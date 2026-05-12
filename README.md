@@ -1,12 +1,33 @@
 # مرصاد — Mirsad Monitoring Platform
 
-منصة رصد مخالفات وامتثال مؤسسي (واجهة عربية RTL) لإدارة دورة التذاكر من الموظف إلى المشرف ثم التدقيق ثم القرار الإداري.
+## Overview (English)
 
-**English:** Single-file static SPA (`index.html`) backed by **Supabase** (Postgres, Auth, Realtime). Optional file uploads via **Cloudflare R2** (worker) and admin operations via a **Supabase Edge Function**.
+**Mirsad** is an integrated **monitoring and compliance** web application for organizations. It helps teams **record violations**, attach evidence, and move each case through a structured workflow: **employee response → supervisor review → internal audit → management decision → closure**. The interface is **Arabic-first with RTL layout**; numeric and date fields are shown in **Latin digits** where appropriate for readability.
+
+The codebase is a **single static SPA** in `index.html` (no build step). Data lives in **Supabase** (PostgreSQL, Row Level Security, Auth, and Realtime subscriptions). **Optional** integrations include **Cloudflare R2** for attachments (via a small upload worker) and a **Supabase Edge Function** for privileged admin user operations.
 
 ---
 
-## Features
+## نظرة عامة (عربي)
+
+منصة **مرصاد** لرصد المخالفات ودعم **الامتثال المؤسسي**: تسجيل تذكرة، مرفقات، ثم تمرير الحالة بين **الموظف والمشرف والمدقق والمدير** حتى الإغلاق. الواجهة **عربية RTL** مع أرقام/تواريخ لاتينية حيث يلزم.
+
+تقنيًا: تطبيق ثابت في ملف **`index.html`** يتصل بـ **Supabase**؛ رفع الملفات عبر **R2** اختياري؛ عمليات المستخدمين الحساسة عبر **Edge Function** عند التفعيل.
+
+---
+
+## Features (English)
+
+- **Dashboard** with KPIs and charts (Latin numerals/dates where used).
+- **New violation** capture and **ticket workflow** with filters, search, and clear state badges.
+- **Reports** and **compliance** views (regions, branches, employees).
+- **Regions & branches**, **users**, and **violation types** catalog (severity and weight).
+- **Mirsad UI:** purple / white / light gray, soft card shadows, **pill** buttons and search fields, light sidebar with purple active state.
+- **Auth** screens (login, forgot/reset) as centered cards.
+
+---
+
+## الميزات (عربي)
 
 - **لوحة تحكم** مع مؤشرات أداء ومخططات؛ أرقام وتواريخ بصيغة لاتينية حيث يلزم.
 - **رصد مخالفة** و**معالجة التذاكر** مع فلترة وبحث وتدفق حالات واضح.
