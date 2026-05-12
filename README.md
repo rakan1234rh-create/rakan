@@ -6,6 +6,11 @@
 
 The codebase is a **single static SPA** in `index.html` (no build step). Data lives in **Supabase** (PostgreSQL, Row Level Security, Auth, and Realtime subscriptions). **Optional** integrations include **Cloudflare R2** for attachments (via a small upload worker) and a **Supabase Edge Function** for privileged admin user operations.
 
+**Quick links (repository files):**
+
+- [index.html](index.html) — full application source (open on GitHub to browse or **Raw** to download).
+- [README.md](README.md) — this documentation file.
+
 ---
 
 ## نظرة عامة (عربي)
@@ -13,6 +18,11 @@ The codebase is a **single static SPA** in `index.html` (no build step). Data li
 منصة **مرصاد** لرصد المخالفات ودعم **الامتثال المؤسسي**: تسجيل تذكرة، مرفقات، ثم تمرير الحالة بين **الموظف والمشرف والمدقق والمدير** حتى الإغلاق. الواجهة **عربية RTL** مع أرقام/تواريخ لاتينية حيث يلزم.
 
 تقنيًا: تطبيق ثابت في ملف **`index.html`** يتصل بـ **Supabase**؛ رفع الملفات عبر **R2** اختياري؛ عمليات المستخدمين الحساسة عبر **Edge Function** عند التفعيل.
+
+**روابط سريعة:**
+
+- [index.html](index.html) — كود التطبيق الكامل.
+- [README.md](README.md) — ملف التوثيق هذا.
 
 ---
 
