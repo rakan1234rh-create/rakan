@@ -33,7 +33,7 @@
       --mr-primary-softer: #f5f3ff;
       --mr-primary-text: #4a3eef;
       --mr-surface: #ffffff;
-      --mr-bg: #f5f5f8;
+      --mr-bg: #f9fafb;
       --mr-bg-2: #ece9ff;
       --mr-border: #e4e6ef;
       --mr-border-2: #acb1c6;
@@ -49,7 +49,7 @@
       --mr-radius-md: 14px;
       --mr-shadow-card: 0 2px 6px rgba(15, 18, 36, 0.04), 0 8px 24px rgba(15, 18, 36, 0.06);
       --mr-shadow-soft: 0 1px 2px rgba(15, 18, 36, 0.04);
-      --bg: #f5f5f8;
+      --bg: #f9fafb;
       --bg2: #ece9ff;
       --bg3: #ffffff;
       --surface: #ffffff;
@@ -100,9 +100,9 @@
       --fig-sidebar-logout-bg: #ffffff;
       --fig-sidebar-logout-text: #685bff;
       --fig-sidebar-logout-hover: #ece9ff;
-      --fig-sidebar-radius: 24px;
-      --fig-sidebar-w: 240px;
-      --fig-sidebar-collapsed-w: 80px;
+      --fig-sidebar-radius: 20px;
+      --fig-sidebar-w: 236px;
+      --fig-sidebar-collapsed-w: 68px;
       --fig-sidebar-shadow: 0 8px 24px rgba(15, 18, 36, 0.06);
       --font: 'IBM Plex Sans Arabic', sans-serif;
       --mono: 'JetBrains Mono', monospace;
@@ -561,7 +561,7 @@
     ═══════════════════════════════════════════════════════════════════════ */
     .app {
       display: flex;
-      flex-direction: row;
+      flex-direction: column;
       height: 100vh;
       overflow: hidden;
     }
@@ -578,6 +578,7 @@
     .app-body {
       display: flex;
       flex: 1;
+      min-height: 0;
       overflow: hidden;
       position: relative;
       align-items: stretch;
@@ -592,7 +593,7 @@
       max-width: var(--fig-sidebar-w);
       background: var(--mr-surface);
       color: var(--mr-text);
-      padding: 16px 14px;
+      padding: 16px 10px 14px;
       display: flex;
       flex-direction: column;
       height: 100%;
@@ -603,7 +604,7 @@
       box-shadow: none;
       z-index: 800;
       font-family: var(--font);
-      transition: width 0.28s ease, flex-basis 0.28s ease, box-shadow 0.28s ease, transform 0.3s ease;
+      transition: width 0.18s ease, flex-basis 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
       box-sizing: border-box;
       overflow: hidden;
       position: relative
@@ -629,10 +630,15 @@
       display: flex;
       align-items: center;
       gap: 12px;
-      padding: 4px 4px 22px;
-      margin-bottom: 8px;
+      padding: 2px 6px 24px;
+      margin-bottom: 4px;
       border-bottom: none;
-      min-height: 48px
+      min-height: 52px
+    }
+
+    .sidebar-brand-text {
+      opacity: 1;
+      max-width: 180px
     }
 
     .figma-sidebar-logo {
@@ -697,15 +703,16 @@
       max-width: 0;
       overflow: hidden;
       white-space: nowrap;
-      transition: opacity 0.2s ease, max-width 0.24s ease
+      transition: opacity 0.14s ease, max-width 0.16s ease
     }
 
     @media (min-width: 993px) {
+
       .sidebar:hover .nav-section-label,
       .sidebar:hover .nav-item-label,
       .sidebar:hover .logout-btn span {
         opacity: 1;
-        max-width: 180px
+        max-width: 148px
       }
 
       .sidebar:not(:hover) .nav-item {
@@ -782,12 +789,12 @@
     }
 
     .nav-section-label {
-      font-size: 10px;
+      font-size: 11px;
       color: var(--mr-text-3);
       text-transform: uppercase;
-      letter-spacing: 1px;
-      padding: 18px 10px 8px;
-      font-weight: 600;
+      letter-spacing: 0.08em;
+      padding: 18px 8px 8px;
+      font-weight: 700;
       font-family: var(--font)
     }
 
@@ -795,26 +802,26 @@
       width: 100%;
       display: flex;
       align-items: center;
-      gap: 12px;
-      padding: 10px 12px;
+      gap: 10px;
+      padding: 9px 11px;
       background: transparent;
       color: var(--mr-text-2);
       opacity: 1;
-      border: none;
+      border: 2px solid transparent;
       border-radius: 12px;
       font-family: var(--font);
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 600;
       cursor: pointer;
       text-align: right;
-      margin-bottom: 4px;
+      margin-bottom: 6px;
       position: relative;
-      transition: background 0.2s ease, color 0.2s ease;
+      transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
     }
 
     .nav-item i {
-      width: 36px;
-      height: 36px;
+      width: 34px;
+      height: 34px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -839,6 +846,7 @@
     .nav-item.active {
       background: transparent;
       color: var(--mr-text);
+      border-color: transparent;
       box-shadow: none
     }
 
@@ -852,14 +860,19 @@
       margin-right: auto;
       background: var(--red);
       color: #fff;
-      font-size: 10px;
-      padding: 2px 7px;
-      border-radius: 10px;
-      font-weight: 600
+      font-size: 11px;
+      min-width: 20px;
+      height: 20px;
+      padding: 0 6px;
+      border-radius: 999px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center
     }
 
     .sidebar-user {
-      padding: 14px 0 6px;
+      padding: 18px 0 4px;
       border-top: 1px solid var(--mr-border);
       margin-top: auto
     }
@@ -951,11 +964,11 @@
 
     .sidebar .logout-btn {
       width: 100%;
-      min-height: 44px;
-      padding: 10px 18px;
+      min-height: 46px;
+      padding: 11px 18px;
       background: var(--mr-surface);
       color: var(--mr-primary);
-      border: 1px solid var(--mr-primary-soft);
+      border: 1.5px solid #bfdbfe;
       border-radius: 999px;
       font-family: var(--font);
       font-size: 13px;
@@ -965,7 +978,7 @@
       align-items: center;
       justify-content: center;
       gap: 10px;
-      transition: background 0.2s ease, color 0.2s ease;
+      transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
       box-shadow: none
     }
 
@@ -1088,9 +1101,11 @@
       display: flex;
       align-items: center;
       gap: 10px;
-      padding: 4px 10px 4px 4px;
+      padding: 6px 14px 6px 6px;
       border-radius: 999px;
-      background: var(--mr-surface)
+      background: var(--mr-surface);
+      border: 1px solid var(--mr-border);
+      box-shadow: 0 2px 10px rgba(15, 18, 36, 0.08)
     }
 
     .mr-topbar-user-av {
@@ -1237,12 +1252,23 @@
       }
     }
 
+    .wf-panel .badge {
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 11px
+    }
+
+    .topbar.unified-banner .mr-topbar-search,
+    .topbar.unified-banner .topbar-clock {
+      display: none
+    }
+
     .topbar-btn {
       background: var(--mr-surface);
       border: 1px solid var(--mr-border);
       width: 40px;
       height: 40px;
-      border-radius: 12px;
+      border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -2249,7 +2275,8 @@
     .topbar.unified-banner {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: flex-start;
+      gap: 18px;
       height: 76px;
       padding: 0 24px;
       background: var(--surface);
@@ -2257,18 +2284,27 @@
       border-inline-start: 0;
       position: sticky;
       top: 0;
-      z-index: 900;
+      z-index: 950;
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       flex-shrink: 0
+    }
+
+    .topbar-tools {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-inline-start: auto;
+      min-width: 0
     }
 
     .brand-area {
       display: flex;
       align-items: center;
       gap: 14px;
-      margin-left: 20px;
+      margin: 0;
       cursor: pointer;
+      flex-shrink: 0
     }
 
     .brand-area .brand-icon {
@@ -2404,19 +2440,19 @@
 
     @media(max-width:992px) {
       .sidebar {
-        --sb-drawer-w: min(300px, 88vw);
+        --sb-drawer-w: min(var(--fig-sidebar-w), 88vw);
         position: fixed;
         right: calc(-1 * var(--sb-drawer-w));
-        top: 0;
+        top: 76px;
         width: var(--sb-drawer-w);
         max-width: var(--sb-drawer-w);
         flex: none;
-        height: 100vh;
+        height: calc(100vh - 76px);
         z-index: 2000;
-        transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: right 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         box-shadow: -10px 0 40px rgba(0, 0, 0, 0.35);
         border-radius: var(--fig-sidebar-radius) 0 0 var(--fig-sidebar-radius);
-        padding-top: 52px
+        padding-top: 16px
       }
 
       .sidebar.open {
@@ -2427,7 +2463,7 @@
       .sidebar.open .nav-item-label,
       .sidebar.open .logout-btn span {
         opacity: 1;
-        max-width: 180px
+        max-width: 148px
       }
 
       .sidebar-close {
@@ -2654,6 +2690,156 @@
       gap: 10px;
       flex-wrap: wrap;
       margin-bottom: 16px
+    }
+
+    .wf-panel {
+      padding: 28px 30px 24px;
+      margin-bottom: 0
+    }
+
+    .wf-panel-intro {
+      margin-bottom: 22px
+    }
+
+    .wf-panel-title {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--mr-text);
+      line-height: 1.25
+    }
+
+    .wf-panel-sub {
+      margin: 6px 0 0;
+      font-size: 12px;
+      color: var(--mr-text-3);
+      font-family: var(--mono);
+      letter-spacing: 0.02em
+    }
+
+    .wf-toolbar {
+      gap: 14px;
+      margin-bottom: 12px
+    }
+
+    .wf-search {
+      flex: 1 1 420px;
+      min-width: 260px;
+      height: 46px;
+      padding-inline: 18px 10px
+    }
+
+    .wf-status-select {
+      flex: 0 0 180px;
+      width: 180px;
+      max-width: 180px;
+      height: 46px;
+      padding-inline: 16px;
+      background: var(--mr-bg);
+      cursor: pointer
+    }
+
+    .wf-count {
+      font-size: 12px;
+      color: var(--mr-text-3);
+      margin-bottom: 14px
+    }
+
+    .wf-count strong {
+      color: var(--mr-text);
+      font-weight: 700
+    }
+
+    .wf-table-wrap {
+      overflow-x: auto
+    }
+
+    .wf-panel .data-table thead {
+      background: #f3f0ff
+    }
+
+    .wf-panel .data-table th {
+      padding: 13px 16px;
+      font-size: 12px;
+      color: var(--mr-text-2);
+      border-bottom: 1px solid var(--mr-border)
+    }
+
+    .wf-panel .data-table td {
+      padding: 16px;
+      font-size: 13px;
+      vertical-align: middle
+    }
+
+    .wf-panel .data-table tbody tr:hover {
+      background: #faf9ff
+    }
+
+    .wf-panel .badge.b-amber {
+      background: #fef3c7;
+      color: #d97706;
+      border-color: #fde68a
+    }
+
+    .wf-panel .badge.b-blue {
+      background: #eff6ff;
+      color: #2563eb;
+      border-color: #bfdbfe
+    }
+
+    .wf-ticket-id {
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 700
+    }
+
+    .wf-emp-name {
+      display: block;
+      font-weight: 600;
+      color: var(--mr-text)
+    }
+
+    .wf-emp-num {
+      display: block;
+      margin-top: 4px;
+      font-size: 11px;
+      color: var(--mr-text-3);
+      font-family: var(--mono)
+    }
+
+    .wf-datetime {
+      font-size: 12px;
+      color: var(--mr-text);
+      white-space: nowrap
+    }
+
+    .wf-process-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px 6px 6px;
+      border: 0;
+      border-radius: 999px;
+      background: #eff6ff;
+      color: #2563eb;
+      font-family: var(--font);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap
+    }
+
+    .wf-process-ico {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--mr-primary);
+      color: #fff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      flex-shrink: 0
     }
 
     .toolbar-input {
@@ -9065,53 +9251,23 @@
   <div class="app" id="appWrap" style="display:none">
 
 
-    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
-      <aside class="sidebar" id="sidebar">
-        <button type="button" class="sidebar-close" id="sidebarCloseBtn" onclick="closeSidebar()"
-          aria-label="إغلاق القائمة"><i class="fas fa-times"></i></button>
-        <nav class="sidebar-nav" id="sidebarNav">
-          <div class="nav-section-label">الرئيسية</div>
-          <button class="nav-item active" onclick="goTab('dashboard',this)"><i class="fas fa-table-cells-large"></i><span
-              class="nav-item-label">لوحة القيادة</span></button>
-          <button class="nav-item" onclick="goTab('newTicket',this)" data-roles="admin,observer,supervisor"><i
-              class="fas fa-circle-plus"></i><span class="nav-item-label">رصد مخالفة</span></button>
-          <button class="nav-item" onclick="goTab('workflow',this)"><i class="fas fa-ticket"></i><span
-              class="nav-item-label">معالجة التذاكر</span><span class="nav-badge" id="pendBadge"
-              style="display:none">0</span></button>
-          <button class="nav-item" onclick="goTab('reports',this)" data-roles="admin,manager,auditor"><i
-              class="fas fa-chart-bar"></i><span class="nav-item-label">التقارير</span></button>
-          <button class="nav-item" onclick="goTab('compliance',this)" data-roles="admin,manager,auditor,supervisor"><i
-              class="fas fa-gauge-high"></i><span class="nav-item-label">مؤشرات الامتثال</span></button>
-          <div class="nav-section-label" data-roles="admin">الإعدادات</div>
-          <button class="nav-item" onclick="goTab('locations',this)" data-roles="admin,supervisor,observer,manager"><i
-              class="fas fa-map-location-dot"></i><span class="nav-item-label">المناطق والفروع</span></button>
-          <button class="nav-item" onclick="goTab('departments',this)" data-roles="admin"><i
-              class="fas fa-users-gear"></i><span class="nav-item-label">المستخدمون</span></button>
-          <button class="nav-item" onclick="goTab('violations',this)" data-roles="admin"><i
-              class="fas fa-triangle-exclamation"></i><span class="nav-item-label">أنواع المخالفات</span></button>
-        </nav>
-        <div class="sidebar-user">
-          <button type="button" class="logout-btn" id="logoutBtn" onclick="handleLogout()"><i
-              class="fas fa-arrow-right-from-bracket"></i><span>تسجيل الخروج</span></button>
-        </div>
-      </aside>
-
-      <div class="app-shell">
-    <header class="topbar unified-banner">
-      <div class="topbar-left">
-        <button class="hamburger-btn" id="hamburgerBtn" onclick="toggleSidebar()" aria-label="فتح القائمة"><i
-            class="fas fa-bars"></i></button>
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+    <div class="app-shell">
+<header class="topbar unified-banner">
         <div class="brand-area">
           <div class="brand-icon"><i class="fas fa-shield-halved"></i></div>
           <div class="brand-text"><strong>مرصاد</strong><span>Mirsad</span></div>
         </div>
-      </div>
-      <div class="mr-topbar-search">
+
+      <div class="topbar-tools">
+        <button class="hamburger-btn" id="hamburgerBtn" onclick="toggleSidebar()" aria-label="فتح القائمة"><i
+            class="fas fa-bars"></i></button>
+          <div class="mr-topbar-search">
         <i class="fas fa-magnifying-glass mr-topbar-search-icon" aria-hidden="true"></i>
         <input type="search" id="globalSearchInput" class="mr-topbar-search-input"
           placeholder="ابحث في التذاكر، المخالفات، الموظفين، والفروع..." aria-label="بحث عام">
       </div>
-      <div class="topbar-right">
+          <div class="topbar-right">
         <div class="topbar-clock" id="topbarClock" dir="ltr"><i class="fas fa-clock"></i><span id="clockText">--:--:--
             --</span></div>
         <button class="topbar-btn" id="notifBellBtn" onclick="toggleNotifPanel(event)" title="التنبيهات"><i
@@ -9142,8 +9298,39 @@
             </div>
           </div>
         </div>
-      </div>
+          </div>
+        </div>
     </header>
+      <div class="app-body">
+      <aside class="sidebar" id="sidebar">
+        <button type="button" class="sidebar-close" id="sidebarCloseBtn" onclick="closeSidebar()"
+          aria-label="إغلاق القائمة"><i class="fas fa-times"></i></button>
+        <nav class="sidebar-nav" id="sidebarNav">
+          <div class="nav-section-label">الرئيسية</div>
+          <button class="nav-item active" onclick="goTab('dashboard',this)"><i class="fas fa-table-cells-large"></i><span
+              class="nav-item-label">لوحة القيادة</span></button>
+          <button class="nav-item" onclick="goTab('newTicket',this)" data-roles="admin,observer,supervisor"><i
+              class="fas fa-circle-plus"></i><span class="nav-item-label">رصد مخالفة</span></button>
+          <button class="nav-item" onclick="goTab('workflow',this)"><i class="fas fa-ticket"></i><span
+              class="nav-item-label">معالجة التذاكر</span><span class="nav-badge" id="pendBadge"
+              style="display:none">0</span></button>
+          <button class="nav-item" onclick="goTab('reports',this)" data-roles="admin,manager,auditor"><i
+              class="fas fa-chart-bar"></i><span class="nav-item-label">التقارير</span></button>
+          <button class="nav-item" onclick="goTab('compliance',this)" data-roles="admin,manager,auditor,supervisor"><i
+              class="fas fa-gauge-high"></i><span class="nav-item-label">مؤشرات الامتثال</span></button>
+          <div class="nav-section-label" data-roles="admin">الإعدادات</div>
+          <button class="nav-item" onclick="goTab('locations',this)" data-roles="admin,supervisor,observer,manager"><i
+              class="fas fa-map-location-dot"></i><span class="nav-item-label">المناطق والفروع</span></button>
+          <button class="nav-item" onclick="goTab('departments',this)" data-roles="admin"><i
+              class="fas fa-users-gear"></i><span class="nav-item-label">المستخدمون</span></button>
+          <button class="nav-item" onclick="goTab('violations',this)" data-roles="admin"><i
+              class="fas fa-triangle-exclamation"></i><span class="nav-item-label">أنواع المخالفات</span></button>
+        </nav>
+        <div class="sidebar-user">
+          <button type="button" class="logout-btn" id="logoutBtn" onclick="handleLogout()"><i
+              class="fas fa-arrow-right-from-bracket"></i><span>تسجيل الخروج</span></button>
+        </div>
+      </aside>
 
       <div class="main">
 
@@ -9322,12 +9509,16 @@
 
           <!-- WORKFLOW -->
           <div class="tab-content" id="tab-workflow">
-            <div class="panel">
-              <div class="toolbar"><div class="figma-search-wrap" style="min-width:200px; flex:1 1 280px;"><input
+            <div class="panel wf-panel">
+              <div class="wf-panel-intro">
+                <h2 class="wf-panel-title">معالجة التذاكر</h2>
+                <p class="wf-panel-sub">tickets workflow</p>
+              </div>
+              <div class="toolbar wf-toolbar"><div class="figma-search-wrap wf-search"><input
                     type="text" class="figma-search-input" id="wf-search" placeholder="ابحث برقم التذكرة أو اسم الموظف..."
                     oninput="filterTickets()"><button type="button" class="figma-search-btn" onclick="filterTickets()"
                     aria-label="بحث"><i class="fas fa-magnifying-glass"></i></button></div><select id="wf-status"
-                  class="form-select" style="max-width:180px" onchange="filterTickets()">
+                  class="form-select wf-status-select" onchange="filterTickets()">
                   <option value="">كل الحالات</option>
                   <option value="emp">بانتظار الموظف</option>
                   <option value="sup">بانتظار المشرف</option>
@@ -9335,8 +9526,7 @@
                   <option value="mgt">بانتظار الإدارة</option>
                   <option value="closed">مغلقة</option>
                 </select></div>
-              <div style="font-size:12px;color:var(--text3);margin-bottom:10px">عدد النتائج: <strong
-                  id="wf-count">0</strong></div>
+              <div class="wf-count">عدد النتائج: <strong id="wf-count">0</strong></div>
               <div id="ticketList"></div>
             </div>
           </div>
@@ -9596,6 +9786,7 @@
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
 
@@ -11468,7 +11659,7 @@
         // إظهار/إخفاء بنر اسم القسم
         const titleBar = document.getElementById('pageTitleBar');
         if (titleBar) {
-          const tabsWithOwnTitle = ['dashboard', 'newTicket', 'locations', 'departments', 'violations', 'compliance'];
+          const tabsWithOwnTitle = ['dashboard', 'newTicket', 'workflow', 'locations', 'departments', 'violations', 'compliance'];
           if (tabsWithOwnTitle.includes(tab)) {
             titleBar.classList.remove('visible');
           } else {
@@ -13914,7 +14105,7 @@
         }
 
         list.innerHTML = `
-    <div style="overflow-x:auto">
+    <div class="wf-table-wrap">
       <table class="data-table">
         <thead>
           <tr>
@@ -13932,17 +14123,22 @@
           const autoFlag = (t.auto_forwarded_emp || t.auto_forwarded_sup)
             ? '<span class="overdue-flag" style="margin-left:4px"><i class="fas fa-robot"></i> تلقائي</span>'
             : '';
+          const empName = (t._empName || '').trim() || '...';
+          const empNumber = (t._empNumber || '').trim();
+          const dateTime = t.violation_date
+            ? `${Sec.escapeHTML(t.violation_date)}, ${Sec.escapeHTML(formatTime12(t.violation_time))}`
+            : '-';
           return `
             <tr onclick="openTicket('${t.id}')">
-              <td><strong style="font-family:var(--mono);font-size:12px">${Sec.escapeHTML(t.ticket_number)}</strong>${autoFlag}</td>
-              <td>${Sec.escapeHTML(t._empName)}<br><span style="font-size:11px;color:var(--text3);font-family:var(--mono)">${Sec.escapeHTML(t._empNumber || '')}</span></td>
+              <td><strong class="wf-ticket-id">${Sec.escapeHTML(t.ticket_number)}</strong>${autoFlag}</td>
+              <td><span class="wf-emp-name">${Sec.escapeHTML(empName)}</span>${empNumber ? `<span class="wf-emp-num">${Sec.escapeHTML(empNumber)}</span>` : ''}</td>
               <td>${Sec.escapeHTML(t.violation_type)}</td>
               <td>${Sec.escapeHTML(t._branchName)}</td>
-              <td style="font-size:12px">${Sec.escapeHTML(t.violation_date || '-')}<br><span style="color:var(--text3);font-size:11px">${Sec.escapeHTML(formatTime12(t.violation_time))}</span></td>
+              <td class="wf-datetime">${dateTime}</td>
               <td><span class="badge ${getTicketBadgeClass(t)}">${Sec.escapeHTML(t.status_text || STATE_LABELS[t.state])}</span></td>
               <td>
                 ${canActOnTicket(t)
-              ? '<span class="badge b-blue"><i class="fas fa-circle-arrow-left"></i> اضغط للمعالجة</span>'
+              ? '<button type="button" class="wf-process-btn" onclick="event.stopPropagation(); openTicket(\'' + t.id + '\')"><span class="wf-process-ico"><i class="fas fa-play"></i></span> اضغط للمعالجة</button>'
               : '<span style="color:var(--text3);font-size:11px">عرض فقط</span>'}
               </td>
             </tr>`;
