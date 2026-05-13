@@ -9279,6 +9279,7 @@
           <div class="topbar-clock-time"><span id="clockText">--:--</span><span class="ampm" id="clockAmPm">--</span></div>
           <div class="topbar-clock-date" id="clockDate">---</div>
         </div>
+        <div class="topbar-divider" aria-hidden="true"></div>
         <button class="topbar-btn" id="notifBellBtn" onclick="toggleNotifPanel(event)" title="التنبيهات"><i
             class="fas fa-bell"></i><span class="notif-bell-count" id="notifBellCount"
             style="display:none">0</span></button>
@@ -9287,8 +9288,8 @@
         <div class="mr-topbar-user" id="topbarUserChip">
           <div class="mr-topbar-user-av" id="tbAv" aria-hidden="true">م</div>
           <div class="mr-topbar-user-info">
-            <span class="mr-topbar-hello">مرحباً</span>
             <strong class="mr-topbar-name" id="tbName">—</strong>
+            <span class="mr-topbar-hello" id="tbRole"><span class="mr-topbar-role-dot" aria-hidden="true"></span>—</span>
           </div>
         </div>
 
@@ -11714,6 +11715,11 @@
           tbAv.style.background = u.color;
         }
         if (tbName) tbName.textContent = u.name;
+        const tbRole = document.getElementById('tbRole');
+        if (tbRole) {
+          const roleLabel = (ROLE_LABELS[u.role] || u.role || '—').trim();
+          tbRole.innerHTML = '<span class="mr-topbar-role-dot" aria-hidden="true"></span> ' + roleLabel;
+        }
 
         const lo = document.getElementById('logoutBtn');
         if (lo) lo.style.display = u.auth_uid ? '' : 'none';
