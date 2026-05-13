@@ -9363,49 +9363,54 @@
                 <p class="md-hero-sub" id="dash-welcome-sub">إليك نظرة عامة على أداء منصتك اليوم</p>
               </div>
               <div class="md-stats-grid">
-                <div class="md-stat-card">
-                  <div class="md-stat-inner">
-                    <div class="md-stat-copy">
-                      <p class="md-stat-label">إجمالي المخالفات</p>
-                      <div class="md-stat-value" id="st-total">0</div>
-                      <div class="md-stat-foot md-foot-muted"><i class="fas fa-arrow-trend-up"></i><span
-                          id="st-total-trend">هذا الشهر</span></div>
-                    </div>
-                    <div class="md-stat-ico md-ico-blue"><i class="fas fa-file-lines"></i></div>
+                <div class="md-stat-card md-stat-card--kpi">
+                  <div class="md-stat-top">
+                    <span class="md-stat-label">إجمالي المخالفات</span>
+                    <span class="md-stat-dot md-stat-dot--neutral" aria-hidden="true"></span>
+                  </div>
+                  <div class="md-stat-value" id="st-total">0</div>
+                  <div class="md-stat-spark md-stat-spark--neutral" id="st-total-spark" aria-hidden="true"></div>
+                  <div class="md-stat-footrow">
+                    <span class="md-stat-trend md-stat-trend--up" id="st-total-delta"><span class="md-stat-arrow md-stat-arrow--up"></span>+0%</span>
+                    <span class="md-stat-period" id="st-total-trend">هذا الشهر</span>
                   </div>
                 </div>
-                <div class="md-stat-card">
-                  <div class="md-stat-inner">
-                    <div class="md-stat-copy">
-                      <p class="md-stat-label">معتمدة نهائياً</p>
-                      <div class="md-stat-value" id="st-approved">0</div>
-                      <div class="md-stat-foot md-foot-up"><i class="fas fa-circle-check"></i><span
-                          id="st-approved-pct">0% من الإجمالي</span></div>
-                    </div>
-                    <div class="md-stat-ico md-ico-green"><i class="fas fa-check-double"></i></div>
+                <div class="md-stat-card md-stat-card--kpi">
+                  <div class="md-stat-top">
+                    <span class="md-stat-label">معتمدة نهائياً</span>
+                    <span class="md-stat-dot md-stat-dot--success" aria-hidden="true"></span>
+                  </div>
+                  <div class="md-stat-value" id="st-approved">0</div>
+                  <div class="md-stat-spark md-stat-spark--success" id="st-approved-spark" aria-hidden="true"></div>
+                  <div class="md-stat-footrow">
+                    <span class="md-stat-trend md-stat-trend--up" id="st-approved-delta"><span class="md-stat-arrow md-stat-arrow--up"></span>+0%</span>
+                    <span class="md-stat-period md-stat-period--strong" id="st-approved-pct">0% من الإجمالي</span>
                   </div>
                 </div>
-                <div class="md-stat-card">
-                  <div class="md-stat-inner">
-                    <div class="md-stat-copy">
-                      <p class="md-stat-label">قيد المعالجة</p>
-                      <div class="md-stat-value" id="st-pending">0</div>
-                      <div class="md-stat-foot md-foot-muted"><i class="fas fa-clock"></i><span>بانتظار رد</span></div>
-                    </div>
-                    <div class="md-stat-ico md-ico-amber"><i class="fas fa-hourglass-half"></i></div>
+                <div class="md-stat-card md-stat-card--kpi">
+                  <div class="md-stat-top">
+                    <span class="md-stat-label">قيد المعالجة</span>
+                    <span class="md-stat-dot md-stat-dot--warning" aria-hidden="true"></span>
+                  </div>
+                  <div class="md-stat-value" id="st-pending">0</div>
+                  <div class="md-stat-spark md-stat-spark--warning" id="st-pending-spark" aria-hidden="true"></div>
+                  <div class="md-stat-footrow">
+                    <span class="md-stat-trend md-stat-trend--flat" id="st-pending-delta">— ثابت</span>
+                    <span class="md-stat-period">بانتظار رد</span>
                   </div>
                 </div>
-                <div class="md-stat-card md-stat-card--click" role="button" tabindex="0"
+                <div class="md-stat-card md-stat-card--kpi md-stat-card--click" role="button" tabindex="0"
                   onclick="showOverdueTickets()"
                   onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showOverdueTickets();}">
-                  <div class="md-stat-inner">
-                    <div class="md-stat-copy">
-                      <p class="md-stat-label">تجاهل / تأخير</p>
-                      <div class="md-stat-value" id="st-overdue">0</div>
-                      <div class="md-stat-foot md-foot-down"><i class="fas fa-circle-exclamation"></i><span>تجاوزت
-                          المدة</span></div>
-                    </div>
-                    <div class="md-stat-ico md-ico-red"><i class="fas fa-triangle-exclamation"></i></div>
+                  <div class="md-stat-top">
+                    <span class="md-stat-label">تجاوزت المدة</span>
+                    <span class="md-stat-dot md-stat-dot--danger" aria-hidden="true"></span>
+                  </div>
+                  <div class="md-stat-value md-stat-value--danger" id="st-overdue">0</div>
+                  <div class="md-stat-spark md-stat-spark--danger" id="st-overdue-spark" aria-hidden="true"></div>
+                  <div class="md-stat-footrow">
+                    <span class="md-stat-trend md-stat-trend--down" id="st-overdue-delta"><span class="md-stat-arrow md-stat-arrow--down"></span>+0%</span>
+                    <span class="md-stat-period">إجراء فوري</span>
                   </div>
                 </div>
               </div>
@@ -12301,12 +12306,88 @@
         return { cls: 'md-ri-warn', icon: 'fa-triangle-exclamation' };
       }
 
+      // ═══ KPI helpers (dashboard cards) ═══
+      function dashCountInMonth(violations, monthStart, nextMonthStart, predicate = () => true) {
+        return violations.filter(v => {
+          if (!v.created_at) return false;
+          const d = new Date(v.created_at);
+          if (d < monthStart || d >= nextMonthStart) return false;
+          return predicate(v);
+        }).length;
+      }
+
+      function dashBucketizeMonth(violations, monthStart, nextMonthStart, predicate = () => true) {
+        const days = Math.max(1, Math.round((nextMonthStart - monthStart) / 864e5));
+        const buckets = new Array(8).fill(0);
+        violations.forEach(v => {
+          if (!v.created_at || !predicate(v)) return;
+          const d = new Date(v.created_at);
+          if (d < monthStart || d >= nextMonthStart) return;
+          const idx = Math.min(7, Math.floor(((d.getDate() - 1) / days) * 8));
+          buckets[idx]++;
+        });
+        return buckets;
+      }
+
+      function dashSparkOpacity(i, last, tone) {
+        if (tone === 'neutral') {
+          if (i === last) return 1;
+          if (i >= 6) return 0.7;
+          if (i >= 4) return 0.4;
+          return 0.18;
+        }
+        if (i === last) return 1;
+        if (i >= 6) return 0.85;
+        if (i >= 4) return 0.65;
+        if (i >= 2) return 0.5;
+        return 0.3;
+      }
+
+      function dashRenderSpark(containerId, values, color, tone = 'neutral') {
+        const el = document.getElementById(containerId);
+        if (!el) return;
+        const max = Math.max(1, ...values);
+        const last = values.length - 1;
+        el.innerHTML = values.map((v, i) => {
+          const h = Math.max(8, Math.round((v / max) * 92));
+          const opacity = dashSparkOpacity(i, last, tone);
+          return `<div class="md-stat-bar" style="height:${h}%;background:${color};opacity:${opacity}"></div>`;
+        }).join('');
+      }
+
+      function dashRenderTrend(elId, current, previous, invert = false) {
+        const el = document.getElementById(elId);
+        if (!el) return;
+        let mode = 'flat';
+        let html = '— ثابت';
+        if (previous > 0) {
+          const pct = ((current - previous) / previous) * 100;
+          const rounded = Math.abs(pct).toFixed(1);
+          if (Math.abs(pct) < 0.05) {
+            mode = 'flat';
+          } else if (pct > 0) {
+            mode = invert ? 'down' : 'up';
+            html = `<span class="md-stat-arrow md-stat-arrow--${mode}"></span>+${rounded}%`;
+          } else {
+            mode = invert ? 'up' : 'down';
+            html = `<span class="md-stat-arrow md-stat-arrow--${mode}"></span>${rounded}%`;
+          }
+        } else if (current > 0) {
+          mode = invert ? 'down' : 'up';
+          html = '<span class="md-stat-arrow md-stat-arrow--up"></span>+' + current;
+        }
+        el.className = 'md-stat-trend md-stat-trend--' + mode;
+        el.innerHTML = html;
+      }
+
       // ═══ تحديث الساعة ═══
       function renderDashboard() {
         // المؤشرات الشخصية أولاً (للموظف والمشرف)
         renderPersonalIndicators();
 
         const now = new Date();
+        const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+        const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
         const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
         const wn = document.getElementById('dash-welcome-name');
@@ -12356,24 +12437,21 @@
         }
 
         // إجمالي المخالفات (للشهر الحالي فقط)
-        dashSet('st-total', String(total));
-        dashSet('st-total-trend', `إحصائيات شهر ${now.toLocaleString('ar-SA', { month: 'long' })}`);
+        dashSet('st-total', total.toLocaleString('en-US'));
+        dashSet('st-total-trend', 'هذا الشهر');
 
         // معتمدة نهائياً + النسبة
         const approved = visible.filter(v => v.state === 'closed' && (v.status_text || '').includes('معتمد')).length;
-        dashSet('st-approved', String(approved));
+        dashSet('st-approved', approved.toLocaleString('en-US'));
         const pct = total > 0 ? Math.round((approved / total) * 100) : 0;
         dashSet('st-approved-pct', `${pct}% من الإجمالي`);
 
         // قيد المعالجة (أي حالة غير مغلقة)
         const pending = visible.filter(v => isTicketWorkflowOpen(v)).length;
-        dashSet('st-pending', String(pending));
+        dashSet('st-pending', pending.toLocaleString('en-US'));
 
-        // تجاوز المدة (تذاكر مفتوحة تجاوزت SLA أو مررت تلقائياً بسبب التأخير)
-        const overdue = visible.filter(v => {
-          // إذا تم تمريرها تلقائياً في أي مرحلة، فهي حالة "تجاهل/تأخير"
+        const isOverdueTicket = (v) => {
           if (v.auto_forwarded_emp || v.auto_forwarded_sup || v.auto_forwarded_aud) return true;
-
           if (v.state === 'closed' || v.state === 'Warning_Issued') return false;
           if (!v.created_at) return false;
           const hours = (Date.now() - new Date(v.created_at).getTime()) / 36e5;
@@ -12381,8 +12459,26 @@
           if (v.state === 'sup' && hours > 72) return true;
           if ((v.state === 'aud' || v.state === 'mgt') && hours > 96) return true;
           return false;
-        }).length;
-        dashSet('st-overdue', String(overdue));
+        };
+
+        // تجاوز المدة (تذاكر مفتوحة تجاوزت SLA أو مررت تلقائياً بسبب التأخير)
+        const overdue = visible.filter(isOverdueTicket).length;
+        dashSet('st-overdue', overdue.toLocaleString('en-US'));
+
+        const prevTotal = dashCountInMonth(allVisible, prevMonthStart, monthStart);
+        const prevApproved = dashCountInMonth(allVisible, prevMonthStart, monthStart, v => v.state === 'closed' && (v.status_text || '').includes('معتمد'));
+        const prevPending = dashCountInMonth(allVisible, prevMonthStart, monthStart, isTicketWorkflowOpen);
+        const prevOverdue = dashCountInMonth(allVisible, prevMonthStart, monthStart, isOverdueTicket);
+
+        dashRenderSpark('st-total-spark', dashBucketizeMonth(allVisible, monthStart, nextMonthStart), 'var(--mr-primary)', 'neutral');
+        dashRenderSpark('st-approved-spark', dashBucketizeMonth(allVisible, monthStart, nextMonthStart, v => v.state === 'closed' && (v.status_text || '').includes('معتمد')), 'var(--mr-success)', 'tone');
+        dashRenderSpark('st-pending-spark', dashBucketizeMonth(allVisible, monthStart, nextMonthStart, isTicketWorkflowOpen), 'var(--mr-warning)', 'tone');
+        dashRenderSpark('st-overdue-spark', dashBucketizeMonth(allVisible, monthStart, nextMonthStart, isOverdueTicket), 'var(--mr-danger)', 'tone');
+
+        dashRenderTrend('st-total-delta', total, prevTotal);
+        dashRenderTrend('st-approved-delta', approved, prevApproved);
+        dashRenderTrend('st-pending-delta', pending, prevPending);
+        dashRenderTrend('st-overdue-delta', overdue, prevOverdue, true);
 
         // ─── توزيع الحالات (تتجدد شهرياً - تعرض فقط بيانات الشهر الحالي) ───
         const distContainer = document.getElementById('stateDistribution');
