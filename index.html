@@ -101,7 +101,8 @@
       --fig-sidebar-logout-text: #685bff;
       --fig-sidebar-logout-hover: #ece9ff;
       --fig-sidebar-radius: 24px;
-      --fig-sidebar-w: 220px;
+      --fig-sidebar-w: 240px;
+      --fig-sidebar-collapsed-w: 80px;
       --fig-sidebar-shadow: 0 8px 24px rgba(15, 18, 36, 0.06);
       --font: 'IBM Plex Sans Arabic', sans-serif;
       --mono: 'JetBrains Mono', monospace;
@@ -560,9 +561,18 @@
     ═══════════════════════════════════════════════════════════════════════ */
     .app {
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
       height: 100vh;
       overflow: hidden;
+    }
+
+    .app-shell {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--bg)
     }
 
     .app-body {
@@ -571,31 +581,40 @@
       overflow: hidden;
       position: relative;
       align-items: stretch;
-      gap: 12px;
-      padding: 12px 12px 12px 0;
+      gap: 0;
+      padding: 0;
       box-sizing: border-box
     }
 
     .sidebar {
-      width: var(--fig-sidebar-w);
-      flex: 0 0 var(--fig-sidebar-w);
+      width: var(--fig-sidebar-collapsed-w);
+      flex: 0 0 var(--fig-sidebar-collapsed-w);
       max-width: var(--fig-sidebar-w);
       background: var(--mr-surface);
       color: var(--mr-text);
-      padding: 22px 16px 16px;
+      padding: 16px 14px;
       display: flex;
       flex-direction: column;
-      height: calc(100% - 0px);
+      height: 100%;
       align-self: stretch;
-      border: 1px solid var(--mr-border);
-      border-radius: var(--fig-sidebar-radius);
-      box-shadow: var(--fig-sidebar-shadow);
+      border: 0;
+      border-inline-start: 1px solid var(--mr-border);
+      border-radius: 0;
+      box-shadow: none;
       z-index: 800;
       font-family: var(--font);
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      transition: width 0.28s ease, flex-basis 0.28s ease, box-shadow 0.28s ease, transform 0.3s ease;
       box-sizing: border-box;
       overflow: hidden;
       position: relative
+    }
+
+    @media (min-width: 993px) {
+      .sidebar:hover {
+        width: var(--fig-sidebar-w);
+        flex-basis: var(--fig-sidebar-w);
+        box-shadow: -8px 0 24px rgba(15, 18, 36, 0.06)
+      }
     }
 
     .main {
@@ -612,7 +631,8 @@
       gap: 12px;
       padding: 4px 4px 22px;
       margin-bottom: 8px;
-      border-bottom: none
+      border-bottom: none;
+      min-height: 48px
     }
 
     .figma-sidebar-logo {
@@ -648,7 +668,74 @@
       font-weight: 800;
       color: var(--mr-text);
       letter-spacing: 0;
-      line-height: 1.2
+      line-height: 1.2;
+      white-space: nowrap
+    }
+
+    .figma-sidebar-brand-text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+      overflow: hidden
+    }
+
+    .figma-sidebar-subtitle {
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      color: var(--mr-text-3);
+      text-transform: uppercase;
+      white-space: nowrap
+    }
+
+    .nav-section-label,
+    .nav-item-label,
+    .sidebar .logout-btn span {
+      opacity: 0;
+      max-width: 0;
+      overflow: hidden;
+      white-space: nowrap;
+      transition: opacity 0.2s ease, max-width 0.24s ease
+    }
+
+    @media (min-width: 993px) {
+      .sidebar:hover .nav-section-label,
+      .sidebar:hover .nav-item-label,
+      .sidebar:hover .logout-btn span {
+        opacity: 1;
+        max-width: 180px
+      }
+
+      .sidebar:not(:hover) .nav-item {
+        justify-content: center;
+        padding-inline: 8px
+      }
+
+      .sidebar:not(:hover) .nav-badge {
+        position: absolute;
+        top: 6px;
+        left: 8px;
+        margin: 0;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 5px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px
+      }
+
+      .sidebar:not(:hover) .sidebar-user {
+        border-top-color: transparent
+      }
+
+      .sidebar:not(:hover) .logout-btn {
+        min-width: 44px;
+        width: 44px;
+        padding-inline: 0
+      }
     }
 
     .brand-icon {
@@ -2167,11 +2254,13 @@
       padding: 0 24px;
       background: var(--surface);
       border-bottom: 1px solid var(--border);
+      border-inline-start: 0;
       position: sticky;
       top: 0;
       z-index: 900;
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
+      flex-shrink: 0
     }
 
     .brand-area {
@@ -2314,11 +2403,6 @@
     }
 
     @media(max-width:992px) {
-      .app-body {
-        gap: 0;
-        padding: 0
-      }
-
       .sidebar {
         --sb-drawer-w: min(300px, 88vw);
         position: fixed;
@@ -2339,8 +2423,11 @@
         right: 0;
       }
 
-      .sidebar-brand {
-        padding-left: 46px
+      .sidebar.open .nav-section-label,
+      .sidebar.open .nav-item-label,
+      .sidebar.open .logout-btn span {
+        opacity: 1;
+        max-width: 180px
       }
 
       .sidebar-close {
@@ -3335,41 +3422,471 @@
       font-size: 11px
     }
 
-    /* Users table — Mirsad cells */
-    .mr-user-cell {
+    .rb-view {
+      animation: rbFadeIn 0.28s ease
+    }
+
+    @keyframes rbFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(8px)
+      }
+
+      to {
+        opacity: 1;
+        transform: none
+      }
+    }
+
+    .rb-drill-head {
       display: flex;
       align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+      padding: 14px 16px;
+      background: var(--mr-surface);
+      border: 1px solid var(--mr-border);
+      border-radius: var(--mr-radius-card);
+      box-shadow: var(--mr-shadow-soft)
+    }
+
+    .rb-drill-meta {
+      flex: 1;
+      min-width: 0
+    }
+
+    .rb-drill-meta h4 {
+      margin: 0 0 4px;
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--mr-text)
+    }
+
+    .rb-drill-meta p {
+      margin: 0;
+      font-size: 12px;
+      color: var(--mr-text-3)
+    }
+
+    .rb-region-card {
+      cursor: pointer
+    }
+
+    .rb-region-card .br-actions,
+    .rb-branch-card .br-actions {
+      position: static;
+      top: auto;
+      left: auto;
+      margin: 0;
+      align-self: flex-start
+    }
+
+    .rb-region-card .mr-viol-thumb,
+    .rb-branch-card .mr-viol-thumb {
+      margin-bottom: 0
+    }
+
+    .rb-card-body {
+      display: flex;
+      flex-direction: column;
       gap: 10px
     }
 
-    .mr-user-cell-av {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      background: var(--mr-primary);
-      color: #fff;
+    .rb-card-columns {
+      display: flex;
+      align-items: stretch;
+      justify-content: space-between;
+      gap: 12px
+    }
+
+    .rb-card-col-meta {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+      min-width: 0
+    }
+
+    .rb-card-col-tools {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+      min-width: 0;
+      margin-inline-start: auto
+    }
+
+    .rb-card-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px
+    }
+
+    .rb-card-row-stats {
+      align-items: flex-end
+    }
+
+    .rb-card-side-left {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+      min-width: 0;
+      margin-inline-start: auto
+    }
+
+    .rb-card-side-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+      min-width: 0;
+      text-align: start
+    }
+
+    .rb-card-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--mr-text);
+      line-height: 1.35
+    }
+
+    .rb-card-stats {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px
+    }
+
+    .rb-stat {
       display: inline-flex;
       align-items: center;
-      justify-content: center;
-      font-weight: 700;
+      gap: 6px;
       font-size: 13px;
+      font-weight: 600;
+      color: var(--mr-primary)
+    }
+
+    .rb-stat i {
+      font-size: 12px
+    }
+
+    .rb-sup-badge,
+    .rb-loc-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      background: rgba(245, 158, 11, 0.14);
+      color: #a65d1f;
+      max-width: 100%;
+      flex-wrap: wrap;
+      justify-content: flex-end
+    }
+
+    .rb-sup-badge .rb-sup-meta,
+    .rb-loc-badge .rb-loc-meta {
+      color: var(--mr-text-3);
+      font-weight: 600
+    }
+
+    .rb-sup-badge.rb-sup-none {
+      background: rgba(239, 68, 68, 0.14);
+      color: #b91c1c
+    }
+
+    .rb-region-card:focus-visible {
+      outline: 2px solid var(--mr-primary);
+      outline-offset: 2px
+    }
+
+    .rb-branch-card .mr-viol-thumb {
+      color: #15803d
+    }
+
+    .rb-emp-panel {
+      margin-top: 10px;
+      padding-top: 12px;
+      border-top: 1px solid var(--mr-border);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 220px;
+      overflow: auto;
+      width: 100%
+    }
+
+    .rb-emp-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 12px;
+      background: rgba(104, 91, 255, 0.06);
+      border: 1px solid rgba(104, 91, 255, 0.12);
+      border-radius: 12px
+    }
+
+    .rb-emp-col-meta {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 3px;
+      min-width: 0;
+      flex: 1
+    }
+
+    .rb-emp-col-contact {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+      min-width: 0;
+      margin-inline-start: auto
+    }
+
+    .rb-emp-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--mr-text);
+      line-height: 1.35
+    }
+
+    .rb-emp-num {
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--mr-text-3)
+    }
+
+    .rb-emp-contact {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+      font-size: 12px;
+      color: var(--mr-text-3)
+    }
+
+    .rb-emp-contact span {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+      direction: ltr;
+      justify-content: flex-start;
+      text-align: left
+    }
+
+    .rb-emp-contact i {
+      width: 12px;
+      color: var(--mr-primary);
       flex-shrink: 0
+    }
+
+    .rb-emp-empty {
+      padding: 14px 10px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--mr-text-3);
+      border: 1px dashed var(--mr-border);
+      border-radius: 12px;
+      background: var(--mr-bg)
+    }
+
+    /* Users table — Mirsad cells */
+    .mr-user-cell {
+      display: block
     }
 
     .mr-user-cell-info {
       display: flex;
       flex-direction: column;
+      align-items: flex-start;
+      gap: 3px;
       min-width: 0
     }
 
     .mr-user-cell-info strong {
-      font-size: 13px;
+      font-size: 14px;
       color: var(--mr-text);
       font-weight: 700;
-      line-height: 1.2
+      line-height: 1.35
     }
 
-    .mr-user-cell-info span {
+    .mr-user-empnum {
+      display: block;
+      font-size: 12px;
+      color: var(--mr-text-3);
+      font-family: var(--mono);
+      direction: ltr;
+      unicode-bidi: plaintext;
+      text-align: right;
+      letter-spacing: 0.3px;
+      font-weight: 600;
+      line-height: 1.3
+    }
+
+    .mr-role-badge {
+      border-radius: 999px !important;
+      padding: 4px 12px !important;
+      font-weight: 700
+    }
+
+    /* ─── Users table — refreshed layout ─── */
+    .mr-users-table-wrap {
+      overflow-x: auto;
+      border-radius: 12px;
+      border: 1px solid var(--mr-border);
+      background: var(--card-bg, #fff)
+    }
+
+    .mr-users-table {
+      width: 100%;
+      table-layout: fixed;
+      border-collapse: collapse;
+      border-spacing: 0
+    }
+
+    .mr-users-table thead {
+      background: var(--mr-primary-softer)
+    }
+
+    .mr-users-table thead th {
+      text-align: right;
+      vertical-align: middle;
+      padding: 12px 16px;
+      font-weight: 700;
+      font-size: 12px;
+      color: var(--mr-text-2);
+      border-bottom: 1px solid var(--mr-border);
+      background: var(--mr-primary-softer);
+      white-space: nowrap
+    }
+
+    .mr-users-table tbody td {
+      padding: 12px 16px;
+      vertical-align: middle;
+      border-bottom: 1px solid var(--mr-border);
+      color: var(--mr-text);
+      text-align: right
+    }
+
+    .mr-users-table tbody tr {
+      cursor: default
+    }
+
+    .mr-users-table .mr-col-user {
+      width: 22%
+    }
+
+    .mr-users-table .mr-col-contact {
+      width: 28%
+    }
+
+    .mr-users-table .mr-col-branch {
+      width: 18%
+    }
+
+    .mr-users-table .mr-col-role {
+      width: 14%
+    }
+
+    .mr-users-table .mr-col-actions {
+      width: 18%
+    }
+
+    .mr-users-table th.mr-col-role,
+    .mr-users-table td.mr-col-role {
+      text-align: right;
+      vertical-align: middle;
+      white-space: nowrap
+    }
+
+    .mr-users-table td.mr-col-role .mr-role-cell {
+      display: flex;
+      justify-content: flex-start
+    }
+
+    .mr-users-table th.mr-col-actions,
+    .mr-users-table td.mr-col-actions {
+      text-align: end;
+      vertical-align: middle;
+      white-space: nowrap
+    }
+
+    .mr-users-table td.mr-col-actions .mr-act-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px
+    }
+
+    .mr-users-table tbody tr:nth-child(even) {
+      background: rgba(124, 58, 237, 0.03)
+    }
+
+    .mr-users-table tbody tr:last-child td {
+      border-bottom: 0
+    }
+
+    .mr-users-table tbody tr:hover {
+      background: var(--mr-primary-softer)
+    }
+
+    .mr-users-table .mr-contact-cell {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 4px
+    }
+
+    .mr-role-pill.mr-role-employee { --rc: #ca8a04 }
+    .mr-role-pill.mr-role-supervisor { --rc: #2563eb }
+    .mr-role-pill.mr-role-auditor { --rc: #7c3aed }
+    .mr-role-pill.mr-role-manager { --rc: #dc2626 }
+
+    /* عمود وسائل التواصل */
+    .mr-contact-cell {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      line-height: 1.35
+    }
+
+    .mr-contact-line {
+      display: grid;
+      grid-template-columns: 16px minmax(0, 1fr);
+      align-items: center;
+      column-gap: 8px;
+      justify-items: start;
+      min-width: 0
+    }
+
+    .mr-contact-line i {
+      color: var(--mr-text-3);
+      font-size: 12px;
+      width: 14px;
+      text-align: center;
+      flex-shrink: 0
+    }
+
+    .mr-contact-phone {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--mr-text);
+      direction: ltr;
+      text-align: start;
+      unicode-bidi: plaintext;
+      font-weight: 600
+    }
+
+    .mr-contact-email {
       font-size: 11px;
       color: var(--mr-text-3);
       font-family: var(--mono);
@@ -3378,10 +3895,71 @@
       unicode-bidi: plaintext
     }
 
-    .mr-role-badge {
-      border-radius: 999px !important;
-      padding: 4px 12px !important;
-      font-weight: 700
+    /* شارة الدور — لون حيوي حسب الدور */
+    .mr-role-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 5px 14px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      background: color-mix(in srgb, var(--rc) 14%, transparent);
+      color: var(--rc);
+      border: 1px solid color-mix(in srgb, var(--rc) 30%, transparent);
+      white-space: nowrap;
+      line-height: 1.2
+    }
+
+    .mr-users-table .mr-role-pill::before {
+      display: none
+    }
+
+    /* عمود الإجراءات */
+    .mr-col-actions {
+      white-space: nowrap
+    }
+
+    .mr-act-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px
+    }
+
+    .mr-act-btn {
+      width: 32px;
+      height: 32px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--mr-primary);
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+      margin: 0 2px;
+      font-size: 13px
+    }
+
+    .mr-act-btn:hover {
+      transform: translateY(-1px)
+    }
+
+    .mr-act-edit:hover {
+      background: rgba(0, 122, 255, 0.12);
+      color: #007AFF;
+      border-color: rgba(0, 122, 255, 0.35)
+    }
+
+    .mr-act-delete:hover {
+      background: rgba(220, 38, 38, 0.12);
+      color: #dc2626;
+      border-color: rgba(220, 38, 38, 0.35)
+    }
+
+    .mr-act-btn:focus-visible {
+      outline: 2px solid var(--mr-primary);
+      outline-offset: 2px
     }
 
     .mr-compliance-badge {
@@ -6246,7 +6824,37 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      max-width: 200px
+      max-width: 240px;
+      display: flex;
+      align-items: center;
+      gap: 8px
+    }
+
+    .cmp-inactive-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      font-size: 10px;
+      font-weight: 700;
+      border-radius: 999px;
+      background: rgba(107, 114, 128, 0.14);
+      color: #4b5563;
+      border: 1px solid rgba(107, 114, 128, 0.3);
+      flex-shrink: 0
+    }
+
+    .cmp-inactive-badge i {
+      font-size: 9px
+    }
+
+    .cmp-entity-wrap.is-inactive .cmp-entity-avatar {
+      opacity: 0.55;
+      filter: grayscale(0.35)
+    }
+
+    .cmp-entity-wrap.is-inactive .cmp-entity-name {
+      color: var(--text2)
     }
 
     .cmp-entity-meta {
@@ -7249,6 +7857,11 @@
       border-right-color: var(--red)
     }
 
+    .cmp-viol-item.sev-warn {
+      border-right-color: #ea580c;
+      background: color-mix(in srgb, #ea580c 10%, var(--surface2))
+    }
+
     .cmp-viol-info {
       flex: 1;
       min-width: 0
@@ -7616,6 +8229,12 @@
 
     .score-viol-row:hover {
       border-color: var(--border2)
+    }
+
+    .score-viol-row.score-viol-row--admin-warn {
+      background: color-mix(in srgb, #ea580c 12%, var(--surface));
+      border-color: #fdba74;
+      border-right: 3px solid #ea580c
     }
 
     .score-viol-name {
@@ -8444,6 +9063,40 @@
   </div>
   <!-- App (مخفي حتى التحقق من الجلسة لتفادي وميض المحتوى) -->
   <div class="app" id="appWrap" style="display:none">
+
+
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+      <aside class="sidebar" id="sidebar">
+        <button type="button" class="sidebar-close" id="sidebarCloseBtn" onclick="closeSidebar()"
+          aria-label="إغلاق القائمة"><i class="fas fa-times"></i></button>
+        <nav class="sidebar-nav" id="sidebarNav">
+          <div class="nav-section-label">الرئيسية</div>
+          <button class="nav-item active" onclick="goTab('dashboard',this)"><i class="fas fa-table-cells-large"></i><span
+              class="nav-item-label">لوحة القيادة</span></button>
+          <button class="nav-item" onclick="goTab('newTicket',this)" data-roles="admin,observer,supervisor"><i
+              class="fas fa-circle-plus"></i><span class="nav-item-label">رصد مخالفة</span></button>
+          <button class="nav-item" onclick="goTab('workflow',this)"><i class="fas fa-ticket"></i><span
+              class="nav-item-label">معالجة التذاكر</span><span class="nav-badge" id="pendBadge"
+              style="display:none">0</span></button>
+          <button class="nav-item" onclick="goTab('reports',this)" data-roles="admin,manager,auditor"><i
+              class="fas fa-chart-bar"></i><span class="nav-item-label">التقارير</span></button>
+          <button class="nav-item" onclick="goTab('compliance',this)" data-roles="admin,manager,auditor,supervisor"><i
+              class="fas fa-gauge-high"></i><span class="nav-item-label">مؤشرات الامتثال</span></button>
+          <div class="nav-section-label" data-roles="admin">الإعدادات</div>
+          <button class="nav-item" onclick="goTab('locations',this)" data-roles="admin,supervisor,observer,manager"><i
+              class="fas fa-map-location-dot"></i><span class="nav-item-label">المناطق والفروع</span></button>
+          <button class="nav-item" onclick="goTab('departments',this)" data-roles="admin"><i
+              class="fas fa-users-gear"></i><span class="nav-item-label">المستخدمون</span></button>
+          <button class="nav-item" onclick="goTab('violations',this)" data-roles="admin"><i
+              class="fas fa-triangle-exclamation"></i><span class="nav-item-label">أنواع المخالفات</span></button>
+        </nav>
+        <div class="sidebar-user">
+          <button type="button" class="logout-btn" id="logoutBtn" onclick="handleLogout()"><i
+              class="fas fa-arrow-right-from-bracket"></i><span>تسجيل الخروج</span></button>
+        </div>
+      </aside>
+
+      <div class="app-shell">
     <header class="topbar unified-banner">
       <div class="topbar-left">
         <button class="hamburger-btn" id="hamburgerBtn" onclick="toggleSidebar()" aria-label="فتح القائمة"><i
@@ -8491,52 +9144,6 @@
         </div>
       </div>
     </header>
-
-    <div class="app-body">
-      <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
-      <aside class="sidebar" id="sidebar">
-        <button type="button" class="sidebar-close" id="sidebarCloseBtn" onclick="closeSidebar()"
-          aria-label="إغلاق القائمة"><i class="fas fa-times"></i></button>
-        <div class="sidebar-brand">
-          <div class="figma-sidebar-logo" aria-hidden="true"><span class="figma-sidebar-logo-dot"></span><i
-              class="fas fa-shield-halved"></i></div>
-          <strong class="figma-sidebar-title">مرصاد</strong>
-        </div>
-        <nav class="sidebar-nav" id="sidebarNav">
-          <div class="nav-section-label">الرئيسية</div>
-          <button class="nav-item active" onclick="goTab('dashboard',this)"><i class="fas fa-table-cells-large"></i>
-            لوحة
-            القيادة</button>
-          <button class="nav-item" onclick="goTab('newTicket',this)" data-roles="admin,observer,supervisor"><i
-              class="fas fa-circle-plus"></i> رصد مخالفة</button>
-          <button class="nav-item" onclick="goTab('workflow',this)"><i class="fas fa-ticket"></i> معالجة التذاكر<span
-              class="nav-badge" id="pendBadge" style="display:none">0</span></button>
-          <button class="nav-item" onclick="goTab('reports',this)" data-roles="admin,manager,auditor"><i
-              class="fas fa-chart-bar"></i> التقارير</button>
-          <button class="nav-item" onclick="goTab('compliance',this)" data-roles="admin,manager,auditor,supervisor"><i
-              class="fas fa-gauge-high"></i> مؤشرات الامتثال</button>
-          <div class="nav-section-label" data-roles="admin">الإعدادات</div>
-          <button class="nav-item" onclick="goTab('locations',this)" data-roles="admin,supervisor,observer,manager"><i
-              class="fas fa-map-location-dot"></i> المناطق والفروع</button>
-          <button class="nav-item" onclick="goTab('departments',this)" data-roles="admin"><i
-              class="fas fa-users-gear"></i> المستخدمون</button>
-          <button class="nav-item" onclick="goTab('violations',this)" data-roles="admin"><i
-              class="fas fa-triangle-exclamation"></i> أنواع المخالفات</button>
-        </nav>
-        <div class="sidebar-user">
-          <div class="user-btn">
-            <div class="user-btn-av figma-user-av" id="sbAv">م</div>
-            <div class="user-btn-info"><strong id="sbName">-</strong>
-              <div id="sbRoleBadge" class="role-badge-sidebar rb-admin"></div>
-              <div class="user-status"></div>
-            </div>
-          </div>
-          <button type="button" class="logout-btn" id="logoutBtn" onclick="handleLogout()"><i
-              class="fas fa-arrow-right-from-bracket"></i><span>تسجيل الخروج</span></button>
-          <div id="sbConnectionStatus"><i class="fas fa-circle" style="font-size:6px;color:#FFCC00"></i><span>جاري
-              الاتصال...</span></div>
-        </div>
-      </aside>
 
       <div class="main">
 
@@ -8910,7 +9517,7 @@
                 <div>
                   <h3>المناطق والفروع</h3>
                   <p>إدارة المناطق والفروع</p>
-                </div><button class="btn btn-primary" onclick="openRegionModal()" data-roles="admin"><i
+                </div><button class="btn btn-primary" id="br-panel-action-btn" onclick="openRegionModal()" data-roles="admin"><i
                     class="fas fa-plus"></i> إضافة منطقة</button>
               </div>
               <div class="br-search-bar">
@@ -8939,7 +9546,7 @@
                   مستخدم</button>
               </div>
               <div class="toolbar"><div class="figma-search-wrap" style="min-width:200px; flex:1 1 280px;"><input
-                    type="text" class="figma-search-input" id="user-search" placeholder="ابحث بالاسم أو الرقم الوظيفي..."
+                    type="text" class="figma-search-input" id="user-search" placeholder="ابحث بالاسم، الرقم الوظيفي، الجوال، أو البريد الإلكتروني..."
                     oninput="renderUsers()"><button type="button" class="figma-search-btn" onclick="renderUsers()"
                     aria-label="بحث"><i class="fas fa-magnifying-glass"></i></button></div><select id="user-roleFilter"
                   class="form-select" style="max-width:180px" onchange="renderUsers()">
@@ -8951,17 +9558,22 @@
                   <option value="employee">الموظف</option>
                   <option value="observer">الراصد</option>
                 </select></div>
-              <div style="overflow-x:auto">
-                <table class="data-table">
+              <div class="mr-users-table-wrap">
+                <table class="data-table mr-users-table">
+                  <colgroup>
+                    <col class="mr-col-user">
+                    <col class="mr-col-contact">
+                    <col class="mr-col-branch">
+                    <col class="mr-col-role">
+                    <col class="mr-col-actions">
+                  </colgroup>
                   <thead>
                     <tr>
-                      <th>الرقم الوظيفي</th>
-                      <th>الموظف</th>
-                      <th>الدور</th>
-                      <th class="col-hide-mobile">الفرع</th>
-                      <th>حالة الامتثال</th>
-                      <th class="col-hide-mobile">الجوال</th>
-                      <th>الإجراءات</th>
+                      <th class="mr-col-user">الموظف</th>
+                      <th class="col-hide-mobile mr-col-contact">وسائل التواصل</th>
+                      <th class="col-hide-mobile mr-col-branch">الفرع</th>
+                      <th class="mr-col-role">الدور</th>
+                      <th class="mr-col-actions">الإجراءات</th>
                     </tr>
                   </thead>
                   <tbody id="usersTable"></tbody>
@@ -9187,6 +9799,7 @@
             <div class="fp-chip" data-val="sup" onclick="toggleChip(this,'stage','active')">بانتظار المشرف</div>
             <div class="fp-chip" data-val="aud" onclick="toggleChip(this,'stage','active')">بانتظار التدقيق</div>
             <div class="fp-chip" data-val="mgt" onclick="toggleChip(this,'stage','active')">بانتظار الإدارة</div>
+            <div class="fp-chip" data-val="Warning_Issued" onclick="toggleChip(this,'stage','active')">تنبيه إداري صادر</div>
           </div>
         </div>
         <div class="fp-section">
@@ -9328,18 +9941,47 @@
       // Supabase Dashboard → Settings → API Keys → Publishable and secret API keys
       const SUPABASE_ANON = 'sb_publishable__nGAMUih_RNZ_6FMpwzDNw_116hvA7K';
 
-      // 📁 Cloudflare R2 Upload URL (المسار النسبي للسيرفر المحلي)
+      // 📁 Cloudflare Worker اختياري (مسار عارض/تحميل قديم)
       const CLOUDFLARE_WORKER_URL = '/upload';
 
       // ✅ العمليات الإدارية تتم عبر Edge Function آمنة على الخادم
       // Secret Key يبقى في متغيرات البيئة على Supabase ولا يصل المتصفح أبداً
       const ADMIN_FN_URL = `${SUPABASE_URL}/functions/v1/admin-users`;
 
+      /** توقيع روابط R2 (رفع/تحميل/نقل) عبر Edge Function — المفاتيح لا تصل للمتصفح */
+      const R2_STORAGE_FN_URL = `${SUPABASE_URL}/functions/v1/r2-storage`;
+
       /** يعمل فقط على المضيف المحلي — لا يُفعّل على نطاق الإنتاج */
       function isLocalDevHost() {
         const h = (location.hostname || '').toLowerCase();
         return h === 'localhost' || h === '127.0.0.1' || h === '[::1]';
       }
+
+      /** فتح الملف مباشرة من القرص (بدون http) — لا يوجد /config ولا R2 */
+      function isFileProtocol() {
+        return (location.protocol || '').toLowerCase() === 'file:';
+      }
+
+      /** تخطي R2 واستخدام مرفقات محلية (data URL) عند عدم توفر /config */
+      function allowAttachmentDevSkip() {
+        return isLocalDevHost() || isFileProtocol();
+      }
+
+      /**
+       * اختبار R2 على Live Server / localhost بنفس سلوك الإنتاج (Edge ثم احتياط /config).
+       * من كونسول المتصفح (F12 → Console) ثم حدّث الصفحة:
+       *   localStorage.setItem('mirsad_force_r2_local','1'); location.reload();
+       * إيقاف الوضع:
+       *   localStorage.removeItem('mirsad_force_r2_local'); location.reload();
+       */
+      function isForceR2LocalTest() {
+        try {
+          return localStorage.getItem('mirsad_force_r2_local') === '1';
+        } catch (_) {
+          return false;
+        }
+      }
+
       const DEV_AUTO_LOGIN = isLocalDevHost();
       /**
        * تطوير محلي فقط: املأ البريد وكلمة المرور على جهازك ثم شغّل Live Server.
@@ -9348,8 +9990,11 @@
       const DEV_ADMIN_EMAIL = '';
       const DEV_ADMIN_PASSWORD = '';
 
-      /** جلب إعدادات R2 من خادم جانبي؛ يعيد null إن لم يكن /config متاحاً */
+      /** مسار قديم: جلب مفاتيح R2 من `/config` (يُفضّل Edge Function `r2-storage`) */
       async function tryFetchR2Config() {
+        if (isFileProtocol()) return null;
+        /** على localhost بدون وضع الاختبار: لا نستدعي `/config` (تجنب 404 من Live Server) */
+        if (isLocalDevHost() && !isForceR2LocalTest()) return null;
         try {
           const r = await fetch('/config');
           if (!r.ok) return null;
@@ -9372,12 +10017,21 @@
 
       const ROLE_COLORS = {
         admin: '#7c3aed',
-        manager: '#FF3B30',
-        auditor: '#007AFF',
-        supervisor: '#FFCC00',
-        employee: '#6b7280',
+        manager: '#dc2626',
+        auditor: '#7c3aed',
+        supervisor: '#2563eb',
+        employee: '#ca8a04',
         observer: '#16a34a'
       };
+
+      /** تطبيع role من القاعدة (مثل Admin أو ADMIN) ليطابق data-roles وصلاحيات الواجهة */
+      function normalizeUserRole(role) {
+        const r = String(role == null ? '' : role).trim().toLowerCase().replace(/\s+/g, '_');
+        if (!r) return 'employee';
+        if (r === 'administrator' || r === 'super_admin' || r === 'sysadmin') return 'admin';
+        if (r === 'mgr') return 'manager';
+        return r;
+      }
 
       const STATE_LABELS = {
         uploading: 'جاري الرفع...',
@@ -9385,6 +10039,7 @@
         sup: 'بانتظار رد المشرف',
         aud: 'بانتظار التدقيق',
         mgt: 'بانتظار القرار الإداري',
+        Warning_Issued: 'تنبيه إداري صادر',
         closed: 'مغلقة'
       };
 
@@ -9394,11 +10049,14 @@
         sup: 'b-blue',
         aud: 'b-purple',
         mgt: 'b-red',
+        Warning_Issued: 'b-amber',
         closed: 'b-gray'
       };
 
       function getTicketBadgeClass(t) {
         if (!t) return 'b-gray';
+        if (t.state === 'Warning_Issued') return 'b-amber';
+        if (t.state === 'closed' && /تنبيه|اكتفاء بالتنبيه/i.test(t.status_text || '')) return 'b-amber';
         if ((t.status_text || '').includes('معتمد')) return 'b-green';
         if ((t.status_text || '').includes('ملغ')) return 'b-red';
         return STATE_BADGES[t.state] || 'b-gray';
@@ -9480,8 +10138,19 @@
         }
       }
 
-      // شغّل التنظيف عند بداية كل session
-      cleanOldSessions();
+      // تنظيف Sessions القديمة (أكثر من 7 أيام) — يُجدول في الخلفية حتى لا يعيق تحميل الصفحة
+      function scheduleCleanOldSessions() {
+        const run = () => {
+          try { cleanOldSessions(); } catch (_) { /* noop */ }
+        };
+        if (typeof requestIdleCallback === 'function') {
+          requestIdleCallback(run, { timeout: 5000 });
+        } else {
+          setTimeout(run, 50);
+        }
+      }
+
+      scheduleCleanOldSessions();
 
       const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
         auth: {
@@ -9491,6 +10160,152 @@
           storage: customStorage  // ✅ كل تبويب مستقل + Session تبقى بعد الإغلاق
         }
       });
+
+      // تحميل ملف من R2: Edge Function (توقيع) أو المسار القديم AWS في المتصفح
+      const _cloudflareCache = {};
+      /** روابط التوقيع تنتهي (~ساعة)؛ لا نخزّنها دائماً */
+      const _cfSignedTtlMs = 50 * 60 * 1000;
+
+      function readCfCache(fileId) {
+        const v = _cloudflareCache[fileId];
+        if (v == null) return null;
+        if (typeof v === 'string') return v;
+        if (typeof v === 'object' && v && typeof v.u === 'string') {
+          if (v.exp && Date.now() > v.exp) {
+            delete _cloudflareCache[fileId];
+            return null;
+          }
+          return v.u;
+        }
+        return null;
+      }
+
+      function writeCfCache(fileId, url) {
+        if (!fileId || !url) return;
+        if (url.startsWith('http://') || url.startsWith('https://')) {
+          _cloudflareCache[fileId] = { u: url, exp: Date.now() + _cfSignedTtlMs };
+          return;
+        }
+        _cloudflareCache[fileId] = url;
+      }
+
+      /** undefined = لم نُحلّ بعد؛ edge | legacy | none = نتيجة التحليل */
+      let _r2ResolvedMode;
+      /** بعد 503 (أسرار ناقصة) نُعيد فحص Edge تلقائياً دون إعادة تحميل الصفحة */
+      let _r2EdgeRecheckAt = 0;
+      /** يُملأ عند فشل ping (مثل 503) لتوضيح سبب تخطي الرفع في وضع التطوير */
+      let _r2LastResolveNote = '';
+      /** إعدادات R2 عند استخدام المسار القديم `/config` فقط */
+      let _r2LegacyConfig;
+
+      function invalidateR2BackendResolution() {
+        _r2ResolvedMode = undefined;
+        _r2LegacyConfig = undefined;
+        _r2EdgeRecheckAt = 0;
+        _r2LastResolveNote = '';
+        Object.keys(_cloudflareCache).forEach((k) => { delete _cloudflareCache[k]; });
+      }
+
+      /**
+       * يحدد مسار التخزين: Edge Function (مُفضّل) ثم احتياط `/config` + AWS في المتصفح.
+       */
+      async function resolveR2Backend() {
+        if (isLocalDevHost() && !isForceR2LocalTest()) {
+          _r2LastResolveNote = '';
+          return 'none';
+        }
+        if (_r2EdgeRecheckAt && Date.now() >= _r2EdgeRecheckAt) {
+          _r2EdgeRecheckAt = 0;
+          _r2ResolvedMode = undefined;
+        }
+        if (_r2ResolvedMode !== undefined) return _r2ResolvedMode;
+
+        const { data: { session } } = await sb.auth.getSession();
+
+        let edgePingStatus = null;
+        if (session?.access_token) {
+          try {
+            _r2LastResolveNote = '';
+            const res = await fetch(R2_STORAGE_FN_URL, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'apikey': SUPABASE_ANON,
+                'Authorization': `Bearer ${session.access_token}`
+              },
+              body: JSON.stringify({ action: 'ping' })
+            });
+            edgePingStatus = res.status;
+            if (res.ok) {
+              _r2EdgeRecheckAt = 0;
+              _r2ResolvedMode = 'edge';
+              _r2LastResolveNote = '';
+              return 'edge';
+            }
+            if (res.status === 503) {
+              let hint = 'أضف أسرار R2 في Supabase → Edge Functions → r2-storage → Secrets (R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_ACCOUNT_ID, R2_BUCKET_NAME).';
+              try {
+                const j = await res.clone().json();
+                if (j && j.error) hint = j.error + ' — ' + hint;
+              } catch (_) { /* noop */ }
+              _r2LastResolveNote = 'سبب التخطي: r2-storage أرجع 503 (أسرار R2 أو إعداد الدالة). ' + hint;
+              console.warn('[R2] الدالة r2-storage أرجعت 503 (الخدمة غير جاهزة).', hint);
+            }
+            if (res.status !== 404 && res.status !== 405 && res.status !== 503 && res.status !== 401 && res.status !== 403) {
+              _r2ResolvedMode = 'none';
+              return 'none';
+            }
+          } catch (_) {
+            /* تجربة المسار القديم */
+          }
+        }
+
+        /** 503 = أسرار R2 ناقصة؛ لا نستدعي /config على localhost + force؛ نُجدد الفحص بعد 30ث */
+        if (isLocalDevHost() && isForceR2LocalTest() && edgePingStatus === 503) {
+          _r2ResolvedMode = 'none';
+          _r2EdgeRecheckAt = Date.now() + 30_000;
+          return 'none';
+        }
+
+        const legacy = await tryFetchR2Config();
+        if (legacy) {
+          _r2LegacyConfig = legacy;
+          _r2ResolvedMode = 'legacy';
+          return 'legacy';
+        }
+        _r2ResolvedMode = 'none';
+        return 'none';
+      }
+
+      /**
+       * استدعاء Edge Function للتخزين على R2 (توقيع فقط — الرفع مباشرة إلى R2).
+       */
+      async function callR2StorageFn(action, payload = {}) {
+        const { data: { session } } = await sb.auth.getSession();
+        if (!session?.access_token) {
+          throw new Error('انتهت الجلسة، يرجى تسجيل الدخول من جديد');
+        }
+
+        const res = await fetch(R2_STORAGE_FN_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': SUPABASE_ANON,
+            'Authorization': `Bearer ${session.access_token}`
+          },
+          body: JSON.stringify({ action, ...payload })
+        });
+
+        let data = {};
+        try { data = await res.json(); } catch (_) { }
+
+        if (!res.ok) {
+          const msg = data.error || data.message || `فشل التخزين (${res.status})`;
+          if (res.status === 401) throw new Error('انتهت الجلسة، يرجى تسجيل الدخول من جديد');
+          throw new Error(msg);
+        }
+        return data;
+      }
 
       // ═══════════════════════════════════════════════════════════════════════════
       // 3. APPLICATION STATE
@@ -9689,15 +10504,8 @@
       }
 
       function setConnStatus(status, attempt) {
-        const el = document.getElementById('sbConnectionStatus');
-        if (!el) return;
-        const states = {
-          connected: { icon: 'fa-circle', color: '#4ade80', text: 'متصل' },
-          disconnected: { icon: 'fa-circle-xmark', color: '#FF3B30', text: 'غير متصل' },
-          reconnecting: { icon: 'fa-rotate fa-spin', color: '#FFCC00', text: `إعادة الاتصال${attempt ? ` (${attempt})` : ''}...` }
-        };
-        const s = states[status] || states.disconnected;
-        el.innerHTML = `<i class="fas ${s.icon}" style="font-size:6px;color:${s.color}"></i><span>${s.text}</span>`;
+        void status;
+        void attempt;
       }
 
       function getNow() {
@@ -9998,9 +10806,11 @@
       // ───────────────────────────────────────────────────────────────────────────
       async function onUserAuthenticated(profile) {
         try {
+          invalidateR2BackendResolution();
+
           // جلب الفروع التي يشرف عليها المستخدم (المشرف يشرف على منطقة، فنجيب كل فروعها)
           let mySupervisedBranches = [];
-          if (profile.role === 'supervisor') {
+          if (normalizeUserRole(profile.role) === 'supervisor') {
             const { data: regions } = await sb.from('regions').select('id').eq('supervisor_id', profile.id);
             const regionIds = (regions || []).map(r => r.id);
             if (regionIds.length) {
@@ -10009,10 +10819,12 @@
             }
           }
 
+          const normRole = normalizeUserRole(profile.role);
           state.currentUser = {
             ...profile,
+            role: normRole,
             supervisedBranches: mySupervisedBranches,
-            color: ROLE_COLORS[profile.role] || '#6b7280',
+            color: ROLE_COLORS[normRole] || '#6b7280',
             initial: (profile.name || 'م').charAt(0)
           };
 
@@ -10026,36 +10838,49 @@
           loadTheme();
           applyRBACUI();
           updateSidebarUser();
-          setupRealtime();
-          setupRealtimeSync(); // مزامنة لحظية للمخالفات (INSERT/UPDATE/DELETE)
+          /** رسم الواجهة قبل Realtime حتى لا يُؤخّر أول عرض باتصال WebSocket */
           renderAll();
           goTab('dashboard', document.querySelector('#sidebarNav .nav-item.active')
             || document.querySelector('#sidebarNav button.nav-item'));
           setLoginLoading(false);
           startLiveClock();
 
+          const startRealtime = () => {
+            try {
+              setupRealtime();
+            } catch (e) {
+              console.warn('[Realtime] تعذّر بدء الاشتراك:', e);
+            }
+          };
+          if (typeof requestIdleCallback === 'function') {
+            requestIdleCallback(startRealtime, { timeout: 3000 });
+          } else {
+            setTimeout(startRealtime, 0);
+          }
+
           // تشغيل فحص التمرير التلقائي مرة عند الدخول وكل 5 دقائق
           checkAndAutoForward();
           if (state._autoForwardTimer) clearInterval(state._autoForwardTimer);
           state._autoForwardTimer = setInterval(checkAndAutoForward, 5 * 60 * 1000);
 
-          // تحديث التنبيهات كل 10 ثواني (أسرع للحصول على تنبيهات لحظية)
           if (state._notifTimer) clearInterval(state._notifTimer);
-          state._notifTimer = setInterval(renderNotifications, 10 * 1000);
+          state._notifTimer = setInterval(() => {
+            if (document.hidden) return;
+            renderNotifBadge();
+          }, 30 * 1000);
 
-          // تحديث المعدّل والمؤشرات الشخصية كل 60 ثانية
-          // (مهم لأن age decay و streak bonus يعتمدان على الوقت الحالي)
           if (state._scoreTimer) clearInterval(state._scoreTimer);
           state._scoreTimer = setInterval(() => {
-            renderPersonalIndicators();
-            // إذا المستخدم في تبويب لوحة الامتثال، نحدّثها أيضاً
+            if (document.hidden) return;
+            if (document.getElementById('tab-dashboard')?.classList.contains('active')) {
+              renderPersonalIndicators();
+            }
             if (document.getElementById('tab-compliance')?.classList.contains('active')) {
               renderCompliance();
             }
           }, 60 * 1000);
 
-          // تشغيل أول مرة فوراً بعد الدخول
-          renderNotifications();
+          renderNotifBadge();
         } catch (err) {
           console.error('onUserAuthenticated', err);
           try { await sb.auth.signOut(); } catch (_) { /* noop */ }
@@ -10104,6 +10929,8 @@
         state.violations = [];
         state.violationTypes = [];
         state.notifications = [];
+
+        invalidateR2BackendResolution();
 
         try { await sb.auth.signOut(); } catch (_) { }
 
@@ -10265,11 +11092,21 @@
       // ═══════════════════════════════════════════════════════════════════════════
 
       async function loadAllData() {
+        const _loadT0 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
         setConnStatus('reconnecting');
         try {
           // limit عالي على المخالفات لمنع تحميل القاعدة كاملة لو زادت لآلاف الصفوف
           // (في حالة الحاجة لأقدم منها يمكن إضافة فلتر تاريخ أو "تحميل المزيد")
           const VIOLATIONS_LIMIT = 1000;
+          /** بدون attachments ولا logs — يقلّل حجم JSON بشكل كبير؛ يُستكمل عند فتح التذكرة */
+          const VIOLATION_LIST_SELECT = [
+            'id', 'created_at', 'updated_at', 'ticket_number', 'state', 'status_text',
+            'employee_id', 'branch_id', 'observer_id', 'supervisor_id',
+            'violation_type', 'violation_date', 'violation_time',
+            'description', 'source_role',
+            'employee_reply', 'supervisor_reply', 'audit_reply', 'management_reply',
+            'auto_forwarded_emp', 'auto_forwarded_sup',
+          ].join(',');
 
           const [
             { data: regions, error: rErr },
@@ -10282,7 +11119,7 @@
             sb.from('regions').select('*').order('name'),
             sb.from('branches').select('*').order('name'),
             sb.from('users').select('*').order('name'),
-            sb.from('violations').select('*').order('created_at', { ascending: false }).limit(VIOLATIONS_LIMIT),
+            sb.from('violations').select(VIOLATION_LIST_SELECT).order('created_at', { ascending: false }).limit(VIOLATIONS_LIMIT),
             sb.from('violation_types').select('*').order('name'),
             sb.from('notifications').select('*').order('created_at', { ascending: false }).limit(50)
           ]);
@@ -10294,7 +11131,11 @@
           if (vtErr) console.warn('[DataLoad] violation_types:', vtErr.message, vtErr);
           if (nErr) console.warn('[DataLoad] notifications:', nErr.message, nErr);
 
-          console.log(`[DataLoad] Loaded ${violations?.length || 0} violations from Supabase.`);
+          const _ms = Math.round(((typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now()) - _loadT0);
+          console.log(`[DataLoad] Loaded ${violations?.length || 0} violations from Supabase (${_ms}ms).`);
+          if (_ms > 8000) {
+            console.warn('[Perf] تحميل البيانات أبطأ من المتوقع — راجع Network (طلبات REST إلى Supabase) وحجم أعمدة JSON في الجداول.');
+          }
           if (violations && violations.length === 0) {
             console.info('[DataLoad] لا توجد مخالفات بعد — جرّب «رصد مخالفة» من القائمة. إن كان الجدول فيه بيانات ولا تظهر هنا فالمشكلة من صلاحيات القاعدة وليس من الكود.');
           }
@@ -10302,6 +11143,7 @@
           state.regions = regions || [];
           state.branches = branches || [];
           state.users = users || [];
+          rebuildLookupMaps();
           state.violations = (violations || []).map(enrichViolation);
           state.violationTypes = vTypes || [];
           state.notifications = notifs || [];
@@ -10312,7 +11154,16 @@
           const nV = state.violations.length;
           if (nR + nB + nU + nV === 0 && !sessionStorage.getItem('dataLoadEmptyWarn')) {
             sessionStorage.setItem('dataLoadEmptyWarn', '1');
-            showToast('لم يُجلب أي بيانات (مناطق/فروع/مستخدمون/مخالفات = 0). إمّا الجداول فارغة، أو مفتاح/مشروع Supabase غير صحيح، أو سياسات RLS تمنع القراءة لهذا الدور. راجع Console ولوحة SQL في Supabase.', 'warning');
+            const isGuest = state.currentUser && state.currentUser.id === GUEST_LOCAL_PROFILE.id;
+            const isAdmin = !isGuest && state.currentUser && state.currentUser.role === 'admin';
+            const guestHint =
+              'وضع «متابعة كضيف»: تأكد من تفعيل Anonymous في Supabase (Authentication → Providers → Anonymous). ثم أضف سياسات RLS تسمح بـ SELECT على الجداول العامة (مثل regions, branches, users, violations…) لدور authenticated المجهول، أو سجّل الدخول بحساب حقيقي من الجدول users.';
+            const adminHint =
+              'حسابك مدير نظام لكن التطبيق لم يستلم أي صف من regions/branches/users/violations. إن كانت الجداول ممتلئة في SQL Editor فالسبب غالباً سياسات RLS تمنع SELECT لهذه الجداول حتى بعد تسجيل الدخول — راجع Policies في Supabase (Table editor → Policies) وطابقة Network في المتصفح لطلبات REST.';
+            const normalHint =
+              'لم يُجلب أي صف (مناطق/فروع/مستخدمون/مخالفات = 0). تحقق من أن رابط المشروع والمفتاح في أعلى index.html يخصان نفس المشروع، وأن الجداول فيها بيانات، وأن RLS يسمح لدورك بالقراءة (راجع Console وNetwork).';
+            const msg = isGuest ? guestHint : (isAdmin ? adminHint : normalHint);
+            showToast(msg, 'warning');
           }
 
           setConnStatus('connected');
@@ -10325,45 +11176,32 @@
         }
       }
 
-      // ─── مزامنة لحظية للمخالفات (Realtime) ───
-      function setupRealtimeSync() {
-        // احذف القديم أولاً (بعض إصدارات عميل Supabase لا تعرض getChannels)
-        if (typeof sb.getChannels === 'function') {
-          const existing = sb.getChannels().find(c => c.topic === 'realtime:violations-realtime');
-          if (existing) sb.removeChannel(existing);
-        }
+      function setupRealtimeSync() { /* تم دمجها في setupRealtime() لتفادي اشتراك مكرر */ }
 
-        sb.channel('violations-realtime')
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'violations' }, async (payload) => {
-            if (payload.eventType === 'INSERT') {
-              const enriched = enrichViolation(payload.new);
-              // أضف فقط إذا لم تكن موجودة مسبقاً
-              if (!state.violations.find(v => v.id === enriched.id)) {
-                state.violations.unshift(enriched);
-              }
-            } else if (payload.eventType === 'UPDATE') {
-              const idx = state.violations.findIndex(v => v.id === payload.new.id);
-              if (idx !== -1) {
-                state.violations[idx] = enrichViolation(payload.new);
-              }
-            } else if (payload.eventType === 'DELETE') {
-              // إزالة المخالفة المحذوفة من state فوراً
-              state.violations = state.violations.filter(v => v.id !== payload.old.id);
-            }
-            renderAll();
-            renderNotifications();
-          })
-          .subscribe();
+      function rebuildLookupMaps() {
+        const um = new Map();
+        for (const u of (state.users || [])) if (u && u.id) um.set(u.id, u);
+        const bm = new Map();
+        for (const b of (state.branches || [])) if (b && b.id) bm.set(b.id, b);
+        const rm = new Map();
+        for (const r of (state.regions || [])) if (r && r.id) rm.set(r.id, r);
+        state._userById = um;
+        state._branchById = bm;
+        state._regionById = rm;
       }
 
-      // إثراء التذاكر بأسماء الموظفين والفروع للعرض
       function enrichViolation(t) {
         if (!t) return t;
-        const emp = state.users.find(u => u.id === t.employee_id);  // UUID
-        const sup = state.users.find(u => u.id === t.supervisor_id);
-        const obs = state.users.find(u => u.id === t.observer_id);
-        const br = state.branches.find(b => b.id === t.branch_id);
-        const region = br && state.regions ? state.regions.find(r => r.id === br.region_id) : null;
+        if (t.logs != null && typeof t.logs === 'string') {
+          try { t.logs = JSON.parse(t.logs); } catch (_) { t.logs = []; }
+        }
+        if (!Array.isArray(t.logs)) t.logs = [];
+        if (!state._userById || !state._branchById || !state._regionById) rebuildLookupMaps();
+        const emp = state._userById.get(t.employee_id);
+        const sup = state._userById.get(t.supervisor_id);
+        const obs = state._userById.get(t.observer_id);
+        const br = state._branchById.get(t.branch_id);
+        const region = br ? state._regionById.get(br.region_id) : null;
 
         t._empName = emp?.name || '-';
         t._empNumber = emp?.employee_number || '-';  // ✅ للعرض
@@ -10371,6 +11209,11 @@
         t._obsName = obs?.name || '-';
         t._branchName = br?.name || '-';
         t._regionName = region?.name || '-';
+
+        if (!t.violation_type_id && t.violation_type && state.violationTypes?.length) {
+          const vt = state.violationTypes.find(x => x.name === t.violation_type);
+          if (vt) t.violation_type_id = vt.id;
+        }
 
         // ─── حساب وقت دخول حالة المشرف (من السجل) ───
         // العد للمشرف يبدأ من لحظة وصول التذكرة لحالة 'sup'
@@ -10395,6 +11238,24 @@
         }
 
         return t;
+      }
+
+      /**
+       * حقول json/jsonb من Supabase قد تُعاد مصفوفة أو **سلسلة JSON**.
+       * بدون التحليل، Array.isArray يفشل فيُستبدل المرفقات القديمة بمصفوفة فارغة.
+       */
+      function parseDbJsonArray(raw) {
+        if (raw == null) return [];
+        if (Array.isArray(raw)) return [...raw];
+        if (typeof raw === 'string') {
+          try {
+            const p = JSON.parse(raw);
+            return Array.isArray(p) ? p : [];
+          } catch (_) {
+            return [];
+          }
+        }
+        return [];
       }
 
       // ═══════════════════════════════════════════════════════════════════════════
@@ -10434,38 +11295,36 @@
         }
       }
 
+      const renderNotifBadgeDebounced = debounce(() => renderNotifBadge(), 400);
+
       function setupRealtime() {
-        // إلغاء الاشتراكات السابقة إن وجدت
         state.realtimeChannels.forEach(ch => sb.removeChannel(ch));
         state.realtimeChannels = [];
 
-        // المخالفات
         const vCh = sb.channel('public:violations')
           .on('postgres_changes', { event: '*', schema: 'public', table: 'violations' }, (payload) => {
             applyRealtimeChange(state.violations, payload, enrichViolation);
             renderAllDebounced();
-            // تحديث فوري للتنبيهات (بدون debounce لضمان ظهور الجرس)
-            renderNotifications();
+            renderNotifBadgeDebounced();
           })
           .subscribe();
         state.realtimeChannels.push(vCh);
 
-        // المستخدمون — تغيير المستخدمين قد يؤثر على إثراء المخالفات (الأسماء)
         const uCh = sb.channel('public:users')
           .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, (payload) => {
             applyRealtimeChange(state.users, payload);
-            // إعادة إثراء المخالفات لتحديث الأسماء المعروضة
-            state.violations = state.violations.map(enrichViolation);
+            rebuildLookupMaps();
+            for (const v of state.violations) enrichViolation(v);
             renderAllDebounced();
           })
           .subscribe();
         state.realtimeChannels.push(uCh);
 
-        // الفروع
         const bCh = sb.channel('public:branches')
           .on('postgres_changes', { event: '*', schema: 'public', table: 'branches' }, (payload) => {
             applyRealtimeChange(state.branches, payload);
-            state.violations = state.violations.map(enrichViolation);
+            rebuildLookupMaps();
+            for (const v of state.violations) enrichViolation(v);
             renderAllDebounced();
           })
           .subscribe();
@@ -10530,7 +11389,7 @@
        */
       function canActOnTicket(t) {
         if (!state.currentUser || !t) return false;
-        if (t.state === 'closed') return false;
+        if (t.state === 'closed' || t.state === 'Warning_Issued') return false;
 
         const { id, role } = state.currentUser;
 
@@ -10543,6 +11402,12 @@
         if (t.state === 'mgt' && role === 'manager') return true;
 
         return false;
+      }
+
+      /** تذكرة ما زالت تسير في المسار (ليست مغلقة ولا تنبيهاً إدارياً نهائياً) */
+      function isTicketWorkflowOpen(t) {
+        if (!t) return false;
+        return t.state !== 'closed' && t.state !== 'Warning_Issued';
       }
 
       // ═══════════════════════════════════════════════════════════════════════════
@@ -10611,6 +11476,8 @@
           }
         }
 
+        if (tab !== 'locations') state._activeRegionId = null;
+
         // تحميل البيانات الخاصة بالتبويب
         if (tab === 'dashboard') renderDashboard();
         if (tab === 'workflow') { populateWfFilters(); filterTickets(); }
@@ -10634,13 +11501,6 @@
       function updateSidebarUser() {
         if (!state.currentUser) return;
         const u = state.currentUser;
-        document.getElementById('sbAv').textContent = u.initial;
-        document.getElementById('sbAv').style.background = u.color;
-        document.getElementById('sbName').textContent = u.name;
-
-        const badge = document.getElementById('sbRoleBadge');
-        badge.className = `role-badge-sidebar rb-${u.role}`;
-        badge.textContent = ROLE_LABELS[u.role] || u.role;
 
         const tbAv = document.getElementById('tbAv');
         const tbName = document.getElementById('tbName');
@@ -10658,17 +11518,21 @@
       // 12. MASTER RENDER
       // ═══════════════════════════════════════════════════════════════════════════
       function renderAll() {
-        renderDashboard();
+        const dashActive = document.getElementById('tab-dashboard')?.classList.contains('active');
+        if (dashActive) renderDashboard();
+
         if (document.getElementById('tab-workflow')?.classList.contains('active')) {
           populateWfFilters(); filterTickets();
         }
         if (document.getElementById('tab-reports')?.classList.contains('active')) filterReports();
+        if (document.getElementById('tab-compliance')?.classList.contains('active')) renderCompliance();
         if (document.getElementById('tab-locations')?.classList.contains('active')) renderRegions();
         if (document.getElementById('tab-departments')?.classList.contains('active')) renderUsers();
         if (document.getElementById('tab-violations')?.classList.contains('active')) renderViolTypes();
 
         updatePendingBadge();
-        renderNotifications();
+        const notifPanelOpen = document.getElementById('notifPanel')?.classList.contains('open');
+        if (notifPanelOpen) renderNotifications(); else renderNotifBadge();
       }
 
       // عداد التذاكر المعلقة في القائمة الجانبية
@@ -10679,7 +11543,7 @@
         else if (state.currentUser?.role === 'manager') pending = visible.filter(v => v.state === 'mgt').length;
         else if (state.currentUser?.role === 'employee') pending = visible.filter(v => v.state === 'emp').length;
         else if (state.currentUser?.role === 'supervisor') pending = visible.filter(v => v.state === 'sup').length;
-        else pending = visible.filter(v => v.state !== 'closed').length;
+        else pending = visible.filter(v => isTicketWorkflowOpen(v)).length;
 
         const badge = document.getElementById('pendBadge');
         if (pending > 0) {
@@ -10745,14 +11609,10 @@
 
       /**
        * حساب مؤشر الالتزام للموظف:
-       * 100 - مجموع أوزان المخالفات المعتمدة نهائياً
+       * 100 − خصم فوري لجميع المخالفات الفعّالة + بونص الانضباط (ما عدا الملغاة/التنبيه).
        */
       function calcEmployeeCommitment(empId) {
-        // نستخدم النظام الاحترافي الكامل (مع decay + frequency + streak)
-        const violations = state.violations.filter(v =>
-          v.state === 'closed' &&
-          (v.status_text || '').includes('معتمد')
-        );
+        const violations = state.violations || [];
         const stat = calcEmpScore(empId, violations);
         return stat.score;
       }
@@ -10811,11 +11671,7 @@
 
         // ─── الموظف: مؤشر الالتزام + الاستجابة ───
         if (role === 'employee') {
-          // استخدم النظام الاحترافي الكامل
-          const violations = state.violations.filter(v =>
-            v.state === 'closed' &&
-            (v.status_text || '').includes('معتمد')
-          );
+          const violations = state.violations || [];
           const empStat = calcEmpScore(me.id, violations);
           const commitment = empStat.score;
           const totalApproved = empStat.violationsCount;
@@ -10823,9 +11679,16 @@
           const rawDeducted = empStat.rawDeducted;
           const streakBonus = empStat.streakBonus;
 
+          const warnCount = violations.filter(v => v.employee_id === me.id && isViolationAdministrativeWarning(v)).length;
+
           // ─── بناء التفاصيل لكل مخالفة ───
-          const myViols = violations.filter(v => v.employee_id === me.id);
-          const sortedMyViols = [...myViols].sort((a, b) => {
+          const myViolsRaw = violations.filter(v =>
+            v.employee_id === me.id &&
+            v.state !== 'draft' &&
+            v.state !== 'uploading' &&
+            (!violationExcludedFromDeduction(v) || isViolationAdministrativeWarning(v))
+          );
+          const sortedMyViols = [...myViolsRaw].sort((a, b) => {
             const da = new Date(a.violation_date || a.created_at).getTime();
             const db = new Date(b.violation_date || b.created_at).getTime();
             return db - da; // الأحدث أولاً
@@ -10835,19 +11698,48 @@
           if (sortedMyViols.length === 0) {
             violRows = `<div class="score-no-viols">
             <i class="fas fa-shield-halved"></i>
-            <div>لا توجد مخالفات معتمدة — سجل نظيف 🎉</div>
+            <div>لا توجد مخالفات تؤثر على تقييمك — سجل نظيف 🎉</div>
           </div>`;
           } else {
             sortedMyViols.forEach((v, i) => {
+              const isAdmWarn = isViolationAdministrativeWarning(v);
+              const rowClass = isAdmWarn ? 'score-viol-row score-viol-row--admin-warn' : 'score-viol-row';
               const type = state.violationTypes.find(x => x.name === v.violation_type);
               const baseWeight = type?.weight || 5;
               const ageDays = Math.round(violationAgeDays(v));
+              const dateStr = v.violation_date || v.created_at || '';
+              const displayDate = dateStr.slice(0, 10);
+
+              if (isAdmWarn) {
+                violRows += `
+              <div class="${rowClass}" onclick="openTicket('${v.id}')" style="cursor:pointer" role="button" tabindex="0">
+                <div>
+                  <div class="score-viol-name">
+                    <span class="sev-dot" style="background:#ea580c"></span>
+                    ${Sec.escapeHTML(v.violation_type)}
+                    <span style="font-size:10px;font-weight:700;color:#c2410c;margin-right:6px">(تنبيه إداري)</span>
+                  </div>
+                  <div class="score-viol-meta">
+                    <span><i class="fas fa-calendar-day"></i> ${displayDate}</span>
+                    <span><i class="fas fa-hourglass-half"></i> منذ ${ageDays} يوم</span>
+                    <span><i class="fas fa-ticket"></i> ${Sec.escapeHTML(v.ticket_number || '')}</span>
+                    <span style="color:#c2410c;font-weight:600"><i class="fas fa-coins"></i> مخالفة بدون أثر مالي</span>
+                  </div>
+                </div>
+                <div class="score-viol-weight" style="color:#c2410c;font-weight:800;font-size:11px;text-align:center;line-height:1.35">
+                  تنبيه<br><span style="font-weight:600;opacity:.9">0 نقاط</span>
+                </div>
+              </div>`;
+                return;
+              }
+
               const decayFactor = getAgeDecayFactor(v, type);
               const decayPct = Math.round(decayFactor * 100);
 
               // حساب التكرار
               const recentBefore = sortedMyViols.filter((other, j) => {
                 if (j <= i) return false; // لأن الترتيب عكسي
+                if (isViolationAdministrativeWarning(other)) return false;
                 const otherAge = violationAgeDays(other);
                 return Math.abs(otherAge - ageDays) <= COMPLIANCE_CONFIG.frequencyWindow;
               }).length;
@@ -10859,11 +11751,8 @@
               const sevColors = { 'منخفض': 'var(--blue)', 'متوسط': 'var(--amber)', 'عالي': '#FF3B30', 'حرج': '#FF3B30' };
               const sevColor = sevColors[severity] || 'var(--blue)';
 
-              const dateStr = v.violation_date || v.created_at || '';
-              const displayDate = dateStr.slice(0, 10);
-
               violRows += `
-              <div class="score-viol-row">
+              <div class="${rowClass}" onclick="openTicket('${v.id}')" style="cursor:pointer" role="button" tabindex="0">
                 <div>
                   <div class="score-viol-name">
                     <span class="sev-dot" style="background:${sevColor}"></span>
@@ -10919,7 +11808,7 @@
             ${sortedMyViols.length > 0 ? `
               <div class="score-section-title">
                 <i class="fas fa-list-check"></i>
-                تفاصيل الخصومات (${sortedMyViols.length} مخالفة)
+                تفاصيل السجل (${sortedMyViols.length})
                 ${rawDeducted !== deductedDisplay ? `<span style="font-weight:400;color:var(--text3);font-size:10px">الخصم الخام: ${rawDeducted} → الفعلي: ${deductedDisplay}</span>` : ''}
               </div>
               <div class="score-viol-list">
@@ -10937,7 +11826,9 @@
               • <strong>وزن المخالفة:</strong> الخصم يعتمد على فداحة المخالفة، فالمخالفة الكبيرة تؤثر أكثر من البسيطة.<br>
               • <strong>التقادم (التلاشي):</strong> تأثير المخالفة يقل تدريجياً مع مرور الوقت، وبعد 3 شهور تُلغى تماماً من السجل.<br>
               • <strong>عدم التكرار:</strong> في حال ارتكاب المخالفات بشكل متكرر في فترة قصيرة، يتضاعف الخصم.<br>
-              • <strong>نقاط الانضباط الإضافية:</strong> التزامك بالأنظمة لمدة ${COMPLIANCE_CONFIG.streakDays} يوم متتالية يمنحك +${COMPLIANCE_CONFIG.streakPoints} نقاط إضافية في رصيدك! (يمكنك تجميع النقاط حتى تصل إلى +${COMPLIANCE_CONFIG.streakMaxBonus} نقطة إضافية ترفع بها درجتك).
+              • <strong>الخصم الفوري:</strong> تُحسب النقاط بمجرد رصد المخالفة حتى قبل الاعتماد النهائي، وتُسترد تلقائياً عند الإلغاء أو التنبيه الإداري حسب النظام.<br>
+              • <strong>نقاط قيد المراجعة:</strong> الجزء البرتقالي في بطاقة الامتثال يعكس نقاطاً قد تتغير حسب قرار المدقق/المدير.<br>
+              • <strong>مكافأة الانضباط:</strong> كل <span class="num">${COMPLIANCE_CONFIG.streakDays}</span> يوماً متتالية من دون <strong>رصد جديد</strong> (من تاريخ الإنشاء) تمنح <span class="num">+${COMPLIANCE_CONFIG.streakPoints}</span> نقاطاً حتى سقف <span class="num">${COMPLIANCE_CONFIG.streakMaxBonus}</span>. التنبيه الإداري يعيد ضبط عداد البونص.
             </div>
           </div>
         `;
@@ -10954,15 +11845,17 @@
                 <div class="indicator-desc">
                   ${streakBonus > 0
               ? `<i class="fas fa-fire" style="color:var(--amber)"></i> أنت محافظ على الانضباط — رصيد إضافي +${streakBonus} نقطة`
-              : 'نقاطك الكاملة 100. كل مخالفة معتمدة تخصم نقاط حسب وزنها وعمرها.'
+              : 'نقاطك من 100. كل مخالفة تُسجّل تُخصم فوراً حسب وزنها وتقادمها حتى يُبتّ فيها.'
             }
                 </div>
                 <div class="indicator-stat">
+                  ${warnCount > 0 ? `<span class="badge b-amber"><i class="fas fa-bell"></i> ${warnCount} تنبيه إداري (بدون أثر مالي)</span>` : ''}
                   ${totalApproved > 0
-              ? `<span class="badge b-blue"><i class="fas fa-check"></i> ${totalApproved} مخالفة معتمدة</span>`
-              : '<span class="badge b-green"><i class="fas fa-shield-halved"></i> سجل نظيف</span>'
+              ? `<span class="badge b-blue"><i class="fas fa-list"></i> ${totalApproved} مخالفة تؤثر على التقييم</span>`
+              : '<span class="badge b-green"><i class="fas fa-shield-halved"></i> لا مخالفات مؤثرة</span>'
             }
-                  ${totalDeducted > 0 ? `<span class="badge b-red"><i class="fas fa-minus"></i> ${Math.round(totalDeducted)} نقطة</span>` : ''}
+                  ${totalDeducted > 0 ? `<span class="badge b-red"><i class="fas fa-minus"></i> ${Math.round(totalDeducted)} خصم فعلي</span>` : ''}
+                  ${empStat.pendingCount > 0 ? `<span class="badge" style="background:#fff7ed;color:#c2410c;border:1px solid #fdba74"><i class="fas fa-hourglass-half"></i> قيد المراجعة: −${empStat.pendingDeducted}</span>` : ''}
                   ${streakBonus > 0 ? `<span class="badge b-green"><i class="fas fa-plus"></i> ${streakBonus} بونص</span>` : ''}
                 </div>
               </div>
@@ -11184,6 +12077,9 @@
       }
 
       function dashRecentIconMeta(t) {
+        if (t.state === 'Warning_Issued') {
+          return { cls: 'md-ri-warn', icon: 'fa-bell' };
+        }
         if (t.state === 'closed' && (t.status_text || '').includes('معتمد')) {
           return { cls: 'md-ri-success', icon: 'fa-circle-check' };
         }
@@ -11259,7 +12155,7 @@
         dashSet('st-approved-pct', `${pct}% من الإجمالي`);
 
         // قيد المعالجة (أي حالة غير مغلقة)
-        const pending = visible.filter(v => v.state !== 'closed').length;
+        const pending = visible.filter(v => isTicketWorkflowOpen(v)).length;
         dashSet('st-pending', String(pending));
 
         // تجاوز المدة (تذاكر مفتوحة تجاوزت SLA أو مررت تلقائياً بسبب التأخير)
@@ -11267,7 +12163,7 @@
           // إذا تم تمريرها تلقائياً في أي مرحلة، فهي حالة "تجاهل/تأخير"
           if (v.auto_forwarded_emp || v.auto_forwarded_sup || v.auto_forwarded_aud) return true;
 
-          if (v.state === 'closed') return false;
+          if (v.state === 'closed' || v.state === 'Warning_Issued') return false;
           if (!v.created_at) return false;
           const hours = (Date.now() - new Date(v.created_at).getTime()) / 36e5;
           if (v.state === 'emp' && hours > 48) return true;
@@ -11286,6 +12182,7 @@
             aud: visible.filter(v => v.state === 'aud').length,
             mgt: visible.filter(v => v.state === 'mgt').length,
             closed: visible.filter(v => v.state === 'closed').length,
+            Warning_Issued: visible.filter(v => v.state === 'Warning_Issued').length,
           };
           const max = Math.max(1, ...Object.values(counts));
           const items = [
@@ -11294,6 +12191,7 @@
             { key: 'aud', label: 'بانتظار التدقيق', badge: 'b-purple' },
             { key: 'mgt', label: 'بانتظار الإدارة', badge: 'b-red' },
             { key: 'closed', label: 'مغلقة', badge: 'b-green' },
+            { key: 'Warning_Issued', label: 'تنبيه إداري صادر', badge: 'b-amber' },
           ];
           distContainer.innerHTML = items.map(it => {
             const count = counts[it.key];
@@ -11359,18 +12257,33 @@
       // 14. REGIONS & BRANCHES (المناطق والفروع — هرمي)
       // ═══════════════════════════════════════════════════════════════════════════
 
-      // حالة الطي/الفتح للمناطق والفروع (memory only)
-      state._collapsedRegions = state._collapsedRegions || {};
-      state._collapsedBranches = state._collapsedBranches || {};
+      state._activeRegionId = state._activeRegionId || null;
 
-      function toggleRegion(rId) {
-        state._collapsedRegions[rId] = !state._collapsedRegions[rId];
+      function openRegionView(regionId) {
+        state._activeRegionId = regionId;
         renderRegions();
       }
 
-      function toggleBranch(bId) {
-        state._collapsedBranches[bId] = !state._collapsedBranches[bId];
+      function backRegionView() {
+        state._activeRegionId = null;
         renderRegions();
+      }
+
+      function syncRegionsPanelAction(isAdmin, activeRegionId) {
+        const btn = document.getElementById('br-panel-action-btn');
+        if (!btn) return;
+        if (!isAdmin) {
+          btn.style.display = 'none';
+          return;
+        }
+        btn.style.display = '';
+        if (activeRegionId) {
+          btn.innerHTML = '<i class="fas fa-plus"></i> إضافة فرع';
+          btn.onclick = () => openBranchModal(activeRegionId);
+        } else {
+          btn.innerHTML = '<i class="fas fa-plus"></i> إضافة منطقة';
+          btn.onclick = openRegionModal;
+        }
       }
 
       function renderRegions() {
@@ -11381,16 +12294,60 @@
         const isAdmin = me?.role === 'admin';
         const isSupervisor = me?.role === 'supervisor';
 
-        // الفلترة حسب الدور:
-        //   admin: كل المناطق + كامل الصلاحيات
-        //   supervisor: منطقته فقط (اطلاع)
-        //   observer/manager: كل المناطق (اطلاع)
         let visibleAll = state.regions;
         if (isSupervisor) {
           visibleAll = state.regions.filter(r => r.supervisor_id === me.id);
         }
 
+        const search = (document.getElementById('br-search')?.value || '').toLowerCase().trim();
+        const matchesSearch = (haystack) => haystack.toLowerCase().includes(search);
+
+        const regionMatchesSearch = (reg) => {
+          if (!search) return true;
+          if (matchesSearch(reg.name || '')) return true;
+          const sup = state.users.find(u => u.id === reg.supervisor_id);
+          if (sup && matchesSearch(`${sup.name || ''} ${sup.employee_number || ''}`)) return true;
+          const regionBranches = state.branches.filter(b => b.region_id === reg.id);
+          return regionBranches.some(br => {
+            if (matchesSearch(`${br.name || ''} ${br.city || ''}`)) return true;
+            const employees = state.users.filter(u => u.branch_id === br.id && u.role === 'employee' && isActiveUser(u));
+            return employees.some(e =>
+              matchesSearch(`${e.name || ''} ${e.employee_number || ''} ${e.email || ''} ${e.phone || ''}`)
+            );
+          });
+        };
+
+        const branchMatchesSearch = (br) => {
+          if (!search) return true;
+          if (matchesSearch(`${br.name || ''} ${br.city || ''}`)) return true;
+          const employees = state.users.filter(u => u.branch_id === br.id && u.role === 'employee' && isActiveUser(u));
+          return employees.some(e =>
+            matchesSearch(`${e.name || ''} ${e.employee_number || ''} ${e.email || ''} ${e.phone || ''}`)
+          );
+        };
+
+        const renderBranchEmployees = (employees) => {
+          if (!employees.length) {
+            return '<div class="rb-emp-empty"><i class="fas fa-user-slash"></i> لا يوجد موظفون</div>';
+          }
+          return employees.map(e => `
+            <div class="rb-emp-row">
+              <div class="rb-emp-col-meta">
+                <div class="rb-emp-name">${Sec.escapeHTML(e.name)}</div>
+                <div class="rb-emp-num">${Sec.escapeHTML(e.employee_number || '')}</div>
+              </div>
+              <div class="rb-emp-col-contact">
+                <div class="rb-emp-contact">
+                  ${e.phone ? `<span title="الجوال" dir="ltr"><i class="fas fa-phone"></i> ${Sec.escapeHTML(e.phone)}</span>` : ''}
+                  ${e.email ? `<span title="البريد" dir="ltr"><i class="fas fa-envelope"></i> ${Sec.escapeHTML(e.email)}</span>` : ''}
+                </div>
+              </div>
+            </div>
+          `).join('');
+        };
+
         if (!visibleAll.length) {
+          syncRegionsPanelAction(isAdmin, null);
           const emptyMsg = isSupervisor
             ? 'لا توجد مناطق مرتبطة بك'
             : (isAdmin ? 'لا توجد مناطق — أضف المنطقة الأولى' : 'لا توجد مناطق');
@@ -11398,150 +12355,125 @@
           return;
         }
 
-        // ─── البحث ───
-        const search = (document.getElementById('br-search')?.value || '').toLowerCase().trim();
+        const activeRegionId = state._activeRegionId;
+        const activeRegion = activeRegionId ? visibleAll.find(r => r.id === activeRegionId) : null;
+        if (activeRegionId && !activeRegion) {
+          state._activeRegionId = null;
+        }
 
-        const matchesSearch = (haystack) => haystack.toLowerCase().includes(search);
+        if (state._activeRegionId && activeRegion) {
+          syncRegionsPanelAction(isAdmin, activeRegion.id);
+          const regionBranches = state.branches.filter(b => b.region_id === activeRegion.id);
+          const visibleBranches = regionBranches.filter(branchMatchesSearch);
+          const totalEmps = state.users.filter(u =>
+            u.role === 'employee' && isActiveUser(u) && regionBranches.some(b => b.id === u.branch_id)
+          ).length;
+          const sup = state.users.find(u => u.id === activeRegion.supervisor_id);
+          const supLine = sup
+            ? `المشرف: ${Sec.escapeHTML(sup.name)}${sup.employee_number ? ` (${Sec.escapeHTML(sup.employee_number)})` : ''}`
+            : 'بدون مشرف';
 
-        // فلترة المناطق
-        const visibleRegions = visibleAll.filter(reg => {
-          if (!search) return true;
-          // المنطقة نفسها
-          if (matchesSearch(reg.name || '')) return true;
-          // مشرف المنطقة
-          const sup = state.users.find(u => u.id === reg.supervisor_id);
-          if (sup && matchesSearch(`${sup.name || ''} ${sup.employee_number || ''}`)) return true;
-          // فروع المنطقة + موظفي تلك الفروع
-          const regionBranches = state.branches.filter(b => b.region_id === reg.id);
-          return regionBranches.some(br => {
-            if (matchesSearch(`${br.name || ''} ${br.city || ''}`)) return true;
-            const employees = state.users.filter(u => u.branch_id === br.id && u.role === 'employee');
-            return employees.some(e =>
-              matchesSearch(`${e.name || ''} ${e.employee_number || ''} ${e.email || ''} ${e.phone || ''}`)
-            );
-          });
-        });
+          const branchesHTML = visibleBranches.length ? visibleBranches.map(br => {
+            const employees = state.users.filter(u => u.branch_id === br.id && u.role === 'employee' && isActiveUser(u));
+            const adminActions = isAdmin ? `
+              <div class="br-actions">
+                <button class="btn btn-ghost btn-sm" onclick="editBranch('${br.id}')" aria-label="تعديل"><i class="fas fa-pen"></i></button>
+                <button class="btn btn-ghost btn-sm" onclick="deleteBranch('${br.id}')" aria-label="حذف"><i class="fas fa-trash"></i></button>
+              </div>
+            ` : '';
+
+            return `
+              <div class="viol-card mr-viol-card rb-branch-card">
+                <div class="mr-viol-thumb"><i class="fas fa-store"></i></div>
+                <div class="rb-card-body">
+                  <div class="rb-card-columns">
+                    <div class="rb-card-col-meta">
+                      <div class="rb-card-title">${Sec.escapeHTML(br.name)}</div>
+                      <span class="rb-loc-badge"><i class="fas fa-location-dot"></i><span>الموقع</span><span class="rb-loc-meta">: ${Sec.escapeHTML(br.city || '-')}</span></span>
+                    </div>
+                    <div class="rb-card-col-tools">
+                      ${adminActions}
+                      <div class="rb-card-stats">
+                        <span class="rb-stat"><i class="fas fa-users"></i><span data-numeric>${employees.length}</span> موظف</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="rb-emp-panel">
+                  ${renderBranchEmployees(employees)}
+                </div>
+              </div>
+            `;
+          }).join('') : '<div class="empty" style="grid-column:1/-1"><i class="fas fa-store-slash"></i><p>لا توجد فروع مطابقة</p></div>';
+
+          container.innerHTML = `
+            <div class="rb-view">
+              <div class="rb-drill-head">
+                <button type="button" class="btn btn-ghost" onclick="backRegionView()">
+                  <i class="fas fa-arrow-right"></i> العودة للمناطق
+                </button>
+                <div class="rb-drill-meta">
+                  <h4>${Sec.escapeHTML(activeRegion.name)}</h4>
+                  <p>${regionBranches.length} فرع · ${totalEmps} موظف · ${supLine}</p>
+                </div>
+              </div>
+              <div class="viol-grid">${branchesHTML}</div>
+            </div>
+          `;
+          return;
+        }
+
+        syncRegionsPanelAction(isAdmin, null);
+        const visibleRegions = visibleAll.filter(regionMatchesSearch);
 
         if (!visibleRegions.length) {
           container.innerHTML = '<div class="empty"><i class="fas fa-magnifying-glass"></i><p>لا توجد نتائج مطابقة</p></div>';
           return;
         }
 
-        container.innerHTML = visibleRegions.map(reg => {
+        container.innerHTML = `
+          <div class="viol-grid rb-view">
+            ${visibleRegions.map(reg => {
           const sup = state.users.find(u => u.id === reg.supervisor_id);
           const regionBranches = state.branches.filter(b => b.region_id === reg.id);
           const totalEmps = state.users.filter(u =>
-            u.role === 'employee' && regionBranches.some(b => b.id === u.branch_id)
+            u.role === 'employee' && isActiveUser(u) && regionBranches.some(b => b.id === u.branch_id)
           ).length;
-          const isCollapsed = !!state._collapsedRegions[reg.id];
-
-          // الفروع داخل المنطقة
-          const branchesHTML = isCollapsed ? '' : `
-          <div class="region-branches">
-            ${regionBranches.length === 0 ? `
-              <div class="region-empty">
-                <i class="fas fa-store-slash"></i> لا توجد فروع في هذه المنطقة
+          const supBadge = sup
+            ? `<span class="rb-sup-badge"><i class="fas fa-user-tie"></i><span>مشرف</span><span class="rb-sup-meta">: ${Sec.escapeHTML(sup.name)}${sup.employee_number ? ` (${Sec.escapeHTML(sup.employee_number)})` : ''}</span></span>`
+            : '<span class="rb-sup-badge rb-sup-none"><i class="fas fa-exclamation"></i> بدون مشرف</span>';
+          const adminActions = isAdmin ? `
+              <div class="br-actions" onclick="event.stopPropagation()">
+                <button class="btn btn-ghost btn-sm" onclick="editRegion('${reg.id}')" aria-label="تعديل"><i class="fas fa-pen"></i></button>
+                <button class="btn btn-ghost btn-sm" onclick="deleteRegion('${reg.id}')" aria-label="حذف"><i class="fas fa-trash"></i></button>
               </div>
-            ` : regionBranches.map(br => {
-            const employees = state.users.filter(u => u.branch_id === br.id && u.role === 'employee');
-            const brCollapsed = !!state._collapsedBranches[br.id];
-
-            const empsHTML = brCollapsed ? '' : (employees.length ? `
-                <div class="branch-employees">
-                  ${employees.map(e => `
-                    <div class="br-emp-item">
-                      <div class="br-emp-avatar" style="background:${ROLE_COLORS[e.role] || '#6b7280'}20;color:${ROLE_COLORS[e.role] || '#6b7280'}">
-                        ${Sec.escapeHTML((e.name || 'م').charAt(0))}
-                      </div>
-                      <div class="br-emp-info">
-                        <div class="br-emp-name">
-                          ${Sec.escapeHTML(e.name)}
-                          <span class="br-emp-num">${Sec.escapeHTML(e.employee_number || '')}</span>
-                        </div>
-                        <div class="br-emp-contact">
-                          ${e.email ? `<span title="البريد"><i class="fas fa-envelope"></i> ${Sec.escapeHTML(e.email)}</span>` : ''}
-                          ${e.phone ? `<span title="الجوال" dir="ltr"><i class="fas fa-phone"></i> ${Sec.escapeHTML(e.phone)}</span>` : ''}
-                        </div>
-                      </div>
-                    </div>
-                  `).join('')}
-                </div>
-              ` : `
-                <div class="branch-employees">
-                  <div class="region-empty"><i class="fas fa-user-slash"></i> لا يوجد موظفون</div>
-                </div>
-              `);
-
-            return `
-                <div class="branch-card-inner">
-                  <div class="branch-row" onclick="toggleBranch('${br.id}')">
-                    <i class="fas fa-chevron-${brCollapsed ? 'left' : 'down'} branch-chevron"></i>
-                    <div class="branch-icon-mini">
-                      <i class="fas fa-store"></i>
-                    </div>
-                    <div class="branch-info">
-                      <div class="branch-name">${Sec.escapeHTML(br.name)}</div>
-                      <div class="branch-meta">
-                        <span><i class="fas fa-location-dot"></i> ${Sec.escapeHTML(br.city || '-')}</span>
-                        <span><i class="fas fa-users"></i> ${employees.length} موظف</span>
-                      </div>
-                    </div>
-                    ${isAdmin ? `
-                    <div class="branch-actions" onclick="event.stopPropagation()">
-                      <button class="btn btn-ghost btn-sm" onclick="editBranch('${br.id}')" title="تعديل">
-                        <i class="fas fa-edit"></i>
-                      </button>
-                      <button class="btn btn-sm" style="background:var(--red-light);color:var(--red-text)"
-                        onclick="deleteBranch('${br.id}')" title="حذف">
-                        <i class="fas fa-trash"></i>
-                      </button>
-                    </div>
-                    ` : ''}
-                  </div>
-                  ${empsHTML}
-                </div>
-              `;
-          }).join('')}
-            ${isAdmin ? `
-            <button class="btn btn-ghost add-branch-btn" onclick="openBranchModal('${reg.id}')">
-              <i class="fas fa-plus"></i> إضافة فرع لهذه المنطقة
-            </button>
-            ` : ''}
-          </div>
-        `;
+            ` : '';
 
           return `
-          <div class="region-card">
-            <div class="region-header" onclick="toggleRegion('${reg.id}')">
-              <i class="fas fa-chevron-${isCollapsed ? 'left' : 'down'} region-chevron"></i>
-              <div class="region-icon"><i class="fas fa-map-marker-alt"></i></div>
-              <div class="region-info">
-                <div class="region-name">${Sec.escapeHTML(reg.name)}</div>
-                <div class="region-meta">
-                  <span><i class="fas fa-store"></i> ${regionBranches.length} فرع</span>
-                  <span><i class="fas fa-users"></i> ${totalEmps} موظف</span>
-                  ${sup
-              ? `<span class="region-sup-tag"><i class="fas fa-user-tie"></i> المشرف: ${Sec.escapeHTML(sup.name)}${sup.employee_number ? ` <span style="font-family:var(--mono);opacity:0.75;font-size:10px">(${Sec.escapeHTML(sup.employee_number)})</span>` : ''}</span>`
-              : '<span class="region-sup-tag region-sup-none"><i class="fas fa-exclamation"></i> بدون مشرف</span>'
-            }
+              <div class="viol-card mr-viol-card rb-region-card" role="button" tabindex="0"
+                onclick="openRegionView('${reg.id}')"
+                onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openRegionView('${reg.id}');}">
+                <div class="mr-viol-thumb"><i class="fas fa-map-location-dot"></i></div>
+                <div class="rb-card-body">
+                  <div class="rb-card-columns">
+                    <div class="rb-card-col-meta">
+                      <div class="rb-card-title">${Sec.escapeHTML(reg.name)}</div>
+                      ${supBadge}
+                    </div>
+                    <div class="rb-card-col-tools" onclick="event.stopPropagation()">
+                      ${adminActions}
+                      <div class="rb-card-stats">
+                        <span class="rb-stat"><i class="fas fa-store"></i><span data-numeric>${regionBranches.length}</span> فرع</span>
+                        <span class="rb-stat"><i class="fas fa-users"></i><span data-numeric>${totalEmps}</span> موظف</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-              ${isAdmin ? `
-              <div class="region-actions" onclick="event.stopPropagation()">
-                <button class="btn btn-ghost btn-sm" onclick="editRegion('${reg.id}')" title="تعديل المنطقة">
-                  <i class="fas fa-edit"></i>
-                </button>
-                <button class="btn btn-sm" style="background:var(--red-light);color:var(--red-text)"
-                  onclick="deleteRegion('${reg.id}')" title="حذف المنطقة">
-                  <i class="fas fa-trash"></i>
-                </button>
-              </div>
-              ` : ''}
-            </div>
-            ${branchesHTML}
+            `;
+        }).join('')}
           </div>
         `;
-        }).join('');
       }
 
       // ─── REGION CRUD ───
@@ -11566,7 +12498,7 @@
       function populateRegionSupervisorSelect(selectedId) {
         const sel = document.getElementById('rm-supervisor');
         if (!sel) return;
-        const supervisors = state.users.filter(u => u.role === 'supervisor');
+        const supervisors = state.users.filter(u => u.role === 'supervisor' && isActiveUser(u));
         sel.innerHTML = '<option value="">-- بدون مشرف --</option>' +
           supervisors.map(s =>
             `<option value="${s.id}" ${s.id === selectedId ? 'selected' : ''}>${Sec.escapeHTML(s.name)} (${s.employee_number})</option>`
@@ -11613,6 +12545,7 @@
         try {
           const { error } = await sb.from('regions').delete().eq('id', id);
           if (error) throw error;
+          if (state._activeRegionId === id) state._activeRegionId = null;
           await loadAllData();
           renderRegions();
           showToast('تم حذف المنطقة', 'info');
@@ -11679,7 +12612,7 @@
       }
 
       async function deleteBranch(id) {
-        const empCount = state.users.filter(u => u.branch_id === id).length;
+        const empCount = state.users.filter(u => u.branch_id === id && isActiveUser(u)).length;
         const msg = empCount > 0
           ? `هذا الفرع به ${empCount} موظف(ين). الحذف سيفصلهم عن الفرع. هل أنت متأكد؟`
           : 'هل تريد حذف هذا الفرع؟';
@@ -11700,6 +12633,20 @@
       // 15. USERS (المستخدمون)
       // ═══════════════════════════════════════════════════════════════════════════
 
+      function isActiveUser(u) { return !!u && u.is_active !== false; }
+
+      function userTableRoleLabel(role) {
+        const labels = {
+          admin: 'مدير النظام',
+          manager: 'مدير',
+          auditor: 'مدقق',
+          supervisor: 'مشرف',
+          employee: 'موظف',
+          observer: 'راصد'
+        };
+        return labels[role] || ROLE_LABELS[role] || role;
+      }
+
       function renderUsers() {
         const tbody = document.getElementById('usersTable');
         if (!tbody) return;
@@ -11708,51 +12655,58 @@
         const roleFilter = document.getElementById('user-roleFilter')?.value || '';
 
         let filtered = state.users.filter(u => {
+          if (!isActiveUser(u)) return false;
           if (roleFilter && u.role !== roleFilter) return false;
           if (search) {
-            const hay = `${u.name} ${u.id} ${u.email} ${u.phone || ''}`.toLowerCase();
+            const hay = [
+              u.name,
+              u.employee_number,
+              u.email,
+              u.phone || '',
+            ].join(' ').toLowerCase();
             if (!hay.includes(search)) return false;
           }
           return true;
         });
 
         if (!filtered.length) {
-          tbody.innerHTML = '<tr><td colspan="7" class="empty"><i class="fas fa-users-slash"></i><p>لا يوجد مستخدمون</p></td></tr>';
+          tbody.innerHTML = '<tr><td colspan="5" class="empty"><i class="fas fa-users-slash"></i><p>لا يوجد مستخدمون</p></td></tr>';
           return;
         }
 
-        const complianceFor = (u) => {
-          if (!Array.isArray(state.violations)) return { label: 'متوافق', cls: 'mr-compliant', pct: 100 };
-          const list = state.violations.filter(v => v.employee_id === u.id);
-          if (!list.length) return { label: 'متوافق', cls: 'mr-compliant', pct: 100 };
-          const open = list.filter(v => v.state !== 'closed').length;
-          if (open >= 3) return { label: 'غير متوافق', cls: 'mr-noncompliant', pct: 45 };
-          if (open >= 1) return { label: 'قيد المراجعة', cls: 'mr-review', pct: 75 };
-          return { label: 'متوافق', cls: 'mr-compliant', pct: 100 };
-        };
-
         tbody.innerHTML = filtered.map(u => {
-          const branch = state.branches.find(b => b.id === u.branch_id);
-          const comp = complianceFor(u);
+          const branch = state._branchById ? state._branchById.get(u.branch_id) : state.branches.find(b => b.id === u.branch_id);
+          const roleColor = ROLE_COLORS[u.role] || 'var(--mr-text-2)';
+          const roleLabel = userTableRoleLabel(u.role);
           return `
       <tr>
-        <td data-numeric><strong>${Sec.escapeHTML(u.employee_number)}</strong></td>
-        <td>
+        <td class="mr-col-user">
           <div class="mr-user-cell">
-            <div class="mr-user-cell-av" style="background:${ROLE_COLORS[u.role]}">${Sec.escapeHTML((u.name || '?').charAt(0))}</div>
             <div class="mr-user-cell-info">
               <strong>${Sec.escapeHTML(u.name)}</strong>
-              <span>${Sec.escapeHTML(u.email)}</span>
+              <span class="mr-user-empnum">${Sec.escapeHTML(u.employee_number || '-')}</span>
             </div>
           </div>
         </td>
-        <td><span class="badge mr-role-badge" style="background:${ROLE_COLORS[u.role]}20;color:${ROLE_COLORS[u.role]};">${ROLE_LABELS[u.role] || u.role}</span></td>
-        <td class="col-hide-mobile">${branch ? Sec.escapeHTML(branch.name) : '-'}</td>
-        <td><span class="mr-compliance-badge ${comp.cls}"><i class="fas fa-circle"></i>${comp.label}</span></td>
-        <td class="col-hide-mobile" data-numeric style="font-family:var(--mono);font-size:11px">${Sec.escapeHTML(u.phone || '-')}</td>
-        <td>
-          <button class="btn btn-ghost btn-sm" onclick="editUser('${u.id}')" aria-label="تعديل"><i class="fas fa-pen"></i></button>
-          <button class="btn btn-ghost btn-sm" onclick="deleteUser('${u.id}')" aria-label="حذف"><i class="fas fa-trash"></i></button>
+        <td class="col-hide-mobile mr-col-contact">
+          <div class="mr-contact-cell">
+            <div class="mr-contact-line">
+              <i class="fas fa-phone" aria-hidden="true"></i>
+              <span class="mr-contact-phone" dir="ltr">${Sec.escapeHTML(u.phone || '-')}</span>
+            </div>
+            <div class="mr-contact-line">
+              <i class="fas fa-envelope" aria-hidden="true"></i>
+              <span class="mr-contact-email" dir="ltr">${Sec.escapeHTML(u.email || '-')}</span>
+            </div>
+          </div>
+        </td>
+        <td class="col-hide-mobile mr-col-branch">${branch ? Sec.escapeHTML(branch.name) : '-'}</td>
+        <td class="mr-col-role"><div class="mr-role-cell"><span class="mr-role-pill mr-role-${u.role}" style="--rc:${roleColor}">${Sec.escapeHTML(roleLabel)}</span></div></td>
+        <td class="mr-col-actions">
+          <div class="mr-act-group">
+            <button class="mr-act-btn mr-act-edit" onclick="editUser('${u.id}')" aria-label="تعديل" title="تعديل"><i class="fas fa-pen"></i></button>
+            <button class="mr-act-btn mr-act-delete" onclick="deleteUser('${u.id}')" aria-label="حذف" title="حذف"><i class="fas fa-trash"></i></button>
+          </div>
         </td>
       </tr>
     `;
@@ -11921,38 +12875,35 @@
       }
 
       /**
-       * ترحيل الرقم الوظيفي مع تحديث جميع العلاقات (عبر Database Function آمن)
+       * حذف منطقي (Soft Delete): يحوّل is_active إلى false دون مساس بالسجلات التاريخية.
+       * • الماضي محفوظ: المخالفات والتقييمات تبقى تعرض اسم الموظف عبر enrichViolation.
+       * • الحاضر محجوب: لا يظهر في إدارة المستخدمين ولا في بحث الرصد.
+       * • قابل للاستعادة: من Supabase بتعديل is_active = true.
        */
       async function deleteUser(id) {
-        if (!await confirmDialog('سيتم حذف المستخدم نهائياً من النظام. متأكد؟', { title: 'حذف المستخدم', okText: 'حذف نهائي' })) return;
         const u = state.users.find(x => x.id === id);
         if (!u) return;
+        if (u.is_active === false) {
+          showToast('المستخدم معطّل بالفعل', 'info');
+          return;
+        }
+        const ok = await confirmDialog(
+          `سيتم تعطيل «${u.name}» وإخفاؤه من الواجهة، مع الإبقاء على كامل سجلاته التاريخية. يمكن إعادة تفعيله لاحقاً من قاعدة البيانات. متابعة؟`,
+          { title: 'تعطيل المستخدم', okText: 'تعطيل' }
+        );
+        if (!ok) return;
 
         try {
-          // حذف من جدول users (سيُحذف auth user تلقائياً عبر CASCADE)
-          const { error } = await sb.from('users').delete().eq('id', id);
+          const { error } = await sb.from('users').update({ is_active: false }).eq('id', id);
           if (error) throw error;
 
-          // حذف من Auth أيضاً (احتياطاً) — لا نوقف العملية لكن نسجّل الخطأ
-          let authWarning = null;
-          if (u.auth_uid) {
-            try {
-              await adminDeleteAuthUser(u.auth_uid);
-            } catch (authErr) {
-              authWarning = authErr.message;
-              console.warn('فشل حذف المستخدم من Auth:', authErr);
-            }
-          }
+          const local = state.users.find(x => x.id === id);
+          if (local) local.is_active = false;
 
-          await loadAllData();
           renderUsers();
-          if (authWarning) {
-            showToast('تم حذف المستخدم من القاعدة، لكن فشل حذف حساب المصادقة: ' + authWarning, 'warning');
-          } else {
-            showToast('تم حذف المستخدم', 'info');
-          }
+          showToast('تم تعطيل المستخدم — سجلاته التاريخية محفوظة', 'info');
         } catch (err) {
-          showToast('فشل الحذف: ' + err.message, 'error');
+          showToast('فشل التعطيل: ' + err.message, 'error');
         }
       }
 
@@ -12260,13 +13211,12 @@
           return;
         }
 
-        // البحث الشامل في الموظفين
         const results = state.users.filter(u =>
-          u.role === 'employee' && (
+          u.role === 'employee' && isActiveUser(u) && (
             (u.employee_number && u.employee_number.toLowerCase().includes(query)) ||
             (u.name && u.name.toLowerCase().includes(query))
           )
-        ).slice(0, 8); // عرض أول 8 نتائج فقط
+        ).slice(0, 8);
 
         if (results.length === 0) {
           dropdown.innerHTML = '<div style="padding: 12px; text-align: center; color: var(--text3); font-size: 12px;">لا يوجد موظف مطابق لبيانات البحث</div>';
@@ -12552,11 +13502,17 @@
       async function uploadToCloudflare(fileObj, folderName, uploaderName, onProgress) {
         try {
           const cleanFileName = (fileObj.name || 'file').replace(/[^\w\s.-]/gi, '');
-          const objectKey = `${folderName}/${cleanFileName} - ${uploaderName}`;
+          const uploadKeyUniq = (typeof crypto !== 'undefined' && crypto.randomUUID)
+            ? crypto.randomUUID().replace(/-/g, '').slice(0, 12)
+            : (Date.now().toString(36) + Math.random().toString(36).slice(2, 10));
+          const objectKey = `${folderName}/${cleanFileName}__${uploadKeyUniq} - ${uploaderName}`;
 
-          const config = await tryFetchR2Config();
-          if (!config) {
-            if (isLocalDevHost()) {
+          const backend = await resolveR2Backend();
+          if (backend === 'none') {
+            if (allowAttachmentDevSkip()) {
+              if (isForceR2LocalTest()) {
+                showToast('وضع اختبار R2 مفعّل لكن Edge أرجع خطأ (غالباً أسرار R2 غير مضبوطة في Supabase → Edge Functions → Secrets). تم حفظ معاينة محلية للصورة فقط. انتظر ~30 ثانية بعد إضافة الأسرار ثم أعد المحاولة.', 'warning');
+              }
               let devDataUrl = null;
               if (fileObj.base64 && String(fileObj.type || '').startsWith('image/')) {
                 devDataUrl = `data:${fileObj.type || 'image/jpeg'};base64,${fileObj.base64}`;
@@ -12568,19 +13524,14 @@
                   rd.readAsDataURL(fileObj.rawFile);
                 });
               }
-              console.info('[DEV] لا يوجد /config — تخطي R2.' + (devDataUrl ? ' تم حفظ معاينة الصورة داخل السجل (محلي فقط).' : ' (فيديو/PDF: بدون معاينة محلية)'));
+              const devWhy = _r2LastResolveNote
+                ? (' ' + _r2LastResolveNote)
+                : ' (وضع محلي: localhost أو file:// — لم يُفعّل اختبار Edge أو لا يوجد مسار تخزين).';
+              console.info('[DEV] تخطي الرفع إلى R2.' + devWhy + (devDataUrl ? ' تم حفظ معاينة الصورة داخل السجل (محلي فقط).' : ' (فيديو/PDF: بدون معاينة محلية)'));
               return { success: true, fileId: objectKey, devSkipR2: true, devDataUrl };
             }
-            throw new Error('لم يُعثر على /config (إعدادات R2). شغّل Worker/خادماً يوفّر هذا المسار أو انشر المشروع على بيئة فيها الرفع.');
+            throw new Error('لم يُجرَ إعداد تخزين المرفقات. انشر Edge Function باسم r2-storage على Supabase وعيّن متغيرات R2 (راجع README)، أو وفّر مسار /config على الخادم (قديم).');
           }
-
-          const s3 = new AWS.S3({
-            accessKeyId: config.R2_ACCESS_KEY_ID,
-            secretAccessKey: config.R2_SECRET_ACCESS_KEY,
-            endpoint: `https://${config.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-            signatureVersion: 'v4',
-            s3ForcePathStyle: true
-          });
 
           let body;
           if (fileObj.rawFile) {
@@ -12595,36 +13546,27 @@
           } else {
             body = fileObj;
           }
+          const contentType = fileObj.type || 'image/jpeg';
 
-          const params = {
-            Bucket: config.R2_BUCKET_NAME,
-            Key: objectKey,
-            Body: body,
-            ContentType: fileObj.type || 'image/jpeg'
-          };
-
-          await s3.putObject(params).promise();
-          return { success: true, fileId: objectKey };
-        } catch (error) {
-          console.error('R2 Upload Error:', error);
-          throw new Error('فشل الرفع المباشر إلى R2: ' + error.message);
-        }
-      }
-
-      /**
-       * نقل مرفقات التذكرة من المجلد المؤقت إلى المجلد النهائي الرسمي
-       */
-      async function moveAttachmentsToFinalFolder(violationId, ticketNumber, attachments) {
-        console.log(`[R2-Move] Starting move for ${ticketNumber}...`);
-        try {
-          const config = await tryFetchR2Config();
-          if (!config) {
-            if (isLocalDevHost()) {
-              console.info('[DEV] تخطي نقل المرفقات إلى R2 (لا /config).');
-              return;
+          if (backend === 'edge') {
+            const { url } = await callR2StorageFn('signPut', { key: objectKey, contentType });
+            const putRes = await fetch(url, {
+              method: 'PUT',
+              body,
+              headers: { 'Content-Type': contentType }
+            });
+            if (!putRes.ok) {
+              const t = await putRes.text().catch(() => '');
+              throw new Error('رفض التخزين (' + putRes.status + '): ' + (t || '').slice(0, 200));
             }
-            throw new Error('لم يُعثر على /config لنقل المرفقات.');
+            return { success: true, fileId: objectKey };
           }
+
+          const config = _r2LegacyConfig || await tryFetchR2Config();
+          if (!config) {
+            throw new Error('لم يُعثر على إعدادات R2 (المسار القديم /config).');
+          }
+          _r2LegacyConfig = config;
 
           const s3 = new AWS.S3({
             accessKeyId: config.R2_ACCESS_KEY_ID,
@@ -12634,29 +13576,68 @@
             s3ForcePathStyle: true
           });
 
+          const params = {
+            Bucket: config.R2_BUCKET_NAME,
+            Key: objectKey,
+            Body: body,
+            ContentType: contentType
+          };
+
+          await s3.putObject(params).promise();
+          return { success: true, fileId: objectKey };
+        } catch (error) {
+          console.error('R2 Upload Error:', error);
+          throw new Error('فشل الرفع إلى R2: ' + error.message);
+        }
+      }
+
+      /**
+       * نقل مرفقات التذكرة من المجلد المؤقت إلى المجلد النهائي الرسمي
+       */
+      async function moveAttachmentsToFinalFolder(violationId, ticketNumber, attachments) {
+        console.log(`[R2-Move] Starting move for ${ticketNumber}...`);
+        try {
+          const backend = await resolveR2Backend();
+          if (backend === 'none') {
+            if (allowAttachmentDevSkip()) {
+              console.info('[DEV] تخطي نقل المرفقات إلى R2 (لا إعدادات).');
+              return;
+            }
+            throw new Error('لم يُجرَ إعداد تخزين المرفقات لنقل الملفات (Edge Function r2-storage أو /config).');
+          }
+
           let updatedAtts = [...attachments];
           let movedAny = false;
 
           for (let i = 0; i < updatedAtts.length; i++) {
             const oldKey = updatedAtts[i].p;
-            // نتأكد أن الملف لا يزال في المجلد المؤقت قبل النقل
             if (oldKey.startsWith('temp_')) {
-              const fileNameWithUser = oldKey.split('/').pop();
-              const newKey = `${ticketNumber}/${fileNameWithUser}`;
-              
-              try {
-                // 1. نسخ الملف للمكان الجديد (يجب تشفير المسار للتعامل مع الأحرف العربية)
-                await s3.copyObject({
-                  Bucket: config.R2_BUCKET_NAME,
-                  CopySource: encodeURI(`${config.R2_BUCKET_NAME}/${oldKey}`),
-                  Key: newKey
-                }).promise();
+              const newKey = `${ticketNumber}/${oldKey.split('/').pop()}`;
 
-                // 2. حذف الملف القديم
-                await s3.deleteObject({
-                  Bucket: config.R2_BUCKET_NAME,
-                  Key: oldKey
-                }).promise();
+              try {
+                if (backend === 'edge') {
+                  await callR2StorageFn('moveObject', { fromKey: oldKey, toKey: newKey });
+                } else {
+                  const config = _r2LegacyConfig || await tryFetchR2Config();
+                  if (!config) throw new Error('لا إعدادات R2');
+                  _r2LegacyConfig = config;
+                  const s3 = new AWS.S3({
+                    accessKeyId: config.R2_ACCESS_KEY_ID,
+                    secretAccessKey: config.R2_SECRET_ACCESS_KEY,
+                    endpoint: `https://${config.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+                    signatureVersion: 'v4',
+                    s3ForcePathStyle: true
+                  });
+                  await s3.copyObject({
+                    Bucket: config.R2_BUCKET_NAME,
+                    CopySource: encodeURI(`${config.R2_BUCKET_NAME}/${oldKey}`),
+                    Key: newKey
+                  }).promise();
+                  await s3.deleteObject({
+                    Bucket: config.R2_BUCKET_NAME,
+                    Key: oldKey
+                  }).promise();
+                }
 
                 updatedAtts[i].p = newKey;
                 movedAny = true;
@@ -12668,10 +13649,8 @@
           }
 
           if (movedAny) {
-            // تحديث السجل في قاعدة البيانات بالمسارات الجديدة النهائية
             await sb.from('violations').update({ attachments: JSON.stringify(updatedAtts) }).eq('id', violationId);
             console.log(`[R2-Move] DB paths updated for ${ticketNumber}`);
-            // تحديث محلي للـ UI إذا كانت التذكرة معروضة حالياً
             const idx = state.violations.findIndex(v => v.id === violationId);
             if (idx !== -1) {
               state.violations[idx].attachments = updatedAtts;
@@ -12691,73 +13670,9 @@
         });
       }
 
-      // دالة لضغط الصور قبل الرفع لتقليل الحجم وتسريع العملية
-      function compressImageFile(file) {
-        return new Promise((resolve, reject) => {
-          // لا نضغط الفيديوهات، الملفات غير الصورية، الصور المتحركة، أو الصور الصغيرة جداً (أقل من 300 كيلوبايت)
-          if (!file.type.startsWith('image/') || file.type === 'image/svg+xml' || file.type === 'image/gif' || file.size < 300 * 1024) {
-            return fileToBase64(file).then(b => resolve({ base64: b, isCompressed: false })).catch(reject);
-          }
-
-          const reader = new FileReader();
-          reader.readAsDataURL(file);
-          reader.onload = (event) => {
-            const originalBase64 = event.target.result.split(',')[1];
-            const img = new Image();
-            img.src = event.target.result;
-            img.onload = () => {
-              const canvas = document.createElement('canvas');
-              let width = img.width;
-              let height = img.height;
-
-              // تحديد الحد الأقصى للأبعاد (Full HD كحد أقصى للحفاظ على الجودة وتقليل الحجم)
-              const MAX_SIZE = 1920;
-              if (width > height) {
-                if (width > MAX_SIZE) {
-                  height *= MAX_SIZE / width;
-                  width = MAX_SIZE;
-                }
-              } else {
-                if (height > MAX_SIZE) {
-                  width *= MAX_SIZE / height;
-                  height = MAX_SIZE;
-                }
-              }
-
-              canvas.width = width;
-              canvas.height = height;
-              const ctx = canvas.getContext('2d');
-
-              // وضع خلفية بيضاء قبل الرسم لتجنب الخلفيات السوداء في صور PNG الشفافة
-              ctx.fillStyle = '#ffffff';
-              ctx.fillRect(0, 0, width, height);
-              ctx.drawImage(img, 0, 0, width, height);
-
-              // ضغط الصورة إلى JPEG بجودة 70%
-              const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
-              const compressedBase64 = dataUrl.split(',')[1];
-
-              // إذا كان الحجم بعد الضغط أكبر من الأصلي (يحدث في الصور البسيطة)، نستخدم الأصلي
-              if (compressedBase64.length >= originalBase64.length) {
-                resolve({ base64: originalBase64, isCompressed: false });
-              } else {
-                resolve({ base64: compressedBase64, isCompressed: true });
-              }
-            };
-            img.onerror = error => reject(error);
-          };
-          reader.onerror = error => reject(error);
-        });
-      }
-
-      // تحميل ملف من R2 مباشرة من المتصفح (AWS SDK v2)
-      const _cloudflareCache = {};
-      /** undefined = لم نجرّب بعد، null = غير متاح، object = إعدادات صالحة */
-      let _r2Config;
-
       function devPlaceholderSvgForPath(fileId, title) {
         const msg = title || 'لا يوجد رفع R2 محلياً';
-        const sub = 'أنشئ تذكرة جديدة بعد التحديث لحفظ معاينة الصورة، أو فعّل /config';
+        const sub = 'أنشئ تذكرة جديدة بعد التحديث لحفظ معاينة الصورة، أو فعّل Edge Function r2-storage';
         const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="520" height="260"><rect fill="#0f172a" width="100%" height="100%" rx="14"/><text x="50%" y="42%" fill="#f1f5f9" text-anchor="middle" font-family="system-ui,sans-serif" font-size="16">${Sec.escapeHTML(msg)}</text><text x="50%" y="56%" fill="#94a3b8" text-anchor="middle" font-size="12">${Sec.escapeHTML(sub)}</text><text x="50%" y="72%" fill="#64748b" text-anchor="middle" font-size="10" font-family="monospace">${Sec.escapeHTML(String(fileId).slice(0, 48))}…</text></svg>`;
         return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
       }
@@ -12780,46 +13695,86 @@
           const r = tryAtts(atts);
           if (r) return r;
         }
-        return tryAtts(state._attList);
+        const listR = tryAtts(state._attList);
+        if (listR) return listR;
+        const viols = state.violations || [];
+        for (let i = 0; i < viols.length; i++) {
+          let atts = viols[i].attachments;
+          if (typeof atts === 'string') {
+            try { atts = JSON.parse(atts); } catch (_) { atts = null; }
+          }
+          const r = tryAtts(atts);
+          if (r) return r;
+        }
+        return null;
+      }
+
+      function isLikelyImageAttachmentKey(fileId) {
+        return /\.(jpe?g|png|gif|webp|bmp|svg)(\s|$)/i.test(String(fileId || ''));
+      }
+
+      /** SVG يُولَّد محلياً عند غياب R2 — لا يُعرض كصورة بحجم الشاشة */
+      function isDevR2PlaceholderSvg(dataUrl) {
+        const s = typeof dataUrl === 'string' ? dataUrl : '';
+        return s.startsWith('data:image/svg+xml') || s.startsWith('data:image/svg%2Bxml');
       }
 
       async function loadCloudflareFile(fileId) {
         if (!fileId) throw new Error('معرف الملف مفقود');
-        if (_cloudflareCache[fileId]) return _cloudflareCache[fileId];
+        const cached = readCfCache(fileId);
+        if (cached) return cached;
 
         const inline = getInlineDataUrlForAttachmentPath(fileId);
         if (inline) {
-          _cloudflareCache[fileId] = inline;
+          writeCfCache(fileId, inline);
           return inline;
         }
 
         try {
-          if (_r2Config === undefined) {
-            _r2Config = await tryFetchR2Config() || null;
+          const backend = await resolveR2Backend();
+
+          if (backend === 'edge') {
+            const { url } = await callR2StorageFn('signGet', { key: fileId });
+            writeCfCache(fileId, url);
+            return url;
           }
-          if (!_r2Config) {
-            if (isLocalDevHost() && String(fileId).startsWith('temp_')) {
-              if (/\.(jpe?g|png|gif|webp)(\s|$)/i.test(fileId)) {
-                return devPlaceholderSvgForPath(fileId, 'معاينة غير متاحة');
-              }
-              throw new Error('الفيديو/PDF يحتاج /config و R2 — أو ارفع صورة لمعاينة محلية مضمّنة');
+
+          if (backend === 'legacy') {
+            const cfg = _r2LegacyConfig || await tryFetchR2Config();
+            if (!cfg) {
+              throw new Error('لا إعدادات R2');
             }
-            throw new Error('لا يوجد /config — لا يمكن توليد رابط المرفق');
+            _r2LegacyConfig = cfg;
+            const s3 = new AWS.S3({
+              accessKeyId: cfg.R2_ACCESS_KEY_ID,
+              secretAccessKey: cfg.R2_SECRET_ACCESS_KEY,
+              endpoint: `https://${cfg.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+              signatureVersion: 'v4',
+              s3ForcePathStyle: true
+            });
+            const params = { Bucket: cfg.R2_BUCKET_NAME, Key: fileId, Expires: 3600 };
+            const url = s3.getSignedUrl('getObject', params);
+            writeCfCache(fileId, url);
+            return url;
           }
 
-          const s3 = new AWS.S3({
-            accessKeyId: _r2Config.R2_ACCESS_KEY_ID,
-            secretAccessKey: _r2Config.R2_SECRET_ACCESS_KEY,
-            endpoint: `https://${_r2Config.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-            signatureVersion: 'v4',
-            s3ForcePathStyle: true
-          });
-
-          const params = { Bucket: _r2Config.R2_BUCKET_NAME, Key: fileId, Expires: 3600 };
-          const url = s3.getSignedUrl('getObject', params);
-
-          _cloudflareCache[fileId] = url;
-          return url;
+          if (allowAttachmentDevSkip()) {
+            if (String(fileId).startsWith('temp_')) {
+              if (isLikelyImageAttachmentKey(fileId)) {
+                const ph = devPlaceholderSvgForPath(fileId, 'معاينة غير متاحة');
+                writeCfCache(fileId, ph);
+                return ph;
+              }
+              throw new Error('الفيديو/PDF يحتاج R2 (Edge Function) — أو ارفع صورة لمعاينة محلية مضمّنة');
+            }
+            if (isLikelyImageAttachmentKey(fileId)) {
+              const ph = devPlaceholderSvgForPath(fileId, 'لا يوجد R2 محلياً');
+              writeCfCache(fileId, ph);
+              return ph;
+            }
+            throw new Error('الفيديو/PDF يحتاج R2 — انشر r2-storage على Supabase أو فعّل الرفع من خادم فيه الإعدادات');
+          }
+          throw new Error('لا يوجد إعداد تخزين للمرفقات — انشر Edge Function r2-storage أو مسار /config');
         } catch (err) {
           console.error(`[R2 Error] Failed to load ${fileId}:`, err);
           throw err;
@@ -12830,20 +13785,30 @@
       function loadAllCloudflareImages() {
         const images = document.querySelectorAll('img[data-cf-id]');
         if (images.length > 0) console.log(`[CloudflareProxy] Attempting to load ${images.length} thumbnails...`);
-        
-        images.forEach(async img => {
-          if (img.src && !img.src.startsWith('data:image/svg')) return;
+
+        images.forEach(async (img) => {
+          if (img.dataset.cfThumbDone === '1') return;
           if (img.dataset.loading === 'true') return;
-          
+
           const fid = img.dataset.cfId;
           if (!fid) return;
-          
+
           img.dataset.loading = 'true';
           try {
-            const dataUrl = await loadCloudflareFile(fid);
-            img.src = dataUrl;
-            img.style.opacity = '1';
+            const resolved = await loadCloudflareFile(fid);
+            img.onload = () => {
+              img.dataset.cfThumbDone = '1';
+              img.style.opacity = '1';
+            };
+            img.onerror = () => {
+              delete _cloudflareCache[fid];
+              delete img.dataset.cfThumbDone;
+              img.alt = 'خطأ في التحميل';
+              img.style.opacity = '0.3';
+            };
+            img.src = resolved;
           } catch (e) {
+            delete _cloudflareCache[fid];
             img.alt = 'خطأ في التحميل';
             img.style.opacity = '0.3';
           } finally {
@@ -12991,9 +13956,22 @@
       // ───────────────────────────────────────────────────────────────────────────
       // فتح تذكرة في المودال
       // ───────────────────────────────────────────────────────────────────────────
-      function openTicket(id) {
+      async function openTicket(id) {
         const t = state.violations.find(v => v.id === id);
         if (!t) return showToast('التذكرة غير موجودة', 'error');
+
+        try {
+          if (!t._detailFetched) {
+            const { data, error } = await sb.from('violations').select('*').eq('id', id).maybeSingle();
+            if (!error && data) {
+              Object.assign(t, data);
+              t._detailFetched = true;
+              enrichViolation(t);
+            }
+          }
+        } catch (e) {
+          console.warn('[openTicket] تعذّر جلب التفاصيل الكاملة:', e);
+        }
 
         state.editingTicket = t;
         state.uploadedFiles.resp = [];
@@ -13212,31 +14190,8 @@
       function buildInlineAttachments(t) {
         const c = document.getElementById('tdInlineAttachments');
         if (!c) return;
-        
-        let atts = [];
-        try {
-          const rawAtts = t.attachments;
-          if (Array.isArray(rawAtts)) {
-            atts = rawAtts;
-          } else if (typeof rawAtts === 'string' && rawAtts.trim() !== '') {
-            // معالجة حالة "[object Object]" التي قد تحدث في بعض قواعد البيانات غير المهيأة لـ JSON
-            if (rawAtts.includes('[object Object]')) {
-              console.warn('[Viewer] Detected corrupted attachment data (object-string conversion issue)');
-              atts = [];
-            } else {
-              atts = JSON.parse(rawAtts);
-            }
-          }
-        } catch (e) {
-          console.error('[Viewer] Failed to parse attachments:', e, t.attachments);
-          atts = [];
-        }
 
-        // فحص إضافي: قد تكون المصفوفة تحتوي على كائنات غير صالحة
-        if (Array.isArray(atts)) {
-          // دعم p (path) الجديد و path القديم و url
-          atts = atts.filter(a => a && typeof a === 'object' && (a.p || a.path || a.url || a.u));
-        }
+        const atts = getVisibleAttachments(t);
 
         if (!atts || !atts.length) {
           c.innerHTML = `
@@ -13344,15 +14299,30 @@
       state._attList = [];      // قائمة المرفقات الحالية
       state._attIndex = 0;      // فهرس المرفق المعروض
 
+      function getVisibleAttachments(t) {
+        let atts = [];
+        try {
+          const raw = t && t.attachments;
+          if (Array.isArray(raw)) atts = raw;
+          else if (typeof raw === 'string' && raw.trim() !== '') {
+            if (raw.includes('[object Object]')) {
+              console.warn('[Viewer] Detected corrupted attachment data (object-string conversion issue)');
+            } else {
+              atts = JSON.parse(raw);
+            }
+          }
+        } catch (e) {
+          console.error('[Viewer] Failed to parse attachments:', e, t && t.attachments);
+        }
+        if (!Array.isArray(atts)) return [];
+        atts = atts.filter(a => a && typeof a === 'object' && (a.p || a.path || a.url || a.u));
+        atts = atts.filter(a => !(a.isUploading || (typeof a.u === 'string' && a.u.startsWith('uploading_'))) || a.p);
+        return atts;
+      }
+
       function openAttViewerByIndex(idx) {
         const t = state.editingTicket;
-        let atts = [];
-        if (t && t.attachments) {
-          if (Array.isArray(t.attachments)) atts = t.attachments;
-          else {
-            try { atts = JSON.parse(t.attachments); } catch(e) { atts = []; }
-          }
-        }
+        const atts = getVisibleAttachments(t);
         state._attList = atts;
         state._attIndex = (idx >= 0 && idx < atts.length) ? idx : 0;
         document.getElementById('attViewer').classList.add('open');
@@ -13362,13 +14332,7 @@
 
       function openAttViewer(url, name) {
         const t = state.editingTicket;
-        let atts = [];
-        if (t && t.attachments) {
-          if (Array.isArray(t.attachments)) atts = t.attachments;
-          else {
-            try { atts = JSON.parse(t.attachments); } catch(e) { atts = []; }
-          }
-        }
+        const atts = getVisibleAttachments(t);
         state._attList = atts;
         // البحث عن المرفق إما بالرابط أو بمعرف R2
         state._attIndex = atts.findIndex(a => (a.url === url || a.u === url || a.p === url));
@@ -13416,11 +14380,18 @@
         const localBlob = state._localBlobUrls && state._localBlobUrls[name];
 
         const inlineViewerImg = (rawAtt.u || rawAtt.url || '');
+        const scannedDataImg = (fileId && getInlineDataUrlForAttachmentPath(fileId)) || '';
+        const realDataImg = (!isDevR2PlaceholderSvg(inlineViewerImg) && String(inlineViewerImg).startsWith('data:image/'))
+          ? inlineViewerImg
+          : (!isDevR2PlaceholderSvg(scannedDataImg) && String(scannedDataImg).startsWith('data:image/'))
+            ? scannedDataImg
+            : '';
+
         if (att.isUploading && !localBlob) {
           const loadingText = isVid ? 'جاري تشغيل الفيديو...' : (isImg ? 'جاري فتح الصورة...' : 'جاري فتح الملف...');
           html = `<div id="att-loading" style="text-align:center;padding:40px;color:#fff"><i class="fas fa-spinner fa-spin fa-2x"></i><p style="margin-top:12px;font-size:14px">${loadingText}</p></div>`;
-        } else if (isImg && inlineViewerImg.startsWith('data:image/')) {
-          html = `<img src="${inlineViewerImg}" style="max-width:100%;max-height:70vh;object-fit:contain" alt="${Sec.escapeHTML(name)}">`;
+        } else if (isImg && realDataImg) {
+          html = `<img src="${realDataImg}" style="max-width:100%;max-height:70vh;object-fit:contain" alt="${Sec.escapeHTML(name)}">`;
         } else if (isImg) {
           if (localBlob) {
             html = `<img src="${localBlob}" style="max-width:100%;max-height:70vh;object-fit:contain" alt="${Sec.escapeHTML(name)}">`;
@@ -13444,12 +14415,40 @@
                 const dataUrl = await loadCloudflareFile(fileId);
                 const img = document.getElementById('att-proxy-img');
                 const loader = document.getElementById('att-loading');
-                if (img) { 
-                  img.onload = () => { 
-                    if (loader) loader.style.display = 'none'; 
+                if (isDevR2PlaceholderSvg(dataUrl)) {
+                  if (img) img.remove();
+                  if (loader) {
+                    loader.style.display = 'flex';
+                    loader.style.pointerEvents = 'auto';
+                    loader.innerHTML = `
+                    <div style="text-align:center;max-width:440px;margin:0 auto;padding:28px 20px;background:rgba(15,23,42,.94);border-radius:16px;border:1px solid rgba(148,163,184,.35);line-height:1.65">
+                      <i class="fas fa-cloud-arrow-up" style="font-size:2rem;color:#94a3b8;margin-bottom:12px;display:block"></i>
+                      <div style="font-weight:800;font-size:1.05rem;color:#f1f5f9;margin-bottom:8px">المرفق مخزّن على R2</div>
+                      <p style="font-size:0.9rem;color:#cbd5e1;margin:0 0 10px">لا يتوفر اتصال بتخزين R2 من هذا العنوان (مثلاً تطوير محلي بدون Edge Function). انشر الدالة <span style="font-family:var(--mono);background:#334155;padding:2px 8px;border-radius:6px">r2-storage</span> على Supabase أو وفّر إعدادات <span style="font-family:var(--mono);background:#334155;padding:2px 8px;border-radius:6px">/config</span> على الخادم.</p>
+                      <p style="font-size:0.82rem;color:#94a3b8;margin:0">راجع README في المستودع لخطوات الربط النظامي.</p>
+                      <p style="font-size:10px;color:#64748b;margin-top:14px;font-family:var(--mono);word-break:break-all;direction:ltr;text-align:left">${Sec.escapeHTML(String(fileId))}</p>
+                    </div>`;
+                  }
+                  return;
+                }
+                if (img) {
+                  img.onerror = () => {
+                    delete _cloudflareCache[fileId];
+                    if (loader) {
+                      loader.style.display = 'flex';
+                      loader.style.pointerEvents = 'auto';
+                      loader.innerHTML = `
+                    <div style="padding:20px;background:rgba(0,0,0,0.5);border-radius:8px;text-align:center">
+                      <i class="fas fa-exclamation-triangle" style="color:var(--amber);font-size:28px;margin-bottom:10px"></i>
+                      <p>تعذّر عرض الصورة (انتهاء الرابط أو رفض التحميل). أعد فتح المرفق.</p>
+                    </div>`;
+                    }
+                  };
+                  img.onload = () => {
+                    if (loader) loader.style.display = 'none';
                     img.style.display = 'block';
                   };
-                  img.src = dataUrl; 
+                  img.src = dataUrl;
                 }
               } catch (e) {
                 console.error('Lightbox Image Load Error:', e);
@@ -13483,8 +14482,9 @@
               try {
                 const dataUrl = await loadCloudflareFile(fileId);
                 const vid = document.getElementById('att-proxy-vid');
-                if (vid) { 
-                  vid.src = dataUrl; 
+                if (vid) {
+                  vid.onerror = () => { delete _cloudflareCache[fileId]; };
+                  vid.src = dataUrl;
                 }
               } catch (e) {
                 console.error('Lightbox Video Load Error:', e);
@@ -13609,8 +14609,8 @@
           visibleSteps = allSteps;
         }
 
-        const orderMap = { obs: 0, emp: 1, sup: 2, aud: 3, mgt: 4, closed: 5 };
-        const currentOrder = orderMap[t.state] || 1;
+        const orderMap = { obs: 0, emp: 1, sup: 2, aud: 3, mgt: 4, closed: 5, Warning_Issued: 5 };
+        const currentOrder = (t.state === 'closed' || t.state === 'Warning_Issued') ? 99 : (orderMap[t.state] || 1);
 
         c.innerHTML = `
           <div style="padding-bottom: 15px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 8px; font-size: 16px;">
@@ -13622,7 +14622,7 @@
           let cls = 'wf-step';
           let icon = `<i class="fas ${s.icon}"></i>`;
 
-          if (t.state === 'closed') {
+          if (t.state === 'closed' || t.state === 'Warning_Issued') {
             cls += ' done';
             icon = '<i class="fas fa-check"></i>';
           } else if (stepOrder < currentOrder) {
@@ -13678,6 +14678,7 @@
       // إعداد نموذج الرد + الأزرار حسب الدور والحالة
       // ───────────────────────────────────────────────────────────────────────────
       function setupResponseForm(t) {
+        let blockedWarnStrip = '';
         const form = document.getElementById('responseForm');
         const btnsWrap = document.getElementById('responseButtons');
         const respTextarea = document.getElementById('respText');
@@ -13712,10 +14713,20 @@
           respTextarea.placeholder = 'اكتب ملاحظات التدقيق... (مطلوب)';
         }
         else if (t.state === 'mgt' && (role === 'manager' || role === 'admin')) {
-          // المدير: قرار نهائي - إلغاء أو اعتماد
-          buttons.push({ act: 'mgt_delete', label: 'إلغاء (قرار إداري)', cls: 'btn-danger', icon: 'fa-times' });
+          const typeRec = state.violationTypes.find(x => x.name === t.violation_type);
+          const vTypeId = t.violation_type_id || typeRec?.id || null;
+          const refDt = t.created_at || t.violation_date;
+          const blockWarn = employeeHadWarningSameTypeThisCalendarMonth(
+            t.employee_id, vTypeId, t.violation_type, refDt, t.id, state.violations || []
+          );
           buttons.push({ act: 'mgt_approve', label: 'اعتماد نهائي', cls: 'btn-success', icon: 'fa-check' });
-          respTextarea.placeholder = 'اكتب القرار الإداري النهائي... (مطلوب)';
+          if (!blockWarn) {
+            buttons.push({ act: 'mgt_warning', label: 'اكتفاء بالتنبيه (تنبيه المرة الأولى)', cls: 'btn', icon: 'fa-triangle-exclamation' });
+          } else {
+            blockedWarnStrip = '<div style="width:100%;margin-top:10px"><button type="button" class="btn" disabled style="opacity:.7;cursor:not-allowed;width:100%;border-style:dashed">مخالفة مكررة هذا الشهر — يستوجب الخصم</button></div>';
+          }
+          buttons.push({ act: 'mgt_delete', label: 'إلغاء (قرار إداري)', cls: 'btn-danger', icon: 'fa-times' });
+          respTextarea.placeholder = 'اكتب القرار الإداري أو ملاحظات التنبيه... (مطلوب)';
         }
 
         if (!buttons.length) {
@@ -13725,7 +14736,7 @@
 
         btnsWrap.innerHTML = buttons.map(b =>
           `<button class="btn ${b.cls}" onclick="submitResp('${b.act}')"><i class="fas ${b.icon}"></i> ${b.label}</button>`
-        ).join('');
+        ).join('') + blockedWarnStrip;
       }
 
       // ───────────────────────────────────────────────────────────────────────────
@@ -13756,10 +14767,14 @@
             // جلب التذكرة الحالية لدمج المرفقات الجديدة مع المرفقات السابقة
             const { data: currentTicket, error: fetchErr } = await sb.from('violations').select('attachments').eq('id', ticketId).single();
             if (!fetchErr && currentTicket) {
-              let currentAtts = Array.isArray(currentTicket.attachments) ? currentTicket.attachments : [];
+              let currentAtts = parseDbJsonArray(currentTicket.attachments);
 
               // إزالة المرفقات المؤقتة (placeholders) لهذه الجلسة بالتحديد لتجنب التكرار
-              currentAtts = currentAtts.filter(a => !(a.isUploading && filesToUpload.some(f => f.name === a.name)));
+              currentAtts = currentAtts.filter(a => {
+                if (!a || !a.isUploading) return true;
+                const attName = a.n || a.name || '';
+                return !filesToUpload.some(f => f && f.name === attName);
+              });
 
               const combinedAtts = currentAtts.concat(uploadedAttachments);
               await sb.from('violations').update({ attachments: JSON.stringify(combinedAtts) }).eq('id', ticketId);
@@ -13813,6 +14828,7 @@
           aud_delete: { newState: 'closed', statusText: 'ملغاة بقرار التدقيق', fieldKey: 'audit_reply', actionLabel: 'إلغاء (التدقيق)' },
           aud_approve: { newState: 'mgt', statusText: null, fieldKey: 'audit_reply', actionLabel: 'تمرير للإدارة' },
           mgt_delete: { newState: 'closed', statusText: 'ملغاة بقرار إداري', fieldKey: 'management_reply', actionLabel: 'إلغاء (الإدارة)' },
+          mgt_warning: { newState: 'Warning_Issued', statusText: 'تنبيه إداري — اكتفاء بالتنبيه (بدون أثر على النقاط)', fieldKey: 'management_reply', actionLabel: 'اكتفاء بالتنبيه (تنبيه المرة الأولى)' },
           mgt_approve: { newState: 'closed', statusText: 'معتمدة نهائياً', fieldKey: 'management_reply', actionLabel: 'اعتماد نهائي' }
         };
 
@@ -13831,10 +14847,10 @@
           note: text
         };
 
-        const newLogs = Array.isArray(current.logs) ? [...current.logs, newLog] : [newLog];
+        const newLogs = [...parseDbJsonArray(current.logs), newLog];
 
         // إنشاء مرفقات مؤقتة (Placeholders) لتظهر فوراً في التذكرة
-        let newAttachments = Array.isArray(current.attachments) ? current.attachments : [];
+        let newAttachments = parseDbJsonArray(current.attachments);
         if (respFiles.length > 0) {
           if (!state._localBlobUrls) state._localBlobUrls = {};
 
@@ -14311,9 +15327,93 @@
       }
       ;
 
+      /** نفس نطاق التاريخ/المشرف لكن بدون اشتراط الاعتماد — لحساب المعدل الفوري والبونص */
+      function getViolationsForScoring() {
+        const fromDate = document.getElementById('cmp-from')?.value || '';
+        const toDate = document.getElementById('cmp-to')?.value || '';
+        let visible = state.violations || [];
+        if (state.currentUser?.role === 'supervisor') {
+          const branchIds = state.currentUser.supervisedBranches || [];
+          visible = visible.filter(v => branchIds.includes(v.branch_id));
+        }
+        const dstr = (v) => (v.violation_date || v.created_at || '').toString().slice(0, 10);
+        if (fromDate) visible = visible.filter(v => dstr(v) >= fromDate);
+        if (toDate) visible = visible.filter(v => dstr(v) <= toDate);
+        return visible;
+      }
+
       // ═══════════════════════════════════════════════════════════════════════════
       // PROFESSIONAL COMPLIANCE SCORING SYSTEM
       // ═══════════════════════════════════════════════════════════════════════════
+
+      /** وقت «الرصد» لحساب البونص: تاريخ إنشاء السجل */
+      function violationObservationMs(v) {
+        const t = new Date(v.created_at || v.violation_date).getTime();
+        return isNaN(t) ? 0 : t;
+      }
+
+      /** تُستبعد من الخصم والبونص: ملغاة/مرفوضة/تنبيه إداري؛ المسودة والرفع غير المكتمل */
+      function violationExcludedFromDeduction(v) {
+        if (!v) return true;
+        if (v.state === 'draft' || v.state === 'uploading') return true;
+        if (v.state === 'Warning_Issued') return true;
+        const st = (v.status_text || '').trim();
+        if (v.state === 'closed') {
+          if (/تنبيه|اكتفاء بالتنبيه|Warning_Issued/i.test(st)) return true;
+          if (/ملغ|مرفوض/i.test(st)) return true;
+          if (/معتمد/.test(st) && !/تنبيه/i.test(st)) return false;
+          return false;
+        }
+        return false;
+      }
+
+      /** اعتماد نهائي بخصم (ليست تنبيهاً) */
+      function isFinalPenaltyApproved(v) {
+        return v && v.state === 'closed' && /معتمد/.test(v.status_text || '') && !/تنبيه/i.test(v.status_text || '');
+      }
+
+      /** تنبيه إداري منتهٍ — للعرض في السجلات والتقارير (بدون أثر مالي على النقاط) */
+      function isViolationAdministrativeWarning(v) {
+        if (!v) return false;
+        if (v.state === 'Warning_Issued') return true;
+        return v.state === 'closed' && /تنبيه|اكتفاء بالتنبيه|Warning_Issued/i.test(v.status_text || '');
+      }
+
+      /** مخالفة تُخصم فورياً ولم يُغلق اعتمادها النهائي بعد */
+      function isPendingDeductionTicket(v) {
+        return !violationExcludedFromDeduction(v) && !isFinalPenaltyApproved(v);
+      }
+
+      /** هل سبق تنبيه (Warning_Issued أو إغلاق بتنبيه) لنفس نوع المخالفة ونفس الشهر الميلادي لـ created_at؟ */
+      function employeeHadWarningSameTypeThisCalendarMonth(empId, violationTypeId, violationTypeName, refDateStr, excludeTicketId, allViolations) {
+        const ref = new Date(refDateStr || Date.now());
+        if (isNaN(ref.getTime())) return false;
+        const y = ref.getFullYear();
+        const mo = ref.getMonth();
+        return (allViolations || []).some(v => {
+          if (v.id === excludeTicketId) return false;
+          if (v.employee_id !== empId) return false;
+
+          let sameType = false;
+          if (violationTypeId != null && violationTypeId !== '') {
+            if (v.violation_type_id != null && v.violation_type_id !== '') {
+              sameType = String(v.violation_type_id) === String(violationTypeId);
+            } else {
+              const tr = state.violationTypes.find(x => x.name === v.violation_type);
+              sameType = !!tr && String(tr.id) === String(violationTypeId);
+            }
+          } else {
+            sameType = (v.violation_type || '') === (violationTypeName || '');
+          }
+          if (!sameType) return false;
+
+          const isWarn = isViolationAdministrativeWarning(v);
+          if (!isWarn) return false;
+
+          const d = new Date(v.created_at || v.violation_date);
+          return !isNaN(d.getTime()) && d.getFullYear() === y && d.getMonth() === mo;
+        });
+      }
 
       /**
        * إعدادات النظام (قابلة للتخصيص لاحقاً من الإعدادات)
@@ -14336,10 +15436,10 @@
         // Frequency: التكرار خلال آخر 90 يوم
         frequencyMultipliers: [1.0, 1.0, 1.3, 1.6, 2.0],  // [0]=1st, [1]=2nd, ...
         frequencyWindow: 90,  // أيام
-        // Streak Bonus: مكافأة الالتزام أقوى وأسرع
-        streakDays: 20,        // كل 20 يوم بدون مخالفة (بدل 30)
-        streakPoints: 4,       // +4 نقاط لكل streak (بدل 3)
-        streakMaxBonus: 20,    // السقف +20 نقطة (بدل 15)
+        // Streak: 10 أيام نظيفة من تاريخ آخر رصد = +7 نقاط (حتى السقف)
+        streakDays: 10,
+        streakPoints: 7,
+        streakMaxBonus: 35,
         // Branch thresholds
         branchSafetyThreshold: 75,  // الموظف "آمن" إذا فوق 75 (مو 90)
         // Critical Freedom: عدد الموظفين لكل مخالفة حرجة
@@ -14399,46 +15499,55 @@
       }
 
       /**
-       * Streak Bonus: عدد الأيام منذ آخر مخالفة طازجة
+       * بونص الانضباط: منذ آخر «رصد» (created_at) أو منذ آخر تنبيه إداري (إعادة ضبط).
+       * كل streakDays يوم بدون مخالفة جديدة تُخصم = streakPoints حتى السقف.
        */
-      function calcStreakBonus(violations) {
-        // لا بونص إذا ما عنده مخالفات أصلاً — درجته 100 كاملة
-        if (!violations.length) return 0;
-
-        // نأخذ المخالفات في آخر سنة فقط (الأقدم لا يهم للستريك)
-        const recent = violations
-          .filter(v => violationAgeDays(v) < 365)
-          .sort((a, b) => {
-            const da = new Date(a.violation_date || a.created_at).getTime();
-            const db = new Date(b.violation_date || b.created_at).getTime();
-            return db - da;
-          });
-
-        if (!recent.length) {
-          // كل مخالفاته قديمة (أكثر من سنة) = streak كامل لأنه التزم
+      function calcStreakBonus(empId, allViolations) {
+        const list = allViolations || [];
+        const mine = list.filter(v => v.employee_id === empId);
+        const deducting = mine.filter(v => !violationExcludedFromDeduction(v));
+        if (!deducting.length) {
           return COMPLIANCE_CONFIG.streakMaxBonus;
         }
-
-        const lastViolDays = violationAgeDays(recent[0]);
-        const streaksCompleted = Math.floor(lastViolDays / COMPLIANCE_CONFIG.streakDays);
-        const bonus = streaksCompleted * COMPLIANCE_CONFIG.streakPoints;
-        return Math.min(bonus, COMPLIANCE_CONFIG.streakMaxBonus);
+        let warnAnchor = 0;
+        mine.forEach(v => {
+          if (v.state === 'Warning_Issued' ||
+            (v.state === 'closed' && /تنبيه|اكتفاء بالتنبيه/i.test(v.status_text || ''))) {
+            const tm = new Date(v.updated_at || v.created_at).getTime();
+            if (!isNaN(tm) && tm > warnAnchor) warnAnchor = tm;
+          }
+        });
+        let lastObs = 0;
+        deducting.forEach(v => {
+          const t = violationObservationMs(v);
+          if (t > lastObs) lastObs = t;
+        });
+        const anchor = Math.max(warnAnchor, lastObs);
+        const daysSince = (Date.now() - anchor) / (1000 * 60 * 60 * 24);
+        if (daysSince < 0) return 0;
+        const periods = Math.floor(daysSince / COMPLIANCE_CONFIG.streakDays);
+        return Math.min(COMPLIANCE_CONFIG.streakMaxBonus, periods * COMPLIANCE_CONFIG.streakPoints);
       }
 
       /**
-       * احسب درجة موظف بالنظام الاحترافي
+       * احسب درجة موظف: خصم فوري لكل المخالفات ما عدا الملغاة/المرفوضة/التنبيه الإداري.
        */
       function calcEmpScore(empId, violations) {
-        // نظام النقاط لا يحتسب إلا المخالفات التي تم "اعتمادها نهائياً" من قبل الإدارة
-        const myViols = violations.filter(v => v.employee_id === empId && v.state === 'closed' && v.status_text === 'معتمدة نهائياً');
+        const list = violations || [];
+        const deductList = list.filter(v => v.employee_id === empId && !violationExcludedFromDeduction(v));
 
-        if (!myViols.length) {
+        const streakBonus = calcStreakBonus(empId, list);
+
+        if (!deductList.length) {
+          const score = Math.min(100, 100 + streakBonus);
           return {
-            score: 100,
+            score: Math.round(score * 10) / 10,
             violationsCount: 0,
             deducted: 0,
             rawDeducted: 0,
-            streakBonus: 0,  // لا بونص — درجته 100 كاملة بدون مخالفات
+            pendingDeducted: 0,
+            pendingCount: 0,
+            streakBonus,
             freshCount: 0,
             oldCount: 0,
             severityBreakdown: { 'منخفض': 0, 'متوسط': 0, 'عالي': 0 },
@@ -14447,16 +15556,15 @@
           };
         }
 
-        // ترتيب من الأقدم للأحدث (لتحديد ترتيب التكرار)
-        const sortedViols = [...myViols].sort((a, b) => {
+        const sortedViols = [...deductList].sort((a, b) => {
           const da = new Date(a.violation_date || a.created_at).getTime();
           const db = new Date(b.violation_date || b.created_at).getTime();
           return da - db;
         });
 
-        // عدّ التكرارات في نافذة 90 يوم
         let totalDeducted = 0;
-        let rawDeducted = 0;  // بدون decay/freq (للمقارنة)
+        let pendingDeducted = 0;
+        let rawDeducted = 0;
         const severityBreakdown = { 'منخفض': 0, 'متوسط': 0, 'عالي': 0 };
         let freshCount = 0;
         let oldCount = 0;
@@ -14466,7 +15574,6 @@
           const baseWeight = type?.weight || 5;
           rawDeducted += baseWeight;
 
-          // تحديد ترتيب التكرار: عدد المخالفات السابقة في آخر 90 يوم
           const myAgeDays = violationAgeDays(v);
           const recentBefore = sortedViols.filter((other, j) => {
             if (j >= i) return false;
@@ -14476,36 +15583,33 @@
 
           const effective = effectiveViolationWeight(v, recentBefore);
           totalDeducted += effective;
+          if (isPendingDeductionTicket(v)) pendingDeducted += effective;
 
-          // إحصائيات إضافية
           const sev = type?.severity || 'منخفض';
           severityBreakdown[sev] = (severityBreakdown[sev] || 0) + 1;
           if (myAgeDays <= 30) freshCount++;
           else if (myAgeDays > 180) oldCount++;
         });
 
-        // Streak bonus
-        const streakBonus = calcStreakBonus(myViols);
-
-        // الدرجة النهائية
         const score = Math.min(100, 100 - totalDeducted + streakBonus);
+        const recencyIndex = sortedViols.length > 0 ? Math.round((freshCount / sortedViols.length) * 100) : 0;
 
-        // Recency Index: نسبة المخالفات الطازجة من الإجمالي
-        const recencyIndex = myViols.length > 0 ? Math.round((freshCount / myViols.length) * 100) : 0;
-
-        // Action Required Flag
-        const criticalRecent = myViols.some(v => {
+        const criticalRecent = sortedViols.some(v => {
           const type = state.violationTypes.find(x => x.name === v.violation_type);
           return type?.severity === 'عالي' && violationAgeDays(v) <= 7;
         });
-        const tooManyRecent = myViols.filter(v => violationAgeDays(v) <= 30).length >= 3;
+        const tooManyRecent = sortedViols.filter(v => violationAgeDays(v) <= 30).length >= 3;
         const actionRequired = score < 40 || criticalRecent || tooManyRecent;
+
+        const pendingCount = sortedViols.filter(isPendingDeductionTicket).length;
 
         return {
           score: Math.round(score * 10) / 10,
-          violationsCount: myViols.length,
+          violationsCount: sortedViols.length,
           deducted: Math.round(totalDeducted * 10) / 10,
           rawDeducted: Math.round(rawDeducted),
+          pendingDeducted: Math.round(pendingDeducted * 10) / 10,
+          pendingCount,
           streakBonus,
           freshCount,
           oldCount,
@@ -14530,7 +15634,7 @@
           };
         }
 
-        const empScores = branchEmps.map(e => calcEmpScore(e.id, violations));
+        const empScores = branchEmps.map(e => calcEmpScore(e.id, state.violations || []));
 
         // 1. Average Score (40%)
         const avgScore = empScores.reduce((a, s) => a + s.score, 0) / empScores.length;
@@ -14541,7 +15645,7 @@
 
         // 3. Critical Freedom (20%)
         const branchEmpIds = new Set(branchEmps.map(e => e.id));
-        const branchViols = violations.filter(v => branchEmpIds.has(v.employee_id));
+        const branchViols = violations.filter(v => branchEmpIds.has(v.employee_id) && !violationExcludedFromDeduction(v));
         const criticalCount = branchViols.filter(v => {
           const type = state.violationTypes.find(x => x.name === v.violation_type);
           return type?.severity === 'عالي' && violationAgeDays(v) <= 90;
@@ -14617,7 +15721,7 @@
         // ملاحظة: الحساب الكامل للترند يحتاج بيانات تاريخية. نستخدم تقريب:
         // نقارن drop في آخر 30 يوم مع 30-60 يوم
         const regBranchIds = new Set(regBranches.map(b => b.id));
-        const regViols = violations.filter(v => regBranchIds.has(v.branch_id));
+        const regViols = violations.filter(v => regBranchIds.has(v.branch_id) && !violationExcludedFromDeduction(v));
         const recent30 = regViols.filter(v => violationAgeDays(v) <= 30).length;
         const prev30 = regViols.filter(v => {
           const a = violationAgeDays(v);
@@ -14672,7 +15776,7 @@
       // ─── Render: Build items array (طريقة موحدة) ───
       function buildCmpItems() {
         const tab = state._cmpActiveTab || 'regions';
-        const violations = getFilteredViolations();
+        const violations = getViolationsForScoring();
         let items = [];
 
         if (tab === 'regions') {
@@ -14686,7 +15790,7 @@
             // عدّ المخالفات الإجمالي للمنطقة
             const regBranches = state.branches.filter(b => b.region_id === r.id);
             const branchIds = regBranches.map(b => b.id);
-            const totalViols = violations.filter(v => branchIds.includes(v.branch_id)).length;
+            const totalViols = violations.filter(v => branchIds.includes(v.branch_id) && !violationExcludedFromDeduction(v)).length;
             return {
               id: r.id,
               type: 'region',
@@ -14717,7 +15821,7 @@
           items = brs.map(b => {
             const stat = calcBranchSafety(b.id, violations);
             const region = state.regions.find(r => r.id === b.region_id);
-            const totalViols = violations.filter(v => v.branch_id === b.id).length;
+            const totalViols = violations.filter(v => v.branch_id === b.id && !violationExcludedFromDeduction(v)).length;
             return {
               id: b.id,
               type: 'branch',
@@ -14749,7 +15853,7 @@
           if (cmpfState.branch) emps = emps.filter(e => e.branch_id === cmpfState.branch);
 
           items = emps.map(e => {
-            const stat = calcEmpScore(e.id, violations);
+            const stat = calcEmpScore(e.id, state.violations || []);
             const branch = state.branches.find(b => b.id === e.branch_id);
             const region = branch ? state.regions.find(r => r.id === branch.region_id) : null;
             const supervisor = region ? state.users.find(u => u.id === region.supervisor_id) : null;
@@ -14758,8 +15862,10 @@
               type: 'employee',
               name: e.name,
               empNumber: e.employee_number,
+              isInactive: !isActiveUser(e),
               score: stat.score,
-              meta: `${branch?.name || '-'} · ${stat.violationsCount} مخالفة · ${stat.deducted} نقطة مخصومة`,
+              meta: `${branch?.name || '-'} · ${stat.violationsCount} مخالفة · ${stat.deducted} نقطة مخصومة` +
+                (stat.pendingCount > 0 ? ` · قيد المراجعة: ${stat.pendingCount} (−${stat.pendingDeducted})` : ''),
               icon: 'fa-user',
               hasViolations: stat.violationsCount > 0,
               violCount: stat.violationsCount,
@@ -14795,6 +15901,15 @@
         }
 
         return items;
+      }
+
+      /** أبطأ تذكرة لا تزال قيد المسار (لعرض مرحلة التأخير للمدراء) */
+      function worstPendingTicketForEmployee(empId) {
+        const pend = (state.violations || []).filter(v =>
+          v.employee_id === empId && isPendingDeductionTicket(v));
+        if (!pend.length) return null;
+        const order = { mgt: 5, aud: 4, sup: 3, emp: 2, uploading: 1 };
+        return [...pend].sort((a, b) => (order[b.state] || 0) - (order[a.state] || 0))[0];
       }
 
       function buildCmpDetailHTML(item, viols) {
@@ -14836,13 +15951,22 @@
           const totalDeducted = stat.deducted || 0;
           const modifier = totalDeducted - raw;
           const streak = stat.streakBonus || 0;
+          const pend = stat.pendingDeducted || 0;
 
           cmpRows = [
             { label: 'النقاط الأساسية', value: '+100', color: 'var(--green-text)' },
-            { label: 'خصم المخالفات', value: `−${raw}`, color: 'var(--red-text)' },
-            { label: 'خصم الوقت والتكرار', value: modifier > 0 ? `−${Math.round(modifier * 10) / 10}` : `+${Math.abs(Math.round(modifier * 10) / 10)}`, color: modifier > 0 ? 'var(--red-text)' : 'var(--green-text)' },
-            { label: 'مكافأة الالتزام', value: `+${streak}`, color: 'var(--green-text)' }
+            { label: 'المعدل الحالي (خصم فوري + معتمد)', value: `−${Math.round(totalDeducted * 10) / 10}`, color: 'var(--red-text)' },
+            { label: 'الخصم الخام (أوزان الأنواع)', value: `−${raw}`, color: 'var(--text3)' },
+            { label: 'تعديل التقادم والتكرار', value: modifier > 0 ? `−${Math.round(modifier * 10) / 10}` : `+${Math.abs(Math.round(modifier * 10) / 10)}`, color: modifier > 0 ? 'var(--red-text)' : 'var(--green-text)' }
           ];
+          if (pend > 0) {
+            cmpRows.push({
+              label: 'نقاط قيد المراجعة (قابلة للاسترداد)',
+              value: `−${pend}`,
+              color: '#ea580c'
+            });
+          }
+          cmpRows.push({ label: 'مكافأة الانضباط (بونص)', value: `+${streak}`, color: 'var(--green-text)' });
         } else if (item.type === 'branch') {
           cmpRows = [
             { label: 'متوسط درجات الموظفين', value: `${stat.avgScore}`, color: 'var(--text)' },
@@ -14984,6 +16108,9 @@
           .sev-low { background: rgba(0, 122, 255, 0.1); color: var(--blue-text); }
           .sev-mid { background: rgba(255, 204, 0, 0.1); color: var(--amber-text); }
           .sev-high { background: rgba(255, 59, 48, 0.1); color: var(--red-text); }
+          .cmp-viol-item.viol-warn { border-color: #fb923c !important; background: color-mix(in srgb, #fb923c 11%, var(--surface)) !important; }
+          .cmp-viol-item.viol-warn:hover { border-color: #ea580c !important; }
+          .cmp-viol-warn-pill { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 800; background: rgba(234, 88, 12, 0.14); color: #c2410c; white-space: nowrap; }
           .cmp-viol-empty { text-align: center; padding: 40px; color: var(--text3); font-size: 14px; background: var(--surface); border-radius: 12px; border: 2px dashed var(--border); }
         </style>
         `;
@@ -15008,6 +16135,21 @@
         </div>
         `;
 
+        const pendingTrackHTML = item.type === 'employee' ? (() => {
+          const wt = worstPendingTicketForEmployee(item.id);
+          if (!wt) return '';
+          const stage = Sec.escapeHTML(STATE_LABELS[wt.state] || wt.state);
+          return `
+        <div class="emp-pending-track" style="margin:0 0 16px;padding:14px 16px;border-radius:14px;border:1px solid var(--border);background:color-mix(in srgb,var(--amber) 10%,var(--surface));font-size:13px;line-height:1.55">
+          <div style="font-weight:800;color:#c2410c;margin-bottom:4px"><i class="fas fa-route"></i> موقع أبطأ تذكرة قيد الإجراء</div>
+          <div><span class="num" style="direction:ltr;display:inline-block;font-weight:700">${Sec.escapeHTML(wt.ticket_number)}</span> — ${stage}</div>
+        </div>`;
+        })() : '';
+
+        const scoreHintHTML = item.type === 'employee' ? `
+        <p style="margin:0 0 16px;font-size:12px;color:var(--text3);line-height:1.55">المعدل يشمل <strong>الخصم الفوري</strong> بمجرد الرصد. البونص: كل <span class="num">${COMPLIANCE_CONFIG.streakDays}</span> أيام بدون تسجيل رصد جديد = <span class="num">+${COMPLIANCE_CONFIG.streakPoints}</span> (سقف <span class="num">${COMPLIANCE_CONFIG.streakMaxBonus}</span>).</p>
+        ` : '';
+
         const cardsHTML = `<div class="${respCard ? 'emp-new-grid' : ''}" style="${!respCard ? 'margin-bottom: 24px' : ''}">${cmpCard}${respCard}</div>`;
 
         // ─── Severity Donut ───
@@ -15023,7 +16165,7 @@
         // ─── Dynamic Hierarchy List ───
         let listTitle = '';
         let listHTML = '';
-        const violations = getFilteredViolations();
+        const violations = getViolationsForScoring();
 
         if (item.type === 'region') {
           listTitle = `الفروع (${item.stat.branchesCount})`;
@@ -15038,7 +16180,7 @@
           listHTML = buildViolationsListHTML(viols);
         }
 
-        return styles + heroHTML + cardsHTML + `
+        return styles + heroHTML + scoreHintHTML + pendingTrackHTML + cardsHTML + `
         <div class="cmp-detail-section">
           <div class="cmp-detail-section-head">
             <div class="cmp-detail-section-title"><i class="fas fa-chart-pie"></i> توزيع الخطورة</div>
@@ -15096,7 +16238,7 @@
         if (!emps.length) return `<div class="cmp-viol-empty">لا يوجد موظفون</div>`;
 
         const sorted = emps.map(e => {
-          const stat = calcEmpScore(e.id, violations);
+          const stat = calcEmpScore(e.id, state.violations || []);
           return { ...e, score: stat.score, stat };
         }).sort((a, b) => b.score - a.score);
 
@@ -15212,7 +16354,7 @@
         <div class="kpi-card" data-tone="${totalViols > 0 ? 'amber' : 'green'}">
           <div class="kpi-head">
             <div class="kpi-icon"><i class="fas fa-file-circle-exclamation"></i></div>
-            <div class="kpi-title">المخالفات المعتمدة</div>
+            <div class="kpi-title">المخالفات (ضمن الفترة)</div>
           </div>
           <div class="kpi-value">${totalViols}</div>
           <div class="kpi-foot">
@@ -15415,7 +16557,7 @@
         }
 
         // حساب الـ severity breakdown على مستوى كل عنصر
-        const violations = getFilteredViolations();
+        const violations = getViolationsForScoring();
 
         const buildRow = (item, idx) => {
           const lvl = levelClass(item.score);
@@ -15527,10 +16669,10 @@
               <span class="cmp-rank-num ${rankCls}">${rankIcon}</span>
             </td>
             <td class="cmp-cell-entity" data-label="${Sec.escapeHTML(lbl.entity)}">
-              <div class="cmp-entity-wrap">
+              <div class="cmp-entity-wrap${item.isInactive ? ' is-inactive' : ''}">
                 <div class="cmp-entity-avatar" data-type="${item.type}">${avatarContent}</div>
                 <div class="cmp-entity-text">
-                  <div class="cmp-entity-name">${Sec.escapeHTML(item.name)}</div>
+                  <div class="cmp-entity-name">${Sec.escapeHTML(item.name)}${item.isInactive ? '<span class="cmp-inactive-badge" title="المستخدم معطّل — يظهر هنا للحفاظ على السجل التاريخي"><i class="fas fa-user-slash"></i> معطّل</span>' : ''}</div>
                   ${empNumDisplay}
                 </div>
               </div>
@@ -15613,6 +16755,7 @@
 
         const breakdown = { low: 0, mid: 0, high: 0, crit: 0 };
         viols.forEach(v => {
+          if (violationExcludedFromDeduction(v)) return;
           const type = state.violationTypes.find(x => x.name === v.violation_type);
           const sev = type?.severity || 'منخفض';
           if (sev === 'منخفض') breakdown.low++;
@@ -15638,8 +16781,9 @@
           viols = violations.filter(v => branchIds.has(v.branch_id));
         }
 
-        const recent30 = viols.filter(v => violationAgeDays(v) <= 30).length;
+        const recent30 = viols.filter(v => !violationExcludedFromDeduction(v) && violationAgeDays(v) <= 30).length;
         const prev30 = viols.filter(v => {
+          if (violationExcludedFromDeduction(v)) return false;
           const a = violationAgeDays(v);
           return a > 30 && a <= 60;
         }).length;
@@ -15668,7 +16812,7 @@
       // ═══════════════════════════════════════════════════════════════════════════
 
       function openCmpItemDetail(type, id) {
-        const violations = getFilteredViolations();
+        const violations = getViolationsForScoring();
         let item, related, viols, breakdown;
 
         // ─── جمع البيانات حسب نوع العنصر ───
@@ -15677,8 +16821,8 @@
           if (!emp) return showToast('الموظف غير موجود', 'error');
           const branch = state.branches.find(b => b.id === emp.branch_id);
           const region = branch ? state.regions.find(r => r.id === branch.region_id) : null;
-          const stat = calcEmpScore(emp.id, violations);
-          viols = violations.filter(v => v.employee_id === emp.id);
+          const stat = calcEmpScore(emp.id, state.violations || []);
+          viols = (state.violations || []).filter(v => v.employee_id === emp.id);
 
           item = {
             type: 'employee',
@@ -15820,6 +16964,7 @@
         }
 
         viols.forEach(v => {
+          if (violationExcludedFromDeduction(v)) return;
           const d = new Date(v.violation_date || v.created_at);
           if (isNaN(d.getTime())) return;
           const mo = months.find(m => m.year === d.getFullYear() && m.month === d.getMonth());
@@ -15854,55 +16999,6 @@
       `;
       }
 
-      function buildViolationsListHTML(viols) {
-        if (!viols.length) {
-          return `<div class="cmp-viol-empty"><i class="fas fa-circle-check"></i>سجل نظيف — لا توجد مخالفات في الفترة المختارة</div>`;
-        }
-
-        // ترتيب من الأحدث للأقدم
-        const sorted = [...viols].sort((a, b) => {
-          const da = new Date(a.violation_date || a.created_at).getTime();
-          const db = new Date(b.violation_date || b.created_at).getTime();
-          return db - da;
-        });
-
-        const sevClass = { 'منخفض': 'sev-low', 'متوسط': 'sev-mid', 'عالي': 'sev-high' };
-
-        return `
-        <div class="cmp-violations-list">
-          ${sorted.map(v => {
-          const type = state.violationTypes.find(x => x.name === v.violation_type);
-          const baseWeight = type?.weight || 5;
-          const sev = type?.severity || 'منخفض';
-          const ageDays = Math.round(violationAgeDays(v));
-          const decay = getAgeDecayFactor(v, type);
-          const effective = Math.round(baseWeight * decay * 10) / 10;
-          const decayPct = Math.round(decay * 100);
-
-          const ageLabel = ageDays === 0 ? 'اليوم'
-            : ageDays === 1 ? 'أمس'
-              : ageDays < 30 ? `قبل ${ageDays} يوم`
-                : ageDays < 60 ? 'قبل شهر'
-                  : ageDays < 365 ? `قبل ${Math.floor(ageDays / 30)} شهور`
-                    : `قبل ${Math.floor(ageDays / 365)} سنة`;
-
-          return `
-              <div class="cmp-viol-item ${sevClass[sev] || 'sev-low'}" onclick="openTicket('${v.id}')">
-                <div class="cmp-viol-info">
-                  <div class="cmp-viol-name">${Sec.escapeHTML(v.violation_type)} <span style="color:var(--text3);font-size:11px;font-family:var(--mono)">· ${Sec.escapeHTML(v.ticket_number)}</span></div>
-                  <div class="cmp-viol-meta">${Sec.escapeHTML(v.violation_date || '-')} · ${Sec.escapeHTML(ageLabel)} · خطورة: ${Sec.escapeHTML(sev)}</div>
-                </div>
-                <div class="cmp-viol-impact">
-                  −${effective}
-                  <span class="cmp-viol-decay">من ${baseWeight} (${decayPct}%)</span>
-                </div>
-              </div>
-            `;
-        }).join('')}
-        </div>
-      `;
-      }
-
       window.openCmpItemDetail = openCmpItemDetail;
 
       // ─── CSV Export ───
@@ -15911,7 +17007,7 @@
         const list = document.getElementById('cmpList');
         if (!list || !list.querySelector('.cmp-row')) return showToast('لا توجد بيانات للتصدير', 'warning');
 
-        const violations = getFilteredViolations();
+        const violations = getViolationsForScoring();
         let rows = [];
         let headers = [];
 
@@ -15948,7 +17044,7 @@
             emps = emps.filter(u => branchIds.includes(u.branch_id));
           }
           const items = emps.map(e => {
-            const stat = calcEmpScore(e.id, violations);
+            const stat = calcEmpScore(e.id, state.violations || []);
             const branch = state.branches.find(b => b.id === e.branch_id);
             return { name: e.name, emp: e.employee_number, branch: branch?.name || '-', score: stat.score, viols: stat.violationsCount, ded: stat.deducted };
           }).sort((a, b) => cmpfState.sort === 'top' ? b.score - a.score : a.score - b.score);
@@ -16097,23 +17193,33 @@
         if (!viols.length) {
           return `<div class="cmp-viol-empty"><i class="fas fa-circle-check"></i>سجل نظيف — لا توجد مخالفات في الفترة المختارة</div>`;
         }
+        const sorted = [...viols].sort((a, b) => {
+          const da = new Date(a.violation_date || a.created_at).getTime();
+          const db = new Date(b.violation_date || b.created_at).getTime();
+          return db - da;
+        });
         return `
         <div class="cmp-viol-list">
-          ${viols.map(v => {
+          ${sorted.map(v => {
           const type = state.violationTypes.find(x => x.name === v.violation_type);
           const sev = type?.severity || 'منخفض';
           const sevClass = sev === 'منخفض' ? 'low' : (sev === 'متوسط' ? 'mid' : 'high');
+          const isWarn = isViolationAdministrativeWarning(v);
+          const rowCls = isWarn ? 'cmp-viol-item viol-warn' : 'cmp-viol-item';
           return `
-              <div class="cmp-viol-item" onclick="openTicket('${v.id}')">
+              <div class="${rowCls}" onclick="openTicket('${v.id}')">
                 <div class="cmp-viol-main">
                   <div class="cmp-viol-type">${Sec.escapeHTML(v.violation_type)}</div>
                   <div class="cmp-viol-meta">
                     <span><i class="fas fa-ticket"></i> ${Sec.escapeHTML(v.ticket_number)}</span>
                     <span><i class="fas fa-calendar-day"></i> ${(v.violation_date || '').slice(0, 10)}</span>
+                    ${isWarn ? '<span class="cmp-viol-warn-pill"><i class="fas fa-coins"></i> بدون أثر مالي</span>' : ''}
                   </div>
                 </div>
                 <div class="cmp-viol-side">
-                  <div class="cmp-viol-sev sev-${sevClass}">${sev}</div>
+                  ${isWarn
+              ? '<div class="cmp-viol-warn-pill" title="مرجع للتقييم السنوي"><i class="fas fa-bell"></i> تنبيه إداري</div>'
+              : `<div class="cmp-viol-sev sev-${sevClass}">${sev}</div>`}
                   <i class="fas fa-chevron-left"></i>
                 </div>
               </div>
@@ -16142,7 +17248,7 @@
           visible = visible.filter(v => {
             if (fpState.status.includes('approved') && v.state === 'closed' && (v.status_text || '').includes('معتمد')) return true;
             if (fpState.status.includes('rejected') && v.state === 'closed' && (v.status_text || '').includes('ملغ')) return true;
-            if (fpState.status.includes('pending') && v.state !== 'closed') return true;
+            if (fpState.status.includes('pending') && isTicketWorkflowOpen(v)) return true;
             if (fpState.status.includes('auto') && (v.auto_forwarded_emp || v.auto_forwarded_sup)) return true;
             return false;
           });
@@ -16162,7 +17268,7 @@
         // إحصائيات
         const approved = visible.filter(v => v.state === 'closed' && (v.status_text || '').includes('معتمد')).length;
         const rejected = visible.filter(v => v.state === 'closed' && (v.status_text || '').includes('ملغ')).length;
-        const pending = visible.filter(v => v.state !== 'closed').length;
+        const pending = visible.filter(v => isTicketWorkflowOpen(v)).length;
 
         document.getElementById('rp-approved').textContent = approved;
         document.getElementById('rp-rejected').textContent = rejected;
@@ -16396,8 +17502,8 @@
               notifs.push({
                 id: `closed_${t.id}`,
                 ticketId: t.id,
-                type: t.status_text?.includes('معتمد') ? 'green' : 'red',
-                icon: t.status_text?.includes('معتمد') ? 'fa-circle-check' : 'fa-circle-xmark',
+                type: t.status_text?.includes('معتمد') && !/تنبيه/i.test(t.status_text || '') ? 'green' : (t.status_text?.includes('تنبيه') ? 'amber' : 'red'),
+                icon: t.status_text?.includes('معتمد') && !/تنبيه/i.test(t.status_text || '') ? 'fa-circle-check' : (t.status_text?.includes('تنبيه') ? 'fa-hand' : 'fa-circle-xmark'),
                 title: `تذكرتك ${t.status_text || 'مغلقة'}`,
                 msg: `${t.ticket_number} — ${t.violation_type}`,
                 time: t.updated_at || t.created_at
@@ -16411,12 +17517,22 @@
           visible.forEach(t => {
             if (t.employee_id !== me.id) return;
             if (t.state === 'closed') {
+              const st = t.status_text || '';
+              const isWarn = /تنبيه|اكتفاء بالتنبيه/i.test(st);
+              const isPenalty = /معتمد/.test(st) && !isWarn;
+              const isCancelled = /ملغ|مرفوض/i.test(st);
+              let type = 'green';
+              let icon = 'fa-circle-check';
+              let title = 'تم تحديث تذكرة بحقك';
+              if (isPenalty) { type = 'red'; icon = 'fa-triangle-exclamation'; title = 'تم اعتماد خصم مخالفة بحقك'; }
+              else if (isWarn) { type = 'amber'; icon = 'fa-hand'; title = 'تم إصدار تنبيه إداري بحقك'; }
+              else if (isCancelled) { type = 'green'; icon = 'fa-circle-check'; title = 'تم إلغاء مخالفة بحقك'; }
               notifs.push({
                 id: `decided_${t.id}`,
                 ticketId: t.id,
-                type: t.status_text?.includes('معتمد') ? 'red' : 'green',
-                icon: t.status_text?.includes('معتمد') ? 'fa-triangle-exclamation' : 'fa-circle-check',
-                title: t.status_text?.includes('معتمد') ? 'تم اعتماد مخالفة بحقك' : 'تم إلغاء مخالفة بحقك',
+                type,
+                icon,
+                title,
                 msg: `${t.ticket_number} — ${t.violation_type}`,
                 time: t.updated_at || t.created_at
               });
@@ -16427,39 +17543,33 @@
         // ─── د. تنبيهات النقاط للموظف (خصم/بونص) ───
         if (role === 'employee') {
           // مخالفات معتمدة → تنبيه خصم
-          const myApproved = state.violations.filter(v =>
+          const myRecentDeduct = state.violations.filter(v =>
             v.employee_id === me.id &&
-            v.state === 'closed' &&
-            (v.status_text || '').includes('معتمد')
+            !violationExcludedFromDeduction(v) &&
+            violationAgeDays(v) <= 30
           );
 
-          myApproved.forEach(v => {
+          myRecentDeduct.forEach(v => {
             const type = state.violationTypes.find(t => t.name === v.violation_type);
             const weight = type?.weight || 5;
-            const ageDays = violationAgeDays(v);
 
-            // فقط المخالفات في آخر 30 يوم (لا نزعج بمخالفات قديمة)
-            if (ageDays > 30) return;
-
-            // الدرجة الحالية للموظف
             const currentScore = Math.round(calcEmployeeCommitment(me.id));
 
-            // ID فريد يشمل تاريخ الاعتماد عشان لو تكرر يطلع جديد
             const decideDate = (v.updated_at || v.created_at || '').slice(0, 10);
             notifs.push({
               id: `score_deduct_${v.id}_${decideDate}`,
               ticketId: v.id,
               type: 'red',
               icon: 'fa-minus-circle',
-              title: `تم خصم ${weight} نقطة من سجل الالتزام`,
-              msg: `بسبب مخالفة "${v.violation_type}" — درجتك الحالية: ${currentScore}`,
+              title: isFinalPenaltyApproved(v) ? `تم تثبيت خصم ${weight} نقطة` : `تسجيل خصم مبدئي ${weight} نقطة (قيد المراجعة)`,
+              msg: `مخالفة "${v.violation_type}" — درجتك الحالية: ${currentScore}`,
               time: v.updated_at || v.created_at
             });
           });
 
           // ─── تنبيه عتبات الدرجة (تحذير عند الانخفاض) ───
           const currentScore = Math.round(calcEmployeeCommitment(me.id));
-          if (currentScore < 40 && myApproved.length > 0) {
+          if (currentScore < 40 && myRecentDeduct.length > 0) {
             notifs.push({
               id: `score_critical_${me.id}_${currentScore}`,
               ticketId: '',
@@ -16469,7 +17579,7 @@
               msg: 'درجتك أقل من 40 — يرجى الالتزام بالأنظمة لتجنب الإجراءات الإدارية',
               time: new Date().toISOString()
             });
-          } else if (currentScore < 75 && currentScore >= 40 && myApproved.length > 0) {
+          } else if (currentScore < 75 && currentScore >= 40 && myRecentDeduct.length > 0) {
             notifs.push({
               id: `score_warning_${me.id}_${currentScore}`,
               ticketId: '',
@@ -16483,27 +17593,28 @@
 
           // ─── بونص الالتزام (Streak Bonus) ───
           const myViols = state.violations.filter(v =>
-            v.employee_id === me.id &&
-            v.state === 'closed' &&
-            (v.status_text || '').includes('معتمد')
+            v.employee_id === me.id && !violationExcludedFromDeduction(v)
           );
 
-          // نقطة البداية لحساب الـ streak:
-          // إما تاريخ آخر مخالفة معتمدة، أو تاريخ إنشاء حساب الموظف
+          let warnMs = 0;
+          state.violations.filter(v =>
+            v.employee_id === me.id &&
+            (v.state === 'Warning_Issued' ||
+              (v.state === 'closed' && /تنبيه|اكتفاء بالتنبيه|Warning_Issued/i.test(v.status_text || '')))
+          ).forEach(v => {
+            const t = new Date(v.updated_at || v.created_at).getTime();
+            if (!isNaN(t) && t > warnMs) warnMs = t;
+          });
+
           let streakStartMs;
           if (myViols.length > 0) {
-            const sorted = [...myViols].sort((a, b) => {
-              const da = new Date(a.violation_date || a.created_at).getTime();
-              const db = new Date(b.violation_date || b.created_at).getTime();
-              return db - da;
-            });
-            streakStartMs = new Date(sorted[0].violation_date || sorted[0].created_at).getTime();
+            const sorted = [...myViols].sort((a, b) =>
+              violationObservationMs(b) - violationObservationMs(a));
+            streakStartMs = Math.max(warnMs, violationObservationMs(sorted[0]));
           } else if (me.created_at) {
-            // موظف جديد بدون مخالفات → نحسب من تاريخ إنشاء حسابه
-            streakStartMs = new Date(me.created_at).getTime();
+            streakStartMs = Math.max(warnMs, new Date(me.created_at).getTime());
           } else {
-            // لا يوجد created_at → نتجاهل البونص
-            streakStartMs = Date.now();
+            streakStartMs = Math.max(warnMs, Date.now());
           }
 
           const daysSinceStart = (Date.now() - streakStartMs) / (1000 * 60 * 60 * 24);
@@ -16565,10 +17676,6 @@
             .filter(u => u.role === 'employee' && me.supervisedBranches?.includes(u.branch_id))
             .map(u => u.id);
 
-          const approvedViols = state.violations.filter(v =>
-            v.state === 'closed' && (v.status_text || '').includes('معتمد')
-          );
-
           supervisedEmpIds.forEach(empId => {
             const emp = state.users.find(u => u.id === empId);
             if (!emp) return;
@@ -16589,7 +17696,7 @@
             }
 
             // تنبيه المشرف عند حصول موظف على بونص الالتزام الكامل
-            const empStat = calcEmpScore(empId, approvedViols);
+            const empStat = calcEmpScore(empId, state.violations || []);
             if (empStat.streakBonus >= COMPLIANCE_CONFIG.streakMaxBonus) {
               notifs.push({
                 id: `sup_emp_maxstreak_${empId}`,
@@ -16637,13 +17744,31 @@
         return notifs;
       }
 
+      function renderNotifBadge() {
+        const bellCount = document.getElementById('notifBellCount');
+        if (!bellCount || !state.currentUser) return;
+        const panelOpen = document.getElementById('notifPanel')?.classList.contains('open');
+        if (panelOpen) { renderNotifications(); return; }
+        try {
+          const notifs = buildUserNotifications();
+          state._currentNotifs = notifs;
+          const read = getReadNotifs();
+          const unread = notifs.filter(n => !read.has(n.id));
+          if (unread.length > 0) {
+            bellCount.style.display = '';
+            bellCount.textContent = unread.length > 99 ? '99+' : unread.length;
+          } else {
+            bellCount.style.display = 'none';
+          }
+        } catch (_) { /* noop */ }
+      }
+
       function renderNotifications() {
         const list = document.getElementById('notifList');
         const count = document.getElementById('notifPanelCount');
         const bellCount = document.getElementById('notifBellCount');
         if (!bellCount || !state.currentUser) return;
 
-        // حدّث الجرس حتى لو list مو موجود (مثلاً المستخدم في صفحة ثانية)
         const notifs = buildUserNotifications();
         state._currentNotifs = notifs;
         const read = getReadNotifs();
@@ -17339,7 +18464,7 @@
 
         // المشرفون
         const supSel = document.getElementById('fp-supervisor');
-        const sups = state.users.filter(u => u.role === 'supervisor');
+        const sups = state.users.filter(u => u.role === 'supervisor' && isActiveUser(u));
         supSel.innerHTML = '<option value="">الكل</option>' +
           sups.map(u =>
             `<option value="${u.id}" ${fpState.supervisor === u.id ? 'selected' : ''}>${Sec.escapeHTML(u.name)}</option>`
@@ -17352,7 +18477,7 @@
         } else {
           obsSection.style.display = '';
           const obsSel = document.getElementById('fp-observer');
-          const obs = state.users.filter(u => u.role === 'observer');
+          const obs = state.users.filter(u => u.role === 'observer' && isActiveUser(u));
           obsSel.innerHTML = '<option value="">الكل</option>' +
             obs.map(u =>
               `<option value="${u.id}" ${fpState.observer === u.id ? 'selected' : ''}>${Sec.escapeHTML(u.name)}</option>`
@@ -17437,10 +18562,10 @@
         const tags = [];
 
         const statusLabels = { approved: 'معتمدة نهائياً', rejected: 'ملغاة', pending: 'قيد المعالجة', auto: 'تمرير تلقائي' };
-        const stageLabels = { emp: 'بانتظار الموظف', sup: 'بانتظار المشرف', aud: 'بانتظار التدقيق', mgt: 'بانتظار الإدارة' };
+        const stageLabels = { emp: 'بانتظار الموظف', sup: 'بانتظار المشرف', aud: 'بانتظار التدقيق', mgt: 'بانتظار الإدارة', Warning_Issued: 'تنبيه إداري صادر' };
 
         fpState.status.forEach(v => tags.push({ label: statusLabels[v], key: 'status', val: v }));
-        fpState.stage.forEach(v => tags.push({ label: stageLabels[v], key: 'stage', val: v }));
+        fpState.stage.forEach(v => tags.push({ label: stageLabels[v] || v, key: 'stage', val: v }));
         if (fpState.vtype) tags.push({ label: fpState.vtype, key: 'vtype', val: fpState.vtype });
         if (fpState.region) {
           const r = state.regions.find(x => x.id === fpState.region);
@@ -17517,8 +18642,8 @@
       window.editRegion = editRegion;
       window.saveRegion = saveRegion;
       window.deleteRegion = deleteRegion;
-      window.toggleRegion = toggleRegion;
-      window.toggleBranch = toggleBranch;
+      window.openRegionView = openRegionView;
+      window.backRegionView = backRegionView;
       window.renderRegions = renderRegions;
       window.openUserModal = openUserModal;
       window.editUser = editUser;
@@ -17545,8 +18670,6 @@
       window.handleNotifClick = handleNotifClick;
       window.markAllNotifsRead = markAllNotifsRead;
       window.printTicketDetail = printTicketDetail;
-
-      // دالة إظهار التحذير عند تغيير الرقم الوظيفي
     </script>
 </body>
 

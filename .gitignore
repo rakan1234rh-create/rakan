@@ -7,3 +7,5 @@ desktop.ini
 node_modules/
 .env
 .env.local
+.supabase/
+supabase/.temp/

@@ -1,0 +1,5 @@
+# ربط محلي بمشروع Supabase: supabase link
+# نشر الدالة: supabase functions deploy r2-storage
+
+[functions.r2-storage]
+verify_jwt = true
