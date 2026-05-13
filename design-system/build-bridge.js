@@ -144,7 +144,24 @@ const aliasMap = {
   'mk-seg__opt': '.seg-option',
   'mk-drop': '.upload-drop',
   'mk-drop__txt': '.upload-drop-text',
-  'mk-form-ft': '.form-footer',
+  'mk-section-hd': '.rp-toolbar',
+  'mk-section-hd__title': '.rp-toolbar h3',
+  'mk-section-hd__sub': '.rp-toolbar p',
+  'mk-cmp-grid': ['.cmp-kpis', '.cmp-podium-row'],
+  'mk-cmp-card__hd': '.cmp-kpi-head',
+  'mk-cmp-card__title': '.cmp-kpi-title',
+  'mk-cmp-card__city': '.cmp-kpi-city',
+  'mk-cmp-card__bd': '.cmp-kpi-body',
+  'mk-cmp-card__stats': '.cmp-kpi-stats',
+  'mk-cmp-card__stat': '.cmp-kpi-stat',
+  'mk-cmp-card__stat-lbl': '.cmp-kpi-stat-label',
+  'mk-cmp-card__stat-val': '.cmp-kpi-stat-value',
+  'mk-form-panel': '#tab-newTicket .panel',
+  'mk-form-hd': '#tab-newTicket .panel-header',
+  'mk-form-grid': '.form-grid',
+  'mk-form-ft': '.modal-footer',
+  'mk-req': '.required-mark',
+  'mk-field--full': '.form-group.form-group--full',
   'mk-login': '#loginScreen.lp-screen',
   'mk-login__blobs': '.lp-bg-blobs',
   'mk-login__blob': '.lp-blob',
@@ -263,7 +280,7 @@ function emitRules(css, write) {
     for (const sel of mapped) {
       write(`${sel} {${body}}\n`);
       if (/^#loginScreen/.test(sel) || sel.includes('#loginScreen ')) continue;
-      if (/(\.(md-|wf-|nav-|sidebar|topbar|lp-|panel|mr-topbar|brand-|modal|confirm|badge|btn|data-table|figma-search)|^main\.main|^\.content\b)/.test(sel)) {
+      if (/(\.(md-|wf-|nav-|sidebar|topbar|lp-|panel|mr-topbar|brand-|modal|confirm|badge|btn|data-table|figma-search|rp-|cmp-|form-)|^main\.main|^\.content\b|#tab-newTicket)/.test(sel)) {
         write(`#appWrap ${sel} {${body}}\n`);
       }
     }
