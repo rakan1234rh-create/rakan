@@ -9119,6 +9119,7 @@
   </style>
   <link rel="stylesheet" href="design-system/colors_and_type.css">
   <link rel="stylesheet" href="design-system/platform-bridge.css">
+  <link rel="stylesheet" href="design-system/platform-preview-parity.css">
 </head>
 
 <body>
@@ -9274,8 +9275,10 @@
           placeholder="ابحث في التذاكر، المخالفات، الموظفين، والفروع..." aria-label="بحث عام">
       </div>
           <div class="topbar-right">
-        <div class="topbar-clock" id="topbarClock" dir="ltr"><i class="fas fa-clock"></i><span id="clockText">--:--:--
-            --</span></div>
+        <div class="topbar-clock" id="topbarClock" dir="ltr">
+          <div class="topbar-clock-time"><span id="clockText">--:--</span><span class="ampm" id="clockAmPm">--</span></div>
+          <div class="topbar-clock-date" id="clockDate">---</div>
+        </div>
         <button class="topbar-btn" id="notifBellBtn" onclick="toggleNotifPanel(event)" title="التنبيهات"><i
             class="fas fa-bell"></i><span class="notif-bell-count" id="notifBellCount"
             style="display:none">0</span></button>
@@ -10788,18 +10791,23 @@
 
       // ─── ساعة حية في الـ topbar (إنجليزي + 12 ساعة) ───
       function startLiveClock() {
-        const el = document.getElementById('clockText');
-        if (!el) return;
+        const timeEl = document.getElementById('clockText');
+        const ampmEl = document.getElementById('clockAmPm');
+        const dateEl = document.getElementById('clockDate');
+        if (!timeEl || !ampmEl || !dateEl) return;
+        const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         const update = () => {
           const d = new Date();
           let h = d.getHours();
           const m = d.getMinutes().toString().padStart(2, '0');
-          const s = d.getSeconds().toString().padStart(2, '0');
           const ampm = h >= 12 ? 'PM' : 'AM';
           h = h % 12;
           if (h === 0) h = 12;
           const hh = h.toString().padStart(2, '0');
-          el.textContent = `${hh}:${m}:${s} ${ampm}`;
+          timeEl.textContent = `${hh}:${m}`;
+          ampmEl.textContent = ampm;
+          dateEl.textContent = `${weekdays[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
         };
         update();
         if (state._clockTimer) clearInterval(state._clockTimer);
