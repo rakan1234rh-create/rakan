@@ -1,0 +1,210 @@
+/* ════════════════════════════════════════════════════════════════════
+   Mirsad — مرصاد — Design System Tokens
+   Source: rakan1234rh-create/rakan (single-file SPA, --mr-* tokens)
+   Arabic-first, RTL. Numbers and dates stay in Latin/English.
+   ════════════════════════════════════════════════════════════════════ */
+
+/* ---- Webfonts ---- */
+/* Primary (Arabic + Latin): IBM Plex Sans Arabic — 300/400/500/600/700
+   Numbers / mono:           JetBrains Mono — 400/600
+   Roboto and Poppins are imported by the source app for one-off Figma
+   widgets (MD date picker, etc.) — not part of the core type system. */
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap");
+
+:root {
+  /* ─────────────── Brand / Primary (black) ─────────────── */
+  --mr-primary:        #0f1224;   /* core action / brand */
+  --mr-primary-hover:  #2a2d3f;
+  --mr-primary-soft:   #e9e9ef;   /* tint background, focus ring */
+  --mr-primary-softer: #f3f3f6;   /* page-level wash, table head */
+  --mr-primary-text:   #0f1224;   /* primary used as text */
+
+  /* ─────────────── Surfaces & neutrals ─────────────── */
+  --mr-surface:  #ffffff;         /* cards, panels */
+  --mr-bg:       #f9fafb;         /* app background, soft pill fields */
+  --mr-bg-2:     #e9e9ef;         /* secondary wash (neutral tinted) */
+  --mr-border:   #e4e6ef;         /* default card/input border */
+  --mr-border-2: #acb1c6;         /* stronger divider */
+
+  /* ─────────────── Text ladder ─────────────── */
+  --mr-text:       #0f1224;       /* primary copy */
+  --mr-text-2:     #4a4d63;       /* secondary */
+  --mr-text-3:     #8b90a6;       /* tertiary / meta */
+  --mr-text-muted: #9aa2b8;       /* placeholders */
+
+  /* ─────────────── Semantic ─────────────── */
+  --mr-success: #16a34a;
+  --mr-warning: #f59e0b;
+  --mr-danger:  #ef4444;
+
+  /* Badge fills (light theme, ticket-state pills) */
+  --b-blue-bg:   rgba(29, 78, 216, 0.10);
+  --b-blue-fg:   #0f1224;
+  --b-blue-bd:   rgba(29, 78, 216, 0.25);
+  --b-green-bg:  rgba(21, 128, 61, 0.10);
+  --b-green-fg:  #15803d;
+  --b-green-bd:  rgba(21, 128, 61, 0.25);
+  --b-amber-bg:  rgba(180, 83, 9, 0.10);
+  --b-amber-fg:  #6b5200;
+  --b-amber-bd:  rgba(180, 83, 9, 0.25);
+  --b-red-bg:    rgba(185, 28, 28, 0.10);
+  --b-red-fg:    #ff3b30;
+  --b-red-bd:    rgba(185, 28, 28, 0.25);
+  --b-purple-bg: rgba(109, 40, 217, 0.10);
+  --b-purple-fg: #0f1224;
+  --b-purple-bd: rgba(109, 40, 217, 0.25);
+
+  /* ─────────────── Radii ─────────────── */
+  --mr-radius-pill: 34px;         /* pill buttons, search bars */
+  --mr-radius-card: 20px;         /* cards, panels */
+  --mr-radius-md:   14px;         /* compact controls */
+  --mr-radius-sm:   10px;         /* tiny chips, nav-item icon tile */
+
+  /* ─────────────── Shadow / elevation ─────────────── */
+  --mr-shadow-soft:    0 1px 2px rgba(15, 18, 36, 0.04);
+  --mr-shadow-card:    0 2px 6px rgba(15, 18, 36, 0.04),
+                       0 8px 24px rgba(15, 18, 36, 0.06);
+  --mr-shadow-lg:      0 24px 60px rgba(15, 18, 36, 0.12);
+  --mr-shadow-primary: 0 6px 16px rgba(15, 18, 36, 0.28); /* primary button glow */
+  --mr-shadow-sidebar: -8px 0 24px rgba(15, 18, 36, 0.06); /* expanded sidebar */
+
+  /* ─────────────── Spacing scale (informal, derived from source) ─────────────── */
+  --sp-1:  4px;
+  --sp-2:  8px;
+  --sp-3:  10px;
+  --sp-4:  12px;
+  --sp-5:  14px;
+  --sp-6:  16px;
+  --sp-7:  20px;
+  --sp-8:  24px;
+  --sp-9:  28px;
+  --sp-10: 32px;
+
+  /* ─────────────── Layout constants ─────────────── */
+  --mr-topbar-h:           76px;
+  --mr-sidebar-w:          236px;   /* hover-expanded */
+  --mr-sidebar-collapsed:  68px;    /* default rail */
+
+  /* ─────────────── Type ─────────────── */
+  --font:   "IBM Plex Sans Arabic", system-ui, "Segoe UI", sans-serif;
+  --mono:   "JetBrains Mono", ui-monospace, Menlo, monospace;
+
+  /* Display + body scale (translated to CSS vars from --mr-* usage) */
+  --fs-display:   2rem;     /* hero "مرحباً بك" — 32px */
+  --fs-h1:        1.3125rem;/* topbar / page title — 21px (18–22) */
+  --fs-h2:        1rem;     /* card title — 16px */
+  --fs-h3:        0.9375rem;/* panel header — 15px */
+  --fs-body:      0.8125rem;/* default UI text — 13px */
+  --fs-sm:        0.75rem;  /* secondary — 12px */
+  --fs-xs:        0.6875rem;/* meta — 11px */
+  --fs-2xs:       0.625rem; /* hint / kicker — 10px */
+
+  --lh-tight:   1.2;
+  --lh-default: 1.45;
+  --lh-loose:   1.6;
+
+  /* Letter-spacing tokens (uppercase kickers vs body) */
+  --tracking-kicker: 0.12em;
+  --tracking-body:   0;
+  --tracking-tight: -0.02em;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   Dark theme override (matches `[data-theme="dark"]` in source app)
+   ════════════════════════════════════════════════════════════════════ */
+[data-theme="dark"] {
+  --mr-surface: #131826;
+  --mr-bg:      #080c14;
+  --mr-bg-2:    #0f1420;
+  --mr-border:  rgba(255, 255, 255, 0.06);
+  --mr-border-2:rgba(255, 255, 255, 0.10);
+
+  --mr-text:       #f1f5f9;
+  --mr-text-2:     #cbd5e1;
+  --mr-text-3:     #94a3b8;
+  --mr-text-muted: rgba(255, 255, 255, 0.45);
+
+  /* Source app shifts the accent to iOS-style blue in dark; we keep the
+     brand primary (black) tokens intact and only soften their tints. */
+  --mr-primary-soft:   rgba(255, 255, 255, 0.10);
+  --mr-primary-softer: rgba(255, 255, 255, 0.06);
+
+  --mr-shadow-soft:    0 1px 2px rgba(0, 0, 0, 0.5);
+  --mr-shadow-card:    0 2px 6px rgba(0, 0, 0, 0.45),
+                       0 8px 24px rgba(0, 0, 0, 0.55);
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   Base + semantic helpers
+   ════════════════════════════════════════════════════════════════════ */
+html { font-size: 14px; }
+
+body {
+  font-family: var(--font);
+  background: var(--mr-bg);
+  color: var(--mr-text);
+  direction: rtl;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+/* Keep numbers + dates in Latin glyphs even inside Arabic copy */
+.num,
+[data-numeric],
+time {
+  font-variant-numeric: lining-nums tabular-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+  unicode-bidi: plaintext;
+}
+
+/* Display / hero — used on dashboard greeting */
+.t-display {
+  font-size: var(--fs-display);
+  font-weight: 700;
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--lh-tight);
+}
+
+.t-h1, h1 {
+  font-size: var(--fs-h1);
+  font-weight: 700;
+  color: var(--mr-text);
+  line-height: var(--lh-tight);
+}
+
+.t-h2, h2 {
+  font-size: var(--fs-h2);
+  font-weight: 700;
+  color: var(--mr-text);
+}
+
+.t-h3, h3 {
+  font-size: var(--fs-h3);
+  font-weight: 700;
+  color: var(--mr-text);
+}
+
+.t-body, p {
+  font-size: var(--fs-body);
+  color: var(--mr-text);
+  line-height: var(--lh-default);
+}
+
+.t-sm  { font-size: var(--fs-sm);  color: var(--mr-text-2); }
+.t-xs  { font-size: var(--fs-xs);  color: var(--mr-text-3); }
+.t-2xs { font-size: var(--fs-2xs); color: var(--mr-text-3); }
+
+/* Mono — clocks, file sizes, IDs, kicker subtitles */
+.t-mono {
+  font-family: var(--mono);
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+/* Kicker / eyebrow — uppercase Latin label above a brand mark */
+.t-kicker {
+  font-family: var(--mono);
+  font-size: var(--fs-2xs);
+  font-weight: 600;
+  letter-spacing: var(--tracking-kicker);
+  color: var(--mr-text-3);
+  text-transform: uppercase;
+}

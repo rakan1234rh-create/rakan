@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+  html, body { margin: 0; padding: 0; background: transparent; }
+  body { font-family: var(--font); color: var(--mr-text); padding: 20px; box-sizing: border-box; }
+  * { box-sizing: border-box; }
+  
+  .grid { display:grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .ex { display:flex; flex-direction:column; gap: 6px; }
+  .lbl { font-size: 11px; color: var(--mr-text-3); font-weight: 600; }
+  .v { font-family: var(--mono); font-variant-numeric: lining-nums tabular-nums; font-size: 18px; font-weight: 600; color: var(--mr-text); }
+  .v.big { font-size: 28px; font-weight: 700; letter-spacing: -0.01em; }
+  .v.small { font-size: 13px; font-weight: 500; color: var(--mr-text-2); }
+  .lat { unicode-bidi: plaintext; }
+
+</style>
+</head>
+<body>
+<div class="grid">
+  <div class="ex">
+    <div class="lbl">KPI value</div>
+    <div class="v big lat">1,248</div>
+  </div>
+  <div class="ex">
+    <div class="lbl">Live clock</div>
+    <div class="v lat">07:42:18 PM</div>
+  </div>
+  <div class="ex">
+    <div class="lbl">Inline in Arabic</div>
+    <div style="font-size:14px;color:var(--mr-text)">تم إغلاق <span class="lat" style="font-family:var(--mono);font-weight:600">3</span> تذاكر اليوم</div>
+  </div>
+  <div class="ex">
+    <div class="lbl">Date</div>
+    <div class="v small lat">2026-04-12 · 14:30</div>
+  </div>
+  <div class="ex">
+    <div class="lbl">ID / Ticket number</div>
+    <div class="v small lat">TKT-0024891</div>
+  </div>
+  <div class="ex">
+    <div class="lbl">Percent / Trend</div>
+    <div class="v small lat" style="color:var(--mr-success)">+12.4%</div>
+  </div>
+</div>
+</body></html>

@@ -26,15 +26,15 @@
        1. CSS Variables / Design Tokens
     ═══════════════════════════════════════════════════════════════════════ */
     :root {
-      /* Mirsad Design System — tokens (black primary, RTL) */
-      --mr-primary: #0f1224;
-      --mr-primary-hover: #2a2d3f;
-      --mr-primary-soft: #e9e9ef;
-      --mr-primary-softer: #f3f3f6;
-      --mr-primary-text: #0f1224;
+      /* Mirsad palette (Search Forms / Sidebar / Cards UI Kits — Figma community) */
+      --mr-primary: #685bff;
+      --mr-primary-hover: #5a4eef;
+      --mr-primary-soft: #ece9ff;
+      --mr-primary-softer: #f5f3ff;
+      --mr-primary-text: #4a3eef;
       --mr-surface: #ffffff;
       --mr-bg: #f9fafb;
-      --mr-bg-2: #e9e9ef;
+      --mr-bg-2: #ece9ff;
       --mr-border: #e4e6ef;
       --mr-border-2: #acb1c6;
       --mr-text: #0f1224;
@@ -49,9 +49,8 @@
       --mr-radius-md: 14px;
       --mr-shadow-card: 0 2px 6px rgba(15, 18, 36, 0.04), 0 8px 24px rgba(15, 18, 36, 0.06);
       --mr-shadow-soft: 0 1px 2px rgba(15, 18, 36, 0.04);
-      --mr-shadow-primary: 0 6px 16px rgba(15, 18, 36, 0.28);
       --bg: #f9fafb;
-      --bg2: #e9e9ef;
+      --bg2: #ece9ff;
       --bg3: #ffffff;
       --surface: #ffffff;
       --surface2: #fafafd;
@@ -60,42 +59,47 @@
       --text: #0f1224;
       --text2: #4a4d63;
       --text3: #8b90a6;
-      --accent: #0f1224;
-      --accent2: #2a2d3f;
-      --blue: #1d4ed8;
-      --blue-light: rgba(29, 78, 216, 0.1);
-      --blue-text: #1d4ed8;
+      --accent: #685bff;
+      --accent2: #5a4eef;
+      /* Mirsad primary (kept aliased to legacy --blue tokens) */
+      --blue: #685bff;
+      --blue-light: #ece9ff;
+      --blue-text: #4a3eef;
       --green: #16a34a;
       --green-light: #dcfce7;
       --green-text: #15803d;
-      --amber: #f59e0b;
-      --amber-light: rgba(245, 158, 11, 0.12);
-      --amber-text: #6b5200;
-      --red: #ef4444;
-      --red-light: rgba(239, 68, 68, 0.14);
-      --red-text: #ef4444;
-      --purple: #6d28d9;
-      --purple-light: rgba(109, 40, 217, 0.1);
-      --purple-text: #6d28d9;
+      /* iOS 14 System Yellow (Figma iOS 14 UI Kit — node 362-13099 family) */
+      --amber: #FFCC00;
+      --amber-light: rgba(255, 204, 0, 0.2);
+      --amber-text: #6B5200;
+      /* iOS 14 System Red (Figma iOS 14 UI Kit — node 362-13091 family) */
+      --red: #FF3B30;
+      --red-light: rgba(255, 59, 48, 0.14);
+      --red-text: #FF3B30;
+      --purple: #685bff;
+      --purple-light: #ece9ff;
+      --purple-text: #4a3eef;
       --sidebar-bg: #ffffff;
       --sidebar-text: #0f1224;
       --sidebar-text2: #8b90a6;
-      --sidebar-hover: #f3f3f6;
+      --sidebar-hover: #f5f3ff;
       --sidebar-border: #e4e6ef;
-      --sidebar-active: #0f1224;
+      --sidebar-active: #685bff;
       --sidebar-active-text: #ffffff;
       --radius: 14px;
       --radius-lg: 20px;
       --shadow: 0 1px 2px rgba(15, 18, 36, 0.04);
       --shadow-md: 0 8px 24px rgba(15, 18, 36, 0.06);
       --shadow-lg: 0 24px 60px rgba(15, 18, 36, 0.12);
+      /* Figma: خلفية بطاقة/مودال (مثال iOS / UI kit) */
       --white-100: #ffffff;
+      /* Mirsad sidebar (light theme, purple active icon) */
       --fig-sidebar-bg: #ffffff;
       --fig-sidebar-accent: transparent;
-      --fig-sidebar-active: #0f1224;
+      --fig-sidebar-active: #685bff;
       --fig-sidebar-logout-bg: #ffffff;
-      --fig-sidebar-logout-text: #0f1224;
-      --fig-sidebar-logout-hover: #e9e9ef;
+      --fig-sidebar-logout-text: #685bff;
+      --fig-sidebar-logout-hover: #ece9ff;
       --fig-sidebar-radius: 20px;
       --fig-sidebar-w: 236px;
       --fig-sidebar-collapsed-w: 68px;
@@ -116,25 +120,12 @@
       --text: #f1f5f9;
       --text2: #cbd5e1;
       --text3: #94a3b8;
-      --mr-surface: #131826;
-      --mr-bg: #080c14;
-      --mr-bg-2: #0f1420;
-      --mr-border: rgba(255, 255, 255, 0.06);
-      --mr-border-2: rgba(255, 255, 255, 0.1);
-      --mr-text: #f1f5f9;
-      --mr-text-2: #cbd5e1;
-      --mr-text-3: #94a3b8;
-      --mr-text-muted: rgba(255, 255, 255, 0.45);
-      --mr-primary-soft: rgba(255, 255, 255, 0.1);
-      --mr-primary-softer: rgba(255, 255, 255, 0.06);
-      --mr-shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.5);
-      --mr-shadow-card: 0 2px 6px rgba(0, 0, 0, 0.45), 0 8px 24px rgba(0, 0, 0, 0.55);
-      --accent: #0f1224;
-      --accent2: #2a2d3f;
-      --blue: #64b5f8;
+      --accent: #0A84FF;
+      --accent2: #0066cc;
+      --blue: #0A84FF;
       --blue-text: #64b5f8;
-      --blue-light: rgba(100, 181, 248, 0.22);
-      --sidebar-active: #0f1224;
+      --blue-light: rgba(10, 132, 255, 0.22);
+      --sidebar-active: #0A84FF;
       --green-light: rgba(22, 163, 74, 0.15);
       --amber: #FFD60A;
       --amber-text: #FFEA8A;
@@ -142,7 +133,7 @@
       --red: #FF453A;
       --red-text: #FF6961;
       --red-light: rgba(255, 69, 58, 0.22);
-      --purple-light: rgba(109, 40, 217, 0.15);
+      --purple-light: rgba(124, 58, 237, 0.15);
       --sidebar-bg: #0b0f1a;
       --sidebar-text: #ffffff;
       --sidebar-text2: rgba(255, 255, 255, 0.5);
@@ -431,7 +422,7 @@
       cursor: pointer;
       color: #fff;
       background: var(--mr-primary);
-      box-shadow: 0 10px 26px rgba(15, 18, 36, 0.32);
+      box-shadow: 0 10px 26px rgba(104, 91, 255, 0.32);
       transition: transform 0.12s, background 0.15s, opacity 0.15s
     }
 
@@ -662,7 +653,7 @@
       justify-content: center;
       font-size: 17px;
       color: #fff;
-      box-shadow: 0 4px 14px rgba(15, 18, 36, 0.28)
+      box-shadow: 0 4px 14px rgba(104, 91, 255, 0.28)
     }
 
     .figma-sidebar-logo-dot {
@@ -862,7 +853,7 @@
     .nav-item.active i {
       background: var(--mr-primary);
       color: #fff;
-      box-shadow: 0 6px 14px rgba(15, 18, 36, 0.28)
+      box-shadow: 0 6px 14px rgba(104, 91, 255, 0.28)
     }
 
     .nav-badge {
@@ -977,7 +968,7 @@
       padding: 11px 18px;
       background: var(--mr-surface);
       color: var(--mr-primary);
-      border: 1.5px solid var(--mr-border);
+      border: 1.5px solid #bfdbfe;
       border-radius: 999px;
       font-family: var(--font);
       font-size: 13px;
@@ -1265,6 +1256,11 @@
       padding: 6px 12px;
       border-radius: 999px;
       font-size: 11px
+    }
+
+    .topbar.unified-banner .mr-topbar-search,
+    .topbar.unified-banner .topbar-clock {
+      display: none
     }
 
     .topbar-btn {
@@ -2158,7 +2154,7 @@
       background: var(--mr-primary);
       color: #fff;
       border-color: var(--mr-primary);
-      box-shadow: 0 6px 16px rgba(15, 18, 36, 0.28)
+      box-shadow: 0 6px 16px rgba(104, 91, 255, 0.28)
     }
 
     .btn-primary:hover {
@@ -2321,7 +2317,7 @@
       align-items: center;
       justify-content: center;
       font-size: 22px;
-      box-shadow: 0 4px 15px rgba(15, 18, 36, 0.22);
+      box-shadow: 0 4px 15px rgba(0, 122, 255, 0.35);
     }
 
     .brand-area .brand-text {
@@ -2411,7 +2407,7 @@
       background: var(--mr-primary);
       color: #fff;
       border-color: var(--mr-primary);
-      box-shadow: 0 12px 24px rgba(15, 18, 36, 0.28);
+      box-shadow: 0 12px 24px rgba(104, 91, 255, 0.28);
     }
 
     .sidebar-brand-minimal {
@@ -2759,7 +2755,7 @@
     }
 
     .wf-panel .data-table thead {
-      background: var(--mr-primary-softer)
+      background: #f3f0ff
     }
 
     .wf-panel .data-table th {
@@ -2776,7 +2772,7 @@
     }
 
     .wf-panel .data-table tbody tr:hover {
-      background: var(--mr-primary-softer)
+      background: #faf9ff
     }
 
     .wf-panel .badge.b-amber {
@@ -2788,7 +2784,7 @@
     .wf-panel .badge.b-blue {
       background: #eff6ff;
       color: #2563eb;
-      border-color: rgba(29, 78, 216, 0.25)
+      border-color: #bfdbfe
     }
 
     .wf-ticket-id {
@@ -3818,8 +3814,8 @@
       justify-content: space-between;
       gap: 12px;
       padding: 10px 12px;
-      background: rgba(15, 18, 36, 0.06);
-      border: 1px solid rgba(15, 18, 36, 0.12);
+      background: rgba(104, 91, 255, 0.06);
+      border: 1px solid rgba(104, 91, 255, 0.12);
       border-radius: 12px
     }
 
@@ -4257,7 +4253,7 @@
       justify-content: center;
       font-size: 18px;
       flex-shrink: 0;
-      box-shadow: 0 8px 18px rgba(15, 18, 36, 0.28);
+      box-shadow: 0 8px 18px rgba(104, 91, 255, 0.28);
     }
 
     .region-info {
@@ -4864,7 +4860,7 @@
       background: var(--mr-primary);
       color: #fff;
       border-color: var(--mr-primary);
-      box-shadow: 0 6px 16px rgba(15, 18, 36, 0.28)
+      box-shadow: 0 6px 16px rgba(104, 91, 255, 0.28)
     }
 
     .rp-tool-btn-primary:hover {
@@ -9117,8 +9113,6 @@
       }
     }
   </style>
-  <link rel="stylesheet" href="design-system/colors_and_type.css">
-  <link rel="stylesheet" href="design-system/platform-bridge.css">
 </head>
 
 <body>
@@ -9261,8 +9255,8 @@
     <div class="app-shell">
 <header class="topbar unified-banner">
         <div class="brand-area">
-          <div class="brand-icon" aria-hidden="true"><span class="brand-mono">م</span></div>
-          <div class="brand-text"><strong>منصة الرصد</strong><span>MONITORING.SYSTEM</span></div>
+          <div class="brand-icon"><i class="fas fa-shield-halved"></i></div>
+          <div class="brand-text"><strong>مرصاد</strong><span>Mirsad</span></div>
         </div>
 
       <div class="topbar-tools">

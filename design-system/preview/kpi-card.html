@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html, body { margin: 0; padding: 0; background: transparent; }
+  body { font-family: var(--font); color: var(--mr-text); padding: 22px; background: var(--mr-bg) !important; box-sizing: border-box; }
+  * { box-sizing: border-box; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+
+  .stat {
+    background: var(--mr-surface);
+    border: 1px solid var(--mr-border);
+    border-radius: 18px;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 148px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Top row: label + dot accent */
+  .stat__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .stat__label {
+    font-size: 12px;
+    color: var(--mr-text-3);
+    font-weight: 500;
+    letter-spacing: 0;
+  }
+  .stat__dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .stat__dot--neutral { background: var(--mr-text-3); opacity: 0.4; }
+  .stat__dot--success { background: var(--mr-success); }
+  .stat__dot--warning { background: var(--mr-warning); }
+  .stat__dot--danger  { background: var(--mr-danger); box-shadow: 0 0 0 4px rgba(239,68,68,0.08); }
+
+  /* Value */
+  .stat__value {
+    font-family: var(--font);
+    font-variant-numeric: lining-nums tabular-nums;
+    font-size: 36px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    color: var(--mr-text);
+    line-height: 1;
+    unicode-bidi: plaintext;
+  }
+
+  /* Sparkline area */
+  .stat__spark {
+    margin-top: auto;
+    height: 28px;
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+  }
+  .stat__bar {
+    flex: 1;
+    background: var(--mr-primary);
+    border-radius: 2px 2px 0 0;
+    opacity: 0.18;
+  }
+  .stat__bar--accent { opacity: 1; }
+  .stat__spark--up .stat__bar:nth-child(n+5) { opacity: 0.4; }
+  .stat__spark--up .stat__bar:nth-child(n+8) { opacity: 0.7; }
+
+  /* Foot row: trend + period */
+  .stat__foot {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 6px;
+    font-size: 11px;
+  }
+  .stat__trend {
+    font-family: var(--mono);
+    font-variant-numeric: lining-nums tabular-nums;
+    font-weight: 600;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .stat__trend--up    { color: var(--mr-success); }
+  .stat__trend--down  { color: var(--mr-danger); }
+  .stat__trend--flat  { color: var(--mr-text-3); }
+  .stat__period { color: var(--mr-text-3); }
+  .stat__period--strong { color: var(--mr-text-2); font-weight: 600; }
+
+  .arrow {
+    display: inline-block;
+    width: 0; height: 0;
+    border: 4px solid transparent;
+  }
+  .arrow--up   { border-bottom-color: currentColor; border-top-width: 0; }
+  .arrow--down { border-top-color: currentColor; border-bottom-width: 0; }
+</style>
+</head>
+<body>
+<div class="grid">
+
+  <!-- TOTAL — neutral, baseline -->
+  <div class="stat">
+    <div class="stat__top">
+      <span class="stat__label">إجمالي المخالفات</span>
+      <span class="stat__dot stat__dot--neutral" aria-hidden="true"></span>
+    </div>
+    <div class="stat__value">1,248</div>
+    <div class="stat__spark stat__spark--up" aria-hidden="true">
+      <div class="stat__bar" style="height:32%"></div>
+      <div class="stat__bar" style="height:48%"></div>
+      <div class="stat__bar" style="height:42%"></div>
+      <div class="stat__bar" style="height:58%"></div>
+      <div class="stat__bar" style="height:50%"></div>
+      <div class="stat__bar" style="height:65%"></div>
+      <div class="stat__bar" style="height:78%"></div>
+      <div class="stat__bar stat__bar--accent" style="height:92%"></div>
+    </div>
+    <div class="stat__foot">
+      <span class="stat__trend stat__trend--up"><span class="arrow arrow--up"></span>+8.2%</span>
+      <span class="stat__period">هذا الشهر</span>
+    </div>
+  </div>
+
+  <!-- APPROVED — success -->
+  <div class="stat">
+    <div class="stat__top">
+      <span class="stat__label">معتمدة نهائياً</span>
+      <span class="stat__dot stat__dot--success" aria-hidden="true"></span>
+    </div>
+    <div class="stat__value">874</div>
+    <div class="stat__spark" aria-hidden="true">
+      <div class="stat__bar" style="background:var(--mr-success);height:25%"></div>
+      <div class="stat__bar" style="background:var(--mr-success);height:35%"></div>
+      <div class="stat__bar" style="background:var(--mr-success);height:48%;opacity:0.45"></div>
+      <div class="stat__bar" style="background:var(--mr-success);height:42%;opacity:0.45"></div>
+      <div class="stat__bar" style="background:var(--mr-success);height:60%;opacity:0.65"></div>
+      <div class="stat__bar" style="background:var(--mr-success);height:55%;opacity:0.65"></div>
+      <div class="stat__bar" style="background:var(--mr-success);height:72%;opacity:0.85"></div>
+      <div class="stat__bar" style="background:var(--mr-success);height:88%;opacity:1"></div>
+    </div>
+    <div class="stat__foot">
+      <span class="stat__trend stat__trend--up"><span class="arrow arrow--up"></span>+12.4%</span>
+      <span class="stat__period stat__period--strong">70% من الإجمالي</span>
+    </div>
+  </div>
+
+  <!-- PENDING — warning -->
+  <div class="stat">
+    <div class="stat__top">
+      <span class="stat__label">قيد المعالجة</span>
+      <span class="stat__dot stat__dot--warning" aria-hidden="true"></span>
+    </div>
+    <div class="stat__value">312</div>
+    <div class="stat__spark" aria-hidden="true">
+      <div class="stat__bar" style="background:var(--mr-warning);height:70%;opacity:0.30"></div>
+      <div class="stat__bar" style="background:var(--mr-warning);height:55%;opacity:0.30"></div>
+      <div class="stat__bar" style="background:var(--mr-warning);height:62%;opacity:0.50"></div>
+      <div class="stat__bar" style="background:var(--mr-warning);height:48%;opacity:0.50"></div>
+      <div class="stat__bar" style="background:var(--mr-warning);height:58%;opacity:0.70"></div>
+      <div class="stat__bar" style="background:var(--mr-warning);height:52%;opacity:0.70"></div>
+      <div class="stat__bar" style="background:var(--mr-warning);height:45%;opacity:0.85"></div>
+      <div class="stat__bar" style="background:var(--mr-warning);height:50%;opacity:1"></div>
+    </div>
+    <div class="stat__foot">
+      <span class="stat__trend stat__trend--flat">— ثابت</span>
+      <span class="stat__period">بانتظار رد</span>
+    </div>
+  </div>
+
+  <!-- OVERDUE — danger -->
+  <div class="stat">
+    <div class="stat__top">
+      <span class="stat__label">تجاوزت المدة</span>
+      <span class="stat__dot stat__dot--danger" aria-hidden="true"></span>
+    </div>
+    <div class="stat__value" style="color:var(--mr-danger)">62</div>
+    <div class="stat__spark" aria-hidden="true">
+      <div class="stat__bar" style="background:var(--mr-danger);height:30%;opacity:0.30"></div>
+      <div class="stat__bar" style="background:var(--mr-danger);height:35%;opacity:0.30"></div>
+      <div class="stat__bar" style="background:var(--mr-danger);height:42%;opacity:0.45"></div>
+      <div class="stat__bar" style="background:var(--mr-danger);height:48%;opacity:0.45"></div>
+      <div class="stat__bar" style="background:var(--mr-danger);height:58%;opacity:0.65"></div>
+      <div class="stat__bar" style="background:var(--mr-danger);height:65%;opacity:0.65"></div>
+      <div class="stat__bar" style="background:var(--mr-danger);height:78%;opacity:0.85"></div>
+      <div class="stat__bar" style="background:var(--mr-danger);height:92%;opacity:1"></div>
+    </div>
+    <div class="stat__foot">
+      <span class="stat__trend stat__trend--down"><span class="arrow arrow--down"></span>+3.6%</span>
+      <span class="stat__period">إجراء فوري</span>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

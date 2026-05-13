@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+  html, body { margin: 0; padding: 0; background: transparent; }
+  body { font-family: var(--font); color: var(--mr-text); padding: 20px; box-sizing: border-box; }
+  * { box-sizing: border-box; }
+  
+  body { background: #fafbfc !important; padding: 30px 20px; }
+  .row { display:flex; gap: 20px; }
+  .b { flex:1; display:flex; flex-direction:column; align-items:center; gap: 12px; }
+  .box { width: 100%; height: 96px; background: var(--mr-surface); border: 1px solid var(--mr-border); border-radius: 14px; display:flex; align-items:center; justify-content:center; font-family: var(--mono); font-size: 11px; color: var(--mr-text-3); }
+  .lbl { font-size: 11px; color: var(--mr-text-2); text-align:center; }
+  .lbl b { display:block; font-size: 12px; color: var(--mr-text); font-weight: 700; margin-bottom: 2px; }
+
+</style>
+</head>
+<body>
+<div class="row">
+  <div class="b">
+    <div class="box" style="box-shadow:0 1px 2px rgba(15,18,36,0.04)">soft</div>
+    <div class="lbl"><b>shadow-soft</b>row / input lift</div>
+  </div>
+  <div class="b">
+    <div class="box" style="box-shadow:0 2px 6px rgba(15,18,36,0.04), 0 8px 24px rgba(15,18,36,0.06)">card</div>
+    <div class="lbl"><b>shadow-card</b>resting card</div>
+  </div>
+  <div class="b">
+    <div class="box" style="box-shadow:0 24px 60px rgba(15,18,36,0.12)">lg</div>
+    <div class="lbl"><b>shadow-lg</b>modals, focus card</div>
+  </div>
+  <div class="b">
+    <div class="box" style="background:var(--mr-primary);color:#fff;box-shadow:0 6px 16px rgba(15, 18, 36, 0.28)">primary</div>
+    <div class="lbl"><b>shadow-primary</b>primary CTA glow</div>
+  </div>
+</div>
+</body></html>

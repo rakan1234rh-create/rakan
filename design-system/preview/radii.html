@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+  html, body { margin: 0; padding: 0; background: transparent; }
+  body { font-family: var(--font); color: var(--mr-text); padding: 20px; box-sizing: border-box; }
+  * { box-sizing: border-box; }
+  
+  .row { display:flex; gap: 18px; align-items:flex-end; }
+  .b { display:flex; flex-direction:column; align-items:center; gap: 10px; }
+  .box { width: 100px; height: 100px; background: var(--mr-primary-softer); border: 1px solid var(--mr-border); display:flex; align-items:center; justify-content:center; color: var(--mr-primary); font-family: var(--mono); font-size: 11px; font-weight: 600; }
+  .lbl { text-align:center; font-size: 11px; color: var(--mr-text-2); }
+  .lbl b { display:block; font-size: 12px; color: var(--mr-text); }
+
+</style>
+</head>
+<body>
+<div class="row">
+  <div class="b"><div class="box" style="border-radius:10px">10</div><div class="lbl"><b>sm</b>icon tiles</div></div>
+  <div class="b"><div class="box" style="border-radius:14px">14</div><div class="lbl"><b>md</b>inputs, nav-item</div></div>
+  <div class="b"><div class="box" style="border-radius:20px">20</div><div class="lbl"><b>card</b>panels, modals</div></div>
+  <div class="b"><div class="box" style="border-radius:34px;width:160px">34</div><div class="lbl"><b>pill</b>buttons, search</div></div>
+  <div class="b"><div class="box" style="border-radius:50%">∞</div><div class="lbl"><b>round</b>avatars, top-bar btns</div></div>
+</div>
+</body></html>

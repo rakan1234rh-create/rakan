@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+  html, body { margin: 0; padding: 0; background: var(--mr-bg); }
+  body { font-family: var(--font); color: var(--mr-text); box-sizing: border-box; }
+  * { box-sizing: border-box; }
+  
+  body { padding: 18px 22px; background: var(--mr-bg); }
+  .twocol { display:flex; gap: 22px; align-items: flex-start; }
+  .sb {
+    width: 236px; flex-shrink: 0;
+    background: var(--mr-surface);
+    border: 1px solid var(--mr-border);
+    border-radius: 20px;
+    padding: 18px 12px 14px;
+    box-shadow: 0 8px 24px rgba(15,18,36,0.06);
+  }
+  .sb-brand { display:flex; align-items:center; gap: 12px; padding: 2px 8px 18px; }
+  .sb-logo { position: relative; width: 40px; height: 40px; flex-shrink: 0; border-radius: 12px; background: var(--mr-primary); display:flex; align-items:center; justify-content:center; font-size: 16px; color: #fff; box-shadow: 0 4px 14px rgba(15, 18, 36, 0.28); }
+  .sb-logo::after { content:""; position:absolute; bottom:2px; right:2px; width:9px; height:9px; border-radius:50%; background: var(--mr-success); border: 2px solid var(--mr-surface); box-sizing: border-box; }
+  .sb-title { font-size: 15px; font-weight: 800; color: var(--mr-text); }
+  .sb-sub { font-family: var(--mono); font-size: 9px; font-weight: 600; letter-spacing: 0.12em; color: var(--mr-text-3); text-transform: uppercase; margin-top: 2px; }
+  .nav-section { font-size: 10px; color: var(--mr-text-3); text-transform: uppercase; letter-spacing: 0.08em; padding: 16px 8px 8px; font-weight: 700; }
+  .nav-item { width: 100%; display:flex; align-items: center; gap: 10px; padding: 7px 11px; background: transparent; color: var(--mr-text-2); border: 2px solid transparent; border-radius: 12px; font-family: var(--font); font-size: 12px; font-weight: 600; cursor: pointer; text-align: right; margin-bottom: 4px; position: relative; }
+  .nav-item i { width: 34px; height: 34px; display:inline-flex; align-items:center; justify-content:center; border-radius: 10px; font-size: 14px; color: var(--mr-text-2); background: var(--mr-bg); border: 1px solid var(--mr-border); flex-shrink: 0; transition: background 0.2s, color 0.2s, border-color 0.2s; }
+  .nav-item:hover { background: var(--mr-primary-softer); color: var(--mr-text); }
+  .nav-item:hover i { color: var(--mr-primary); background: var(--mr-surface); border-color: var(--mr-primary-soft); }
+  .nav-item.active { color: var(--mr-text); }
+  .nav-item.active i { background: var(--mr-primary); color: #fff; border-color: var(--mr-primary); box-shadow: 0 6px 14px rgba(15, 18, 36, 0.22); }
+  .nav-badge { margin-right: auto; background: var(--mr-danger); color: #fff; font-size: 10px; min-width: 18px; height: 18px; padding: 0 6px; border-radius: 999px; font-weight: 700; display:inline-flex; align-items:center; justify-content:center; font-family: var(--mono); }
+  .rail { width: 64px; flex-shrink: 0; background: var(--mr-surface); border: 1px solid var(--mr-border); border-radius: 20px; padding: 18px 8px 14px; display:flex; flex-direction: column; align-items: center; gap: 4px; }
+  .rail .item { width: 44px; height: 44px; display:flex; align-items:center; justify-content:center; border-radius: 12px; color: var(--mr-text-2); cursor: pointer; font-size: 15px; transition: background 0.18s, color 0.18s; }
+  .rail .item:hover { background: var(--mr-primary-softer); color: var(--mr-primary); }
+  .rail .item.active { background: var(--mr-primary); color: #fff; box-shadow: 0 6px 14px rgba(15, 18, 36, 0.28); }
+  .rail .item.has-badge { position: relative; }
+  .rail .item .b { position: absolute; top: 4px; left: 4px; min-width: 16px; height: 16px; padding: 0 4px; background: var(--mr-danger); color: #fff; font-size: 9px; font-weight: 700; border-radius: 999px; display:inline-flex; align-items:center; justify-content:center; font-family: var(--mono); }
+  .rail .brand-mini { width: 36px; height: 36px; border-radius: 10px; background: var(--mr-primary); color: #fff; display:flex; align-items:center; justify-content:center; font-size: 15px; margin-bottom: 6px; box-shadow: 0 4px 14px rgba(15, 18, 36, 0.28); }
+  .meta { font-family: var(--mono); font-size: 10px; color: var(--mr-text-3); letter-spacing: 0.08em; text-transform: uppercase; margin-top: 10px; text-align:center; }
+
+.sb-logo .sb-mono { font-family: var(--font); font-weight: 800; font-size: 22px; line-height: 1; }
+.brand-mini .bm-mono { font-family: var(--font); font-weight: 800; font-size: 20px; line-height: 1; }
+</style>
+</head>
+<body>
+<div class="twocol">
+  <aside class="rail">
+    <div class="brand-mini"><span class="bm-mono">م</span></div>
+    <div class="item"><i class="fas fa-chart-line"></i></div>
+    <div class="item"><i class="fas fa-pen-to-square"></i></div>
+    <div class="item active has-badge"><i class="fas fa-inbox"></i><span class="b">7</span></div>
+    <div class="item"><i class="fas fa-chart-column"></i></div>
+    <div class="item"><i class="fas fa-shield-halved"></i></div>
+    <div class="item"><i class="fas fa-location-dot"></i></div>
+  </aside>
+  <aside class="sb">
+    <div class="sb-brand">
+      <div class="sb-logo"><span class="sb-mono">م</span></div>
+      <div><div class="sb-title">مرصاد</div></div>
+    </div>
+    <div class="nav-section">الرئيسية</div>
+    <button class="nav-item"><i class="fas fa-chart-line"></i><span>لوحة القيادة</span></button>
+    <button class="nav-item"><i class="fas fa-pen-to-square"></i><span>رصد مخالفة</span></button>
+    <button class="nav-item active"><i class="fas fa-inbox"></i><span>معالجة التذاكر</span><span class="nav-badge num">7</span></button>
+    <button class="nav-item"><i class="fas fa-chart-column"></i><span>التقارير</span></button>
+    <button class="nav-item"><i class="fas fa-shield-halved"></i><span>مؤشرات الامتثال</span></button>
+  </aside>
+</div>
+<div class="meta">↑ collapsed rail (68px) — hover expands to drawer (236px)</div>
+</body></html>

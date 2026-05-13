@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+  html, body { margin: 0; padding: 0; background: transparent; }
+  body { font-family: var(--font); color: var(--mr-text); padding: 22px 24px; box-sizing: border-box; }
+  * { box-sizing: border-box; }
+  .badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; font-size: 11px; font-weight: 600; border: 1px solid transparent; }
+  .b-blue   { background: rgba(29,78,216,0.10);  color: #0f1224; border-color: rgba(29,78,216,0.25); }
+  .b-green  { background: rgba(21,128,61,0.10);  color: #15803d; border-color: rgba(21,128,61,0.25); }
+  .b-amber  { background: #fef3c7; color: #d97706; border-color: #fde68a; }
+  .b-red    { background: rgba(185,28,28,0.10);  color: #ef4444; border-color: rgba(185,28,28,0.25); }
+  .b-purple { background: rgba(109,40,217,0.10); color: #0f1224; border-color: rgba(109,40,217,0.25); }
+  .b-gray   { background: var(--mr-bg-2); color: var(--mr-text-2); border-color: var(--mr-border); }
+  
+  .row { display:flex; align-items:center; gap: 14px; padding: 8px 0; }
+  .row:not(:last-child) { border-bottom: 1px dashed var(--mr-border); }
+  .step { font-family: var(--mono); font-size: 10px; color: var(--mr-text-3); letter-spacing: 0.1em; text-transform: uppercase; min-width: 130px; }
+  .desc { font-size: 12px; color: var(--mr-text-3); margin-inline-start: auto; }
+
+</style>
+</head>
+<body>
+<div class="row">
+  <span class="step">emp</span>
+  <span class="badge b-amber"><i class="fas fa-user-clock"></i> بانتظار الموظف</span>
+  <span class="desc">awaiting employee response</span>
+</div>
+<div class="row">
+  <span class="step">sup</span>
+  <span class="badge b-blue"><i class="fas fa-user-tie"></i> بانتظار المشرف</span>
+  <span class="desc">supervisor review</span>
+</div>
+<div class="row">
+  <span class="step">aud</span>
+  <span class="badge b-purple"><i class="fas fa-clipboard-check"></i> بانتظار التدقيق</span>
+  <span class="desc">internal audit</span>
+</div>
+<div class="row">
+  <span class="step">mgt</span>
+  <span class="badge b-red"><i class="fas fa-gavel"></i> بانتظار الإدارة</span>
+  <span class="desc">management decision</span>
+</div>
+<div class="row">
+  <span class="step">closed</span>
+  <span class="badge b-green"><i class="fas fa-check-double"></i> مغلقة</span>
+  <span class="desc">closed</span>
+</div>
+<div class="row">
+  <span class="step">Warning_Issued</span>
+  <span class="badge b-amber"><i class="fas fa-bell"></i> تنبيه إداري صادر</span>
+  <span class="desc">advisory (no financial impact)</span>
+</div>
+</body></html>

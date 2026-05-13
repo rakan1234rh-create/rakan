@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html, body { margin: 0; padding: 0; background: transparent; }
+  body { font-family: var(--font); color: var(--mr-text); padding: 22px; box-sizing: border-box; }
+  * { box-sizing: border-box; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1.05fr 1fr;
+    gap: 18px;
+  }
+
+  /* Surfaces panel — nested cards to show layering */
+  .surf {
+    background: #f9fafb;
+    border-radius: 18px;
+    padding: 18px;
+    border: 1px solid #e4e6ef;
+    position: relative;
+  }
+  .surf__hd {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-family: var(--mono); font-size: 10px;
+    color: var(--mr-text-3);
+    letter-spacing: 0.12em;
+    text-transform: uppercase; font-weight: 600;
+    margin-bottom: 12px;
+  }
+  .surf__row {
+    display: grid;
+    grid-template-columns: 22px 1fr auto;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 12px;
+    margin-bottom: 6px;
+    border-radius: 10px;
+    border: 1px solid #e4e6ef;
+    font-size: 12px;
+  }
+  .surf__row:last-child { margin-bottom: 0; }
+  .surf__sw {
+    width: 22px; height: 22px; border-radius: 7px;
+    border: 1px solid #e4e6ef;
+  }
+  .surf__name { color: var(--mr-text); font-weight: 600; }
+  .surf__val { font-family: var(--mono); font-size: 11px; color: var(--mr-text-3); }
+
+  /* Text ladder panel */
+  .txt {
+    background: #ffffff;
+    border-radius: 18px;
+    border: 1px solid #e4e6ef;
+    padding: 18px;
+    box-shadow: 0 1px 2px rgba(15,18,36,0.04);
+  }
+  .txt__hd {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-family: var(--mono); font-size: 10px;
+    color: var(--mr-text-3);
+    letter-spacing: 0.12em;
+    text-transform: uppercase; font-weight: 600;
+    margin-bottom: 14px;
+  }
+  .lvl {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: baseline;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px dashed #e4e6ef;
+  }
+  .lvl:last-child { border-bottom: none; }
+  .lvl__txt { font-weight: 600; font-size: 14px; line-height: 1.3; }
+  .lvl__meta {
+    display: flex; gap: 10px; align-items: center;
+    font-family: var(--mono); font-size: 10px;
+    color: var(--mr-text-3);
+  }
+  .lvl__chip {
+    width: 14px; height: 14px; border-radius: 4px;
+    border: 1px solid rgba(15,18,36,0.08);
+  }
+  .lvl__token {
+    background: #f3f3f6;
+    color: var(--mr-text-2);
+    padding: 2px 7px;
+    border-radius: 5px;
+    font-weight: 600;
+  }
+</style>
+</head>
+<body>
+<div class="grid">
+  <!-- Surfaces & borders -->
+  <div class="surf">
+    <div class="surf__hd">
+      <span>Surfaces &amp; borders</span>
+      <span style="color:var(--mr-text-3);font-family:var(--font);text-transform:none;letter-spacing:0">used as fills</span>
+    </div>
+    <div class="surf__row" style="background:#ffffff">
+      <div class="surf__sw" style="background:#ffffff"></div>
+      <span class="surf__name">surface</span>
+      <span class="surf__val">#ffffff</span>
+    </div>
+    <div class="surf__row" style="background:#f9fafb">
+      <div class="surf__sw" style="background:#f9fafb"></div>
+      <span class="surf__name">bg <span style="color:var(--mr-text-3);font-weight:500;margin-inline-start:6px">app background</span></span>
+      <span class="surf__val">#f9fafb</span>
+    </div>
+    <div class="surf__row" style="background:#e9e9ef;border-color:#e4e6ef">
+      <div class="surf__sw" style="background:#e9e9ef"></div>
+      <span class="surf__name">bg-2 <span style="color:var(--mr-text-3);font-weight:500;margin-inline-start:6px">soft wash</span></span>
+      <span class="surf__val">#e9e9ef</span>
+    </div>
+    <div class="surf__row" style="background:#ffffff">
+      <div class="surf__sw" style="background:#e4e6ef"></div>
+      <span class="surf__name">border <span style="color:var(--mr-text-3);font-weight:500;margin-inline-start:6px">1px default</span></span>
+      <span class="surf__val">#e4e6ef</span>
+    </div>
+    <div class="surf__row" style="background:#ffffff">
+      <div class="surf__sw" style="background:#acb1c6"></div>
+      <span class="surf__name">border-2 <span style="color:var(--mr-text-3);font-weight:500;margin-inline-start:6px">strong divider</span></span>
+      <span class="surf__val">#acb1c6</span>
+    </div>
+  </div>
+
+  <!-- Text ladder -->
+  <div class="txt">
+    <div class="txt__hd">
+      <span>Text ladder</span>
+      <span style="color:var(--mr-text-3);font-family:var(--font);text-transform:none;letter-spacing:0">contrast on white</span>
+    </div>
+    <div class="lvl">
+      <div class="lvl__txt" style="color:#0f1224">إجمالي المخالفات</div>
+      <div class="lvl__meta">
+        <span class="lvl__chip" style="background:#0f1224"></span>
+        <span class="lvl__token">text</span>
+        <span>#0f1224</span>
+      </div>
+    </div>
+    <div class="lvl">
+      <div class="lvl__txt" style="color:#4a4d63">بانتظار رد الموظف خلال 3 أيام</div>
+      <div class="lvl__meta">
+        <span class="lvl__chip" style="background:#4a4d63"></span>
+        <span class="lvl__token">text-2</span>
+        <span>#4a4d63</span>
+      </div>
+    </div>
+    <div class="lvl">
+      <div class="lvl__txt" style="color:#8b90a6">آخر تحديث · قبل 12 دقيقة</div>
+      <div class="lvl__meta">
+        <span class="lvl__chip" style="background:#8b90a6"></span>
+        <span class="lvl__token">text-3</span>
+        <span>#8b90a6</span>
+      </div>
+    </div>
+    <div class="lvl">
+      <div class="lvl__txt" style="color:#9aa2b8;font-weight:500">ابحث في التذاكر، المخالفات...</div>
+      <div class="lvl__meta">
+        <span class="lvl__chip" style="background:#9aa2b8"></span>
+        <span class="lvl__token">text-muted</span>
+        <span>#9aa2b8</span>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

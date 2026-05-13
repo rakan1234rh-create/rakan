@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+  html, body { margin: 0; padding: 0; background: transparent; }
+  body { font-family: var(--font); color: var(--mr-text); padding: 22px 24px; box-sizing: border-box; }
+  * { box-sizing: border-box; }
+  .badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; font-size: 11px; font-weight: 600; border: 1px solid transparent; }
+  .b-blue   { background: rgba(29,78,216,0.10);  color: #0f1224; border-color: rgba(29,78,216,0.25); }
+  .b-green  { background: rgba(21,128,61,0.10);  color: #15803d; border-color: rgba(21,128,61,0.25); }
+  .b-amber  { background: #fef3c7; color: #d97706; border-color: #fde68a; }
+  .b-red    { background: rgba(185,28,28,0.10);  color: #ef4444; border-color: rgba(185,28,28,0.25); }
+  .b-purple { background: rgba(109,40,217,0.10); color: #0f1224; border-color: rgba(109,40,217,0.25); }
+  .b-gray   { background: var(--mr-bg-2); color: var(--mr-text-2); border-color: var(--mr-border); }
+  
+  body { background: var(--mr-bg) !important; padding: 22px; }
+  .panel {
+    background: var(--mr-surface);
+    border: 1px solid var(--mr-border);
+    border-radius: 20px;
+    padding: 22px;
+    box-shadow: 0 2px 6px rgba(15,18,36,0.04), 0 8px 24px rgba(15,18,36,0.06);
+  }
+  .panel-header { display:flex; align-items:center; justify-content: space-between; padding-bottom: 14px; margin-bottom: 16px; border-bottom: 1px solid var(--mr-border); }
+  .panel-header h3 { font-size: 15px; font-weight: 700; color: var(--mr-text); margin: 0; }
+  .panel-header p { font-size: 11px; color: var(--mr-text-3); margin: 2px 0 0; }
+  .panel-body { font-size: 13px; color: var(--mr-text-2); line-height: 1.55; }
+  .tag-row { display:flex; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
+  .tag { font-family: var(--mono); font-size: 10px; color: var(--mr-text-3); padding: 4px 10px; border-radius: 999px; background: var(--mr-primary-softer); border: 1px solid var(--mr-border); }
+
+</style>
+</head>
+<body>
+<div class="panel">
+  <div class="panel-header">
+    <div>
+      <h3>تفاصيل التذكرة</h3>
+      <p>عرض ومراجعة قبل التمرير للمشرف</p>
+    </div>
+    <span style="font-family:var(--mono);font-size:11px;color:var(--mr-primary)" class="num">TKT-0024891</span>
+  </div>
+  <div class="panel-body">
+    هذه هي الوصفة الأساسية لأي سطح في مرصاد: خلفية بيضاء، إطار رفيع <span class="num">1px #e4e6ef</span>، نصف قطر <span class="num">20px</span>، ظل ناعم على طبقتين، وحشو داخلي <span class="num">22px</span>.
+    <div class="tag-row">
+      <span class="tag">surface · #ffffff</span>
+      <span class="tag">border · 1px #e4e6ef</span>
+      <span class="tag">radius · 20px</span>
+      <span class="tag">shadow-card</span>
+      <span class="tag">padding · 22px</span>
+    </div>
+  </div>
+</div>
+</body></html>
