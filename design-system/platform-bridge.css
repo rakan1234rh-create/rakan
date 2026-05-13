@@ -21,17 +21,9 @@
 
 #appWrap.app { min-height: 100vh; display: flex; flex-direction: column; }
 
-.app-shell { min-height: 100vh; display: flex; flex-direction: column; }
-
 .app-body { display: flex; flex: 1; min-height: 0; overflow: hidden; }
 
-main.main {
-  flex: 1; min-width: 0; overflow-y: auto;
-  padding: 24px;
-  background: var(--mr-bg);
-}
-
-#appWrap main.main {
+.main {
   flex: 1; min-width: 0; overflow-y: auto;
   padding: 24px;
   background: var(--mr-bg);
@@ -1569,42 +1561,6 @@ header.topbar.unified-banner {
 
 .table-empty i { font-size: 32px; margin-bottom: 10px; display: block; opacity: 0.5; }
 
-.modal {
-  position: fixed; inset: 0;
-  background: rgba(15,18,36,0.45);
-  display: flex; align-items: center; justify-content: center;
-  padding: 24px;
-  z-index: 1000;
-  animation: mkOverlayIn 0.2s ease both;
-}
-
-#appWrap .modal {
-  position: fixed; inset: 0;
-  background: rgba(15,18,36,0.45);
-  display: flex; align-items: center; justify-content: center;
-  padding: 24px;
-  z-index: 1000;
-  animation: mkOverlayIn 0.2s ease both;
-}
-
-.confirm-overlay {
-  position: fixed; inset: 0;
-  background: rgba(15,18,36,0.45);
-  display: flex; align-items: center; justify-content: center;
-  padding: 24px;
-  z-index: 1000;
-  animation: mkOverlayIn 0.2s ease both;
-}
-
-#appWrap .confirm-overlay {
-  position: fixed; inset: 0;
-  background: rgba(15,18,36,0.45);
-  display: flex; align-items: center; justify-content: center;
-  padding: 24px;
-  z-index: 1000;
-  animation: mkOverlayIn 0.2s ease both;
-}
-
 .modal-card {
   width: 100%; max-width: 720px;
   background: var(--mr-surface);
@@ -1627,28 +1583,6 @@ header.topbar.unified-banner {
   animation: mkModalIn 0.3s cubic-bezier(0.22,1,0.36,1) both;
 }
 
-.confirm-box {
-  width: 100%; max-width: 720px;
-  background: var(--mr-surface);
-  border-radius: 20px;
-  box-shadow: 0 24px 60px rgba(15,18,36,0.20);
-  overflow: hidden;
-  display: flex; flex-direction: column;
-  max-height: 90vh;
-  animation: mkModalIn 0.3s cubic-bezier(0.22,1,0.36,1) both;
-}
-
-#appWrap .confirm-box {
-  width: 100%; max-width: 720px;
-  background: var(--mr-surface);
-  border-radius: 20px;
-  box-shadow: 0 24px 60px rgba(15,18,36,0.20);
-  overflow: hidden;
-  display: flex; flex-direction: column;
-  max-height: 90vh;
-  animation: mkModalIn 0.3s cubic-bezier(0.22,1,0.36,1) both;
-}
-
 .modal-header {
   display: flex; align-items: center; gap: 14px;
   padding: 18px 22px;
@@ -1661,25 +1595,9 @@ header.topbar.unified-banner {
   border-bottom: 1px solid var(--mr-border);
 }
 
-.confirm-title {
-  display: flex; align-items: center; gap: 14px;
-  padding: 18px 22px;
-  border-bottom: 1px solid var(--mr-border);
-}
-
-#appWrap .confirm-title {
-  display: flex; align-items: center; gap: 14px;
-  padding: 18px 22px;
-  border-bottom: 1px solid var(--mr-border);
-}
-
 .modal-body { padding: 18px 22px; flex: 1; overflow-y: auto; }
 
 #appWrap .modal-body { padding: 18px 22px; flex: 1; overflow-y: auto; }
-
-.confirm-msg { padding: 18px 22px; flex: 1; overflow-y: auto; }
-
-#appWrap .confirm-msg { padding: 18px 22px; flex: 1; overflow-y: auto; }
 
 .modal-footer {
   padding: 14px 22px;
@@ -1690,22 +1608,6 @@ header.topbar.unified-banner {
 }
 
 #appWrap .modal-footer {
-  padding: 14px 22px;
-  border-top: 1px solid var(--mr-border);
-  display: flex; gap: 10px; flex-wrap: wrap;
-  justify-content: flex-end;
-  background: var(--mr-primary-softer);
-}
-
-.confirm-actions {
-  padding: 14px 22px;
-  border-top: 1px solid var(--mr-border);
-  display: flex; gap: 10px; flex-wrap: wrap;
-  justify-content: flex-end;
-  background: var(--mr-primary-softer);
-}
-
-#appWrap .confirm-actions {
   padding: 14px 22px;
   border-top: 1px solid var(--mr-border);
   display: flex; gap: 10px; flex-wrap: wrap;
@@ -2413,3 +2315,8 @@ header.topbar.unified-banner {
 .mr-topbar-search-input::placeholder { color: var(--mr-text-muted); }
 .figma-search-input { flex: 1; border: 0; outline: none; background: transparent; font-family: var(--font); font-size: 13px; color: var(--mr-text); }
 .figma-search-input::placeholder { color: var(--mr-text-muted); }
+#appWrap .modal:not(.open) { display: none !important; }
+#confirmOverlay.confirm-overlay:not(.open) { display: none !important; }
+#appWrap.app { height: 100vh; overflow: hidden; }
+.app-shell { flex: 1; min-height: 0; overflow: hidden; }
+.main { flex: 1; min-width: 0; overflow-y: auto; }

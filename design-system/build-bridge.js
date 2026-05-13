@@ -5,9 +5,9 @@ const stylesPath = path.join(__dirname, 'ui_kits', 'mirsad', 'styles.css');
 const outPath = path.join(__dirname, 'platform-bridge.css');
 
 const aliasMap = {
-  'mk-app': ['#appWrap.app', '.app-shell'],
+  'mk-app': '#appWrap.app',
   'mk-app__body': '.app-body',
-  'mk-app__main': 'main.main',
+  'mk-app__main': '.main',
   'mk-app__main-inner': '.content',
   'mk-topbar': ['header.topbar.unified-banner', '.topbar.unified-banner'],
   'mk-brand': '.brand-area',
@@ -119,11 +119,10 @@ const aliasMap = {
   'mk-emp__name': '.wf-emp-name',
   'mk-emp__num': '.wf-emp-num',
   'mk-empty': '.table-empty',
-  'mk-modal-overlay': ['.modal', '.confirm-overlay'],
-  'mk-modal': ['.modal-card', '.confirm-box'],
-  'mk-modal__hd': ['.modal-header', '.confirm-title'],
-  'mk-modal__bd': ['.modal-body', '.confirm-msg'],
-  'mk-modal__ft': ['.modal-footer', '.confirm-actions'],
+  'mk-modal': '.modal-card',
+  'mk-modal__hd': '.modal-header',
+  'mk-modal__bd': '.modal-body',
+  'mk-modal__ft': '.modal-footer',
   'mk-kv': '.detail-kv',
   'mk-kv__row': '.detail-kv-row',
   'mk-kv__k': '.detail-kv-k',
@@ -300,6 +299,11 @@ output += '.mr-topbar-search-input { flex: 1; border: 0; outline: none; backgrou
 output += '.mr-topbar-search-input::placeholder { color: var(--mr-text-muted); }\n';
 output += '.figma-search-input { flex: 1; border: 0; outline: none; background: transparent; font-family: var(--font); font-size: 13px; color: var(--mr-text); }\n';
 output += '.figma-search-input::placeholder { color: var(--mr-text-muted); }\n';
+output += '#appWrap .modal:not(.open) { display: none !important; }\n';
+output += '#confirmOverlay.confirm-overlay:not(.open) { display: none !important; }\n';
+output += '#appWrap.app { height: 100vh; overflow: hidden; }\n';
+output += '.app-shell { flex: 1; min-height: 0; overflow: hidden; }\n';
+output += '.main { flex: 1; min-width: 0; overflow-y: auto; }\n';
 
 fs.writeFileSync(outPath, output, 'utf8');
 console.log('Wrote', outPath, 'rules', chunks.length);
