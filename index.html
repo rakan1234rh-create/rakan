@@ -9118,6 +9118,7 @@
     }
   </style>
   <link rel="stylesheet" href="design-system/colors_and_type.css">
+  <link rel="stylesheet" href="design-system/ui_kits/mirsad/styles.css">
   <link rel="stylesheet" href="design-system/platform-bridge.css">
   <link rel="stylesheet" href="design-system/platform-preview-parity.css">
 </head>
@@ -11050,7 +11051,12 @@
           applyRBACUI();
           updateSidebarUser();
           /** رسم الواجهة قبل Realtime حتى لا يُؤخّر أول عرض باتصال WebSocket */
-          renderAll();
+          try {
+            renderAll();
+          } catch (renderErr) {
+            console.error('renderAll', renderErr);
+            showToast('تعذّر عرض بعض أقسام الواجهة. راجع وحدة التحكم للتفاصيل.', 'error');
+          }
           goTab('dashboard', document.querySelector('#sidebarNav .nav-item.active')
             || document.querySelector('#sidebarNav button.nav-item'));
           setLoginLoading(false);
@@ -11723,7 +11729,10 @@
         const tbRole = document.getElementById('tbRole');
         if (tbRole) {
           const roleLabel = (ROLE_LABELS[u.role] || u.role || '—').trim();
-          tbRole.innerHTML = '<span class="mr-topbar-role-dot" aria-hidden="true"></span> ' + roleLabel;
+          const dot = tbRole.querySelector('.mr-topbar-role-dot');
+          tbRole.textContent = '';
+          if (dot) tbRole.appendChild(dot);
+          tbRole.appendChild(document.createTextNode(' ' + roleLabel));
         }
 
         const lo = document.getElementById('logoutBtn');
@@ -12470,15 +12479,19 @@
         const prevPending = dashCountInMonth(allVisible, prevMonthStart, monthStart, isTicketWorkflowOpen);
         const prevOverdue = dashCountInMonth(allVisible, prevMonthStart, monthStart, isOverdueTicket);
 
-        dashRenderSpark('st-total-spark', dashBucketizeMonth(allVisible, monthStart, nextMonthStart), 'var(--mr-primary)', 'neutral');
-        dashRenderSpark('st-approved-spark', dashBucketizeMonth(allVisible, monthStart, nextMonthStart, v => v.state === 'closed' && (v.status_text || '').includes('معتمد')), 'var(--mr-success)', 'tone');
-        dashRenderSpark('st-pending-spark', dashBucketizeMonth(allVisible, monthStart, nextMonthStart, isTicketWorkflowOpen), 'var(--mr-warning)', 'tone');
-        dashRenderSpark('st-overdue-spark', dashBucketizeMonth(allVisible, monthStart, nextMonthStart, isOverdueTicket), 'var(--mr-danger)', 'tone');
+        try {
+          dashRenderSpark('st-total-spark', dashBucketizeMonth(allVisible, monthStart, nextMonthStart), 'var(--mr-primary)', 'neutral');
+          dashRenderSpark('st-approved-spark', dashBucketizeMonth(allVisible, monthStart, nextMonthStart, v => v.state === 'closed' && (v.status_text || '').includes('معتمد')), 'var(--mr-success)', 'tone');
+          dashRenderSpark('st-pending-spark', dashBucketizeMonth(allVisible, monthStart, nextMonthStart, isTicketWorkflowOpen), 'var(--mr-warning)', 'tone');
+          dashRenderSpark('st-overdue-spark', dashBucketizeMonth(allVisible, monthStart, nextMonthStart, isOverdueTicket), 'var(--mr-danger)', 'tone');
 
-        dashRenderTrend('st-total-delta', total, prevTotal);
-        dashRenderTrend('st-approved-delta', approved, prevApproved);
-        dashRenderTrend('st-pending-delta', pending, prevPending);
-        dashRenderTrend('st-overdue-delta', overdue, prevOverdue, true);
+          dashRenderTrend('st-total-delta', total, prevTotal);
+          dashRenderTrend('st-approved-delta', approved, prevApproved);
+          dashRenderTrend('st-pending-delta', pending, prevPending);
+          dashRenderTrend('st-overdue-delta', overdue, prevOverdue, true);
+        } catch (kpiErr) {
+          console.warn('[dashboard kpi]', kpiErr);
+        }
 
         // ─── توزيع الحالات (تتجدد شهرياً - تعرض فقط بيانات الشهر الحالي) ───
         const distContainer = document.getElementById('stateDistribution');

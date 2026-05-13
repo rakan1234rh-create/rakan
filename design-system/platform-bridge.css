@@ -1,5 +1,4 @@
 /* Mirsad platform bridge — production class aliases */
-@import url("ui_kits/mirsad/styles.css");
 
 .num-latin {
   font-variant-numeric: lining-nums tabular-nums;

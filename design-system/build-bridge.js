@@ -290,8 +290,7 @@ const css = stripComments(fs.readFileSync(stylesPath, 'utf8'));
 const chunks = [];
 emitRules(css, (rule) => chunks.push(rule));
 
-let output = '/* Mirsad platform bridge — production class aliases */\n';
-output += '@import url("ui_kits/mirsad/styles.css");\n\n';
+let output = '/* Mirsad platform bridge — production class aliases */\n\n';
 output += chunks.join('\n');
 output += '\n.brand-area .brand-icon i, #loginScreen .lp-brand-ico i, #loginTransition .lt-shield i { display: none; }\n';
 output += '#loginScreen .lp-title i.fa-wand-magic-sparkles { color: var(--mr-primary); }\n';
