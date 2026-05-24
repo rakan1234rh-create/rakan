@@ -17124,6 +17124,12 @@
         return h === 'localhost' || h === '127.0.0.1' || h === '[::1]';
       }
 
+      /** GitHub Pages أو أي نشر عام — لا يدعم وضع الضيف للبيانات */
+      function isPublicDeployHost() {
+        const h = (location.hostname || '').toLowerCase();
+        return h === 'github.io' || h.endsWith('.github.io');
+      }
+
       /** فتح الملف مباشرة من القرص (بدون http) — لا يوجد /config ولا R2 */
       function isFileProtocol() {
         return (location.protocol || '').toLowerCase() === 'file:';
@@ -17660,13 +17666,38 @@
         ]);
       }
 
-      const MOB_USER_SELECT = 'id,name,role,branch_id,employee_number,auth_uid,is_active,email,region_id,supervisor_id,department_id';
+      /** انتظار توفر JWT قبل طلبات REST (مهم على Safari/iOS بعد تسجيل الدخول) */
+      async function ensureAuthSessionReady(maxWaitMs = 5000) {
+        const t0 = Date.now();
+        while (Date.now() - t0 < maxWaitMs) {
+          const { data: { session } } = await sb.auth.getSession();
+          if (session?.access_token) return session;
+          await new Promise(r => setTimeout(r, 180));
+        }
+        const { data: { session } } = await sb.auth.getSession();
+        return session || null;
+      }
+
+      async function mobSupabaseQuery(label, queryPromise, ms = 22000) {
+        const res = await withLoadTimeout(queryPromise, ms, `انتهت مهلة: ${label}`);
+        if (res.error) {
+          const detail = formatPostgrestError(res.error) || res.error.message || label;
+          const e = new Error(detail);
+          e.mobLabel = label;
+          e.cause = res.error;
+          throw e;
+        }
+        return res.data || [];
+      }
+
+      const MOB_USER_SELECT = 'id,name,role,branch_id,employee_number,auth_uid,is_active,email,supervisor_id';
+      const MOB_LOAD_TIMEOUT_MS = 28000;
       const MOB_VIOLATION_SELECT = [
         'id', 'created_at', 'updated_at', 'ticket_number', 'state', 'status_text',
         'employee_id', 'branch_id', 'observer_id', 'supervisor_id',
-        'violation_type', 'violation_date', 'violation_time', 'source_role',
-        'auto_forwarded_emp', 'auto_forwarded_sup',
+        'violation_type', 'violation_date', 'violation_time',
       ].join(',');
+      const MOB_VIOLATION_SELECT_MIN = 'id,created_at,ticket_number,state,status_text,employee_id,branch_id,observer_id,supervisor_id,violation_type';
 
       function enrichViolationLite(t) {
         if (!t) return t;
@@ -17686,68 +17717,129 @@
         return t;
       }
 
-      async function loadAllDataMobile() {
-        const T = 12000;
+      async function loadUsersForMobileViolations(violations, timeoutMs) {
+        const ids = new Set();
+        for (const v of violations || []) {
+          if (v.employee_id) ids.add(v.employee_id);
+          if (v.supervisor_id) ids.add(v.supervisor_id);
+          if (v.observer_id) ids.add(v.observer_id);
+        }
+        if (state.currentUser?.id) ids.add(state.currentUser.id);
+        if (!ids.size) return state.currentUser ? [state.currentUser] : [];
+        const idList = [...ids];
+        const chunk = 80;
+        const users = [];
+        for (let i = 0; i < idList.length; i += chunk) {
+          const part = idList.slice(i, i + chunk);
+          const rows = await mobSupabaseQuery(
+            'مستخدمون (جزئي)',
+            sb.from('users').select(MOB_USER_SELECT).in('id', part),
+            timeoutMs
+          );
+          users.push(...rows);
+        }
+        return users;
+      }
+
+      async function loadAllDataMobile(isRetry) {
+        const stepMs = isRetry ? 38000 : MOB_LOAD_TIMEOUT_MS;
         setConnStatus('reconnecting');
         try {
-          const [
-            { data: regions, error: rErr },
-            { data: branches, error: bErr },
-            { data: vTypes, error: vtErr },
-          ] = await withLoadTimeout(
-            Promise.all([
-              sb.from('regions').select('id,name,supervisor_id').order('name'),
-              sb.from('branches').select('id,name,region_id').order('name'),
+          await ensureAuthSessionReady(isRetry ? 8000 : 5000);
+
+          const [regions, branches] = await Promise.all([
+            mobSupabaseQuery('المناطق', sb.from('regions').select('id,name,supervisor_id').order('name'), stepMs),
+            mobSupabaseQuery('الفروع', sb.from('branches').select('id,name,region_id').order('name'), stepMs),
+          ]);
+          state.regions = regions;
+          state.branches = branches;
+          rebuildLookupMaps();
+
+          let violations;
+          try {
+            violations = await mobSupabaseQuery(
+              'المخالفات',
+              sb.from('violations')
+                .select(MOB_VIOLATION_SELECT)
+                .order('created_at', { ascending: false })
+                .limit(50),
+              stepMs
+            );
+          } catch (v1) {
+            console.warn('[DataLoad mobile] violations lite fallback', v1);
+            violations = await mobSupabaseQuery(
+              'المخالفات (مختصر)',
+              sb.from('violations')
+                .select(MOB_VIOLATION_SELECT_MIN)
+                .order('created_at', { ascending: false })
+                .limit(40),
+              stepMs
+            );
+          }
+
+          let users;
+          try {
+            users = await mobSupabaseQuery(
+              'المستخدمون',
+              sb.from('users').select(MOB_USER_SELECT).order('name'),
+              stepMs
+            );
+          } catch (uErr) {
+            console.warn('[DataLoad mobile] users full load failed, partial', uErr);
+            users = await loadUsersForMobileViolations(violations, stepMs);
+            showToast('تم تحميل المستخدمين المرتبطين بالتذاكر فقط — الشبكة بطيئة.', 'warning');
+          }
+
+          let vTypes = [];
+          try {
+            vTypes = await mobSupabaseQuery(
+              'أنواع المخالفات',
               sb.from('violation_types').select('id,name,category,severity,points').order('name'),
-            ]),
-            T,
-            'انتهت مهلة تحميل الإعدادات الأساسية'
-          );
-          if (rErr) throw rErr;
-          if (bErr) throw bErr;
-          if (vtErr && isMirsadDebugLog()) console.warn('[DataLoad] violation_types:', vtErr.message);
+              Math.min(stepMs, 18000)
+            );
+          } catch (vtErr) {
+            console.warn('[DataLoad mobile] violation_types skipped', vtErr);
+          }
 
-          state.regions = regions || [];
-          state.branches = branches || [];
-          state.violationTypes = vTypes || [];
-          rebuildLookupMaps();
-
-          const { data: users, error: uErr } = await withLoadTimeout(
-            sb.from('users').select(MOB_USER_SELECT).order('name'),
-            T,
-            'انتهت مهلة تحميل المستخدمين'
-          );
-          if (uErr) throw uErr;
           state.users = users || [];
-          rebuildLookupMaps();
-
-          const { data: violations, error: vErr } = await withLoadTimeout(
-            sb.from('violations')
-              .select(MOB_VIOLATION_SELECT)
-              .order('created_at', { ascending: false })
-              .limit(60),
-            T,
-            'انتهت مهلة تحميل المخالفات'
-          );
-          if (vErr) throw vErr;
+          state.violationTypes = vTypes || [];
           state.violations = (violations || []).map(enrichViolationLite);
           state.notifications = [];
+          rebuildLookupMaps();
 
           setConnStatus('connected');
           return true;
         } catch (err) {
+          const label = err && err.mobLabel ? ` (${err.mobLabel})` : '';
+          const msg = formatPostgrestError(err) || (err && err.message) || String(err) || 'خطأ غير معروف';
+          if (!isRetry && /مهلة|timeout/i.test(msg)) {
+            showToast('بطء الشبكة — إعادة المحاولة…', 'info');
+            return loadAllDataMobile(true);
+          }
           console.error('[DataLoad mobile]', err);
           setConnStatus('disconnected');
-          const msg = err && err.message ? err.message : String(err);
           showToast(
-            msg.includes('مهلة')
-              ? msg + ' — تحقق من إنترنت الآيفون (ليس فقط شبكة الكمبيوتر)'
-              : 'فشل تحميل البيانات: ' + msg,
+            /مهلة|timeout/i.test(msg)
+              ? msg + label + ' — Wi‑Fi أو 4G ثم حدّث الصفحة'
+              : 'فشل تحميل البيانات' + label + ': ' + msg,
             'error'
           );
           return false;
         }
       }
+
+      async function retryMobileDataLoad() {
+        if (!state.currentUser) return false;
+        sessionStorage.removeItem('dataLoadEmptyWarn');
+        showToast('جاري إعادة تحميل البيانات…', 'info');
+        const ok = await loadAllData();
+        if (ok) {
+          try { renderAll(); } catch (e) { console.error('renderAll', e); }
+          showToast('تم تحميل البيانات', 'success');
+        }
+        return ok;
+      }
+      window.retryMobileDataLoad = retryMobileDataLoad;
 
       function dismissToast(el) {
         if (!el || el.classList.contains('mk-toast--out')) return;
@@ -18462,6 +18554,10 @@
       }
 
       async function enterGuestBrowse() {
+        if (isPublicDeployHost()) {
+          showToast('على الرابط المنشور سجّل الدخول بحسابك الرسمي — وضع «متابعة كضيف» لا يجلب البيانات من القاعدة.', 'warning');
+          return;
+        }
         hideLoginError();
         // بدون جلسة، طلبات PostgREST تمر كـ anon وغالباً RLS تمنع القراءة → جداول فارغة.
         // تسجيل دخول مجهول يعطي JWT بدور authenticated (يحتاج تفعيله من Supabase → Authentication → Providers → Anonymous).
@@ -18656,11 +18752,7 @@
           loadTheme();
           const mobBoot = isMobileViewport();
           if (mobBoot) {
-            try {
-              await withLoadTimeout(loadRolePermissions(), 5000, 'permissions');
-            } catch (e) {
-              console.warn('[mobile] loadRolePermissions', e);
-            }
+            loadRolePermissions().catch(e => console.warn('[mobile] loadRolePermissions', e));
           } else {
             await loadRolePermissions();
           }
@@ -18736,11 +18828,18 @@
             try { renderDashboardMobLite(); } catch (_) { /* noop */ }
             finishLoginBoot();
             showToast('جاري مزامنة البيانات…', 'info');
+            ensureAuthSessionReady().catch(() => null);
             loadAllData()
               .then((ok) => {
                 state._dashMobLiteOnly = false;
                 if (ok) {
+                  loadRolePermissions().then(() => {
+                    applyRBACUI();
+                    ensureActiveTabAllowed();
+                  }).catch(e => console.warn('[mobile] permissions after data', e));
                   try { runInitialRender(); } catch (_) { /* logged in runInitialRender */ }
+                } else {
+                  showToast('فشل التحميل — اسحب لتحديث الصفحة أو من Console: retryMobileDataLoad()', 'warning');
                 }
               })
               .catch((e) => {
@@ -18968,8 +19067,38 @@
       // 8. DATA LOADING
       // ═══════════════════════════════════════════════════════════════════════════
 
+      /** بعد تسجيل الدخول: يوضح إن كانت RLS تمنع القراءة */
+      async function showDataAccessDiagnosis() {
+        const u = state.currentUser;
+        if (!u?.auth_uid) return;
+        const role = u.role || '?';
+        const checks = await Promise.all([
+          sb.from('regions').select('id').limit(1),
+          sb.from('violations').select('id').limit(1),
+        ]);
+        const [regRes, violRes] = checks;
+        const regErr = regRes.error?.message || '';
+        const violErr = violRes.error?.message || '';
+        const regOk = (regRes.data || []).length;
+        const violOk = (violRes.data || []).length;
+        let msg = `دورك: ${role}. `;
+        if (regErr || violErr) {
+          msg += [regErr && `regions: ${regErr}`, violErr && `violations: ${violErr}`].filter(Boolean).join(' · ');
+        } else if (!regOk && !violOk) {
+          msg += 'الجلسة سليمة لكن RLS تمنع قراءة الجداول — شغّل supabase/تحقق-من-البيانات.sql و supabase/إصلاح-قراءة-المدير.sql في SQL Editor.';
+        } else {
+          msg += 'القراءة تعمل جزئياً — قد يكون دورك يرى بيانات محدودة فقط.';
+        }
+        if (isPublicDeployHost()) {
+          msg += ' تأكد من Authentication → URL Configuration في Supabase: ' + location.origin + location.pathname;
+        }
+        showToast(msg, 'warning', 14000);
+        if (isMirsadDebugLog()) console.warn('[DataAccess]', { role, regRes, violRes });
+      }
+
       async function loadAllData() {
         if (isMobileViewport()) return loadAllDataMobile();
+        await ensureAuthSessionReady(2000);
 
         const _loadT0 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
         const mobLoad = false;
@@ -19054,6 +19183,9 @@
           const nV = state.violations.length;
           if (nR + nB + nU + nV === 0 && !sessionStorage.getItem('dataLoadEmptyWarn')) {
             sessionStorage.setItem('dataLoadEmptyWarn', '1');
+            if (state.currentUser?.auth_uid && typeof showDataAccessDiagnosis === 'function') {
+              showDataAccessDiagnosis().catch(e => console.warn('[DataAccess]', e));
+            }
             const isGuest = state.currentUser && state.currentUser.id === GUEST_LOCAL_PROFILE.id;
             const isAdmin = !isGuest && state.currentUser && state.currentUser.role === 'admin';
             const guestHint =
@@ -19062,7 +19194,11 @@
               'حسابك مدير نظام لكن التطبيق لم يستلم أي صف من regions/branches/users/violations. إن كانت الجداول ممتلئة في SQL Editor فالسبب غالباً سياسات RLS تمنع SELECT لهذه الجداول حتى بعد تسجيل الدخول — راجع Policies في Supabase (Table editor → Policies) وطابقة Network في المتصفح لطلبات REST.';
             const normalHint =
               'لم يُجلب أي صف (مناطق/فروع/مستخدمون/مخالفات = 0). تحقق من أن رابط المشروع والمفتاح في أعلى index.html يخصان نفس المشروع، وأن الجداول فيها بيانات، وأن RLS يسمح لدورك بالقراءة (راجع Console وNetwork).';
-            const msg = isGuest ? guestHint : (isAdmin ? adminHint : normalHint);
+            const deployHint =
+              'على GitHub Pages: سجّل الدخول بالبريد/الرقم الوظيفي وكلمة المرور (ليس «متابعة كضيف»). في Supabase: Authentication → URL Configuration أضف ' +
+              (typeof location !== 'undefined' ? location.origin + location.pathname : 'رابط الموقع') +
+              ' ثم تأكد أن حسابك في جدول users مربوط بـ auth_uid.';
+            const msg = isGuest ? guestHint : (isPublicDeployHost() ? deployHint : (isAdmin ? adminHint : normalHint));
             showToast(msg, 'warning');
           }
 
