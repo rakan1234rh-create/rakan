@@ -3201,6 +3201,26 @@
         display: none !important
       }
 
+      @media (display-mode: standalone) {
+        body.mirsad-app-active #appWrap.app {
+          height: 100vh;
+          height: -webkit-fill-available;
+          min-height: -webkit-fill-available;
+          max-height: 100vh
+        }
+      }
+
+      html.mirsad-standalone-nav #mobileBottomNav.mobile-bottom-nav {
+        position: fixed !important;
+        margin: 0 !important;
+        z-index: 2147483646 !important;
+        background: var(--mr-surface) !important;
+        border-top: 1px solid var(--mr-border) !important;
+        box-shadow: 0 -6px 24px rgba(15, 18, 36, 0.12) !important;
+        -webkit-backdrop-filter: none !important;
+        backdrop-filter: none !important
+      }
+
       #appWrap .mobile-bottom-nav {
         display: flex !important;
         position: fixed;
@@ -3213,14 +3233,12 @@
         min-height: 56px;
         height: auto;
         padding-top: 6px;
-        padding-bottom: env(safe-area-inset-bottom, 0px);
+        padding-bottom: max(env(safe-area-inset-bottom, 0px), var(--mr-safe-bottom, 0px));
         box-sizing: border-box;
         padding-inline: 4px;
         background: var(--mr-surface);
         border-top: 1px solid var(--mr-border);
         box-shadow: 0 -6px 24px rgba(15, 18, 36, 0.08);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
         align-items: stretch;
         justify-content: flex-start;
         gap: 0;
@@ -18640,6 +18658,7 @@
           app.style.display = '';
         }
         setNativeAppShellActive(true);
+        if (typeof dockMobileBottomNav === 'function') dockMobileBottomNav();
         if (typeof initSidebarMobileControls === 'function') {
           requestAnimationFrame(() => initSidebarMobileControls());
         }
@@ -20302,16 +20321,94 @@
         nav.classList.toggle('mobile-bottom-nav--scroll', !spread && n > 0);
       }
 
+      let _mobNavAnchor = null;
+
+      function isStandalonePwa() {
+        try {
+          if (window.navigator.standalone === true) return true;
+          if (window.matchMedia('(display-mode: standalone)').matches) return true;
+          if (window.matchMedia('(display-mode: fullscreen)').matches) return true;
+        } catch (_) { /* noop */ }
+        return false;
+      }
+
+      function pinMobNavViewportBottom() {
+        const nav = document.getElementById('mobileBottomNav');
+        if (!nav || !document.documentElement.classList.contains('mirsad-standalone-nav')) return;
+        const vv = window.visualViewport;
+        nav.style.position = 'fixed';
+        nav.style.margin = '0';
+        nav.style.zIndex = '2147483646';
+        if (vv) {
+          const w = Math.max(1, Math.round(vv.width));
+          const left = Math.round(vv.offsetLeft);
+          const h = Math.ceil(nav.getBoundingClientRect().height) || nav.offsetHeight || 56;
+          const top = Math.round(vv.offsetTop + vv.height - h);
+          nav.style.top = `${top}px`;
+          nav.style.bottom = 'auto';
+          nav.style.left = `${left}px`;
+          nav.style.right = 'auto';
+          nav.style.width = `${w}px`;
+          nav.style.maxWidth = `${w}px`;
+        } else {
+          nav.style.top = '';
+          nav.style.bottom = '0';
+          nav.style.left = '0';
+          nav.style.right = '0';
+          nav.style.width = '100%';
+          nav.style.maxWidth = '';
+        }
+      }
+
+      function dockMobileBottomNav() {
+        const nav = document.getElementById('mobileBottomNav');
+        if (!nav) return;
+        const dockOnBody = typeof isMobileViewport === 'function' && isMobileViewport()
+          && isStandalonePwa()
+          && document.body.classList.contains('mirsad-app-active');
+
+        if (!_mobNavAnchor) {
+          _mobNavAnchor = { parent: nav.parentNode, next: nav.nextSibling };
+        }
+
+        if (dockOnBody) {
+          document.documentElement.classList.add('mirsad-standalone-nav');
+          if (nav.parentNode !== document.body) document.body.appendChild(nav);
+          pinMobNavViewportBottom();
+          if (!window._mrVVNavBound && window.visualViewport) {
+            window._mrVVNavBound = true;
+            window.visualViewport.addEventListener('resize', pinMobNavViewportBottom, { passive: true });
+            window.visualViewport.addEventListener('scroll', pinMobNavViewportBottom, { passive: true });
+          }
+        } else {
+          document.documentElement.classList.remove('mirsad-standalone-nav');
+          nav.style.top = '';
+          nav.style.bottom = '';
+          nav.style.left = '';
+          nav.style.right = '';
+          nav.style.width = '';
+          nav.style.maxWidth = '';
+          nav.style.transform = '';
+          if (_mobNavAnchor.parent && nav.parentNode === document.body) {
+            _mobNavAnchor.parent.insertBefore(nav, _mobNavAnchor.next);
+          }
+        }
+      }
+
       function syncMobBottomNavHeight() {
         const nav = document.getElementById('mobileBottomNav');
         if (!nav || window.innerWidth > 992) return;
+        dockMobileBottomNav();
+        if (document.documentElement.classList.contains('mirsad-standalone-nav')) {
+          pinMobNavViewportBottom();
+        }
         const rect = nav.getBoundingClientRect();
         const h = Math.ceil(rect.height);
         if (h > 0) {
           document.documentElement.style.setProperty('--mr-mob-bottom-nav-h', h + 'px');
         }
-        const gap = Math.max(0, Math.round(window.innerHeight - rect.bottom));
-        if (gap > 2 && isMirsadDebugLog()) {
+        const gap = Math.max(0, Math.round((window.visualViewport?.height || window.innerHeight) - rect.bottom));
+        if (gap > 4 && isMirsadDebugLog()) {
           console.warn('[mob-nav] gap below bar:', gap, 'px');
         }
       }
@@ -20710,15 +20807,21 @@
             syncSafeAreaInsets();
             syncTopbarHeightVar();
             syncMobileBottomNavLayout();
+            dockMobileBottomNav();
             const appVisible = document.getElementById('appWrap')?.style.display !== 'none';
             setNativeAppShellActive(appVisible && !!state.currentUser);
+            if (appVisible && !!state.currentUser) dockMobileBottomNav();
             if (window.innerWidth > 992) closeSidebar();
             if (document.getElementById('tab-workflow')?.classList.contains('active') && typeof filterTickets === 'function') {
               filterTickets();
             }
           }, { passive: true });
           window.addEventListener('orientationchange', () => {
-            setTimeout(syncSafeAreaInsets, 120);
+            setTimeout(() => {
+              syncSafeAreaInsets();
+              dockMobileBottomNav();
+              syncMobBottomNavHeight();
+            }, 120);
           }, { passive: true });
         }
         syncMobileBottomNavLayout();
@@ -20734,6 +20837,7 @@
           const roNav = new ResizeObserver(() => syncMobBottomNavHeight());
           roNav.observe(mobNav);
         }
+        dockMobileBottomNav();
         syncMobBottomNavHeight();
       }
 
