@@ -17690,7 +17690,8 @@
         return res.data || [];
       }
 
-      const MOB_USER_SELECT = 'id,name,role,branch_id,employee_number,auth_uid,is_active,email,supervisor_id';
+      /** أعمدة موجودة فعلاً في جدول users — لا تضف region_id أو supervisor_id (غير موجودين في Supabase) */
+      const MOB_USER_SELECT = 'id,name,role,branch_id,employee_number,auth_uid,is_active,email';
       const MOB_LOAD_TIMEOUT_MS = 28000;
       const MOB_VIOLATION_SELECT = [
         'id', 'created_at', 'updated_at', 'ticket_number', 'state', 'status_text',
@@ -19015,7 +19016,7 @@
         if (isPublicDeployHost()) {
           msg += ' تأكد من Authentication → URL Configuration في Supabase: ' + location.origin + location.pathname;
         }
-        showToast(msg, 'warning', 14000);
+        showToast(msg, 'warning');
         if (isMirsadDebugLog()) console.warn('[DataAccess]', { role, regRes, violRes });
       }
 
