@@ -3210,15 +3210,26 @@
         }
       }
 
-      html.mirsad-standalone-nav #mobileBottomNav.mobile-bottom-nav {
+      html.mirsad-mob-nav-docked #mobileBottomNav.mobile-bottom-nav {
         position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: 100% !important;
+        max-width: none !important;
         margin: 0 !important;
+        border-radius: 0 !important;
         z-index: 2147483646 !important;
         background: var(--mr-surface) !important;
         border-top: 1px solid var(--mr-border) !important;
         box-shadow: 0 -6px 24px rgba(15, 18, 36, 0.12) !important;
         -webkit-backdrop-filter: none !important;
-        backdrop-filter: none !important
+        backdrop-filter: none !important;
+        transform: translateZ(0)
+      }
+
+      html.mirsad-mob-nav-docked body.mirsad-app-active #appWrap > .app-shell {
+        padding-bottom: 0 !important
       }
 
       #appWrap .mobile-bottom-nav {
@@ -20334,29 +20345,26 @@
 
       function pinMobNavViewportBottom() {
         const nav = document.getElementById('mobileBottomNav');
-        if (!nav || !document.documentElement.classList.contains('mirsad-standalone-nav')) return;
-        const vv = window.visualViewport;
+        if (!nav || !document.documentElement.classList.contains('mirsad-mob-nav-docked')) return;
+
         nav.style.position = 'fixed';
         nav.style.margin = '0';
+        nav.style.left = '0';
+        nav.style.right = '0';
+        nav.style.width = '100%';
+        nav.style.maxWidth = 'none';
+        nav.style.borderRadius = '0';
         nav.style.zIndex = '2147483646';
-        if (vv) {
-          const w = Math.max(1, Math.round(vv.width));
-          const left = Math.round(vv.offsetLeft);
-          const h = Math.ceil(nav.getBoundingClientRect().height) || nav.offsetHeight || 56;
-          const top = Math.round(vv.offsetTop + vv.height - h);
+        nav.style.bottom = '0';
+        nav.style.top = 'auto';
+
+        const h = Math.ceil(nav.getBoundingClientRect().height) || nav.offsetHeight || 56;
+        const vh = window.innerHeight;
+        const top = Math.max(0, Math.round(vh - h));
+        const rect = nav.getBoundingClientRect();
+        if (Math.abs(rect.bottom - vh) > 2) {
           nav.style.top = `${top}px`;
           nav.style.bottom = 'auto';
-          nav.style.left = `${left}px`;
-          nav.style.right = 'auto';
-          nav.style.width = `${w}px`;
-          nav.style.maxWidth = `${w}px`;
-        } else {
-          nav.style.top = '';
-          nav.style.bottom = '0';
-          nav.style.left = '0';
-          nav.style.right = '0';
-          nav.style.width = '100%';
-          nav.style.maxWidth = '';
         }
       }
 
@@ -20364,7 +20372,6 @@
         const nav = document.getElementById('mobileBottomNav');
         if (!nav) return;
         const dockOnBody = typeof isMobileViewport === 'function' && isMobileViewport()
-          && isStandalonePwa()
           && document.body.classList.contains('mirsad-app-active');
 
         if (!_mobNavAnchor) {
@@ -20372,22 +20379,33 @@
         }
 
         if (dockOnBody) {
-          document.documentElement.classList.add('mirsad-standalone-nav');
+          document.documentElement.classList.add('mirsad-mob-nav-docked');
           if (nav.parentNode !== document.body) document.body.appendChild(nav);
           pinMobNavViewportBottom();
-          if (!window._mrVVNavBound && window.visualViewport) {
+          if (!window._mrVVNavBound) {
             window._mrVVNavBound = true;
-            window.visualViewport.addEventListener('resize', pinMobNavViewportBottom, { passive: true });
-            window.visualViewport.addEventListener('scroll', pinMobNavViewportBottom, { passive: true });
+            const repin = () => {
+              if (document.documentElement.classList.contains('mirsad-mob-nav-docked')) {
+                pinMobNavViewportBottom();
+                syncMobBottomNavHeight();
+              }
+            };
+            window.addEventListener('resize', repin, { passive: true });
+            window.addEventListener('orientationchange', () => setTimeout(repin, 150), { passive: true });
+            if (window.visualViewport) {
+              window.visualViewport.addEventListener('resize', repin, { passive: true });
+              window.visualViewport.addEventListener('scroll', repin, { passive: true });
+            }
           }
         } else {
-          document.documentElement.classList.remove('mirsad-standalone-nav');
+          document.documentElement.classList.remove('mirsad-mob-nav-docked');
           nav.style.top = '';
           nav.style.bottom = '';
           nav.style.left = '';
           nav.style.right = '';
           nav.style.width = '';
           nav.style.maxWidth = '';
+          nav.style.borderRadius = '';
           nav.style.transform = '';
           if (_mobNavAnchor.parent && nav.parentNode === document.body) {
             _mobNavAnchor.parent.insertBefore(nav, _mobNavAnchor.next);
@@ -20399,15 +20417,13 @@
         const nav = document.getElementById('mobileBottomNav');
         if (!nav || window.innerWidth > 992) return;
         dockMobileBottomNav();
-        if (document.documentElement.classList.contains('mirsad-standalone-nav')) {
-          pinMobNavViewportBottom();
-        }
+        pinMobNavViewportBottom();
         const rect = nav.getBoundingClientRect();
         const h = Math.ceil(rect.height);
         if (h > 0) {
           document.documentElement.style.setProperty('--mr-mob-bottom-nav-h', h + 'px');
         }
-        const gap = Math.max(0, Math.round((window.visualViewport?.height || window.innerHeight) - rect.bottom));
+        const gap = Math.max(0, Math.round(window.innerHeight - rect.bottom));
         if (gap > 4 && isMirsadDebugLog()) {
           console.warn('[mob-nav] gap below bar:', gap, 'px');
         }
