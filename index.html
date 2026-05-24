@@ -15305,9 +15305,13 @@
       }
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table col.wf-col-emp-c,
-      #tab-workflow .wf-panel .data-table.wf-tickets-table col.wf-col-viol-c,
-      #tab-workflow .wf-panel .data-table.wf-tickets-table col.wf-col-branch-c {
+      #tab-workflow .wf-panel .data-table.wf-tickets-table col.wf-col-viol-c {
         width: 0 !important
+      }
+
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob col.wf-col-branch-c,
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob .wf-col-branch {
+        display: none !important
       }
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table col.wf-col-datetime-c {
@@ -16028,7 +16032,7 @@
       }
     }
   </style>
-  <meta name="app-build" content="mobnav-spread-v3">
+  <meta name="app-build" content="wf-mob-no-branch-col-v4">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
 </head>
 
@@ -25182,14 +25186,17 @@
           return;
         }
 
+        const branchColHtml = wfMob ? '' : '<col class="wf-col-branch-c">';
+        const branchThHtml = wfMob ? '' : '<th class="wf-col-branch">الفرع</th>';
+
         list.innerHTML = `
     <div class="wf-table-wrap">
-      <table class="data-table wf-tickets-table">
+      <table class="data-table wf-tickets-table${wfMob ? ' wf-tickets-table--mob' : ''}">
         <colgroup>
           <col class="wf-col-ticket-c">
           <col class="wf-col-emp-c">
           <col class="wf-col-viol-c">
-          <col class="wf-col-branch-c">
+          ${branchColHtml}
           <col class="wf-col-datetime-c">
           <col class="wf-col-status-c">
           <col class="wf-col-action-c">
@@ -25199,7 +25206,7 @@
             <th class="wf-col-ticket">${wfMob ? 'تذكرة' : 'رقم التذكرة'}</th>
             <th class="wf-col-emp">${wfMob ? 'موظف' : 'الموظف'}</th>
             <th class="wf-col-violation">${wfMob ? 'مخالفة' : 'نوع المخالفة'}</th>
-            <th class="wf-col-branch">${wfMob ? 'فرع' : 'الفرع'}</th>
+            ${branchThHtml}
             <th class="wf-col-datetime">${wfMob ? 'وقت' : 'التاريخ والوقت'}</th>
             <th>${wfMob ? 'حالة' : 'الحالة'}</th>
             <th class="wf-col-action">${isReports ? 'المرفقات' : (wfMob ? '' : 'الإجراء')}</th>
@@ -25222,12 +25229,15 @@
             : (canActOnTicket(t)
               ? '<button type="button" class="wf-process-btn" onclick="event.stopPropagation(); openTicket(\'' + t.id + '\')" title="معالجة">' + (wfMob ? '<i class="fas fa-pen" aria-hidden="true"></i>' : 'اضغط للمعالجة') + '</button>'
               : '<span class="wf-view-only">' + (wfMob ? 'عرض' : 'عرض فقط') + '</span>');
+          const branchTdHtml = wfMob
+            ? ''
+            : `<td class="wf-col-branch"><span class="wf-branch-cell"><span class="wf-branch-name">${Sec.escapeHTML(branchName)}</span></span></td>`;
           return `
             <tr onclick="openTicket('${t.id}')">
               <td class="wf-ticket-cell"><div class="ticket-id-cell"><strong class="wf-ticket-id">${Sec.escapeHTML(t.ticket_number)}</strong>${autoFlag}</div></td>
               <td class="wf-col-emp"><span class="wf-emp-cell"><span class="wf-emp-name">${Sec.escapeHTML(empName)}</span>${empNumber ? `<span class="wf-emp-num">${Sec.escapeHTML(empNumber)}</span>` : ''}</span></td>
               <td class="wf-col-violation"><span class="wf-viol-cell"><span class="wf-viol-name">${Sec.escapeHTML(violName)}</span></span></td>
-              <td class="wf-col-branch"><span class="wf-branch-cell"><span class="wf-branch-name">${Sec.escapeHTML(branchName)}</span></span></td>
+              ${branchTdHtml}
               <td class="wf-col-datetime wf-datetime">${dateTime}</td>
               <td><span class="badge ${getTicketBadgeClass(t)}">${Sec.escapeHTML(t.status_text || STATE_LABELS[t.state])}</span></td>
               <td class="wf-col-action">${actionCell}</td>
