@@ -15090,7 +15090,19 @@
         padding-block: 0 !important;
         max-width: 100% !important;
         background: var(--mr-bg) !important;
-        overflow-x: clip
+        overflow: hidden !important;
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column
+      }
+
+      #appWrap .main:has(#tab-workflow.active) {
+        overflow: hidden !important;
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 auto;
+        min-height: 0
       }
 
       #tab-workflow.tab-content {
@@ -15103,11 +15115,14 @@
 
       #tab-workflow.tab-content.active {
         display: flex !important;
-        flex-direction: column
+        flex-direction: column;
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: hidden
       }
 
       #tab-workflow {
-        font-size: 10px
+        font-size: 9px
       }
 
       #tab-workflow .wf-panel {
@@ -15128,16 +15143,159 @@
       #tab-workflow .wf-panel-banner {
         padding: 10px 12px 6px;
         margin-bottom: 0;
-        background: transparent;
+        background: var(--mr-bg) !important;
         flex-shrink: 0;
-        border: none !important
+        flex-grow: 0;
+        border: none !important;
+        border-bottom: none !important;
+        position: relative;
+        z-index: 3
+      }
+
+      #tab-workflow .wf-panel-banner:has(#wfMobTicketsHead:not(:empty)) {
+        padding-bottom: 0;
+        overflow: hidden
+      }
+
+      #tab-workflow .wf-panel-banner:has(#wfMobTicketsHead:not(:empty)) .wf-count {
+        margin-bottom: 6px !important
+      }
+
+      #tab-workflow .wf-panel-banner:has(#wfMobTicketsHead:not(:empty)) .wf-table-wrap--head {
+        margin-top: 0 !important;
+        padding-bottom: 0 !important
+      }
+
+      #tab-workflow #wfMobTicketsHead:empty {
+        display: none
+      }
+
+      #tab-workflow #wfMobTicketsHead:not(:empty) {
+        display: block;
+        margin-inline: -12px;
+        margin-bottom: 0;
+        width: calc(100% + 24px);
+        max-width: none;
+        padding: 0;
+        line-height: 0;
+        background: var(--mr-bg)
+      }
+
+      #tab-workflow #wfMobTicketsHead .wf-tickets-table--mob-head thead th:first-child,
+      #tab-workflow #wfMobTicketsHead .wf-tickets-table--mob-head thead th:last-child {
+        border-radius: 0 !important
+      }
+
+      #tab-workflow #wfMobTicketsHead .wf-table-wrap--head {
+        margin: 0;
+        padding: 0;
+        line-height: 0;
+        overflow-x: hidden;
+        overflow-y: hidden
+      }
+
+      #tab-workflow #wfMobTicketsHead .wf-tickets-table--mob-head {
+        display: table;
+        margin: 0 !important;
+        font-size: 8px;
+        line-height: normal;
+        vertical-align: top;
+        border-collapse: collapse !important;
+        border-spacing: 0 !important
+      }
+
+      #tab-workflow .wf-tickets-table--mob-head,
+      #tab-workflow .wf-tickets-table--mob-body {
+        table-layout: fixed !important;
+        width: 100% !important
+      }
+
+      #tab-workflow .wf-tickets-table--mob-body {
+        border-collapse: separate !important;
+        border-spacing: 0 6px !important
+      }
+
+      #tab-workflow #wfMobTicketsHead .wf-tickets-table--mob-head thead th {
+        background: var(--mr-surface) !important;
+        opacity: 1 !important;
+        height: 24px !important;
+        border-bottom: 1px solid var(--mr-border) !important;
+        box-shadow: none !important
+      }
+
+      #tab-workflow .wf-panel-banner:has(#wfMobTicketsHead:not(:empty)) + #ticketList > .wf-mob-tickets-body {
+        margin-top: -1px !important;
+        padding-top: 0 !important
+      }
+
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-head thead th {
+        border-bottom: 1px solid var(--mr-border) !important
       }
 
       #tab-workflow #ticketList {
         flex: 1 1 auto;
         background: var(--mr-bg);
         min-height: 0;
-        border: none !important
+        border: none !important;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column
+      }
+
+      #tab-workflow #ticketList > .wf-mob-tickets-body {
+        flex: 1 1 auto;
+        min-height: 0;
+        width: 100%;
+        overflow-x: auto;
+        overflow-y: auto;
+        scrollbar-gutter: stable;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+        touch-action: pan-x pan-y;
+        padding-bottom: 12px
+      }
+
+      #tab-workflow #ticketList > .wf-mob-tickets-body .wf-table-wrap--body {
+        margin: 0 !important;
+        padding: 0 !important
+      }
+
+      #tab-workflow #ticketList .wf-table-wrap {
+        overflow: visible !important
+      }
+
+      #tab-workflow .wf-tickets-table--mob-head th.wf-col-ticket,
+      #tab-workflow .wf-tickets-table--mob-head th.wf-col-emp,
+      #tab-workflow .wf-tickets-table--mob-body td.wf-ticket-cell,
+      #tab-workflow .wf-tickets-table--mob-body td.wf-col-emp {
+        padding: 2px 4px 2px 2px !important;
+        box-sizing: border-box !important
+      }
+
+      #tab-workflow .wf-tickets-table--mob-head th.wf-col-ticket,
+      #tab-workflow .wf-tickets-table--mob-head th.wf-col-emp {
+        width: auto !important;
+        min-width: 0 !important;
+        max-width: none !important
+      }
+
+      #tab-workflow .wf-tickets-table--mob-body tr.wf-ticket-row--auto td.wf-ticket-cell {
+        max-width: none !important;
+        height: 36px !important;
+        min-height: 36px !important;
+        max-height: 36px !important
+      }
+
+      #tab-workflow .wf-tickets-table--mob-body tbody tr.wf-ticket-row:first-child > td {
+        height: 36px !important;
+        min-height: 36px !important;
+        max-height: 36px !important
+      }
+
+      #tab-workflow .wf-tickets-table--mob-body .ticket-id-cell,
+      #tab-workflow .wf-tickets-table--mob-body .ticket-id-cell--auto {
+        max-height: 100% !important;
+        overflow: hidden !important
       }
 
       #tab-workflow .wf-table-wrap {
@@ -15190,13 +15348,14 @@
       }
 
       #tab-workflow .figma-search-input {
-        font-size: 12px !important;
+        font-size: 11px !important;
         min-width: 0
       }
 
       #tab-workflow .figma-search-input::placeholder {
-        font-size: 12px !important;
-        color: var(--mr-text-muted)
+        font-size: 11px !important;
+        color: var(--mr-text-2) !important;
+        opacity: 1 !important
       }
 
       #tab-workflow .figma-search-btn {
@@ -15205,7 +15364,8 @@
         font-size: 12px !important;
         min-width: 28px !important;
         flex-shrink: 0;
-        color: var(--mr-text-3)
+        color: var(--mr-text-2) !important;
+        opacity: 1 !important
       }
 
       #tab-workflow .wf-status-filter {
@@ -15219,7 +15379,7 @@
         min-width: 0 !important;
         width: 100% !important;
         height: 38px !important;
-        font-size: 12px !important;
+        font-size: 11px !important;
         gap: 6px !important;
         padding: 0 10px !important;
         justify-content: flex-start !important;
@@ -15235,7 +15395,7 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-        font-size: 12px !important;
+        font-size: 11px !important;
         text-align: start
       }
 
@@ -15250,13 +15410,15 @@
         font-size: 9px !important;
         flex-shrink: 0;
         margin-inline-start: auto;
-        opacity: 0.65
+        color: var(--mr-text-2) !important;
+        opacity: 1 !important
       }
 
       #tab-workflow .wf-count {
-        font-size: 12px !important;
-        margin-bottom: 0;
-        color: var(--mr-text-3);
+        font-size: 11px !important;
+        margin: 0 0 6px !important;
+        color: var(--mr-text) !important;
+        opacity: 1 !important;
         line-height: 1.3
       }
 
@@ -15287,8 +15449,6 @@
       }
 
       #tab-workflow .wf-table-wrap {
-        overflow-x: auto !important;
-        -webkit-overflow-scrolling: touch;
         border-radius: 0;
         margin-top: 4px;
         padding-bottom: 4px
@@ -15300,13 +15460,99 @@
         max-width: 100% !important;
         table-layout: auto !important;
         border-collapse: separate !important;
-        border-spacing: 0 6px !important;
-        font-size: 9px !important
+        border-spacing: 0 8px !important;
+        font-size: 8px !important
+      }
+
+      /* بنر عناوين الجدول — جوال */
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob thead th {
+        height: 28px;
+        padding: 0 3px !important;
+        font-size: 7px !important;
+        line-height: 1.2 !important;
+        font-weight: 700 !important;
+        letter-spacing: 0.02em;
+        color: var(--mr-text-2) !important;
+        background: var(--mr-surface) !important;
+        background-color: var(--mr-surface) !important;
+        opacity: 1 !important;
+        border: 1px solid var(--mr-border) !important;
+        border-bottom: none !important;
+        white-space: nowrap !important;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: middle !important;
+        text-align: center !important;
+        box-sizing: border-box;
+        width: auto !important;
+        min-width: 0 !important;
+        max-width: none !important;
+        box-shadow: none !important
+      }
+
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob thead th+th {
+        border-inline-start: 1px solid color-mix(in srgb, var(--mr-border) 52%, transparent) !important
+      }
+
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob thead th:first-child {
+        border-inline-end-color: transparent !important;
+        border-radius: 0 6px 6px 0 !important
+      }
+
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob thead th:last-child {
+        border-radius: 6px 0 0 6px !important;
+        color: var(--mr-text-2) !important;
+        opacity: 1 !important
+      }
+
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob thead tr > th,
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob thead tr > th.wf-col-ticket,
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob thead tr > th.wf-col-emp,
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob thead tr > th.wf-col-violation,
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob thead tr > th.wf-col-datetime,
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob thead tr > th.wf-col-action {
+        text-align: center !important
+      }
+
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob tbody tr.wf-ticket-row {
+        height: 36px
+      }
+
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob tbody tr.wf-ticket-row > td,
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob tbody tr.wf-ticket-row > td.wf-ticket-cell,
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob tbody tr.wf-ticket-row > td.wf-col-emp,
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob tbody tr.wf-ticket-row > td.wf-col-violation,
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob tbody tr.wf-ticket-row > td.wf-col-datetime,
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob tbody tr.wf-ticket-row > td.wf-col-action {
+        height: 36px !important;
+        min-height: 36px !important;
+        max-height: 36px !important;
+        padding: 0 3px !important;
+        line-height: 1.25 !important;
+        white-space: nowrap !important;
+        word-break: normal !important;
+        overflow-wrap: normal !important;
+        hyphens: none !important;
+        overflow: hidden !important;
+        box-sizing: border-box !important;
+        vertical-align: middle !important
+      }
+
+      #tab-workflow .wf-panel .data-table.wf-tickets-table tbody tr.wf-ticket-row {
+        height: 40px
       }
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table col.wf-col-emp-c,
       #tab-workflow .wf-panel .data-table.wf-tickets-table col.wf-col-viol-c {
         width: 0 !important
+      }
+
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob col.wf-col-emp-c {
+        width: 21% !important
+      }
+
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob col.wf-col-viol-c {
+        width: 24% !important
       }
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob col.wf-col-branch-c,
@@ -15318,8 +15564,20 @@
         width: 0 !important
       }
 
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob col.wf-col-datetime-c {
+        width: 12% !important
+      }
+
       #tab-workflow .wf-panel .data-table.wf-tickets-table col.wf-col-status-c {
         width: 22% !important
+      }
+
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob col.wf-col-status-c {
+        width: 13% !important
+      }
+
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob col.wf-col-action-c {
+        width: 11% !important
       }
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table col.wf-col-action-c {
@@ -15338,8 +15596,8 @@
       }
 
       #tab-workflow .wf-panel .data-table thead th {
-        padding: 4px 3px !important;
-        font-size: 8px !important;
+        padding: 3px 2px !important;
+        font-size: 7px !important;
         line-height: 1.2;
         font-weight: 700;
         background: var(--mr-primary-softer) !important;
@@ -15347,9 +15605,7 @@
       }
 
       #tab-workflow .wf-panel .data-table tbody td {
-        padding: 4px 3px !important;
-        font-size: 9px !important;
-        line-height: 1.15;
+        font-size: 8px !important;
         background: var(--mr-surface) !important;
         border-top: 1px solid var(--mr-border) !important;
         border-bottom: 1px solid var(--mr-border) !important
@@ -15380,13 +15636,85 @@
       #tab-workflow .wf-panel .data-table td.wf-ticket-cell {
         width: auto !important;
         min-width: max-content !important;
-        max-width: min(40vw, 18ch) !important;
+        max-width: none !important;
         white-space: nowrap !important;
         overflow: visible !important;
         text-align: start !important;
         vertical-align: middle !important;
         padding: 3px 4px !important;
         line-height: 1.2 !important
+      }
+
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob col.wf-col-ticket-c {
+        width: 19% !important
+      }
+
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob th.wf-col-ticket,
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob th.wf-col-emp {
+        width: auto !important;
+        min-width: 0 !important;
+        max-width: none !important;
+        text-align: center !important;
+        padding: 0 3px !important
+      }
+
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob td.wf-ticket-cell {
+        width: auto !important;
+        min-width: 0 !important;
+        max-width: none !important;
+        overflow: hidden !important;
+        padding: 2px 4px 2px 2px !important;
+        text-align: start !important
+      }
+
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob tr.wf-ticket-row--auto td.wf-ticket-cell {
+        min-width: 0 !important;
+        max-width: min(32vw, 18ch) !important
+      }
+
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob .ticket-id-cell {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        direction: rtl !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        gap: 3px
+      }
+
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob .ticket-id-cell--auto {
+        gap: 3px !important
+      }
+
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob .wf-ticket-id {
+        flex: 0 1 auto !important;
+        min-width: 0;
+        max-width: 100%;
+        overflow: hidden !important;
+        text-overflow: ellipsis;
+        direction: ltr;
+        unicode-bidi: embed;
+        text-align: end
+      }
+
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob .ticket-id-cell--auto .wf-ticket-id {
+        display: inline-block !important;
+        font-size: 7px !important;
+        line-height: 1.1
+      }
+
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob .ticket-id-cell--auto .wf-auto-flag {
+        padding: 1px 3px !important;
+        min-width: 0 !important;
+        font-size: 6px !important;
+        gap: 2px;
+        flex-shrink: 0
+      }
+
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob .ticket-id-cell--auto .wf-auto-flag i {
+        font-size: 6px !important
       }
 
       #tab-workflow .wf-panel .data-table th:nth-child(2),
@@ -15408,6 +15736,33 @@
         vertical-align: middle !important;
         padding: 2px 3px !important;
         line-height: 1.1 !important
+      }
+
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob td.wf-col-emp {
+        width: auto !important;
+        min-width: 0 !important;
+        max-width: none !important;
+        padding: 2px 4px 2px 2px !important;
+        text-align: start !important
+      }
+
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob .wf-emp-cell {
+        display: inline-flex !important;
+        flex-direction: row;
+        direction: rtl;
+        justify-content: flex-start;
+        align-items: center;
+        width: 100%;
+        max-width: 100%;
+        text-align: start
+      }
+
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob .wf-emp-name {
+        flex: 0 1 auto;
+        min-width: 0;
+        font-size: 7px !important;
+        font-weight: 600;
+        text-align: start
       }
 
       #tab-workflow .wf-panel .data-table th:nth-child(3),
@@ -15465,26 +15820,129 @@
         max-width: min(34vw, 20ch) !important;
         white-space: nowrap !important;
         padding: 2px 3px !important;
-        text-align: right !important
+        text-align: center !important
       }
 
       #tab-workflow .wf-panel .data-table td.wf-col-datetime {
         width: 1px !important;
         min-width: 0 !important;
         max-width: min(34vw, 20ch) !important;
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis;
-        text-align: right !important;
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: clip;
+        text-align: center !important;
         vertical-align: middle !important;
-        padding: 2px 3px !important;
-        line-height: 1.1 !important;
+        padding: 3px 4px !important;
+        line-height: 1.15 !important;
         word-break: normal !important;
         overflow-wrap: normal !important
       }
 
-      #tab-workflow .wf-panel .data-table th:nth-child(6),
-      #tab-workflow .wf-panel .data-table td:nth-child(6) {
+      #tab-workflow .wf-datetime-stack {
+        display: inline-flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        width: 100%;
+        max-width: 100%;
+        line-height: 1.15;
+        white-space: nowrap;
+        text-align: center
+      }
+
+      #tab-workflow .wf-datetime-stack__time {
+        display: inline-flex;
+        flex-direction: row;
+        direction: rtl;
+        align-items: baseline;
+        justify-content: center;
+        gap: 4px;
+        unicode-bidi: isolate;
+        font-family: var(--mono);
+        line-height: 1.1;
+        white-space: nowrap
+      }
+
+      #tab-workflow .wf-time-hm {
+        direction: ltr;
+        unicode-bidi: embed;
+        font-size: 0.9em;
+        font-weight: 400;
+        color: var(--mr-text-2) !important;
+        opacity: 1 !important;
+        letter-spacing: 0.02em
+      }
+
+      #tab-workflow .wf-time-ampm {
+        font-size: 0.9em;
+        font-weight: 400;
+        color: var(--mr-text-2) !important;
+        opacity: 1 !important;
+        line-height: 1
+      }
+
+      #tab-workflow .wf-datetime-stack__date {
+        display: block;
+        width: 100%;
+        text-align: center;
+        font-family: var(--mono);
+        font-weight: 300;
+        color: var(--mr-text);
+        font-size: 0.9em;
+        line-height: 1.1;
+        letter-spacing: 0.02em
+      }
+
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob th:nth-child(4),
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob th.wf-col-datetime,
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob td.wf-col-datetime {
+        width: 1px !important;
+        min-width: 0 !important;
+        max-width: min(24vw, 11.5ch) !important;
+        padding: 2px 2px !important;
+        text-align: center !important;
+        overflow: hidden !important
+      }
+
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob .wf-datetime-stack {
+        gap: 1px;
+        max-width: 100%
+      }
+
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob .wf-datetime-stack__date {
+        font-size: 0.82em;
+        overflow: hidden;
+        text-overflow: ellipsis
+      }
+
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob .wf-time-hm,
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob .wf-time-ampm {
+        font-size: 0.82em
+      }
+
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob th:nth-child(5),
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob td:nth-child(5) {
+        width: 1px !important;
+        min-width: 0 !important;
+        max-width: min(24vw, 10.5ch) !important;
+        padding: 2px 2px !important;
+        text-align: center !important;
+        overflow: hidden !important
+      }
+
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob th:nth-child(6),
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob td:nth-child(6),
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob th.wf-col-action,
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob td.wf-col-action {
+        width: 11% !important;
+        min-width: 0 !important;
+        max-width: 11% !important;
+        padding-inline: 2px !important
+      }
+
+      #tab-workflow .wf-panel .data-table:not(.wf-tickets-table--mob) th:nth-child(6),
+      #tab-workflow .wf-panel .data-table:not(.wf-tickets-table--mob) td:nth-child(6) {
         width: 22% !important;
         min-width: 22% !important
       }
@@ -15498,13 +15956,13 @@
 
       #tab-workflow .wf-col-datetime,
       #tab-workflow .wf-datetime {
-        font-size: 8px !important;
-        line-height: 1.1;
-        white-space: nowrap !important
+        font-size: 7px !important;
+        line-height: 1.15;
+        white-space: normal !important
       }
 
       #tab-workflow .wf-col-branch {
-        font-size: 8px !important;
+        font-size: 7px !important;
         line-height: 1.1
       }
 
@@ -15546,7 +16004,7 @@
         max-width: 100%;
         margin: 0;
         padding: 0;
-        font-size: 8px !important;
+        font-size: 7px !important;
         font-weight: 600;
         line-height: 1.1;
         white-space: nowrap;
@@ -15562,42 +16020,60 @@
       }
 
       #tab-workflow .wf-process-btn {
-        padding: 2px 3px;
-        font-size: 8px;
-        line-height: 1;
-        white-space: normal;
+        padding: 1px 2px;
+        font-size: 6px;
+        font-weight: 700;
+        line-height: 1.1;
+        white-space: nowrap;
         max-width: 100%;
-        border-radius: 3px;
+        border-radius: 4px;
         min-height: 0
       }
 
-      #tab-workflow .wf-process-btn i {
-        font-size: 9px
+      #tab-workflow .wf-process-btn--emp-reply {
+        font-size: 5px;
+        line-height: 1.15;
+        white-space: normal;
+        word-break: break-word;
+        hyphens: none;
+        padding: 2px 1px;
+        background: var(--red-light) !important;
+        color: var(--mr-red) !important;
+        border: 1px solid color-mix(in srgb, var(--mr-red) 28%, transparent) !important
+      }
+
+      #tab-workflow .wf-col-action .wf-process-btn--emp-reply {
+        max-width: 100%
       }
 
       #tab-workflow .wf-view-only {
-        font-size: 8px
+        font-size: 6px;
+        font-weight: 600;
+        color: var(--mr-text-2) !important;
+        opacity: 1 !important
       }
 
       #tab-workflow .wf-ticket-cell {
         white-space: nowrap !important;
-        overflow: visible !important;
+        overflow: hidden !important;
         text-align: start !important;
         color: var(--mr-text) !important;
         width: 1%;
-        max-width: max-content
+        max-width: min(28vw, 14ch)
       }
 
       #tab-workflow .ticket-id-cell {
-        display: inline-flex;
-        flex-direction: row;
-        flex-wrap: wrap;
+        display: inline-flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
         align-items: center;
         justify-content: flex-start;
-        gap: 3px;
-        white-space: normal;
-        width: fit-content;
-        max-width: 100%;
+        gap: 4px;
+        direction: rtl;
+        white-space: nowrap !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
         margin: 0;
         padding: 0;
         vertical-align: middle;
@@ -15606,24 +16082,28 @@
       }
 
       #tab-workflow .wf-ticket-id {
-        display: inline !important;
-        flex-shrink: 0;
+        display: inline-block !important;
+        flex: 0 1 auto;
         margin: 0;
         padding: 0;
-        font-size: 8px !important;
+        font-size: 7px !important;
         line-height: 1.1;
         font-weight: 700;
         color: var(--mr-text) !important;
-        overflow: visible;
+        overflow: hidden;
+        text-overflow: ellipsis;
         white-space: nowrap;
+        direction: ltr;
+        unicode-bidi: embed;
+        text-align: end;
         visibility: visible;
         opacity: 1
       }
 
       #tab-workflow .wf-ticket-cell .overdue-flag {
         margin: 0;
-        padding: 2px 5px !important;
-        font-size: 8px !important;
+        padding: 2px 4px !important;
+        font-size: 7px !important;
         line-height: 1.2 !important;
         gap: 3px;
         border-radius: 4px;
@@ -15647,19 +16127,44 @@
       }
 
       #tab-workflow .badge {
-        font-size: 8px !important;
-        padding: 2px 4px !important;
+        font-size: 7px !important;
+        padding: 1px 3px !important;
         line-height: 1.2;
-        white-space: normal !important;
+        white-space: nowrap !important;
         border-radius: 4px;
         display: inline-block;
-        margin: 1px 0;
-        max-width: 100%
+        margin: 0;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: middle
+      }
+
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob .badge {
+        font-size: 6px !important;
+        padding: 1px 2px !important;
+        line-height: 1.1;
+        white-space: nowrap !important;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+        border-radius: 3px;
+        display: inline-block;
+        vertical-align: middle
+      }
+
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob .ticket-id-cell,
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob .ticket-id-cell--auto,
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob .wf-emp-cell,
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob .wf-viol-cell,
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob .wf-datetime-stack {
+        max-height: 100%;
+        overflow: hidden
       }
 
       #tab-workflow .overdue-flag {
-        font-size: 7px;
-        padding: 2px 5px;
+        font-size: 6px;
+        padding: 1px 4px;
         border-radius: 4px;
         line-height: 1.2;
         display: inline-flex;
@@ -15671,7 +16176,7 @@
         display: inline-block !important;
         font-size: 7px !important;
         flex-shrink: 0;
-        opacity: 0.95
+        opacity: 1 !important
       }
 
       /* مودال التذكرة — تصغير */
@@ -16051,7 +16556,7 @@
       }
     }
   </style>
-  <meta name="app-build" content="wf-auto-flag-v6">
+  <meta name="app-build" content="wf-ticket-row-even-v70">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
 </head>
 
@@ -16587,6 +17092,7 @@
                   </div>
                 </div>
                 <div class="wf-count">عدد النتائج: <strong id="wf-count">0</strong></div>
+                <div id="wfMobTicketsHead" class="wf-mob-tickets-head" aria-hidden="true"></div>
               </div>
               <div id="ticketList"></div>
             </div>
@@ -17918,6 +18424,8 @@
         'id', 'created_at', 'updated_at', 'ticket_number', 'state', 'status_text',
         'employee_id', 'branch_id', 'observer_id', 'supervisor_id',
         'violation_type', 'violation_date', 'violation_time',
+        'employee_reply', 'supervisor_reply',
+        'auto_forwarded_emp', 'auto_forwarded_sup',
       ].join(',');
       const MOB_VIOLATION_SELECT_MIN = 'id,created_at,ticket_number,state,status_text,employee_id,branch_id,observer_id,supervisor_id,violation_type';
       const MOB_VIOLATION_TYPES_SELECT = 'id,name,category,severity,weight,description';
@@ -18496,6 +19004,23 @@
           const h12 = h % 12 || 12;
           return `${h12}:${m} ${ampm}`;
         } catch { return timeStr; }
+      }
+
+      /** وقت الجوال: الساعة ثم ص/م (في RTL: الأرقام يميناً ثم ص/م يساراً = بعد الساعة في القراءة) */
+      function formatMobTicketTimeHtml(timeStr) {
+        if (!timeStr) return '-';
+        try {
+          const parts = String(timeStr).split(':');
+          if (parts.length < 2) return Sec.escapeHTML(timeStr);
+          const h = parseInt(parts[0], 10);
+          const m = String(parts[1] || '0').padStart(2, '0').slice(0, 2);
+          if (isNaN(h)) return Sec.escapeHTML(timeStr);
+          const ampm = h >= 12 ? 'م' : 'ص';
+          const h12 = h % 12 || 12;
+          return `<span class="wf-time-hm" dir="ltr">${Sec.escapeHTML(h12 + ':' + m)}</span><span class="wf-time-ampm">${Sec.escapeHTML(ampm)}</span>`;
+        } catch {
+          return Sec.escapeHTML(timeStr);
+        }
       }
 
       /** 12 ساعة مع ص/م قبل الساعة — لعرض نموذج رصد المخالفة */
@@ -20573,6 +21098,22 @@
         return false;
       }
 
+      /** نص عمود الإجراء على الجوال — «مطلوب ردك» للموظف/مدير الفرع المعني بانتظار رده */
+      function getWfMobActionLabel(t) {
+        if (!t || !state.currentUser) return 'رد';
+        const me = state.currentUser;
+        const actAsAdmin = me.role === 'admin' || hasPermission('act_all_tickets');
+        if (
+          t.state === 'emp' &&
+          !actAsAdmin &&
+          (me.role === 'employee' || me.role === 'branch_manager') &&
+          t.employee_id === me.id
+        ) {
+          return 'مطلوب ردك';
+        }
+        return 'رد';
+      }
+
       /** تذكرة ما زالت تسير في المسار (ليست مغلقة ولا تنبيهاً إدارياً نهائياً) */
       function isTicketWorkflowOpen(t) {
         if (!t) return false;
@@ -20582,7 +21123,7 @@
       /** تجاوزت المدة أو مُرّرت تلقائياً — نفس منطق بطاقة لوحة القيادة */
       function dashIsOverdueTicket(v) {
         if (!v) return false;
-        if (v.auto_forwarded_emp || v.auto_forwarded_sup || v.auto_forwarded_aud) return true;
+        if (v.auto_forwarded_emp || v.auto_forwarded_sup) return true;
         if (v.state === 'closed' || v.state === 'Warning_Issued') return false;
         if (!v.created_at) return false;
         const hours = (Date.now() - new Date(v.created_at).getTime()) / 36e5;
@@ -21107,6 +21648,28 @@
 
       function isDbTruthy(val) {
         return val === true || val === 1 || val === 'true' || val === 't';
+      }
+
+      function isTicketAutoForwarded(t) {
+        if (!t) return false;
+        if (isDbTruthy(t.auto_forwarded_emp) || isDbTruthy(t.auto_forwarded_sup)) {
+          return true;
+        }
+        const replyHay = [t.employee_reply, t.supervisor_reply, t.audit_reply].filter(Boolean).join(' ');
+        if (/مررت التذكرة تلقائياً|تمرير تلقائي/i.test(replyHay)) return true;
+        let logs = t.logs;
+        if (typeof logs === 'string') {
+          try { logs = JSON.parse(logs); } catch (_) { logs = []; }
+        }
+        if (Array.isArray(logs) && logs.some(l => /تمرير تلقائي|تلقائي/i.test(String(l?.action || '')))) {
+          return true;
+        }
+        return false;
+      }
+
+      function ticketAutoFlagHtml(t) {
+        if (!isTicketAutoForwarded(t)) return '';
+        return '<span class="overdue-flag wf-auto-flag" title="تمرير تلقائي"><i class="fas fa-robot" aria-hidden="true"></i><span class="overdue-flag__txt">تلقائي</span></span>';
       }
 
       function isAutoPlaceholderReply(text) {
@@ -22144,7 +22707,7 @@
             const initials = (t._empName || '—').trim().charAt(0) || '—';
             const ageMs = t.created_at ? (Date.now() - new Date(t.created_at).getTime()) : 0;
             const ageHours = Math.round(ageMs / 36e5);
-            const overdueCls = (t.auto_forwarded_emp || t.auto_forwarded_sup || t.auto_forwarded_aud) ? ' is-overdue' : '';
+            const overdueCls = (t.auto_forwarded_emp || t.auto_forwarded_sup) ? ' is-overdue' : '';
             return `
         <button type="button" class="mk-attn__row" onclick="openTicket('${t.id}')">
           <span class="mk-attn__avatar">${Sec.escapeHTML(initials)}</span>
@@ -25200,60 +25763,66 @@
         const list = document.getElementById('ticketList');
         if (!list) return;
 
+        const mobHead = document.getElementById('wfMobTicketsHead');
         if (!tickets.length) {
+          if (mobHead) {
+            mobHead.innerHTML = '';
+            mobHead.setAttribute('aria-hidden', 'true');
+          }
           list.innerHTML = '<div class="empty"><i class="fas fa-inbox"></i><p>لا توجد تذاكر مطابقة</p></div>';
           return;
         }
 
         const branchColHtml = wfMob ? '' : '<col class="wf-col-branch-c">';
         const branchThHtml = wfMob ? '' : '<th class="wf-col-branch">الفرع</th>';
-
-        list.innerHTML = `
-    <div class="wf-table-wrap">
-      <table class="data-table wf-tickets-table${wfMob ? ' wf-tickets-table--mob' : ''}">
-        <colgroup>
+        const colgroupHtml = `
           <col class="wf-col-ticket-c">
           <col class="wf-col-emp-c">
           <col class="wf-col-viol-c">
           ${branchColHtml}
           <col class="wf-col-datetime-c">
           <col class="wf-col-status-c">
-          <col class="wf-col-action-c">
-        </colgroup>
-        <thead>
+          <col class="wf-col-action-c">`;
+        const theadHtml = `
           <tr>
-            <th class="wf-col-ticket">${wfMob ? 'تذكرة' : 'رقم التذكرة'}</th>
-            <th class="wf-col-emp">${wfMob ? 'موظف' : 'الموظف'}</th>
-            <th class="wf-col-violation">${wfMob ? 'مخالفة' : 'نوع المخالفة'}</th>
+            <th class="wf-col-ticket">رقم التذكرة</th>
+            <th class="wf-col-emp">اسم الموظف</th>
+            <th class="wf-col-violation">نوع المخالفة</th>
             ${branchThHtml}
-            <th class="wf-col-datetime">${wfMob ? 'وقت' : 'التاريخ والوقت'}</th>
-            <th>${wfMob ? 'حالة' : 'الحالة'}</th>
-            <th class="wf-col-action">${isReports ? 'المرفقات' : (wfMob ? '' : 'الإجراء')}</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${tickets.map(t => {
-          const autoFlag = (t.auto_forwarded_emp || t.auto_forwarded_sup)
-            ? '<span class="overdue-flag"><i class="fas fa-robot" aria-hidden="true"></i><span class="overdue-flag__txt">تلقائي</span></span>'
-            : '';
+            <th class="wf-col-datetime">تاريخ المخالفة</th>
+            <th>حالة المخالفة</th>
+            <th class="wf-col-action">${isReports ? 'المرفقات' : 'إجراء'}</th>
+          </tr>`;
+
+        const tbodyHtml = tickets.map(t => {
+          const autoFlag = ticketAutoFlagHtml(t);
+          const autoRowCls = autoFlag ? ' wf-ticket-row--auto' : '';
           const empName = (t._empName || '').trim() || '...';
           const empNumber = (t._empNumber || '').trim();
           const branchName = (t._branchName || '').trim() || '...';
           const violName = (t.violation_type || '').trim() || '...';
           const dateTime = t.violation_date
-            ? `${Sec.escapeHTML(t.violation_date)} ${Sec.escapeHTML(formatTime12(t.violation_time))}`
+            ? (wfMob
+              ? `<span class="wf-datetime-stack"><span class="wf-datetime-stack__time">${formatMobTicketTimeHtml(t.violation_time)}</span><span class="wf-datetime-stack__date">${Sec.escapeHTML(t.violation_date)}</span></span>`
+              : `${Sec.escapeHTML(t.violation_date)} ${Sec.escapeHTML(formatTime12(t.violation_time))}`)
             : '-';
+          const mobActionLbl = wfMob ? getWfMobActionLabel(t) : '';
+          const mobActionBtnCls = wfMob && mobActionLbl === 'مطلوب ردك' ? ' wf-process-btn--emp-reply' : '';
           const actionCell = isReports
             ? `<span class="report-attachments-count" title="عدد المرفقات"><i class="fas fa-paperclip" aria-hidden="true"></i> ${getViolationAttachmentCount(t)}</span>`
             : (canActOnTicket(t)
-              ? '<button type="button" class="wf-process-btn" onclick="event.stopPropagation(); openTicket(\'' + t.id + '\')" title="معالجة">' + (wfMob ? '<i class="fas fa-pen" aria-hidden="true"></i>' : 'اضغط للمعالجة') + '</button>'
+              ? '<button type="button" class="wf-process-btn' + mobActionBtnCls + '" onclick="event.stopPropagation(); openTicket(\'' + t.id + '\')" title="' + (mobActionLbl === 'مطلوب ردك' ? 'مطلوب ردك على المخالفة' : 'معالجة') + '">' + (wfMob ? mobActionLbl : 'اضغط للمعالجة') + '</button>'
               : '<span class="wf-view-only">' + (wfMob ? 'عرض' : 'عرض فقط') + '</span>');
           const branchTdHtml = wfMob
             ? ''
             : `<td class="wf-col-branch"><span class="wf-branch-cell"><span class="wf-branch-name">${Sec.escapeHTML(branchName)}</span></span></td>`;
+          const ticketNumHtml = `<strong class="wf-ticket-id">${Sec.escapeHTML(t.ticket_number)}</strong>`;
+          const ticketIdCellHtml = (wfMob && autoFlag)
+            ? `<div class="ticket-id-cell ticket-id-cell--auto">${ticketNumHtml}${autoFlag}</div>`
+            : `<div class="ticket-id-cell">${ticketNumHtml}${autoFlag}</div>`;
           return `
-            <tr onclick="openTicket('${t.id}')">
-              <td class="wf-ticket-cell"><div class="ticket-id-cell"><strong class="wf-ticket-id">${Sec.escapeHTML(t.ticket_number)}</strong>${autoFlag}</div></td>
+            <tr class="wf-ticket-row${autoRowCls}" onclick="openTicket('${t.id}')">
+              <td class="wf-ticket-cell">${ticketIdCellHtml}</td>
               <td class="wf-col-emp"><span class="wf-emp-cell"><span class="wf-emp-name">${Sec.escapeHTML(empName)}</span>${empNumber ? `<span class="wf-emp-num">${Sec.escapeHTML(empNumber)}</span>` : ''}</span></td>
               <td class="wf-col-violation"><span class="wf-viol-cell"><span class="wf-viol-name">${Sec.escapeHTML(violName)}</span></span></td>
               ${branchTdHtml}
@@ -25261,11 +25830,95 @@
               <td><span class="badge ${getTicketBadgeClass(t)}">${Sec.escapeHTML(t.status_text || STATE_LABELS[t.state])}</span></td>
               <td class="wf-col-action">${actionCell}</td>
             </tr>`;
-        }).join('')}
-        </tbody>
+        }).join('');
+
+        if (wfMob) {
+          if (mobHead) {
+            mobHead.innerHTML = `
+        <div class="wf-table-wrap wf-table-wrap--head">
+          <table class="data-table wf-tickets-table wf-tickets-table--mob wf-tickets-table--mob-head">
+            <colgroup>${colgroupHtml}</colgroup>
+            <thead>${theadHtml}</thead>
+          </table>
+        </div>`;
+            mobHead.setAttribute('aria-hidden', 'false');
+          }
+          list.innerHTML = `
+    <div class="wf-mob-tickets-body">
+      <div class="wf-table-wrap wf-table-wrap--body">
+        <table class="data-table wf-tickets-table wf-tickets-table--mob wf-tickets-table--mob-body">
+          <colgroup>${colgroupHtml}</colgroup>
+          <tbody>${tbodyHtml}</tbody>
+        </table>
+      </div>
+    </div>`;
+          requestAnimationFrame(() => requestAnimationFrame(bindMobTicketsHeadScroll));
+        } else {
+          if (mobHead) {
+            mobHead.innerHTML = '';
+            mobHead.setAttribute('aria-hidden', 'true');
+          }
+          list.innerHTML = `
+    <div class="wf-table-wrap">
+      <table class="data-table wf-tickets-table">
+        <colgroup>${colgroupHtml}</colgroup>
+        <thead>${theadHtml}</thead>
+        <tbody>${tbodyHtml}</tbody>
       </table>
-    </div>
-  `;
+    </div>`;
+        }
+      }
+
+      function syncMobTicketsColWidths() {
+        const headTable = document.querySelector('#tab-workflow #wfMobTicketsHead .wf-tickets-table--mob-head');
+        const bodyTable = document.querySelector('#tab-workflow #ticketList .wf-tickets-table--mob-body');
+        const bodyScroll = document.querySelector('#tab-workflow #ticketList .wf-mob-tickets-body');
+        const headWrap = document.querySelector('#tab-workflow #wfMobTicketsHead .wf-table-wrap--head');
+        if (!headTable || !bodyTable || !bodyScroll) return;
+
+        const row = bodyTable.querySelector('tbody tr.wf-ticket-row');
+        if (!row) return;
+
+        const tds = row.querySelectorAll('td');
+        const ths = headTable.querySelectorAll('thead th');
+        const headCols = headTable.querySelectorAll('colgroup col');
+        const bodyCols = bodyTable.querySelectorAll('colgroup col');
+        if (!tds.length || tds.length !== ths.length) return;
+
+        const scrollBarW = Math.max(0, bodyScroll.offsetWidth - bodyScroll.clientWidth);
+        if (headWrap) headWrap.style.paddingInlineEnd = scrollBarW ? `${scrollBarW}px` : '';
+
+        headTable.style.width = '100%';
+        bodyTable.style.width = '100%';
+
+        tds.forEach((td, i) => {
+          const w = td.offsetWidth;
+          const px = `${w}px`;
+          if (ths[i]) {
+            ths[i].style.width = px;
+            ths[i].style.minWidth = px;
+            ths[i].style.maxWidth = px;
+          }
+          if (headCols[i]) headCols[i].style.width = px;
+          if (bodyCols[i]) bodyCols[i].style.width = px;
+        });
+      }
+
+      function bindMobTicketsHeadScroll() {
+        const bodyScroll = document.querySelector('#tab-workflow #ticketList .wf-mob-tickets-body');
+        const headWrap = document.querySelector('#tab-workflow #wfMobTicketsHead .wf-table-wrap--head');
+        if (!bodyScroll || !headWrap) return;
+
+        bodyScroll.onscroll = () => { headWrap.scrollLeft = bodyScroll.scrollLeft; };
+        headWrap.scrollLeft = bodyScroll.scrollLeft;
+        syncMobTicketsColWidths();
+        if (!bodyScroll.dataset.wfColSyncBound) {
+          bodyScroll.dataset.wfColSyncBound = '1';
+          const ro = new ResizeObserver(() => syncMobTicketsColWidths());
+          ro.observe(bodyScroll);
+          const bodyTable = bodyScroll.querySelector('.wf-tickets-table--mob-body');
+          if (bodyTable) ro.observe(bodyTable);
+        }
       }
 
       // ───────────────────────────────────────────────────────────────────────────
