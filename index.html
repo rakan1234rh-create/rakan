@@ -26,6 +26,11 @@
        1. CSS Variables / Design Tokens
     ═══════════════════════════════════════════════════════════════════════ */
     :root {
+      /* iOS notch / شريط الحالة عند «إضافة إلى الشاشة الرئيسية» */
+      --mr-safe-top: env(safe-area-inset-top, 0px);
+      --mr-safe-bottom: env(safe-area-inset-bottom, 0px);
+      --mr-safe-left: env(safe-area-inset-left, 0px);
+      --mr-safe-right: env(safe-area-inset-right, 0px);
       /* Mirsad Design System — tokens (black primary, RTL) */
       --mr-primary: #0f1224;
       --mr-primary-hover: #2a2d3f;
@@ -2667,7 +2672,9 @@
       box-sizing: border-box;
       gap: 10px;
       height: 76px;
+      min-height: calc(76px + var(--mr-safe-top, env(safe-area-inset-top, 0px)));
       padding-block: 10px;
+      padding-block-start: calc(10px + var(--mr-safe-top, env(safe-area-inset-top, 0px)));
       padding-inline-start: 16px;
       padding-inline-end: 6px;
       background: color-mix(in srgb, var(--mr-surface) 94%, transparent);
@@ -2880,7 +2887,7 @@
       }
 
       :root {
-        --unified-topbar-h: 76px;
+        --unified-topbar-h: calc(76px + var(--mr-safe-top, env(safe-area-inset-top, 0px)));
         --mr-mob-ref-w: 430px;
         --mr-mob-base-scale: 0.90;
         --mr-mob-scale-min: 0.78;
@@ -3045,8 +3052,11 @@
 
       .topbar.unified-banner {
         position: sticky;
+        top: 0;
         z-index: 2200;
-        align-items: center
+        align-items: center;
+        padding-block-start: calc(8px + var(--mr-safe-top, env(safe-area-inset-top, 0px))) !important;
+        min-height: calc(56px + var(--mr-safe-top, env(safe-area-inset-top, 0px))) !important
       }
 
       .sidebar-overlay.open {
@@ -14604,7 +14614,7 @@
 
     @media (max-width: 768px) {
       #toastContainer.mk-toast-stack {
-        top: 12px;
+        top: calc(var(--unified-topbar-h, 76px) + 8px);
         max-width: calc(100vw - 16px);
       }
       .mk-toast {
@@ -14726,12 +14736,13 @@
 
       .topbar.unified-banner {
         height: auto !important;
-        min-height: 56px;
+        min-height: calc(56px + var(--mr-safe-top, env(safe-area-inset-top, 0px))) !important;
         flex-wrap: nowrap !important;
         align-items: center !important;
-        padding-block: 8px !important;
-        padding-inline-start: 12px !important;
-        padding-inline-end: 4px !important;
+        padding-block-end: 8px !important;
+        padding-block-start: calc(8px + var(--mr-safe-top, env(safe-area-inset-top, 0px))) !important;
+        padding-inline-start: max(12px, var(--mr-safe-left, env(safe-area-inset-left, 0px))) !important;
+        padding-inline-end: max(4px, var(--mr-safe-right, env(safe-area-inset-right, 0px))) !important;
         gap: 8px !important
       }
 
@@ -20429,6 +20440,19 @@
         }
       }
 
+      function syncSafeAreaInsets() {
+        const probe = document.createElement('div');
+        probe.style.cssText = 'position:fixed;top:0;left:0;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);visibility:hidden;pointer-events:none';
+        document.body.appendChild(probe);
+        const s = getComputedStyle(probe);
+        const top = parseFloat(s.paddingTop) || 0;
+        const bottom = parseFloat(s.paddingBottom) || 0;
+        probe.remove();
+        if (top > 0) document.documentElement.style.setProperty('--mr-safe-top', top + 'px');
+        if (bottom > 0) document.documentElement.style.setProperty('--mr-safe-bottom', bottom + 'px');
+        syncTopbarHeightVar();
+      }
+
       function syncSidebarToggleBtn() {
         const btn = document.getElementById('sidebarToggleBtn');
         const sb = document.getElementById('sidebar');
@@ -20468,6 +20492,7 @@
       }
 
       function initSidebarMobileControls() {
+        syncSafeAreaInsets();
         syncTopbarHeightVar();
         syncSidebarToggleBtn();
         const btn = document.getElementById('sidebarToggleBtn');
@@ -20482,12 +20507,16 @@
         if (!window._mrSidebarResizeBound) {
           window._mrSidebarResizeBound = true;
           window.addEventListener('resize', () => {
+            syncSafeAreaInsets();
             syncTopbarHeightVar();
             syncMobileBottomNavLayout();
             if (window.innerWidth > 992) closeSidebar();
             if (document.getElementById('tab-workflow')?.classList.contains('active') && typeof filterTickets === 'function') {
               filterTickets();
             }
+          }, { passive: true });
+          window.addEventListener('orientationchange', () => {
+            setTimeout(syncSafeAreaInsets, 120);
           }, { passive: true });
         }
         syncMobileBottomNavLayout();
