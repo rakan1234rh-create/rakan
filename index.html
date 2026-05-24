@@ -3,7 +3,8 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="format-detection" content="telephone=no">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="theme-color" content="#eceef3" id="metaThemeColor">
   <meta name="mobile-web-app-capable" content="yes">
@@ -2855,6 +2856,70 @@
     }
 
     @media(max-width:992px) {
+      html {
+        touch-action: manipulation;
+        -webkit-text-size-adjust: 100%;
+        -webkit-tap-highlight-color: transparent
+      }
+
+      /* وضع تطبيق: لا تكبير باللمس مرتين، والبنر ثابت */
+      body.mirsad-app-active {
+        position: fixed;
+        overflow: hidden;
+        width: 100%;
+        height: 100%;
+        touch-action: manipulation
+      }
+
+      body.mirsad-app-active #appWrap.app {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100dvh;
+        max-height: 100dvh;
+        overflow: hidden
+      }
+
+      body.mirsad-app-active #appWrap .app-shell {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 0;
+        overflow: hidden
+      }
+
+      body.mirsad-app-active #appWrap .topbar.unified-banner {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: 100% !important;
+        z-index: 3000 !important;
+        touch-action: none;
+        user-select: none;
+        -webkit-user-select: none;
+        -webkit-user-drag: none
+      }
+
+      body.mirsad-app-active #appWrap .app-body {
+        flex: 1 1 auto;
+        min-height: 0;
+        margin-top: 0 !important;
+        overflow: hidden !important;
+        display: flex;
+        flex-direction: column
+      }
+
+      body.mirsad-app-active #appWrap .main {
+        flex: 1 1 auto;
+        min-height: 0;
+        height: auto !important;
+        overflow-y: auto !important;
+        overflow-x: clip;
+        overscroll-behavior-y: contain;
+        -webkit-overflow-scrolling: touch
+      }
+
       /* إخفاء أشرطة التمرير — التمرير باللمس فقط */
       html,
       body,
@@ -3055,12 +3120,30 @@
       }
 
       .topbar.unified-banner {
-        position: sticky;
+        position: fixed;
         top: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
         z-index: 2200;
         align-items: center;
+        touch-action: none;
+        user-select: none;
         padding-block-start: calc(8px + var(--mr-safe-top, env(safe-area-inset-top, 0px))) !important;
         min-height: calc(56px + var(--mr-safe-top, env(safe-area-inset-top, 0px))) !important
+      }
+
+      #appWrap .app-shell {
+        padding-top: var(--unified-topbar-h, 76px);
+        box-sizing: border-box;
+        height: 100%;
+        min-height: 0
+      }
+
+      #appWrap .app-body {
+        flex: 1 1 auto;
+        min-height: 0;
+        margin-top: 0 !important
       }
 
       .sidebar-overlay.open {
@@ -3218,6 +3301,13 @@
 
       #appWrap .main {
         padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)) !important
+      }
+
+      #appWrap input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+      #appWrap select,
+      #appWrap textarea,
+      .lp-input {
+        font-size: 16px
       }
 
       .sidebar-drawer-toggle.sidebar-toggle-btn {
@@ -18446,9 +18536,34 @@
       // 7. AUTHENTICATION
       // ═══════════════════════════════════════════════════════════════════════════
 
+      function setNativeAppShellActive(active) {
+        const on = !!active && typeof isMobileViewport === 'function' && isMobileViewport();
+        document.body.classList.toggle('mirsad-app-active', on);
+      }
+
+      function initNativeAppFeel() {
+        if (window._mrNativeFeelBound) return;
+        window._mrNativeFeelBound = true;
+        const blockGestureZoom = (e) => {
+          if (!document.body.classList.contains('mirsad-app-active')) return;
+          e.preventDefault();
+        };
+        ['gesturestart', 'gesturechange', 'gestureend'].forEach((ev) => {
+          document.addEventListener(ev, blockGestureZoom, { passive: false });
+        });
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', (e) => {
+          if (!document.body.classList.contains('mirsad-app-active')) return;
+          const now = Date.now();
+          if (now - lastTouchEnd < 320) e.preventDefault();
+          lastTouchEnd = now;
+        }, { passive: false });
+      }
+
       function openLoginPortal() {
         const ls = document.getElementById('loginScreen');
         const app = document.getElementById('appWrap');
+        setNativeAppShellActive(false);
         if (ls) {
           ls.classList.remove('hidden');
           ls.removeAttribute('hidden');
@@ -18472,6 +18587,7 @@
           app.classList.add('rbac-ready');
           app.style.display = '';
         }
+        setNativeAppShellActive(true);
         if (typeof initSidebarMobileControls === 'function') {
           requestAnimationFrame(() => initSidebarMobileControls());
         }
@@ -20527,6 +20643,8 @@
             syncSafeAreaInsets();
             syncTopbarHeightVar();
             syncMobileBottomNavLayout();
+            const appVisible = document.getElementById('appWrap')?.style.display !== 'none';
+            setNativeAppShellActive(appVisible && !!state.currentUser);
             if (window.innerWidth > 992) closeSidebar();
             if (document.getElementById('tab-workflow')?.classList.contains('active') && typeof filterTickets === 'function') {
               filterTickets();
@@ -30534,6 +30652,7 @@
         try {
           loadTheme();
           if (typeof initSidebarMobileControls === 'function') initSidebarMobileControls();
+          if (typeof initNativeAppFeel === 'function') initNativeAppFeel();
           if (typeof syncMobileBottomNavLayout === 'function') syncMobileBottomNavLayout();
           if (typeof initMobileViewportSync === 'function') initMobileViewportSync();
           if (typeof initViolDetailSheetDrag === 'function') initViolDetailSheetDrag();
