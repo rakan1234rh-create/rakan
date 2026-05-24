@@ -2896,15 +2896,21 @@
       }
 
       body.mirsad-app-active #appWrap .mobile-bottom-nav {
-        position: relative !important;
-        flex: 0 0 auto;
-        margin-top: auto !important;
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
         width: 100% !important;
+        margin: 0 !important;
         z-index: 2800 !important;
         touch-action: pan-x;
         overscroll-behavior: none;
         user-select: none;
         -webkit-user-select: none
+      }
+
+      body.mirsad-app-active #appWrap > .app-shell {
+        padding-bottom: var(--mr-mob-bottom-nav-h, calc(56px + env(safe-area-inset-bottom, 0px)))
       }
 
       body.mirsad-app-active #appWrap .topbar.unified-banner {
@@ -3168,6 +3174,7 @@
         min-height: 0;
         max-height: 100%;
         padding-top: var(--unified-topbar-h, 76px);
+        padding-bottom: var(--mr-mob-bottom-nav-h, calc(56px + env(safe-area-inset-bottom, 0px)));
         box-sizing: border-box;
         overflow: hidden
       }
@@ -3196,18 +3203,20 @@
 
       #appWrap .mobile-bottom-nav {
         display: flex !important;
-        position: relative;
-        flex: 0 0 auto;
-        margin-top: auto;
-        order: 99;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
         width: 100%;
-        z-index: 2200;
+        margin: 0;
+        z-index: 2800;
         min-height: 56px;
-        height: var(--mr-mob-bottom-nav-h, calc(56px + env(safe-area-inset-bottom, 0px)));
-        padding-bottom: max(env(safe-area-inset-bottom, 0px), 0px);
+        height: auto;
+        padding-top: 6px;
+        padding-bottom: env(safe-area-inset-bottom, 0px);
         box-sizing: border-box;
         padding-inline: 4px;
-        background: color-mix(in srgb, var(--mr-surface) 98%, transparent);
+        background: var(--mr-surface);
         border-top: 1px solid var(--mr-border);
         box-shadow: 0 -6px 24px rgba(15, 18, 36, 0.08);
         backdrop-filter: blur(12px);
@@ -16830,6 +16839,7 @@
           </div>        </div>
       </div>
       </div>
+    </div>
 
     <nav class="mobile-bottom-nav" id="mobileBottomNav" aria-label="التنقل الرئيسي">
       <button type="button" class="mob-nav-item active" data-tab="dashboard" data-perm="tab_dashboard"
@@ -16879,7 +16889,6 @@
         <span>صلاحيات</span>
       </button>
     </nav>
-    </div>
 
     <!-- MODALS -->
     <div class="modal" id="regionModal">
@@ -20296,9 +20305,14 @@
       function syncMobBottomNavHeight() {
         const nav = document.getElementById('mobileBottomNav');
         if (!nav || window.innerWidth > 992) return;
-        const h = Math.ceil(nav.getBoundingClientRect().height);
+        const rect = nav.getBoundingClientRect();
+        const h = Math.ceil(rect.height);
         if (h > 0) {
           document.documentElement.style.setProperty('--mr-mob-bottom-nav-h', h + 'px');
+        }
+        const gap = Math.max(0, Math.round(window.innerHeight - rect.bottom));
+        if (gap > 2 && isMirsadDebugLog()) {
+          console.warn('[mob-nav] gap below bar:', gap, 'px');
         }
       }
 
