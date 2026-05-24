@@ -1442,7 +1442,11 @@
 
       .mr-topbar-name {
         font-size: 12px;
-        font-weight: 700
+        font-weight: 700;
+        max-width: min(42vw, 148px);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap
       }
 
       .mr-topbar-role {
@@ -14851,9 +14855,10 @@
     @media (max-width: 576px) {
       /* تحسين حجم الخطوط والعناوين على الشاشات الصغيرة جداً */
       .topbar.unified-banner {
-        padding-block: 8px !important;
-        padding-inline-start: 10px !important;
-        padding-inline-end: 2px !important;
+        padding-block-end: 8px !important;
+        padding-block-start: calc(8px + var(--mr-safe-top, env(safe-area-inset-top, 0px))) !important;
+        padding-inline-start: max(10px, var(--mr-safe-left, env(safe-area-inset-left, 0px))) !important;
+        padding-inline-end: max(2px, var(--mr-safe-right, env(safe-area-inset-right, 0px))) !important;
         gap: 8px !important;
       }
       .brand-area .brand-text strong {
