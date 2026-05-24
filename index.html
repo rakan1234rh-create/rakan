@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#eceef3" id="metaThemeColor">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <title>منصة الرصد المتكاملة | Monitoring Platform</title>
   <link rel="icon"
     href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛡️</text></svg>">
@@ -26,6 +26,13 @@
     /* ═══════════════════════════════════════════════════════════════════════
        1. CSS Variables / Design Tokens
     ═══════════════════════════════════════════════════════════════════════ */
+    html {
+      background: var(--mr-bg);
+      min-height: 100%;
+      min-height: 100dvh;
+      min-height: -webkit-fill-available
+    }
+
     :root {
       /* iOS notch / شريط الحالة عند «إضافة إلى الشاشة الرئيسية» */
       --mr-safe-top: env(safe-area-inset-top, 0px);
@@ -2862,24 +2869,39 @@
         -webkit-tap-highlight-color: transparent
       }
 
-      /* وضع تطبيق: لا تكبير باللمس مرتين، والبنر ثابت */
-      body.mirsad-app-active {
-        position: fixed;
+      /* وضع تطبيق: لا تكبير باللمس مرتين — القفل على html/#appWrap وليس body (إصلاح فراغ iOS) */
+      html.mirsad-app-shell-lock {
         overflow: hidden;
         width: 100%;
         height: 100%;
+        height: 100svh;
+        height: 100dvh;
+        height: -webkit-fill-available;
         touch-action: manipulation
+      }
+
+      body.mirsad-app-active {
+        overflow: hidden;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        touch-action: manipulation;
+        background: var(--mr-bg)
       }
 
       body.mirsad-app-active #appWrap.app {
         position: fixed;
         inset: 0;
         width: 100%;
+        height: 100%;
+        height: 100svh;
         height: 100dvh;
-        max-height: 100dvh;
+        height: -webkit-fill-available;
+        max-height: none;
         overflow: hidden;
         display: flex;
-        flex-direction: column
+        flex-direction: column;
+        box-sizing: border-box
       }
 
       body.mirsad-app-active #appWrap > .app-shell {
@@ -2893,24 +2915,6 @@
         overflow: hidden;
         padding-top: var(--unified-topbar-h, 76px);
         box-sizing: border-box
-      }
-
-      body.mirsad-app-active #appWrap .mobile-bottom-nav {
-        position: fixed !important;
-        bottom: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        width: 100% !important;
-        margin: 0 !important;
-        z-index: 2800 !important;
-        touch-action: pan-x;
-        overscroll-behavior: none;
-        user-select: none;
-        -webkit-user-select: none
-      }
-
-      body.mirsad-app-active #appWrap > .app-shell {
-        padding-bottom: var(--mr-mob-bottom-nav-h, calc(56px + env(safe-area-inset-bottom, 0px)))
       }
 
       body.mirsad-app-active #appWrap .topbar.unified-banner {
@@ -3161,8 +3165,11 @@
       #appWrap.app {
         display: flex;
         flex-direction: column;
+        height: 100%;
+        height: 100svh;
         height: 100dvh;
-        max-height: 100dvh;
+        height: -webkit-fill-available;
+        max-height: none;
         overflow: hidden
       }
 
@@ -3174,7 +3181,7 @@
         min-height: 0;
         max-height: 100%;
         padding-top: var(--unified-topbar-h, 76px);
-        padding-bottom: var(--mr-mob-bottom-nav-h, calc(56px + env(safe-area-inset-bottom, 0px)));
+        padding-bottom: 0;
         box-sizing: border-box;
         overflow: hidden
       }
@@ -3201,59 +3208,30 @@
         display: none !important
       }
 
-      @media (display-mode: standalone) {
-        body.mirsad-app-active #appWrap.app {
-          height: 100vh;
-          height: -webkit-fill-available;
-          min-height: -webkit-fill-available;
-          max-height: 100vh
-        }
-      }
-
-      html.mirsad-mob-nav-docked #mobileBottomNav.mobile-bottom-nav {
-        position: fixed !important;
-        bottom: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        width: 100% !important;
-        max-width: none !important;
-        margin: 0 !important;
-        border-radius: 0 !important;
-        z-index: 2147483646 !important;
-        background: var(--mr-surface) !important;
-        border-top: 1px solid var(--mr-border) !important;
-        box-shadow: 0 -6px 24px rgba(15, 18, 36, 0.12) !important;
-        -webkit-backdrop-filter: none !important;
-        backdrop-filter: none !important;
-        transform: translateZ(0)
-      }
-
-      html.mirsad-mob-nav-docked body.mirsad-app-active #appWrap > .app-shell {
-        padding-bottom: 0 !important
-      }
-
-      #appWrap .mobile-bottom-nav {
+      #appWrap > .app-shell > #mobileBottomNav.mobile-bottom-nav {
         display: flex !important;
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
+        position: relative;
+        flex: 0 0 auto;
+        align-self: stretch;
+        order: 99;
         width: 100%;
+        max-width: 100%;
         margin: 0;
+        margin-top: auto;
         z-index: 2800;
         min-height: 56px;
-        height: auto;
         padding-top: 6px;
-        padding-bottom: max(env(safe-area-inset-bottom, 0px), var(--mr-safe-bottom, 0px));
+        padding-bottom: constant(safe-area-inset-bottom);
+        padding-bottom: env(safe-area-inset-bottom, 0px);
         box-sizing: border-box;
-        padding-inline: 4px;
+        padding-inline: 8px;
         background: var(--mr-surface);
         border-top: 1px solid var(--mr-border);
         box-shadow: 0 -6px 24px rgba(15, 18, 36, 0.08);
         align-items: stretch;
-        justify-content: flex-start;
-        gap: 0;
-        overflow-x: auto;
+        justify-content: space-evenly;
+        gap: 4px;
+        overflow-x: hidden;
         overflow-y: hidden;
         overscroll-behavior: none;
         touch-action: pan-x;
@@ -3263,42 +3241,42 @@
         scrollbar-width: none
       }
 
-      #appWrap .mobile-bottom-nav::-webkit-scrollbar {
+      #appWrap > .app-shell > #mobileBottomNav.mobile-bottom-nav::-webkit-scrollbar {
         display: none;
         height: 0
       }
 
-      #appWrap .mobile-bottom-nav.mobile-bottom-nav--spread {
+      #appWrap > .app-shell > #mobileBottomNav.mobile-bottom-nav.mobile-bottom-nav--spread {
         justify-content: space-evenly;
         overflow-x: hidden;
         padding-inline: 10px;
         gap: 6px
       }
 
-      #appWrap .mobile-bottom-nav.mobile-bottom-nav--spread .mob-nav-item {
+      #appWrap > .app-shell > #mobileBottomNav.mobile-bottom-nav.mobile-bottom-nav--spread .mob-nav-item {
         flex: 1 1 0;
         min-width: 0;
         max-width: none;
         padding-inline: 6px
       }
 
-      #appWrap .mobile-bottom-nav.mobile-bottom-nav--spread .mob-nav-item span {
+      #appWrap > .app-shell > #mobileBottomNav.mobile-bottom-nav.mobile-bottom-nav--spread .mob-nav-item span {
         max-width: none
       }
 
-      #appWrap .mobile-bottom-nav.mobile-bottom-nav--scroll {
+      #appWrap > .app-shell > #mobileBottomNav.mobile-bottom-nav.mobile-bottom-nav--scroll {
         justify-content: flex-start;
         overflow-x: auto
       }
 
-      #appWrap .mobile-bottom-nav.mobile-bottom-nav--scroll .mob-nav-item {
+      #appWrap > .app-shell > #mobileBottomNav.mobile-bottom-nav.mobile-bottom-nav--scroll .mob-nav-item {
         flex: 0 0 auto;
         min-width: 62px
       }
 
       .mob-nav-item {
-        flex: 0 0 auto;
-        min-width: 62px;
+        flex: 1 1 0;
+        min-width: 0;
         max-width: none;
         display: flex;
         flex-direction: column;
@@ -3397,7 +3375,7 @@
     }
 
     @media (min-width: 993px) {
-      #appWrap .mobile-bottom-nav {
+      #appWrap > .app-shell > #mobileBottomNav.mobile-bottom-nav {
         display: none !important
       }
     }
@@ -16020,6 +15998,37 @@
 
     }
   </style>
+  <!-- mob-nav-spread-fix-v3: توزيع أيقونات الشريط السفلي -->
+  <style id="mob-nav-spread-fix-v3">
+    @media (max-width: 992px) {
+      #mobileBottomNav.mobile-bottom-nav {
+        display: flex !important;
+        flex-direction: row !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        align-self: stretch !important;
+        justify-content: space-evenly !important;
+        overflow-x: hidden !important;
+      }
+
+      #mobileBottomNav.mobile-bottom-nav.mobile-bottom-nav--scroll {
+        justify-content: flex-start !important;
+        overflow-x: auto !important;
+      }
+
+      #mobileBottomNav.mobile-bottom-nav:not(.mobile-bottom-nav--scroll) .mob-nav-item {
+        flex: 1 1 0 !important;
+        min-width: 0 !important;
+        max-width: none !important;
+      }
+
+      #mobileBottomNav.mobile-bottom-nav--scroll .mob-nav-item {
+        flex: 0 0 auto !important;
+        min-width: 62px !important;
+      }
+    }
+  </style>
+  <meta name="app-build" content="mobnav-spread-v3">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
 </head>
 
@@ -16868,7 +16877,6 @@
           </div>        </div>
       </div>
       </div>
-    </div>
 
     <nav class="mobile-bottom-nav" id="mobileBottomNav" aria-label="التنقل الرئيسي">
       <button type="button" class="mob-nav-item active" data-tab="dashboard" data-perm="tab_dashboard"
@@ -16918,6 +16926,7 @@
         <span>صلاحيات</span>
       </button>
     </nav>
+    </div>
 
     <!-- MODALS -->
     <div class="modal" id="regionModal">
@@ -17277,6 +17286,8 @@
       <div class="att-viewer-caption" id="attViewerCaption"></div>
       <div class="att-viewer-counter" id="attViewerCounter"></div>
     </div>
+  </div><!-- /#appWrap -->
+
     <!-- تحميل مكتبة S3 النسخة المستقرة للمتصفحات -->
     <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1530.0.min.js"></script>
 
@@ -18620,6 +18631,7 @@
       function setNativeAppShellActive(active) {
         const on = !!active && typeof isMobileViewport === 'function' && isMobileViewport();
         document.body.classList.toggle('mirsad-app-active', on);
+        document.documentElement.classList.toggle('mirsad-app-shell-lock', on);
       }
 
       function initNativeAppFeel() {
@@ -18644,6 +18656,8 @@
       function openLoginPortal() {
         const ls = document.getElementById('loginScreen');
         const app = document.getElementById('appWrap');
+        const mobNav = document.getElementById('mobileBottomNav');
+        if (mobNav) mobNav.style.display = 'none';
         setNativeAppShellActive(false);
         if (ls) {
           ls.classList.remove('hidden');
@@ -18669,7 +18683,6 @@
           app.style.display = '';
         }
         setNativeAppShellActive(true);
-        if (typeof dockMobileBottomNav === 'function') dockMobileBottomNav();
         if (typeof initSidebarMobileControls === 'function') {
           requestAnimationFrame(() => initSidebarMobileControls());
         }
@@ -20274,6 +20287,8 @@
         if (!hasAnyNavTabPermission()) showNoPermissionsScreen();
         else ensureActiveTabAllowed();
         syncMobileBottomNavLayout();
+        requestAnimationFrame(() => layoutMobileBottomNav());
+        setTimeout(() => layoutMobileBottomNav(), 150);
       }
 
       const MR_NAV_TAB_ORDER = ['dashboard', 'workflow', 'newTicket', 'reports', 'compliance', 'violations', 'locations', 'departments', 'settings'];
@@ -20324,117 +20339,75 @@
       function layoutMobileBottomNav() {
         const nav = document.getElementById('mobileBottomNav');
         if (!nav) return;
-        const visible = [...nav.querySelectorAll('.mob-nav-item')].filter(el => !el.hasAttribute('data-role-hide'));
+        const visible = [...nav.querySelectorAll('.mob-nav-item')].filter(el => {
+          if (el.hasAttribute('data-role-hide')) return false;
+          return el.getClientRects().length > 0;
+        });
         const n = visible.length;
         nav.dataset.mobNavCount = String(n);
         const spread = n > 0 && n <= MR_MOB_NAV_SPREAD_MAX;
         nav.classList.toggle('mobile-bottom-nav--spread', spread);
-        nav.classList.toggle('mobile-bottom-nav--scroll', !spread && n > 0);
-      }
-
-      let _mobNavAnchor = null;
-
-      function isStandalonePwa() {
-        try {
-          if (window.navigator.standalone === true) return true;
-          if (window.matchMedia('(display-mode: standalone)').matches) return true;
-          if (window.matchMedia('(display-mode: fullscreen)').matches) return true;
-        } catch (_) { /* noop */ }
-        return false;
-      }
-
-      function pinMobNavViewportBottom() {
-        const nav = document.getElementById('mobileBottomNav');
-        if (!nav || !document.documentElement.classList.contains('mirsad-mob-nav-docked')) return;
-
-        nav.style.position = 'fixed';
-        nav.style.margin = '0';
-        nav.style.left = '0';
-        nav.style.right = '0';
-        nav.style.width = '100%';
-        nav.style.maxWidth = 'none';
-        nav.style.borderRadius = '0';
-        nav.style.zIndex = '2147483646';
-        nav.style.bottom = '0';
-        nav.style.top = 'auto';
-
-        const h = Math.ceil(nav.getBoundingClientRect().height) || nav.offsetHeight || 56;
-        const vh = window.innerHeight;
-        const top = Math.max(0, Math.round(vh - h));
-        const rect = nav.getBoundingClientRect();
-        if (Math.abs(rect.bottom - vh) > 2) {
-          nav.style.top = `${top}px`;
-          nav.style.bottom = 'auto';
+        nav.classList.remove('mobile-bottom-nav--scroll');
+        if (!spread && n > MR_MOB_NAV_SPREAD_MAX) {
+          nav.classList.add('mobile-bottom-nav--scroll');
         }
-      }
-
-      function dockMobileBottomNav() {
-        const nav = document.getElementById('mobileBottomNav');
-        if (!nav) return;
-        const dockOnBody = typeof isMobileViewport === 'function' && isMobileViewport()
-          && document.body.classList.contains('mirsad-app-active');
-
-        if (!_mobNavAnchor) {
-          _mobNavAnchor = { parent: nav.parentNode, next: nav.nextSibling };
-        }
-
-        if (dockOnBody) {
-          document.documentElement.classList.add('mirsad-mob-nav-docked');
-          if (nav.parentNode !== document.body) document.body.appendChild(nav);
-          pinMobNavViewportBottom();
-          if (!window._mrVVNavBound) {
-            window._mrVVNavBound = true;
-            const repin = () => {
-              if (document.documentElement.classList.contains('mirsad-mob-nav-docked')) {
-                pinMobNavViewportBottom();
-                syncMobBottomNavHeight();
-              }
-            };
-            window.addEventListener('resize', repin, { passive: true });
-            window.addEventListener('orientationchange', () => setTimeout(repin, 150), { passive: true });
-            if (window.visualViewport) {
-              window.visualViewport.addEventListener('resize', repin, { passive: true });
-              window.visualViewport.addEventListener('scroll', repin, { passive: true });
-            }
-          }
+        visible.forEach(btn => {
+          btn.style.flex = '';
+          btn.style.minWidth = '';
+        });
+        if (spread) {
+          nav.style.removeProperty('justify-content');
+          visible.forEach(btn => {
+            btn.style.flex = '1 1 0';
+            btn.style.minWidth = '0';
+          });
+        } else if (nav.classList.contains('mobile-bottom-nav--scroll')) {
+          nav.style.removeProperty('justify-content');
+          visible.forEach(btn => {
+            btn.style.flex = '0 0 auto';
+            btn.style.minWidth = '62px';
+          });
         } else {
-          document.documentElement.classList.remove('mirsad-mob-nav-docked');
-          nav.style.top = '';
-          nav.style.bottom = '';
-          nav.style.left = '';
-          nav.style.right = '';
-          nav.style.width = '';
-          nav.style.maxWidth = '';
-          nav.style.borderRadius = '';
-          nav.style.transform = '';
-          if (_mobNavAnchor.parent && nav.parentNode === document.body) {
-            _mobNavAnchor.parent.insertBefore(nav, _mobNavAnchor.next);
-          }
+          nav.style.removeProperty('justify-content');
         }
+      }
+
+      function mountMobileBottomNav() {
+        const nav = document.getElementById('mobileBottomNav');
+        const shell = document.querySelector('#appWrap > .app-shell');
+        if (!nav || !shell) return;
+        nav.style.top = '';
+        nav.style.bottom = '';
+        nav.style.transform = '';
+        if (nav.parentNode !== shell) shell.appendChild(nav);
       }
 
       function syncMobBottomNavHeight() {
         const nav = document.getElementById('mobileBottomNav');
         if (!nav || window.innerWidth > 992) return;
-        dockMobileBottomNav();
-        pinMobNavViewportBottom();
-        const rect = nav.getBoundingClientRect();
-        const h = Math.ceil(rect.height);
+        const h = Math.ceil(nav.offsetHeight || nav.getBoundingClientRect().height);
         if (h > 0) {
           document.documentElement.style.setProperty('--mr-mob-bottom-nav-h', h + 'px');
         }
-        const gap = Math.max(0, Math.round(window.innerHeight - rect.bottom));
-        if (gap > 4 && isMirsadDebugLog()) {
-          console.warn('[mob-nav] gap below bar:', gap, 'px');
+        const vv = window.visualViewport;
+        const screenBottom = vv ? vv.offsetTop + vv.height : window.innerHeight;
+        const gap = Math.round(screenBottom - nav.getBoundingClientRect().bottom);
+        if (gap > 2 && gap < 80) {
+          nav.style.transform = `translateY(${gap}px)`;
+        } else {
+          nav.style.transform = '';
         }
       }
 
       function syncMobileBottomNavLayout() {
         const nav = document.getElementById('mobileBottomNav');
         if (!nav) return;
+        mountMobileBottomNav();
+        const app = document.getElementById('appWrap');
+        const appOpen = app && app.style.display !== 'none';
         const mobile = window.matchMedia('(max-width: 992px)').matches;
         layoutMobileBottomNav();
-        if (!mobile) {
+        if (!mobile || !appOpen) {
           nav.style.display = 'none';
           return;
         }
@@ -20805,6 +20778,7 @@
       }
 
       function initSidebarMobileControls() {
+        mountMobileBottomNav();
         syncSafeAreaInsets();
         syncTopbarHeightVar();
         syncSidebarToggleBtn();
@@ -20823,10 +20797,8 @@
             syncSafeAreaInsets();
             syncTopbarHeightVar();
             syncMobileBottomNavLayout();
-            dockMobileBottomNav();
             const appVisible = document.getElementById('appWrap')?.style.display !== 'none';
             setNativeAppShellActive(appVisible && !!state.currentUser);
-            if (appVisible && !!state.currentUser) dockMobileBottomNav();
             if (window.innerWidth > 992) closeSidebar();
             if (document.getElementById('tab-workflow')?.classList.contains('active') && typeof filterTickets === 'function') {
               filterTickets();
@@ -20835,7 +20807,6 @@
           window.addEventListener('orientationchange', () => {
             setTimeout(() => {
               syncSafeAreaInsets();
-              dockMobileBottomNav();
               syncMobBottomNavHeight();
             }, 120);
           }, { passive: true });
@@ -20853,7 +20824,12 @@
           const roNav = new ResizeObserver(() => syncMobBottomNavHeight());
           roNav.observe(mobNav);
         }
-        dockMobileBottomNav();
+        if (!window._mrVVNavBound && window.visualViewport) {
+          window._mrVVNavBound = true;
+          const repinNav = () => syncMobBottomNavHeight();
+          window.visualViewport.addEventListener('resize', repinNav, { passive: true });
+          window.visualViewport.addEventListener('scroll', repinNav, { passive: true });
+        }
         syncMobBottomNavHeight();
       }
 
