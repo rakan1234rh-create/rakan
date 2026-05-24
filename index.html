@@ -17715,6 +17715,7 @@
         'violation_type', 'violation_date', 'violation_time',
       ].join(',');
       const MOB_VIOLATION_SELECT_MIN = 'id,created_at,ticket_number,state,status_text,employee_id,branch_id,observer_id,supervisor_id,violation_type';
+      const MOB_VIOLATION_TYPES_SELECT = 'id,name,category,severity,weight,description';
 
       function enrichViolationLite(t) {
         if (!t) return t;
@@ -19069,7 +19070,7 @@
               : sb.from('users').select('*').order('name'),
             sb.from('violations').select(VIOLATION_LIST_SELECT).order('created_at', { ascending: false }).limit(VIOLATIONS_LIMIT),
             mobLoad
-              ? sb.from('violation_types').select('id,name,category,severity,points').order('name')
+              ? sb.from('violation_types').select(MOB_VIOLATION_TYPES_SELECT).order('name')
               : sb.from('violation_types').select('*').order('name'),
             mobLoad
               ? Promise.resolve({ data: [], error: null })
@@ -19114,7 +19115,18 @@
             }
           }
           if (uErr) throw uErr;
-          if (vtErr && isMirsadDebugLog()) console.warn('[DataLoad] violation_types:', vtErr.message, vtErr);
+          if (vtErr) {
+            console.warn('[DataLoad] violation_types:', formatPostgrestError(vtErr), vtErr);
+            if (mobLoad) {
+              try {
+                const retry = await sb.from('violation_types').select('id,name,category,severity,weight').order('name');
+                if (!retry.error && retry.data?.length) {
+                  vTypes = retry.data;
+                  vtErr = null;
+                }
+              } catch (_) { /* noop */ }
+            }
+          }
           if (nErr && isMirsadDebugLog()) console.warn('[DataLoad] notifications:', nErr.message, nErr);
 
           const _ms = Math.round(((typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now()) - _loadT0);
@@ -22890,12 +22902,40 @@
       // 17. VIOLATION TYPES (أنواع المخالفات)
       // ═══════════════════════════════════════════════════════════════════════════
 
-      function renderViolTypes() {
+      async function ensureViolationTypesLoaded() {
+        if (state.violationTypes?.length) return true;
+        try {
+          let res = await sb.from('violation_types').select(MOB_VIOLATION_TYPES_SELECT).order('name');
+          if (res.error) {
+            res = await sb.from('violation_types').select('id,name,category,severity,weight').order('name');
+          }
+          if (res.error) throw res.error;
+          state.violationTypes = res.data || [];
+          return state.violationTypes.length > 0;
+        } catch (e) {
+          console.warn('[violation_types]', formatPostgrestError(e), e);
+          return false;
+        }
+      }
+
+      async function renderViolTypes() {
         const grid = document.getElementById('violGrid');
         if (!grid) return;
         const canManage = canManageViolationTypes();
         const violMob = typeof window !== 'undefined' && window.matchMedia('(max-width: 992px)').matches;
         grid.className = violMob ? 'viol-grid viol-grid--mob-list' : 'viol-grid';
+        if (!state.violationTypes.length) {
+          grid.innerHTML = violMob
+            ? '<div class="empty viol-types-empty"><i class="fas fa-spinner fa-spin"></i><p>جاري تحميل أنواع المخالفات…</p></div>'
+            : '<div class="empty" style="grid-column:1/-1"><i class="fas fa-spinner fa-spin"></i><p>جاري التحميل…</p></div>';
+          const ok = await ensureViolationTypesLoaded();
+          if (!ok) {
+            const emptyCls = violMob ? 'empty viol-types-empty' : 'empty';
+            const emptyStyle = violMob ? '' : ' style="grid-column:1/-1"';
+            grid.innerHTML = `<div class="${emptyCls}"${emptyStyle}><i class="fas fa-triangle-exclamation"></i><p>لا توجد أنواع مخالفات</p></div>`;
+            return;
+          }
+        }
         if (!state.violationTypes.length) {
           const emptyCls = violMob ? 'empty viol-types-empty' : 'empty';
           const emptyStyle = violMob ? '' : ' style="grid-column:1/-1"';
@@ -22916,7 +22956,7 @@
           grid.innerHTML = state.violationTypes.map(v => {
             let sev = v.severity || 'منخفض';
             if (sev === 'حرج') sev = 'عالي';
-            const points = v.weight || 0;
+            const points = v.weight ?? v.points ?? 0;
             const desc = (v.description || v.category || '').trim() || '—';
             const adminBtns = canManage
               ? `<div class="viol-type-list-admin">
@@ -22946,7 +22986,7 @@
         grid.innerHTML = state.violationTypes.map(v => {
           let sev = v.severity || 'منخفض';
           if (sev === 'حرج') sev = 'عالي';
-          const points = v.weight || 0;
+          const points = v.weight ?? v.points ?? 0;
           const desc = v.description || v.category || '';
           return `
     <div class="viol-card mr-viol-card mr-viol-type-card">
