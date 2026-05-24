@@ -4,6 +4,7 @@ desktop.ini
 .cache/
 .tmp/
 *.log
+tunnel-last.log
 node_modules/
 .env
 .env.local
