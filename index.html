@@ -2877,26 +2877,28 @@
         width: 100%;
         height: 100dvh;
         max-height: 100dvh;
-        overflow: hidden
+        overflow: hidden;
+        display: flex;
+        flex-direction: column
       }
 
-      body.mirsad-app-active #appWrap .app-shell {
+      body.mirsad-app-active #appWrap > .app-shell {
         display: flex;
         flex-direction: column;
-        height: 100%;
+        flex: 1 1 auto;
+        width: 100%;
+        height: auto;
         min-height: 0;
+        max-height: 100%;
         overflow: hidden;
         padding-top: var(--unified-topbar-h, 76px);
-        padding-bottom: 0;
         box-sizing: border-box
       }
 
       body.mirsad-app-active #appWrap .mobile-bottom-nav {
         position: relative !important;
-        bottom: auto !important;
-        left: auto !important;
-        right: auto !important;
         flex: 0 0 auto;
+        margin-top: auto !important;
         width: 100% !important;
         z-index: 2800 !important;
         touch-action: pan-x;
@@ -3150,13 +3152,23 @@
         min-height: calc(56px + var(--mr-safe-top, env(safe-area-inset-top, 0px))) !important
       }
 
-      #appWrap .app-shell {
+      #appWrap.app {
         display: flex;
         flex-direction: column;
+        height: 100dvh;
+        max-height: 100dvh;
+        overflow: hidden
+      }
+
+      #appWrap > .app-shell {
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 auto;
+        width: 100%;
+        min-height: 0;
+        max-height: 100%;
         padding-top: var(--unified-topbar-h, 76px);
         box-sizing: border-box;
-        height: 100%;
-        min-height: 0;
         overflow: hidden
       }
 
@@ -3186,14 +3198,14 @@
         display: flex !important;
         position: relative;
         flex: 0 0 auto;
+        margin-top: auto;
         order: 99;
-        left: auto;
-        right: auto;
-        bottom: auto;
+        width: 100%;
         z-index: 2200;
         min-height: 56px;
         height: var(--mr-mob-bottom-nav-h, calc(56px + env(safe-area-inset-bottom, 0px)));
-        padding-bottom: env(safe-area-inset-bottom, 0px);
+        padding-bottom: max(env(safe-area-inset-bottom, 0px), 0px);
+        box-sizing: border-box;
         padding-inline: 4px;
         background: color-mix(in srgb, var(--mr-surface) 98%, transparent);
         border-top: 1px solid var(--mr-border);
@@ -16818,7 +16830,6 @@
           </div>        </div>
       </div>
       </div>
-    </div>
 
     <nav class="mobile-bottom-nav" id="mobileBottomNav" aria-label="التنقل الرئيسي">
       <button type="button" class="mob-nav-item active" data-tab="dashboard" data-perm="tab_dashboard"
@@ -16868,6 +16879,7 @@
         <span>صلاحيات</span>
       </button>
     </nav>
+    </div>
 
     <!-- MODALS -->
     <div class="modal" id="regionModal">
