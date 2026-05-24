@@ -15378,15 +15378,15 @@
       }
 
       #tab-workflow .wf-panel .data-table td.wf-ticket-cell {
-        width: 0 !important;
-        min-width: 0 !important;
-        max-width: none !important;
+        width: auto !important;
+        min-width: max-content !important;
+        max-width: min(40vw, 18ch) !important;
         white-space: nowrap !important;
         overflow: visible !important;
         text-align: start !important;
         vertical-align: middle !important;
-        padding: 2px 3px !important;
-        line-height: 1.1 !important
+        padding: 3px 4px !important;
+        line-height: 1.2 !important
       }
 
       #tab-workflow .wf-panel .data-table th:nth-child(2),
@@ -15591,18 +15591,18 @@
       #tab-workflow .ticket-id-cell {
         display: inline-flex;
         flex-direction: row;
-        flex-wrap: nowrap;
+        flex-wrap: wrap;
         align-items: center;
         justify-content: flex-start;
         gap: 3px;
-        white-space: nowrap;
+        white-space: normal;
         width: fit-content;
-        max-width: max-content;
+        max-width: 100%;
         margin: 0;
         padding: 0;
         vertical-align: middle;
         color: var(--mr-text);
-        line-height: 1.1
+        line-height: 1.2
       }
 
       #tab-workflow .wf-ticket-id {
@@ -15622,12 +15622,28 @@
 
       #tab-workflow .wf-ticket-cell .overdue-flag {
         margin: 0;
-        padding: 0 3px;
-        font-size: 7px;
-        line-height: 1.1;
-        gap: 2px;
-        border-radius: 3px;
-        flex-shrink: 0
+        padding: 2px 5px !important;
+        font-size: 8px !important;
+        line-height: 1.2 !important;
+        gap: 3px;
+        border-radius: 4px;
+        flex-shrink: 0;
+        color: #fff !important;
+        background: var(--mr-red) !important;
+        display: inline-flex !important;
+        align-items: center;
+        visibility: visible !important;
+        opacity: 1 !important;
+        min-width: max-content;
+        white-space: nowrap
+      }
+
+      #tab-workflow .wf-ticket-cell .overdue-flag__txt {
+        display: inline !important;
+        visibility: visible !important;
+        color: #fff !important;
+        font-size: inherit !important;
+        font-weight: 700
       }
 
       #tab-workflow .badge {
@@ -15652,7 +15668,10 @@
       }
 
       #tab-workflow .overdue-flag i {
-        display: none
+        display: inline-block !important;
+        font-size: 7px !important;
+        flex-shrink: 0;
+        opacity: 0.95
       }
 
       /* مودال التذكرة — تصغير */
@@ -16032,7 +16051,7 @@
       }
     }
   </style>
-  <meta name="app-build" content="wf-mob-font-up-v5">
+  <meta name="app-build" content="wf-auto-flag-v6">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
 </head>
 
@@ -25215,7 +25234,7 @@
         <tbody>
           ${tickets.map(t => {
           const autoFlag = (t.auto_forwarded_emp || t.auto_forwarded_sup)
-            ? '<span class="overdue-flag"><i class="fas fa-robot"></i> تلقائي</span>'
+            ? '<span class="overdue-flag"><i class="fas fa-robot" aria-hidden="true"></i><span class="overdue-flag__txt">تلقائي</span></span>'
             : '';
           const empName = (t._empName || '').trim() || '...';
           const empNumber = (t._empNumber || '').trim();
