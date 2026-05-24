@@ -17741,90 +17741,14 @@
         return users;
       }
 
-      async function loadAllDataMobile(isRetry) {
-        const stepMs = isRetry ? 38000 : MOB_LOAD_TIMEOUT_MS;
-        setConnStatus('reconnecting');
+      function mobFinishDashboardRender() {
+        state._dashMobLiteOnly = false;
         try {
-          await ensureAuthSessionReady(isRetry ? 8000 : 5000);
-
-          const [regions, branches] = await Promise.all([
-            mobSupabaseQuery('المناطق', sb.from('regions').select('id,name,supervisor_id').order('name'), stepMs),
-            mobSupabaseQuery('الفروع', sb.from('branches').select('id,name,region_id').order('name'), stepMs),
-          ]);
-          state.regions = regions;
-          state.branches = branches;
-          rebuildLookupMaps();
-
-          let violations;
-          try {
-            violations = await mobSupabaseQuery(
-              'المخالفات',
-              sb.from('violations')
-                .select(MOB_VIOLATION_SELECT)
-                .order('created_at', { ascending: false })
-                .limit(50),
-              stepMs
-            );
-          } catch (v1) {
-            console.warn('[DataLoad mobile] violations lite fallback', v1);
-            violations = await mobSupabaseQuery(
-              'المخالفات (مختصر)',
-              sb.from('violations')
-                .select(MOB_VIOLATION_SELECT_MIN)
-                .order('created_at', { ascending: false })
-                .limit(40),
-              stepMs
-            );
+          if (document.getElementById('tab-dashboard')?.classList.contains('active')) {
+            renderDashboard();
           }
-
-          let users;
-          try {
-            users = await mobSupabaseQuery(
-              'المستخدمون',
-              sb.from('users').select(MOB_USER_SELECT).order('name'),
-              stepMs
-            );
-          } catch (uErr) {
-            console.warn('[DataLoad mobile] users full load failed, partial', uErr);
-            users = await loadUsersForMobileViolations(violations, stepMs);
-            showToast('تم تحميل المستخدمين المرتبطين بالتذاكر فقط — الشبكة بطيئة.', 'warning');
-          }
-
-          let vTypes = [];
-          try {
-            vTypes = await mobSupabaseQuery(
-              'أنواع المخالفات',
-              sb.from('violation_types').select('id,name,category,severity,points').order('name'),
-              Math.min(stepMs, 18000)
-            );
-          } catch (vtErr) {
-            console.warn('[DataLoad mobile] violation_types skipped', vtErr);
-          }
-
-          state.users = users || [];
-          state.violationTypes = vTypes || [];
-          state.violations = (violations || []).map(enrichViolationLite);
-          state.notifications = [];
-          rebuildLookupMaps();
-
-          setConnStatus('connected');
-          return true;
-        } catch (err) {
-          const label = err && err.mobLabel ? ` (${err.mobLabel})` : '';
-          const msg = formatPostgrestError(err) || (err && err.message) || String(err) || 'خطأ غير معروف';
-          if (!isRetry && /مهلة|timeout/i.test(msg)) {
-            showToast('بطء الشبكة — إعادة المحاولة…', 'info');
-            return loadAllDataMobile(true);
-          }
-          console.error('[DataLoad mobile]', err);
-          setConnStatus('disconnected');
-          showToast(
-            /مهلة|timeout/i.test(msg)
-              ? msg + label + ' — Wi‑Fi أو 4G ثم حدّث الصفحة'
-              : 'فشل تحميل البيانات' + label + ': ' + msg,
-            'error'
-          );
-          return false;
+        } catch (e) {
+          console.warn('[mobile dash]', e);
         }
       }
 
@@ -18828,10 +18752,9 @@
             try { renderDashboardMobLite(); } catch (_) { /* noop */ }
             finishLoginBoot();
             showToast('جاري مزامنة البيانات…', 'info');
-            ensureAuthSessionReady().catch(() => null);
-            loadAllData()
-              .then((ok) => {
-                state._dashMobLiteOnly = false;
+            (async () => {
+              try {
+                const ok = await loadAllData();
                 if (ok) {
                   loadRolePermissions().then(() => {
                     applyRBACUI();
@@ -18839,13 +18762,13 @@
                   }).catch(e => console.warn('[mobile] permissions after data', e));
                   try { runInitialRender(); } catch (_) { /* logged in runInitialRender */ }
                 } else {
-                  showToast('فشل التحميل — اسحب لتحديث الصفحة أو من Console: retryMobileDataLoad()', 'warning');
+                  showToast('فشل التحميل — اسحب لتحديث الصفحة', 'warning');
                 }
-              })
-              .catch((e) => {
-                state._dashMobLiteOnly = false;
+              } catch (e) {
                 console.error('[mobile boot]', e);
-              });
+                mobFinishDashboardRender();
+              }
+            })();
           } else {
             const dataOk = await loadAllData();
             if (!dataOk) {
@@ -19096,28 +19019,18 @@
         if (isMirsadDebugLog()) console.warn('[DataAccess]', { role, regRes, violRes });
       }
 
-      async function loadAllData() {
-        if (isMobileViewport()) return loadAllDataMobile();
-        await ensureAuthSessionReady(2000);
+      async function loadAllData(isRetry) {
+        const mobLoad = isMobileViewport();
+        if (mobLoad) await ensureAuthSessionReady(isRetry ? 8000 : 6000);
+        else await ensureAuthSessionReady(2000);
 
         const _loadT0 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
-        const mobLoad = false;
         let loaderGuard;
         setConnStatus('reconnecting');
         try {
-          // limit عالي على المخالفات لمنع تحميل القاعدة كاملة لو زادت لآلاف الصفوف
-          // (في حالة الحاجة لأقدم منها يمكن إضافة فلتر تاريخ أو "تحميل المزيد")
-          const VIOLATIONS_LIMIT = mobLoad ? 120 : 1000;
-          /** على الجوال: بدون attachments (ثقيلة جداً) — تُجلب عند فتح التذكرة */
+          const VIOLATIONS_LIMIT = mobLoad ? 50 : 1000;
           const VIOLATION_LIST_SELECT = mobLoad
-            ? [
-              'id', 'created_at', 'updated_at', 'ticket_number', 'state', 'status_text',
-              'employee_id', 'branch_id', 'observer_id', 'supervisor_id',
-              'violation_type', 'violation_date', 'violation_time',
-              'description', 'source_role',
-              'employee_reply', 'supervisor_reply', 'audit_reply', 'management_reply',
-              'auto_forwarded_emp', 'auto_forwarded_sup',
-            ].join(',')
+            ? MOB_VIOLATION_SELECT
             : [
               'id', 'created_at', 'updated_at', 'ticket_number', 'state', 'status_text',
               'employee_id', 'branch_id', 'observer_id', 'supervisor_id',
@@ -19128,33 +19041,62 @@
             ].join(',');
 
           const fetchAll = Promise.all([
-            sb.from('regions').select('*').order('name'),
-            sb.from('branches').select('*').order('name'),
-            sb.from('users').select('*').order('name'),
+            mobLoad
+              ? sb.from('regions').select('id,name,supervisor_id').order('name')
+              : sb.from('regions').select('*').order('name'),
+            mobLoad
+              ? sb.from('branches').select('id,name,region_id').order('name')
+              : sb.from('branches').select('*').order('name'),
+            mobLoad
+              ? sb.from('users').select(MOB_USER_SELECT)
+              : sb.from('users').select('*').order('name'),
             sb.from('violations').select(VIOLATION_LIST_SELECT).order('created_at', { ascending: false }).limit(VIOLATIONS_LIMIT),
-            sb.from('violation_types').select('*').order('name'),
-            sb.from('notifications').select('*').order('created_at', { ascending: false }).limit(mobLoad ? 25 : 50)
+            mobLoad
+              ? sb.from('violation_types').select('id,name,category,severity,points').order('name')
+              : sb.from('violation_types').select('*').order('name'),
+            mobLoad
+              ? Promise.resolve({ data: [], error: null })
+              : sb.from('notifications').select('*').order('created_at', { ascending: false }).limit(50),
           ]);
 
-          const [
+          let pack;
+          const mobTimeout = isRetry ? 48000 : 42000;
+          try {
+            pack = mobLoad
+              ? await withLoadTimeout(fetchAll, mobTimeout, 'انتهت مهلة تحميل البيانات — تحقق من إنترنت الجوال')
+              : await fetchAll;
+          } catch (timeoutErr) {
+            if (mobLoad && !isRetry && /مهلة|timeout/i.test(timeoutErr.message || '')) {
+              showToast('بطء الشبكة — إعادة المحاولة…', 'info');
+              return loadAllData(true);
+            }
+            throw timeoutErr;
+          }
+
+          let [
             { data: regions, error: rErr },
             { data: branches, error: bErr },
             { data: users, error: uErr },
             { data: violations, error: vErr },
             { data: vTypes, error: vtErr },
-            { data: notifs, error: nErr }
-          ] = mobLoad
-            ? await withLoadTimeout(
-              fetchAll,
-              20000,
-              'انتهت مهلة تحميل البيانات — تحقق من الإنترنت أو أعد المحاولة'
-            )
-            : await fetchAll;
+            { data: notifs, error: nErr },
+          ] = pack;
 
           if (rErr) throw rErr;
           if (bErr) throw bErr;
-          if (uErr) throw uErr;
           if (vErr) throw vErr;
+
+          if (uErr && mobLoad) {
+            console.warn('[DataLoad mobile] users, fallback partial', uErr);
+            try {
+              users = await loadUsersForMobileViolations(violations || [], mobTimeout);
+              uErr = null;
+              showToast('تم تحميل مستخدمي التذاكر فقط — الشبكة بطيئة.', 'warning');
+            } catch (partialErr) {
+              console.warn('[DataLoad mobile] partial users failed', partialErr);
+            }
+          }
+          if (uErr) throw uErr;
           if (vtErr && isMirsadDebugLog()) console.warn('[DataLoad] violation_types:', vtErr.message, vtErr);
           if (nErr && isMirsadDebugLog()) console.warn('[DataLoad] notifications:', nErr.message, nErr);
 
@@ -19173,9 +19115,10 @@
           state.branches = branches || [];
           state.users = users || [];
           rebuildLookupMaps();
-          state.violations = (violations || []).map(enrichViolation);
+          const enrichRow = mobLoad ? enrichViolationLite : enrichViolation;
+          state.violations = (violations || []).map(enrichRow);
           state.violationTypes = vTypes || [];
-          state.notifications = notifs || [];
+          state.notifications = mobLoad ? [] : (notifs || []);
 
           const nR = state.regions.length;
           const nB = state.branches.length;
@@ -19204,21 +19147,25 @@
 
           setConnStatus('connected');
           if (mobLoad) showGlobalLoader(false);
+          if (mobLoad && state.violations.length > 0) {
+            showToast(`تم التحميل: ${state.violations.length} مخالفة`, 'success');
+          }
           return true;
         } catch (err) {
           console.error('Failed to load data:', err);
           setConnStatus('disconnected');
           if (mobLoad) showGlobalLoader(false);
-          const msg = err && err.message ? err.message : String(err);
+          const msg = formatPostgrestError(err) || (err && err.message) || String(err);
           showToast(
-            msg.includes('مهلة')
-              ? msg + ' — يمكنك إعادة فتح الصفحة أو التحقق من اتصال Supabase'
+            /مهلة|timeout/i.test(msg)
+              ? msg + ' — Wi‑Fi أو 4G ثم حدّث الصفحة'
               : 'فشل تحميل البيانات: ' + msg,
             'error'
           );
           return false;
         } finally {
           if (loaderGuard) clearTimeout(loaderGuard);
+          if (mobLoad) mobFinishDashboardRender();
         }
       }
 
