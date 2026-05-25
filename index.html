@@ -2914,6 +2914,7 @@
         max-height: 100%;
         overflow: hidden;
         padding-top: var(--unified-topbar-h, 76px);
+        padding-bottom: var(--mr-mob-bottom-nav-h, 56px);
         box-sizing: border-box
       }
 
@@ -3210,14 +3211,10 @@
 
       #appWrap > .app-shell > #mobileBottomNav.mobile-bottom-nav {
         display: flex !important;
-        position: relative;
-        flex: 0 0 auto;
-        align-self: stretch;
-        order: 99;
-        width: 100%;
-        max-width: 100%;
-        margin: 0;
-        margin-top: auto;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
         z-index: 2800;
         min-height: 56px;
         padding-top: 6px;
@@ -3238,7 +3235,9 @@
         user-select: none;
         -webkit-user-select: none;
         -webkit-overflow-scrolling: touch;
-        scrollbar-width: none
+        scrollbar-width: none;
+        will-change: auto;
+        transform: none !important
       }
 
       #appWrap > .app-shell > #mobileBottomNav.mobile-bottom-nav::-webkit-scrollbar {
@@ -3377,6 +3376,9 @@
     @media (min-width: 993px) {
       #appWrap > .app-shell > #mobileBottomNav.mobile-bottom-nav {
         display: none !important
+      }
+      body.mirsad-app-active #appWrap > .app-shell {
+        padding-bottom: 0 !important
       }
     }
 
@@ -15149,12 +15151,13 @@
         border: none !important;
         border-bottom: none !important;
         position: relative;
-        z-index: 3
+        z-index: 100;
+        overflow: visible
       }
 
       #tab-workflow .wf-panel-banner:has(#wfMobTicketsHead:not(:empty)) {
         padding-bottom: 0;
-        overflow: hidden
+        overflow: visible
       }
 
       #tab-workflow .wf-panel-banner:has(#wfMobTicketsHead:not(:empty)) .wf-count {
@@ -15237,7 +15240,7 @@
         background: var(--mr-bg);
         min-height: 0;
         border: none !important;
-        overflow: hidden;
+        overflow: visible;
         display: flex;
         flex-direction: column
       }
@@ -20990,8 +20993,6 @@
         const nav = document.getElementById('mobileBottomNav');
         const shell = document.querySelector('#appWrap > .app-shell');
         if (!nav || !shell) return;
-        nav.style.top = '';
-        nav.style.bottom = '';
         nav.style.transform = '';
         if (nav.parentNode !== shell) shell.appendChild(nav);
       }
@@ -21003,14 +21004,7 @@
         if (h > 0) {
           document.documentElement.style.setProperty('--mr-mob-bottom-nav-h', h + 'px');
         }
-        const vv = window.visualViewport;
-        const screenBottom = vv ? vv.offsetTop + vv.height : window.innerHeight;
-        const gap = Math.round(screenBottom - nav.getBoundingClientRect().bottom);
-        if (gap > 2 && gap < 80) {
-          nav.style.transform = `translateY(${gap}px)`;
-        } else {
-          nav.style.transform = '';
-        }
+        nav.style.transform = '';
       }
 
       function syncMobileBottomNavLayout() {
@@ -21456,9 +21450,12 @@
         }
         if (!window._mrVVNavBound && window.visualViewport) {
           window._mrVVNavBound = true;
-          const repinNav = () => syncMobBottomNavHeight();
+          let _rrTick = 0;
+          const repinNav = () => {
+            if (_rrTick) return;
+            _rrTick = requestAnimationFrame(() => { _rrTick = 0; syncMobBottomNavHeight(); });
+          };
           window.visualViewport.addEventListener('resize', repinNav, { passive: true });
-          window.visualViewport.addEventListener('scroll', repinNav, { passive: true });
         }
         syncMobBottomNavHeight();
       }
@@ -25726,6 +25723,9 @@
         const toolbar = document.querySelector('.wf-toolbar');
         if (!menu || !trigger) return;
         const open = !menu.classList.contains('open');
+        if (open && menu.parentNode !== document.body) {
+          document.body.appendChild(menu);
+        }
         menu.classList.toggle('open', open);
         trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
         toolbar?.classList.toggle('is-status-open', open);
