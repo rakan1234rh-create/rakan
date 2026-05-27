@@ -15727,14 +15727,14 @@
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob .ticket-id-cell--auto .wf-ticket-id {
         display: inline-block !important;
-        font-size: 7px !important;
+        font-size: 9px !important;
         line-height: 1.1
       }
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob .ticket-id-cell--auto .wf-auto-flag {
         padding: 1px 2px 3px !important;
         min-width: 0 !important;
-        font-size: 5px !important;
+        font-size: 7px !important;
         line-height: 1 !important;
         gap: 2px;
         flex-shrink: 0;
@@ -15742,7 +15742,7 @@
       }
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob .ticket-id-cell--auto .wf-auto-flag i {
-        font-size: 5px !important
+        font-size: 7px !important
       }
 
       #tab-workflow .wf-panel .data-table th:nth-child(2),
@@ -15788,9 +15788,20 @@
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob .wf-emp-name {
         flex: 0 1 auto;
         min-width: 0;
-        font-size: 7px !important;
+        font-size: 9px !important;
         font-weight: 600;
         text-align: start
+      }
+
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob .wf-viol-name {
+        font-size: 9px !important;
+        font-weight: 700
+      }
+
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob .wf-process-btn,
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob .wf-process-btn--emp-reply,
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob .wf-view-only {
+        font-size: 9px !important
       }
 
       #tab-workflow .wf-panel .data-table th:nth-child(3),
@@ -15895,7 +15906,7 @@
       #tab-workflow .wf-time-hm {
         direction: ltr;
         unicode-bidi: embed;
-        font-size: 0.9em;
+        font-size: 9px;
         font-weight: 600;
         color: var(--mr-text) !important;
         opacity: 1 !important;
@@ -15903,7 +15914,7 @@
       }
 
       #tab-workflow .wf-time-ampm {
-        font-size: 0.9em;
+        font-size: 9px;
         font-weight: 600;
         color: var(--mr-text) !important;
         opacity: 1 !important;
@@ -15918,7 +15929,7 @@
         font-weight: 600;
         color: var(--mr-text) !important;
         opacity: 1 !important;
-        font-size: 0.9em;
+        font-size: 9px;
         line-height: 1.1;
         letter-spacing: 0.02em
       }
@@ -15940,14 +15951,14 @@
       }
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob .wf-datetime-stack__date {
-        font-size: 0.82em;
+        font-size: 9px !important;
         overflow: hidden;
         text-overflow: ellipsis
       }
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob .wf-time-hm,
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob .wf-time-ampm {
-        font-size: 0.82em
+        font-size: 9px !important
       }
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob th:nth-child(5),
@@ -15986,7 +15997,7 @@
 
       #tab-workflow .wf-col-datetime,
       #tab-workflow .wf-datetime {
-        font-size: 7px !important;
+        font-size: 9px !important;
         line-height: 1.15;
         white-space: normal !important
       }
@@ -16026,14 +16037,46 @@
         overflow: visible
       }
 
-      #tab-workflow .wf-branch-name,
-      #tab-workflow .wf-emp-name,
-      #tab-workflow .wf-viol-name {
+      #tab-workflow .wf-branch-name {
         display: block;
         max-width: 100%;
         margin: 0;
         padding: 0;
         font-size: 7px !important;
+        font-weight: 700;
+        color: var(--mr-text) !important;
+        opacity: 1 !important;
+        line-height: 1.6;
+        white-space: normal;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+        overflow: visible;
+        vertical-align: middle
+      }
+
+      #tab-workflow .wf-viol-name {
+        display: block;
+        max-width: 100%;
+        margin: 0;
+        padding: 0;
+        font-size: 9px !important;
+        font-weight: 700;
+        color: var(--mr-text) !important;
+        opacity: 1 !important;
+        line-height: 1.6;
+        white-space: normal;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+        overflow: visible;
+        vertical-align: middle
+      }
+
+      #tab-workflow .wf-emp-name {
+        display: block;
+        max-width: 100%;
+        margin: 0;
+        padding: 0;
+        font-size: 9px !important;
         font-weight: 700;
         color: var(--mr-text) !important;
         opacity: 1 !important;
@@ -16051,7 +16094,7 @@
 
       #tab-workflow .wf-process-btn {
         padding: 1px 2px;
-        font-size: 6px;
+        font-size: 9px;
         font-weight: 700;
         line-height: 1.1;
         white-space: nowrap;
@@ -16061,7 +16104,7 @@
       }
 
       #tab-workflow .wf-process-btn--emp-reply {
-        font-size: 6px;
+        font-size: 9px;
         line-height: 1.15;
         white-space: normal;
         word-break: break-word;
@@ -16088,7 +16131,7 @@
       }
 
       #tab-workflow .wf-view-only {
-        font-size: 6px;
+        font-size: 9px;
         font-weight: 600;
         color: var(--mr-text-2) !important;
         opacity: 1 !important
@@ -16127,7 +16170,7 @@
         flex: none;
         margin: 0;
         padding: 0;
-        font-size: 7px !important;
+        font-size: 9px !important;
         line-height: 1.1;
         font-weight: 800;
         color: var(--mr-text) !important;
@@ -16144,7 +16187,7 @@
       #tab-workflow .wf-ticket-cell .overdue-flag {
         margin: 0;
         padding: 1px 2px 3px !important;
-        font-size: 5px !important;
+        font-size: 7px !important;
         line-height: 1 !important;
         gap: 3px;
         border-radius: 4px;
@@ -16168,7 +16211,7 @@
       }
 
       #tab-workflow .badge {
-        font-size: 7px !important;
+        font-size: 9px !important;
         padding: 1px 3px !important;
         line-height: 1.2;
         white-space: nowrap !important;
@@ -16182,7 +16225,7 @@
       }
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob .badge {
-        font-size: 6px !important;
+        font-size: 9px !important;
         padding: 2px 2px !important;
         line-height: 1.4;
         white-space: normal !important;
@@ -16215,7 +16258,7 @@
       }
 
       #tab-workflow .overdue-flag {
-        font-size: 5px;
+        font-size: 7px;
         padding: 1px 2px 3px;
         border-radius: 4px;
         line-height: 1;
