@@ -16582,13 +16582,11 @@
         grid-column: unset !important
       }
 
-      /* تعريف المخالفة — bottom sheet ينزلق خلف شريط التنقل ويتوقف عند حافته */
+      /* تعريف المخالفة — bottom sheet ينزلق خلف شريط التنقل ويلتصق بحافته السفلية */
       #violDetailModal.modal {
         z-index: 2400 !important;
-        align-items: flex-end !important;
-        justify-content: center !important;
+        display: none;
         padding: 0 !important;
-        padding-bottom: var(--mr-mob-bottom-nav-h, calc(56px + env(safe-area-inset-bottom, 0px))) !important;
         box-sizing: border-box;
         background: color-mix(in srgb, var(--mr-primary) 42%, transparent) !important;
         opacity: 0;
@@ -16608,6 +16606,7 @@
       }
 
       #violDetailModal.modal.open {
+        display: block !important;
         opacity: 1
       }
 
@@ -16616,18 +16615,22 @@
       }
 
       #violDetailModal .viol-paper-sheet {
+        position: fixed !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: var(--viol-sheet-bottom, var(--mr-mob-bottom-nav-h, calc(56px + env(safe-area-inset-bottom, 0px)))) !important;
         width: 100% !important;
         max-width: 100% !important;
         max-height: min(
           82dvh,
           calc(
-            100dvh - var(--unified-topbar-h, 76px) - var(--mr-mob-bottom-nav-h, 56px) - 12px
+            100dvh - var(--unified-topbar-h, 76px) - var(--viol-sheet-bottom, var(--mr-mob-bottom-nav-h, 56px)) - 8px
           )
         ) !important;
         height: auto !important;
         margin: 0 !important;
         border-radius: 16px 16px 0 0 !important;
-        border-bottom: 1px solid var(--mr-border) !important;
+        border-bottom: none !important;
         background: var(--mr-surface) !important;
         color: var(--mr-text);
         display: flex !important;
@@ -16638,11 +16641,7 @@
         transform: translateY(100%);
         transition: transform 0.36s cubic-bezier(0.32, 0.72, 0, 1);
         will-change: transform;
-        box-shadow: 0 -8px 40px rgba(15, 18, 36, 0.18)
-      }
-
-      [data-theme="dark"] #violDetailModal .viol-paper-sheet {
-        box-shadow: 0 -12px 48px rgba(0, 0, 0, 0.55)
+        box-shadow: none
       }
 
       #violDetailModal .viol-paper-sheet-head {
@@ -18829,6 +18828,21 @@
         return typeof window !== 'undefined' && window.matchMedia('(max-width: 992px)').matches;
       }
 
+      /** قياس موضع الشريط السفلي فعلياً — يزيل الفراغ على اختلاف أحجام الشاشات */
+      function syncViolSheetBottomInset() {
+        const nav = document.getElementById('mobileBottomNav');
+        const sheet = document.querySelector('#violDetailModal .viol-paper-sheet');
+        if (!nav || !isViolDetailMobSheet()) return;
+        const rect = nav.getBoundingClientRect();
+        const vv = window.visualViewport;
+        const viewBottom = vv ? vv.offsetTop + vv.height : window.innerHeight;
+        let inset = Math.ceil(viewBottom - rect.top);
+        if (inset > 0) inset -= 1;
+        inset = Math.max(0, inset);
+        document.documentElement.style.setProperty('--viol-sheet-bottom', inset + 'px');
+        if (sheet) sheet.style.bottom = inset + 'px';
+      }
+
       /** على الجوال: النافذة داخل app-shell قبل الشريط السفلي لينزلق الورقة خلفه (نفس سياق z-index) */
       function mountViolDetailModalForMob() {
         const modal = document.getElementById('violDetailModal');
@@ -18849,18 +18863,33 @@
         const sheet = modal?.querySelector('.viol-paper-sheet');
         if (!modal || !sheet) return;
         const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (typeof syncMobBottomNavHeight === 'function') syncMobBottomNavHeight();
         mountViolDetailModalForMob();
+        syncViolSheetBottomInset();
         modal.classList.remove('sheet-ready', 'sheet-closing', 'sheet-dragging');
         modal.classList.add('open');
         document.body.classList.add('modal-open');
+        if (!window._violSheetVVBound) {
+          window._violSheetVVBound = true;
+          const repinViolSheet = () => {
+            if (document.getElementById('violDetailModal')?.classList.contains('open')) {
+              syncViolSheetBottomInset();
+            }
+          };
+          window.addEventListener('resize', repinViolSheet, { passive: true });
+          window.visualViewport?.addEventListener('resize', repinViolSheet, { passive: true });
+        }
         if (reduced) {
+          syncViolSheetBottomInset();
           modal.classList.add('sheet-ready');
           sheet.style.transform = '';
           return;
         }
         sheet.style.transform = 'translateY(100%)';
         requestAnimationFrame(() => {
+          syncViolSheetBottomInset();
           requestAnimationFrame(() => {
+            syncViolSheetBottomInset();
             modal.classList.add('sheet-ready');
             sheet.style.removeProperty('transform');
           });
@@ -18873,7 +18902,10 @@
         if (!modal) return;
         const finish = () => {
           modal.classList.remove('open', 'sheet-ready', 'sheet-closing', 'sheet-dragging');
-          if (sheet) sheet.style.transform = '';
+          if (sheet) {
+            sheet.style.transform = '';
+            sheet.style.removeProperty('bottom');
+          }
           if (!document.querySelector('.modal.open')) {
             document.body.classList.remove('modal-open');
           }
