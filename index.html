@@ -5130,14 +5130,37 @@
     .mr-points {
       font-size: 12px;
       font-weight: 700;
-      color: var(--mr-primary);
+      color: var(--mr-text);
       display: inline-flex;
       align-items: center;
       gap: 6px
     }
 
     .mr-points i {
-      font-size: 11px
+      font-size: 11px;
+      color: var(--mr-amber)
+    }
+
+    [data-theme="dark"] .mr-sev-low {
+      background: rgba(0, 122, 255, 0.22);
+      color: #5eb3ff;
+      border-color: rgba(0, 122, 255, 0.38)
+    }
+
+    [data-theme="dark"] .mr-sev-mid {
+      background: rgba(255, 195, 0, 0.2);
+      color: #ffd54d;
+      border-color: rgba(255, 195, 0, 0.38)
+    }
+
+    [data-theme="dark"] .mr-sev-high {
+      background: rgba(255, 0, 0, 0.2);
+      color: #ff6b6b;
+      border-color: rgba(255, 0, 0, 0.38)
+    }
+
+    [data-theme="dark"] .mr-points i {
+      color: var(--mr-amber)
     }
 
     .mr-viol-type-card.viol-card {
@@ -5892,9 +5915,13 @@
 
     .viol-paper-sheet {
       max-width: 560px;
-      background: #fbfaf7;
+      background: var(--mr-surface);
       border: 1px solid var(--mr-border);
       box-shadow: 0 24px 60px rgba(15, 18, 36, 0.16)
+    }
+
+    [data-theme="dark"] .viol-paper-sheet {
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5)
     }
 
     .viol-paper-sheet-head {
@@ -5905,7 +5932,7 @@
       gap: 8px;
       padding: 10px 20px 14px;
       border-bottom: 1px solid var(--mr-border);
-      background: rgba(255, 255, 255, 0.72)
+      background: var(--mr-surface)
     }
 
     .viol-sheet-grabber-wrap {
@@ -5922,7 +5949,7 @@
       width: 42px;
       height: 4px;
       border-radius: 999px;
-      background: #c5c9d2
+      background: color-mix(in srgb, var(--mr-text-3) 70%, transparent)
     }
 
     .viol-paper-sheet-head h3 {
@@ -5996,7 +6023,7 @@
       margin-top: 18px;
       padding: 14px 16px;
       border-radius: 14px;
-      background: rgba(255, 255, 255, 0.88);
+      background: var(--mr-bg);
       border: 1px solid var(--mr-border);
       font-size: 13px;
       line-height: 1.8;
@@ -6014,7 +6041,7 @@
       border-top: 1px solid var(--mr-border);
       display: flex;
       justify-content: flex-end;
-      background: rgba(255, 255, 255, 0.72)
+      background: var(--mr-surface)
     }
 
     .rb-view {
@@ -16496,7 +16523,21 @@
       }
 
       #tab-violations .viol-type-list-meta .mr-points {
-        font-size: 11px
+        font-size: 11px;
+        color: var(--mr-text) !important
+      }
+
+      #tab-violations .viol-type-list-meta .mr-points i {
+        color: var(--mr-amber) !important
+      }
+
+      #tab-violations .mr-viol-type-card .mr-points,
+      #tab-violations .mr-viol-foot .mr-points {
+        color: var(--mr-text) !important
+      }
+
+      #tab-violations .mr-points i {
+        color: var(--mr-amber) !important
       }
 
       #tab-violations .viol-type-list-end {
@@ -16541,15 +16582,29 @@
         grid-column: unset !important
       }
 
-      /* تعريف المخالفة — bottom sheet + سحب للإغلاق + فتح من الأسفل */
+      /* تعريف المخالفة — bottom sheet ينزلق خلف شريط التنقل ويتوقف عند حافته */
       #violDetailModal.modal {
+        z-index: 2400 !important;
         align-items: flex-end !important;
         justify-content: center !important;
         padding: 0 !important;
-        padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px)) !important;
+        padding-bottom: var(--mr-mob-bottom-nav-h, calc(56px + env(safe-area-inset-bottom, 0px))) !important;
         box-sizing: border-box;
+        background: color-mix(in srgb, var(--mr-primary) 42%, transparent) !important;
         opacity: 0;
         transition: opacity 0.28s ease
+      }
+
+      #appWrap > .app-shell > #violDetailModal.modal {
+        z-index: 2400 !important
+      }
+
+      #appWrap > .app-shell > #mobileBottomNav.mobile-bottom-nav {
+        z-index: 2900 !important
+      }
+
+      [data-theme="dark"] #violDetailModal.modal {
+        background: rgba(0, 0, 0, 0.62) !important
       }
 
       #violDetailModal.modal.open {
@@ -16563,17 +16618,51 @@
       #violDetailModal .viol-paper-sheet {
         width: 100% !important;
         max-width: 100% !important;
-        max-height: min(82vh, calc(100dvh - 120px)) !important;
+        max-height: min(
+          82dvh,
+          calc(
+            100dvh - var(--unified-topbar-h, 76px) - var(--mr-mob-bottom-nav-h, 56px) - 12px
+          )
+        ) !important;
         height: auto !important;
         margin: 0 !important;
         border-radius: 16px 16px 0 0 !important;
+        border-bottom: 1px solid var(--mr-border) !important;
+        background: var(--mr-surface) !important;
+        color: var(--mr-text);
         display: flex !important;
         flex-direction: column !important;
         overflow: hidden !important;
         box-sizing: border-box;
+        padding-bottom: 0;
         transform: translateY(100%);
         transition: transform 0.36s cubic-bezier(0.32, 0.72, 0, 1);
-        will-change: transform
+        will-change: transform;
+        box-shadow: 0 -8px 40px rgba(15, 18, 36, 0.18)
+      }
+
+      [data-theme="dark"] #violDetailModal .viol-paper-sheet {
+        box-shadow: 0 -12px 48px rgba(0, 0, 0, 0.55)
+      }
+
+      #violDetailModal .viol-paper-sheet-head {
+        background: var(--mr-surface) !important;
+        border-bottom-color: var(--mr-border) !important
+      }
+
+      #violDetailModal .viol-paper-sheet-body {
+        background: var(--mr-surface);
+        color: var(--mr-text)
+      }
+
+      #violDetailModal .viol-paper-note {
+        background: var(--mr-bg) !important;
+        border-color: var(--mr-border) !important;
+        color: var(--mr-text-2) !important
+      }
+
+      #violDetailModal .viol-paper-note strong {
+        color: var(--mr-text) !important
       }
 
       #violDetailModal.modal.sheet-ready .viol-paper-sheet {
@@ -18740,12 +18829,27 @@
         return typeof window !== 'undefined' && window.matchMedia('(max-width: 992px)').matches;
       }
 
+      /** على الجوال: النافذة داخل app-shell قبل الشريط السفلي لينزلق الورقة خلفه (نفس سياق z-index) */
+      function mountViolDetailModalForMob() {
+        const modal = document.getElementById('violDetailModal');
+        const shell = document.querySelector('#appWrap > .app-shell');
+        const nav = document.getElementById('mobileBottomNav');
+        if (!modal || !shell) return;
+        if (isViolDetailMobSheet() && nav) {
+          if (modal.parentNode !== shell || modal.nextElementSibling !== nav) {
+            shell.insertBefore(modal, nav);
+          }
+        } else if (modal.parentNode !== document.body) {
+          document.body.appendChild(modal);
+        }
+      }
+
       function openViolDetailSheetAnimated() {
         const modal = document.getElementById('violDetailModal');
         const sheet = modal?.querySelector('.viol-paper-sheet');
         if (!modal || !sheet) return;
         const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        document.body.appendChild(modal);
+        mountViolDetailModalForMob();
         modal.classList.remove('sheet-ready', 'sheet-closing', 'sheet-dragging');
         modal.classList.add('open');
         document.body.classList.add('modal-open');
