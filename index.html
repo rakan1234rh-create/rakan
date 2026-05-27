@@ -16389,7 +16389,20 @@
 
       .content:has(#tab-violations.active) {
         padding: 0 !important;
-        background: var(--mr-bg) !important
+        background: var(--mr-bg) !important;
+        overflow: hidden !important;
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column
+      }
+
+      #appWrap .main:has(#tab-violations.active) {
+        overflow: hidden !important;
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 auto;
+        min-height: 0
       }
 
       #tab-violations.tab-content,
@@ -16398,12 +16411,25 @@
         background: var(--mr-bg) !important
       }
 
+      #tab-violations.tab-content.active {
+        display: flex !important;
+        flex-direction: column;
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: hidden
+      }
+
       #tab-violations .panel {
         border: none !important;
         box-shadow: none !important;
         border-radius: 0 !important;
         padding: 0 !important;
-        margin: 0 !important
+        margin: 0 !important;
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden
       }
 
       #tab-violations .panel-header {
@@ -16415,7 +16441,8 @@
         border-radius: 0 !important;
         flex-direction: column !important;
         align-items: stretch !important;
-        gap: 10px !important
+        gap: 10px !important;
+        flex-shrink: 0
       }
 
       #tab-violations .panel-header .btn {
@@ -16428,9 +16455,17 @@
         flex-direction: column !important;
         gap: 0 !important;
         padding: 0 !important;
+        padding-bottom: calc(var(--mr-mob-bottom-nav-h, 56px) + 12px) !important;
         margin: 0 !important;
         width: 100% !important;
-        max-width: none !important
+        max-width: none !important;
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto !important;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+        touch-action: pan-y;
+        overscroll-behavior-y: contain
       }
 
       #tab-violations .viol-type-list-item {
@@ -16587,10 +16622,28 @@
         z-index: 2400 !important;
         display: none;
         padding: 0 !important;
+        padding-bottom: var(--viol-sheet-bottom, var(--mr-mob-bottom-nav-h, 56px)) !important;
         box-sizing: border-box;
-        background: color-mix(in srgb, var(--mr-primary) 42%, transparent) !important;
+        background: transparent !important;
+        pointer-events: none;
         opacity: 0;
         transition: opacity 0.28s ease
+      }
+
+      #violDetailModal.modal.open::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: var(--viol-sheet-bottom, var(--mr-mob-bottom-nav-h, 56px));
+        background: color-mix(in srgb, var(--mr-primary) 42%, transparent);
+        pointer-events: none;
+        z-index: 0
+      }
+
+      [data-theme="dark"] #violDetailModal.modal.open::before {
+        background: rgba(0, 0, 0, 0.62)
       }
 
       #appWrap > .app-shell > #violDetailModal.modal {
@@ -16601,13 +16654,10 @@
         z-index: 2900 !important
       }
 
-      [data-theme="dark"] #violDetailModal.modal {
-        background: rgba(0, 0, 0, 0.62) !important
-      }
-
       #violDetailModal.modal.open {
         display: block !important;
-        opacity: 1
+        opacity: 1;
+        pointer-events: auto
       }
 
       #violDetailModal.modal.sheet-closing {
@@ -16619,6 +16669,8 @@
         left: 0 !important;
         right: 0 !important;
         bottom: var(--viol-sheet-bottom, var(--mr-mob-bottom-nav-h, calc(56px + env(safe-area-inset-bottom, 0px)))) !important;
+        pointer-events: auto;
+        z-index: 1;
         width: 100% !important;
         max-width: 100% !important;
         max-height: min(
@@ -18836,8 +18888,8 @@
         const rect = nav.getBoundingClientRect();
         const vv = window.visualViewport;
         const viewBottom = vv ? vv.offsetTop + vv.height : window.innerHeight;
-        let inset = Math.ceil(viewBottom - rect.top);
-        if (inset > 0) inset -= 1;
+        const overlap = 6;
+        let inset = Math.floor(viewBottom - rect.top) - overlap;
         inset = Math.max(0, inset);
         document.documentElement.style.setProperty('--viol-sheet-bottom', inset + 'px');
         if (sheet) sheet.style.bottom = inset + 'px';
@@ -18856,6 +18908,12 @@
         } else if (modal.parentNode !== document.body) {
           document.body.appendChild(modal);
         }
+      }
+
+      function releaseViolDetailModalFromShell() {
+        const modal = document.getElementById('violDetailModal');
+        if (!modal || modal.parentNode === document.body) return;
+        document.body.appendChild(modal);
       }
 
       function openViolDetailSheetAnimated() {
@@ -18906,6 +18964,7 @@
             sheet.style.transform = '';
             sheet.style.removeProperty('bottom');
           }
+          releaseViolDetailModalFromShell();
           if (!document.querySelector('.modal.open')) {
             document.body.classList.remove('modal-open');
           }
@@ -18935,6 +18994,13 @@
         const sheet = modal?.querySelector('.viol-paper-sheet');
         if (!modal || !zone || !sheet || modal.dataset.dragInit === '1') return;
         modal.dataset.dragInit = '1';
+
+        sheet.addEventListener('click', (e) => e.stopPropagation());
+        modal.addEventListener('click', (e) => {
+          if (!modal.classList.contains('open')) return;
+          if (e.target.closest('.viol-paper-sheet')) return;
+          closeViolDetailSheet();
+        });
 
         const dragEnd = () => {
           if (!_violDetailDrag.active) return;
@@ -32179,8 +32245,9 @@
 
         // إغلاق النوافذ (Modals) عند الضغط على الخلفية خارج الكارد
         if (e.target.classList.contains('modal')) {
-          if (e.target.id === 'violDetailModal') closeViolDetailSheet();
-          else closeModal(e.target.id);
+          if (e.target.id === 'violDetailModal') {
+            if (!e.target.closest('.viol-paper-sheet')) closeViolDetailSheet();
+          } else closeModal(e.target.id);
         }
       });
 
