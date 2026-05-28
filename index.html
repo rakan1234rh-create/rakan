@@ -15219,16 +15219,17 @@
         padding: 0;
         line-height: 0;
         overflow-x: hidden;
-        overflow-y: hidden
+        overflow-y: hidden;
+        box-sizing: border-box
       }
 
       #tab-workflow #wfMobTicketsHead .wf-tickets-table--mob-head {
         display: table;
         margin: 0 !important;
-        font-size: 8px;
+        font-size: 13px;
         line-height: normal;
         vertical-align: top;
-        border-collapse: collapse !important;
+        border-collapse: separate !important;
         border-spacing: 0 !important
       }
 
@@ -15252,7 +15253,7 @@
       }
 
       #tab-workflow .wf-panel-banner:has(#wfMobTicketsHead:not(:empty)) + #ticketList > .wf-mob-tickets-body {
-        margin-top: -1px !important;
+        margin-top: 0 !important;
         padding-top: 0 !important
       }
 
@@ -15276,7 +15277,6 @@
         width: 100%;
         overflow-x: auto;
         overflow-y: auto;
-        scrollbar-gutter: stable;
         -webkit-overflow-scrolling: touch;
         overscroll-behavior: contain;
         touch-action: pan-x pan-y;
@@ -15300,11 +15300,10 @@
         box-sizing: border-box !important
       }
 
-      #tab-workflow .wf-tickets-table--mob-head th.wf-col-ticket,
-      #tab-workflow .wf-tickets-table--mob-head th.wf-col-emp {
-        width: auto !important;
+      #tab-workflow .wf-tickets-table--mob-head th.wf-col-ticket {
+        width: 8% !important;
         min-width: 0 !important;
-        max-width: none !important
+        max-width: 8% !important
       }
 
       #tab-workflow .wf-tickets-table--mob-body tr.wf-ticket-row--auto td.wf-ticket-cell {
@@ -15498,11 +15497,12 @@
       }
 
       /* بنر عناوين الجدول — جوال */
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-head thead th,
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob thead th {
         height: 34px;
         padding: 2px 3px !important;
-        font-size: 9px !important;
-        line-height: 1.3 !important;
+        font-size: 13px !important;
+        line-height: 1.15 !important;
         font-weight: 700 !important;
         letter-spacing: 0.02em;
         color: var(--mr-text) !important;
@@ -15517,9 +15517,7 @@
         vertical-align: middle !important;
         text-align: center !important;
         box-sizing: border-box;
-        width: auto !important;
         min-width: 0 !important;
-        max-width: none !important;
         box-shadow: none !important
       }
 
@@ -15543,6 +15541,7 @@
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob thead tr > th.wf-col-emp,
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob thead tr > th.wf-col-violation,
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob thead tr > th.wf-col-datetime,
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob thead tr > th.wf-col-status,
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob thead tr > th.wf-col-action {
         text-align: center !important
       }
@@ -15612,8 +15611,8 @@
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob col.wf-col-status-c,
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-head col.wf-col-status-c,
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-body col.wf-col-status-c {
-        width: 8% !important;
-        max-width: 8% !important
+        width: 10% !important;
+        max-width: 10% !important
       }
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob col.wf-col-action-c,
@@ -15621,6 +15620,43 @@
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-body col.wf-col-action-c {
         width: 8% !important;
         max-width: 8% !important
+      }
+
+      /* عرض موحّد: عناوين الجوال = صفوف المخالفات */
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-head col.wf-col-emp-c,
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-body col.wf-col-emp-c,
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-head th.wf-col-emp,
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-body td.wf-col-emp {
+        width: 21% !important;
+        min-width: 0 !important;
+        max-width: 21% !important
+      }
+
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-head col.wf-col-viol-c,
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-body col.wf-col-viol-c,
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-head th.wf-col-violation,
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-body td.wf-col-violation {
+        width: 24% !important;
+        min-width: 0 !important;
+        max-width: 24% !important
+      }
+
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-head col.wf-col-datetime-c,
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-body col.wf-col-datetime-c,
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-head th.wf-col-datetime,
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-body td.wf-col-datetime {
+        width: 12% !important;
+        min-width: 0 !important;
+        max-width: 12% !important
+      }
+
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-head col.wf-col-status-c,
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-body col.wf-col-status-c,
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-head th.wf-col-status,
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-body td.wf-col-status {
+        width: 10% !important;
+        min-width: 0 !important;
+        max-width: 10% !important
       }
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) col.wf-col-action-c {
@@ -15647,6 +15683,11 @@
         opacity: 1 !important;
         background: var(--mr-primary-softer) !important;
         border-bottom: none !important
+      }
+
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-head thead th {
+        font-size: 13px !important;
+        line-height: 1.15 !important
       }
 
       #tab-workflow .wf-panel .data-table tbody td {
@@ -15676,7 +15717,6 @@
       #tab-workflow .wf-panel .data-table th:nth-child(1),
       #tab-workflow .wf-panel .data-table th.wf-col-ticket {
         width: 8% !important;
-        white-space: nowrap !important;
         padding: 2px 3px !important;
         text-align: center !important
       }
@@ -15693,36 +15733,44 @@
         line-height: 1.2 !important
       }
 
-      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob col.wf-col-ticket-c {
-        width: 8% !important
-      }
-
-      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob th.wf-col-ticket {
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob col.wf-col-ticket-c,
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-head col.wf-col-ticket-c,
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-body col.wf-col-ticket-c {
         width: 8% !important;
-        min-width: 0 !important;
         max-width: 8% !important
       }
 
-      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob th.wf-col-emp {
-        width: auto !important;
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-head th.wf-col-ticket,
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-body td.wf-ticket-cell,
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob th.wf-col-ticket {
+        width: 8% !important;
         min-width: 0 !important;
-        max-width: none !important;
+        max-width: 8% !important;
+        white-space: normal !important;
+        word-break: break-word !important;
+        overflow-wrap: anywhere !important;
+        line-height: 1.2 !important;
+        overflow: visible !important;
+        text-overflow: clip !important
+      }
+
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-head th.wf-col-emp {
         text-align: center !important;
         padding: 0 3px !important
       }
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob td.wf-ticket-cell {
-        width: auto !important;
+        width: 8% !important;
         min-width: 0 !important;
-        max-width: none !important;
+        max-width: 8% !important;
         overflow: hidden !important;
-        padding: 2px 4px 2px 2px !important;
-        text-align: start !important
+        padding: 2px 2px !important;
+        text-align: center !important
       }
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob tr.wf-ticket-row--auto td.wf-ticket-cell {
         min-width: 0 !important;
-        max-width: min(32vw, 18ch) !important
+        max-width: 8% !important
       }
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob .ticket-id-cell {
@@ -15772,8 +15820,8 @@
         font-size: 7px !important
       }
 
-      #tab-workflow .wf-panel .data-table th:nth-child(2),
-      #tab-workflow .wf-panel .data-table th.wf-col-emp {
+      #tab-workflow .wf-panel .data-table:not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) th:nth-child(2),
+      #tab-workflow .wf-panel .data-table:not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) th.wf-col-emp {
         width: 0 !important;
         white-space: nowrap !important;
         padding: 2px 3px !important;
@@ -15793,10 +15841,7 @@
         line-height: 1.1 !important
       }
 
-      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob td.wf-col-emp {
-        width: auto !important;
-        min-width: 0 !important;
-        max-width: none !important;
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-body td.wf-col-emp {
         padding: 2px 4px 2px 2px !important;
         text-align: start !important
       }
@@ -15831,15 +15876,15 @@
         font-size: 9px !important
       }
 
-      #tab-workflow .wf-panel .data-table th:nth-child(3),
-      #tab-workflow .wf-panel .data-table th.wf-col-violation {
+      #tab-workflow .wf-panel .data-table:not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) th:nth-child(3),
+      #tab-workflow .wf-panel .data-table:not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) th.wf-col-violation {
         width: 1px !important;
         white-space: nowrap !important;
         padding: 1px 2px !important;
         text-align: right !important
       }
 
-      #tab-workflow .wf-panel .data-table td.wf-col-violation {
+      #tab-workflow .wf-panel .data-table:not(.wf-tickets-table--mob-body) td.wf-col-violation {
         width: 1px !important;
         min-width: 0 !important;
         max-width: min(26vw, 14ch) !important;
@@ -15879,8 +15924,8 @@
         hyphens: manual !important
       }
 
-      #tab-workflow .wf-panel .data-table th:nth-child(5),
-      #tab-workflow .wf-panel .data-table th.wf-col-datetime {
+      #tab-workflow .wf-panel .data-table:not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) th:nth-child(5),
+      #tab-workflow .wf-panel .data-table:not(.wf-tickets-table--mob-head) th.wf-col-datetime {
         width: 1px !important;
         min-width: 0 !important;
         max-width: min(34vw, 20ch) !important;
@@ -15889,7 +15934,7 @@
         text-align: center !important
       }
 
-      #tab-workflow .wf-panel .data-table td.wf-col-datetime {
+      #tab-workflow .wf-panel .data-table:not(.wf-tickets-table--mob-body) td.wf-col-datetime {
         width: 1px !important;
         min-width: 0 !important;
         max-width: min(34vw, 20ch) !important;
@@ -15961,12 +16006,8 @@
         letter-spacing: 0.02em
       }
 
-      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob th:nth-child(4),
-      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob th.wf-col-datetime,
-      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob td.wf-col-datetime {
-        width: 1px !important;
-        min-width: 0 !important;
-        max-width: min(24vw, 11.5ch) !important;
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-head th.wf-col-datetime,
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-body td.wf-col-datetime {
         padding: 2px 2px !important;
         text-align: center !important;
         overflow: hidden !important
@@ -15988,18 +16029,15 @@
         font-size: 9px !important
       }
 
-      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob th:nth-child(5),
-      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob td:nth-child(5) {
-        width: 8% !important;
-        min-width: 0 !important;
-        max-width: 8% !important;
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-head th.wf-col-status,
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-body td.wf-col-status {
         padding: 2px 2px !important;
         text-align: center !important;
         overflow: hidden !important
       }
 
-      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob th:nth-child(6),
-      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob td:nth-child(6),
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-head th.wf-col-action,
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-body td.wf-col-action,
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob th.wf-col-action,
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob td.wf-col-action {
         width: 8% !important;
@@ -26095,12 +26133,12 @@
           <col class="wf-col-action-c">`;
         const theadHtml = `
           <tr>
-            <th class="wf-col-ticket">رقم المخالفة</th>
-            <th class="wf-col-emp">اسم الموظف</th>
+            <th class="wf-col-ticket">ID</th>
+            <th class="wf-col-emp">الموظف</th>
             <th class="wf-col-violation">نوع المخالفة</th>
             ${branchThHtml}
-            <th class="wf-col-datetime">تاريخ المخالفة</th>
-            <th>حالة المخالفة</th>
+            <th class="wf-col-datetime">التاريخ</th>
+            <th class="wf-col-status">الحالة</th>
             <th class="wf-col-action">${isReports ? 'المرفقات' : 'إجراء'}</th>
           </tr>`;
 
@@ -26137,7 +26175,7 @@
               <td class="wf-col-violation"><span class="wf-viol-cell"><span class="wf-viol-name">${Sec.escapeHTML(violName)}</span></span></td>
               ${branchTdHtml}
               <td class="wf-col-datetime wf-datetime">${dateTime}</td>
-              <td><span class="badge ${getTicketBadgeClass(t)}">${Sec.escapeHTML(t.status_text || STATE_LABELS[t.state])}</span></td>
+              <td class="wf-col-status"><span class="badge ${getTicketBadgeClass(t)}">${Sec.escapeHTML(t.status_text || STATE_LABELS[t.state])}</span></td>
               <td class="wf-col-action">${actionCell}</td>
             </tr>`;
         }).join('');
@@ -26180,6 +26218,7 @@
       }
 
       function syncMobTicketsColWidths() {
+        const headHost = document.getElementById('wfMobTicketsHead');
         const headTable = document.querySelector('#tab-workflow #wfMobTicketsHead .wf-tickets-table--mob-head');
         const bodyTable = document.querySelector('#tab-workflow #ticketList .wf-tickets-table--mob-body');
         const bodyScroll = document.querySelector('#tab-workflow #ticketList .wf-mob-tickets-body');
@@ -26195,23 +26234,53 @@
         const bodyCols = bodyTable.querySelectorAll('colgroup col');
         if (!tds.length || tds.length !== ths.length) return;
 
-        const scrollBarW = Math.max(0, bodyScroll.offsetWidth - bodyScroll.clientWidth);
-        if (headWrap) headWrap.style.paddingInlineEnd = scrollBarW ? `${scrollBarW}px` : '';
+        const outerW = bodyScroll.offsetWidth;
+        const innerW = bodyScroll.clientWidth;
+        const scrollBarW = Math.max(0, outerW - innerW);
+        const innerPx = `${innerW}px`;
+        const outerPx = `${outerW}px`;
 
-        headTable.style.width = '100%';
-        bodyTable.style.width = '100%';
+        if (headHost) {
+          headHost.style.width = outerPx;
+          headHost.style.maxWidth = outerPx;
+        }
+        if (headWrap) {
+          headWrap.style.boxSizing = 'border-box';
+          headWrap.style.width = outerPx;
+          headWrap.style.maxWidth = outerPx;
+          headWrap.style.paddingInlineEnd = scrollBarW ? `${scrollBarW}px` : '';
+        }
 
-        tds.forEach((td, i) => {
-          const w = td.offsetWidth;
+        headTable.style.width = innerPx;
+        headTable.style.transform = '';
+        bodyTable.style.width = innerPx;
+
+        const setColW = (el, px) => {
+          if (!el) return;
+          el.style.setProperty('width', px, 'important');
+          el.style.setProperty('min-width', px, 'important');
+          el.style.setProperty('max-width', px, 'important');
+        };
+
+        const raw = Array.from(tds, td => td.offsetWidth);
+        let sum = raw.reduce((a, b) => a + b, 0);
+        if (!sum) return;
+        let widths = raw.map(w => Math.floor((w / sum) * innerW));
+        let used = widths.reduce((a, b) => a + b, 0);
+        for (let i = 0; used < innerW; i = (i + 1) % widths.length) {
+          widths[i] += 1;
+          used += 1;
+        }
+
+        widths.forEach((w, i) => {
           const px = `${w}px`;
-          if (ths[i]) {
-            ths[i].style.width = px;
-            ths[i].style.minWidth = px;
-            ths[i].style.maxWidth = px;
-          }
-          if (headCols[i]) headCols[i].style.width = px;
-          if (bodyCols[i]) bodyCols[i].style.width = px;
+          setColW(ths[i], px);
+          setColW(headCols[i], px);
+          setColW(bodyCols[i], px);
         });
+
+        const slip = tds[0].getBoundingClientRect().left - ths[0].getBoundingClientRect().left;
+        if (Math.abs(slip) > 0.5) headTable.style.transform = `translateX(${slip}px)`;
       }
 
       function bindMobTicketsHeadScroll() {
@@ -26228,6 +26297,8 @@
           ro.observe(bodyScroll);
           const bodyTable = bodyScroll.querySelector('.wf-tickets-table--mob-body');
           if (bodyTable) ro.observe(bodyTable);
+          const headHost = document.getElementById('wfMobTicketsHead');
+          if (headHost) ro.observe(headHost);
         }
       }
 
