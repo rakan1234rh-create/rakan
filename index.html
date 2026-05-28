@@ -18939,8 +18939,15 @@
       const MOB_VIOLATION_SELECT = [
         'id', 'created_at', 'updated_at', 'ticket_number', 'state', 'status_text',
         'employee_id', 'branch_id', 'observer_id', 'supervisor_id',
-        'violation_type', 'violation_date', 'violation_time',
-        'employee_reply', 'supervisor_reply',
+        'violation_type', 'violation_date', 'violation_time', 'description',
+        'employee_reply', 'supervisor_reply', 'audit_reply', 'management_reply',
+        'attachments', 'logs',
+        'auto_forwarded_emp', 'auto_forwarded_sup',
+      ].join(',');
+      const TICKET_DETAIL_EXTRA_SELECT = [
+        'attachments', 'logs', 'description',
+        'employee_reply', 'supervisor_reply', 'audit_reply', 'management_reply',
+        'source_role', 'violation_type_id', 'updated_at',
         'auto_forwarded_emp', 'auto_forwarded_sup',
       ].join(',');
       const MOB_VIOLATION_SELECT_MIN = 'id,created_at,ticket_number,state,status_text,employee_id,branch_id,observer_id,supervisor_id,violation_type';
@@ -26571,7 +26578,7 @@
             ? `<div class="ticket-id-cell ticket-id-cell--auto">${ticketNumHtml}${autoFlag}</div>`
             : `<div class="ticket-id-cell">${ticketNumHtml}${autoFlag}</div>`;
           return `
-            <tr class="wf-ticket-row${autoRowCls}" onclick="openTicket('${t.id}')">
+            <tr class="wf-ticket-row${autoRowCls}" ontouchstart="prefetchTicketDetail('${t.id}')" onclick="openTicket('${t.id}')">
               <td class="wf-ticket-cell">${ticketIdCellHtml}</td>
               <td class="wf-col-emp"><span class="wf-emp-cell"><span class="wf-emp-name">${Sec.escapeHTML(empName)}</span>${empNumber ? `<span class="wf-emp-num">${Sec.escapeHTML(empNumber)}</span>` : ''}</span></td>
               <td class="wf-col-violation"><span class="wf-viol-cell"><span class="wf-viol-name">${Sec.escapeHTML(violName)}</span></span></td>
@@ -26704,46 +26711,82 @@
         }
       }
 
-      // ───────────────────────────────────────────────────────────────────────────
-      // فتح تذكرة في المودال
-      // ───────────────────────────────────────────────────────────────────────────
-      async function openTicket(id) {
-        const t = state.violations.find(v => v.id === id);
-        if (!t) return showToast('التذكرة غير موجودة', 'error');
+      const _ticketDetailPrefetch = new Map();
 
-        try {
-          if (!t._detailFetched) {
-            const { data, error } = await sb.from('violations').select('*').eq('id', id).maybeSingle();
+      function ticketDetailExtrasReady(t) {
+        return !!(t && (t._detailFetched || t._detailExtrasLoaded || t.attachments !== undefined));
+      }
+
+      function refreshTicketDetailAfterExtras(id) {
+        const t = state.violations.find(v => v.id === id);
+        if (!t || state.editingTicket?.id !== id) return;
+        buildInlineAttachments(t);
+        buildLogs(t);
+        buildWfSteps(t);
+        setupResponseForm(t);
+      }
+
+      function fetchTicketFullDetail(id) {
+        const t = state.violations.find(v => v.id === id);
+        if (!t || t._detailFetched) return Promise.resolve(t);
+        if (_ticketDetailPrefetch.has(id)) return _ticketDetailPrefetch.get(id);
+        const job = sb.from('violations').select(TICKET_DETAIL_EXTRA_SELECT).eq('id', id).maybeSingle()
+          .then(({ data, error }) => {
             if (!error && data) {
               Object.assign(t, data);
+              t._detailExtrasLoaded = true;
               t._detailFetched = true;
               enrichViolation(t);
+              refreshTicketDetailAfterExtras(id);
             }
-          }
-        } catch (e) {
-          console.warn('[openTicket] تعذّر جلب التفاصيل الكاملة:', e);
-        }
+            return t;
+          })
+          .catch((e) => {
+            console.warn('[fetchTicketFullDetail]', e);
+            return t;
+          })
+          .finally(() => { _ticketDetailPrefetch.delete(id); });
+        _ticketDetailPrefetch.set(id, job);
+        return job;
+      }
 
-        state.editingTicket = t;
-        state.uploadedFiles.resp = [];
-        document.getElementById('respFileArea').innerHTML = '';
-        document.getElementById('respText').value = '';
+      /** جلب تفاصيل التذكرة مسبقاً عند اللمس — يقلّل انتظار «عرض» */
+      function prefetchTicketDetail(id) {
+        fetchTicketFullDetail(id);
+      }
 
-        // العنوان والشارة
+      function renderTicketDetailUI(t) {
+        if (!t) return;
         document.getElementById('td-id').textContent = shortTicketNum(t.ticket_number);
         const badge = document.getElementById('td-badge');
         badge.className = `badge ${getTicketBadgeClass(t)}`;
         badge.textContent = t.status_text || STATE_LABELS[t.state];
-
-        // ابدأ بتبويب المعلومات
         switchDetailTab('info');
         buildTicketInfo(t);
         buildWfSteps(t);
         buildLogs(t);
         setupResponseForm(t);
+      }
+
+      // ───────────────────────────────────────────────────────────────────────────
+      // فتح تذكرة في المودال — عرض فوري ثم تحديث من الخادم
+      // ───────────────────────────────────────────────────────────────────────────
+      async function openTicket(id) {
+        const t = state.violations.find(v => v.id === id);
+        if (!t) return showToast('التذكرة غير موجودة', 'error');
+
+        enrichViolationLite(t);
+        state.editingTicket = t;
+        state.uploadedFiles.resp = [];
+        document.getElementById('respFileArea').innerHTML = '';
+        document.getElementById('respText').value = '';
+
+        renderTicketDetailUI(t);
 
         if (isViolDetailMobSheet()) openTicketSheetAnimated();
         else openModal('ticketModal');
+
+        fetchTicketFullDetail(id);
       }
 
       function switchDetailTab(tab) {
@@ -26947,6 +26990,17 @@
       function buildInlineAttachments(t) {
         const c = document.getElementById('tdInlineAttachments');
         if (!c) return;
+
+        if (!ticketDetailExtrasReady(t)) {
+          c.innerHTML = `
+      <div class="panel-header" style="margin-top:10px">
+        <div>
+          <h3 style="font-size:14px"><i class="fas fa-paperclip"></i> المرفقات</h3>
+          <p class="td-att-loading"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i> جاري تحميل المرفقات…</p>
+        </div>
+      </div>`;
+          return;
+        }
 
         const atts = getVisibleAttachments(t);
 
@@ -33230,6 +33284,7 @@
       window.userRoleDdToggle = userRoleDdToggle;
       window.userRoleDdPick = userRoleDdPick;
       window.openTicket = openTicket;
+      window.prefetchTicketDetail = prefetchTicketDetail;
       window.switchDetailTab = switchDetailTab;
       window.submitResp = submitResp;
       window.filterReports = filterReports;
