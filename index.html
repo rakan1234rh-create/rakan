@@ -12153,14 +12153,6 @@
       animation: cfFade 0.2s ease
     }
 
-    .att-viewer-content {
-      max-width: 100%;
-      max-height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center
-    }
-
     .att-viewer-content img,
     .att-viewer-content video {
       max-width: 100%;
@@ -12205,36 +12197,36 @@
 
     .att-viewer-close,
     .att-viewer-download {
-      position: absolute;
-      top: 16px;
-      width: 42px;
-      height: 42px;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.12);
-      backdrop-filter: blur(8px);
-      border: 1px solid rgba(255, 255, 255, 0.18);
-      color: #fff;
-      cursor: pointer;
+      display: none !important
+    }
+
+    .att-viewer-stage {
+      position: relative;
+      width: 100%;
+      height: 100%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 16px;
-      transition: 0.2s;
-      text-decoration: none
+      will-change: transform
     }
 
-    .att-viewer-close {
-      left: 16px
+    .att-viewer-content {
+      position: relative;
+      z-index: 0;
+      flex: 0 1 auto;
+      max-width: 100%;
+      max-height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center
     }
 
-    .att-viewer-download {
-      left: 70px
+    .att-viewer-drag-zone {
+      touch-action: manipulation
     }
 
-    .att-viewer-close:hover,
-    .att-viewer-download:hover {
-      background: rgba(255, 255, 255, 0.22);
-      transform: scale(1.05)
+    .att-viewer.att-dragging .att-viewer-stage {
+      transition: none !important
     }
 
     .att-viewer-nav {
@@ -18301,20 +18293,19 @@
 
     <!-- Attachment Viewer (Lightbox) -->
     <div class="att-viewer" id="attViewer" onclick="closeAttViewer(event)">
-      <button class="att-viewer-close" onclick="closeAttViewer()" title="إغلاق">
-        <i class="fas fa-times"></i>
-      </button>
-      <button class="att-viewer-nav att-viewer-prev" id="attViewerPrev"
-        onclick="event.stopPropagation(); navAttViewer(-1)" title="السابق">
-        <i class="fas fa-chevron-right"></i>
-      </button>
-      <button class="att-viewer-nav att-viewer-next" id="attViewerNext"
-        onclick="event.stopPropagation(); navAttViewer(1)" title="التالي">
-        <i class="fas fa-chevron-left"></i>
-      </button>
-      <div class="att-viewer-content" id="attViewerContent" onclick="event.stopPropagation()"></div>
-      <div class="att-viewer-caption" id="attViewerCaption"></div>
-      <div class="att-viewer-counter" id="attViewerCounter"></div>
+      <div class="att-viewer-stage att-viewer-drag-zone">
+        <button type="button" class="att-viewer-nav att-viewer-prev" id="attViewerPrev"
+          onclick="event.stopPropagation(); navAttViewer(-1)" title="السابق">
+          <i class="fas fa-chevron-right"></i>
+        </button>
+        <button type="button" class="att-viewer-nav att-viewer-next" id="attViewerNext"
+          onclick="event.stopPropagation(); navAttViewer(1)" title="التالي">
+          <i class="fas fa-chevron-left"></i>
+        </button>
+        <div class="att-viewer-content" id="attViewerContent" onclick="event.stopPropagation()"></div>
+        <div class="att-viewer-caption" id="attViewerCaption"></div>
+        <div class="att-viewer-counter" id="attViewerCounter"></div>
+      </div>
     </div>
   </div><!-- /#appWrap -->
 
@@ -27181,7 +27172,11 @@
         const atts = getVisibleAttachments(t);
         state._attList = atts;
         state._attIndex = (idx >= 0 && idx < atts.length) ? idx : 0;
-        document.getElementById('attViewer').classList.add('open');
+        const viewer = document.getElementById('attViewer');
+        const stage = viewer?.querySelector('.att-viewer-stage');
+        if (stage) stage.style.transform = '';
+        viewer.classList.remove('att-dragging');
+        viewer.classList.add('open');
         document.body.style.overflow = 'hidden';
         renderAttViewer();
       }
@@ -27196,7 +27191,11 @@
           state._attList = [{ url, name }];
           state._attIndex = 0;
         }
-        document.getElementById('attViewer').classList.add('open');
+        const viewer = document.getElementById('attViewer');
+        const stage = viewer?.querySelector('.att-viewer-stage');
+        if (stage) stage.style.transform = '';
+        viewer.classList.remove('att-dragging');
+        viewer.classList.add('open');
         document.body.style.overflow = 'hidden';
         renderAttViewer();
       }
@@ -27471,12 +27470,77 @@
         renderAttViewer();
       }
 
+      const _attViewerDrag = { active: false, startY: 0, deltaY: 0, pointerId: null };
+
       function closeAttViewer(event) {
         if (event && event.target.closest('.att-viewer-content')) return;
         const viewer = document.getElementById('attViewer');
-        viewer.classList.remove('open');
+        const stage = viewer?.querySelector('.att-viewer-stage');
+        viewer.classList.remove('open', 'att-dragging');
+        if (stage) stage.style.transform = '';
         document.getElementById('attViewerContent').innerHTML = '';
         document.body.style.overflow = '';
+        _attViewerDrag.active = false;
+        _attViewerDrag.pointerId = null;
+        _attViewerDrag.deltaY = 0;
+      }
+
+      function initAttViewerDrag() {
+        const viewer = document.getElementById('attViewer');
+        const zone = viewer?.querySelector('.att-viewer-drag-zone');
+        const stage = viewer?.querySelector('.att-viewer-stage');
+        if (!viewer || !zone || !stage || viewer.dataset.dragInit === '1') return;
+        viewer.dataset.dragInit = '1';
+
+        const dragEnd = () => {
+          if (!_attViewerDrag.active) return;
+          _attViewerDrag.active = false;
+          viewer.classList.remove('att-dragging');
+          zone.style.cursor = '';
+          const threshold = Math.max(72, window.innerHeight * 0.12);
+          if (Math.abs(_attViewerDrag.deltaY) > threshold) {
+            closeAttViewer();
+          } else {
+            stage.style.transform = '';
+          }
+          _attViewerDrag.deltaY = 0;
+          _attViewerDrag.pointerId = null;
+        };
+
+        const dragMove = (clientY) => {
+          if (!_attViewerDrag.active) return;
+          _attViewerDrag.deltaY = clientY - _attViewerDrag.startY;
+          stage.style.transform = `translateY(${_attViewerDrag.deltaY}px)`;
+        };
+
+        const dragStart = (clientY) => {
+          if (!viewer.classList.contains('open')) return;
+          _attViewerDrag.active = true;
+          _attViewerDrag.startY = clientY;
+          _attViewerDrag.deltaY = 0;
+          viewer.classList.add('att-dragging');
+          zone.style.cursor = 'grabbing';
+        };
+
+        zone.addEventListener('pointerdown', (e) => {
+          if (e.button !== undefined && e.button !== 0) return;
+          if (e.target.closest('video, button, a, input, .att-viewer-nav')) return;
+          _attViewerDrag.pointerId = e.pointerId;
+          dragStart(e.clientY);
+          try { zone.setPointerCapture(e.pointerId); } catch (_) { /* noop */ }
+        });
+
+        zone.addEventListener('pointermove', (e) => {
+          if (!_attViewerDrag.active || e.pointerId !== _attViewerDrag.pointerId) return;
+          dragMove(e.clientY);
+        });
+
+        zone.addEventListener('pointerup', (e) => {
+          if (e.pointerId !== _attViewerDrag.pointerId) return;
+          dragEnd();
+        });
+
+        zone.addEventListener('pointercancel', dragEnd);
       }
 
       // التحكم بالكيبورد
@@ -32347,6 +32411,7 @@
           if (typeof initMobileViewportSync === 'function') initMobileViewportSync();
           if (typeof initViolDetailSheetDrag === 'function') initViolDetailSheetDrag();
           if (typeof initTicketSheetDrag === 'function') initTicketSheetDrag();
+          if (typeof initAttViewerDrag === 'function') initAttViewerDrag();
 
           sb.auth.onAuthStateChange((event) => {
             if (event === 'PASSWORD_RECOVERY') {
