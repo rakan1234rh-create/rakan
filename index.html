@@ -9094,7 +9094,32 @@
     .td-content-area {
       flex: 1;
       overflow-y: auto;
-      min-height: 0
+      min-height: 0;
+      --td-detail-pad-x: 16px;
+      padding: 0 var(--td-detail-pad-x) 16px;
+      box-sizing: border-box
+    }
+
+    #ticketModal #tdp-info.td-pane {
+      padding: 0
+    }
+
+    #ticketModal #tdInfo {
+      padding: 0
+    }
+
+    #ticketModal #tdInfo .overdue-banner,
+    #ticketModal #tdInfo .countdown-card,
+    #ticketModal #tdInfo .td-info-rows,
+    #ticketModal #tdInfo .info-row {
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      margin-inline: 0
+    }
+
+    #ticketModal #tdInfo .info-row {
+      padding-inline: 0
     }
 
     .td-content-area::-webkit-scrollbar {
@@ -9185,7 +9210,7 @@
     .overdue-banner {
       background: var(--red-light);
       border: 1px solid var(--red);
-      border-right: 4px solid var(--red);
+      border-inline-start: 4px solid var(--red);
       padding: 10px 14px;
       border-radius: 8px;
       margin-bottom: 14px;
@@ -9193,7 +9218,10 @@
       align-items: center;
       gap: 14px;
       font-size: 12px;
-      color: var(--red-text)
+      color: var(--red-text);
+      direction: rtl;
+      width: 100%;
+      box-sizing: border-box
     }
 
     .overdue-banner i {
@@ -15530,7 +15558,6 @@
         font-size: 8px !important
       }
 
-      /* بنر عناوين الجدول — جوال */
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-head thead th,
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob thead th {
         height: 34px;
@@ -15570,7 +15597,6 @@
         opacity: 1 !important
       }
 
-      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob thead tr > th,
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob thead tr > th.wf-col-ticket,
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob thead tr > th.wf-col-emp,
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob thead tr > th.wf-col-violation,
@@ -16376,16 +16402,28 @@
       /* مودال التذكرة — جوال */
       #ticketModal .modal-header {
         align-items: center;
-        gap: 8px
+        justify-content: flex-start !important;
+        gap: 10px;
+        padding-inline: 12px 10px !important;
+        overflow: visible !important
       }
 
       #ticketModal .td-header-main {
         display: flex !important;
         flex-direction: row !important;
         align-items: center !important;
+        justify-content: flex-start !important;
         gap: 8px !important;
         flex-wrap: nowrap !important;
-        min-width: 0 !important
+        min-width: 0 !important;
+        flex: 1 1 auto !important;
+        max-width: calc(100% - 44px) !important;
+        overflow: visible !important
+      }
+
+      #ticketModal .td-header-actions {
+        margin-inline-start: auto !important;
+        flex-shrink: 0 !important
       }
 
       #ticketModal .modal-header h3,
@@ -16396,11 +16434,21 @@
       }
 
       #ticketModal .td-header-main .badge {
-        flex: 0 1 auto !important;
-        max-width: 52% !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
-        white-space: nowrap !important
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex: 0 0 auto !important;
+        width: auto !important;
+        min-width: max-content !important;
+        max-width: none !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+        white-space: nowrap !important;
+        font-size: 11px !important;
+        padding-block: 4px !important;
+        padding-inline: 10px 9px !important;
+        line-height: 1.25 !important;
+        box-sizing: border-box !important
       }
 
       #ticketModal .td-header-actions .td-close-btn {
@@ -16454,8 +16502,14 @@
         touch-action: pan-y
       }
 
-      #ticketModal #tdInfo {
-        padding: 4px 12px 8px
+      #ticketModal .td-content-area {
+        --td-detail-pad-x: 14px;
+        padding: 0 var(--td-detail-pad-x) 14px
+      }
+
+      #ticketModal #tdp-workflow.td-pane,
+      #ticketModal #tdp-logs.td-pane {
+        padding: 10px 0
       }
 
       #ticketModal .info-row {
@@ -16497,10 +16551,6 @@
         padding: 7px 10px;
         flex-shrink: 0;
         white-space: nowrap
-      }
-
-      #ticketModal .td-content-area {
-        padding: 0 12px 12px
       }
 
       #ticketModal .wf-steps {
@@ -17000,7 +17050,8 @@
 
       #ticketModal .td-sheet-drag-zone .modal-header {
         border-bottom: 1px solid var(--mr-border);
-        padding-top: 0 !important
+        padding-top: 0 !important;
+        justify-content: flex-start !important
       }
 
       /* أداء الجوال — تقليل الحركة الثقيلة */
@@ -26883,7 +26934,7 @@
         if (t.audit_reply) rows.push(['ملاحظات التدقيق', t.audit_reply]);
         if (t.management_reply) rows.push(['القرار الإداري', t.management_reply]);
 
-        c.innerHTML = overdueBanner + countdownBlock + rows.map(([label, value]) => {
+        const infoRowsHtml = rows.map(([label, value]) => {
           const v = value || '-';
           const isNoReply = typeof v === 'string' && v.includes('لم يتم تقديم رد');
           return `
@@ -26893,6 +26944,7 @@
       </div>
     `;
         }).join('');
+        c.innerHTML = overdueBanner + countdownBlock + `<div class="td-info-rows">${infoRowsHtml}</div>`;
 
         // المرفقات داخل نفس الفيو
         buildInlineAttachments(t);
