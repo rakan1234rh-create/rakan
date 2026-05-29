@@ -4863,6 +4863,47 @@
     }
 
     /* Attachment Grid */
+    #ticketModal #tdInlineAttachments {
+      margin-top: 0
+    }
+
+    .td-att-section-head {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 6px 10px;
+      margin-top: 0;
+      margin-bottom: 0;
+      padding: 8px 0;
+      border-bottom: 1px dashed var(--border);
+      direction: rtl
+    }
+
+    .td-att-section-head h3 {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+      flex: 0 0 auto;
+      white-space: nowrap
+    }
+
+    .td-att-section-head .td-att-hint,
+    .td-att-section-head .td-att-loading {
+      margin: 0;
+      font-size: 11px;
+      color: var(--text3);
+      flex: 1 1 auto;
+      min-width: 0;
+      line-height: 1.35
+    }
+
+    .td-att-section-head .td-att-loading i {
+      margin-inline-end: 4px
+    }
+
     .att-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
@@ -9122,6 +9163,11 @@
       padding-inline: 0
     }
 
+    #ticketModal #tdInfo .overdue-banner {
+      margin-top: 6px;
+      margin-bottom: 4px
+    }
+
     .td-content-area::-webkit-scrollbar {
       width: 6px
     }
@@ -9180,6 +9226,23 @@
       flex-shrink: 0
     }
 
+    #ticketModal .modal-header {
+      align-items: flex-start
+    }
+
+    #ticketModal .td-header-main {
+      padding-block-start: 1px
+    }
+
+    #ticketModal .td-header-actions {
+      align-self: flex-start;
+      margin-block-start: -1px
+    }
+
+    #ticketModal .td-print-btn {
+      transform: translateY(-3px)
+    }
+
     /* Overdue */
     .overdue-flag {
       display: inline-flex;
@@ -9210,18 +9273,33 @@
     .overdue-banner {
       background: var(--red-light);
       border: 1px solid var(--red);
-      border-inline-start: 4px solid var(--red);
-      padding: 10px 14px;
+      padding: 6px 12px;
       border-radius: 8px;
-      margin-bottom: 14px;
+      margin-bottom: 4px;
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 10px;
       font-size: 12px;
+      line-height: 1.25;
       color: var(--red-text);
       direction: rtl;
       width: 100%;
       box-sizing: border-box
+    }
+
+    .overdue-banner > div {
+      line-height: 1.25
+    }
+
+    .overdue-banner strong {
+      display: block;
+      line-height: 1.25
+    }
+
+    .overdue-banner .overdue-banner__reason {
+      font-size: 11px;
+      margin-top: 1px;
+      line-height: 1.25
     }
 
     .overdue-banner i {
@@ -16401,9 +16479,10 @@
 
       /* مودال التذكرة — جوال */
       #ticketModal .modal-header {
-        align-items: center;
+        align-items: flex-start !important;
         justify-content: flex-start !important;
         gap: 10px;
+        padding-block: 0 2px !important;
         padding-inline: 12px 10px !important;
         overflow: visible !important
       }
@@ -16423,7 +16502,13 @@
 
       #ticketModal .td-header-actions {
         margin-inline-start: auto !important;
-        flex-shrink: 0 !important
+        flex-shrink: 0 !important;
+        align-self: flex-start !important;
+        margin-block-start: -1px !important
+      }
+
+      #ticketModal .td-print-btn {
+        transform: translateY(-5px) !important
       }
 
       #ticketModal .modal-header h3,
@@ -16519,6 +16604,16 @@
         align-items: baseline !important;
         gap: 0 !important;
         padding: 8px 0 !important
+      }
+
+      #ticketModal #tdInlineAttachments {
+        margin-top: 0 !important
+      }
+
+      #ticketModal .td-att-section-head {
+        margin-top: 0 !important;
+        padding: 8px 0 !important;
+        border-bottom: 1px dashed var(--border) !important
       }
 
       #ticketModal .info-label {
@@ -17051,6 +17146,7 @@
       #ticketModal .td-sheet-drag-zone .modal-header {
         border-bottom: 1px solid var(--mr-border);
         padding-top: 0 !important;
+        padding-bottom: 2px !important;
         justify-content: flex-start !important
       }
 
@@ -18159,7 +18255,7 @@
         <div class="td-content-area">
           <div class="td-pane active" id="tdp-info">
             <div id="tdInfo"></div>
-            <div id="tdInlineAttachments" style="margin-top:18px"></div>
+            <div id="tdInlineAttachments"></div>
           </div>
           <div class="td-pane" id="tdp-workflow">
             <div id="wfStepsContainer"></div>
@@ -26856,7 +26952,7 @@
         <i class="fas fa-robot"></i>
         <div>
           <strong>تمرير تلقائي بواسطة النظام</strong>
-          <div style="font-size:11px;margin-top:2px">السبب: ${reasons.join(' · ')}</div>
+          <div class="overdue-banner__reason">السبب: ${reasons.join(' · ')}</div>
         </div>
       </div>`;
         }
@@ -27036,11 +27132,9 @@
 
         if (!ticketDetailExtrasReady(t)) {
           c.innerHTML = `
-      <div class="panel-header" style="margin-top:10px">
-        <div>
-          <h3 style="font-size:14px"><i class="fas fa-paperclip"></i> المرفقات</h3>
-          <p class="td-att-loading"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i> جاري تحميل المرفقات…</p>
-        </div>
+      <div class="td-att-section-head">
+        <h3><i class="fas fa-paperclip"></i> المرفقات</h3>
+        <span class="td-att-loading"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i> جاري تحميل المرفقات…</span>
       </div>`;
           return;
         }
@@ -27049,11 +27143,9 @@
 
         if (!atts || !atts.length) {
           c.innerHTML = `
-      <div class="panel-header" style="margin-top:10px">
-        <div>
-          <h3 style="font-size:14px"><i class="fas fa-paperclip"></i> المرفقات</h3>
-          <p>لا توجد مرفقات</p>
-        </div>
+      <div class="td-att-section-head">
+        <h3><i class="fas fa-paperclip"></i> المرفقات</h3>
+        <span class="td-att-hint">لا توجد مرفقات</span>
       </div>`;
           return;
         }
@@ -27130,11 +27222,9 @@
         }).join('');
 
         c.innerHTML = `
-    <div class="panel-header" style="margin-top:10px">
-      <div>
-        <h3 style="font-size:14px"><i class="fas fa-paperclip"></i> المرفقات (${normalizedAtts.length})</h3>
-        <p>اضغط على أي مرفق لفتحه في نافذة جديدة</p>
-      </div>
+    <div class="td-att-section-head">
+      <h3><i class="fas fa-paperclip"></i> المرفقات (${normalizedAtts.length})</h3>
+      <span class="td-att-hint">اضغط على أي مرفق لفتحه</span>
     </div>
     <div class="att-grid">${items}</div>`;
         // بعد رسم الـ DOM، نحمّل صور Cloudflare تلقائياً عبر الوسيط
