@@ -4775,16 +4775,25 @@
     /* Logs */
     .log-item {
       padding: 10px 12px;
-      border-right: 3px solid var(--border2);
+      border: 1px solid var(--border2);
       margin-bottom: 8px;
       background: var(--surface2);
-      border-radius: 0 8px 8px 0;
+      border-radius: 8px;
       transition: all 0.2s ease;
     }
 
     .log-item:hover {
       transform: translateX(-4px);
-      border-right-color: var(--blue);
+      border-color: var(--blue);
+    }
+
+    .log-item--auto {
+      border-color: var(--red);
+      background: var(--red-light);
+    }
+
+    .log-item--auto:hover {
+      border-color: var(--red);
     }
 
     .log-meta {
@@ -28131,7 +28140,7 @@
           // تحديد إذا الإجراء تلقائي
           const isAuto = (l.user === 'النظام' || l.role === 'النظام' || /تلقائي/.test(l.action || ''));
           return `
-      <div class="log-item" ${isAuto ? 'style="border-right-color:var(--red);background:var(--red-light)"' : ''} style="transition: all 0.2s ease; cursor: default;">
+      <div class="log-item${isAuto ? ' log-item--auto' : ''}">
         <div class="log-meta">${Sec.escapeHTML(metaLine)}</div>
         <div class="log-action">${isAuto ? '<i class="fas fa-robot" style="color:var(--red);margin-left:4px"></i>' : ''}${Sec.escapeHTML(l.action || '-')}</div>
         ${l.note ? `<div class="log-note">${Sec.escapeHTML(l.note)}</div>` : ''}
