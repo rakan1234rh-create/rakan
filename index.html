@@ -4607,41 +4607,77 @@
 
     /* Workflow Steps */
     .wf-steps {
+      --wf-circle-size: 32px;
+      --wf-step-gap: 20px;
+      --wf-step-pad-y: 15px;
+      --wf-steps-pad-x: 24px;
+      --wf-steps-pad-y: 24px;
+      --wf-rail-x: calc(var(--wf-steps-pad-x) + (var(--wf-circle-size) / 2));
+      --wf-rail-y1: calc(var(--wf-steps-pad-y) + var(--wf-step-pad-y) + (var(--wf-circle-size) / 2));
+      --wf-rail-y2: var(--wf-rail-y1);
+      --wf-rail-y-end: var(--wf-rail-y1);
       display: flex;
       flex-direction: column;
       gap: 0;
-      padding: 24px;
+      padding: var(--wf-steps-pad-y) var(--wf-steps-pad-x);
       background: var(--surface2);
       border-radius: 16px;
-      position: relative;
       direction: rtl;
+      position: relative;
+      overflow: visible;
+    }
+
+    /* مسار عمودي واحد على يسار الدوائر (يُضبط ديناميكياً عبر syncWfStepsRail) */
+    .wf-steps::before,
+    .wf-steps::after {
+      content: "";
+      position: absolute;
+      left: var(--wf-rail-x);
+      right: auto;
+      width: 2px;
+      transform: translateX(-50%);
+      border-radius: 1px;
+      pointer-events: none;
+      z-index: 0;
     }
 
     .wf-steps::before {
-      content: "";
-      position: absolute;
-      right: 39px;
-      top: 55px; /* Start at the center of the first circle */
-      bottom: 55px; /* End at the center of the last circle */
-      width: 2px;
+      top: var(--wf-rail-y1);
+      height: max(2px, calc(var(--wf-rail-y-end) - var(--wf-rail-y1)));
       background: var(--border);
-      z-index: 0;
+    }
+
+    .wf-steps::after {
+      top: var(--wf-rail-y1);
+      height: max(2px, calc(var(--wf-rail-y2) - var(--wf-rail-y1) + 2px));
+      background: var(--green);
     }
 
     .wf-step {
       display: flex;
-      align-items: flex-start;
-      gap: 20px;
-      padding: 15px 0;
-      position: relative;
-      z-index: 1;
-      background: transparent;
+      flex-direction: row;
+      direction: ltr;
+      align-items: stretch;
+      gap: var(--wf-step-gap);
+      padding: 0;
       color: var(--text3);
     }
 
+    .wf-step-rail {
+      position: relative;
+      align-self: stretch;
+      width: var(--wf-circle-size);
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      z-index: 1;
+    }
+
     .wf-step-circle {
-      width: 32px;
-      height: 32px;
+      width: var(--wf-circle-size);
+      height: var(--wf-circle-size);
+      margin-top: var(--wf-step-pad-y);
       border-radius: 50%;
       background: var(--bg2);
       border: 2px solid var(--border);
@@ -4652,6 +4688,8 @@
       font-size: 14px;
       transition: all 0.3s ease;
       position: relative;
+      z-index: 1;
+      box-sizing: border-box;
     }
 
     .wf-step.done .wf-step-circle {
@@ -4667,29 +4705,14 @@
       box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.1);
     }
 
-    /* Vertical connector line color based on step state */
-    /* This creates a green segment leading INTO a step if the previous one is done */
-    .wf-step.done + .wf-step::before,
-    .wf-step.done + .wf-arrow + .wf-step::before {
-      content: "";
-      position: absolute;
-      right: 15px; /* Centered in the 32px circle */
-      top: -15px;  /* Start from the previous step's bottom padding */
-      height: 31px; /* Cover the 30px gap + 1px for overlap */
-      width: 2px;
-      background: var(--green);
-      z-index: 1;
-    }
-
-    /* No connector before the first step */
-    .wf-step:first-child::before {
-      display: none;
-    }
-
     .wf-step-content {
       display: flex;
       flex-direction: column;
       gap: 4px;
+      flex: 1;
+      min-width: 0;
+      padding: var(--wf-step-pad-y) 0;
+      direction: rtl;
       text-align: right;
     }
 
@@ -16766,17 +16789,14 @@
       }
 
       #ticketModal .wf-steps {
-        padding: 12px 10px
-      }
-
-      #ticketModal .wf-step {
-        gap: 12px;
-        padding: 10px 0
+        --wf-circle-size: 28px;
+        --wf-step-gap: 12px;
+        --wf-step-pad-y: 10px;
+        --wf-steps-pad-x: 10px;
+        --wf-steps-pad-y: 12px
       }
 
       #ticketModal .wf-step-circle {
-        width: 28px;
-        height: 28px;
         font-size: 12px
       }
 
@@ -27049,6 +27069,9 @@
         document.getElementById(`tdt-${tab}`)?.classList.add('active');
         document.querySelectorAll('.td-pane').forEach(p => p.classList.remove('active'));
         document.getElementById(`tdp-${tab}`)?.classList.add('active');
+        if (tab === 'workflow') {
+          requestAnimationFrame(() => syncWfStepsRail(document.getElementById('wfStepsContainer')));
+        }
       }
 
       // ───────────────────────────────────────────────────────────────────────────
@@ -27966,6 +27989,62 @@
       window.closeAttViewer = closeAttViewer;
       window.navAttViewer = navAttViewer;
 
+      /** ضبط المسار العمودي: يسار الدوائر + امتداد كامل بين المراكز */
+      function syncWfStepsRail(root) {
+        const wfSteps = (root && root.querySelector)
+          ? root.querySelector('.wf-steps')
+          : document.querySelector('#wfStepsContainer .wf-steps');
+        if (!wfSteps) return;
+
+        const stepEls = [...wfSteps.querySelectorAll('.wf-step')];
+        if (!stepEls.length) return;
+
+        let railEndEl = null;
+        const allDone = stepEls.every((el) => el.classList.contains('done'));
+        if (allDone) {
+          railEndEl = stepEls[stepEls.length - 1];
+        } else {
+          stepEls.forEach((el) => {
+            if (el.classList.contains('done') || el.classList.contains('active')) {
+              railEndEl = el;
+            }
+          });
+        }
+
+        const firstCircle = stepEls[0].querySelector('.wf-step-circle');
+        const lastCircle = stepEls[stepEls.length - 1].querySelector('.wf-step-circle');
+        const endCircle = (railEndEl || stepEls[0]).querySelector('.wf-step-circle');
+        if (!firstCircle || !lastCircle || !endCircle) return;
+
+        const box = wfSteps.getBoundingClientRect();
+        const centerY = (el) => {
+          const r = el.getBoundingClientRect();
+          return r.top + r.height / 2 - box.top;
+        };
+        const centerX = (el) => {
+          const r = el.getBoundingClientRect();
+          return r.left + r.width / 2 - box.left;
+        };
+
+        const y1 = centerY(firstCircle);
+        const y2 = centerY(endCircle);
+        const yEnd = centerY(lastCircle);
+        const x = centerX(firstCircle);
+
+        wfSteps.style.setProperty('--wf-rail-x', `${Math.round(x)}px`);
+        wfSteps.style.setProperty('--wf-rail-y1', `${Math.round(y1)}px`);
+        wfSteps.style.setProperty('--wf-rail-y2', `${Math.round(Math.max(y1, y2))}px`);
+        wfSteps.style.setProperty('--wf-rail-y-end', `${Math.round(Math.max(y1, yEnd))}px`);
+      }
+
+      function bindWfStepsRailObserver(root) {
+        const wfSteps = root?.querySelector?.('.wf-steps');
+        if (!wfSteps || typeof ResizeObserver === 'undefined') return;
+        if (wfSteps._wfRailRO) wfSteps._wfRailRO.disconnect();
+        wfSteps._wfRailRO = new ResizeObserver(() => syncWfStepsRail(root));
+        wfSteps._wfRailRO.observe(wfSteps);
+      }
+
       // ───────────────────────────────────────────────────────────────────────────
       // بناء واجهة المسار (Workflow Steps)
       // ───────────────────────────────────────────────────────────────────────────
@@ -28015,7 +28094,9 @@
 
           return `
                 <div class="${cls}">
-                  <div class="wf-step-circle">${icon}</div>
+                  <div class="wf-step-rail" aria-hidden="true">
+                    <div class="wf-step-circle">${icon}</div>
+                  </div>
                   <div class="wf-step-content">
                     <div class="wf-step-label">${s.label}</div>
                     <div class="wf-step-sub">${s.sub}</div>
@@ -28025,6 +28106,12 @@
         }).join('')}
           </div>
         `;
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            syncWfStepsRail(c);
+            bindWfStepsRailObserver(c);
+          });
+        });
       }
 
       // ───────────────────────────────────────────────────────────────────────────
