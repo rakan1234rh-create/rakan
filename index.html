@@ -12256,6 +12256,9 @@
 
     .att-viewer.open {
       display: flex;
+      align-items: stretch;
+      justify-content: stretch;
+      box-sizing: border-box;
       animation: cfFade 0.2s ease
     }
 
@@ -12308,8 +12311,9 @@
 
     .att-viewer-stage {
       position: relative;
+      flex: 1 1 auto;
       width: 100%;
-      height: 100%;
+      min-height: min(60vh, calc(100dvh - 140px));
       display: flex;
       align-items: center;
       justify-content: center;
@@ -12325,6 +12329,119 @@
       display: flex;
       align-items: center;
       justify-content: center
+    }
+
+    #attViewer .att-viewer-content:has(#att-loading),
+    #attViewer .att-viewer-stage:has(#att-loading) .att-viewer-content {
+      flex: 1 1 auto;
+      align-self: stretch;
+      width: 100%;
+      height: 100%;
+      max-width: 100%;
+      max-height: 100%;
+      min-height: inherit
+    }
+
+    .att-viewer-load-wrap {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      min-height: min(60vh, calc(100dvh - 180px));
+      display: flex;
+      align-items: center;
+      justify-content: center
+    }
+
+    #attViewer #att-loading {
+      position: absolute !important;
+      inset: 0 !important;
+      display: flex !important;
+      flex-direction: row !important;
+      flex-wrap: nowrap !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 10px !important;
+      text-align: center;
+      min-width: 0;
+      width: 100%;
+      height: 100%;
+      box-sizing: border-box;
+      pointer-events: none
+    }
+
+    #attViewer #att-loading.att-viewer-loading-panel {
+      position: relative !important;
+      inset: auto !important;
+      min-height: min(60vh, calc(100dvh - 180px));
+      width: 100%;
+      padding: 40px;
+      color: #fff
+    }
+
+    #attViewer #att-loading > i {
+      margin: 0 !important;
+      flex-shrink: 0
+    }
+
+    #attViewer #att-loading p {
+      margin: 0 !important;
+      white-space: nowrap !important;
+      line-height: 1.35 !important
+    }
+
+    #attViewer .att-viewer-caption {
+      display: none !important
+    }
+
+    .att-viewer-load-wrap video,
+    .att-viewer-load-wrap img,
+    .att-viewer-load-wrap iframe,
+    #attViewerContent > video,
+    #attViewerContent > img {
+      position: relative;
+      z-index: 20
+    }
+
+    .att-media-zoom-wrap {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      max-width: 100%;
+      max-height: 85vh;
+      touch-action: none;
+      cursor: zoom-in;
+      z-index: 20
+    }
+
+    .att-media-zoom-wrap.is-zoomed {
+      cursor: grab;
+      overflow: auto;
+      -webkit-overflow-scrolling: touch
+    }
+
+    .att-media-zoom-wrap.is-zoomed.is-panning {
+      cursor: grabbing
+    }
+
+    .att-media-zoom-inner {
+      transform-origin: center center;
+      transition: transform 0.1s ease-out;
+      will-change: transform
+    }
+
+    .att-media-zoom-target {
+      display: block;
+      max-width: 100%;
+      max-height: 85vh;
+      width: auto;
+      height: auto;
+      object-fit: contain
+    }
+
+    .att-media-zoom-wrap video.att-media-zoom-target {
+      max-height: 85vh;
+      background: #000
     }
 
     .att-viewer-drag-zone {
@@ -18449,7 +18566,7 @@
           onclick="event.stopPropagation(); navAttViewer(1)" title="التالي">
           <i class="fas fa-chevron-left"></i>
         </button>
-        <div class="att-viewer-content" id="attViewerContent" onclick="event.stopPropagation()"></div>
+        <div class="att-viewer-content" id="attViewerContent"></div>
         <div class="att-viewer-caption" id="attViewerCaption"></div>
         <div class="att-viewer-counter" id="attViewerCounter"></div>
       </div>
@@ -27309,6 +27426,151 @@
         return atts;
       }
 
+      function hideAttViewerLoader() {
+        document.getElementById('att-loading')?.remove();
+      }
+
+      function applyAttMediaZoom(wrap) {
+        if (!wrap || !wrap._zoomState) return;
+        const inner = wrap.querySelector('.att-media-zoom-inner');
+        const st = wrap._zoomState;
+        if (inner) {
+          inner.style.transform = `translate(${st.panX}px, ${st.panY}px) scale(${st.scale})`;
+        }
+        wrap.classList.toggle('is-zoomed', st.scale > 1.05);
+      }
+
+      function initAttMediaZoom(wrap) {
+        if (!wrap || wrap.dataset.zoomInit === '1') return;
+        wrap.dataset.zoomInit = '1';
+        wrap._zoomState = { scale: 1, panX: 0, panY: 0 };
+        const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+        const touchDist = (a, b) => Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+        let lastTap = 0;
+        let pinchDist0 = 0;
+        let pinchScale0 = 1;
+        let panStart = null;
+
+        const toggleZoom = () => {
+          const st = wrap._zoomState;
+          if (st.scale > 1.05) {
+            st.scale = 1;
+            st.panX = 0;
+            st.panY = 0;
+          } else {
+            st.scale = 2.5;
+          }
+          applyAttMediaZoom(wrap);
+        };
+
+        wrap.addEventListener('click', (e) => e.stopPropagation());
+        wrap.addEventListener('dblclick', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          toggleZoom();
+        });
+
+        wrap.addEventListener('touchend', (e) => {
+          if (e.touches.length > 0) return;
+          const now = Date.now();
+          if (e.changedTouches.length === 1 && now - lastTap < 320) {
+            e.preventDefault();
+            toggleZoom();
+            lastTap = 0;
+          } else {
+            lastTap = now;
+          }
+        }, { passive: false });
+
+        wrap.addEventListener('touchstart', (e) => {
+          if (e.touches.length === 2) {
+            e.preventDefault();
+            pinchDist0 = touchDist(e.touches[0], e.touches[1]);
+            pinchScale0 = wrap._zoomState.scale;
+            panStart = null;
+          } else if (e.touches.length === 1 && wrap._zoomState.scale > 1.05) {
+            panStart = {
+              x: e.touches[0].clientX - wrap._zoomState.panX,
+              y: e.touches[0].clientY - wrap._zoomState.panY
+            };
+            wrap.classList.add('is-panning');
+          }
+        }, { passive: false });
+
+        wrap.addEventListener('touchmove', (e) => {
+          if (e.touches.length === 2) {
+            e.preventDefault();
+            const d = touchDist(e.touches[0], e.touches[1]);
+            if (pinchDist0 > 0) {
+              wrap._zoomState.scale = clamp(pinchScale0 * (d / pinchDist0), 1, 5);
+              applyAttMediaZoom(wrap);
+            }
+          } else if (e.touches.length === 1 && panStart) {
+            e.preventDefault();
+            wrap._zoomState.panX = e.touches[0].clientX - panStart.x;
+            wrap._zoomState.panY = e.touches[0].clientY - panStart.y;
+            applyAttMediaZoom(wrap);
+          }
+        }, { passive: false });
+
+        wrap.addEventListener('touchend', () => {
+          panStart = null;
+          pinchDist0 = 0;
+          wrap.classList.remove('is-panning');
+        });
+
+        wrap.addEventListener('wheel', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          wrap._zoomState.scale = clamp(
+            wrap._zoomState.scale + (e.deltaY < 0 ? 0.12 : -0.12),
+            1,
+            5
+          );
+          applyAttMediaZoom(wrap);
+        }, { passive: false });
+      }
+
+      function wrapAttMediaZoom(el) {
+        if (!el || el.closest('.att-media-zoom-wrap')) {
+          return el?.closest('.att-media-zoom-wrap') || el;
+        }
+        const tag = (el.tagName || '').toUpperCase();
+        if (tag !== 'IMG' && tag !== 'VIDEO') return el;
+        const wrap = document.createElement('div');
+        wrap.className = 'att-media-zoom-wrap';
+        const inner = document.createElement('div');
+        inner.className = 'att-media-zoom-inner';
+        const parent = el.parentNode;
+        if (!parent) return el;
+        parent.insertBefore(wrap, el);
+        inner.appendChild(el);
+        wrap.appendChild(inner);
+        el.classList.add('att-media-zoom-target');
+        initAttMediaZoom(wrap);
+        return wrap;
+      }
+
+      function attachZoomToAttViewerContent() {
+        const content = document.getElementById('attViewerContent');
+        if (!content) return;
+        content.querySelectorAll('img, video').forEach((el) => {
+          if (el.style.display === 'none') return;
+          wrapAttMediaZoom(el);
+        });
+      }
+
+      function revealAttViewerMedia(el) {
+        hideAttViewerLoader();
+        if (!el) return;
+        el.style.display = 'block';
+        el.style.position = 'relative';
+        el.style.zIndex = '20';
+        el.style.pointerEvents = 'auto';
+        const tag = (el.tagName || '').toUpperCase();
+        if (tag === 'IMG' || tag === 'VIDEO') wrapAttMediaZoom(el);
+      }
+
       function openAttViewerByIndex(idx) {
         const t = state.editingTicket;
         const atts = getVisibleAttachments(t);
@@ -27386,7 +27648,7 @@
 
         if (att.isUploading && !localBlob) {
           const loadingText = isVid ? 'جاري تشغيل الفيديو...' : (isImg ? 'جاري فتح الصورة...' : 'جاري فتح الملف...');
-          html = `<div id="att-loading" style="text-align:center;padding:40px;color:#fff"><i class="fas fa-spinner fa-spin fa-2x"></i><p style="margin-top:12px;font-size:14px">${loadingText}</p></div>`;
+          html = `<div id="att-loading" class="att-viewer-loading-panel"><i class="fas fa-spinner fa-spin fa-2x"></i><p style="font-size:14px">${loadingText}</p></div>`;
         } else if (isImg && realDataImg) {
           html = `<img src="${realDataImg}" style="max-width:100%;max-height:70vh;object-fit:contain" alt="${Sec.escapeHTML(name)}">`;
         } else if (isImg) {
@@ -27398,10 +27660,10 @@
           } else {
             // نعرض spinner ثم نحمّل الصورة عبر الوسيط
             html = `
-              <div style="position:relative; width:100%; display:flex; justify-content:center; align-items:center;">
-                <div id="att-loading" style="position:absolute; inset:0; display:flex; flex-direction:column; justify-content:center; align-items:center; color:#fff; z-index:10; pointer-events:none;">
-                  <i class="fas fa-spinner fa-spin fa-2x" style="margin-bottom:15px"></i>
-                  <p style="font-size:15px; font-weight:500; white-space:nowrap; margin:0; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">جاري تحميل الصورة...</p>
+              <div class="att-viewer-load-wrap">
+                <div id="att-loading" style="color:#fff;z-index:10">
+                  <i class="fas fa-spinner fa-spin fa-2x"></i>
+                  <p style="font-size:15px;font-weight:500;text-shadow:0 2px 4px rgba(0,0,0,0.5)">جاري تحميل الصورة…</p>
                 </div>
                 <img id="att-proxy-img" style="display:none;max-width:100%;max-height:70vh;object-fit:contain" alt="${Sec.escapeHTML(name)}">
               </div>`;
@@ -27441,10 +27703,7 @@
                     </div>`;
                     }
                   };
-                  img.onload = () => {
-                    if (loader) loader.style.display = 'none';
-                    img.style.display = 'block';
-                  };
+                  img.onload = () => revealAttViewerMedia(img);
                   img.src = dataUrl;
                 }
               } catch (e) {
@@ -27475,10 +27734,10 @@
             html = `<video controls playsinline crossorigin="anonymous" style="width:100%;max-height:70vh" src="${vidSrc.replace(/"/g, '&quot;')}"></video>`;
           } else {
             html = `
-              <div style="position:relative;width:100%;display:flex;justify-content:center;align-items:center;min-height:200px">
-                <div id="att-loading" style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;color:#fff;z-index:10">
-                  <i class="fas fa-spinner fa-spin fa-2x" style="margin-bottom:12px"></i>
-                  <p style="margin:0;font-size:14px">جاري تحميل الفيديو...</p>
+              <div class="att-viewer-load-wrap">
+                <div id="att-loading" style="color:#fff;z-index:10">
+                  <i class="fas fa-spinner fa-spin fa-2x"></i>
+                  <p style="font-size:14px">جاري تحميل الفيديو…</p>
                 </div>
                 <video id="att-proxy-vid" controls playsinline crossorigin="anonymous" style="max-width:100%;max-height:70vh;display:none"></video>
               </div>`;
@@ -27499,8 +27758,7 @@
                     throw new Error('تعذّر تشغيل الفيديو');
                   }
                 }
-                if (loader) loader.style.display = 'none';
-                if (vid) vid.style.display = 'block';
+                revealAttViewerMedia(vid);
               } catch (e) {
                 console.error('Lightbox Video Load Error:', e);
                 delete _cloudflareCache[fileId];
@@ -27522,10 +27780,10 @@
           }
         } else if (isPdf) {
           html = `
-            <div style="position:relative; width:100%; display:flex; justify-content:center; align-items:center;">
-              <div id="att-loading" style="position:absolute; inset:0; display:flex; flex-direction:column; justify-content:center; align-items:center; color:#fff; z-index:10; pointer-events:none;">
-                <i class="fas fa-spinner fa-spin fa-2x" style="margin-bottom:15px"></i>
-                <p style="font-size:15px; font-weight:500; white-space:nowrap; margin:0; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">جاري تحميل الملف...</p>
+            <div class="att-viewer-load-wrap">
+              <div id="att-loading" style="color:#fff;z-index:10;pointer-events:none">
+                <i class="fas fa-spinner fa-spin fa-2x"></i>
+                <p style="font-size:15px;font-weight:500;text-shadow:0 2px 4px rgba(0,0,0,0.5)">جاري تحميل الملف…</p>
               </div>
               <iframe id="att-proxy-pdf" style="display:none;width:100%;height:70vh;border:none"></iframe>
             </div>`;
@@ -27554,8 +27812,8 @@
                   }
                 } else {
                   pdf.src = safeSrc;
-                  pdf.style.display = '';
-                  pdf.onload = () => { if (loader) loader.style.display = 'none'; };
+                  pdf.onload = () => revealAttViewerMedia(pdf);
+                  if (pdf.complete) revealAttViewerMedia(pdf);
                 }
               }
               if (loader && !pdf) loader.remove();
@@ -27588,7 +27846,11 @@
         }
 
         content.innerHTML = html;
-        caption.textContent = name;
+        attachZoomToAttViewerContent();
+        if (caption) {
+          caption.textContent = '';
+          caption.style.display = 'none';
+        }
 
         // العدّاد + أزرار التنقل
         if (total > 1) {
@@ -27615,7 +27877,12 @@
       const _attViewerDrag = { active: false, startY: 0, deltaY: 0, pointerId: null };
 
       function closeAttViewer(event) {
-        if (event && event.target.closest('.att-viewer-content')) return;
+        if (event) {
+          const t = event.target;
+          if (t.closest('.att-viewer-nav')) return;
+          if (t.closest('.att-media-zoom-wrap, #att-loading, iframe, .att-fallback')) return;
+          if (!t.closest('#attViewer')) return;
+        }
         const viewer = document.getElementById('attViewer');
         const stage = viewer?.querySelector('.att-viewer-stage');
         viewer.classList.remove('open', 'att-dragging');
@@ -27666,7 +27933,7 @@
 
         zone.addEventListener('pointerdown', (e) => {
           if (e.button !== undefined && e.button !== 0) return;
-          if (e.target.closest('video, button, a, input, .att-viewer-nav')) return;
+          if (e.target.closest('.att-media-zoom-wrap, video, button, a, input, .att-viewer-nav')) return;
           _attViewerDrag.pointerId = e.pointerId;
           dragStart(e.clientY);
           try { zone.setPointerCapture(e.pointerId); } catch (_) { /* noop */ }
