@@ -22638,6 +22638,7 @@
       }
 
       function showNoPermissionsScreen() {
+        if (typeof dismissPageOverlaysOnTabLeave === 'function') dismissPageOverlaysOnTabLeave();
         document.querySelectorAll('.tab-content').forEach(t => {
           t.classList.remove('active');
           if (t.id !== 'tab-noAccess') t.setAttribute('hidden', '');
@@ -23193,18 +23194,97 @@
       window.syncTopbarHeightVar = syncTopbarHeightVar;
       window.mobileNavGo = mobileNavGo;
 
+      /** إغلاق كل الطبقات العائمة عند مغادرة تبويب — سلوك تطبيق (لا تبقى مفتوحة خلف التبويب الجديد) */
+      function dismissPageOverlaysOnTabLeave() {
+        const confirmOv = document.getElementById('confirmOverlay');
+        if (confirmOv?.classList.contains('open')) {
+          document.getElementById('confirmCancelBtn')?.click();
+        }
+
+        [...document.querySelectorAll('.modal.open')].forEach(m => {
+          const id = m.id;
+          if (!id) return;
+          if (id === 'violDetailModal') closeViolDetailSheet();
+          else closeModal(id);
+        });
+
+        if (typeof closeFilterPanel === 'function') closeFilterPanel();
+        if (typeof closeCmpFilterPanel === 'function') closeCmpFilterPanel();
+        closeTopbarUserMenu();
+        if (typeof closeFpDropdowns === 'function') closeFpDropdowns();
+        if (typeof wfStatusClose === 'function') wfStatusClose();
+        if (typeof userRoleDdClose === 'function') userRoleDdClose();
+        if (typeof settingsUserDdClose === 'function') settingsUserDdClose();
+
+        document.getElementById('notifPanel')?.classList.remove('open');
+
+        if (typeof dpFloatClose === 'function') {
+          dpFloatClose(document.getElementById('datePickerPopup'));
+          dpFloatClose(document.getElementById('cmpDatePickerPopup'));
+        }
+        if (typeof closeNtDatePicker === 'function') closeNtDatePicker();
+        if (typeof closeNtTimePicker === 'function') closeNtTimePicker();
+
+        const attViewer = document.getElementById('attViewer');
+        if (attViewer?.classList.contains('open') && typeof closeAttViewer === 'function') {
+          closeAttViewer();
+        }
+
+        closeSidebar();
+
+        document.querySelectorAll('.score-breakdown-toggle.open').forEach(btn => {
+          btn.classList.remove('open');
+          btn.nextElementSibling?.classList.remove('open');
+        });
+        document.querySelectorAll('.score-breakdown-panel.open').forEach(p => p.classList.remove('open'));
+
+        document.querySelectorAll('.mk-cmp-branch-shell.is-open').forEach(shell => {
+          shell.classList.remove('is-open');
+          const trigger = shell.querySelector('.mk-cmp-branch-shell__trigger');
+          if (trigger) trigger.setAttribute('aria-expanded', 'false');
+        });
+
+        ['nt-empDropdown', 'nt-typeDropdown'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.style.display = 'none';
+        });
+
+        if (!document.querySelector('.modal.open')) {
+          document.body.classList.remove('modal-open', 'ticket-over-cmp');
+        }
+        if (!document.getElementById('filterPanel')?.classList.contains('open')
+          && !document.getElementById('cmpFilterPanel')?.classList.contains('open')) {
+          document.body.style.overflow = '';
+        }
+      }
+
+      window.dismissPageOverlaysOnTabLeave = dismissPageOverlaysOnTabLeave;
+
       function goTab(tab, btn) {
         const tabPerm = MR_TAB_PERM_MAP[tab];
         if (tabPerm && !hasPermission(tabPerm)) {
           const fallback = getFirstAllowedTab();
           if (!fallback) {
+            dismissPageOverlaysOnTabLeave();
             showNoPermissionsScreen();
             return;
           }
           if (fallback !== tab) goTab(fallback, getNavButtonForTab(fallback));
-          else showNoPermissionsScreen();
+          else {
+            dismissPageOverlaysOnTabLeave();
+            showNoPermissionsScreen();
+          }
           return;
         }
+
+        const leavingTab = getActiveTabKey();
+        if (leavingTab && leavingTab !== tab) {
+          dismissPageOverlaysOnTabLeave();
+          if (leavingTab === 'workflow' && typeof resetWorkflowTabFilters === 'function') {
+            resetWorkflowTabFilters();
+          }
+        }
+
         document.querySelectorAll('.tab-content').forEach(t => {
           t.classList.remove('active');
           if (t.id !== `tab-${tab}`) t.setAttribute('hidden', '');
@@ -27462,6 +27542,31 @@
         wfStatusSyncUi(val);
         wfStatusClose();
         filterTickets();
+      }
+
+      /** إعادة بحث وفلتر معالجة التذاكر للوضع الافتراضي عند مغادرة التبويب */
+      function resetWorkflowTabFilters() {
+        const search = document.getElementById('wf-search');
+        if (search) search.value = '';
+
+        const sel = document.getElementById('wf-status');
+        if (sel) sel.value = '';
+        wfStatusSyncUi('');
+        wfStatusClose();
+
+        const menu = document.getElementById('wf-status-menu');
+        const filter = document.getElementById('wf-status-filter');
+        if (menu && filter && menu.parentNode !== filter) {
+          filter.appendChild(menu);
+          menu.style.top = '';
+          menu.style.left = '';
+          menu.style.right = '';
+          menu.style.bottom = '';
+          menu.style.width = '';
+          menu.style.minWidth = '';
+          menu.style.maxWidth = '';
+          menu.style.maxHeight = '';
+        }
       }
 
       const USER_ROLE_FILTER_LABELS = {
@@ -34558,6 +34663,7 @@
       window.filterTickets = filterTickets;
       window.wfStatusToggle = wfStatusToggle;
       window.wfStatusPick = wfStatusPick;
+      window.resetWorkflowTabFilters = resetWorkflowTabFilters;
       window.userRoleDdToggle = userRoleDdToggle;
       window.userRoleDdPick = userRoleDdPick;
       window.openTicket = openTicket;
