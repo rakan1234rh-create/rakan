@@ -6035,6 +6035,7 @@
     }
 
     .viol-sheet-grabber-wrap,
+    .cmp-sheet-grabber-wrap,
     #ticketModal .td-sheet-grabber-wrap {
       display: none;
       justify-content: center;
@@ -6050,6 +6051,20 @@
       height: 4px;
       border-radius: 999px;
       background: color-mix(in srgb, var(--mr-text-3) 70%, transparent)
+    }
+
+    .cmp-sheet-grabber {
+      display: block;
+      width: 40px;
+      height: 4px;
+      min-height: 4px;
+      border: none;
+      border-radius: 999px;
+      background: #9ca3af;
+      box-shadow: none;
+      outline: none;
+      flex-shrink: 0;
+      line-height: 0
     }
 
     .viol-paper-sheet-head h3 {
@@ -10628,6 +10643,17 @@
       min-height: 0
     }
 
+    .modal-card.cmp-detail-card .cmp-sheet-drag-zone {
+      background: var(--bg);
+      border-bottom: none
+    }
+
+    .modal-card.cmp-detail-card .cmp-sheet-grabber-wrap {
+      background: var(--bg);
+      line-height: 0;
+      font-size: 0
+    }
+
     .cmp-detail-modal-header__hero {
       flex: 1;
       min-width: 0;
@@ -10724,49 +10750,97 @@
     }
 
     .cmp-detail-hero-badges {
+      --cmp-hero-badge-fs: 8px;
+      --cmp-hero-badge-pad-x: 5px;
+      --cmp-hero-badge-pad-y: 0;
+      --cmp-hero-badge-gap: 3px;
+      --cmp-hero-badge-icon: 6px;
       display: flex;
-      flex-wrap: wrap;
-      align-items: flex-start;
-      gap: 5px;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: var(--cmp-hero-badge-gap);
       justify-content: flex-start;
       direction: rtl;
-      width: 100%
+      width: 100%;
+      min-width: 0;
+      overflow-x: auto;
+      overscroll-behavior-x: contain;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-x;
+      scrollbar-width: none;
+      -ms-overflow-style: none
+    }
+
+    .cmp-detail-hero-badges::-webkit-scrollbar {
+      display: none;
+      width: 0;
+      height: 0
     }
 
     .cmp-detail-hero-badge {
       display: inline-flex;
       align-items: center;
-      gap: 4px;
-      padding: 2px 8px;
+      gap: 2px;
+      padding: var(--cmp-hero-badge-pad-y) var(--cmp-hero-badge-pad-x);
       border-radius: 999px;
-      font-size: 10px;
+      font-size: var(--cmp-hero-badge-fs);
       font-weight: 600;
       color: var(--text2);
       background: var(--surface);
       border: 1px solid var(--border);
-      line-height: 1.35;
-      max-width: min(100%, 280px);
+      line-height: 1.2;
+      max-width: min(100%, 200px);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      flex-shrink: 0;
+      box-sizing: border-box
     }
 
-    .cmp-detail-hero-badge--branch {
-      flex: 0 1 auto;
-      width: fit-content;
+    .cmp-detail-hero-badges--emp .cmp-detail-hero-badge--branch,
+    .cmp-detail-hero-badges--emp .cmp-detail-hero-badge--supervisor {
+      flex: 0 0 auto
+    }
+
+    .cmp-detail-hero-badge__lbl {
+      flex-shrink: 0;
+      color: var(--text3);
+      font-weight: 600
+    }
+
+    .cmp-detail-hero-badge__lbl::after {
+      content: ':';
+      margin-inline-start: 2px
+    }
+
+    .cmp-detail-hero-badge__val {
       min-width: 0;
-      max-width: 100%;
-      white-space: normal;
-      overflow: visible;
-      text-overflow: unset;
-      word-break: break-word;
-      overflow-wrap: anywhere
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap
     }
 
     .cmp-detail-hero-badge i {
-      font-size: 8px;
+      font-size: var(--cmp-hero-badge-icon);
       opacity: 0.75;
       flex-shrink: 0;
+    }
+
+    /* موظف — جنب بعض مع تمرير عند الحاجة */
+    .cmp-detail-hero-badges--emp {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      touch-action: pan-x
+    }
+
+    .cmp-detail-hero-badges--emp .cmp-detail-hero-badge {
+      flex-shrink: 0;
+      max-width: none
+    }
+
+    .cmp-detail-hero-badges--emp .cmp-detail-hero-badge--supervisor,
+    .cmp-detail-hero-badges--emp .cmp-detail-hero-badge--branch {
+      max-width: none
     }
 
     .cmp-detail-hero-score {
@@ -10822,11 +10896,69 @@
     }
 
     @media (max-width: 768px) {
+      #cmpDetailModal.modal.open {
+        align-items: flex-end !important;
+        padding: 0 !important
+      }
+
       .modal-card.cmp-detail-card {
         width: 100% !important;
         max-width: 100% !important;
         max-height: 92vh;
         border-radius: 16px 16px 0 0 !important;
+        margin: 0 !important;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        will-change: transform
+      }
+
+      #cmpDetailModal.modal.sheet-dragging .modal-card.cmp-detail-card {
+        transition: none !important
+      }
+
+      .modal-card.cmp-detail-card .cmp-sheet-grabber-wrap {
+        display: flex !important;
+        justify-content: center;
+        align-items: center;
+        flex-shrink: 0;
+        padding: 10px 0 8px;
+        margin: 0;
+        cursor: grab;
+        touch-action: none;
+        background: var(--bg) !important;
+        border: none !important
+      }
+
+      .modal-card.cmp-detail-card .cmp-sheet-grabber {
+        width: 40px;
+        height: 4px;
+        min-height: 4px;
+        background: #9ca3af !important;
+        border: none !important;
+        box-shadow: none !important
+      }
+
+      .modal-card.cmp-detail-card .cmp-sheet-drag-zone {
+        flex-shrink: 0;
+        cursor: grab;
+        touch-action: none;
+        background: var(--bg) !important;
+        border-bottom: none !important
+      }
+
+      .modal-card.cmp-detail-card .cmp-sheet-drag-zone:active {
+        cursor: grabbing
+      }
+
+      .modal-card.cmp-detail-card .cmp-detail-modal-header {
+        padding-top: 0 !important;
+        border-bottom: 1px solid var(--border) !important;
+        background: var(--bg) !important
+      }
+
+      .modal-card.cmp-detail-card .modal-header.cmp-detail-modal-header {
+        border-bottom: 1px solid var(--border) !important
       }
 
       .modal-card.cmp-detail-card .modal-body {
@@ -10917,14 +11049,107 @@
 
       .cmp-detail-hero-top {
         flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 8px
+      }
+
+      .modal-card.cmp-detail-card .cmp-detail-hero-main {
+        flex: 1 1 calc(100% - 76px);
+        min-width: 0;
+        max-width: 100%
+      }
+
+      .modal-card.cmp-detail-card .cmp-detail-hero-text {
+        width: 100%;
+        min-width: 0
+      }
+
+      .modal-card.cmp-detail-card .cmp-detail-hero-text h3 {
+        font-size: 14px
+      }
+
+      .modal-card.cmp-detail-card .cmp-detail-hero-sub {
+        margin-bottom: 4px;
+        font-size: 10px
+      }
+
+      .modal-card.cmp-detail-card .cmp-detail-hero-badges {
+        --cmp-hero-badge-fs: clamp(7px, 2.1vw, 8px);
+        --cmp-hero-badge-pad-x: clamp(4px, 1.2vw, 6px);
+        --cmp-hero-badge-gap: 3px;
+        --cmp-hero-badge-icon: clamp(5.5px, 1.6vw, 7px);
+        width: 100%;
+        max-width: 100%;
+        margin-top: 1px
+      }
+
+      /* موظف: مشرف وفرع جنب بعض — تمرير أفقي إن طال النص (بدون قص إجباري) */
+      .modal-card.cmp-detail-card .cmp-detail-hero-badges--emp {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: center;
+        gap: 4px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        overscroll-behavior-x: contain;
+        -webkit-overflow-scrolling: touch;
+        touch-action: pan-x;
+        scroll-snap-type: x proximity
+      }
+
+      .modal-card.cmp-detail-card .cmp-detail-hero-badges--emp .cmp-detail-hero-badge {
+        width: auto;
+        max-width: none;
+        flex: 0 0 auto;
+        flex-shrink: 0;
+        scroll-snap-align: start
+      }
+
+      .modal-card.cmp-detail-card .cmp-detail-hero-badges--emp .cmp-detail-hero-badge__val {
+        flex: 0 1 auto;
+        white-space: nowrap
       }
 
       .cmp-detail-hero-score {
         align-self: flex-start;
+        flex: 0 0 auto
       }
 
       .cmp-detail-hero-score__val {
-        font-size: 24px;
+        font-size: 24px
+      }
+    }
+
+    @media (max-width: 400px) {
+      .modal-card.cmp-detail-card .cmp-detail-modal-header {
+        padding: 10px 12px 8px
+      }
+
+      .modal-card.cmp-detail-card .cmp-detail-hero-text h3 {
+        font-size: 13px
+      }
+
+      .modal-card.cmp-detail-card .cmp-detail-hero-badges {
+        --cmp-hero-badge-fs: 7px;
+        --cmp-hero-badge-pad-x: 4px
+      }
+
+      .cmp-detail-hero-score__val {
+        font-size: 22px
+      }
+    }
+
+    @media (max-width: 340px) {
+      .modal-card.cmp-detail-card .cmp-detail-hero-badges:not(:has(.cmp-detail-hero-badge--branch)) {
+        flex-wrap: wrap;
+        overflow: visible;
+        touch-action: auto
+      }
+
+      .modal-card.cmp-detail-card .cmp-detail-hero-badges:not(:has(.cmp-detail-hero-badge--branch)) .cmp-detail-hero-badge {
+        flex: 1 1 calc(50% - 2px);
+        max-width: calc(50% - 2px)
       }
     }
 
@@ -18715,8 +18940,11 @@
     <!-- Compliance Detail Modal -->
     <div class="modal" id="cmpDetailModal">
       <div class="modal-card cmp-detail-card">
-        <div class="modal-header cmp-detail-modal-header">
-          <div class="cmp-detail-modal-header__hero" id="cmpDetailHero"></div>
+        <div class="cmp-sheet-drag-zone">
+          <div class="cmp-sheet-grabber-wrap" aria-hidden="true"><span class="cmp-sheet-grabber"></span></div>
+          <div class="modal-header cmp-detail-modal-header">
+            <div class="cmp-detail-modal-header__hero" id="cmpDetailHero"></div>
+          </div>
         </div>
         <div class="modal-body" id="cmpDetailBody"></div>
       </div>
@@ -19566,6 +19794,12 @@
           return;
         }
         document.getElementById(id)?.classList.remove('open');
+        if (id === 'cmpDetailModal') {
+          const cmpSheet = document.querySelector('#cmpDetailModal .modal-card.cmp-detail-card');
+          const cmpModal = document.getElementById('cmpDetailModal');
+          if (cmpSheet) cmpSheet.style.transform = '';
+          cmpModal?.classList.remove('sheet-dragging');
+        }
         if (!document.querySelector('.modal.open')) {
           document.body.classList.remove('modal-open');
         }
@@ -19581,6 +19815,11 @@
 
       const _violDetailDrag = { active: false, startY: 0, deltaY: 0, pointerId: null };
       const _ticketDetailDrag = { active: false, startY: 0, deltaY: 0, pointerId: null };
+      const _cmpDetailDrag = { active: false, startY: 0, deltaY: 0, pointerId: null };
+
+      function isCmpDetailMobSheet() {
+        return typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches;
+      }
 
       function isViolDetailMobSheet() {
         return typeof window !== 'undefined' && window.matchMedia('(max-width: 992px)').matches;
@@ -19701,6 +19940,71 @@
         };
         sheet.addEventListener('transitionend', onEnd);
         setTimeout(onEnd, 420);
+      }
+
+      function initCmpDetailSheetDrag() {
+        const modal = document.getElementById('cmpDetailModal');
+        const zone = modal?.querySelector('.cmp-sheet-drag-zone');
+        const sheet = modal?.querySelector('.modal-card.cmp-detail-card');
+        if (!modal || !zone || !sheet || modal.dataset.cmpDragInit === '1') return;
+        modal.dataset.cmpDragInit = '1';
+
+        sheet.addEventListener('click', (e) => e.stopPropagation());
+        modal.addEventListener('click', (e) => {
+          if (!modal.classList.contains('open')) return;
+          if (e.target.closest('.modal-card.cmp-detail-card')) return;
+          closeModal('cmpDetailModal');
+        });
+
+        const dragEnd = () => {
+          if (!_cmpDetailDrag.active) return;
+          _cmpDetailDrag.active = false;
+          modal.classList.remove('sheet-dragging');
+          zone.style.cursor = '';
+          const threshold = Math.max(72, sheet.offsetHeight * 0.16);
+          if (_cmpDetailDrag.deltaY > threshold) {
+            closeModal('cmpDetailModal');
+          } else {
+            sheet.style.transform = '';
+          }
+          _cmpDetailDrag.deltaY = 0;
+          _cmpDetailDrag.pointerId = null;
+        };
+
+        const dragMove = (clientY) => {
+          if (!_cmpDetailDrag.active) return;
+          _cmpDetailDrag.deltaY = Math.max(0, clientY - _cmpDetailDrag.startY);
+          sheet.style.transform = `translateY(${_cmpDetailDrag.deltaY}px)`;
+        };
+
+        const dragStart = (clientY) => {
+          if (!modal.classList.contains('open') || !isCmpDetailMobSheet()) return;
+          _cmpDetailDrag.active = true;
+          _cmpDetailDrag.startY = clientY;
+          _cmpDetailDrag.deltaY = 0;
+          modal.classList.add('sheet-dragging');
+          zone.style.cursor = 'grabbing';
+          sheet.style.transform = 'translateY(0)';
+        };
+
+        zone.addEventListener('pointerdown', (e) => {
+          if (e.button !== undefined && e.button !== 0) return;
+          _cmpDetailDrag.pointerId = e.pointerId;
+          dragStart(e.clientY);
+          try { zone.setPointerCapture(e.pointerId); } catch (_) { /* noop */ }
+        });
+
+        zone.addEventListener('pointermove', (e) => {
+          if (!_cmpDetailDrag.active || e.pointerId !== _cmpDetailDrag.pointerId) return;
+          dragMove(e.clientY);
+        });
+
+        zone.addEventListener('pointerup', (e) => {
+          if (e.pointerId !== _cmpDetailDrag.pointerId) return;
+          dragEnd();
+        });
+
+        zone.addEventListener('pointercancel', dragEnd);
       }
 
       function initViolDetailSheetDrag() {
@@ -20012,12 +20316,11 @@
         const out = [];
         for (let i = count - 1; i >= 0; i--) {
           const { year, month } = ksaShiftMonth(p.year, p.month, -i);
-          const anchor = new Date(Date.UTC(year, month, 15, 12, 0, 0));
           out.push({
             year,
             month,
-            monthName: anchor.toLocaleDateString('ar-SA', { month: 'long', timeZone: APP_TZ }),
-            yearLabel: anchor.toLocaleDateString('ar-SA-u-nu-latn', { year: 'numeric', timeZone: APP_TZ })
+            monthName: KSA_AR_MONTHS[month],
+            yearLabel: String(year)
           });
         }
         return out;
@@ -20123,16 +20426,6 @@
         };
       }
 
-      function ksaLocaleDateAr(value, options = {}) {
-        const iso = typeof value === 'string' ? value.slice(0, 10) : ksaCalendarToIso(value);
-        if (!iso) return '-';
-        try {
-          return new Date(iso + 'T12:00:00').toLocaleDateString('ar-SA', { timeZone: APP_TZ, ...options });
-        } catch {
-          return iso;
-        }
-      }
-
       const KSA_AR_MONTHS = [
         'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
         'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
@@ -20141,6 +20434,22 @@
 
       function formatDashMonthYear(year, month0) {
         return `${KSA_AR_MONTHS[month0]} ${year}`;
+      }
+
+      /** تاريخ عربي ميلادي — يتجنب تقويم أم القرى على iOS/جوال */
+      function ksaLocaleDateAr(value, options = {}) {
+        const iso = typeof value === 'string' ? value.slice(0, 10) : ksaCalendarToIso(value);
+        if (!iso) return '-';
+        try {
+          return new Date(iso + 'T12:00:00').toLocaleDateString('ar-SA-u-ca-gregory-u-nu-latn', {
+            timeZone: APP_TZ,
+            calendar: 'gregory',
+            numberingSystem: 'latn',
+            ...options
+          });
+        } catch {
+          return iso;
+        }
       }
 
       /** تاريخ لوحة القيادة — الجمعة · 22 مايو 2026 */
@@ -23620,8 +23929,9 @@
         const max = Math.max(0, ...values);
         const maxForScale = Math.max(1, max);
         const ms = monthStart instanceof Date ? monthStart : null;
-        const monthName = ms ? ms.toLocaleString('ar-SA', { month: 'long', timeZone: APP_TZ }) : '';
-        const yearStr = ms ? String(ms.getFullYear()) : '';
+        const msParts = ms ? ksaFormatParts(ms) : null;
+        const monthName = msParts ? KSA_AR_MONTHS[msParts.month] : '';
+        const yearStr = msParts ? String(msParts.year) : '';
         el.innerHTML = values.map((v, i) => {
           const dayNum = i + 1;
           const h = dashSparkBarHeight(v, maxForScale);
@@ -29810,17 +30120,34 @@
         const subLine = item.type === 'employee'
           ? 'الرقم الوظيفي: ' + (item.empNumber || '-')
           : (item.subtitle || (item.type === 'branch' ? 'فرع' : 'منطقة'));
-        const badgesHTML = (item.context || []).length
-          ? `<div class="cmp-detail-hero-badges">
-              ${(item.context || []).map(ctx => {
+        const cmpHeroBadgeRank = (lbl) => {
+          if ((lbl || '').includes('مشرف')) return 0;
+          if ((lbl || '').includes('فرع')) return 1;
+          return 2;
+        };
+        const heroContexts = [...(item.context || [])].sort(
+          (a, b) => cmpHeroBadgeRank(a.label) - cmpHeroBadgeRank(b.label)
+        );
+        const badgesEmp = item.type === 'employee';
+        const badgesHTML = heroContexts.length
+          ? `<div class="cmp-detail-hero-badges${badgesEmp ? ' cmp-detail-hero-badges--emp' : ''}">
+              ${heroContexts.map(ctx => {
                 const lbl = ctx.label || '';
                 const isBranch = lbl.includes('فرع');
                 const isSupervisor = lbl.includes('مشرف');
-                let badgeText;
-                if (isBranch) badgeText = Sec.escapeHTML(ctx.value);
-                else if (isSupervisor) badgeText = `${Sec.escapeHTML(lbl)} : ${Sec.escapeHTML(ctx.value)}`;
-                else badgeText = `${Sec.escapeHTML(lbl)} — ${Sec.escapeHTML(ctx.value)}`;
-                return `<span class="cmp-detail-hero-badge${isBranch ? ' cmp-detail-hero-badge--branch' : ''}"><i class="fas fa-tag"></i>${badgeText}</span>`;
+                const val = Sec.escapeHTML(String(ctx.value ?? '-'));
+                const mod = isBranch ? ' cmp-detail-hero-badge--branch' : (isSupervisor ? ' cmp-detail-hero-badge--supervisor' : '');
+                const icon = isBranch ? 'fa-store' : (isSupervisor ? 'fa-user-tie' : 'fa-tag');
+                const title = isBranch || isSupervisor
+                  ? val
+                  : `${Sec.escapeHTML(lbl)} — ${val}`;
+                if (isBranch) {
+                  return `<span class="cmp-detail-hero-badge${mod}" title="${title}"><i class="fas ${icon}"></i><span class="cmp-detail-hero-badge__val">${val}</span></span>`;
+                }
+                if (isSupervisor) {
+                  return `<span class="cmp-detail-hero-badge${mod}" title="${title}"><i class="fas ${icon}"></i><span class="cmp-detail-hero-badge__lbl">${Sec.escapeHTML(lbl)}</span><span class="cmp-detail-hero-badge__val">${val}</span></span>`;
+                }
+                return `<span class="cmp-detail-hero-badge${mod}" title="${title}"><i class="fas ${icon}"></i><span class="cmp-detail-hero-badge__val">${Sec.escapeHTML(lbl)} — ${val}</span></span>`;
               }).join('')}
             </div>`
           : '';
@@ -33125,6 +33452,7 @@
           if (typeof initMobileViewportSync === 'function') initMobileViewportSync();
           if (typeof initViolDetailSheetDrag === 'function') initViolDetailSheetDrag();
           if (typeof initTicketSheetDrag === 'function') initTicketSheetDrag();
+          if (typeof initCmpDetailSheetDrag === 'function') initCmpDetailSheetDrag();
           if (typeof initAttViewerDrag === 'function') initAttViewerDrag();
 
           sb.auth.onAuthStateChange((event) => {
