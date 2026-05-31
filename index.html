@@ -4254,6 +4254,15 @@
       display: flex
     }
 
+    /* تذكرة فوق امتثال — الامتثال يبقى ظاهراً خلفها */
+    body.ticket-over-cmp #cmpDetailModal.modal.open {
+      z-index: 1000 !important
+    }
+
+    body.ticket-over-cmp #ticketModal.modal.open {
+      z-index: 1100 !important
+    }
+
     .modal-card {
       background: var(--surface);
       border-radius: var(--radius-lg);
@@ -10812,13 +10821,98 @@
       text-align: center;
     }
 
-    @media (max-width: 560px) {
-      .modal-card.cmp-detail-card .cmp-detail-modal-header {
-        padding: 10px 12px 8px;
+    @media (max-width: 768px) {
+      .modal-card.cmp-detail-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        max-height: 92vh;
+        border-radius: 16px 16px 0 0 !important;
       }
 
-      .modal-card.cmp-detail-card .cmp-detail-hero-banner {
-        padding: 0;
+      .modal-card.cmp-detail-card .modal-body {
+        padding: 12px 14px;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-y: contain;
+        touch-action: pan-y;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+
+      .modal-card.cmp-detail-card .modal-body::-webkit-scrollbar {
+        display: none;
+        width: 0;
+        height: 0;
+      }
+
+      /* 3 مخالفات ظاهرة + الباقي بالمس (بدون شريط تمرير) */
+      .modal-card.cmp-detail-card .cmp-detail-section--violations .cmp-viol-list,
+      .modal-card.cmp-detail-card .cmp-detail-section--violations .cmp-viol-list.cmp-viol-list--scroll {
+        --cmp-viol-rows: 3;
+        --cmp-viol-row-h: 56px;
+        --cmp-viol-gap: 6px;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: var(--cmp-viol-gap) !important;
+        max-height: calc(var(--cmp-viol-rows) * var(--cmp-viol-row-h) + (var(--cmp-viol-rows) - 1) * var(--cmp-viol-gap)) !important;
+        height: auto !important;
+        min-height: 0;
+        overflow-y: auto !important;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+        touch-action: pan-y;
+        padding-inline-end: 0 !important;
+        margin: 0 !important;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+
+      .modal-card.cmp-detail-card .cmp-detail-section--violations .cmp-viol-list::-webkit-scrollbar {
+        display: none;
+        width: 0;
+        height: 0;
+      }
+
+      .modal-card.cmp-detail-card .cmp-viol-list .score-viol-row {
+        padding: 6px 10px;
+        gap: 8px;
+        font-size: 11px;
+        min-height: var(--cmp-viol-row-h);
+        flex-shrink: 0;
+        align-items: center;
+      }
+
+      .modal-card.cmp-detail-card .score-viol-name {
+        font-size: 11px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .modal-card.cmp-detail-card .score-viol-meta {
+        font-size: 9px;
+        gap: 6px 10px;
+        margin-top: 2px;
+        flex-wrap: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .modal-card.cmp-detail-card .score-viol-meta span:nth-child(n+3) {
+        display: none;
+      }
+
+      .modal-card.cmp-detail-card .score-viol-weight {
+        font-size: 12px;
+      }
+
+      .modal-card.cmp-detail-card .score-viol-weight .raw-weight {
+        font-size: 9px;
+      }
+
+      .modal-card.cmp-detail-card .cmp-detail-modal-header {
+        padding: 12px 14px 10px;
       }
 
       .cmp-detail-hero-top {
@@ -17241,6 +17335,53 @@
         z-index: 2400 !important
       }
 
+      body.ticket-over-cmp #ticketModal.modal.open {
+        z-index: 3100 !important
+      }
+
+      body.ticket-over-cmp #cmpDetailModal.modal.open {
+        z-index: 1050 !important
+      }
+
+      /* فوق الامتثال: التذكرة تلتصق بأسفل الشاشة (بدون فراغ للشريط — لأنها فوقه) */
+      body.ticket-over-cmp #ticketModal.modal {
+        padding-bottom: 0 !important
+      }
+
+      body.ticket-over-cmp #ticketModal.modal.open::before {
+        bottom: 0 !important;
+        background: rgba(15, 23, 42, 0.38) !important
+      }
+
+      body.ticket-over-cmp #ticketModal .td-mob-sheet {
+        bottom: 0 !important;
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+        max-height: min(
+          86dvh,
+          calc(100dvh - var(--unified-topbar-h, 76px) - 12px)
+        ) !important
+      }
+
+      [data-theme="dark"] body.ticket-over-cmp #ticketModal.modal.open::before {
+        background: rgba(0, 0, 0, 0.48) !important
+      }
+
+      body.ticket-over-cmp #cmpDetailModal .modal-card.cmp-detail-card .modal-body {
+        overflow: hidden !important;
+        touch-action: none
+      }
+
+      #ticketModal .td-content-area {
+        scrollbar-width: none;
+        -ms-overflow-style: none
+      }
+
+      #ticketModal .td-content-area::-webkit-scrollbar {
+        display: none;
+        width: 0;
+        height: 0
+      }
+
       #ticketModal.modal.open {
         display: block !important;
         opacity: 1;
@@ -17261,7 +17402,7 @@
         width: 100% !important;
         max-width: 100% !important;
         max-height: min(
-          88dvh,
+          82dvh,
           calc(
             100dvh - var(--unified-topbar-h, 76px) - var(--ticket-sheet-bottom, var(--mr-mob-bottom-nav-h, 56px)) - 8px
           )
@@ -19429,9 +19570,12 @@
           document.body.classList.remove('modal-open');
         }
         // إيقاف عدّاد التذكرة عند إغلاق المودال
-        if (id === 'ticketModal' && state._countdownTimer) {
-          clearInterval(state._countdownTimer);
-          state._countdownTimer = null;
+        if (id === 'ticketModal') {
+          document.body.classList.remove('ticket-over-cmp');
+          if (state._countdownTimer) {
+            clearInterval(state._countdownTimer);
+            state._countdownTimer = null;
+          }
         }
       }
 
@@ -19456,7 +19600,14 @@
         document.documentElement.style.setProperty('--viol-sheet-bottom', insetPx);
         document.documentElement.style.setProperty('--ticket-sheet-bottom', insetPx);
         document.querySelector('#violDetailModal .viol-paper-sheet')?.style.setProperty('bottom', insetPx);
-        document.querySelector('#ticketModal .td-mob-sheet')?.style.setProperty('bottom', insetPx);
+        const ticketSheet = document.querySelector('#ticketModal .td-mob-sheet');
+        if (ticketSheet) {
+          if (document.body.classList.contains('ticket-over-cmp')) {
+            ticketSheet.style.removeProperty('bottom');
+          } else {
+            ticketSheet.style.setProperty('bottom', insetPx);
+          }
+        }
       }
 
       /** على الجوال: النافذة داخل app-shell قبل الشريط السفلي لينزلق الورقة خلفه (نفس سياق z-index) */
@@ -19624,6 +19775,10 @@
         const shell = document.querySelector('#appWrap > .app-shell');
         const nav = document.getElementById('mobileBottomNav');
         if (!modal || !shell) return;
+        if (document.body.classList.contains('ticket-over-cmp')) {
+          if (modal.parentNode !== document.body) document.body.appendChild(modal);
+          return;
+        }
         if (isViolDetailMobSheet() && nav) {
           if (modal.nextElementSibling === nav) return;
           shell.insertBefore(modal, nav);
@@ -19646,6 +19801,9 @@
         if (typeof syncMobBottomNavHeight === 'function') syncMobBottomNavHeight();
         mountTicketModalForMob();
         syncViolSheetBottomInset();
+        if (document.body.classList.contains('ticket-over-cmp')) {
+          sheet.style.removeProperty('bottom');
+        }
         modal.classList.remove('sheet-ready', 'sheet-closing', 'sheet-dragging');
         modal.classList.add('open');
         document.body.classList.add('modal-open');
@@ -19691,6 +19849,7 @@
             clearInterval(state._countdownTimer);
             state._countdownTimer = null;
           }
+          document.body.classList.remove('ticket-over-cmp');
           if (!document.querySelector('.modal.open')) {
             document.body.classList.remove('modal-open');
           }
@@ -27055,6 +27214,14 @@
       // ───────────────────────────────────────────────────────────────────────────
       // فتح تذكرة في المودال — عرض فوري ثم تحديث من الخادم
       // ───────────────────────────────────────────────────────────────────────────
+      /** من امتثال: التذكرة فوقه والامتثال يبقى ظاهراً خلفها (لا يُغلق) */
+      function openTicketFromCompliance(id) {
+        if (document.getElementById('cmpDetailModal')?.classList.contains('open')) {
+          document.body.classList.add('ticket-over-cmp');
+        }
+        openTicket(id);
+      }
+
       async function openTicket(id) {
         const t = state.violations.find(v => v.id === id);
         if (!t) return showToast('التذكرة غير موجودة', 'error');
@@ -27434,7 +27601,15 @@
         const date = formatLogDate(log.date) || '-';
         const actor = formatLogActorForDisplay(log, ticket, hideObs);
         if (actor.masked) return `${date} · الراصد`;
-        return `${date} · ${actor.user} · ${actor.role}`;
+        const user = String(actor.user || '').trim();
+        const role = String(actor.role || '').trim();
+        if (!user || user === '-') {
+          return role && role !== '-' ? `${date} · ${role}` : date;
+        }
+        if (!role || role === '-' || role === user) {
+          return `${date} · ${user}`;
+        }
+        return `${date} · ${user} · ${role}`;
       }
 
       function getVisibleAttachments(t) {
@@ -28513,12 +28688,26 @@
         renderCompliance();
       }
 
+      /** نطاق جغرافي تلقائي لمدير المعرض — ليس فلتراً يختاره المستخدم */
+      function isCmpImplicitGeoScope() {
+        return state.currentUser?.role === 'branch_manager';
+      }
+
+      function applyCmpBranchManagerGeoScope() {
+        if (!isCmpImplicitGeoScope()) return;
+        const bid = state.currentUser?.branch_id || '';
+        const br = bid && state.branches.find(b => b.id === bid);
+        cmpfState.region = br?.region_id || '';
+        cmpfState.branch = bid;
+      }
+
       function clearAllCmpFilters() {
         cmpfState.sort = 'default';
         cmpfState.level = [];
         cmpfState.region = '';
         cmpfState.branch = '';
         cmpfState.vstate = [];
+        applyCmpBranchManagerGeoScope();
         populateCmpfSelects();
         updateCmpActiveFiltersTags();
         renderCompliance();
@@ -28533,14 +28722,15 @@
         const tags = [];
         const levelLabels = { excellent: 'ممتاز', good: 'جيد', warn: 'تحذير', danger: 'متعثر' };
         const vstateLabels = { has: 'لديه مخالفات', clean: 'سجل نظيف' };
+        const hideGeoTags = isCmpImplicitGeoScope();
 
         cmpfState.level.forEach(v => tags.push({ label: 'مستوى: ' + levelLabels[v], key: 'level', val: v }));
         cmpfState.vstate.forEach(v => tags.push({ label: vstateLabels[v], key: 'vstate', val: v }));
-        if (cmpfState.region) {
+        if (cmpfState.region && !hideGeoTags) {
           const r = state.regions.find(x => x.id === cmpfState.region);
           if (r) tags.push({ label: 'منطقة: ' + r.name, key: 'region', val: cmpfState.region });
         }
-        if (cmpfState.branch) {
+        if (cmpfState.branch && !hideGeoTags) {
           const b = state.branches.find(x => x.id === cmpfState.branch);
           if (b) tags.push({ label: 'فرع: ' + b.name, key: 'branch', val: cmpfState.branch });
         }
@@ -30011,6 +30201,26 @@
           .cmp-detail-section--violations .score-viol-list { margin-bottom: 0 !important; }
           .cmp-viol-list .score-viol-row { margin: 0; flex-shrink: 0; }
           .cmp-viol-empty { text-align: center; padding: 32px; color: var(--text3); font-size: 13px; background: var(--surface); border-radius: 12px; border: 1px dashed var(--border); }
+          @media (max-width: 768px) {
+            .cmp-detail-section--violations .cmp-viol-list,
+            .cmp-detail-section--violations .cmp-viol-list.cmp-viol-list--scroll {
+              --cmp-viol-rows: 3;
+              --cmp-viol-row-h: 56px;
+              --cmp-viol-gap: 6px;
+              gap: var(--cmp-viol-gap) !important;
+              max-height: calc(var(--cmp-viol-rows) * var(--cmp-viol-row-h) + (var(--cmp-viol-rows) - 1) * var(--cmp-viol-gap)) !important;
+              height: auto !important;
+              overflow-y: auto !important;
+              padding-inline-end: 0 !important;
+              scrollbar-width: none;
+              -webkit-overflow-scrolling: touch;
+            }
+            .cmp-detail-section--violations .cmp-viol-list::-webkit-scrollbar { display: none; width: 0; }
+            .cmp-viol-list .score-viol-row { padding: 6px 10px; min-height: var(--cmp-viol-row-h); font-size: 11px; }
+            .cmp-viol-list .score-viol-name { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+            .cmp-viol-list .score-viol-meta { font-size: 9px; flex-wrap: nowrap; overflow: hidden; }
+            .cmp-viol-list .score-viol-meta span:nth-child(n+3) { display: none; }
+          }
         </style>
         `;
 
@@ -30865,8 +31075,7 @@
           const br = bmBranchId && state.branches.find(b => b.id === bmBranchId);
           view = 'employees';
           state._cmpDrill = { view: 'employees', regionId: br?.region_id || '', branchId: bmBranchId };
-          cmpfState.region = br?.region_id || '';
-          cmpfState.branch = bmBranchId;
+          applyCmpBranchManagerGeoScope();
         }
 
         state._cmpActiveTab = view;
@@ -31863,7 +32072,7 @@
           const sevColor = sevColors[sev] || 'var(--blue)';
           const repeatStyle = ded.freqMult > 1 ? ' style="color:var(--red-text)"' : '';
           return `
-              <div class="score-viol-row" onclick="openTicket('${v.id}')" style="cursor:pointer" role="button" tabindex="0">
+              <div class="score-viol-row" onclick="openTicketFromCompliance('${v.id}')" style="cursor:pointer" role="button" tabindex="0">
                 <div>
                   <div class="score-viol-name">
                     <span class="sev-dot" style="background:${sevColor}"></span>
@@ -33854,6 +34063,7 @@
       window.userRoleDdToggle = userRoleDdToggle;
       window.userRoleDdPick = userRoleDdPick;
       window.openTicket = openTicket;
+      window.openTicketFromCompliance = openTicketFromCompliance;
       window.prefetchTicketDetail = prefetchTicketDetail;
       window.switchDetailTab = switchDetailTab;
       window.submitResp = submitResp;
