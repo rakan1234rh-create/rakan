@@ -18061,7 +18061,7 @@
         flex-direction: column;
         flex: 1 1 auto;
         min-height: 0;
-        padding-bottom: 0 !important;
+        padding-bottom: var(--mr-mob-bottom-nav-h, 56px) !important;
         margin-bottom: 0 !important
       }
 
@@ -18093,7 +18093,7 @@
         max-width: 100%;
         box-shadow: none !important;
         background: var(--mr-bg) !important;
-        flex: 1 1 auto;
+        flex: 1 1 0;
         min-height: 0;
         display: flex;
         flex-direction: column;
@@ -18186,7 +18186,7 @@
       }
 
       #tab-reports #reportList {
-        flex: 1 1 auto;
+        flex: 1 1 0;
         background: transparent;
         min-height: 0;
         border: none !important;
@@ -18200,8 +18200,9 @@
       }
 
       #tab-reports #reportList > .wf-mob-tickets-body {
-        flex: 1 1 auto;
+        flex: 1 1 0;
         min-height: 0;
+        height: auto;
         width: 100% !important;
         max-width: 100% !important;
         margin-inline: 0 !important;
@@ -18213,7 +18214,8 @@
         overscroll-behavior-x: none;
         overscroll-behavior-y: contain;
         touch-action: pan-y;
-        padding-bottom: var(--mr-mob-bottom-nav-h, 56px) !important
+        padding-bottom: 12px !important;
+        scroll-padding-bottom: 12px
       }
 
       #tab-reports #reportList .wf-table-wrap,
@@ -18256,6 +18258,11 @@
         border-bottom: 1px solid var(--mr-border) !important;
         border-inline-start: none !important;
         border-inline-end: none !important
+      }
+
+      #tab-reports #reportList .rp-tickets-table--mob tbody tr.wf-ticket-row:last-child > td {
+        padding-block-end: 0 !important;
+        margin-bottom: 0 !important
       }
 
       #tab-reports #reportList .rp-tickets-table--mob tbody tr.wf-ticket-row:hover > td,
