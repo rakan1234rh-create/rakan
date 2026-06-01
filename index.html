@@ -8081,7 +8081,41 @@
       }
 
       .filter-panel.open {
-        left: 0
+        left: 0;
+        transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)
+      }
+
+      .filter-panel.filter-panel-dragging {
+        transition: none !important
+      }
+
+      .filter-panel-header.filter-panel-drag-zone {
+        touch-action: none;
+        cursor: grab;
+        user-select: none;
+        -webkit-user-select: none;
+        -webkit-tap-highlight-color: transparent;
+        justify-content: flex-start;
+        align-items: center;
+        align-self: stretch;
+        width: 100%;
+        min-height: 52px;
+        box-sizing: border-box
+      }
+
+      .filter-panel-drag-zone:active {
+        cursor: grabbing
+      }
+
+      .filter-panel-drag-zone h3 {
+        flex: 1 1 auto;
+        width: 100%;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        align-self: stretch;
+        min-height: 100%;
+        line-height: 1.35
       }
 
       .filter-panel-header {
@@ -18909,7 +18943,7 @@
       }
     }
   </style>
-  <meta name="app-build" content="wf-ticket-row-even-v70">
+  <meta name="app-build" content="fp-panel-draft-drag-v71">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
 </head>
 
@@ -20006,11 +20040,10 @@
     </div>
 
     <!-- Filter Panels -->
-    <div class="filter-panel-overlay" id="filterOverlay" onclick="closeFilterPanel()"></div>
+    <div class="filter-panel-overlay" id="filterOverlay" onclick="closeFilterPanelFromOverlay()"></div>
     <div class="filter-panel" id="filterPanel">
-      <div class="filter-panel-header">
-        <h3><i class="fas fa-sliders" style="margin-left:8px;color:var(--blue)"></i>فرز بواسطة</h3><button
-          class="btn btn-ghost btn-sm" onclick="closeFilterPanel()"><i class="fas fa-times"></i></button>
+      <div class="filter-panel-header filter-panel-drag-zone" aria-label="اسحب لإغلاق الفلتر">
+        <h3><i class="fas fa-sliders" style="margin-left:8px;color:var(--blue)"></i>فرز بواسطة</h3>
       </div>
       <div class="filter-panel-body">
         <div class="fp-section">
@@ -20073,34 +20106,31 @@
           </select>
         </div>
         <div class="fp-section" data-fp-admin-only id="fp-branch-section">
-          <div class="fp-section-title"><i class="fas fa-store"></i>الفرع</div><select class="fp-select" id="fp-branch"
-            onchange="applyFilters()">
+          <div class="fp-section-title"><i class="fas fa-store"></i>الفرع</div><select class="fp-select" id="fp-branch">
             <option value="">الكل</option>
           </select>
         </div>
         <div class="fp-section" data-fp-admin-only id="fp-supervisor-section">
           <div class="fp-section-title"><i class="fas fa-user-tie"></i>المشرف</div><select class="fp-select"
-            id="fp-supervisor" onchange="applyFilters()">
+            id="fp-supervisor">
             <option value="">الكل</option>
           </select>
         </div>
         <div class="fp-section" id="fp-observer-section">
-          <div class="fp-section-title"><i class="fas fa-eye"></i>الراصد</div><select class="fp-select" id="fp-observer"
-            onchange="applyFilters()">
+          <div class="fp-section-title"><i class="fas fa-eye"></i>الراصد</div><select class="fp-select" id="fp-observer">
             <option value="">الكل</option>
           </select>
         </div>
       </div>
       <div class="filter-panel-footer"><button class="fp-btn fp-btn-clear" onclick="clearAllFilters()"><i
             class="fas fa-rotate-left"></i><span>إزالة الفلاتر</span></button><button class="fp-btn fp-btn-apply"
-          onclick="closeFilterPanel()"><i class="fas fa-check"></i><span>تطبيق</span></button></div>
+          onclick="applyFilterPanelAndClose()"><i class="fas fa-check"></i><span>تطبيق</span></button></div>
     </div>
 
-    <div class="filter-panel-overlay" id="cmpFilterOverlay" onclick="closeCmpFilterPanel()"></div>
+    <div class="filter-panel-overlay" id="cmpFilterOverlay" onclick="closeCmpFilterPanelFromOverlay()"></div>
     <div class="filter-panel" id="cmpFilterPanel">
-      <div class="filter-panel-header">
-        <h3><i class="fas fa-sliders" style="margin-left:8px;color:var(--blue)"></i>فرز بواسطة</h3><button
-          class="btn btn-ghost btn-sm" onclick="closeCmpFilterPanel()"><i class="fas fa-times"></i></button>
+      <div class="filter-panel-header filter-panel-drag-zone" aria-label="اسحب لإغلاق الفلتر">
+        <h3><i class="fas fa-sliders" style="margin-left:8px;color:var(--blue)"></i>فرز بواسطة</h3>
       </div>
       <div class="filter-panel-body">
         <div class="fp-section">
@@ -20131,7 +20161,7 @@
         </div>
         <div class="fp-section" id="cmpf-branch-section">
           <div class="fp-section-title"><i class="fas fa-store"></i>الفرع</div><select class="fp-select"
-            id="cmpf-branch" onchange="applyCmpFilters2()">
+            id="cmpf-branch">
             <option value="">الكل</option>
           </select>
         </div>
@@ -20145,7 +20175,7 @@
       </div>
       <div class="filter-panel-footer"><button class="fp-btn fp-btn-clear" onclick="clearAllCmpFilters()"><i
             class="fas fa-rotate-left"></i><span>إزالة الفلاتر</span></button><button class="fp-btn fp-btn-apply"
-          onclick="closeCmpFilterPanel()"><i class="fas fa-check"></i><span>تطبيق</span></button></div>
+          onclick="applyCmpFilterPanelAndClose()"><i class="fas fa-check"></i><span>تطبيق</span></button></div>
     </div>
 
     <!-- Compliance Detail Modal -->
@@ -30245,6 +30275,35 @@
         branch: '',           // '' = الكل
         vstate: []            // ['has', 'clean']
       };
+      let cmpfDraftState = cloneCmpfState(cmpfState);
+
+      function cloneCmpfState(src) {
+        return {
+          sort: src.sort || 'default',
+          level: [...(src.level || [])],
+          region: src.region || '',
+          branch: src.branch || '',
+          vstate: [...(src.vstate || [])]
+        };
+      }
+
+      function clearCmpfStateObject(target) {
+        target.sort = 'default';
+        target.level = [];
+        target.region = '';
+        target.branch = '';
+        target.vstate = [];
+      }
+
+      function cmpfPanelState() {
+        return document.getElementById('cmpFilterPanel')?.classList.contains('open') ? cmpfDraftState : cmpfState;
+      }
+
+      function syncCmpfDraftFromDom() {
+        if (!cmpfDraftState) return;
+        cmpfDraftState.region = document.getElementById('cmpf-region')?.value || '';
+        cmpfDraftState.branch = document.getElementById('cmpf-branch')?.value || '';
+      }
 
       function switchCmpTab(tab) {
         state._cmpActiveTab = tab;
@@ -30258,19 +30317,34 @@
 
       // ─── Filter Panel (يستخدم نفس filter-panel للتقارير) ───
       function openCmpFilterPanel() {
+        cmpfDraftState = cloneCmpfState(cmpfState);
         populateCmpfSelects();
-        document.getElementById('cmpFilterPanel').classList.add('open');
+        const panel = document.getElementById('cmpFilterPanel');
+        if (panel) panel.style.transform = '';
+        panel?.classList.add('open');
         document.getElementById('cmpFilterOverlay').classList.add('open');
         document.body.style.overflow = 'hidden';
       }
 
       function closeCmpFilterPanel() {
-        document.getElementById('cmpFilterPanel').classList.remove('open');
-        document.getElementById('cmpFilterOverlay').classList.remove('open');
+        const panel = document.getElementById('cmpFilterPanel');
+        if (!panel?.classList.contains('open')) return;
+        panel.style.transform = '';
+        panel.classList.remove('open');
+        document.getElementById('cmpFilterOverlay')?.classList.remove('open');
         document.body.style.overflow = '';
       }
 
+      function applyCmpFilterPanelAndClose() {
+        syncCmpfDraftFromDom();
+        Object.assign(cmpfState, cloneCmpfState(cmpfDraftState));
+        updateCmpActiveFiltersTags();
+        renderCompliance();
+        closeCmpFilterPanel();
+      }
+
       function populateCmpfSelects() {
+        const st = cmpfPanelState();
         const tab = state._cmpActiveTab;
 
         // إظهار/إخفاء قسم المنطقة والفرع حسب التبويب
@@ -30292,7 +30366,7 @@
         const regSel = document.getElementById('cmpf-region');
         regSel.innerHTML = '<option value="">الكل</option>' +
           state.regions.map(r =>
-            `<option value="${r.id}" ${cmpfState.region === r.id ? 'selected' : ''}>${Sec.escapeHTML(r.name)}</option>`
+            `<option value="${r.id}" ${st.region === r.id ? 'selected' : ''}>${Sec.escapeHTML(r.name)}</option>`
           ).join('');
 
         // ملء قائمة الفروع (حسب المنطقة المختارة)
@@ -30300,13 +30374,13 @@
 
         // تحديث chips الفرز
         document.querySelectorAll('#cmpf-sort-chips .fp-chip').forEach(chip => {
-          chip.classList.toggle('active', chip.dataset.val === cmpfState.sort);
+          chip.classList.toggle('active', chip.dataset.val === st.sort);
         });
 
         // تحديث chips المستوى
         document.querySelectorAll('#cmpf-level-chips .fp-chip').forEach(chip => {
           chip.className = 'fp-chip';
-          if (cmpfState.level.includes(chip.dataset.val)) {
+          if (st.level.includes(chip.dataset.val)) {
             const colorMap = { excellent: 'active-green', good: 'active', warn: 'active-amber', danger: 'active-red' };
             chip.classList.add(colorMap[chip.dataset.val] || 'active');
           }
@@ -30315,7 +30389,7 @@
         // تحديث chips حالة المخالفات
         document.querySelectorAll('#cmpf-vstate-chips .fp-chip').forEach(chip => {
           chip.className = 'fp-chip';
-          if (cmpfState.vstate.includes(chip.dataset.val)) {
+          if (st.vstate.includes(chip.dataset.val)) {
             const colorMap = { has: 'active-amber', clean: 'active-green' };
             chip.classList.add(colorMap[chip.dataset.val] || 'active');
           }
@@ -30323,33 +30397,33 @@
       }
 
       function populateCmpfBranches() {
+        const st = cmpfPanelState();
         const brSel = document.getElementById('cmpf-branch');
         const regionId = document.getElementById('cmpf-region')?.value || '';
         let branches = state.branches;
         if (regionId) branches = branches.filter(b => b.region_id === regionId);
         brSel.innerHTML = '<option value="">الكل</option>' +
           branches.map(b =>
-            `<option value="${b.id}" ${cmpfState.branch === b.id ? 'selected' : ''}>${Sec.escapeHTML(b.name)}</option>`
+            `<option value="${b.id}" ${st.branch === b.id ? 'selected' : ''}>${Sec.escapeHTML(b.name)}</option>`
           ).join('');
       }
 
       function onCmpfRegionChange() {
-        cmpfState.region = document.getElementById('cmpf-region').value;
-        cmpfState.branch = '';
+        const st = cmpfPanelState();
+        st.region = document.getElementById('cmpf-region').value;
+        st.branch = '';
         populateCmpfBranches();
-        applyCmpFilters2();
       }
 
       function setCmpSort(el, val) {
-        cmpfState.sort = val;
+        cmpfPanelState().sort = val;
         document.querySelectorAll('#cmpf-sort-chips .fp-chip').forEach(c => c.classList.remove('active'));
         el.classList.add('active');
-        applyCmpFilters2();
       }
 
       function toggleCmpChip(el, group, activeClass) {
         const val = el.dataset.val;
-        const arr = cmpfState[group];
+        const arr = cmpfPanelState()[group];
         const idx = arr.indexOf(val);
         if (idx >= 0) {
           arr.splice(idx, 1);
@@ -30358,7 +30432,6 @@
           arr.push(val);
           el.className = `fp-chip ${activeClass}`;
         }
-        applyCmpFilters2();
       }
 
       function applyCmpFilters2() {
@@ -30373,20 +30446,26 @@
         return state.currentUser?.role === 'branch_manager';
       }
 
-      function applyCmpBranchManagerGeoScope() {
-        if (!isCmpImplicitGeoScope()) return;
+      function applyCmpBranchManagerGeoScopeTo(target) {
+        if (!target || !isCmpImplicitGeoScope()) return;
         const bid = state.currentUser?.branch_id || '';
         const br = bid && state.branches.find(b => b.id === bid);
-        cmpfState.region = br?.region_id || '';
-        cmpfState.branch = bid;
+        target.region = br?.region_id || '';
+        target.branch = bid;
+      }
+
+      function applyCmpBranchManagerGeoScope() {
+        applyCmpBranchManagerGeoScopeTo(cmpfState);
       }
 
       function clearAllCmpFilters() {
-        cmpfState.sort = 'default';
-        cmpfState.level = [];
-        cmpfState.region = '';
-        cmpfState.branch = '';
-        cmpfState.vstate = [];
+        if (document.getElementById('cmpFilterPanel')?.classList.contains('open')) {
+          clearCmpfStateObject(cmpfDraftState);
+          applyCmpBranchManagerGeoScopeTo(cmpfDraftState);
+          populateCmpfSelects();
+          return;
+        }
+        clearCmpfStateObject(cmpfState);
         applyCmpBranchManagerGeoScope();
         populateCmpfSelects();
         updateCmpActiveFiltersTags();
@@ -33584,6 +33663,7 @@
       window.toggleCmpBranchEmployees = toggleCmpBranchEmployees;
       window.openCmpFilterPanel = openCmpFilterPanel;
       window.closeCmpFilterPanel = closeCmpFilterPanel;
+      window.applyCmpFilterPanelAndClose = applyCmpFilterPanelAndClose;
       window.setCmpSort = setCmpSort;
       window.toggleCmpChip = toggleCmpChip;
       window.applyCmpFilters2 = applyCmpFilters2;
@@ -34716,6 +34796,10 @@
           if (typeof initViolDetailSheetDrag === 'function') initViolDetailSheetDrag();
           if (typeof initTicketSheetDrag === 'function') initTicketSheetDrag();
           if (typeof initCmpDetailSheetDrag === 'function') initCmpDetailSheetDrag();
+          if (typeof initFilterPanelDrag === 'function') {
+            initFilterPanelDrag('filterPanel', closeFilterPanel);
+            initFilterPanelDrag('cmpFilterPanel', closeCmpFilterPanel);
+          }
           if (typeof initAttViewerDrag === 'function') initAttViewerDrag();
 
           sb.auth.onAuthStateChange((event) => {
@@ -35204,6 +35288,51 @@
         scope: 'branch',  // branch | mine — مدير الفرع
         employees: []
       };
+      let fpDraftState = cloneFpState(fpState);
+
+      function cloneFpState(src) {
+        return {
+          status: [...(src.status || [])],
+          stage: [...(src.stage || [])],
+          vtypes: [...(src.vtypes || [])],
+          region: src.region || '',
+          branch: src.branch || '',
+          supervisor: src.supervisor || '',
+          observer: src.observer || '',
+          scope: src.scope || 'branch',
+          employees: [...(src.employees || [])]
+        };
+      }
+
+      function clearFpStateObject(target) {
+        target.status = [];
+        target.stage = [];
+        target.vtypes = [];
+        target.region = '';
+        target.branch = '';
+        target.supervisor = '';
+        target.observer = '';
+        target.scope = 'branch';
+        target.employees = [];
+      }
+
+      function fpPanelState() {
+        return document.getElementById('filterPanel')?.classList.contains('open') ? fpDraftState : fpState;
+      }
+
+      function syncFpDraftFromDom() {
+        if (!fpDraftState) return;
+        if (isBranchManagerFpUser()) {
+          fpDraftState.region = '';
+          fpDraftState.branch = '';
+          fpDraftState.supervisor = '';
+        } else {
+          fpDraftState.region = document.getElementById('fp-region')?.value || '';
+          fpDraftState.branch = document.getElementById('fp-branch')?.value || '';
+          fpDraftState.supervisor = document.getElementById('fp-supervisor')?.value || '';
+        }
+        fpDraftState.observer = document.getElementById('fp-observer')?.value || '';
+      }
 
       function isBranchManagerFpUser() {
         return normalizeUserRole(state.currentUser?.role) === 'branch_manager';
@@ -35248,7 +35377,7 @@
 
       function toggleFpListItem(el, group) {
         const val = el.dataset.val;
-        const arr = fpState[group];
+        const arr = fpPanelState()[group];
         const idx = arr.indexOf(val);
         if (idx >= 0) {
           arr.splice(idx, 1);
@@ -35258,7 +35387,6 @@
           syncFpChecklistEl(el, true);
         }
         updateFpChecklistDropdowns();
-        applyFilters();
       }
 
       function closeFpDropdowns() {
@@ -35308,8 +35436,9 @@
       }
 
       function updateFpChecklistDropdowns() {
-        updateFpDropdownTrigger('fp-vtype-dropdown', 'fp-vtype-list', fpState.vtypes, 'اختر نوع المخالفة');
-        updateFpDropdownTrigger('fp-employee-dropdown', 'fp-employee-list', fpState.employees, 'اختر الموظف');
+        const st = fpPanelState();
+        updateFpDropdownTrigger('fp-vtype-dropdown', 'fp-vtype-list', st.vtypes, 'اختر نوع المخالفة');
+        updateFpDropdownTrigger('fp-employee-dropdown', 'fp-employee-list', st.employees, 'اختر الموظف');
       }
 
       function populateFpVtypeList() {
@@ -35322,9 +35451,9 @@
         }
         wrap.innerHTML = types.map(v => {
           const name = v.name || '';
-          return fpChecklistItemHtml(name, name, 'vtypes', fpState.vtypes.includes(name));
+          return fpChecklistItemHtml(name, name, 'vtypes', fpPanelState().vtypes.includes(name));
         }).join('');
-        updateFpDropdownTrigger('fp-vtype-dropdown', 'fp-vtype-list', fpState.vtypes, 'اختر نوع المخالفة');
+        updateFpDropdownTrigger('fp-vtype-dropdown', 'fp-vtype-list', fpPanelState().vtypes, 'اختر نوع المخالفة');
       }
 
       function populateFpEmployeeList() {
@@ -35336,13 +35465,13 @@
           return;
         }
         wrap.innerHTML = staff.map(u =>
-          fpChecklistItemHtml(u.id, u.name || '—', 'employees', fpState.employees.includes(u.id))
+          fpChecklistItemHtml(u.id, u.name || '—', 'employees', fpPanelState().employees.includes(u.id))
         ).join('');
-        updateFpDropdownTrigger('fp-employee-dropdown', 'fp-employee-list', fpState.employees, 'اختر الموظف');
+        updateFpDropdownTrigger('fp-employee-dropdown', 'fp-employee-list', fpPanelState().employees, 'اختر الموظف');
       }
 
       function syncFpScopeChips() {
-        const scope = fpState.scope || 'branch';
+        const scope = fpPanelState().scope || 'branch';
         document.querySelectorAll('#fp-scope-chips .fp-chip').forEach(chip => {
           chip.className = 'fp-chip';
           if (chip.dataset.val === scope) chip.classList.add('active');
@@ -35350,27 +35479,121 @@
       }
 
       function setFpScope(el, val) {
-        fpState.scope = val === 'mine' ? 'mine' : 'branch';
+        fpPanelState().scope = val === 'mine' ? 'mine' : 'branch';
         syncFpScopeChips();
-        applyFilters();
       }
 
       function openFilterPanel() {
+        fpDraftState = cloneFpState(fpState);
         populateFpSelects();
         closeFpDropdowns();
-        document.getElementById('filterPanel').classList.add('open');
+        const panel = document.getElementById('filterPanel');
+        if (panel) panel.style.transform = '';
+        panel?.classList.add('open');
         document.getElementById('filterOverlay').classList.add('open');
         document.body.style.overflow = 'hidden';
       }
 
+      let fpOverlayClickBlockUntil = 0;
+
+      function closeFilterPanelFromOverlay() {
+        if (Date.now() < fpOverlayClickBlockUntil) return;
+        closeFilterPanel();
+      }
+
+      function closeCmpFilterPanelFromOverlay() {
+        if (Date.now() < fpOverlayClickBlockUntil) return;
+        closeCmpFilterPanel();
+      }
+
       function closeFilterPanel() {
+        const panel = document.getElementById('filterPanel');
+        if (!panel?.classList.contains('open')) return;
         closeFpDropdowns();
-        document.getElementById('filterPanel').classList.remove('open');
-        document.getElementById('filterOverlay').classList.remove('open');
+        panel.style.transform = '';
+        panel.classList.remove('open');
+        document.getElementById('filterOverlay')?.classList.remove('open');
         document.body.style.overflow = '';
       }
 
+      function initFilterPanelDrag(panelId, onClose) {
+        const panel = document.getElementById(panelId);
+        const zone = panel?.querySelector('.filter-panel-drag-zone');
+        if (!panel || !zone || panel.dataset.fpDragInit === '1') return;
+        panel.dataset.fpDragInit = '1';
+        const drag = { active: false, startX: 0, deltaX: 0, pointerId: null };
+
+        const dragEnd = (e) => {
+          if (!drag.active) return;
+          drag.active = false;
+          panel.classList.remove('filter-panel-dragging');
+          const threshold = Math.max(64, panel.offsetWidth * 0.22);
+          const dismiss = -drag.deltaX > threshold;
+          panel.style.transform = '';
+          drag.deltaX = 0;
+          drag.pointerId = null;
+          if (dismiss) {
+            if (e) {
+              e.preventDefault();
+              e.stopPropagation();
+            }
+            fpOverlayClickBlockUntil = Date.now() + 500;
+            if (typeof onClose === 'function') onClose();
+          }
+        };
+
+        const dragMove = (clientX) => {
+          if (!drag.active) return;
+          drag.deltaX = Math.min(0, clientX - drag.startX);
+          panel.style.transform = `translateX(${drag.deltaX}px)`;
+        };
+
+        const dragStart = (clientX, e) => {
+          if (!panel.classList.contains('open') || window.innerWidth > 992) return;
+          if (e) e.preventDefault();
+          drag.active = true;
+          drag.startX = clientX;
+          drag.deltaX = 0;
+          panel.classList.add('filter-panel-dragging');
+          panel.style.transform = 'translateX(0)';
+        };
+
+        zone.addEventListener('pointerdown', (e) => {
+          if (e.button !== undefined && e.button !== 0) return;
+          if (e.target.closest('button')) return;
+          drag.pointerId = e.pointerId;
+          dragStart(e.clientX, e);
+          try { zone.setPointerCapture(e.pointerId); } catch (_) { /* noop */ }
+        }, { passive: false });
+
+        zone.addEventListener('pointermove', (e) => {
+          if (!drag.active || e.pointerId !== drag.pointerId) return;
+          e.preventDefault();
+          dragMove(e.clientX);
+        }, { passive: false });
+
+        zone.addEventListener('pointerup', (e) => {
+          if (e.pointerId !== drag.pointerId) return;
+          dragEnd(e);
+        });
+
+        zone.addEventListener('pointercancel', (e) => {
+          if (drag.pointerId != null && e.pointerId !== drag.pointerId) return;
+          dragEnd(e);
+        });
+      }
+
+      function applyFilterPanelAndClose() {
+        syncFpDraftFromDom();
+        Object.assign(fpState, cloneFpState(fpDraftState));
+        state.rpDashPreset = null;
+        updateActiveFiltersTags();
+        filterReports();
+        closeFilterPanel();
+      }
+
       function populateFpSelects() {
+        const st = fpPanelState();
         configureFilterPanelForRole();
         populateFpVtypeList();
 
@@ -35383,7 +35606,7 @@
           if (regSel) {
             regSel.innerHTML = '<option value="">الكل</option>' +
               state.regions.map(r =>
-                `<option value="${r.id}" ${fpState.region === r.id ? 'selected' : ''}>${Sec.escapeHTML(r.name)}</option>`
+                `<option value="${r.id}" ${st.region === r.id ? 'selected' : ''}>${Sec.escapeHTML(r.name)}</option>`
               ).join('');
           }
 
@@ -35396,7 +35619,7 @@
           if (supSel) {
             supSel.innerHTML = '<option value="">الكل</option>' +
               sups.map(u =>
-                `<option value="${u.id}" ${fpState.supervisor === u.id ? 'selected' : ''}>${Sec.escapeHTML(u.name)}</option>`
+                `<option value="${u.id}" ${st.supervisor === u.id ? 'selected' : ''}>${Sec.escapeHTML(u.name)}</option>`
               ).join('');
           }
         }
@@ -35411,46 +35634,47 @@
           const obs = state.users.filter(u => u.role === 'observer' && isActiveUser(u));
           obsSel.innerHTML = '<option value="">الكل</option>' +
             obs.map(u =>
-              `<option value="${u.id}" ${fpState.observer === u.id ? 'selected' : ''}>${Sec.escapeHTML(u.name)}</option>`
+              `<option value="${u.id}" ${st.observer === u.id ? 'selected' : ''}>${Sec.escapeHTML(u.name)}</option>`
             ).join('');
         }
 
         // تحديث chips
         document.querySelectorAll('#fp-status-chips .fp-chip').forEach(chip => {
           chip.className = 'fp-chip';
-          if (fpState.status.includes(chip.dataset.val)) {
+          if (st.status.includes(chip.dataset.val)) {
             const colorMap = { approved: 'active-green', rejected: 'active-red', pending: 'active', auto: 'active-amber' };
             chip.classList.add(colorMap[chip.dataset.val] || 'active');
           }
         });
         document.querySelectorAll('#fp-stage-chips .fp-chip').forEach(chip => {
           chip.className = 'fp-chip';
-          if (fpState.stage.includes(chip.dataset.val)) chip.classList.add('active');
+          if (st.stage.includes(chip.dataset.val)) chip.classList.add('active');
         });
         updateFpChecklistDropdowns();
       }
 
       function populateFpBranches() {
+        const st = fpPanelState();
         const brSel = document.getElementById('fp-branch');
         const regionId = document.getElementById('fp-region')?.value || '';
         let branches = state.branches;
         if (regionId) branches = branches.filter(b => b.region_id === regionId);
         brSel.innerHTML = '<option value="">الكل</option>' +
           branches.map(b =>
-            `<option value="${b.id}" ${fpState.branch === b.id ? 'selected' : ''}>${Sec.escapeHTML(b.name)}</option>`
+            `<option value="${b.id}" ${st.branch === b.id ? 'selected' : ''}>${Sec.escapeHTML(b.name)}</option>`
           ).join('');
       }
 
       function onFpRegionChange() {
-        fpState.region = document.getElementById('fp-region').value;
-        fpState.branch = '';
+        const st = fpPanelState();
+        st.region = document.getElementById('fp-region').value;
+        st.branch = '';
         populateFpBranches();
-        applyFilters();
       }
 
       function toggleChip(el, group, activeClass) {
         const val = el.dataset.val;
-        const arr = fpState[group];
+        const arr = fpPanelState()[group];
         const idx = arr.indexOf(val);
         if (idx >= 0) {
           arr.splice(idx, 1);
@@ -35459,7 +35683,6 @@
           arr.push(val);
           el.className = `fp-chip ${activeClass}`;
         }
-        applyFilters();
       }
 
       function applyFilters() {
@@ -35469,6 +35692,7 @@
           fpState.branch = '';
           fpState.supervisor = '';
         } else {
+          fpState.region = document.getElementById('fp-region')?.value || '';
           fpState.branch = document.getElementById('fp-branch')?.value || '';
           fpState.supervisor = document.getElementById('fp-supervisor')?.value || '';
         }
@@ -35480,15 +35704,12 @@
 
       function clearAllFilters() {
         state.rpDashPreset = null;
-        fpState.status = [];
-        fpState.stage = [];
-        fpState.vtypes = [];
-        fpState.region = '';
-        fpState.branch = '';
-        fpState.supervisor = '';
-        fpState.observer = '';
-        fpState.scope = 'branch';
-        fpState.employees = [];
+        if (document.getElementById('filterPanel')?.classList.contains('open')) {
+          clearFpStateObject(fpDraftState);
+          populateFpSelects();
+          return;
+        }
+        clearFpStateObject(fpState);
         dashClearReportsMonthFilter();
         populateFpSelects();
         updateActiveFiltersTags();
@@ -35577,6 +35798,9 @@
 
       window.openFilterPanel = openFilterPanel;
       window.closeFilterPanel = closeFilterPanel;
+      window.closeFilterPanelFromOverlay = closeFilterPanelFromOverlay;
+      window.closeCmpFilterPanelFromOverlay = closeCmpFilterPanelFromOverlay;
+      window.applyFilterPanelAndClose = applyFilterPanelAndClose;
       window.toggleChip = toggleChip;
       window.toggleFpListItem = toggleFpListItem;
       window.toggleFpDropdown = toggleFpDropdown;
