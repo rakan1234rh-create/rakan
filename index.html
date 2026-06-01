@@ -8069,11 +8069,11 @@
         --fp-slide-gap: 16px;
         width: var(--fp-w);
         max-width: calc(100vw - var(--fp-peek));
-        top: 0;
-        bottom: 0;
+        top: var(--unified-topbar-h, calc(76px + env(safe-area-inset-top, 0px)));
+        bottom: var(--mr-mob-bottom-nav-h, calc(56px + env(safe-area-inset-bottom, 0px)));
         left: calc(-1 * var(--fp-w) - var(--fp-slide-gap));
-        height: 100dvh;
-        max-height: 100dvh;
+        height: auto;
+        max-height: none;
         z-index: 2651;
         box-sizing: border-box;
         padding-left: env(safe-area-inset-left, 0px);
@@ -8085,8 +8085,7 @@
       }
 
       .filter-panel-header {
-        padding: clamp(10px, 2.8vw, 14px) clamp(12px, 3.5vw, 16px);
-        padding-top: calc(clamp(10px, 2.8vw, 14px) + var(--unified-topbar-h, calc(76px + env(safe-area-inset-top, 0px))))
+        padding: clamp(10px, 2.8vw, 14px) clamp(12px, 3.5vw, 16px)
       }
 
       .filter-panel-header h3 {
@@ -8099,7 +8098,6 @@
 
       .filter-panel-footer {
         padding: clamp(10px, 2.8vw, 14px) clamp(12px, 3.5vw, 16px);
-        padding-bottom: calc(clamp(10px, 2.8vw, 14px) + var(--mr-mob-bottom-nav-h, calc(56px + env(safe-area-inset-bottom, 0px))));
         gap: clamp(8px, 2.2vw, 12px)
       }
 
