@@ -8051,27 +8051,86 @@
     }
 
     @media (max-width: 992px) {
+      :root {
+        --fp-peek: clamp(44px, 12vw, 80px);
+        --fp-w: clamp(
+          228px,
+          68vw,
+          min(304px, calc(100vw - var(--fp-peek)))
+        )
+      }
+
+      .filter-panel-overlay {
+        inset: 0;
+        z-index: 2650
+      }
+
       .filter-panel {
-        --fp-w: min(272px, 64vw);
+        --fp-slide-gap: 16px;
         width: var(--fp-w);
-        left: calc(-1 * var(--fp-w) - 20px)
+        max-width: calc(100vw - var(--fp-peek));
+        top: 0;
+        bottom: 0;
+        left: calc(-1 * var(--fp-w) - var(--fp-slide-gap));
+        height: 100dvh;
+        max-height: 100dvh;
+        z-index: 2651;
+        box-sizing: border-box;
+        padding-left: env(safe-area-inset-left, 0px);
+        box-shadow: 4px 0 28px rgba(0, 0, 0, 0.16)
+      }
+
+      .filter-panel.open {
+        left: 0
       }
 
       .filter-panel-header {
-        padding: 12px 14px
+        padding: clamp(10px, 2.8vw, 14px) clamp(12px, 3.5vw, 16px);
+        padding-top: calc(clamp(10px, 2.8vw, 14px) + var(--unified-topbar-h, calc(76px + env(safe-area-inset-top, 0px))))
       }
 
       .filter-panel-header h3 {
-        font-size: 14px
+        font-size: clamp(13px, 3.6vw, 15px)
       }
 
       .filter-panel-body {
-        padding: 12px 14px
+        padding: clamp(10px, 2.8vw, 14px) clamp(12px, 3.5vw, 16px)
       }
 
       .filter-panel-footer {
-        padding: 12px 14px;
-        gap: 10px
+        padding: clamp(10px, 2.8vw, 14px) clamp(12px, 3.5vw, 16px);
+        padding-bottom: calc(clamp(10px, 2.8vw, 14px) + var(--mr-mob-bottom-nav-h, calc(56px + env(safe-area-inset-bottom, 0px))));
+        gap: clamp(8px, 2.2vw, 12px)
+      }
+
+      .fp-section {
+        margin-bottom: clamp(14px, 4vw, 20px)
+      }
+
+      .fp-chip {
+        font-size: clamp(11px, 3vw, 12px);
+        padding: clamp(5px, 1.5vw, 6px) clamp(10px, 2.8vw, 12px)
+      }
+
+      .fp-dropdown-trigger {
+        font-size: clamp(12px, 3.2vw, 13px);
+        padding: clamp(8px, 2.2vw, 9px) clamp(10px, 2.8vw, 12px)
+      }
+
+      .fp-btn {
+        font-size: clamp(12px, 3.2vw, 13px);
+        padding: clamp(10px, 2.8vw, 12px) clamp(12px, 3.2vw, 16px)
+      }
+    }
+
+    @media (max-width: 992px) and (orientation: landscape) {
+      :root {
+        --fp-peek: clamp(72px, 22vw, 120px);
+        --fp-w: clamp(
+          220px,
+          52vw,
+          min(280px, calc(100vw - var(--fp-peek)))
+        )
       }
     }
 
