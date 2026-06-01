@@ -8054,6 +8054,8 @@
     @media (max-width: 992px) {
       :root {
         --fp-peek: clamp(44px, 12vw, 80px);
+        --fp-z-overlay: 2100;
+        --fp-z-panel: 2101;
         --fp-w: clamp(
           228px,
           68vw,
@@ -8066,10 +8068,11 @@
         bottom: var(--mr-mob-bottom-nav-h, calc(56px + env(safe-area-inset-bottom, 0px)));
         left: 0;
         right: 0;
-        z-index: 2650 !important
+        z-index: var(--fp-z-overlay) !important
       }
 
       body.filter-panel-open #appWrap .topbar.unified-banner {
+        z-index: 3100 !important;
         background: var(--mr-surface) !important;
         backdrop-filter: none !important;
         -webkit-backdrop-filter: none !important;
@@ -8078,6 +8081,7 @@
       }
 
       body.filter-panel-open #appWrap > .app-shell > #mobileBottomNav.mobile-bottom-nav {
+        z-index: 2900 !important;
         background: var(--mr-surface) !important;
         opacity: 1 !important
       }
@@ -8092,7 +8096,7 @@
         height: auto;
         max-height: none;
         border-top: none !important;
-        z-index: 2651 !important;
+        z-index: var(--fp-z-panel) !important;
         box-sizing: border-box;
         padding-left: env(safe-area-inset-left, 0px);
         box-shadow: 4px 0 28px rgba(0, 0, 0, 0.16)
@@ -18929,7 +18933,7 @@
       }
     }
   </style>
-  <meta name="app-build" content="fp-panel-no-top-border-v78">
+  <meta name="app-build" content="fp-shell-zstack-v82">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
 </head>
 
@@ -23662,12 +23666,21 @@
         if (nav.parentNode !== shell) shell.appendChild(nav);
       }
 
-      /** لوحات الفلتر على body لتجنب قصّها داخل app-shell (overflow) */
-      function portalFilterPanelsToBody() {
+      /** على الجوال: داخل app-shell (نفس سياق z-index للبنر والشريط السفلي — لا body) */
+      function portalFilterPanelsForMob() {
+        if (!window.matchMedia('(max-width: 992px)').matches) return;
+        const shell = document.querySelector('#appWrap > .app-shell');
+        const nav = document.getElementById('mobileBottomNav');
+        if (!shell) return;
         ['filterOverlay', 'filterPanel', 'cmpFilterOverlay', 'cmpFilterPanel'].forEach((id) => {
           const el = document.getElementById(id);
-          if (el && el.parentNode !== document.body) {
-            document.body.appendChild(el);
+          if (!el) return;
+          if (nav) {
+            if (el.parentNode !== shell || el.nextElementSibling !== nav) {
+              shell.insertBefore(el, nav);
+            }
+          } else if (el.parentNode !== shell) {
+            shell.appendChild(el);
           }
         });
       }
@@ -23692,7 +23705,7 @@
         const nav = document.getElementById('mobileBottomNav');
         if (!nav) return;
         mountMobileBottomNav();
-        if (typeof portalFilterPanelsToBody === 'function') portalFilterPanelsToBody();
+        if (typeof portalFilterPanelsForMob === 'function') portalFilterPanelsForMob();
         const app = document.getElementById('appWrap');
         const appOpen = app && app.style.display !== 'none';
         const mobile = window.matchMedia('(max-width: 992px)').matches;
@@ -30320,7 +30333,9 @@
 
       // ─── Filter Panel (يستخدم نفس filter-panel للتقارير) ───
       function openCmpFilterPanel() {
-        if (typeof portalFilterPanelsToBody === 'function') portalFilterPanelsToBody();
+        if (typeof portalFilterPanelsForMob === 'function') portalFilterPanelsForMob();
+        if (typeof syncTopbarHeightVar === 'function') syncTopbarHeightVar();
+        if (typeof syncMobBottomNavHeight === 'function') syncMobBottomNavHeight();
         cmpfDraftState = cloneCmpfState(cmpfState);
         populateCmpfSelects();
         document.getElementById('cmpFilterOverlay').classList.add('open');
@@ -34792,7 +34807,7 @@
           loadTheme();
           if (typeof initSidebarMobileControls === 'function') initSidebarMobileControls();
           if (typeof initNativeAppFeel === 'function') initNativeAppFeel();
-          if (typeof portalFilterPanelsToBody === 'function') portalFilterPanelsToBody();
+          if (typeof portalFilterPanelsForMob === 'function') portalFilterPanelsForMob();
           if (typeof syncMobileBottomNavLayout === 'function') syncMobileBottomNavLayout();
           if (typeof initMobileViewportSync === 'function') initMobileViewportSync();
           if (typeof initViolDetailSheetDrag === 'function') initViolDetailSheetDrag();
@@ -35482,7 +35497,9 @@
       }
 
       function openFilterPanel() {
-        if (typeof portalFilterPanelsToBody === 'function') portalFilterPanelsToBody();
+        if (typeof portalFilterPanelsForMob === 'function') portalFilterPanelsForMob();
+        if (typeof syncTopbarHeightVar === 'function') syncTopbarHeightVar();
+        if (typeof syncMobBottomNavHeight === 'function') syncMobBottomNavHeight();
         fpDraftState = cloneFpState(fpState);
         populateFpSelects();
         closeFpDropdowns();
