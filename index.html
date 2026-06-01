@@ -14107,7 +14107,9 @@
     .mk-dash__hand-slot[data-hand-mode="sad"]:hover {
       filter:brightness(1.1) saturate(1.15);
     }
-    .mk-dash__hand-slot[data-hand-mode="sad"]:hover .mk-dash__hand-emoji--sad {
+    .mk-dash__hand-slot[data-hand-mode="sad"]:hover .mk-dash__hand-emoji--sad,
+    .mk-dash__hand-slot[data-hand-mode="sad"]:active .mk-dash__hand-emoji--sad,
+    .mk-dash__hand-slot[data-hand-mode="sad"].mk-dash__hand-slot--tap .mk-dash__hand-emoji--sad {
       animation:mk-dash-hand-sad-hover 0.42s ease-in-out infinite;
     }
     @keyframes mk-dash-hand-sad-hover {
@@ -14167,8 +14169,30 @@
 
     .mk-kpi-grid { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:12px; }
     @media (max-width:1024px){ .mk-kpi-grid{ grid-template-columns:repeat(2,1fr); } }
-    @media (max-width:520px){ .mk-kpi-grid{ grid-template-columns:1fr; } }
     .mk-kpi { background:var(--mr-surface); border:1px solid var(--mr-border); border-radius:18px; padding:18px; display:flex; flex-direction:column; gap:12px; min-height:168px; transition:border-color .18s, box-shadow .18s; }
+    @media (max-width:992px) {
+      .mk-kpi-grid { grid-template-columns:repeat(2, minmax(0, 1fr)); gap:8px; }
+      .mk-kpi {
+        padding:12px 10px;
+        gap:8px;
+        min-height:0;
+        border-radius:14px;
+      }
+      #tab-dashboard .mk-kpi__label { font-size:10px; line-height:1.25; }
+      #tab-dashboard .mk-kpi__dot { width:6px; height:6px; }
+      #tab-dashboard .mk-kpi__top .mk-kpi__value { font-size:26px; letter-spacing:-0.03em; }
+      #tab-dashboard .mk-kpi__spark { height:22px; margin-top:4px; }
+      #tab-dashboard .mk-kpi__spark > div.mk-kpi__spark-hit--on { min-height:4px; }
+      #tab-dashboard .mk-kpi__foot {
+        flex-wrap:wrap;
+        gap:4px 6px;
+        font-size:10px;
+        line-height:1.2;
+      }
+      #tab-dashboard .mk-kpi__trend { font-size:10px; gap:3px; }
+      #tab-dashboard .mk-kpi__trend i { font-size:9px; }
+      #tab-dashboard .mk-kpi__period { font-size:9px; max-width:100%; }
+    }
     .mk-kpi:hover { border-color:var(--mr-primary-soft); box-shadow:0 1px 2px rgba(15,18,36,.04); }
     .mk-kpi--click { cursor:pointer; }
     .mk-kpi--click:focus-visible {
@@ -14176,8 +14200,10 @@
       outline-offset:2px;
       border-color:var(--mr-primary);
     }
-    .mk-kpi__top { display:flex; align-items:center; justify-content:space-between; gap:8px; }
-    .mk-kpi__label { font-size:12px; color:var(--mk-text-3); font-weight:500; }
+    .mk-kpi__top { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+    .mk-kpi__title { display:flex; align-items:center; gap:6px; min-width:0; flex:1 1 auto; }
+    .mk-kpi__top .mk-kpi__value { flex-shrink:0; margin:0; align-self:flex-start; }
+    .mk-kpi__label { font-size:12px; color:var(--mk-text-3); font-weight:500; line-height:1.3; }
     .mk-kpi__dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
     .mk-kpi__value,
     .rp-stat-value {
@@ -14226,7 +14252,7 @@
     .mk-funnel__row {
       display:grid;
       grid-template-columns:minmax(0,1.3fr) auto;
-      grid-template-rows:auto auto;
+      grid-template-rows:auto;
       align-items:center;
       gap:4px 14px;
       width:100%;
@@ -14270,14 +14296,6 @@
     .mk-funnel__label { font-size:13px; font-weight:600; color:var(--mr-text); }
     .mk-funnel__meta-sub { font-size:11px; color:var(--mk-text-3); margin-top:2px; }
     .mk-funnel__count { grid-row:1; grid-column:2; font-family:var(--font); font-variant-numeric:lining-nums tabular-nums; font-size:22px; font-weight:500; color:var(--mr-text); unicode-bidi:plaintext; }
-    .mk-funnel__track { grid-row:2; grid-column:1 / -1; height:5px; background:var(--mk-bg-2); border-radius:999px; overflow:hidden; margin-top:4px; display:block; }
-    .mk-funnel__fill {
-      display:block;
-      height:100%;
-      min-width:0;
-      border-radius:999px;
-      transition:width .4s ease;
-    }
 
     .mk-attn__body { display:flex; flex-direction:column; gap:2px; }
     .mk-attn__row {
@@ -18990,8 +19008,7 @@
         color: var(--mr-text) !important
       }
 
-      /* أداء الجوال — تقليل الحركة الثقيلة */
-      #tab-dashboard .mk-dash__hand-emoji,
+      /* أداء الجوال — إيقاف حركة md-dash-play فقط (إيموجي الترحيب يبقى يعمل) */
       #tab-dashboard .md-dash.md-dash-play * {
         animation: none !important
       }
@@ -19032,7 +19049,7 @@
       }
     }
   </style>
-  <meta name="app-build" content="dp-dark-white-v93">
+  <meta name="app-build" content="dash-hand-mob-v105">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
 </head>
 
@@ -19302,10 +19319,12 @@
                   onclick="dashKpiNavigate('total')"
                   onkeydown="dashKpiKey(event,'total')">
                   <div class="mk-kpi__top">
-                    <span class="mk-kpi__label">إجمالي المخالفات</span>
-                    <span class="mk-kpi__dot" style="background:var(--mr-primary)"></span>
+                    <div class="mk-kpi__title">
+                      <span class="mk-kpi__dot" style="background:var(--mr-blue)"></span>
+                      <span class="mk-kpi__label">إجمالي المخالفات</span>
+                    </div>
+                    <div class="mk-kpi__value" id="st-total">0</div>
                   </div>
-                  <div class="mk-kpi__value" id="st-total">0</div>
                   <div class="mk-kpi__spark" id="st-total-spark" aria-hidden="true"></div>
                   <div class="mk-kpi__foot">
                     <span class="mk-kpi__trend" id="st-total-delta">—</span>
@@ -19316,10 +19335,12 @@
                   onclick="dashKpiNavigate('approved')"
                   onkeydown="dashKpiKey(event,'approved')">
                   <div class="mk-kpi__top">
-                    <span class="mk-kpi__label">معتمدة نهائياً</span>
-                    <span class="mk-kpi__dot" style="background:var(--mk-success)"></span>
+                    <div class="mk-kpi__title">
+                      <span class="mk-kpi__dot" style="background:var(--mk-success)"></span>
+                      <span class="mk-kpi__label">معتمدة نهائياً</span>
+                    </div>
+                    <div class="mk-kpi__value" id="st-approved">0</div>
                   </div>
-                  <div class="mk-kpi__value" id="st-approved">0</div>
                   <div class="mk-kpi__spark" id="st-approved-spark" aria-hidden="true"></div>
                   <div class="mk-kpi__foot">
                     <span class="mk-kpi__trend" id="st-approved-delta">—</span>
@@ -19330,10 +19351,12 @@
                   onclick="dashKpiNavigate('pending')"
                   onkeydown="dashKpiKey(event,'pending')">
                   <div class="mk-kpi__top">
-                    <span class="mk-kpi__label">قيد المعالجة</span>
-                    <span class="mk-kpi__dot" style="background:var(--mk-warning)"></span>
+                    <div class="mk-kpi__title">
+                      <span class="mk-kpi__dot" style="background:var(--mk-warning)"></span>
+                      <span class="mk-kpi__label">قيد المعالجة</span>
+                    </div>
+                    <div class="mk-kpi__value" id="st-pending">0</div>
                   </div>
-                  <div class="mk-kpi__value" id="st-pending">0</div>
                   <div class="mk-kpi__spark" id="st-pending-spark" aria-hidden="true"></div>
                   <div class="mk-kpi__foot">
                     <span class="mk-kpi__trend" id="st-pending-delta">—</span>
@@ -19344,10 +19367,12 @@
                   onclick="dashKpiNavigate('overdue')"
                   onkeydown="dashKpiKey(event,'overdue')">
                   <div class="mk-kpi__top">
-                    <span class="mk-kpi__label">تجاوزت المدة</span>
-                    <span class="mk-kpi__dot" style="background:var(--mk-danger)"></span>
+                    <div class="mk-kpi__title">
+                      <span class="mk-kpi__dot" style="background:var(--mk-danger)"></span>
+                      <span class="mk-kpi__label">تجاوزت المدة</span>
+                    </div>
+                    <div class="mk-kpi__value" id="st-overdue" style="color:var(--mk-danger)">0</div>
                   </div>
-                  <div class="mk-kpi__value" id="st-overdue" style="color:var(--mk-danger)">0</div>
                   <div class="mk-kpi__spark" id="st-overdue-spark" aria-hidden="true"></div>
                   <div class="mk-kpi__foot">
                     <span class="mk-kpi__trend" id="st-overdue-delta">—</span>
@@ -19544,26 +19569,24 @@
                     <button type="button" class="wf-status-trigger" id="wf-status-trigger"
                       onclick="wfStatusToggle(event)" aria-haspopup="listbox" aria-expanded="false">
                       <span class="wf-status-trigger__ico" aria-hidden="true"><i class="fas fa-filter"></i></span>
-                      <span class="wf-status-trigger__label" id="wf-status-label">كل الحالات</span>
+                      <span class="wf-status-trigger__label" id="wf-status-label">كل مراحل المعالجة</span>
                       <i class="fas fa-chevron-down wf-status-trigger__chev" aria-hidden="true"></i>
                     </button>
                     <div class="wf-status-menu" id="wf-status-menu" role="listbox" aria-label="فلتر الحالة">
                       <div class="wf-status-menu__scroll">
-                        <button type="button" class="wf-status-opt is-active" data-val="" onclick="wfStatusPick('')">كل الحالات</button>
+                        <button type="button" class="wf-status-opt is-active" data-val="" onclick="wfStatusPick('')">كل مراحل المعالجة</button>
                         <button type="button" class="wf-status-opt" data-val="emp" onclick="wfStatusPick('emp')">بانتظار الموظف</button>
                         <button type="button" class="wf-status-opt" data-val="sup" onclick="wfStatusPick('sup')">بانتظار المشرف</button>
                         <button type="button" class="wf-status-opt" data-val="aud" onclick="wfStatusPick('aud')">بانتظار التدقيق</button>
                         <button type="button" class="wf-status-opt" data-val="mgt" onclick="wfStatusPick('mgt')">بانتظار الإدارة</button>
-                        <button type="button" class="wf-status-opt" data-val="closed" onclick="wfStatusPick('closed')">مغلقة</button>
                       </div>
                     </div>
                     <select id="wf-status" class="wf-status-select-native" tabindex="-1" aria-hidden="true" onchange="filterTickets()">
-                      <option value="">كل الحالات</option>
+                      <option value="">كل مراحل المعالجة</option>
                       <option value="emp">بانتظار الموظف</option>
                       <option value="sup">بانتظار المشرف</option>
                       <option value="aud">بانتظار التدقيق</option>
                       <option value="mgt">بانتظار الإدارة</option>
-                      <option value="closed">مغلقة</option>
                     </select>
                   </div>
                 </div>
@@ -20980,6 +21003,7 @@
         state._dashMobLiteOnly = false;
         try {
           if (document.getElementById('tab-dashboard')?.classList.contains('active')) {
+            state._dashHandPlayEntryWave = true;
             renderDashboard();
           }
         } catch (e) {
@@ -20994,7 +21018,6 @@
         const ok = await loadAllData();
         if (ok) {
           try { renderAll(); } catch (e) { console.error('renderAll', e); }
-          showToast('تم تحميل البيانات', 'success');
         }
         return ok;
       }
@@ -21764,6 +21787,21 @@
         return `${KSA_AR_MONTHS[month0]} ${year}`;
       }
 
+      /** عنوان فرعي للوحة القيادة حسب دور المستخدم */
+      function getDashWelcomeSubtitle(role, monthLbl) {
+        const r = normalizeUserRole(role);
+        const suffix = ` · ${monthLbl}`;
+        const byRole = {
+          employee: `إليك نظرة عامة على أدائك لشهر${suffix}`,
+          branch_manager: `إليك نظرة عامة على أدائك لشهر${suffix}`,
+          supervisor: `إليك نظرة عامة على أداء منطقتك لشهر${suffix}`,
+          admin: `إليك نظرة عامة على أداء المناطق لشهر${suffix}`,
+          manager: `إليك نظرة عامة على أداء المناطق لشهر${suffix}`,
+          observer: `إليك نظرة عامة على أداء رصدك لشهر${suffix}`
+        };
+        return byRole[r] || `إليك نظرة عامة على أداء منصتك لشهر${suffix}`;
+      }
+
       /** تاريخ عربي ميلادي — يتجنب تقويم أم القرى على iOS/جوال */
       function ksaLocaleDateAr(value, options = {}) {
         const iso = typeof value === 'string' ? value.slice(0, 10) : ksaCalendarToIso(value);
@@ -22362,7 +22400,6 @@
             state._dashMobLiteOnly = true;
             try { renderDashboardMobLite(); } catch (_) { /* noop */ }
             finishLoginBoot();
-            showToast('جاري مزامنة البيانات…', 'info');
             (async () => {
               try {
                 const ok = await loadAllData();
@@ -22769,9 +22806,6 @@
 
           setConnStatus('connected');
           if (mobLoad) showGlobalLoader(false);
-          if (mobLoad && state.violations.length > 0) {
-            showToast(`تم التحميل: ${state.violations.length} مخالفة`, 'success');
-          }
           return true;
         } catch (err) {
           console.error('Failed to load data:', err);
@@ -23969,7 +24003,11 @@
       /** تذكرة ما زالت تسير في المسار (ليست مغلقة ولا تنبيهاً إدارياً نهائياً) */
       function isTicketWorkflowOpen(t) {
         if (!t) return false;
-        return t.state !== 'closed' && t.state !== 'Warning_Issued';
+        if (t.state === 'uploading') return false;
+        if (t.state === 'closed' || t.state === 'Warning_Issued') return false;
+        const st = String(t.status_text || '');
+        if (st.includes('معتمد') || st.includes('ملغ')) return false;
+        return true;
       }
 
       /** تجاوزت المدة أو مُرّرت تلقائياً — نفس منطق بطاقة لوحة القيادة */
@@ -25344,35 +25382,37 @@
         return buckets;
       }
 
-      /** ارتفاع عمود الـ spark — جذر التربيع يُبرز الأيام ذات قيمة قليلة (مثل مخالفة واحدة) */
+      /** مرجع مقياس الـ spark — يمنع قفزة 88% عندما يكون ذروة الشهر مخالفة واحدة */
+      function dashSparkScaleMax(max) {
+        return Math.max(max, 8);
+      }
+
+      /** ارتفاع عمود الـ spark — جذر التربيع مع سقف مرجعي ثابت */
       function dashSparkBarHeight(v, max) {
-        if (v <= 0) return 10;
-        if (max <= 1) return 88;
-        const scaled = Math.sqrt(v / max);
-        return Math.max(34, Math.round(scaled * 92));
+        if (v <= 0) return 8;
+        const scaleMax = dashSparkScaleMax(max);
+        const t = Math.min(1, v / scaleMax);
+        const curved = Math.sqrt(t);
+        return Math.round(10 + 78 * curved);
       }
 
       function dashSparkDayOpacity(v, max, tone) {
         if (v <= 0) return tone === 'neutral' ? 0.12 : 0.16;
-        if (max <= 1) return 0.92;
-        const t = Math.sqrt(v / max);
-        const base = 0.52 + 0.48 * t;
-        return tone === 'neutral' ? Math.min(1, base * 0.94) : Math.min(1, base);
+        return 1;
       }
 
       function dashRenderSpark(containerId, values, color, tone = 'neutral', monthStart = null) {
         const el = document.getElementById(containerId);
         if (!el) return;
         const max = Math.max(0, ...values);
-        const maxForScale = Math.max(1, max);
         const ms = monthStart instanceof Date ? monthStart : null;
         const msParts = ms ? ksaFormatParts(ms) : null;
         const monthName = msParts ? KSA_AR_MONTHS[msParts.month] : '';
         const yearStr = msParts ? String(msParts.year) : '';
         el.innerHTML = values.map((v, i) => {
           const dayNum = i + 1;
-          const h = dashSparkBarHeight(v, maxForScale);
-          const opacity = dashSparkDayOpacity(v, maxForScale, tone);
+          const h = dashSparkBarHeight(v, max);
+          const opacity = dashSparkDayOpacity(v, max, tone);
           const onClass = v > 0 ? ' mk-kpi__spark-hit--on' : '';
           let tip = '';
           let aria = '';
@@ -25446,10 +25486,22 @@
         const tips = {
           wave: 'تحية عند دخول لوحة القيادة',
           clap: 'عندك بونص انضباط — تصفيق',
-          sad: 'مخالفة حديثة — مرّر الماوس على الإيموجي يتفاعل معك'
+          sad: 'مخالفة حديثة — اضغط على الإيموجي يتفاعل معك'
         };
         el.setAttribute('title', tips[mode] || tips.wave);
         el.setAttribute('aria-label', tips[mode] || tips.wave);
+        if (!el._dashHandTapBound) {
+          el._dashHandTapBound = true;
+          el.addEventListener('click', () => {
+            if (el.dataset.handMode !== 'sad') return;
+            el.classList.add('mk-dash__hand-slot--tap');
+            if (el._dashHandTapTimer) clearTimeout(el._dashHandTapTimer);
+            el._dashHandTapTimer = setTimeout(() => {
+              el.classList.remove('mk-dash__hand-slot--tap');
+              el._dashHandTapTimer = null;
+            }, 900);
+          });
+        }
         if (el._dashHandEntryTimer) {
           clearTimeout(el._dashHandEntryTimer);
           el._dashHandEntryTimer = null;
@@ -25467,6 +25519,7 @@
       function renderDashboardMobLite() {
         const wn = document.getElementById('dash-welcome-name');
         if (wn) wn.textContent = state.currentUser?.name || '—';
+        try { renderDashWelcomeHand(false); } catch (_) { /* noop */ }
         const ws = document.getElementById('dash-welcome-sub');
         if (ws) ws.textContent = 'جاري تحميل الإحصائيات…';
         if (typeof updateDashDateKicker === 'function') updateDashDateKicker();
@@ -25507,9 +25560,7 @@
         const ws = document.getElementById('dash-welcome-sub');
         if (ws) {
           const monthLbl = formatDashMonthYear(ksaNow.year, ksaNow.month);
-          ws.textContent = isBmDash
-            ? `مخالفاتك الشخصية فقط (${monthLbl}) — امتثال موظفي الفرع في «مؤشرات الامتثال»`
-            : `إليك نظرة عامة على أداء منصتك اليوم · ${monthLbl}`;
+          ws.textContent = getDashWelcomeSubtitle(state.currentUser?.role, monthLbl);
         }
         updateDashDateKicker();
 
@@ -25581,12 +25632,10 @@
         const prevOverdue = dashCountInMonth(allVisible, prevFromIso, monthFromIso, dashIsOverdueTicket);
 
         try {
-          if (!isMobileViewport()) {
-            dashRenderSpark('st-total-spark', dashBucketizeMonth(allVisible, monthFromIso, nextFromIso), 'var(--mr-primary)', 'neutral', monthStart);
-            dashRenderSpark('st-approved-spark', dashBucketizeMonth(allVisible, monthFromIso, nextFromIso, v => v.state === 'closed' && (v.status_text || '').includes('معتمد')), 'var(--mr-success)', 'tone', monthStart);
-            dashRenderSpark('st-pending-spark', dashBucketizeMonth(allVisible, monthFromIso, nextFromIso, isTicketWorkflowOpen), 'var(--mr-warning)', 'tone', monthStart);
-            dashRenderSpark('st-overdue-spark', dashBucketizeMonth(allVisible, monthFromIso, nextFromIso, dashIsOverdueTicket), 'var(--mr-danger)', 'tone', monthStart);
-          }
+          dashRenderSpark('st-total-spark', dashBucketizeMonth(allVisible, monthFromIso, nextFromIso), 'var(--mr-blue)', 'tone', monthStart);
+          dashRenderSpark('st-approved-spark', dashBucketizeMonth(allVisible, monthFromIso, nextFromIso, v => v.state === 'closed' && (v.status_text || '').includes('معتمد')), 'var(--mr-success)', 'tone', monthStart);
+          dashRenderSpark('st-pending-spark', dashBucketizeMonth(allVisible, monthFromIso, nextFromIso, isTicketWorkflowOpen), 'var(--mr-warning)', 'tone', monthStart);
+          dashRenderSpark('st-overdue-spark', dashBucketizeMonth(allVisible, monthFromIso, nextFromIso, dashIsOverdueTicket), 'var(--mr-danger)', 'tone', monthStart);
           dashRenderTrend('st-total-delta', total, prevTotal);
           dashRenderTrend('st-approved-delta', approved, prevApproved);
           dashRenderTrend('st-pending-delta', pending, prevPending);
@@ -25606,7 +25655,6 @@
             closed: visible.filter(v => v.state === 'closed').length,
             Warning_Issued: visible.filter(v => v.state === 'Warning_Issued').length,
           };
-          const totalDist = Object.values(counts).reduce((a, b) => a + b, 0);
           const items = [
             { key: 'emp', label: 'بانتظار الموظف', sub: 'مرحلة الرد الأول', tone: 'amber', icon: 'fa-user-clock', fill: 'var(--amber)' },
             { key: 'sup', label: 'بانتظار المشرف', sub: 'تدقيق المشرف المباشر', tone: 'blue', icon: 'fa-user-tie', fill: 'var(--blue)' },
@@ -25617,19 +25665,16 @@
           ];
           distContainer.innerHTML = items.map(it => {
             const count = counts[it.key];
-            const pct = totalDist > 0 ? Math.round((count / totalDist) * 100) : 0;
-            const width = count > 0 ? Math.max(pct, 8) : 0;
             return `
             <button type="button" class="mk-funnel__row" onclick="dashFunnelNavigate('${it.key}')">
               <div class="mk-funnel__lead">
                 <span class="mk-funnel__pill b-${it.tone}"><i class="fas ${it.icon}"></i></span>
                 <span class="mk-funnel__meta">
                   <span class="mk-funnel__label">${Sec.escapeHTML(it.label)}</span>
-                  <span class="mk-funnel__meta-sub">${Sec.escapeHTML(it.sub)} · ${pct}%</span>
+                  <span class="mk-funnel__meta-sub">${Sec.escapeHTML(it.sub)}</span>
                 </span>
               </div>
               <span class="mk-funnel__count">${count}</span>
-              <span class="mk-funnel__track"><span class="mk-funnel__fill" style="width:${width}%; background:${it.fill}"></span></span>
             </button>
           `;
           }).join('');
@@ -28527,12 +28572,11 @@
       }
 
       const WF_STATUS_LABELS = {
-        '': 'كل الحالات',
+        '': 'كل مراحل المعالجة',
         emp: 'بانتظار الموظف',
         sup: 'بانتظار المشرف',
         aud: 'بانتظار التدقيق',
-        mgt: 'بانتظار الإدارة',
-        closed: 'مغلقة'
+        mgt: 'بانتظار الإدارة'
       };
 
       function wfStatusClose() {
@@ -28741,7 +28785,7 @@
         const search = (document.getElementById('wf-search')?.value || '').toLowerCase().trim();
         const status = document.getElementById('wf-status')?.value || '';
 
-        let visible = getVisibleViolations();
+        let visible = getVisibleViolations().filter(isTicketWorkflowOpen);
 
         if (status) visible = visible.filter(v => v.state === status);
         if (search) {
@@ -34932,6 +34976,9 @@
         const mq = window.matchMedia('(max-width: 992px)');
         const apply = () => {
           syncMobilePlatformScale();
+          if (document.getElementById('tab-dashboard')?.classList.contains('active') && typeof renderDashboard === 'function') {
+            try { renderDashboard(); } catch (e) { console.warn('[dashboard viewport]', e); }
+          }
           if (document.getElementById('tab-workflow')?.classList.contains('active') && typeof filterTickets === 'function') {
             filterTickets();
           }
