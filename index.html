@@ -8081,41 +8081,7 @@
       }
 
       .filter-panel.open {
-        left: 0;
-        transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)
-      }
-
-      .filter-panel.filter-panel-dragging {
-        transition: none !important
-      }
-
-      .filter-panel-header.filter-panel-drag-zone {
-        touch-action: none;
-        cursor: grab;
-        user-select: none;
-        -webkit-user-select: none;
-        -webkit-tap-highlight-color: transparent;
-        justify-content: flex-start;
-        align-items: center;
-        align-self: stretch;
-        width: 100%;
-        min-height: 52px;
-        box-sizing: border-box
-      }
-
-      .filter-panel-drag-zone:active {
-        cursor: grabbing
-      }
-
-      .filter-panel-drag-zone h3 {
-        flex: 1 1 auto;
-        width: 100%;
-        margin: 0;
-        display: flex;
-        align-items: center;
-        align-self: stretch;
-        min-height: 100%;
-        line-height: 1.35
+        left: 0
       }
 
       .filter-panel-header {
@@ -18943,7 +18909,7 @@
       }
     }
   </style>
-  <meta name="app-build" content="fp-panel-draft-drag-v71">
+  <meta name="app-build" content="fp-panel-draft-apply-v72">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
 </head>
 
@@ -20040,10 +20006,11 @@
     </div>
 
     <!-- Filter Panels -->
-    <div class="filter-panel-overlay" id="filterOverlay" onclick="closeFilterPanelFromOverlay()"></div>
+    <div class="filter-panel-overlay" id="filterOverlay" onclick="closeFilterPanel()"></div>
     <div class="filter-panel" id="filterPanel">
-      <div class="filter-panel-header filter-panel-drag-zone" aria-label="اسحب لإغلاق الفلتر">
-        <h3><i class="fas fa-sliders" style="margin-left:8px;color:var(--blue)"></i>فرز بواسطة</h3>
+      <div class="filter-panel-header">
+        <h3><i class="fas fa-sliders" style="margin-left:8px;color:var(--blue)"></i>فرز بواسطة</h3><button
+          class="btn btn-ghost btn-sm" onclick="closeFilterPanel()"><i class="fas fa-times"></i></button>
       </div>
       <div class="filter-panel-body">
         <div class="fp-section">
@@ -20127,10 +20094,11 @@
           onclick="applyFilterPanelAndClose()"><i class="fas fa-check"></i><span>تطبيق</span></button></div>
     </div>
 
-    <div class="filter-panel-overlay" id="cmpFilterOverlay" onclick="closeCmpFilterPanelFromOverlay()"></div>
+    <div class="filter-panel-overlay" id="cmpFilterOverlay" onclick="closeCmpFilterPanel()"></div>
     <div class="filter-panel" id="cmpFilterPanel">
-      <div class="filter-panel-header filter-panel-drag-zone" aria-label="اسحب لإغلاق الفلتر">
-        <h3><i class="fas fa-sliders" style="margin-left:8px;color:var(--blue)"></i>فرز بواسطة</h3>
+      <div class="filter-panel-header">
+        <h3><i class="fas fa-sliders" style="margin-left:8px;color:var(--blue)"></i>فرز بواسطة</h3><button
+          class="btn btn-ghost btn-sm" onclick="closeCmpFilterPanel()"><i class="fas fa-times"></i></button>
       </div>
       <div class="filter-panel-body">
         <div class="fp-section">
@@ -30319,19 +30287,14 @@
       function openCmpFilterPanel() {
         cmpfDraftState = cloneCmpfState(cmpfState);
         populateCmpfSelects();
-        const panel = document.getElementById('cmpFilterPanel');
-        if (panel) panel.style.transform = '';
-        panel?.classList.add('open');
+        document.getElementById('cmpFilterPanel').classList.add('open');
         document.getElementById('cmpFilterOverlay').classList.add('open');
         document.body.style.overflow = 'hidden';
       }
 
       function closeCmpFilterPanel() {
-        const panel = document.getElementById('cmpFilterPanel');
-        if (!panel?.classList.contains('open')) return;
-        panel.style.transform = '';
-        panel.classList.remove('open');
-        document.getElementById('cmpFilterOverlay')?.classList.remove('open');
+        document.getElementById('cmpFilterPanel').classList.remove('open');
+        document.getElementById('cmpFilterOverlay').classList.remove('open');
         document.body.style.overflow = '';
       }
 
@@ -34796,10 +34759,6 @@
           if (typeof initViolDetailSheetDrag === 'function') initViolDetailSheetDrag();
           if (typeof initTicketSheetDrag === 'function') initTicketSheetDrag();
           if (typeof initCmpDetailSheetDrag === 'function') initCmpDetailSheetDrag();
-          if (typeof initFilterPanelDrag === 'function') {
-            initFilterPanelDrag('filterPanel', closeFilterPanel);
-            initFilterPanelDrag('cmpFilterPanel', closeCmpFilterPanel);
-          }
           if (typeof initAttViewerDrag === 'function') initAttViewerDrag();
 
           sb.auth.onAuthStateChange((event) => {
@@ -35487,100 +35446,16 @@
         fpDraftState = cloneFpState(fpState);
         populateFpSelects();
         closeFpDropdowns();
-        const panel = document.getElementById('filterPanel');
-        if (panel) panel.style.transform = '';
-        panel?.classList.add('open');
+        document.getElementById('filterPanel').classList.add('open');
         document.getElementById('filterOverlay').classList.add('open');
         document.body.style.overflow = 'hidden';
       }
 
-      let fpOverlayClickBlockUntil = 0;
-
-      function closeFilterPanelFromOverlay() {
-        if (Date.now() < fpOverlayClickBlockUntil) return;
-        closeFilterPanel();
-      }
-
-      function closeCmpFilterPanelFromOverlay() {
-        if (Date.now() < fpOverlayClickBlockUntil) return;
-        closeCmpFilterPanel();
-      }
-
       function closeFilterPanel() {
-        const panel = document.getElementById('filterPanel');
-        if (!panel?.classList.contains('open')) return;
         closeFpDropdowns();
-        panel.style.transform = '';
-        panel.classList.remove('open');
-        document.getElementById('filterOverlay')?.classList.remove('open');
+        document.getElementById('filterPanel').classList.remove('open');
+        document.getElementById('filterOverlay').classList.remove('open');
         document.body.style.overflow = '';
-      }
-
-      function initFilterPanelDrag(panelId, onClose) {
-        const panel = document.getElementById(panelId);
-        const zone = panel?.querySelector('.filter-panel-drag-zone');
-        if (!panel || !zone || panel.dataset.fpDragInit === '1') return;
-        panel.dataset.fpDragInit = '1';
-        const drag = { active: false, startX: 0, deltaX: 0, pointerId: null };
-
-        const dragEnd = (e) => {
-          if (!drag.active) return;
-          drag.active = false;
-          panel.classList.remove('filter-panel-dragging');
-          const threshold = Math.max(64, panel.offsetWidth * 0.22);
-          const dismiss = -drag.deltaX > threshold;
-          panel.style.transform = '';
-          drag.deltaX = 0;
-          drag.pointerId = null;
-          if (dismiss) {
-            if (e) {
-              e.preventDefault();
-              e.stopPropagation();
-            }
-            fpOverlayClickBlockUntil = Date.now() + 500;
-            if (typeof onClose === 'function') onClose();
-          }
-        };
-
-        const dragMove = (clientX) => {
-          if (!drag.active) return;
-          drag.deltaX = Math.min(0, clientX - drag.startX);
-          panel.style.transform = `translateX(${drag.deltaX}px)`;
-        };
-
-        const dragStart = (clientX, e) => {
-          if (!panel.classList.contains('open') || window.innerWidth > 992) return;
-          if (e) e.preventDefault();
-          drag.active = true;
-          drag.startX = clientX;
-          drag.deltaX = 0;
-          panel.classList.add('filter-panel-dragging');
-          panel.style.transform = 'translateX(0)';
-        };
-
-        zone.addEventListener('pointerdown', (e) => {
-          if (e.button !== undefined && e.button !== 0) return;
-          if (e.target.closest('button')) return;
-          drag.pointerId = e.pointerId;
-          dragStart(e.clientX, e);
-          try { zone.setPointerCapture(e.pointerId); } catch (_) { /* noop */ }
-        }, { passive: false });
-
-        zone.addEventListener('pointermove', (e) => {
-          if (!drag.active || e.pointerId !== drag.pointerId) return;
-          e.preventDefault();
-          dragMove(e.clientX);
-        }, { passive: false });
-
-        zone.addEventListener('pointerup', (e) => {
-          if (e.pointerId !== drag.pointerId) return;
-          dragEnd(e);
-        });
-
-        zone.addEventListener('pointercancel', (e) => {
-          if (drag.pointerId != null && e.pointerId !== drag.pointerId) return;
-          dragEnd(e);
-        });
       }
 
       function applyFilterPanelAndClose() {
@@ -35798,8 +35673,6 @@
 
       window.openFilterPanel = openFilterPanel;
       window.closeFilterPanel = closeFilterPanel;
-      window.closeFilterPanelFromOverlay = closeFilterPanelFromOverlay;
-      window.closeCmpFilterPanelFromOverlay = closeCmpFilterPanelFromOverlay;
       window.applyFilterPanelAndClose = applyFilterPanelAndClose;
       window.toggleChip = toggleChip;
       window.toggleFpListItem = toggleFpListItem;
