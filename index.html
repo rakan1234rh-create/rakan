@@ -8061,8 +8061,23 @@
       }
 
       .filter-panel-overlay {
-        inset: 0;
+        top: var(--unified-topbar-h, calc(76px + env(safe-area-inset-top, 0px)));
+        bottom: var(--mr-mob-bottom-nav-h, calc(56px + env(safe-area-inset-bottom, 0px)));
+        left: 0;
+        right: 0;
         z-index: 2650 !important
+      }
+
+      body.filter-panel-open #appWrap .topbar.unified-banner {
+        background: var(--mr-surface) !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        opacity: 1 !important
+      }
+
+      body.filter-panel-open #appWrap > .app-shell > #mobileBottomNav.mobile-bottom-nav {
+        background: var(--mr-surface) !important;
+        opacity: 1 !important
       }
 
       .filter-panel {
@@ -18910,7 +18925,7 @@
       }
     }
   </style>
-  <meta name="app-build" content="fp-panel-body-portal-v76">
+  <meta name="app-build" content="fp-overlay-skip-chrome-v77">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
 </head>
 
@@ -23651,6 +23666,12 @@
             document.body.appendChild(el);
           }
         });
+      }
+
+      function syncFilterPanelOpenClass() {
+        const open = document.getElementById('filterPanel')?.classList.contains('open')
+          || document.getElementById('cmpFilterPanel')?.classList.contains('open');
+        document.body.classList.toggle('filter-panel-open', !!open);
       }
 
       function syncMobBottomNavHeight() {
@@ -30301,12 +30322,14 @@
         document.getElementById('cmpFilterOverlay').classList.add('open');
         document.getElementById('cmpFilterPanel').classList.add('open');
         document.body.style.overflow = 'hidden';
+        syncFilterPanelOpenClass();
       }
 
       function closeCmpFilterPanel() {
         document.getElementById('cmpFilterPanel').classList.remove('open');
         document.getElementById('cmpFilterOverlay').classList.remove('open');
         document.body.style.overflow = '';
+        syncFilterPanelOpenClass();
       }
 
       function applyCmpFilterPanelAndClose() {
@@ -35462,6 +35485,7 @@
         document.getElementById('filterOverlay').classList.add('open');
         document.getElementById('filterPanel').classList.add('open');
         document.body.style.overflow = 'hidden';
+        syncFilterPanelOpenClass();
       }
 
       function closeFilterPanel() {
@@ -35469,6 +35493,7 @@
         document.getElementById('filterPanel').classList.remove('open');
         document.getElementById('filterOverlay').classList.remove('open');
         document.body.style.overflow = '';
+        syncFilterPanelOpenClass();
       }
 
       function applyFilterPanelAndClose() {
