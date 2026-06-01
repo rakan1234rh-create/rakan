@@ -18041,19 +18041,28 @@
         max-width: 100% !important;
         background: var(--mr-bg) !important;
         overflow: hidden !important;
+        overflow-x: hidden !important;
         flex: 1 1 auto;
         min-height: 0;
         display: flex;
         flex-direction: column
       }
 
+      #appWrap:has(#tab-reports.active),
+      #appWrap .app-body:has(#tab-reports.active) {
+        overflow-x: hidden !important;
+        max-width: 100% !important
+      }
+
       #appWrap .main:has(#tab-reports.active) {
         overflow: hidden !important;
+        overflow-x: hidden !important;
         display: flex;
         flex-direction: column;
         flex: 1 1 auto;
         min-height: 0;
-        padding-bottom: 0 !important
+        padding-bottom: 0 !important;
+        margin-bottom: 0 !important
       }
 
       #tab-reports.tab-content {
@@ -18069,7 +18078,10 @@
         flex-direction: column;
         flex: 1 1 auto;
         min-height: 0;
-        overflow: hidden
+        overflow: hidden;
+        overflow-x: hidden !important;
+        max-width: 100% !important;
+        touch-action: pan-y
       }
 
       #tab-reports .wf-panel {
@@ -18084,7 +18096,8 @@
         flex: 1 1 auto;
         min-height: 0;
         display: flex;
-        flex-direction: column
+        flex-direction: column;
+        overflow-x: hidden !important
       }
 
       #tab-reports .wf-panel-banner {
@@ -18096,7 +18109,8 @@
         border: none !important;
         position: relative;
         z-index: 100;
-        overflow: visible
+        overflow-x: hidden;
+        overflow-y: visible
       }
 
       #tab-reports .wf-panel-banner:has(#rpMobTicketsHead:not(:empty)) {
@@ -18119,13 +18133,13 @@
 
       #tab-reports #rpMobTicketsHead:not(:empty) {
         display: block;
-        width: 100vw;
-        max-width: 100vw;
-        margin-inline: calc(50% - 50vw);
+        width: calc(100% + 24px);
+        max-width: none;
+        margin-inline: -12px;
         margin-bottom: 0;
         padding: 0;
         line-height: 0;
-        background: var(--mr-bg);
+        background: transparent;
         box-sizing: border-box
       }
 
@@ -18173,10 +18187,14 @@
 
       #tab-reports #reportList {
         flex: 1 1 auto;
-        background: var(--mr-bg);
+        background: transparent;
         min-height: 0;
         border: none !important;
-        overflow: visible;
+        margin-bottom: 0 !important;
+        padding: 0 !important;
+        overflow: hidden;
+        overflow-x: hidden !important;
+        max-width: 100% !important;
         display: flex;
         flex-direction: column
       }
@@ -18184,21 +18202,34 @@
       #tab-reports #reportList > .wf-mob-tickets-body {
         flex: 1 1 auto;
         min-height: 0;
-        width: 100vw;
-        max-width: 100vw;
-        margin-inline: calc(50% - 50vw);
+        width: 100% !important;
+        max-width: 100% !important;
+        margin-inline: 0 !important;
+        margin-bottom: 0 !important;
         box-sizing: border-box;
-        overflow-x: auto;
+        overflow-x: hidden !important;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
-        overscroll-behavior: contain;
-        touch-action: pan-x pan-y;
-        padding-bottom: calc(var(--mr-mob-bottom-nav-h, 56px) + 16px)
+        overscroll-behavior-x: none;
+        overscroll-behavior-y: contain;
+        touch-action: pan-y;
+        padding-bottom: var(--mr-mob-bottom-nav-h, 56px) !important
       }
 
-      #tab-reports #reportList > .wf-mob-tickets-body .wf-table-wrap--body {
+      #tab-reports #reportList .wf-table-wrap,
+      #tab-reports #reportList > .wf-mob-tickets-body .wf-table-wrap--body,
+      #tab-reports #rpMobTicketsHead .wf-table-wrap--head {
         margin: 0 !important;
-        padding: 0 !important
+        padding: 0 !important;
+        border: none !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        overflow-x: hidden !important
+      }
+
+      #tab-reports #reportList .wf-table-wrap {
+        overflow: visible !important
       }
 
       #tab-reports .wf-panel-banner:has(#rpMobTicketsHead:not(:empty)) + #reportList > .wf-mob-tickets-body {
@@ -28625,9 +28656,9 @@
 
         if (headHost) {
           if (root.listId === 'reportList') {
-            headHost.style.width = '100vw';
-            headHost.style.maxWidth = '100vw';
-            headHost.style.marginInline = 'calc(50% - 50vw)';
+            headHost.style.width = 'calc(100% + 24px)';
+            headHost.style.maxWidth = 'none';
+            headHost.style.marginInline = '-12px';
           } else {
             headHost.style.width = outerPx;
             headHost.style.maxWidth = outerPx;
