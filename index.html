@@ -8013,6 +8013,7 @@
 
     .filter-panel-header {
       padding: 16px 20px;
+      border-top: none;
       border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
@@ -8072,7 +8073,8 @@
         background: var(--mr-surface) !important;
         backdrop-filter: none !important;
         -webkit-backdrop-filter: none !important;
-        opacity: 1 !important
+        opacity: 1 !important;
+        border-bottom-color: transparent !important
       }
 
       body.filter-panel-open #appWrap > .app-shell > #mobileBottomNav.mobile-bottom-nav {
@@ -8089,6 +8091,7 @@
         left: calc(-1 * var(--fp-w) - var(--fp-slide-gap));
         height: auto;
         max-height: none;
+        border-top: none !important;
         z-index: 2651 !important;
         box-sizing: border-box;
         padding-left: env(safe-area-inset-left, 0px);
@@ -8100,7 +8103,8 @@
       }
       
       .filter-panel-header {
-        padding: clamp(10px, 2.8vw, 14px) clamp(12px, 3.5vw, 16px)
+        padding: clamp(10px, 2.8vw, 14px) clamp(12px, 3.5vw, 16px);
+        border-top: none !important
       }
 
       .filter-panel-header h3 {
@@ -18925,7 +18929,7 @@
       }
     }
   </style>
-  <meta name="app-build" content="fp-overlay-skip-chrome-v77">
+  <meta name="app-build" content="fp-panel-no-top-border-v78">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
 </head>
 
