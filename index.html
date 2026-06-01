@@ -18071,7 +18071,7 @@
         width: 100%;
         background: var(--mr-bg);
         box-sizing: border-box;
-        --rp-scroll-pad-bottom: calc(var(--mr-mob-bottom-nav-h, calc(56px + env(safe-area-inset-bottom, 0px))) + 16px)
+        --rp-scroll-pad-bottom: calc(var(--mr-mob-bottom-nav-h, calc(56px + env(safe-area-inset-bottom, 0px))) + 4px)
       }
 
       #tab-reports.tab-content.active {
@@ -18215,8 +18215,8 @@
         overscroll-behavior-x: none;
         overscroll-behavior-y: contain;
         touch-action: pan-y;
-        padding-bottom: var(--rp-scroll-pad-bottom, calc(var(--mr-mob-bottom-nav-h, calc(56px + env(safe-area-inset-bottom, 0px))) + 16px)) !important;
-        scroll-padding-bottom: var(--rp-scroll-pad-bottom, calc(var(--mr-mob-bottom-nav-h, calc(56px + env(safe-area-inset-bottom, 0px))) + 16px))
+        padding-bottom: var(--rp-scroll-pad-bottom) !important;
+        scroll-padding-bottom: var(--rp-scroll-pad-bottom)
       }
 
       #tab-reports #reportList .wf-table-wrap,
