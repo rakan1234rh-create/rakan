@@ -8050,6 +8050,31 @@
       background: var(--surface)
     }
 
+    @media (max-width: 992px) {
+      .filter-panel {
+        --fp-w: min(272px, 64vw);
+        width: var(--fp-w);
+        left: calc(-1 * var(--fp-w) - 20px)
+      }
+
+      .filter-panel-header {
+        padding: 12px 14px
+      }
+
+      .filter-panel-header h3 {
+        font-size: 14px
+      }
+
+      .filter-panel-body {
+        padding: 12px 14px
+      }
+
+      .filter-panel-footer {
+        padding: 12px 14px;
+        gap: 10px
+      }
+    }
+
     .fp-btn {
       flex: 1;
       padding: 12px 16px;
