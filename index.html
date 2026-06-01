@@ -7852,7 +7852,7 @@
       gap: 8px;
       padding: 10px 18px;
       background: var(--mr-surface);
-      color: var(--mr-primary);
+      color: var(--mr-text-2);
       border: 1px solid var(--mr-primary-soft);
       border-radius: 999px;
       font-family: var(--font);
@@ -7867,13 +7867,13 @@
     .rp-tool-btn:hover {
       background: var(--mr-primary-softer);
       border-color: var(--mr-primary);
-      color: var(--mr-primary)
+      color: var(--mr-text)
     }
 
     .rp-tool-btn.active {
       background: var(--mr-primary);
       border-color: var(--mr-primary);
-      color: #fff
+      color: var(--mr-primary-text, #fff)
     }
 
     .rp-tool-btn-primary {
@@ -8138,6 +8138,11 @@
         padding: clamp(8px, 2.2vw, 9px) clamp(10px, 2.8vw, 12px)
       }
 
+      #fp-vtype-list .fp-checklist-item {
+        font-size: clamp(11px, 2.9vw, 12px);
+        padding: clamp(7px, 2vw, 8px) clamp(8px, 2.4vw, 10px)
+      }
+
       .fp-btn {
         font-size: clamp(12px, 3.2vw, 13px);
         padding: clamp(10px, 2.8vw, 12px) clamp(12px, 3.2vw, 16px)
@@ -8315,9 +8320,10 @@
 
     .fp-checklist-item {
       display: flex;
+      flex-direction: row-reverse;
       align-items: center;
-      justify-content: space-between;
-      gap: 14px;
+      justify-content: flex-start;
+      gap: 8px;
       width: 100%;
       padding: 10px 12px;
       border: none;
@@ -8367,6 +8373,15 @@
       background: var(--blue);
       border-color: var(--blue);
       color: #fff
+    }
+
+    #fp-vtype-list .fp-checklist-item {
+      font-size: 12px;
+      padding: 8px 10px
+    }
+
+    #fp-vtype-list .fp-checklist-empty {
+      font-size: 11px
     }
 
     .fp-chip {
@@ -8528,13 +8543,52 @@
     }
 
     [data-theme="dark"] .date-picker-popup {
-      --md2-dp-range-bg: var(--mr-primary-soft);
-      --md2-dp-range-text: var(--mr-text);
-      --md2-dp-on-surface: rgba(255, 255, 255, 0.87);
-      --md2-dp-on-surface-variant: rgba(255, 255, 255, 0.54);
+      --md2-dp-primary: #ffffff;
+      --md2-dp-primary-hover: rgba(255, 255, 255, 0.72);
+      --md2-dp-on-primary: #0f1224;
+      --md2-dp-range-bg: rgba(255, 255, 255, 0.12);
+      --md2-dp-range-text: rgba(255, 255, 255, 0.92);
+      --md2-dp-on-surface: rgba(255, 255, 255, 0.92);
+      --md2-dp-on-surface-variant: rgba(255, 255, 255, 0.65);
       --md2-dp-on-surface-disabled: rgba(255, 255, 255, 0.38);
-      --md2-dp-state-hover: rgba(255, 255, 255, 0.06);
-      --md2-dp-state-focus: var(--mr-primary-soft)
+      --md2-dp-state-hover: rgba(255, 255, 255, 0.08);
+      --md2-dp-state-focus: rgba(255, 255, 255, 0.14);
+      background: var(--mr-surface);
+      box-shadow: 0 3px 6px rgba(0, 0, 0, 0.35), 0 24px 48px rgba(0, 0, 0, 0.5)
+    }
+
+    [data-theme="dark"] .date-picker-popup .dp-quick-btn {
+      color: #ffffff;
+      border-color: rgba(255, 255, 255, 0.28)
+    }
+
+    [data-theme="dark"] .date-picker-popup .dp-quick-btn:hover {
+      color: #ffffff;
+      border-color: rgba(255, 255, 255, 0.45)
+    }
+
+    [data-theme="dark"] .date-picker-popup .dp-btn-today,
+    [data-theme="dark"] .date-picker-popup .dp-btn-clear {
+      color: #ffffff
+    }
+
+    [data-theme="dark"] .date-picker-popup .dp-btn-clear:hover {
+      color: rgba(255, 255, 255, 0.85)
+    }
+
+    [data-theme="dark"] .date-picker-popup .dp-btn-apply {
+      background: #ffffff;
+      color: #0f1224
+    }
+
+    [data-theme="dark"] .date-picker-popup .dp-btn-apply:hover {
+      background: rgba(255, 255, 255, 0.9);
+      color: #0f1224
+    }
+
+    [data-theme="dark"] .date-picker-popup .dp-pick-cell.selected {
+      background: #ffffff;
+      color: #0f1224
     }
 
     /*
@@ -8568,7 +8622,24 @@
       flex-direction: row;
       align-items: center;
       gap: 4px;
-      min-width: 0
+      min-width: 0;
+      margin: 0;
+      padding: 0;
+      border: none;
+      background: transparent;
+      font: inherit;
+      cursor: pointer;
+      border-radius: 4px;
+      color: var(--md2-dp-on-surface-variant)
+    }
+
+    .date-picker-popup .dp-month-trigger:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 2px var(--white-100, var(--surface)), 0 0 0 4px var(--md2-dp-primary)
+    }
+
+    .date-picker-popup .dp-month-trigger .dp-month-label {
+      pointer-events: none
     }
 
     .date-picker-popup .dp-month-chevron {
@@ -8577,9 +8648,52 @@
       height: 24px;
       align-items: center;
       justify-content: center;
-      color: rgba(0, 0, 0, 0.6);
+      color: var(--md2-dp-on-surface-variant);
       pointer-events: none;
-      font-size: 11px
+      font-size: 11px;
+      flex-shrink: 0
+    }
+
+    .date-picker-popup .dp-month-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      max-width: 256px;
+      margin: 0 auto 8px;
+      padding: 4px 0
+    }
+
+    .date-picker-popup .dp-pick-cell {
+      padding: 10px 6px;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      font-family: 'Roboto', var(--font), sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--md2-dp-on-surface);
+      cursor: pointer;
+      transition: background 0.12s, color 0.12s
+    }
+
+    .date-picker-popup .dp-pick-cell:hover {
+      background: var(--md2-dp-state-hover)
+    }
+
+    .date-picker-popup .dp-pick-cell.selected {
+      background: var(--md2-dp-primary, var(--blue));
+      color: var(--md2-dp-on-primary, #fff);
+      font-weight: 600
+    }
+
+    .date-picker-popup .dp-days.dp-mode-pick {
+      display: block;
+      max-width: 256px
+    }
+
+    .date-picker-popup.dp-picker-months .dp-quick-actions,
+    .date-picker-popup.dp-picker-months .dp-weekdays {
+      display: none !important
     }
 
     .date-picker-popup .dp-month-arrows {
@@ -8596,7 +8710,7 @@
       border: none;
       background: transparent;
       border-radius: 50%;
-      color: rgba(0, 0, 0, 0.54);
+      color: var(--md2-dp-on-surface-variant);
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -8613,14 +8727,6 @@
     .date-picker-popup .dp-icon-btn--nav:focus-visible {
       outline: none;
       box-shadow: 0 0 0 2px var(--white-100, var(--surface)), 0 0 0 4px var(--md2-dp-primary)
-    }
-
-    [data-theme="dark"] .date-picker-popup .dp-month-chevron {
-      color: rgba(255, 255, 255, 0.6)
-    }
-
-    [data-theme="dark"] .date-picker-popup .dp-icon-btn--nav {
-      color: rgba(255, 255, 255, 0.54)
     }
 
     .dp-popup-body {
@@ -8719,16 +8825,12 @@
       font-size: 14px;
       line-height: 20px;
       letter-spacing: 0;
-      color: rgba(0, 0, 0, 0.6);
+      color: var(--md2-dp-on-surface-variant);
       border-radius: 4px;
       padding: 0 2px 0 0;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis
-    }
-
-    [data-theme="dark"] .date-picker-popup .dp-header-fig .dp-month-label {
-      color: rgba(255, 255, 255, 0.6)
     }
 
     .date-picker-popup .dp-header-fig .dp-month-label:hover {
@@ -8779,10 +8881,6 @@
       border: 1px solid color-mix(in srgb, var(--md2-dp-primary) 32%, transparent)
     }
 
-    [data-theme="dark"] .date-picker-popup .dp-quick-btn {
-      border-color: color-mix(in srgb, var(--md2-dp-primary) 40%, transparent)
-    }
-
     .dp-quick-btn:hover {
       background: var(--blue-light);
       color: var(--blue-text);
@@ -8823,7 +8921,7 @@
       font-weight: 400;
       line-height: 16px;
       letter-spacing: 0;
-      color: rgba(0, 0, 0, 0.6);
+      color: var(--md2-dp-on-surface-variant);
       padding: 0;
       width: 32px;
       height: 32px;
@@ -8831,10 +8929,6 @@
       align-items: center;
       justify-content: center;
       box-sizing: border-box
-    }
-
-    [data-theme="dark"] .date-picker-popup .dp-weekdays span {
-      color: rgba(255, 255, 255, 0.6)
     }
 
     .dp-days {
@@ -9071,10 +9165,6 @@
       background: var(--md2-dp-state-focus)
     }
 
-    [data-theme="dark"] .date-picker-popup .dp-btn-today {
-      color: var(--md2-dp-primary)
-    }
-
     .dp-btn-clear {
       background: var(--surface);
       color: var(--text2);
@@ -9111,11 +9201,6 @@
     .date-picker-popup .dp-btn-apply:hover {
       background: var(--md2-dp-primary-hover);
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2), 0 3px 4px rgba(0, 0, 0, 0.12)
-    }
-
-    [data-theme="dark"] .date-picker-popup .dp-btn-apply {
-      background: var(--md2-dp-primary);
-      color: var(--md2-dp-on-primary)
     }
 
     .dp-btn-apply {
@@ -18531,7 +18616,21 @@
         border: 1px solid var(--mr-border) !important;
         box-shadow: 0 1px 2px rgba(15, 18, 36, 0.04) !important;
         justify-content: flex-start !important;
-        box-sizing: border-box
+        box-sizing: border-box;
+        color: var(--mr-text-2) !important
+      }
+
+      [data-theme="dark"] #tab-reports .rp-date-wrap .rp-date-btn,
+      [data-theme="dark"] #tab-reports .rp-tool-btn:not(.rp-tool-btn-primary) {
+        color: var(--mr-text) !important;
+        box-shadow: none !important
+      }
+
+      [data-theme="dark"] #tab-reports .rp-date-btn.active,
+      [data-theme="dark"] #tab-reports .rp-tool-btn.active {
+        background: var(--mr-primary-hover) !important;
+        border-color: var(--mr-border-2) !important;
+        color: var(--mr-text) !important
       }
 
       #tab-reports .rp-date-btn span {
@@ -18933,7 +19032,7 @@
       }
     }
   </style>
-  <meta name="app-build" content="fp-panel-like-bottom-nav-v86">
+  <meta name="app-build" content="dp-dark-white-v93">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
 </head>
 
@@ -19339,10 +19438,10 @@
                           <div class="date-picker-popup nt-date-picker" id="ntDatePickerPopup" role="dialog" aria-label="اختيار التاريخ">
                             <div class="dp-popup-body">
                               <div class="dp-header-fig">
-                                <div class="dp-month-trigger">
-                                  <button type="button" class="dp-month-label" id="ntDpMonthLabel" tabindex="-1">--</button>
+                                <button type="button" class="dp-month-trigger" onclick="ntDpToggleMonthYear()" aria-expanded="false" aria-haspopup="listbox">
+                                  <span class="dp-month-label" id="ntDpMonthLabel">--</span>
                                   <span class="dp-month-chevron" aria-hidden="true"><i class="fas fa-chevron-down"></i></span>
-                                </div>
+                                </button>
                                 <div class="dp-month-arrows">
                                   <button type="button" class="dp-icon-btn dp-icon-btn--nav" onclick="ntDpChangeMonth(-1)"
                                     aria-label="الشهر السابق"><i class="fas fa-chevron-right"></i></button>
@@ -19483,11 +19582,10 @@
                   <div class="fig-dp1429428-top-spacer" aria-hidden="true"></div>
                   <div class="dp-popup-body">
                   <div class="dp-header-fig" dir="ltr">
-                    <div class="dp-month-trigger">
-                      <button type="button" class="dp-month-label" id="cmpDpMonthLabel"
-                        onclick="cmpDpToggleMonthYear()">--</button>
+                    <button type="button" class="dp-month-trigger" onclick="cmpDpToggleMonthYear()" aria-expanded="false" aria-haspopup="listbox">
+                      <span class="dp-month-label" id="cmpDpMonthLabel">--</span>
                       <span class="dp-month-chevron" aria-hidden="true"><i class="fas fa-chevron-down"></i></span>
-                    </div>
+                    </button>
                     <div class="dp-month-arrows">
                       <button type="button" class="dp-icon-btn dp-icon-btn--nav" data-cmp-dp-nav="-1"
                         aria-label="الشهر السابق"><i class="fas fa-chevron-up"></i></button>
@@ -19571,11 +19669,10 @@
                 <div class="fig-dp1429428-top-spacer" aria-hidden="true"></div>
                 <div class="dp-popup-body">
                 <div class="dp-header-fig" dir="ltr">
-                  <div class="dp-month-trigger">
-                    <button type="button" class="dp-month-label" id="dpMonthLabel"
-                      onclick="dpToggleMonthYear()">--</button>
+                  <button type="button" class="dp-month-trigger" onclick="dpToggleMonthYear()" aria-expanded="false" aria-haspopup="listbox">
+                    <span class="dp-month-label" id="dpMonthLabel">--</span>
                     <span class="dp-month-chevron" aria-hidden="true"><i class="fas fa-chevron-down"></i></span>
-                  </div>
+                  </button>
                   <div class="dp-month-arrows">
                     <button type="button" class="dp-icon-btn dp-icon-btn--nav" onclick="dpChangeMonth(-1)"
                       aria-label="الشهر السابق"><i class="fas fa-chevron-up"></i></button>
@@ -26923,6 +27020,7 @@
       const ntDpState = {
         viewYear: ksaFormatParts().year,
         viewMonth: ksaFormatParts().month,
+        pickerView: 'days',
         selected: null
       };
 
@@ -26961,8 +27059,17 @@
       function renderNtDatePicker() {
         const label = document.getElementById('ntDpMonthLabel');
         const grid = document.getElementById('ntDpDays');
+        const popup = document.getElementById('ntDatePickerPopup');
         if (!label || !grid) return;
 
+        if (ntDpState.pickerView === 'months') {
+          label.textContent = String(ntDpState.viewYear);
+          grid.innerHTML = dpBuildMonthGridHtml(NT_DP_MONTHS, ntDpState.viewMonth, 'ntDpPickMonth');
+          grid.classList.add('dp-mode-pick');
+          return;
+        }
+
+        grid.classList.remove('dp-mode-pick');
         label.textContent = `${NT_DP_MONTHS[ntDpState.viewMonth]} ${ntDpState.viewYear}`;
 
         const today = ksaTodayCalendar();
@@ -27022,20 +27129,41 @@
           ntDpState.selected = null;
         }
 
+        ntDpState.pickerView = 'days';
+        dpPickerSyncChrome(popup, 'days');
         renderNtDatePicker();
         popup.classList.add('open');
         btn.classList.add('mk-dt-control--open');
         btn.setAttribute('aria-expanded', 'true');
       }
 
+      function ntDpToggleMonthYear() {
+        const popup = document.getElementById('ntDatePickerPopup');
+        ntDpState.pickerView = ntDpState.pickerView === 'months' ? 'days' : 'months';
+        dpPickerSyncChrome(popup, ntDpState.pickerView);
+        renderNtDatePicker();
+      }
+
+      function ntDpPickMonth(monthIndex) {
+        ntDpState.viewMonth = monthIndex;
+        ntDpState.pickerView = 'days';
+        const popup = document.getElementById('ntDatePickerPopup');
+        dpPickerSyncChrome(popup, 'days');
+        renderNtDatePicker();
+      }
+
       function ntDpChangeMonth(dir) {
-        ntDpState.viewMonth += dir;
-        if (ntDpState.viewMonth > 11) {
-          ntDpState.viewMonth = 0;
-          ntDpState.viewYear++;
-        } else if (ntDpState.viewMonth < 0) {
-          ntDpState.viewMonth = 11;
-          ntDpState.viewYear--;
+        if (ntDpState.pickerView === 'months') {
+          ntDpState.viewYear += dir;
+        } else {
+          ntDpState.viewMonth += dir;
+          if (ntDpState.viewMonth > 11) {
+            ntDpState.viewMonth = 0;
+            ntDpState.viewYear++;
+          } else if (ntDpState.viewMonth < 0) {
+            ntDpState.viewMonth = 11;
+            ntDpState.viewYear--;
+          }
         }
         renderNtDatePicker();
       }
@@ -30549,6 +30677,7 @@
       const cmpDpState = {
         viewYear: ksaFormatParts().year,
         viewMonth: ksaFormatParts().month,
+        pickerView: 'days',
         from: null,
         to: null,
         pending: null
@@ -30579,6 +30708,8 @@
           dpFloatClose(popup);
         } else {
           cmpDpSyncFromInputs();
+          cmpDpState.pickerView = 'days';
+          dpPickerSyncChrome(popup, 'days');
           renderCmpDatePicker();
           dpFloatOpen(popup, btn);
         }
@@ -30625,12 +30756,16 @@
       }
 
       function cmpDpChangeMonth(dir) {
-        let m = cmpDpState.viewMonth + dir;
-        let y = cmpDpState.viewYear;
-        if (m > 11) { m = 0; y++; }
-        else if (m < 0) { m = 11; y--; }
-        cmpDpState.viewMonth = m;
-        cmpDpState.viewYear = y;
+        if (cmpDpState.pickerView === 'months') {
+          cmpDpState.viewYear += dir;
+        } else {
+          let m = cmpDpState.viewMonth + dir;
+          let y = cmpDpState.viewYear;
+          if (m > 11) { m = 0; y++; }
+          else if (m < 0) { m = 11; y--; }
+          cmpDpState.viewMonth = m;
+          cmpDpState.viewYear = y;
+        }
         renderCmpDatePicker();
       }
 
@@ -30688,9 +30823,20 @@
       }
 
       function renderCmpDatePicker() {
+        const cmpPop = document.getElementById('cmpDatePickerPopup');
+        const daysEl = document.getElementById('cmpDpDays');
+
+        if (cmpDpState.pickerView === 'months') {
+          document.getElementById('cmpDpMonthLabel').textContent = String(cmpDpState.viewYear);
+          daysEl.innerHTML = dpBuildMonthGridHtml(DP_MONTHS, cmpDpState.viewMonth, 'cmpDpPickMonth');
+          daysEl.classList.add('dp-mode-pick');
+          if (cmpPop?.classList.contains('open')) dpFloatScheduleReposition();
+          return;
+        }
+
+        daysEl.classList.remove('dp-mode-pick');
         document.getElementById('cmpDpMonthLabel').textContent =
           `${DP_MONTHS[cmpDpState.viewMonth]} ${cmpDpState.viewYear}`;
-        const cmpPop = document.getElementById('cmpDatePickerPopup');
         const appliedIso = document.getElementById('cmp-to')?.value || document.getElementById('cmp-from')?.value || '';
         let appliedDate = null;
         if (appliedIso) {
@@ -33689,6 +33835,7 @@
       window.toggleCmpDatePicker = toggleCmpDatePicker;
       window.cmpDpChangeMonth = cmpDpChangeMonth;
       window.cmpDpToggleMonthYear = cmpDpToggleMonthYear;
+      window.cmpDpPickMonth = cmpDpPickMonth;
       window.cmpDpSelectDate = cmpDpSelectDate;
       window.cmpDpSelectToday = cmpDpSelectToday;
       window.cmpDpSelectThisWeek = cmpDpSelectThisWeek;
@@ -34841,10 +34988,32 @@
       const dpState = {
         viewYear: ksaFormatParts().year,
         viewMonth: ksaFormatParts().month,
+        pickerView: 'days',
         from: null,   // Date object or null
         to: null,
         hover: null   // for range preview while hovering
       };
+
+      function dpPickerSyncChrome(popup, pickerView) {
+        if (!popup) return;
+        popup.classList.toggle('dp-picker-months', pickerView === 'months');
+        const trigger = popup.querySelector('.dp-month-trigger');
+        if (trigger) trigger.setAttribute('aria-expanded', pickerView === 'months' ? 'true' : 'false');
+        const chev = popup.querySelector('.dp-month-chevron i');
+        if (chev) {
+          chev.classList.remove('fa-chevron-down', 'fa-chevron-up');
+          chev.classList.add(pickerView === 'months' ? 'fa-chevron-up' : 'fa-chevron-down');
+        }
+      }
+
+      function dpBuildMonthGridHtml(months, viewMonth, pickHandlerName) {
+        let html = '<div class="dp-month-grid" role="listbox" aria-label="اختيار الشهر">';
+        months.forEach((name, i) => {
+          const sel = i === viewMonth ? ' selected' : '';
+          html += `<button type="button" class="dp-pick-cell${sel}" role="option" aria-selected="${i === viewMonth ? 'true' : 'false'}" onclick="${pickHandlerName}(${i})">${name}</button>`;
+        });
+        return html + '</div>';
+      }
 
       const dpPtr = { dragging: false, anchor: null, raf: 0 };
 
@@ -34928,29 +35097,57 @@
         if (popup.classList.contains('open')) {
           dpFloatClose(popup);
         } else {
+          dpState.pickerView = 'days';
+          dpPickerSyncChrome(popup, 'days');
           renderDatePicker();
           dpFloatOpen(popup, btn);
         }
       }
 
       function dpChangeMonth(dir) {
-        dpState.viewMonth += dir;
-        if (dpState.viewMonth > 11) {
-          dpState.viewMonth = 0;
-          dpState.viewYear++;
-        } else if (dpState.viewMonth < 0) {
-          dpState.viewMonth = 11;
-          dpState.viewYear--;
+        if (dpState.pickerView === 'months') {
+          dpState.viewYear += dir;
+        } else {
+          dpState.viewMonth += dir;
+          if (dpState.viewMonth > 11) {
+            dpState.viewMonth = 0;
+            dpState.viewYear++;
+          } else if (dpState.viewMonth < 0) {
+            dpState.viewMonth = 11;
+            dpState.viewYear--;
+          }
         }
         renderDatePicker();
       }
 
       function dpToggleMonthYear() {
-        /* مكان مستقبلي لقائمة شهر/سنة (Figma: أيقونة السهم بجانب التسمية) */
+        const popup = document.getElementById('datePickerPopup');
+        dpState.pickerView = dpState.pickerView === 'months' ? 'days' : 'months';
+        dpPickerSyncChrome(popup, dpState.pickerView);
+        renderDatePicker();
+      }
+
+      function dpPickMonth(monthIndex) {
+        dpState.viewMonth = monthIndex;
+        dpState.pickerView = 'days';
+        const popup = document.getElementById('datePickerPopup');
+        dpPickerSyncChrome(popup, 'days');
+        renderDatePicker();
       }
 
       function cmpDpToggleMonthYear() {
-        /* نفس السلوك لمنتقي الامتثال */
+        const popup = document.getElementById('cmpDatePickerPopup');
+        cmpDpState.pickerView = cmpDpState.pickerView === 'months' ? 'days' : 'months';
+        dpPickerSyncChrome(popup, cmpDpState.pickerView);
+        renderCmpDatePicker();
+      }
+
+      function cmpDpPickMonth(monthIndex) {
+        cmpDpState.viewMonth = monthIndex;
+        cmpDpState.pickerView = 'days';
+        const popup = document.getElementById('cmpDatePickerPopup');
+        dpPickerSyncChrome(popup, 'days');
+        renderCmpDatePicker();
       }
 
       function dpFormatDate(d) {
@@ -35008,11 +35205,22 @@
       }
 
       function renderDatePicker() {
-        // Header
+        const dpPop = document.getElementById('datePickerPopup');
+        const daysEl = document.getElementById('dpDays');
+
+        if (dpState.pickerView === 'months') {
+          document.getElementById('dpMonthLabel').textContent = String(dpState.viewYear);
+          if (dpPop) dpPop.classList.remove('dp-range-pending');
+          daysEl.innerHTML = dpBuildMonthGridHtml(DP_MONTHS, dpState.viewMonth, 'dpPickMonth');
+          daysEl.classList.add('dp-mode-pick');
+          if (dpPop?.classList.contains('open')) dpFloatScheduleReposition();
+          return;
+        }
+
+        daysEl.classList.remove('dp-mode-pick');
         document.getElementById('dpMonthLabel').textContent =
           `${DP_MONTHS[dpState.viewMonth]} ${dpState.viewYear}`;
 
-        const dpPop = document.getElementById('datePickerPopup');
         if (dpPop) {
           dpPop.classList.toggle('dp-range-pending', !!(dpState.from && !dpState.to));
         }
@@ -35272,6 +35480,7 @@
       window.toggleDatePicker = toggleDatePicker;
       window.dpChangeMonth = dpChangeMonth;
       window.dpToggleMonthYear = dpToggleMonthYear;
+      window.dpPickMonth = dpPickMonth;
       window.dpSelectDate = dpSelectDate;
       window.dpSelectToday = dpSelectToday;
       window.dpSelectThisWeek = dpSelectThisWeek;
@@ -35797,6 +36006,8 @@
       window.ntTpSelectNow = ntTpSelectNow;
       window.ntTpClear = ntTpClear;
       window.toggleNtDatePicker = toggleNtDatePicker;
+      window.ntDpToggleMonthYear = ntDpToggleMonthYear;
+      window.ntDpPickMonth = ntDpPickMonth;
       window.ntDpChangeMonth = ntDpChangeMonth;
       window.ntDpPickDay = ntDpPickDay;
       window.ntDpSelectToday = ntDpSelectToday;
