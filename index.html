@@ -8062,7 +8062,7 @@
 
       .filter-panel-overlay {
         inset: 0;
-        z-index: 2650
+        z-index: 2650 !important
       }
 
       .filter-panel {
@@ -8074,16 +8074,16 @@
         left: calc(-1 * var(--fp-w) - var(--fp-slide-gap));
         height: auto;
         max-height: none;
-        z-index: 2651;
+        z-index: 2651 !important;
         box-sizing: border-box;
         padding-left: env(safe-area-inset-left, 0px);
         box-shadow: 4px 0 28px rgba(0, 0, 0, 0.16)
       }
 
       .filter-panel.open {
-        left: 0
+        left: 0 !important
       }
-
+      
       .filter-panel-header {
         padding: clamp(10px, 2.8vw, 14px) clamp(12px, 3.5vw, 16px)
       }
@@ -14781,6 +14781,7 @@
       border-color: color-mix(in srgb, var(--purple) 25%, transparent);
     }
 
+    .filter-panel,
     #appWrap .modal-box,
     #appWrap .filter-panel,
     #appWrap .date-picker-popup {
@@ -18909,7 +18910,7 @@
       }
     }
   </style>
-  <meta name="app-build" content="fp-panel-draft-apply-v72">
+  <meta name="app-build" content="fp-panel-body-portal-v76">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
 </head>
 
@@ -20009,8 +20010,7 @@
     <div class="filter-panel-overlay" id="filterOverlay" onclick="closeFilterPanel()"></div>
     <div class="filter-panel" id="filterPanel">
       <div class="filter-panel-header">
-        <h3><i class="fas fa-sliders" style="margin-left:8px;color:var(--blue)"></i>فرز بواسطة</h3><button
-          class="btn btn-ghost btn-sm" onclick="closeFilterPanel()"><i class="fas fa-times"></i></button>
+        <h3><i class="fas fa-sliders" style="margin-left:8px;color:var(--blue)"></i>فرز بواسطة</h3>
       </div>
       <div class="filter-panel-body">
         <div class="fp-section">
@@ -20097,8 +20097,7 @@
     <div class="filter-panel-overlay" id="cmpFilterOverlay" onclick="closeCmpFilterPanel()"></div>
     <div class="filter-panel" id="cmpFilterPanel">
       <div class="filter-panel-header">
-        <h3><i class="fas fa-sliders" style="margin-left:8px;color:var(--blue)"></i>فرز بواسطة</h3><button
-          class="btn btn-ghost btn-sm" onclick="closeCmpFilterPanel()"><i class="fas fa-times"></i></button>
+        <h3><i class="fas fa-sliders" style="margin-left:8px;color:var(--blue)"></i>فرز بواسطة</h3>
       </div>
       <div class="filter-panel-body">
         <div class="fp-section">
@@ -23644,6 +23643,16 @@
         if (nav.parentNode !== shell) shell.appendChild(nav);
       }
 
+      /** لوحات الفلتر على body لتجنب قصّها داخل app-shell (overflow) */
+      function portalFilterPanelsToBody() {
+        ['filterOverlay', 'filterPanel', 'cmpFilterOverlay', 'cmpFilterPanel'].forEach((id) => {
+          const el = document.getElementById(id);
+          if (el && el.parentNode !== document.body) {
+            document.body.appendChild(el);
+          }
+        });
+      }
+
       function syncMobBottomNavHeight() {
         const nav = document.getElementById('mobileBottomNav');
         if (!nav || window.innerWidth > 992) return;
@@ -23658,6 +23667,7 @@
         const nav = document.getElementById('mobileBottomNav');
         if (!nav) return;
         mountMobileBottomNav();
+        if (typeof portalFilterPanelsToBody === 'function') portalFilterPanelsToBody();
         const app = document.getElementById('appWrap');
         const appOpen = app && app.style.display !== 'none';
         const mobile = window.matchMedia('(max-width: 992px)').matches;
@@ -30285,10 +30295,11 @@
 
       // ─── Filter Panel (يستخدم نفس filter-panel للتقارير) ───
       function openCmpFilterPanel() {
+        if (typeof portalFilterPanelsToBody === 'function') portalFilterPanelsToBody();
         cmpfDraftState = cloneCmpfState(cmpfState);
         populateCmpfSelects();
-        document.getElementById('cmpFilterPanel').classList.add('open');
         document.getElementById('cmpFilterOverlay').classList.add('open');
+        document.getElementById('cmpFilterPanel').classList.add('open');
         document.body.style.overflow = 'hidden';
       }
 
@@ -34754,6 +34765,7 @@
           loadTheme();
           if (typeof initSidebarMobileControls === 'function') initSidebarMobileControls();
           if (typeof initNativeAppFeel === 'function') initNativeAppFeel();
+          if (typeof portalFilterPanelsToBody === 'function') portalFilterPanelsToBody();
           if (typeof syncMobileBottomNavLayout === 'function') syncMobileBottomNavLayout();
           if (typeof initMobileViewportSync === 'function') initMobileViewportSync();
           if (typeof initViolDetailSheetDrag === 'function') initViolDetailSheetDrag();
@@ -35443,11 +35455,12 @@
       }
 
       function openFilterPanel() {
+        if (typeof portalFilterPanelsToBody === 'function') portalFilterPanelsToBody();
         fpDraftState = cloneFpState(fpState);
         populateFpSelects();
         closeFpDropdowns();
-        document.getElementById('filterPanel').classList.add('open');
         document.getElementById('filterOverlay').classList.add('open');
+        document.getElementById('filterPanel').classList.add('open');
         document.body.style.overflow = 'hidden';
       }
 
