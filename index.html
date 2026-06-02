@@ -1434,39 +1434,39 @@
 
     @media (max-width: 992px) {
       .mr-topbar-user {
-        width: fit-content;
-        max-width: min(calc(100vw - 168px), max-content);
-        padding: 5px 8px 5px 6px;
-        gap: 5px;
-        flex-shrink: 0
+        width: auto;
+        max-width: none;
+        padding: 0;
+        gap: 0;
+        flex-shrink: 0;
+        background: transparent;
+        border: 0;
+        box-shadow: none;
+      }
+
+      [data-theme="dark"] .mr-topbar-user {
+        background: transparent;
+        border-color: transparent;
       }
 
       .mr-topbar-user-info {
-        display: flex;
-        width: fit-content;
-        max-width: 100%;
-        flex: 0 1 auto
-      }
-
-      .mr-topbar-name {
-        font-size: 12px;
-        font-weight: 700;
-        max-width: min(42vw, 148px);
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap
-      }
-
-      .mr-topbar-role {
-        display: none
+        display: none !important;
       }
 
       .mr-topbar-user-toggle {
-        width: 26px;
-        height: 26px;
+        width: 32px;
+        height: 32px;
         border-radius: 999px;
-        background: var(--mr-primary-softer);
-        flex-shrink: 0
+        background: var(--mr-surface);
+        border: 1px solid var(--mr-border);
+        box-shadow: var(--mr-shadow-soft);
+        flex-shrink: 0;
+        font-size: 11px;
+      }
+
+      [data-theme="dark"] .mr-topbar-user-toggle {
+        background: rgba(255, 255, 255, 0.06);
+        border-color: rgba(255, 255, 255, 0.1);
       }
 
       .mr-topbar-user-menu {
@@ -14320,33 +14320,285 @@
     /* Dashboard */
     #tab-dashboard .mk-dash { display:flex; flex-direction:column; gap:22px; }
     #tab-dashboard .mk-dash > .indicators-row { margin-bottom: 0; }
+    #tab-dashboard .mk-dash__split > .indicators-row--branch-staff {
+      margin-top: 0;
+      margin-bottom: 0;
+    }
+
+    /* مدير الفرع — موظفو الفرع + توزيع الحالات جنباً إلى جنب (جوال ≤992px) */
+    @media (max-width: 992px) {
+      #tab-dashboard .mk-dash__split.mk-dash__split--duo {
+        --dash-bleed-inline: 24px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        grid-template-areas:
+          "dashStaff dashFunnel"
+          "dashAttn dashAttn";
+        column-gap: 6px;
+        row-gap: 10px;
+        align-items: stretch;
+        margin-inline: calc(-1 * var(--dash-bleed-inline));
+        width: calc(100% + 2 * var(--dash-bleed-inline));
+        max-width: 100vw;
+        padding-inline: max(0px, env(safe-area-inset-left, 0px)) max(0px, env(safe-area-inset-right, 0px));
+        box-sizing: border-box;
+      }
+      #tab-dashboard .mk-dash__split.mk-dash__split--duo > #branchStaffPanel {
+        grid-area: dashStaff;
+        display: flex !important;
+        flex-direction: column;
+        grid-template-columns: unset;
+        min-width: 0;
+        max-width: 100%;
+        width: 100%;
+        height: 100%;
+        align-self: stretch;
+        margin: 0;
+        padding-bottom: 0;
+        gap: 0;
+        overflow: hidden;
+        box-sizing: border-box;
+      }
+      #tab-dashboard .mk-dash__split.mk-dash__split--duo > .mk-funnel {
+        grid-area: dashFunnel;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        max-width: 100%;
+        width: 100%;
+        height: 100%;
+        align-self: stretch;
+        box-sizing: border-box;
+      }
+      #tab-dashboard .mk-dash__split.mk-dash__split--duo > .mk-attn {
+        grid-area: dashAttn;
+        grid-column: 1 / -1;
+        min-width: 0;
+      }
+      #tab-dashboard .mk-dash__split.mk-dash__split--duo #branchStaffPanel .indicator-card--branch-staff {
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        min-height: 100%;
+        height: 100%;
+        padding: 8px 6px;
+        border-radius: 12px;
+        min-width: 0;
+        box-sizing: border-box;
+      }
+      #tab-dashboard .mk-dash__split.mk-dash__split--duo #branchStaffPanel .indicator-title {
+        font-size: 9px;
+        margin-bottom: 6px !important;
+        gap: 4px;
+        line-height: 1.3;
+      }
+      #tab-dashboard .mk-dash__split.mk-dash__split--duo #branchStaffPanel .indicator-title i {
+        font-size: 8px;
+      }
+      #tab-dashboard .mk-dash__split.mk-dash__split--duo #branchStaffPanel .score-viol-list {
+        flex: 1 1 auto;
+        min-height: 0;
+        max-height: none;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      #tab-dashboard .mk-dash__split.mk-dash__split--duo #branchStaffPanel .score-viol-row {
+        padding: 3px 4px;
+        gap: 3px;
+      }
+      #tab-dashboard .mk-dash__split.mk-dash__split--duo #branchStaffPanel .score-viol-name {
+        font-size: 8px;
+        line-height: 1.25;
+      }
+      #tab-dashboard .mk-dash__split.mk-dash__split--duo #branchStaffPanel .score-viol-name span {
+        display: none;
+      }
+      #tab-dashboard .mk-dash__split.mk-dash__split--duo #branchStaffPanel .score-viol-meta {
+        display: flex;
+        margin-top: 2px;
+        gap: 0;
+        font-size: 7px;
+        line-height: 1.25;
+        color: var(--text3);
+      }
+      #tab-dashboard .mk-dash__split.mk-dash__split--duo #branchStaffPanel .score-viol-meta span {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+      }
+      #tab-dashboard .mk-dash__split.mk-dash__split--duo #branchStaffPanel .score-viol-meta span i {
+        font-size: 7px;
+        color: var(--text3);
+        flex-shrink: 0;
+      }
+      #tab-dashboard .mk-dash__split.mk-dash__split--duo #branchStaffPanel .score-viol-weight {
+        font-size: 9px;
+        min-width: 1.25rem;
+        text-align: left;
+      }
+      #tab-dashboard .mk-dash__split.mk-dash__split--duo .mk-funnel {
+        padding: 8px 6px;
+        border-radius: 12px;
+        gap: 6px;
+      }
+      #tab-dashboard .mk-dash__split.mk-dash__split--duo .mk-funnel__head {
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 6px;
+        width: 100%;
+      }
+      #tab-dashboard .mk-dash__split.mk-dash__split--duo .mk-funnel__head > div:first-child {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+      #tab-dashboard .mk-dash__split.mk-dash__split--duo .mk-funnel__title {
+        font-size: 9px;
+        line-height: 1.3;
+      }
+      #tab-dashboard .mk-dash__split.mk-dash__split--duo .mk-funnel__sub {
+        display: block;
+        margin: 2px 0 0;
+        font-size: 7px;
+        line-height: 1.3;
+        color: var(--mk-text-3);
+      }
+      #tab-dashboard .mk-dash__split.mk-dash__split--duo .mk-funnel__head .mk-link,
+      #tab-dashboard .mk-dash__split.mk-dash__split--duo .mk-attn__head .mk-link {
+        display: inline-flex !important;
+        flex: 0 0 auto;
+        align-self: flex-start;
+        font-size: 7px;
+        font-weight: 600;
+        padding: 2px 5px;
+        gap: 3px;
+        white-space: nowrap;
+      }
+      #tab-dashboard .mk-dash__split.mk-dash__split--duo .mk-funnel__head .mk-link i,
+      #tab-dashboard .mk-dash__split.mk-dash__split--duo .mk-attn__head .mk-link i {
+        font-size: 6px !important;
+      }
+      #tab-dashboard .mk-dash__split.mk-dash__split--duo .mk-attn__head {
+        flex-wrap: wrap;
+        align-items: flex-start;
+        justify-content: space-between;
+        row-gap: 6px;
+        gap: 6px 8px;
+      }
+      #tab-dashboard .mk-dash__split.mk-dash__split--duo .mk-attn__title {
+        font-size: 14px;
+      }
+      #tab-dashboard .mk-dash__split.mk-dash__split--duo .mk-attn__sub {
+        display: block;
+        font-size: 10px;
+        line-height: 1.35;
+      }
+      #tab-dashboard .mk-dash__split.mk-dash__split--duo .mk-funnel__body {
+        flex: 1 1 auto;
+        min-height: 0;
+        gap: 3px;
+        max-height: none;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      #tab-dashboard .mk-dash__split.mk-dash__split--duo .mk-funnel__row {
+        padding: 4px 5px;
+        gap: 2px 4px;
+        border-radius: 8px;
+      }
+      #tab-dashboard .mk-dash__split.mk-dash__split--duo .mk-funnel__lead {
+        gap: 4px;
+      }
+      #tab-dashboard .mk-dash__split.mk-dash__split--duo .mk-funnel__pill {
+        width: 20px;
+        height: 20px;
+        font-size: 8px;
+        border-radius: 6px;
+      }
+      #tab-dashboard .mk-dash__split.mk-dash__split--duo .mk-funnel__meta-sub {
+        display: block;
+        font-size: 6px;
+        line-height: 1.25;
+        margin-top: 1px;
+        color: var(--mk-text-3);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      #tab-dashboard .mk-dash__split.mk-dash__split--duo .mk-funnel__label {
+        font-size: 8px;
+        line-height: 1.25;
+      }
+      #tab-dashboard .mk-dash__split.mk-dash__split--duo .mk-funnel__meta {
+        min-width: 0;
+      }
+      #tab-dashboard .mk-dash__split.mk-dash__split--duo .mk-funnel__count {
+        font-size: 12px;
+      }
+    }
 
     /* بطاقتا الالتزام والاستجابة — تنسيق الجوال فقط (≤992px) */
     @media (max-width: 992px) {
-    #tab-dashboard #personalIndicators:has(> .indicator-card--score + .indicator-card--score) {
+    #tab-dashboard .mk-dash {
       --dash-bleed-inline: 24px;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 6px;
-      margin-bottom: 10px;
+      gap: 8px;
+    }
+    #tab-dashboard .mk-dash__hero {
       margin-inline: calc(-1 * var(--dash-bleed-inline));
       width: calc(100% + 2 * var(--dash-bleed-inline));
       max-width: 100vw;
       padding-inline: max(0px, env(safe-area-inset-left, 0px)) max(0px, env(safe-area-inset-right, 0px));
       box-sizing: border-box;
-      align-items: stretch;
+    }
+    #tab-dashboard .mk-kpi-grid {
+      margin-inline: calc(-1 * var(--dash-bleed-inline));
+      width: calc(100% + 2 * var(--dash-bleed-inline));
+      max-width: 100vw;
+      padding-inline: max(0px, env(safe-area-inset-left, 0px)) max(0px, env(safe-area-inset-right, 0px));
+      box-sizing: border-box;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px;
+    }
+    #tab-dashboard #personalIndicators:has(> .indicator-card--score + .indicator-card--score) {
+      --dash-bleed-inline: 24px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px;
+      margin-bottom: 0;
+      padding-bottom: 0;
+      margin-inline: calc(-1 * var(--dash-bleed-inline));
+      width: calc(100% + 2 * var(--dash-bleed-inline));
+      max-width: 100vw;
+      padding-inline: max(0px, env(safe-area-inset-left, 0px)) max(0px, env(safe-area-inset-right, 0px));
+      box-sizing: border-box;
+      align-items: flex-start;
     }
     #tab-dashboard #personalIndicators .indicator-card--score {
-      padding: 8px 6px;
+      --dash-card-pad-inline: 6px;
+      --dash-card-pad-block: 4px;
+      --dash-card-header-min-h: 4.75rem;
+      padding: var(--dash-card-pad-block) var(--dash-card-pad-inline);
       border-radius: 12px;
       min-width: 0;
       display: flex;
       flex-direction: column;
-      height: 100%;
+      height: auto;
       box-sizing: border-box;
+      overflow: hidden;
     }
     #tab-dashboard #personalIndicators .indicator-card--score > div:first-child {
+      flex: 0 0 auto;
+      min-height: var(--dash-card-header-min-h);
       gap: 6px !important;
       align-items: flex-start !important;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .indicator-info {
+      flex: 1 1 auto;
+      min-width: 0;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
     }
     #tab-dashboard #personalIndicators .indicator-card--commitment > div:first-child,
     #tab-dashboard #personalIndicators .indicator-card--response > div:first-child {
@@ -14355,6 +14607,20 @@
     #tab-dashboard #personalIndicators .indicator-card--score .indicator-ring {
       width: 48px;
       height: 48px;
+      flex: 0 0 48px;
+      min-width: 48px;
+      min-height: 48px;
+      overflow: visible;
+      contain: layout style;
+      transform-origin: 50% 50%;
+      will-change: transform, filter;
+      isolation: isolate;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .indicator-ring svg {
+      display: block;
+      transform: none !important;
+      filter: none !important;
+      animation: none !important;
     }
     #tab-dashboard #personalIndicators .indicator-card--score .indicator-ring.lvl-excellent {
       animation: dash-ring-pulse-excellent 8s ease-in-out infinite;
@@ -14375,6 +14641,15 @@
       inset: -5px;
       border-width: 1px;
       animation: dash-donut-ripple 5s ease-out infinite;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .interactive-donut:hover {
+      transform: none !important;
+      filter: brightness(1.08) drop-shadow(0 0 10px var(--ring-color)) !important;
+      z-index: 1;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .interactive-donut:active {
+      transform: none !important;
+      filter: brightness(1.04) drop-shadow(0 0 6px var(--ring-color)) !important;
     }
     @keyframes dash-ring-pulse-excellent {
       0%, 100% {
@@ -14453,12 +14728,13 @@
     }
     #tab-dashboard #personalIndicators .indicator-card--score .indicator-desc {
       font-size: 8px;
-      line-height: 1.3;
-      margin-bottom: 4px;
-      display: -webkit-box;
-      -webkit-line-clamp: 1;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
+      line-height: 1.4;
+      margin-bottom: 2px;
+      display: block;
+      overflow: visible;
+      white-space: normal;
+      word-break: break-word;
+      -webkit-line-clamp: unset;
     }
     #tab-dashboard #personalIndicators .indicator-card--score .indicator-stat {
       font-size: 8px;
@@ -14486,20 +14762,34 @@
     #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-actions {
       display: flex;
       flex-wrap: wrap;
-      gap: 5px;
-      margin-top: 5px;
+      gap: 3px;
+      margin-top: 2px;
+      margin-bottom: 0;
+      padding: 2px 0 0;
       width: 100%;
+      flex-shrink: 0;
+      border-top: 1px solid var(--border);
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-toggle.open {
+      border-color: transparent;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-toggle:focus {
+      outline: none;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-toggle:focus-visible {
+      outline: 2px solid var(--blue);
+      outline-offset: 1px;
     }
     #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-toggle,
     #tab-dashboard #personalIndicators .indicator-card--score .score-help-open-btn {
       font-size: 8px;
-      padding: 3px 6px;
+      padding: 2px 5px;
       margin-top: 0;
       flex: 1 1 auto;
       min-width: 0;
       justify-content: center;
       box-sizing: border-box;
-      border-radius: 6px;
+      border-radius: 5px;
     }
     #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-toggle i,
     #tab-dashboard #personalIndicators .indicator-card--score .score-help-open-btn i {
@@ -14535,9 +14825,6 @@
       gap: 0;
       min-height: 0;
     }
-    #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-panel.open .score-breakdown-records {
-      min-height: calc(3 * var(--score-viol-list-row-h, 48px) + 2 * var(--score-viol-list-gap, 3px) + 28px + 4px);
-    }
     #tab-dashboard #personalIndicators .indicator-card--score .score-toggle-label--full {
       display: none;
     }
@@ -14545,18 +14832,26 @@
       display: inline;
     }
     #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-panel {
-      margin-top: 5px;
-      padding: 6px 5px;
-      border-radius: 8px;
+      flex-shrink: 0;
+      margin-top: 0;
+      margin-inline: calc(-1 * var(--dash-card-pad-inline));
+      margin-bottom: calc(-1 * var(--dash-card-pad-block));
+      width: calc(100% + 2 * var(--dash-card-pad-inline));
+      max-width: none;
+      padding: 2px 4px 4px;
+      border-radius: 0;
+      border-inline-width: 0;
+      border-bottom-width: 0;
+      box-sizing: border-box;
     }
     #tab-dashboard #personalIndicators .indicator-card--score .score-equation {
       display: flex;
       flex-wrap: nowrap;
       align-items: flex-end;
       justify-content: space-between;
-      gap: 3px 2px;
-      padding: 6px 4px;
-      margin-bottom: 5px;
+      gap: 2px 1px;
+      padding: 4px 3px;
+      margin-bottom: 3px;
       font-size: 9px;
       border-radius: 6px;
       overflow-x: auto;
@@ -14624,19 +14919,18 @@
       margin-bottom: 5px;
       padding-inline-end: 1px;
     }
-    /* عند الفتح: 3 مخالفات + مساحة بونص الالتزام في بطاقة الاستجابة للموازنة */
+    /* عند الفتح: ارتفاع موحّد للسجلين (مخالفات + بونص الالتزام) */
     #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-panel.open .score-viol-list {
-      --score-viol-list-rows: 3;
-      --score-viol-list-row-h: 48px;
+      --score-viol-list-rows: 4;
+      --score-viol-list-row-h: 42px;
+      --dash-records-block-h: calc(4 * var(--score-viol-list-row-h) + 3 * var(--score-viol-list-gap) + 28px);
+      margin-bottom: 0;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--response .score-breakdown-panel.open .score-viol-list {
+      max-height: var(--dash-records-block-h);
     }
     #tab-dashboard #personalIndicators .indicator-card--response .score-breakdown-spacer {
-      display: none;
-      flex-shrink: 0;
-    }
-    #tab-dashboard #personalIndicators .indicator-card--response .score-breakdown-panel.open .score-breakdown-spacer {
-      display: block;
-      height: 28px;
-      margin-bottom: 4px;
+      display: none !important;
     }
     #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-panel.open .score-viol-meta span:nth-child(3) {
       display: inline-flex;
@@ -14678,6 +14972,9 @@
       flex-wrap: wrap;
       row-gap: 2px;
     }
+    #tab-dashboard #personalIndicators .indicator-card--response .score-viol-row.score-viol-row--on-time {
+      border-right-width: 1px;
+    }
     #tab-dashboard #personalIndicators .indicator-card--score .score-viol-tag {
       font-size: 7px;
       padding: 0 3px;
@@ -14690,11 +14987,11 @@
       white-space: nowrap;
     }
     #tab-dashboard #personalIndicators .indicator-card--score .score-bonus-row {
-      padding: 4px 6px;
+      padding: 3px 6px;
       font-size: 8px;
       border-radius: 5px;
       margin-bottom: 4px;
-      min-height: 28px;
+      min-height: 26px;
       box-sizing: border-box;
     }
     #tab-dashboard #personalIndicators .indicator-card--score .score-bonus-val {
@@ -14725,7 +15022,10 @@
       gap: 5px;
     }
     #tab-dashboard #personalIndicators .indicator-card--score {
-      padding: 7px 5px;
+      --dash-card-pad-inline: 5px;
+      --dash-card-pad-block: 7px;
+      --dash-card-header-min-h: 5.25rem;
+      padding: var(--dash-card-pad-block) var(--dash-card-pad-inline);
     }
     #tab-dashboard #personalIndicators .indicator-card--score .indicator-ring {
       width: 44px;
@@ -14745,12 +15045,13 @@
       padding: 1px 3px;
     }
     #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-panel {
-      padding: 5px 4px;
+      padding: 2px 3px 3px;
     }
     #tab-dashboard #personalIndicators .indicator-card--score .score-equation {
-      padding: 5px 3px;
+      padding: 3px 2px;
       font-size: 8px;
       gap: 2px 1px;
+      margin-bottom: 2px;
     }
     #tab-dashboard #personalIndicators .indicator-card--score .score-equation .eq-num {
       font-size: 11px;
@@ -14766,9 +15067,6 @@
     #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-panel .score-viol-list {
       --score-viol-list-row-h: 36px;
     }
-    #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-panel.open .score-breakdown-records {
-      min-height: calc(3 * 36px + 2 * 3px + 28px + 4px);
-    }
     #tab-dashboard #personalIndicators .indicator-card--score .score-viol-row {
       padding: 2px 4px;
       font-size: 7px;
@@ -14779,6 +15077,21 @@
     #tab-dashboard #personalIndicators .indicator-card--score .score-decay-info {
       font-size: 6px;
       padding: 3px 4px;
+    }
+    #tab-dashboard .mk-funnel__head,
+    #tab-dashboard .mk-attn__head {
+      flex-wrap: wrap;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 6px 8px;
+    }
+    #tab-dashboard .mk-funnel__head .mk-link,
+    #tab-dashboard .mk-attn__head .mk-link {
+      display: inline-flex !important;
+      flex-shrink: 0;
+      font-size: 10px;
+      padding: 4px 8px;
+      white-space: nowrap;
     }
     }
     @media (min-width: 993px) {
@@ -14933,7 +15246,7 @@
     @media (max-width:1024px){ .mk-kpi-grid{ grid-template-columns:repeat(2,1fr); } }
     .mk-kpi { background:var(--mr-surface); border:1px solid var(--mr-border); border-radius:18px; padding:18px; display:flex; flex-direction:column; gap:12px; min-height:168px; transition:border-color .18s, box-shadow .18s; }
     @media (max-width:992px) {
-      .mk-kpi-grid { grid-template-columns:repeat(2, minmax(0, 1fr)); gap:8px; }
+      .mk-kpi-grid { grid-template-columns:repeat(2, minmax(0, 1fr)); gap:6px; }
       .mk-kpi {
         padding:12px 10px;
         gap:8px;
@@ -15004,8 +15317,13 @@
     .mk-kpi__trend.is-down { color:var(--mk-danger); }
     .mk-kpi__period { color:var(--mk-text-3); }
 
-    .mk-dash__main { display:grid; grid-template-columns:minmax(0,1.05fr) minmax(0,1fr); gap:16px; }
-    @media (max-width:1100px){ .mk-dash__main{ grid-template-columns:1fr; } }
+    .mk-dash__split { display:grid; grid-template-columns:minmax(0,1.05fr) minmax(0,1fr); gap:16px; }
+    @media (min-width: 993px) {
+      #tab-dashboard .mk-dash__split > #branchStaffPanel {
+        grid-column: 1 / -1;
+      }
+    }
+    @media (max-width:1100px){ .mk-dash__split{ grid-template-columns:1fr; } }
     .mk-funnel, .mk-attn { background:var(--mr-surface); border:1px solid var(--mr-border); border-radius:20px; padding:22px; display:flex; flex-direction:column; gap:16px; }
     .mk-funnel__head, .mk-attn__head { display:flex; align-items:flex-end; justify-content:space-between; gap:12px; }
     .mk-funnel__title, .mk-attn__title { margin:0; font-size:17px; font-weight:600; color:var(--mr-text); letter-spacing:-0.01em; }
@@ -16784,15 +17102,9 @@
       }
 
       .mr-topbar-user {
-        flex-shrink: 1;
+        flex-shrink: 0;
         min-width: 0;
-        max-width: 100%
-      }
-
-      .mr-topbar-name {
-        max-width: 120px;
-        overflow: hidden;
-        text-overflow: ellipsis
+        max-width: none
       }
     }
 
@@ -19823,7 +20135,7 @@
       }
     }
   </style>
-  <meta name="app-build" content="dash-hide-help-btn-desktop-v150">
+  <meta name="app-build" content="dash-indicators-kpi-gap-tight-v188">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
 </head>
 
@@ -20155,7 +20467,8 @@
                 </article>
               </div>
 
-              <div class="mk-dash__main">
+              <div class="mk-dash__split" id="dashStaffFunnelSplit">
+                <div class="indicators-row indicators-row--branch-staff" id="branchStaffPanel" style="display:none"></div>
                 <section class="mk-funnel">
                   <header class="mk-funnel__head">
                     <div>
@@ -25753,10 +26066,19 @@
        */
       function renderPersonalIndicators() {
         const container = document.getElementById('personalIndicators');
+        const branchPanel = document.getElementById('branchStaffPanel');
         if (!container || !state.currentUser) return;
 
         const me = state.currentUser;
         const role = me.role;
+
+        const dashSplit = document.getElementById('dashStaffFunnelSplit');
+        if (dashSplit) dashSplit.classList.remove('mk-dash__split--duo');
+
+        if (branchPanel) {
+          branchPanel.innerHTML = '';
+          branchPanel.style.display = 'none';
+        }
 
         // المؤشرات: موظف ومدير فرع (نفس المؤشرات الشخصية + إضافات مدير الفرع)، مشرف
         if (role !== 'employee' && role !== 'branch_manager' && role !== 'supervisor') {
@@ -25765,6 +26087,7 @@
         }
 
         const cards = [];
+        let branchStaffHtml = '';
 
         // ─── الموظف ومدير الفرع: مؤشر الالتزام + الاستجابة (شخصي) ───
         if (role === 'employee' || role === 'branch_manager') {
@@ -26014,7 +26337,6 @@
               </div>
               <div class="score-breakdown-records">
                 ${respRecordsBlock}
-                <div class="score-breakdown-spacer" aria-hidden="true"></div>
               </div>
               <div class="score-decay-info score-decay-info--in-panel">
                 ${buildResponseScoreHelpHtml()}
@@ -26044,18 +26366,18 @@
         `);
         }
 
-        // ─── مدير الفرع (إضافة في لوحة القيادة): قائمة موظفي الفرع فقط — مؤشر امتثال الفرع في تبويب «مؤشرات الامتثال»
+        // ─── مدير الفرع: قائمة موظفي الفرع تحت بطاقتي الالتزام والاستجابة
         if (role === 'branch_manager') {
           const violations = state.violations || [];
           const bid = me.branch_id;
           if (!bid) {
-            cards.push(`
-          <div class="indicator-card" style="flex-direction:column;align-items:stretch">
+            branchStaffHtml = `
+          <div class="indicator-card indicator-card--branch-staff" style="flex-direction:column;align-items:stretch">
             <div class="indicator-title" style="display:flex;align-items:center;gap:8px;color:var(--amber)">
               <i class="fas fa-circle-exclamation"></i> فرع الإدارة غير مضبوط
             </div>
             <p class="indicator-desc" style="margin:0">لا يوجد <strong>branch_id</strong> على حسابك — اطلب من المدير ربطك بفرع. يمكنك بعدها عرض موظفي الفرع هنا ومؤشر امتثال الفرع من قائمة <strong>مؤشرات الامتثال</strong>.</p>
-          </div>`);
+          </div>`;
           } else {
           const empRows = getBranchStaff(bid)
             .map(e => {
@@ -26079,14 +26401,14 @@
             ).join('');
           }
 
-          cards.push(`
-          <div class="indicator-card" style="flex-direction:column;align-items:stretch">
+          branchStaffHtml = `
+          <div class="indicator-card indicator-card--branch-staff" style="flex-direction:column;align-items:stretch">
             <div class="indicator-title" style="margin-bottom:10px;display:flex;align-items:center;gap:8px">
               <i class="fas fa-id-badge" style="color:var(--amber)"></i> موظفو الفرع — الالتزام
             </div>
             <div class="score-viol-list">${empListHtml}</div>
           </div>
-        `);
+        `;
           }
         }
 
@@ -26149,7 +26471,6 @@
               </div>
               <div class="score-breakdown-records">
                 ${respRecordsBlock}
-                <div class="score-breakdown-spacer" aria-hidden="true"></div>
               </div>
               <div class="score-decay-info score-decay-info--in-panel">
                 ${buildResponseSupervisorScoreHelpHtml()}
@@ -26182,6 +26503,15 @@
 
         container.innerHTML = cards.join('');
         container.style.display = cards.length ? 'grid' : 'none';
+
+        if (branchPanel) {
+          branchPanel.innerHTML = branchStaffHtml;
+          branchPanel.style.display = branchStaffHtml ? 'grid' : 'none';
+        }
+        if (dashSplit) {
+          if (branchStaffHtml) dashSplit.classList.add('mk-dash__split--duo');
+          else dashSplit.classList.remove('mk-dash__split--duo');
+        }
       }
 
       /**
