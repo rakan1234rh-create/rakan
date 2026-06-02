@@ -14332,8 +14332,7 @@
         display: grid;
         grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
         grid-template-areas:
-          "dashStaff dashFunnel"
-          "dashAttn dashAttn";
+          "dashStaff dashFunnel";
         column-gap: 6px;
         row-gap: 10px;
         align-items: stretch;
@@ -15037,6 +15036,36 @@
     #tab-dashboard #personalIndicators .indicator-card--score .indicator-title {
       font-size: 9px;
     }
+    #tab-dashboard #personalIndicators .indicator-card--commitment .indicator-title {
+      font-size: 11px;
+      gap: 4px;
+      line-height: 1.35;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--commitment .indicator-title i {
+      font-size: 10px;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--response .indicator-title {
+      font-size: 11px;
+      gap: 4px;
+      line-height: 1.35;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--response .indicator-title i {
+      font-size: 10px;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--commitment .indicator-desc {
+      font-size: 9px;
+      line-height: 1.45;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--commitment .indicator-desc i {
+      font-size: 9px;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--response .indicator-desc {
+      font-size: 9px;
+      line-height: 1.45;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--response .indicator-desc i {
+      font-size: 9px;
+    }
     #tab-dashboard #personalIndicators .indicator-card--score .indicator-desc {
       font-size: 7px;
     }
@@ -15092,6 +15121,9 @@
       font-size: 10px;
       padding: 4px 8px;
       white-space: nowrap;
+    }
+    #tab-dashboard .mk-attn {
+      display: none !important;
     }
     }
     @media (min-width: 993px) {
@@ -20135,7 +20167,7 @@
       }
     }
   </style>
-  <meta name="app-build" content="dash-indicators-kpi-gap-tight-v188">
+  <meta name="app-build" content="response-desc-size-v193">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
 </head>
 
