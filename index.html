@@ -3517,6 +3517,18 @@
       border: 1px solid var(--b-amber-bd);
     }
 
+    .b-orange {
+      background: #fff7ed;
+      color: #c2410c;
+      border: 1px solid #fdba74;
+    }
+
+    [data-theme="dark"] .b-orange {
+      background: rgba(234, 88, 12, 0.2);
+      color: #fdba74;
+      border-color: rgba(251, 146, 60, 0.45);
+    }
+
     .b-red {
       background: var(--b-red-bg);
       color: var(--red-text);
@@ -8051,6 +8063,227 @@
       background: var(--surface)
     }
 
+    /* شرح حساب الدرجة — ورقة مركزية */
+    #scoreHelpOverlay.score-help-overlay {
+      background: rgba(15, 18, 36, 0.45);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px)
+    }
+
+    #scoreHelpPanel.score-help-panel {
+      left: 50% !important;
+      top: 50% !important;
+      bottom: auto !important;
+      width: min(420px, calc(100vw - 28px)) !important;
+      max-width: calc(100vw - 28px) !important;
+      height: auto;
+      max-height: min(82vh, calc(100dvh - 40px));
+      padding: 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid color-mix(in srgb, var(--mr-border) 70%, transparent);
+      border-radius: 22px;
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.06) inset,
+        0 24px 56px rgba(15, 18, 36, 0.28),
+        0 8px 20px rgba(15, 18, 36, 0.12);
+      transform: translate(-50%, -50%) scale(0.92);
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition:
+        transform 0.32s cubic-bezier(0.34, 1.2, 0.64, 1),
+        opacity 0.24s ease,
+        visibility 0.24s,
+        left 0s
+    }
+
+    #scoreHelpPanel.score-help-panel.open {
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto
+    }
+
+    .score-help-sheet {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      max-height: inherit
+    }
+
+    .score-help-sheet__hero {
+      position: relative;
+      padding: 20px 18px 16px;
+      background: linear-gradient(145deg,
+        color-mix(in srgb, var(--mr-amber) 18%, var(--mr-surface)) 0%,
+        color-mix(in srgb, var(--mr-blue) 10%, var(--mr-surface)) 100%);
+      border-bottom: 1px solid color-mix(in srgb, var(--mr-border) 55%, transparent)
+    }
+
+    .score-help-sheet__hero-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px
+    }
+
+    .score-help-sheet__headings {
+      flex: 1;
+      min-width: 0
+    }
+
+    .score-help-sheet__icon {
+      width: 44px;
+      height: 44px;
+      flex-shrink: 0;
+      border-radius: 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      color: var(--mr-amber);
+      background: color-mix(in srgb, var(--mr-amber) 22%, var(--mr-surface));
+      border: 1px solid color-mix(in srgb, var(--mr-amber) 35%, transparent);
+      box-shadow: 0 4px 14px color-mix(in srgb, var(--mr-amber) 25%, transparent)
+    }
+
+    .score-help-sheet__icon--response {
+      color: var(--mr-purple);
+      background: color-mix(in srgb, var(--mr-purple) 18%, var(--mr-surface));
+      border-color: color-mix(in srgb, var(--mr-purple) 32%, transparent);
+      box-shadow: 0 4px 14px color-mix(in srgb, var(--mr-purple) 22%, transparent)
+    }
+
+    .score-help-sheet__title {
+      margin: 0;
+      font-size: 17px;
+      font-weight: 700;
+      line-height: 1.35;
+      color: var(--mr-text);
+      letter-spacing: -0.02em
+    }
+
+    .score-help-sheet__sub {
+      margin: 6px 0 0;
+      font-size: 12px;
+      line-height: 1.5;
+      color: var(--mr-text-2)
+    }
+
+    .score-help-sheet__body {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      padding: 14px 14px 10px;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin;
+      scrollbar-color: var(--mr-border-2) transparent
+    }
+
+    .score-help-sheet__foot {
+      flex-shrink: 0;
+      padding: 12px 14px 16px;
+      border-top: 1px solid var(--mr-border);
+      background: var(--mr-surface)
+    }
+
+    .score-help-sheet__ok {
+      width: 100%;
+      height: 42px;
+      border: none;
+      border-radius: 14px;
+      font-family: var(--font);
+      font-size: 14px;
+      font-weight: 600;
+      color: #fff;
+      cursor: pointer;
+      background: linear-gradient(135deg, var(--mr-primary) 0%, color-mix(in srgb, var(--mr-primary) 75%, var(--mr-blue)) 100%);
+      box-shadow: 0 6px 18px color-mix(in srgb, var(--mr-primary) 32%, transparent);
+      transition: transform 0.18s, box-shadow 0.18s
+    }
+
+    .score-help-sheet__ok:active {
+      transform: scale(0.98)
+    }
+
+    .score-help-body-inner {
+      display: flex;
+      flex-direction: column;
+      gap: 8px
+    }
+
+    .score-help-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 11px;
+      border-radius: 12px;
+      background: var(--mr-surface);
+      border: 1px solid var(--mr-border);
+      transition: border-color 0.18s, box-shadow 0.18s
+    }
+
+    .score-help-item:hover {
+      border-color: var(--mr-border-2);
+      box-shadow: 0 2px 8px rgba(15, 18, 36, 0.06)
+    }
+
+    .score-help-item__ico {
+      flex-shrink: 0;
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      color: var(--help-ico-fg, var(--mr-blue));
+      background: var(--help-ico-bg, var(--blue-light));
+      border: 1px solid color-mix(in srgb, var(--help-ico-fg, var(--mr-blue)) 22%, transparent)
+    }
+
+    .score-help-item__text {
+      flex: 1;
+      min-width: 0;
+      font-size: 12px;
+      line-height: 1.55;
+      color: var(--mr-text-2)
+    }
+
+    .score-help-item__text strong {
+      display: block;
+      margin-bottom: 3px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--mr-text)
+    }
+
+    .score-help-body-inner--plain ul {
+      margin: 0;
+      padding: 0 1.1em 0 0;
+      list-style: disc
+    }
+
+    .score-help-body-inner--plain li {
+      margin-bottom: 8px;
+      font-size: 11px;
+      line-height: 1.5;
+      color: var(--mr-text-2)
+    }
+
+    [data-theme="dark"] #scoreHelpPanel.score-help-panel {
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.08) inset,
+        0 24px 56px rgba(0, 0, 0, 0.55)
+    }
+
+    [data-theme="dark"] .score-help-sheet__hero {
+      background: linear-gradient(145deg,
+        color-mix(in srgb, var(--mr-amber) 14%, var(--mr-surface)) 0%,
+        color-mix(in srgb, var(--mr-blue) 12%, #1a1d2e) 100%)
+    }
+
     @media (max-width: 992px) {
       :root {
         --fp-peek: clamp(44px, 12vw, 80px);
@@ -8122,6 +8355,45 @@
       .filter-panel-footer {
         padding: clamp(10px, 2.8vw, 14px) clamp(12px, 3.5vw, 16px);
         gap: clamp(8px, 2.2vw, 12px)
+      }
+
+      #scoreHelpPanel.score-help-panel {
+        width: min(380px, calc(100vw - 20px)) !important;
+        max-width: calc(100vw - 20px) !important;
+        max-height: min(78vh, calc(100dvh - var(--unified-topbar-h, 76px) - var(--mr-mob-bottom-nav-h, 56px) - 24px));
+        border-radius: 18px
+      }
+
+      .score-help-sheet__hero {
+        padding: 16px 14px 12px
+      }
+
+      .score-help-sheet__title {
+        font-size: 15px
+      }
+
+      .score-help-sheet__sub {
+        font-size: 11px
+      }
+
+      .score-help-sheet__body {
+        padding: 10px 10px 8px
+      }
+
+      .score-help-item {
+        padding: 8px 9px;
+        gap: 8px
+      }
+
+      .score-help-item__ico {
+        width: 28px;
+        height: 28px;
+        font-size: 11px
+      }
+
+      .score-help-item__text,
+      .score-help-item__text strong {
+        font-size: 11px
       }
 
       .fp-section {
@@ -12846,8 +13118,26 @@
 
     .score-viol-row.score-viol-row--admin-warn {
       background: color-mix(in srgb, #ea580c 12%, var(--surface));
-      border-color: #fdba74;
-      border-right: 3px solid #ea580c
+      border: 1px solid #fdba74;
+    }
+
+    .score-viol-tag {
+      font-size: 10px;
+      font-weight: 600;
+      color: #c2410c;
+      flex-shrink: 0;
+      white-space: nowrap
+    }
+
+    .score-viol-tag--warn {
+      padding: 1px 5px;
+      border-radius: 4px;
+      background: color-mix(in srgb, #ea580c 14%, var(--surface))
+    }
+
+    .score-viol-weight--zero {
+      color: #c2410c;
+      font-weight: 700
     }
 
     .score-viol-row.score-viol-row--on-time {
@@ -14031,24 +14321,120 @@
     #tab-dashboard .mk-dash { display:flex; flex-direction:column; gap:22px; }
     #tab-dashboard .mk-dash > .indicators-row { margin-bottom: 0; }
 
-    /* بطاقتا الالتزام والاستجابة — جنباً إلى جنب ومضغوطتان */
+    /* بطاقتا الالتزام والاستجابة — تنسيق الجوال فقط (≤992px) */
+    @media (max-width: 992px) {
     #tab-dashboard #personalIndicators:has(> .indicator-card--score + .indicator-card--score) {
+      --dash-bleed-inline: 24px;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 6px;
       margin-bottom: 10px;
+      margin-inline: calc(-1 * var(--dash-bleed-inline));
+      width: calc(100% + 2 * var(--dash-bleed-inline));
+      max-width: 100vw;
+      padding-inline: max(0px, env(safe-area-inset-left, 0px)) max(0px, env(safe-area-inset-right, 0px));
+      box-sizing: border-box;
+      align-items: stretch;
     }
     #tab-dashboard #personalIndicators .indicator-card--score {
       padding: 8px 6px;
       border-radius: 12px;
       min-width: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      box-sizing: border-box;
     }
     #tab-dashboard #personalIndicators .indicator-card--score > div:first-child {
       gap: 6px !important;
       align-items: flex-start !important;
     }
+    #tab-dashboard #personalIndicators .indicator-card--commitment > div:first-child,
+    #tab-dashboard #personalIndicators .indicator-card--response > div:first-child {
+      flex-direction: row-reverse;
+    }
     #tab-dashboard #personalIndicators .indicator-card--score .indicator-ring {
       width: 48px;
       height: 48px;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .indicator-ring.lvl-excellent {
+      animation: dash-ring-pulse-excellent 8s ease-in-out infinite;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .indicator-ring.lvl-good {
+      animation: dash-ring-pulse-good 7s ease-in-out infinite;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .indicator-ring.lvl-warn {
+      animation: dash-ring-pulse-warn 6s ease-in-out infinite;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .indicator-ring.lvl-danger {
+      animation: dash-ring-pulse-danger 5s ease-in-out infinite;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .indicator-ring.is-negative {
+      animation: dash-ring-pulse-negative 4s ease-in-out infinite;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .indicator-ring .donut-ripple {
+      inset: -5px;
+      border-width: 1px;
+      animation: dash-donut-ripple 5s ease-out infinite;
+    }
+    @keyframes dash-ring-pulse-excellent {
+      0%, 100% {
+        transform: scale(1);
+        filter: drop-shadow(0 0 2px rgba(72, 161, 17, 0.12));
+      }
+      50% {
+        transform: scale(1.006);
+        filter: drop-shadow(0 0 5px rgba(72, 161, 17, 0.22));
+      }
+    }
+    @keyframes dash-ring-pulse-good {
+      0%, 100% {
+        transform: scale(1);
+        filter: drop-shadow(0 0 2px rgba(0, 122, 255, 0.12));
+      }
+      50% {
+        transform: scale(1.006);
+        filter: drop-shadow(0 0 5px rgba(0, 122, 255, 0.22));
+      }
+    }
+    @keyframes dash-ring-pulse-warn {
+      0%, 100% {
+        transform: scale(1);
+        filter: drop-shadow(0 0 2px rgba(255, 204, 0, 0.15));
+      }
+      50% {
+        transform: scale(1.008);
+        filter: drop-shadow(0 0 6px rgba(255, 204, 0, 0.28));
+      }
+    }
+    @keyframes dash-ring-pulse-danger {
+      0%, 100% {
+        transform: scale(1);
+        filter: drop-shadow(0 0 3px rgba(255, 0, 0, 0.18));
+      }
+      50% {
+        transform: scale(1.01);
+        filter: drop-shadow(0 0 8px rgba(255, 0, 0, 0.32));
+      }
+    }
+    @keyframes dash-ring-pulse-negative {
+      0%, 100% {
+        transform: scale(1);
+        filter: drop-shadow(0 0 3px rgba(255, 0, 0, 0.2));
+      }
+      50% {
+        transform: scale(1.012);
+        filter: drop-shadow(0 0 10px rgba(255, 0, 0, 0.38));
+      }
+    }
+    @keyframes dash-donut-ripple {
+      0% {
+        transform: scale(0.92);
+        opacity: 0.18;
+      }
+      100% {
+        transform: scale(1.12);
+        opacity: 0;
+      }
     }
     #tab-dashboard #personalIndicators .indicator-card--score .indicator-ring-num {
       font-size: 14px;
@@ -14086,17 +14472,77 @@
     #tab-dashboard #personalIndicators .indicator-card--score .indicator-stat .badge i {
       font-size: 6px;
     }
-    #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-toggle {
-      font-size: 8px;
-      padding: 3px 6px;
+    #tab-dashboard #personalIndicators .indicator-card--score .indicator-stat .badge.b-orange {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      border-radius: 6px;
+      border: 1px solid #fdba74;
+      box-sizing: border-box;
+    }
+    [data-theme="dark"] #tab-dashboard #personalIndicators .indicator-card--score .indicator-stat .badge.b-orange {
+      border-color: rgba(251, 146, 60, 0.45);
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
       margin-top: 5px;
       width: 100%;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-toggle,
+    #tab-dashboard #personalIndicators .indicator-card--score .score-help-open-btn {
+      font-size: 8px;
+      padding: 3px 6px;
+      margin-top: 0;
+      flex: 1 1 auto;
+      min-width: 0;
       justify-content: center;
       box-sizing: border-box;
       border-radius: 6px;
     }
-    #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-toggle i {
+    #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-toggle i,
+    #tab-dashboard #personalIndicators .indicator-card--score .score-help-open-btn i {
       font-size: 7px;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .score-help-open-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: var(--surface2);
+      color: var(--text2);
+      border: 1px solid var(--border);
+      font-family: var(--font);
+      font-weight: 600;
+      cursor: pointer;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .score-toggle-label--record {
+      display: none;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .score-decay-info--in-panel {
+      display: none !important;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .score-section-title {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      line-height: 1.25;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-records {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      min-height: 0;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-panel.open .score-breakdown-records {
+      min-height: calc(3 * var(--score-viol-list-row-h, 48px) + 2 * var(--score-viol-list-gap, 3px) + 28px + 4px);
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .score-toggle-label--full {
+      display: none;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .score-toggle-label--record {
+      display: inline;
     }
     #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-panel {
       margin-top: 5px;
@@ -14104,26 +14550,63 @@
       border-radius: 8px;
     }
     #tab-dashboard #personalIndicators .indicator-card--score .score-equation {
-      padding: 5px 4px;
-      gap: 2px;
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 3px 2px;
+      padding: 6px 4px;
       margin-bottom: 5px;
       font-size: 9px;
       border-radius: 6px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
     }
-    #tab-dashboard #personalIndicators .indicator-card--score .eq-num {
+    #tab-dashboard #personalIndicators .indicator-card--score .score-equation::-webkit-scrollbar {
+      display: none;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .score-equation .eq-item {
+      flex: 0 0 auto;
+      min-width: 0;
+      gap: 2px;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .score-equation .eq-num {
       font-size: 13px;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      line-height: 1;
     }
-    #tab-dashboard #personalIndicators .indicator-card--score .eq-op {
-      font-size: 11px;
-      padding: 0;
+    #tab-dashboard #personalIndicators .indicator-card--score .score-equation .eq-op {
+      flex: 0 0 auto;
+      font-size: 12px;
+      line-height: 1;
+      padding: 0 1px;
+      align-self: center;
+      margin-bottom: calc(0.65em + 2px);
+      color: var(--text3);
     }
-    #tab-dashboard #personalIndicators .indicator-card--score .eq-label {
+    #tab-dashboard #personalIndicators .indicator-card--score .score-equation .eq-label {
       font-size: 7px;
       letter-spacing: 0;
+      text-transform: none;
+      text-align: center;
+      line-height: 1.15;
+      white-space: nowrap;
+      max-width: 52px;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-    #tab-dashboard #personalIndicators .indicator-card--score .eq-result {
+    #tab-dashboard #personalIndicators .indicator-card--score .score-equation .eq-result {
+      flex: 0 0 auto;
       padding: 2px 5px;
       border-radius: 4px;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .score-equation .eq-result.eq-result--low {
+      background: var(--red-light);
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .score-equation .eq-result.eq-result--low .eq-num {
+      color: var(--red-text) !important;
     }
     #tab-dashboard #personalIndicators .indicator-card--score .score-section-title {
       font-size: 8px;
@@ -14140,6 +14623,23 @@
       --score-viol-list-gap: 3px;
       margin-bottom: 5px;
       padding-inline-end: 1px;
+    }
+    /* عند الفتح: 3 مخالفات + مساحة بونص الالتزام في بطاقة الاستجابة للموازنة */
+    #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-panel.open .score-viol-list {
+      --score-viol-list-rows: 3;
+      --score-viol-list-row-h: 48px;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--response .score-breakdown-spacer {
+      display: none;
+      flex-shrink: 0;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--response .score-breakdown-panel.open .score-breakdown-spacer {
+      display: block;
+      height: 28px;
+      margin-bottom: 4px;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-panel.open .score-viol-meta span:nth-child(3) {
+      display: inline-flex;
     }
     #tab-dashboard #personalIndicators .indicator-card--score .score-viol-row {
       padding: 3px 5px;
@@ -14174,11 +14674,28 @@
     #tab-dashboard #personalIndicators .indicator-card--score .score-viol-weight .raw-weight {
       font-size: 7px;
     }
+    #tab-dashboard #personalIndicators .indicator-card--score .score-viol-row--admin-warn .score-viol-name {
+      flex-wrap: wrap;
+      row-gap: 2px;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .score-viol-tag {
+      font-size: 7px;
+      padding: 0 3px;
+      border-radius: 3px;
+      line-height: 1.2;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .score-viol-weight--zero {
+      font-size: 9px;
+      line-height: 1;
+      white-space: nowrap;
+    }
     #tab-dashboard #personalIndicators .indicator-card--score .score-bonus-row {
       padding: 4px 6px;
       font-size: 8px;
       border-radius: 5px;
       margin-bottom: 4px;
+      min-height: 28px;
+      box-sizing: border-box;
     }
     #tab-dashboard #personalIndicators .indicator-card--score .score-bonus-val {
       font-size: 11px;
@@ -14204,53 +14721,75 @@
     #tab-dashboard #personalIndicators .indicator-card:not(.indicator-card--score) {
       grid-column: 1 / -1;
     }
-    @media (max-width: 992px) {
-      #tab-dashboard #personalIndicators:has(> .indicator-card--score + .indicator-card--score) {
-        gap: 5px;
+    #tab-dashboard #personalIndicators:has(> .indicator-card--score + .indicator-card--score) {
+      gap: 5px;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score {
+      padding: 7px 5px;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .indicator-ring {
+      width: 44px;
+      height: 44px;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .indicator-ring-num {
+      font-size: 12px;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .indicator-title {
+      font-size: 9px;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .indicator-desc {
+      font-size: 7px;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .indicator-stat .badge {
+      font-size: 6px;
+      padding: 1px 3px;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-panel {
+      padding: 5px 4px;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .score-equation {
+      padding: 5px 3px;
+      font-size: 8px;
+      gap: 2px 1px;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .score-equation .eq-num {
+      font-size: 11px;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .score-equation .eq-op {
+      font-size: 10px;
+      margin-bottom: calc(0.6em + 2px);
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .score-equation .eq-label {
+      font-size: 6px;
+      max-width: 44px;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-panel .score-viol-list {
+      --score-viol-list-row-h: 36px;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-panel.open .score-breakdown-records {
+      min-height: calc(3 * 36px + 2 * 3px + 28px + 4px);
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .score-viol-row {
+      padding: 2px 4px;
+      font-size: 7px;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .score-viol-meta {
+      font-size: 6px;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .score-decay-info {
+      font-size: 6px;
+      padding: 3px 4px;
+    }
+    }
+    @media (min-width: 993px) {
+      #tab-dashboard #personalIndicators .indicator-card--score .score-help-open-btn {
+        display: none !important;
       }
-      #tab-dashboard #personalIndicators .indicator-card--score {
-        padding: 7px 5px;
+      #tab-dashboard #personalIndicators .indicator-card--score .score-toggle-label--record {
+        display: none;
       }
-      #tab-dashboard #personalIndicators .indicator-card--score .indicator-ring {
-        width: 44px;
-        height: 44px;
-      }
-      #tab-dashboard #personalIndicators .indicator-card--score .indicator-ring-num {
-        font-size: 12px;
-      }
-      #tab-dashboard #personalIndicators .indicator-card--score .indicator-title {
-        font-size: 9px;
-      }
-      #tab-dashboard #personalIndicators .indicator-card--score .indicator-desc {
-        font-size: 7px;
-      }
-      #tab-dashboard #personalIndicators .indicator-card--score .indicator-stat .badge {
-        font-size: 6px;
-        padding: 1px 3px;
-      }
-      #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-panel {
-        padding: 5px 4px;
-      }
-      #tab-dashboard #personalIndicators .indicator-card--score .score-equation {
-        padding: 4px 3px;
-        font-size: 8px;
-      }
-      #tab-dashboard #personalIndicators .indicator-card--score .eq-num {
-        font-size: 11px;
-      }
-      #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-panel .score-viol-list {
-        --score-viol-list-row-h: 36px;
-      }
-      #tab-dashboard #personalIndicators .indicator-card--score .score-viol-row {
-        padding: 2px 4px;
-        font-size: 7px;
-      }
-      #tab-dashboard #personalIndicators .indicator-card--score .score-viol-meta {
-        font-size: 6px;
-      }
-      #tab-dashboard #personalIndicators .indicator-card--score .score-decay-info {
-        font-size: 6px;
-        padding: 3px 4px;
+      #tab-dashboard #personalIndicators .indicator-card--score .score-decay-info--in-panel {
+        display: block !important;
       }
     }
     .mk-dash__hero { display:flex; align-items:flex-end; justify-content:space-between; gap:18px; padding:6px 4px 4px; flex-wrap:wrap; }
@@ -15109,6 +15648,18 @@
       background: var(--amber-light);
       color: var(--amber-text);
       border-color: color-mix(in srgb, var(--mr-warning) 25%, transparent);
+    }
+
+    #appWrap .b-orange {
+      background: #fff7ed;
+      color: #c2410c;
+      border-color: #fdba74;
+    }
+
+    [data-theme="dark"] #appWrap .b-orange {
+      background: rgba(234, 88, 12, 0.2);
+      color: #fdba74;
+      border-color: rgba(251, 146, 60, 0.45);
     }
 
     #appWrap .b-red,
@@ -19272,7 +19823,7 @@
       }
     }
   </style>
-  <meta name="app-build" content="dash-ring-no-en-label-v109">
+  <meta name="app-build" content="dash-hide-help-btn-desktop-v150">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
 </head>
 
@@ -20509,6 +21060,26 @@
       <div class="filter-panel-footer"><button class="fp-btn fp-btn-clear" onclick="clearAllCmpFilters()"><i
             class="fas fa-rotate-left"></i><span>إزالة الفلاتر</span></button><button class="fp-btn fp-btn-apply"
           onclick="applyCmpFilterPanelAndClose()"><i class="fas fa-check"></i><span>تطبيق</span></button></div>
+    </div>
+
+    <!-- شرح حساب الدرجة — ورقة في وسط الشاشة -->
+    <div class="filter-panel-overlay score-help-overlay" id="scoreHelpOverlay" onclick="closeScoreHelpSheet()"></div>
+    <div class="filter-panel score-help-panel" id="scoreHelpPanel" role="dialog" aria-modal="true" aria-labelledby="scoreHelpTitle">
+      <div class="score-help-sheet">
+        <div class="score-help-sheet__hero">
+          <div class="score-help-sheet__hero-row">
+            <div class="score-help-sheet__icon" id="scoreHelpIcon" aria-hidden="true"><i class="fas fa-lightbulb"></i></div>
+            <div class="score-help-sheet__headings">
+              <h2 class="score-help-sheet__title" id="scoreHelpTitle">كيف يتم حساب نقاطك بوضوح؟</h2>
+              <p class="score-help-sheet__sub" id="scoreHelpSub">شرح مبسّط لطريقة احتساب درجة الالتزام</p>
+            </div>
+          </div>
+        </div>
+        <div class="score-help-sheet__body" id="scoreHelpBody"></div>
+        <div class="score-help-sheet__foot">
+          <button type="button" class="score-help-sheet__ok" onclick="closeScoreHelpSheet()">فهمت</button>
+        </div>
+      </div>
     </div>
 
     <!-- Compliance Detail Modal -->
@@ -24026,7 +24597,7 @@
         const shell = document.querySelector('#appWrap > .app-shell');
         const nav = document.getElementById('mobileBottomNav');
         if (!shell) return;
-        ['filterOverlay', 'filterPanel', 'cmpFilterOverlay', 'cmpFilterPanel'].forEach((id) => {
+        ['filterOverlay', 'filterPanel', 'cmpFilterOverlay', 'cmpFilterPanel', 'scoreHelpOverlay', 'scoreHelpPanel'].forEach((id) => {
           const el = document.getElementById(id);
           if (!el) return;
           if (nav) {
@@ -24041,7 +24612,8 @@
 
       function syncFilterPanelOpenClass() {
         const open = document.getElementById('filterPanel')?.classList.contains('open')
-          || document.getElementById('cmpFilterPanel')?.classList.contains('open');
+          || document.getElementById('cmpFilterPanel')?.classList.contains('open')
+          || document.getElementById('scoreHelpPanel')?.classList.contains('open');
         document.body.classList.toggle('filter-panel-open', !!open);
       }
 
@@ -24524,6 +25096,10 @@
           closeTicketSheet();
           return;
         }
+        if (document.getElementById('scoreHelpPanel')?.classList.contains('open')) {
+          closeScoreHelpSheet();
+          return;
+        }
         closeSidebar();
       });
 
@@ -24550,6 +25126,7 @@
 
         if (typeof closeFilterPanel === 'function') closeFilterPanel();
         if (typeof closeCmpFilterPanel === 'function') closeCmpFilterPanel();
+        if (typeof closeScoreHelpSheet === 'function') closeScoreHelpSheet();
         closeTopbarUserMenu();
         if (typeof closeFpDropdowns === 'function') closeFpDropdowns();
         if (typeof wfStatusClose === 'function') wfStatusClose();
@@ -24829,11 +25406,130 @@
       }
 
       function toggleScoreBreakdown(btn) {
-        const panel = btn.nextElementSibling;
+        const panel = btn.closest('.indicator-card')?.querySelector('.score-breakdown-panel');
         if (!panel) return;
         btn.classList.toggle('open');
         panel.classList.toggle('open');
       }
+
+      function scoreHelpItem(icon, icoFg, icoBg, title, text) {
+        return `<div class="score-help-item">
+          <span class="score-help-item__ico" style="--help-ico-fg:${icoFg};--help-ico-bg:${icoBg}"><i class="fas ${icon}" aria-hidden="true"></i></span>
+          <div class="score-help-item__text"><strong>${Sec.escapeHTML(title)}</strong><span>${text}</span></div>
+        </div>`;
+      }
+
+      function buildCommitmentScoreHelpHtml(opts) {
+        const forPanel = opts && opts.forPanel;
+        const d = COMPLIANCE_CONFIG.streakDays;
+        const p = COMPLIANCE_CONFIG.streakPoints;
+        const streakDaysPhrase = 'كل <bdi dir="ltr">' + d + '</bdi> أيام';
+        const streakBonusPanel =
+          streakDaysPhrase +
+          ' دون مخالفات يمنحك النظام +' +
+          p +
+          ' نقاطاً حتى يصل المعدل <strong>100</strong>. عند إصدار <strong>تنبيه إداري</strong> لا يُخصم من نقاطك، لكنه يعيد ضبط عداد أيام نقاط الالتزام.';
+        const streakBonusSheet =
+          streakDaysPhrase +
+          ' دون مخالفات يمنحك النظام +' +
+          p +
+          ' نقاطاً حتى المعدل 100. التنبيه الإداري لا يُخصم من نقاطك، لكنه يعيد ضبط عداد أيام نقاط الالتزام.';
+        const instantDeductionLine =
+          'تُخصم النقاط بمجرد رصد المخالفة وتُسترد النقاط عند إلغائها أو إصدار تنبيه إداري.';
+        const pendingReviewLine =
+          'المخالفات قيد المراجعة: عند إلغائها أو إصدار تنبيه إداري تُسترد نقاطها المخصومة.';
+        if (forPanel) {
+          return `<div class="score-help-body-inner score-help-body-inner--plain"><p style="margin:0 0 8px;font-weight:700;color:var(--text);font-size:11px"><i class="fas fa-lightbulb" style="color:var(--amber)"></i> كيف يتم حساب نقاطك بوضوح؟</p><ul>
+            <li><strong>وزن المخالفة:</strong> الخصم يعتمد على حجم المخالفة؛ المخالفة الكبيرة تؤثر أكثر من البسيطة.</li>
+            <li><strong>عدم التكرار:</strong> تكرار <strong>نفس نوع</strong> المخالفة خلال الشهر الجاري يضاعف الخصم.</li>
+            <li><strong>الخصم الفوري:</strong> ${instantDeductionLine}</li>
+            <li><strong>نقاط قيد المراجعة:</strong> ${pendingReviewLine} يظهر الخصم المبدئي باللون البرتقالي في بطاقة الالتزام.</li>
+            <li><strong>مكافأة الانضباط:</strong> ${streakBonusPanel}</li>
+          </ul></div>`;
+        }
+        return `<div class="score-help-body-inner">
+          ${scoreHelpItem('fa-weight-hanging', 'var(--blue-text)', 'var(--blue-light)', 'وزن المخالفة', 'الخصم يعتمد على حجم المخالفة؛ المخالفة الكبيرة تؤثر أكثر من البسيطة.')}
+          ${scoreHelpItem('fa-repeat', 'var(--red-text)', 'var(--red-light)', 'عدم التكرار', 'تكرار نفس نوع المخالفة خلال الشهر الجاري يضاعف الخصم.')}
+          ${scoreHelpItem('fa-bolt', 'var(--purple-text)', 'var(--purple-light)', 'الخصم الفوري', instantDeductionLine)}
+          ${scoreHelpItem('fa-hourglass-half', 'var(--amber-text)', 'var(--amber-light)', 'قيد المراجعة', pendingReviewLine)}
+          ${scoreHelpItem('fa-fire', 'var(--green-text)', 'var(--green-light)', 'مكافأة الانضباط', streakBonusSheet)}
+        </div>`;
+      }
+
+      function buildResponseScoreHelpHtml() {
+        const late = COMPLIANCE_CONFIG.responseLatePenalty ?? 20;
+        const bonus = COMPLIANCE_CONFIG.responseOnTimeBonus ?? 10;
+        return `<div class="score-help-body-inner">
+          ${scoreHelpItem('fa-clock', 'var(--red-text)', 'var(--red-light)', 'خصم التأخير', `خصم ${late} نقاط عن كل مخالفة يتم تمريرها تلقائياً لعدم الرد خلال 24 ساعة.`)}
+          ${scoreHelpItem('fa-reply', 'var(--green-text)', 'var(--green-light)', 'بونص الاستجابة', `كل رد في الوقت (قبل التمرير التلقائي) يمنح +${bonus} نقاط.`)}
+          ${scoreHelpItem('fa-gauge-high', 'var(--purple-text)', 'var(--purple-light)', 'حد الدرجة', 'الدرجة حتى 100 وقد تصبح سالبة إذا تجاوز الخصم رصيد النقاط.')}
+        </div>`;
+      }
+
+      function buildResponseSupervisorScoreHelpHtml() {
+        const late = COMPLIANCE_CONFIG.responseLatePenalty ?? 20;
+        const bonus = COMPLIANCE_CONFIG.responseOnTimeBonus ?? 10;
+        return `<div class="score-help-body-inner">
+          ${scoreHelpItem('fa-clock', 'var(--red-text)', 'var(--red-light)', 'خصم التأخير', `خصم ${late} نقاط عن كل مخالفة تُمرَّر تلقائياً لعدم المعالجة خلال 48 ساعة.`)}
+          ${scoreHelpItem('fa-user-check', 'var(--green-text)', 'var(--green-light)', 'بونص المعالجة', `كل معالجة في الوقت تمنح +${bonus} نقاط.`)}
+          ${scoreHelpItem('fa-gauge-high', 'var(--purple-text)', 'var(--purple-light)', 'حد الدرجة', 'الدرجة حتى 100 وقد تصبح سالبة إذا تجاوز الخصم رصيد النقاط.')}
+        </div>`;
+      }
+
+      function openScoreHelpSheet(kind) {
+        const panel = document.getElementById('scoreHelpPanel');
+        const overlay = document.getElementById('scoreHelpOverlay');
+        const body = document.getElementById('scoreHelpBody');
+        const title = document.getElementById('scoreHelpTitle');
+        const sub = document.getElementById('scoreHelpSub');
+        const iconWrap = document.getElementById('scoreHelpIcon');
+        if (!panel || !overlay || !body) return;
+        const meta = {
+          commitment: {
+            title: 'كيف يتم حساب نقاطك بوضوح؟',
+            sub: 'شرح مبسّط لطريقة احتساب درجة الالتزام',
+            icon: 'fa-lightbulb',
+            iconClass: ''
+          },
+          response: {
+            title: 'شرح مؤشر الاستجابة',
+            sub: 'كيف تُحسب نقاط سرعة ردك على المخالفات',
+            icon: 'fa-bolt',
+            iconClass: 'score-help-sheet__icon--response'
+          },
+          responseSupervisor: {
+            title: 'شرح مؤشر استجابة المشرف',
+            sub: 'كيف تُحسب نقاط معالجة المخالفات في وقتها',
+            icon: 'fa-user-tie',
+            iconClass: 'score-help-sheet__icon--response'
+          }
+        };
+        const m = meta[kind] || meta.commitment;
+        const builders = {
+          commitment: buildCommitmentScoreHelpHtml,
+          response: buildResponseScoreHelpHtml,
+          responseSupervisor: buildResponseSupervisorScoreHelpHtml
+        };
+        body.innerHTML = (builders[kind] || builders.commitment)();
+        if (title) title.textContent = m.title;
+        if (sub) sub.textContent = m.sub;
+        if (iconWrap) {
+          iconWrap.className = 'score-help-sheet__icon' + (m.iconClass ? ' ' + m.iconClass : '');
+          iconWrap.innerHTML = `<i class="fas ${m.icon}" aria-hidden="true"></i>`;
+        }
+        if (typeof portalFilterPanelsForMob === 'function') portalFilterPanelsForMob();
+        overlay.classList.add('open');
+        panel.classList.add('open');
+        if (typeof syncFilterPanelOpenClass === 'function') syncFilterPanelOpenClass();
+      }
+
+      function closeScoreHelpSheet() {
+        document.getElementById('scoreHelpOverlay')?.classList.remove('open');
+        document.getElementById('scoreHelpPanel')?.classList.remove('open');
+        if (typeof syncFilterPanelOpenClass === 'function') syncFilterPanelOpenClass();
+      }
+      window.openScoreHelpSheet = openScoreHelpSheet;
+      window.closeScoreHelpSheet = closeScoreHelpSheet;
 
       /**
        * حساب مؤشر الالتزام للموظف:
@@ -24926,6 +25622,13 @@
               <div class="score-viol-weight" style="color:var(--green-text)">+${bonusPts}</div>
             </div>`;
         }).join('');
+      }
+
+      /** سجل الاستجابة في لوحة القيادة — بدون قائمة فارغة بارتفاع محجوز */
+      function buildDashboardResponseRecordsBlock(isEmpty, emptyHtml, listTitle, listHtml) {
+        if (isEmpty) return emptyHtml;
+        return `<div class="score-section-title"><i class="fas fa-list"></i> ${listTitle}</div>
+          <div class="score-viol-list">${listHtml}</div>`;
       }
 
       function buildCombinedResponseViolList(lateViols, onTimeViols, latePts, bonusPts, opts = {}) {
@@ -25071,7 +25774,6 @@
           const totalApproved = empStat.violationsCount;
           const totalDeducted = empStat.deducted;
           const grossDeducted = empStat.grossDeducted ?? totalDeducted;
-          const rawDeducted = empStat.rawDeducted;
           const streakBonus = empStat.streakBonus;
           const scoreHealed = empStat.scoreHealed;
 
@@ -25113,31 +25815,23 @@
                   <div class="score-viol-name">
                     <span class="sev-dot" style="background:#ea580c"></span>
                     ${Sec.escapeHTML(v.violation_type)}
-                    <span style="font-size:10px;font-weight:700;color:#c2410c;margin-right:6px">(تنبيه إداري)</span>
+                    <span class="score-viol-tag score-viol-tag--warn">تنبيه إداري</span>
                   </div>
                   <div class="score-viol-meta">
                     <span><i class="fas fa-calendar-day"></i> ${displayDate}</span>
                     <span><i class="fas fa-hourglass-half"></i> منذ ${ageDays} يوم</span>
                     <span><i class="fas fa-ticket"></i> ${Sec.escapeHTML(shortTicketNum(v.ticket_number))}</span>
-                    <span style="color:#c2410c;font-weight:600"><i class="fas fa-coins"></i> مخالفة بدون أثر مالي</span>
                   </div>
                 </div>
-                <div class="score-viol-weight" style="color:#c2410c;font-weight:800;font-size:11px;text-align:center;line-height:1.35">
-                  تنبيه<br><span style="font-weight:600;opacity:.9">0 نقاط</span>
-                </div>
+                <div class="score-viol-weight score-viol-weight--zero">0</div>
               </div>`;
                 return;
               }
 
-              const decayFactor = getAgeDecayFactor(v, type);
-              const decayPct = Math.round(decayFactor * 100);
-
-              const recentBefore = sortedMyViols.filter((other, j) => {
-                if (j <= i) return false;
-                if (isViolationAdministrativeWarning(other)) return false;
-                const otherAge = violationAgeDays(other);
-                return Math.abs(otherAge - ageDays) <= COMPLIANCE_CONFIG.frequencyWindow;
-              }).length;
+              const sortedAscDeduct = sortedMyViols
+                .filter(x => !violationExcludedFromDeduction(x))
+                .sort((a, b) => violationObservationMs(a) - violationObservationMs(b));
+              const recentBefore = countPriorViolationsInFrequencyWindow(v, sortedAscDeduct);
               const freqIdx = Math.min(recentBefore, COMPLIANCE_CONFIG.frequencyMultipliers.length - 1);
               const freqMult = COMPLIANCE_CONFIG.frequencyMultipliers[freqIdx];
               const effective = Math.round(effectiveViolationWeight(v, recentBefore) * 10) / 10;
@@ -25156,7 +25850,6 @@
                   <div class="score-viol-meta">
                     <span><i class="fas fa-calendar-day"></i> ${displayDate}</span>
                     <span><i class="fas fa-hourglass-half"></i> منذ ${ageDays} يوم</span>
-                    <span><i class="fas fa-weight-hanging"></i> نقاط المخالفة الأساسية: ${baseWeight}</span>
                     <span${freqMult > 1 ? ' style="color:var(--red-text)"' : ''}><i class="fas fa-repeat"></i> تكرار ${recentBefore + 1}: ×${freqMult}</span>
                   </div>
                 </div>
@@ -25170,12 +25863,22 @@
 
           // ─── معادلة الدرجة ───
           const deductedDisplay = scoreHealed ? grossDeducted : Math.round(totalDeducted * 10) / 10;
+          const commitmentRounded = Math.round(commitment);
+          const commitmentResultClass = commitmentRounded < 0 ? ' eq-result--low' : '';
+          const commitmentNumColor = commitmentRounded < 0 ? 'var(--red-text)' : (scoreHealed ? 'var(--green-text)' : 'var(--blue-text)');
 
           const breakdownHTML = `
-          <button class="score-breakdown-toggle" onclick="toggleScoreBreakdown(this)">
-            <i class="fas fa-chevron-down"></i>
-            كيف تُحسب درجتي؟
-          </button>
+          <div class="score-breakdown-actions">
+            <button type="button" class="score-breakdown-toggle" onclick="toggleScoreBreakdown(this)">
+              <i class="fas fa-chevron-down"></i>
+              <span class="score-toggle-label score-toggle-label--full">كيف تُحسب درجتي؟</span>
+              <span class="score-toggle-label score-toggle-label--record">تفاصيل السجل</span>
+            </button>
+            <button type="button" class="score-help-open-btn" onclick="openScoreHelpSheet('commitment')">
+              <i class="fas fa-circle-info"></i>
+              <span>كيف تحسب درجتي؟</span>
+            </button>
+          </div>
           <div class="score-breakdown-panel" id="scoreBreakdownPanel">
             <div class="score-equation">
               <div class="eq-item">
@@ -25193,17 +25896,17 @@
                 <span class="eq-label">بونص</span>
               </div>
               <span class="eq-op">=</span>
-              <div class="eq-item eq-result">
-                <span class="eq-num" style="color:var(--blue-text)">${Math.round(commitment)}</span>
+              <div class="eq-item eq-result${commitmentResultClass}">
+                <span class="eq-num" style="color:${commitmentNumColor}">${commitmentRounded}</span>
                 <span class="eq-label">درجتك</span>
               </div>
             </div>
 
+            <div class="score-breakdown-records">
             ${sortedMyViols.length > 0 ? `
               <div class="score-section-title">
                 <i class="fas fa-list-check"></i>
                 تفاصيل السجل (${sortedMyViols.length})
-                ${rawDeducted !== deductedDisplay ? `<span style="font-weight:400;color:var(--text3);font-size:10px">الخصم الخام: ${rawDeducted} → الفعلي: ${deductedDisplay}</span>` : ''}
               </div>
               <div class="score-viol-list">
                 ${violRows}
@@ -25214,21 +25917,16 @@
               <span><i class="fas fa-fire"></i> نقاط الالتزام (Streak Bonus)</span>
               <span class="score-bonus-val">${scoreHealed ? `معالج +${streakBonus}` : `+${streakBonus}`}</span>
             </div>
+            </div>
 
-            <div class="score-decay-info">
-              <strong><i class="fas fa-lightbulb"></i> كيف يتم حساب نقاطك بوضوح؟</strong><br>
-              • <strong>وزن المخالفة:</strong> الخصم يعتمد على فداحة المخالفة، فالمخالفة الكبيرة تؤثر أكثر من البسيطة.<br>
-              • <strong>التقادم (التلاشي):</strong> تأثير المخالفة يقل تدريجياً مع مرور الوقت، وبعد 3 شهور تُلغى تماماً من السجل.<br>
-              • <strong>عدم التكرار:</strong> في حال ارتكاب المخالفات بشكل متكرر في فترة قصيرة، يتضاعف الخصم.<br>
-              • <strong>الخصم الفوري:</strong> تُحسب النقاط بمجرد رصد المخالفة حتى قبل الاعتماد النهائي، وتُسترد تلقائياً عند الإلغاء أو التنبيه الإداري حسب النظام.<br>
-              • <strong>نقاط قيد المراجعة:</strong> الجزء البرتقالي في بطاقة الامتثال يعكس نقاطاً قد تتغير حسب قرار المدقق/المدير.<br>
-              • <strong>مكافأة الانضباط:</strong> كل <span class="num">${COMPLIANCE_CONFIG.streakDays}</span> يوماً متتالية من دون <strong>رصد جديد</strong> تمنح <span class="num">+${COMPLIANCE_CONFIG.streakPoints}</span> نقاطاً تُعوّض الخصم حتى يصل المعدل <strong>100</strong> — عندها يتوقف البونص وتُعالج كل النسب المخصومة. التنبيه الإداري يعيد ضبط العداد.
+            <div class="score-decay-info score-decay-info--in-panel">
+              ${buildCommitmentScoreHelpHtml({ forPanel: true })}
             </div>
           </div>
         `;
 
           cards.push(`
-          <div class="indicator-card indicator-card--score" style="flex-direction:column;align-items:stretch">
+          <div class="indicator-card indicator-card--score indicator-card--commitment" style="flex-direction:column;align-items:stretch">
             <div style="display:flex;align-items:center;gap:16px">
               ${buildIndicatorRing(commitment, '')}
               <div class="indicator-info">
@@ -25241,18 +25939,17 @@
               ? '<i class="fas fa-heart-pulse" style="color:var(--green)"></i> تعافيت للمعدل 100 — تمت معالجة الخصومات بالبونص'
               : streakBonus > 0
               ? `<i class="fas fa-fire" style="color:var(--amber)"></i> أنت محافظ على الانضباط — بونص مُطبَّق +${streakBonus} نقطة`
-              : 'نقاطك من 100. كل مخالفة تُسجّل تُخصم فوراً حسب وزنها وتقادمها حتى يُبتّ فيها.'
+              : 'نقاطك من 100. كل مخالفة تُخصم فوراً حسب وزنها؛ التعافي عبر بونص الالتزام عند الانضباط.'
             }
                 </div>
                 <div class="indicator-stat">
-                  ${warnCount > 0 ? `<span class="badge b-amber"><i class="fas fa-bell"></i> ${warnCount} تنبيه إداري (بدون أثر مالي)</span>` : ''}
+                  ${warnCount > 0 ? `<span class="badge b-orange"><i class="fas fa-bell"></i> ${warnCount} تنبيه إداري</span>` : ''}
                   ${totalApproved > 0
               ? `<span class="badge b-blue"><i class="fas fa-list"></i> ${totalApproved} مخالفة تؤثر على التقييم</span>`
               : '<span class="badge b-green"><i class="fas fa-shield-halved"></i> لا مخالفات مؤثرة</span>'
             }
-                  ${!scoreHealed && totalDeducted > 0 ? `<span class="badge b-red"><i class="fas fa-minus"></i> ${Math.round(totalDeducted)} خصم فعلي</span>` : ''}
                   ${scoreHealed ? `<span class="badge b-green"><i class="fas fa-heart-pulse"></i> معدل 100 — خصومات مُعالجة</span>` : ''}
-                  ${empStat.pendingCount > 0 && !scoreHealed ? `<span class="badge" style="background:#fff7ed;color:#c2410c;border:1px solid #fdba74"><i class="fas fa-hourglass-half"></i> قيد المراجعة: −${empStat.pendingDeducted}</span>` : ''}
+                  ${empStat.pendingCount > 0 && !scoreHealed ? `<span class="badge b-amber"><i class="fas fa-hourglass-half"></i> قيد المراجعة: −${empStat.pendingDeducted}</span>` : ''}
                   ${streakBonus > 0 && !scoreHealed ? `<span class="badge b-green"><i class="fas fa-plus"></i> ${streakBonus} بونص</span>` : ''}
                 </div>
               </div>
@@ -25280,16 +25977,31 @@
             respLatePts,
             respBonusPts
           );
-          const respViolRows = (autoCount === 0 && respondedCount === 0)
-            ? `<div class="score-no-viols"><i class="fas fa-bolt"></i><div>استجابة فورية لجميع التذاكر 🎉</div></div>`
-            : respList.html;
-          const respListTitle = (autoCount === 0 && respondedCount === 0) ? 'سجل مؤشر الاستجابة' : respList.title;
+          const respEmpty = autoCount === 0 && respondedCount === 0;
+          const respEmptyHtml = `<div class="score-no-viols"><i class="fas fa-bolt"></i><div>استجابة فورية لجميع التذاكر 🎉</div></div>`;
+          const respListTitle = respEmpty ? 'سجل مؤشر الاستجابة' : respList.title;
+          const respRecordsBlock = buildDashboardResponseRecordsBlock(
+            respEmpty,
+            respEmptyHtml,
+            respListTitle,
+            respList.html
+          );
+          const responseRounded = Math.round(response);
+          const responseResultClass = responseRounded < 0 ? ' eq-result--low' : '';
+          const responseNumColor = responseRounded < 0 ? 'var(--red-text)' : 'var(--purple-text)';
 
           const responseBreakdownHTML = `
-            <button class="score-breakdown-toggle" onclick="toggleScoreBreakdown(this)">
-              <i class="fas fa-chevron-down"></i>
-              تفاصيل مؤشر الاستجابة
-            </button>
+            <div class="score-breakdown-actions">
+              <button type="button" class="score-breakdown-toggle" onclick="toggleScoreBreakdown(this)">
+                <i class="fas fa-chevron-down"></i>
+                <span class="score-toggle-label score-toggle-label--full">تفاصيل مؤشر الاستجابة</span>
+                <span class="score-toggle-label score-toggle-label--record">تفاصيل السجل</span>
+              </button>
+              <button type="button" class="score-help-open-btn" onclick="openScoreHelpSheet('response')">
+                <i class="fas fa-circle-info"></i>
+                <span>كيف تحسب درجتي؟</span>
+              </button>
+            </div>
             <div class="score-breakdown-panel">
               <div class="score-equation">
                 <div class="eq-item"><span class="eq-num">100</span><span class="eq-label">الأساس</span></div>
@@ -25298,19 +26010,20 @@
                 <span class="eq-op">+</span>
                 <div class="eq-item"><span class="eq-num" style="color:var(--green-text)">${bonus}</span><span class="eq-label">بونص استجابة</span></div>
                 <span class="eq-op">=</span>
-                <div class="eq-item eq-result"><span class="eq-num" style="color:var(--purple-text)">${response}</span><span class="eq-label">درجتك</span></div>
+                <div class="eq-item eq-result${responseResultClass}"><span class="eq-num" style="color:${responseNumColor}">${responseRounded}</span><span class="eq-label">درجتك</span></div>
               </div>
-              <div class="score-section-title"><i class="fas fa-list"></i> ${respListTitle}</div>
-              <div class="score-viol-list">${respViolRows}</div>
-              <div class="score-decay-info">
-                <strong><i class="fas fa-circle-info"></i> معلومة:</strong><br>
-                يتم خصم 20 نقاط عن كل مخالفة تُمرَّر تلقائياً لعدم الرد خلال المهلة (24 ساعة للموظف). كل رد حقيقي في الوقت (قبل التمرير التلقائي) يمنح +10 نقاط بونص. الدرجة تُحدَّد بـ 100 كحد أقصى، وقد تصبح سالبة إذا تجاوز الخصم الرصيد.
+              <div class="score-breakdown-records">
+                ${respRecordsBlock}
+                <div class="score-breakdown-spacer" aria-hidden="true"></div>
+              </div>
+              <div class="score-decay-info score-decay-info--in-panel">
+                ${buildResponseScoreHelpHtml()}
               </div>
             </div>
           `;
 
           cards.push(`
-          <div class="indicator-card indicator-card--score" style="flex-direction:column;align-items:stretch">
+          <div class="indicator-card indicator-card--score indicator-card--response" style="flex-direction:column;align-items:stretch">
             <div style="display:flex;align-items:center;gap:16px">
               ${buildIndicatorRing(response, '')}
               <div class="indicator-info">
@@ -25399,16 +26112,31 @@
             respBonusPts,
             { showEmpName: true }
           );
-          const respViolRows = (autoCount === 0 && respondedCount === 0)
-            ? `<div class="score-no-viols"><i class="fas fa-bolt"></i><div>معالجة فورية لجميع التذاكر 🎉</div></div>`
-            : respList.html;
-          const respListTitle = (autoCount === 0 && respondedCount === 0) ? 'سجل مؤشر الاستجابة' : respList.title;
+          const respEmpty = autoCount === 0 && respondedCount === 0;
+          const respEmptyHtml = `<div class="score-no-viols"><i class="fas fa-bolt"></i><div>معالجة فورية لجميع التذاكر 🎉</div></div>`;
+          const respListTitle = respEmpty ? 'سجل مؤشر الاستجابة' : respList.title;
+          const respRecordsBlock = buildDashboardResponseRecordsBlock(
+            respEmpty,
+            respEmptyHtml,
+            respListTitle,
+            respList.html
+          );
+          const responseRounded = Math.round(response);
+          const responseResultClass = responseRounded < 0 ? ' eq-result--low' : '';
+          const responseNumColor = responseRounded < 0 ? 'var(--red-text)' : 'var(--purple-text)';
 
           const responseBreakdownHTML = `
-            <button class="score-breakdown-toggle" onclick="toggleScoreBreakdown(this)">
-              <i class="fas fa-chevron-down"></i>
-              تفاصيل مؤشر الاستجابة
-            </button>
+            <div class="score-breakdown-actions">
+              <button type="button" class="score-breakdown-toggle" onclick="toggleScoreBreakdown(this)">
+                <i class="fas fa-chevron-down"></i>
+                <span class="score-toggle-label score-toggle-label--full">تفاصيل مؤشر الاستجابة</span>
+                <span class="score-toggle-label score-toggle-label--record">تفاصيل السجل</span>
+              </button>
+              <button type="button" class="score-help-open-btn" onclick="openScoreHelpSheet('responseSupervisor')">
+                <i class="fas fa-circle-info"></i>
+                <span>كيف تحسب درجتي؟</span>
+              </button>
+            </div>
             <div class="score-breakdown-panel">
               <div class="score-equation">
                 <div class="eq-item"><span class="eq-num">100</span><span class="eq-label">الأساس</span></div>
@@ -25417,19 +26145,20 @@
                 <span class="eq-op">+</span>
                 <div class="eq-item"><span class="eq-num" style="color:var(--green-text)">${bonus}</span><span class="eq-label">بونص استجابة</span></div>
                 <span class="eq-op">=</span>
-                <div class="eq-item eq-result"><span class="eq-num" style="color:var(--purple-text)">${response}</span><span class="eq-label">درجتك</span></div>
+                <div class="eq-item eq-result${responseResultClass}"><span class="eq-num" style="color:${responseNumColor}">${responseRounded}</span><span class="eq-label">درجتك</span></div>
               </div>
-              <div class="score-section-title"><i class="fas fa-list"></i> ${respListTitle}</div>
-              <div class="score-viol-list">${respViolRows}</div>
-              <div class="score-decay-info">
-                <strong><i class="fas fa-circle-info"></i> معلومة للمشرف:</strong><br>
-                يتم خصم 20 نقاط عن كل مخالفة تُمرَّر تلقائياً لعدم المعالجة خلال 48 ساعة. كل معالجة حقيقية في الوقت تمنح +10 نقاط بونص. الدرجة تُحدَّد بـ 100 كحد أقصى، وقد تصبح سالبة إذا تجاوز الخصم الرصيد.
+              <div class="score-breakdown-records">
+                ${respRecordsBlock}
+                <div class="score-breakdown-spacer" aria-hidden="true"></div>
+              </div>
+              <div class="score-decay-info score-decay-info--in-panel">
+                ${buildResponseSupervisorScoreHelpHtml()}
               </div>
             </div>
           `;
 
           cards.push(`
-          <div class="indicator-card" style="flex-direction:column;align-items:stretch">
+          <div class="indicator-card indicator-card--score indicator-card--response" style="flex-direction:column;align-items:stretch">
             <div style="display:flex;align-items:center;gap:16px">
               ${buildIndicatorRing(response, '')}
               <div class="indicator-info">
@@ -31442,23 +32171,8 @@
        * إعدادات النظام (قابلة للتخصيص لاحقاً من الإعدادات)
        */
       const COMPLIANCE_CONFIG = {
-        // Age Decay: تذويب أسرع — المخالفة تختفي خلال 4 شهور
-        ageDecay: [
-          { maxDays: 14, factor: 1.00 },   // أسبوعين تأثير كامل 100%
-          { maxDays: 30, factor: 0.70 },   // شهر → 70%
-          { maxDays: 60, factor: 0.35 },   // شهرين → 35%
-          { maxDays: 90, factor: 0.10 },   // 3 شهور → 10%
-          { maxDays: Infinity, factor: 0.00 }  // أكثر من 3 شهور → تنمحي تماماً
-        ],
-        // Severity multipliers على age decay
-        severityDecayBoost: {
-          'منخفض': 1.0,
-          'متوسط': 1.0,
-          'عالي': 0.85
-        },
-        // Frequency: التكرار خلال آخر 90 يوم
+        // Frequency: تكرار نفس النوع خلال نفس الشهر (تقويم السعودية)
         frequencyMultipliers: [1.0, 1.0, 1.3, 1.6, 2.0],  // [0]=1st, [1]=2nd, ...
-        frequencyWindow: 90,  // أيام
         // Streak: كل streakDays يوم بدون رصد جديد = +streakPoints (بدون سقف — يُطبَّق حتى التعافي 100 فقط)
         streakDays: 10,
         streakPoints: 7,
@@ -31494,41 +32208,43 @@
         return Math.max(0, diffMs / (1000 * 60 * 60 * 24));
       }
 
-      /**
-       * احسب age decay factor للمخالفة (مع تعديل الخطورة)
-       */
-      function getAgeDecayFactor(v, type) {
-        const ageDays = violationAgeDays(v);
-        let baseFactor = 0.05;
-        for (const tier of COMPLIANCE_CONFIG.ageDecay) {
-          if (ageDays <= tier.maxDays) {
-            baseFactor = tier.factor;
-            break;
-          }
-        }
-        // الخطورة تجعل الـ decay أبطأ (يبقى تأثير أقوى)
-        const severity = type?.severity || 'منخفض';
-        const boost = COMPLIANCE_CONFIG.severityDecayBoost[severity] || 1.0;
-        // كلما قل boost = decay أبطأ = factor أعلى
-        return Math.min(1.0, baseFactor / boost);
+      /** التقادم الزمني مُلغى — الخصم يبقى كاملاً حتى يُعوَّض ببونص الالتزام أو يُلغى/يُنبَّه */
+      function getAgeDecayFactor(_v, _type) {
+        return 1;
+      }
+
+      /** مفتاح شهر الرصد (تقويم السعودية) لحساب تكرار المخالفات */
+      function violationKsaMonthKey(v) {
+        const t = violationObservationMs(v);
+        if (!t) return '';
+        const p = ksaFormatParts(new Date(t));
+        return p.year + '-' + p.month;
+      }
+
+      /** نوع المخالفة لربط تكرار الخصم (اسم أو معرّف) */
+      function violationTypeKey(v) {
+        if (!v) return '';
+        if (v.violation_type_id) return 'id:' + v.violation_type_id;
+        const name = (v.violation_type || '').trim();
+        return name ? 'name:' + name : '';
       }
 
       /**
-       * عدد مخالفات أقدم زمنياً ضمن نافذة التكرار (90 يوم).
+       * عدد مخالفات أقدم من نفس النوع في نفس الشهر (تقويم السعودية).
        * sortedViols: من الأقدم للأحدث.
        */
       function countPriorViolationsInFrequencyWindow(v, sortedViols) {
         const idx = sortedViols.findIndex(x => x.id === v.id);
         if (idx <= 0) return 0;
-        const myT = violationObservationMs(v);
-        if (!myT) return 0;
-        const winMs = COMPLIANCE_CONFIG.frequencyWindow * 86400000;
+        const myMonth = violationKsaMonthKey(v);
+        const myType = violationTypeKey(v);
+        if (!myMonth || !myType) return 0;
         let n = 0;
         for (let j = 0; j < idx; j++) {
-          const otherT = violationObservationMs(sortedViols[j]);
-          if (!otherT) continue;
-          const delta = myT - otherT;
-          if (delta > 0 && delta <= winMs) n++;
+          const other = sortedViols[j];
+          if (violationKsaMonthKey(other) !== myMonth) continue;
+          if (violationTypeKey(other) !== myType) continue;
+          n++;
         }
         return n;
       }
