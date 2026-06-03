@@ -6045,6 +6045,12 @@
       position: relative;
     }
 
+    @media (max-width: 992px) {
+      #tab-compliance .cmp-neo-btn--pdf-export {
+        display: none !important;
+      }
+    }
+
     .cmp-neo-back {
       display: flex;
       align-items: center;
@@ -6425,9 +6431,9 @@
     }
 
     [data-theme="dark"] .cmp-neo-card {
-      background: linear-gradient(180deg, rgba(22, 28, 42, 0.98), rgba(10, 15, 28, 0.98));
-      border-color: rgba(71, 85, 130, 0.38);
-      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+      background: var(--mr-surface);
+      border-color: var(--mr-border);
+      box-shadow: var(--mr-shadow-card);
     }
 
     [data-theme="dark"] .cmp-neo-ring {
@@ -6439,13 +6445,13 @@
     }
 
     [data-theme="dark"] .cmp-neo-card--low {
-      border-color: rgba(255, 0, 0, 0.28);
-      box-shadow: 0 4px 28px rgba(255, 0, 0, 0.1), 0 0 0 1px rgba(71, 85, 130, 0.32);
+      border-color: color-mix(in srgb, var(--mr-danger) 35%, var(--mr-border));
+      box-shadow: var(--mr-shadow-card);
     }
 
     [data-theme="dark"] .cmp-neo-card:hover {
-      border-color: rgba(110, 154, 255, 0.45);
-      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+      border-color: var(--mr-border-2);
+      box-shadow: var(--mr-shadow-card);
     }
 
     [data-theme="dark"] .cmp-neo-ring--alert svg {
@@ -6461,21 +6467,21 @@
     }
 
     [data-theme="dark"] .cmp-neo-head h4 span.cmp-neo-head-text {
-      color: #fff;
+      color: var(--mr-text);
       opacity: 1;
     }
 
     [data-theme="dark"] .cmp-neo-head span:not(.cmp-neo-head-text),
     [data-theme="dark"] .cmp-neo-metrics div {
-      color: #8ea0c8;
+      color: var(--mr-text-2);
     }
 
     [data-theme="dark"] .cmp-neo-stat__val {
-      color: #f4f7ff;
+      color: var(--mr-text);
     }
 
     [data-theme="dark"] .cmp-neo-ring-core {
-      color: #f4f7ff;
+      color: var(--mr-text);
       font-weight: 600;
     }
 
@@ -6505,17 +6511,15 @@
       font-weight: 600;
     }
 
-    [data-theme="dark"] #tab-compliance .mk-cmp-emp-card {
-      background: linear-gradient(180deg, rgba(22, 27, 34, 0.98), rgba(14, 18, 28, 0.98));
-      border-color: rgba(255, 255, 255, 0.07);
-      color: #e8eeff;
+    [data-theme="dark"] #tab-compliance .mk-cmp-emp-card__avatar {
+      background: var(--mr-primary-softer);
+      border-color: var(--mr-border);
+      color: var(--mr-text-2);
     }
 
-    [data-theme="dark"] #tab-compliance .mk-cmp-emp-card__name {
-      color: #f3f7ff;
+    [data-theme="dark"] #tab-compliance .mk-cmp-emp-card__ft {
+      color: var(--mr-text-2);
     }
-
-
 
     @media (max-width: 1180px) {
       .cmp-neo-grid {
@@ -16378,7 +16382,7 @@
       align-items:flex-start;
       gap:12px;
       padding:14px 16px 10px;
-      background:linear-gradient(180deg, var(--mr-primary-softer) 0%, transparent 100%);
+      background:transparent;
       border-bottom:1px solid var(--mr-border);
       min-height:72px;
     }
@@ -16422,10 +16426,7 @@
     .mk-cmp-emp-card__chips {
       display:flex; flex-wrap:wrap; align-content:flex-start; gap:6px;
       padding:10px 16px 12px;
-      height:106px;
-      min-height:106px;
-      max-height:106px;
-      overflow:hidden;
+      min-height:0;
       border-bottom:1px solid var(--mr-border);
       box-sizing:border-box;
       flex-shrink:0;
@@ -16441,7 +16442,7 @@
     .mk-cmp-emp-chip--green { background:var(--green-surface); color:var(--green-text); border-color:var(--b-green-bd); }
     .mk-cmp-emp-chip--amber { background:var(--amber-surface); color:var(--amber-text); border-color:var(--b-amber-bd); }
     .mk-cmp-emp-chip--blue { background:var(--blue-surface); color:var(--blue-text); border-color:var(--b-blue-bd); }
-    .mk-cmp-emp-chip--gray { background:var(--mk-bg-2); color:var(--mk-text-2); border-color:var(--mr-border); }
+    .mk-cmp-emp-chip--gray { background:var(--mr-primary-softer); color:var(--mk-text-2); border-color:var(--mr-border); }
     @keyframes mk-cmp-chip-pop {
       0% { opacity:0; transform:scale(0.72) translateY(10px); }
       62% { opacity:1; transform:scale(1.07) translateY(0); }
@@ -16467,7 +16468,7 @@
     .mk-cmp-emp-metric {
       width:100%;
       aspect-ratio:1;
-      background:var(--mk-bg-2);
+      background:var(--mr-surface);
       border:1px solid var(--mr-border);
       border-radius:16px;
       padding:10px 10px 8px;
@@ -16737,6 +16738,7 @@
     #appWrap .mk-card,
     #appWrap .mk-cmp-card,
     #appWrap .mk-cmp-emp-card,
+    #appWrap .cmp-neo-card,
     #appWrap .md-stat-card,
     #appWrap .rp-stat-card,
     #appWrap .stat-card-v2 {
@@ -16749,6 +16751,7 @@
     #appWrap .panel:hover,
     #appWrap .mk-cmp-card:hover,
     #appWrap .mk-cmp-emp-card:hover,
+    #appWrap .cmp-neo-card:hover,
     #appWrap .md-stat-card:hover,
     #appWrap .rp-stat-card:hover {
       border-color: color-mix(in srgb, var(--mr-primary) 18%, var(--mr-border));
@@ -21054,7 +21057,7 @@
       }
     }
   </style>
-  <meta name="app-build" content="dash-users-admin-first-v312">
+  <meta name="app-build" content="cmp-hide-pdf-mob-v317">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
 </head>
 
@@ -34837,12 +34840,9 @@
 
       function cmpEmpCardHTML(card) {
         const lvl = cmpScoreLevelMeta(card.score);
-        const trendChipCls = card.trend.cls === 'up' ? 'mk-cmp-emp-chip--green' : (card.trend.cls === 'down' ? 'mk-cmp-emp-chip--red' : 'mk-cmp-emp-chip--gray');
         const empId = String(card.id || '').replace(/'/g, "\\'");
         const click = card.onClick || `openCmpItemDetail('employee','${empId}')`;
-        const chips = [
-          `<span class="mk-cmp-emp-chip ${trendChipCls}" title="${Sec.escapeHTML(card.trend.hint || '')}"><i class="fas ${card.trend.icon}"></i> اتجاه ${Sec.escapeHTML(card.trend.pct)}</span>`
-        ];
+        const chips = [];
         if (card.violationsCount > 0) {
           chips.push(`<span class="mk-cmp-emp-chip mk-cmp-emp-chip--red"><i class="fas fa-list"></i> ${card.violationsCount} مخالفة</span>`);
         } else {
@@ -35310,7 +35310,7 @@
                     <i class="fas fa-calendar"></i><span id="cmp-date-label">${Sec.escapeHTML(dateLabel)}</span>
                   </button>
                 </div>
-                <button type="button" class="cmp-neo-btn" onclick="exportCompliancePDF()">
+                <button type="button" class="cmp-neo-btn cmp-neo-btn--pdf-export" onclick="exportCompliancePDF()">
                   <i class="fas fa-file-pdf"></i><span>تصدير PDF</span>
                 </button>
               </div>
