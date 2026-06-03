@@ -20,6 +20,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
   <!-- Poppins: شريط جانبي Figma — Side-bar components for dashboard (node 11:10961) -->
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -365,6 +366,50 @@
       font-size: 1.85rem;
       box-shadow: none;
       animation: lpIconSpring 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) 0.08s both
+    }
+
+    .wefaq-logo-host {
+      background: transparent !important;
+      box-shadow: none !important;
+      border-radius: 0 !important;
+      color: inherit
+    }
+
+    .wefaq-logo-host .wefaq-app-logo {
+      display: block;
+      width: 100%;
+      height: 100%;
+      flex-shrink: 0
+    }
+
+    @media (max-width: 992px) {
+      #loginScreen #loginCard .lp-brand-ico.wefaq-logo-host {
+        width: 7.5rem;
+        height: 7.5rem;
+        max-width: min(72vw, 7.5rem);
+        margin-bottom: 1.1rem;
+        animation: lpIconSpring 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) 0.08s both
+      }
+
+      #loginTransition .lt-shield.wefaq-logo-host {
+        width: 5.75rem;
+        height: 5.75rem;
+        animation: none
+      }
+
+      .brand-area .brand-icon.wefaq-logo-host {
+        width: 40px !important;
+        height: 40px !important;
+        padding: 0;
+        font-size: 0 !important
+      }
+    }
+
+    @media (max-width: 576px) {
+      .brand-area .brand-icon.wefaq-logo-host {
+        width: 36px !important;
+        height: 36px !important
+      }
     }
 
     #loginScreen .lp-title {
@@ -21057,7 +21102,7 @@
       }
     }
   </style>
-  <meta name="app-build" content="cmp-hide-pdf-mob-v317">
+  <meta name="app-build" content="wefaq-mobile-logo-v319">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
 </head>
 
@@ -21562,12 +21607,12 @@
                     <button type="button" class="wf-status-trigger" id="wf-status-trigger"
                       onclick="wfStatusToggle(event)" aria-haspopup="listbox" aria-expanded="false">
                       <span class="wf-status-trigger__ico" aria-hidden="true"><i class="fas fa-filter"></i></span>
-                      <span class="wf-status-trigger__label" id="wf-status-label">كل مراحل المعالجة</span>
+                      <span class="wf-status-trigger__label" id="wf-status-label">جميع المراحل</span>
                       <i class="fas fa-chevron-down wf-status-trigger__chev" aria-hidden="true"></i>
                     </button>
                     <div class="wf-status-menu" id="wf-status-menu" role="listbox" aria-label="فلتر الحالة">
                       <div class="wf-status-menu__scroll">
-                        <button type="button" class="wf-status-opt is-active" data-val="" onclick="wfStatusPick('')">كل مراحل المعالجة</button>
+                        <button type="button" class="wf-status-opt is-active" data-val="" onclick="wfStatusPick('')">جميع المراحل</button>
                         <button type="button" class="wf-status-opt" data-val="emp" onclick="wfStatusPick('emp')">بانتظار الموظف</button>
                         <button type="button" class="wf-status-opt" data-val="sup" onclick="wfStatusPick('sup')">بانتظار المشرف</button>
                         <button type="button" class="wf-status-opt" data-val="aud" onclick="wfStatusPick('aud')">بانتظار التدقيق</button>
@@ -21575,7 +21620,7 @@
                       </div>
                     </div>
                     <select id="wf-status" class="wf-status-select-native" tabindex="-1" aria-hidden="true" onchange="filterTickets()">
-                      <option value="">كل مراحل المعالجة</option>
+                      <option value="">جميع المراحل</option>
                       <option value="emp">بانتظار الموظف</option>
                       <option value="sup">بانتظار المشرف</option>
                       <option value="aud">بانتظار التدقيق</option>
@@ -24094,6 +24139,7 @@
         const mobNav = document.getElementById('mobileBottomNav');
         if (mobNav) mobNav.style.display = 'none';
         setNativeAppShellActive(false);
+        if (typeof syncWefaqMobileBranding === 'function') syncWefaqMobileBranding();
         if (ls) {
           ls.classList.remove('hidden');
           ls.removeAttribute('hidden');
@@ -24937,6 +24983,57 @@
 
       function isMobileViewport() {
         return typeof window !== 'undefined' && window.matchMedia('(max-width: 992px)').matches;
+      }
+
+      function wefaqOfficialLogoHtml(uid) {
+        const sh = 'wefaqSh_' + uid;
+        const sf = 'wefaqSf_' + uid;
+        return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="شعار وفاق" class="wefaq-app-logo">
+          <defs>
+            <filter id="${sh}" x="44" y="52" width="424" height="432" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+              <feDropShadow dx="0" dy="22" stdDeviation="18" flood-color="#000000" flood-opacity="0.22"/>
+            </filter>
+            <linearGradient id="${sf}" x1="88" x2="424" y1="70" y2="426" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#1E3A5F"/>
+              <stop offset="1" stop-color="#0F2540"/>
+            </linearGradient>
+          </defs>
+          <rect x="66" y="56" width="380" height="380" rx="78" fill="url(#${sf})" filter="url(#${sh})"/>
+          <g fill="#F8F8F5" font-family="Manrope, var(--font), Arial, sans-serif" font-weight="700">
+            <text x="256" y="278" text-anchor="middle" font-size="118" letter-spacing="-6">wefaq</text>
+          </g>
+          <path d="M150 318 Q 256 372 362 318" stroke="#F8F8F5" stroke-width="9" stroke-linecap="round" fill="none"/>
+          <circle cx="150" cy="318" r="9" fill="#F8F8F5"/>
+          <circle cx="362" cy="318" r="9" fill="#F8F8F5"/>
+        </svg>`;
+      }
+
+      const WEFAQ_MOBILE_LOGO_HOSTS = [
+        { sel: '#loginScreen #loginCard .lp-brand-ico', uid: 'lp' },
+        { sel: '#loginTransition .lt-shield', uid: 'lt' },
+        { sel: '#brandArea .brand-icon', uid: 'tb' }
+      ];
+
+      function syncWefaqMobileBranding() {
+        const mob = typeof isMobileViewport === 'function' && isMobileViewport();
+        WEFAQ_MOBILE_LOGO_HOSTS.forEach(({ sel, uid }) => {
+          const host = document.querySelector(sel);
+          if (!host) return;
+          const mono = host.querySelector(':scope > .brand-mono');
+          let logo = host.querySelector(':scope > .wefaq-app-logo');
+          if (mob) {
+            host.classList.add('wefaq-logo-host');
+            if (mono) mono.hidden = true;
+            if (!logo) {
+              host.insertAdjacentHTML('beforeend', wefaqOfficialLogoHtml(uid));
+              logo = host.querySelector(':scope > .wefaq-app-logo');
+            }
+          } else {
+            host.classList.remove('wefaq-logo-host');
+            if (mono) mono.hidden = false;
+            if (logo) logo.remove();
+          }
+        });
       }
 
       const renderAllDebounced = debounce(() => renderAll(), 200);
@@ -30746,7 +30843,7 @@
       }
 
       const WF_STATUS_LABELS = {
-        '': 'كل مراحل المعالجة',
+        '': 'جميع المراحل',
         emp: 'بانتظار الموظف',
         sup: 'بانتظار المشرف',
         aud: 'بانتظار التدقيق',
@@ -33184,6 +33281,7 @@
         const popup = document.getElementById('cmpDatePickerPopup');
         if (!popup || popup.dataset.cmpWired === '1') return;
         popup.dataset.cmpWired = '1';
+        dpWireMonthPickOnPopup(popup, cmpDpPickMonth);
 
         const onPopupPointer = (e) => e.stopPropagation();
         popup.addEventListener('mousedown', onPopupPointer);
@@ -37201,6 +37299,7 @@
       function initMobileViewportSync() {
         const mq = window.matchMedia('(max-width: 992px)');
         const apply = () => {
+          if (typeof syncWefaqMobileBranding === 'function') syncWefaqMobileBranding();
           syncMobilePlatformScale();
           if (document.getElementById('tab-dashboard')?.classList.contains('active') && typeof renderDashboard === 'function') {
             try { renderDashboard(); } catch (e) { console.warn('[dashboard viewport]', e); }
@@ -37230,6 +37329,7 @@
           if (typeof portalFilterPanelsForMob === 'function') portalFilterPanelsForMob();
           if (typeof syncMobileBottomNavLayout === 'function') syncMobileBottomNavLayout();
           if (typeof initMobileViewportSync === 'function') initMobileViewportSync();
+          if (typeof syncWefaqMobileBranding === 'function') syncWefaqMobileBranding();
           if (typeof initViolDetailSheetDrag === 'function') initViolDetailSheetDrag();
           if (typeof initTicketSheetDrag === 'function') initTicketSheetDrag();
           if (typeof initCmpDetailSheetDrag === 'function') initCmpDetailSheetDrag();
@@ -37279,13 +37379,27 @@
         }
       }
 
-      function dpBuildMonthGridHtml(months, viewMonth, pickHandlerName) {
+      function dpBuildMonthGridHtml(months, viewMonth, _pickHandlerName) {
         let html = '<div class="dp-month-grid" role="listbox" aria-label="اختيار الشهر">';
         months.forEach((name, i) => {
           const sel = i === viewMonth ? ' selected' : '';
-          html += `<button type="button" class="dp-pick-cell${sel}" role="option" aria-selected="${i === viewMonth ? 'true' : 'false'}" onclick="${pickHandlerName}(${i})">${name}</button>`;
+          html += `<button type="button" class="dp-pick-cell${sel}" role="option" aria-selected="${i === viewMonth ? 'true' : 'false'}" data-dp-month="${i}">${name}</button>`;
         });
         return html + '</div>';
+      }
+
+      /** اختيار الشهر — capture قبل إعادة الرسم حتى لا يُفسَّر النقر كخارج النافذة */
+      function dpWireMonthPickOnPopup(popup, pickFn) {
+        if (!popup || popup.dataset.dpMonthPickWired === '1') return;
+        popup.dataset.dpMonthPickWired = '1';
+        popup.addEventListener('click', (e) => {
+          const cell = e.target.closest('.dp-pick-cell[data-dp-month]');
+          if (!cell || !popup.contains(cell)) return;
+          e.preventDefault();
+          e.stopPropagation();
+          const idx = parseInt(cell.getAttribute('data-dp-month'), 10);
+          if (!Number.isNaN(idx)) pickFn(idx);
+        }, true);
       }
 
       const dpPtr = { dragging: false, anchor: null, raf: 0 };
@@ -37597,7 +37711,31 @@
         grid.addEventListener('pointercancel', end);
       }
 
+      function wireRpDatePickerPopup() {
+        const popup = document.getElementById('datePickerPopup');
+        if (!popup || popup.dataset.rpDpWired === '1') return;
+        popup.dataset.rpDpWired = '1';
+        dpWireMonthPickOnPopup(popup, dpPickMonth);
+        const stopOut = (e) => e.stopPropagation();
+        popup.addEventListener('mousedown', stopOut);
+        popup.addEventListener('pointerdown', stopOut);
+        popup.addEventListener('click', stopOut);
+      }
+
+      function wireNtDatePickerPopup() {
+        const popup = document.getElementById('ntDatePickerPopup');
+        if (!popup || popup.dataset.ntDpWired === '1') return;
+        popup.dataset.ntDpWired = '1';
+        dpWireMonthPickOnPopup(popup, ntDpPickMonth);
+        const stopOut = (e) => e.stopPropagation();
+        popup.addEventListener('mousedown', stopOut);
+        popup.addEventListener('pointerdown', stopOut);
+        popup.addEventListener('click', stopOut);
+      }
+
       wireRangeDragGrid('dpDays', dpState, renderDatePicker, dpPtr, dpScheduleRender);
+      wireRpDatePickerPopup();
+      wireNtDatePickerPopup();
       wireCmpDatePickerPopup();
       cmpEnsureDatePickerHome();
 
