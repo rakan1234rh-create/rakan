@@ -7733,10 +7733,12 @@
       bottom: 16px;
       margin: 0;
       max-width: calc(100% - 88px);
-      font-size: 13px;
+      font-family: var(--font);
+      font-size: 12px;
       font-weight: 500;
-      line-height: 1.35;
-      color: var(--mr-text-2);
+      letter-spacing: -0.02em;
+      line-height: 1;
+      color: var(--mr-text);
       text-align: end;
       direction: rtl;
       white-space: nowrap;
@@ -15632,7 +15634,7 @@
       }
       #tab-dashboard .mk-kpi__trend { font-size:10px; gap:3px; }
       #tab-dashboard .mk-kpi__trend i { font-size:9px; }
-      #tab-dashboard .mk-kpi__period { font-size:9px; max-width:100%; }
+      #tab-dashboard .mk-kpi__title-line .mk-kpi__period { font-size:10px; line-height:1.25; }
     }
     .mk-kpi:hover { border-color:var(--mr-primary-soft); box-shadow:0 1px 2px rgba(15,18,36,.04); }
     .mk-kpi--click { cursor:pointer; }
@@ -15642,7 +15644,17 @@
       border-color:var(--mr-primary);
     }
     .mk-kpi__top { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
-    .mk-kpi__title { display:flex; align-items:center; gap:6px; min-width:0; flex:1 1 auto; }
+    .mk-kpi__title { display:flex; align-items:center; flex-wrap:wrap; gap:6px; min-width:0; flex:1 1 auto; }
+    .mk-kpi__title-line { display:inline; min-width:0; line-height:1.3; }
+    .mk-kpi__title-line .mk-kpi__label,
+    .mk-kpi__title-line .mk-kpi__period {
+      display:inline;
+      font-size:12px;
+      font-weight:500;
+      line-height:1.3;
+      color:var(--mk-text-3);
+      white-space:normal;
+    }
     .mk-kpi__top .mk-kpi__value { flex-shrink:0; margin:0; align-self:flex-start; }
     .mk-kpi__label { font-size:12px; color:var(--mk-text-3); font-weight:500; line-height:1.3; }
     .mk-kpi__dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
@@ -19991,8 +20003,12 @@
       #tab-reports .rp-stat-label {
         right: 4px !important;
         bottom: 4px !important;
-        font-size: clamp(7px, 2vw, 8px) !important;
-        line-height: 1.15 !important;
+        font-family: var(--font) !important;
+        font-size: clamp(9px, 2.4vw, 10px) !important;
+        font-weight: 500 !important;
+        letter-spacing: -0.02em !important;
+        line-height: 1 !important;
+        color: var(--mr-text) !important;
         max-width: calc(100% - 32px);
         white-space: nowrap;
         overflow: hidden;
@@ -20501,7 +20517,7 @@
       }
     }
   </style>
-  <meta name="app-build" content="dash-header-badge-clip-v267">
+  <meta name="app-build" content="dash-kpi-total-period-unified-v277">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
 </head>
 
@@ -20773,15 +20789,11 @@
                   <div class="mk-kpi__top">
                     <div class="mk-kpi__title">
                       <span class="mk-kpi__dot" style="background:var(--mr-blue)"></span>
-                      <span class="mk-kpi__label">إجمالي المخالفات</span>
+                      <span class="mk-kpi__title-line"><span class="mk-kpi__label">إجمالي المخالفات</span><span class="mk-kpi__period" id="st-total-trend"> هذا الشهر</span></span>
                     </div>
                     <div class="mk-kpi__value" id="st-total">0</div>
                   </div>
                   <div class="mk-kpi__spark" id="st-total-spark" aria-hidden="true"></div>
-                  <div class="mk-kpi__foot">
-                    <span class="mk-kpi__trend" id="st-total-delta">—</span>
-                    <span class="mk-kpi__period" id="st-total-trend">هذا الشهر</span>
-                  </div>
                 </article>
                 <article class="mk-kpi mk-kpi--click" role="button" tabindex="0"
                   onclick="dashKpiNavigate('approved')"
@@ -20794,10 +20806,6 @@
                     <div class="mk-kpi__value" id="st-approved">0</div>
                   </div>
                   <div class="mk-kpi__spark" id="st-approved-spark" aria-hidden="true"></div>
-                  <div class="mk-kpi__foot">
-                    <span class="mk-kpi__trend" id="st-approved-delta">—</span>
-                    <span class="mk-kpi__period" id="st-approved-pct">0% من الإجمالي</span>
-                  </div>
                 </article>
                 <article class="mk-kpi mk-kpi--click" role="button" tabindex="0"
                   onclick="dashKpiNavigate('pending')"
@@ -20810,10 +20818,6 @@
                     <div class="mk-kpi__value" id="st-pending">0</div>
                   </div>
                   <div class="mk-kpi__spark" id="st-pending-spark" aria-hidden="true"></div>
-                  <div class="mk-kpi__foot">
-                    <span class="mk-kpi__trend" id="st-pending-delta">—</span>
-                    <span class="mk-kpi__period">بانتظار رد</span>
-                  </div>
                 </article>
                 <article class="mk-kpi mk-kpi--click" role="button" tabindex="0"
                   onclick="dashKpiNavigate('overdue')"
@@ -20826,10 +20830,6 @@
                     <div class="mk-kpi__value" id="st-overdue" style="color:var(--mk-danger)">0</div>
                   </div>
                   <div class="mk-kpi__spark" id="st-overdue-spark" aria-hidden="true"></div>
-                  <div class="mk-kpi__foot">
-                    <span class="mk-kpi__trend" id="st-overdue-delta">—</span>
-                    <span class="mk-kpi__period">إجراء فوري</span>
-                  </div>
                 </article>
               </div>
 
@@ -27075,33 +27075,6 @@
         }).join('');
       }
 
-      function dashRenderTrend(elId, current, previous, invert = false) {
-        const el = document.getElementById(elId);
-        if (!el) return;
-        let mode = 'flat';
-        let html = '<i class="fas fa-minus"></i> ثابت';
-        if (previous > 0) {
-          const pct = ((current - previous) / previous) * 100;
-          const rounded = Math.abs(pct).toFixed(1);
-          if (Math.abs(pct) < 0.05) {
-            mode = 'flat';
-          } else if (pct > 0) {
-            mode = invert ? 'down' : 'up';
-            html = `<i class="fas fa-arrow-trend-up"></i> +${rounded}%`;
-            if (mode === 'down') html = `<i class="fas fa-arrow-trend-up"></i> +${rounded}%`;
-          } else {
-            mode = invert ? 'up' : 'down';
-            html = `<i class="fas fa-arrow-trend-down"></i> ${rounded}%`;
-          }
-        } else if (current > 0) {
-          mode = invert ? 'down' : 'up';
-          html = '<i class="fas fa-arrow-trend-up"></i> +' + current;
-        }
-        const cls = mode === 'flat' ? 'mk-kpi__trend' : ('mk-kpi__trend is-' + mode);
-        el.className = cls;
-        el.innerHTML = html;
-      }
-
       // ═══ تحديث الساعة ═══
       /** يد الترحيب بجانب الاسم: موجة عند الدخول، تصفيق عند بونص انضباط، زعلان عند مخالفة حديثة */
       function getDashWelcomeHandMode() {
@@ -27193,14 +27166,10 @@
 
         const isBmDash = state.currentUser?.role === 'branch_manager';
         const curMonth = ksaCurrentMonthRange();
-        const prevMonth = ksaShiftMonth(curMonth.year, curMonth.month, -1);
-        const prevRange = ksaMonthRange(prevMonth.year, prevMonth.month);
         const monthStart = curMonth.monthStart;
         const nextMonthStart = curMonth.nextMonthStart;
         const monthFromIso = curMonth.fromIso;
-        const monthToIso = curMonth.toIso;
         const nextFromIso = curMonth.nextFromIso;
-        const prevFromIso = prevRange.fromIso;
         const ksaNow = ksaFormatParts();
 
         const wn = document.getElementById('dash-welcome-name');
@@ -27258,13 +27227,11 @@
 
         // إجمالي المخالفات (للشهر الحالي فقط)
         dashSet('st-total', total.toLocaleString('en-US'));
-        dashSet('st-total-trend', 'هذا الشهر');
+        dashSet('st-total-trend', ' هذا الشهر');
 
-        // معتمدة نهائياً + النسبة
+        // معتمدة نهائياً
         const approved = visible.filter(v => v.state === 'closed' && (v.status_text || '').includes('معتمد')).length;
         dashSet('st-approved', approved.toLocaleString('en-US'));
-        const pct = total > 0 ? Math.round((approved / total) * 100) : 0;
-        dashSet('st-approved-pct', `${pct}% من الإجمالي`);
 
         // قيد المعالجة (أي حالة غير مغلقة)
         const pending = visible.filter(v => isTicketWorkflowOpen(v)).length;
@@ -27274,20 +27241,11 @@
         const overdue = visible.filter(dashIsOverdueTicket).length;
         dashSet('st-overdue', overdue.toLocaleString('en-US'));
 
-        const prevTotal = dashCountInMonth(allVisible, prevFromIso, monthFromIso);
-        const prevApproved = dashCountInMonth(allVisible, prevFromIso, monthFromIso, v => v.state === 'closed' && (v.status_text || '').includes('معتمد'));
-        const prevPending = dashCountInMonth(allVisible, prevFromIso, monthFromIso, isTicketWorkflowOpen);
-        const prevOverdue = dashCountInMonth(allVisible, prevFromIso, monthFromIso, dashIsOverdueTicket);
-
         try {
           dashRenderSpark('st-total-spark', dashBucketizeMonth(allVisible, monthFromIso, nextFromIso), 'var(--mr-blue)', 'tone', monthStart);
           dashRenderSpark('st-approved-spark', dashBucketizeMonth(allVisible, monthFromIso, nextFromIso, v => v.state === 'closed' && (v.status_text || '').includes('معتمد')), 'var(--mr-success)', 'tone', monthStart);
           dashRenderSpark('st-pending-spark', dashBucketizeMonth(allVisible, monthFromIso, nextFromIso, isTicketWorkflowOpen), 'var(--mr-warning)', 'tone', monthStart);
           dashRenderSpark('st-overdue-spark', dashBucketizeMonth(allVisible, monthFromIso, nextFromIso, dashIsOverdueTicket), 'var(--mr-danger)', 'tone', monthStart);
-          dashRenderTrend('st-total-delta', total, prevTotal);
-          dashRenderTrend('st-approved-delta', approved, prevApproved);
-          dashRenderTrend('st-pending-delta', pending, prevPending);
-          dashRenderTrend('st-overdue-delta', overdue, prevOverdue, true);
         } catch (kpiErr) {
           console.warn('[dashboard kpi]', kpiErr);
         }
