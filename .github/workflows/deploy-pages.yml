@@ -25,8 +25,10 @@ jobs:
 
       - name: Prepare site
         run: |
-          mkdir -p site
+          mkdir -p site/icons
           cp index.html site/index.html
+          cp manifest.webmanifest site/manifest.webmanifest
+          cp icons/wefaq-192.png icons/wefaq-512.png icons/apple-touch-icon.png site/icons/
 
       - uses: actions/upload-pages-artifact@v3
         with:
