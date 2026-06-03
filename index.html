@@ -12890,6 +12890,32 @@
       flex-wrap: wrap
     }
 
+    .indicator-stat .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      vertical-align: middle;
+      line-height: 1;
+      padding-block: 3px;
+      box-sizing: border-box;
+    }
+
+    .indicator-stat .badge i {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 0.95em;
+      width: 1.15em;
+      height: 1.15em;
+      line-height: 1;
+    }
+
+    .indicator-stat .badge i::before {
+      line-height: 1;
+    }
+
     .indicator-ring.lvl-excellent .indicator-ring-fg {
       stroke: var(--green)
     }
@@ -13118,7 +13144,12 @@
 
     .score-viol-row.score-viol-row--admin-warn {
       background: color-mix(in srgb, #ea580c 12%, var(--surface));
-      border: 1px solid #fdba74;
+      border: 1px solid #ea580c;
+    }
+
+    [data-theme="dark"] .score-viol-row.score-viol-row--admin-warn {
+      border-color: #ea580c;
+      background: color-mix(in srgb, #ea580c 14%, var(--surface));
     }
 
     .score-viol-tag {
@@ -13142,12 +13173,11 @@
 
     .score-viol-row.score-viol-row--on-time {
       background: color-mix(in srgb, var(--green) 10%, var(--surface));
-      border-color: color-mix(in srgb, var(--green) 35%, var(--border));
-      border-right: 3px solid var(--green)
+      border: 1px solid color-mix(in srgb, var(--green) 40%, var(--border));
     }
 
     .score-viol-row.score-viol-row--on-time:hover {
-      border-color: var(--green)
+      border-color: color-mix(in srgb, var(--green) 58%, var(--border));
     }
 
     .score-viol-name {
@@ -14319,7 +14349,10 @@
 
     /* Dashboard */
     #tab-dashboard .mk-dash { display:flex; flex-direction:column; gap:22px; }
-    #tab-dashboard .mk-dash > .indicators-row { margin-bottom: 0; }
+    #tab-dashboard .mk-dash > .indicators-row {
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
     #tab-dashboard .mk-dash__split > .indicators-row--branch-staff {
       margin-top: 0;
       margin-bottom: 0;
@@ -14542,13 +14575,13 @@
     @media (max-width: 992px) {
     #tab-dashboard .mk-dash {
       --dash-bleed-inline: 24px;
-      gap: 8px;
+      gap: 6px;
     }
     #tab-dashboard .mk-dash__hero {
       margin-inline: calc(-1 * var(--dash-bleed-inline));
       width: calc(100% + 2 * var(--dash-bleed-inline));
       max-width: 100vw;
-      padding-inline: max(0px, env(safe-area-inset-left, 0px)) max(0px, env(safe-area-inset-right, 0px));
+      padding-inline: max(10px, env(safe-area-inset-left, 0px)) max(10px, env(safe-area-inset-right, 0px));
       box-sizing: border-box;
     }
     #tab-dashboard .mk-kpi-grid {
@@ -14575,20 +14608,28 @@
     }
     #tab-dashboard #personalIndicators .indicator-card--score {
       --dash-card-pad-inline: 6px;
-      --dash-card-pad-block: 4px;
-      --dash-card-header-min-h: 4.75rem;
-      padding: var(--dash-card-pad-block) var(--dash-card-pad-inline);
-      border-radius: 12px;
+      --dash-card-pad-top: 4px;
+      --dash-card-pad-bottom: 4px;
+      --dash-card-radius: 12px;
+      --dash-panel-pad-inline: 4px;
+      --dash-panel-pad-bottom: 4px;
+      --dash-card-header-min-h: 6.5rem;
+      --dash-action-btn-h: 26px;
+      padding: var(--dash-card-pad-top) var(--dash-card-pad-inline) var(--dash-card-pad-bottom);
+      border-radius: var(--dash-card-radius);
       min-width: 0;
       display: flex;
       flex-direction: column;
+      gap: 0;
       height: auto;
+      align-self: start;
       box-sizing: border-box;
       overflow: hidden;
     }
     #tab-dashboard #personalIndicators .indicator-card--score > div:first-child {
       flex: 0 0 auto;
       min-height: var(--dash-card-header-min-h);
+      box-sizing: border-box;
       gap: 6px !important;
       align-items: flex-start !important;
     }
@@ -14729,28 +14770,32 @@
       font-size: 8px;
       line-height: 1.4;
       margin-bottom: 2px;
-      display: block;
-      overflow: visible;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      overflow: hidden;
       white-space: normal;
       word-break: break-word;
-      -webkit-line-clamp: unset;
     }
     #tab-dashboard #personalIndicators .indicator-card--score .indicator-stat {
       font-size: 8px;
       gap: 3px;
+      min-height: 2.5rem;
+      align-content: flex-start;
     }
     #tab-dashboard #personalIndicators .indicator-card--score .indicator-stat .badge {
       font-size: 7px;
-      padding: 1px 4px;
-      line-height: 1.2;
+      padding: 3px 5px;
+      gap: 3px;
+      line-height: 1;
+      min-height: 18px;
     }
     #tab-dashboard #personalIndicators .indicator-card--score .indicator-stat .badge i {
-      font-size: 6px;
+      font-size: 7px;
+      width: 1.1em;
+      height: 1.1em;
     }
     #tab-dashboard #personalIndicators .indicator-card--score .indicator-stat .badge.b-orange {
-      display: inline-flex;
-      align-items: center;
-      gap: 3px;
       border-radius: 6px;
       border: 1px solid #fdba74;
       box-sizing: border-box;
@@ -14759,40 +14804,72 @@
       border-color: rgba(251, 146, 60, 0.45);
     }
     #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 3px;
-      margin-top: 2px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 4px;
+      align-items: stretch;
+      margin-top: 1px;
       margin-bottom: 0;
-      padding: 2px 0 0;
+      padding: 1px 0 4px;
       width: 100%;
       flex-shrink: 0;
       border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      order: 1;
     }
     #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-toggle.open {
-      border-color: transparent;
+      border-color: color-mix(in srgb, var(--blue) 45%, var(--border));
     }
     #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-toggle:focus {
       outline: none;
     }
     #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-toggle:focus-visible {
-      outline: 2px solid var(--blue);
-      outline-offset: 1px;
+      outline: 1px solid var(--blue);
+      outline-offset: 0;
     }
     #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-toggle,
     #tab-dashboard #personalIndicators .indicator-card--score .score-help-open-btn {
       font-size: 8px;
-      padding: 2px 5px;
-      margin-top: 0;
-      flex: 1 1 auto;
-      min-width: 0;
+      padding: 0 4px !important;
+      margin-top: 0 !important;
+      min-height: var(--dash-action-btn-h, 30px) !important;
+      height: var(--dash-action-btn-h, 30px) !important;
+      max-height: var(--dash-action-btn-h, 30px) !important;
+      width: 100%;
+      display: inline-flex;
+      align-items: center;
       justify-content: center;
+      gap: 3px;
+      line-height: 1;
+      white-space: nowrap;
+      overflow: hidden;
       box-sizing: border-box;
       border-radius: 5px;
+      border: 1px solid var(--border);
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-toggle {
+      background: var(--blue-light);
+      color: var(--blue-text);
+      border-color: color-mix(in srgb, var(--blue) 45%, var(--border));
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-toggle span,
+    #tab-dashboard #personalIndicators .indicator-card--score .score-help-open-btn span {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      line-height: 1.2;
     }
     #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-toggle i,
     #tab-dashboard #personalIndicators .indicator-card--score .score-help-open-btn i {
-      font-size: 7px;
+      font-size: 6px;
+      width: 1em;
+      height: 1em;
+      flex-shrink: 0;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
     #tab-dashboard #personalIndicators .indicator-card--score .score-help-open-btn {
       display: inline-flex;
@@ -14812,11 +14889,15 @@
       display: none !important;
     }
     #tab-dashboard #personalIndicators .indicator-card--score .score-section-title {
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
+      display: flex;
+      align-items: center;
+      font-size: 8px;
+      margin: 0 0 4px;
+      padding: 3px 0;
+      gap: 3px;
+      flex-wrap: wrap;
       line-height: 1.25;
+      min-height: 0;
     }
     #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-records {
       display: flex;
@@ -14831,28 +14912,65 @@
       display: inline;
     }
     #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-panel {
+      order: 2;
+      flex: 0 0 auto;
       flex-shrink: 0;
-      margin-top: 0;
+      display: none !important;
+      margin: 0;
       margin-inline: calc(-1 * var(--dash-card-pad-inline));
-      margin-bottom: calc(-1 * var(--dash-card-pad-block));
       width: calc(100% + 2 * var(--dash-card-pad-inline));
       max-width: none;
-      padding: 2px 4px 4px;
+      padding: 0;
       border-radius: 0;
-      border-inline-width: 0;
-      border-bottom-width: 0;
+      border: none;
+      background: transparent;
+      animation: none;
+      box-sizing: border-box;
+      overflow: hidden;
+      min-height: 0;
+      max-height: none;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-panel.open {
+      display: block !important;
+      margin-top: 0 !important;
+      padding: 3px 0 0;
+      border-top: none;
+      animation: fadeIn 0.25s ease;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-panel.open .score-equation,
+    #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-panel.open .score-section-title,
+    #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-panel.open .score-viol-list {
+      margin-inline: var(--dash-panel-pad-inline);
+      margin-top: 0;
       box-sizing: border-box;
     }
+    #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-panel.open .score-section-title {
+      margin-bottom: 4px;
+      padding: 2px 0;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-panel.open .score-breakdown-records {
+      padding-top: 0;
+      margin-top: 0;
+    }
     #tab-dashboard #personalIndicators .indicator-card--score .score-equation {
-      display: flex;
-      flex-wrap: nowrap;
-      align-items: flex-end;
-      justify-content: space-between;
-      gap: 2px 1px;
-      padding: 4px 3px;
-      margin-bottom: 3px;
+      --eq-num-size: 13px;
+      --eq-label-size: 9px;
+      --eq-item-gap: 2px;
+      display: grid;
+      grid-auto-flow: column;
+      grid-template-rows: auto auto;
+      justify-content: center;
+      justify-items: center;
+      align-items: center;
+      column-gap: 4px;
+      row-gap: var(--eq-item-gap);
+      padding: 1px 3px 2px;
+      margin: 0;
       font-size: 9px;
-      border-radius: 6px;
+      border-radius: 0;
+      border: none;
+      border-bottom: 1px solid var(--border);
+      background: transparent;
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
       scrollbar-width: none;
@@ -14861,39 +14979,55 @@
       display: none;
     }
     #tab-dashboard #personalIndicators .indicator-card--score .score-equation .eq-item {
-      flex: 0 0 auto;
+      display: grid;
+      grid-row: 1 / 3;
+      grid-template-rows: subgrid;
+      align-items: center;
+      justify-items: center;
       min-width: 0;
-      gap: 2px;
+      gap: 0;
     }
     #tab-dashboard #personalIndicators .indicator-card--score .score-equation .eq-num {
-      font-size: 13px;
+      grid-row: 1;
+      align-self: center;
+      font-size: var(--eq-num-size);
       font-variant-numeric: tabular-nums;
       white-space: nowrap;
       line-height: 1;
     }
     #tab-dashboard #personalIndicators .indicator-card--score .score-equation .eq-op {
-      flex: 0 0 auto;
-      font-size: 12px;
-      line-height: 1;
-      padding: 0 1px;
+      grid-row: 1;
       align-self: center;
-      margin-bottom: calc(0.65em + 2px);
+      justify-self: center;
+      margin: 0;
+      padding: 0 2px;
+      font-size: calc(var(--eq-num-size) + 1px);
+      font-weight: 700;
+      line-height: 1;
       color: var(--text3);
+      box-sizing: border-box;
     }
     #tab-dashboard #personalIndicators .indicator-card--score .score-equation .eq-label {
-      font-size: 7px;
+      grid-row: 2;
+      align-self: start;
+      font-size: 9px;
       letter-spacing: 0;
       text-transform: none;
       text-align: center;
-      line-height: 1.15;
+      line-height: 1.2;
       white-space: nowrap;
-      max-width: 52px;
+      max-width: 58px;
       overflow: hidden;
       text-overflow: ellipsis;
+      color: var(--text2);
     }
     #tab-dashboard #personalIndicators .indicator-card--score .score-equation .eq-result {
-      flex: 0 0 auto;
-      padding: 2px 5px;
+      grid-row: 1 / 3;
+      display: grid;
+      grid-template-rows: subgrid;
+      align-items: center;
+      justify-items: center;
+      padding: 0 5px;
       border-radius: 4px;
     }
     #tab-dashboard #personalIndicators .indicator-card--score .score-equation .eq-result.eq-result--low {
@@ -14902,31 +15036,118 @@
     #tab-dashboard #personalIndicators .indicator-card--score .score-equation .eq-result.eq-result--low .eq-num {
       color: var(--red-text) !important;
     }
-    #tab-dashboard #personalIndicators .indicator-card--score .score-section-title {
-      font-size: 8px;
-      margin-bottom: 4px;
-      gap: 3px;
-      flex-wrap: wrap;
-    }
     #tab-dashboard #personalIndicators .indicator-card--score .score-section-title i {
       font-size: 7px;
+      flex-shrink: 0;
+      align-self: center;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-panel {
+      --score-viol-list-row-h: 34px;
+      --score-bonus-row-h: 22px;
     }
     #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-panel .score-viol-list {
       --score-viol-list-rows: 2;
-      --score-viol-list-row-h: 40px;
+      --score-viol-list-row-h: 34px;
       --score-viol-list-gap: 3px;
       margin-bottom: 5px;
       padding-inline-end: 1px;
     }
+    #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-panel .score-viol-list > .score-viol-row,
+    #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-panel .score-viol-list > .score-viol-row.score-viol-row--on-time {
+      min-height: var(--score-viol-list-row-h);
+      height: var(--score-viol-list-row-h);
+      max-height: var(--score-viol-list-row-h);
+      box-sizing: border-box;
+      align-items: stretch;
+      overflow: hidden;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-records > .score-bonus-row {
+      min-height: var(--score-bonus-row-h);
+      height: var(--score-bonus-row-h);
+      max-height: var(--score-bonus-row-h);
+      box-sizing: border-box;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 1px 6px;
+      overflow: hidden;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .score-viol-row.score-viol-row--on-time,
+    #tab-dashboard #personalIndicators .indicator-card--response .score-viol-row.score-viol-row--on-time {
+      background: color-mix(in srgb, var(--green) 8%, var(--surface));
+      border: 1px solid color-mix(in srgb, var(--green) 48%, var(--border)) !important;
+      box-shadow: none !important;
+      outline: none !important;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .score-viol-row.score-viol-row--on-time::before,
+    #tab-dashboard #personalIndicators .indicator-card--response .score-viol-row.score-viol-row--on-time::before {
+      display: none !important;
+      content: none !important;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .score-viol-row > div:first-child {
+      min-width: 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-self: stretch;
+      gap: 1px;
+    }
     /* عند الفتح: ارتفاع موحّد للسجلين (مخالفات + بونص الالتزام) */
+    #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-panel.open {
+      --score-viol-list-row-h: 38px;
+      --score-bonus-row-h: 22px;
+    }
     #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-panel.open .score-viol-list {
       --score-viol-list-rows: 4;
-      --score-viol-list-row-h: 42px;
-      --dash-records-block-h: calc(4 * var(--score-viol-list-row-h) + 3 * var(--score-viol-list-gap) + 28px);
+      --score-viol-list-row-h: 38px;
+      --dash-records-block-h: calc(4 * var(--score-viol-list-row-h) + 3 * var(--score-viol-list-gap) + var(--score-bonus-row-h));
+      --dash-records-list-h: calc(4 * var(--score-viol-list-row-h) + 3 * var(--score-viol-list-gap));
+      flex: 1 1 auto;
+      min-height: var(--dash-records-list-h);
+      max-height: var(--dash-records-list-h);
+      margin-top: 0;
       margin-bottom: 0;
     }
-    #tab-dashboard #personalIndicators .indicator-card--response .score-breakdown-panel.open .score-viol-list {
-      max-height: var(--dash-records-block-h);
+    #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-panel.open .score-breakdown-records {
+      --dash-records-title-est: 22px;
+      display: flex;
+      flex-direction: column;
+      min-height: calc(var(--dash-records-title-est) + var(--dash-records-block-h));
+      margin-bottom: 0;
+      padding-top: 0;
+      padding-bottom: var(--score-bonus-row-h);
+      box-sizing: border-box;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--commitment:has(.score-breakdown-panel.open),
+    #tab-dashboard #personalIndicators .indicator-card--response:has(.score-breakdown-panel.open) {
+      padding-bottom: 0;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--commitment:has(.score-breakdown-panel.open) {
+      position: relative;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-panel.open .score-bonus-row {
+      min-height: var(--score-bonus-row-h);
+      height: var(--score-bonus-row-h);
+      margin-bottom: 0;
+      flex-shrink: 0;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--commitment .score-breakdown-panel.open .score-bonus-row {
+      position: absolute;
+      inset-inline: calc(-1 * var(--dash-card-pad-inline));
+      bottom: 0;
+      width: auto;
+      margin: 0;
+      border-radius: 0;
+      border-bottom-left-radius: var(--dash-card-radius);
+      border-bottom-right-radius: var(--dash-card-radius);
+      border-left: none;
+      border-right: none;
+      border-bottom: none;
+      border-top: 1px solid color-mix(in srgb, var(--green) 38%, var(--border));
+      box-sizing: border-box;
+      z-index: 1;
     }
     #tab-dashboard #personalIndicators .indicator-card--response .score-breakdown-spacer {
       display: none !important;
@@ -14935,44 +15156,129 @@
       display: inline-flex;
     }
     #tab-dashboard #personalIndicators .indicator-card--score .score-viol-row {
-      padding: 3px 5px;
-      gap: 4px;
+      position: relative;
+      padding: 1px 4px 2px;
+      gap: 3px;
       font-size: 8px;
       border-radius: 5px;
       grid-template-columns: 1fr auto;
     }
     #tab-dashboard #personalIndicators .indicator-card--score .score-viol-name {
-      font-size: 8px;
+      font-size: 9px;
       gap: 3px;
-      line-height: 1.2;
+      line-height: 1.15;
+      align-self: flex-start;
+      margin-top: 0;
     }
     #tab-dashboard #personalIndicators .indicator-card--score .score-viol-name .sev-dot {
-      width: 5px;
-      height: 5px;
+      width: 6px;
+      height: 6px;
     }
     #tab-dashboard #personalIndicators .indicator-card--score .score-viol-meta {
-      font-size: 7px;
+      font-size: 8px;
+      line-height: 1;
       gap: 4px;
-      margin-top: 1px;
+      margin-top: auto;
+      margin-bottom: 1px;
+      align-self: flex-start;
+      align-items: center;
+      flex-wrap: nowrap;
+      overflow: visible;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .score-viol-meta .score-viol-meta-item,
+    #tab-dashboard #personalIndicators .indicator-card--score .score-viol-meta > span:not(.score-viol-meta-txt) {
+      font-size: inherit;
+      line-height: 1;
+      display: inline-grid;
+      grid-template-columns: auto auto;
+      align-items: center;
+      column-gap: 4px;
+      white-space: nowrap;
     }
     #tab-dashboard #personalIndicators .indicator-card--score .score-viol-meta span:nth-child(n+3) {
       display: none;
     }
-    #tab-dashboard #personalIndicators .indicator-card--score .score-viol-meta span i {
-      font-size: 6px;
+    #tab-dashboard #personalIndicators .indicator-card--score .score-viol-meta .score-viol-meta-item > i,
+    #tab-dashboard #personalIndicators .indicator-card--score .score-viol-meta > span:not(.score-viol-meta-txt) > i {
+      font-size: 1em;
+      line-height: 1;
+      width: 1em;
+      height: 1em;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .score-viol-meta .score-viol-meta-txt {
+      display: flex;
+      align-items: center;
+      line-height: 1;
+      height: 1em;
     }
     #tab-dashboard #personalIndicators .indicator-card--score .score-viol-weight {
       font-size: 9px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 0;
+      line-height: 1;
+      min-width: 1.75rem;
+      padding-top: 0;
+      box-sizing: border-box;
+      align-self: center;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .score-viol-weight:has(.raw-weight) {
+      align-self: stretch;
+      justify-content: center;
+      gap: 0;
+      padding-top: 0;
+      height: 100%;
+      min-height: 0;
     }
     #tab-dashboard #personalIndicators .indicator-card--score .score-viol-weight .raw-weight {
+      position: absolute;
+      top: 1px;
+      inset-inline-end: 0;
+      flex-shrink: 0;
       font-size: 7px;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
     }
+    #tab-dashboard #personalIndicators .indicator-card--score .score-viol-weight .raw-weight::after {
+      content: '';
+      position: absolute;
+      inset-inline: 0;
+      top: 50%;
+      height: 1px;
+      background: currentColor;
+      transform: translateY(-50%);
+      pointer-events: none;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .score-viol-weight:has(.raw-weight) .score-viol-weight-num {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      flex: 1;
+      align-self: stretch;
+      line-height: 1;
+      font-size: inherit;
+      font-weight: inherit;
+      color: inherit;
+      margin-top: 0;
+      min-height: 0;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .score-viol-row--admin-warn {
+      border-color: #ea580c;
+    }
+
     #tab-dashboard #personalIndicators .indicator-card--score .score-viol-row--admin-warn .score-viol-name {
       flex-wrap: wrap;
       row-gap: 2px;
-    }
-    #tab-dashboard #personalIndicators .indicator-card--response .score-viol-row.score-viol-row--on-time {
-      border-right-width: 1px;
     }
     #tab-dashboard #personalIndicators .indicator-card--score .score-viol-tag {
       font-size: 7px;
@@ -14986,12 +15292,17 @@
       white-space: nowrap;
     }
     #tab-dashboard #personalIndicators .indicator-card--score .score-bonus-row {
-      padding: 3px 6px;
+      padding: 1px 6px;
       font-size: 8px;
       border-radius: 5px;
-      margin-bottom: 4px;
-      min-height: 26px;
+      margin-bottom: 0;
+      min-height: var(--score-bonus-row-h, 22px);
+      height: var(--score-bonus-row-h, 22px);
       box-sizing: border-box;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
     }
     #tab-dashboard #personalIndicators .indicator-card--score .score-bonus-val {
       font-size: 11px;
@@ -15022,13 +15333,18 @@
     }
     #tab-dashboard #personalIndicators .indicator-card--score {
       --dash-card-pad-inline: 5px;
-      --dash-card-pad-block: 7px;
-      --dash-card-header-min-h: 5.25rem;
-      padding: var(--dash-card-pad-block) var(--dash-card-pad-inline);
+      --dash-card-pad-top: 4px;
+      --dash-card-pad-bottom: 4px;
+      --dash-card-header-min-h: 6.5rem;
+      --dash-action-btn-h: 26px;
+      padding: var(--dash-card-pad-top) var(--dash-card-pad-inline) var(--dash-card-pad-bottom);
     }
     #tab-dashboard #personalIndicators .indicator-card--score .indicator-ring {
       width: 44px;
       height: 44px;
+      flex: 0 0 44px;
+      min-width: 44px;
+      min-height: 44px;
     }
     #tab-dashboard #personalIndicators .indicator-card--score .indicator-ring-num {
       font-size: 12px;
@@ -15071,27 +15387,45 @@
     }
     #tab-dashboard #personalIndicators .indicator-card--score .indicator-stat .badge {
       font-size: 6px;
-      padding: 1px 3px;
+      padding: 2px 4px;
+      min-height: 16px;
     }
-    #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-panel {
-      padding: 2px 3px 3px;
+    #tab-dashboard #personalIndicators .indicator-card--score .indicator-stat .badge i {
+      font-size: 6px;
+      width: 1.1em;
+      height: 1.1em;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score {
+      --dash-panel-pad-inline: 3px;
+      --dash-panel-pad-bottom: 3px;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-panel:not(.open) {
+      padding: 0 var(--dash-panel-pad-inline) var(--dash-panel-pad-bottom);
+    }
+    #tab-dashboard #personalIndicators .indicator-card--commitment:has(.score-breakdown-panel.open) {
+      padding-bottom: 0;
+      position: relative;
+    }
+    #tab-dashboard #personalIndicators .indicator-card--commitment .score-breakdown-panel.open {
+      padding: 3px 0 0;
     }
     #tab-dashboard #personalIndicators .indicator-card--score .score-equation {
-      padding: 3px 2px;
+      --eq-num-size: 11px;
+      --eq-label-size: 8px;
+      column-gap: 3px;
+      padding: 1px 2px 2px;
       font-size: 8px;
-      gap: 2px 1px;
-      margin-bottom: 2px;
+      margin: 0;
     }
     #tab-dashboard #personalIndicators .indicator-card--score .score-equation .eq-num {
-      font-size: 11px;
+      font-size: var(--eq-num-size);
     }
     #tab-dashboard #personalIndicators .indicator-card--score .score-equation .eq-op {
-      font-size: 10px;
-      margin-bottom: calc(0.6em + 2px);
+      font-size: calc(var(--eq-num-size) + 1px);
     }
     #tab-dashboard #personalIndicators .indicator-card--score .score-equation .eq-label {
-      font-size: 6px;
-      max-width: 44px;
+      font-size: 8px;
+      max-width: 52px;
     }
     #tab-dashboard #personalIndicators .indicator-card--score .score-breakdown-panel .score-viol-list {
       --score-viol-list-row-h: 36px;
@@ -15101,7 +15435,7 @@
       font-size: 7px;
     }
     #tab-dashboard #personalIndicators .indicator-card--score .score-viol-meta {
-      font-size: 6px;
+      font-size: 8px;
     }
     #tab-dashboard #personalIndicators .indicator-card--score .score-decay-info {
       font-size: 6px;
@@ -20167,7 +20501,7 @@
       }
     }
   </style>
-  <meta name="app-build" content="response-desc-size-v193">
+  <meta name="app-build" content="dash-header-badge-clip-v267">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
 </head>
 
@@ -25949,7 +26283,7 @@
         return violations.map(v => {
           const displayDate = (v.violation_date || v.created_at || '').slice(0, 10);
           const empMeta = opts.showEmpName
-            ? `<span><i class="fas fa-user"></i> الموظف: ${Sec.escapeHTML(v._empName || '—')}</span>`
+            ? `<span class="score-viol-meta-item"><i class="fas fa-user"></i><span class="score-viol-meta-txt">الموظف: ${Sec.escapeHTML(v._empName || '—')}</span></span>`
             : '';
           return `
             <div class="score-viol-row score-viol-row--on-time" onclick="openTicket('${v.id}')" style="cursor:pointer" role="button" tabindex="0">
@@ -25959,8 +26293,8 @@
                   ${Sec.escapeHTML(v.violation_type)}
                 </div>
                 <div class="score-viol-meta">
-                  <span><i class="fas fa-calendar-day"></i> ${displayDate}</span>
-                  <span><i class="fas fa-ticket"></i> ${Sec.escapeHTML(shortTicketNum(v.ticket_number))}</span>
+                  <span class="score-viol-meta-item"><i class="fas fa-calendar-day"></i><span class="score-viol-meta-txt">${displayDate}</span></span>
+                  <span class="score-viol-meta-item"><i class="fas fa-ticket"></i><span class="score-viol-meta-txt">${Sec.escapeHTML(shortTicketNum(v.ticket_number))}</span></span>
                   ${empMeta}
                 </div>
               </div>
@@ -25994,7 +26328,7 @@
           const displayDate = (v.violation_date || v.created_at || '').slice(0, 10);
           const isLate = kind === 'late';
           const empMeta = opts.showEmpName
-            ? `<span><i class="fas fa-user"></i> الموظف: ${Sec.escapeHTML(v._empName || '—')}</span>`
+            ? `<span class="score-viol-meta-item"><i class="fas fa-user"></i><span class="score-viol-meta-txt">الموظف: ${Sec.escapeHTML(v._empName || '—')}</span></span>`
             : '';
           return `
             <div class="score-viol-row${isLate ? '' : ' score-viol-row--on-time'}" onclick="openTicket('${v.id}')" style="cursor:pointer" role="button" tabindex="0">
@@ -26004,10 +26338,10 @@
                   ${Sec.escapeHTML(v.violation_type)}
                 </div>
                 <div class="score-viol-meta">
-                  <span><i class="fas fa-calendar-day"></i> ${displayDate}</span>
-                  <span><i class="fas fa-ticket"></i> ${Sec.escapeHTML(shortTicketNum(v.ticket_number))}</span>
+                  <span class="score-viol-meta-item"><i class="fas fa-calendar-day"></i><span class="score-viol-meta-txt">${displayDate}</span></span>
+                  <span class="score-viol-meta-item"><i class="fas fa-ticket"></i><span class="score-viol-meta-txt">${Sec.escapeHTML(shortTicketNum(v.ticket_number))}</span></span>
                   ${empMeta}
-                  <span><i class="fas fa-${isLate ? 'clock-rotate-left' : 'check'}"></i> ${isLate ? 'تأخير' : 'بونص'}</span>
+                  <span class="score-viol-meta-item"><i class="fas fa-${isLate ? 'clock-rotate-left' : 'check'}"></i><span class="score-viol-meta-txt">${isLate ? 'تأخير' : 'بونص'}</span></span>
                 </div>
               </div>
               <div class="score-viol-weight" style="color:${isLate ? 'var(--red-text)' : 'var(--green-text)'}">${isLate ? '-' + latePts : '+' + bonusPts}</div>
@@ -26079,13 +26413,13 @@
           if (variant === 'supervisor') return '';
           return '<span class="badge b-green"><i class="fas fa-bolt"></i> استجابة ممتازة</span>';
         }
-        const autoClass = variant === 'supervisor' ? 'b-red' : 'b-amber';
+        const autoClass = 'b-red';
         let html = '';
         if (autoCount > 0) {
           html += `<span class="badge ${autoClass}"><i class="fas fa-forward"></i> ${autoCount} تمرير تلقائي</span>`;
         }
         if (respondedCount > 0) {
-          html += `<span class="badge b-blue"><i class="fas fa-circle-check"></i> ${respondedCount} رد في الوقت (+${bonus})</span>`;
+          html += `<span class="badge b-green"><i class="fas fa-circle-check"></i> ${respondedCount} رد في الوقت (+${bonus})</span>`;
         }
         if (!html) {
           html = `<span class="badge" style="background:var(--surface2);color:var(--text2);border:1px solid var(--border)"><i class="fas fa-gauge-high"></i> مؤشر الاستجابة ${score}</span>`;
@@ -26173,9 +26507,9 @@
                     <span class="score-viol-tag score-viol-tag--warn">تنبيه إداري</span>
                   </div>
                   <div class="score-viol-meta">
-                    <span><i class="fas fa-calendar-day"></i> ${displayDate}</span>
-                    <span><i class="fas fa-hourglass-half"></i> منذ ${ageDays} يوم</span>
-                    <span><i class="fas fa-ticket"></i> ${Sec.escapeHTML(shortTicketNum(v.ticket_number))}</span>
+                    <span class="score-viol-meta-item"><i class="fas fa-calendar-day"></i><span class="score-viol-meta-txt">${displayDate}</span></span>
+                    <span class="score-viol-meta-item"><i class="fas fa-hourglass-half"></i><span class="score-viol-meta-txt">منذ ${ageDays} يوم</span></span>
+                    <span class="score-viol-meta-item"><i class="fas fa-ticket"></i><span class="score-viol-meta-txt">${Sec.escapeHTML(shortTicketNum(v.ticket_number))}</span></span>
                   </div>
                 </div>
                 <div class="score-viol-weight score-viol-weight--zero">0</div>
@@ -26203,14 +26537,14 @@
                     ${Sec.escapeHTML(v.violation_type)}
                   </div>
                   <div class="score-viol-meta">
-                    <span><i class="fas fa-calendar-day"></i> ${displayDate}</span>
-                    <span><i class="fas fa-hourglass-half"></i> منذ ${ageDays} يوم</span>
-                    <span${freqMult > 1 ? ' style="color:var(--red-text)"' : ''}><i class="fas fa-repeat"></i> تكرار ${recentBefore + 1}: ×${freqMult}</span>
+                    <span class="score-viol-meta-item"><i class="fas fa-calendar-day"></i><span class="score-viol-meta-txt">${displayDate}</span></span>
+                    <span class="score-viol-meta-item"><i class="fas fa-hourglass-half"></i><span class="score-viol-meta-txt">منذ ${ageDays} يوم</span></span>
+                    <span class="score-viol-meta-item"${freqMult > 1 ? ' style="color:var(--red-text)"' : ''}><i class="fas fa-repeat"></i><span class="score-viol-meta-txt">تكرار ${recentBefore + 1}: ×${freqMult}</span></span>
                   </div>
                 </div>
                 <div class="score-viol-weight">
                   ${baseWeight !== effective ? `<span class="raw-weight">${baseWeight}</span>` : ''}
-                  -${effective}
+                  <span class="score-viol-weight-num">-${effective}</span>
                 </div>
               </div>`;
             });
@@ -26240,17 +26574,17 @@
                 <span class="eq-num" style="color:var(--text)">100</span>
                 <span class="eq-label">الأساس</span>
               </div>
-              <span class="eq-op">−</span>
+              <div class="eq-op" aria-hidden="true">−</div>
               <div class="eq-item">
                 <span class="eq-num" style="color:var(--red-text)">${deductedDisplay}</span>
                 <span class="eq-label">خصم فعلي</span>
               </div>
-              <span class="eq-op">+</span>
+              <div class="eq-op" aria-hidden="true">+</div>
               <div class="eq-item">
                 <span class="eq-num" style="color:var(--green-text)">${streakBonus}</span>
                 <span class="eq-label">بونص</span>
               </div>
-              <span class="eq-op">=</span>
+              <div class="eq-op" aria-hidden="true">=</div>
               <div class="eq-item eq-result${commitmentResultClass}">
                 <span class="eq-num" style="color:${commitmentNumColor}">${commitmentRounded}</span>
                 <span class="eq-label">درجتك</span>
@@ -26300,7 +26634,7 @@
                 <div class="indicator-stat">
                   ${warnCount > 0 ? `<span class="badge b-orange"><i class="fas fa-bell"></i> ${warnCount} تنبيه إداري</span>` : ''}
                   ${totalApproved > 0
-              ? `<span class="badge b-blue"><i class="fas fa-list"></i> ${totalApproved} مخالفة تؤثر على التقييم</span>`
+              ? `<span class="badge b-red"><i class="fas fa-list"></i> ${totalApproved} مخالفة تؤثر على التقييم</span>`
               : '<span class="badge b-green"><i class="fas fa-shield-halved"></i> لا مخالفات مؤثرة</span>'
             }
                   ${scoreHealed ? `<span class="badge b-green"><i class="fas fa-heart-pulse"></i> معدل 100 — خصومات مُعالجة</span>` : ''}
@@ -26360,11 +26694,11 @@
             <div class="score-breakdown-panel">
               <div class="score-equation">
                 <div class="eq-item"><span class="eq-num">100</span><span class="eq-label">الأساس</span></div>
-                <span class="eq-op">−</span>
+                <div class="eq-op" aria-hidden="true">−</div>
                 <div class="eq-item"><span class="eq-num" style="color:var(--red-text)">${penalty}</span><span class="eq-label">خصم تأخير</span></div>
-                <span class="eq-op">+</span>
-                <div class="eq-item"><span class="eq-num" style="color:var(--green-text)">${bonus}</span><span class="eq-label">بونص استجابة</span></div>
-                <span class="eq-op">=</span>
+                <div class="eq-op" aria-hidden="true">+</div>
+                <div class="eq-item"><span class="eq-num" style="color:var(--green-text)">${bonus}</span><span class="eq-label">بونص</span></div>
+                <div class="eq-op" aria-hidden="true">=</div>
                 <div class="eq-item eq-result${responseResultClass}"><span class="eq-num" style="color:${responseNumColor}">${responseRounded}</span><span class="eq-label">درجتك</span></div>
               </div>
               <div class="score-breakdown-records">
@@ -26494,11 +26828,11 @@
             <div class="score-breakdown-panel">
               <div class="score-equation">
                 <div class="eq-item"><span class="eq-num">100</span><span class="eq-label">الأساس</span></div>
-                <span class="eq-op">−</span>
+                <div class="eq-op" aria-hidden="true">−</div>
                 <div class="eq-item"><span class="eq-num" style="color:var(--red-text)">${penalty}</span><span class="eq-label">خصم تأخير</span></div>
-                <span class="eq-op">+</span>
-                <div class="eq-item"><span class="eq-num" style="color:var(--green-text)">${bonus}</span><span class="eq-label">بونص استجابة</span></div>
-                <span class="eq-op">=</span>
+                <div class="eq-op" aria-hidden="true">+</div>
+                <div class="eq-item"><span class="eq-num" style="color:var(--green-text)">${bonus}</span><span class="eq-label">بونص</span></div>
+                <div class="eq-op" aria-hidden="true">=</div>
                 <div class="eq-item eq-result${responseResultClass}"><span class="eq-num" style="color:${responseNumColor}">${responseRounded}</span><span class="eq-label">درجتك</span></div>
               </div>
               <div class="score-breakdown-records">
@@ -35260,8 +35594,8 @@
                     ${ded.pending ? '<span style="font-size:10px;font-weight:700;color:#c2410c;margin-right:6px"><i class="fas fa-hourglass-half"></i> قيد المراجعة</span>' : ''}
                   </div>
                   <div class="score-viol-meta">
-                    <span><i class="fas fa-calendar-day"></i> ${displayDate}</span>
-                    <span><i class="fas fa-hourglass-half"></i> منذ ${ageDays} يوم</span>
+                    <span class="score-viol-meta-item"><i class="fas fa-calendar-day"></i><span class="score-viol-meta-txt">${displayDate}</span></span>
+                    <span class="score-viol-meta-item"><i class="fas fa-hourglass-half"></i><span class="score-viol-meta-txt">منذ ${ageDays} يوم</span></span>
                     <span><i class="fas fa-weight-hanging"></i> نقاط المخالفة الأساسية: ${ded.baseWeight}</span>
                     <span${repeatStyle}><i class="fas fa-repeat"></i> تكرار ${ded.occurrence}: ×${ded.freqMult}</span>
                   </div>
