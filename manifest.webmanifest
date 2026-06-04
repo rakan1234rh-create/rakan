@@ -6,8 +6,8 @@
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#000000",
-  "theme_color": "#000000",
+  "background_color": "#0D0E12",
+  "theme_color": "#17181C",
   "lang": "ar",
   "dir": "rtl",
   "icons": [
@@ -24,7 +24,7 @@
       "purpose": "any"
     },
     {
-      "src": "icons/homescreen-512.png",
+      "src": "icons/homescreen-maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
