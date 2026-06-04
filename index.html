@@ -414,15 +414,16 @@
     }
 
     .brand-area .brand-icon.wefaq-logo-slot {
-      width: 52px;
-      height: 52px;
-      font-size: 0 !important
+      width: 64px;
+      height: 64px;
+      font-size: 0 !important;
+      flex-shrink: 0
     }
 
     @media (max-width: 576px) {
       .brand-area .brand-icon.wefaq-logo-slot {
-        width: 44px !important;
-        height: 44px !important
+        width: 52px !important;
+        height: 52px !important
       }
     }
 
@@ -693,8 +694,8 @@
     }
 
     #loginTransition .lt-shield.wefaq-logo-slot {
-      width: 5.75rem;
-      height: 5.75rem;
+      width: 7.25rem;
+      height: 7.25rem;
       margin: 0 auto 1.25rem;
       animation: none !important;
       background: transparent !important;
@@ -18242,7 +18243,7 @@
       .brand-area {
         gap: 8px !important;
       }
-      .brand-area .brand-icon {
+      .brand-area .brand-icon:not(.wefaq-logo-slot) {
         width: 32px !important;
         height: 32px !important;
         font-size: 16px !important;
