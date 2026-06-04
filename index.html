@@ -21262,27 +21262,35 @@
           <div id="loginError" class="login-err" role="alert">
             <span id="loginErrorMsg"></span>
           </div>
-          <div class="lp-login-fields" role="group" aria-label="تسجيل الدخول">
-            <div class="lp-row lp-f2">
-              <label class="lp-label" for="loginIdentifier">البريد أو الرقم الوظيفي</label>
-              <input id="loginIdentifier" class="lp-input" type="text" autocomplete="username"
-                enterkeyhint="next" placeholder="البريد أو الرقم الوظيفي" required>
-            </div>
-            <div class="lp-row lp-f3">
-              <label class="lp-label" for="loginPassword">كلمة المرور</label>
-              <div class="lp-input-wrap">
-                <input id="loginPassword" class="lp-input lp-input--pw" type="password" autocomplete="current-password"
-                  enterkeyhint="go" placeholder="••••••••" required>
-                <button type="button" class="lp-pw-toggle" onclick="toggleLoginPw()" title="إظهار/إخفاء"><i
-                    class="fas fa-eye" id="loginPwIcon"></i></button>
+          <div class="lp-login-fields" id="loginFields" role="group" aria-label="تسجيل الدخول">
+            <div class="lp-login-step lp-login-step--id" id="loginStepId">
+              <div class="lp-row lp-f2">
+                <label class="lp-label" for="loginIdentifier">البريد أو الرقم الوظيفي</label>
+                <input id="loginIdentifier" class="lp-input" type="text" autocomplete="username"
+                  enterkeyhint="next" placeholder="البريد أو الرقم الوظيفي" required>
+              </div>
+              <div class="lp-f5 lp-login-next-wrap">
+                <button type="button" class="lp-btn-primary" id="loginNextBtn"><span>متابعة</span></button>
               </div>
             </div>
-            <div class="lp-meta lp-f4">
-              <label><input type="checkbox" id="loginRemember"> <span>تذكرني</span></label>
-              <a href="#" class="lp-link" onclick="event.preventDefault(); showForgotPassword();">نسيت كلمة المرور؟</a>
-            </div>
-            <div class="lp-f5">
-              <button type="button" class="lp-btn-primary" id="loginBtn"><span>تسجيل الدخول</span></button>
+            <div class="lp-login-step lp-login-step--pw" id="loginStepPw">
+              <div class="lp-row lp-f3">
+                <label class="lp-label" for="loginPassword">كلمة المرور</label>
+                <div class="lp-input-wrap">
+                  <input id="loginPassword" class="lp-input lp-input--pw" type="password" autocomplete="current-password"
+                    enterkeyhint="go" placeholder="••••••••" required>
+                  <button type="button" class="lp-pw-toggle" tabindex="-1" onclick="toggleLoginPw()" title="إظهار/إخفاء"><i
+                      class="fas fa-eye" id="loginPwIcon"></i></button>
+                </div>
+              </div>
+              <div class="lp-meta lp-f4">
+                <label><input type="checkbox" id="loginRemember"> <span>تذكرني</span></label>
+                <a href="#" class="lp-link" onclick="event.preventDefault(); showForgotPassword();">نسيت كلمة المرور؟</a>
+              </div>
+              <div class="lp-f5">
+                <button type="button" class="lp-btn-primary" id="loginBtn"><span>تسجيل الدخول</span></button>
+                <button type="button" class="lp-login-back-btn" id="loginBackBtn">رجوع</button>
+              </div>
             </div>
           </div>
           <div class="lp-divider lp-secure-note">
@@ -24320,6 +24328,28 @@
         ico.className = inp.type === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash';
       }
 
+      function resetLoginMobileStep() {
+        const wrap = document.getElementById('loginFields');
+        if (wrap) wrap.classList.remove('lp-login-fields--on-pw');
+      }
+
+      function showLoginPasswordStep() {
+        const idEl = document.getElementById('loginIdentifier');
+        const wrap = document.getElementById('loginFields');
+        if (!idEl?.value.trim()) {
+          showLoginError('يرجى إدخال الرقم الوظيفي أو البريد الإلكتروني');
+          idEl?.focus();
+          return;
+        }
+        hideLoginError();
+        if (wrap?.classList.contains('lp-login-fields--steps')) {
+          wrap.classList.add('lp-login-fields--on-pw');
+          setTimeout(() => document.getElementById('loginPassword')?.focus(), 80);
+        } else {
+          document.getElementById('loginPassword')?.focus();
+        }
+      }
+
       function showLoginForm() {
         const lc = document.getElementById('loginCard');
         if (!lc) return;
@@ -24329,6 +24359,7 @@
         if (fc) fc.style.display = 'none';
         if (rc) rc.style.display = 'none';
         hideLoginError();
+        resetLoginMobileStep();
       }
 
       function showForgotPassword() {
