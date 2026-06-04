@@ -286,6 +286,20 @@
       overflow: hidden;
     }
 
+    html.login-portal-open,
+    body.login-portal-open {
+      overflow: hidden !important;
+      overscroll-behavior: none;
+      touch-action: manipulation
+    }
+
+    body.login-portal-open {
+      position: fixed;
+      width: 100%;
+      left: 0;
+      right: 0
+    }
+
     /* شاشة تسجيل الدخول — نفس أسلوب الأرشيف (مرصاد) + انتقال التحميل */
     #loginScreen.hidden {
       display: none !important
@@ -299,9 +313,29 @@
       align-items: center;
       justify-content: center;
       overflow: hidden;
+      overscroll-behavior: none;
+      height: 100dvh;
+      max-height: 100dvh;
       padding: clamp(12px, 3vw, 28px);
+      padding-top: max(clamp(12px, 3vw, 28px), env(safe-area-inset-top));
+      padding-bottom: max(clamp(12px, 3vw, 28px), env(safe-area-inset-bottom));
       background: linear-gradient(135deg, #f8fafc 0%, #fff 45%, #f1f5f9 100%);
-      direction: rtl
+      direction: rtl;
+      touch-action: manipulation;
+      -webkit-overflow-scrolling: auto
+    }
+
+    @media (max-width: 992px) {
+      #loginScreen.lp-screen {
+        align-items: flex-start;
+        justify-content: flex-start
+      }
+
+      #loginScreen .lp-center {
+        margin-top: clamp(6px, 2.5vh, 24px);
+        max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 16px);
+        overflow: hidden
+      }
     }
 
     [data-theme="dark"] #loginScreen.lp-screen {
@@ -24253,12 +24287,71 @@
         }, { passive: false });
       }
 
+      let _loginPortalScrollY = 0;
+
+      function setLoginPortalScrollLock(on) {
+        const root = document.documentElement;
+        const body = document.body;
+        if (on) {
+          _loginPortalScrollY = window.scrollY || 0;
+          root.classList.add('login-portal-open');
+          body.classList.add('login-portal-open');
+          body.style.top = `-${_loginPortalScrollY}px`;
+        } else {
+          root.classList.remove('login-portal-open');
+          body.classList.remove('login-portal-open');
+          body.style.top = '';
+          window.scrollTo(0, _loginPortalScrollY);
+        }
+      }
+
+      function resetLoginScreenViewportPin() {
+        const ls = document.getElementById('loginScreen');
+        if (!ls) return;
+        ls.style.top = ls.style.left = ls.style.width = ls.style.height = ls.style.right = ls.style.bottom = '';
+      }
+
+      function pinLoginScreenToViewport() {
+        const ls = document.getElementById('loginScreen');
+        if (!ls || ls.classList.contains('hidden')) return;
+        const vv = window.visualViewport;
+        if (!vv) return;
+        ls.style.top = `${vv.offsetTop}px`;
+        ls.style.left = `${vv.offsetLeft}px`;
+        ls.style.width = `${vv.width}px`;
+        ls.style.height = `${vv.height}px`;
+        ls.style.right = 'auto';
+        ls.style.bottom = 'auto';
+      }
+
+      /** تثبيت شاشة تسجيل الدخول عند فتح لوحة المفاتيح (iOS / جوال) */
+      function initLoginScreenViewportLock() {
+        if (window._loginVpLockBound) return;
+        window._loginVpLockBound = true;
+        const repin = () => {
+          if (!document.body.classList.contains('login-portal-open')) return;
+          pinLoginScreenToViewport();
+          window.scrollTo(0, 0);
+        };
+        window.visualViewport?.addEventListener('resize', repin, { passive: true });
+        window.visualViewport?.addEventListener('scroll', repin, { passive: true });
+        window.addEventListener('scroll', repin, { passive: true });
+        ['loginIdentifier', 'loginPassword', 'forgotEmail'].forEach((id) => {
+          document.getElementById(id)?.addEventListener('focus', () => {
+            if (!document.body.classList.contains('login-portal-open')) return;
+            requestAnimationFrame(() => window.scrollTo(0, 0));
+          });
+        });
+      }
+
       function openLoginPortal() {
         const ls = document.getElementById('loginScreen');
         const app = document.getElementById('appWrap');
         const mobNav = document.getElementById('mobileBottomNav');
         if (mobNav) mobNav.style.display = 'none';
         setNativeAppShellActive(false);
+        setLoginPortalScrollLock(true);
+        pinLoginScreenToViewport();
         if (typeof syncWefaqBranding === 'function') syncWefaqBranding();
         if (ls) {
           ls.classList.remove('hidden');
@@ -24279,6 +24372,8 @@
           ls.setAttribute('hidden', '');
           ls.setAttribute('aria-hidden', 'true');
         }
+        resetLoginScreenViewportPin();
+        setLoginPortalScrollLock(false);
         if (app) {
           app.classList.add('rbac-ready');
           app.style.display = '';
@@ -37475,6 +37570,7 @@
           if (typeof syncMobileBottomNavLayout === 'function') syncMobileBottomNavLayout();
           if (typeof initMobileViewportSync === 'function') initMobileViewportSync();
           if (typeof syncWefaqBranding === 'function') syncWefaqBranding();
+          if (typeof initLoginScreenViewportLock === 'function') initLoginScreenViewportLock();
           if (typeof initLoginFieldKeyboard === 'function') initLoginFieldKeyboard();
           if (typeof initViolDetailSheetDrag === 'function') initViolDetailSheetDrag();
           if (typeof initTicketSheetDrag === 'function') initTicketSheetDrag();
