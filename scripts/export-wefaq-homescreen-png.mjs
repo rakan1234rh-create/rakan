@@ -1,8 +1,8 @@
 /**
- * PWA / home-screen PNGs (iOS apple-touch + Android manifest).
- * Manrope outlines, 8× supersample, 1024 master for Retina downscale (not 180 upscale).
+ * Home-screen PNGs: Manrope outlines + 4× supersample (crisp type/strokes on Retina).
+ * Run: npm install sharp opentype.js && node scripts/export-wefaq-homescreen-png.mjs
  */
-import { readFileSync, writeFileSync, copyFileSync } from 'fs';
+import { readFileSync, writeFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import opentype from 'opentype.js';
@@ -13,8 +13,7 @@ const iconsDir = join(root, 'icons');
 const fontPath = join(root, 'fonts', 'Manrope-Bold.ttf');
 const BLEED_BG = '#0D0E12';
 const VIEW = 512;
-const SUPER = 8;
-const ICON_CACHE_VER = '335';
+const SUPER = 4;
 
 let sharp;
 try {
@@ -31,6 +30,7 @@ function glyphAdvance(ch, fontSize) {
   return (g.advanceWidth || 0) * (fontSize / font.unitsPerEm);
 }
 
+/** Centered wefaq word as SVG path (Manrope outlines — no raster font substitution). */
 function wefaqTextPathD(cx, baselineY, fontSize, letterSpacing) {
   const text = 'wefaq';
   let total = 0;
@@ -50,7 +50,6 @@ function wefaqTextPathD(cx, baselineY, fontSize, letterSpacing) {
 
 function buildHomescreenSvg(contentScale) {
   const textD = wefaqTextPathD(256, 278, 118, -6);
-  const strokeW = (5 / contentScale).toFixed(4);
   const strokes = `
       <line x1="132" y1="360" x2="222" y2="360"/>
       <path d="M 290 360 L 400 360 Q 410 360 410 350 L 410 278"/>
@@ -67,10 +66,11 @@ function buildHomescreenSvg(contentScale) {
     </linearGradient>
   </defs>
   <rect width="${VIEW}" height="${VIEW}" fill="url(#surface)"/>
-  <g transform="translate(256 256) scale(${contentScale}) translate(-256 -250)" shape-rendering="geometricPrecision">
+  <g transform="translate(256 256) scale(${contentScale}) translate(-256 -250)"
+     shape-rendering="geometricPrecision" text-rendering="geometricPrecision">
     <path fill="#F8F8F5" d="${textD}"/>
-    <g stroke="#F8F8F5" stroke-width="${strokeW}" stroke-linecap="round" stroke-linejoin="round"
-       fill="none" shape-rendering="geometricPrecision">
+    <g stroke="#F8F8F5" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"
+       fill="none" vector-effect="non-scaling-stroke" shape-rendering="geometricPrecision">
       ${strokes}
     </g>
   </g>
@@ -97,21 +97,16 @@ async function exportPng(svg, size, name) {
     throw new Error(`${name}: expected ${size}x${size}, got ${meta.width}x${meta.height}`);
   }
   writeFileSync(join(iconsDir, name), buf);
-  console.log('Wrote', join(iconsDir, name), `(${meta.width}x${meta.height})`);
+  console.log('Wrote', join(iconsDir, name), `(${meta.width}x${meta.height}, ${SUPER}x SS)`);
 }
 
 const svgAny = buildHomescreenSvg(SCALE_ANY);
 const svgMask = buildHomescreenSvg(SCALE_MASKABLE);
 
-await exportPng(svgAny, 1024, 'homescreen-1024.png');
 await exportPng(svgAny, 512, 'homescreen-512.png');
 await exportPng(svgAny, 192, 'homescreen-192.png');
 await exportPng(svgMask, 512, 'homescreen-maskable-512.png');
-
-/* iOS: use 512/1024 downscale — never upscale a tiny 180px master */
-copyFileSync(join(iconsDir, 'homescreen-512.png'), join(iconsDir, 'apple-touch-icon.png'));
-await exportPng(svgAny, 180, 'apple-touch-icon-180.png');
+await exportPng(svgAny, 180, 'apple-touch-icon.png');
 
 writeFileSync(join(iconsDir, 'wefaq-512.png'), readFileSync(join(iconsDir, 'homescreen-512.png')));
 writeFileSync(join(iconsDir, 'wefaq-192.png'), readFileSync(join(iconsDir, 'homescreen-192.png')));
-writeFileSync(join(iconsDir, 'icon-cache-ver.txt'), ICON_CACHE_VER + '\n');
