@@ -398,12 +398,20 @@
       color: inherit
     }
 
-    #loginScreen #loginCard .wefaq-logo-slot {
-      width: 10rem;
-      height: 10rem;
-      max-width: min(78vw, 10rem);
-      margin: 0 auto 1.1rem;
+    #loginScreen #loginCard.lp-card .lp-hd--wefaq {
+      padding: 1.35rem 1.25rem 0.85rem
+    }
+
+    #loginScreen #loginCard .lp-hd--wefaq .wefaq-logo-slot {
+      width: 11rem;
+      height: 11rem;
+      max-width: min(82vw, 11rem);
+      margin: 0 auto 0.75rem;
       animation: lpIconSpring 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) 0.08s both
+    }
+
+    #loginScreen #loginCard .lp-hd--wefaq .lp-sub {
+      margin: 0
     }
 
     #loginTransition .wefaq-logo-slot {
@@ -21228,9 +21236,8 @@
     </div>
     <div class="lp-center">
       <div id="loginCard" class="lp-card lp-card--in">
-        <div class="lp-hd">
+        <div class="lp-hd lp-hd--wefaq">
           <div class="lp-brand-ico wefaq-logo-slot" aria-hidden="true"></div>
-          <h1 class="lp-title">منصة الرصد <i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i></h1>
           <p class="lp-sub">أدخل بيانات الدخول للوصول إلى المنصة</p>
         </div>
         <div class="lp-bd">
@@ -25066,7 +25073,7 @@
         return typeof window !== 'undefined' && window.matchMedia('(max-width: 992px)').matches;
       }
 
-      const WEFAQ_LOGO_VER = '344';
+      const WEFAQ_LOGO_VER = '345';
 
       function wefaqOfficialLogoHtml() {
         return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="شعار وفاق" class="wefaq-app-logo" data-wefaq-ver="${WEFAQ_LOGO_VER}" aria-hidden="true">
