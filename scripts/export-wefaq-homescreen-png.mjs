@@ -16,8 +16,9 @@ const VIEW = 512;
 const SUPER = 4;
 const SCALE_ANY = 512 / 380;
 const SCALE_MASKABLE = SCALE_ANY * 0.9;
-const STROKE_OFFSET_X = -4;
-const ICON_CACHE_VER = '344';
+/** PWA only — independent from in-app logo (see index.html wefaqOfficialLogoHtml). */
+const PWA_STROKE_OFFSET_X = -14;
+const ICON_CACHE_VER = '345';
 
 let sharp;
 try {
@@ -71,7 +72,7 @@ function buildHomescreenSvg(contentScale) {
   <rect width="${VIEW}" height="${VIEW}" fill="url(#surface)"/>
   <g transform="translate(256 256) scale(${contentScale}) translate(-256 -250)">
     <path fill="#F8F8F5" d="${textD}"/>
-    <g stroke="#F8F8F5" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none" transform="translate(${STROKE_OFFSET_X} 0)">
+    <g stroke="#F8F8F5" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none" transform="translate(${PWA_STROKE_OFFSET_X} 0)">
       ${strokes}
     </g>
   </g>
