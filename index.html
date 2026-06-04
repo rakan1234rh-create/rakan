@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=overlays-content">
   <meta name="format-detection" content="telephone=no">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="theme-color" content="#17181C" id="metaThemeColor">
@@ -340,12 +340,17 @@
     body.login-portal-open #loginScreen.lp-screen {
       top: 0 !important;
       right: 0 !important;
-      bottom: 0 !important;
       left: 0 !important;
+      bottom: auto !important;
       width: 100% !important;
       height: var(--login-stable-h, 100vh) !important;
       min-height: var(--login-stable-h, 100vh) !important;
       max-height: var(--login-stable-h, 100vh) !important;
+      transform: none !important;
+      will-change: auto
+    }
+
+    body.login-portal-open #loginScreen .lp-center {
       transform: none !important
     }
 
@@ -363,7 +368,6 @@
         justify-content: flex-start;
         height: 100vh;
         min-height: 100vh;
-        min-height: -webkit-fill-available;
         max-height: 100vh;
         padding-top: calc(env(safe-area-inset-top, 0px) + clamp(16px, 5vh, 48px));
         padding-bottom: max(clamp(12px, 3vw, 28px), env(safe-area-inset-bottom));
@@ -24403,14 +24407,30 @@
       }
 
       let _loginPortalScrollY = 0;
+      let _loginLockedVpH = 0;
 
       function applyLoginStableViewport() {
         const h = window.innerHeight;
-        document.documentElement.style.setProperty('--login-stable-h', `${h}px`);
+        if (!_loginLockedVpH || h > _loginLockedVpH) _loginLockedVpH = h;
+        document.documentElement.style.setProperty('--login-stable-h', `${_loginLockedVpH}px`);
       }
 
       function clearLoginStableViewport() {
+        _loginLockedVpH = 0;
         document.documentElement.style.removeProperty('--login-stable-h');
+      }
+
+      function freezeLoginPortalScroll() {
+        if (!document.body.classList.contains('login-portal-open')) return;
+        window.scrollTo(0, 0);
+        const ls = document.getElementById('loginScreen');
+        if (ls) {
+          ls.style.top = '0px';
+          ls.style.left = '0px';
+          ls.style.right = '0px';
+          ls.style.bottom = 'auto';
+          ls.style.transform = 'none';
+        }
       }
 
       function isLoginStandalonePwa() {
@@ -24453,11 +24473,13 @@
           ls.style.transform = '';
       }
 
-      /** شاشة دخول ثابتة — ارتفاع يُقفل عند الفتح ولا يتغير مع لوحة المفاتيح */
+      /** شاشة دخول ثابتة — لا تحريك مع لوحة المفاتيح (overlays-content + قفل ارتفاع) */
       function initLoginScreenViewportLock() {
         if (window._loginVpLockBound) return;
         window._loginVpLockBound = true;
         syncLoginStandalonePwaClass();
+        window.visualViewport?.addEventListener('scroll', freezeLoginPortalScroll, { passive: true });
+        window.addEventListener('scroll', freezeLoginPortalScroll, { passive: true });
       }
 
       function openLoginPortal() {
@@ -24631,6 +24653,9 @@
         if (!idEl || !pwEl || idEl.dataset.kbBound === '1') return;
         idEl.dataset.kbBound = '1';
         initLoginIosIdentifierNoSuggest(idEl);
+        [idEl, pwEl].forEach((el) => {
+          el.addEventListener('focus', () => requestAnimationFrame(freezeLoginPortalScroll), { passive: true });
+        });
         idEl.addEventListener('keydown', (e) => {
           if (e.key === 'Enter') {
             e.preventDefault();
