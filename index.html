@@ -325,30 +325,19 @@
       -webkit-overflow-scrolling: auto
     }
 
+    /* جوال + ويب + PWA: نفس مقاس البطاقة (28rem) والتوسيط — بدون تصغير */
     @media (max-width: 992px) {
-      #loginScreen.lp-screen:not(.lp-standalone-pwa) {
-        align-items: flex-start;
-        justify-content: flex-start
-      }
-
-      #loginScreen.lp-screen:not(.lp-standalone-pwa) .lp-center {
-        margin-top: clamp(6px, 2.5vh, 24px);
-        max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 16px);
-        overflow: hidden
-      }
-    }
-
-    /* PWA على الشاشة الرئيسية (iOS) — تنسيق ثابت بدون اهتزاز عند اللمس */
-    @media (display-mode: standalone),
-    (display-mode: fullscreen) {
       #loginScreen.lp-screen {
+        align-items: center;
+        justify-content: center;
         height: 100%;
         min-height: 100vh;
         min-height: -webkit-fill-available;
         max-height: none;
-        align-items: center;
-        justify-content: center;
-        padding: max(12px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left))
+        padding-top: max(clamp(12px, 3vw, 28px), env(safe-area-inset-top));
+        padding-bottom: max(clamp(12px, 3vw, 28px), env(safe-area-inset-bottom));
+        padding-left: max(clamp(12px, 3vw, 28px), env(safe-area-inset-left));
+        padding-right: max(clamp(12px, 3vw, 28px), env(safe-area-inset-right))
       }
 
       #loginScreen .lp-center {
@@ -356,9 +345,13 @@
         max-height: none;
         overflow: visible;
         width: 100%;
-        max-width: min(24rem, calc(100vw - 32px - env(safe-area-inset-left) - env(safe-area-inset-right)))
+        max-width: 28rem
       }
+    }
 
+    /* iOS PWA: إيقاف حركات الدخول فقط (لا تغيير مقاس الشعار أو البطاقة) */
+    @media (display-mode: standalone),
+    (display-mode: fullscreen) {
       #loginScreen .lp-blob {
         animation: none;
         opacity: 0.32
@@ -372,44 +365,6 @@
       #loginScreen #loginCard .lp-hd--wefaq .wefaq-logo-slot {
         animation: none !important
       }
-
-      #loginScreen #loginCard.lp-card .lp-hd--wefaq {
-        padding: 1rem 1rem 0.6rem
-      }
-
-      #loginScreen #loginCard .lp-hd--wefaq .wefaq-logo-slot {
-        width: min(8.5rem, 68vw);
-        height: min(8.5rem, 68vw);
-        max-width: min(8.5rem, 68vw);
-        margin-bottom: 0.5rem
-      }
-
-      #loginScreen .lp-card,
-      #loginScreen .lp-center {
-        -webkit-tap-highlight-color: transparent;
-        touch-action: manipulation;
-        transform: translateZ(0);
-        -webkit-transform: translateZ(0);
-        backface-visibility: hidden
-      }
-    }
-
-    #loginScreen.lp-standalone-pwa.lp-screen {
-      height: 100%;
-      min-height: 100vh;
-      min-height: -webkit-fill-available;
-      max-height: none;
-      align-items: center;
-      justify-content: center;
-      padding: max(12px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left))
-    }
-
-    #loginScreen.lp-standalone-pwa .lp-center {
-      margin-top: 0;
-      max-height: none;
-      overflow: visible;
-      width: 100%;
-      max-width: min(24rem, calc(100vw - 32px - env(safe-area-inset-left) - env(safe-area-inset-right)))
     }
 
     #loginScreen.lp-standalone-pwa .lp-blob {
@@ -424,17 +379,6 @@
     #loginScreen.lp-standalone-pwa .lp-f5,
     #loginScreen.lp-standalone-pwa #loginCard .lp-hd--wefaq .wefaq-logo-slot {
       animation: none !important
-    }
-
-    #loginScreen.lp-standalone-pwa #loginCard.lp-card .lp-hd--wefaq {
-      padding: 1rem 1rem 0.6rem
-    }
-
-    #loginScreen.lp-standalone-pwa #loginCard .lp-hd--wefaq .wefaq-logo-slot {
-      width: min(8.5rem, 68vw);
-      height: min(8.5rem, 68vw);
-      max-width: min(8.5rem, 68vw);
-      margin-bottom: 0.5rem
     }
 
     #loginScreen.lp-standalone-pwa .lp-card,
@@ -24450,7 +24394,7 @@
       function pinLoginScreenToViewport() {
         const ls = document.getElementById('loginScreen');
         if (!ls || ls.classList.contains('hidden')) return;
-        if (isLoginStandalonePwa() && !loginKeyboardLikelyOpen()) {
+        if (!loginKeyboardLikelyOpen()) {
           resetLoginScreenViewportPin();
           return;
         }
@@ -24464,7 +24408,7 @@
         ls.style.bottom = 'auto';
       }
 
-      /** تثبيت شاشة تسجيل الدخول عند فتح لوحة المفاتيح — بدون اهتزاز في PWA */
+      /** تثبيت الشاشة عند فتح لوحة المفاتيح فقط — ويب + PWA بدون اهتزاز عند اللمس */
       function initLoginScreenViewportLock() {
         if (window._loginVpLockBound) return;
         window._loginVpLockBound = true;
@@ -24473,24 +24417,20 @@
           if (!document.body.classList.contains('login-portal-open')) return;
           cancelAnimationFrame(_loginRepinRaf);
           _loginRepinRaf = requestAnimationFrame(() => {
-            if (isLoginStandalonePwa() && !loginKeyboardLikelyOpen()) {
+            if (!loginKeyboardLikelyOpen()) {
               resetLoginScreenViewportPin();
               return;
             }
             pinLoginScreenToViewport();
-            if (!isLoginStandalonePwa()) window.scrollTo(0, 0);
           });
         };
-        const pwa = isLoginStandalonePwa();
         window.visualViewport?.addEventListener('resize', repin, { passive: true });
-        if (!pwa) {
-          window.visualViewport?.addEventListener('scroll', repin, { passive: true });
-          window.addEventListener('scroll', repin, { passive: true });
-        }
         ['loginIdentifier', 'loginPassword', 'forgotEmail'].forEach((id) => {
-          document.getElementById(id)?.addEventListener('focus', () => {
-            if (!document.body.classList.contains('login-portal-open')) return;
-            repin();
+          document.getElementById(id)?.addEventListener('focus', repin);
+          document.getElementById(id)?.addEventListener('blur', () => {
+            requestAnimationFrame(() => {
+              if (!loginKeyboardLikelyOpen()) resetLoginScreenViewportPin();
+            });
           });
         });
       }
@@ -24503,8 +24443,7 @@
         setNativeAppShellActive(false);
         syncLoginStandalonePwaClass();
         setLoginPortalScrollLock(true);
-        if (isLoginStandalonePwa()) resetLoginScreenViewportPin();
-        else pinLoginScreenToViewport();
+        resetLoginScreenViewportPin();
         if (typeof syncWefaqBranding === 'function') syncWefaqBranding();
         if (ls) {
           ls.classList.remove('hidden');
