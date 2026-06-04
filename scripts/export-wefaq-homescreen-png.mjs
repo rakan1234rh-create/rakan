@@ -1,5 +1,6 @@
 /**
- * Home-screen PNGs: 512x512 full-bleed #0D0E12 base (no white edge bleed on OS mask).
+ * Home-screen PNGs: single-layer full-bleed gradient (no inner rounded tile — avoids double frame).
+ * purpose=any: logo scaled to fill; maskable: ~90% safe-zone scale on same full-bleed background.
  * Run: npm install sharp && node scripts/export-wefaq-homescreen-png.mjs
  */
 import { readFileSync, writeFileSync } from 'fs';
