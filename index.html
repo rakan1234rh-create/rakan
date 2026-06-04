@@ -525,10 +525,10 @@
       transform: translate(-50%, calc(-50% - 6px))
     }
 
-    /* iOS PWA — شعار الصفحة الرئيسية: WEFAQ + خط المعينين (فكرة الأيقونة) */
-    html.ios-standalone-pwa .brand-area .brand-icon.wefaq-logo-slot .wefaq-app-logo--pwa-home {
-      width: 132px;
-      height: 132px;
+    /* شعار الصفحة الرئيسية (الشريط): WEFAQ + خط المعينين */
+    .brand-area .brand-icon.wefaq-logo-slot .wefaq-app-logo--home-wordmark {
+      width: 148px;
+      height: 148px;
       transform: translate(-50%, calc(-50% - 5px))
     }
 
@@ -559,9 +559,9 @@
         transform: translate(-50%, calc(-50% - 4px)) !important
       }
 
-      html.ios-standalone-pwa .brand-area .brand-icon.wefaq-logo-slot .wefaq-app-logo--pwa-home {
-        width: 98px !important;
-        height: 98px !important;
+      .brand-area .brand-icon.wefaq-logo-slot .wefaq-app-logo--home-wordmark {
+        width: 108px !important;
+        height: 108px !important;
         transform: translate(-50%, calc(-50% - 4px)) !important
       }
     }
@@ -21307,7 +21307,7 @@
       }
     }
   </style>
-  <meta name="app-build" content="wefaq-pwa-home-logo-v356">
+  <meta name="app-build" content="wefaq-home-wordmark-v357">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
 </head>
 
@@ -24326,6 +24326,10 @@
         const on = !!active && typeof isMobileViewport === 'function' && isMobileViewport();
         document.body.classList.toggle('mirsad-app-active', on);
         document.documentElement.classList.toggle('mirsad-app-shell-lock', on);
+        if (on) {
+          if (typeof syncLoginStandalonePwaClass === 'function') syncLoginStandalonePwaClass();
+          if (typeof syncWefaqBranding === 'function') syncWefaqBranding();
+        }
       }
 
       function initNativeAppFeel() {
@@ -24418,6 +24422,8 @@
           app.style.display = '';
         }
         setNativeAppShellActive(true);
+        if (typeof syncLoginStandalonePwaClass === 'function') syncLoginStandalonePwaClass();
+        if (typeof syncWefaqBranding === 'function') syncWefaqBranding();
         if (typeof initSidebarMobileControls === 'function') {
           requestAnimationFrame(() => initSidebarMobileControls());
         }
@@ -25281,11 +25287,11 @@
         return typeof window !== 'undefined' && window.matchMedia('(max-width: 992px)').matches;
       }
 
-      const WEFAQ_LOGO_VER = '356';
+      const WEFAQ_LOGO_VER = '357';
 
-      /** شعار الدخول والانتقال — النسخة الكلاسيكية */
+      /** شعار الدخول والانتقال */
       function wefaqOfficialLogoHtml() {
-        return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="شعار وفاق" class="wefaq-app-logo" data-wefaq-ver="${WEFAQ_LOGO_VER}" aria-hidden="true">
+        return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="شعار وفاق" class="wefaq-app-logo" data-wefaq-ver="${WEFAQ_LOGO_VER}" data-wefaq-style="login" aria-hidden="true">
           <g fill="currentColor" font-family="Manrope, var(--font), Arial, sans-serif" font-weight="700">
             <text x="256" y="278" text-anchor="middle" font-size="118" letter-spacing="-6">wefaq</text>
           </g>
@@ -25300,49 +25306,37 @@
         </svg>`;
       }
 
-      /** iOS PWA — الصفحة الرئيسية: WEFAQ بخط عريض + خط تحتي بمعينين متشابكين ووصل لذيل Q */
-      function wefaqPwaHomeLogoHtml() {
-        return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="WEFAQ" class="wefaq-app-logo wefaq-app-logo--pwa-home" data-wefaq-ver="${WEFAQ_LOGO_VER}" data-wefaq-style="pwa-home" aria-hidden="true">
+      /** الشريط العلوي (الصفحة الرئيسية): WEFAQ + خط المعينين — فكرة أيقونة التطبيق */
+      function wefaqHomeWordmarkLogoHtml() {
+        return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="72 210 368 150" role="img" aria-label="WEFAQ" class="wefaq-app-logo wefaq-app-logo--home-wordmark" data-wefaq-ver="${WEFAQ_LOGO_VER}" data-wefaq-style="home-wordmark" aria-hidden="true">
           <g fill="currentColor" font-family="Montserrat, Manrope, var(--font), system-ui, sans-serif" font-weight="800">
-            <text x="256" y="258" text-anchor="middle" font-size="98" letter-spacing="14">WEFAQ</text>
+            <text x="256" y="292" text-anchor="middle" font-size="108" letter-spacing="18">WEFAQ</text>
           </g>
-          <g stroke="currentColor" stroke-width="4.25" stroke-linecap="round" stroke-linejoin="round" fill="none">
-            <line x1="104" y1="330" x2="226" y2="330"/>
-            <path d="M226 330 L242 314 L258 330 L242 346 Z"/>
-            <path d="M242 330 L258 314 L274 330 L258 346 Z"/>
-            <line x1="274" y1="330" x2="368" y2="330"/>
-            <path d="M368 330 Q384 330 384 316 L384 246"/>
+          <g stroke="currentColor" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" fill="none">
+            <line x1="118" y1="348" x2="232" y2="348"/>
+            <path d="M232 348 L248 332 L264 348 L248 364 Z"/>
+            <path d="M248 348 L264 332 L280 348 L264 364 Z"/>
+            <line x1="280" y1="348" x2="372" y2="348"/>
+            <path d="M372 348 Q388 348 388 334 L388 258"/>
           </g>
         </svg>`;
       }
 
       const WEFAQ_LOGO_HOSTS = [
-        { sel: '#loginScreen #loginCard .wefaq-logo-slot', uid: 'lp' },
-        { sel: '#loginTransition .wefaq-logo-slot', uid: 'lt' },
-        { sel: '#brandArea .brand-icon.wefaq-logo-slot', uid: 'tb' }
+        { sel: '#loginScreen #loginCard .wefaq-logo-slot', style: 'login' },
+        { sel: '#loginTransition .wefaq-logo-slot', style: 'login' },
+        { sel: '#brandArea .brand-icon.wefaq-logo-slot', style: 'home-wordmark' }
       ];
 
       function syncWefaqBranding() {
-        const pwaHome = isLoginStandalonePwa();
-        WEFAQ_LOGO_HOSTS.forEach(({ sel }) => {
+        WEFAQ_LOGO_HOSTS.forEach(({ sel, style }) => {
           const host = document.querySelector(sel);
           if (!host) return;
           host.classList.add('wefaq-logo-host');
-          const mono = host.querySelector(':scope > .brand-mono');
-          if (mono) mono.remove();
-          const usePwaHome = pwaHome && sel.includes('brandArea');
-          const markup = usePwaHome ? wefaqPwaHomeLogoHtml() : wefaqOfficialLogoHtml();
-          const logo = host.querySelector(':scope > .wefaq-app-logo, :scope > img');
-          const needsReplace =
-            !logo ||
-            logo.tagName === 'IMG' ||
-            logo.getAttribute('data-wefaq-ver') !== WEFAQ_LOGO_VER ||
-            (usePwaHome && logo.getAttribute('data-wefaq-style') !== 'pwa-home') ||
-            (!usePwaHome && logo.getAttribute('data-wefaq-style') === 'pwa-home');
-          if (logo && needsReplace) logo.remove();
-          if (!host.querySelector(':scope > .wefaq-app-logo')) {
-            host.insertAdjacentHTML('beforeend', markup);
-          }
+          host.querySelector(':scope > .brand-mono')?.remove();
+          const markup = style === 'home-wordmark' ? wefaqHomeWordmarkLogoHtml() : wefaqOfficialLogoHtml();
+          host.querySelectorAll(':scope > .wefaq-app-logo, :scope > img').forEach((el) => el.remove());
+          host.insertAdjacentHTML('beforeend', markup);
         });
       }
 
