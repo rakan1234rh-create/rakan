@@ -21403,7 +21403,7 @@
       }
     }
   </style>
-  <meta name="app-build" content="wefaq-login-vv-shift-v343">
+  <meta name="app-build" content="wefaq-login-vv-focus-v344">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
 </head>
 
@@ -24448,6 +24448,7 @@
       let _loginCardTopPx = 0;
       let _loginVvShiftPx = -1;
       let _loginVvResizeTimer = 0;
+      let _loginTouchingScreen = false;
 
       function applyLoginStableViewport() {
         const candidates = [
@@ -24488,12 +24489,20 @@
         } else {
           document.documentElement.style.removeProperty('--login-vv-shift');
         }
-        window.scrollTo(0, 0);
       }
 
       function scheduleLoginCardViewportShift() {
         clearTimeout(_loginVvResizeTimer);
         _loginVvResizeTimer = setTimeout(syncLoginCardViewportShift, 40);
+      }
+
+      /** بعد focus — iOS يغيّر offsetTop عبر scroll وليس resize */
+      function burstLoginCardViewportShift() {
+        syncLoginCardViewportShift();
+        requestAnimationFrame(syncLoginCardViewportShift);
+        scheduleLoginCardViewportShift();
+        setTimeout(syncLoginCardViewportShift, 90);
+        setTimeout(syncLoginCardViewportShift, 200);
       }
 
       function getLoginCardTopPx() {
@@ -24606,14 +24615,46 @@
           'touchstart',
           (e) => {
             if (!document.body.classList.contains('login-portal-open')) return;
+            _loginTouchingScreen = true;
             if (e.touches.length > 1) e.preventDefault();
           },
           { passive: false }
+        );
+        ls?.addEventListener(
+          'touchend',
+          () => {
+            _loginTouchingScreen = false;
+            scheduleLoginCardViewportShift();
+          },
+          { passive: true }
+        );
+        ls?.addEventListener(
+          'touchcancel',
+          () => {
+            _loginTouchingScreen = false;
+            scheduleLoginCardViewportShift();
+          },
+          { passive: true }
+        );
+        ls?.addEventListener(
+          'focusin',
+          (e) => {
+            if (!document.body.classList.contains('login-portal-open')) return;
+            if (!e.target?.closest?.('#loginCard input, #loginCard textarea, #loginCard select')) return;
+            burstLoginCardViewportShift();
+            freezeLoginPortalScroll();
+          },
+          true
         );
         const vv = window.visualViewport;
         if (vv && !window._loginVvResizeBound) {
           window._loginVvResizeBound = true;
           vv.addEventListener('resize', scheduleLoginCardViewportShift, { passive: true });
+          vv.addEventListener('scroll', () => {
+            if (!document.body.classList.contains('login-portal-open')) return;
+            if (_loginTouchingScreen) return;
+            scheduleLoginCardViewportShift();
+          }, { passive: true });
         }
       }
 
@@ -24796,13 +24837,15 @@
         if (!idEl || !pwEl || idEl.dataset.kbBound === '1') return;
         idEl.dataset.kbBound = '1';
         initLoginIosIdentifierNoSuggest(idEl);
-        const onFieldFocus = () => {
-          reinforceLoginCardTop();
-          freezeLoginPortalScroll();
-          scheduleLoginCardViewportShift();
-        };
         [idEl, pwEl].forEach((el) => {
-          el.addEventListener('focus', onFieldFocus, { passive: true });
+          el.addEventListener(
+            'focus',
+            () => {
+              reinforceLoginCardTop();
+              burstLoginCardViewportShift();
+            },
+            { passive: true }
+          );
         });
         idEl.addEventListener('keydown', (e) => {
           if (e.key !== 'Enter') return;
