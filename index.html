@@ -666,6 +666,20 @@
       color: var(--text3)
     }
 
+    #loginScreen .lp-divider.lp-secure-note {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.45rem;
+      line-height: 1.45
+    }
+
+    #loginScreen .lp-divider.lp-secure-note i {
+      color: var(--mr-primary);
+      font-size: 0.9rem;
+      flex-shrink: 0
+    }
+
     #loginScreen .lp-foot-out {
       margin-top: 1.25rem;
       text-align: center;
@@ -21267,10 +21281,6 @@
               <button type="submit" class="lp-btn-primary" id="loginBtn"><span>تسجيل الدخول</span></button>
             </div>
           </form>
-          <div class="lp-divider lp-secure-note">
-            <i class="fas fa-shield-halved" aria-hidden="true"></i>
-            <span>محمي بأعلى معايير الأمان والخصوصية</span>
-          </div>
         </div>
       </div>
 
@@ -21317,7 +21327,6 @@
         </div>
       </div>
 
-      <p class="lp-foot-out">محمي بأعلى معايير الأمان والخصوصية</p>
     </div>
   </div>
   <!-- App (مخفي حتى التحقق من الجلسة لتفادي وميض المحتوى) -->
