@@ -371,8 +371,8 @@
       width: auto !important;
       max-width: 28rem !important;
       margin: 0 auto !important;
-      transform: translateZ(0) !important;
-      -webkit-transform: translateZ(0) !important;
+      transform: translate3d(0, var(--login-vv-shift, 0px), 0) translateZ(0) !important;
+      -webkit-transform: translate3d(0, var(--login-vv-shift, 0px), 0) translateZ(0) !important;
       overflow: visible;
       touch-action: none;
       overscroll-behavior: none;
@@ -21403,7 +21403,7 @@
       }
     }
   </style>
-  <meta name="app-build" content="wefaq-login-single-stable-v342">
+  <meta name="app-build" content="wefaq-login-vv-shift-v343">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
 </head>
 
@@ -24446,6 +24446,8 @@
       let _loginPortalScrollY = 0;
       let _loginLockedVpH = 0;
       let _loginCardTopPx = 0;
+      let _loginVvShiftPx = -1;
+      let _loginVvResizeTimer = 0;
 
       function applyLoginStableViewport() {
         const candidates = [
@@ -24461,7 +24463,37 @@
       function clearLoginStableViewport() {
         _loginLockedVpH = 0;
         document.documentElement.style.removeProperty('--login-stable-h');
+        clearLoginCardViewportShift();
         unlockLoginCardPosition();
+      }
+
+      /** iOS: تعويض انزياج visualViewport عند لوحة المفاتيح — resize فقط (لا scroll = لا اهتزاز بالسحب) */
+      function clearLoginCardViewportShift() {
+        _loginVvShiftPx = -1;
+        document.documentElement.style.removeProperty('--login-vv-shift');
+      }
+
+      function syncLoginCardViewportShift() {
+        if (!document.body.classList.contains('login-portal-open') || !_loginCardTopPx) return;
+        const vv = window.visualViewport;
+        if (!vv) {
+          clearLoginCardViewportShift();
+          return;
+        }
+        const shift = Math.max(0, Math.round(vv.offsetTop));
+        if (shift === _loginVvShiftPx) return;
+        _loginVvShiftPx = shift;
+        if (shift > 0) {
+          document.documentElement.style.setProperty('--login-vv-shift', `${shift}px`);
+        } else {
+          document.documentElement.style.removeProperty('--login-vv-shift');
+        }
+        window.scrollTo(0, 0);
+      }
+
+      function scheduleLoginCardViewportShift() {
+        clearTimeout(_loginVvResizeTimer);
+        _loginVvResizeTimer = setTimeout(syncLoginCardViewportShift, 40);
       }
 
       function getLoginCardTopPx() {
@@ -24481,17 +24513,18 @@
       }
 
       function lockLoginCardPosition() {
-        const card = document.querySelector('#loginScreen .lp-center');
+        const card = document.getElementById('loginCard');
         if (!card || card.dataset.posLocked === '1') return;
         const topPx = getLoginCardTopPx();
         document.documentElement.style.setProperty('--login-card-top-px', `${topPx}px`);
         card.dataset.posLocked = '1';
+        scheduleLoginCardViewportShift();
       }
 
       function unlockLoginCardPosition() {
         _loginCardTopPx = 0;
         document.documentElement.style.removeProperty('--login-card-top-px');
-        const card = document.querySelector('#loginScreen .lp-center');
+        const card = document.getElementById('loginCard');
         if (card) card.dataset.posLocked = '';
       }
 
@@ -24500,7 +24533,7 @@
         const topPx = _loginCardTopPx;
         if (!topPx) return;
         document.documentElement.style.setProperty('--login-card-top-px', `${topPx}px`);
-        window.scrollTo(0, 0);
+        scheduleLoginCardViewportShift();
       }
 
       function patchLoginInputsNoScroll() {
@@ -24577,6 +24610,11 @@
           },
           { passive: false }
         );
+        const vv = window.visualViewport;
+        if (vv && !window._loginVvResizeBound) {
+          window._loginVvResizeBound = true;
+          vv.addEventListener('resize', scheduleLoginCardViewportShift, { passive: true });
+        }
       }
 
       function openLoginPortal() {
@@ -24761,6 +24799,7 @@
         const onFieldFocus = () => {
           reinforceLoginCardTop();
           freezeLoginPortalScroll();
+          scheduleLoginCardViewportShift();
         };
         [idEl, pwEl].forEach((el) => {
           el.addEventListener('focus', onFieldFocus, { passive: true });
