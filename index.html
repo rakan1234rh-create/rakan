@@ -13,9 +13,9 @@
   <meta name="apple-mobile-web-app-title" content="wefaq">
   <title>منصة الرصد المتكاملة | Monitoring Platform</title>
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="icon" type="image/png" sizes="512x512" href="icons/homescreen-512.png?v=330">
-  <link rel="icon" type="image/png" sizes="192x192" href="icons/homescreen-192.png?v=330">
-  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=330">
+  <link rel="icon" type="image/png" sizes="512x512" href="icons/homescreen-512.png?v=331">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/homescreen-192.png?v=331">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=331">
   <link
     href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@500;600;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap"
     rel="stylesheet">
@@ -356,7 +356,7 @@
       padding: 2rem 1.25rem 1.25rem
     }
 
-    #loginScreen .lp-brand-ico {
+    #loginScreen .lp-brand-ico:not(.wefaq-logo-slot) {
       width: 4.5rem;
       height: 4.5rem;
       margin: 0 auto 1rem;
@@ -371,45 +371,49 @@
       animation: lpIconSpring 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) 0.08s both
     }
 
+    .wefaq-logo-slot,
     .wefaq-logo-host {
       background: transparent !important;
       box-shadow: none !important;
       border-radius: 0 !important;
-      color: inherit
+      color: inherit;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 !important
     }
 
-    .wefaq-logo-host .wefaq-app-logo {
+    .wefaq-logo-host .wefaq-app-logo,
+    .wefaq-logo-slot .wefaq-app-logo {
       display: block;
       width: 100%;
       height: 100%;
       flex-shrink: 0
     }
 
-    @media (max-width: 992px) {
-      #loginScreen #loginCard .lp-brand-ico.wefaq-logo-host {
-        width: 7.5rem;
-        height: 7.5rem;
-        max-width: min(72vw, 7.5rem);
-        margin-bottom: 1.1rem;
-        animation: lpIconSpring 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) 0.08s both
-      }
+    #loginScreen #loginCard .wefaq-logo-slot {
+      width: 7.5rem;
+      height: 7.5rem;
+      max-width: min(72vw, 7.5rem);
+      margin: 0 auto 1.1rem;
+      animation: lpIconSpring 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) 0.08s both
+    }
 
-      #loginTransition .lt-shield.wefaq-logo-host {
-        width: 5.75rem;
-        height: 5.75rem;
-        animation: none
-      }
+    #loginTransition .wefaq-logo-slot {
+      width: 5.75rem;
+      height: 5.75rem;
+      margin: 0 auto 1.25rem;
+      animation: none
+    }
 
-      .brand-area .brand-icon.wefaq-logo-host {
-        width: 40px !important;
-        height: 40px !important;
-        padding: 0;
-        font-size: 0 !important
-      }
+    .brand-area .brand-icon.wefaq-logo-slot {
+      width: 44px;
+      height: 44px;
+      font-size: 0 !important
     }
 
     @media (max-width: 576px) {
-      .brand-area .brand-icon.wefaq-logo-host {
+      .brand-area .brand-icon.wefaq-logo-slot {
         width: 36px !important;
         height: 36px !important
       }
@@ -666,7 +670,7 @@
       padding: 2rem
     }
 
-    #loginTransition .lt-shield {
+    #loginTransition .lt-shield:not(.wefaq-logo-slot) {
       width: 5rem;
       height: 5rem;
       margin: 0 auto 1.25rem;
@@ -679,6 +683,16 @@
       font-size: 2rem;
       box-shadow: 0 20px 40px color-mix(in srgb, var(--blue) 35%, transparent);
       animation: ltShieldSpin 2s linear infinite
+    }
+
+    #loginTransition .lt-shield.wefaq-logo-slot {
+      width: 5.75rem;
+      height: 5.75rem;
+      margin: 0 auto 1.25rem;
+      animation: none !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      border-radius: 0 !important
     }
 
     #loginTransition .lt-title {
@@ -950,7 +964,7 @@
       }
     }
 
-    .brand-icon {
+    .brand-icon:not(.wefaq-logo-slot) {
       width: 44px;
       height: 44px;
       background: var(--mr-primary);
@@ -2790,7 +2804,7 @@
       flex-shrink: 0
     }
 
-    .brand-area .brand-icon {
+    .brand-area .brand-icon:not(.wefaq-logo-slot) {
       width: 44px;
       height: 44px;
       background: var(--mr-primary);
@@ -2801,6 +2815,12 @@
       justify-content: center;
       font-size: 20px;
       box-shadow: 0 4px 15px rgba(15, 18, 36, 0.22);
+    }
+
+    .brand-area .brand-icon.wefaq-logo-slot {
+      background: transparent !important;
+      box-shadow: none !important;
+      border-radius: 0 !important
     }
 
     .brand-mono {
@@ -21105,7 +21125,7 @@
       }
     }
   </style>
-  <meta name="app-build" content="wefaq-pwa-fullbleed-v330">
+  <meta name="app-build" content="wefaq-pwa-fullbleed-v331">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
 </head>
 
@@ -21143,7 +21163,7 @@
 
   <div id="loginTransition" aria-hidden="true">
     <div class="lt-box">
-      <div class="lt-shield" aria-hidden="true"><span class="brand-mono">م</span></div>
+      <div class="lt-shield wefaq-logo-slot" aria-hidden="true"></div>
       <h2 class="lt-title">جاري التحميل...</h2>
       <p class="lt-sub">منصة الرصد</p>
     </div>
@@ -21157,7 +21177,7 @@
     <div class="lp-center">
       <div id="loginCard" class="lp-card lp-card--in">
         <div class="lp-hd">
-          <div class="lp-brand-ico" aria-hidden="true"><span class="brand-mono">م</span></div>
+          <div class="lp-brand-ico wefaq-logo-slot" aria-hidden="true"></div>
           <h1 class="lp-title">منصة الرصد <i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i></h1>
           <p class="lp-sub">أدخل بيانات الدخول للوصول إلى المنصة</p>
         </div>
@@ -21250,7 +21270,7 @@
 <header class="topbar unified-banner">
         <div class="topbar-brand-zone">
           <div class="brand-area" id="brandArea">
-            <div class="brand-icon" aria-hidden="true"><span class="brand-mono">م</span></div>
+            <div class="brand-icon wefaq-logo-slot" aria-hidden="true"></div>
             <div class="brand-text"><strong>منصة الرصد</strong><span>MONITORING.SYSTEM</span></div>
           </div>
           <div class="topbar-vdivider topbar-brand-divider" aria-hidden="true"></div>
@@ -24142,7 +24162,7 @@
         const mobNav = document.getElementById('mobileBottomNav');
         if (mobNav) mobNav.style.display = 'none';
         setNativeAppShellActive(false);
-        if (typeof syncWefaqMobileBranding === 'function') syncWefaqMobileBranding();
+        if (typeof syncWefaqBranding === 'function') syncWefaqBranding();
         if (ls) {
           ls.classList.remove('hidden');
           ls.removeAttribute('hidden');
@@ -24988,7 +25008,7 @@
         return typeof window !== 'undefined' && window.matchMedia('(max-width: 992px)').matches;
       }
 
-      const WEFAQ_LOGO_VER = '328';
+      const WEFAQ_LOGO_VER = '331';
 
       function wefaqOfficialLogoHtml(uid) {
         const sh = 'wefaqSh_' + uid;
@@ -25018,33 +25038,25 @@
         </svg>`;
       }
 
-      const WEFAQ_MOBILE_LOGO_HOSTS = [
-        { sel: '#loginScreen #loginCard .lp-brand-ico', uid: 'lp' },
-        { sel: '#loginTransition .lt-shield', uid: 'lt' },
-        { sel: '#brandArea .brand-icon', uid: 'tb' }
+      const WEFAQ_LOGO_HOSTS = [
+        { sel: '#loginScreen #loginCard .wefaq-logo-slot', uid: 'lp' },
+        { sel: '#loginTransition .wefaq-logo-slot', uid: 'lt' },
+        { sel: '#brandArea .brand-icon.wefaq-logo-slot', uid: 'tb' }
       ];
 
-      function syncWefaqMobileBranding() {
-        const mob = typeof isMobileViewport === 'function' && isMobileViewport();
-        WEFAQ_MOBILE_LOGO_HOSTS.forEach(({ sel, uid }) => {
+      function syncWefaqBranding() {
+        WEFAQ_LOGO_HOSTS.forEach(({ sel, uid }) => {
           const host = document.querySelector(sel);
           if (!host) return;
+          host.classList.add('wefaq-logo-host');
           const mono = host.querySelector(':scope > .brand-mono');
-          let logo = host.querySelector(':scope > .wefaq-app-logo');
-          if (mob) {
-            host.classList.add('wefaq-logo-host');
-            if (mono) mono.hidden = true;
-            if (logo && (logo.tagName === 'IMG' || logo.getAttribute('data-wefaq-ver') !== WEFAQ_LOGO_VER)) {
-              logo.remove();
-              logo = null;
-            }
-            if (!logo) {
-              host.insertAdjacentHTML('beforeend', wefaqOfficialLogoHtml(uid));
-            }
-          } else {
-            host.classList.remove('wefaq-logo-host');
-            if (mono) mono.hidden = false;
-            if (logo) logo.remove();
+          if (mono) mono.remove();
+          const stale = host.querySelector(':scope > .wefaq-app-logo, :scope > img');
+          if (stale && (stale.tagName === 'IMG' || stale.getAttribute('data-wefaq-ver') !== WEFAQ_LOGO_VER)) {
+            stale.remove();
+          }
+          if (!host.querySelector(':scope > .wefaq-app-logo')) {
+            host.insertAdjacentHTML('beforeend', wefaqOfficialLogoHtml(uid));
           }
         });
       }
@@ -37312,7 +37324,7 @@
       function initMobileViewportSync() {
         const mq = window.matchMedia('(max-width: 992px)');
         const apply = () => {
-          if (typeof syncWefaqMobileBranding === 'function') syncWefaqMobileBranding();
+          if (typeof syncWefaqBranding === 'function') syncWefaqBranding();
           syncMobilePlatformScale();
           if (document.getElementById('tab-dashboard')?.classList.contains('active') && typeof renderDashboard === 'function') {
             try { renderDashboard(); } catch (e) { console.warn('[dashboard viewport]', e); }
@@ -37342,7 +37354,7 @@
           if (typeof portalFilterPanelsForMob === 'function') portalFilterPanelsForMob();
           if (typeof syncMobileBottomNavLayout === 'function') syncMobileBottomNavLayout();
           if (typeof initMobileViewportSync === 'function') initMobileViewportSync();
-          if (typeof syncWefaqMobileBranding === 'function') syncWefaqMobileBranding();
+          if (typeof syncWefaqBranding === 'function') syncWefaqBranding();
           if (typeof initViolDetailSheetDrag === 'function') initViolDetailSheetDrag();
           if (typeof initTicketSheetDrag === 'function') initTicketSheetDrag();
           if (typeof initCmpDetailSheetDrag === 'function') initCmpDetailSheetDrag();
