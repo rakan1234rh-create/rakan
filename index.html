@@ -581,6 +581,15 @@
       padding-left: 2.75rem
     }
 
+    #loginScreen .lp-ios-autofill-trap {
+      position: fixed;
+      left: -9999px;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      pointer-events: none
+    }
+
     #loginScreen .lp-row {
       margin-bottom: 1.1rem
     }
@@ -21263,9 +21272,15 @@
             <span id="loginErrorMsg"></span>
           </div>
           <div class="lp-login-fields" role="group" aria-label="تسجيل الدخول">
+            <input type="text" class="lp-ios-autofill-trap" tabindex="-1" aria-hidden="true" autocomplete="username">
+            <input type="password" class="lp-ios-autofill-trap" tabindex="-1" aria-hidden="true"
+              autocomplete="current-password">
             <div class="lp-row lp-f2">
               <label class="lp-label" for="loginIdentifier">البريد أو الرقم الوظيفي</label>
-              <input id="loginIdentifier" class="lp-input" type="text" autocomplete="username"
+              <!-- iOS: إيقاف مقترحات لوحة المفاتيح والإكمال التلقائي في خانة المستخدم (تبقى لكلمة المرور فقط) -->
+              <input id="loginIdentifier" class="lp-input" type="text" name="mirsad-login-id"
+                autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+                inputmode="text" data-lpignore="true" data-1p-ignore data-bwignore
                 enterkeyhint="next" placeholder="البريد أو الرقم الوظيفي" required>
             </div>
             <div class="lp-row lp-f3">
@@ -24383,12 +24398,27 @@
       // ───────────────────────────────────────────────────────────────────────────
       // LOGIN
       // ───────────────────────────────────────────────────────────────────────────
+      /** iOS: إخفاء مقترحات لوحة المفاتيح في خانة المستخدم (QuickType / إكمال تلقائي) */
+      function initLoginIosIdentifierNoSuggest(idEl) {
+        if (!idEl || idEl.dataset.iosNoSuggest === '1') return;
+        idEl.dataset.iosNoSuggest = '1';
+        const isIOS =
+          /iPad|iPhone|iPod/i.test(navigator.userAgent) ||
+          (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        if (!isIOS) return;
+        idEl.setAttribute('readonly', 'readonly');
+        const unlock = () => idEl.removeAttribute('readonly');
+        idEl.addEventListener('focus', unlock, { once: true });
+        idEl.addEventListener('touchstart', unlock, { once: true, passive: true });
+      }
+
       /** تقليل شريط iOS فوق لوحة المفاتيح (أسهم تنقل وتم) — بدون form متعدد الحقول */
       function initLoginFieldKeyboard() {
         const idEl = document.getElementById('loginIdentifier');
         const pwEl = document.getElementById('loginPassword');
         if (!idEl || !pwEl || idEl.dataset.kbBound === '1') return;
         idEl.dataset.kbBound = '1';
+        initLoginIosIdentifierNoSuggest(idEl);
         idEl.addEventListener('keydown', (e) => {
           if (e.key === 'Enter') {
             e.preventDefault();
