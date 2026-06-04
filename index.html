@@ -414,7 +414,13 @@
     }
 
     .topbar-brand-zone {
-      overflow: visible
+      overflow: visible;
+      padding-inline-start: 10px
+    }
+
+    .topbar-brand-zone .brand-area {
+      margin-inline-start: 6px;
+      margin-block-start: -5px
     }
 
     .brand-area .brand-icon.wefaq-logo-slot {
@@ -432,10 +438,10 @@
       position: absolute;
       left: 50%;
       top: 50%;
-      width: 108px;
-      height: 108px;
+      width: 124px;
+      height: 124px;
       max-width: none;
-      transform: translate(-50%, -50%)
+      transform: translate(-50%, calc(-50% - 6px))
     }
 
     #brandArea.brand-area {
@@ -450,9 +456,19 @@
         min-height: 36px !important
       }
 
+      .topbar-brand-zone {
+        padding-inline-start: 8px !important
+      }
+
+      .topbar-brand-zone .brand-area {
+        margin-inline-start: 4px !important;
+        margin-block-start: -4px !important
+      }
+
       .brand-area .brand-icon.wefaq-logo-slot .wefaq-app-logo {
-        width: 80px !important;
-        height: 80px !important
+        width: 92px !important;
+        height: 92px !important;
+        transform: translate(-50%, calc(-50% - 4px)) !important
       }
     }
 
