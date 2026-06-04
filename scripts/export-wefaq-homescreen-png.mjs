@@ -16,8 +16,8 @@ const VIEW = 512;
 const SUPER = 4;
 const SCALE_ANY = 512 / 380;
 const SCALE_MASKABLE = SCALE_ANY * 0.9;
-const STROKE_OFFSET_X = -14;
-const ICON_CACHE_VER = '340';
+const STROKE_OFFSET_X = -18;
+const ICON_CACHE_VER = '342';
 
 let sharp;
 try {
