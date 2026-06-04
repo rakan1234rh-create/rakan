@@ -348,21 +348,37 @@
       min-height: var(--login-stable-h, 100vh) !important;
       max-height: var(--login-stable-h, 100vh) !important;
       padding: 0 !important;
-      transform: none !important
+      transform: none !important;
+      touch-action: none;
+      overscroll-behavior: none
     }
 
-    /* البطاقة مثبتة بـ fixed + تعويض offsetTop — لا تتحرك مع لوحة المفاتيح */
+    /* البطاقة مثبتة — لا سحب ولا اهتزاز مع لوحة المفاتيح */
     body.login-portal-open #loginScreen .lp-center {
       position: fixed !important;
       z-index: 10001;
-      top: calc(env(safe-area-inset-top, 0px) + var(--login-vv-offset, 0px) + clamp(16px, 5vh, 48px)) !important;
+      top: calc(env(safe-area-inset-top, 0px) + clamp(8px, 2.5vh, 22px)) !important;
       left: max(clamp(12px, 3vw, 28px), env(safe-area-inset-left, 0px)) !important;
       right: max(clamp(12px, 3vw, 28px), env(safe-area-inset-right, 0px)) !important;
       width: auto !important;
       max-width: 28rem !important;
       margin: 0 auto !important;
       transform: none !important;
-      overflow: visible
+      overflow: visible;
+      touch-action: none;
+      overscroll-behavior: none;
+      -webkit-user-drag: none;
+      user-select: none;
+      -webkit-user-select: none
+    }
+
+    body.login-portal-open #loginScreen .lp-center input,
+    body.login-portal-open #loginScreen .lp-center button,
+    body.login-portal-open #loginScreen .lp-center a,
+    body.login-portal-open #loginScreen .lp-center label {
+      touch-action: manipulation;
+      user-select: auto;
+      -webkit-user-select: auto
     }
 
     body.login-portal-open #loginScreen .lp-btn-primary:hover:not(:disabled) {
@@ -396,7 +412,7 @@
 
     @media (min-width: 993px) {
       body.login-portal-open #loginScreen .lp-center {
-        top: calc(env(safe-area-inset-top, 0px) + var(--login-vv-offset, 0px) + clamp(40px, 10vh, 96px)) !important
+        top: calc(env(safe-area-inset-top, 0px) + clamp(32px, 8vh, 80px)) !important
       }
 
       #loginScreen.lp-screen {
@@ -24436,17 +24452,28 @@
       function clearLoginStableViewport() {
         _loginLockedVpH = 0;
         document.documentElement.style.removeProperty('--login-stable-h');
-        document.documentElement.style.removeProperty('--login-vv-offset');
+      }
+
+      function lockLoginCardPosition() {
+        const card = document.querySelector('#loginScreen .lp-center');
+        if (!card || card.dataset.posLocked === '1') return;
+        requestAnimationFrame(() => {
+          const topPx = Math.max(6, Math.round(card.getBoundingClientRect().top));
+          card.dataset.posLocked = '1';
+          card.style.top = `${topPx}px`;
+        });
+      }
+
+      function unlockLoginCardPosition() {
+        const card = document.querySelector('#loginScreen .lp-center');
+        if (!card) return;
+        card.dataset.posLocked = '';
+        card.style.top = '';
       }
 
       function freezeLoginPortalScroll() {
         if (!document.body.classList.contains('login-portal-open')) return;
-        const vv = window.visualViewport;
-        const oy = vv ? Math.max(0, Math.round(vv.offsetTop)) : 0;
-        document.documentElement.style.setProperty('--login-vv-offset', `${oy}px`);
         window.scrollTo(0, 0);
-        const ls = document.getElementById('loginScreen');
-        if (ls) ls.style.transform = 'none';
       }
 
       function isLoginStandalonePwa() {
@@ -24489,22 +24516,22 @@
           ls.style.transform = '';
       }
 
-      /** شاشة دخول ثابتة — تعويض انزياج iOS عند لوحة المفاتيح */
+      /** شاشة دخول ثابتة — منع السحب والاهتزاز أثناء لوحة المفاتيح */
       function initLoginScreenViewportLock() {
         if (window._loginVpLockBound) return;
         window._loginVpLockBound = true;
         syncLoginStandalonePwaClass();
-        const vv = window.visualViewport;
-        vv?.addEventListener('scroll', freezeLoginPortalScroll, { passive: true });
-        vv?.addEventListener('resize', freezeLoginPortalScroll, { passive: true });
-        window.addEventListener('scroll', freezeLoginPortalScroll, { passive: true });
         const ls = document.getElementById('loginScreen');
+        const blockTouchDrag = (e) => {
+          if (!document.body.classList.contains('login-portal-open')) return;
+          e.preventDefault();
+        };
+        ls?.addEventListener('touchmove', blockTouchDrag, { passive: false });
         ls?.addEventListener(
-          'touchmove',
+          'touchstart',
           (e) => {
             if (!document.body.classList.contains('login-portal-open')) return;
-            if (e.target?.closest?.('button, a, input, textarea, label, .lp-pw-toggle, .lp-card')) return;
-            e.preventDefault();
+            if (e.touches.length > 1) e.preventDefault();
           },
           { passive: false }
         );
@@ -24519,12 +24546,15 @@
         syncLoginStandalonePwaClass();
         setLoginPortalScrollLock(true);
         resetLoginScreenViewportPin();
-        freezeLoginPortalScroll();
         if (typeof syncWefaqBranding === 'function') syncWefaqBranding();
         if (ls) {
           ls.classList.remove('hidden');
           ls.removeAttribute('hidden');
           ls.setAttribute('aria-hidden', 'false');
+          requestAnimationFrame(() => {
+            lockLoginCardPosition();
+            freezeLoginPortalScroll();
+          });
         }
         if (app) {
           app.style.display = 'none';
@@ -24541,6 +24571,7 @@
           ls.setAttribute('aria-hidden', 'true');
         }
         resetLoginScreenViewportPin();
+        unlockLoginCardPosition();
         clearLoginStableViewport();
         setLoginPortalScrollLock(false);
         if (app) {
@@ -24683,9 +24714,6 @@
         if (!idEl || !pwEl || idEl.dataset.kbBound === '1') return;
         idEl.dataset.kbBound = '1';
         initLoginIosIdentifierNoSuggest(idEl);
-        [idEl, pwEl].forEach((el) => {
-          el.addEventListener('focus', () => requestAnimationFrame(freezeLoginPortalScroll), { passive: true });
-        });
         idEl.addEventListener('keydown', (e) => {
           if (e.key === 'Enter') {
             e.preventDefault();
