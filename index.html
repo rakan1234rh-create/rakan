@@ -325,10 +325,11 @@
       -webkit-overflow-scrolling: auto
     }
 
-    /* جوال + ويب + PWA: نفس مقاس البطاقة (28rem) — مرفوعة للأعلى */
+    /* جوال + ويب + PWA: مرفوعة للأعلى ومتوسطة أفقياً (RTL: flex-start يمين = انزياح) */
     @media (max-width: 992px) {
       #loginScreen.lp-screen {
-        align-items: flex-start;
+        flex-direction: column;
+        align-items: center;
         justify-content: flex-start;
         height: 100%;
         min-height: 100vh;
@@ -342,6 +343,7 @@
 
       #loginScreen .lp-center {
         margin-top: 0;
+        margin-inline: auto;
         max-height: none;
         overflow: visible;
         width: 100%;
@@ -351,9 +353,14 @@
 
     @media (min-width: 993px) {
       #loginScreen.lp-screen {
-        align-items: flex-start;
-        justify-content: center;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
         padding-top: clamp(40px, 10vh, 96px)
+      }
+
+      #loginScreen .lp-center {
+        margin-inline: auto
       }
     }
 
