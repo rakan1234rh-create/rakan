@@ -353,35 +353,36 @@
       overscroll-behavior: none
     }
 
-    /* البطاقة مثبتة — لا سحب ولا اهتزاز مع لوحة المفاتيح */
+    /* البطاقة مثبتة على #loginCard — لا تتحرك مع لوحة المفاتيح */
     body.login-portal-open #loginScreen .lp-center {
+      position: static !important;
+      width: 100%;
+      max-width: 28rem;
+      margin: 0 auto;
+      transform: none !important
+    }
+
+    body.login-portal-open #loginScreen #loginCard {
       position: fixed !important;
       z-index: 10001;
-      top: var(--login-card-top-px, calc(env(safe-area-inset-top, 0px) + clamp(32px, 5.2vh, 54px))) !important;
+      top: var(--login-card-top-px, calc(env(safe-area-inset-top, 0px) + clamp(40px, 6vh, 64px))) !important;
       left: max(clamp(12px, 3vw, 28px), env(safe-area-inset-left, 0px)) !important;
       right: max(clamp(12px, 3vw, 28px), env(safe-area-inset-right, 0px)) !important;
       width: auto !important;
       max-width: 28rem !important;
       margin: 0 auto !important;
-      transform: none !important;
+      transform: translateZ(0) !important;
+      -webkit-transform: translateZ(0) !important;
       overflow: visible;
       touch-action: none;
       overscroll-behavior: none;
-      -webkit-user-drag: none;
-      user-select: none;
-      -webkit-user-select: none
+      contain: layout style
     }
 
-    body.login-portal-open #loginScreen .lp-card {
-      contain: layout style;
-      transform: translateZ(0);
-      -webkit-transform: translateZ(0)
-    }
-
-    body.login-portal-open #loginScreen .lp-center input,
-    body.login-portal-open #loginScreen .lp-center button,
-    body.login-portal-open #loginScreen .lp-center a,
-    body.login-portal-open #loginScreen .lp-center label {
+    body.login-portal-open #loginScreen #loginCard input,
+    body.login-portal-open #loginScreen #loginCard button,
+    body.login-portal-open #loginScreen #loginCard a,
+    body.login-portal-open #loginScreen #loginCard label {
       touch-action: manipulation;
       user-select: auto;
       -webkit-user-select: auto;
@@ -391,6 +392,70 @@
 
     body.login-portal-open #loginScreen .lp-btn-primary:hover:not(:disabled) {
       transform: none
+    }
+
+    /* جوال: خطوتان — طبقات فوق بعض (ارتفاع ثابت = لا قفز عند التبديل) */
+    @media (max-width: 992px) {
+      #loginScreen .lp-login-fields--steps {
+        position: relative;
+        min-height: 248px
+      }
+
+      #loginScreen .lp-login-fields--steps .lp-login-step {
+        position: absolute;
+        top: 0;
+        right: 0;
+        left: 0;
+        width: 100%;
+        margin: 0
+      }
+
+      #loginScreen .lp-login-fields--steps .lp-login-step--pw {
+        visibility: hidden;
+        opacity: 0;
+        pointer-events: none
+      }
+
+      #loginScreen .lp-login-fields--steps.lp-login-fields--on-pw .lp-login-step--id {
+        visibility: hidden;
+        opacity: 0;
+        pointer-events: none
+      }
+
+      #loginScreen .lp-login-fields--steps.lp-login-fields--on-pw .lp-login-step--pw {
+        visibility: visible;
+        opacity: 1;
+        pointer-events: auto
+      }
+
+      #loginScreen .lp-login-back-btn {
+        display: none;
+        width: 100%;
+        margin-top: 0.65rem;
+        padding: 0.65rem;
+        border: none;
+        background: transparent;
+        color: var(--text3);
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        font-family: inherit
+      }
+
+      #loginScreen .lp-login-fields--steps.lp-login-fields--on-pw .lp-login-back-btn {
+        display: block
+      }
+    }
+
+    @media (min-width: 993px) {
+      #loginScreen .lp-login-next-wrap,
+      #loginScreen .lp-login-back-btn {
+        display: none !important
+      }
+
+      #loginScreen .lp-login-step {
+        display: contents
+      }
     }
 
     /* جوال + ويب + PWA: مرفوعة للأعلى ومتوسطة أفقياً */
@@ -21402,7 +21467,7 @@
       }
     }
   </style>
-  <meta name="app-build" content="wefaq-pwa-single-layer-v340">
+  <meta name="app-build" content="wefaq-login-steps-stable-v341">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
 </head>
 
@@ -21461,33 +21526,40 @@
           <div id="loginError" class="login-err" role="alert">
             <span id="loginErrorMsg"></span>
           </div>
-          <div class="lp-login-fields" role="group" aria-label="تسجيل الدخول">
+          <div class="lp-login-fields" id="loginFields" role="group" aria-label="تسجيل الدخول">
             <input type="text" class="lp-ios-autofill-trap" tabindex="-1" aria-hidden="true" autocomplete="username">
             <input type="password" class="lp-ios-autofill-trap" tabindex="-1" aria-hidden="true"
               autocomplete="current-password">
-            <div class="lp-row lp-f2">
-              <label class="lp-label" for="loginIdentifier">البريد أو الرقم الوظيفي</label>
-              <!-- iOS: إيقاف مقترحات لوحة المفاتيح والإكمال التلقائي في خانة المستخدم (تبقى لكلمة المرور فقط) -->
-              <input id="loginIdentifier" class="lp-input" type="text" name="mirsad-login-id"
-                autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-                inputmode="text" data-lpignore="true" data-1p-ignore data-bwignore
-                enterkeyhint="next" placeholder="البريد أو الرقم الوظيفي" required>
-            </div>
-            <div class="lp-row lp-f3">
-              <label class="lp-label" for="loginPassword">كلمة المرور</label>
-              <div class="lp-input-wrap">
-                <input id="loginPassword" class="lp-input lp-input--pw" type="password" autocomplete="current-password"
-                  enterkeyhint="go" placeholder="••••••••" required>
-                <button type="button" class="lp-pw-toggle" onclick="toggleLoginPw()" title="إظهار/إخفاء"><i
-                    class="fas fa-eye" id="loginPwIcon"></i></button>
+            <div class="lp-login-step lp-login-step--id" id="loginStepId">
+              <div class="lp-row lp-f2">
+                <label class="lp-label" for="loginIdentifier">البريد أو الرقم الوظيفي</label>
+                <input id="loginIdentifier" class="lp-input" type="text" name="mirsad-login-id"
+                  autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+                  inputmode="text" data-lpignore="true" data-1p-ignore data-bwignore
+                  enterkeyhint="next" placeholder="البريد أو الرقم الوظيفي" required>
+              </div>
+              <div class="lp-f5 lp-login-next-wrap">
+                <button type="button" class="lp-btn-primary" id="loginNextBtn"><span>متابعة</span></button>
               </div>
             </div>
-            <div class="lp-meta lp-f4">
-              <label><input type="checkbox" id="loginRemember"> <span>تذكرني</span></label>
-              <a href="#" class="lp-link" onclick="event.preventDefault(); showForgotPassword();">نسيت كلمة المرور؟</a>
-            </div>
-            <div class="lp-f5">
-              <button type="button" class="lp-btn-primary" id="loginBtn" onclick="handleLogin()"><span>تسجيل الدخول</span></button>
+            <div class="lp-login-step lp-login-step--pw" id="loginStepPw">
+              <div class="lp-row lp-f3">
+                <label class="lp-label" for="loginPassword">كلمة المرور</label>
+                <div class="lp-input-wrap">
+                  <input id="loginPassword" class="lp-input lp-input--pw" type="password" autocomplete="current-password"
+                    enterkeyhint="go" placeholder="••••••••" required>
+                  <button type="button" class="lp-pw-toggle" tabindex="-1" onclick="toggleLoginPw()" title="إظهار/إخفاء"><i
+                      class="fas fa-eye" id="loginPwIcon"></i></button>
+                </div>
+              </div>
+              <div class="lp-meta lp-f4">
+                <label><input type="checkbox" id="loginRemember"> <span>تذكرني</span></label>
+                <a href="#" class="lp-link" onclick="event.preventDefault(); showForgotPassword();">نسيت كلمة المرور؟</a>
+              </div>
+              <div class="lp-f5">
+                <button type="button" class="lp-btn-primary" id="loginBtn" onclick="handleLogin()"><span>تسجيل الدخول</span></button>
+                <button type="button" class="lp-login-back-btn" id="loginBackBtn">رجوع</button>
+              </div>
             </div>
           </div>
           <div class="lp-divider lp-secure-note">
@@ -24475,7 +24547,7 @@
         const desktop = window.matchMedia('(min-width: 993px)').matches;
         const vhPart = desktop
           ? Math.min(Math.max(window.innerHeight * 0.08, 32), 80)
-          : Math.min(Math.max(window.innerHeight * 0.052, 32), 54);
+          : Math.min(Math.max(window.innerHeight * 0.062, 40), 64);
         _loginCardTopPx = Math.round(safeTop + vhPart);
         return _loginCardTopPx;
       }
@@ -24499,16 +24571,8 @@
         if (!document.body.classList.contains('login-portal-open')) return;
         const topPx = _loginCardTopPx;
         if (!topPx) return;
-        const apply = () => {
-          document.documentElement.style.setProperty('--login-card-top-px', `${topPx}px`);
-          window.scrollTo(0, 0);
-        };
-        apply();
-        requestAnimationFrame(apply);
-        requestAnimationFrame(() => requestAnimationFrame(apply));
-        setTimeout(apply, 0);
-        setTimeout(apply, 80);
-        setTimeout(apply, 200);
+        document.documentElement.style.setProperty('--login-card-top-px', `${topPx}px`);
+        window.scrollTo(0, 0);
       }
 
       function patchLoginInputsNoScroll() {
@@ -24585,23 +24649,135 @@
           },
           { passive: false }
         );
-        ls?.addEventListener(
-          'focusin',
-          (e) => {
-            if (!document.body.classList.contains('login-portal-open')) return;
-            if (!e.target?.matches?.('input, textarea, button, select')) return;
-            reinforceLoginCardTop();
-          },
-          true
-        );
-        window.visualViewport?.addEventListener(
-          'scroll',
-          () => {
-            if (!document.body.classList.contains('login-portal-open') || !_loginCardTopPx) return;
-            reinforceLoginCardTop();
-          },
-          { passive: true }
-        );
+      }
+
+      function resetLoginMobileStep() {
+        const wrap = document.getElementById('loginFields');
+        if (wrap) wrap.classList.remove('lp-login-fields--on-pw');
+        syncLoginFieldAccess();
+      }
+
+      function showLoginPasswordStep() {
+        const idEl = document.getElementById('loginIdentifier');
+        const wrap = document.getElementById('loginFields');
+        const pwEl = document.getElementById('loginPassword');
+        if (!idEl?.value.trim()) {
+          showLoginError('يرجى إدخال الرقم الوظيفي أو البريد الإلكتروني');
+          idEl?.focus();
+          return;
+        }
+        hideLoginError();
+        if (wrap?.classList.contains('lp-login-fields--steps')) {
+          idEl.blur();
+          wrap.classList.add('lp-login-fields--on-pw');
+          syncLoginFieldAccess();
+          reinforceLoginCardTop();
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              try {
+                pwEl?.focus({ preventScroll: true });
+              } catch (_) {
+                pwEl?.focus();
+              }
+              reinforceLoginCardTop();
+            });
+          });
+        } else {
+          try {
+            pwEl?.focus({ preventScroll: true });
+          } catch (_) {
+            pwEl?.focus();
+          }
+        }
+      }
+
+      function syncLoginFieldAccess() {
+        const wrap = document.getElementById('loginFields');
+        const idEl = document.getElementById('loginIdentifier');
+        const pwEl = document.getElementById('loginPassword');
+        const remember = document.getElementById('loginRemember');
+        const stepId = document.getElementById('loginStepId');
+        const stepPw = document.getElementById('loginStepPw');
+        if (!wrap || !idEl || !pwEl) return;
+        const mobile = wrap.classList.contains('lp-login-fields--steps');
+        const onPw = wrap.classList.contains('lp-login-fields--on-pw');
+        const enable = (el, on) => {
+          if (!el) return;
+          if (on) {
+            el.disabled = false;
+            el.removeAttribute('tabindex');
+            el.removeAttribute('aria-hidden');
+          } else {
+            el.disabled = true;
+            el.setAttribute('tabindex', '-1');
+            el.setAttribute('aria-hidden', 'true');
+          }
+        };
+        if (!mobile) {
+          enable(idEl, true);
+          enable(pwEl, true);
+          enable(remember, true);
+          stepId?.removeAttribute('inert');
+          stepPw?.removeAttribute('inert');
+          return;
+        }
+        if (!onPw) {
+          enable(idEl, true);
+          enable(pwEl, false);
+          enable(remember, false);
+          stepId?.removeAttribute('inert');
+          stepPw?.setAttribute('inert', '');
+        } else {
+          enable(idEl, false);
+          enable(pwEl, true);
+          enable(remember, true);
+          stepId?.setAttribute('inert', '');
+          stepPw?.removeAttribute('inert');
+        }
+      }
+
+      function isLoginMobileStepsLayout() {
+        if (window.innerWidth <= 992) return true;
+        try {
+          return window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+        } catch (_) {
+          return false;
+        }
+      }
+
+      function initLoginMobileSteps() {
+        const wrap = document.getElementById('loginFields');
+        const idEl = document.getElementById('loginIdentifier');
+        const pwEl = document.getElementById('loginPassword');
+        if (!wrap || !idEl || !pwEl || wrap.dataset.stepsBound === '1') return;
+        wrap.dataset.stepsBound = '1';
+        const applyLayout = () => {
+          if (isLoginMobileStepsLayout()) {
+            wrap.classList.add('lp-login-fields--steps');
+            wrap.classList.remove('lp-login-fields--on-pw');
+          } else {
+            wrap.classList.remove('lp-login-fields--steps', 'lp-login-fields--on-pw');
+          }
+          syncLoginFieldAccess();
+        };
+        window.addEventListener('resize', applyLayout, { passive: true });
+        applyLayout();
+        pwEl.addEventListener('focus', () => {
+          if (!wrap.classList.contains('lp-login-fields--steps')) return;
+          if (wrap.classList.contains('lp-login-fields--on-pw')) return;
+          pwEl.blur();
+          showLoginPasswordStep();
+        });
+        document.getElementById('loginNextBtn')?.addEventListener('click', showLoginPasswordStep);
+        document.getElementById('loginBackBtn')?.addEventListener('click', () => {
+          wrap.classList.remove('lp-login-fields--on-pw');
+          syncLoginFieldAccess();
+          try {
+            idEl.focus({ preventScroll: true });
+          } catch (_) {
+            idEl.focus();
+          }
+        });
       }
 
       function openLoginPortal() {
@@ -24708,6 +24884,7 @@
         if (fc) fc.style.display = 'none';
         if (rc) rc.style.display = 'none';
         hideLoginError();
+        resetLoginMobileStep();
       }
 
       function showForgotPassword() {
@@ -24771,30 +24948,31 @@
           (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
         if (!isIOS) return;
         idEl.setAttribute('readonly', 'readonly');
-        const unlock = () => {
-          idEl.removeAttribute('readonly');
-          reinforceLoginCardTop();
-        };
+        const unlock = () => idEl.removeAttribute('readonly');
         idEl.addEventListener('focus', unlock, { once: true });
         idEl.addEventListener('touchstart', unlock, { once: true, passive: true });
       }
 
-      /** تقليل شريط iOS فوق لوحة المفاتيح (أسهم تنقل وتم) — بدون form متعدد الحقول */
+      /** تقليل شريط iOS + Enter بين الحقول */
       function initLoginFieldKeyboard() {
         const idEl = document.getElementById('loginIdentifier');
         const pwEl = document.getElementById('loginPassword');
         if (!idEl || !pwEl || idEl.dataset.kbBound === '1') return;
         idEl.dataset.kbBound = '1';
         initLoginIosIdentifierNoSuggest(idEl);
+        initLoginMobileSteps();
         idEl.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter') {
-            e.preventDefault();
+          if (e.key !== 'Enter') return;
+          e.preventDefault();
+          const wrap = document.getElementById('loginFields');
+          if (wrap?.classList.contains('lp-login-fields--steps') && !wrap.classList.contains('lp-login-fields--on-pw')) {
+            showLoginPasswordStep();
+          } else {
             try {
               pwEl.focus({ preventScroll: true });
             } catch (_) {
               pwEl.focus();
             }
-            reinforceLoginCardTop();
           }
         });
         pwEl.addEventListener('keydown', (e) => {
