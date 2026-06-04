@@ -337,8 +337,12 @@
       -webkit-overflow-scrolling: auto
     }
 
+    /* شاشة ثابتة + بطاقة في التدفق (لا fixed ولا JS لموضع — يمنع قفز iOS) */
     body.login-portal-open #loginScreen.lp-screen {
-      display: block !important;
+      display: flex !important;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
       top: 0 !important;
       right: 0 !important;
       left: 0 !important;
@@ -347,36 +351,37 @@
       height: var(--login-stable-h, 100vh) !important;
       min-height: var(--login-stable-h, 100vh) !important;
       max-height: var(--login-stable-h, 100vh) !important;
-      padding: 0 !important;
+      padding-top: calc(env(safe-area-inset-top, 0px) + clamp(40px, 6vh, 64px)) !important;
+      padding-bottom: max(clamp(12px, 3vw, 28px), env(safe-area-inset-bottom)) !important;
+      padding-left: max(clamp(12px, 3vw, 28px), env(safe-area-inset-left, 0px)) !important;
+      padding-right: max(clamp(12px, 3vw, 28px), env(safe-area-inset-right, 0px)) !important;
       transform: none !important;
       touch-action: none;
       overscroll-behavior: none
     }
 
-    /* البطاقة مثبتة على #loginCard — لا تتحرك مع لوحة المفاتيح */
     body.login-portal-open #loginScreen .lp-center {
       position: static !important;
       width: 100%;
       max-width: 28rem;
       margin: 0 auto;
-      transform: none !important
+      transform: none !important;
+      flex: 0 0 auto
     }
 
     body.login-portal-open #loginScreen #loginCard {
-      position: fixed !important;
-      z-index: 10001;
-      top: var(--login-card-top-px, calc(env(safe-area-inset-top, 0px) + clamp(40px, 6vh, 64px))) !important;
-      left: max(clamp(12px, 3vw, 28px), env(safe-area-inset-left, 0px)) !important;
-      right: max(clamp(12px, 3vw, 28px), env(safe-area-inset-right, 0px)) !important;
-      width: auto !important;
+      position: relative !important;
+      top: auto !important;
+      left: auto !important;
+      right: auto !important;
+      width: 100% !important;
       max-width: 28rem !important;
       margin: 0 auto !important;
-      transform: translateZ(0) !important;
-      -webkit-transform: translateZ(0) !important;
+      transform: none !important;
+      -webkit-transform: none !important;
       overflow: visible;
-      touch-action: none;
-      overscroll-behavior: none;
-      contain: layout style
+      touch-action: manipulation;
+      overscroll-behavior: none
     }
 
     body.login-portal-open #loginScreen #loginCard input,
@@ -420,8 +425,8 @@
     }
 
     @media (min-width: 993px) {
-      body.login-portal-open #loginScreen .lp-center {
-        top: var(--login-card-top-px, calc(env(safe-area-inset-top, 0px) + clamp(32px, 8vh, 80px))) !important
+      body.login-portal-open #loginScreen.lp-screen {
+        padding-top: calc(env(safe-area-inset-top, 0px) + clamp(40px, 10vh, 96px)) !important
       }
 
       #loginScreen.lp-screen {
@@ -21403,7 +21408,7 @@
       }
     }
   </style>
-  <meta name="app-build" content="wefaq-login-top-merge-v345">
+  <meta name="app-build" content="wefaq-login-flex-stable-v346">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
 </head>
 
@@ -24445,10 +24450,6 @@
 
       let _loginPortalScrollY = 0;
       let _loginLockedVpH = 0;
-      let _loginCardTopPx = 0;
-      let _loginCardAppliedTopPx = -1;
-      let _loginVvResizeTimer = 0;
-      let _loginTouchingScreen = false;
 
       function applyLoginStableViewport() {
         const candidates = [
@@ -24464,66 +24465,7 @@
       function clearLoginStableViewport() {
         _loginLockedVpH = 0;
         document.documentElement.style.removeProperty('--login-stable-h');
-        clearLoginCardViewportShift();
-        unlockLoginCardPosition();
-      }
-
-      /** iOS: موضع واحد = القفل + انزياج visualViewport (بدون transform منفصل) */
-      function clearLoginCardViewportShift() {
-        _loginCardAppliedTopPx = -1;
-        document.documentElement.style.removeProperty('--login-vv-shift');
-      }
-
-      function applyLoginCardViewportTop() {
-        if (!document.body.classList.contains('login-portal-open') || !_loginCardTopPx) return;
-        const vv = window.visualViewport;
-        const shift = vv ? Math.max(0, Math.round(vv.offsetTop)) : 0;
-        const combined = _loginCardTopPx + shift;
-        if (combined === _loginCardAppliedTopPx) return;
-        _loginCardAppliedTopPx = combined;
-        document.documentElement.style.setProperty('--login-card-top-px', `${combined}px`);
-      }
-
-      function scheduleLoginCardViewportShift() {
-        clearTimeout(_loginVvResizeTimer);
-        _loginVvResizeTimer = setTimeout(applyLoginCardViewportTop, 32);
-      }
-
-      function syncLoginCardViewportAfterFocus() {
-        applyLoginCardViewportTop();
-        requestAnimationFrame(applyLoginCardViewportTop);
-        scheduleLoginCardViewportShift();
-      }
-
-      function getLoginCardTopPx() {
-        if (_loginCardTopPx) return _loginCardTopPx;
-        let safeTop = 0;
-        try {
-          const st = getComputedStyle(document.documentElement);
-          const v = parseFloat(st.getPropertyValue('--mr-safe-top'));
-          if (Number.isFinite(v) && v > 0) safeTop = v;
-        } catch (_) { /* noop */ }
-        const desktop = window.matchMedia('(min-width: 993px)').matches;
-        const vhPart = desktop
-          ? Math.min(Math.max(window.innerHeight * 0.08, 32), 80)
-          : Math.min(Math.max(window.innerHeight * 0.062, 40), 64);
-        _loginCardTopPx = Math.round(safeTop + vhPart);
-        return _loginCardTopPx;
-      }
-
-      function lockLoginCardPosition() {
-        const card = document.getElementById('loginCard');
-        if (!card || card.dataset.posLocked === '1') return;
-        getLoginCardTopPx();
-        card.dataset.posLocked = '1';
-        applyLoginCardViewportTop();
-      }
-
-      function unlockLoginCardPosition() {
-        _loginCardTopPx = 0;
         document.documentElement.style.removeProperty('--login-card-top-px');
-        const card = document.getElementById('loginCard');
-        if (card) card.dataset.posLocked = '';
       }
 
       function patchLoginInputsNoScroll() {
@@ -24589,6 +24531,7 @@
         const ls = document.getElementById('loginScreen');
         const blockTouchDrag = (e) => {
           if (!document.body.classList.contains('login-portal-open')) return;
+          if (e.target?.closest?.('input, textarea, button, a, label, .lp-card, .lp-pw-toggle')) return;
           e.preventDefault();
         };
         ls?.addEventListener('touchmove', blockTouchDrag, { passive: false });
@@ -24596,46 +24539,10 @@
           'touchstart',
           (e) => {
             if (!document.body.classList.contains('login-portal-open')) return;
-            _loginTouchingScreen = true;
             if (e.touches.length > 1) e.preventDefault();
           },
           { passive: false }
         );
-        ls?.addEventListener(
-          'touchend',
-          () => {
-            _loginTouchingScreen = false;
-            scheduleLoginCardViewportShift();
-          },
-          { passive: true }
-        );
-        ls?.addEventListener(
-          'touchcancel',
-          () => {
-            _loginTouchingScreen = false;
-            scheduleLoginCardViewportShift();
-          },
-          { passive: true }
-        );
-        ls?.addEventListener(
-          'focusin',
-          (e) => {
-            if (!document.body.classList.contains('login-portal-open')) return;
-            if (!e.target?.closest?.('#loginCard input, #loginCard textarea, #loginCard select')) return;
-            syncLoginCardViewportAfterFocus();
-          },
-          true
-        );
-        const vv = window.visualViewport;
-        if (vv && !window._loginVvResizeBound) {
-          window._loginVvResizeBound = true;
-          vv.addEventListener('resize', scheduleLoginCardViewportShift, { passive: true });
-          vv.addEventListener('scroll', () => {
-            if (!document.body.classList.contains('login-portal-open')) return;
-            if (_loginTouchingScreen) return;
-            scheduleLoginCardViewportShift();
-          }, { passive: true });
-        }
       }
 
       function openLoginPortal() {
@@ -24652,12 +24559,7 @@
           ls.classList.remove('hidden');
           ls.removeAttribute('hidden');
           ls.setAttribute('aria-hidden', 'false');
-          requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-              lockLoginCardPosition();
-              freezeLoginPortalScroll();
-            });
-          });
+          requestAnimationFrame(() => freezeLoginPortalScroll());
         }
         if (app) {
           app.style.display = 'none';
@@ -24824,7 +24726,6 @@
           } catch (_) {
             pwEl.focus();
           }
-          syncLoginCardViewportAfterFocus();
         });
         pwEl.addEventListener('keydown', (e) => {
           if (e.key === 'Enter') {
