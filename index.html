@@ -325,6 +325,17 @@
       -webkit-overflow-scrolling: auto
     }
 
+    body.login-portal-open #loginScreen.lp-screen {
+      top: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      left: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      max-height: 100dvh;
+      transform: none !important
+    }
+
     /* جوال + ويب + PWA: مرفوعة للأعلى ومتوسطة أفقياً (RTL: flex-start يمين = انزياح) */
     @media (max-width: 992px) {
       #loginScreen.lp-screen {
@@ -24360,8 +24371,6 @@
       }
 
       let _loginPortalScrollY = 0;
-      let _loginRepinRaf = 0;
-
       function isLoginStandalonePwa() {
         return !!(
           window.navigator.standalone ||
