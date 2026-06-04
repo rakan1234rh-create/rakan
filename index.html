@@ -382,8 +382,7 @@
       display: block;
       width: 100%;
       height: 100%;
-      flex-shrink: 0;
-      object-fit: contain
+      flex-shrink: 0
     }
 
     @media (max-width: 992px) {
@@ -21106,7 +21105,7 @@
       }
     }
   </style>
-  <meta name="app-build" content="wefaq-icon-fit-v327">
+  <meta name="app-build" content="wefaq-svg-logo-v328">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
 </head>
 
@@ -24989,19 +24988,45 @@
         return typeof window !== 'undefined' && window.matchMedia('(max-width: 992px)').matches;
       }
 
-      function wefaqOfficialLogoHtml() {
-        return '<img src="icons/wefaq-app-512.png?v=327" alt="wefaq" class="wefaq-app-logo" width="512" height="512" decoding="async" draggable="false">';
+      const WEFAQ_LOGO_VER = '328';
+
+      function wefaqOfficialLogoHtml(uid) {
+        const sh = 'wefaqSh_' + uid;
+        const sf = 'wefaqSf_' + uid;
+        return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="شعار وفاق" class="wefaq-app-logo" data-wefaq-ver="${WEFAQ_LOGO_VER}" aria-hidden="true">
+          <defs>
+            <filter id="${sh}" x="44" y="52" width="424" height="432" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+              <feDropShadow dx="0" dy="22" stdDeviation="18" flood-color="#000000" flood-opacity="0.22"/>
+            </filter>
+            <linearGradient id="${sf}" x1="88" x2="424" y1="70" y2="426" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#17181C"/>
+              <stop offset="1" stop-color="#0D0E12"/>
+            </linearGradient>
+          </defs>
+          <rect x="66" y="56" width="380" height="380" rx="78" fill="url(#${sf})" filter="url(#${sh})"/>
+          <g fill="#F8F8F5" font-family="Manrope, var(--font), Arial, sans-serif" font-weight="700">
+            <text x="256" y="278" text-anchor="middle" font-size="118" letter-spacing="-6">wefaq</text>
+          </g>
+          <g stroke="#F8F8F5" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none">
+            <line x1="132" y1="360" x2="222" y2="360"/>
+            <path d="M 290 360 L 400 360 Q 410 360 410 350 L 410 278"/>
+            <path d="M222 360 L 244 338 L 254 348"/>
+            <path d="M258 352 L 266 360 L 254 372"/>
+            <path d="M258 368 L 244 382 L 222 360"/>
+            <path d="M246 360 L 268 338 L 290 360 L 268 382 L 246 360 Z"/>
+          </g>
+        </svg>`;
       }
 
       const WEFAQ_MOBILE_LOGO_HOSTS = [
-        { sel: '#loginScreen #loginCard .lp-brand-ico' },
-        { sel: '#loginTransition .lt-shield' },
-        { sel: '#brandArea .brand-icon' }
+        { sel: '#loginScreen #loginCard .lp-brand-ico', uid: 'lp' },
+        { sel: '#loginTransition .lt-shield', uid: 'lt' },
+        { sel: '#brandArea .brand-icon', uid: 'tb' }
       ];
 
       function syncWefaqMobileBranding() {
         const mob = typeof isMobileViewport === 'function' && isMobileViewport();
-        WEFAQ_MOBILE_LOGO_HOSTS.forEach(({ sel }) => {
+        WEFAQ_MOBILE_LOGO_HOSTS.forEach(({ sel, uid }) => {
           const host = document.querySelector(sel);
           if (!host) return;
           const mono = host.querySelector(':scope > .brand-mono');
@@ -25009,13 +25034,12 @@
           if (mob) {
             host.classList.add('wefaq-logo-host');
             if (mono) mono.hidden = true;
-            if (logo && logo.tagName !== 'IMG') {
+            if (logo && (logo.tagName === 'IMG' || logo.getAttribute('data-wefaq-ver') !== WEFAQ_LOGO_VER)) {
               logo.remove();
               logo = null;
             }
             if (!logo) {
-              host.insertAdjacentHTML('beforeend', wefaqOfficialLogoHtml());
-              logo = host.querySelector(':scope > .wefaq-app-logo');
+              host.insertAdjacentHTML('beforeend', wefaqOfficialLogoHtml(uid));
             }
           } else {
             host.classList.remove('wefaq-logo-host');
