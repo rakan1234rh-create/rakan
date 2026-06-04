@@ -687,7 +687,12 @@
     #loginScreen .lp-input:focus {
       outline: none;
       border-color: var(--mr-primary);
-      box-shadow: 0 0 0 4px var(--mr-primary-soft)
+      box-shadow: 0 0 0 4px var(--mr-primary-soft);
+      scroll-margin: 0
+    }
+
+    body.login-portal-open #loginScreen .lp-input {
+      scroll-margin: 0
     }
 
     #loginScreen .lp-input-wrap {
