@@ -309,9 +309,10 @@
       overscroll-behavior: contain;
       min-height: 100dvh;
       min-height: 100vh;
-      padding: clamp(12px, 3vw, 28px);
-      padding-top: max(clamp(12px, 3vw, 28px), env(safe-area-inset-top, 0px));
-      padding-bottom: max(clamp(12px, 3vw, 28px), env(safe-area-inset-bottom, 0px));
+      padding-top: max(clamp(16px, 4vw, 32px), env(safe-area-inset-top, 0px));
+      padding-bottom: max(clamp(16px, 4vw, 32px), env(safe-area-inset-bottom, 0px));
+      padding-left: max(clamp(20px, 5vw, 36px), env(safe-area-inset-left, 0px));
+      padding-right: max(clamp(20px, 5vw, 36px), env(safe-area-inset-right, 0px));
       background: linear-gradient(135deg, #f8fafc 0%, #fff 45%, #f1f5f9 100%);
       direction: rtl;
       touch-action: manipulation;
@@ -324,7 +325,8 @@
       max-width: 28rem;
       margin-inline: auto;
       margin-block: auto;
-      flex: 0 0 auto
+      flex: 0 0 auto;
+      transform: translateY(clamp(28px, 6vh, 56px))
     }
 
     #loginScreen #loginCard {
@@ -496,12 +498,12 @@
 
     .topbar-brand-zone {
       overflow: visible;
-      padding-inline-start: 10px
+      padding-inline-start: 16px
     }
 
     .topbar-brand-zone .brand-area {
-      margin-inline-start: 6px;
-      margin-block-start: -5px
+      margin-inline-start: 10px;
+      margin-block-start: 2px
     }
 
     .brand-area .brand-icon.wefaq-logo-slot {
