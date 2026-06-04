@@ -413,15 +413,40 @@
       animation: none
     }
 
+    .topbar-brand-zone {
+      overflow: visible
+    }
+
     .brand-area .brand-icon.wefaq-logo-slot {
+      width: 44px;
+      height: 44px;
+      min-width: 44px;
+      min-height: 44px;
+      font-size: 0 !important;
+      flex-shrink: 0;
+      overflow: visible;
+      position: relative
+    }
+
+    .brand-area .brand-icon.wefaq-logo-slot .wefaq-app-logo {
+      position: absolute;
+      left: 50%;
+      top: 50%;
       width: 76px;
       height: 76px;
-      font-size: 0 !important;
-      flex-shrink: 0
+      max-width: none;
+      transform: translate(-50%, -50%)
     }
 
     @media (max-width: 576px) {
       .brand-area .brand-icon.wefaq-logo-slot {
+        width: 36px !important;
+        height: 36px !important;
+        min-width: 36px !important;
+        min-height: 36px !important
+      }
+
+      .brand-area .brand-icon.wefaq-logo-slot .wefaq-app-logo {
         width: 58px !important;
         height: 58px !important
       }
