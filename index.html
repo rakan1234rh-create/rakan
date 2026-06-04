@@ -432,10 +432,14 @@
       position: absolute;
       left: 50%;
       top: 50%;
-      width: 76px;
-      height: 76px;
+      width: 92px;
+      height: 92px;
       max-width: none;
       transform: translate(-50%, -50%)
+    }
+
+    #brandArea.brand-area {
+      gap: 0
     }
 
     @media (max-width: 576px) {
@@ -447,8 +451,8 @@
       }
 
       .brand-area .brand-icon.wefaq-logo-slot .wefaq-app-logo {
-        width: 58px !important;
-        height: 58px !important
+        width: 68px !important;
+        height: 68px !important
       }
     }
 
@@ -18159,7 +18163,7 @@
 
       .topbar-brand-zone .brand-area {
         min-width: 0;
-        overflow: hidden
+        overflow: visible
       }
 
       .brand-area .brand-text {
@@ -21302,9 +21306,8 @@
     <div class="app-shell">
 <header class="topbar unified-banner">
         <div class="topbar-brand-zone">
-          <div class="brand-area" id="brandArea">
+          <div class="brand-area" id="brandArea" aria-label="wefaq">
             <div class="brand-icon wefaq-logo-slot" aria-hidden="true"></div>
-            <div class="brand-text"><strong>منصة الرصد</strong><span>MONITORING.SYSTEM</span></div>
           </div>
           <div class="topbar-vdivider topbar-brand-divider" aria-hidden="true"></div>
         </div>
