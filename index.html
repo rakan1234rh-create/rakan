@@ -290,26 +290,18 @@
     body.login-portal-open {
       overflow: hidden !important;
       overscroll-behavior: none;
-      touch-action: manipulation
+      touch-action: manipulation;
+      position: fixed !important;
+      inset: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      margin: 0 !important;
+      background: linear-gradient(135deg, #f8fafc 0%, #fff 45%, #f1f5f9 100%)
     }
 
-    html.login-portal-open {
-      position: fixed;
-      width: 100%;
-      height: var(--login-stable-h, 100%);
-      left: 0;
-      right: 0;
-      top: 0 !important
-    }
-
-    body.login-portal-open {
-      position: fixed;
-      width: 100%;
-      height: var(--login-stable-h, 100%);
-      left: 0;
-      right: 0;
-      top: 0 !important;
-      margin: 0
+    [data-theme="dark"] html.login-portal-open,
+    [data-theme="dark"] body.login-portal-open {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)
     }
 
     /* شاشة تسجيل الدخول — نفس أسلوب الأرشيف (مرصاد) + انتقال التحميل */
@@ -337,41 +329,60 @@
       -webkit-overflow-scrolling: auto
     }
 
-    /* شاشة ثابتة + بطاقة في التدفق (لا fixed ولا JS لموضع — يمنع قفز iOS) */
-    body.login-portal-open #loginScreen.lp-screen {
+    /* سطح المكتب: شاشة دخول كاملة */
+    body.login-portal-open:not(.login-vv-sync) #loginScreen.lp-screen {
       display: flex !important;
       flex-direction: column;
       align-items: center;
       justify-content: flex-start;
-      top: 0 !important;
-      right: 0 !important;
-      left: 0 !important;
-      bottom: auto !important;
+      position: fixed !important;
+      inset: 0 !important;
+      z-index: 10000 !important;
       width: 100% !important;
-      height: var(--login-stable-h, 100vh) !important;
-      min-height: var(--login-stable-h, 100vh) !important;
-      max-height: var(--login-stable-h, 100vh) !important;
-      padding-top: calc(env(safe-area-inset-top, 0px) + clamp(80px, 11vh, 112px)) !important;
+      height: 100% !important;
+      padding-top: calc(env(safe-area-inset-top, 0px) + clamp(48px, 10vh, 96px)) !important;
       padding-bottom: max(clamp(12px, 3vw, 28px), env(safe-area-inset-bottom)) !important;
       padding-left: max(clamp(12px, 3vw, 28px), env(safe-area-inset-left, 0px)) !important;
       padding-right: max(clamp(12px, 3vw, 28px), env(safe-area-inset-right, 0px)) !important;
+      overflow: hidden !important;
       transform: none !important;
-      touch-action: none;
-      overscroll-behavior: none
+      touch-action: manipulation;
+      box-sizing: border-box
     }
 
-    /* جوال: تعويض انزياج iOS فقط (top) — الارتفاع يبقى مقفولاً ولا يُصغَّر مع لوحة المفاتيح */
-    body.login-portal-open.login-vv-pinned #loginScreen.lp-screen {
+    /* جوال: شاشة كاملة + رفع البطاقة فقط فوق لوحة المفاتيح (لا تصغير الشاشة = لا فراغ تحت) */
+    body.login-portal-open.login-vv-sync #loginScreen.lp-screen {
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: flex-start !important;
+      position: fixed !important;
+      z-index: 10000 !important;
       top: var(--login-vv-top, 0px) !important;
       left: 0 !important;
       right: 0 !important;
-      bottom: auto !important;
+      bottom: 0 !important;
       width: 100% !important;
-      height: var(--login-stable-h, 100vh) !important;
-      min-height: var(--login-stable-h, 100vh) !important;
-      max-height: var(--login-stable-h, 100vh) !important;
+      height: 100% !important;
+      min-height: 100dvh !important;
+      max-height: none !important;
+      padding-top: calc(env(safe-area-inset-top, 0px) + clamp(44px, 7vh, 80px)) !important;
+      padding-bottom: max(12px, env(safe-area-inset-bottom, 0px)) !important;
+      padding-left: max(12px, env(safe-area-inset-left, 0px)) !important;
+      padding-right: max(12px, env(safe-area-inset-right, 0px)) !important;
+      overflow: hidden !important;
       transform: none !important;
-      -webkit-transform: none !important
+      -webkit-transform: none !important;
+      touch-action: manipulation;
+      overscroll-behavior: none;
+      box-sizing: border-box
+    }
+
+    body.login-portal-open.login-vv-sync #loginScreen .lp-center {
+      transform: translateY(calc(-1 * var(--login-kb-lift, 0px))) translateZ(0) !important;
+      -webkit-transform: translateY(calc(-1 * var(--login-kb-lift, 0px))) translateZ(0) !important;
+      transition: none !important;
+      will-change: transform
     }
 
     body.login-portal-open #loginScreen .lp-card--in {
@@ -382,7 +393,7 @@
       position: static !important;
       width: 100%;
       max-width: 28rem;
-      margin: clamp(16px, 3vh, 28px) auto 0 !important;
+      margin: 0 auto !important;
       transform: none !important;
       flex: 0 0 auto
     }
@@ -417,16 +428,7 @@
       transform: none
     }
 
-    /* جوال: نزول البطاقة عند شاشة الدخول */
     @media (max-width: 992px) {
-      body.login-portal-open #loginScreen.lp-screen {
-        padding-top: calc(env(safe-area-inset-top, 0px) + clamp(80px, 11vh, 112px)) !important
-      }
-
-      body.login-portal-open #loginScreen .lp-center {
-        margin-top: clamp(16px, 3vh, 28px) !important
-      }
-
       #loginScreen.lp-screen {
         flex-direction: column;
         align-items: center;
@@ -451,10 +453,6 @@
     }
 
     @media (min-width: 993px) {
-      body.login-portal-open #loginScreen.lp-screen {
-        padding-top: calc(env(safe-area-inset-top, 0px) + clamp(72px, 12vh, 120px)) !important
-      }
-
       #loginScreen.lp-screen {
         flex-direction: column;
         align-items: center;
@@ -21434,7 +21432,7 @@
       }
     }
   </style>
-  <meta name="app-build" content="wefaq-login-vv-top-only-v351">
+  <meta name="app-build" content="wefaq-login-kb-lift-v353">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
 </head>
 
@@ -24475,8 +24473,8 @@
       }
 
       let _loginPortalScrollY = 0;
-      let _loginLockedVpH = 0;
-      let _loginVvPinKey = -1;
+      let _loginVvSyncKey = '';
+      let _loginVvRaf = 0;
       let _loginTouchingScreen = false;
 
       function isLoginMobileViewport() {
@@ -24488,52 +24486,56 @@
         }
       }
 
-      function clearLoginVisualViewportPin() {
-        _loginVvPinKey = '';
-        document.body.classList.remove('login-vv-pinned');
-        document.documentElement.style.removeProperty('--login-vv-top');
+      function clearLoginVisualViewportSync() {
+        _loginVvSyncKey = '';
+        document.body.classList.remove('login-vv-sync');
+        const root = document.documentElement;
+        root.style.removeProperty('--login-vv-top');
+        root.style.removeProperty('--login-kb-lift');
       }
 
-      /** تعويض offsetTop فقط — لا تصغير ارتفاع الشاشة (سبب قفز البطاقة للأعلى) */
-      function pinLoginScreenToVisualViewport() {
-        if (!document.body.classList.contains('login-portal-open') || !isLoginMobileViewport()) {
-          clearLoginVisualViewportPin();
+      function scheduleLoginVisualViewportSync() {
+        if (_loginVvRaf) cancelAnimationFrame(_loginVvRaf);
+        _loginVvRaf = requestAnimationFrame(() => {
+          _loginVvRaf = 0;
+          syncLoginVisualViewportBox();
+        });
+      }
+
+      /** جوال: شاشة بملء الشاشة + تعويض offsetTop + رفع البطاقة فوق لوحة المفاتيح */
+      function syncLoginVisualViewportBox() {
+        if (!document.body.classList.contains('login-portal-open')) {
+          clearLoginVisualViewportSync();
+          return;
+        }
+        if (!isLoginMobileViewport()) {
+          clearLoginVisualViewportSync();
           return;
         }
         const vv = window.visualViewport;
         if (!vv) return;
         const top = Math.max(0, Math.round(vv.offsetTop));
-        if (top === _loginVvPinKey) return;
-        _loginVvPinKey = top;
-        if (top <= 0) {
-          clearLoginVisualViewportPin();
-          return;
-        }
-        document.body.classList.add('login-vv-pinned');
-        document.documentElement.style.setProperty('--login-vv-top', `${top}px`);
+        const layoutH = window.innerHeight || document.documentElement.clientHeight || 0;
+        const visibleBottom = vv.offsetTop + vv.height;
+        const kbLift = Math.max(0, Math.round(layoutH - visibleBottom));
+        const key = `${top}|${kbLift}`;
+        if (key === _loginVvSyncKey) return;
+        _loginVvSyncKey = key;
+        document.body.classList.add('login-vv-sync');
+        const root = document.documentElement;
+        root.style.setProperty('--login-vv-top', `${top}px`);
+        root.style.setProperty('--login-kb-lift', `${kbLift}px`);
       }
 
-      function pinLoginScreenAfterFocus() {
-        pinLoginScreenToVisualViewport();
-        requestAnimationFrame(pinLoginScreenToVisualViewport);
+      function syncLoginVisualViewportAfterFocus() {
+        scheduleLoginVisualViewportSync();
+        setTimeout(scheduleLoginVisualViewportSync, 48);
+        setTimeout(scheduleLoginVisualViewportSync, 280);
       }
 
-      function applyLoginStableViewport() {
-        const candidates = [
-          window.innerHeight,
-          document.documentElement.clientHeight,
-          window.outerHeight
-        ].filter((n) => n > 0);
-        const h = Math.max(...candidates, _loginLockedVpH || 0);
-        if (!_loginLockedVpH || h > _loginLockedVpH) _loginLockedVpH = h;
-        document.documentElement.style.setProperty('--login-stable-h', `${_loginLockedVpH}px`);
-      }
-
-      function clearLoginStableViewport() {
-        _loginLockedVpH = 0;
-        document.documentElement.style.removeProperty('--login-stable-h');
+      function clearLoginPortalViewportState() {
+        clearLoginVisualViewportSync();
         document.documentElement.style.removeProperty('--login-card-top-px');
-        clearLoginVisualViewportPin();
       }
 
       function patchLoginInputsNoScroll() {
@@ -24543,11 +24545,6 @@
           el.dataset.scrollPatch = '1';
           el.scrollIntoView = function () {};
         });
-      }
-
-      function freezeLoginPortalScroll() {
-        if (!document.body.classList.contains('login-portal-open')) return;
-        window.scrollTo(0, 0);
       }
 
       function isLoginStandalonePwa() {
@@ -24570,15 +24567,16 @@
         const body = document.body;
         if (on) {
           _loginPortalScrollY = window.scrollY || 0;
-          applyLoginStableViewport();
           root.classList.add('login-portal-open');
           body.classList.add('login-portal-open');
           body.style.top = '';
+          window.scrollTo(0, 0);
+          scheduleLoginVisualViewportSync();
         } else {
           root.classList.remove('login-portal-open');
           body.classList.remove('login-portal-open');
           body.style.top = '';
-          clearLoginStableViewport();
+          clearLoginPortalViewportState();
           window.scrollTo(0, _loginPortalScrollY);
         }
       }
@@ -24619,7 +24617,7 @@
           (e) => {
             if (!document.body.classList.contains('login-portal-open')) return;
             if (!e.target?.closest?.('#loginCard input, #loginCard textarea, #loginCard select')) return;
-            pinLoginScreenAfterFocus();
+            syncLoginVisualViewportAfterFocus();
           },
           true
         );
@@ -24629,20 +24627,31 @@
             setTimeout(() => {
               if (!document.body.classList.contains('login-portal-open')) return;
               if (document.activeElement?.closest?.('#loginCard input, #loginCard textarea')) return;
-              pinLoginScreenToVisualViewport();
+              scheduleLoginVisualViewportSync();
             }, 0);
           },
           true
         );
         const vv = window.visualViewport;
-        if (vv && !window._loginVvScrollBound) {
-          window._loginVvScrollBound = true;
-          vv.addEventListener('scroll', () => {
+        if (vv && !window._loginVvBound) {
+          window._loginVvBound = true;
+          const onVvChange = () => {
             if (!document.body.classList.contains('login-portal-open')) return;
-            if (_loginTouchingScreen) return;
-            pinLoginScreenToVisualViewport();
-          }, { passive: true });
+            scheduleLoginVisualViewportSync();
+          };
+          vv.addEventListener('resize', onVvChange, { passive: true });
+          vv.addEventListener('scroll', onVvChange, { passive: true });
         }
+        if (!window._loginOrientationBound) {
+          window._loginOrientationBound = true;
+          window.addEventListener('orientationchange', () => {
+            setTimeout(scheduleLoginVisualViewportSync, 100);
+          });
+        }
+        window.addEventListener('resize', () => {
+          if (!document.body.classList.contains('login-portal-open')) return;
+          scheduleLoginVisualViewportSync();
+        }, { passive: true });
       }
 
       function openLoginPortal() {
@@ -24659,7 +24668,10 @@
           ls.classList.remove('hidden');
           ls.removeAttribute('hidden');
           ls.setAttribute('aria-hidden', 'false');
-          requestAnimationFrame(() => freezeLoginPortalScroll());
+          requestAnimationFrame(() => {
+            window.scrollTo(0, 0);
+            scheduleLoginVisualViewportSync();
+          });
         }
         if (app) {
           app.style.display = 'none';
@@ -24676,7 +24688,7 @@
           ls.setAttribute('aria-hidden', 'true');
         }
         resetLoginScreenViewportPin();
-        clearLoginStableViewport();
+        clearLoginPortalViewportState();
         setLoginPortalScrollLock(false);
         if (app) {
           app.classList.add('rbac-ready');
@@ -24818,7 +24830,7 @@
         if (!idEl || !pwEl || idEl.dataset.kbBound === '1') return;
         idEl.dataset.kbBound = '1';
         initLoginIosIdentifierNoSuggest(idEl);
-        pwEl.addEventListener('touchstart', () => pinLoginScreenAfterFocus(), { passive: true });
+        pwEl.addEventListener('touchstart', () => syncLoginVisualViewportAfterFocus(), { passive: true });
         idEl.addEventListener('keydown', (e) => {
           if (e.key !== 'Enter') return;
           e.preventDefault();
@@ -24827,7 +24839,7 @@
           } catch (_) {
             pwEl.focus();
           }
-          pinLoginScreenAfterFocus();
+          syncLoginVisualViewportAfterFocus();
         });
         pwEl.addEventListener('keydown', (e) => {
           if (e.key === 'Enter') {
