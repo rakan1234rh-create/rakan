@@ -371,8 +371,8 @@
       width: auto !important;
       max-width: 28rem !important;
       margin: 0 auto !important;
-      transform: translate3d(0, var(--login-vv-shift, 0px), 0) translateZ(0) !important;
-      -webkit-transform: translate3d(0, var(--login-vv-shift, 0px), 0) translateZ(0) !important;
+      transform: translateZ(0) !important;
+      -webkit-transform: translateZ(0) !important;
       overflow: visible;
       touch-action: none;
       overscroll-behavior: none;
@@ -21403,7 +21403,7 @@
       }
     }
   </style>
-  <meta name="app-build" content="wefaq-login-vv-focus-v344">
+  <meta name="app-build" content="wefaq-login-top-merge-v345">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
 </head>
 
@@ -24446,7 +24446,7 @@
       let _loginPortalScrollY = 0;
       let _loginLockedVpH = 0;
       let _loginCardTopPx = 0;
-      let _loginVvShiftPx = -1;
+      let _loginCardAppliedTopPx = -1;
       let _loginVvResizeTimer = 0;
       let _loginTouchingScreen = false;
 
@@ -24468,41 +24468,31 @@
         unlockLoginCardPosition();
       }
 
-      /** iOS: تعويض انزياج visualViewport عند لوحة المفاتيح — resize فقط (لا scroll = لا اهتزاز بالسحب) */
+      /** iOS: موضع واحد = القفل + انزياج visualViewport (بدون transform منفصل) */
       function clearLoginCardViewportShift() {
-        _loginVvShiftPx = -1;
+        _loginCardAppliedTopPx = -1;
         document.documentElement.style.removeProperty('--login-vv-shift');
       }
 
-      function syncLoginCardViewportShift() {
+      function applyLoginCardViewportTop() {
         if (!document.body.classList.contains('login-portal-open') || !_loginCardTopPx) return;
         const vv = window.visualViewport;
-        if (!vv) {
-          clearLoginCardViewportShift();
-          return;
-        }
-        const shift = Math.max(0, Math.round(vv.offsetTop));
-        if (shift === _loginVvShiftPx) return;
-        _loginVvShiftPx = shift;
-        if (shift > 0) {
-          document.documentElement.style.setProperty('--login-vv-shift', `${shift}px`);
-        } else {
-          document.documentElement.style.removeProperty('--login-vv-shift');
-        }
+        const shift = vv ? Math.max(0, Math.round(vv.offsetTop)) : 0;
+        const combined = _loginCardTopPx + shift;
+        if (combined === _loginCardAppliedTopPx) return;
+        _loginCardAppliedTopPx = combined;
+        document.documentElement.style.setProperty('--login-card-top-px', `${combined}px`);
       }
 
       function scheduleLoginCardViewportShift() {
         clearTimeout(_loginVvResizeTimer);
-        _loginVvResizeTimer = setTimeout(syncLoginCardViewportShift, 40);
+        _loginVvResizeTimer = setTimeout(applyLoginCardViewportTop, 32);
       }
 
-      /** بعد focus — iOS يغيّر offsetTop عبر scroll وليس resize */
-      function burstLoginCardViewportShift() {
-        syncLoginCardViewportShift();
-        requestAnimationFrame(syncLoginCardViewportShift);
+      function syncLoginCardViewportAfterFocus() {
+        applyLoginCardViewportTop();
+        requestAnimationFrame(applyLoginCardViewportTop);
         scheduleLoginCardViewportShift();
-        setTimeout(syncLoginCardViewportShift, 90);
-        setTimeout(syncLoginCardViewportShift, 200);
       }
 
       function getLoginCardTopPx() {
@@ -24524,10 +24514,9 @@
       function lockLoginCardPosition() {
         const card = document.getElementById('loginCard');
         if (!card || card.dataset.posLocked === '1') return;
-        const topPx = getLoginCardTopPx();
-        document.documentElement.style.setProperty('--login-card-top-px', `${topPx}px`);
+        getLoginCardTopPx();
         card.dataset.posLocked = '1';
-        scheduleLoginCardViewportShift();
+        applyLoginCardViewportTop();
       }
 
       function unlockLoginCardPosition() {
@@ -24535,14 +24524,6 @@
         document.documentElement.style.removeProperty('--login-card-top-px');
         const card = document.getElementById('loginCard');
         if (card) card.dataset.posLocked = '';
-      }
-
-      function reinforceLoginCardTop() {
-        if (!document.body.classList.contains('login-portal-open')) return;
-        const topPx = _loginCardTopPx;
-        if (!topPx) return;
-        document.documentElement.style.setProperty('--login-card-top-px', `${topPx}px`);
-        scheduleLoginCardViewportShift();
       }
 
       function patchLoginInputsNoScroll() {
@@ -24641,8 +24622,7 @@
           (e) => {
             if (!document.body.classList.contains('login-portal-open')) return;
             if (!e.target?.closest?.('#loginCard input, #loginCard textarea, #loginCard select')) return;
-            burstLoginCardViewportShift();
-            freezeLoginPortalScroll();
+            syncLoginCardViewportAfterFocus();
           },
           true
         );
@@ -24675,7 +24655,6 @@
           requestAnimationFrame(() => {
             requestAnimationFrame(() => {
               lockLoginCardPosition();
-              reinforceLoginCardTop();
               freezeLoginPortalScroll();
             });
           });
@@ -24837,16 +24816,6 @@
         if (!idEl || !pwEl || idEl.dataset.kbBound === '1') return;
         idEl.dataset.kbBound = '1';
         initLoginIosIdentifierNoSuggest(idEl);
-        [idEl, pwEl].forEach((el) => {
-          el.addEventListener(
-            'focus',
-            () => {
-              reinforceLoginCardTop();
-              burstLoginCardViewportShift();
-            },
-            { passive: true }
-          );
-        });
         idEl.addEventListener('keydown', (e) => {
           if (e.key !== 'Enter') return;
           e.preventDefault();
@@ -24855,7 +24824,7 @@
           } catch (_) {
             pwEl.focus();
           }
-          reinforceLoginCardTop();
+          syncLoginCardViewportAfterFocus();
         });
         pwEl.addEventListener('keydown', (e) => {
           if (e.key === 'Enter') {
