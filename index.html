@@ -21262,17 +21262,17 @@
           <div id="loginError" class="login-err" role="alert">
             <span id="loginErrorMsg"></span>
           </div>
-          <form onsubmit="event.preventDefault(); handleLogin();">
+          <div class="lp-login-fields" role="group" aria-label="تسجيل الدخول">
             <div class="lp-row lp-f2">
               <label class="lp-label" for="loginIdentifier">البريد أو الرقم الوظيفي</label>
               <input id="loginIdentifier" class="lp-input" type="text" autocomplete="username"
-                placeholder="البريد أو الرقم الوظيفي" required>
+                enterkeyhint="next" placeholder="البريد أو الرقم الوظيفي" required>
             </div>
             <div class="lp-row lp-f3">
               <label class="lp-label" for="loginPassword">كلمة المرور</label>
               <div class="lp-input-wrap">
                 <input id="loginPassword" class="lp-input lp-input--pw" type="password" autocomplete="current-password"
-                  placeholder="••••••••" required>
+                  enterkeyhint="go" placeholder="••••••••" required>
                 <button type="button" class="lp-pw-toggle" onclick="toggleLoginPw()" title="إظهار/إخفاء"><i
                     class="fas fa-eye" id="loginPwIcon"></i></button>
               </div>
@@ -21282,9 +21282,9 @@
               <a href="#" class="lp-link" onclick="event.preventDefault(); showForgotPassword();">نسيت كلمة المرور؟</a>
             </div>
             <div class="lp-f5">
-              <button type="submit" class="lp-btn-primary" id="loginBtn"><span>تسجيل الدخول</span></button>
+              <button type="button" class="lp-btn-primary" id="loginBtn"><span>تسجيل الدخول</span></button>
             </div>
-          </form>
+          </div>
           <div class="lp-divider lp-secure-note">
             <i class="fas fa-shield-halved" aria-hidden="true"></i>
             <span>محمي بأعلى معايير الأمان والخصوصية</span>
@@ -24383,6 +24383,26 @@
       // ───────────────────────────────────────────────────────────────────────────
       // LOGIN
       // ───────────────────────────────────────────────────────────────────────────
+      /** تقليل شريط iOS فوق لوحة المفاتيح (أسهم تنقل وتم) — بدون form متعدد الحقول */
+      function initLoginFieldKeyboard() {
+        const idEl = document.getElementById('loginIdentifier');
+        const pwEl = document.getElementById('loginPassword');
+        if (!idEl || !pwEl || idEl.dataset.kbBound === '1') return;
+        idEl.dataset.kbBound = '1';
+        idEl.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            pwEl.focus();
+          }
+        });
+        pwEl.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            handleLogin();
+          }
+        });
+      }
+
       async function handleLogin() {
         if (!document.getElementById('loginIdentifier')) {
           showToast('تسجيل الدخول من الواجهة غير متاح.', 'info');
@@ -37425,6 +37445,7 @@
           if (typeof syncMobileBottomNavLayout === 'function') syncMobileBottomNavLayout();
           if (typeof initMobileViewportSync === 'function') initMobileViewportSync();
           if (typeof syncWefaqBranding === 'function') syncWefaqBranding();
+          if (typeof initLoginFieldKeyboard === 'function') initLoginFieldKeyboard();
           if (typeof initViolDetailSheetDrag === 'function') initViolDetailSheetDrag();
           if (typeof initTicketSheetDrag === 'function') initTicketSheetDrag();
           if (typeof initCmpDetailSheetDrag === 'function') initCmpDetailSheetDrag();
