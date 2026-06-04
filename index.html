@@ -764,7 +764,15 @@
       opacity: 0.88
     }
 
+    #loginScreen .lp-f5 {
+      position: relative;
+      z-index: 3
+    }
+
     #loginScreen .lp-btn-primary {
+      position: relative;
+      z-index: 3;
+      pointer-events: auto;
       width: 100%;
       height: 3rem;
       margin-top: 0.35rem;
@@ -21438,7 +21446,7 @@
               <a href="#" class="lp-link" onclick="event.preventDefault(); showForgotPassword();">نسيت كلمة المرور؟</a>
             </div>
             <div class="lp-f5">
-              <button type="button" class="lp-btn-primary" id="loginBtn"><span>تسجيل الدخول</span></button>
+              <button type="button" class="lp-btn-primary" id="loginBtn" onclick="handleLogin()"><span>تسجيل الدخول</span></button>
             </div>
           </div>
           <div class="lp-divider lp-secure-note">
@@ -24450,15 +24458,6 @@
         if (window._loginVpLockBound) return;
         window._loginVpLockBound = true;
         syncLoginStandalonePwaClass();
-        const ls = document.getElementById('loginScreen');
-        ls?.addEventListener(
-          'touchmove',
-          (e) => {
-            if (!document.body.classList.contains('login-portal-open')) return;
-            e.preventDefault();
-          },
-          { passive: false }
-        );
       }
 
       function openLoginPortal() {
@@ -24644,6 +24643,14 @@
             handleLogin();
           }
         });
+        const loginBtn = document.getElementById('loginBtn');
+        if (loginBtn && loginBtn.dataset.clickBound !== '1') {
+          loginBtn.dataset.clickBound = '1';
+          loginBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            handleLogin();
+          });
+        }
       }
 
       async function handleLogin() {
