@@ -478,11 +478,17 @@
     }
 
     #loginScreen #loginCard .lp-hd--wefaq .wefaq-logo-slot {
-      width: 11rem;
-      height: 11rem;
-      max-width: min(82vw, 11rem);
-      margin: 0 auto 0.75rem;
+      width: 12rem;
+      height: 5.5rem;
+      max-width: min(88vw, 12rem);
+      margin: 0 auto 0.85rem;
       animation: lpIconSpring 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) 0.08s both
+    }
+
+    #loginScreen #loginCard .lp-hd--wefaq .wefaq-logo-slot .wefaq-app-logo--wordmark,
+    #loginTransition .wefaq-logo-slot .wefaq-app-logo--wordmark {
+      width: 100%;
+      height: 100%
     }
 
     #loginScreen #loginCard .lp-hd--wefaq .lp-sub {
@@ -490,8 +496,9 @@
     }
 
     #loginTransition .wefaq-logo-slot {
-      width: 7.25rem;
-      height: 7.25rem;
+      width: 10rem;
+      height: 4.5rem;
+      max-width: min(80vw, 10rem);
       margin: 0 auto 1.25rem;
       animation: none
     }
@@ -528,10 +535,10 @@
     }
 
     /* شعار الصفحة الرئيسية (الشريط): WEFAQ + خط المعينين */
-    .brand-area .brand-icon.wefaq-logo-slot .wefaq-app-logo--home-wordmark {
+    .brand-area .brand-icon.wefaq-logo-slot .wefaq-app-logo--wordmark {
       width: 148px;
       height: 148px;
-      transform: translate(-50%, calc(-50% - 5px))
+      transform: translate(-50%, calc(-50% + 4px))
     }
 
     #brandArea.brand-area {
@@ -547,12 +554,12 @@
       }
 
       .topbar-brand-zone {
-        padding-inline-start: 8px !important
+        padding-inline-start: 14px !important
       }
 
       .topbar-brand-zone .brand-area {
-        margin-inline-start: 4px !important;
-        margin-block-start: -4px !important
+        margin-inline-start: 8px !important;
+        margin-block-start: 1px !important
       }
 
       .brand-area .brand-icon.wefaq-logo-slot .wefaq-app-logo {
@@ -561,10 +568,10 @@
         transform: translate(-50%, calc(-50% - 4px)) !important
       }
 
-      .brand-area .brand-icon.wefaq-logo-slot .wefaq-app-logo--home-wordmark {
+      .brand-area .brand-icon.wefaq-logo-slot .wefaq-app-logo--wordmark {
         width: 108px !important;
         height: 108px !important;
-        transform: translate(-50%, calc(-50% - 4px)) !important
+        transform: translate(-50%, calc(-50% + 3px)) !important
       }
     }
 
@@ -21309,7 +21316,7 @@
       }
     }
   </style>
-  <meta name="app-build" content="wefaq-home-wordmark-v357">
+  <meta name="app-build" content="wefaq-wordmark-login-v358">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
 </head>
 
@@ -25289,28 +25296,11 @@
         return typeof window !== 'undefined' && window.matchMedia('(max-width: 992px)').matches;
       }
 
-      const WEFAQ_LOGO_VER = '357';
+      const WEFAQ_LOGO_VER = '358';
 
-      /** شعار الدخول والانتقال */
-      function wefaqOfficialLogoHtml() {
-        return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="شعار وفاق" class="wefaq-app-logo" data-wefaq-ver="${WEFAQ_LOGO_VER}" data-wefaq-style="login" aria-hidden="true">
-          <g fill="currentColor" font-family="Manrope, var(--font), Arial, sans-serif" font-weight="700">
-            <text x="256" y="278" text-anchor="middle" font-size="118" letter-spacing="-6">wefaq</text>
-          </g>
-          <g stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none" transform="translate(-4 0)">
-            <line x1="132" y1="360" x2="222" y2="360"/>
-            <path d="M 290 360 L 400 360 Q 410 360 410 350 L 410 278"/>
-            <path d="M222 360 L 244 338 L 254 348"/>
-            <path d="M258 352 L 266 360 L 254 372"/>
-            <path d="M258 368 L 244 382 L 222 360"/>
-            <path d="M246 360 L 268 338 L 290 360 L 268 382 L 246 360 Z"/>
-          </g>
-        </svg>`;
-      }
-
-      /** الشريط العلوي (الصفحة الرئيسية): WEFAQ + خط المعينين — فكرة أيقونة التطبيق */
-      function wefaqHomeWordmarkLogoHtml() {
-        return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="72 210 368 150" role="img" aria-label="WEFAQ" class="wefaq-app-logo wefaq-app-logo--home-wordmark" data-wefaq-ver="${WEFAQ_LOGO_VER}" data-wefaq-style="home-wordmark" aria-hidden="true">
+      /** WEFAQ + خط المعينين — الدخول والشريط وشاشة التحميل */
+      function wefaqWordmarkLogoHtml() {
+        return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="72 210 368 150" role="img" aria-label="WEFAQ" class="wefaq-app-logo wefaq-app-logo--wordmark" data-wefaq-ver="${WEFAQ_LOGO_VER}" data-wefaq-style="wordmark" aria-hidden="true">
           <g fill="currentColor" font-family="Montserrat, Manrope, var(--font), system-ui, sans-serif" font-weight="800">
             <text x="256" y="292" text-anchor="middle" font-size="108" letter-spacing="18">WEFAQ</text>
           </g>
@@ -25325,18 +25315,18 @@
       }
 
       const WEFAQ_LOGO_HOSTS = [
-        { sel: '#loginScreen #loginCard .wefaq-logo-slot', style: 'login' },
-        { sel: '#loginTransition .wefaq-logo-slot', style: 'login' },
-        { sel: '#brandArea .brand-icon.wefaq-logo-slot', style: 'home-wordmark' }
+        '#loginScreen #loginCard .wefaq-logo-slot',
+        '#loginTransition .wefaq-logo-slot',
+        '#brandArea .brand-icon.wefaq-logo-slot'
       ];
 
       function syncWefaqBranding() {
-        WEFAQ_LOGO_HOSTS.forEach(({ sel, style }) => {
+        const markup = wefaqWordmarkLogoHtml();
+        WEFAQ_LOGO_HOSTS.forEach((sel) => {
           const host = document.querySelector(sel);
           if (!host) return;
           host.classList.add('wefaq-logo-host');
           host.querySelector(':scope > .brand-mono')?.remove();
-          const markup = style === 'home-wordmark' ? wefaqHomeWordmarkLogoHtml() : wefaqOfficialLogoHtml();
           host.querySelectorAll(':scope > .wefaq-app-logo, :scope > img').forEach((el) => el.remove());
           host.insertAdjacentHTML('beforeend', markup);
         });
