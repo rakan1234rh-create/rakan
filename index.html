@@ -24,7 +24,6 @@
   <!-- Poppins: شريط جانبي Figma — Side-bar components for dashboard (node 11:10961) -->
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@700&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -525,31 +524,24 @@
     }
 
     .brand-area .brand-icon.wefaq-logo-slot {
-      width: 44px;
-      height: 44px;
-      min-width: 44px;
-      min-height: 44px;
+      width: auto;
+      height: auto;
+      min-width: 0;
+      min-height: 0;
       font-size: 0 !important;
       flex-shrink: 0;
       overflow: visible;
       position: relative
     }
 
-    .brand-area .brand-icon.wefaq-logo-slot .wefaq-app-logo {
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      width: 142px;
-      height: 142px;
-      max-width: none;
-      transform: translate(-50%, calc(-50% - 6px))
-    }
-
-    /* شعار الصفحة الرئيسية (الشريط): WEFAQ + خط المعينين */
+    /* شعار الشريط — بدون قص داخل مربع 44px */
     .brand-area .brand-icon.wefaq-logo-slot .wefaq-app-logo--wordmark {
-      width: 148px;
-      height: 148px;
-      transform: translate(-50%, calc(-50% + 4px))
+      position: static;
+      width: 6.75rem;
+      height: auto;
+      max-width: none;
+      transform: none;
+      margin-block-start: 2px
     }
 
     #brandArea.brand-area {
@@ -557,32 +549,10 @@
     }
 
     @media (max-width: 576px) {
-      .brand-area .brand-icon.wefaq-logo-slot {
-        width: 36px !important;
-        height: 36px !important;
-        min-width: 36px !important;
-        min-height: 36px !important
-      }
-
-      .topbar-brand-zone {
-        padding-inline-start: 14px !important
-      }
-
-      .topbar-brand-zone .brand-area {
-        margin-inline-start: 8px !important;
-        margin-block-start: 1px !important
-      }
-
-      .brand-area .brand-icon.wefaq-logo-slot .wefaq-app-logo {
-        width: 104px !important;
-        height: 104px !important;
-        transform: translate(-50%, calc(-50% - 4px)) !important
-      }
-
       .brand-area .brand-icon.wefaq-logo-slot .wefaq-app-logo--wordmark {
-        width: 108px !important;
-        height: 108px !important;
-        transform: translate(-50%, calc(-50% + 3px)) !important
+        width: 5.5rem !important;
+        height: auto !important;
+        transform: none !important
       }
     }
 
@@ -21327,7 +21297,7 @@
       }
     }
   </style>
-  <meta name="app-build" content="wefaq-wordmark-sm-v359">
+  <meta name="app-build" content="wefaq-wordmark-noclip-v359">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
 </head>
 
@@ -25307,12 +25277,12 @@
         return typeof window !== 'undefined' && window.matchMedia('(max-width: 992px)').matches;
       }
 
-      const WEFAQ_LOGO_VER = '358';
+      const WEFAQ_LOGO_VER = '360';
 
       /** WEFAQ + خط المعينين — الدخول والشريط وشاشة التحميل */
       function wefaqWordmarkLogoHtml() {
-        return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="72 210 368 150" role="img" aria-label="WEFAQ" class="wefaq-app-logo wefaq-app-logo--wordmark" data-wefaq-ver="${WEFAQ_LOGO_VER}" data-wefaq-style="wordmark" aria-hidden="true">
-          <g fill="currentColor" font-family="Montserrat, Manrope, var(--font), system-ui, sans-serif" font-weight="800">
+        return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="58 198 408 172" overflow="visible" preserveAspectRatio="xMidYMid meet" role="img" aria-label="WEFAQ" class="wefaq-app-logo wefaq-app-logo--wordmark" data-wefaq-ver="${WEFAQ_LOGO_VER}" data-wefaq-style="wordmark" aria-hidden="true">
+          <g fill="currentColor" font-family="Candara, 'Segoe UI', var(--font), system-ui, sans-serif" font-weight="700">
             <text x="256" y="292" text-anchor="middle" font-size="108" letter-spacing="18">WEFAQ</text>
           </g>
           <g stroke="currentColor" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" fill="none">
