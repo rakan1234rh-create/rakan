@@ -360,16 +360,16 @@
       overscroll-behavior: none
     }
 
-    /* جوال: تثبيت الشاشة على حدود visualViewport — يمنع قفز البطاقة عند كلمة المرور */
+    /* جوال: تعويض انزياج iOS فقط (top) — الارتفاع يبقى مقفولاً ولا يُصغَّر مع لوحة المفاتيح */
     body.login-portal-open.login-vv-pinned #loginScreen.lp-screen {
       top: var(--login-vv-top, 0px) !important;
-      left: var(--login-vv-left, 0px) !important;
-      right: auto !important;
+      left: 0 !important;
+      right: 0 !important;
       bottom: auto !important;
-      width: var(--login-vv-width, 100%) !important;
-      height: var(--login-vv-height, var(--login-stable-h, 100vh)) !important;
-      min-height: var(--login-vv-height, var(--login-stable-h, 100vh)) !important;
-      max-height: var(--login-vv-height, var(--login-stable-h, 100vh)) !important;
+      width: 100% !important;
+      height: var(--login-stable-h, 100vh) !important;
+      min-height: var(--login-stable-h, 100vh) !important;
+      max-height: var(--login-stable-h, 100vh) !important;
       transform: none !important;
       -webkit-transform: none !important
     }
@@ -21434,7 +21434,7 @@
       }
     }
   </style>
-  <meta name="app-build" content="wefaq-login-vv-pin-v350">
+  <meta name="app-build" content="wefaq-login-vv-top-only-v351">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
 </head>
 
@@ -24491,12 +24491,10 @@
       function clearLoginVisualViewportPin() {
         _loginVvPinKey = '';
         document.body.classList.remove('login-vv-pinned');
-        ['--login-vv-top', '--login-vv-left', '--login-vv-width', '--login-vv-height', '--login-vv-shift'].forEach((k) => {
-          document.documentElement.style.removeProperty(k);
-        });
+        document.documentElement.style.removeProperty('--login-vv-top');
       }
 
-      /** تثبيت #loginScreen على visualViewport — الشاشة والبطاقة يتحركان معاً */
+      /** تعويض offsetTop فقط — لا تصغير ارتفاع الشاشة (سبب قفز البطاقة للأعلى) */
       function pinLoginScreenToVisualViewport() {
         if (!document.body.classList.contains('login-portal-open') || !isLoginMobileViewport()) {
           clearLoginVisualViewportPin();
@@ -24504,18 +24502,15 @@
         }
         const vv = window.visualViewport;
         if (!vv) return;
-        const top = Math.round(vv.offsetTop);
-        const left = Math.round(vv.offsetLeft);
-        const w = Math.round(vv.width);
-        const h = Math.round(vv.height);
-        const key = `${top}|${left}|${w}|${h}`;
-        if (key === _loginVvPinKey) return;
-        _loginVvPinKey = key;
+        const top = Math.max(0, Math.round(vv.offsetTop));
+        if (top === _loginVvPinKey) return;
+        _loginVvPinKey = top;
+        if (top <= 0) {
+          clearLoginVisualViewportPin();
+          return;
+        }
         document.body.classList.add('login-vv-pinned');
         document.documentElement.style.setProperty('--login-vv-top', `${top}px`);
-        document.documentElement.style.setProperty('--login-vv-left', `${left}px`);
-        document.documentElement.style.setProperty('--login-vv-width', `${w}px`);
-        document.documentElement.style.setProperty('--login-vv-height', `${h}px`);
       }
 
       function pinLoginScreenAfterFocus() {
@@ -24640,12 +24635,8 @@
           true
         );
         const vv = window.visualViewport;
-        if (vv && !window._loginVvResizeBound) {
-          window._loginVvResizeBound = true;
-          vv.addEventListener('resize', () => {
-            if (!document.body.classList.contains('login-portal-open')) return;
-            pinLoginScreenToVisualViewport();
-          }, { passive: true });
+        if (vv && !window._loginVvScrollBound) {
+          window._loginVvScrollBound = true;
           vv.addEventListener('scroll', () => {
             if (!document.body.classList.contains('login-portal-open')) return;
             if (_loginTouchingScreen) return;
@@ -24668,10 +24659,7 @@
           ls.classList.remove('hidden');
           ls.removeAttribute('hidden');
           ls.setAttribute('aria-hidden', 'false');
-          requestAnimationFrame(() => {
-            freezeLoginPortalScroll();
-            pinLoginScreenToVisualViewport();
-          });
+          requestAnimationFrame(() => freezeLoginPortalScroll());
         }
         if (app) {
           app.style.display = 'none';
