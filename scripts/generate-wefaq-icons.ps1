@@ -1,15 +1,19 @@
-# Resize wefaq-master.png into PWA / home-screen icon sizes.
+# App icons (inside the UI) — separate from home-screen icons.
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Drawing
 
 $root = Split-Path $PSScriptRoot -Parent
 $iconsDir = Join-Path $root 'icons'
-$master = Join-Path $iconsDir 'wefaq-master.png'
+$master = Join-Path $iconsDir 'wefaq-app-master.png'
 if (-not (Test-Path $master)) {
-    throw "Missing wefaq-master.png in icons folder."
+    $fallback = Join-Path $iconsDir 'wefaq-master.png'
+    if (Test-Path $fallback) { Copy-Item $fallback $master -Force }
+}
+if (-not (Test-Path $master)) {
+    throw 'Missing icons/wefaq-app-master.png'
 }
 
-function Resize-WefaqIcon {
+function Resize-WefaqAppIcon {
     param([int]$Size, [string]$OutName)
     $bmp = [System.Drawing.Image]::FromFile($master)
     $out = New-Object System.Drawing.Bitmap $Size, $Size
@@ -23,6 +27,4 @@ function Resize-WefaqIcon {
     Write-Host "Wrote $outPath"
 }
 
-Resize-WefaqIcon -Size 512 -OutName 'wefaq-512.png'
-Resize-WefaqIcon -Size 192 -OutName 'wefaq-192.png'
-Resize-WefaqIcon -Size 180 -OutName 'apple-touch-icon.png'
+Resize-WefaqAppIcon -Size 512 -OutName 'wefaq-app-512.png'
