@@ -351,7 +351,7 @@
       height: var(--login-stable-h, 100vh) !important;
       min-height: var(--login-stable-h, 100vh) !important;
       max-height: var(--login-stable-h, 100vh) !important;
-      padding-top: calc(env(safe-area-inset-top, 0px) + clamp(52px, 7.5vh, 78px)) !important;
+      padding-top: calc(env(safe-area-inset-top, 0px) + clamp(80px, 11vh, 112px)) !important;
       padding-bottom: max(clamp(12px, 3vw, 28px), env(safe-area-inset-bottom)) !important;
       padding-left: max(clamp(12px, 3vw, 28px), env(safe-area-inset-left, 0px)) !important;
       padding-right: max(clamp(12px, 3vw, 28px), env(safe-area-inset-right, 0px)) !important;
@@ -364,7 +364,7 @@
       position: static !important;
       width: 100%;
       max-width: 28rem;
-      margin: 0 auto;
+      margin: clamp(16px, 3vh, 28px) auto 0 !important;
       transform: none !important;
       flex: 0 0 auto
     }
@@ -399,8 +399,16 @@
       transform: none
     }
 
-    /* جوال + ويب + PWA: مرفوعة للأعلى ومتوسطة أفقياً */
+    /* جوال: نزول البطاقة عند شاشة الدخول */
     @media (max-width: 992px) {
+      body.login-portal-open #loginScreen.lp-screen {
+        padding-top: calc(env(safe-area-inset-top, 0px) + clamp(80px, 11vh, 112px)) !important
+      }
+
+      body.login-portal-open #loginScreen .lp-center {
+        margin-top: clamp(16px, 3vh, 28px) !important
+      }
+
       #loginScreen.lp-screen {
         flex-direction: column;
         align-items: center;
@@ -21408,7 +21416,7 @@
       }
     }
   </style>
-  <meta name="app-build" content="wefaq-login-flex-stable-v346">
+  <meta name="app-build" content="wefaq-login-card-lower-v347">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
 </head>
 
