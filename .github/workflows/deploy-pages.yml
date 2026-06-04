@@ -29,12 +29,15 @@ jobs:
 
       - name: Prepare site
         run: |
-          npm install sharp --no-save
+          npm install sharp opentype.js --no-save
           node scripts/export-wefaq-homescreen-png.mjs
           mkdir -p site/icons
           cp index.html site/index.html
           cp manifest.webmanifest site/manifest.webmanifest
-          cp icons/homescreen-192.png icons/homescreen-512.png icons/homescreen-maskable-512.png icons/apple-touch-icon.png icons/wefaq-app-icon.svg icons/wefaq-homescreen-fullbleed.svg site/icons/
+          cp icons/homescreen-1024.png icons/homescreen-192.png icons/homescreen-512.png \
+            icons/homescreen-maskable-512.png icons/apple-touch-icon.png icons/apple-touch-icon-180.png \
+            icons/wefaq-app-icon.svg icons/wefaq-homescreen-fullbleed.svg icons/wefaq-homescreen-maskable.svg \
+            site/icons/
 
       - uses: actions/upload-pages-artifact@v3
         with:
