@@ -357,7 +357,7 @@
     body.login-portal-open #loginScreen .lp-center {
       position: fixed !important;
       z-index: 10001;
-      top: var(--login-card-top-px, calc(env(safe-area-inset-top, 0px) + clamp(22px, 3.8vh, 40px))) !important;
+      top: var(--login-card-top-px, calc(env(safe-area-inset-top, 0px) + clamp(32px, 5.2vh, 54px))) !important;
       left: max(clamp(12px, 3vw, 28px), env(safe-area-inset-left, 0px)) !important;
       right: max(clamp(12px, 3vw, 28px), env(safe-area-inset-right, 0px)) !important;
       width: auto !important;
@@ -372,13 +372,21 @@
       -webkit-user-select: none
     }
 
+    body.login-portal-open #loginScreen .lp-card {
+      contain: layout style;
+      transform: translateZ(0);
+      -webkit-transform: translateZ(0)
+    }
+
     body.login-portal-open #loginScreen .lp-center input,
     body.login-portal-open #loginScreen .lp-center button,
     body.login-portal-open #loginScreen .lp-center a,
     body.login-portal-open #loginScreen .lp-center label {
       touch-action: manipulation;
       user-select: auto;
-      -webkit-user-select: auto
+      -webkit-user-select: auto;
+      scroll-margin: 0;
+      scroll-margin-block: 0
     }
 
     body.login-portal-open #loginScreen .lp-btn-primary:hover:not(:disabled) {
@@ -24467,7 +24475,7 @@
         const desktop = window.matchMedia('(min-width: 993px)').matches;
         const vhPart = desktop
           ? Math.min(Math.max(window.innerHeight * 0.08, 32), 80)
-          : Math.min(Math.max(window.innerHeight * 0.038, 22), 40);
+          : Math.min(Math.max(window.innerHeight * 0.052, 32), 54);
         _loginCardTopPx = Math.round(safeTop + vhPart);
         return _loginCardTopPx;
       }
@@ -24489,9 +24497,27 @@
 
       function reinforceLoginCardTop() {
         if (!document.body.classList.contains('login-portal-open')) return;
-        const topPx = _loginCardTopPx || getLoginCardTopPx();
-        document.documentElement.style.setProperty('--login-card-top-px', `${topPx}px`);
-        window.scrollTo(0, 0);
+        const topPx = _loginCardTopPx;
+        if (!topPx) return;
+        const apply = () => {
+          document.documentElement.style.setProperty('--login-card-top-px', `${topPx}px`);
+          window.scrollTo(0, 0);
+        };
+        apply();
+        requestAnimationFrame(apply);
+        requestAnimationFrame(() => requestAnimationFrame(apply));
+        setTimeout(apply, 0);
+        setTimeout(apply, 80);
+        setTimeout(apply, 200);
+      }
+
+      function patchLoginInputsNoScroll() {
+        ['loginIdentifier', 'loginPassword', 'forgotEmail'].forEach((id) => {
+          const el = document.getElementById(id);
+          if (!el || el.dataset.scrollPatch === '1') return;
+          el.dataset.scrollPatch = '1';
+          el.scrollIntoView = function () {};
+        });
       }
 
       function freezeLoginPortalScroll() {
@@ -24544,6 +24570,7 @@
         if (window._loginVpLockBound) return;
         window._loginVpLockBound = true;
         syncLoginStandalonePwaClass();
+        patchLoginInputsNoScroll();
         const ls = document.getElementById('loginScreen');
         const blockTouchDrag = (e) => {
           if (!document.body.classList.contains('login-portal-open')) return;
@@ -24557,6 +24584,23 @@
             if (e.touches.length > 1) e.preventDefault();
           },
           { passive: false }
+        );
+        ls?.addEventListener(
+          'focusin',
+          (e) => {
+            if (!document.body.classList.contains('login-portal-open')) return;
+            if (!e.target?.matches?.('input, textarea, button, select')) return;
+            reinforceLoginCardTop();
+          },
+          true
+        );
+        window.visualViewport?.addEventListener(
+          'scroll',
+          () => {
+            if (!document.body.classList.contains('login-portal-open') || !_loginCardTopPx) return;
+            reinforceLoginCardTop();
+          },
+          { passive: true }
         );
       }
 
@@ -24574,8 +24618,13 @@
           ls.classList.remove('hidden');
           ls.removeAttribute('hidden');
           ls.setAttribute('aria-hidden', 'false');
-          lockLoginCardPosition();
-          freezeLoginPortalScroll();
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              lockLoginCardPosition();
+              reinforceLoginCardTop();
+              freezeLoginPortalScroll();
+            });
+          });
         }
         if (app) {
           app.style.display = 'none';
@@ -24722,7 +24771,10 @@
           (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
         if (!isIOS) return;
         idEl.setAttribute('readonly', 'readonly');
-        const unlock = () => idEl.removeAttribute('readonly');
+        const unlock = () => {
+          idEl.removeAttribute('readonly');
+          reinforceLoginCardTop();
+        };
         idEl.addEventListener('focus', unlock, { once: true });
         idEl.addEventListener('touchstart', unlock, { once: true, passive: true });
       }
@@ -24734,13 +24786,15 @@
         if (!idEl || !pwEl || idEl.dataset.kbBound === '1') return;
         idEl.dataset.kbBound = '1';
         initLoginIosIdentifierNoSuggest(idEl);
-        [idEl, pwEl].forEach((el) => {
-          el.addEventListener('focus', reinforceLoginCardTop, { passive: true });
-        });
         idEl.addEventListener('keydown', (e) => {
           if (e.key === 'Enter') {
             e.preventDefault();
-            pwEl.focus();
+            try {
+              pwEl.focus({ preventScroll: true });
+            } catch (_) {
+              pwEl.focus();
+            }
+            reinforceLoginCardTop();
           }
         });
         pwEl.addEventListener('keydown', (e) => {
