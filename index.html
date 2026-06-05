@@ -503,8 +503,7 @@
     }
 
     #loginScreen #loginCard .lp-hd--wefaq .wefaq-logo-slot,
-    #loginTransition .wefaq-logo-slot,
-    .brand-area .brand-icon.wefaq-logo-slot {
+    #loginTransition .wefaq-logo-slot {
       width: 11rem;
       height: auto;
       max-width: min(86vw, 11rem)
@@ -554,25 +553,30 @@
 
     .topbar-brand-zone .brand-area {
       margin-inline-start: 10px;
-      margin-block-start: 2px
+      margin-block-start: 0
     }
 
     .brand-area .brand-icon.wefaq-logo-slot {
-      width: auto;
-      height: auto;
-      min-width: 0;
-      min-height: 0;
+      width: 44px;
+      height: 44px;
+      min-width: 44px;
+      min-height: 44px;
       font-size: 0 !important;
       flex-shrink: 0;
       overflow: visible;
       position: relative
     }
 
-    /* شعار الشريط — موحّد مع صفحة الدخول */
+    /* شعار الشريط — نفس عرض الدخول (11rem) دون توسيع ارتفاع الشريط */
     .brand-area .brand-icon.wefaq-logo-slot .wefaq-app-logo--athar {
-      position: static;
-      transform: none;
-      margin-block-start: 2px
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 11rem;
+      max-width: 11rem;
+      height: auto;
+      margin: 0;
+      transform: translate(-50%, calc(-50% - 2px))
     }
 
     #brandArea.brand-area {
@@ -2944,6 +2948,7 @@
       gap: 10px;
       height: 76px;
       min-height: calc(76px + var(--mr-safe-top, env(safe-area-inset-top, 0px)));
+      max-height: calc(76px + var(--mr-safe-top, env(safe-area-inset-top, 0px)));
       padding-block: 10px;
       padding-block-start: calc(10px + var(--mr-safe-top, env(safe-area-inset-top, 0px)));
       padding-inline-start: 16px;
@@ -3423,8 +3428,10 @@
         align-items: center;
         touch-action: none;
         user-select: none;
-        padding-block-start: calc(8px + var(--mr-safe-top, env(safe-area-inset-top, 0px))) !important;
-        min-height: calc(56px + var(--mr-safe-top, env(safe-area-inset-top, 0px))) !important
+        height: calc(56px + var(--mr-safe-top, env(safe-area-inset-top, 0px))) !important;
+        min-height: calc(56px + var(--mr-safe-top, env(safe-area-inset-top, 0px))) !important;
+        max-height: calc(56px + var(--mr-safe-top, env(safe-area-inset-top, 0px))) !important;
+        padding-block-start: calc(8px + var(--mr-safe-top, env(safe-area-inset-top, 0px))) !important
       }
 
       #appWrap.app {
@@ -18247,8 +18254,9 @@
 
   @media (min-width: 993px) and (max-width: 1320px) {
       .topbar.unified-banner {
-        height: auto;
-        min-height: 64px;
+        height: 76px;
+        max-height: calc(76px + var(--mr-safe-top, env(safe-area-inset-top, 0px)));
+        min-height: calc(76px + var(--mr-safe-top, env(safe-area-inset-top, 0px)));
         flex-wrap: wrap;
         align-items: center;
         padding: 10px 16px;
@@ -18303,7 +18311,8 @@
       }
 
       .topbar.unified-banner {
-        height: auto !important;
+        height: calc(56px + var(--mr-safe-top, env(safe-area-inset-top, 0px))) !important;
+        max-height: calc(56px + var(--mr-safe-top, env(safe-area-inset-top, 0px))) !important;
         min-height: calc(56px + var(--mr-safe-top, env(safe-area-inset-top, 0px))) !important;
         flex-wrap: nowrap !important;
         align-items: center !important;
@@ -21321,7 +21330,7 @@
       }
     }
   </style>
-  <meta name="app-build" content="athar-figma-v376-unified-size">
+  <meta name="app-build" content="athar-figma-v377-topbar-height">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
 </head>
 
