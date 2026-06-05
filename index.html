@@ -492,13 +492,12 @@
     }
 
     .wefaq-app-logo--athar {
-      aspect-ratio: 903 / 422;
+      aspect-ratio: 903 / 555;
       max-width: 100%
     }
 
-    .wefaq-app-logo--athar-login {
-      aspect-ratio: 903 / 555;
-      max-width: 100%
+    .wefaq-app-logo--athar .athar-logo-deco path {
+      shape-rendering: geometricPrecision
     }
 
     #loginScreen #loginCard.lp-card .lp-hd--wefaq {
@@ -522,14 +521,10 @@
         margin-top: 0.35rem
       }
 
-      #loginScreen #loginCard .lp-hd--wefaq .wefaq-app-logo--athar-login {
+      #loginScreen #loginCard .lp-hd--wefaq .wefaq-app-logo--athar {
         transform: translateY(10px);
         transform-origin: center top
       }
-    }
-
-    #loginScreen #loginCard .lp-hd--wefaq .wefaq-logo-slot .athar-logo-deco path {
-      shape-rendering: geometricPrecision
     }
 
     #loginScreen #loginCard .lp-hd--wefaq .lp-sub {
@@ -569,12 +564,12 @@
       position: relative
     }
 
-    /* شعار الشريط — ATHAR من Figma */
+    /* شعار الشريط — ATHAR موحّد مع صفحة الدخول */
     .brand-area .brand-icon.wefaq-logo-slot .wefaq-app-logo--athar {
       position: static;
       width: 7.25rem;
       height: auto;
-      aspect-ratio: 903 / 422;
+      aspect-ratio: 903 / 555;
       max-width: none;
       transform: none;
       margin-block-start: 2px
@@ -21333,7 +21328,7 @@
       }
     }
   </style>
-  <meta name="app-build" content="athar-figma-v372-login-deco">
+  <meta name="app-build" content="athar-figma-v373-unified">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
 </head>
 
@@ -25315,18 +25310,16 @@
         return typeof window !== 'undefined' && window.matchMedia('(max-width: 992px)').matches;
       }
 
-      const ATHAR_LOGO_VER = '372';
-      const ATHAR_LOGIN_DECO_SHIFT = { x: -8, y: -210 };
+      const ATHAR_LOGO_VER = '373';
+      const ATHAR_DECO_SHIFT = { x: -8, y: -210 };
+      const ATHAR_LOGO_VIEWBOX = '-31 75 903 555';
 
-      /** شعار ATHAR — Figma v371 */
-      function atharWordmarkLogoHtml(variant) {
-        const isLogin = variant === 'login';
-        const viewBox = isLogin ? '-31 75 903 555' : '-31 250 903 422';
-        const extraClass = isLogin ? ' wefaq-app-logo--athar-login' : '';
-        const dx = isLogin ? ATHAR_LOGIN_DECO_SHIFT.x : 0;
-        const dy = isLogin ? ATHAR_LOGIN_DECO_SHIFT.y : 0;
-        const decoTag = isLogin ? ` data-deco-shift="${ATHAR_LOGIN_DECO_SHIFT.x},${ATHAR_LOGIN_DECO_SHIFT.y}"` : '';
-        return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" overflow="visible" preserveAspectRatio="xMidYMid meet" role="img" aria-label="ATHAR" class="wefaq-app-logo wefaq-app-logo--athar${extraClass}" data-athar-ver="${ATHAR_LOGO_VER}"${decoTag} aria-hidden="true">
+      /** شعار ATHAR الموحّد — نفس صفحة الدخول في كل المنصة */
+      function atharWordmarkLogoHtml() {
+        const dx = ATHAR_DECO_SHIFT.x;
+        const dy = ATHAR_DECO_SHIFT.y;
+        const decoTag = ` data-deco-shift="${dx},${dy}"`;
+        return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${ATHAR_LOGO_VIEWBOX}" overflow="visible" preserveAspectRatio="xMidYMid meet" role="img" aria-label="ATHAR" class="wefaq-app-logo wefaq-app-logo--athar" data-athar-ver="${ATHAR_LOGO_VER}"${decoTag} aria-hidden="true">
           <g fill="currentColor">
             <text x="421" y="250" text-anchor="middle" dominant-baseline="hanging" font-size="230" font-weight="400">
               <tspan font-family="'ZCOOL XiaoWei', Georgia, 'Times New Roman', serif">ATHA</tspan><tspan class="athar-logo-r" dx="-8" dy="2" font-family="'Petrona', Georgia, 'Times New Roman', serif">R</tspan>
@@ -25342,30 +25335,25 @@
       }
 
       const ATHAR_LOGO_HOSTS = [
-        { sel: '#loginScreen #loginCard .wefaq-logo-slot', variant: 'login' },
-        { sel: '#loginTransition .wefaq-logo-slot', variant: 'default' },
-        { sel: '#brandArea .brand-icon.wefaq-logo-slot', variant: 'default' }
+        '#loginScreen #loginCard .wefaq-logo-slot',
+        '#loginTransition .wefaq-logo-slot',
+        '#brandArea .brand-icon.wefaq-logo-slot'
       ];
 
       function syncAtharBranding() {
-        ATHAR_LOGO_HOSTS.forEach(({ sel, variant }) => {
+        const decoShift = `${ATHAR_DECO_SHIFT.x},${ATHAR_DECO_SHIFT.y}`;
+        ATHAR_LOGO_HOSTS.forEach((sel) => {
           const host = document.querySelector(sel);
           if (!host) return;
-          const wantLogin = variant === 'login';
           const existing = host.querySelector(':scope > .wefaq-app-logo--athar');
-          const decoShift = `${ATHAR_LOGIN_DECO_SHIFT.x},${ATHAR_LOGIN_DECO_SHIFT.y}`;
-          if (!wantLogin && existing?.dataset.atharVer === ATHAR_LOGO_VER &&
-            existing.classList.contains('wefaq-app-logo--athar-login') === wantLogin) {
-            return;
-          }
-          if (wantLogin && existing?.dataset.atharVer === ATHAR_LOGO_VER &&
+          if (existing?.dataset.atharVer === ATHAR_LOGO_VER &&
             existing.dataset.decoShift === decoShift) {
             return;
           }
           host.classList.add('wefaq-logo-host');
           host.querySelector(':scope > .brand-mono')?.remove();
           host.querySelectorAll(':scope > .wefaq-app-logo, :scope > img').forEach((el) => el.remove());
-          host.insertAdjacentHTML('beforeend', atharWordmarkLogoHtml(variant));
+          host.insertAdjacentHTML('beforeend', atharWordmarkLogoHtml());
         });
       }
 
