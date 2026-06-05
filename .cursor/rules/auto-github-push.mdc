@@ -1,0 +1,15 @@
+---
+description: Push every code change to GitHub immediately after edits
+alwaysApply: true
+---
+
+# رفع تلقائي على GitHub
+
+بعد أي تعديل على المشروع (CSS، JS، HTML، أيقونات، إلخ):
+
+1. حدّث `app-build` في `index.html` عند تغيير الواجهة.
+2. نفّذ `git add` للملفات ذات الصلة فقط (لا ترفع `.env` أو أسراراً).
+3. أنشئ commit بجملة واضحة، ثم `git push origin main` مباشرة.
+4. أخبر المستخدم برابط النشر `?v=<hash>` دون انتظار طلب «GitHub» صريح.
+
+لا ترفع ملفات مساعدة محلية (.bat، SQL تشخيص) إلا إذا طلب المستخدم ذلك.
