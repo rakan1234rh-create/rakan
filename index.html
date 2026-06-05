@@ -24,6 +24,7 @@
   <!-- Poppins: شريط جانبي Figma — Side-bar components for dashboard (node 11:10961) -->
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -485,6 +486,11 @@
       max-width: 100%
     }
 
+    .wefaq-app-logo--figma-home {
+      aspect-ratio: 920 / 372;
+      max-width: 100%
+    }
+
     #loginScreen #loginCard.lp-card .lp-hd--wefaq {
       padding: 1.35rem 1.25rem 0.85rem
     }
@@ -534,8 +540,18 @@
       position: relative
     }
 
-    /* شعار الشريط — بدون قص داخل مربع 44px */
-    .brand-area .brand-icon.wefaq-logo-slot .wefaq-app-logo--wordmark {
+    /* شعار الشريط — Figma ATHAR */
+    .brand-area .brand-icon.wefaq-logo-slot .wefaq-app-logo--figma-home {
+      position: static;
+      width: 7.25rem;
+      height: auto;
+      aspect-ratio: 920 / 372;
+      max-width: none;
+      transform: none;
+      margin-block-start: 2px
+    }
+
+    .brand-area .brand-icon.wefaq-logo-slot .wefaq-app-logo--wordmark:not(.wefaq-app-logo--figma-home) {
       position: static;
       width: 6.75rem;
       height: auto;
@@ -549,8 +565,8 @@
     }
 
     @media (max-width: 576px) {
-      .brand-area .brand-icon.wefaq-logo-slot .wefaq-app-logo--wordmark {
-        width: 5.5rem !important;
+      .brand-area .brand-icon.wefaq-logo-slot .wefaq-app-logo--figma-home {
+        width: 5.75rem !important;
         height: auto !important;
         transform: none !important
       }
@@ -21297,7 +21313,7 @@
       }
     }
   </style>
-  <meta name="app-build" content="wefaq-wordmark-arial-v361">
+  <meta name="app-build" content="figma-athar-home-v362">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
 </head>
 
@@ -25277,9 +25293,9 @@
         return typeof window !== 'undefined' && window.matchMedia('(max-width: 992px)').matches;
       }
 
-      const WEFAQ_LOGO_VER = '361';
+      const WEFAQ_LOGO_VER = '362';
 
-      /** WEFAQ + خط المعينين — الدخول والشريط وشاشة التحميل */
+      /** الدخول وشاشة التحميل */
       function wefaqWordmarkLogoHtml() {
         return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="58 198 408 172" overflow="visible" preserveAspectRatio="xMidYMid meet" role="img" aria-label="WEFAQ" class="wefaq-app-logo wefaq-app-logo--wordmark" data-wefaq-ver="${WEFAQ_LOGO_VER}" data-wefaq-style="wordmark" aria-hidden="true">
           <g fill="currentColor" font-family="Arial, Helvetica, 'Segoe UI', system-ui, sans-serif" font-weight="700">
@@ -25295,19 +25311,33 @@
         </svg>`;
       }
 
+      /** الشريط — شعار Figma (ATHAR + الزخرفة) */
+      function figmaHomeWordmarkLogoHtml() {
+        return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-48 288 920 372" overflow="visible" preserveAspectRatio="xMidYMid meet" role="img" aria-label="ATHAR" class="wefaq-app-logo wefaq-app-logo--wordmark wefaq-app-logo--figma-home" data-wefaq-ver="${WEFAQ_LOGO_VER}" data-wefaq-style="figma-home" aria-hidden="true">
+          <g fill="currentColor">
+            <text x="421" y="518" text-anchor="middle" font-family="'ZCOOL XiaoWei', Georgia, 'Times New Roman', serif" font-size="240" font-weight="400">ATHAR</text>
+            <g transform="translate(133 553)"><path d="M279.517 0C283.38 0.482274 297.362 15.8852 300.941 19.5087C299.022 21.9926 298.351 22.6626 295.987 24.7326C290.758 19.355 285.437 14.0713 280.026 8.88155C270.347 19.9354 257.604 31.2411 247.417 42.0603C244.142 45.5386 238.48 51.1979 233.87 52.1454C225.844 53.7971 215.672 53.2721 207.286 53.2721L172.533 53.2507L38.8631 53.3148C31.8075 53.302 24.7519 53.3318 17.6962 53.4001C13.2311 53.4385 8.67799 53.6861 4.25466 53.1355C-1.61692 52.4057 -1.16106 47.0708 4.08478 45.863C7.10381 45.1716 10.4408 45.7136 13.5572 45.7307L37.0525 45.7435L161.137 45.7008L203.729 45.7094C211.07 45.7094 225.762 46.3069 232.898 44.6851C235.376 44.1217 242.958 36.0809 245.184 33.8275L265.004 13.8835C268.744 10.0766 275.218 2.78268 279.517 0Z"/></g>
+            <g transform="translate(370 582)"><path d="M75.0732 0C77.706 0.993442 90.0443 13.6941 90.4445 16.2676C90.7809 18.4215 72.8675 35.7039 70.5272 38.0933L54.5478 54.408C51.2779 57.7395 45.2646 64.7878 40.8405 65.7813C37.7563 64.4795 9.32399 34.749 4.76866 30.1758C3.0752 28.4801 1.59254 26.8101 0 25.0287C1.4171 23.029 2.51953 21.0378 5.11954 20.8708C7.50451 21.7958 38.0024 53.5859 41.4183 57.0843C44.4786 54.438 48.7895 49.7534 51.8221 46.7731C61.9871 36.7873 71.711 26.1378 81.9539 16.2376C78.3949 12.615 73.7102 8.59413 70.6358 4.76595C72.3327 2.52214 72.8351 1.71711 75.0732 0Z"/></g>
+            <g transform="translate(412 552)"><path d="M48.1287 0C49.0763 0.0256075 50.2501 0.0213395 51.0013 0.746885C60.6991 10.0595 70.1023 19.7775 79.5439 29.3589C83.5178 33.3921 87.6539 37.4936 91.4271 41.7018C89.6856 43.2254 87.7947 44.4631 85.8953 45.7861C82.297 42.8028 76.172 36.3412 72.706 32.8416L49.0122 8.7748C43.092 14.3914 36.6553 21.1475 30.8379 26.9903C23.965 33.9171 15.5123 42.9992 8.43446 49.3712C12.323 53.1952 16.1683 57.0662 19.9702 60.9757C18.3059 63.195 17.1428 64.2747 15.1546 66.1996C10.491 61.7994 5.21184 56.8528 1.04334 51.9533C0.533699 51.3515 -0.308894 49.862 0.11581 49.0255C0.990827 47.3013 2.23337 45.6794 3.54547 44.2497C12.0434 35.6541 20.9805 26.5763 29.4763 18.0703C32.5598 14.9846 45.367 1.65595 48.1287 0Z"/></g>
+            <g transform="translate(439 596.32)"><path d="M201.5 0.168308V7.80213L186.069 7.79304H97.1226C90.5558 7.79736 75.4375 6.90929 66.5567 8.84489C59.7522 10.3322 24.0537 54.4159 19.3882 53.765C17.3493 53.4805 1.99423 37.642 0 34.5511C0.214725 32.3697 2.14641 30.253 4.20193 29.8564C6.47634 30.2315 17.0158 42.0823 19.163 44.3413L19.8468 44.6387C21.5729 43.936 30.1327 33.9863 32.5677 31.6972C42.4534 22.4115 52.2014 8.81468 63.5964 1.90858C67.9409 -0.725401 84.2683 0.123848 89.7803 0.154035L118.891 0.145429L201.5 0.168308Z"/></g>
+            <g transform="translate(639 506.86)"><path d="M170.5 12.6405C167.5 9.14048 168.5 5.12102 151 5.12102C151 5.12102 142.58 -0.110799 142.54 0.255118C142.5 0.621034 176 -6.35951 177.5 33.6406C179 73.6407 170.269 91.2372 153.5 97.238C144.331 100.519 23.5485 97.2552 13.7712 97.2552L0 97.2471V89.6133L119.5 91.6407C138.5 91.6407 82.5 91.6407 137 91.6407C191.5 91.6407 173.5 16.1405 170.5 12.6405Z"/></g>
+          </g>
+        </svg>`;
+      }
+
       const WEFAQ_LOGO_HOSTS = [
-        '#loginScreen #loginCard .wefaq-logo-slot',
-        '#loginTransition .wefaq-logo-slot',
-        '#brandArea .brand-icon.wefaq-logo-slot'
+        { sel: '#loginScreen #loginCard .wefaq-logo-slot', style: 'wordmark' },
+        { sel: '#loginTransition .wefaq-logo-slot', style: 'wordmark' },
+        { sel: '#brandArea .brand-icon.wefaq-logo-slot', style: 'figma-home' }
       ];
 
       function syncWefaqBranding() {
-        const markup = wefaqWordmarkLogoHtml();
-        WEFAQ_LOGO_HOSTS.forEach((sel) => {
+        WEFAQ_LOGO_HOSTS.forEach(({ sel, style }) => {
           const host = document.querySelector(sel);
           if (!host) return;
           host.classList.add('wefaq-logo-host');
           host.querySelector(':scope > .brand-mono')?.remove();
+          const markup = style === 'figma-home' ? figmaHomeWordmarkLogoHtml() : wefaqWordmarkLogoHtml();
           host.querySelectorAll(':scope > .wefaq-app-logo, :scope > img').forEach((el) => el.remove());
           host.insertAdjacentHTML('beforeend', markup);
         });
