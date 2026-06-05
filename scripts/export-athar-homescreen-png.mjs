@@ -1,7 +1,7 @@
 /**
- * ATHAR home-screen icons from Figma app icon (842 canvas → PNG).
+ * ATHAR home-screen icons — ملفات بأسماء جديدة لتجاوز كاش iOS.
  */
-import { readFileSync, writeFileSync, copyFileSync } from 'fs';
+import { readFileSync, writeFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -10,7 +10,7 @@ const root = join(__dirname, '..');
 const iconsDir = join(root, 'icons');
 const BLEED_BG = '#121212';
 const VIEW = 842;
-const ICON_CACHE_VER = '362';
+const ICON_CACHE_VER = '363';
 
 const logoPaths = readFileSync(join(iconsDir, 'athar-app-icon.svg'), 'utf8')
   .replace(/<\?xml[^>]*>\s*/i, '')
@@ -30,16 +30,11 @@ function buildSvg(contentScale) {
   const s = contentScale;
   const tx = (VIEW / 2) * (1 - s);
   const ty = (VIEW / 2) * (1 - s);
-  const inner = s === 1
-    ? logoPaths
-    : `<g transform="translate(${tx} ${ty}) scale(${s})">${logoPaths.replace(/<rect[^>]*\/>/, '').trim()}</g>
-  <rect width="${VIEW}" height="${VIEW}" fill="${BLEED_BG}"/>`;
+  const logoOnly = logoPaths.replace(/<rect[^>]*\/>/, '').trim();
   const body = s === 1
     ? logoPaths
     : `<rect width="${VIEW}" height="${VIEW}" fill="${BLEED_BG}"/>
-  <g transform="translate(${tx} ${ty}) scale(${s})">
-    ${logoPaths.replace(/<rect[^>]*\/>/, '').trim()}
-  </g>`;
+  <g transform="translate(${tx} ${ty}) scale(${s})">${logoOnly}</g>`;
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${VIEW} ${VIEW}" width="${VIEW}" height="${VIEW}">
   ${body}
@@ -65,9 +60,9 @@ async function exportPng(svg, size, name) {
   console.log('Wrote', name, size + 'x' + size);
 }
 
-await exportPng(svgAny, 512, 'homescreen-512.png');
-await exportPng(svgAny, 192, 'homescreen-192.png');
-await exportPng(svgMask, 512, 'homescreen-maskable-512.png');
-copyFileSync(join(iconsDir, 'homescreen-512.png'), join(iconsDir, 'apple-touch-icon.png'));
+await exportPng(svgAny, 512, 'athar-icon-512.png');
+await exportPng(svgAny, 192, 'athar-icon-192.png');
+await exportPng(svgAny, 180, 'athar-apple-touch-180.png');
+await exportPng(svgMask, 512, 'athar-icon-maskable-512.png');
 writeFileSync(join(iconsDir, 'icon-cache-ver.txt'), ICON_CACHE_VER + '\n');
 console.log('Done v' + ICON_CACHE_VER);

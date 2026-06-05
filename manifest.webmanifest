@@ -2,7 +2,7 @@
   "name": "ATHAR",
   "short_name": "ATHAR",
   "description": "منصة الرصد المتكاملة",
-  "start_url": "./index.html",
+  "start_url": "./index.html?athar=363",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
@@ -12,19 +12,25 @@
   "dir": "rtl",
   "icons": [
     {
-      "src": "icons/homescreen-512.png?v=362",
+      "src": "icons/athar-icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icons/homescreen-192.png?v=362",
+      "src": "icons/athar-icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icons/homescreen-maskable-512.png?v=362",
+      "src": "icons/athar-apple-touch-180.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/athar-icon-maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
