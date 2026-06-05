@@ -1,5 +1,5 @@
 /**
- * ATHAR home-screen icons — ملفات بأسماء جديدة لتجاوز كاش iOS.
+ * ATHAR PWA icons — ملفات بأسماء جديدة + نسخة جذر لـ iOS (apple-touch-icon.png).
  */
 import { readFileSync, writeFileSync } from 'fs';
 import { dirname, join } from 'path';
@@ -10,7 +10,7 @@ const root = join(__dirname, '..');
 const iconsDir = join(root, 'icons');
 const BLEED_BG = '#121212';
 const VIEW = 842;
-const ICON_CACHE_VER = '364';
+const ICON_CACHE_VER = '365';
 
 const logoPaths = readFileSync(join(iconsDir, 'athar-app-icon.svg'), 'utf8')
   .replace(/<\?xml[^>]*>\s*/i, '')
@@ -60,9 +60,10 @@ async function exportPng(svg, size, name) {
   console.log('Wrote', name, size + 'x' + size);
 }
 
-await exportPng(svgAny, 512, 'athar-icon-512.png');
-await exportPng(svgAny, 192, 'athar-icon-192.png');
-await exportPng(svgAny, 180, 'athar-apple-touch-180.png');
-await exportPng(svgMask, 512, 'athar-icon-maskable-512.png');
+const v = ICON_CACHE_VER;
+await exportPng(svgAny, 512, `athar-pwa-512-v${v}.png`);
+await exportPng(svgAny, 192, `athar-pwa-192-v${v}.png`);
+await exportPng(svgAny, 180, `athar-pwa-180-v${v}.png`);
+await exportPng(svgMask, 512, `athar-pwa-maskable-512-v${v}.png`);
 writeFileSync(join(iconsDir, 'icon-cache-ver.txt'), ICON_CACHE_VER + '\n');
 console.log('Done v' + ICON_CACHE_VER);

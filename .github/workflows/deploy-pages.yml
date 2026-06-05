@@ -34,9 +34,14 @@ jobs:
           mkdir -p site/icons
           cp index.html site/index.html
           cp manifest.webmanifest site/manifest.webmanifest
-          cp icons/athar-icon-192.png icons/athar-icon-512.png icons/athar-icon-maskable-512.png \
-            icons/athar-apple-touch-180.png icons/athar-app-icon.svg \
-            icons/athar-homescreen-fullbleed.svg icons/athar-homescreen-maskable.svg site/icons/
+          cp icons/athar-pwa-192-v365.png icons/athar-pwa-512-v365.png \
+            icons/athar-pwa-180-v365.png icons/athar-pwa-maskable-512-v365.png \
+            icons/athar-app-icon.svg icons/athar-homescreen-fullbleed.svg \
+            icons/athar-homescreen-maskable.svg site/icons/
+          cp icons/athar-pwa-180-v365.png site/apple-touch-icon.png
+          cp icons/athar-pwa-180-v365.png site/apple-touch-icon-precomposed.png
+          cp icons/athar-pwa-180-v365.png site/icons/apple-touch-icon.png
+          cp icons/athar-pwa-512-v365.png site/favicon.png
 
       - uses: actions/upload-pages-artifact@v3
         with:
