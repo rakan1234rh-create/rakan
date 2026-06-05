@@ -10,7 +10,7 @@ const root = join(__dirname, '..');
 const iconsDir = join(root, 'icons');
 const BLEED_BG = '#121212';
 const VIEW = 842;
-const ICON_CACHE_VER = '363';
+const ICON_CACHE_VER = '364';
 
 const logoPaths = readFileSync(join(iconsDir, 'athar-app-icon.svg'), 'utf8')
   .replace(/<\?xml[^>]*>\s*/i, '')
@@ -42,7 +42,7 @@ function buildSvg(contentScale) {
 }
 
 const svgAny = buildSvg(1);
-const svgMask = buildSvg(0.88);
+const svgMask = buildSvg(0.92);
 
 writeFileSync(join(iconsDir, 'athar-homescreen-fullbleed.svg'), svgAny);
 writeFileSync(join(iconsDir, 'athar-homescreen-maskable.svg'), svgMask);

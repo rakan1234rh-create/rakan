@@ -2,7 +2,7 @@
   "name": "ATHAR",
   "short_name": "ATHAR",
   "description": "منصة الرصد المتكاملة",
-  "start_url": "./index.html?athar=363",
+  "start_url": "./index.html?athar=364",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
