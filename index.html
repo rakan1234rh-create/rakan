@@ -21333,7 +21333,7 @@
       }
     }
   </style>
-  <meta name="app-build" content="athar-figma-v371">
+  <meta name="app-build" content="athar-figma-v372-login-deco">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
 </head>
 
@@ -24426,6 +24426,9 @@
           ls.setAttribute('aria-hidden', 'false');
           ls.scrollTop = 0;
         }
+        document.querySelector('#loginScreen #loginCard .wefaq-logo-slot')
+          ?.querySelectorAll(':scope > .wefaq-app-logo, :scope > img')
+          .forEach((el) => el.remove());
         if (typeof syncWefaqBranding === 'function') syncWefaqBranding();
         if (app) {
           app.style.display = 'none';
@@ -25312,8 +25315,8 @@
         return typeof window !== 'undefined' && window.matchMedia('(max-width: 992px)').matches;
       }
 
-      const ATHAR_LOGO_VER = '371';
-      const ATHAR_LOGIN_DECO_SHIFT = { x: -8, y: -105 };
+      const ATHAR_LOGO_VER = '372';
+      const ATHAR_LOGIN_DECO_SHIFT = { x: -8, y: -130 };
 
       /** شعار ATHAR — Figma v371 */
       function atharWordmarkLogoHtml(variant) {
@@ -25322,7 +25325,8 @@
         const extraClass = isLogin ? ' wefaq-app-logo--athar-login' : '';
         const dx = isLogin ? ATHAR_LOGIN_DECO_SHIFT.x : 0;
         const dy = isLogin ? ATHAR_LOGIN_DECO_SHIFT.y : 0;
-        return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" overflow="visible" preserveAspectRatio="xMidYMid meet" role="img" aria-label="ATHAR" class="wefaq-app-logo wefaq-app-logo--athar${extraClass}" data-athar-ver="${ATHAR_LOGO_VER}" aria-hidden="true">
+        const decoTag = isLogin ? ` data-deco-shift="${ATHAR_LOGIN_DECO_SHIFT.x},${ATHAR_LOGIN_DECO_SHIFT.y}"` : '';
+        return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" overflow="visible" preserveAspectRatio="xMidYMid meet" role="img" aria-label="ATHAR" class="wefaq-app-logo wefaq-app-logo--athar${extraClass}" data-athar-ver="${ATHAR_LOGO_VER}"${decoTag} aria-hidden="true">
           <g fill="currentColor">
             <text x="421" y="250" text-anchor="middle" dominant-baseline="hanging" font-size="230" font-weight="400">
               <tspan font-family="'ZCOOL XiaoWei', Georgia, 'Times New Roman', serif">ATHA</tspan><tspan class="athar-logo-r" dy="5" font-family="'Petrona', Georgia, 'Times New Roman', serif">R</tspan>
@@ -25349,8 +25353,13 @@
           if (!host) return;
           const wantLogin = variant === 'login';
           const existing = host.querySelector(':scope > .wefaq-app-logo--athar');
-          if (existing?.dataset.atharVer === ATHAR_LOGO_VER &&
+          const decoShift = `${ATHAR_LOGIN_DECO_SHIFT.x},${ATHAR_LOGIN_DECO_SHIFT.y}`;
+          if (!wantLogin && existing?.dataset.atharVer === ATHAR_LOGO_VER &&
             existing.classList.contains('wefaq-app-logo--athar-login') === wantLogin) {
+            return;
+          }
+          if (wantLogin && existing?.dataset.atharVer === ATHAR_LOGO_VER &&
+            existing.dataset.decoShift === decoShift) {
             return;
           }
           host.classList.add('wefaq-logo-host');
