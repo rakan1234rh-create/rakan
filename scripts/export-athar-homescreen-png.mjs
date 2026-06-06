@@ -10,7 +10,7 @@ const root = join(__dirname, '..');
 const iconsDir = join(root, 'icons');
 const BLEED_BG = '#121212';
 const VIEW = 842;
-const ICON_CACHE_VER = '375';
+const ICON_CACHE_VER = '376';
 
 const logoPaths = readFileSync(join(iconsDir, 'athar-app-icon.svg'), 'utf8')
   .replace(/<\?xml[^>]*>\s*/i, '')

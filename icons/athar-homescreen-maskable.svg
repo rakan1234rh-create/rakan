@@ -4,8 +4,8 @@
   <g transform="translate(33.679999999999986 33.679999999999986) scale(0.92)"><!-- أيقونة PWA منفصلة — موضع الخط الزخرفي الافتراضي (لا يستخدم إزاحة صفحة الدخول) -->
 
   
-  <g fill="#FBFBFB" transform="translate(421 421) scale(0.82) translate(-421 -421)">
-    <text x="421" y="250" text-anchor="middle" dominant-baseline="hanging" font-size="230" font-weight="400">
+  <g fill="#FFFFFF" transform="translate(421 421) scale(0.90) translate(-421 -421)">
+    <text x="421" y="250" text-anchor="middle" dominant-baseline="hanging" font-size="230" font-weight="400" fill="#FFFFFF">
       <tspan font-family="'ZCOOL XiaoWei', Georgia, 'Times New Roman', serif">ATHA</tspan><tspan class="athar-logo-r" dx="-8" dy="2" font-family="'Petrona', Georgia, 'Times New Roman', serif">R</tspan>
     </text>
     <g class="athar-icon-deco">
