@@ -2,7 +2,7 @@
   "name": "ATHAR",
   "short_name": "ATHAR",
   "description": "منصة الرصد المتكاملة",
-  "start_url": "./index.html?athar=374",
+  "start_url": "./index.html?athar=375",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
@@ -12,19 +12,19 @@
   "dir": "rtl",
   "icons": [
     {
-      "src": "icons/athar-pwa-512-v374.png",
+      "src": "icons/athar-pwa-512-v375.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icons/athar-pwa-192-v374.png",
+      "src": "icons/athar-pwa-192-v375.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icons/athar-pwa-180-v374.png",
+      "src": "icons/athar-pwa-180-v375.png",
       "sizes": "180x180",
       "type": "image/png",
       "purpose": "any"
@@ -36,7 +36,7 @@
       "purpose": "any"
     },
     {
-      "src": "icons/athar-pwa-maskable-512-v374.png",
+      "src": "icons/athar-pwa-maskable-512-v375.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
