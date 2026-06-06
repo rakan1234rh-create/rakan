@@ -1,7 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- أيقونة PWA — شعار الدخول + خط زخرفي (deco dy: -49) -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 842 842" width="842" height="842" role="img" aria-label="ATHAR">
-  <rect width="842" height="842" fill="#121212"/>
+  <defs>
+    <linearGradient id="athar-pwa-bg" x1="421" y1="0" x2="421" y2="842" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3a3a3a"/>
+      <stop offset="40%" stop-color="#141414"/>
+      <stop offset="100%" stop-color="#000000"/>
+    </linearGradient>
+    <radialGradient id="athar-pwa-shine" cx="260" cy="120" r="470" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.16"/>
+      <stop offset="45%" stop-color="#ffffff" stop-opacity="0.05"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="842" height="842" fill="url(#athar-pwa-bg)"/>
+  <rect width="842" height="842" fill="url(#athar-pwa-shine)"/>
   <g fill="#FFFFFF" stroke="none" transform="translate(421 421) scale(0.97) translate(-420.5 -352.5)">
     <text x="421" y="250" text-anchor="middle" dominant-baseline="hanging" font-size="230" font-weight="400" fill="#FFFFFF" stroke="none">
       <tspan fill="#FFFFFF" font-family="'ZCOOL XiaoWei', Georgia, 'Times New Roman', serif">ATHA</tspan><tspan class="athar-logo-r" fill="#FFFFFF" dx="-8" dy="2" font-family="'Petrona', Georgia, 'Times New Roman', serif">R</tspan>

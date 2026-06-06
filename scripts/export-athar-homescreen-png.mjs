@@ -9,9 +9,9 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
 const iconsDir = join(root, 'icons');
 const fontsDir = join(iconsDir, 'fonts');
-const BLEED_BG = '#121212';
+const BLEED_BG = '#000000';
 const VIEW = 842;
-const ICON_CACHE_VER = '392';
+const ICON_CACHE_VER = '393';
 
 const FONT_SOURCES = [
   {
@@ -54,15 +54,23 @@ try {
   process.exit(1);
 }
 
+function splitLogoInner(inner) {
+  const defsMatch = inner.match(/<defs>[\s\S]*?<\/defs>/i);
+  const defs = defsMatch ? defsMatch[0] : '';
+  const bgRects = [...inner.matchAll(/<rect[^>]*\/>/g)].map((m) => m[0]).join('\n  ');
+  const wordmark = inner
+    .replace(/<defs>[\s\S]*?<\/defs>\s*/i, '')
+    .replace(/<rect[^>]*\/>/g, '')
+    .trim();
+  return { defs, bgRects, wordmark };
+}
+
 function buildSvg(contentScale) {
   const s = contentScale;
-  const tx = (VIEW / 2) * (1 - s);
-  const ty = (VIEW / 2) * (1 - s);
-  const logoOnly = logoPaths.replace(/<rect[^>]*\/>/, '').trim();
+  const { defs, bgRects, wordmark } = splitLogoInner(logoPaths);
   const body = s === 1
-    ? logoPaths
-    : `<rect width="${VIEW}" height="${VIEW}" fill="${BLEED_BG}"/>
-  <g transform="translate(${tx} ${ty}) scale(${s})">${logoOnly}</g>`;
+    ? `${defs}\n  ${bgRects}\n  ${wordmark}`
+    : `${defs}\n  ${bgRects}\n  <g transform="translate(${(VIEW / 2) * (1 - s)} ${(VIEW / 2) * (1 - s)}) scale(${s})">${wordmark}</g>`;
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${VIEW} ${VIEW}" width="${VIEW}" height="${VIEW}">
   ${body}
