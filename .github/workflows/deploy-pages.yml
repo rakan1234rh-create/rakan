@@ -29,19 +29,20 @@ jobs:
 
       - name: Prepare site
         run: |
-          npm install sharp --no-save
+          npm install sharp @resvg/resvg-js --no-save
           node scripts/export-athar-homescreen-png.mjs
+          VER="$(tr -d '\r\n' < icons/icon-cache-ver.txt)"
           mkdir -p site/icons
           cp index.html site/index.html
           cp manifest.webmanifest site/manifest.webmanifest
-          cp icons/athar-pwa-192-v382.png icons/athar-pwa-512-v382.png \
-            icons/athar-pwa-180-v382.png icons/athar-pwa-maskable-512-v382.png \
+          cp icons/athar-pwa-192-v${VER}.png icons/athar-pwa-512-v${VER}.png \
+            icons/athar-pwa-180-v${VER}.png icons/athar-pwa-maskable-512-v${VER}.png \
             icons/athar-app-icon.svg icons/athar-homescreen-fullbleed.svg \
             icons/athar-homescreen-maskable.svg site/icons/
-          cp icons/athar-pwa-180-v382.png site/apple-touch-icon.png
-          cp icons/athar-pwa-180-v382.png site/apple-touch-icon-precomposed.png
-          cp icons/athar-pwa-180-v382.png site/icons/apple-touch-icon.png
-          cp icons/athar-pwa-512-v382.png site/favicon.png
+          cp icons/athar-pwa-180-v${VER}.png site/apple-touch-icon.png
+          cp icons/athar-pwa-180-v${VER}.png site/apple-touch-icon-precomposed.png
+          cp icons/athar-pwa-180-v${VER}.png site/icons/apple-touch-icon.png
+          cp icons/athar-pwa-512-v${VER}.png site/favicon.png
 
       - uses: actions/upload-pages-artifact@v3
         with:

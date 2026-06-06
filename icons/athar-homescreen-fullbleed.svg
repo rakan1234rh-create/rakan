@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 842 842" width="842" height="842">
-  <!-- أيقونة PWA — شعار الدخول + خط زخرفي منخفض (deco dy: -165 بدل -210) -->
-
   <rect width="842" height="842" fill="#121212"/>
   <g fill="#FFFFFF" transform="translate(421 421) scale(0.90) translate(-420.5 -352.5)">
     <text x="421" y="250" text-anchor="middle" dominant-baseline="hanging" font-size="230" font-weight="400" fill="#FFFFFF">
