@@ -1,5 +1,5 @@
 /**
- * ATHAR PWA icons — ملفات بأسماء جديدة + نسخة جذر لـ iOS (apple-touch-icon.png).
+ * ATHAR PWA icons — نفس شعار صفحة الدخول (athar-app-icon.svg).
  */
 import { readFileSync, writeFileSync } from 'fs';
 import { dirname, join } from 'path';
@@ -10,7 +10,7 @@ const root = join(__dirname, '..');
 const iconsDir = join(root, 'icons');
 const BLEED_BG = '#121212';
 const VIEW = 842;
-const ICON_CACHE_VER = '380';
+const ICON_CACHE_VER = '381';
 
 const logoPaths = readFileSync(join(iconsDir, 'athar-app-icon.svg'), 'utf8')
   .replace(/<\?xml[^>]*>\s*/i, '')
