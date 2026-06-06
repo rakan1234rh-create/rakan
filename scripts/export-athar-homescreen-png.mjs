@@ -11,7 +11,7 @@ const iconsDir = join(root, 'icons');
 const fontsDir = join(iconsDir, 'fonts');
 const BLEED_BG = '#121212';
 const VIEW = 842;
-const ICON_CACHE_VER = '388';
+const ICON_CACHE_VER = '389';
 
 const FONT_SOURCES = [
   {
