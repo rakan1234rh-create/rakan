@@ -19478,7 +19478,15 @@
           -webkit-overflow-scrolling: touch;
           touch-action: pan-y;
           overscroll-behavior-y: contain;
-          background: var(--mr-bg)
+          background: var(--mr-bg);
+          align-items: stretch
+        }
+
+        #tab-departments .users-grid--mob-list > .user-mob-card,
+        #tab-departments .users-grid--mob-list > .empty {
+          flex: 0 0 auto;
+          flex-shrink: 0;
+          min-height: min-content
         }
 
         #tab-departments .user-mob-card {
@@ -19491,7 +19499,8 @@
           box-shadow: var(--mr-shadow-soft);
           box-sizing: border-box;
           text-align: right;
-          overflow: hidden
+          overflow: hidden;
+          height: auto
         }
 
         #tab-departments .user-mob-card:active {
@@ -19525,11 +19534,11 @@
         #tab-departments .user-mob-card__head {
           min-width: 0;
           padding-inline-start: 0;
-          padding-inline-end: 76px
+          padding-inline-end: 76px;
+          padding-top: 30px
         }
 
         #tab-departments .user-mob-card__main {
-          flex: 1 1 auto;
           min-width: 0;
           display: flex;
           flex-direction: column;
