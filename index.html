@@ -19379,10 +19379,10 @@
         #tab-departments .users-filters-toolbar .user-role-dd .wf-status-trigger {
           width: auto;
           min-width: 0;
-          max-width: 118px;
+          max-width: 102px;
           height: 38px;
-          gap: 6px;
-          padding: 0 10px 0 8px
+          gap: 5px;
+          padding: 0 8px 0 6px
         }
 
         #tab-departments .users-filters-toolbar .user-role-dd .wf-status-trigger__ico {
@@ -19412,7 +19412,8 @@
         #tab-departments .users-filters-toolbar .users-io-more-btn {
           min-height: 38px;
           height: 38px;
-          padding-inline: 10px;
+          padding-inline: 8px;
+          font-size: 12px;
           white-space: nowrap
         }
 
@@ -19454,10 +19455,15 @@
         #tab-departments .users-io-menu {
           position: absolute;
           top: calc(100% + 6px);
-          left: 0;
+          inset-inline-end: 0;
+          inset-inline-start: auto;
+          left: auto;
+          right: 0;
           z-index: 600;
-          min-width: 190px;
-          padding: 6px;
+          width: max-content;
+          min-width: 0;
+          max-width: min(168px, calc(100vw - 28px));
+          padding: 4px;
           background: var(--mr-surface);
           border: 1px solid var(--mr-border);
           border-radius: 12px;
@@ -19471,20 +19477,22 @@
         }
 
         #tab-departments .users-io-menu-item {
-          display: flex;
+          display: inline-flex;
           align-items: center;
-          gap: 10px;
-          width: 100%;
-          padding: 10px 12px;
+          gap: 8px;
+          width: auto;
+          min-width: 0;
+          padding: 8px 10px;
           border: 0;
           border-radius: 8px;
           background: transparent;
           color: var(--mr-text);
           font-family: var(--font);
-          font-size: 13px;
+          font-size: 12px;
           font-weight: 600;
           cursor: pointer;
-          text-align: right
+          text-align: right;
+          white-space: nowrap
         }
 
         #tab-departments .users-io-menu-item:active {
