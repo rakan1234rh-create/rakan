@@ -34187,20 +34187,90 @@
         return null;
       }
 
+      /** صيغ مجلد التذكرة في R2 — يدعم القصير (0236) والكامل (V-2026-0236) والقديم */
+      function getTicketR2FolderVariants(ticketNumber, createdAt) {
+        const variants = [];
+        const add = (v) => {
+          const t = String(v || '').trim();
+          if (t && !variants.includes(t)) variants.push(t);
+        };
+        const raw = String(ticketNumber || '').trim();
+        if (!raw) return variants;
+        add(raw);
+        const parts = raw.split('-');
+        const shortPart = parts.length >= 3 ? parts[parts.length - 1] : raw;
+        const digits = shortPart.replace(/\D/g, '');
+        if (digits) {
+          add(digits);
+          add(digits.padStart(4, '0'));
+          add(digits.padStart(5, '0'));
+          const n = parseInt(digits, 10);
+          if (!Number.isNaN(n)) add(String(n));
+        }
+        const year = createdAt
+          ? new Date(createdAt).getFullYear()
+          : new Date().getFullYear();
+        if (digits && !/^V-/i.test(raw)) {
+          add(`V-${year}-${digits.padStart(4, '0')}`);
+          add(`V-${year}-${digits}`);
+          const n = parseInt(digits, 10);
+          if (!Number.isNaN(n)) {
+            add(`V-${year}-${n}`);
+            for (let delta = -5; delta <= 5; delta++) {
+              if (!delta) continue;
+              const adj = n + delta;
+              if (adj > 0) {
+                add(`V-${year}-${String(adj).padStart(4, '0')}`);
+                add(`V-${year}-${adj}`);
+              }
+            }
+          }
+        }
+        if (parts.length >= 3 && /^V$/i.test(parts[0])) {
+          const yr = parts[1];
+          const seq = parts[parts.length - 1];
+          add(seq);
+          add(seq.padStart(4, '0'));
+          add(seq.padStart(5, '0'));
+          if (yr && seq) add(`V-${yr}-${seq.padStart(4, '0')}`);
+        }
+        const noPrefix = raw.replace(/^TKT[-_]?/i, '');
+        if (noPrefix && noPrefix !== raw) add(noPrefix);
+        return variants;
+      }
+
+      function collectAttachmentFolderPrefixes(atts) {
+        const folders = [];
+        if (!Array.isArray(atts)) return folders;
+        for (const a of atts) {
+          const p = a?.p || a?.path;
+          if (!p || typeof p !== 'string') continue;
+          const t = p.trim();
+          if (!t || t.startsWith('temp_') || !t.includes('/')) continue;
+          const folder = t.substring(0, t.lastIndexOf('/'));
+          if (folder && !folders.includes(folder)) folders.push(folder);
+        }
+        return folders;
+      }
+
       /** مفاتيح بديلة للمرفقات القديمة (مسار نهائي ↔ مؤقت أو مسارات شقيقة) */
       function getR2KeyFallbackCandidates(fileId) {
-        const keys = [];
         const id = String(fileId || '').trim();
-        if (!id) return keys;
-        keys.push(id);
-        const base = id.includes('/') ? id.split('/').pop() : id;
-        if (base && base !== id) keys.push(base);
-        const uniqMatch = base && base.match(/^([a-f0-9]{8,16})_/i);
-        const uniq = uniqMatch ? uniqMatch[1] : null;
+        if (!id) return [];
+        const all = new Set();
+        const ticketFolder = [];
+        const nonTempPaths = [];
+        const addUnique = (arr, p) => {
+          const t = String(p || '').trim();
+          if (!t || arr.includes(t)) return;
+          arr.push(t);
+          all.add(t);
+        };
         const collectPath = (p) => {
-          if (!p || typeof p !== 'string') return;
-          const t = p.trim();
-          if (t && !keys.includes(t)) keys.push(t);
+          const t = String(p || '').trim();
+          if (!t) return;
+          all.add(t);
+          if (!t.startsWith('temp_') && t.includes('/')) addUnique(nonTempPaths, t);
         };
         const scanAtts = (atts) => {
           if (!Array.isArray(atts)) return;
@@ -34209,15 +34279,19 @@
             collectPath(a.p || a.path);
           }
         };
-        const ticketNums = new Set();
-        const addTicketFolderCandidates = (tn) => {
-          if (!tn || !base) return;
-          const raw = String(tn).trim();
-          if (!raw) return;
-          ticketNums.add(raw);
-          collectPath(`${raw}/${base}`);
-          const noPrefix = raw.replace(/^TKT[-_]?/i, '');
-          if (noPrefix && noPrefix !== raw) collectPath(`${noPrefix}/${base}`);
+        const base = id.includes('/') ? id.split('/').pop() : id;
+        all.add(id);
+        if (base && base !== id) all.add(base);
+        const uniqMatch = base && base.match(/^([a-f0-9]{8,16})_/i);
+        const uniq = uniqMatch ? uniqMatch[1] : null;
+        const addTicketFolderCandidates = (tn, createdAt, atts) => {
+          if (!base) return;
+          for (const folder of collectAttachmentFolderPrefixes(atts)) {
+            addUnique(ticketFolder, `${folder}/${base}`);
+          }
+          for (const variant of getTicketR2FolderVariants(tn, createdAt)) {
+            addUnique(ticketFolder, `${variant}/${base}`);
+          }
         };
         for (const v of state.violations || []) {
           let atts = v.attachments;
@@ -34227,13 +34301,34 @@
           scanAtts(atts);
           const hasThis = Array.isArray(atts) && atts.some(a => (a?.p || a?.path) === id);
           if (hasThis || (id.startsWith('temp_') && v.ticket_number)) {
-            addTicketFolderCandidates(v.ticket_number);
+            addTicketFolderCandidates(v.ticket_number, v.created_at, atts);
           }
         }
         if (id.startsWith('temp_') && state.editingTicket?.ticket_number) {
-          addTicketFolderCandidates(state.editingTicket.ticket_number);
+          let editAtts = state.editingTicket.attachments;
+          if (typeof editAtts === 'string') {
+            try { editAtts = JSON.parse(editAtts); } catch (_) { editAtts = null; }
+          }
+          addTicketFolderCandidates(
+            state.editingTicket.ticket_number,
+            state.editingTicket.created_at,
+            editAtts
+          );
         }
         scanAtts(state._attList);
+        for (const v of state.violations || []) {
+          let vAtts = v.attachments;
+          if (typeof vAtts === 'string') {
+            try { vAtts = JSON.parse(vAtts); } catch (_) { vAtts = null; }
+          }
+          if (!Array.isArray(vAtts)) continue;
+          for (const a of vAtts) {
+            const p = a?.p || a?.path;
+            if (!p || String(p).startsWith('temp_')) continue;
+            const pBase = String(p).includes('/') ? String(p).split('/').pop() : String(p);
+            if (pBase === base) collectPath(p);
+          }
+        }
         if (uniq) {
           for (const v of state.violations || []) {
             let atts = v.attachments;
@@ -34245,29 +34340,107 @@
               const p = a?.p || a?.path;
               if (p && String(p).includes(uniq)) collectPath(p);
             }
-            if (v.ticket_number && base.includes(uniq)) addTicketFolderCandidates(v.ticket_number);
+            if (v.ticket_number && base.includes(uniq)) {
+              addTicketFolderCandidates(v.ticket_number, v.created_at, atts);
+            }
           }
         }
-        return [...new Set(keys)];
+        const score = (k) => {
+          if (ticketFolder.includes(k)) return 0;
+          if (nonTempPaths.includes(k)) return 1;
+          if (!k.startsWith('temp_') && k.includes('/') && k !== base) return 2;
+          if (k === id) return 3;
+          if (k.startsWith('temp_')) return 4;
+          if (k === base) return 5;
+          return 6;
+        };
+        return [...all].sort((a, b) => score(a) - score(b) || a.length - b.length);
       }
 
-      async function r2SignedUrlExists(url) {
-        const u = String(url || '').trim();
-        if (!u || !/^https?:\/\//i.test(u)) return false;
+      /** إصلاح مسارات temp_ القديمة في قاعدة البيانات بعد نقل الملفات لمجلد التذكرة */
+      /** إصلاح مسارات temp_ القديمة — يبحث المجلد الصحيح (0236 أو V-2026-0236) */
+      async function resolveR2FolderForAttachment(ticket, baseName, atts) {
+        const folders = [
+          ...collectAttachmentFolderPrefixes(atts),
+          ...getTicketR2FolderVariants(ticket.ticket_number, ticket.created_at)
+        ];
+        const uniqMatch = String(baseName || '').match(/^([a-f0-9]{8,16})_/i);
+        if (uniqMatch) {
+          const uniq = uniqMatch[1];
+          for (const v of state.violations || []) {
+            let vAtts = v.attachments;
+            if (typeof vAtts === 'string') {
+              try { vAtts = JSON.parse(vAtts); } catch (_) { vAtts = null; }
+            }
+            if (!Array.isArray(vAtts)) continue;
+            for (const a of vAtts) {
+              const p = a?.p || a?.path;
+              if (!p || String(p).startsWith('temp_')) continue;
+              const pStr = String(p);
+              if (pStr.includes(uniq) && pStr.includes('/')) {
+                const folder = pStr.substring(0, pStr.lastIndexOf('/'));
+                if (folder && !folders.includes(folder)) folders.unshift(folder);
+              }
+              const pBase = pStr.includes('/') ? pStr.split('/').pop() : pStr;
+              if (pBase === baseName && pStr.includes('/')) {
+                const folder = pStr.substring(0, pStr.lastIndexOf('/'));
+                if (folder && !folders.includes(folder)) folders.unshift(folder);
+              }
+            }
+          }
+        }
         try {
-          const head = await fetch(u, { method: 'HEAD', mode: 'cors', credentials: 'omit' });
-          if (head.status === 404) return false;
-          if (head.ok) return true;
+          const backend = await resolveR2Backend();
+          if (backend === 'edge') {
+            for (const folder of folders) {
+              const key = `${folder}/${baseName}`;
+              try {
+                const head = await callR2StorageFn('headObject', { key });
+                if (head?.ok) return folder;
+              } catch (he) {
+                if (/غير معروف|unknown/i.test(String(he?.message || he))) break;
+              }
+            }
+          }
         } catch (_) {}
+        return folders[0] || String(ticket.ticket_number || '').trim();
+      }
+
+      async function repairViolationAttachmentPaths(ticket) {
+        if (!ticket?.id || !ticket.ticket_number) return false;
+        let atts = ticket.attachments;
+        if (typeof atts === 'string') {
+          try { atts = JSON.parse(atts); } catch (_) { return false; }
+        }
+        if (!Array.isArray(atts) || !atts.length) return false;
+        let changed = false;
+        const updated = [];
+        for (const a of atts) {
+          if (!a) { updated.push(a); continue; }
+          const oldKey = a.p || a.path;
+          if (!oldKey || !String(oldKey).startsWith('temp_')) {
+            updated.push(a);
+            continue;
+          }
+          const baseName = String(oldKey).split('/').pop();
+          const folder = await resolveR2FolderForAttachment(ticket, baseName, atts);
+          const newKey = `${folder}/${baseName}`;
+          changed = true;
+          delete _cloudflareCache[oldKey];
+          const copy = { ...a, p: newKey };
+          if ('path' in a) copy.path = newKey;
+          updated.push(copy);
+        }
+        if (!changed) return false;
         try {
-          const probe = await fetch(u, {
-            method: 'GET',
-            mode: 'cors',
-            credentials: 'omit',
-            headers: { Range: 'bytes=0-0' }
-          });
-          return probe.status !== 404;
-        } catch (_) {
+          await sb.from('violations').update({ attachments: JSON.stringify(updated) }).eq('id', ticket.id);
+          ticket.attachments = updated;
+          const idx = state.violations.findIndex(v => v.id === ticket.id);
+          if (idx !== -1) state.violations[idx].attachments = updated;
+          if (isMirsadDebugLog()) console.log('[R2-Repair] updated attachment paths for', ticket.ticket_number);
+          return true;
+        } catch (e) {
+          if (isMirsadDebugLog()) console.warn('[R2-Repair]', e);
           return false;
         }
       }
@@ -34278,17 +34451,22 @@
         if (!u) throw new Error('رابط فارغ');
         if (u.startsWith('data:') || u.startsWith('blob:')) return u;
         if (!/^https?:\/\//i.test(u)) return u;
-        const res = await fetch(u, { method: 'GET', mode: 'cors', credentials: 'omit' });
-        if (res.status === 404) {
-          throw new Error('الملف غير موجود في التخزين (404). قد يكون الرفع لم يكتمل — أعد رفع المرفق أو تواصل مع الدعم.');
+        try {
+          const res = await fetch(u, { method: 'GET', mode: 'cors', credentials: 'omit' });
+          if (res.status === 404) {
+            throw new Error('الملف غير موجود في التخزين (404). قد يكون الرفع لم يكتمل — أعد رفع المرفق أو تواصل مع الدعم.');
+          }
+          if (!res.ok) throw new Error(`فشل جلب الملف (${res.status})`);
+          let blob = await res.blob();
+          const type = blob.type || mimeType || '';
+          if (mimeType && (!blob.type || blob.type === 'application/octet-stream')) {
+            blob = new Blob([blob], { type: mimeType });
+          }
+          return URL.createObjectURL(blob);
+        } catch (e) {
+          if (/404/.test(String(e?.message || e))) throw e;
+          return u;
         }
-        if (!res.ok) throw new Error(`فشل جلب الملف (${res.status})`);
-        let blob = await res.blob();
-        const type = blob.type || mimeType || '';
-        if (mimeType && (!blob.type || blob.type === 'application/octet-stream')) {
-          blob = new Blob([blob], { type: mimeType });
-        }
-        return URL.createObjectURL(blob);
       }
 
       async function loadAttachmentPlayUrl(fileId, fileName) {
@@ -34353,15 +34531,28 @@
             const ct = mimeTypeFromAttachmentExt(extractAttachmentExt(fileId, ''));
             const candidates = getR2KeyFallbackCandidates(fileId);
             let lastSignErr = null;
+            let headProbe = null;
             for (const key of candidates) {
               try {
+                if (headProbe !== false) {
+                  try {
+                    const head = await callR2StorageFn('headObject', { key });
+                    headProbe = true;
+                    if (!head?.ok) continue;
+                  } catch (he) {
+                    if (/غير معروف|unknown/i.test(String(he?.message || he))) {
+                      headProbe = false;
+                    } else {
+                      lastSignErr = he;
+                      continue;
+                    }
+                  }
+                }
                 const { url } = await callR2StorageFn('signGet', { key, ...(ct ? { contentType: ct } : {}) });
-                if (!url) continue;
-                if (await r2SignedUrlExists(url)) {
+                if (url) {
                   writeCfCache(fileId, url);
                   return url;
                 }
-                lastSignErr = new Error('الملف غير موجود في R2 للمسار: ' + key);
               } catch (e) {
                 lastSignErr = e;
               }
@@ -35433,6 +35624,8 @@
         document.getElementById('respFileArea').innerHTML = '';
         document.getElementById('respText').value = '';
 
+        try { await repairViolationAttachmentPaths(t); } catch (_) {}
+
         renderTicketDetailUI(t);
 
         if (isViolDetailMobSheet()) openTicketSheetAnimated();
@@ -36138,7 +36331,7 @@
             : (getInlineDataUrlForAttachmentPath(fileId) || '');
           const vidSrc = localBlob || inlineVid;
           if (vidSrc) {
-            html = `<video controls playsinline crossorigin="anonymous" style="width:100%;max-height:70vh" src="${vidSrc.replace(/"/g, '&quot;')}"></video>`;
+            html = `<video controls playsinline style="width:100%;max-height:70vh" src="${vidSrc.replace(/"/g, '&quot;')}"></video>`;
           } else {
             html = `
               <div class="att-viewer-load-wrap">
@@ -36146,7 +36339,7 @@
                   <i class="fas fa-spinner fa-spin fa-2x"></i>
                   <p style="font-size:14px">جاري تحميل الفيديو…</p>
                 </div>
-                <video id="att-proxy-vid" controls playsinline crossorigin="anonymous" style="max-width:100%;max-height:70vh;display:none"></video>
+                <video id="att-proxy-vid" controls playsinline style="max-width:100%;max-height:70vh;display:none"></video>
               </div>`;
             setTimeout(async () => {
               const vid = document.getElementById('att-proxy-vid');

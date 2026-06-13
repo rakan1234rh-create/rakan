@@ -11,6 +11,7 @@ import {
   CopyObjectCommand,
   DeleteObjectCommand,
   GetObjectCommand,
+  HeadObjectCommand,
   PutObjectCommand,
   S3Client,
 } from 'npm:@aws-sdk/client-s3@3.733.0'
@@ -145,6 +146,23 @@ Deno.serve(async (req) => {
       })
       const url = await getSignedUrl(s3, cmd, { expiresIn: 3600 })
       return json({ url, key })
+    }
+
+    if (action === 'headObject') {
+      const key = assertKey(body.key)
+      try {
+        await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: key }))
+        return json({ ok: true, key })
+      } catch (e: unknown) {
+        const name =
+          e && typeof e === 'object' && 'name' in e
+            ? String((e as { name: string }).name)
+            : ''
+        if (name === 'NotFound' || name === 'NoSuchKey' || name === '404') {
+          return json({ ok: false, key })
+        }
+        throw e
+      }
     }
 
     if (action === 'moveObject') {
