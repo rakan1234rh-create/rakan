@@ -28101,6 +28101,8 @@
           || document.querySelector(`#sidebarNav button.nav-item[onclick*='goTab("${tab}"']`);
       }
 
+      const MR_MOB_NAV_SPREAD_MAX = 6;
+
       function layoutMobileBottomNav() {
         const nav = document.getElementById('mobileBottomNav');
         if (!nav) return;

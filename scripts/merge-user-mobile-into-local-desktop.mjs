@@ -407,6 +407,17 @@ function main() {
     console.log('JS:', name);
   }
 
+  if (!merged.includes('MR_MOB_NAV_SPREAD_MAX')) {
+    const constLine = mobile.match(/const MR_MOB_NAV_SPREAD_MAX = \d+;/)?.[0];
+    if (constLine) {
+      merged = merged.replace(
+        /(\n      function layoutMobileBottomNav\(\) \{)/,
+        `\n      ${constLine}\n$1`
+      );
+      console.log('Const: MR_MOB_NAV_SPREAD_MAX');
+    }
+  }
+
   merged = injectMissingFunctions(merged, mobile, MOBILE_JS_REPLACE);
   merged = patchSidebarInit(merged, mobile);
   merged = patchDesktopSidebarRailGuard(merged);
