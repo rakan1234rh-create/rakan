@@ -37,6 +37,7 @@ jobs:
           cp -r styles site/
           if [ -d js ]; then cp -r js site/; fi
           cp manifest.webmanifest site/manifest.webmanifest
+          if [ -f CNAME ]; then cp CNAME site/CNAME; fi
           cp icons/athar-pwa-192-v${VER}.png icons/athar-pwa-512-v${VER}.png \
             icons/athar-pwa-180-v${VER}.png icons/athar-pwa-maskable-512-v${VER}.png \
             icons/athar-app-icon.svg icons/athar-homescreen-fullbleed.svg \

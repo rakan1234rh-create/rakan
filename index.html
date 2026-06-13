@@ -45,6 +45,49 @@
   <link rel="stylesheet" href="styles/desktop/settings-shell.css" id="platform-settings-shell-link" media="screen and (min-width: 993px)">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script id="syncDesktopUiClassEarly">(function(){var d=window.matchMedia('(max-width:992px)').matches;document.documentElement.classList.toggle('mr-desktop-ui',!d);document.documentElement.classList.toggle('mr-mobile-ui',d);})();</script>
+  <style id="mr-ui-shell-early-lock">
+    @media (max-width: 992px) {
+      html.mr-mobile-ui #appWrap #sidebar,
+      html.mr-mobile-ui #appWrap .app-body .sidebar {
+        display: none !important;
+        visibility: hidden !important;
+        width: 0 !important;
+        min-width: 0 !important;
+        max-width: 0 !important;
+        flex: 0 0 0 !important;
+        overflow: hidden !important;
+        pointer-events: none !important;
+        position: absolute !important;
+        opacity: 0 !important
+      }
+
+      html.mr-mobile-ui #sidebarToggleBtn,
+      html.mr-mobile-ui .sidebar-drawer-toggle.sidebar-toggle-btn,
+      html.mr-mobile-ui #sidebarOverlay {
+        display: none !important;
+        visibility: hidden !important;
+        pointer-events: none !important
+      }
+
+      html.mr-mobile-ui #mobileBottomNav.mobile-bottom-nav {
+        display: flex !important
+      }
+
+      html.mr-mobile-ui .wf-desk-tickets-host .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) {
+        display: none !important
+      }
+    }
+
+    @media (min-width: 993px) {
+      html.mr-desktop-ui #mobileBottomNav.mobile-bottom-nav {
+        display: none !important
+      }
+
+      html.mr-desktop-ui #sidebarToggleBtn.sidebar-drawer-toggle {
+        display: none !important
+      }
+    }
+  </style>
   <style>
     /* ═══════════════════════════════════════════════════════════════════════
        1. CSS Variables / Design Tokens
@@ -1149,40 +1192,42 @@
       background: var(--bg)
     }
 
-    .app-body {
-      display: flex;
-      flex: 1;
-      min-height: 0;
-      overflow: hidden;
-      position: relative;
-      align-items: stretch;
-      gap: 0;
-      padding: 0;
-      box-sizing: border-box
-    }
+    @media (min-width: 993px) {
+      .app-body {
+        display: flex;
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+        position: relative;
+        align-items: stretch;
+        gap: 0;
+        padding: 0;
+        box-sizing: border-box
+      }
 
-    .sidebar {
-      width: var(--fig-sidebar-collapsed-w);
-      flex: 0 0 var(--fig-sidebar-collapsed-w);
-      max-width: var(--fig-sidebar-w);
-      background: var(--sidebar-bg);
-      color: var(--sidebar-text);
-      padding: 16px 10px 14px;
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      align-self: stretch;
-      border: 0;
-      border-radius: 0;
-      box-shadow: none;
-      z-index: 800;
-      font-family: var(--font);
-      transition: width 0.18s ease, flex-basis 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
-      box-sizing: border-box;
-      contain: style;
-      overflow: hidden;
-      overflow-x: hidden;
-      position: relative
+      .sidebar {
+        width: var(--fig-sidebar-collapsed-w);
+        flex: 0 0 var(--fig-sidebar-collapsed-w);
+        max-width: var(--fig-sidebar-w);
+        background: var(--sidebar-bg);
+        color: var(--sidebar-text);
+        padding: 16px 10px 14px;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        align-self: stretch;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+        z-index: 800;
+        font-family: var(--font);
+        transition: width 0.18s ease, flex-basis 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+        box-sizing: border-box;
+        contain: style;
+        overflow: hidden;
+        overflow-x: hidden;
+        position: relative
+      }
     }
 
     @media (min-width: 993px) {
@@ -1285,17 +1330,17 @@
       text-overflow: ellipsis
     }
 
-    .nav-section-label,
-    .nav-item-label,
-    .sidebar .logout-btn span {
-      opacity: 0;
-      max-width: 0;
-      overflow: hidden;
-      white-space: nowrap;
-      transition: opacity 0.14s ease, max-width 0.16s ease
-    }
-
     @media (min-width: 993px) {
+      .nav-section-label,
+      .nav-item-label,
+      .sidebar .logout-btn span {
+        opacity: 0;
+        max-width: 0;
+        overflow: hidden;
+        white-space: nowrap;
+        transition: opacity 0.14s ease, max-width 0.16s ease
+      }
+
 .sidebar .nav-item,
       .sidebar .logout-btn {
         justify-content: flex-start;
@@ -23833,8 +23878,8 @@
       // Supabase Dashboard → Settings → API Keys → Publishable and secret API keys
       const SUPABASE_ANON = 'sb_publishable__nGAMUih_RNZ_6FMpwzDNw_116hvA7K';
 
-      /** رابط النشر — روابط استعادة كلمة المرور من file:// أو localhost */
-      const ATHAR_PUBLIC_ORIGIN = 'https://rakan1234rh-create.github.io/rakan';
+      /** رابط النشر العام — يُستخدم عند التطوير من file:// أو localhost */
+      const ATHAR_PUBLIC_ORIGIN = 'https://athar.app';
 
       // 📁 Cloudflare Worker اختياري (مسار عارض/تحميل قديم)
       const CLOUDFLARE_WORKER_URL = '/upload';
@@ -23852,10 +23897,9 @@
         return h === 'localhost' || h === '127.0.0.1' || h === '[::1]';
       }
 
-      /** GitHub Pages أو أي نشر عام — لا يدعم وضع الضيف للبيانات */
+      /** نشر عام (GitHub Pages أو نطاق مخصص) */
       function isPublicDeployHost() {
-        const h = (location.hostname || '').toLowerCase();
-        return h === 'github.io' || h.endsWith('.github.io');
+        return !isFileProtocol() && !isLocalDevHost();
       }
 
       /** فتح الملف مباشرة من القرص (بدون http) — لا يوجد /config ولا R2 */
@@ -26140,7 +26184,7 @@
 
           document.getElementById('forgotSuccess').classList.add('show');
           document.getElementById('forgotSuccessMsg').textContent =
-            'إن وُجد الطلب في Resend كـ Delivered، راجع Gmail (وارد + spam + كل البريد) لبريد حساب Resend. الرابط يفتح: https://rakan1234rh-create.github.io/rakan/ — مع onboarding@resend.dev لا يصل البريد إلا لبريد تسجيل Resend.';
+            'إن وُجد الطلب في Resend كـ Delivered، راجع Gmail (وارد + spam + كل البريد) لبريد حساب Resend. الرابط يفتح: https://athar.app/ — مع onboarding@resend.dev لا يصل البريد إلا لبريد تسجيل Resend.';
           document.getElementById('forgotEmail').value = '';
         } catch (err) {
           if (isMirsadDebugLog()) console.error('[ForgotPassword]', err);
@@ -26581,6 +26625,21 @@
         const desktop = isDesktopUi();
         document.documentElement.classList.toggle('mr-desktop-ui', desktop);
         document.documentElement.classList.toggle('mr-mobile-ui', !desktop);
+        if (!desktop) {
+          const sb = document.getElementById('sidebar');
+          if (sb) {
+            sb.classList.remove('open', 'sidebar-rail-open', 'sidebar-rail-hover', 'sidebar-rail-expanded');
+            delete sb.dataset.railExpanded;
+            delete sb.dataset.railHover;
+            sb.style.removeProperty('width');
+            sb.style.removeProperty('min-width');
+            sb.style.removeProperty('flex');
+            sb.style.removeProperty('max-width');
+          }
+          document.getElementById('sidebarOverlay')?.classList.remove('open');
+          const mobNav = document.getElementById('mobileBottomNav');
+          if (mobNav) mobNav.style.removeProperty('display');
+        }
       }
 
       const ATHAR_LOGO_VER = '388';
@@ -28816,6 +28875,7 @@
       }
 
       function initDesktopSidebarRail() {
+        if (!isDesktopUi()) return;
         const sb = document.getElementById('sidebar');
         if (!sb || sb.dataset.railHoverBound) return;
         sb.dataset.railHoverBound = '1';
@@ -28922,7 +28982,7 @@
         syncSafeAreaInsets();
         syncTopbarHeightVar();
         const sb = document.getElementById('sidebar');
-        if (sb) syncDesktopSidebarRailSize(sb);
+        if (sb && isDesktopUi()) syncDesktopSidebarRailSize(sb);
         if (!window._mrSidebarResizeBound) {
           window._mrSidebarResizeBound = true;
           window.addEventListener('resize', () => {
