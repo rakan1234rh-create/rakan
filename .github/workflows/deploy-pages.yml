@@ -34,7 +34,8 @@ jobs:
           VER="$(tr -d '\r\n' < icons/icon-cache-ver.txt)"
           mkdir -p site/icons
           cp index.html site/index.html
-          cp -r styles js site/
+          cp -r styles site/
+          if [ -d js ]; then cp -r js site/; fi
           cp manifest.webmanifest site/manifest.webmanifest
           cp icons/athar-pwa-192-v${VER}.png icons/athar-pwa-512-v${VER}.png \
             icons/athar-pwa-180-v${VER}.png icons/athar-pwa-maskable-512-v${VER}.png \
