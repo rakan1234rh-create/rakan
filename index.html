@@ -26056,6 +26056,7 @@
               } catch (e) {
                 if (isMirsadDebugLog()) console.warn('[Realtime] تعذّر بدء الاشتراك:', e);
               }
+              try { startMobilePermissionsPoll(); } catch (_) {}
             };
             if (typeof requestIdleCallback === 'function') {
               requestIdleCallback(startRealtime, { timeout: 3000 });
@@ -26140,6 +26141,7 @@
         if (!await confirmDialog('هل تريد تسجيل الخروج؟', { type: 'info', title: 'تسجيل الخروج', okText: 'خروج' })) return;
 
         // إلغاء كل قنوات الـ realtime
+        stopMobilePermissionsPoll();
         state.realtimeChannels.forEach(ch => sb.removeChannel(ch));
         state.realtimeChannels = [];
 
@@ -27280,6 +27282,7 @@
         await Promise.all([cmpReloadGeoDataIfNeeded(), wfReloadViolationsIfNeeded()]);
         cmpRefreshAfterPermissionChange();
         wfRefreshAfterPermissionChange();
+        flushPermissionsMobileShell({ skipRbac: true, skipRender: true });
       }
 
       let _cmpAccessSyncPromise = null;
@@ -27464,7 +27467,7 @@
         }
       }
 
-      function persistPermissionsLocal() {
+      function persistPermissionsLocal(opts = {}) {
         try {
           rebuildWorkflowSkipSettings();
           localStorage.setItem(MR_PERMS_STORAGE_KEY, JSON.stringify(state.rolePermissionOverrides || {}));
@@ -27475,7 +27478,7 @@
           } else {
             localStorage.removeItem(MR_USER_DENY_KEYS_STORAGE);
           }
-          window.dispatchEvent(new CustomEvent('mirsad-permissions-changed'));
+          if (!opts.silent) window.dispatchEvent(new CustomEvent('mirsad-permissions-changed'));
         } catch (e) {
           if (isMirsadDebugLog()) console.warn('[permissions] local save failed', e);
         }
@@ -27521,6 +27524,24 @@
       }
 
       let _mrPermsCloudTimer = null;
+      let _mrPermsMobilePollId = null;
+
+      function startMobilePermissionsPoll() {
+        if (_mrPermsMobilePollId) return;
+        if (!isMobileViewport()) return;
+        _mrPermsMobilePollId = setInterval(() => {
+          if (!state.currentUser || document.hidden) return;
+          refreshPermissionsFromCloud({ forceCloud: true })
+            .catch(e => { if (isMirsadDebugLog()) console.warn('[permissions] mobile poll', e); });
+        }, 12000);
+      }
+
+      function stopMobilePermissionsPoll() {
+        if (!_mrPermsMobilePollId) return;
+        clearInterval(_mrPermsMobilePollId);
+        _mrPermsMobilePollId = null;
+      }
+
       function schedulePermissionsCloudSave() {
         if (_mrPermsCloudTimer) clearTimeout(_mrPermsCloudTimer);
         _mrPermsCloudTimer = setTimeout(async () => {
@@ -27529,6 +27550,8 @@
           if (synced) {
             state._permLocalDirtyAt = 0;
             state._permsFromCloud = true;
+            try { persistPermissionsLocal({ silent: true }); } catch (_) {}
+            flushPermissionsMobileShell({ skipRbac: true });
           }
         }, 700);
       }
@@ -27538,6 +27561,7 @@
         state._permLocalDirtyAt = Date.now();
         persistPermissionsLocal();
         await applyEffectivePermissionsAndRender({ forceCloud: false });
+        flushPermissionsMobileShell({ skipRbac: true });
         ensureActiveTabAllowed();
         schedulePermissionsCloudSave();
       }
@@ -27598,6 +27622,7 @@
         state._viewAllTicketsPrev = undefined;
         await applyEffectivePermissionsAndRender({ forceCloud: false });
         ensureActiveTabAllowed();
+        flushPermissionsMobileShell({ skipRbac: true });
         scheduleRenderAll();
         showToast(
           synced
@@ -27773,6 +27798,7 @@
         loadUserPermDenyKeysFromCache();
         applyRBACUI();
         ensureActiveTabAllowed();
+        flushPermissionsMobileShell({ skipRbac: true });
       }
 
       function onUserPermCheckboxChange(ev) {
@@ -28108,9 +28134,39 @@
 
         if (!hasAnyNavTabPermission()) showNoPermissionsScreen();
         else ensureActiveTabAllowed();
-        syncMobileBottomNavLayout();
-        requestAnimationFrame(() => layoutMobileBottomNav());
-        setTimeout(() => layoutMobileBottomNav(), 150);
+        flushPermissionsMobileShell({ skipRbac: true });
+      }
+
+      function flushPermissionsMobileShell(opts = {}) {
+        if (!state.currentUser) return;
+        if (!opts.skipRbac && typeof applyRBACUI === 'function') {
+          applyRBACUI({ skipCmpRefresh: !!opts.skipCmpRefresh });
+        }
+        if (typeof ensureActiveTabAllowed === 'function') ensureActiveTabAllowed();
+        if (typeof layoutMobileBottomNav === 'function') layoutMobileBottomNav();
+        if (typeof syncMobileBottomNavLayout === 'function') syncMobileBottomNavLayout();
+        const tab = typeof getActiveTabKey === 'function' ? getActiveTabKey() : null;
+        if (tab && typeof syncMobileBottomNav === 'function') syncMobileBottomNav(tab);
+        if (!opts.skipRender) {
+          if (typeof scheduleRenderAll === 'function') scheduleRenderAll();
+          refreshActiveTabAfterPermissionChange(tab);
+        }
+      }
+
+      function refreshActiveTabAfterPermissionChange(tab) {
+        if (!tab) return;
+        try {
+          if (tab === 'dashboard' && typeof renderDashboard === 'function') renderDashboard();
+          else if (tab === 'workflow' && typeof filterTickets === 'function') filterTickets();
+          else if (tab === 'reports' && typeof filterReports === 'function') filterReports();
+          else if (tab === 'compliance' && typeof renderCompliance === 'function') renderCompliance();
+          else if (tab === 'violations' && typeof renderViolTypes === 'function') renderViolTypes();
+          else if (tab === 'locations' && typeof renderRegions === 'function') renderRegions();
+          else if (tab === 'departments' && typeof renderUsers === 'function') renderUsers();
+          else if (tab === 'settings' && typeof renderSettingsPermissions === 'function') renderSettingsPermissions();
+        } catch (e) {
+          if (isMirsadDebugLog()) console.warn('[permissions] active tab refresh', e);
+        }
       }
 
       const MR_NAV_TAB_ORDER = ['dashboard', 'workflow', 'newTicket', 'reports', 'compliance', 'violations', 'locations', 'departments', 'settings'];
@@ -28142,6 +28198,8 @@
           panel.classList.add('active');
         }
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        document.querySelectorAll('#mobileBottomNav .mob-nav-item').forEach(n => n.classList.remove('active'));
+        if (typeof syncMobileBottomNavLayout === 'function') syncMobileBottomNavLayout();
         const titleBar = document.getElementById('pageTitleBar');
         if (titleBar) titleBar.classList.remove('visible');
         const pt = document.getElementById('pageTitle');
@@ -28152,7 +28210,8 @@
 
       function getNavButtonForTab(tab) {
         return document.querySelector(`#sidebarNav button.nav-item[onclick*="goTab('${tab}'"]`)
-          || document.querySelector(`#sidebarNav button.nav-item[onclick*='goTab("${tab}"']`);
+          || document.querySelector(`#sidebarNav button.nav-item[onclick*='goTab("${tab}"']`)
+          || document.querySelector(`#mobileBottomNav .mob-nav-item[data-tab="${tab}"]`);
       }
 
       const MR_MOB_NAV_SPREAD_MAX = 6;
@@ -28303,7 +28362,7 @@
         if (!nav || window.innerWidth > 992) return;
         nav.querySelectorAll('.mob-nav-item').forEach(el => {
           el.classList.remove('active');
-          if (el.getAttribute('data-tab') === tab) el.classList.add('active');
+          if (el.getAttribute('data-tab') === tab && !el.hasAttribute('data-role-hide')) el.classList.add('active');
         });
         if (nav.classList.contains('mobile-bottom-nav--scroll')) {
           const activeBtn = nav.querySelector(`.mob-nav-item[data-tab="${tab}"]`);
@@ -29258,6 +29317,12 @@
         }
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
         if (btn && btn.classList.contains('nav-item')) btn.classList.add('active');
+        document.querySelectorAll('#mobileBottomNav .mob-nav-item').forEach(n => n.classList.remove('active'));
+        const mobBtn = (btn && btn.classList?.contains?.('mob-nav-item') && !btn.hasAttribute('data-role-hide'))
+          ? btn
+          : document.querySelector(`#mobileBottomNav .mob-nav-item[data-tab="${tab}"]:not([data-role-hide])`);
+        if (mobBtn) mobBtn.classList.add('active');
+        if (typeof syncMobileBottomNav === 'function') syncMobileBottomNav(tab);
         const meta = TAB_TITLES[tab] || { title: tab, sub: '' };
         document.getElementById('pageTitle').textContent = meta.title;
         document.getElementById('pageSubtitle').textContent = meta.sub;
@@ -42212,6 +42277,7 @@
         state._seeAllCompliancePrev = undefined;
         state._viewAllTicketsPrev = undefined;
         applyEffectivePermissionsAndRender({ forceCloud: false })
+          .then(() => flushPermissionsMobileShell({ skipRbac: true }))
           .catch(e => { if (isMirsadDebugLog()) console.warn('[permissions] refresh', e); });
       });
       window.addEventListener('storage', (e) => {
@@ -42220,6 +42286,7 @@
           state._seeAllCompliancePrev = undefined;
           state._viewAllTicketsPrev = undefined;
           applyEffectivePermissionsAndRender({ forceCloud: false })
+            .then(() => flushPermissionsMobileShell({ skipRbac: true }))
             .catch(err => { if (isMirsadDebugLog()) console.warn('[permissions] storage sync', err); });
         }
       });
@@ -42233,17 +42300,22 @@
           await applyEffectivePermissionsAndRender({ forceCloud: true });
         }
         ensureActiveTabAllowed();
+        flushPermissionsMobileShell({ skipRbac: true });
       }
 
       document.addEventListener('visibilitychange', () => {
         if (!state.currentUser) return;
         if (document.hidden) {
-          if (isMobileViewport()) teardownRealtime();
+          if (isMobileViewport()) {
+            teardownRealtime();
+            stopMobilePermissionsPoll();
+          }
           return;
         }
         if (isMobileViewport()) {
           setTimeout(() => {
             try { setupRealtime(); } catch (e) { if (isMirsadDebugLog()) console.warn('[Realtime] resume', e); }
+            try { startMobilePermissionsPoll(); } catch (_) {}
           }, 400);
         }
         refreshPermissionsFromCloud()
