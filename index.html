@@ -19399,9 +19399,9 @@
         }
 
         #tab-departments .users-filters-toolbar .user-role-dd .wf-status-trigger {
-          width: var(--user-role-dd-fixed-w, 118px) !important;
-          min-width: var(--user-role-dd-fixed-w, 118px);
-          max-width: var(--user-role-dd-fixed-w, 118px);
+          width: var(--user-role-dd-fixed-w, 128px) !important;
+          min-width: var(--user-role-dd-fixed-w, 128px);
+          max-width: var(--user-role-dd-fixed-w, 128px);
           height: 38px;
           gap: 3px;
           padding-block: 0;
@@ -35620,7 +35620,7 @@
           _userRoleDdWidthProbe.textContent = text;
           maxTextW = Math.max(maxTextW, _userRoleDdWidthProbe.offsetWidth);
         });
-        const triggerW = Math.ceil(maxTextW + 20 + 3 + 3 + 5);
+        const triggerW = Math.ceil(maxTextW + 20 + 3 + 3 + 5 + 10);
         filter.style.setProperty('--user-role-dd-fixed-w', `${triggerW}px`);
       }
 
