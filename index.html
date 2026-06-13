@@ -15806,7 +15806,9 @@
       .autocomplete-dropdown,
       .wf-status-menu__scroll,
       .filter-panel-body,
-      .br-employees-list {
+      .br-employees-list,
+      #tab-violations .viol-grid--mob-list,
+      #tab-violations #violGrid.viol-grid--mob-list {
         -webkit-overflow-scrolling: touch
       }
 
@@ -18985,10 +18987,85 @@
         max-width: none !important;
         flex: 1 1 auto;
         min-height: 0;
+        height: 0;
         overflow-y: auto !important;
         overflow-x: hidden;
         -webkit-overflow-scrolling: touch;
         touch-action: pan-y;
+        overscroll-behavior-y: contain
+      }
+
+      html.mr-mobile-ui.mr-viol-tab-active body.mirsad-app-active #appWrap .main {
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        padding: 0 !important
+      }
+
+      html.mr-mobile-ui.mr-viol-tab-active body.mirsad-app-active #appWrap .main .content {
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        height: 0 !important;
+        padding: 0 !important;
+        max-width: none !important;
+        margin: 0 !important
+      }
+
+      html.mr-mobile-ui.mr-viol-tab-active #tab-violations.tab-content.active {
+        display: flex !important;
+        flex-direction: column !important;
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        height: 0 !important;
+        overflow: hidden !important
+      }
+
+      html.mr-mobile-ui.mr-viol-tab-active #tab-violations .panel.wf-panel {
+        padding: 0 !important;
+        margin: 0 !important;
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        height: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        overflow: hidden !important
+      }
+
+      html.mr-mobile-ui.mr-viol-tab-active #tab-violations #violDeskHost {
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        height: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        overflow: hidden !important
+      }
+
+      html.mr-mobile-ui.mr-viol-tab-active #tab-violations #violDeskHost > .mr-users-list-wrap {
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        height: 0 !important;
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
+        border: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        background: var(--mr-bg) !important
+      }
+
+      html.mr-mobile-ui.mr-viol-tab-active #tab-violations #violGrid.viol-grid--mob-list {
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        height: 0 !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        -webkit-overflow-scrolling: touch !important;
+        touch-action: pan-y !important;
         overscroll-behavior-y: contain
       }
 
@@ -28311,6 +28388,7 @@
         const ps = document.getElementById('pageSubtitle');
         if (pt) pt.textContent = 'لا صلاحيات';
         if (ps) ps.textContent = '';
+        syncViolMobileScrollShell(null);
       }
 
       function getNavButtonForTab(tab) {
@@ -29377,6 +29455,12 @@
         }
       }
 
+      function syncViolMobileScrollShell(tab) {
+        const activeTab = tab || (typeof getActiveTabKey === 'function' ? getActiveTabKey() : null);
+        const on = typeof isMobileViewport === 'function' && isMobileViewport() && activeTab === 'violations';
+        document.documentElement.classList.toggle('mr-viol-tab-active', on);
+      }
+
       window.dismissPageOverlaysOnTabLeave = dismissPageOverlaysOnTabLeave;
 
       function goTab(tab, btn, opts = {}) {
@@ -29483,6 +29567,7 @@
         if (tab === 'reports' && typeof syncDesktopWfTableColWidths === 'function') {
           requestAnimationFrame(() => requestAnimationFrame(() => syncDesktopWfTableColWidths('reports')));
         }
+        syncViolMobileScrollShell(tab);
       }
 
       /** تفعيل تبويب من الشريط الجانبي (لوحة القيادة — إجراءات سريعة) */
@@ -32649,6 +32734,10 @@
         grid.innerHTML = violMob
           ? state.violationTypes.map(v => renderViolTypeMobItem(v, canManage)).join('')
           : state.violationTypes.map(v => renderViolTypeCard(v, canManage)).join('');
+        if (violMob) {
+          syncViolMobileScrollShell('violations');
+          requestAnimationFrame(() => syncViolMobileScrollShell('violations'));
+        }
       }
 
       function openViolDetailSheet(id) {
