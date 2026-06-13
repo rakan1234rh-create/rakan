@@ -19399,16 +19399,17 @@
         }
 
         #tab-departments .users-filters-toolbar .user-role-dd .wf-status-trigger {
-          width: auto !important;
-          min-width: 0;
-          max-width: 108px;
+          width: var(--user-role-dd-fixed-w, 118px) !important;
+          min-width: var(--user-role-dd-fixed-w, 118px);
+          max-width: var(--user-role-dd-fixed-w, 118px);
           height: 38px;
           gap: 3px;
           padding-block: 0;
           padding-inline-start: 3px;
           padding-inline-end: 5px;
           justify-content: center;
-          align-items: center
+          align-items: center;
+          box-sizing: border-box
         }
 
         #tab-departments .users-filters-toolbar .user-role-dd .wf-status-trigger__ico {
@@ -19422,13 +19423,13 @@
         #tab-departments .users-filters-toolbar .user-role-dd .wf-status-trigger__label {
           display: block;
           font-size: 10px;
-          flex: 0 1 auto;
+          flex: 1 1 auto;
           min-width: 0;
-          max-width: 4.6rem;
+          max-width: none;
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
-          text-align: start;
+          text-align: center;
           line-height: 1.2
         }
 
@@ -29928,6 +29929,7 @@
             const activeTab = typeof getActiveTabKey === 'function' ? getActiveTabKey() : null;
             syncViolMobileScrollShell(activeTab);
             syncUsersMobileScrollShell(activeTab);
+            if (typeof syncUserRoleDdFixedWidth === 'function') syncUserRoleDdFixedWidth();
             if (activeTab === 'departments' && typeof renderUsers === 'function') renderUsers();
             if (activeTab === 'violations' && typeof renderViolTypes === 'function') renderViolTypes();
           }, { passive: true });
@@ -32992,6 +32994,7 @@
         if (!list) return;
 
         userRoleDdSyncUi(document.getElementById('user-roleFilter')?.value || '');
+        syncUserRoleDdFixedWidth();
 
         const countEl = document.getElementById('users-count');
         const usersMob = isMobileViewport();
@@ -35591,6 +35594,36 @@
         hr: 'الموارد البشرية'
       };
 
+      let _userRoleDdWidthProbe;
+
+      /** عرض ثابت لزر فلتر الأدوار على الجوال = أعرض تسمية دور */
+      function syncUserRoleDdFixedWidth() {
+        const filter = document.getElementById('user-role-dd-filter');
+        const label = document.getElementById('user-role-dd-label');
+        if (!filter || !label) return;
+        if (!window.matchMedia('(max-width: 992px)').matches) {
+          filter.style.removeProperty('--user-role-dd-fixed-w');
+          return;
+        }
+        if (!_userRoleDdWidthProbe) {
+          _userRoleDdWidthProbe = document.createElement('span');
+          _userRoleDdWidthProbe.setAttribute('aria-hidden', 'true');
+          _userRoleDdWidthProbe.style.cssText = 'position:fixed;left:-9999px;top:0;visibility:hidden;white-space:nowrap;pointer-events:none;';
+          document.body.appendChild(_userRoleDdWidthProbe);
+        }
+        const cs = getComputedStyle(label);
+        _userRoleDdWidthProbe.style.fontFamily = cs.fontFamily;
+        _userRoleDdWidthProbe.style.fontSize = cs.fontSize;
+        _userRoleDdWidthProbe.style.fontWeight = cs.fontWeight;
+        let maxTextW = 0;
+        Object.values(USER_ROLE_FILTER_LABELS).forEach(text => {
+          _userRoleDdWidthProbe.textContent = text;
+          maxTextW = Math.max(maxTextW, _userRoleDdWidthProbe.offsetWidth);
+        });
+        const triggerW = Math.ceil(maxTextW + 20 + 3 + 3 + 5);
+        filter.style.setProperty('--user-role-dd-fixed-w', `${triggerW}px`);
+      }
+
       /** قائمة الأدوار — محاذاة القائمة تحت الزر بنفس العرض (جوال) */
       function userRoleDdPositionMenu() {
         const trigger = document.getElementById('user-role-dd-trigger');
@@ -35762,6 +35795,7 @@
         trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
         toolbar?.classList.toggle('is-status-open', open);
         if (open) {
+          syncUserRoleDdFixedWidth();
           userRoleDdPositionMenu();
           requestAnimationFrame(() => {
             userRoleDdPositionMenu();
@@ -44416,7 +44450,7 @@
         const cmpMenu = document.getElementById('cmp-filter-menu');
         if (cmpMenu?.classList.contains('open')) cmpFilterPositionMenu();
         const urMenu = document.getElementById('user-role-dd-menu');
-        const urTrigger = document.getElementById('user-role-dd-trigger');
+        if (typeof syncUserRoleDdFixedWidth === 'function') syncUserRoleDdFixedWidth();
         if (urMenu?.classList.contains('open')) userRoleDdPositionMenu();
         const usersIoMenu = document.getElementById('usersIoMenu');
         if (usersIoMenu && !usersIoMenu.hidden) usersIoMenuPosition();
