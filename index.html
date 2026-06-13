@@ -19369,8 +19369,8 @@
 
         #tab-departments .users-filters-toolbar .figma-search-wrap {
           height: 38px;
-          padding: 0 10px 0 6px;
-          gap: 8px
+          padding: 0 8px 0 4px;
+          gap: 6px
         }
 
         #tab-departments .users-filters-toolbar .figma-search-input {
@@ -19380,13 +19380,15 @@
         }
 
         #tab-departments .users-filters-toolbar .figma-search-input::placeholder {
-          font-size: 10px
+          font-size: 11px;
+          opacity: 1
         }
 
         #tab-departments .users-filters-toolbar .figma-search-btn {
-          width: 38px;
-          min-width: 38px;
-          height: 38px
+          width: 32px;
+          min-width: 32px;
+          height: 32px;
+          flex-shrink: 0
         }
 
         #tab-departments .users-filters-toolbar .user-role-dd {
@@ -19399,11 +19401,11 @@
         #tab-departments .users-filters-toolbar .user-role-dd .wf-status-trigger {
           width: auto !important;
           min-width: 0;
-          max-width: 96px;
+          max-width: 38px;
           height: 38px;
-          gap: 4px;
-          padding: 0 8px 0 6px;
-          justify-content: flex-start
+          gap: 0;
+          padding: 0;
+          justify-content: center
         }
 
         #tab-departments .users-filters-toolbar .user-role-dd .wf-status-trigger__ico {
@@ -19412,22 +19414,25 @@
           font-size: 10px
         }
 
-        #tab-departments .users-filters-toolbar .user-role-dd .wf-status-trigger__label {
-          font-size: 11px;
-          flex: 0 1 auto;
-          min-width: 0;
-          max-width: 3.6rem
-        }
-
+        #tab-departments .users-filters-toolbar .user-role-dd .wf-status-trigger__label,
         #tab-departments .users-filters-toolbar .user-role-dd .wf-status-trigger__chev {
           display: none
+        }
+
+        #tab-departments .users-io-mob-wrap {
+          flex: 0 0 auto !important;
+          width: auto !important;
+          display: block;
+          position: relative;
+          z-index: 620
         }
 
         #tab-departments .users-filters-toolbar .users-io-mob-wrap {
           flex: 0 0 auto !important;
           width: auto !important;
           display: block;
-          position: relative
+          position: relative;
+          z-index: 620
         }
 
         #tab-departments .users-filters-toolbar .users-io-more-btn {
@@ -19479,7 +19484,8 @@
           white-space: nowrap
         }
 
-        #tab-departments .users-io-menu {
+        #tab-departments .users-io-menu,
+        #usersIoMenu {
           position: fixed;
           z-index: 9000;
           width: max-content;
@@ -19489,16 +19495,19 @@
           background: var(--mr-surface);
           border: 1px solid var(--mr-border);
           border-radius: 12px;
-          box-shadow: var(--mr-shadow-card)
-        }
-
-        #tab-departments .users-io-menu:not([hidden]) {
-          display: flex;
+          box-shadow: var(--mr-shadow-card);
+          display: none;
           flex-direction: column;
           gap: 2px
         }
 
-        #tab-departments .users-io-menu-item {
+        #tab-departments .users-io-menu:not([hidden]),
+        #usersIoMenu:not([hidden]) {
+          display: flex
+        }
+
+        #tab-departments .users-io-menu-item,
+        #usersIoMenu .users-io-menu-item {
           display: inline-flex;
           align-items: center;
           gap: 8px;
@@ -19517,7 +19526,8 @@
           white-space: nowrap
         }
 
-        #tab-departments .users-io-menu-item:active {
+        #tab-departments .users-io-menu-item:active,
+        #usersIoMenu .users-io-menu-item:active {
           background: var(--mr-primary-softer)
         }
 
@@ -23905,7 +23915,8 @@
                       </div>
                       <div class="wf-status-filter user-role-dd" id="user-role-dd-filter">
                         <button type="button" class="wf-status-trigger" id="user-role-dd-trigger"
-                          onclick="userRoleDdToggle(event)" aria-haspopup="listbox" aria-expanded="false">
+                          onclick="userRoleDdToggle(event)" aria-haspopup="listbox" aria-expanded="false"
+                          title="كل الأدوار" aria-label="فلتر الأدوار">
                           <span class="wf-status-trigger__ico" aria-hidden="true"><i class="fas fa-user-tag"></i></span>
                           <span class="wf-status-trigger__label" id="user-role-dd-label">كل الأدوار</span>
                           <i class="fas fa-chevron-down wf-status-trigger__chev" aria-hidden="true"></i>
@@ -35649,7 +35660,6 @@
       function usersIoMenuClose() {
         const menu = document.getElementById('usersIoMenu');
         const btn = document.getElementById('usersIoMoreBtn');
-        const wrap = btn?.closest('.users-io-mob-wrap');
         if (menu) {
           menu.hidden = true;
           menu.style.top = '';
@@ -35658,13 +35668,13 @@
           menu.style.bottom = '';
           menu.style.width = '';
           menu.style.maxWidth = '';
-          if (wrap && menu.parentNode !== wrap) wrap.appendChild(menu);
         }
         if (btn) btn.setAttribute('aria-expanded', 'false');
       }
 
       function usersIoMenuToggle(ev) {
         ev?.stopPropagation?.();
+        ev?.preventDefault?.();
         const menu = document.getElementById('usersIoMenu');
         const btn = document.getElementById('usersIoMoreBtn');
         if (!menu || !btn) return;
@@ -35674,8 +35684,8 @@
           usersIoMenuClose();
           return;
         }
-        if (menu.parentNode !== document.body) document.body.appendChild(menu);
         menu.hidden = false;
+        menu.dataset.openStamp = String(Date.now());
         btn.setAttribute('aria-expanded', 'true');
         usersIoMenuPosition();
         requestAnimationFrame(usersIoMenuPosition);
@@ -44314,7 +44324,8 @@
         const usersIoMenu = document.getElementById('usersIoMenu');
         const usersIoBtn = document.getElementById('usersIoMoreBtn');
         if (usersIoMenu && !usersIoMenu.hidden &&
-          !usersIoMenu.contains(e.target) && !usersIoBtn?.contains(e.target)) {
+          !usersIoMenu.contains(e.target) && !usersIoBtn?.contains(e.target) &&
+          !(usersIoMenu.dataset.openStamp && (Date.now() - Number(usersIoMenu.dataset.openStamp)) < 180)) {
           usersIoMenuClose();
         }
 
