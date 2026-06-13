@@ -19341,26 +19341,79 @@
         }
 
         #tab-departments .users-filters-row {
-          padding: 10px 14px 0;
-          border-bottom: none
+          padding: 10px 14px 12px;
+          border-bottom: 1px solid var(--mr-border)
         }
 
         #tab-departments .users-filters-toolbar {
-          flex-direction: column !important;
-          align-items: stretch !important;
-          gap: 10px !important;
+          flex-direction: row !important;
+          flex-wrap: nowrap !important;
+          align-items: center !important;
+          gap: 8px !important;
           margin-bottom: 0 !important
         }
 
         #tab-departments .users-filters-toolbar .wf-search {
           flex: 1 1 auto !important;
           min-width: 0 !important;
-          width: 100% !important
+          width: auto !important
+        }
+
+        #tab-departments .users-filters-toolbar .figma-search-input {
+          min-height: 38px;
+          font-size: 12px
+        }
+
+        #tab-departments .users-filters-toolbar .figma-search-btn {
+          width: 38px;
+          min-width: 38px;
+          height: 38px
         }
 
         #tab-departments .users-filters-toolbar .user-role-dd {
-          width: 100% !important;
+          flex: 0 0 auto !important;
+          width: auto !important;
           max-width: none !important
+        }
+
+        #tab-departments .users-filters-toolbar .user-role-dd .wf-status-trigger {
+          width: auto;
+          min-width: 0;
+          max-width: 118px;
+          height: 38px;
+          gap: 6px;
+          padding: 0 10px 0 8px
+        }
+
+        #tab-departments .users-filters-toolbar .user-role-dd .wf-status-trigger__ico {
+          width: 22px;
+          height: 22px;
+          font-size: 9px
+        }
+
+        #tab-departments .users-filters-toolbar .user-role-dd .wf-status-trigger__label {
+          font-size: 11px;
+          flex: 0 1 auto;
+          min-width: 0;
+          max-width: 4.8rem
+        }
+
+        #tab-departments .users-filters-toolbar .user-role-dd .wf-status-trigger__chev {
+          font-size: 9px;
+          margin-inline-start: -2px
+        }
+
+        #tab-departments .users-filters-toolbar .users-io-mob-wrap {
+          flex: 0 0 auto;
+          display: block;
+          position: relative
+        }
+
+        #tab-departments .users-filters-toolbar .users-io-more-btn {
+          min-height: 38px;
+          height: 38px;
+          padding-inline: 10px;
+          white-space: nowrap
         }
 
         #tab-departments .users-io-group--desk {
@@ -19373,7 +19426,7 @@
           align-items: center;
           justify-content: space-between;
           gap: 10px;
-          padding: 18px 14px 12px;
+          padding: 8px 14px 10px;
           margin: 0;
           border-bottom: 1px solid var(--mr-border);
           background: var(--mr-bg)
@@ -19392,14 +19445,10 @@
           margin-inline-start: auto
         }
 
-        #tab-departments .users-io-mob-wrap {
-          display: block;
-          position: relative
-        }
-
-        #tab-departments .users-io-more-btn {
+        #tab-departments .users-add-btn {
+          display: inline-flex;
           min-height: 38px;
-          padding-inline: 12px
+          white-space: nowrap
         }
 
         #tab-departments .users-io-menu {
@@ -19440,12 +19489,6 @@
 
         #tab-departments .users-io-menu-item:active {
           background: var(--mr-primary-softer)
-        }
-
-        #tab-departments .users-add-btn {
-          display: inline-flex;
-          min-height: 38px;
-          white-space: nowrap
         }
 
         #tab-departments .mr-users-list-wrap:has(.users-grid--mob-list) {
@@ -19513,10 +19556,10 @@
           inset-inline-start: 0;
           display: inline-flex;
           align-items: center;
-          padding: 6px 12px;
+          padding: 8px 14px;
           border-radius: 0;
-          border-end-end-radius: 12px;
-          font-size: 10px;
+          border-end-end-radius: 14px;
+          font-size: 12px;
           font-weight: 700;
           line-height: 1.2;
           color: var(--rc, var(--mr-primary));
@@ -19524,7 +19567,7 @@
           border: none;
           border-bottom: 1px solid color-mix(in srgb, var(--rc, var(--mr-primary)) 24%, transparent);
           border-inline-end: 1px solid color-mix(in srgb, var(--rc, var(--mr-primary)) 24%, transparent);
-          max-width: 72%;
+          max-width: 75%;
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
@@ -19534,8 +19577,8 @@
         #tab-departments .user-mob-card__head {
           min-width: 0;
           padding-inline-start: 0;
-          padding-inline-end: 76px;
-          padding-top: 30px
+          padding-inline-end: 82px;
+          padding-top: 36px
         }
 
         #tab-departments .user-mob-card__main {
@@ -23862,6 +23905,27 @@
                           <option value="admin">مدير النظام</option>
                         </select>
                       </div>
+                      <div class="users-io-mob-wrap">
+                        <button type="button" class="rp-tool-btn users-io-more-btn" id="usersIoMoreBtn"
+                          onclick="usersIoMenuToggle(event)" aria-haspopup="menu" aria-expanded="false"
+                          aria-controls="usersIoMenu" title="استيراد وتصدير">
+                          <i class="fas fa-file-export" aria-hidden="true"></i><span>CSV</span>
+                        </button>
+                        <div class="users-io-menu" id="usersIoMenu" role="menu" aria-label="استيراد وتصدير المستخدمين" hidden>
+                          <button type="button" role="menuitem" class="users-io-menu-item" onclick="usersIoMenuClose(); downloadUsersImportTemplate()" data-perm-any="import_users,manage_users">
+                            <i class="fas fa-file-download"></i><span>قالب CSV</span>
+                          </button>
+                          <button type="button" role="menuitem" class="users-io-menu-item" onclick="usersIoMenuClose(); exportUsersCSV(false)" data-perm-any="export_users,manage_users">
+                            <i class="fas fa-file-export"></i><span>تصدير المفلتر</span>
+                          </button>
+                          <button type="button" role="menuitem" class="users-io-menu-item" onclick="usersIoMenuClose(); exportUsersCSV(true)" data-perm-any="export_users,manage_users">
+                            <i class="fas fa-file-export"></i><span>تصدير الكل</span>
+                          </button>
+                          <button type="button" role="menuitem" class="users-io-menu-item" onclick="usersIoMenuClose(); triggerUsersImport()" data-perm-any="import_users,manage_users">
+                            <i class="fas fa-file-import"></i><span>استيراد CSV</span>
+                          </button>
+                        </div>
+                      </div>
                       <div class="users-io-group users-io-group--desk">
                         <button type="button" class="rp-tool-btn users-io-btn" onclick="downloadUsersImportTemplate()" title="قالب فارغ للاستيراد" data-perm-any="import_users,manage_users">
                           <i class="fas fa-file-download"></i><span>قالب CSV</span>
@@ -23885,27 +23949,6 @@
                   <div class="users-meta-row">
                     <div class="wf-count">عدد النتائج: <strong id="users-count">0</strong></div>
                     <div class="users-meta-actions">
-                      <div class="users-io-mob-wrap">
-                        <button type="button" class="rp-tool-btn users-io-more-btn" id="usersIoMoreBtn"
-                          onclick="usersIoMenuToggle(event)" aria-haspopup="menu" aria-expanded="false"
-                          aria-controls="usersIoMenu" title="استيراد وتصدير">
-                          <i class="fas fa-ellipsis-vertical" aria-hidden="true"></i><span>CSV</span>
-                        </button>
-                        <div class="users-io-menu" id="usersIoMenu" role="menu" aria-label="استيراد وتصدير المستخدمين" hidden>
-                          <button type="button" role="menuitem" class="users-io-menu-item" onclick="usersIoMenuClose(); downloadUsersImportTemplate()" data-perm-any="import_users,manage_users">
-                            <i class="fas fa-file-download"></i><span>قالب CSV</span>
-                          </button>
-                          <button type="button" role="menuitem" class="users-io-menu-item" onclick="usersIoMenuClose(); exportUsersCSV(false)" data-perm-any="export_users,manage_users">
-                            <i class="fas fa-file-export"></i><span>تصدير المفلتر</span>
-                          </button>
-                          <button type="button" role="menuitem" class="users-io-menu-item" onclick="usersIoMenuClose(); exportUsersCSV(true)" data-perm-any="export_users,manage_users">
-                            <i class="fas fa-file-export"></i><span>تصدير الكل</span>
-                          </button>
-                          <button type="button" role="menuitem" class="users-io-menu-item" onclick="usersIoMenuClose(); triggerUsersImport()" data-perm-any="import_users,manage_users">
-                            <i class="fas fa-file-import"></i><span>استيراد CSV</span>
-                          </button>
-                        </div>
-                      </div>
                       <button type="button" class="rp-tool-btn rp-tool-btn-primary users-add-btn" onclick="openUserModal()" data-perm="manage_users">
                         <i class="fas fa-user-plus"></i><span>إضافة مستخدم</span>
                       </button>
