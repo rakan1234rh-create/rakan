@@ -3,10 +3,14 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=overlays-content">
   <meta name="format-detection" content="telephone=no">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="theme-color" content="#121212" id="metaThemeColor">
+  <meta name="apple-mobile-web-app-title" content="ATHAR">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
   <title>منصة الرصد المتكاملة | Monitoring Platform</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -45,6 +49,7 @@
   <link rel="stylesheet" href="styles/desktop/settings-shell.css" id="platform-settings-shell-link" media="screen and (min-width: 993px)">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script id="syncDesktopUiClassEarly">(function(){var d=window.matchMedia('(max-width:992px)').matches;document.documentElement.classList.toggle('mr-desktop-ui',!d);document.documentElement.classList.toggle('mr-mobile-ui',d);})();</script>
+  
   <style id="mr-ui-shell-early-lock">
     @media (max-width: 992px) {
       html.mr-mobile-ui #appWrap #sidebar,
@@ -1192,42 +1197,40 @@
       background: var(--bg)
     }
 
-    @media (min-width: 993px) {
-      .app-body {
-        display: flex;
-        flex: 1;
-        min-height: 0;
-        overflow: hidden;
-        position: relative;
-        align-items: stretch;
-        gap: 0;
-        padding: 0;
-        box-sizing: border-box
-      }
+    .app-body {
+      display: flex;
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+      position: relative;
+      align-items: stretch;
+      gap: 0;
+      padding: 0;
+      box-sizing: border-box
+    }
 
-      .sidebar {
-        width: var(--fig-sidebar-collapsed-w);
-        flex: 0 0 var(--fig-sidebar-collapsed-w);
-        max-width: var(--fig-sidebar-w);
-        background: var(--sidebar-bg);
-        color: var(--sidebar-text);
-        padding: 16px 10px 14px;
-        display: flex;
-        flex-direction: column;
-        height: 100%;
-        align-self: stretch;
-        border: 0;
-        border-radius: 0;
-        box-shadow: none;
-        z-index: 800;
-        font-family: var(--font);
-        transition: width 0.18s ease, flex-basis 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
-        box-sizing: border-box;
-        contain: style;
-        overflow: hidden;
-        overflow-x: hidden;
-        position: relative
-      }
+    .sidebar {
+      width: var(--fig-sidebar-collapsed-w);
+      flex: 0 0 var(--fig-sidebar-collapsed-w);
+      max-width: var(--fig-sidebar-w);
+      background: var(--sidebar-bg);
+      color: var(--sidebar-text);
+      padding: 16px 10px 14px;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      align-self: stretch;
+      border: 0;
+      border-radius: 0;
+      box-shadow: none;
+      z-index: 800;
+      font-family: var(--font);
+      transition: width 0.18s ease, flex-basis 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+      box-sizing: border-box;
+      contain: style;
+      overflow: hidden;
+      overflow-x: hidden;
+      position: relative
     }
 
     @media (min-width: 993px) {
@@ -1330,17 +1333,17 @@
       text-overflow: ellipsis
     }
 
-    @media (min-width: 993px) {
-      .nav-section-label,
-      .nav-item-label,
-      .sidebar .logout-btn span {
-        opacity: 0;
-        max-width: 0;
-        overflow: hidden;
-        white-space: nowrap;
-        transition: opacity 0.14s ease, max-width 0.16s ease
-      }
+    .nav-section-label,
+    .nav-item-label,
+    .sidebar .logout-btn span {
+      opacity: 0;
+      max-width: 0;
+      overflow: hidden;
+      white-space: nowrap;
+      transition: opacity 0.14s ease, max-width 0.16s ease
+    }
 
+    @media (min-width: 993px) {
 .sidebar .nav-item,
       .sidebar .logout-btn {
         justify-content: flex-start;
@@ -15536,7 +15539,7 @@
       justify-content: space-between
     }
   
-    /* ═══ MOBILE UI (GitHub HEAD) ═══ */
+    /* ═══ MOBILE UI (user source) ═══ */
 @media (max-width: 992px) {
       #loginScreen.lp-screen {
         justify-content: center
@@ -22598,14 +22601,70 @@
 
 
     <div class="app-shell">
+    <!-- <div id="rpMobTicketsHead" aria-hidden="true"></ (user mobile) -->
+<div id="rpMobTicketsHead" aria-hidden="true"></div>
+              </div>
+            
 
+    <!-- <div id="wfMobTicketsHead" class="wf-mob-tickets (user mobile) -->
+<div id="wfMobTicketsHead" class="wf-mob-tickets-head" aria-hidden="true"></div>
+              </div>
+              
+
+    <!-- <nav class="mobile-bottom-nav" id="mobileBottomN (user mobile) -->
+<nav class="mobile-bottom-nav" id="mobileBottomNav" aria-label="التنقل الرئيسي">
+      <button type="button" class="mob-nav-item active" data-tab="dashboard" data-perm="tab_dashboard"
+        onclick="mobileNavGo('dashboard', this)">
+        <i class="fas fa-house" aria-hidden="true"></i>
+        <span>الرئيسية</span>
+      </button>
+      <button type="button" class="mob-nav-item" data-tab="newTicket" data-perm="tab_newTicket"
+        onclick="mobileNavGo('newTicket', this)">
+        <i class="fas fa-circle-plus" aria-hidden="true"></i>
+        <span>رصد</span>
+      </button>
+      <button type="button" class="mob-nav-item" data-tab="workflow" data-perm="tab_workflow"
+        onclick="mobileNavGo('workflow', this)">
+        <i class="fas fa-clipboard-list" aria-hidden="true"></i>
+        <span>تذاكر</span>
+        <span class="mob-nav-badge" id="mobPendBadge" style="display:none">0</span>
+      </button>
+      <button type="button" class="mob-nav-item" data-tab="reports" data-perm="tab_reports"
+        onclick="mobileNavGo('reports', this)">
+        <i class="fas fa-chart-line" aria-hidden="true"></i>
+        <span>تقارير</span>
+      </button>
+      <button type="button" class="mob-nav-item" data-tab="compliance" data-perm="tab_compliance"
+        onclick="mobileNavGo('compliance', this)">
+        <i class="fas fa-chart-pie" aria-hidden="true"></i>
+        <span>امتثال</span>
+      </button>
+      <button type="button" class="mob-nav-item" data-tab="violations" data-perm="tab_violations"
+        onclick="mobileNavGo('violations', this)">
+        <i class="fas fa-tags" aria-hidden="true"></i>
+        <span>مخالفات</span>
+      </button>
+      <button type="button" class="mob-nav-item" data-tab="locations" data-perm="tab_locations"
+        onclick="mobileNavGo('locations', this)">
+        <i class="fas fa-location-dot" aria-hidden="true"></i>
+        <span>فروع</span>
+      </button>
+      <button type="button" class="mob-nav-item" data-tab="departments" data-perm="tab_departments"
+        onclick="mobileNavGo('departments', this)">
+        <i class="fas fa-user-group" aria-hidden="true"></i>
+        <span>مستخدمون</span>
+      </button>
+      <button type="button" class="mob-nav-item" data-tab="settings" data-perm="tab_settings"
+        onclick="mobileNavGo('settings', this)">
+        <i class="fas fa-shield-halved" aria-hidden="true"></i>
+        <span>صلاحيات</span>
+      </button>
+    </nav>
+
+    <!-- <div class="sidebar-overlay" id="sidebarOverlay" (user mobile) -->
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 
-    <header class="topbar unified-banner">
-        <button type="button" class="sidebar-toggle-btn sidebar-drawer-toggle" id="sidebarToggleBtn"
-          aria-label="فتح القائمة" aria-expanded="false" aria-controls="sidebar">
-          <i class="fas fa-chevron-left" aria-hidden="true"></i>
-        </button>
+<header class="topbar unified-banner">
         <div class="topbar-brand-zone">
           <div class="brand-area" id="brandArea" aria-label="ATHAR">
             <div class="brand-icon wefaq-logo-slot" aria-hidden="true"></div>
@@ -22666,55 +22725,6 @@
         </div>
         </div>
     </header>
-    <nav class="mobile-bottom-nav" id="mobileBottomNav" aria-label="التنقل الرئيسي">
-      <button type="button" class="mob-nav-item active" data-tab="dashboard" data-perm="tab_dashboard"
-        onclick="mobileNavGo('dashboard', this)">
-        <i class="fas fa-house" aria-hidden="true"></i>
-        <span>الرئيسية</span>
-      </button>
-      <button type="button" class="mob-nav-item" data-tab="newTicket" data-perm="tab_newTicket"
-        onclick="mobileNavGo('newTicket', this)">
-        <i class="fas fa-circle-plus" aria-hidden="true"></i>
-        <span>رصد</span>
-      </button>
-      <button type="button" class="mob-nav-item" data-tab="workflow" data-perm="tab_workflow"
-        onclick="mobileNavGo('workflow', this)">
-        <i class="fas fa-clipboard-list" aria-hidden="true"></i>
-        <span>تذاكر</span>
-        <span class="mob-nav-badge" id="mobPendBadge" style="display:none">0</span>
-      </button>
-      <button type="button" class="mob-nav-item" data-tab="reports" data-perm="tab_reports"
-        onclick="mobileNavGo('reports', this)">
-        <i class="fas fa-chart-line" aria-hidden="true"></i>
-        <span>تقارير</span>
-      </button>
-      <button type="button" class="mob-nav-item" data-tab="compliance" data-perm="tab_compliance"
-        onclick="mobileNavGo('compliance', this)">
-        <i class="fas fa-chart-pie" aria-hidden="true"></i>
-        <span>امتثال</span>
-      </button>
-      <button type="button" class="mob-nav-item" data-tab="violations" data-perm="tab_violations"
-        onclick="mobileNavGo('violations', this)">
-        <i class="fas fa-tags" aria-hidden="true"></i>
-        <span>مخالفات</span>
-      </button>
-      <button type="button" class="mob-nav-item" data-tab="locations" data-perm="tab_locations"
-        onclick="mobileNavGo('locations', this)">
-        <i class="fas fa-location-dot" aria-hidden="true"></i>
-        <span>فروع</span>
-      </button>
-      <button type="button" class="mob-nav-item" data-tab="departments" data-perm="tab_departments"
-        onclick="mobileNavGo('departments', this)">
-        <i class="fas fa-user-group" aria-hidden="true"></i>
-        <span>مستخدمون</span>
-      </button>
-      <button type="button" class="mob-nav-item" data-tab="settings" data-perm="tab_settings"
-        onclick="mobileNavGo('settings', this)">
-        <i class="fas fa-shield-halved" aria-hidden="true"></i>
-        <span>صلاحيات</span>
-      </button>
-    </nav>
-
       <div class="app-body">
       <aside class="sidebar" id="sidebar">
         <nav class="sidebar-nav" id="sidebarNav">
@@ -22997,7 +23007,6 @@
           <!-- WORKFLOW -->
           <div class="tab-content" id="tab-workflow">
             <div class="panel wf-panel">
-              <div id="wfMobTicketsHead" class="wf-mob-tickets-head" aria-hidden="true"></div>
               <div class="wf-panel-banner">
                 <div class="wf-panel-intro">
                   <h2 class="wf-panel-title">معالجة التذاكر</h2>
@@ -23100,7 +23109,6 @@
           <!-- REPORTS -->
           <div class="tab-content" id="tab-reports">
             <div class="panel wf-panel">
-              <div id="rpMobTicketsHead" aria-hidden="true"></div>
               <div class="wf-panel-banner">
                 <div class="wf-panel-intro">
                   <h2 class="wf-panel-title">التقارير</h2>
@@ -23878,8 +23886,8 @@
       // Supabase Dashboard → Settings → API Keys → Publishable and secret API keys
       const SUPABASE_ANON = 'sb_publishable__nGAMUih_RNZ_6FMpwzDNw_116hvA7K';
 
-      /** رابط النشر العام — يُستخدم عند التطوير من file:// أو localhost */
-      const ATHAR_PUBLIC_ORIGIN = 'https://athar.app';
+      /** رابط النشر — روابط استعادة كلمة المرور من file:// أو localhost */
+      const ATHAR_PUBLIC_ORIGIN = 'https://rakan1234rh-create.github.io/rakan';
 
       // 📁 Cloudflare Worker اختياري (مسار عارض/تحميل قديم)
       const CLOUDFLARE_WORKER_URL = '/upload';
@@ -23897,9 +23905,10 @@
         return h === 'localhost' || h === '127.0.0.1' || h === '[::1]';
       }
 
-      /** نشر عام (GitHub Pages أو نطاق مخصص) */
+      /** GitHub Pages أو أي نشر عام — لا يدعم وضع الضيف للبيانات */
       function isPublicDeployHost() {
-        return !isFileProtocol() && !isLocalDevHost();
+        const h = (location.hostname || '').toLowerCase();
+        return h === 'github.io' || h.endsWith('.github.io');
       }
 
       /** فتح الملف مباشرة من القرص (بدون http) — لا يوجد /config ولا R2 */
@@ -26184,7 +26193,7 @@
 
           document.getElementById('forgotSuccess').classList.add('show');
           document.getElementById('forgotSuccessMsg').textContent =
-            'إن وُجد الطلب في Resend كـ Delivered، راجع Gmail (وارد + spam + كل البريد) لبريد حساب Resend. الرابط يفتح: https://athar.app/ — مع onboarding@resend.dev لا يصل البريد إلا لبريد تسجيل Resend.';
+            'إن وُجد الطلب في Resend كـ Delivered، راجع Gmail (وارد + spam + كل البريد) لبريد حساب Resend. الرابط يفتح: https://rakan1234rh-create.github.io/rakan/ — مع onboarding@resend.dev لا يصل البريد إلا لبريد تسجيل Resend.';
           document.getElementById('forgotEmail').value = '';
         } catch (err) {
           if (isMirsadDebugLog()) console.error('[ForgotPassword]', err);
@@ -26613,10 +26622,6 @@
           || document.referrer.includes('android-app://'));
       }
 
-      function isMobileViewport() {
-        return typeof window !== 'undefined' && window.matchMedia('(max-width: 992px)').matches;
-      }
-
       function isDesktopUi() {
         return !isMobileViewport();
       }
@@ -26640,6 +26645,10 @@
           const mobNav = document.getElementById('mobileBottomNav');
           if (mobNav) mobNav.style.removeProperty('display');
         }
+      }
+
+      function isMobileViewport() {
+        return typeof window !== 'undefined' && window.matchMedia('(max-width: 992px)').matches;
       }
 
       const ATHAR_LOGO_VER = '388';
@@ -28092,8 +28101,6 @@
           || document.querySelector(`#sidebarNav button.nav-item[onclick*='goTab("${tab}"']`);
       }
 
-      const MR_MOB_NAV_SPREAD_MAX = 6;
-
       function layoutMobileBottomNav() {
         const nav = document.getElementById('mobileBottomNav');
         if (!nav) return;
@@ -28137,20 +28144,11 @@
         if (nav.parentNode !== shell) shell.appendChild(nav);
       }
       function portalFilterPanelsForMob() {
-        if (!window.matchMedia('(max-width: 992px)').matches) return;
         const shell = document.querySelector('#appWrap > .app-shell');
-        const nav = document.getElementById('mobileBottomNav');
         if (!shell) return;
         ['filterOverlay', 'filterPanel', 'cmpFilterOverlay', 'cmpFilterPanel', 'scoreHelpOverlay', 'scoreHelpPanel'].forEach((id) => {
           const el = document.getElementById(id);
-          if (!el) return;
-          if (nav) {
-            if (el.parentNode !== shell || el.nextElementSibling !== nav) {
-              shell.insertBefore(el, nav);
-            }
-          } else if (el.parentNode !== shell) {
-            shell.appendChild(el);
-          }
+          if (el && el.parentNode !== shell) shell.appendChild(el);
         });
       }
 
@@ -28244,24 +28242,7 @@
           requestAnimationFrame(syncMobBottomNavHeight);
         }
       }
-      function syncMobileBottomNav(tab) {
-        const nav = document.getElementById('mobileBottomNav');
-        if (!nav || window.innerWidth > 992) return;
-        nav.querySelectorAll('.mob-nav-item').forEach(el => {
-          el.classList.remove('active');
-          if (el.getAttribute('data-tab') === tab) el.classList.add('active');
-        });
-        if (nav.classList.contains('mobile-bottom-nav--scroll')) {
-          const activeBtn = nav.querySelector(`.mob-nav-item[data-tab="${tab}"]`);
-          if (activeBtn && !activeBtn.hasAttribute('data-role-hide')) {
-            activeBtn.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'smooth' });
-          }
-        }
-      }
-
-      function mobileNavGo(tab, el) {
-        goTab(tab, getNavButtonForTab(tab) || el);
-      }
+      function syncMobileBottomNav() {}
 
       function getActiveTabKey() {
         const active = document.querySelector('.tab-content.active');
@@ -28815,7 +28796,7 @@
       }
 
       function usesMobileSidebarDrawer() {
-        return isMobileViewport();
+        return false;
       }
 
       function applyDesktopSidebarRailSize(sb, expanded) {
@@ -28875,7 +28856,6 @@
       }
 
       function initDesktopSidebarRail() {
-        if (!isDesktopUi()) return;
         const sb = document.getElementById('sidebar');
         if (!sb || sb.dataset.railHoverBound) return;
         sb.dataset.railHoverBound = '1';
@@ -28976,7 +28956,7 @@
         else openSidebar();
       }
 
-      function initSidebarMobileControls() {
+      function _initSidebarMobileControlsDesktop() {
         syncDesktopUiClass();
         initDesktopSidebarRail();
         syncSafeAreaInsets();
@@ -29022,6 +29002,73 @@
         }
         closeSidebar();
       });
+
+      
+      function _initSidebarMobileControlsMobile() {
+        mountMobileBottomNav();
+        syncSafeAreaInsets();
+        syncTopbarHeightVar();
+        syncSidebarToggleBtn();
+        const btn = document.getElementById('sidebarToggleBtn');
+        if (btn && !btn.dataset.bound) {
+          btn.dataset.bound = '1';
+          btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleSidebar();
+          });
+        }
+        if (!window._mrSidebarResizeBound) {
+          window._mrSidebarResizeBound = true;
+          window.addEventListener('resize', () => {
+            syncSafeAreaInsets();
+            syncTopbarHeightVar();
+            syncMobileBottomNavLayout();
+            const appVisible = document.getElementById('appWrap')?.style.display !== 'none';
+            setNativeAppShellActive(appVisible && !!state.currentUser);
+            if (window.innerWidth > 992) closeSidebar();
+            if (document.getElementById('tab-workflow')?.classList.contains('active') && typeof filterTickets === 'function') {
+              filterTickets();
+            }
+          }, { passive: true });
+          window.addEventListener('orientationchange', () => {
+            setTimeout(() => {
+              syncSafeAreaInsets();
+              syncMobBottomNavHeight();
+            }, 120);
+          }, { passive: true });
+        }
+        syncMobileBottomNavLayout();
+        const bar = document.querySelector('.topbar.unified-banner');
+        if (bar && !bar.dataset.sbRoBound && typeof ResizeObserver !== 'undefined') {
+          bar.dataset.sbRoBound = '1';
+          const ro = new ResizeObserver(() => syncTopbarHeightVar());
+          ro.observe(bar);
+        }
+        const mobNav = document.getElementById('mobileBottomNav');
+        if (mobNav && !mobNav.dataset.sbRoBound && typeof ResizeObserver !== 'undefined') {
+          mobNav.dataset.sbRoBound = '1';
+          const roNav = new ResizeObserver(() => syncMobBottomNavHeight());
+          roNav.observe(mobNav);
+        }
+        if (!window._mrVVNavBound && window.visualViewport) {
+          window._mrVVNavBound = true;
+          let _rrTick = 0;
+          const repinNav = () => {
+            if (_rrTick) return;
+            _rrTick = requestAnimationFrame(() => { _rrTick = 0; syncMobBottomNavHeight(); });
+          };
+          window.visualViewport.addEventListener('resize', repinNav, { passive: true });
+        }
+        syncMobBottomNavHeight();
+      }
+
+
+      function initSidebarMobileControls() {
+        syncDesktopUiClass();
+        if (isDesktopUi()) _initSidebarMobileControlsDesktop();
+        else _initSidebarMobileControlsMobile();
+      }
 
       // كشف الدوال للـ window
       window.openSidebar = openSidebar;
@@ -29188,22 +29235,14 @@
         }
 
         const sb = document.getElementById('sidebar');
-        if (isDesktopUi() && sb?.matches(':hover')) {
+        if (sb?.matches(':hover')) {
           sb.classList.add('sidebar-rail-hover');
           syncSidebarRailAttrs(sb);
         }
         btn?.blur?.();
 
-        if (isDesktopUi()) {
-          if (tab === 'reports' && typeof syncDesktopWfTableColWidths === 'function') {
-            requestAnimationFrame(() => requestAnimationFrame(() => syncDesktopWfTableColWidths('reports')));
-          }
-          if (tab === 'workflow' && typeof syncDesktopWfTableColWidths === 'function') {
-            requestAnimationFrame(() => requestAnimationFrame(() => syncDesktopWfTableColWidths('workflow')));
-          }
-        } else {
-          if (typeof syncMobileBottomNav === 'function') syncMobileBottomNav(tab);
-          if (typeof syncMobileBottomNavLayout === 'function') syncMobileBottomNavLayout();
+        if (tab === 'reports' && typeof syncDesktopWfTableColWidths === 'function') {
+          requestAnimationFrame(() => requestAnimationFrame(() => syncDesktopWfTableColWidths('reports')));
         }
       }
 
@@ -29253,7 +29292,12 @@
         }
       }
 
-      // ═══════════════════════════════════════════════════════════════════════════
+      
+      /* ═══ MOBILE JS (user source) ═══ */
+      function mobileNavGo(tab, el) {
+        goTab(tab, getNavButtonForTab(tab) || el);
+      }
+// ═══════════════════════════════════════════════════════════════════════════
       // 12. MASTER RENDER
       // ═══════════════════════════════════════════════════════════════════════════
       function renderAll() {
@@ -34317,138 +34361,7 @@
         return parseDbJsonArray(t && t.attachments).length;
       }
 
-function renderTicketListMobile(tickets, opts) {
-        const view = (opts && opts.view) || 'workflow';
-        const isReports = view === 'reports';
-        const mobViewport = typeof window !== 'undefined' && window.matchMedia('(max-width: 992px)').matches;
-        const wfMob = !isReports && mobViewport;
-        const rpMob = isReports && mobViewport;
-        const mobSplit = wfMob || rpMob;
-        const list = isReports ? document.getElementById('reportList') : document.getElementById('ticketList');
-        if (!list) return;
-
-        const mobHead = document.getElementById(isReports ? 'rpMobTicketsHead' : 'wfMobTicketsHead');
-        if (!tickets.length) {
-          if (mobHead) {
-            mobHead.innerHTML = '';
-            mobHead.setAttribute('aria-hidden', 'true');
-          }
-          list.innerHTML = '<div class="empty"><i class="fas fa-inbox"></i><p>لا توجد تذاكر مطابقة</p></div>';
-          return;
-        }
-
-        const rpTableCls = rpMob ? ' rp-tickets-table--mob' : '';
-        const branchColHtml = wfMob ? '' : '<col class="wf-col-branch-c">';
-        const branchThHtml = wfMob ? '' : '<th class="wf-col-branch">الفرع</th>';
-        const actionColHtml = isReports ? '' : '<col class="wf-col-action-c">';
-        const actionThHtml = isReports ? '' : '<th class="wf-col-action">إجراء</th>';
-        const colgroupHtml = `
-          <col class="wf-col-ticket-c">
-          <col class="wf-col-emp-c">
-          <col class="wf-col-viol-c">
-          ${branchColHtml}
-          <col class="wf-col-datetime-c">
-          <col class="wf-col-status-c">
-          ${actionColHtml}`;
-        const theadHtml = `
-          <tr>
-            <th class="wf-col-ticket">ID</th>
-            <th class="wf-col-emp">الموظف</th>
-            <th class="wf-col-violation">نوع المخالفة</th>
-            ${branchThHtml}
-            <th class="wf-col-datetime">التاريخ</th>
-            <th class="wf-col-status">الحالة</th>
-            ${actionThHtml}
-          </tr>`;
-
-        const tbodyHtml = tickets.map(t => {
-          const autoFlag = ticketAutoFlagHtml(t, rpMob);
-          const autoRowCls = autoFlag ? ' wf-ticket-row--auto' : '';
-          const empName = (t._empName || '').trim() || '...';
-          const empNumber = (t._empNumber || '').trim();
-          const branchName = (t._branchName || '').trim() || '...';
-          const violName = (t.violation_type || '').trim() || '...';
-          const dateTime = t.violation_date
-            ? (wfMob
-              ? `<span class="wf-datetime-stack"><span class="wf-datetime-stack__time">${formatMobTicketTimeHtml(t.violation_time)}</span><span class="wf-datetime-stack__date">${Sec.escapeHTML(t.violation_date)}</span></span>`
-              : rpMob
-                ? `<span class="wf-datetime-stack"><span class="wf-datetime-stack__time">${Sec.escapeHTML(formatTime12(t.violation_time))}</span><span class="wf-datetime-stack__date">${Sec.escapeHTML(t.violation_date)}</span></span>`
-                : `${Sec.escapeHTML(t.violation_date)} ${Sec.escapeHTML(formatTime12(t.violation_time))}`)
-            : '-';
-          let actionTdHtml = '';
-          if (!isReports) {
-            const mobActionLbl = wfMob ? getWfMobActionLabel(t) : '';
-            const mobActionBtnCls = wfMob && mobActionLbl === 'مطلوب ردك' ? ' wf-process-btn--emp-reply' : '';
-            const actionCell = canActOnTicket(t)
-              ? '<button type="button" class="wf-process-btn' + mobActionBtnCls + '" onclick="event.stopPropagation(); openTicket(\'' + t.id + '\')" title="' + (mobActionLbl === 'مطلوب ردك' ? 'مطلوب ردك على المخالفة' : 'معالجة') + '">' + (wfMob ? mobActionLbl : 'اضغط للمعالجة') + '</button>'
-              : '<span class="wf-view-only">' + (wfMob ? 'عرض' : 'عرض فقط') + '</span>';
-            actionTdHtml = `<td class="wf-col-action">${actionCell}</td>`;
-          }
-          const branchTdHtml = wfMob
-            ? ''
-            : `<td class="wf-col-branch"><span class="wf-branch-cell"><span class="wf-branch-name">${Sec.escapeHTML(branchName)}</span></span></td>`;
-          const ticketNumHtml = `<strong class="wf-ticket-id">${Sec.escapeHTML(shortTicketNum(t.ticket_number))}</strong>`;
-          let ticketIdCellCls = 'ticket-id-cell';
-          if (autoFlag && wfMob) ticketIdCellCls += ' ticket-id-cell--auto';
-          else if (autoFlag && rpMob) ticketIdCellCls += ' ticket-id-cell--auto ticket-id-cell--under-id';
-          const ticketIdCellHtml = `<div class="${ticketIdCellCls}">${ticketNumHtml}${autoFlag}</div>`;
-          return `
-            <tr class="wf-ticket-row${autoRowCls}" ontouchstart="prefetchTicketDetail('${t.id}')" onclick="openTicket('${t.id}')">
-              <td class="wf-ticket-cell">${ticketIdCellHtml}</td>
-              <td class="wf-col-emp"><span class="wf-emp-cell"><span class="wf-emp-name">${Sec.escapeHTML(empName)}</span>${empNumber ? `<span class="wf-emp-num">${Sec.escapeHTML(empNumber)}</span>` : ''}</span></td>
-              <td class="wf-col-violation"><span class="wf-viol-cell"><span class="wf-viol-name">${Sec.escapeHTML(violName)}</span></span></td>
-              ${branchTdHtml}
-              <td class="wf-col-datetime wf-datetime">${dateTime}</td>
-              <td class="wf-col-status"><span class="badge ${getTicketBadgeClass(t)}">${Sec.escapeHTML(t.status_text || STATE_LABELS[t.state])}</span></td>
-              ${actionTdHtml}
-            </tr>`;
-        }).join('');
-
-        if (mobSplit) {
-          const bodyTableCls = 'data-table wf-tickets-table wf-tickets-table--mob wf-tickets-table--mob-body' + (rpMob ? ' rp-tickets-table--mob' : '');
-          if (mobHead) {
-            mobHead.innerHTML = `
-        <div class="wf-table-wrap wf-table-wrap--head">
-          <table class="data-table wf-tickets-table wf-tickets-table--mob wf-tickets-table--mob-head${rpMob ? ' rp-tickets-table--mob' : ''}">
-            <colgroup>${colgroupHtml}</colgroup>
-            <thead>${theadHtml}</thead>
-          </table>
-        </div>`;
-            mobHead.setAttribute('aria-hidden', 'false');
-          }
-          list.innerHTML = `
-    <div class="wf-mob-tickets-body">
-      <div class="wf-table-wrap wf-table-wrap--body">
-        <table class="${bodyTableCls}">
-          <colgroup>${colgroupHtml}</colgroup>
-          <tbody>${tbodyHtml}</tbody>
-        </table>
-      </div>
-    </div>`;
-          const scrollTab = isReports ? 'reports' : 'workflow';
-          requestAnimationFrame(() => requestAnimationFrame(() => bindMobTicketsHeadScroll(scrollTab)));
-        } else {
-          if (mobHead) {
-            mobHead.innerHTML = '';
-            mobHead.setAttribute('aria-hidden', 'true');
-          }
-          list.innerHTML = `
-    <div class="wf-table-wrap">
-      <table class="data-table wf-tickets-table${rpTableCls}">
-        <colgroup>${colgroupHtml}</colgroup>
-        <thead>${theadHtml}</thead>
-        <tbody>${tbodyHtml}</tbody>
-      </table>
-    </div>`;
-        }
-      }
-
       function renderTicketList(tickets, opts) {
-        if (!isDesktopUi()) return renderTicketListMobile(tickets, opts);
-        return renderTicketListDesktop(tickets, opts);
-      }
-
-      function renderTicketListDesktop(tickets, opts) {
         const view = (opts && opts.view) || 'workflow';
         const reportHost = !!(opts && opts.host === 'reports');
         const legacyReportsView = view === 'reports';
@@ -42316,12 +42229,9 @@ function renderTicketListMobile(tickets, opts) {
             setNativeAppShellActive(appVisible && !!state.currentUser);
           }
           if (typeof syncMobileBottomNavLayout === 'function') syncMobileBottomNavLayout();
-          syncDesktopUiClass();
           if (isDesktopUi()) {
-            if (typeof layoutMobileBottomNav === 'function') {
-              const nav = document.getElementById('mobileBottomNav');
-              if (nav) nav.style.display = 'none';
-            }
+            const nav = document.getElementById('mobileBottomNav');
+            if (nav) nav.style.display = 'none';
             if (document.getElementById('tab-workflow')?.classList.contains('active') && typeof filterTickets === 'function') {
               filterTickets();
             }
