@@ -22600,70 +22600,8 @@
   <div class="app" id="appWrap" style="display:none">
 
 
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
     <div class="app-shell">
-    <!-- <div id="rpMobTicketsHead" aria-hidden="true"></ (user mobile) -->
-<div id="rpMobTicketsHead" aria-hidden="true"></div>
-              </div>
-            
-
-    <!-- <div id="wfMobTicketsHead" class="wf-mob-tickets (user mobile) -->
-<div id="wfMobTicketsHead" class="wf-mob-tickets-head" aria-hidden="true"></div>
-              </div>
-              
-
-    <!-- <nav class="mobile-bottom-nav" id="mobileBottomN (user mobile) -->
-<nav class="mobile-bottom-nav" id="mobileBottomNav" aria-label="التنقل الرئيسي">
-      <button type="button" class="mob-nav-item active" data-tab="dashboard" data-perm="tab_dashboard"
-        onclick="mobileNavGo('dashboard', this)">
-        <i class="fas fa-house" aria-hidden="true"></i>
-        <span>الرئيسية</span>
-      </button>
-      <button type="button" class="mob-nav-item" data-tab="newTicket" data-perm="tab_newTicket"
-        onclick="mobileNavGo('newTicket', this)">
-        <i class="fas fa-circle-plus" aria-hidden="true"></i>
-        <span>رصد</span>
-      </button>
-      <button type="button" class="mob-nav-item" data-tab="workflow" data-perm="tab_workflow"
-        onclick="mobileNavGo('workflow', this)">
-        <i class="fas fa-clipboard-list" aria-hidden="true"></i>
-        <span>تذاكر</span>
-        <span class="mob-nav-badge" id="mobPendBadge" style="display:none">0</span>
-      </button>
-      <button type="button" class="mob-nav-item" data-tab="reports" data-perm="tab_reports"
-        onclick="mobileNavGo('reports', this)">
-        <i class="fas fa-chart-line" aria-hidden="true"></i>
-        <span>تقارير</span>
-      </button>
-      <button type="button" class="mob-nav-item" data-tab="compliance" data-perm="tab_compliance"
-        onclick="mobileNavGo('compliance', this)">
-        <i class="fas fa-chart-pie" aria-hidden="true"></i>
-        <span>امتثال</span>
-      </button>
-      <button type="button" class="mob-nav-item" data-tab="violations" data-perm="tab_violations"
-        onclick="mobileNavGo('violations', this)">
-        <i class="fas fa-tags" aria-hidden="true"></i>
-        <span>مخالفات</span>
-      </button>
-      <button type="button" class="mob-nav-item" data-tab="locations" data-perm="tab_locations"
-        onclick="mobileNavGo('locations', this)">
-        <i class="fas fa-location-dot" aria-hidden="true"></i>
-        <span>فروع</span>
-      </button>
-      <button type="button" class="mob-nav-item" data-tab="departments" data-perm="tab_departments"
-        onclick="mobileNavGo('departments', this)">
-        <i class="fas fa-user-group" aria-hidden="true"></i>
-        <span>مستخدمون</span>
-      </button>
-      <button type="button" class="mob-nav-item" data-tab="settings" data-perm="tab_settings"
-        onclick="mobileNavGo('settings', this)">
-        <i class="fas fa-shield-halved" aria-hidden="true"></i>
-        <span>صلاحيات</span>
-      </button>
-    </nav>
-
-    <!-- <div class="sidebar-overlay" id="sidebarOverlay" (user mobile) -->
-<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
-
 <header class="topbar unified-banner">
         <div class="topbar-brand-zone">
           <div class="brand-area" id="brandArea" aria-label="ATHAR">
@@ -23048,6 +22986,7 @@
                   </div>
                 </div>
                 <div class="wf-count">عدد النتائج: <strong id="wf-count">0</strong></div>
+                <div id="wfMobTicketsHead" class="wf-mob-tickets-head" aria-hidden="true"></div>
               </div>
               <div id="ticketList" class="wf-desk-tickets-host"></div>
             </div>
@@ -23204,6 +23143,7 @@
                   <div id="activeFiltersTags" style="display:flex;flex-wrap:wrap;gap:6px"></div>
                 </div>
                 <div class="wf-count">عدد النتائج: <strong id="rp-count">0</strong><span id="rp-period" class="wf-count__period" style="display:none"></span></div>
+                <div id="rpMobTicketsHead" aria-hidden="true"></div>
               </div>
               <div id="reportList" class="wf-desk-tickets-host"></div>
             </div>
@@ -23441,6 +23381,55 @@
         </div>
       </div>
       </div>
+
+    <nav class="mobile-bottom-nav" id="mobileBottomNav" aria-label="التنقل الرئيسي">
+      <button type="button" class="mob-nav-item active" data-tab="dashboard" data-perm="tab_dashboard"
+        onclick="mobileNavGo('dashboard', this)">
+        <i class="fas fa-house" aria-hidden="true"></i>
+        <span>الرئيسية</span>
+      </button>
+      <button type="button" class="mob-nav-item" data-tab="newTicket" data-perm="tab_newTicket"
+        onclick="mobileNavGo('newTicket', this)">
+        <i class="fas fa-circle-plus" aria-hidden="true"></i>
+        <span>رصد</span>
+      </button>
+      <button type="button" class="mob-nav-item" data-tab="workflow" data-perm="tab_workflow"
+        onclick="mobileNavGo('workflow', this)">
+        <i class="fas fa-clipboard-list" aria-hidden="true"></i>
+        <span>تذاكر</span>
+        <span class="mob-nav-badge" id="mobPendBadge" style="display:none">0</span>
+      </button>
+      <button type="button" class="mob-nav-item" data-tab="reports" data-perm="tab_reports"
+        onclick="mobileNavGo('reports', this)">
+        <i class="fas fa-chart-line" aria-hidden="true"></i>
+        <span>تقارير</span>
+      </button>
+      <button type="button" class="mob-nav-item" data-tab="compliance" data-perm="tab_compliance"
+        onclick="mobileNavGo('compliance', this)">
+        <i class="fas fa-chart-pie" aria-hidden="true"></i>
+        <span>امتثال</span>
+      </button>
+      <button type="button" class="mob-nav-item" data-tab="violations" data-perm="tab_violations"
+        onclick="mobileNavGo('violations', this)">
+        <i class="fas fa-tags" aria-hidden="true"></i>
+        <span>مخالفات</span>
+      </button>
+      <button type="button" class="mob-nav-item" data-tab="locations" data-perm="tab_locations"
+        onclick="mobileNavGo('locations', this)">
+        <i class="fas fa-location-dot" aria-hidden="true"></i>
+        <span>فروع</span>
+      </button>
+      <button type="button" class="mob-nav-item" data-tab="departments" data-perm="tab_departments"
+        onclick="mobileNavGo('departments', this)">
+        <i class="fas fa-user-group" aria-hidden="true"></i>
+        <span>مستخدمون</span>
+      </button>
+      <button type="button" class="mob-nav-item" data-tab="settings" data-perm="tab_settings"
+        onclick="mobileNavGo('settings', this)">
+        <i class="fas fa-shield-halved" aria-hidden="true"></i>
+        <span>صلاحيات</span>
+      </button>
+    </nav>
 
     </div>
 
@@ -28244,7 +28233,20 @@
           requestAnimationFrame(syncMobBottomNavHeight);
         }
       }
-      function syncMobileBottomNav() {}
+      function syncMobileBottomNav(tab) {
+        const nav = document.getElementById('mobileBottomNav');
+        if (!nav || window.innerWidth > 992) return;
+        nav.querySelectorAll('.mob-nav-item').forEach(el => {
+          el.classList.remove('active');
+          if (el.getAttribute('data-tab') === tab) el.classList.add('active');
+        });
+        if (nav.classList.contains('mobile-bottom-nav--scroll')) {
+          const activeBtn = nav.querySelector(`.mob-nav-item[data-tab="${tab}"]`);
+          if (activeBtn && !activeBtn.hasAttribute('data-role-hide')) {
+            activeBtn.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'smooth' });
+          }
+        }
+      }
 
       function getActiveTabKey() {
         const active = document.querySelector('.tab-content.active');

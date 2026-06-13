@@ -11,12 +11,40 @@ const desktopPath = path.join(root, 'index.local-desktop-backup.html');
 const mobilePath = path.join(root, 'index.user-mobile-source.html');
 const outPath = path.join(root, 'index.html');
 
-const MOBILE_HTML_PATTERNS = [
-  /<div[^>]*class="sidebar-overlay"[^>]*id="sidebarOverlay"[^>]*>[\s\S]*?<\/div>/,
-  /<nav class="mobile-bottom-nav"[\s\S]*?<\/nav>/,
-  /<div[^>]*id="wfMobTicketsHead"[^>]*>[\s\S]*?<\/div>\s*(?=<div id="ticketList")/,
-  /<div[^>]*id="rpMobTicketsHead"[^>]*>[\s\S]*?<\/div>\s*(?=<div id="reportList")/,
-];
+function injectBeforeAnchor(html, anchor, snippet, label) {
+  if (!snippet.trim() || html.includes(snippet.slice(0, Math.min(60, snippet.length)).trim())) return html;
+  const idx = html.indexOf(anchor);
+  if (idx === -1) throw new Error(`anchor not found for ${label}`);
+  return html.slice(0, idx) + `\n    <!-- ${label} (user mobile) -->\n${snippet}\n` + html.slice(idx);
+}
+
+function injectMobileHtml(html, mobile) {
+  const overlay = mobile.match(/<div[^>]*class="sidebar-overlay"[^>]*id="sidebarOverlay"[^>]*>[\s\S]*?<\/div>/)?.[0];
+  if (overlay && !html.includes('id="sidebarOverlay"')) {
+    html = injectBeforeAnchor(html, '<div class="app-shell">', overlay, 'sidebarOverlay');
+    console.log('HTML: sidebarOverlay');
+  }
+
+  const wfHead = '<div id="wfMobTicketsHead" class="wf-mob-tickets-head" aria-hidden="true"></div>';
+  if (!html.includes('id="wfMobTicketsHead"')) {
+    html = injectBeforeAnchor(html, '<div id="ticketList"', wfHead, 'wfMobTicketsHead');
+    console.log('HTML: wfMobTicketsHead');
+  }
+
+  const rpHead = '<div id="rpMobTicketsHead" aria-hidden="true"></div>';
+  if (!html.includes('id="rpMobTicketsHead"')) {
+    html = injectBeforeAnchor(html, '<div id="reportList"', rpHead, 'rpMobTicketsHead');
+    console.log('HTML: rpMobTicketsHead');
+  }
+
+  const nav = mobile.match(/<nav class="mobile-bottom-nav"[\s\S]*?<\/nav>/)?.[0];
+  if (nav && !html.includes('id="mobileBottomNav"')) {
+    html = injectBeforeAnchor(html, '\n    <!-- MODALS -->', nav, 'mobileBottomNav');
+    console.log('HTML: mobileBottomNav');
+  }
+
+  return html;
+}
 
 const MOBILE_JS_REPLACE = [
   'isNativeMobileShell',
@@ -29,6 +57,7 @@ const MOBILE_JS_REPLACE = [
   'mountMobileBottomNav',
   'syncMobileBottomNavLayout',
   'syncMobBottomNavHeight',
+  'syncMobileBottomNav',
   'mobileNavGo',
 ];
 
@@ -145,15 +174,6 @@ function extractMobileCss(mobileHtml) {
     if (part.length > 80) chunks.push(part);
   }
   return chunks.join('\n\n');
-}
-
-function injectAfterAppShellOpen(html, snippet, label) {
-  if (html.includes(snippet.slice(0, Math.min(80, snippet.length)))) return html;
-  const anchor = '<div class="app-shell">';
-  const idx = html.indexOf(anchor);
-  if (idx === -1) throw new Error(`anchor not found for ${label}`);
-  const insertAt = idx + anchor.length;
-  return html.slice(0, insertAt) + `\n    <!-- ${label} (user mobile) -->\n` + snippet + '\n' + html.slice(insertAt);
 }
 
 function injectMobileCss(html, mobileCss) {
@@ -384,17 +404,7 @@ function main() {
   const mobile = readFileSync(mobilePath, 'utf8');
   let merged = desktop;
 
-  for (const pat of MOBILE_HTML_PATTERNS) {
-    const m = mobile.match(pat);
-    if (!m) continue;
-    const label = m[0].slice(0, 48).replace(/\s+/g, ' ');
-    if (m[0].includes('sidebarOverlay') && merged.includes('id="sidebarOverlay"')) continue;
-    if (m[0].includes('mobileBottomNav') && merged.includes('id="mobileBottomNav"')) continue;
-    if (m[0].includes('wfMobTicketsHead') && merged.includes('id="wfMobTicketsHead"')) continue;
-    if (m[0].includes('rpMobTicketsHead') && merged.includes('id="rpMobTicketsHead"')) continue;
-    merged = injectAfterAppShellOpen(merged, m[0], label);
-    console.log('HTML:', label);
-  }
+  merged = injectMobileHtml(merged, mobile);
 
   const mobileCss = extractMobileCss(mobile);
   console.log('Mobile CSS chars:', mobileCss.length);
