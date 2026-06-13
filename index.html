@@ -26055,8 +26055,8 @@
                 setupRealtime();
               } catch (e) {
                 if (isMirsadDebugLog()) console.warn('[Realtime] تعذّر بدء الاشتراك:', e);
+                syncMobilePermissionsFallbackPoll();
               }
-              try { startMobilePermissionsPoll(); } catch (_) {}
             };
             if (typeof requestIdleCallback === 'function') {
               requestIdleCallback(startRealtime, { timeout: 3000 });
@@ -26141,7 +26141,7 @@
         if (!await confirmDialog('هل تريد تسجيل الخروج؟', { type: 'info', title: 'تسجيل الخروج', okText: 'خروج' })) return;
 
         // إلغاء كل قنوات الـ realtime
-        stopMobilePermissionsPoll();
+        stopMobilePermissionsFallbackPoll();
         state.realtimeChannels.forEach(ch => sb.removeChannel(ch));
         state.realtimeChannels = [];
 
@@ -26831,6 +26831,7 @@
         }
 
         const permKeys = [MR_PERMS_BUNDLE_DB_KEY, MR_PERMS_DB_KEY, MR_USER_PERMS_DB_KEY];
+        state._permsRealtimeSubscribed = false;
         const pCh = sb.channel('public:platform_settings')
           .on('postgres_changes', { event: '*', schema: 'public', table: 'platform_settings' }, (payload) => {
             const key = payload?.new?.key || payload?.old?.key;
@@ -26840,11 +26841,26 @@
             refreshPermissionsFromCloud({ forceCloud: true })
               .catch(e => { if (isMirsadDebugLog()) console.warn('[permissions] realtime refresh', e); });
           })
-          .subscribe();
+          .subscribe((status) => {
+            if (status === 'SUBSCRIBED') {
+              state._permsRealtimeSubscribed = true;
+              stopMobilePermissionsFallbackPoll();
+              return;
+            }
+            if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+              state._permsRealtimeSubscribed = false;
+              syncMobilePermissionsFallbackPoll();
+            }
+          });
         state.realtimeChannels.push(pCh);
+        setTimeout(() => {
+          if (state.currentUser && !state._permsRealtimeSubscribed) syncMobilePermissionsFallbackPoll();
+        }, 8000);
       }
 
       function teardownRealtime() {
+        state._permsRealtimeSubscribed = false;
+        stopMobilePermissionsFallbackPoll();
         state.realtimeChannels.forEach(ch => sb.removeChannel(ch));
         state.realtimeChannels = [];
       }
@@ -27524,22 +27540,44 @@
       }
 
       let _mrPermsCloudTimer = null;
-      let _mrPermsMobilePollId = null;
+      let _mrPermsFallbackPollId = null;
+      const MR_PERMS_FALLBACK_POLL_MS = 75000;
 
-      function startMobilePermissionsPoll() {
-        if (_mrPermsMobilePollId) return;
-        if (!isMobileViewport()) return;
-        _mrPermsMobilePollId = setInterval(() => {
-          if (!state.currentUser || document.hidden) return;
-          refreshPermissionsFromCloud({ forceCloud: true })
-            .catch(e => { if (isMirsadDebugLog()) console.warn('[permissions] mobile poll', e); });
-        }, 12000);
+      function isPermissionsRealtimeHealthy() {
+        return !!state._permsRealtimeSubscribed;
       }
 
-      function stopMobilePermissionsPoll() {
-        if (!_mrPermsMobilePollId) return;
-        clearInterval(_mrPermsMobilePollId);
-        _mrPermsMobilePollId = null;
+      function syncMobilePermissionsFallbackPoll() {
+        if (!isMobileViewport() || !state.currentUser || document.hidden) {
+          stopMobilePermissionsFallbackPoll();
+          return;
+        }
+        if (isPermissionsRealtimeHealthy()) {
+          stopMobilePermissionsFallbackPoll();
+          return;
+        }
+        startMobilePermissionsFallbackPoll();
+      }
+
+      function startMobilePermissionsFallbackPoll() {
+        if (_mrPermsFallbackPollId) return;
+        if (!isMobileViewport() || !state.currentUser || document.hidden) return;
+        if (isPermissionsRealtimeHealthy()) return;
+        _mrPermsFallbackPollId = setInterval(() => {
+          if (!state.currentUser || document.hidden) return;
+          if (isPermissionsRealtimeHealthy()) {
+            stopMobilePermissionsFallbackPoll();
+            return;
+          }
+          refreshPermissionsFromCloud({ forceCloud: true })
+            .catch(e => { if (isMirsadDebugLog()) console.warn('[permissions] fallback poll', e); });
+        }, MR_PERMS_FALLBACK_POLL_MS);
+      }
+
+      function stopMobilePermissionsFallbackPoll() {
+        if (!_mrPermsFallbackPollId) return;
+        clearInterval(_mrPermsFallbackPollId);
+        _mrPermsFallbackPollId = null;
       }
 
       function schedulePermissionsCloudSave() {
@@ -42306,16 +42344,15 @@
       document.addEventListener('visibilitychange', () => {
         if (!state.currentUser) return;
         if (document.hidden) {
-          if (isMobileViewport()) {
-            teardownRealtime();
-            stopMobilePermissionsPoll();
-          }
+          if (isMobileViewport()) teardownRealtime();
           return;
         }
         if (isMobileViewport()) {
           setTimeout(() => {
-            try { setupRealtime(); } catch (e) { if (isMirsadDebugLog()) console.warn('[Realtime] resume', e); }
-            try { startMobilePermissionsPoll(); } catch (_) {}
+            try { setupRealtime(); } catch (e) {
+              if (isMirsadDebugLog()) console.warn('[Realtime] resume', e);
+              syncMobilePermissionsFallbackPoll();
+            }
           }, 400);
         }
         refreshPermissionsFromCloud()
