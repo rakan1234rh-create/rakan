@@ -19375,8 +19375,12 @@
 
         #tab-departments .users-filters-toolbar .figma-search-input {
           min-height: 38px;
-          font-size: 12px;
+          font-size: 11px;
           min-width: 0
+        }
+
+        #tab-departments .users-filters-toolbar .figma-search-input::placeholder {
+          font-size: 10px
         }
 
         #tab-departments .users-filters-toolbar .figma-search-btn {
@@ -19476,16 +19480,11 @@
         }
 
         #tab-departments .users-io-menu {
-          position: absolute;
-          top: calc(100% + 6px);
-          inset-inline-end: 0;
-          inset-inline-start: auto;
-          left: auto;
-          right: 0;
-          z-index: 600;
+          position: fixed;
+          z-index: 9000;
           width: max-content;
           min-width: 0;
-          max-width: min(168px, calc(100vw - 28px));
+          max-width: min(168px, calc(100vw - 16px));
           padding: 4px;
           background: var(--mr-surface);
           border: 1px solid var(--mr-border);
@@ -35615,10 +35614,52 @@
         });
       }
 
+      function usersIoMenuPosition() {
+        const btn = document.getElementById('usersIoMoreBtn');
+        const menu = document.getElementById('usersIoMenu');
+        if (!btn || !menu || menu.hidden) return;
+        const r = btn.getBoundingClientRect();
+        const gap = 6;
+        const pad = 8;
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+
+        menu.style.width = 'max-content';
+        menu.style.maxWidth = `min(168px, ${vw - pad * 2}px)`;
+        const w = menu.offsetWidth;
+
+        let top = r.bottom + gap;
+        menu.style.top = `${top}px`;
+        menu.style.bottom = 'auto';
+
+        let left = r.left;
+        if (left + w > vw - pad) left = Math.max(pad, vw - w - pad);
+        if (left < pad) left = pad;
+        menu.style.left = `${left}px`;
+        menu.style.right = 'auto';
+
+        const menuH = menu.offsetHeight;
+        if (top + menuH > vh - pad) {
+          const above = r.top - gap - menuH;
+          if (above >= pad) menu.style.top = `${above}px`;
+          else menu.style.top = `${Math.max(pad, vh - menuH - pad)}px`;
+        }
+      }
+
       function usersIoMenuClose() {
         const menu = document.getElementById('usersIoMenu');
         const btn = document.getElementById('usersIoMoreBtn');
-        if (menu) menu.hidden = true;
+        const wrap = btn?.closest('.users-io-mob-wrap');
+        if (menu) {
+          menu.hidden = true;
+          menu.style.top = '';
+          menu.style.left = '';
+          menu.style.right = '';
+          menu.style.bottom = '';
+          menu.style.width = '';
+          menu.style.maxWidth = '';
+          if (wrap && menu.parentNode !== wrap) wrap.appendChild(menu);
+        }
         if (btn) btn.setAttribute('aria-expanded', 'false');
       }
 
@@ -35633,8 +35674,11 @@
           usersIoMenuClose();
           return;
         }
+        if (menu.parentNode !== document.body) document.body.appendChild(menu);
         menu.hidden = false;
         btn.setAttribute('aria-expanded', 'true');
+        usersIoMenuPosition();
+        requestAnimationFrame(usersIoMenuPosition);
       }
 
       function userRoleDdToggle(ev) {
@@ -44307,6 +44351,8 @@
         const urMenu = document.getElementById('user-role-dd-menu');
         const urTrigger = document.getElementById('user-role-dd-trigger');
         if (urMenu?.classList.contains('open')) userRoleDdPositionMenu();
+        const usersIoMenu = document.getElementById('usersIoMenu');
+        if (usersIoMenu && !usersIoMenu.hidden) usersIoMenuPosition();
         const suMenu = document.getElementById('settings-user-dd-menu');
         const suTrigger = document.getElementById('settings-user-dd-trigger');
         if (suMenu?.classList.contains('open')) mrDdPositionFixed(suTrigger, suMenu, 260);
@@ -44879,6 +44925,7 @@
       window.userRoleDdPick = userRoleDdPick;
       window.usersIoMenuToggle = usersIoMenuToggle;
       window.usersIoMenuClose = usersIoMenuClose;
+      window.usersIoMenuPosition = usersIoMenuPosition;
       window.openTicket = openTicket;
       window.openTicketFromCompliance = openTicketFromCompliance;
       window.prefetchTicketDetail = prefetchTicketDetail;
