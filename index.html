@@ -18925,8 +18925,7 @@
         overflow: hidden
       }
 
-      #tab-violations .panel-header,
-      #tab-violations .wf-panel-banner {
+      #tab-violations .panel-header {
         padding: 12px 14px 10px !important;
         margin: 0 !important;
         background: var(--mr-bg) !important;
@@ -18939,6 +18938,23 @@
         flex-shrink: 0
       }
 
+      #tab-violations .wf-panel-banner {
+        padding: 12px 14px 4px !important;
+        margin: 0 !important;
+        background: var(--mr-bg) !important;
+        border: none !important;
+        border-bottom: none !important;
+        border-radius: 0 !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 0 !important;
+        flex-shrink: 0
+      }
+
+      #tab-violations .wf-panel-banner .wf-panel-intro {
+        margin-bottom: 0 !important
+      }
+
       #tab-violations .wf-desk-tickets-host {
         flex: 1 1 auto;
         min-height: 0;
@@ -18949,13 +18965,20 @@
 
       #tab-violations .viol-types-meta-row {
         flex-shrink: 0;
-        padding: 8px 14px 6px;
-        background: var(--mr-bg)
+        padding: 6px 14px 10px;
+        margin: 0;
+        background: var(--mr-bg);
+        border-bottom: 1px solid var(--mr-border)
       }
 
       #tab-violations .viol-types-meta-row .wf-count {
         margin: 0;
-        font-size: 12px
+        font-size: 12px;
+        line-height: 1.35
+      }
+
+      #tab-violations .viol-types-toolbar {
+        margin-top: 8px
       }
 
       #tab-violations .mr-users-list-wrap:has(.viol-grid--mob-list) {
@@ -19089,8 +19112,12 @@
         background: var(--mr-primary-softer)
       }
 
-      #tab-violations .viol-type-list-item:last-child {
-        border-bottom: none
+      #tab-violations .viol-grid--mob-list .viol-type-list-item:first-child {
+        border-top: 1px solid var(--mr-border)
+      }
+
+      #tab-violations .viol-grid--mob-list .viol-type-list-item:last-child {
+        border-bottom: 1px solid var(--mr-border)
       }
 
       #tab-violations .viol-type-list-ico {
