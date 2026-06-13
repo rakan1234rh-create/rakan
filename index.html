@@ -19464,8 +19464,8 @@
         #tab-departments .users-grid--mob-list {
           display: flex !important;
           flex-direction: column !important;
-          gap: 0 !important;
-          padding: 0 !important;
+          gap: 12px !important;
+          padding: 12px 14px !important;
           padding-bottom: calc(var(--mr-mob-bottom-nav-h, 56px) + 12px) !important;
           margin: 0 !important;
           width: 100% !important;
@@ -19477,35 +19477,61 @@
           overflow-x: hidden;
           -webkit-overflow-scrolling: touch;
           touch-action: pan-y;
-          overscroll-behavior-y: contain
+          overscroll-behavior-y: contain;
+          background: var(--mr-bg)
         }
 
-        #tab-departments .user-list-item {
-          display: flex;
-          align-items: center;
-          gap: 12px;
+        #tab-departments .user-mob-card {
+          position: relative;
           width: 100%;
-          padding: 12px 14px;
-          border: none;
-          border-bottom: 1px solid var(--mr-border);
-          border-radius: 0;
-          background: var(--mr-bg);
+          padding: 14px 14px 12px;
+          border: 1px solid var(--mr-border);
+          border-radius: 16px;
+          background: var(--mr-surface);
+          box-shadow: var(--mr-shadow-soft);
           box-sizing: border-box;
           text-align: right
         }
 
-        #tab-departments .users-grid--mob-list .user-list-item:first-child {
-          border-top: 1px solid var(--mr-border)
+        #tab-departments .user-mob-card:active {
+          background: color-mix(in srgb, var(--mr-primary) 6%, var(--mr-surface))
         }
 
-        #tab-departments .user-list-item:active {
-          background: var(--mr-primary-softer)
+        #tab-departments .user-mob-card__role {
+          position: absolute;
+          top: 12px;
+          inset-inline-start: 12px;
+          display: inline-flex;
+          align-items: center;
+          padding: 4px 10px;
+          border-radius: 8px;
+          font-size: 10px;
+          font-weight: 700;
+          line-height: 1.2;
+          color: var(--rc, var(--mr-primary));
+          background: color-mix(in srgb, var(--rc, var(--mr-primary)) 16%, transparent);
+          border: 1px solid color-mix(in srgb, var(--rc, var(--mr-primary)) 32%, transparent);
+          max-width: calc(100% - 24px);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          z-index: 1
+        }
+
+        #tab-departments .user-mob-card__head {
+          display: flex;
+          align-items: flex-start;
+          gap: 12px;
+          padding-inline-start: 0;
+          padding-inline-end: 88px;
+          min-width: 0
         }
 
         #tab-departments .user-list-avatar {
           flex: 0 0 40px;
           width: 40px;
           height: 40px;
+          margin-top: 2px;
           border-radius: 50%;
           background: var(--mr-bg-2);
           color: var(--mr-text-3);
@@ -19515,49 +19541,64 @@
           font-size: 16px
         }
 
-        #tab-departments .user-list-content {
+        #tab-departments .user-mob-card__main {
           flex: 1 1 auto;
           min-width: 0;
           display: flex;
           flex-direction: column;
-          gap: 4px
+          gap: 8px
         }
 
-        #tab-departments .user-list-title {
-          display: flex;
-          flex-wrap: wrap;
-          align-items: center;
-          gap: 8px;
-          font-size: 14px;
+        #tab-departments .user-mob-card__name {
+          margin: 0;
+          font-size: 16px;
           font-weight: 700;
           color: var(--mr-text);
-          line-height: 1.3
+          line-height: 1.35;
+          letter-spacing: -0.02em;
+          overflow-wrap: anywhere
         }
 
-        #tab-departments .user-list-role {
-          display: inline-flex;
-          align-items: center;
-          padding: 2px 8px;
-          border-radius: 999px;
-          font-size: 10px;
-          font-weight: 700;
-          background: color-mix(in srgb, var(--rc, var(--mr-primary)) 14%, transparent);
-          color: var(--rc, var(--mr-primary))
-        }
-
-        #tab-departments .user-list-meta,
-        #tab-departments .user-list-sub {
-          font-size: 11px;
-          color: var(--mr-text-3);
-          line-height: 1.35
-        }
-
-        #tab-departments .user-list-end {
-          flex: 0 0 auto;
+        #tab-departments .user-mob-card__rows {
+          list-style: none;
+          margin: 0;
+          padding: 0;
           display: flex;
           flex-direction: column;
-          align-items: center;
-          gap: 6px
+          gap: 7px
+        }
+
+        #tab-departments .user-mob-card__row {
+          display: flex;
+          align-items: flex-start;
+          gap: 10px;
+          font-size: 12px;
+          font-weight: 500;
+          color: var(--mr-text-2);
+          line-height: 1.4
+        }
+
+        #tab-departments .user-mob-card__row i {
+          flex: 0 0 16px;
+          width: 16px;
+          margin-top: 2px;
+          text-align: center;
+          color: var(--mr-text-3);
+          font-size: 13px
+        }
+
+        #tab-departments .user-mob-card__row span {
+          min-width: 0;
+          overflow-wrap: anywhere
+        }
+
+        #tab-departments .user-mob-card__actions {
+          display: flex;
+          justify-content: flex-end;
+          gap: 6px;
+          margin-top: 12px;
+          padding-top: 10px;
+          border-top: 1px solid var(--mr-border)
         }
 
         #tab-departments .user-list-admin {
@@ -19570,7 +19611,7 @@
           height: 30px;
           border: 0;
           border-radius: 8px;
-          background: var(--mr-surface);
+          background: var(--mr-bg-2);
           color: var(--mr-text-2);
           display: inline-flex;
           align-items: center;
@@ -32796,30 +32837,38 @@
         const roleLabel = userTableRoleLabel(u.role);
         const roleColor = ROLE_COLORS[roleKey] || ROLE_COLORS[u.role] || 'var(--mr-primary)';
         const empNum = padEmpNum(u.employee_number);
-        const subParts = [];
-        if (u.phone) subParts.push(Sec.escapeHTML(u.phone));
-        if (u.email) subParts.push(Sec.escapeHTML(u.email));
-        if (branch) subParts.push(Sec.escapeHTML(branch.name));
-        const subLine = subParts.join(' · ');
+        const rows = [];
+        if (empNum) {
+          rows.push(`<li class="user-mob-card__row"><i class="fas fa-id-card" aria-hidden="true"></i><span>الرقم الوظيفي: ${Sec.escapeHTML(empNum)}</span></li>`);
+        }
+        if (u.phone) {
+          rows.push(`<li class="user-mob-card__row"><i class="fas fa-phone" aria-hidden="true"></i><span>${Sec.escapeHTML(u.phone)}</span></li>`);
+        }
+        if (u.email) {
+          rows.push(`<li class="user-mob-card__row"><i class="fas fa-envelope" aria-hidden="true"></i><span>${Sec.escapeHTML(u.email)}</span></li>`);
+        }
+        if (branch) {
+          rows.push(`<li class="user-mob-card__row"><i class="fas fa-store" aria-hidden="true"></i><span>${Sec.escapeHTML(branch.name)}</span></li>`);
+        }
+        const rowsHtml = rows.length ? `<ul class="user-mob-card__rows">${rows.join('')}</ul>` : '';
         const adminBtns = canManage
-          ? `<div class="user-list-admin">
+          ? `<div class="user-mob-card__actions user-list-admin">
           <button type="button" class="mr-viol-act" onclick="editUser('${u.id}')" aria-label="تعديل"><i class="fas fa-pen"></i></button>
           <button type="button" class="mr-viol-act" onclick="deleteUser('${u.id}')" aria-label="تعطيل"><i class="fas fa-trash"></i></button>
         </div>`
           : '';
         return `
-    <div class="user-list-item" role="listitem">
-      <span class="user-list-avatar" aria-hidden="true"><i class="fas fa-user"></i></span>
-      <div class="user-list-content">
-        <div class="user-list-title">
-          <span>${Sec.escapeHTML(u.name)}</span>
-          ${roleLabel ? `<span class="user-list-role" style="--rc:${roleColor}">${Sec.escapeHTML(roleLabel)}</span>` : ''}
+    <article class="user-mob-card" role="listitem">
+      ${roleLabel ? `<span class="user-mob-card__role user-mob-card__role--${roleKey}" style="--rc:${roleColor}">${Sec.escapeHTML(roleLabel)}</span>` : ''}
+      <div class="user-mob-card__head">
+        <span class="user-list-avatar" aria-hidden="true"><i class="fas fa-user"></i></span>
+        <div class="user-mob-card__main">
+          <h3 class="user-mob-card__name">${Sec.escapeHTML(u.name)}</h3>
+          ${rowsHtml}
         </div>
-        ${empNum ? `<div class="user-list-meta">الرقم الوظيفي: ${Sec.escapeHTML(empNum)}</div>` : ''}
-        ${subLine ? `<div class="user-list-sub">${subLine}</div>` : ''}
       </div>
-      <div class="user-list-end">${adminBtns}</div>
-    </div>`;
+      ${adminBtns}
+    </article>`;
       }
 
       function renderUsers() {
