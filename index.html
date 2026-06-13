@@ -33790,9 +33790,9 @@
           const ticketData = insertData[0];
           const officialNumber = ticketData.ticket_number;
 
-          // الخطوة 3: نقل الملفات في الخلفية إلى المجلد النهائي الرسمي (باسم رقم التذكرة)
-          // يتم هذا في الخلفية لضمان سرعة الاستجابة للمستخدم
-          moveAttachmentsToFinalFolder(ticketData.id, officialNumber, tempAttachments);
+          // الخطوة 3: نقل الملفات إلى المجلد النهائي قبل إظهار النجاح (تجنّب 404 على مسار temp_)
+          const movedAtts = await moveAttachmentsToFinalFolder(ticketData.id, officialNumber, tempAttachments);
+          if (movedAtts) ticketData.attachments = movedAtts;
 
           state.tempTicketId = null;
           resetNewTicket();
@@ -33948,6 +33948,7 @@
           const backend = await resolveR2Backend();
           let updatedAtts = [...attachments];
           let movedAny = false;
+          const failed = [];
 
           if (backend === 'none') {
             if (allowAttachmentDevSkip()) {
@@ -33966,14 +33967,14 @@
                 if (idx !== -1) state.violations[idx].attachments = updatedAtts;
               }
               if (isMirsadDebugLog()) console.info('[DEV] تحديث مسارات المرفقات محلياً (IndexedDB).');
-              return;
+              return movedAny ? updatedAtts : null;
             }
             throw new Error('لم يُجرَ إعداد تخزين المرفقات لنقل الملفات (Edge Function r2-storage أو /config).');
           }
 
           for (let i = 0; i < updatedAtts.length; i++) {
             const oldKey = updatedAtts[i].p;
-            if (oldKey.startsWith('temp_')) {
+            if (oldKey && oldKey.startsWith('temp_')) {
               const newKey = `${ticketNumber}/${oldKey.split('/').pop()}`;
 
               try {
@@ -34005,6 +34006,7 @@
                 movedAny = true;
                 if (isMirsadDebugLog()) console.log(`[R2-Move] Moved: ${oldKey} -> ${newKey}`);
               } catch (e) {
+                failed.push(oldKey);
                 if (isMirsadDebugLog()) console.error(`[R2-Move] Failed to move ${oldKey}:`, e);
               }
             }
@@ -34018,8 +34020,14 @@
               state.violations[idx].attachments = updatedAtts;
             }
           }
+
+          if (failed.length) {
+            throw new Error('فشل نقل ' + failed.length + ' مرفق(ات) إلى المجلد النهائي. أعد رفع المرفق أو تواصل مع الدعم.');
+          }
+          return movedAny ? updatedAtts : null;
         } catch (err) {
           if (isMirsadDebugLog()) console.error('[R2-Move] Critical Error:', err);
+          throw err;
         }
       }
 
@@ -34187,7 +34195,7 @@
         keys.push(id);
         const base = id.includes('/') ? id.split('/').pop() : id;
         if (base && base !== id) keys.push(base);
-        const uniqMatch = base && base.match(/__([a-f0-9]{8,16})/i);
+        const uniqMatch = base && base.match(/^([a-f0-9]{8,16})_/i);
         const uniq = uniqMatch ? uniqMatch[1] : null;
         const collectPath = (p) => {
           if (!p || typeof p !== 'string') return;
@@ -34201,21 +34209,67 @@
             collectPath(a.p || a.path);
           }
         };
+        const ticketNums = new Set();
+        const addTicketFolderCandidates = (tn) => {
+          if (!tn || !base) return;
+          const raw = String(tn).trim();
+          if (!raw) return;
+          ticketNums.add(raw);
+          collectPath(`${raw}/${base}`);
+          const noPrefix = raw.replace(/^TKT[-_]?/i, '');
+          if (noPrefix && noPrefix !== raw) collectPath(`${noPrefix}/${base}`);
+        };
         for (const v of state.violations || []) {
           let atts = v.attachments;
           if (typeof atts === 'string') {
             try { atts = JSON.parse(atts); } catch (_) { atts = null; }
           }
           scanAtts(atts);
+          const hasThis = Array.isArray(atts) && atts.some(a => (a?.p || a?.path) === id);
+          if (hasThis || (id.startsWith('temp_') && v.ticket_number)) {
+            addTicketFolderCandidates(v.ticket_number);
+          }
+        }
+        if (id.startsWith('temp_') && state.editingTicket?.ticket_number) {
+          addTicketFolderCandidates(state.editingTicket.ticket_number);
         }
         scanAtts(state._attList);
         if (uniq) {
-          const filtered = keys.filter(k => k.includes(uniq));
-          keys.length = 0;
-          keys.push(id, ...filtered);
-          if (base && !keys.includes(base)) keys.push(base);
+          for (const v of state.violations || []) {
+            let atts = v.attachments;
+            if (typeof atts === 'string') {
+              try { atts = JSON.parse(atts); } catch (_) { atts = null; }
+            }
+            if (!Array.isArray(atts)) continue;
+            for (const a of atts) {
+              const p = a?.p || a?.path;
+              if (p && String(p).includes(uniq)) collectPath(p);
+            }
+            if (v.ticket_number && base.includes(uniq)) addTicketFolderCandidates(v.ticket_number);
+          }
         }
         return [...new Set(keys)];
+      }
+
+      async function r2SignedUrlExists(url) {
+        const u = String(url || '').trim();
+        if (!u || !/^https?:\/\//i.test(u)) return false;
+        try {
+          const head = await fetch(u, { method: 'HEAD', mode: 'cors', credentials: 'omit' });
+          if (head.status === 404) return false;
+          if (head.ok) return true;
+        } catch (_) {}
+        try {
+          const probe = await fetch(u, {
+            method: 'GET',
+            mode: 'cors',
+            credentials: 'omit',
+            headers: { Range: 'bytes=0-0' }
+          });
+          return probe.status !== 404;
+        } catch (_) {
+          return false;
+        }
       }
 
       /** تحويل رابط موقّع إلى blob URL عند فشل التشغيل المباشر (CORS / نوع المحتوى) */
@@ -34302,10 +34356,12 @@
             for (const key of candidates) {
               try {
                 const { url } = await callR2StorageFn('signGet', { key, ...(ct ? { contentType: ct } : {}) });
-                if (url) {
+                if (!url) continue;
+                if (await r2SignedUrlExists(url)) {
                   writeCfCache(fileId, url);
                   return url;
                 }
+                lastSignErr = new Error('الملف غير موجود في R2 للمسار: ' + key);
               } catch (e) {
                 lastSignErr = e;
               }
