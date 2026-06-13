@@ -18889,7 +18889,8 @@
         overflow: hidden
       }
 
-      #tab-violations .panel-header {
+      #tab-violations .panel-header,
+      #tab-violations .wf-panel-banner {
         padding: 12px 14px 10px !important;
         margin: 0 !important;
         background: var(--mr-bg) !important;
@@ -18900,6 +18901,38 @@
         align-items: stretch !important;
         gap: 10px !important;
         flex-shrink: 0
+      }
+
+      #tab-violations .wf-desk-tickets-host {
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden
+      }
+
+      #tab-violations .viol-types-meta-row {
+        flex-shrink: 0;
+        padding: 8px 14px 6px;
+        background: var(--mr-bg)
+      }
+
+      #tab-violations .viol-types-meta-row .wf-count {
+        margin: 0;
+        font-size: 12px
+      }
+
+      #tab-violations .mr-users-list-wrap:has(.viol-grid--mob-list) {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        background: var(--mr-bg) !important
       }
 
       #tab-violations .panel-header .btn {
@@ -32469,6 +32502,45 @@
         'عالي': '#FF0000'
       };
 
+      function renderViolTypeMobItem(v, canManage) {
+        let sev = v.severity || 'منخفض';
+        if (sev === 'حرج') sev = 'عالي';
+        const points = v.weight ?? v.points ?? 0;
+        const desc = (v.description || v.category || '').trim() || '—';
+        const sevClass = {
+          'منخفض': 'mr-sev mr-sev-low',
+          'متوسط': 'mr-sev mr-sev-mid',
+          'عالي': 'mr-sev mr-sev-high'
+        };
+        const thumbClass = {
+          'منخفض': 'mr-viol-thumb-low',
+          'متوسط': 'mr-viol-thumb-mid',
+          'عالي': 'mr-viol-thumb-high'
+        };
+        const adminBtns = canManage
+          ? `<div class="viol-type-list-admin">
+          <button type="button" class="mr-viol-act" onclick="event.stopPropagation(); editViolType('${v.id}')" aria-label="تعديل"><i class="fas fa-pen"></i></button>
+          <button type="button" class="mr-viol-act" onclick="event.stopPropagation(); deleteViolType('${v.id}')" aria-label="حذف"><i class="fas fa-trash"></i></button>
+        </div>`
+          : '';
+        return `
+    <div class="viol-type-list-item" role="button" tabindex="0" onclick="openViolDetailSheet('${v.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openViolDetailSheet('${v.id}')}">
+      <div class="viol-type-list-ico ${thumbClass[sev] || 'mr-viol-thumb-low'}"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i></div>
+      <div class="viol-type-list-content">
+        <div class="viol-type-list-title">${Sec.escapeHTML(v.name)}</div>
+        <div class="viol-type-list-desc">${Sec.escapeHTML(desc)}</div>
+        <div class="viol-type-list-meta">
+          <span class="${sevClass[sev] || 'mr-sev mr-sev-low'}">${Sec.escapeHTML(sev)}</span>
+          <span class="mr-points"><i class="fas fa-bolt" aria-hidden="true"></i><span data-numeric>${points}</span> نقطة</span>
+        </div>
+      </div>
+      <div class="viol-type-list-end">
+        ${adminBtns}
+        <span class="viol-type-list-chev" aria-hidden="true"><i class="fas fa-chevron-left"></i></span>
+      </div>
+    </div>`;
+      }
+
       function renderViolTypeCard(v, canManage) {
         const sev = violTypeSeverity(v);
         const sevColor = VIOL_SEV_COLORS[sev] || '#007aff';
@@ -32510,28 +32582,39 @@
         if (!grid) return;
         const countEl = document.getElementById('viol-types-count');
         const canManage = canManageViolationTypes();
-        grid.className = 'mr-users-list';
+        const violMob = isMobileViewport();
+        grid.className = violMob ? 'viol-grid viol-grid--mob-list' : 'mr-users-list';
         if (isAppDataPending()) {
           if (countEl) countEl.textContent = '…';
-          grid.innerHTML = '<div class="mr-users-empty empty mr-data-loading"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i><p>جاري تحميل أنواع المخالفات…</p></div>';
+          grid.innerHTML = violMob
+            ? '<div class="empty viol-types-empty"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i><p>جاري تحميل أنواع المخالفات…</p></div>'
+            : '<div class="mr-users-empty empty mr-data-loading"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i><p>جاري تحميل أنواع المخالفات…</p></div>';
           return;
         }
         if (!state.violationTypes.length) {
-          grid.innerHTML = '<div class="mr-users-empty empty"><i class="fas fa-spinner fa-spin"></i><p>جاري تحميل أنواع المخالفات…</p></div>';
+          grid.innerHTML = violMob
+            ? '<div class="empty viol-types-empty"><i class="fas fa-spinner fa-spin"></i><p>جاري تحميل أنواع المخالفات…</p></div>'
+            : '<div class="mr-users-empty empty"><i class="fas fa-spinner fa-spin"></i><p>جاري تحميل أنواع المخالفات…</p></div>';
           if (countEl) countEl.textContent = '0';
           const ok = await ensureViolationTypesLoaded();
           if (!ok) {
-            grid.innerHTML = '<div class="mr-users-empty empty"><i class="fas fa-triangle-exclamation"></i><p>لا توجد أنواع مخالفات</p></div>';
+            grid.innerHTML = violMob
+              ? '<div class="empty viol-types-empty"><i class="fas fa-triangle-exclamation"></i><p>لا توجد أنواع مخالفات</p></div>'
+              : '<div class="mr-users-empty empty"><i class="fas fa-triangle-exclamation"></i><p>لا توجد أنواع مخالفات</p></div>';
             return;
           }
         }
         if (!state.violationTypes.length) {
           if (countEl) countEl.textContent = '0';
-          grid.innerHTML = '<div class="mr-users-empty empty"><i class="fas fa-triangle-exclamation"></i><p>لا توجد أنواع مخالفات</p></div>';
+          grid.innerHTML = violMob
+            ? '<div class="empty viol-types-empty"><i class="fas fa-triangle-exclamation"></i><p>لا توجد أنواع مخالفات</p></div>'
+            : '<div class="mr-users-empty empty"><i class="fas fa-triangle-exclamation"></i><p>لا توجد أنواع مخالفات</p></div>';
           return;
         }
         if (countEl) countEl.textContent = String(state.violationTypes.length);
-        grid.innerHTML = state.violationTypes.map(v => renderViolTypeCard(v, canManage)).join('');
+        grid.innerHTML = violMob
+          ? state.violationTypes.map(v => renderViolTypeMobItem(v, canManage)).join('')
+          : state.violationTypes.map(v => renderViolTypeCard(v, canManage)).join('');
       }
 
       function openViolDetailSheet(id) {
