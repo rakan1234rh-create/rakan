@@ -19350,7 +19350,13 @@
           flex-wrap: nowrap !important;
           align-items: center !important;
           gap: 6px !important;
-          margin-bottom: 0 !important
+          margin-bottom: 0 !important;
+          width: 100% !important
+        }
+
+        #tab-departments .users-filters-toolbar.toolbar > * {
+          width: auto !important;
+          flex: 0 0 auto !important
         }
 
         #tab-departments .users-filters-toolbar .wf-search,
@@ -19387,18 +19393,19 @@
         }
 
         #tab-departments .users-filters-toolbar .user-role-dd .wf-status-trigger {
-          width: auto;
+          width: auto !important;
           min-width: 0;
           max-width: 96px;
           height: 38px;
           gap: 4px;
-          padding: 0 8px 0 6px
+          padding: 0 8px 0 6px;
+          justify-content: flex-start
         }
 
         #tab-departments .users-filters-toolbar .user-role-dd .wf-status-trigger__ico {
-          width: 22px;
-          height: 22px;
-          font-size: 9px
+          width: 24px;
+          height: 24px;
+          font-size: 10px
         }
 
         #tab-departments .users-filters-toolbar .user-role-dd .wf-status-trigger__label {
@@ -19413,7 +19420,8 @@
         }
 
         #tab-departments .users-filters-toolbar .users-io-mob-wrap {
-          flex: 0 0 auto;
+          flex: 0 0 auto !important;
+          width: auto !important;
           display: block;
           position: relative
         }
