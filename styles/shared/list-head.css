@@ -1,0 +1,47 @@
+/* شريط عناوين القوائم — مشترك (مستخدمون + تقارير) */
+thead.mr-users-thead {
+  background: var(--mr-primary-softer)
+}
+
+thead.mr-users-thead th {
+  text-align: right;
+  vertical-align: middle;
+  padding: 10px 14px;
+  font-family: var(--font);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: -0.02em;
+  line-height: 1.35;
+  color: var(--mr-text);
+  border: none;
+  border-bottom: 1px solid var(--mr-border);
+  background: var(--mr-primary-softer);
+  white-space: nowrap;
+  box-sizing: border-box
+}
+
+thead.mr-users-thead th + th {
+  border-inline-start: none
+}
+
+thead.mr-users-thead th:first-child {
+  border-start-start-radius: 11px
+}
+
+thead.mr-users-thead th:last-child {
+  border-start-end-radius: 0
+}
+
+thead.mr-users-thead .mr-users-head-label {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  text-align: inherit
+}
+
+[data-theme="dark"] thead.mr-users-thead th {
+  color: #f1f5f9;
+  -webkit-text-fill-color: #f1f5f9;
+  border-bottom-color: var(--mr-border-2)
+}

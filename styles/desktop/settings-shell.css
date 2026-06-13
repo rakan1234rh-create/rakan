@@ -1,0 +1,240 @@
+/* صلاحيات المنصة — سطح المكتب مثل المستخدمين */
+html.mr-desktop-ui .main:has(#tab-settings.active),
+html.mr-desktop-ui #appWrap .main:has(#tab-settings.active) {
+  padding: 0 !important;
+  background: var(--mr-bg) !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important
+}
+
+html.mr-desktop-ui .main:has(#tab-settings.active) .content,
+html.mr-desktop-ui .content:has(#tab-settings.active) {
+  padding: 0 !important;
+  max-width: 100% !important;
+  background: var(--mr-bg) !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 0% !important;
+  min-height: 0 !important
+}
+
+html.mr-desktop-ui #tab-settings.tab-content.active {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  font-size: inherit !important;
+  margin-inline: 0 !important;
+  max-width: 100% !important;
+  width: 100% !important;
+  background: var(--mr-bg) !important
+}
+
+html.mr-desktop-ui #tab-settings .wf-panel {
+  padding-block: clamp(10px, 1.4vw, 14px) 0 !important;
+  padding-left: 0 !important;
+  padding-right: clamp(12px, 1.6vw, 18px) !important;
+  margin: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: var(--mr-bg) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  width: 100% !important;
+  max-width: 100% !important
+}
+
+html.mr-desktop-ui #tab-settings .wf-panel-banner {
+  padding-block: 0 8px !important;
+  padding-left: clamp(12px, 1.6vw, 18px) !important;
+  padding-right: 0 !important;
+  margin: 0 !important;
+  background: var(--mr-bg) !important;
+  border: none !important;
+  flex-shrink: 0 !important;
+  position: relative !important;
+  overflow: visible !important
+}
+
+html.mr-desktop-ui #tab-settings .wf-panel-intro {
+  margin-bottom: 8px !important
+}
+
+html.mr-desktop-ui #tab-settings .wf-panel-title {
+  font-size: 22px !important;
+  font-weight: 800 !important;
+  line-height: 1.25 !important
+}
+
+html.mr-desktop-ui #tab-settings .wf-panel-sub {
+  display: block !important
+}
+
+html.mr-desktop-ui #tab-settings .mr-settings-note {
+  margin: 0 0 10px !important;
+  font-size: 12px !important;
+  line-height: 1.45 !important
+}
+
+html.mr-desktop-ui #tab-settings .mr-settings-toolbar {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 10px 12px !important;
+  width: 100% !important;
+  margin: 0 0 8px !important
+}
+
+html.mr-desktop-ui #tab-settings .mr-settings-seg {
+  margin-bottom: 0 !important
+}
+
+html.mr-desktop-ui #tab-settings .mr-user-perm-bar {
+  margin-bottom: 0 !important;
+  flex: 1 1 260px !important;
+  min-width: 200px !important
+}
+
+html.mr-desktop-ui #tab-settings .mr-user-perm-bar[hidden] {
+  display: none !important;
+  flex: 0 0 auto !important;
+  min-width: 0 !important;
+  width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  visibility: hidden !important;
+  pointer-events: none !important
+}
+
+html.mr-desktop-ui #tab-settings .settings-user-dd .wf-status-trigger {
+  min-height: 38px !important;
+  height: 38px !important;
+  border-radius: 999px !important;
+  background: var(--mr-surface) !important;
+  border: 1px solid var(--mr-border) !important;
+  box-shadow: 0 1px 2px rgba(15, 18, 36, 0.04) !important
+}
+
+html.mr-desktop-ui:not([data-theme="dark"]) #tab-settings .settings-user-dd .wf-status-trigger:hover {
+  background: var(--mr-primary) !important;
+  border-color: var(--mr-primary) !important;
+  color: #fff !important;
+  box-shadow: none !important
+}
+
+html.mr-desktop-ui:not([data-theme="dark"]) #tab-settings .settings-user-dd .wf-status-trigger:hover .wf-status-trigger__label,
+html.mr-desktop-ui:not([data-theme="dark"]) #tab-settings .settings-user-dd .wf-status-trigger:hover .wf-status-trigger__chev {
+  color: #fff !important
+}
+
+html.mr-desktop-ui:not([data-theme="dark"]) #tab-settings .settings-user-dd .wf-status-trigger:hover .wf-status-trigger__ico {
+  background: rgba(255, 255, 255, 0.16) !important;
+  color: #fff !important
+}
+
+html.mr-desktop-ui #tab-settings #settingsDeskHost.wf-desk-tickets-host {
+  flex: 1 1 0% !important;
+  background: transparent !important;
+  min-height: 0 !important;
+  border: none !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  margin-top: 0 !important;
+  width: 100% !important;
+  box-sizing: border-box !important
+}
+
+html.mr-desktop-ui #tab-settings .mr-users-list-wrap.wf-table-wrap {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  padding: 0 !important;
+  border: 1px solid var(--mr-border) !important;
+  border-start-start-radius: 12px !important;
+  border-start-end-radius: 0 !important;
+  border-end-start-radius: 12px !important;
+  border-end-end-radius: 0 !important;
+  background: var(--mr-bg) !important;
+  box-shadow: none !important;
+  box-sizing: border-box !important
+}
+
+html.mr-desktop-ui #tab-settings .mr-settings-scroll {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  width: 100% !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  scrollbar-width: thin !important;
+  scrollbar-color: color-mix(in srgb, var(--mr-text-3) 42%, transparent) color-mix(in srgb, var(--mr-border) 72%, transparent) !important
+}
+
+html.mr-desktop-ui #tab-settings .mr-settings-scroll .mr-perms-wrap {
+  max-height: none !important;
+  height: auto !important;
+  min-height: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: var(--mr-surface) !important;
+  overflow-x: auto !important;
+  overflow-y: visible !important
+}
+
+html.mr-desktop-ui #tab-settings #settingsPermRolesPanel,
+html.mr-desktop-ui #tab-settings #settingsPermUserPanel {
+  min-height: 0 !important
+}
+
+html.mr-desktop-ui:not([data-theme="dark"]) #tab-settings .mr-users-list-wrap.wf-table-wrap {
+  border-color: var(--mr-border-2) !important
+}
+
+html.mr-desktop-ui #tab-settings .mr-settings-actions {
+  flex-shrink: 0 !important;
+  margin: 0 !important;
+  padding: 10px 0 clamp(12px, 1.6vw, 18px) !important;
+  padding-inline-start: clamp(12px, 1.6vw, 18px) !important;
+  gap: 8px !important;
+  border-top: 1px solid var(--mr-border) !important;
+  background: var(--mr-bg) !important
+}
+
+html.mr-desktop-ui #tab-settings .mr-settings-actions .btn {
+  min-height: 38px !important;
+  height: 38px !important;
+  border-radius: 999px !important;
+  padding: 0 14px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important
+}
+
+html.mr-desktop-ui #tab-settings .mr-settings-actions .btn-primary {
+  background: var(--mr-primary) !important;
+  border-color: var(--mr-primary) !important;
+  color: #fff !important
+}
+
+html.mr-desktop-ui #tab-settings .mr-settings-scroll > .mr-settings-note:only-child {
+  padding: clamp(16px, 2vw, 24px) !important
+}

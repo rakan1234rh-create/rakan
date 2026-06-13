@@ -1,0 +1,17 @@
+/* إخفاء التبويبات غير النشطة — مشترك بين الجوال وسطح المكتب */
+.tab-content:not(.active),
+.tab-content[hidden] {
+  display: none !important;
+}
+
+html.mr-desktop-ui #tab-workflow.tab-content:not(.active),
+html.mr-desktop-ui #tab-reports.tab-content:not(.active),
+html.mr-desktop-ui #tab-departments.tab-content:not(.active),
+html.mr-desktop-ui #tab-violations.tab-content:not(.active),
+html.mr-desktop-ui #tab-locations.tab-content:not(.active),
+html.mr-desktop-ui #tab-settings.tab-content:not(.active),
+html.mr-desktop-ui #tab-compliance.tab-content:not(.active),
+html.mr-desktop-ui #tab-dashboard.tab-content:not(.active) {
+  display: none !important;
+}
+
