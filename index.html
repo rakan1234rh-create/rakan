@@ -19401,22 +19401,49 @@
         #tab-departments .users-filters-toolbar .user-role-dd .wf-status-trigger {
           width: auto !important;
           min-width: 0;
-          max-width: 38px;
+          max-width: 108px;
           height: 38px;
-          gap: 0;
-          padding: 0;
-          justify-content: center
+          gap: 4px;
+          padding: 0 8px 0 6px;
+          justify-content: flex-start
         }
 
         #tab-departments .users-filters-toolbar .user-role-dd .wf-status-trigger__ico {
-          width: 24px;
-          height: 24px;
-          font-size: 10px
+          width: 22px;
+          height: 22px;
+          font-size: 9px;
+          flex-shrink: 0
         }
 
-        #tab-departments .users-filters-toolbar .user-role-dd .wf-status-trigger__label,
+        #tab-departments .users-filters-toolbar .user-role-dd .wf-status-trigger__label {
+          display: block;
+          font-size: 10px;
+          flex: 1 1 auto;
+          min-width: 0;
+          max-width: 4.5rem;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap
+        }
+
         #tab-departments .users-filters-toolbar .user-role-dd .wf-status-trigger__chev {
           display: none
+        }
+
+        #user-role-dd-menu.open .wf-status-menu__scroll {
+          width: 100% !important;
+          min-width: 0 !important;
+          max-width: none !important;
+          box-sizing: border-box
+        }
+
+        #user-role-dd-menu.open .wf-status-opt {
+          white-space: normal;
+          text-align: center;
+          font-size: 10px;
+          line-height: 1.25;
+          padding: 7px 4px;
+          justify-content: center
         }
 
         #tab-departments .users-io-mob-wrap {
@@ -35558,7 +35585,7 @@
         hr: 'الموارد البشرية'
       };
 
-      /** قائمة الأدوار — محاذاة يمين القائمة مع يمين الزر (جوال: بجانب البحث) */
+      /** قائمة الأدوار — محاذاة القائمة تحت الزر بنفس العرض (جوال) */
       function userRoleDdPositionMenu() {
         const trigger = document.getElementById('user-role-dd-trigger');
         const menu = document.getElementById('user-role-dd-menu');
@@ -35570,9 +35597,28 @@
         const vh = window.innerHeight;
         const isMob = window.matchMedia('(max-width: 992px)').matches;
 
+        if (isMob) {
+          const tw = Math.round(r.width);
+          menu.style.width = `${tw}px`;
+          menu.style.minWidth = `${tw}px`;
+          menu.style.maxWidth = `${tw}px`;
+          menu.style.left = `${Math.round(r.left)}px`;
+          menu.style.right = 'auto';
+          menu.style.top = `${Math.round(r.bottom + gap)}px`;
+          menu.style.bottom = 'auto';
+          menu.style.maxHeight = `${Math.max(120, vh - Math.round(r.bottom + gap) - pad)}px`;
+
+          const menuH = menu.offsetHeight;
+          if (r.bottom + gap + menuH > vh - pad) {
+            const above = r.top - gap - menuH;
+            if (above >= pad) menu.style.top = `${Math.round(above)}px`;
+          }
+          return;
+        }
+
         menu.style.width = 'max-content';
-        menu.style.minWidth = isMob ? `${Math.ceil(r.width)}px` : '';
-        menu.style.maxWidth = `min(${isMob ? 188 : 200}px, ${vw - pad * 2}px)`;
+        menu.style.minWidth = '';
+        menu.style.maxWidth = `min(200px, ${vw - pad * 2}px)`;
         const w = menu.offsetWidth;
         menu.style.width = `${w}px`;
 
@@ -35619,7 +35665,10 @@
 
       function userRoleDdSyncUi(val) {
         const label = document.getElementById('user-role-dd-label');
-        if (label) label.textContent = USER_ROLE_FILTER_LABELS[val] || val || 'كل الأدوار';
+        const text = USER_ROLE_FILTER_LABELS[val] || val || 'كل الأدوار';
+        if (label) label.textContent = text;
+        const trigger = document.getElementById('user-role-dd-trigger');
+        if (trigger) trigger.setAttribute('title', text);
         document.querySelectorAll('#user-role-dd-menu .wf-status-opt').forEach(el => {
           el.classList.toggle('is-active', el.dataset.val === val);
         });
@@ -35662,6 +35711,7 @@
         const btn = document.getElementById('usersIoMoreBtn');
         if (menu) {
           menu.hidden = true;
+          delete menu.dataset.openStamp;
           menu.style.top = '';
           menu.style.left = '';
           menu.style.right = '';
