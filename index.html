@@ -75,7 +75,7 @@
   <link rel="stylesheet" href="styles/shared/tabs.css" id="platform-tabs-link" media="screen and (min-width: 993px)">
   <!-- صفحة المستخدمين — CSS مفصول -->
   <link rel="stylesheet" href="styles/shared/list-head.css" id="platform-list-head-link" media="screen and (min-width: 993px)">
-  <link rel="stylesheet" href="styles/shared/users.css" id="platform-users-shared-link" media="screen and (min-width: 993px)">
+  <link rel="stylesheet" href="styles/shared/users.css" id="platform-users-shared-link">
   <link rel="stylesheet" href="styles/desktop/users.css" id="platform-users-desktop-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/users-shell.css" id="platform-users-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/violations-shell.css" id="platform-violations-shell-link" media="screen and (min-width: 993px)">
@@ -15808,7 +15808,9 @@
       .filter-panel-body,
       .br-employees-list,
       #tab-violations .viol-grid--mob-list,
-      #tab-violations #violGrid.viol-grid--mob-list {
+      #tab-violations #violGrid.viol-grid--mob-list,
+      #tab-departments .users-grid--mob-list,
+      #tab-departments #usersList.users-grid--mob-list {
         -webkit-overflow-scrolling: touch
       }
 
@@ -19247,6 +19249,414 @@
         padding: 40px 16px;
         background: var(--mr-bg);
         grid-column: unset !important
+      }
+
+      /* ── المستخدمون — جوال (مثل أنواع المخالفات) ── */
+      #tab-departments .users-io-mob-wrap,
+      #tab-departments .users-add-btn {
+        display: none
+      }
+
+      #tab-departments .users-meta-row {
+        display: none
+      }
+
+      @media (min-width: 993px) {
+        #tab-departments .users-meta-row {
+          display: block;
+          padding: 0 clamp(14px, 1.6vw, 18px) 12px;
+          margin: 0
+        }
+
+        #tab-departments .users-meta-row .wf-count {
+          margin: 0
+        }
+      }
+
+      @media (max-width: 992px) {
+        .content:has(#tab-departments.active) {
+          padding: 0 !important;
+          background: var(--mr-bg) !important;
+          overflow: hidden !important;
+          flex: 1 1 auto;
+          min-height: 0;
+          display: flex;
+          flex-direction: column
+        }
+
+        #appWrap .main:has(#tab-departments.active) {
+          overflow: hidden !important;
+          display: flex;
+          flex-direction: column;
+          flex: 1 1 auto;
+          min-height: 0
+        }
+
+        #tab-departments.tab-content.active {
+          display: flex !important;
+          flex-direction: column;
+          flex: 1 1 auto;
+          min-height: 0;
+          overflow: hidden
+        }
+
+        #tab-departments .panel.wf-panel {
+          padding: 0 !important;
+          margin: 0 !important;
+          border: none !important;
+          border-radius: 0 !important;
+          box-shadow: none !important;
+          background: var(--mr-bg) !important;
+          flex: 1 1 auto;
+          min-height: 0;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden
+        }
+
+        #tab-departments .users-panel-banner {
+          padding: 26px 14px 4px !important;
+          margin: 0 !important;
+          background: var(--mr-bg) !important;
+          border: none !important;
+          border-radius: 0 !important;
+          flex-shrink: 0
+        }
+
+        #tab-departments .users-panel-banner .wf-panel-sub {
+          margin-top: 10px !important
+        }
+
+        #tab-departments #usersDeskHost {
+          flex: 1 1 auto;
+          min-height: 0;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden
+        }
+
+        #tab-departments .users-controls {
+          flex-shrink: 0;
+          background: var(--mr-bg)
+        }
+
+        #tab-departments .users-filters-row {
+          padding: 10px 14px 0;
+          border-bottom: none
+        }
+
+        #tab-departments .users-filters-toolbar {
+          flex-direction: column !important;
+          align-items: stretch !important;
+          gap: 10px !important;
+          margin-bottom: 0 !important
+        }
+
+        #tab-departments .users-filters-toolbar .wf-search {
+          flex: 1 1 auto !important;
+          min-width: 0 !important;
+          width: 100% !important
+        }
+
+        #tab-departments .users-filters-toolbar .user-role-dd {
+          width: 100% !important;
+          max-width: none !important
+        }
+
+        #tab-departments .users-io-group--desk {
+          display: none !important
+        }
+
+        #tab-departments .users-meta-row {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          justify-content: space-between;
+          gap: 10px;
+          padding: 18px 14px 12px;
+          margin: 0;
+          border-bottom: 1px solid var(--mr-border);
+          background: var(--mr-bg)
+        }
+
+        #tab-departments .users-meta-row .wf-count {
+          margin: 0;
+          font-size: 12px;
+          line-height: 1.35
+        }
+
+        #tab-departments .users-meta-actions {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-inline-start: auto
+        }
+
+        #tab-departments .users-io-mob-wrap {
+          display: block;
+          position: relative
+        }
+
+        #tab-departments .users-io-more-btn {
+          min-height: 38px;
+          padding-inline: 12px
+        }
+
+        #tab-departments .users-io-menu {
+          position: absolute;
+          top: calc(100% + 6px);
+          left: 0;
+          z-index: 600;
+          min-width: 190px;
+          padding: 6px;
+          background: var(--mr-surface);
+          border: 1px solid var(--mr-border);
+          border-radius: 12px;
+          box-shadow: var(--mr-shadow-card)
+        }
+
+        #tab-departments .users-io-menu:not([hidden]) {
+          display: flex;
+          flex-direction: column;
+          gap: 2px
+        }
+
+        #tab-departments .users-io-menu-item {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          width: 100%;
+          padding: 10px 12px;
+          border: 0;
+          border-radius: 8px;
+          background: transparent;
+          color: var(--mr-text);
+          font-family: var(--font);
+          font-size: 13px;
+          font-weight: 600;
+          cursor: pointer;
+          text-align: right
+        }
+
+        #tab-departments .users-io-menu-item:active {
+          background: var(--mr-primary-softer)
+        }
+
+        #tab-departments .users-add-btn {
+          display: inline-flex;
+          min-height: 38px;
+          white-space: nowrap
+        }
+
+        #tab-departments .mr-users-list-wrap:has(.users-grid--mob-list) {
+          flex: 1 1 auto;
+          min-height: 0;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+          border: none !important;
+          box-shadow: none !important;
+          padding: 0 !important;
+          margin: 0 !important;
+          background: var(--mr-bg) !important
+        }
+
+        #tab-departments .users-grid--mob-list {
+          display: flex !important;
+          flex-direction: column !important;
+          gap: 0 !important;
+          padding: 0 !important;
+          padding-bottom: calc(var(--mr-mob-bottom-nav-h, 56px) + 12px) !important;
+          margin: 0 !important;
+          width: 100% !important;
+          max-width: none !important;
+          flex: 1 1 auto;
+          min-height: 0;
+          height: 0;
+          overflow-y: auto !important;
+          overflow-x: hidden;
+          -webkit-overflow-scrolling: touch;
+          touch-action: pan-y;
+          overscroll-behavior-y: contain
+        }
+
+        #tab-departments .user-list-item {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          width: 100%;
+          padding: 12px 14px;
+          border: none;
+          border-bottom: 1px solid var(--mr-border);
+          border-radius: 0;
+          background: var(--mr-bg);
+          box-sizing: border-box;
+          text-align: right
+        }
+
+        #tab-departments .users-grid--mob-list .user-list-item:first-child {
+          border-top: 1px solid var(--mr-border)
+        }
+
+        #tab-departments .user-list-item:active {
+          background: var(--mr-primary-softer)
+        }
+
+        #tab-departments .user-list-avatar {
+          flex: 0 0 40px;
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          background: var(--mr-bg-2);
+          color: var(--mr-text-3);
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 16px
+        }
+
+        #tab-departments .user-list-content {
+          flex: 1 1 auto;
+          min-width: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 4px
+        }
+
+        #tab-departments .user-list-title {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          gap: 8px;
+          font-size: 14px;
+          font-weight: 700;
+          color: var(--mr-text);
+          line-height: 1.3
+        }
+
+        #tab-departments .user-list-role {
+          display: inline-flex;
+          align-items: center;
+          padding: 2px 8px;
+          border-radius: 999px;
+          font-size: 10px;
+          font-weight: 700;
+          background: color-mix(in srgb, var(--rc, var(--mr-primary)) 14%, transparent);
+          color: var(--rc, var(--mr-primary))
+        }
+
+        #tab-departments .user-list-meta,
+        #tab-departments .user-list-sub {
+          font-size: 11px;
+          color: var(--mr-text-3);
+          line-height: 1.35
+        }
+
+        #tab-departments .user-list-end {
+          flex: 0 0 auto;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 6px
+        }
+
+        #tab-departments .user-list-admin {
+          display: flex;
+          gap: 4px
+        }
+
+        #tab-departments .user-list-admin .mr-viol-act {
+          width: 30px;
+          height: 30px;
+          border: 0;
+          border-radius: 8px;
+          background: var(--mr-surface);
+          color: var(--mr-text-2);
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer
+        }
+
+        #tab-departments .users-empty-mob {
+          padding: 40px 16px;
+          background: var(--mr-bg);
+          text-align: center
+        }
+      }
+
+      html.mr-mobile-ui.mr-users-tab-active body.mirsad-app-active #appWrap .main {
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        padding: 0 !important
+      }
+
+      html.mr-mobile-ui.mr-users-tab-active body.mirsad-app-active #appWrap .main .content {
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        height: 0 !important;
+        padding: 0 !important;
+        max-width: none !important;
+        margin: 0 !important
+      }
+
+      html.mr-mobile-ui.mr-users-tab-active #tab-departments.tab-content.active {
+        display: flex !important;
+        flex-direction: column !important;
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        height: 0 !important;
+        overflow: hidden !important
+      }
+
+      html.mr-mobile-ui.mr-users-tab-active #tab-departments .panel.wf-panel {
+        padding: 0 !important;
+        margin: 0 !important;
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        height: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        overflow: hidden !important
+      }
+
+      html.mr-mobile-ui.mr-users-tab-active #tab-departments #usersDeskHost {
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        height: 0 !important;
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important
+      }
+
+      html.mr-mobile-ui.mr-users-tab-active #tab-departments #usersDeskHost > .mr-users-list-wrap {
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        height: 0 !important;
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
+        border: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        background: var(--mr-bg) !important
+      }
+
+      html.mr-mobile-ui.mr-users-tab-active #tab-departments #usersList.users-grid--mob-list {
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        height: 0 !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        -webkit-overflow-scrolling: touch !important;
+        touch-action: pan-y !important;
+        overscroll-behavior-y: contain
       }
 
       /* تعريف المخالفة — bottom sheet ينزلق خلف شريط التنقل ويلتصق بحافته السفلية */
@@ -23362,74 +23772,108 @@
           <!-- USERS -->
           <div class="tab-content" id="tab-departments">
             <div class="panel wf-panel">
-              <div class="wf-panel-banner">
+              <div class="wf-panel-banner users-panel-banner">
                 <div class="wf-panel-intro">
                   <h2 class="wf-panel-title">إدارة المستخدمين</h2>
                   <p class="wf-panel-sub">users management</p>
                 </div>
-                <div class="toolbar wf-toolbar users-toolbar">
-                  <div class="figma-search-wrap wf-search">
-                    <input type="text" class="figma-search-input" id="user-search"
-                      placeholder="ابحث بالاسم، الرقم الوظيفي، البريد..." oninput="renderUsers()">
-                    <button type="button" class="figma-search-btn" onclick="renderUsers()" aria-label="بحث">
-                      <i class="fas fa-magnifying-glass"></i>
-                    </button>
-                  </div>
-                  <div class="wf-status-filter user-role-dd" id="user-role-dd-filter">
-                  <button type="button" class="wf-status-trigger" id="user-role-dd-trigger"
-                    onclick="userRoleDdToggle(event)" aria-haspopup="listbox" aria-expanded="false">
-                    <span class="wf-status-trigger__ico" aria-hidden="true"><i class="fas fa-user-tag"></i></span>
-                    <span class="wf-status-trigger__label" id="user-role-dd-label">كل الأدوار</span>
-                    <i class="fas fa-chevron-down wf-status-trigger__chev" aria-hidden="true"></i>
-                  </button>
-                  <div class="wf-status-menu" id="user-role-dd-menu" role="listbox" aria-label="فلتر الدور">
-                    <div class="wf-status-menu__scroll">
-                    <button type="button" class="wf-status-opt is-active" data-val="" onclick="userRoleDdPick('')">كل الأدوار</button>
-                    <button type="button" class="wf-status-opt" data-val="observer" onclick="userRoleDdPick('observer')">الراصد</button>
-                    <button type="button" class="wf-status-opt" data-val="branch_manager" onclick="userRoleDdPick('branch_manager')">مدير الفرع</button>
-                    <button type="button" class="wf-status-opt" data-val="employee" onclick="userRoleDdPick('employee')">الموظف</button>
-                    <button type="button" class="wf-status-opt" data-val="supervisor" onclick="userRoleDdPick('supervisor')">المشرف</button>
-                    <button type="button" class="wf-status-opt" data-val="auditor" onclick="userRoleDdPick('auditor')">المدقق</button>
-                    <button type="button" class="wf-status-opt" data-val="manager" onclick="userRoleDdPick('manager')">المدير</button>
-                    <button type="button" class="wf-status-opt" data-val="hr" onclick="userRoleDdPick('hr')">الموارد البشرية</button>
-                    <button type="button" class="wf-status-opt" data-val="admin" onclick="userRoleDdPick('admin')">مدير النظام</button>
-                    </div>
-                  </div>
-                  <select id="user-roleFilter" class="wf-status-select-native" tabindex="-1" aria-hidden="true" onchange="renderUsers()">
-                  <option value="">كل الأدوار</option>
-                  <option value="observer">الراصد</option>
-                  <option value="branch_manager">مدير الفرع</option>
-                  <option value="employee">الموظف</option>
-                  <option value="supervisor">المشرف</option>
-                  <option value="auditor">المدقق</option>
-                  <option value="manager">المدير</option>
-                  <option value="hr">الموارد البشرية</option>
-                  <option value="admin">مدير النظام</option>
-                  </select>
-                </div>
-                  <button type="button" class="rp-tool-btn users-io-btn" onclick="downloadUsersImportTemplate()" title="قالب فارغ للاستيراد" data-perm-any="import_users,manage_users">
-                    <i class="fas fa-file-download"></i><span>قالب CSV</span>
-                  </button>
-                  <button type="button" class="rp-tool-btn users-io-btn" onclick="exportUsersCSV(false)" data-perm-any="export_users,manage_users">
-                    <i class="fas fa-file-export"></i><span>تصدير المفلتر</span>
-                  </button>
-                  <button type="button" class="rp-tool-btn users-io-btn" onclick="exportUsersCSV(true)" data-perm-any="export_users,manage_users">
-                    <i class="fas fa-file-export"></i><span>تصدير الكل</span>
-                  </button>
-                  <button type="button" class="rp-tool-btn users-io-btn" onclick="triggerUsersImport()" data-perm-any="import_users,manage_users">
-                    <i class="fas fa-file-import"></i><span>استيراد CSV</span>
-                  </button>
-                  <input type="file" id="users-import-file" accept=".csv,text/csv" style="display:none" onchange="handleUsersImportFile(event)">
-                  <button type="button" class="rp-tool-btn rp-tool-btn-primary users-io-btn" onclick="openUserModal()" data-perm="manage_users">
-                    <i class="fas fa-user-plus"></i><span>إضافة مستخدم</span>
-                  </button>
-                </div>
-                <div class="wf-count">عدد النتائج: <strong id="users-count">0</strong></div>
               </div>
               <div id="usersDeskHost" class="wf-desk-tickets-host">
-              <div class="mr-users-list-wrap wf-table-wrap">
-                <div id="usersList" class="mr-users-list" role="list" aria-label="قائمة المستخدمين"></div>
-              </div>
+                <div class="users-controls">
+                  <div class="users-filters-row">
+                    <div class="toolbar wf-toolbar users-toolbar users-filters-toolbar">
+                      <div class="figma-search-wrap wf-search">
+                        <input type="text" class="figma-search-input" id="user-search"
+                          placeholder="ابحث بالاسم، الرقم الوظيفي، البريد..." oninput="renderUsers()">
+                        <button type="button" class="figma-search-btn" onclick="renderUsers()" aria-label="بحث">
+                          <i class="fas fa-magnifying-glass"></i>
+                        </button>
+                      </div>
+                      <div class="wf-status-filter user-role-dd" id="user-role-dd-filter">
+                        <button type="button" class="wf-status-trigger" id="user-role-dd-trigger"
+                          onclick="userRoleDdToggle(event)" aria-haspopup="listbox" aria-expanded="false">
+                          <span class="wf-status-trigger__ico" aria-hidden="true"><i class="fas fa-user-tag"></i></span>
+                          <span class="wf-status-trigger__label" id="user-role-dd-label">كل الأدوار</span>
+                          <i class="fas fa-chevron-down wf-status-trigger__chev" aria-hidden="true"></i>
+                        </button>
+                        <div class="wf-status-menu" id="user-role-dd-menu" role="listbox" aria-label="فلتر الدور">
+                          <div class="wf-status-menu__scroll">
+                            <button type="button" class="wf-status-opt is-active" data-val="" onclick="userRoleDdPick('')">كل الأدوار</button>
+                            <button type="button" class="wf-status-opt" data-val="observer" onclick="userRoleDdPick('observer')">الراصد</button>
+                            <button type="button" class="wf-status-opt" data-val="branch_manager" onclick="userRoleDdPick('branch_manager')">مدير الفرع</button>
+                            <button type="button" class="wf-status-opt" data-val="employee" onclick="userRoleDdPick('employee')">الموظف</button>
+                            <button type="button" class="wf-status-opt" data-val="supervisor" onclick="userRoleDdPick('supervisor')">المشرف</button>
+                            <button type="button" class="wf-status-opt" data-val="auditor" onclick="userRoleDdPick('auditor')">المدقق</button>
+                            <button type="button" class="wf-status-opt" data-val="manager" onclick="userRoleDdPick('manager')">المدير</button>
+                            <button type="button" class="wf-status-opt" data-val="hr" onclick="userRoleDdPick('hr')">الموارد البشرية</button>
+                            <button type="button" class="wf-status-opt" data-val="admin" onclick="userRoleDdPick('admin')">مدير النظام</button>
+                          </div>
+                        </div>
+                        <select id="user-roleFilter" class="wf-status-select-native" tabindex="-1" aria-hidden="true" onchange="renderUsers()">
+                          <option value="">كل الأدوار</option>
+                          <option value="observer">الراصد</option>
+                          <option value="branch_manager">مدير الفرع</option>
+                          <option value="employee">الموظف</option>
+                          <option value="supervisor">المشرف</option>
+                          <option value="auditor">المدقق</option>
+                          <option value="manager">المدير</option>
+                          <option value="hr">الموارد البشرية</option>
+                          <option value="admin">مدير النظام</option>
+                        </select>
+                      </div>
+                      <div class="users-io-group users-io-group--desk">
+                        <button type="button" class="rp-tool-btn users-io-btn" onclick="downloadUsersImportTemplate()" title="قالب فارغ للاستيراد" data-perm-any="import_users,manage_users">
+                          <i class="fas fa-file-download"></i><span>قالب CSV</span>
+                        </button>
+                        <button type="button" class="rp-tool-btn users-io-btn" onclick="exportUsersCSV(false)" data-perm-any="export_users,manage_users">
+                          <i class="fas fa-file-export"></i><span>تصدير المفلتر</span>
+                        </button>
+                        <button type="button" class="rp-tool-btn users-io-btn" onclick="exportUsersCSV(true)" data-perm-any="export_users,manage_users">
+                          <i class="fas fa-file-export"></i><span>تصدير الكل</span>
+                        </button>
+                        <button type="button" class="rp-tool-btn users-io-btn" onclick="triggerUsersImport()" data-perm-any="import_users,manage_users">
+                          <i class="fas fa-file-import"></i><span>استيراد CSV</span>
+                        </button>
+                        <input type="file" id="users-import-file" accept=".csv,text/csv" style="display:none" onchange="handleUsersImportFile(event)">
+                        <button type="button" class="rp-tool-btn rp-tool-btn-primary users-io-btn" onclick="openUserModal()" data-perm="manage_users">
+                          <i class="fas fa-user-plus"></i><span>إضافة مستخدم</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="users-meta-row">
+                    <div class="wf-count">عدد النتائج: <strong id="users-count">0</strong></div>
+                    <div class="users-meta-actions">
+                      <div class="users-io-mob-wrap">
+                        <button type="button" class="rp-tool-btn users-io-more-btn" id="usersIoMoreBtn"
+                          onclick="usersIoMenuToggle(event)" aria-haspopup="menu" aria-expanded="false"
+                          aria-controls="usersIoMenu" title="استيراد وتصدير">
+                          <i class="fas fa-ellipsis-vertical" aria-hidden="true"></i><span>CSV</span>
+                        </button>
+                        <div class="users-io-menu" id="usersIoMenu" role="menu" aria-label="استيراد وتصدير المستخدمين" hidden>
+                          <button type="button" role="menuitem" class="users-io-menu-item" onclick="usersIoMenuClose(); downloadUsersImportTemplate()" data-perm-any="import_users,manage_users">
+                            <i class="fas fa-file-download"></i><span>قالب CSV</span>
+                          </button>
+                          <button type="button" role="menuitem" class="users-io-menu-item" onclick="usersIoMenuClose(); exportUsersCSV(false)" data-perm-any="export_users,manage_users">
+                            <i class="fas fa-file-export"></i><span>تصدير المفلتر</span>
+                          </button>
+                          <button type="button" role="menuitem" class="users-io-menu-item" onclick="usersIoMenuClose(); exportUsersCSV(true)" data-perm-any="export_users,manage_users">
+                            <i class="fas fa-file-export"></i><span>تصدير الكل</span>
+                          </button>
+                          <button type="button" role="menuitem" class="users-io-menu-item" onclick="usersIoMenuClose(); triggerUsersImport()" data-perm-any="import_users,manage_users">
+                            <i class="fas fa-file-import"></i><span>استيراد CSV</span>
+                          </button>
+                        </div>
+                      </div>
+                      <button type="button" class="rp-tool-btn rp-tool-btn-primary users-add-btn" onclick="openUserModal()" data-perm="manage_users">
+                        <i class="fas fa-user-plus"></i><span>إضافة مستخدم</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div class="mr-users-list-wrap wf-table-wrap">
+                  <div id="usersList" class="mr-users-list" role="list" aria-label="قائمة المستخدمين"></div>
+                </div>
               </div>
             </div>
           </div>
@@ -28425,6 +28869,7 @@
         if (pt) pt.textContent = 'لا صلاحيات';
         if (ps) ps.textContent = '';
         syncViolMobileScrollShell(null);
+        syncUsersMobileScrollShell(null);
       }
 
       function getNavButtonForTab(tab) {
@@ -29322,6 +29767,11 @@
             if (document.getElementById('tab-reports')?.classList.contains('active') && typeof filterReports === 'function') {
               filterReports();
             }
+            const activeTab = typeof getActiveTabKey === 'function' ? getActiveTabKey() : null;
+            syncViolMobileScrollShell(activeTab);
+            syncUsersMobileScrollShell(activeTab);
+            if (activeTab === 'departments' && typeof renderUsers === 'function') renderUsers();
+            if (activeTab === 'violations' && typeof renderViolTypes === 'function') renderViolTypes();
           }, { passive: true });
         }
         const bar = document.querySelector('.topbar.unified-banner');
@@ -29447,6 +29897,7 @@
         if (typeof closeFpDropdowns === 'function') closeFpDropdowns();
         if (typeof wfStatusClose === 'function') wfStatusClose();
         if (typeof userRoleDdClose === 'function') userRoleDdClose();
+        if (typeof usersIoMenuClose === 'function') usersIoMenuClose();
         if (typeof settingsUserDdClose === 'function') settingsUserDdClose();
 
         document.getElementById('notifPanel')?.classList.remove('open');
@@ -29495,6 +29946,12 @@
         const activeTab = tab || (typeof getActiveTabKey === 'function' ? getActiveTabKey() : null);
         const on = typeof isMobileViewport === 'function' && isMobileViewport() && activeTab === 'violations';
         document.documentElement.classList.toggle('mr-viol-tab-active', on);
+      }
+
+      function syncUsersMobileScrollShell(tab) {
+        const activeTab = tab || (typeof getActiveTabKey === 'function' ? getActiveTabKey() : null);
+        const on = typeof isMobileViewport === 'function' && isMobileViewport() && activeTab === 'departments';
+        document.documentElement.classList.toggle('mr-users-tab-active', on);
       }
 
       window.dismissPageOverlaysOnTabLeave = dismissPageOverlaysOnTabLeave;
@@ -29604,6 +30061,7 @@
           requestAnimationFrame(() => requestAnimationFrame(() => syncDesktopWfTableColWidths('reports')));
         }
         syncViolMobileScrollShell(tab);
+        syncUsersMobileScrollShell(tab);
       }
 
       /** تفعيل تبويب من الشريط الجانبي (لوحة القيادة — إجراءات سريعة) */
@@ -32332,6 +32790,38 @@
           .map(x => x.u);
       }
 
+      function renderUserMobItem(u, canManage) {
+        const branch = state._branchById ? state._branchById.get(u.branch_id) : state.branches.find(b => b.id === u.branch_id);
+        const roleKey = normalizeUserRole(u.role);
+        const roleLabel = userTableRoleLabel(u.role);
+        const roleColor = ROLE_COLORS[roleKey] || ROLE_COLORS[u.role] || 'var(--mr-primary)';
+        const empNum = padEmpNum(u.employee_number);
+        const subParts = [];
+        if (u.phone) subParts.push(Sec.escapeHTML(u.phone));
+        if (u.email) subParts.push(Sec.escapeHTML(u.email));
+        if (branch) subParts.push(Sec.escapeHTML(branch.name));
+        const subLine = subParts.join(' · ');
+        const adminBtns = canManage
+          ? `<div class="user-list-admin">
+          <button type="button" class="mr-viol-act" onclick="editUser('${u.id}')" aria-label="تعديل"><i class="fas fa-pen"></i></button>
+          <button type="button" class="mr-viol-act" onclick="deleteUser('${u.id}')" aria-label="تعطيل"><i class="fas fa-trash"></i></button>
+        </div>`
+          : '';
+        return `
+    <div class="user-list-item" role="listitem">
+      <span class="user-list-avatar" aria-hidden="true"><i class="fas fa-user"></i></span>
+      <div class="user-list-content">
+        <div class="user-list-title">
+          <span>${Sec.escapeHTML(u.name)}</span>
+          ${roleLabel ? `<span class="user-list-role" style="--rc:${roleColor}">${Sec.escapeHTML(roleLabel)}</span>` : ''}
+        </div>
+        ${empNum ? `<div class="user-list-meta">الرقم الوظيفي: ${Sec.escapeHTML(empNum)}</div>` : ''}
+        ${subLine ? `<div class="user-list-sub">${subLine}</div>` : ''}
+      </div>
+      <div class="user-list-end">${adminBtns}</div>
+    </div>`;
+      }
+
       function renderUsers() {
         const list = document.getElementById('usersList');
         if (!list) return;
@@ -32339,9 +32829,14 @@
         userRoleDdSyncUi(document.getElementById('user-roleFilter')?.value || '');
 
         const countEl = document.getElementById('users-count');
+        const usersMob = isMobileViewport();
+        list.className = usersMob ? 'mr-users-list users-grid--mob-list' : 'mr-users-list';
         if (isAppDataPending()) {
           if (countEl) countEl.textContent = '…';
-          list.innerHTML = '<div class="mr-users-empty empty mr-data-loading"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i><p>جاري تحميل المستخدمين…</p></div>';
+          list.innerHTML = usersMob
+            ? '<div class="empty users-empty-mob"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i><p>جاري تحميل المستخدمين…</p></div>'
+            : '<div class="mr-users-empty empty mr-data-loading"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i><p>جاري تحميل المستخدمين…</p></div>';
+          syncUsersMobileScrollShell('departments');
           return;
         }
 
@@ -32350,11 +32845,18 @@
         if (countEl) countEl.textContent = String(filtered.length);
 
         if (!filtered.length) {
-          list.innerHTML = '<div class="mr-users-empty empty"><i class="fas fa-users-slash"></i><p>لا يوجد مستخدمون</p></div>';
+          list.innerHTML = usersMob
+            ? '<div class="empty users-empty-mob"><i class="fas fa-users-slash"></i><p>لا يوجد مستخدمون</p></div>'
+            : '<div class="mr-users-empty empty"><i class="fas fa-users-slash"></i><p>لا يوجد مستخدمون</p></div>';
+          syncUsersMobileScrollShell('departments');
           return;
         }
 
-        list.innerHTML = filtered.map(u => renderUserCard(u, canManage)).join('');
+        list.innerHTML = usersMob
+          ? filtered.map(u => renderUserMobItem(u, canManage)).join('')
+          : filtered.map(u => renderUserCard(u, canManage)).join('');
+        syncUsersMobileScrollShell('departments');
+        requestAnimationFrame(() => syncUsersMobileScrollShell('departments'));
       }
 
       function openUserModal() {
@@ -34966,7 +35468,7 @@
         const menu = document.getElementById('user-role-dd-menu');
         const trigger = document.getElementById('user-role-dd-trigger');
         const filter = document.getElementById('user-role-dd-filter');
-        const toolbar = document.querySelector('.users-toolbar');
+        const toolbar = document.querySelector('.users-filters-toolbar') || document.querySelector('.users-toolbar');
         if (menu) menu.classList.remove('open');
         if (trigger) trigger.setAttribute('aria-expanded', 'false');
         toolbar?.classList.remove('is-status-open');
@@ -34991,11 +35493,34 @@
         });
       }
 
+      function usersIoMenuClose() {
+        const menu = document.getElementById('usersIoMenu');
+        const btn = document.getElementById('usersIoMoreBtn');
+        if (menu) menu.hidden = true;
+        if (btn) btn.setAttribute('aria-expanded', 'false');
+      }
+
+      function usersIoMenuToggle(ev) {
+        ev?.stopPropagation?.();
+        const menu = document.getElementById('usersIoMenu');
+        const btn = document.getElementById('usersIoMoreBtn');
+        if (!menu || !btn) return;
+        const willOpen = menu.hidden;
+        userRoleDdClose();
+        if (!willOpen) {
+          usersIoMenuClose();
+          return;
+        }
+        menu.hidden = false;
+        btn.setAttribute('aria-expanded', 'true');
+      }
+
       function userRoleDdToggle(ev) {
         ev.stopPropagation();
+        usersIoMenuClose();
         const menu = document.getElementById('user-role-dd-menu');
         const trigger = document.getElementById('user-role-dd-trigger');
-        const toolbar = document.querySelector('.users-toolbar');
+        const toolbar = document.querySelector('.users-filters-toolbar') || document.querySelector('.users-toolbar');
         if (!menu || !trigger) return;
         const open = !menu.classList.contains('open');
         if (open && menu.parentNode !== document.body) {
@@ -43620,6 +44145,13 @@
           userRoleDdClose();
         }
 
+        const usersIoMenu = document.getElementById('usersIoMenu');
+        const usersIoBtn = document.getElementById('usersIoMoreBtn');
+        if (usersIoMenu && !usersIoMenu.hidden &&
+          !usersIoMenu.contains(e.target) && !usersIoBtn?.contains(e.target)) {
+          usersIoMenuClose();
+        }
+
         const suMenu = document.getElementById('settings-user-dd-menu');
         const suFilter = document.getElementById('settings-user-dd');
         if (suMenu && suMenu.classList.contains('open') && suFilter && !suFilter.contains(e.target)) {
@@ -44223,6 +44755,8 @@
       window.resetWorkflowTabFilters = resetWorkflowTabFilters;
       window.userRoleDdToggle = userRoleDdToggle;
       window.userRoleDdPick = userRoleDdPick;
+      window.usersIoMenuToggle = usersIoMenuToggle;
+      window.usersIoMenuClose = usersIoMenuClose;
       window.openTicket = openTicket;
       window.openTicketFromCompliance = openTicketFromCompliance;
       window.prefetchTicketDetail = prefetchTicketDetail;
