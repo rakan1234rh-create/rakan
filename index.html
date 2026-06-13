@@ -24398,10 +24398,13 @@
 
       // تحميل ملف من R2: Edge Function (توقيع) أو المسار القديم AWS في المتصفح
       const _cloudflareCache = {};
-      /** null=لم يُختبر، true/false بعد أول استدعاء headObject */
-      let _r2HeadObjectOk = null;
+      let _r2HeadObjectOk = false;
       /** روابط التوقيع تنتهي (~ساعة)؛ لا نخزّنها دائماً */
       const _cfSignedTtlMs = 50 * 60 * 1000;
+
+      function cfCacheKey(fileId, ticketCtx) {
+        return `${ticketCtx?.id || state.editingTicket?.id || ''}::${String(fileId || '').trim()}`;
+      }
 
       function readCfCache(fileId) {
         const v = _cloudflareCache[fileId];
@@ -34279,30 +34282,39 @@
         return folders;
       }
 
-      /** مفاتيح بديلة للمرفقات القديمة (مسار نهائي ↔ مؤقت أو مسارات شقيقة) */
-      function getR2KeyFallbackCandidates(fileId) {
+      /** مفاتيح بديلة للمرفقات — لا تخلط مسارات تذاكر أخرى حتى لو تطابق اسم الملف */
+      function getR2KeyFallbackCandidates(fileId, ticketCtx) {
         const id = String(fileId || '').trim();
         if (!id) return [];
+        const ctx = ticketCtx || state.editingTicket || null;
         const all = new Set();
         const ticketFolder = [];
-        const nonTempPaths = [];
+        const sameTicketPaths = [];
         const addUnique = (arr, p) => {
           const t = String(p || '').trim();
           if (!t || arr.includes(t)) return;
           arr.push(t);
           all.add(t);
         };
-        const collectPath = (p) => {
+        const collectSameTicketPath = (p) => {
           const t = String(p || '').trim();
           if (!t) return;
           all.add(t);
-          if (!t.startsWith('temp_') && t.includes('/')) addUnique(nonTempPaths, t);
+          if (!t.startsWith('temp_') && t.includes('/')) addUnique(sameTicketPaths, t);
+        };
+        const parseAtts = (raw) => {
+          if (Array.isArray(raw)) return raw;
+          if (typeof raw === 'string') {
+            try { return JSON.parse(raw); } catch (_) { return null; }
+          }
+          return null;
         };
         const scanAtts = (atts) => {
           if (!Array.isArray(atts)) return;
           for (const a of atts) {
             if (!a) continue;
-            collectPath(a.p || a.path);
+            const p = a.p || a.path;
+            if (p) all.add(String(p).trim());
           }
         };
         const base = id.includes('/') ? id.split('/').pop() : id;
@@ -34320,70 +34332,57 @@
           for (const variant of lists.padded) addUnique(ticketFolder, `${variant}/${base}`);
           for (const variant of lists.bare) addUnique(ticketFolder, `${variant}/${base}`);
         };
+        const relateTicket = (v) => {
+          if (!v) return false;
+          if (ctx?.id && v.id === ctx.id) return true;
+          const atts = parseAtts(v.attachments);
+          return Array.isArray(atts) && atts.some((a) => (a?.p || a?.path) === id);
+        };
         for (const v of state.violations || []) {
-          let atts = v.attachments;
-          if (typeof atts === 'string') {
-            try { atts = JSON.parse(atts); } catch (_) { atts = null; }
-          }
-          scanAtts(atts);
-          const hasThis = Array.isArray(atts) && atts.some(a => (a?.p || a?.path) === id);
-          if (hasThis || (id.startsWith('temp_') && v.ticket_number)) {
-            addTicketFolderCandidates(v.ticket_number, v.created_at, atts);
-          }
-        }
-        if (id.startsWith('temp_') && state.editingTicket?.ticket_number) {
-          let editAtts = state.editingTicket.attachments;
-          if (typeof editAtts === 'string') {
-            try { editAtts = JSON.parse(editAtts); } catch (_) { editAtts = null; }
-          }
-          addTicketFolderCandidates(
-            state.editingTicket.ticket_number,
-            state.editingTicket.created_at,
-            editAtts
-          );
-        }
-        scanAtts(state._attList);
-        for (const v of state.violations || []) {
-          let vAtts = v.attachments;
-          if (typeof vAtts === 'string') {
-            try { vAtts = JSON.parse(vAtts); } catch (_) { vAtts = null; }
-          }
-          if (!Array.isArray(vAtts)) continue;
-          for (const a of vAtts) {
+          if (!relateTicket(v)) continue;
+          const atts = parseAtts(v.attachments);
+          if (!Array.isArray(atts)) continue;
+          for (const a of atts) {
             const p = a?.p || a?.path;
             if (!p || String(p).startsWith('temp_')) continue;
-            const pBase = String(p).includes('/') ? String(p).split('/').pop() : String(p);
-            if (pBase === base) collectPath(p);
-          }
-        }
-        if (uniq) {
-          for (const v of state.violations || []) {
-            let atts = v.attachments;
-            if (typeof atts === 'string') {
-              try { atts = JSON.parse(atts); } catch (_) { atts = null; }
+            const pStr = String(p);
+            const pBase = pStr.includes('/') ? pStr.split('/').pop() : pStr;
+            if (pStr === id || pBase === base || (uniq && pStr.includes(uniq))) {
+              collectSameTicketPath(pStr);
             }
-            if (!Array.isArray(atts)) continue;
-            for (const a of atts) {
+          }
+          addTicketFolderCandidates(v.ticket_number, v.created_at, atts);
+        }
+        if (ctx) {
+          const ctxAtts = parseAtts(ctx.attachments);
+          if (Array.isArray(ctxAtts)) {
+            for (const a of ctxAtts) {
               const p = a?.p || a?.path;
-              if (p && String(p).includes(uniq)) collectPath(p);
+              if (!p || String(p).startsWith('temp_')) continue;
+              const pStr = String(p);
+              const pBase = pStr.includes('/') ? pStr.split('/').pop() : pStr;
+              if (pStr === id || pBase === base || (uniq && pStr.includes(uniq))) {
+                collectSameTicketPath(pStr);
+              }
             }
-            if (v.ticket_number && base.includes(uniq)) {
-              addTicketFolderCandidates(v.ticket_number, v.created_at, atts);
-            }
+            addTicketFolderCandidates(ctx.ticket_number, ctx.created_at, ctxAtts);
           }
         }
+        scanAtts(state._attList);
         const rank = new Map();
         let n = 0;
         const setRank = (k, r) => {
           if (!rank.has(k)) rank.set(k, r);
         };
-        for (const p of nonTempPaths) setRank(p, n++);
+        setRank(id, n++);
+        for (const p of sameTicketPaths) {
+          if (p !== id) setRank(p, n++);
+        }
         for (const p of ticketFolder) {
           const folder = p.includes('/') ? p.substring(0, p.lastIndexOf('/')) : '';
           if (/^V-\d{4}-/i.test(folder)) setRank(p, n++);
         }
         for (const p of ticketFolder) setRank(p, n++);
-        if (!id.startsWith('temp_')) setRank(id, n++);
         if (id.startsWith('temp_')) setRank(id, n++);
         if (base !== id) setRank(base, n++);
         return [...all].sort((a, b) => {
@@ -34503,12 +34502,12 @@
         }
       }
 
-      async function loadAttachmentPlayUrl(fileId, fileName) {
+      async function loadAttachmentPlayUrl(fileId, fileName, ticketCtx) {
         const inline = getInlineDataUrlForAttachmentPath(fileId);
         if (inline) return inline;
         const devUrl = await devMediaPlayUrl(fileId);
         if (devUrl) return devUrl;
-        const raw = await loadCloudflareFile(fileId);
+        const raw = await loadCloudflareFile(fileId, ticketCtx);
         if (isDevR2PlaceholderSvg(raw)) {
           throw new Error('المرفق غير متاح محلياً — فعّل r2-storage على Supabase مع أسرار R2');
         }
@@ -34525,6 +34524,9 @@
             vid.removeEventListener('canplay', onOk);
             vid.removeEventListener('error', onErr);
           };
+          vid.pause();
+          vid.removeAttribute('src');
+          vid.load();
           vid.addEventListener('loadeddata', onOk, { once: true });
           vid.addEventListener('canplay', onOk, { once: true });
           vid.addEventListener('error', onErr, { once: true });
@@ -34539,21 +34541,22 @@
         return s.startsWith('data:image/svg+xml') || s.startsWith('data:image/svg%2Bxml');
       }
 
-      async function loadCloudflareFile(fileId) {
+      async function loadCloudflareFile(fileId, ticketCtx) {
         if (!fileId) throw new Error('معرف الملف مفقود');
-        const cached = readCfCache(fileId);
+        const cacheKey = cfCacheKey(fileId, ticketCtx);
+        const cached = readCfCache(cacheKey);
         if (cached) return cached;
 
         const inline = getInlineDataUrlForAttachmentPath(fileId);
         if (inline) {
-          writeCfCache(fileId, inline);
+          writeCfCache(cacheKey, inline);
           return inline;
         }
 
         if (allowAttachmentDevSkip()) {
           const devUrl = await devMediaPlayUrl(fileId);
           if (devUrl) {
-            writeCfCache(fileId, devUrl);
+            writeCfCache(cacheKey, devUrl);
             return devUrl;
           }
         }
@@ -34563,7 +34566,7 @@
 
           if (backend === 'edge') {
             const ct = mimeTypeFromAttachmentExt(extractAttachmentExt(fileId, ''));
-            const candidates = getR2KeyFallbackCandidates(fileId);
+            const candidates = getR2KeyFallbackCandidates(fileId, ticketCtx);
             let lastSignErr = null;
             for (const key of candidates) {
               try {
@@ -34571,7 +34574,7 @@
                 if (exists === false) continue;
                 const { url } = await callR2StorageFn('signGet', { key, ...(ct ? { contentType: ct } : {}) });
                 if (url) {
-                  writeCfCache(fileId, url);
+                  writeCfCache(cacheKey, url);
                   return url;
                 }
               } catch (e) {
@@ -34580,7 +34583,7 @@
             }
             const devFallback = await devMediaPlayUrl(fileId);
             if (devFallback) {
-              writeCfCache(fileId, devFallback);
+              writeCfCache(cacheKey, devFallback);
               return devFallback;
             }
             throw lastSignErr || new Error('الملف غير موجود في R2. أعد رفع المرفق أو تحقق من إعدادات التخزين.');
@@ -34601,7 +34604,7 @@
             });
             const params = { Bucket: cfg.R2_BUCKET_NAME, Key: fileId, Expires: 3600 };
             const url = s3.getSignedUrl('getObject', params);
-            writeCfCache(fileId, url);
+            writeCfCache(cacheKey, url);
             return url;
           }
 
@@ -34612,14 +34615,14 @@
             if (String(fileId).startsWith('temp_')) {
               if (isLikelyImageAttachmentKey(fileId)) {
                 const ph = devPlaceholderSvgForPath(fileId, 'معاينة غير متاحة');
-                writeCfCache(fileId, ph);
+                writeCfCache(cacheKey, ph);
                 return ph;
               }
               throw new Error('PDF يحتاج R2 — انشر r2-storage على Supabase');
             }
             if (isLikelyImageAttachmentKey(fileId)) {
               const ph = devPlaceholderSvgForPath(fileId, 'لا يوجد R2 محلياً');
-              writeCfCache(fileId, ph);
+              writeCfCache(cacheKey, ph);
               return ph;
             }
             throw new Error('الملف يحتاج R2 — انشر r2-storage على Supabase أو فعّل الرفع من الخادم');
@@ -34645,20 +34648,22 @@
 
           img.dataset.loading = 'true';
           try {
-            const resolved = await loadCloudflareFile(fid);
+            const resolved = await loadCloudflareFile(fid, state.editingTicket);
+            const ck = cfCacheKey(fid, state.editingTicket);
             img.onload = () => {
               img.dataset.cfThumbDone = '1';
               img.style.opacity = '1';
             };
             img.onerror = () => {
-              delete _cloudflareCache[fid];
+              delete _cloudflareCache[ck];
               delete img.dataset.cfThumbDone;
               img.alt = 'خطأ في التحميل';
               img.style.opacity = '0.3';
             };
             img.src = resolved;
           } catch (e) {
-            delete _cloudflareCache[fid];
+            const ck = cfCacheKey(fid, state.editingTicket);
+            delete _cloudflareCache[ck];
             img.alt = 'خطأ في التحميل';
             img.style.opacity = '0.3';
           } finally {
@@ -36197,6 +36202,7 @@
         const atts = getVisibleAttachments(t);
         state._attList = atts;
         state._attIndex = (idx >= 0 && idx < atts.length) ? idx : 0;
+        state._attViewerLoadGen = (state._attViewerLoadGen || 0) + 1;
         const viewer = document.getElementById('attViewer');
         const stage = viewer?.querySelector('.att-viewer-stage');
         if (stage) stage.style.transform = '';
@@ -36216,6 +36222,7 @@
           state._attList = [{ url, name }];
           state._attIndex = 0;
         }
+        state._attViewerLoadGen = (state._attViewerLoadGen || 0) + 1;
         const viewer = document.getElementById('attViewer');
         const stage = viewer?.querySelector('.att-viewer-stage');
         if (stage) stage.style.transform = '';
@@ -36256,6 +36263,8 @@
         const isPdf = ext === 'pdf';
 
         const fileId = att.id || '';
+        const ticketCtx = state.editingTicket;
+        const viewerLoadGen = state._attViewerLoadGen || 0;
         let html = '';
         const localBlob = state._localBlobUrls && state._localBlobUrls[name];
 
@@ -36290,11 +36299,14 @@
               </div>`;
             // تحميل الصورة عبر السكربت الوسيط
             setTimeout(async () => {
+              if (viewerLoadGen !== state._attViewerLoadGen) return;
               try {
                 if (isMirsadDebugLog()) console.log(`[Viewer] Loading R2 Image: ${fileId}`);
-                const dataUrl = await loadCloudflareFile(fileId);
+                const dataUrl = await loadCloudflareFile(fileId, ticketCtx);
+                if (viewerLoadGen !== state._attViewerLoadGen) return;
                 const img = document.getElementById('att-proxy-img');
                 const loader = document.getElementById('att-loading');
+                const ck = cfCacheKey(fileId, ticketCtx);
                 if (isDevR2PlaceholderSvg(dataUrl)) {
                   if (img) img.remove();
                   if (loader) {
@@ -36313,7 +36325,7 @@
                 }
                 if (img) {
                   img.onerror = () => {
-                    delete _cloudflareCache[fileId];
+                    delete _cloudflareCache[ck];
                     if (loader) {
                       loader.style.display = 'flex';
                       loader.style.pointerEvents = 'auto';
@@ -36363,17 +36375,21 @@
                 <video id="att-proxy-vid" controls playsinline style="max-width:100%;max-height:70vh;display:none"></video>
               </div>`;
             setTimeout(async () => {
+              if (viewerLoadGen !== state._attViewerLoadGen) return;
               const vid = document.getElementById('att-proxy-vid');
               const loader = document.getElementById('att-loading');
               const mime = mimeTypeFromAttachmentExt(ext) || 'video/mp4';
+              const ck = cfCacheKey(fileId, ticketCtx);
               try {
-                let playUrl = await loadAttachmentPlayUrl(fileId, name);
+                let playUrl = await loadAttachmentPlayUrl(fileId, name, ticketCtx);
+                if (viewerLoadGen !== state._attViewerLoadGen) return;
                 try {
                   await setVideoElementSource(vid, playUrl);
                 } catch (_) {
                   if (/^https?:\/\//i.test(playUrl)) {
-                    delete _cloudflareCache[fileId];
+                    delete _cloudflareCache[ck];
                     playUrl = await resolveMediaPlayUrl(playUrl, mime);
+                    if (viewerLoadGen !== state._attViewerLoadGen) return;
                     await setVideoElementSource(vid, playUrl);
                   } else {
                     throw new Error('تعذّر تشغيل الفيديو');
@@ -36382,7 +36398,7 @@
                 revealAttViewerMedia(vid);
               } catch (e) {
                 if (isMirsadDebugLog()) console.error('Lightbox Video Load Error:', e);
-                delete _cloudflareCache[fileId];
+                delete _cloudflareCache[ck];
                 if (loader) {
                   loader.style.pointerEvents = 'auto';
                   const extLink = (cfUrl && /^https?:\/\//i.test(String(cfUrl).trim()))
@@ -36409,8 +36425,10 @@
               <iframe id="att-proxy-pdf" style="display:none;width:100%;height:70vh;border:none"></iframe>
             </div>`;
           setTimeout(async () => {
+            if (viewerLoadGen !== state._attViewerLoadGen) return;
             try {
-              const dataUrl = await loadCloudflareFile(fileId);
+              const dataUrl = await loadCloudflareFile(fileId, ticketCtx);
+              if (viewerLoadGen !== state._attViewerLoadGen) return;
               const pdf = document.getElementById('att-proxy-pdf');
               const loader = document.getElementById('att-loading');
               const safeSrc = typeof dataUrl === 'string' ? dataUrl.trim() : '';
@@ -36489,9 +36507,8 @@
       function navAttViewer(dir) {
         const total = state._attList.length;
         if (total <= 1) return;
-        // dir = -1 (السابق) أو +1 (التالي)
-        // مع دعم اللف من البداية للنهاية والعكس
         state._attIndex = (state._attIndex + dir + total) % total;
+        state._attViewerLoadGen = (state._attViewerLoadGen || 0) + 1;
         renderAttViewer();
       }
 
