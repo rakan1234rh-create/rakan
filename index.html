@@ -22429,7 +22429,7 @@
         if (t) document.documentElement.setAttribute('data-mr-restore-tab', t);
         for (var i = 0; i < localStorage.length; i++) {
           var k = localStorage.key(i);
-          if (k && k.indexOf('sb-') === 0 && k.indexOf('-auth-token') > -1 && localStorage.getItem(k)) {
+          if (k && k.indexOf('-auth-token') > -1 && localStorage.getItem(k)) {
             document.documentElement.classList.add('mr-session-restore');
             break;
           }
@@ -24082,46 +24082,79 @@
         return 'tab_' + Date.now() + '_' + rand;
       }
 
+      const PWA_AUTH_SCOPE = 'mirsad_pwa';
+      const AUTH_SCOPE_SESSION_KEY = 'auth_scope_id';
+
+      function isStandalonePwaShell() {
+        try {
+          return !!(
+            window.navigator.standalone ||
+            window.matchMedia('(display-mode: standalone)').matches ||
+            window.matchMedia('(display-mode: fullscreen)').matches
+          );
+        } catch (_) {
+          return false;
+        }
+      }
+
+      function scopeHasAuthToken(scopeId) {
+        if (!scopeId) return false;
+        const prefix = `${scopeId}_`;
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith(prefix) && key.includes('-auth-token') && localStorage.getItem(key)) {
+            return true;
+          }
+        }
+        return false;
+      }
+
+      function rememberAuthScope(scopeId) {
+        if (!scopeId) return;
+        sessionStorage.setItem(AUTH_SCOPE_SESSION_KEY, scopeId);
+        sessionStorage.setItem('tab_id', scopeId);
+        localStorage.setItem('last_tab_id', scopeId);
+        localStorage.setItem('last_auth_scope', scopeId);
+      }
+
+      function resolveAuthScopeId() {
+        let scopeId = sessionStorage.getItem(AUTH_SCOPE_SESSION_KEY) || sessionStorage.getItem('tab_id');
+        if (scopeId) return scopeId;
+
+        if (isStandalonePwaShell()) {
+          if (scopeHasAuthToken(PWA_AUTH_SCOPE)) {
+            scopeId = PWA_AUTH_SCOPE;
+          } else {
+            const lastTabId = localStorage.getItem('last_tab_id');
+            scopeId = (lastTabId && scopeHasAuthToken(lastTabId)) ? lastTabId : PWA_AUTH_SCOPE;
+          }
+          rememberAuthScope(scopeId);
+          return scopeId;
+        }
+
+        const lastTabId = localStorage.getItem('last_tab_id');
+        if (lastTabId && scopeHasAuthToken(lastTabId)) {
+          scopeId = lastTabId;
+        } else {
+          scopeId = generateTabId();
+        }
+        rememberAuthScope(scopeId);
+        return scopeId;
+      }
+
       const customStorage = {
         getItem: (key) => {
-          // جلب أو إنشاء tab_id (نحفظه في sessionStorage للتبويب + localStorage للاستمرارية)
-          let tabId = sessionStorage.getItem('tab_id');
-
-          if (!tabId) {
-            // محاولة استرجاع آخر tab_id من localStorage لهذا التبويب
-            const lastTabId = localStorage.getItem('last_tab_id');
-
-            // التحقق إذا آخر session موجود في localStorage
-            if (lastTabId && localStorage.getItem(`${lastTabId}_sb-auth-token`)) {
-              // استخدام نفس الـ tab_id (للحفاظ على Session بعد refresh)
-              tabId = lastTabId;
-            } else {
-              // إنشاء tab_id جديد
-              tabId = generateTabId();
-            }
-
-            sessionStorage.setItem('tab_id', tabId);
-            localStorage.setItem('last_tab_id', tabId);
-          }
-
-          const storageKey = `${tabId}_${key}`;
-          return localStorage.getItem(storageKey);
+          const scopeId = resolveAuthScopeId();
+          return localStorage.getItem(`${scopeId}_${key}`);
         },
         setItem: (key, value) => {
-          let tabId = sessionStorage.getItem('tab_id');
-          if (!tabId) {
-            tabId = generateTabId();
-            sessionStorage.setItem('tab_id', tabId);
-            localStorage.setItem('last_tab_id', tabId);
-          }
-          const storageKey = `${tabId}_${key}`;
-          localStorage.setItem(storageKey, value);
+          const scopeId = resolveAuthScopeId();
+          localStorage.setItem(`${scopeId}_${key}`, value);
         },
         removeItem: (key) => {
-          const tabId = sessionStorage.getItem('tab_id');
-          if (!tabId) return;
-          const storageKey = `${tabId}_${key}`;
-          localStorage.removeItem(storageKey);
+          const scopeId = sessionStorage.getItem(AUTH_SCOPE_SESSION_KEY) || sessionStorage.getItem('tab_id');
+          if (!scopeId) return;
+          localStorage.removeItem(`${scopeId}_${key}`);
         }
       };
 
@@ -24132,6 +24165,8 @@
 
         for (let i = 0; i < localStorage.length; i++) {
           const key = localStorage.key(i);
+          if (!key) continue;
+          if (key.startsWith(`${PWA_AUTH_SCOPE}_`)) continue;
           if (key && key.startsWith('tab_')) {
             // استخراج timestamp من اسم المفتاح
             const match = key.match(/^tab_(\d+)_/);
@@ -26114,17 +26149,17 @@
         if (state._scoreTimer) { clearInterval(state._scoreTimer); state._scoreTimer = null; }
 
         // حذف session التبويب الحالي فقط (مو كل التبويبات!)
-        const tabId = sessionStorage.getItem('tab_id');
-        if (tabId) {
-          // حذف كل مفاتيح هذا التبويب من localStorage
+        const scopeId = sessionStorage.getItem(AUTH_SCOPE_SESSION_KEY) || sessionStorage.getItem('tab_id');
+        if (scopeId) {
           Object.keys(localStorage).forEach(key => {
-            if (key.startsWith(tabId + '_')) {
+            if (key.startsWith(scopeId + '_')) {
               localStorage.removeItem(key);
             }
           });
-          // حذف tab_id من sessionStorage و last_tab_id من localStorage
+          sessionStorage.removeItem(AUTH_SCOPE_SESSION_KEY);
           sessionStorage.removeItem('tab_id');
-          localStorage.removeItem('last_tab_id');
+          if (localStorage.getItem('last_tab_id') === scopeId) localStorage.removeItem('last_tab_id');
+          if (localStorage.getItem('last_auth_scope') === scopeId) localStorage.removeItem('last_auth_scope');
         }
 
         state.currentUser = null;
@@ -26272,6 +26307,36 @@
           if (isMirsadDebugLog()) console.warn('[DEV] Auto login:', e);
           return false;
         }
+      }
+
+      function initPwaSessionPersistence() {
+        if (window._mrPwaSessionBound) return;
+        window._mrPwaSessionBound = true;
+
+        const resumeAuthIfNeeded = async () => {
+          if (!isStandalonePwaShell()) return;
+          const app = document.getElementById('appWrap');
+          if (!app || app.style.display === 'none') return;
+          if (state.currentUser) return;
+          try {
+            const { data: { session } } = await sb.auth.getSession();
+            if (!session?.user) return;
+            const { data: profile } = await sb
+              .from('users').select('*').eq('auth_uid', session.user.id).maybeSingle();
+            if (profile?.is_active) {
+              await onUserAuthenticated(profile);
+            }
+          } catch (e) {
+            if (isMirsadDebugLog()) console.warn('[PWA resume]', e);
+          }
+        };
+
+        document.addEventListener('visibilitychange', () => {
+          if (!document.hidden) resumeAuthIfNeeded();
+        });
+        window.addEventListener('pageshow', () => {
+          resumeAuthIfNeeded();
+        });
       }
 
       async function checkExistingSession() {
@@ -42272,6 +42337,7 @@
       document.addEventListener('DOMContentLoaded', async () => {
         try {
           loadTheme();
+          if (typeof initPwaSessionPersistence === 'function') initPwaSessionPersistence();
           if (typeof initSidebarMobileControls === 'function') initSidebarMobileControls();
           if (typeof initNativeAppFeel === 'function') initNativeAppFeel();
           if (typeof portalFilterPanelsForMob === 'function') portalFilterPanelsForMob();
