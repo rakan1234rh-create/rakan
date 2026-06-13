@@ -11,6 +11,40 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
+  <meta name="athar-build" content="dev">
+  <script id="atharPwaUpdateCheck">(function () {
+    if (location.protocol === 'file:') return;
+    if (/^localhost$|^127\.0\.0\.1$/.test(location.hostname)) return;
+    var KEY = 'athar_deploy_build';
+    function reloadForBuild(build) {
+      try { localStorage.setItem(KEY, build); } catch (_) {}
+      var base = location.pathname.replace(/[^/]*$/, '');
+      location.replace(base + 'index.html?athar=' + encodeURIComponent(build) + '&_=' + Date.now());
+    }
+    function checkUpdate() {
+      var bakedEl = document.querySelector('meta[name="athar-build"]');
+      var baked = bakedEl ? String(bakedEl.content || '').trim() : '';
+      fetch('app-version.json?_=' + Date.now(), { cache: 'no-store', credentials: 'same-origin' })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (v) {
+          if (!v || !v.build) return;
+          var remote = String(v.build);
+          if (baked && baked !== 'dev' && baked !== remote) { reloadForBuild(remote); return; }
+          var stored = null;
+          try { stored = localStorage.getItem(KEY); } catch (_) {}
+          if (!stored) {
+            try { localStorage.setItem(KEY, remote); } catch (_) {}
+            return;
+          }
+          if (stored !== remote) reloadForBuild(remote);
+        })
+        .catch(function () {});
+    }
+    checkUpdate();
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden) checkUpdate();
+    });
+  })();</script>
   <title>منصة الرصد المتكاملة | Monitoring Platform</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

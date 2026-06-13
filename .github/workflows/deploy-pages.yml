@@ -32,8 +32,11 @@ jobs:
           npm install sharp @resvg/resvg-js --no-save
           node scripts/export-athar-homescreen-png.mjs
           VER="$(tr -d '\r\n' < icons/icon-cache-ver.txt)"
+          SHORT_SHA="$(git rev-parse --short HEAD)"
           mkdir -p site/icons
           cp index.html site/index.html
+          sed -i "s/<meta name=\"athar-build\" content=\"[^\"]*\">/<meta name=\"athar-build\" content=\"${SHORT_SHA}\">/" site/index.html
+          printf '%s\n' "{\"build\":\"${SHORT_SHA}\",\"builtAt\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}" > site/app-version.json
           cp -r styles site/
           if [ -d js ]; then cp -r js site/; fi
           cp manifest.webmanifest site/manifest.webmanifest
