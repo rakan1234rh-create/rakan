@@ -19380,8 +19380,9 @@
         }
 
         #tab-departments .users-filters-toolbar .figma-search-input::placeholder {
-          font-size: 11px;
-          opacity: 1
+          font-size: 9px;
+          opacity: 1;
+          letter-spacing: -0.01em
         }
 
         #tab-departments .users-filters-toolbar .figma-search-btn {
@@ -23942,7 +23943,9 @@
                     <div class="toolbar wf-toolbar users-toolbar users-filters-toolbar">
                       <div class="figma-search-wrap wf-search">
                         <input type="text" class="figma-search-input" id="user-search"
-                          placeholder="ابحث بالاسم، الرقم الوظيفي، البريد..." oninput="renderUsers()">
+                          placeholder="ابحث بالاسم، الرقم الوظيفي، البريد الإلكتروني، رقم الجوال"
+                          title="ابحث بالاسم، الرقم الوظيفي، البريد الإلكتروني، رقم الجوال"
+                          oninput="renderUsers()">
                         <button type="button" class="figma-search-btn" onclick="renderUsers()" aria-label="بحث">
                           <i class="fas fa-magnifying-glass"></i>
                         </button>
