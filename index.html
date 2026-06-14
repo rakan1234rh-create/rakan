@@ -16655,7 +16655,15 @@
             - 12px
           )
         ) !important;
-        height: auto !important;
+        height: min(
+          72dvh,
+          calc(
+            100dvh
+            - var(--unified-topbar-h, 76px)
+            - var(--mob-chrome-bottom, var(--mr-mob-bottom-nav-h, calc(56px + env(safe-area-inset-bottom, 0px))))
+            - 12px
+          )
+        ) !important;
         min-height: 0 !important;
         border-radius: 16px 16px 0 0 !important;
         margin: 0 !important;
@@ -16718,21 +16726,18 @@
         flex: 1 1 auto !important;
         min-height: 0 !important;
         padding: 6px 12px 12px;
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
-        overscroll-behavior-y: contain;
-        touch-action: pan-y;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-      }
-
-      .modal-card.cmp-detail-card .modal-body::-webkit-scrollbar {
-        display: none;
-        width: 0;
-        height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden !important;
+        overscroll-behavior: none;
       }
 
       .modal-card.cmp-detail-card .cmp-detail-shell {
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
         max-width: none;
         width: 100%;
         --cmp-detail-w: 100%;
@@ -16751,9 +16756,23 @@
       .modal-card.cmp-detail-card .emp-new-grid,
       .modal-card.cmp-detail-card .emp-new-cards-wrap--single,
       .modal-card.cmp-detail-card .cmp-charts-grid {
+        flex-shrink: 0;
         max-width: 100%;
         width: 100%;
         margin-inline: 0
+      }
+
+      .modal-card.cmp-detail-card .cmp-detail-section--violations {
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        margin-bottom: 0 !important
+      }
+
+      .modal-card.cmp-detail-card .cmp-detail-section--violations .cmp-detail-section-head {
+        flex-shrink: 0
       }
 
       .modal-card.cmp-detail-card .cmp-detail-section--severity {
@@ -16810,16 +16829,17 @@
         margin-top: 2px !important
       }
 
-      /* 3 مخالفات ظاهرة + الباقي بالمس (بدون شريط تمرير) */
+      /* التفاصيل ثابتة — التمرير داخل قائمة المخالفات المؤثرة فقط */
       .modal-card.cmp-detail-card .cmp-detail-section--violations .cmp-viol-list,
-      .modal-card.cmp-detail-card .cmp-detail-section--violations .cmp-viol-list.cmp-viol-list--scroll {
-        --cmp-viol-rows: 3;
+      .modal-card.cmp-detail-card .cmp-detail-section--violations .cmp-viol-list.cmp-viol-list--scroll,
+      .modal-card.cmp-detail-card .cmp-detail-section--violations .score-viol-list.cmp-viol-list--scroll {
         --cmp-viol-row-h: 56px;
         --cmp-viol-gap: 6px;
+        flex: 1 1 auto;
         display: flex !important;
         flex-direction: column !important;
         gap: var(--cmp-viol-gap) !important;
-        max-height: calc(var(--cmp-viol-rows) * var(--cmp-viol-row-h) + (var(--cmp-viol-rows) - 1) * var(--cmp-viol-gap)) !important;
+        max-height: none !important;
         height: auto !important;
         min-height: 0;
         overflow-y: auto !important;
@@ -21532,13 +21552,14 @@
     }
 
 @media (max-width: 768px) {
-            .cmp-detail-section--violations .cmp-viol-list,
-            .cmp-detail-section--violations .cmp-viol-list.cmp-viol-list--scroll {
-              --cmp-viol-rows: 3;
+            .modal-card.cmp-detail-card .cmp-detail-section--violations .cmp-viol-list,
+            .modal-card.cmp-detail-card .cmp-detail-section--violations .cmp-viol-list.cmp-viol-list--scroll {
               --cmp-viol-row-h: 56px;
               --cmp-viol-gap: 6px;
               gap: var(--cmp-viol-gap) !important;
-              max-height: calc(var(--cmp-viol-rows) * var(--cmp-viol-row-h) + (var(--cmp-viol-rows) - 1) * var(--cmp-viol-gap)) !important;
+              max-height: none !important;
+              flex: 1 1 auto;
+              min-height: 0;
               height: auto !important;
               overflow-y: auto !important;
               padding-inline-end: 0 !important;
