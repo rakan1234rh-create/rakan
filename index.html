@@ -16624,25 +16624,39 @@
         align-items: flex-end !important;
         justify-content: flex-end !important;
         padding: 0 !important;
-        padding-bottom: var(--mr-mob-bottom-nav-h, calc(56px + env(safe-area-inset-bottom, 0px))) !important;
         box-sizing: border-box !important
       }
 
+      #cmpDetailModal.modal.open::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: var(--mob-chrome-bottom, var(--mr-mob-bottom-nav-h, calc(56px + env(safe-area-inset-bottom, 0px))));
+        pointer-events: none;
+        z-index: 0
+      }
+
       .modal-card.cmp-detail-card {
+        position: fixed !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: var(--mob-chrome-bottom, var(--mr-mob-bottom-nav-h, calc(56px + env(safe-area-inset-bottom, 0px)))) !important;
+        z-index: 1 !important;
         width: 100% !important;
         max-width: 100% !important;
-        --cmp-mob-sheet-h: min(
-          82dvh,
+        max-height: min(
+          72dvh,
           calc(
             100dvh
-            - env(safe-area-inset-top, 0px)
-            - var(--mr-mob-bottom-nav-h, calc(56px + env(safe-area-inset-bottom, 0px)))
-            - 24px
+            - var(--unified-topbar-h, 76px)
+            - var(--mob-chrome-bottom, var(--mr-mob-bottom-nav-h, calc(56px + env(safe-area-inset-bottom, 0px))))
+            - 12px
           )
-        );
-        max-height: var(--cmp-mob-sheet-h) !important;
-        height: var(--cmp-mob-sheet-h) !important;
-        min-height: var(--cmp-mob-sheet-h) !important;
+        ) !important;
+        height: auto !important;
+        min-height: 0 !important;
         border-radius: 16px 16px 0 0 !important;
         margin: 0 !important;
         display: flex;
