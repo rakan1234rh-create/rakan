@@ -4465,7 +4465,10 @@
 
     /* تذكرة فوق امتثال — الامتثال يبقى ظاهراً خلفها */
     body.ticket-over-cmp #cmpDetailModal.modal.open {
-      z-index: 1000 !important
+      z-index: 1000 !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+      pointer-events: none !important
     }
 
     body.ticket-over-cmp #ticketModal.modal.open {
@@ -20104,7 +20107,10 @@
       }
 
       body.ticket-over-cmp #cmpDetailModal.modal.open {
-        z-index: 1050 !important
+        z-index: 1050 !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important
       }
 
       /* فوق الامتثال: التذكرة تلتصق بأسفل الشاشة (بدون فراغ للشريط — لأنها فوقه) */
@@ -20124,6 +20130,16 @@
           86dvh,
           calc(100dvh - var(--unified-topbar-h, 76px) - 12px)
         ) !important
+      }
+
+      body.ticket-over-cmp.ticket-keyboard-open #ticketModal .td-mob-sheet {
+        max-height: none !important
+      }
+
+      body.ticket-keyboard-open #cmpDetailModal.modal.open {
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important
       }
 
       [data-theme="dark"] body.ticket-over-cmp #ticketModal.modal.open::before {
@@ -25736,7 +25752,44 @@
         return typeof window !== 'undefined' && window.matchMedia('(max-width: 992px)').matches;
       }
 
+      function isMobileKeyboardOpen() {
+        const vv = window.visualViewport;
+        if (!vv) return false;
+        return window.innerHeight - vv.height > 120;
+      }
+
+      function syncTicketSheetKeyboardLayout() {
+        const modal = document.getElementById('ticketModal');
+        const sheet = modal?.querySelector('.td-mob-sheet');
+        if (!modal?.classList.contains('open') || !sheet || !isViolDetailMobSheet()) return;
+
+        const vv = window.visualViewport;
+        const keyboardOpen = isMobileKeyboardOpen();
+        document.body.classList.toggle('ticket-keyboard-open', keyboardOpen);
+
+        if (!keyboardOpen || !vv) {
+          if (document.body.classList.contains('ticket-over-cmp')) {
+            sheet.style.removeProperty('bottom');
+          }
+          sheet.style.removeProperty('max-height');
+          return;
+        }
+
+        const bottomGap = Math.max(0, window.innerHeight - vv.offsetTop - vv.height);
+        if (document.body.classList.contains('ticket-over-cmp')) {
+          sheet.style.removeProperty('bottom');
+        } else {
+          sheet.style.bottom = `${bottomGap}px`;
+        }
+        sheet.style.maxHeight = `${Math.max(240, vv.height - 12)}px`;
+      }
+
       function syncViolSheetBottomInset() {
+        if (document.getElementById('ticketModal')?.classList.contains('open')) {
+          syncTicketSheetKeyboardLayout();
+        }
+        if (isMobileKeyboardOpen()) return;
+
         const nav = document.getElementById('mobileBottomNav');
         if (!nav || !isViolDetailMobSheet()) return;
         const rect = nav.getBoundingClientRect();
@@ -25777,6 +25830,50 @@
         const modal = document.getElementById('violDetailModal');
         if (!modal || modal.parentNode === document.body) return;
         document.body.appendChild(modal);
+      }
+
+      function mountTicketModalForMob() {
+        const modal = document.getElementById('ticketModal');
+        const shell = document.querySelector('#appWrap > .app-shell');
+        const nav = document.getElementById('mobileBottomNav');
+        if (!modal || !shell) return;
+        if (document.body.classList.contains('ticket-over-cmp')) {
+          if (modal.parentNode !== document.body) document.body.appendChild(modal);
+          return;
+        }
+        if (isViolDetailMobSheet() && nav) {
+          if (modal.nextElementSibling === nav) return;
+          shell.insertBefore(modal, nav);
+        } else if (modal.parentNode !== document.body) {
+          document.body.appendChild(modal);
+        }
+      }
+
+      function releaseTicketModalFromShell() {
+        const modal = document.getElementById('ticketModal');
+        if (!modal || modal.parentNode === document.body) return;
+        document.body.appendChild(modal);
+      }
+
+      function initTicketRespKeyboardGuard() {
+        const ta = document.getElementById('respText');
+        const scroll = document.querySelector('#ticketModal .td-content-area');
+        if (!ta || !scroll || ta.dataset.kbInit === '1') return;
+        ta.dataset.kbInit = '1';
+        ta.addEventListener('focus', () => {
+          if (!isViolDetailMobSheet()) return;
+          requestAnimationFrame(() => {
+            syncTicketSheetKeyboardLayout();
+            const taRect = ta.getBoundingClientRect();
+            const scrollRect = scroll.getBoundingClientRect();
+            if (taRect.bottom > scrollRect.bottom - 20) {
+              scroll.scrollTop += taRect.bottom - scrollRect.bottom + 28;
+            }
+          });
+        });
+        ta.addEventListener('blur', () => {
+          window.setTimeout(syncTicketSheetKeyboardLayout, 120);
+        });
       }
 
       function openViolDetailSheetAnimated() {
@@ -25989,6 +26086,7 @@
         if (!modal || !sheet) return;
         const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         if (typeof syncMobBottomNavHeight === 'function') syncMobBottomNavHeight();
+        mountTicketModalForMob();
         syncViolSheetBottomInset();
         if (document.body.classList.contains('ticket-over-cmp')) {
           sheet.style.removeProperty('bottom');
@@ -26032,7 +26130,10 @@
           if (sheet) {
             sheet.style.transform = '';
             sheet.style.removeProperty('bottom');
+            sheet.style.removeProperty('max-height');
           }
+          releaseTicketModalFromShell();
+          document.body.classList.remove('ticket-keyboard-open');
           if (state._countdownTimer) {
             clearInterval(state._countdownTimer);
             state._countdownTimer = null;
@@ -37742,6 +37843,7 @@
         }
         form.style.display = '';
         btnsWrap.innerHTML = '';
+        if (typeof initTicketRespKeyboardGuard === 'function') initTicketRespKeyboardGuard();
 
         const role = state.currentUser.role;
         const meId = state.currentUser.id;
@@ -44007,6 +44109,7 @@
           if (typeof initLoginFieldKeyboard === 'function') initLoginFieldKeyboard();
           if (typeof initViolDetailSheetDrag === 'function') initViolDetailSheetDrag();
           if (typeof initTicketSheetDrag === 'function') initTicketSheetDrag();
+          if (typeof initTicketRespKeyboardGuard === 'function') initTicketRespKeyboardGuard();
           if (typeof initCmpDetailSheetDrag === 'function') initCmpDetailSheetDrag();
           if (typeof initAttViewerDrag === 'function') initAttViewerDrag();
 
