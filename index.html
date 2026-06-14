@@ -16715,6 +16715,36 @@
         margin-inline: 0
       }
 
+      .modal-card.cmp-detail-card .cmp-detail-section--severity {
+        padding: 5px 4px 6px 5px !important
+      }
+
+      .modal-card.cmp-detail-card .cmp-detail-section--severity .cmp-detail-section-title {
+        margin-bottom: 4px !important;
+        padding-inline: 0 !important
+      }
+
+      .modal-card.cmp-detail-card .cmp-detail-section--severity .cmp-severity-grid {
+        flex-direction: row-reverse !important;
+        align-items: center !important;
+        gap: 6px !important;
+        text-align: start !important
+      }
+
+      .modal-card.cmp-detail-card .cmp-detail-section--severity .cmp-severity-donut {
+        margin: 0 !important
+      }
+
+      .modal-card.cmp-detail-card .cmp-detail-section--severity .cmp-severity-legend {
+        gap: 2px !important;
+        max-width: none !important
+      }
+
+      .modal-card.cmp-detail-card .cmp-detail-section--severity .cmp-sev-legend-item {
+        padding: 3px 4px !important;
+        min-height: 0 !important
+      }
+
       /* 3 مخالفات ظاهرة + الباقي بالمس (بدون شريط تمرير) */
       .modal-card.cmp-detail-card .cmp-detail-section--violations .cmp-viol-list,
       .modal-card.cmp-detail-card .cmp-detail-section--violations .cmp-viol-list.cmp-viol-list--scroll {
@@ -16786,15 +16816,34 @@
       }
 
       .cmp-detail-hero-top {
-        flex-wrap: wrap;
-        align-items: flex-start;
-        gap: 8px
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) auto !important;
+        grid-template-rows: auto !important;
+        align-items: start !important;
+        gap: 8px !important;
+        direction: rtl !important
       }
 
       .modal-card.cmp-detail-card .cmp-detail-hero-main {
-        flex: 1 1 calc(100% - 76px);
-        min-width: 0;
-        max-width: 100%
+        grid-column: 1 !important;
+        grid-row: 1 !important;
+        flex: none !important;
+        min-width: 0 !important;
+        max-width: none !important;
+        width: 100% !important
+      }
+
+      .modal-card.cmp-detail-card .cmp-detail-hero-ring-wrap {
+        grid-column: 2 !important;
+        grid-row: 1 !important;
+        flex: 0 0 auto !important;
+        align-self: start !important;
+        justify-self: end !important
+      }
+
+      .modal-card.cmp-detail-card .cmp-detail-hero-ring {
+        width: 64px !important;
+        height: 64px !important
       }
 
       .modal-card.cmp-detail-card .cmp-detail-hero-text {
@@ -16943,6 +16992,15 @@
 
       .cmp-severity-donut {
         margin: 0 auto
+      }
+
+      .modal-card.cmp-detail-card .cmp-detail-section--severity .cmp-severity-grid {
+        flex-direction: row-reverse !important;
+        text-align: start !important
+      }
+
+      .modal-card.cmp-detail-card .cmp-detail-section--severity .cmp-severity-donut {
+        margin: 0 !important
       }
     }
 
