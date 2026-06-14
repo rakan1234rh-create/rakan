@@ -20009,7 +20009,7 @@
         box-sizing: border-box;
         padding-bottom: 0;
         transform: translateY(100%);
-        transition: transform 0.36s cubic-bezier(0.32, 0.72, 0, 1);
+        transition: transform 0.36s cubic-bezier(0.32, 0.72, 0, 1), bottom 0.22s ease, max-height 0.22s ease;
         will-change: transform;
         box-shadow: none
       }
@@ -25855,7 +25855,7 @@
         document.documentElement.style.setProperty('--mr-mob-bottom-nav-h', `${navH}px`);
 
         const keyboardActive = kbInset > 0 || editingResp;
-        const effectiveBottom = (editingResp && kbInset > 0) ? 0 : navH;
+        const effectiveBottom = editingResp ? 0 : navH;
         document.documentElement.style.setProperty('--mob-chrome-bottom', `${effectiveBottom}px`);
         document.documentElement.style.setProperty('--viol-sheet-bottom', `${effectiveBottom}px`);
         document.documentElement.style.setProperty('--ticket-sheet-bottom', `${effectiveBottom}px`);
@@ -26024,7 +26024,7 @@
 
         document.addEventListener('focusout', (e) => {
           if (e.target.id !== 'respText') return;
-          window.setTimeout(tryReleaseTicketRespEditing, 320);
+          window.setTimeout(tryReleaseTicketRespEditing, 600);
         }, true);
       }
 
@@ -26051,7 +26051,7 @@
             }
             document.body.dataset.violRespFocus = '0';
             syncMobViewportLayout();
-          }, 320);
+          }, 600);
         }, true);
       }
 
