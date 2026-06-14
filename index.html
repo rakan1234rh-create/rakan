@@ -36274,12 +36274,38 @@
         }
       }
 
+      function isR2StreamPlayUrl(url) {
+        const u = String(url || '');
+        return u.includes('/functions/v1/r2-storage') && /[?&]stream=/.test(u);
+      }
+
       /** رابط بث عبر Edge Function — يتجاوز CORS على R2 */
       function buildR2StreamPlayUrl(streamToken) {
         const tok = String(streamToken || '').trim();
         if (!tok) return '';
         const q = new URLSearchParams({ stream: tok, apikey: SUPABASE_ANON });
         return `${R2_STORAGE_FN_URL}?${q.toString()}`;
+      }
+
+      /** جلب بث الفيدio عبر Edge Function مع JWT (لا يعمل في src مباشرة) */
+      async function fetchAuthedStreamBlobUrl(playUrl, mimeType) {
+        const { data: { session } } = await sb.auth.getSession();
+        const bearer = session?.access_token || SUPABASE_ANON;
+        const res = await fetch(playUrl, {
+          method: 'GET',
+          headers: {
+            'apikey': SUPABASE_ANON,
+            'Authorization': `Bearer ${bearer}`,
+          },
+        });
+        if (res.status === 404) throw new Error('الملف غير موجود في التخزين (404).');
+        if (!res.ok && res.status !== 206) {
+          throw new Error('تعذّر تحميل الفيديو (' + res.status + ')');
+        }
+        const blob = await res.blob();
+        const type = mimeType || blob.type || 'video/mp4';
+        const b = blob.type && blob.type.startsWith('video/') ? blob : new Blob([blob], { type });
+        return URL.createObjectURL(b);
       }
 
       /** أرجع رابط التشغيل — بدون fetch (يتجنّب CORS على R2) */
@@ -36289,9 +36315,21 @@
         return u;
       }
 
-      async function playVideoInViewer(vid, playUrl) {
-        await setVideoElementSource(vid, resolveMediaPlayUrl(playUrl));
-        return playUrl;
+      async function playVideoInViewer(vid, playUrl, mimeType) {
+        const url = resolveMediaPlayUrl(playUrl);
+        if (isR2StreamPlayUrl(url)) {
+          const blobUrl = await fetchAuthedStreamBlobUrl(url, mimeType);
+          try {
+            await setVideoElementSource(vid, blobUrl);
+            vid.dataset.blobPlayUrl = blobUrl;
+            return blobUrl;
+          } catch (e) {
+            URL.revokeObjectURL(blobUrl);
+            throw e;
+          }
+        }
+        await setVideoElementSource(vid, url);
+        return url;
       }
 
       async function loadAttachmentPlayUrl(fileId, fileName, ticketCtx) {
@@ -38409,7 +38447,7 @@
               try {
                 playUrl = await loadAttachmentPlayUrl(fileId, name, ticketCtx);
                 if (viewerLoadGen !== state._attViewerLoadGen) return;
-                playUrl = await playVideoInViewer(vid, playUrl);
+                playUrl = await playVideoInViewer(vid, playUrl, mime);
                 revealAttViewerMedia(vid);
               } catch (e) {
                 if (isMirsadDebugLog()) console.error('Lightbox Video Load Error:', e);
