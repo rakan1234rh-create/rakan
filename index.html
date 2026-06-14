@@ -20013,9 +20013,9 @@
       }
 
       #tab-compliance .cmp-neo-toolbar.toolbar.wf-toolbar {
-        display: flex !important;
-        flex-direction: row !important;
-        flex-wrap: wrap !important;
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) auto !important;
+        grid-template-rows: auto auto !important;
         align-items: stretch !important;
         gap: 8px !important;
         width: 100% !important;
@@ -20024,15 +20024,49 @@
       }
 
       #tab-compliance .cmp-neo-search-combo {
-        flex: 1 1 100% !important;
-        min-width: 0 !important
+        grid-column: 1 !important;
+        grid-row: 1 !important;
+        flex: none !important;
+        min-width: 0 !important;
+        width: 100% !important;
+        max-width: none !important
+      }
+
+      #tab-compliance .cmp-neo-toolbar #cmpNeoDateWrap,
+      #tab-compliance .cmp-neo-toolbar .rp-date-wrap {
+        grid-column: 2 !important;
+        grid-row: 1 !important;
+        flex: 0 0 auto !important;
+        width: auto !important;
+        min-width: 0 !important;
+        max-width: none !important
       }
 
       #tab-compliance .cmp-neo-toolbar .wf-status-filter,
-      #tab-compliance .cmp-neo-toolbar .rp-date-wrap,
       #tab-compliance .cmp-neo-toolbar .rp-tool-btn.cmp-neo-btn--pdf-export {
-        flex: 1 1 auto !important;
+        grid-column: 1 / -1 !important;
+        grid-row: 2 !important;
+        flex: none !important;
+        width: 100% !important;
         min-width: 0 !important
+      }
+
+      #tab-compliance .cmp-neo-toolbar .rp-date-btn {
+        min-height: 46px !important;
+        height: 46px !important;
+        width: 46px !important;
+        min-width: 46px !important;
+        padding: 0 !important;
+        justify-content: center !important;
+        align-items: center !important
+      }
+
+      #tab-compliance .cmp-neo-toolbar .rp-date-btn #cmp-date-label {
+        display: none !important
+      }
+
+      #tab-compliance .cmp-neo-toolbar .rp-date-btn i {
+        margin: 0 !important
       }
 
       #tab-compliance .cmp-neo-search-meta {
@@ -20042,7 +20076,30 @@
 
       #tab-compliance .cmp-neo-extremes {
         margin-bottom: 12px !important;
-        gap: 10px !important
+        gap: 8px !important
+      }
+
+      #tab-compliance .cmp-neo-extreme {
+        padding: 10px !important;
+        gap: 8px !important;
+        min-width: 0 !important
+      }
+
+      #tab-compliance .cmp-neo-extreme__body {
+        min-width: 0 !important
+      }
+
+      #tab-compliance .cmp-neo-extreme__name {
+        font-size: 12px !important;
+        white-space: normal !important;
+        overflow: hidden !important;
+        display: -webkit-box !important;
+        -webkit-line-clamp: 2 !important;
+        -webkit-box-orient: vertical !important
+      }
+
+      #tab-compliance .cmp-neo-extreme__score {
+        font-size: 13px !important
       }
 
       #tab-compliance .mk-cmp-grid--emp,
@@ -20060,7 +20117,7 @@
         -webkit-overflow-scrolling: touch;
         touch-action: pan-y;
         overscroll-behavior-y: contain;
-        padding-bottom: calc(var(--mr-mob-bottom-nav-h, 56px) + 16px) !important;
+        padding-bottom: calc(var(--mr-mob-bottom-nav-h, calc(56px + env(safe-area-inset-bottom, 0px))) + 24px) !important;
         margin: 0 !important;
         width: 100% !important;
         max-width: none !important
@@ -20069,7 +20126,36 @@
       #tab-compliance .mk-cmp-grid--emp > .mk-cmp-emp-card,
       #tab-compliance .cmp-neo-grid > .cmp-neo-card {
         width: 100% !important;
-        max-width: none !important
+        max-width: none !important;
+        height: auto !important;
+        min-height: unset !important;
+        flex: 0 0 auto !important;
+        overflow: visible !important
+      }
+
+      #tab-compliance .mk-cmp-emp-card__chips {
+        flex: 0 0 auto !important;
+        min-height: unset !important
+      }
+
+      #tab-compliance .mk-cmp-emp-card__metrics {
+        flex-shrink: 0 !important;
+        align-items: stretch !important
+      }
+
+      #tab-compliance .mk-cmp-emp-metric {
+        aspect-ratio: unset !important;
+        min-height: 148px !important;
+        height: auto !important;
+        overflow: visible !important
+      }
+
+      #tab-compliance .mk-cmp-emp-metric__ring {
+        margin-top: 4px !important
+      }
+
+      #tab-compliance .mk-cmp-emp-card__ft {
+        flex-shrink: 0 !important
       }
 
       html.mr-mobile-ui.mr-cmp-tab-active body.mirsad-app-active #appWrap .main {
@@ -20130,7 +20216,8 @@
         overflow-x: hidden !important;
         -webkit-overflow-scrolling: touch !important;
         touch-action: pan-y !important;
-        overscroll-behavior-y: contain
+        overscroll-behavior-y: contain;
+        padding-bottom: calc(var(--mr-mob-bottom-nav-h, calc(56px + env(safe-area-inset-bottom, 0px))) + 24px) !important
       }
 
       /* تعريف المخالفة — bottom sheet ينزلق خلف شريط التنقل ويلتصق بحافته السفلية */
