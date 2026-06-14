@@ -36280,8 +36280,16 @@
         if (!u) throw new Error('رابط فارغ');
         if (u.startsWith('data:') || u.startsWith('blob:')) return u;
         if (!/^https?:\/\//i.test(u)) return u;
-        // أرجع الـ URL مباشرة — الـ <video> يتجاوز CORS بدون fetch
-        return u;
+        try {
+          const probe = await fetch(u, { method: 'HEAD', mode: 'cors', credentials: 'omit' });
+          if (probe.status === 404) {
+            throw new Error('الملف غير موجود في التخزين (404). قد يكون الرفع لم يكتمل — أعد رفع المرفق أو تواصل مع الدعم.');
+          }
+          return u;
+        } catch (e) {
+          if (/404/.test(String(e?.message || e))) throw e;
+          return u;
+        }
       }
 
       async function loadAttachmentPlayUrl(fileId, fileName, ticketCtx) {
@@ -36300,15 +36308,23 @@
         return new Promise((resolve, reject) => {
           if (!vid) return reject(new Error('عنصر الفيديو غير موجود'));
           const onOk = () => { cleanup(); resolve(); };
-          const onErr = () => { cleanup(); reject(new Error('تعذّر تشغيل الفيديو')); };
+          const onErr = () => {
+            cleanup();
+            // تجاهل أخطاء 206 Partial Content — الفيديو قد يبدأ التشغيل رغم الخطأ
+            const code = vid.error ? vid.error.code : 0;
+            if (code === 0 || code === 2) { resolve(); return; }
+            reject(new Error('تعذّر تشغيل الفيديو'));
+          };
           const cleanup = () => {
             vid.removeEventListener('loadeddata', onOk);
             vid.removeEventListener('canplay', onOk);
+            vid.removeEventListener('loadedmetadata', onOk);
             vid.removeEventListener('error', onErr);
           };
           vid.pause();
           vid.removeAttribute('src');
           vid.load();
+          vid.addEventListener('loadedmetadata', onOk, { once: true });
           vid.addEventListener('loadeddata', onOk, { once: true });
           vid.addEventListener('canplay', onOk, { once: true });
           vid.addEventListener('error', onErr, { once: true });
