@@ -36309,7 +36309,13 @@
           method: 'GET',
           headers: await r2StreamFetchHeaders(),
         });
-        if (res.status === 401) throw new Error('رمز البث غير صالح — أعد نشر r2-storage على Supabase.');
+        if (res.status === 401) {
+          const gw = res.headers.get('sb-error-code') || '';
+          if (/NO_AUTH|UNAUTHORIZED/i.test(gw)) {
+            throw new Error('انتهت الجلسة أو JWT مفعّل على الدالة — سجّل الدخول من جديد، أو عطّل Enforce JWT Verification على r2-storage.');
+          }
+          throw new Error('رمز البث غير صالح — أعد نشر r2-storage على Supabase.');
+        }
         if (res.status === 404) throw new Error('الملف غير موجود في التخزين (404).');
         if (!res.ok && res.status !== 206) {
           let detail = '';
