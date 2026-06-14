@@ -11,6 +11,14 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
+  <script id="mobPortraitLockEarly">(function () {
+    function isMobLandscape() {
+      if (window.matchMedia('(min-width: 993px)').matches) return false;
+      if (!window.matchMedia('(orientation: landscape)').matches) return false;
+      return Math.min(window.innerWidth, window.innerHeight) < 520;
+    }
+    document.documentElement.classList.toggle('mob-landscape-locked', isMobLandscape());
+  })();</script>
   <meta name="athar-build" content="dev">
   <script id="atharPwaUpdateCheck">(function () {
     if (location.protocol === 'file:') return;
@@ -15794,6 +15802,61 @@
       }
 
       /* وضع تطبيق: لا تكبير باللمس مرتين — القفل على html/#appWrap وليس body (إصلاح فراغ iOS) */
+      .mob-portrait-lock {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 100000;
+        align-items: center;
+        justify-content: center;
+        padding: max(20px, env(safe-area-inset-top, 0px)) 24px max(20px, env(safe-area-inset-bottom, 0px));
+        background: #0f1218;
+        color: #fff;
+        text-align: center;
+        direction: rtl;
+        box-sizing: border-box;
+        touch-action: none
+      }
+
+      .mob-portrait-lock__card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        max-width: 280px
+      }
+
+      .mob-portrait-lock__icon {
+        font-size: 42px;
+        color: var(--mr-primary, #2f2fe4);
+        transform: rotate(90deg);
+        margin-bottom: 4px
+      }
+
+      .mob-portrait-lock__title {
+        margin: 0;
+        font-size: 17px;
+        font-weight: 700;
+        line-height: 1.45
+      }
+
+      .mob-portrait-lock__hint {
+        margin: 0;
+        font-size: 13px;
+        line-height: 1.55;
+        color: rgba(255, 255, 255, 0.72)
+      }
+
+      html.mob-landscape-locked .mob-portrait-lock {
+        display: flex !important
+      }
+
+      html.mob-landscape-locked,
+      html.mob-landscape-locked body {
+        overflow: hidden !important;
+        touch-action: none !important
+      }
+
       html.mirsad-app-shell-lock {
         overflow: hidden;
         width: 100%;
@@ -23900,6 +23963,13 @@
 </head>
 
 <body>
+  <div id="mobPortraitLock" class="mob-portrait-lock" hidden aria-hidden="true">
+    <div class="mob-portrait-lock__card">
+      <i class="fas fa-mobile-screen-button mob-portrait-lock__icon" aria-hidden="true"></i>
+      <p class="mob-portrait-lock__title">وضع التطبيق عمودي فقط</p>
+      <p class="mob-portrait-lock__hint">أعد تدوير الجهاز للوضع العمودي لمتابعة استخدام ATHAR</p>
+    </div>
+  </div>
   <!-- Global Loader Overlay -->
   <div id="globalLoader"
     style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); z-index: 99999; justify-content: center; align-items: center; backdrop-filter: blur(5px);">
@@ -27394,6 +27464,32 @@
       // 7. AUTHENTICATION
       // ═══════════════════════════════════════════════════════════════════════════
 
+      function isMobileLandscapeViewport() {
+        if (typeof isMobileViewport === 'function' && !isMobileViewport()) return false;
+        if (!window.matchMedia('(orientation: landscape)').matches) return false;
+        return Math.min(window.innerWidth, window.innerHeight) < 520;
+      }
+
+      function lockMobilePortraitOrientation() {
+        if (typeof isMobileViewport === 'function' && !isMobileViewport()) return;
+        const orient = screen.orientation;
+        if (!orient || typeof orient.lock !== 'function') return;
+        orient.lock('portrait-primary').catch(() => {
+          orient.lock('portrait').catch(() => {});
+        });
+      }
+
+      function syncMobilePortraitLock() {
+        const locked = isMobileLandscapeViewport();
+        document.documentElement.classList.toggle('mob-landscape-locked', locked);
+        const overlay = document.getElementById('mobPortraitLock');
+        if (overlay) {
+          overlay.hidden = !locked;
+          overlay.setAttribute('aria-hidden', locked ? 'false' : 'true');
+        }
+        if (!locked) lockMobilePortraitOrientation();
+      }
+
       function setNativeAppShellActive(active) {
         const on = !!active && typeof isMobileViewport === 'function' && isMobileViewport();
         document.body.classList.toggle('mirsad-app-active', on);
@@ -27402,11 +27498,20 @@
           if (typeof syncLoginStandalonePwaClass === 'function') syncLoginStandalonePwaClass();
           if (typeof syncWefaqBranding === 'function') syncWefaqBranding();
         }
+        syncMobilePortraitLock();
       }
 
       function initNativeAppFeel() {
         if (window._mrNativeFeelBound) return;
         window._mrNativeFeelBound = true;
+        syncMobilePortraitLock();
+        const tryLockOnGesture = () => {
+          lockMobilePortraitOrientation();
+          document.removeEventListener('touchstart', tryLockOnGesture, true);
+          document.removeEventListener('click', tryLockOnGesture, true);
+        };
+        document.addEventListener('touchstart', tryLockOnGesture, { capture: true, passive: true });
+        document.addEventListener('click', tryLockOnGesture, { capture: true, passive: true });
         const blockGestureZoom = (e) => {
           if (!document.body.classList.contains('mirsad-app-active')) return;
           e.preventDefault();
@@ -27421,6 +27526,12 @@
           if (now - lastTouchEnd < 320) e.preventDefault();
           lastTouchEnd = now;
         }, { passive: false });
+        window.addEventListener('orientationchange', () => {
+          setTimeout(syncMobilePortraitLock, 80);
+        }, { passive: true });
+        document.addEventListener('visibilitychange', () => {
+          if (!document.hidden) syncMobilePortraitLock();
+        }, { passive: true });
       }
 
       let _loginPortalScrollY = 0;
@@ -30965,6 +31076,7 @@
             setTimeout(() => {
               syncSafeAreaInsets();
               syncMobBottomNavHeight();
+              if (typeof syncMobilePortraitLock === 'function') syncMobilePortraitLock();
             }, 120);
           }, { passive: true });
         }
@@ -44760,6 +44872,7 @@
         const apply = () => {
           syncDesktopUiClass();
           if (typeof syncWefaqBranding === 'function') syncWefaqBranding();
+          if (typeof syncMobilePortraitLock === 'function') syncMobilePortraitLock();
           syncMobilePlatformScale();
           syncDesktopHorizontalScroll();
           const appVisible = document.getElementById('appWrap')?.style.display !== 'none';
@@ -44795,6 +44908,11 @@
           if (typeof m.addEventListener === 'function') m.addEventListener('change', apply);
           else if (typeof m.addListener === 'function') m.addListener(apply);
         });
+        window.addEventListener('orientationchange', () => {
+          setTimeout(() => {
+            if (typeof syncMobilePortraitLock === 'function') syncMobilePortraitLock();
+          }, 80);
+        }, { passive: true });
         let resizeT;
         window.addEventListener('resize', () => {
           clearTimeout(resizeT);
