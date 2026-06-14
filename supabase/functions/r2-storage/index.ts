@@ -72,14 +72,6 @@ function makeS3(env: NonNullable<ReturnType<typeof requireR2Env>>) {
   })
 }
 
-function streamSecret() {
-  return envFirst(
-    'SUPABASE_SERVICE_ROLE_KEY',
-    'SUPABASE_JWT_SECRET',
-    'SUPABASE_ANON_KEY',
-  )
-}
-
 function b64url(data: Uint8Array | string): string {
   const bytes = typeof data === 'string' ? new TextEncoder().encode(data) : data
   let bin = ''
@@ -96,8 +88,12 @@ function b64urlDecode(s: string): Uint8Array {
   return out
 }
 
-async function hmacSign(message: string): Promise<string> {
-  const secret = streamSecret()
+function streamSecret(env: NonNullable<ReturnType<typeof requireR2Env>>) {
+  // نفس السرّ عند التوقيع والتحقق — مرتبط بأسرار R2 الثابتة
+  return `${env.secretAccessKey}:${env.accessKeyId}:${env.bucket}`
+}
+
+async function hmacSign(message: string, secret: string): Promise<string> {
   const enc = new TextEncoder()
   const key = await crypto.subtle.importKey(
     'raw',
@@ -110,14 +106,21 @@ async function hmacSign(message: string): Promise<string> {
   return b64url(new Uint8Array(sig))
 }
 
-async function makeStreamToken(key: string, ttlSec = 3600): Promise<string> {
+async function makeStreamToken(
+  key: string,
+  env: NonNullable<ReturnType<typeof requireR2Env>>,
+  ttlSec = 3600,
+): Promise<string> {
   const exp = Math.floor(Date.now() / 1000) + ttlSec
   const msg = `${exp}:${key}`
-  const sig = await hmacSign(msg)
+  const sig = await hmacSign(msg, streamSecret(env))
   return `${b64url(msg)}.${sig}`
 }
 
-async function verifyStreamToken(token: string): Promise<string | null> {
+async function verifyStreamToken(
+  token: string,
+  env: NonNullable<ReturnType<typeof requireR2Env>>,
+): Promise<string | null> {
   const parts = token.split('.')
   if (parts.length !== 2) return null
   let msg = ''
@@ -131,7 +134,7 @@ async function verifyStreamToken(token: string): Promise<string | null> {
   const exp = parseInt(msg.slice(0, colon), 10)
   const key = msg.slice(colon + 1)
   if (!key || !exp || exp < Math.floor(Date.now() / 1000)) return null
-  const expected = await hmacSign(msg)
+  const expected = await hmacSign(msg, streamSecret(env))
   if (expected !== parts[1]) return null
   return key
 }
@@ -140,12 +143,13 @@ async function handleStreamRequest(
   req: Request,
   s3: S3Client,
   bucket: string,
+  env: NonNullable<ReturnType<typeof requireR2Env>>,
 ): Promise<Response | null> {
   const u = new URL(req.url)
   const token = u.searchParams.get('stream')
   if (!token) return null
 
-  const key = await verifyStreamToken(token)
+  const key = await verifyStreamToken(token, env)
   if (!key) return json({ error: 'رمز بث غير صالح أو منتهٍ' }, 401)
 
   const range = req.headers.get('Range') || undefined
@@ -207,7 +211,7 @@ Deno.serve(async (req) => {
   if (req.method === 'GET' || req.method === 'HEAD') {
     if (!env) return json({ error: 'R2 غير مُعدّ (متغيرات البيئة على الدالة)' }, 503)
     const s3 = makeS3(env)
-    const streamResp = await handleStreamRequest(req, s3, env.bucket)
+    const streamResp = await handleStreamRequest(req, s3, env.bucket, env)
     if (streamResp) return streamResp
     return json({ error: 'Method not allowed' }, 405)
   }
@@ -284,7 +288,7 @@ Deno.serve(async (req) => {
         Key: key,
       })
       const url = await getSignedUrl(s3, cmd, { expiresIn: 3600 })
-      const streamToken = await makeStreamToken(key)
+      const streamToken = await makeStreamToken(key, env)
       return json({ url, key, streamToken })
     }
 

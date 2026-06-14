@@ -36287,20 +36287,37 @@
         return `${R2_STORAGE_FN_URL}?${q.toString()}`;
       }
 
-      /** جلب بث الفيدio عبر Edge Function مع JWT (لا يعمل في src مباشرة) */
-      async function fetchAuthedStreamBlobUrl(playUrl, mimeType) {
+      async function r2StreamFetchHeaders() {
         const { data: { session } } = await sb.auth.getSession();
         const bearer = session?.access_token || SUPABASE_ANON;
+        return { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${bearer}` };
+      }
+
+      async function probeR2StreamPlayUrl(streamPlay) {
+        if (!streamPlay) return false;
+        try {
+          const res = await fetch(streamPlay, { method: 'HEAD', headers: await r2StreamFetchHeaders() });
+          return res.ok || res.status === 206;
+        } catch (_) {
+          return false;
+        }
+      }
+
+      /** جلب بث الفيدio عبر Edge Function مع JWT */
+      async function fetchAuthedStreamBlobUrl(playUrl, mimeType) {
         const res = await fetch(playUrl, {
           method: 'GET',
-          headers: {
-            'apikey': SUPABASE_ANON,
-            'Authorization': `Bearer ${bearer}`,
-          },
+          headers: await r2StreamFetchHeaders(),
         });
+        if (res.status === 401) throw new Error('رمز البث غير صالح — أعد نشر r2-storage على Supabase.');
         if (res.status === 404) throw new Error('الملف غير موجود في التخزين (404).');
         if (!res.ok && res.status !== 206) {
-          throw new Error('تعذّر تحميل الفيديو (' + res.status + ')');
+          let detail = '';
+          try {
+            const j = await res.json();
+            detail = j.error || j.message || '';
+          } catch (_) { /* ليس JSON */ }
+          throw new Error(detail || ('تعذّر تحميل الفيديو (' + res.status + ')'));
         }
         const blob = await res.blob();
         const type = mimeType || blob.type || 'video/mp4';
@@ -36318,14 +36335,19 @@
       async function playVideoInViewer(vid, playUrl, mimeType) {
         const url = resolveMediaPlayUrl(playUrl);
         if (isR2StreamPlayUrl(url)) {
-          const blobUrl = await fetchAuthedStreamBlobUrl(url, mimeType);
           try {
-            await setVideoElementSource(vid, blobUrl);
-            vid.dataset.blobPlayUrl = blobUrl;
-            return blobUrl;
-          } catch (e) {
-            URL.revokeObjectURL(blobUrl);
-            throw e;
+            await setVideoElementSource(vid, url);
+            return url;
+          } catch (_) {
+            const blobUrl = await fetchAuthedStreamBlobUrl(url, mimeType);
+            try {
+              await setVideoElementSource(vid, blobUrl);
+              vid.dataset.blobPlayUrl = blobUrl;
+              return blobUrl;
+            } catch (e) {
+              URL.revokeObjectURL(blobUrl);
+              throw e;
+            }
           }
         }
         await setVideoElementSource(vid, url);
@@ -36416,14 +36438,16 @@
             let lastSignErr = null;
             for (const key of candidates) {
               try {
-                if (!useStream) {
-                  const exists = await r2ObjectExists(key);
-                  if (exists === false) continue;
-                }
+                const exists = await r2ObjectExists(key);
+                if (exists === false) continue;
                 const signed = await callR2StorageFn('signGet', { key, ...(ct ? { contentType: ct } : {}) });
                 const streamPlay = useStream && signed?.streamToken
                   ? buildR2StreamPlayUrl(signed.streamToken)
                   : '';
+                if (useStream && streamPlay) {
+                  const ok = await probeR2StreamPlayUrl(streamPlay);
+                  if (!ok) continue;
+                }
                 const resolved = streamPlay || signed?.url;
                 if (!resolved) continue;
                 writeCfCache(cacheKey, resolved);
