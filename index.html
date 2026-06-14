@@ -36296,7 +36296,7 @@
       async function probeR2StreamPlayUrl(streamPlay) {
         if (!streamPlay) return false;
         try {
-          const res = await fetch(streamPlay, { method: 'HEAD', headers: await r2StreamFetchHeaders() });
+          const res = await fetch(streamPlay, { method: 'HEAD' });
           return res.ok || res.status === 206;
         } catch (_) {
           return false;
@@ -36317,7 +36317,8 @@
           throw new Error('رمز البث غير صالح — أعد نشر r2-storage على Supabase.');
         }
         if (res.status === 404) throw new Error('الملف غير موجود في التخزين (404).');
-        if (!res.ok && res.status !== 206) {
+        if (res.status === 206) throw new Error('تعذّر تحميل نسخة كاملة — استخدم البث المباشر.');
+        if (!res.ok) {
           let detail = '';
           try {
             const j = await res.json();
@@ -36341,13 +36342,14 @@
       async function playVideoInViewer(vid, playUrl, mimeType) {
         const url = resolveMediaPlayUrl(playUrl);
         if (isR2StreamPlayUrl(url)) {
+          // JWT مغلق — البث المباشر عبر src (يدعم Range / 206)
           try {
-            await setVideoElementSource(vid, url);
+            await setVideoElementSource(vid, url, mimeType);
             return url;
           } catch (_) {
             const blobUrl = await fetchAuthedStreamBlobUrl(url, mimeType);
             try {
-              await setVideoElementSource(vid, blobUrl);
+              await setVideoElementSource(vid, blobUrl, mimeType);
               vid.dataset.blobPlayUrl = blobUrl;
               return blobUrl;
             } catch (e) {
@@ -36356,7 +36358,7 @@
             }
           }
         }
-        await setVideoElementSource(vid, url);
+        await setVideoElementSource(vid, url, mimeType);
         return url;
       }
 
@@ -36372,7 +36374,7 @@
         return raw;
       }
 
-      function setVideoElementSource(vid, src) {
+      function setVideoElementSource(vid, src, mimeType) {
         return new Promise((resolve, reject) => {
           if (!vid) return reject(new Error('عنصر الفيديو غير موجود'));
           let settled = false;
@@ -36380,30 +36382,45 @@
             if (settled) return;
             settled = true;
             cleanup();
+            clearTimeout(errTimer);
             if (ok) resolve();
             else reject(new Error('تعذّر تشغيل الفيديو'));
           };
           const onOk = () => finish(true);
+          let errTimer = null;
           const onErr = () => {
             const code = vid.error ? vid.error.code : 0;
             if (code === 0 || code === 2) { finish(true); return; }
-            finish(false);
+            errTimer = setTimeout(() => {
+              if (vid.readyState >= 2 && (!vid.error || vid.error.code === 0)) finish(true);
+              else finish(false);
+            }, 1200);
           };
           const cleanup = () => {
             vid.removeEventListener('loadedmetadata', onOk);
             vid.removeEventListener('loadeddata', onOk);
             vid.removeEventListener('canplay', onOk);
+            vid.removeEventListener('canplaythrough', onOk);
             vid.removeEventListener('error', onErr);
           };
           vid.pause();
           vid.removeAttribute('crossorigin');
+          vid.innerHTML = '';
           const wasHidden = vid.style.display === 'none';
           if (wasHidden) { vid.style.visibility = 'hidden'; vid.style.display = ''; }
           vid.addEventListener('loadedmetadata', onOk, { once: true });
           vid.addEventListener('loadeddata', onOk, { once: true });
           vid.addEventListener('canplay', onOk, { once: true });
+          vid.addEventListener('canplaythrough', onOk, { once: true });
           vid.addEventListener('error', onErr, { once: true });
-          vid.src = src;
+          if (mimeType && /^https?:\/\//i.test(String(src))) {
+            const source = document.createElement('source');
+            source.src = src;
+            source.type = mimeType;
+            vid.appendChild(source);
+          } else {
+            vid.src = src;
+          }
           vid.load();
         });
       }

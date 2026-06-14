@@ -72,6 +72,24 @@ function makeS3(env: NonNullable<ReturnType<typeof requireR2Env>>) {
   })
 }
 
+function guessContentTypeFromKey(key: string): string {
+  const ext = key.includes('.') ? key.split('.').pop()!.toLowerCase() : ''
+  const map: Record<string, string> = {
+    mp4: 'video/mp4',
+    mov: 'video/quicktime',
+    webm: 'video/webm',
+    avi: 'video/x-msvideo',
+    mkv: 'video/x-matroska',
+    jpg: 'image/jpeg',
+    jpeg: 'image/jpeg',
+    png: 'image/png',
+    gif: 'image/gif',
+    webp: 'image/webp',
+    pdf: 'application/pdf',
+  }
+  return map[ext] || 'application/octet-stream'
+}
+
 function b64url(data: Uint8Array | string): string {
   const bytes = typeof data === 'string' ? new TextEncoder().encode(data) : data
   let bin = ''
@@ -158,7 +176,7 @@ async function handleStreamRequest(
     if (req.method === 'HEAD') {
       const head = await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: key }))
       const headers: Record<string, string> = { ...cors }
-      headers['Content-Type'] = head.ContentType || 'application/octet-stream'
+      headers['Content-Type'] = head.ContentType || guessContentTypeFromKey(key)
       headers['Accept-Ranges'] = 'bytes'
       if (head.ContentLength != null) {
         headers['Content-Length'] = String(head.ContentLength)
@@ -175,7 +193,7 @@ async function handleStreamRequest(
     )
 
     const headers: Record<string, string> = { ...cors }
-    headers['Content-Type'] = out.ContentType || 'application/octet-stream'
+    headers['Content-Type'] = out.ContentType || guessContentTypeFromKey(key)
     headers['Accept-Ranges'] = 'bytes'
     if (out.ContentLength != null) {
       headers['Content-Length'] = String(out.ContentLength)
