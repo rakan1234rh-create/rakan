@@ -16722,6 +16722,10 @@
         border-bottom: 1px solid var(--border) !important
       }
 
+      #cmpDetailModal.modal.open {
+        touch-action: none
+      }
+
       .modal-card.cmp-detail-card .modal-body {
         flex: 1 1 auto !important;
         min-height: 0 !important;
@@ -16730,6 +16734,15 @@
         flex-direction: column;
         overflow: hidden !important;
         overscroll-behavior: none;
+        touch-action: none
+      }
+
+      .modal-card.cmp-detail-card .emp-new-grid,
+      .modal-card.cmp-detail-card .emp-new-cards-wrap--single,
+      .modal-card.cmp-detail-card .cmp-charts-grid,
+      .modal-card.cmp-detail-card .cmp-detail-section--severity,
+      .modal-card.cmp-detail-card .cmp-detail-section--timeline {
+        touch-action: none
       }
 
       .modal-card.cmp-detail-card .cmp-detail-shell {
@@ -20608,6 +20621,15 @@
 
       body.ticket-scroll-locked {
         overflow: hidden !important
+      }
+
+      body.cmp-detail-open html.mr-mobile-ui.mr-cmp-tab-active #tab-compliance .mk-cmp-grid--emp,
+      body.cmp-detail-open html.mr-mobile-ui.mr-cmp-tab-active #tab-compliance .cmp-neo-grid,
+      body.cmp-detail-open html.mr-mobile-ui.mr-cmp-tab-active #tab-compliance .cmp-neo-pending-wrap {
+        overflow: hidden !important;
+        touch-action: none !important;
+        overscroll-behavior: none !important;
+        pointer-events: none !important
       }
 
       body.mob-resp-keyboard-open #appWrap > .app-shell > #mobileBottomNav.mobile-bottom-nav {
@@ -26231,6 +26253,9 @@
         if (el) {
           el.classList.add('open');
           document.body.classList.add('modal-open');
+          if (id === 'cmpDetailModal' && isCmpDetailMobSheet()) {
+            document.body.classList.add('cmp-detail-open');
+          }
           // انقل المودال لآخر الـ body لضمان ظهوره في المقدمة (Z-Index fix)
           document.body.appendChild(el);
         }
@@ -26250,9 +26275,11 @@
           const cmpModal = document.getElementById('cmpDetailModal');
           if (cmpSheet) cmpSheet.style.transform = '';
           cmpModal?.classList.remove('sheet-dragging');
+          document.body.classList.remove('cmp-detail-open');
         }
         if (!document.querySelector('.modal.open')) {
           document.body.classList.remove('modal-open');
+          document.body.classList.remove('cmp-detail-open');
         }
         // إيقاف عدّاد التذكرة عند إغلاق المودال
         if (id === 'ticketModal') {
@@ -26682,6 +26709,16 @@
         });
 
         zone.addEventListener('pointercancel', dragEnd);
+
+        const cmpViolScrollAllowed = (el) => el?.closest?.(
+          '.cmp-detail-section--violations .cmp-viol-list, .cmp-detail-section--violations .score-viol-list'
+        );
+
+        modal.addEventListener('touchmove', (e) => {
+          if (!modal.classList.contains('open') || !isCmpDetailMobSheet()) return;
+          if (cmpViolScrollAllowed(e.target)) return;
+          e.preventDefault();
+        }, { passive: false });
       }
 
       function initViolDetailSheetDrag() {
@@ -31027,7 +31064,7 @@
         });
 
         if (!document.querySelector('.modal.open')) {
-          document.body.classList.remove('modal-open', 'ticket-over-cmp');
+          document.body.classList.remove('modal-open', 'ticket-over-cmp', 'cmp-detail-open');
         }
         if (!document.getElementById('filterPanel')?.classList.contains('open')
           && !document.getElementById('cmpFilterPanel')?.classList.contains('open')) {
