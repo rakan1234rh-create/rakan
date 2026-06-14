@@ -19036,7 +19036,7 @@
       }
 
       #tab-violations .wf-panel-banner {
-        padding: 26px 14px 4px !important;
+        padding: 18px 14px 0 !important;
         margin: 0 !important;
         background: var(--mr-bg) !important;
         border: none !important;
@@ -19053,20 +19053,24 @@
       }
 
       #tab-violations .wf-panel-banner .wf-panel-sub {
-        margin-top: 10px !important
-      }
-
-      #tab-violations .wf-desk-tickets-host {
-        flex: 1 1 auto;
-        min-height: 0;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden
+        margin-top: 6px !important;
+        margin-bottom: 0 !important;
+        font-family: var(--font);
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--mr-text-2);
+        letter-spacing: 0;
+        line-height: 1.45
       }
 
       #tab-violations .viol-types-meta-row {
         flex-shrink: 0;
-        padding: 18px 14px 12px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 4px 14px 10px;
         margin: 0;
         background: var(--mr-bg);
         border-bottom: 1px solid var(--mr-border)
@@ -19079,7 +19083,20 @@
       }
 
       #tab-violations .viol-types-toolbar {
-        margin-top: 8px
+        margin: 0;
+        margin-inline-start: auto
+      }
+
+      #tab-violations .viol-types-toolbar:has(#violTypesAddBtn[data-role-hide]) {
+        display: none
+      }
+
+      #tab-violations .wf-desk-tickets-host {
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden
       }
 
       #tab-violations .mr-users-list-wrap:has(.viol-grid--mob-list) {
@@ -24163,7 +24180,7 @@
               <div class="wf-panel-banner">
                 <div class="wf-panel-intro">
                   <h2 class="wf-panel-title">أنواع المخالفات</h2>
-                  <p class="wf-panel-sub" id="violTypesPanelSub">قاموس المخالفات المعتمدة</p>
+                  <p class="wf-panel-sub" id="violTypesPanelSub">قاموس أنواع المخالفات المعتمدة</p>
                 </div>
               </div>
               <div id="violDeskHost" class="wf-desk-tickets-host">
@@ -29038,8 +29055,8 @@
         const violSub = document.getElementById('violTypesPanelSub');
         if (violSub) {
           violSub.textContent = canManageViolationTypes()
-            ? 'إدارة قاموس المخالفات'
-            : 'قاموس المخالفات المعتمدة — للاطلاع';
+            ? 'قاموس أنواع المخالفات — إدارة وتعديل'
+            : 'قاموس أنواع المخالفات المعتمدة — للاطلاع';
         }
 
         document.querySelectorAll('[data-perm]').forEach(el => {
