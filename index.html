@@ -10781,114 +10781,147 @@
     /* Notifications */
     .notif-panel {
       position: fixed;
-      top: 56px;
-      left: 24px;
-      width: 380px;
-      max-height: 520px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow-lg);
-      z-index: 999;
+      z-index: 1100;
+      width: min(320px, calc(100vw - 20px));
+      max-height: min(360px, calc(100dvh - 96px));
+      background: var(--mr-surface);
+      border: 1px solid var(--mr-border);
+      border-radius: 14px;
+      box-shadow: 0 10px 36px rgba(15, 18, 36, 0.12), 0 2px 8px rgba(15, 18, 36, 0.06);
       display: none;
       flex-direction: column;
       overflow: hidden;
-      animation: fadeUp 0.2s ease
+      animation: notifPanelIn 0.18s ease
+    }
+
+    @keyframes notifPanelIn {
+      from {
+        opacity: 0;
+        transform: translateY(-6px)
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0)
+      }
     }
 
     .notif-panel.open {
       display: flex
     }
 
+    [data-theme="dark"] .notif-panel {
+      background: var(--mr-surface);
+      border-color: var(--mr-border-2);
+      box-shadow: 0 14px 40px rgba(0, 0, 0, 0.34), 0 2px 8px rgba(0, 0, 0, 0.18)
+    }
+
     .notif-header {
-      padding: 14px 16px;
-      border-bottom: 1px solid var(--border);
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--mr-border);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background: var(--surface2)
+      gap: 10px;
+      background: var(--mr-surface);
+      flex-shrink: 0
     }
 
     .notif-header h4 {
-      font-size: 14px;
+      margin: 0;
+      font-size: 13px;
       font-weight: 700;
-      color: var(--text)
+      color: var(--mr-text)
     }
 
     .notif-header .notif-count {
-      font-size: 11px;
-      color: var(--text3);
-      margin-top: 2px
+      font-size: 10px;
+      color: var(--mr-text-3);
+      margin-top: 1px
     }
 
     .notif-mark-all {
-      background: none;
-      border: none;
-      color: var(--blue);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 5px 8px;
+      border-radius: 8px;
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--mr-primary);
       font-family: var(--font);
-      font-size: 12px;
+      font-size: 11px;
+      font-weight: 600;
       cursor: pointer;
-      font-weight: 500
+      white-space: nowrap;
+      transition: background 0.15s ease, border-color 0.15s ease
     }
 
     .notif-mark-all:hover {
-      text-decoration: underline
+      background: var(--mr-primary-softer);
+      border-color: color-mix(in srgb, var(--mr-primary) 18%, transparent);
+      text-decoration: none
     }
 
     .notif-list {
       overflow-y: auto;
-      flex: 1;
-      max-height: 440px
+      flex: 1 1 auto;
+      min-height: 0
     }
 
     .notif-list::-webkit-scrollbar {
-      width: 6px
+      width: 5px
     }
 
     .notif-list::-webkit-scrollbar-thumb {
-      background: var(--border2);
-      border-radius: 3px
+      background: var(--mr-border-2);
+      border-radius: 999px
     }
 
     .notif-item {
-      padding: 12px 16px;
-      border-bottom: 1px solid var(--border);
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--mr-border);
       cursor: pointer;
-      transition: 0.15s;
+      transition: background 0.15s ease;
       display: flex;
-      gap: 14px;
-      position: relative
+      gap: 10px;
+      position: relative;
+      text-align: right
+    }
+
+    .notif-item:last-child {
+      border-bottom: 0
     }
 
     .notif-item:hover {
-      background: var(--surface2)
+      background: var(--mr-bg-2)
     }
 
     .notif-item.unread {
-      background: rgba(0, 122, 255, 0.04)
+      background: color-mix(in srgb, var(--mr-primary) 5%, var(--mr-surface))
     }
 
     .notif-item.unread::before {
       content: '';
       position: absolute;
-      right: 6px;
+      inset-inline-end: 8px;
       top: 50%;
       transform: translateY(-50%);
-      width: 7px;
-      height: 7px;
-      background: var(--blue);
+      width: 6px;
+      height: 6px;
+      background: var(--mr-primary);
       border-radius: 50%
     }
 
     .notif-icon {
-      width: 36px;
-      height: 36px;
-      border-radius: 10px;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      font-size: 14px
+      font-size: 13px
     }
 
     .notif-icon.blue {
@@ -10922,36 +10955,46 @@
     }
 
     .notif-title {
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 600;
-      color: var(--text);
-      margin-bottom: 3px
+      color: var(--mr-text);
+      margin-bottom: 2px;
+      line-height: 1.35
     }
 
     .notif-msg {
-      font-size: 12px;
-      color: var(--text2);
-      line-height: 1.5;
-      margin-bottom: 4px
+      font-size: 11px;
+      color: var(--mr-text-2);
+      line-height: 1.45;
+      margin-bottom: 3px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden
     }
 
     .notif-time {
       font-size: 10px;
-      color: var(--text3);
+      color: var(--mr-text-3);
       font-family: var(--mono)
     }
 
     .notif-empty {
-      padding: 40px 20px;
+      padding: 28px 16px;
       text-align: center;
-      color: var(--text3)
+      color: var(--mr-text-3)
     }
 
     .notif-empty i {
-      font-size: 32px;
-      margin-bottom: 10px;
-      opacity: 0.4;
+      font-size: 24px;
+      margin-bottom: 8px;
+      opacity: 0.45;
       display: block
+    }
+
+    .notif-empty p {
+      margin: 0;
+      font-size: 12px
     }
 
     /* Ticket Detail Modal */
@@ -17029,12 +17072,17 @@
       }
 
       .notif-panel {
-        position: fixed;
-        top: 56px;
-        left: 8px;
-        right: 8px;
-        width: auto;
-        max-height: calc(100vh - 80px)
+        width: min(300px, calc(100vw - 16px));
+        max-height: min(320px, calc(100dvh - 88px));
+        border-radius: 12px
+      }
+
+      .notif-header {
+        padding: 9px 10px
+      }
+
+      .notif-item {
+        padding: 9px 10px
       }
 
       .btn {
@@ -30133,6 +30181,7 @@
         if (typeof settingsUserDdClose === 'function') settingsUserDdClose();
 
         document.getElementById('notifPanel')?.classList.remove('open');
+        if (typeof notifPanelClearPosition === 'function') notifPanelClearPosition();
 
         if (typeof dpFloatClose === 'function') {
           dpFloatClose(document.getElementById('datePickerPopup'));
@@ -43302,7 +43351,9 @@
         // ─── تحديث القائمة (إذا كانت موجودة) ───
         if (!list) return;
 
-        count.textContent = `${notifs.length} ${notifs.length === 1 ? 'تنبيه' : 'تنبيهات'} · ${unread.length} جديد`;
+        count.textContent = unread.length
+          ? `${unread.length} جديد · ${notifs.length} إجمالاً`
+          : `${notifs.length} ${notifs.length === 1 ? 'تنبيه' : 'تنبيهات'}`;
 
         if (!notifs.length) {
           list.innerHTML = `
@@ -43327,6 +43378,55 @@
         </div>
       </div>`;
         }).join('');
+
+        if (document.getElementById('notifPanel')?.classList.contains('open')) {
+          notifPanelPosition();
+        }
+      }
+
+      function notifPanelClearPosition() {
+        const panel = document.getElementById('notifPanel');
+        if (!panel) return;
+        panel.style.top = '';
+        panel.style.left = '';
+        panel.style.right = '';
+        panel.style.width = '';
+        panel.style.maxHeight = '';
+      }
+
+      function notifPanelPosition() {
+        const panel = document.getElementById('notifPanel');
+        const bell = document.getElementById('notifBellBtn');
+        if (!panel || !bell || !panel.classList.contains('open')) return;
+
+        const pad = 10;
+        const gap = 8;
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        const bellR = bell.getBoundingClientRect();
+        const isMobile = document.documentElement.classList.contains('mr-mobile-ui');
+        const panelW = Math.min(isMobile ? 300 : 320, vw - pad * 2);
+        const panelMaxH = Math.min(isMobile ? 320 : 360, vh - pad * 2);
+
+        panel.style.width = `${panelW}px`;
+        panel.style.maxHeight = `${Math.min(panelMaxH, vh - bellR.bottom - gap - pad)}px`;
+
+        let top = bellR.bottom + gap;
+        let left = bellR.right - panelW;
+
+        if (left < pad) left = pad;
+        if (left + panelW > vw - pad) left = vw - panelW - pad;
+
+        panel.style.top = `${top}px`;
+        panel.style.left = `${left}px`;
+        panel.style.right = 'auto';
+
+        const panelH = panel.offsetHeight;
+        if (top + panelH > vh - pad) {
+          const above = bellR.top - gap - panelH;
+          if (above >= pad) panel.style.top = `${above}px`;
+          else panel.style.top = `${Math.max(pad, vh - panelH - pad)}px`;
+        }
       }
 
       function toggleNotifPanel(event) {
@@ -43337,6 +43437,10 @@
         if (bell) bell.setAttribute('aria-expanded', panel.classList.contains('open') ? 'true' : 'false');
         if (panel.classList.contains('open')) {
           renderNotifications();
+          notifPanelPosition();
+          requestAnimationFrame(notifPanelPosition);
+        } else {
+          notifPanelClearPosition();
         }
       }
 
@@ -43348,6 +43452,8 @@
 
         // إغلاق اللوحة
         document.getElementById('notifPanel').classList.remove('open');
+        document.getElementById('notifBellBtn')?.setAttribute('aria-expanded', 'false');
+        notifPanelClearPosition();
 
         // الانتقال للتذكرة المرتبطة
         if (ticketId) {
@@ -43381,6 +43487,7 @@
           !bell.contains(e.target)) {
           panel.classList.remove('open');
           bell.setAttribute('aria-expanded', 'false');
+          notifPanelClearPosition();
         }
       });
 
@@ -44529,6 +44636,7 @@
         if (urMenu?.classList.contains('open')) userRoleDdPositionMenu();
         const usersIoMenu = document.getElementById('usersIoMenu');
         if (usersIoMenu && !usersIoMenu.hidden) usersIoMenuPosition();
+        if (document.getElementById('notifPanel')?.classList.contains('open')) notifPanelPosition();
         const suMenu = document.getElementById('settings-user-dd-menu');
         const suTrigger = document.getElementById('settings-user-dd-trigger');
         if (suMenu?.classList.contains('open')) mrDdPositionFixed(suTrigger, suMenu, 260);
