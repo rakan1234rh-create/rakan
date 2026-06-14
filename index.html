@@ -1932,19 +1932,26 @@
     }
 
     .mr-topbar-user-avatar {
-      width: 30px;
-      height: 30px;
-      border-radius: 999px;
-      background: linear-gradient(145deg, #2f2fe4 0%, #6366f1 100%);
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(145deg, var(--mr-primary) 0%, color-mix(in srgb, var(--mr-primary) 76%, #0f1224) 100%);
       color: #fff;
-      font-size: 11px;
-      font-weight: 800;
-      letter-spacing: 0.02em;
+      font-family: var(--font);
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0;
+      line-height: 1;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+      user-select: none;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.16);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.24),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.1),
+        0 1px 3px rgba(15, 18, 36, 0.14)
     }
 
     .mr-topbar-user-chevron {
@@ -15616,7 +15623,21 @@
         display: none !important;
       }
 
-      .mr-topbar-user-toggle {
+      .mr-topbar-user-trigger {
+        min-height: 36px;
+        padding-inline: 8px 6px;
+        gap: 6px
+      }
+
+      .mr-topbar-user-avatar {
+        width: 34px;
+        height: 34px;
+        font-size: 15px
+      }
+
+      .mr-topbar-user-chevron {
+        font-size: 11px
+      }
         width: 32px;
         height: 32px;
         border-radius: 999px;
@@ -30235,10 +30256,9 @@
       }
 
       function userDisplayInitials(name) {
-        const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
-        if (!parts.length) return 'م';
-        if (parts.length === 1) return parts[0].charAt(0);
-        return parts[0].charAt(0) + parts[parts.length - 1].charAt(0);
+        const trimmed = String(name || '').trim();
+        if (!trimmed) return 'م';
+        return trimmed.charAt(0);
       }
 
       function updateSidebarUser() {
@@ -30265,6 +30285,7 @@
           tbTopbarAv.style.background = u.color
             ? `linear-gradient(145deg, ${u.color} 0%, color-mix(in srgb, ${u.color} 72%, #0f1224) 100%)`
             : '';
+          tbTopbarAv.style.color = '#fff';
         }
 
         const chip = document.getElementById('topbarUserChip');
