@@ -36041,10 +36041,8 @@
       }
 
       function pickPreferredR2Folder(ticketNumber, createdAt, atts) {
-        const fromAtts = collectAttachmentFolderPrefixes(atts).find((f) => /^V-\d{4}-/i.test(f));
-        if (fromAtts) return fromAtts;
         const lists = buildR2FolderVariantLists(ticketNumber, createdAt);
-        return lists.vFull[0] || lists.padded[0] || String(ticketNumber || '').trim();
+        return lists.padded[0] || lists.vFull[0] || String(ticketNumber || '').trim();
       }
 
       function isBareTicketStorageKey(key) {
@@ -36218,8 +36216,8 @@
         }
         for (const f of collectAttachmentFolderPrefixes(atts)) addFolder(f);
         const lists = buildR2FolderVariantLists(ticket.ticket_number, ticket.created_at);
-        for (const f of lists.vFull) addFolder(f);
         for (const f of lists.padded) addFolder(f);
+        for (const f of lists.vFull) addFolder(f);
         for (const f of lists.bare) addFolder(f);
         for (const folder of folders) {
           const exists = await r2ObjectExists(`${folder}/${baseName}`);
