@@ -16157,7 +16157,8 @@
         -webkit-overflow-scrolling: touch;
         scrollbar-width: none;
         will-change: auto;
-        transform: none !important
+        transform: none !important;
+        transition: opacity 0.22s ease, visibility 0.22s ease
       }
 
       #appWrap > .app-shell > #mobileBottomNav.mobile-bottom-nav::-webkit-scrollbar {
@@ -20139,7 +20140,8 @@
       body.mob-resp-keyboard-open #appWrap > .app-shell > #mobileBottomNav.mobile-bottom-nav {
         visibility: hidden !important;
         opacity: 0 !important;
-        pointer-events: none !important
+        pointer-events: none !important;
+        transition: opacity 0.22s ease, visibility 0.22s ease !important
       }
 
       body.ticket-keyboard-open #ticketModal .td-mob-sheet {
@@ -25851,11 +25853,13 @@
           || (resp && document.activeElement === resp);
 
         document.documentElement.style.setProperty('--mr-mob-bottom-nav-h', `${navH}px`);
-        document.documentElement.style.setProperty('--mob-chrome-bottom', `${navH}px`);
-        document.documentElement.style.setProperty('--viol-sheet-bottom', `${navH}px`);
-        document.documentElement.style.setProperty('--ticket-sheet-bottom', `${navH}px`);
 
         const keyboardActive = kbInset > 0 || editingResp;
+        const effectiveBottom = (editingResp && kbInset > 0) ? 0 : navH;
+        document.documentElement.style.setProperty('--mob-chrome-bottom', `${effectiveBottom}px`);
+        document.documentElement.style.setProperty('--viol-sheet-bottom', `${effectiveBottom}px`);
+        document.documentElement.style.setProperty('--ticket-sheet-bottom', `${effectiveBottom}px`);
+
         const ticketSheetActive = ticketOpen || (cmpDetailOpen && document.body.classList.contains('ticket-over-cmp'));
 
         document.body.classList.toggle('mob-resp-keyboard-open', editingResp);
@@ -25864,7 +25868,7 @@
 
         if (ticketSheetActive && vv && keyboardActive) {
           const visibleBottom = vv.offsetTop + vv.height;
-          const maxH = Math.max(280, Math.round(visibleBottom - topBar - navH - 8));
+          const maxH = Math.max(280, Math.round(visibleBottom - topBar - effectiveBottom - 8));
           document.documentElement.style.setProperty('--ticket-kb-max-h', `${maxH}px`);
         } else {
           document.documentElement.style.removeProperty('--ticket-kb-max-h');
@@ -25872,7 +25876,7 @@
 
         if (violDetailOpen && vv && keyboardActive) {
           const visibleBottom = vv.offsetTop + vv.height;
-          const maxH = Math.max(220, Math.round(visibleBottom - topBar - navH - 8));
+          const maxH = Math.max(220, Math.round(visibleBottom - topBar - effectiveBottom - 8));
           document.documentElement.style.setProperty('--viol-kb-max-h', `${maxH}px`);
         } else {
           document.documentElement.style.removeProperty('--viol-kb-max-h');
@@ -25903,7 +25907,7 @@
           const sheetOpen = document.getElementById('ticketModal')?.classList.contains('open')
             || document.getElementById('violDetailModal')?.classList.contains('open');
           if (
-            performance.now() - started < 800
+            performance.now() - started < 1400
             && sheetOpen
             && (isTicketRespEditing() || document.body.dataset.violRespFocus === '1' || isMobileKeyboardOpen())
           ) {
