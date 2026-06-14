@@ -195,6 +195,8 @@ async function handleStreamRequest(
     const headers: Record<string, string> = { ...cors }
     headers['Content-Type'] = out.ContentType || guessContentTypeFromKey(key)
     headers['Accept-Ranges'] = 'bytes'
+    headers['Cache-Control'] = 'private, max-age=3600'
+    headers['Content-Disposition'] = 'inline'
     if (out.ContentLength != null) {
       headers['Content-Length'] = String(out.ContentLength)
     }

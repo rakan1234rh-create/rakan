@@ -38300,6 +38300,8 @@
         hideAttViewerLoader();
         if (!el) return;
         el.style.display = 'block';
+        el.style.visibility = 'visible';
+        el.style.opacity = '1';
         el.style.position = 'relative';
         el.style.zIndex = '20';
         el.style.pointerEvents = 'auto';
