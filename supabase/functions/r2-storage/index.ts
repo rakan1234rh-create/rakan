@@ -64,6 +64,8 @@ function makeS3(env: NonNullable<ReturnType<typeof requireR2Env>>) {
       secretAccessKey: env.secretAccessKey,
     },
     forcePathStyle: true,
+    requestChecksumCalculation: 'WHEN_REQUIRED',
+    responseChecksumValidation: 'WHEN_REQUIRED',
   })
 }
 
