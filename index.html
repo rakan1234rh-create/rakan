@@ -19935,6 +19935,204 @@
         overscroll-behavior-y: contain
       }
 
+      /* تقييم الموظفين / الامتثال — جوال: تمرير داخلي + مسافة فوق الشريط السفلي */
+      .main:has(#tab-compliance.active) {
+        padding-inline: 0 !important;
+        padding-block: 0 !important;
+        background: var(--mr-bg) !important
+      }
+
+      .content:has(#tab-compliance.active) {
+        padding: 0 !important;
+        background: var(--mr-bg) !important;
+        overflow: hidden !important;
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column
+      }
+
+      #appWrap .main:has(#tab-compliance.active) {
+        overflow: hidden !important;
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 auto;
+        min-height: 0;
+        padding-bottom: 0 !important
+      }
+
+      #tab-compliance.tab-content,
+      #tab-compliance .cmp-neo-board,
+      #tab-compliance .mk-cmp-grid--emp,
+      #tab-compliance .cmp-neo-grid {
+        background: var(--mr-bg) !important
+      }
+
+      #tab-compliance.tab-content.active {
+        display: flex !important;
+        flex-direction: column;
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: hidden
+      }
+
+      #tab-compliance #cmpBoard {
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden
+      }
+
+      #tab-compliance .cmp-neo-board {
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        padding-inline: 12px;
+        padding-top: 10px;
+        box-sizing: border-box
+      }
+
+      #tab-compliance .cmp-neo-board-head,
+      #tab-compliance .cmp-neo-toolbar,
+      #tab-compliance .cmp-neo-search-meta,
+      #tab-compliance .cmp-neo-extremes,
+      #tab-compliance .active-filters-bar {
+        flex-shrink: 0
+      }
+
+      #tab-compliance .cmp-neo-board-head {
+        margin-bottom: 8px !important
+      }
+
+      #tab-compliance .cmp-neo-title-wrap h3 {
+        font-size: 16px !important;
+        line-height: 1.3 !important
+      }
+
+      #tab-compliance .cmp-neo-toolbar.toolbar.wf-toolbar {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        align-items: stretch !important;
+        gap: 8px !important;
+        width: 100% !important;
+        margin: 0 0 8px !important;
+        padding: 0 !important
+      }
+
+      #tab-compliance .cmp-neo-search-combo {
+        flex: 1 1 100% !important;
+        min-width: 0 !important
+      }
+
+      #tab-compliance .cmp-neo-toolbar .wf-status-filter,
+      #tab-compliance .cmp-neo-toolbar .rp-date-wrap,
+      #tab-compliance .cmp-neo-toolbar .rp-tool-btn.cmp-neo-btn--pdf-export {
+        flex: 1 1 auto !important;
+        min-width: 0 !important
+      }
+
+      #tab-compliance .cmp-neo-search-meta {
+        margin: 0 0 8px !important;
+        font-size: 12px !important
+      }
+
+      #tab-compliance .cmp-neo-extremes {
+        margin-bottom: 12px !important;
+        gap: 10px !important
+      }
+
+      #tab-compliance .mk-cmp-grid--emp,
+      #tab-compliance .cmp-neo-grid,
+      #tab-compliance .cmp-neo-pending-wrap {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 12px !important;
+        grid-template-columns: none !important;
+        flex: 1 1 auto;
+        min-height: 0;
+        height: 0;
+        overflow-y: auto !important;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+        touch-action: pan-y;
+        overscroll-behavior-y: contain;
+        padding-bottom: calc(var(--mr-mob-bottom-nav-h, 56px) + 16px) !important;
+        margin: 0 !important;
+        width: 100% !important;
+        max-width: none !important
+      }
+
+      #tab-compliance .mk-cmp-grid--emp > .mk-cmp-emp-card,
+      #tab-compliance .cmp-neo-grid > .cmp-neo-card {
+        width: 100% !important;
+        max-width: none !important
+      }
+
+      html.mr-mobile-ui.mr-cmp-tab-active body.mirsad-app-active #appWrap .main {
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        padding: 0 !important
+      }
+
+      html.mr-mobile-ui.mr-cmp-tab-active body.mirsad-app-active #appWrap .main .content {
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        height: 0 !important;
+        padding: 0 !important;
+        max-width: none !important;
+        margin: 0 !important
+      }
+
+      html.mr-mobile-ui.mr-cmp-tab-active #tab-compliance.tab-content.active {
+        display: flex !important;
+        flex-direction: column !important;
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        height: 0 !important;
+        overflow: hidden !important
+      }
+
+      html.mr-mobile-ui.mr-cmp-tab-active #tab-compliance #cmpBoard {
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        height: 0 !important;
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important
+      }
+
+      html.mr-mobile-ui.mr-cmp-tab-active #tab-compliance .cmp-neo-board {
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        height: 0 !important;
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important
+      }
+
+      html.mr-mobile-ui.mr-cmp-tab-active #tab-compliance .mk-cmp-grid--emp,
+      html.mr-mobile-ui.mr-cmp-tab-active #tab-compliance .cmp-neo-grid,
+      html.mr-mobile-ui.mr-cmp-tab-active #tab-compliance .cmp-neo-pending-wrap {
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        height: 0 !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        -webkit-overflow-scrolling: touch !important;
+        touch-action: pan-y !important;
+        overscroll-behavior-y: contain
+      }
+
       /* تعريف المخالفة — bottom sheet ينزلق خلف شريط التنقل ويلتصق بحافته السفلية */
       #violDetailModal.modal {
         z-index: 2400 !important;
@@ -29490,6 +29688,7 @@
         if (ps) ps.textContent = '';
         syncViolMobileScrollShell(null);
         syncUsersMobileScrollShell(null);
+        syncCmpMobileScrollShell(null);
       }
 
       function getNavButtonForTab(tab) {
@@ -30389,6 +30588,7 @@
             const activeTab = typeof getActiveTabKey === 'function' ? getActiveTabKey() : null;
             syncViolMobileScrollShell(activeTab);
             syncUsersMobileScrollShell(activeTab);
+            syncCmpMobileScrollShell(activeTab);
             if (typeof syncUserRoleDdFixedWidth === 'function') syncUserRoleDdFixedWidth();
             if (activeTab === 'departments' && typeof renderUsers === 'function') renderUsers();
             if (activeTab === 'violations' && typeof renderViolTypes === 'function') renderViolTypes();
@@ -30571,6 +30771,12 @@
         document.documentElement.classList.toggle('mr-users-tab-active', on);
       }
 
+      function syncCmpMobileScrollShell(tab) {
+        const activeTab = tab || (typeof getActiveTabKey === 'function' ? getActiveTabKey() : null);
+        const on = typeof isMobileViewport === 'function' && isMobileViewport() && activeTab === 'compliance';
+        document.documentElement.classList.toggle('mr-cmp-tab-active', on);
+      }
+
       window.dismissPageOverlaysOnTabLeave = dismissPageOverlaysOnTabLeave;
 
       function goTab(tab, btn, opts = {}) {
@@ -30679,6 +30885,7 @@
         }
         syncViolMobileScrollShell(tab);
         syncUsersMobileScrollShell(tab);
+        syncCmpMobileScrollShell(tab);
       }
 
       /** تفعيل تبويب من الشريط الجانبي (لوحة القيادة — إجراءات سريعة) */
@@ -41361,6 +41568,10 @@
 
         updateCmpActiveFiltersTags();
         cmpFilterSyncUi();
+        if (typeof syncCmpMobileScrollShell === 'function') {
+          syncCmpMobileScrollShell('compliance');
+          requestAnimationFrame(() => syncCmpMobileScrollShell('compliance'));
+        }
       }
 
 
