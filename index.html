@@ -2242,21 +2242,27 @@
 
     .notif-bell-count {
       position: absolute;
-      top: -4px;
-      left: -4px;
-      background: var(--mr-danger);
+      top: 1px;
+      inset-inline-end: 1px;
+      inset-inline-start: auto;
+      z-index: 1;
+      background: linear-gradient(180deg, #f87171 0%, #ef4444 52%, #dc2626 100%);
       color: #fff;
-      font-size: 9px;
+      font-family: var(--mono);
+      font-size: 10px;
       font-weight: 700;
-      min-width: 16px;
-      height: 16px;
+      line-height: 1;
+      min-width: 17px;
+      height: 17px;
       padding: 0 4px;
       border-radius: 999px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       border: 2px solid var(--mr-surface);
-      font-family: var(--mono);
+      box-shadow: 0 1px 4px rgba(220, 38, 38, 0.32);
+      font-variant-numeric: lining-nums tabular-nums;
+      pointer-events: none
     }
 
     .wf-panel .badge {
@@ -2277,42 +2283,61 @@
     }
 
     .topbar-btn--notif {
-      background: #f3f4f6;
-      border: 0;
-      color: var(--mr-text)
+      width: 36px;
+      height: 36px;
+      flex-shrink: 0;
+      border: 1px solid color-mix(in srgb, var(--mr-border) 55%, transparent);
+      border-radius: 50%;
+      background: color-mix(in srgb, var(--mr-surface) 94%, var(--mr-bg));
+      color: var(--mr-text-2);
+      box-shadow: 0 1px 3px rgba(15, 18, 36, 0.05);
+      transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, color 0.15s ease, transform 0.12s ease
+    }
+
+    .topbar-btn--notif i {
+      font-size: 15px;
+      line-height: 1
     }
 
     .topbar-btn--notif:hover {
-      background: #e5e7eb;
-      color: var(--mr-text)
+      background: var(--mr-surface);
+      border-color: var(--mr-border-2);
+      color: var(--mr-text);
+      box-shadow: 0 2px 8px rgba(15, 18, 36, 0.06)
+    }
+
+    .topbar-btn--notif:active {
+      transform: scale(0.94)
+    }
+
+    .topbar-actions-zone:has(#notifPanel.open) .topbar-btn--notif {
+      border-color: color-mix(in srgb, var(--mr-primary) 35%, var(--mr-border));
+      background: var(--mr-surface);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--mr-primary) 12%, transparent);
+      color: var(--mr-primary)
     }
 
     [data-theme="dark"] .topbar-btn--notif {
-      background: rgba(255, 255, 255, 0.08);
-      color: var(--mr-text)
+      background: rgba(255, 255, 255, 0.05);
+      border-color: var(--mr-border-2);
+      box-shadow: none;
+      color: var(--mr-text-2)
     }
 
     [data-theme="dark"] .topbar-btn--notif:hover {
-      background: rgba(255, 255, 255, 0.12)
+      background: rgba(255, 255, 255, 0.08);
+      border-color: color-mix(in srgb, var(--mr-primary) 28%, var(--mr-border-2));
+      color: var(--mr-text)
     }
 
-    .notif-bell-count {
-      position: absolute;
-      top: -4px;
-      left: -4px;
-      background: var(--red);
-      color: #fff;
-      font-size: 9px;
-      font-weight: 700;
-      padding: 2px 5px;
-      border-radius: 10px;
-      min-width: 16px;
-      height: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border: 2px solid var(--surface);
-      font-family: var(--mono)
+    [data-theme="dark"] .topbar-actions-zone:has(#notifPanel.open) .topbar-btn--notif {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: color-mix(in srgb, var(--mr-primary) 40%, var(--mr-border-2));
+      color: var(--mr-primary)
+    }
+
+    [data-theme="dark"] .notif-bell-count {
+      border-color: color-mix(in srgb, var(--mr-bg) 55%, var(--mr-surface))
     }
 
     .content {
@@ -17338,6 +17363,11 @@
         width: 34px !important;
         height: 34px !important;
       }
+
+      .topbar-btn--notif {
+        width: 36px !important;
+        height: 36px !important
+      }
       .sidebar-toggle-btn {
         width: 34px !important;
         height: 34px !important;
@@ -22233,7 +22263,23 @@
     }
 
     #appWrap .topbar-btn--notif {
-      color: var(--mr-text) !important;
+      background: color-mix(in srgb, var(--mr-surface) 94%, var(--mr-bg)) !important;
+      border: 1px solid color-mix(in srgb, var(--mr-border) 55%, transparent) !important;
+      color: var(--mr-text-2) !important;
+      box-shadow: 0 1px 3px rgba(15, 18, 36, 0.05) !important
+    }
+
+    [data-theme="dark"] #appWrap .topbar-btn--notif {
+      background: rgba(255, 255, 255, 0.05) !important;
+      border-color: var(--mr-border-2) !important;
+      box-shadow: none !important
+    }
+
+    #appWrap .topbar-actions-zone:has(#notifPanel.open) .topbar-btn--notif {
+      border-color: color-mix(in srgb, var(--mr-primary) 35%, var(--mr-border)) !important;
+      background: var(--mr-surface) !important;
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--mr-primary) 12%, transparent) !important;
+      color: var(--mr-primary) !important
     }
   </style>
   <style id="nt-form-overrides">
@@ -23385,7 +23431,7 @@
               </div>
               <div class="topbar-clock-date" id="clockDate">---</div>
             </div>
-            <button class="topbar-btn topbar-btn--notif" id="notifBellBtn" onclick="toggleNotifPanel(event)" title="التنبيهات"><i
+            <button class="topbar-btn topbar-btn--notif" id="notifBellBtn" onclick="toggleNotifPanel(event)" title="التنبيهات" aria-label="التنبيهات" aria-expanded="false" aria-controls="notifPanel"><i
                 class="fas fa-bell"></i><span class="notif-bell-count" id="notifBellCount"
                 style="display:none">0</span></button>
             <div class="mr-topbar-user" id="topbarUserChip" dir="rtl">
@@ -43286,7 +43332,9 @@
       function toggleNotifPanel(event) {
         if (event) event.stopPropagation();
         const panel = document.getElementById('notifPanel');
+        const bell = document.getElementById('notifBellBtn');
         panel.classList.toggle('open');
+        if (bell) bell.setAttribute('aria-expanded', panel.classList.contains('open') ? 'true' : 'false');
         if (panel.classList.contains('open')) {
           renderNotifications();
         }
@@ -43332,6 +43380,7 @@
           !panel.contains(e.target) &&
           !bell.contains(e.target)) {
           panel.classList.remove('open');
+          bell.setAttribute('aria-expanded', 'false');
         }
       });
 
