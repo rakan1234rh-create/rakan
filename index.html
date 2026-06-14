@@ -25823,7 +25823,13 @@
       function ensureMobViewportWatch() {
         if (window._mobVvWatch) return;
         window._mobVvWatch = true;
-        const sync = () => syncMobViewportLayout();
+        const sync = () => {
+          if (_syncLayoutRaf) return;
+          _syncLayoutRaf = requestAnimationFrame(() => {
+            _syncLayoutRaf = 0;
+            syncMobViewportLayout();
+          });
+        };
         window.addEventListener('resize', sync, { passive: true });
         window.visualViewport?.addEventListener('resize', sync, { passive: true });
         window.visualViewport?.addEventListener('scroll', sync, { passive: true });
@@ -25888,6 +25894,9 @@
       }
 
       let _ticketKbSyncRaf = 0;
+      let _violKbBlurTimer = 0;
+      let _ticketKbBlurTimer = 0;
+      let _syncLayoutRaf = 0;
 
       function isTicketRespEditing() {
         return document.body.dataset.ticketRespFocus === '1';
@@ -26005,10 +26014,10 @@
           if (!isViolDetailMobSheet()) return;
           if (e.target.id !== 'respText') return;
           if (!document.getElementById('ticketModal')?.classList.contains('open')) return;
+          if (_ticketKbBlurTimer) { clearTimeout(_ticketKbBlurTimer); _ticketKbBlurTimer = 0; }
           setTicketRespEditing(true);
           lockMobileAppScrollForTicket();
           requestAnimationFrame(() => {
-            syncMobViewportLayout();
             const ta = document.getElementById('respText');
             const scroll = document.querySelector('#ticketModal .td-content-area');
             if (ta && scroll) {
@@ -26024,7 +26033,11 @@
 
         document.addEventListener('focusout', (e) => {
           if (e.target.id !== 'respText') return;
-          window.setTimeout(tryReleaseTicketRespEditing, 600);
+          if (_ticketKbBlurTimer) { clearTimeout(_ticketKbBlurTimer); _ticketKbBlurTimer = 0; }
+          _ticketKbBlurTimer = window.setTimeout(() => {
+            _ticketKbBlurTimer = 0;
+            tryReleaseTicketRespEditing();
+          }, 600);
         }, true);
       }
 
@@ -26036,21 +26049,23 @@
         modal.addEventListener('focusin', (e) => {
           if (!isViolDetailMobSheet()) return;
           if (!e.target.matches('textarea, input:not([type=hidden])')) return;
+          if (_violKbBlurTimer) { clearTimeout(_violKbBlurTimer); _violKbBlurTimer = 0; }
           document.body.dataset.violRespFocus = '1';
-          syncMobViewportLayout();
           scheduleTicketKeyboardSync();
         }, true);
 
         modal.addEventListener('focusout', (e) => {
           if (!e.target.matches('textarea, input:not([type=hidden])')) return;
-          window.setTimeout(() => {
+          if (_violKbBlurTimer) { clearTimeout(_violKbBlurTimer); _violKbBlurTimer = 0; }
+          _violKbBlurTimer = window.setTimeout(() => {
+            _violKbBlurTimer = 0;
             if (modal.contains(document.activeElement)) return;
             if (isMobileKeyboardOpen()) {
               scheduleTicketKeyboardSync();
               return;
             }
             document.body.dataset.violRespFocus = '0';
-            syncMobViewportLayout();
+            requestAnimationFrame(() => syncMobViewportLayout());
           }, 600);
         }, true);
       }
