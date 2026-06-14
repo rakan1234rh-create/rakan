@@ -1932,13 +1932,13 @@
     }
 
     .mr-topbar-user-avatar {
-      width: 32px;
-      height: 32px;
+      width: 30px;
+      height: 30px;
       border-radius: 50%;
       background: linear-gradient(145deg, var(--mr-primary) 0%, color-mix(in srgb, var(--mr-primary) 76%, #0f1224) 100%);
       color: #fff;
       font-family: var(--font);
-      font-size: 14px;
+      font-size: 12px;
       font-weight: 700;
       letter-spacing: 0;
       line-height: 1;
@@ -15624,33 +15624,27 @@
       }
 
       .mr-topbar-user-trigger {
-        min-height: 36px;
-        padding-inline: 8px 6px;
-        gap: 6px
-      }
-
-      .mr-topbar-user-avatar {
-        width: 34px;
-        height: 34px;
-        font-size: 15px
+        min-height: 0;
+        padding-block: 3px;
+        padding-inline-start: 3px;
+        padding-inline-end: 5px;
+        gap: 4px
       }
 
       .mr-topbar-user-chevron {
-        font-size: 11px
-      }
-        width: 32px;
-        height: 32px;
-        border-radius: 999px;
-        background: var(--mr-surface);
-        border: 1px solid var(--mr-border);
-        box-shadow: var(--mr-shadow-soft);
-        flex-shrink: 0;
-        font-size: 11px;
+        margin-inline-start: 0;
+        font-size: 10px
       }
 
-      [data-theme="dark"] .mr-topbar-user-toggle {
-        background: rgba(255, 255, 255, 0.06);
-        border-color: rgba(255, 255, 255, 0.1);
+      html.mr-mobile-ui .topbar-clock,
+      html.mr-mobile-ui #topbarClock {
+        display: none !important;
+        visibility: hidden !important;
+        width: 0 !important;
+        min-width: 0 !important;
+        overflow: hidden !important;
+        margin: 0 !important;
+        padding: 0 !important
       }
 
       .mr-topbar-user-menu {
@@ -15662,8 +15656,10 @@
     }
 
     @media (max-width: 992px) {
-      .topbar-clock {
-        display: none;
+      .topbar-clock,
+      html.mr-mobile-ui .topbar-clock,
+      html.mr-mobile-ui #topbarClock {
+        display: none !important;
       }
     }
 
@@ -22220,6 +22216,11 @@
       border: 0 !important;
       box-shadow: none !important;
       padding: 0 2px !important;
+    }
+
+    html.mr-mobile-ui #appWrap .topbar-clock,
+    html.mr-mobile-ui #appWrap #topbarClock {
+      display: none !important;
     }
 
     #appWrap .topbar-clock-hm {
