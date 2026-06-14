@@ -16629,9 +16629,10 @@
       .modal-card.cmp-detail-card {
         width: 100% !important;
         max-width: 100% !important;
-        max-height: min(94dvh, calc(100dvh - env(safe-area-inset-top, 0px) - 16px)) !important;
-        height: auto !important;
-        min-height: 0 !important;
+        --cmp-mob-sheet-h: min(94dvh, calc(100dvh - env(safe-area-inset-top, 0px) - 16px));
+        max-height: var(--cmp-mob-sheet-h) !important;
+        height: var(--cmp-mob-sheet-h) !important;
+        min-height: var(--cmp-mob-sheet-h) !important;
         border-radius: 16px 16px 0 0 !important;
         margin: 0 !important;
         display: flex;
