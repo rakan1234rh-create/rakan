@@ -16622,13 +16622,17 @@
     @media (max-width: 768px) {
       #cmpDetailModal.modal.open {
         align-items: flex-end !important;
-        padding: 0 !important
+        justify-content: flex-end !important;
+        padding: 0 !important;
+        padding-top: max(4px, env(safe-area-inset-top, 0px)) !important
       }
 
       .modal-card.cmp-detail-card {
         width: 100% !important;
         max-width: 100% !important;
-        max-height: 92vh;
+        max-height: calc(100dvh - max(4px, env(safe-area-inset-top, 0px))) !important;
+        height: calc(100dvh - max(4px, env(safe-area-inset-top, 0px))) !important;
+        min-height: 0 !important;
         border-radius: 16px 16px 0 0 !important;
         margin: 0 !important;
         display: flex;
@@ -16646,7 +16650,7 @@
         justify-content: center;
         align-items: center;
         flex-shrink: 0;
-        padding: 6px 0 4px;
+        padding: 4px 0 2px;
         margin: 0;
         cursor: grab;
         touch-action: none;
@@ -16677,7 +16681,7 @@
 
       .modal-card.cmp-detail-card .cmp-detail-modal-header {
         padding-top: 0 !important;
-        padding-bottom: 6px !important;
+        padding-bottom: 4px !important;
         border-bottom: 1px solid var(--border) !important;
         background: var(--bg) !important
       }
@@ -16687,7 +16691,9 @@
       }
 
       .modal-card.cmp-detail-card .modal-body {
-        padding: 8px 12px 12px;
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        padding: 6px 12px 12px;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
         overscroll-behavior-y: contain;
@@ -16847,7 +16853,7 @@
       }
 
       .modal-card.cmp-detail-card .cmp-detail-modal-header {
-        padding: 6px 12px 4px;
+        padding: 4px 12px 2px;
       }
 
       .cmp-detail-hero-top {
