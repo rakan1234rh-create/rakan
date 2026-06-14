@@ -16623,13 +16623,23 @@
       #cmpDetailModal.modal.open {
         align-items: flex-end !important;
         justify-content: flex-end !important;
-        padding: 0 !important
+        padding: 0 !important;
+        padding-bottom: var(--mr-mob-bottom-nav-h, calc(56px + env(safe-area-inset-bottom, 0px))) !important;
+        box-sizing: border-box !important
       }
 
       .modal-card.cmp-detail-card {
         width: 100% !important;
         max-width: 100% !important;
-        --cmp-mob-sheet-h: min(94dvh, calc(100dvh - env(safe-area-inset-top, 0px) - 16px));
+        --cmp-mob-sheet-h: min(
+          82dvh,
+          calc(
+            100dvh
+            - env(safe-area-inset-top, 0px)
+            - var(--mr-mob-bottom-nav-h, calc(56px + env(safe-area-inset-bottom, 0px)))
+            - 24px
+          )
+        );
         max-height: var(--cmp-mob-sheet-h) !important;
         height: var(--cmp-mob-sheet-h) !important;
         min-height: var(--cmp-mob-sheet-h) !important;
