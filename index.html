@@ -36302,19 +36302,36 @@
           const onOk = () => { cleanup(); resolve(); };
           const onErr = () => {
             cleanup();
-            // تجاهل أخطاء 206 Partial Content — الفيديو قد يبدأ التشغيل رغم الخطأ
             const code = vid.error ? vid.error.code : 0;
-            if (code === 0 || code === 2) { resolve(); return; }
+            // code 4 = لا يستطيع تحميل المصدر — قد يكون CORS على <video>
+            // نحاول بدون crossorigin
+            if (code === 4 && vid.hasAttribute('crossorigin')) {
+              vid.removeAttribute('crossorigin');
+              vid.src = src;
+              vid.load();
+              vid.addEventListener('loadedmetadata', onOk2, { once: true });
+              vid.addEventListener('canplay', onOk2, { once: true });
+              vid.addEventListener('error', onErr2, { once: true });
+              return;
+            }
             reject(new Error('تعذّر تشغيل الفيديو'));
           };
+          const onOk2 = () => { cleanup2(); resolve(); };
+          const onErr2 = () => { cleanup2(); reject(new Error('تعذّر تشغيل الفيديو')); };
           const cleanup = () => {
+            vid.removeEventListener('loadedmetadata', onOk);
             vid.removeEventListener('loadeddata', onOk);
             vid.removeEventListener('canplay', onOk);
-            vid.removeEventListener('loadedmetadata', onOk);
             vid.removeEventListener('error', onErr);
+          };
+          const cleanup2 = () => {
+            vid.removeEventListener('loadedmetadata', onOk2);
+            vid.removeEventListener('canplay', onOk2);
+            vid.removeEventListener('error', onErr2);
           };
           vid.pause();
           vid.removeAttribute('src');
+          vid.removeAttribute('crossorigin');
           vid.load();
           vid.addEventListener('loadedmetadata', onOk, { once: true });
           vid.addEventListener('loadeddata', onOk, { once: true });
