@@ -12878,6 +12878,16 @@
       text-align: center;
     }
 
+    .cmp-detail-hero-ring-lbl {
+      font-size: 9px;
+      font-weight: 700;
+      color: var(--text3);
+      line-height: 1.2;
+      text-align: center;
+      margin-top: 3px;
+      white-space: nowrap;
+    }
+
     .modal-card.cmp-detail-card .cmp-detail-hero-top {
       align-items: center;
       gap: 14px;
@@ -16636,7 +16646,7 @@
         justify-content: center;
         align-items: center;
         flex-shrink: 0;
-        padding: 10px 0 8px;
+        padding: 6px 0 4px;
         margin: 0;
         cursor: grab;
         touch-action: none;
@@ -16667,6 +16677,7 @@
 
       .modal-card.cmp-detail-card .cmp-detail-modal-header {
         padding-top: 0 !important;
+        padding-bottom: 6px !important;
         border-bottom: 1px solid var(--border) !important;
         background: var(--bg) !important
       }
@@ -16676,7 +16687,7 @@
       }
 
       .modal-card.cmp-detail-card .modal-body {
-        padding: 12px 14px;
+        padding: 8px 12px 12px;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
         overscroll-behavior-y: contain;
@@ -16743,6 +16754,30 @@
       .modal-card.cmp-detail-card .cmp-detail-section--severity .cmp-sev-legend-item {
         padding: 3px 4px !important;
         min-height: 0 !important
+      }
+
+      .modal-card.cmp-detail-card .cmp-detail-section--timeline {
+        padding: 5px 4px 6px 5px !important
+      }
+
+      .modal-card.cmp-detail-card .cmp-detail-section--timeline .cmp-detail-section-title {
+        margin-bottom: 4px !important;
+        padding-inline: 0 !important
+      }
+
+      .modal-card.cmp-detail-card .cmp-detail-section--timeline .cmp-timeline-wrap {
+        padding: 0 !important;
+        margin: 0 !important
+      }
+
+      .modal-card.cmp-detail-card .cmp-detail-section--timeline .cmp-timeline {
+        gap: 4px !important;
+        padding: 0 !important
+      }
+
+      .modal-card.cmp-detail-card .cmp-detail-section--timeline .cmp-timeline-axis {
+        padding-inline: 0 !important;
+        margin-top: 2px !important
       }
 
       /* 3 مخالفات ظاهرة + الباقي بالمس (بدون شريط تمرير) */
@@ -16812,7 +16847,7 @@
       }
 
       .modal-card.cmp-detail-card .cmp-detail-modal-header {
-        padding: 12px 14px 10px;
+        padding: 6px 12px 4px;
       }
 
       .cmp-detail-hero-top {
@@ -16844,6 +16879,25 @@
       .modal-card.cmp-detail-card .cmp-detail-hero-ring {
         width: 64px !important;
         height: 64px !important
+      }
+
+      .modal-card.cmp-detail-card .cmp-detail-hero-ring-lbl {
+        font-size: 8px !important;
+        margin-top: 2px !important
+      }
+
+      .modal-card.cmp-detail-card .cmp-detail-hero-banner {
+        gap: 4px !important
+      }
+
+      .modal-card.cmp-detail-card .cmp-detail-hero-meta {
+        gap: 4px 8px !important;
+        font-size: 10px !important;
+        margin-top: 0 !important
+      }
+
+      .modal-card.cmp-detail-card .emp-new-grid {
+        margin-bottom: 10px !important
       }
 
       .modal-card.cmp-detail-card .cmp-detail-hero-text {
@@ -40282,6 +40336,7 @@
             </div>
             <div class="cmp-detail-hero-ring-wrap">
               ${cmpDetailHeroRingSVG(score, lvlText)}
+              <span class="cmp-detail-hero-ring-lbl">التقييم العام</span>
             </div>
           </div>
         </div>`;
