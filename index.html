@@ -21099,17 +21099,32 @@
         width: 100%;
         max-width: 100%;
         margin-inline: 0;
-        min-height: 58px;
-        height: 58px;
-        padding: 6px 5px 5px;
-        border-radius: 10px
+        min-height: 72px;
+        height: auto;
+        padding: 5px 4px 4px;
+        border-radius: 10px;
+        overflow: hidden;
+        gap: 2px
+      }
+
+      #tab-reports .rp-stat-top {
+        flex-shrink: 0;
+        gap: 4px;
+        align-items: center;
+        min-height: 0
+      }
+
+      #tab-reports .rp-stat-title {
+        min-width: 0;
+        flex: 1 1 auto
       }
 
       #tab-reports .rp-stat-value {
-        left: 5px !important;
-        font-size: clamp(14px, 4.2vw, 18px) !important;
+        left: auto !important;
+        font-size: clamp(12px, 3.6vw, 16px) !important;
         font-weight: 600 !important;
-        line-height: 1 !important
+        line-height: 1 !important;
+        flex-shrink: 0
       }
 
       #tab-reports .rp-stat-icon {
@@ -21122,18 +21137,42 @@
       }
 
       #tab-reports .rp-stat-label {
-        right: 4px !important;
-        bottom: 4px !important;
+        right: auto !important;
+        bottom: auto !important;
         font-family: var(--font) !important;
-        font-size: clamp(9px, 2.4vw, 10px) !important;
+        font-size: clamp(8px, 2.2vw, 9px) !important;
         font-weight: 500 !important;
         letter-spacing: -0.02em !important;
         line-height: 1 !important;
         color: var(--mr-text) !important;
-        max-width: calc(100% - 32px);
+        max-width: none;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis
+      }
+
+      #tab-reports .rp-stat-chart {
+        flex: 1 1 auto;
+        min-height: 18px;
+        height: 20px;
+        max-height: 22px;
+        margin-top: 0 !important;
+        overflow: hidden !important;
+        width: 100%;
+        cursor: default;
+        pointer-events: none
+      }
+
+      #tab-reports .rp-stat-chart__stage,
+      #tab-reports .rp-stat-chart__layer,
+      #tab-reports .rp-stat-chart__svg {
+        width: 100%;
+        height: 100%;
+        overflow: hidden
+      }
+
+      #tab-reports .rp-stat-chart__hover-dot {
+        display: none !important
       }
 
       #tab-reports .toolbar.wf-toolbar {
@@ -36928,13 +36967,19 @@
         const reportHost = !!(opts && opts.host === 'reports');
         const legacyReportsView = view === 'reports';
         const isReportsList = reportHost || legacyReportsView;
-        const useLegacyReportsTable = false;
-        const deskUi = true;
-        const useDeskDateTime = true;
+        const mobViewport = typeof isDesktopUi === 'function' ? !isDesktopUi() : window.matchMedia('(max-width: 992px)').matches;
+        const wfMob = !isReportsList && mobViewport;
+        const rpMob = isReportsList && mobViewport;
+        const mobSplit = wfMob || rpMob;
         const list = document.getElementById(isReportsList ? 'reportList' : 'ticketList');
+        const mobHead = document.getElementById(isReportsList ? 'rpMobTicketsHead' : 'wfMobTicketsHead');
         if (!list) return;
 
         if (!tickets.length) {
+          if (mobHead) {
+            mobHead.innerHTML = '';
+            mobHead.setAttribute('aria-hidden', 'true');
+          }
           if (isAppDataPending()) {
             list.innerHTML = dataLoadingEmptyHTML(isReportsList ? 'جاري تحميل التقارير…' : 'جاري تحميل التذاكر…');
           } else {
@@ -36945,7 +36990,92 @@
           return;
         }
 
-        const deskFlatUi = true;
+        if (mobSplit) {
+          const branchColHtml = wfMob ? '' : '<col class="wf-col-branch-c">';
+          const branchThHtml = wfMob ? '' : '<th class="wf-col-branch">الفرع</th>';
+          const actionColHtml = '';
+          const actionThHtml = '';
+          const colgroupHtml = `
+          <col class="wf-col-ticket-c">
+          <col class="wf-col-emp-c">
+          <col class="wf-col-viol-c">
+          ${branchColHtml}
+          <col class="wf-col-datetime-c">
+          <col class="wf-col-status-c">
+          ${actionColHtml}`;
+          const theadHtml = `
+          <tr>
+            <th class="wf-col-ticket">ID</th>
+            <th class="wf-col-emp">الموظف</th>
+            <th class="wf-col-violation">نوع المخالفة</th>
+            ${branchThHtml}
+            <th class="wf-col-datetime">التاريخ</th>
+            <th class="wf-col-status">الحالة</th>
+            ${actionThHtml}
+          </tr>`;
+          const tbodyHtml = tickets.map(t => {
+            const autoFlag = ticketAutoFlagHtml(t, rpMob);
+            const autoRowCls = autoFlag ? ' wf-ticket-row--auto' : '';
+            const empName = (t._empName || '').trim() || '...';
+            const empNumber = (t._empNumber || '').trim();
+            const branchName = (t._branchName || '').trim() || '...';
+            const violName = (t.violation_type || '').trim() || '...';
+            const dateTime = t.violation_date
+              ? (wfMob
+                ? `<span class="wf-datetime-stack"><span class="wf-datetime-stack__time">${formatMobTicketTimeHtml(t.violation_time)}</span><span class="wf-datetime-stack__date">${Sec.escapeHTML(t.violation_date)}</span></span>`
+                : `<span class="wf-datetime-stack"><span class="wf-datetime-stack__time">${Sec.escapeHTML(formatTime12(t.violation_time))}</span><span class="wf-datetime-stack__date">${Sec.escapeHTML(t.violation_date)}</span></span>`)
+              : '-';
+            const branchTdHtml = wfMob
+              ? ''
+              : `<td class="wf-col-branch"><span class="wf-branch-cell"><span class="wf-branch-name">${Sec.escapeHTML(branchName)}</span></span></td>`;
+            const ticketNumHtml = `<strong class="wf-ticket-id">${Sec.escapeHTML(shortTicketNum(t.ticket_number))}</strong>`;
+            let ticketIdCellCls = 'ticket-id-cell';
+            if (autoFlag && wfMob) ticketIdCellCls += ' ticket-id-cell--auto';
+            else if (autoFlag && rpMob) ticketIdCellCls += ' ticket-id-cell--auto ticket-id-cell--under-id';
+            const ticketIdCellHtml = `<div class="${ticketIdCellCls}">${ticketNumHtml}${autoFlag}</div>`;
+            const statusText = (t.status_text || STATE_LABELS[t.state] || '').trim();
+            return `
+            <tr class="wf-ticket-row${autoRowCls}" ontouchstart="prefetchTicketDetail('${t.id}')" onclick="openTicket('${t.id}')">
+              <td class="wf-ticket-cell">${ticketIdCellHtml}</td>
+              <td class="wf-col-emp"><span class="wf-emp-cell"><span class="wf-emp-name">${Sec.escapeHTML(empName)}</span>${empNumber ? `<span class="wf-emp-num">${Sec.escapeHTML(empNumber)}</span>` : ''}</span></td>
+              <td class="wf-col-violation"><span class="wf-viol-cell"><span class="wf-viol-name">${Sec.escapeHTML(violName)}</span></span></td>
+              ${branchTdHtml}
+              <td class="wf-col-datetime wf-datetime">${dateTime}</td>
+              <td class="wf-col-status"><span class="badge ${getTicketBadgeClass(t)}">${Sec.escapeHTML(statusText)}</span></td>
+            </tr>`;
+          }).join('');
+          const bodyTableCls = 'data-table wf-tickets-table wf-tickets-table--mob wf-tickets-table--mob-body' + (rpMob ? ' rp-tickets-table--mob' : '');
+          if (mobHead) {
+            mobHead.innerHTML = `
+        <div class="wf-table-wrap wf-table-wrap--head">
+          <table class="data-table wf-tickets-table wf-tickets-table--mob wf-tickets-table--mob-head${rpMob ? ' rp-tickets-table--mob' : ''}">
+            <colgroup>${colgroupHtml}</colgroup>
+            <thead>${theadHtml}</thead>
+          </table>
+        </div>`;
+            mobHead.setAttribute('aria-hidden', 'false');
+          }
+          list.innerHTML = `
+    <div class="wf-mob-tickets-body">
+      <div class="wf-table-wrap wf-table-wrap--body">
+        <table class="${bodyTableCls}">
+          <colgroup>${colgroupHtml}</colgroup>
+          <tbody>${tbodyHtml}</tbody>
+        </table>
+      </div>
+    </div>`;
+          const scrollTab = isReportsList ? 'reports' : 'workflow';
+          requestAnimationFrame(() => requestAnimationFrame(() => bindMobTicketsHeadScroll(scrollTab)));
+          return;
+        }
+
+        if (mobHead) {
+          mobHead.innerHTML = '';
+          mobHead.setAttribute('aria-hidden', 'true');
+        }
+
+        const useLegacyReportsTable = false;
+        const useDeskDateTime = true;
         const showActionCol = false;
         const branchColHtml = '<col class="wf-col-branch-c">';
         const branchThHtml = '<th class="wf-col-branch">الفرع</th>';
