@@ -20136,8 +20136,21 @@
         overflow: hidden !important
       }
 
+      body.mob-resp-keyboard-open #appWrap > .app-shell > #mobileBottomNav.mobile-bottom-nav {
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important
+      }
+
       body.ticket-keyboard-open #ticketModal .td-mob-sheet {
         max-height: var(--ticket-kb-max-h, min(
+          82dvh,
+          calc(100dvh - var(--unified-topbar-h, 76px) - var(--mob-chrome-bottom, var(--mr-mob-bottom-nav-h, 56px)) - 8px)
+        )) !important
+      }
+
+      body.viol-keyboard-open #violDetailModal .viol-paper-sheet {
+        max-height: var(--viol-kb-max-h, min(
           82dvh,
           calc(100dvh - var(--unified-topbar-h, 76px) - var(--mob-chrome-bottom, var(--mr-mob-bottom-nav-h, 56px)) - 8px)
         )) !important
@@ -25818,7 +25831,9 @@
         if (!isViolDetailMobSheet()) {
           document.documentElement.style.removeProperty('--mob-chrome-bottom');
           document.documentElement.style.removeProperty('--ticket-kb-max-h');
-          document.body.classList.remove('ticket-keyboard-open');
+          document.documentElement.style.removeProperty('--viol-kb-max-h');
+          document.body.classList.remove('ticket-keyboard-open', 'viol-keyboard-open', 'mob-resp-keyboard-open');
+          delete document.body.dataset.violRespFocus;
           return;
         }
 
@@ -25828,25 +25843,39 @@
         const vv = window.visualViewport;
         const topBar = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--unified-topbar-h'), 10) || 76;
         const ticketOpen = document.getElementById('ticketModal')?.classList.contains('open');
+        const violDetailOpen = document.getElementById('violDetailModal')?.classList.contains('open');
+        const cmpDetailOpen = document.getElementById('cmpDetailModal')?.classList.contains('open');
         const resp = document.getElementById('respText');
         const editingResp = document.body.dataset.ticketRespFocus === '1'
+          || document.body.dataset.violRespFocus === '1'
           || (resp && document.activeElement === resp);
 
-        /* الشريط السفلي: bottom:0 دائماً — إذا iOS رفعه فوق الكيبورد نعيده لمكانه */
         document.documentElement.style.setProperty('--mr-mob-bottom-nav-h', `${navH}px`);
         document.documentElement.style.setProperty('--mob-chrome-bottom', `${navH}px`);
         document.documentElement.style.setProperty('--viol-sheet-bottom', `${navH}px`);
         document.documentElement.style.setProperty('--ticket-sheet-bottom', `${navH}px`);
 
         const keyboardActive = kbInset > 0 || editingResp;
-        document.body.classList.toggle('ticket-keyboard-open', ticketOpen && keyboardActive);
+        const ticketSheetActive = ticketOpen || (cmpDetailOpen && document.body.classList.contains('ticket-over-cmp'));
 
-        if (ticketOpen && vv && keyboardActive) {
+        document.body.classList.toggle('mob-resp-keyboard-open', editingResp);
+        document.body.classList.toggle('ticket-keyboard-open', ticketSheetActive && keyboardActive);
+        document.body.classList.toggle('viol-keyboard-open', violDetailOpen && keyboardActive);
+
+        if (ticketSheetActive && vv && keyboardActive) {
           const visibleBottom = vv.offsetTop + vv.height;
           const maxH = Math.max(280, Math.round(visibleBottom - topBar - navH - 8));
           document.documentElement.style.setProperty('--ticket-kb-max-h', `${maxH}px`);
         } else {
           document.documentElement.style.removeProperty('--ticket-kb-max-h');
+        }
+
+        if (violDetailOpen && vv && keyboardActive) {
+          const visibleBottom = vv.offsetTop + vv.height;
+          const maxH = Math.max(220, Math.round(visibleBottom - topBar - navH - 8));
+          document.documentElement.style.setProperty('--viol-kb-max-h', `${maxH}px`);
+        } else {
+          document.documentElement.style.removeProperty('--viol-kb-max-h');
         }
 
         document.querySelector('#ticketModal .td-mob-sheet')?.style.removeProperty('bottom');
@@ -25871,10 +25900,12 @@
         const started = performance.now();
         const loop = () => {
           syncMobViewportLayout();
+          const sheetOpen = document.getElementById('ticketModal')?.classList.contains('open')
+            || document.getElementById('violDetailModal')?.classList.contains('open');
           if (
             performance.now() - started < 800
-            && document.getElementById('ticketModal')?.classList.contains('open')
-            && (isTicketRespEditing() || isMobileKeyboardOpen())
+            && sheetOpen
+            && (isTicketRespEditing() || document.body.dataset.violRespFocus === '1' || isMobileKeyboardOpen())
           ) {
             _ticketKbSyncRaf = requestAnimationFrame(loop);
           } else {
@@ -25963,32 +25994,60 @@
       }
 
       function initTicketRespKeyboardGuard() {
-        const modal = document.getElementById('ticketModal');
-        const ta = document.getElementById('respText');
-        const scroll = document.querySelector('#ticketModal .td-content-area');
-        if (!modal || !ta || !scroll || modal.dataset.kbInit === '1') return;
-        modal.dataset.kbInit = '1';
+        if (document.body.dataset.respTextKbInit === '1') return;
+        document.body.dataset.respTextKbInit = '1';
 
-        modal.addEventListener('focusin', (e) => {
+        document.addEventListener('focusin', (e) => {
           if (!isViolDetailMobSheet()) return;
-          if (e.target !== ta) return;
+          if (e.target.id !== 'respText') return;
+          if (!document.getElementById('ticketModal')?.classList.contains('open')) return;
           setTicketRespEditing(true);
           lockMobileAppScrollForTicket();
           requestAnimationFrame(() => {
-            syncTicketSheetForKeyboard();
-            const taRect = ta.getBoundingClientRect();
-            const scrollRect = scroll.getBoundingClientRect();
-            if (taRect.bottom > scrollRect.bottom - 16) {
-              scroll.scrollTop += taRect.bottom - scrollRect.bottom + 20;
+            syncMobViewportLayout();
+            const ta = document.getElementById('respText');
+            const scroll = document.querySelector('#ticketModal .td-content-area');
+            if (ta && scroll) {
+              const taRect = ta.getBoundingClientRect();
+              const scrollRect = scroll.getBoundingClientRect();
+              if (taRect.bottom > scrollRect.bottom - 16) {
+                scroll.scrollTop += taRect.bottom - scrollRect.bottom + 20;
+              }
             }
             scheduleTicketKeyboardSync();
           });
         }, true);
 
-        modal.addEventListener('focusout', (e) => {
-          if (!isViolDetailMobSheet()) return;
-          if (e.target !== ta) return;
+        document.addEventListener('focusout', (e) => {
+          if (e.target.id !== 'respText') return;
           window.setTimeout(tryReleaseTicketRespEditing, 320);
+        }, true);
+      }
+
+      function initViolRespKeyboardGuard() {
+        const modal = document.getElementById('violDetailModal');
+        if (!modal || modal.dataset.violKbInit === '1') return;
+        modal.dataset.violKbInit = '1';
+
+        modal.addEventListener('focusin', (e) => {
+          if (!isViolDetailMobSheet()) return;
+          if (!e.target.matches('textarea, input:not([type=hidden])')) return;
+          document.body.dataset.violRespFocus = '1';
+          syncMobViewportLayout();
+          scheduleTicketKeyboardSync();
+        }, true);
+
+        modal.addEventListener('focusout', (e) => {
+          if (!e.target.matches('textarea, input:not([type=hidden])')) return;
+          window.setTimeout(() => {
+            if (modal.contains(document.activeElement)) return;
+            if (isMobileKeyboardOpen()) {
+              scheduleTicketKeyboardSync();
+              return;
+            }
+            document.body.dataset.violRespFocus = '0';
+            syncMobViewportLayout();
+          }, 320);
         }, true);
       }
 
@@ -26041,6 +26100,9 @@
             sheet.style.removeProperty('bottom');
           }
           releaseViolDetailModalFromShell();
+          document.body.dataset.violRespFocus = '0';
+          document.body.classList.remove('viol-keyboard-open', 'mob-resp-keyboard-open');
+          syncMobViewportLayout();
           if (!document.querySelector('.modal.open')) {
             document.body.classList.remove('modal-open');
           }
@@ -26239,7 +26301,7 @@
           releaseTicketModalFromShell();
           unlockMobileAppScrollForTicket();
           setTicketRespEditing(false);
-          document.body.classList.remove('ticket-keyboard-open');
+          document.body.classList.remove('ticket-keyboard-open', 'mob-resp-keyboard-open');
           syncMobViewportLayout();
           if (state._countdownTimer) {
             clearInterval(state._countdownTimer);
@@ -37946,6 +38008,7 @@
         form.style.display = '';
         btnsWrap.innerHTML = '';
         if (typeof initTicketRespKeyboardGuard === 'function') initTicketRespKeyboardGuard();
+        if (typeof initViolRespKeyboardGuard === 'function') initViolRespKeyboardGuard();
 
         const role = state.currentUser.role;
         const meId = state.currentUser.id;
@@ -44212,6 +44275,7 @@
           if (typeof initViolDetailSheetDrag === 'function') initViolDetailSheetDrag();
           if (typeof initTicketSheetDrag === 'function') initTicketSheetDrag();
           if (typeof initTicketRespKeyboardGuard === 'function') initTicketRespKeyboardGuard();
+        if (typeof initViolRespKeyboardGuard === 'function') initViolRespKeyboardGuard();
           if (typeof initCmpDetailSheetDrag === 'function') initCmpDetailSheetDrag();
           if (typeof initAttViewerDrag === 'function') initAttViewerDrag();
 
