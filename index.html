@@ -36274,24 +36274,18 @@
         }
       }
 
-      /** تحويل رابط موقّع إلى blob URL عند فشل التشغيل المباشر (CORS / نوع المحتوى) */
+      /** إرجاع رابط التشغيل — يفضّل التشغيل المباشر في <video> بدون fetch كامل (CORS / checksum) */
       async function resolveMediaPlayUrl(url, mimeType) {
         const u = String(url || '').trim();
         if (!u) throw new Error('رابط فارغ');
         if (u.startsWith('data:') || u.startsWith('blob:')) return u;
         if (!/^https?:\/\//i.test(u)) return u;
         try {
-          const res = await fetch(u, { method: 'GET', mode: 'cors', credentials: 'omit' });
-          if (res.status === 404) {
+          const probe = await fetch(u, { method: 'HEAD', mode: 'cors', credentials: 'omit' });
+          if (probe.status === 404) {
             throw new Error('الملف غير موجود في التخزين (404). قد يكون الرفع لم يكتمل — أعد رفع المرفق أو تواصل مع الدعم.');
           }
-          if (!res.ok) throw new Error(`فشل جلب الملف (${res.status})`);
-          let blob = await res.blob();
-          const type = blob.type || mimeType || '';
-          if (mimeType && (!blob.type || blob.type === 'application/octet-stream')) {
-            blob = new Blob([blob], { type: mimeType });
-          }
-          return URL.createObjectURL(blob);
+          return u;
         } catch (e) {
           if (/404/.test(String(e?.message || e))) throw e;
           return u;
