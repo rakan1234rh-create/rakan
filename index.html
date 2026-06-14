@@ -20132,14 +20132,43 @@
         ) !important
       }
 
-      body.ticket-over-cmp.ticket-keyboard-open #ticketModal .td-mob-sheet {
-        max-height: none !important
+      body.ticket-scroll-locked {
+        position: fixed !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: 100% !important;
+        overflow: hidden !important
       }
 
-      body.ticket-keyboard-open #cmpDetailModal.modal.open {
-        visibility: hidden !important;
-        opacity: 0 !important;
-        pointer-events: none !important
+      #ticketModal .ticket-resp-search {
+        align-items: flex-start;
+        min-height: 48px;
+        height: auto;
+        border-radius: 18px;
+        padding: 4px 6px 4px 14px
+      }
+
+      #ticketModal .ticket-resp-input {
+        min-height: 72px;
+        max-height: 120px;
+        resize: none;
+        border: 0 !important;
+        background: transparent !important;
+        font-size: 16px !important;
+        line-height: 1.45;
+        padding: 10px 8px 10px 0 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important
+      }
+
+      #ticketModal .ticket-resp-input:focus {
+        border-color: transparent !important;
+        box-shadow: none !important
+      }
+
+      #ticketModal .ticket-resp-search:focus-within {
+        border-color: var(--mr-primary) !important;
+        box-shadow: 0 0 0 4px var(--mr-primary-soft) !important
       }
 
       [data-theme="dark"] body.ticket-over-cmp #ticketModal.modal.open::before {
@@ -24529,8 +24558,11 @@
             <div id="wfStepsContainer"></div>
             <div id="responseForm" style="margin-top:18px;display:none">
               <div class="panel" style="margin:0">
-                <h4 style="margin-bottom:10px;font-size:14px">إضافة رد</h4><textarea id="respText" class="form-textarea"
-                  placeholder="اكتب ردك أو ملاحظاتك..." style="min-height:90px"></textarea>
+                <h4 style="margin-bottom:10px;font-size:14px">إضافة رد</h4>
+                <div class="figma-search-wrap ticket-resp-search">
+                  <textarea id="respText" class="figma-search-input ticket-resp-input form-textarea" rows="3"
+                    placeholder="اكتب ردك أو ملاحظاتك..."></textarea>
+                </div>
                 <div class="form-group" style="margin-top:10px"><label class="form-label">إرفاق ملفات (اختياري)</label>
                   <div class="file-area" onclick="document.getElementById('resp-files').click()"><i
                       class="fas fa-cloud-arrow-up"></i>
@@ -25752,43 +25784,35 @@
         return typeof window !== 'undefined' && window.matchMedia('(max-width: 992px)').matches;
       }
 
+      let _ticketBodyScrollY = 0;
+
       function isMobileKeyboardOpen() {
         const vv = window.visualViewport;
         if (!vv) return false;
         return window.innerHeight - vv.height > 120;
       }
 
-      function syncTicketSheetKeyboardLayout() {
-        const modal = document.getElementById('ticketModal');
-        const sheet = modal?.querySelector('.td-mob-sheet');
-        if (!modal?.classList.contains('open') || !sheet || !isViolDetailMobSheet()) return;
+      function lockMobileAppScrollForTicket() {
+        if (!isViolDetailMobSheet()) return;
+        if (document.body.dataset.ticketScrollLock === '1') return;
+        _ticketBodyScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+        document.body.dataset.ticketScrollLock = '1';
+        document.body.classList.add('ticket-scroll-locked');
+        document.body.style.top = `-${_ticketBodyScrollY}px`;
+      }
 
-        const vv = window.visualViewport;
-        const keyboardOpen = isMobileKeyboardOpen();
-        document.body.classList.toggle('ticket-keyboard-open', keyboardOpen);
-
-        if (!keyboardOpen || !vv) {
-          if (document.body.classList.contains('ticket-over-cmp')) {
-            sheet.style.removeProperty('bottom');
-          }
-          sheet.style.removeProperty('max-height');
-          return;
-        }
-
-        const bottomGap = Math.max(0, window.innerHeight - vv.offsetTop - vv.height);
-        if (document.body.classList.contains('ticket-over-cmp')) {
-          sheet.style.removeProperty('bottom');
-        } else {
-          sheet.style.bottom = `${bottomGap}px`;
-        }
-        sheet.style.maxHeight = `${Math.max(240, vv.height - 12)}px`;
+      function unlockMobileAppScrollForTicket() {
+        if (document.body.dataset.ticketScrollLock !== '1') return;
+        const y = _ticketBodyScrollY || 0;
+        document.body.dataset.ticketScrollLock = '0';
+        document.body.classList.remove('ticket-scroll-locked');
+        document.body.style.top = '';
+        window.scrollTo(0, y);
       }
 
       function syncViolSheetBottomInset() {
-        if (document.getElementById('ticketModal')?.classList.contains('open')) {
-          syncTicketSheetKeyboardLayout();
-        }
-        if (isMobileKeyboardOpen()) return;
+        const ticketOpen = document.getElementById('ticketModal')?.classList.contains('open');
+        if (ticketOpen || isMobileKeyboardOpen()) return;
 
         const nav = document.getElementById('mobileBottomNav');
         if (!nav || !isViolDetailMobSheet()) return;
@@ -25862,17 +25886,22 @@
         ta.dataset.kbInit = '1';
         ta.addEventListener('focus', () => {
           if (!isViolDetailMobSheet()) return;
+          lockMobileAppScrollForTicket();
           requestAnimationFrame(() => {
-            syncTicketSheetKeyboardLayout();
             const taRect = ta.getBoundingClientRect();
             const scrollRect = scroll.getBoundingClientRect();
-            if (taRect.bottom > scrollRect.bottom - 20) {
-              scroll.scrollTop += taRect.bottom - scrollRect.bottom + 28;
+            if (taRect.bottom > scrollRect.bottom - 16) {
+              scroll.scrollTop += taRect.bottom - scrollRect.bottom + 20;
             }
           });
         });
         ta.addEventListener('blur', () => {
-          window.setTimeout(syncTicketSheetKeyboardLayout, 120);
+          if (!isViolDetailMobSheet()) return;
+          window.setTimeout(() => {
+            if (document.getElementById('respText') === document.activeElement) return;
+            if (document.getElementById('ticketModal')?.classList.contains('open')) return;
+            unlockMobileAppScrollForTicket();
+          }, 120);
         });
       }
 
@@ -26094,12 +26123,12 @@
         modal.classList.remove('sheet-ready', 'sheet-closing', 'sheet-dragging');
         modal.classList.add('open');
         document.body.classList.add('modal-open');
+        if (isViolDetailMobSheet()) lockMobileAppScrollForTicket();
         if (!window._ticketSheetVVBound) {
           window._ticketSheetVVBound = true;
           const repin = () => {
-            if (document.getElementById('ticketModal')?.classList.contains('open')) {
-              syncViolSheetBottomInset();
-            }
+            if (document.getElementById('ticketModal')?.classList.contains('open')) return;
+            syncViolSheetBottomInset();
           };
           window.addEventListener('resize', repin, { passive: true });
           window.visualViewport?.addEventListener('resize', repin, { passive: true });
@@ -26133,7 +26162,7 @@
             sheet.style.removeProperty('max-height');
           }
           releaseTicketModalFromShell();
-          document.body.classList.remove('ticket-keyboard-open');
+          unlockMobileAppScrollForTicket();
           if (state._countdownTimer) {
             clearInterval(state._countdownTimer);
             state._countdownTimer = null;
@@ -30285,6 +30314,7 @@
           window._mrVVNavBound = true;
           let _rrTick = 0;
           const repinNav = () => {
+            if (document.getElementById('ticketModal')?.classList.contains('open')) return;
             if (_rrTick) return;
             _rrTick = requestAnimationFrame(() => { _rrTick = 0; syncMobBottomNavHeight(); });
           };
