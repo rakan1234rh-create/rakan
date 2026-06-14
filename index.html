@@ -16132,7 +16132,7 @@
       #appWrap > .app-shell > #mobileBottomNav.mobile-bottom-nav {
         display: flex !important;
         position: fixed;
-        bottom: 0;
+        bottom: 0 !important;
         left: 0;
         right: 0;
         z-index: 2800;
@@ -18883,6 +18883,21 @@
         padding: 10px 0
       }
 
+      #ticketModal #tdp-workflow.td-pane {
+        display: flex;
+        flex-direction: column
+      }
+
+      #ticketModal #tdp-workflow #responseForm {
+        order: -1;
+        margin-top: 0 !important;
+        margin-bottom: 18px
+      }
+
+      #ticketModal #tdp-workflow #wfStepsContainer {
+        order: 0
+      }
+
       #ticketModal .info-row {
         display: flex !important;
         flex-direction: row !important;
@@ -19985,7 +20000,7 @@
         position: fixed !important;
         left: 0 !important;
         right: 0 !important;
-        bottom: var(--viol-sheet-bottom, var(--mr-mob-bottom-nav-h, calc(56px + env(safe-area-inset-bottom, 0px)))) !important;
+        bottom: var(--mob-chrome-bottom, var(--viol-sheet-bottom, var(--mr-mob-bottom-nav-h, calc(56px + env(safe-area-inset-bottom, 0px))))) !important;
         pointer-events: auto;
         z-index: 1;
         width: 100% !important;
@@ -19993,7 +20008,7 @@
         max-height: min(
           82dvh,
           calc(
-            100dvh - var(--unified-topbar-h, 76px) - var(--viol-sheet-bottom, var(--mr-mob-bottom-nav-h, 56px)) - 8px
+            100dvh - var(--unified-topbar-h, 76px) - var(--mob-chrome-bottom, var(--viol-sheet-bottom, var(--mr-mob-bottom-nav-h, 56px))) - 8px
           )
         ) !important;
         height: auto !important;
@@ -20113,7 +20128,7 @@
         pointer-events: none !important
       }
 
-      /* فوق الامتثال: التذكرة تلتصق بأسفل الشاشة (بدون فراغ للشريط — لأنها فوقه) */
+      /* فوق الامتثال: الورقة فوق الشريط السفلي — والشريط يبقى ظاهراً */
       body.ticket-over-cmp #ticketModal.modal {
         padding-bottom: 0 !important
       }
@@ -20124,11 +20139,11 @@
       }
 
       body.ticket-over-cmp #ticketModal .td-mob-sheet {
-        bottom: 0 !important;
-        padding-bottom: env(safe-area-inset-bottom, 0px);
+        bottom: var(--mob-chrome-bottom, var(--mr-mob-bottom-nav-h, calc(56px + env(safe-area-inset-bottom, 0px)))) !important;
+        padding-bottom: 0;
         max-height: min(
           86dvh,
-          calc(100dvh - var(--unified-topbar-h, 76px) - 12px)
+          calc(100dvh - var(--unified-topbar-h, 76px) - var(--mob-chrome-bottom, var(--mr-mob-bottom-nav-h, 56px)) - 8px)
         ) !important
       }
 
@@ -20136,11 +20151,11 @@
         overflow: hidden !important
       }
 
-      body.ticket-over-cmp #appWrap > .app-shell > #mobileBottomNav.mobile-bottom-nav {
-        bottom: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        transform: none !important
+      body.ticket-keyboard-open #ticketModal .td-mob-sheet {
+        max-height: var(--ticket-kb-max-h, min(
+          82dvh,
+          calc(100dvh - var(--unified-topbar-h, 76px) - var(--mob-chrome-bottom, var(--mr-mob-bottom-nav-h, 56px)) - 8px)
+        )) !important
       }
 
       #ticketModal .ticket-resp-search {
@@ -20208,7 +20223,7 @@
         position: fixed !important;
         left: 0 !important;
         right: 0 !important;
-        bottom: var(--ticket-sheet-bottom, var(--mr-mob-bottom-nav-h, calc(56px + env(safe-area-inset-bottom, 0px)))) !important;
+        bottom: var(--mob-chrome-bottom, var(--ticket-sheet-bottom, var(--mr-mob-bottom-nav-h, calc(56px + env(safe-area-inset-bottom, 0px))))) !important;
         pointer-events: auto;
         z-index: 1;
         width: 100% !important;
@@ -20216,7 +20231,7 @@
         max-height: min(
           82dvh,
           calc(
-            100dvh - var(--unified-topbar-h, 76px) - var(--ticket-sheet-bottom, var(--mr-mob-bottom-nav-h, 56px)) - 8px
+            100dvh - var(--unified-topbar-h, 76px) - var(--mob-chrome-bottom, var(--ticket-sheet-bottom, var(--mr-mob-bottom-nav-h, 56px))) - 8px
           )
         ) !important;
         height: auto !important;
@@ -25787,12 +25802,114 @@
         return typeof window !== 'undefined' && window.matchMedia('(max-width: 992px)').matches;
       }
 
-      let _ticketBodyScrollY = 0;
-
       function isMobileKeyboardOpen() {
+        return getMobKeyboardInset() > 0;
+      }
+
+      function getMobKeyboardInset() {
         const vv = window.visualViewport;
-        if (!vv) return false;
-        return window.innerHeight - vv.height > 120;
+        if (!vv) return 0;
+        return Math.max(0, Math.round(window.innerHeight - vv.offsetTop - vv.height));
+      }
+
+      function getMobNavHeight() {
+        const nav = document.getElementById('mobileBottomNav');
+        if (!nav || !isViolDetailMobSheet()) return 56;
+        const h = Math.ceil(nav.getBoundingClientRect().height);
+        if (h > 0) return h;
+        return parseInt(getComputedStyle(document.documentElement).getPropertyValue('--mr-mob-bottom-nav-h'), 10) || 56;
+      }
+
+      function ensureMobViewportWatch() {
+        if (window._mobVvWatch) return;
+        window._mobVvWatch = true;
+        const sync = () => syncMobViewportLayout();
+        window.addEventListener('resize', sync, { passive: true });
+        window.visualViewport?.addEventListener('resize', sync, { passive: true });
+        window.visualViewport?.addEventListener('scroll', sync, { passive: true });
+      }
+
+      function syncMobViewportLayout() {
+        if (!isViolDetailMobSheet()) {
+          document.documentElement.style.removeProperty('--mob-chrome-bottom');
+          document.documentElement.style.removeProperty('--ticket-kb-max-h');
+          document.body.classList.remove('ticket-keyboard-open');
+          return;
+        }
+
+        ensureMobViewportWatch();
+        const kbInset = getMobKeyboardInset();
+        const navH = getMobNavHeight();
+        const vv = window.visualViewport;
+        const topBar = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--unified-topbar-h'), 10) || 76;
+        const ticketOpen = document.getElementById('ticketModal')?.classList.contains('open');
+        const resp = document.getElementById('respText');
+        const editingResp = document.body.dataset.ticketRespFocus === '1'
+          || (resp && document.activeElement === resp);
+
+        /* الشريط السفلي: bottom:0 دائماً — إذا iOS رفعه فوق الكيبورد نعيده لمكانه */
+        document.documentElement.style.setProperty('--mr-mob-bottom-nav-h', `${navH}px`);
+        document.documentElement.style.setProperty('--mob-chrome-bottom', `${navH}px`);
+        document.documentElement.style.setProperty('--viol-sheet-bottom', `${navH}px`);
+        document.documentElement.style.setProperty('--ticket-sheet-bottom', `${navH}px`);
+
+        const keyboardActive = kbInset > 0 || editingResp;
+        document.body.classList.toggle('ticket-keyboard-open', ticketOpen && keyboardActive);
+
+        if (ticketOpen && vv && keyboardActive) {
+          const visibleBottom = vv.offsetTop + vv.height;
+          const maxH = Math.max(280, Math.round(visibleBottom - topBar - navH - 8));
+          document.documentElement.style.setProperty('--ticket-kb-max-h', `${maxH}px`);
+        } else {
+          document.documentElement.style.removeProperty('--ticket-kb-max-h');
+        }
+
+        document.querySelector('#ticketModal .td-mob-sheet')?.style.removeProperty('bottom');
+        document.querySelector('#ticketModal .td-mob-sheet')?.style.removeProperty('max-height');
+        document.querySelector('#violDetailModal .viol-paper-sheet')?.style.removeProperty('bottom');
+      }
+
+      let _ticketKbSyncRaf = 0;
+
+      function isTicketRespEditing() {
+        return document.body.dataset.ticketRespFocus === '1';
+      }
+
+      function setTicketRespEditing(active) {
+        document.body.dataset.ticketRespFocus = active ? '1' : '0';
+        if (active) scheduleTicketKeyboardSync();
+        else syncMobViewportLayout();
+      }
+
+      function scheduleTicketKeyboardSync() {
+        if (_ticketKbSyncRaf) cancelAnimationFrame(_ticketKbSyncRaf);
+        const started = performance.now();
+        const loop = () => {
+          syncMobViewportLayout();
+          if (
+            performance.now() - started < 800
+            && document.getElementById('ticketModal')?.classList.contains('open')
+            && (isTicketRespEditing() || isMobileKeyboardOpen())
+          ) {
+            _ticketKbSyncRaf = requestAnimationFrame(loop);
+          } else {
+            _ticketKbSyncRaf = 0;
+          }
+        };
+        _ticketKbSyncRaf = requestAnimationFrame(loop);
+      }
+
+      function tryReleaseTicketRespEditing() {
+        const resp = document.getElementById('respText');
+        if (resp && document.activeElement === resp) return;
+        if (isMobileKeyboardOpen()) {
+          scheduleTicketKeyboardSync();
+          return;
+        }
+        setTicketRespEditing(false);
+        if (!document.getElementById('ticketModal')?.classList.contains('open')) {
+          unlockMobileAppScrollForTicket();
+        }
       }
 
       function lockMobileAppScrollForTicket() {
@@ -25806,30 +25923,15 @@
         if (document.body.dataset.ticketScrollLock !== '1') return;
         document.body.dataset.ticketScrollLock = '0';
         document.body.classList.remove('ticket-scroll-locked');
+        syncMobViewportLayout();
+      }
+
+      function syncTicketSheetForKeyboard() {
+        syncMobViewportLayout();
       }
 
       function syncViolSheetBottomInset() {
-        const ticketOpen = document.getElementById('ticketModal')?.classList.contains('open');
-        if (ticketOpen || isMobileKeyboardOpen()) return;
-
-        const nav = document.getElementById('mobileBottomNav');
-        if (!nav || !isViolDetailMobSheet()) return;
-
-        const navH = Math.ceil(nav.getBoundingClientRect().height)
-          || parseInt(getComputedStyle(document.documentElement).getPropertyValue('--mr-mob-bottom-nav-h'), 10)
-          || 56;
-        const insetPx = `${navH}px`;
-        document.documentElement.style.setProperty('--viol-sheet-bottom', insetPx);
-        document.documentElement.style.setProperty('--ticket-sheet-bottom', insetPx);
-        document.querySelector('#violDetailModal .viol-paper-sheet')?.style.setProperty('bottom', insetPx);
-        const ticketSheet = document.querySelector('#ticketModal .td-mob-sheet');
-        if (ticketSheet) {
-          if (document.body.classList.contains('ticket-over-cmp')) {
-            ticketSheet.style.removeProperty('bottom');
-          } else {
-            ticketSheet.style.setProperty('bottom', insetPx);
-          }
-        }
+        syncMobViewportLayout();
       }
 
       function mountViolDetailModalForMob() {
@@ -25876,29 +25978,33 @@
       }
 
       function initTicketRespKeyboardGuard() {
+        const modal = document.getElementById('ticketModal');
         const ta = document.getElementById('respText');
         const scroll = document.querySelector('#ticketModal .td-content-area');
-        if (!ta || !scroll || ta.dataset.kbInit === '1') return;
-        ta.dataset.kbInit = '1';
-        ta.addEventListener('focus', () => {
+        if (!modal || !ta || !scroll || modal.dataset.kbInit === '1') return;
+        modal.dataset.kbInit = '1';
+
+        modal.addEventListener('focusin', (e) => {
           if (!isViolDetailMobSheet()) return;
+          if (e.target !== ta) return;
+          setTicketRespEditing(true);
           lockMobileAppScrollForTicket();
           requestAnimationFrame(() => {
+            syncTicketSheetForKeyboard();
             const taRect = ta.getBoundingClientRect();
             const scrollRect = scroll.getBoundingClientRect();
             if (taRect.bottom > scrollRect.bottom - 16) {
               scroll.scrollTop += taRect.bottom - scrollRect.bottom + 20;
             }
+            scheduleTicketKeyboardSync();
           });
-        });
-        ta.addEventListener('blur', () => {
+        }, true);
+
+        modal.addEventListener('focusout', (e) => {
           if (!isViolDetailMobSheet()) return;
-          window.setTimeout(() => {
-            if (document.getElementById('respText') === document.activeElement) return;
-            if (document.getElementById('ticketModal')?.classList.contains('open')) return;
-            unlockMobileAppScrollForTicket();
-          }, 120);
-        });
+          if (e.target !== ta) return;
+          window.setTimeout(tryReleaseTicketRespEditing, 320);
+        }, true);
       }
 
       function openViolDetailSheetAnimated() {
@@ -26112,33 +26218,22 @@
         const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         if (typeof syncMobBottomNavHeight === 'function') syncMobBottomNavHeight();
         mountTicketModalForMob();
-        syncViolSheetBottomInset();
-        if (document.body.classList.contains('ticket-over-cmp')) {
-          sheet.style.removeProperty('bottom');
-        }
+        syncMobViewportLayout();
         modal.classList.remove('sheet-ready', 'sheet-closing', 'sheet-dragging');
         modal.classList.add('open');
         document.body.classList.add('modal-open');
-        if (!window._ticketSheetVVBound) {
-          window._ticketSheetVVBound = true;
-          const repin = () => {
-            if (document.getElementById('ticketModal')?.classList.contains('open')) return;
-            syncViolSheetBottomInset();
-          };
-          window.addEventListener('resize', repin, { passive: true });
-          window.visualViewport?.addEventListener('resize', repin, { passive: true });
-        }
+        ensureMobViewportWatch();
         if (reduced) {
-          syncViolSheetBottomInset();
+          syncMobViewportLayout();
           modal.classList.add('sheet-ready');
           sheet.style.transform = '';
           return;
         }
         sheet.style.transform = 'translateY(100%)';
         requestAnimationFrame(() => {
-          syncViolSheetBottomInset();
+          syncMobViewportLayout();
           requestAnimationFrame(() => {
-            syncViolSheetBottomInset();
+            syncMobViewportLayout();
             modal.classList.add('sheet-ready');
             sheet.style.removeProperty('transform');
           });
@@ -26158,6 +26253,9 @@
           }
           releaseTicketModalFromShell();
           unlockMobileAppScrollForTicket();
+          setTicketRespEditing(false);
+          document.body.classList.remove('ticket-keyboard-open');
+          syncMobViewportLayout();
           if (state._countdownTimer) {
             clearInterval(state._countdownTimer);
             state._countdownTimer = null;
@@ -29375,7 +29473,6 @@
         const nav = document.getElementById('mobileBottomNav');
         const shell = document.querySelector('#appWrap > .app-shell');
         if (!nav || !shell) return;
-        nav.style.transform = '';
         if (nav.parentNode !== shell) shell.appendChild(nav);
       }
       function portalFilterPanelsForMob() {
@@ -29454,7 +29551,7 @@
         if (h > 0) {
           document.documentElement.style.setProperty('--mr-mob-bottom-nav-h', h + 'px');
         }
-        nav.style.transform = '';
+        if (typeof syncMobViewportLayout === 'function') syncMobViewportLayout();
       }
       function syncMobileBottomNavLayout() {
         const nav = document.getElementById('mobileBottomNav');
@@ -30307,15 +30404,10 @@
         }
         if (!window._mrVVNavBound && window.visualViewport) {
           window._mrVVNavBound = true;
-          let _rrTick = 0;
-          const repinNav = () => {
-            if (document.getElementById('ticketModal')?.classList.contains('open')) return;
-            if (_rrTick) return;
-            _rrTick = requestAnimationFrame(() => { _rrTick = 0; syncMobBottomNavHeight(); });
-          };
-          window.visualViewport.addEventListener('resize', repinNav, { passive: true });
+          ensureMobViewportWatch();
         }
         syncMobBottomNavHeight();
+        if (typeof syncMobViewportLayout === 'function') syncMobViewportLayout();
       }
 
 
