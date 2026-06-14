@@ -17,10 +17,13 @@ import {
 } from 'npm:@aws-sdk/client-s3@3.733.0'
 import { getSignedUrl } from 'npm:@aws-sdk/s3-request-presigner@3.733.0'
 
-const cors = {
+const cors: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers':
+    'authorization, x-client-info, apikey, content-type, range',
+  'Access-Control-Allow-Methods': 'GET, HEAD, POST, OPTIONS',
+  'Access-Control-Expose-Headers':
+    'Content-Length, Content-Range, Accept-Ranges, Content-Type',
 }
 
 function json(body: unknown, status = 200) {
@@ -69,9 +72,144 @@ function makeS3(env: NonNullable<ReturnType<typeof requireR2Env>>) {
   })
 }
 
+function streamSecret() {
+  return envFirst(
+    'SUPABASE_SERVICE_ROLE_KEY',
+    'SUPABASE_JWT_SECRET',
+    'SUPABASE_ANON_KEY',
+  )
+}
+
+function b64url(data: Uint8Array | string): string {
+  const bytes = typeof data === 'string' ? new TextEncoder().encode(data) : data
+  let bin = ''
+  for (const b of bytes) bin += String.fromCharCode(b)
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+}
+
+function b64urlDecode(s: string): Uint8Array {
+  const pad = s.length % 4 ? '='.repeat(4 - (s.length % 4)) : ''
+  const b64 = s.replace(/-/g, '+').replace(/_/g, '/') + pad
+  const bin = atob(b64)
+  const out = new Uint8Array(bin.length)
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i)
+  return out
+}
+
+async function hmacSign(message: string): Promise<string> {
+  const secret = streamSecret()
+  const enc = new TextEncoder()
+  const key = await crypto.subtle.importKey(
+    'raw',
+    enc.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  )
+  const sig = await crypto.subtle.sign('HMAC', key, enc.encode(message))
+  return b64url(new Uint8Array(sig))
+}
+
+async function makeStreamToken(key: string, ttlSec = 3600): Promise<string> {
+  const exp = Math.floor(Date.now() / 1000) + ttlSec
+  const msg = `${exp}:${key}`
+  const sig = await hmacSign(msg)
+  return `${b64url(msg)}.${sig}`
+}
+
+async function verifyStreamToken(token: string): Promise<string | null> {
+  const parts = token.split('.')
+  if (parts.length !== 2) return null
+  let msg = ''
+  try {
+    msg = new TextDecoder().decode(b64urlDecode(parts[0]))
+  } catch {
+    return null
+  }
+  const colon = msg.indexOf(':')
+  if (colon < 1) return null
+  const exp = parseInt(msg.slice(0, colon), 10)
+  const key = msg.slice(colon + 1)
+  if (!key || !exp || exp < Math.floor(Date.now() / 1000)) return null
+  const expected = await hmacSign(msg)
+  if (expected !== parts[1]) return null
+  return key
+}
+
+async function handleStreamRequest(
+  req: Request,
+  s3: S3Client,
+  bucket: string,
+): Promise<Response | null> {
+  const u = new URL(req.url)
+  const token = u.searchParams.get('stream')
+  if (!token) return null
+
+  const key = await verifyStreamToken(token)
+  if (!key) return json({ error: 'رمز بث غير صالح أو منتهٍ' }, 401)
+
+  const range = req.headers.get('Range') || undefined
+
+  try {
+    if (req.method === 'HEAD') {
+      const head = await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: key }))
+      const headers: Record<string, string> = { ...cors }
+      headers['Content-Type'] = head.ContentType || 'application/octet-stream'
+      headers['Accept-Ranges'] = 'bytes'
+      if (head.ContentLength != null) {
+        headers['Content-Length'] = String(head.ContentLength)
+      }
+      return new Response(null, { status: 200, headers })
+    }
+
+    const out = await s3.send(
+      new GetObjectCommand({
+        Bucket: bucket,
+        Key: key,
+        ...(range ? { Range: range } : {}),
+      }),
+    )
+
+    const headers: Record<string, string> = { ...cors }
+    headers['Content-Type'] = out.ContentType || 'application/octet-stream'
+    headers['Accept-Ranges'] = 'bytes'
+    if (out.ContentLength != null) {
+      headers['Content-Length'] = String(out.ContentLength)
+    }
+    if (out.ContentRange) headers['Content-Range'] = out.ContentRange
+
+    const body = out.Body
+    if (!body) return json({ error: 'جسم فارغ' }, 404)
+
+    return new Response(body as ReadableStream, {
+      status: range && out.ContentRange ? 206 : 200,
+      headers,
+    })
+  } catch (e: unknown) {
+    const name =
+      e && typeof e === 'object' && 'name' in e
+        ? String((e as { name: string }).name)
+        : ''
+    if (name === 'NotFound' || name === 'NoSuchKey' || name === '404') {
+      return json({ error: 'غير موجود' }, 404)
+    }
+    throw e
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: cors })
+  }
+
+  const env = requireR2Env()
+
+  if (req.method === 'GET' || req.method === 'HEAD') {
+    if (!env) return json({ error: 'R2 غير مُعدّ (متغيرات البيئة على الدالة)' }, 503)
+    const s3 = makeS3(env)
+    const streamResp = await handleStreamRequest(req, s3, env.bucket)
+    if (streamResp) return streamResp
+    return json({ error: 'Method not allowed' }, 405)
   }
 
   if (req.method !== 'POST') {
@@ -111,7 +249,6 @@ Deno.serve(async (req) => {
   }
 
   const action = body.action
-  const env = requireR2Env()
   if (!env) {
     return json({ error: 'R2 غير مُعدّ (متغيرات البيئة على الدالة)' }, 503)
   }
@@ -147,7 +284,8 @@ Deno.serve(async (req) => {
         Key: key,
       })
       const url = await getSignedUrl(s3, cmd, { expiresIn: 3600 })
-      return json({ url, key })
+      const streamToken = await makeStreamToken(key)
+      return json({ url, key, streamToken })
     }
 
     if (action === 'headObject') {
