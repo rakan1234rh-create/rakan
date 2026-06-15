@@ -36339,6 +36339,14 @@
         return u;
       }
 
+      function isDirectR2SignedUrl(url) {
+        return /r2\.cloudflarestorage\.com/i.test(String(url || ''));
+      }
+
+      function isFastVideoStreamUrl(url) {
+        return isR2StreamPlayUrl(url) || isDirectR2SignedUrl(url);
+      }
+
       async function playVideoInViewer(vid, playUrl, mimeType) {
         const url = resolveMediaPlayUrl(playUrl);
         vid.preload = 'auto';
@@ -36346,7 +36354,7 @@
         vid.controls = true;
         vid.removeAttribute('crossorigin');
 
-        if (isR2StreamPlayUrl(url)) {
+        if (isFastVideoStreamUrl(url)) {
           hideAttViewerLoader();
           vid.style.display = 'block';
           vid.style.visibility = 'visible';
@@ -36485,14 +36493,18 @@
                 const exists = await r2ObjectExists(key);
                 if (exists === false) continue;
                 const signed = await callR2StorageFn('signGet', { key, ...(ct ? { contentType: ct } : {}) });
-                const streamPlay = useStream && signed?.streamToken
-                  ? buildR2StreamPlayUrl(signed.streamToken)
-                  : '';
-                if (useStream && streamPlay) {
+                if (!signed?.url) continue;
+                if (useStream) {
+                  // R2 مباشرة — Range أسرع من بروكسي Supabase (8MB+)
+                  writeCfCache(cacheKey, signed.url);
+                  return signed.url;
+                }
+                const streamPlay = signed?.streamToken ? buildR2StreamPlayUrl(signed.streamToken) : '';
+                if (streamPlay) {
                   const ok = await probeR2StreamPlayUrl(streamPlay);
                   if (!ok) continue;
                 }
-                const resolved = streamPlay || signed?.url;
+                const resolved = streamPlay || signed.url;
                 if (!resolved) continue;
                 writeCfCache(cacheKey, resolved);
                 return resolved;
