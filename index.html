@@ -22,7 +22,9 @@
   })();</script>
   <script id="mobPortraitLockEarly">(function () {
     function isMobLandscape() {
-      if (window.matchMedia('(min-width: 993px)').matches) return false;
+      const isWide = window.matchMedia('(min-width: 993px)').matches;
+      const isTouch = window.matchMedia('(pointer: coarse)').matches;
+      if (isWide && !isTouch) return false;
       if (!window.matchMedia('(orientation: landscape)').matches) return false;
       return Math.min(window.innerWidth, window.innerHeight) < 520;
     }
@@ -99,7 +101,7 @@
   <link rel="stylesheet" href="styles/desktop/locations-shell.css" id="platform-locations-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/settings-shell.css" id="platform-settings-shell-link" media="screen and (min-width: 993px)">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script id="syncDesktopUiClassEarly">(function(){var d=window.matchMedia('(max-width:992px)').matches;document.documentElement.classList.toggle('mr-desktop-ui',!d);document.documentElement.classList.toggle('mr-mobile-ui',d);})();</script>
+  <script id="syncDesktopUiClassEarly">(function(){var isWide=window.matchMedia('(min-width:993px)').matches;var isTouch=window.matchMedia('(pointer:coarse)').matches;var d=!isWide||isTouch;document.documentElement.classList.toggle('mr-desktop-ui',!d);document.documentElement.classList.toggle('mr-mobile-ui',d);})();</script>
   
   <style id="mr-ui-shell-early-lock">
     @media (max-width: 992px) {
@@ -26469,7 +26471,7 @@
       }
 
       function isViolDetailMobSheet() {
-        return typeof window !== 'undefined' && window.matchMedia('(max-width: 992px)').matches;
+        return typeof isMobileViewport === 'function' && isMobileViewport();
       }
 
       function isMobileKeyboardOpen() {
@@ -28669,7 +28671,10 @@
       }
 
       function isMobileViewport() {
-        return typeof window !== 'undefined' && window.matchMedia('(max-width: 992px)').matches;
+        if (typeof window === 'undefined') return false;
+        const isWide = window.matchMedia('(min-width: 993px)').matches;
+        const isTouch = window.matchMedia('(pointer: coarse)').matches;
+        return !isWide || isTouch;
       }
 
       const ATHAR_LOGO_VER = '388';
@@ -30348,7 +30353,7 @@
         if (typeof portalFilterPanelsForMob === 'function') portalFilterPanelsForMob();
         const app = document.getElementById('appWrap');
         const appOpen = app && app.style.display !== 'none';
-        const mobile = window.matchMedia('(max-width: 992px)').matches;
+        const mobile = typeof isMobileViewport === 'function' ? isMobileViewport() : false;
         layoutMobileBottomNav();
         if (!mobile || !appOpen) {
           nav.style.display = 'none';
@@ -37142,7 +37147,7 @@
         const filter = document.getElementById('user-role-dd-filter');
         const label = document.getElementById('user-role-dd-label');
         if (!filter || !label) return;
-        if (!window.matchMedia('(max-width: 992px)').matches) {
+        if (!(typeof isMobileViewport === 'function' && isMobileViewport())) {
           filter.style.removeProperty('--user-role-dd-fixed-w');
           return;
         }
@@ -37175,7 +37180,7 @@
         const pad = 8;
         const vw = window.innerWidth;
         const vh = window.innerHeight;
-        const isMob = window.matchMedia('(max-width: 992px)').matches;
+        const isMob = typeof isMobileViewport === 'function' && isMobileViewport();
 
         if (isMob) {
           const tw = Math.round(r.width);
@@ -37380,7 +37385,7 @@
         const reportHost = !!(opts && opts.host === 'reports');
         const legacyReportsView = view === 'reports';
         const isReportsList = reportHost || legacyReportsView;
-        const mobViewport = typeof isDesktopUi === 'function' ? !isDesktopUi() : window.matchMedia('(max-width: 992px)').matches;
+        const mobViewport = typeof isDesktopUi === 'function' ? !isDesktopUi() : (typeof isMobileViewport === 'function' && isMobileViewport());
         const wfMob = !isReportsList && mobViewport;
         const rpMob = isReportsList && mobViewport;
         const mobSplit = wfMob || rpMob;
