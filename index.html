@@ -104,7 +104,7 @@
   <link rel="stylesheet" href="styles/desktop/locations-shell.css" id="platform-locations-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/settings-shell.css" id="platform-settings-shell-link" media="screen and (min-width: 993px)">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script id="syncDesktopUiClassEarly">(function(){var isIpad=/iPad/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)||(/Android/i.test(navigator.userAgent)&&!/Mobile/i.test(navigator.userAgent));var isWide=window.matchMedia('(min-width:993px)').matches;var isTouch=window.matchMedia('(pointer:coarse)').matches;var mob=isIpad||!isWide||isTouch;document.documentElement.classList.toggle('mr-desktop-ui',!mob);document.documentElement.classList.toggle('mr-mobile-ui',mob);var deskIds=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link'];for(var i=0;i<deskIds.length;i++){var el=document.getElementById(deskIds[i]);if(el)el.disabled=mob;}})();</script>
+  <script id="syncDesktopUiClassEarly">(function(){var isIpad=/iPad/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);var isTab=isIpad||(/Android/i.test(navigator.userAgent)&&!/Mobile/i.test(navigator.userAgent));var isWide=window.matchMedia('(min-width:993px)').matches;var isTouch=window.matchMedia('(pointer:coarse)').matches;var mob=isTab||!isWide||isTouch;var meta=document.querySelector('meta[name="viewport"]');var vpDev='width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=overlays-content';var vpTab='width=992, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=overlays-content';document.documentElement.classList.toggle('mr-desktop-ui',!mob);document.documentElement.classList.toggle('mr-mobile-ui',mob);if(meta){meta.setAttribute('content',(mob&&isTab&&window.matchMedia('(orientation: landscape)').matches)?vpTab:vpDev);}var deskIds=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link'];for(var i=0;i<deskIds.length;i++){var el=document.getElementById(deskIds[i]);if(el)el.disabled=mob;}})();</script>
   
   <style id="mr-ui-shell-early-lock">
     html.mr-mobile-ui #appWrap #sidebar,
@@ -28910,6 +28910,32 @@
           || document.referrer.includes('android-app://'));
       }
 
+      function isTabletDevice() {
+        if (typeof navigator === 'undefined') return false;
+        return /iPad/i.test(navigator.userAgent)
+          || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+          || (/Android/i.test(navigator.userAgent) && !/Mobile/i.test(navigator.userAgent));
+      }
+
+      const MR_VIEWPORT_DEVICE = 'width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=overlays-content';
+      const MR_VIEWPORT_TABLET_LAND = 'width=992, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=overlays-content';
+
+      function needsTabletMobileViewportLock() {
+        if (!document.documentElement.classList.contains('mr-mobile-ui')) return false;
+        if (!isTabletDevice()) return false;
+        return window.matchMedia('(orientation: landscape)').matches;
+      }
+
+      function syncMobileLayoutViewport() {
+        const meta = document.querySelector('meta[name="viewport"]');
+        if (!meta) return false;
+        const next = needsTabletMobileViewportLock() ? MR_VIEWPORT_TABLET_LAND : MR_VIEWPORT_DEVICE;
+        const prev = meta.getAttribute('content') || '';
+        if (prev === next) return false;
+        meta.setAttribute('content', next);
+        return true;
+      }
+
       function isDesktopUi() {
         return !isMobileViewport();
       }
@@ -28918,6 +28944,7 @@
         const desktop = isDesktopUi();
         document.documentElement.classList.toggle('mr-desktop-ui', desktop);
         document.documentElement.classList.toggle('mr-mobile-ui', !desktop);
+        const viewportChanged = typeof syncMobileLayoutViewport === 'function' && syncMobileLayoutViewport();
         if (typeof window.syncPlatformDesktopStylesheets === 'function') {
           window.syncPlatformDesktopStylesheets(desktop);
         }
@@ -28935,6 +28962,9 @@
           document.getElementById('sidebarOverlay')?.classList.remove('open');
           const mobNav = document.getElementById('mobileBottomNav');
           if (mobNav) mobNav.style.removeProperty('display');
+        }
+        if (viewportChanged && typeof window.initMobileViewportSync === 'function') {
+          window.dispatchEvent(new Event('resize'));
         }
       }
 
@@ -31494,6 +31524,8 @@
       window.toggleSidebar = toggleSidebar;
       window.isDesktopUi = isDesktopUi;
       window.syncDesktopUiClass = syncDesktopUiClass;
+      window.syncMobileLayoutViewport = syncMobileLayoutViewport;
+      window.isTabletDevice = isTabletDevice;
       window.isMobileViewport = isMobileViewport;
       window.syncTopbarHeightVar = syncTopbarHeightVar;
 
@@ -45870,8 +45902,9 @@
         });
         window.addEventListener('orientationchange', () => {
           setTimeout(() => {
+            syncDesktopUiClass();
             if (typeof syncMobilePortraitLock === 'function') syncMobilePortraitLock();
-          }, 80);
+          }, 120);
         }, { passive: true });
         let resizeT;
         window.addEventListener('resize', () => {
