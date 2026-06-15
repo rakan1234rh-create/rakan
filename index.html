@@ -107,36 +107,34 @@
   <script id="syncDesktopUiClassEarly">(function(){var isIpad=/iPad/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)||(/Android/i.test(navigator.userAgent)&&!/Mobile/i.test(navigator.userAgent));var isWide=window.matchMedia('(min-width:993px)').matches;var isTouch=window.matchMedia('(pointer:coarse)').matches;var d=isIpad||!isWide||isTouch;document.documentElement.classList.toggle('mr-desktop-ui',!d);document.documentElement.classList.toggle('mr-mobile-ui',d);})();</script>
   
   <style id="mr-ui-shell-early-lock">
-    @media (max-width: 992px) {
-      html.mr-mobile-ui #appWrap #sidebar,
-      html.mr-mobile-ui #appWrap .app-body .sidebar {
-        display: none !important;
-        visibility: hidden !important;
-        width: 0 !important;
-        min-width: 0 !important;
-        max-width: 0 !important;
-        flex: 0 0 0 !important;
-        overflow: hidden !important;
-        pointer-events: none !important;
-        position: absolute !important;
-        opacity: 0 !important
-      }
+    html.mr-mobile-ui #appWrap #sidebar,
+    html.mr-mobile-ui #appWrap .app-body .sidebar {
+      display: none !important;
+      visibility: hidden !important;
+      width: 0 !important;
+      min-width: 0 !important;
+      max-width: 0 !important;
+      flex: 0 0 0 !important;
+      overflow: hidden !important;
+      pointer-events: none !important;
+      position: absolute !important;
+      opacity: 0 !important
+    }
 
-      html.mr-mobile-ui #sidebarToggleBtn,
-      html.mr-mobile-ui .sidebar-drawer-toggle.sidebar-toggle-btn,
-      html.mr-mobile-ui #sidebarOverlay {
-        display: none !important;
-        visibility: hidden !important;
-        pointer-events: none !important
-      }
+    html.mr-mobile-ui #sidebarToggleBtn,
+    html.mr-mobile-ui .sidebar-drawer-toggle.sidebar-toggle-btn,
+    html.mr-mobile-ui #sidebarOverlay {
+      display: none !important;
+      visibility: hidden !important;
+      pointer-events: none !important
+    }
 
-      html.mr-mobile-ui #mobileBottomNav.mobile-bottom-nav {
-        display: flex !important
-      }
+    html.mr-mobile-ui #mobileBottomNav.mobile-bottom-nav {
+      display: flex !important
+    }
 
-      html.mr-mobile-ui .wf-desk-tickets-host .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) {
-        display: none !important
-      }
+    html.mr-mobile-ui .wf-desk-tickets-host .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) {
+      display: none !important
     }
 
     @media (min-width: 993px) {
