@@ -104,7 +104,7 @@
   <link rel="stylesheet" href="styles/desktop/locations-shell.css" id="platform-locations-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/settings-shell.css" id="platform-settings-shell-link" media="screen and (min-width: 993px)">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script id="syncDesktopUiClassEarly">(function(){var isIpad=/iPad/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);var isTab=isIpad||(/Android/i.test(navigator.userAgent)&&!/Mobile/i.test(navigator.userAgent));var isWide=window.matchMedia('(min-width:993px)').matches;var isTouch=window.matchMedia('(pointer:coarse)').matches;var mob=isTab||!isWide||isTouch;var meta=document.querySelector('meta[name="viewport"]');var vpDev='width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=overlays-content';var vpTab='width=992, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=overlays-content';document.documentElement.classList.toggle('mr-desktop-ui',!mob);document.documentElement.classList.toggle('mr-mobile-ui',mob);if(meta){meta.setAttribute('content',(mob&&isTab&&window.matchMedia('(orientation: landscape)').matches)?vpTab:vpDev);}var deskIds=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link'];for(var i=0;i<deskIds.length;i++){var el=document.getElementById(deskIds[i]);if(el)el.disabled=mob;}})();</script>
+  <script id="syncDesktopUiClassEarly">(function(){var isIpad=/iPad/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);var isTab=isIpad||(/Android/i.test(navigator.userAgent)&&!/Mobile/i.test(navigator.userAgent));var isWide=window.matchMedia('(min-width:993px)').matches;var isTouch=window.matchMedia('(pointer:coarse)').matches;var mob=isTab||!isWide||isTouch;var meta=document.querySelector('meta[name="viewport"]');var vpDev='width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=overlays-content';function buildVpTab(){var layoutW=992;var landW=Math.max(window.screen&&window.screen.width||0,window.screen&&window.screen.height||0)||window.innerWidth||layoutW;var scale=Math.max(0.85,Math.min(1.35,landW/layoutW));var scaleStr=(Math.round(scale*10000)/10000).toFixed(4);return'width='+layoutW+', initial-scale='+scaleStr+', maximum-scale='+scaleStr+', minimum-scale='+scaleStr+', user-scalable=no, viewport-fit=cover, interactive-widget=overlays-content';}var tabLand=mob&&isTab&&window.matchMedia('(orientation: landscape)').matches;document.documentElement.classList.toggle('mr-desktop-ui',!mob);document.documentElement.classList.toggle('mr-mobile-ui',mob);document.documentElement.classList.toggle('mr-tablet-landscape',tabLand);if(meta){meta.setAttribute('content',tabLand?buildVpTab():vpDev);}var deskIds=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link'];for(var i=0;i<deskIds.length;i++){var el=document.getElementById(deskIds[i]);if(el)el.disabled=mob;}})();</script>
   
   <style id="mr-ui-shell-early-lock">
     html.mr-mobile-ui #appWrap #sidebar,
@@ -383,6 +383,33 @@
 
     html.mr-mobile-ui #appWrap .main {
       padding-bottom: calc(var(--mr-mob-bottom-nav-h, 56px) + 16px) !important
+    }
+
+    html.mr-mobile-ui.mr-tablet-landscape,
+    html.mr-mobile-ui.mr-tablet-landscape body {
+      width: 100%;
+      min-width: 100%;
+      overflow-x: hidden
+    }
+
+    html.mr-mobile-ui.mr-tablet-landscape #appWrap.app,
+    html.mr-mobile-ui.mr-tablet-landscape #appWrap > .app-shell,
+    html.mr-mobile-ui.mr-tablet-landscape #appWrap .app-body,
+    html.mr-mobile-ui.mr-tablet-landscape #appWrap .main,
+    html.mr-mobile-ui.mr-tablet-landscape #appWrap .content {
+      width: 100% !important;
+      max-width: 100% !important;
+      box-sizing: border-box
+    }
+
+    html.mr-mobile-ui.mr-tablet-landscape #tab-departments .users-grid--mob-list,
+    html.mr-mobile-ui.mr-tablet-landscape #tab-departments #usersList.users-grid--mob-list,
+    html.mr-mobile-ui.mr-tablet-landscape #tab-departments .user-mob-card,
+    html.mr-mobile-ui.mr-tablet-landscape #tab-departments .users-panel-banner,
+    html.mr-mobile-ui.mr-tablet-landscape #tab-departments .users-controls {
+      width: 100% !important;
+      max-width: 100% !important;
+      box-sizing: border-box
     }
 
     html.mr-mobile-ui .sidebar-drawer-toggle.sidebar-toggle-btn {
@@ -19897,13 +19924,13 @@
       }
 
       @media (min-width: 993px) {
-        #tab-departments .users-meta-row {
+        html.mr-desktop-ui #tab-departments .users-meta-row {
           display: block;
           padding: 0 clamp(14px, 1.6vw, 18px) 12px;
           margin: 0
         }
 
-        #tab-departments .users-meta-row .wf-count {
+        html.mr-desktop-ui #tab-departments .users-meta-row .wf-count {
           margin: 0
         }
       }
@@ -28918,7 +28945,14 @@
       }
 
       const MR_VIEWPORT_DEVICE = 'width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=overlays-content';
-      const MR_VIEWPORT_TABLET_LAND = 'width=992, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=overlays-content';
+
+      function buildTabletLandscapeViewportContent() {
+        const layoutW = 992;
+        const landW = Math.max(window.screen?.width || 0, window.screen?.height || 0) || window.innerWidth || layoutW;
+        const scale = Math.max(0.85, Math.min(1.35, landW / layoutW));
+        const scaleStr = (Math.round(scale * 10000) / 10000).toFixed(4);
+        return `width=${layoutW}, initial-scale=${scaleStr}, maximum-scale=${scaleStr}, minimum-scale=${scaleStr}, user-scalable=no, viewport-fit=cover, interactive-widget=overlays-content`;
+      }
 
       function needsTabletMobileViewportLock() {
         if (!document.documentElement.classList.contains('mr-mobile-ui')) return false;
@@ -28929,7 +28963,9 @@
       function syncMobileLayoutViewport() {
         const meta = document.querySelector('meta[name="viewport"]');
         if (!meta) return false;
-        const next = needsTabletMobileViewportLock() ? MR_VIEWPORT_TABLET_LAND : MR_VIEWPORT_DEVICE;
+        const lock = needsTabletMobileViewportLock();
+        document.documentElement.classList.toggle('mr-tablet-landscape', lock);
+        const next = lock ? buildTabletLandscapeViewportContent() : MR_VIEWPORT_DEVICE;
         const prev = meta.getAttribute('content') || '';
         if (prev === next) return false;
         meta.setAttribute('content', next);
