@@ -1290,15 +1290,15 @@
     }
 
     @media (min-width: 993px) {
-.sidebar:hover {
+      html.mr-desktop-ui .sidebar:hover {
         width: var(--fig-sidebar-w);
         flex-basis: var(--fig-sidebar-w);
       }
 
-      [data-theme="dark"] .sidebar:hover {
+      [data-theme="dark"] html.mr-desktop-ui .sidebar:hover {
         box-shadow: -8px 0 24px rgba(0, 0, 0, 0.28);
       }
-}
+    }
 
     .main {
       flex: 1 1 auto;
@@ -1400,20 +1400,20 @@
     }
 
     @media (min-width: 993px) {
-.sidebar .nav-item,
-      .sidebar .logout-btn {
+      html.mr-desktop-ui .sidebar .nav-item,
+      html.mr-desktop-ui .sidebar .logout-btn {
         justify-content: flex-start;
       }
 
-      .sidebar:hover .nav-section-label,
-      .sidebar:hover .nav-item-label,
-      .sidebar:hover .logout-btn span {
+      html.mr-desktop-ui .sidebar:hover .nav-section-label,
+      html.mr-desktop-ui .sidebar:hover .nav-item-label,
+      html.mr-desktop-ui .sidebar:hover .logout-btn span {
         opacity: 1;
         max-width: 148px
       }
 
       /* Sidebar مطوي — أيقونات في المنتصف بدون قص */
-      .sidebar:not(:hover) .nav-item {
+      html.mr-desktop-ui .sidebar:not(:hover) .nav-item {
         width: 100%;
         max-width: 100%;
         margin-inline: 0;
@@ -1426,12 +1426,12 @@
         box-sizing: border-box;
       }
 
-      .sidebar:not(:hover) .nav-item:hover {
+      html.mr-desktop-ui .sidebar:not(:hover) .nav-item:hover {
         transform: none;
         background: var(--sidebar-hover);
       }
 
-      .sidebar:not(:hover) .nav-item-label {
+      html.mr-desktop-ui .sidebar:not(:hover) .nav-item-label {
         display: none !important;
         flex: 0 0 0 !important;
         width: 0 !important;
@@ -1441,26 +1441,26 @@
         overflow: hidden;
       }
 
-      .sidebar:not(:hover) .nav-item.active,
-      .sidebar:not(:hover) #appWrap .nav-item.active {
+      html.mr-desktop-ui .sidebar:not(:hover) .nav-item.active,
+      html.mr-desktop-ui .sidebar:not(:hover) #appWrap .nav-item.active {
         background: transparent !important;
         border-color: transparent !important;
         box-shadow: none !important;
         color: var(--sidebar-text);
       }
 
-      .sidebar:not(:hover) .nav-item.active .nav-icon-wrap {
+      html.mr-desktop-ui .sidebar:not(:hover) .nav-item.active .nav-icon-wrap {
         background: var(--sidebar-active);
         color: var(--sidebar-active-text);
         box-shadow: none;
       }
 
-      .sidebar:not(:hover) .nav-item.active i {
+      html.mr-desktop-ui .sidebar:not(:hover) .nav-item.active i {
         margin: 0;
         box-shadow: none;
       }
 
-      .sidebar:not(:hover) .nav-badge {
+      html.mr-desktop-ui .sidebar:not(:hover) .nav-badge {
         position: absolute;
         top: 4px;
         inset-inline-start: 4px;
@@ -1477,11 +1477,11 @@
         border-radius: 999px;
       }
 
-      .sidebar:not(:hover) .sidebar-user {
+      html.mr-desktop-ui .sidebar:not(:hover) .sidebar-user {
         border-top-color: transparent
       }
 
-      .sidebar:not(:hover) .logout-btn {
+      html.mr-desktop-ui .sidebar:not(:hover) .logout-btn {
         width: 100%;
         min-width: 0;
         margin-inline: 0;
@@ -1491,13 +1491,13 @@
       }
 
       /* Sidebar موسّع (hover) — خلفية الصف النشط كاملة */
-      .sidebar:hover .nav-item.active,
-      .sidebar:hover #appWrap .nav-item.active {
+      html.mr-desktop-ui .sidebar:hover .nav-item.active,
+      html.mr-desktop-ui .sidebar:hover #appWrap .nav-item.active {
         background: var(--sidebar-hover);
         color: var(--sidebar-text);
         border-color: transparent;
       }
-}
+    }
 
     .brand-icon:not(.wefaq-logo-slot) {
       width: 44px;
@@ -22581,7 +22581,7 @@
     }
 
     @media (min-width: 993px) {
-#appWrap .sidebar::before {
+      html.mr-desktop-ui #appWrap .sidebar::before {
         content: '';
         position: absolute;
         top: 0;
@@ -22593,14 +22593,14 @@
         z-index: 5;
       }
 
-      :root:not([data-theme="dark"]) #appWrap .sidebar {
+      :root:not([data-theme="dark"]) html.mr-desktop-ui #appWrap .sidebar {
         box-shadow: -1px 0 16px rgba(0, 0, 0, 0.06);
       }
 
-      :root:not([data-theme="dark"]) #appWrap .sidebar:hover {
+      :root:not([data-theme="dark"]) html.mr-desktop-ui #appWrap .sidebar:hover {
         box-shadow: -1px 0 0 0 var(--sidebar-border), -8px 0 24px rgba(0, 0, 0, 0.06);
       }
-}
+    }
 
     #appWrap .nav-section-label {
       color: var(--sidebar-text2);
@@ -22681,13 +22681,13 @@
     }
 
     @media (min-width: 993px) {
-#appWrap .sidebar:not(:hover) .nav-item.active {
+      html.mr-desktop-ui #appWrap .sidebar:not(:hover) .nav-item.active {
         background: transparent !important;
         color: var(--sidebar-text);
         border-color: transparent !important;
         box-shadow: none !important;
       }
-}
+    }
 
     #appWrap .panel,
     #appWrap .mk-form-panel,
@@ -22925,13 +22925,13 @@
     }
 
     @media (min-width: 993px) {
-[data-theme="dark"] #appWrap .sidebar:not(:hover) .nav-item.active,
-      [data-theme="dark"] #appWrap .sidebar:not(:hover) .nav-item.active .nav-item-label {
+      [data-theme="dark"] html.mr-desktop-ui #appWrap .sidebar:not(:hover) .nav-item.active,
+      [data-theme="dark"] html.mr-desktop-ui #appWrap .sidebar:not(:hover) .nav-item.active .nav-item-label {
         background: transparent !important;
         color: #ffffff !important;
         -webkit-text-fill-color: #ffffff !important;
       }
-}
+    }
 
     /* الشريط الجانبي — active / inactive (Light Mode فقط) */
     :root:not([data-theme="dark"]) #appWrap .sidebar .nav-item:not(.active):not(:hover) {
