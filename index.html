@@ -36420,9 +36420,103 @@
 
       function videoCodecErrorMessage(codec) {
         if (codec === 'h265') {
-          return 'ترميز H.265 (HEVC) — Chrome لا يشغّله حتى من الرابط المباشر. حمّل الملف وافتحه في VLC، أو اضبط الكاميرا على H.264.';
+          return 'ترميز H.265 — جارٍ تحويله تلقائياً لـ H.264…';
         }
-        return 'الملف يُحمّل كاملاً لكن Chrome لا يفكّ ترميزه (كاميرا مراقبة). حمّله وافتحه في VLC — للتسجيلات الجديدة استخدم H.264.';
+        return 'ترميز غير مدعوم في Chrome — جارٍ التحويل تلقائياً…';
+      }
+
+      function needsBrowserVideoTranscode(codec) {
+        return codec === 'h265' || codec === 'unknown';
+      }
+
+      let _ffmpegWasmPromise = null;
+      const _transcodedPlayCache = {};
+      let _transcodeProgressCb = null;
+
+      async function getFfmpegWasm() {
+        if (!_ffmpegWasmPromise) {
+          _ffmpegWasmPromise = (async () => {
+            const coreVer = '0.12.6';
+            const base = `https://cdn.jsdelivr.net/npm/@ffmpeg/core@${coreVer}/dist/esm`;
+            const { FFmpeg } = await import(`https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js`);
+            const { fetchFile, toBlobURL } = await import(`https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/esm/index.js`);
+            const ff = new FFmpeg();
+            ff.on('log', ({ message }) => {
+              if (isMirsadDebugLog()) console.log('[ffmpeg]', message);
+            });
+            ff.on('progress', ({ progress }) => {
+              if (_transcodeProgressCb) {
+                _transcodeProgressCb(Math.min(99, Math.round((progress || 0) * 100)));
+              }
+            });
+            await ff.load({
+              coreURL: await toBlobURL(`${base}/ffmpeg-core.js`, 'text/javascript'),
+              wasmURL: await toBlobURL(`${base}/ffmpeg-core.wasm`, 'application/wasm'),
+            });
+            return { ff, fetchFile };
+          })();
+        }
+        return _ffmpegWasmPromise;
+      }
+
+      async function transcodeVideoBlobToH264(blob, onProgress) {
+        if (!blob || !blob.size) throw new Error('ملف فيديو فارغ');
+        if (onProgress) onProgress(0);
+        _transcodeProgressCb = onProgress || null;
+        try {
+          const { ff, fetchFile } = await getFfmpegWasm();
+          const inName = 'in.mp4';
+          const outName = 'out.mp4';
+          await ff.writeFile(inName, await fetchFile(blob));
+          await ff.exec([
+            '-i', inName,
+            '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '28',
+            '-c:a', 'aac', '-b:a', '128k',
+            '-movflags', '+faststart',
+            '-y', outName,
+          ]);
+          const data = await ff.readFile(outName);
+          try {
+            await ff.deleteFile(inName);
+            await ff.deleteFile(outName);
+          } catch (_) { /* */ }
+          if (onProgress) onProgress(100);
+          return new Blob([data.buffer], { type: 'video/mp4' });
+        } finally {
+          _transcodeProgressCb = null;
+        }
+      }
+
+      async function blobFromVideoPlayUrl(playUrl, mimeType) {
+        const u = String(playUrl || '').trim();
+        if (!u) throw new Error('رابط فارغ');
+        if (u.startsWith('blob:')) return fetch(u).then((r) => r.blob());
+        const { blob } = await fetchR2VideoBlob(u, mimeType || 'video/mp4');
+        return blob;
+      }
+
+      async function transcodeAndPlayVideoInViewer(vid, playUrl, mimeType, cacheKey, onUiProgress) {
+        const ck = String(cacheKey || '').trim();
+        if (ck && _transcodedPlayCache[ck]) {
+          const cached = _transcodedPlayCache[ck];
+          resetAttViewerVideo(vid);
+          await attachVideoSourceAndWait(vid, cached, mimeType || 'video/mp4', 20000, false);
+          if (await waitVideoElementPlayable(vid, 8000)) return cached;
+        }
+        if (onUiProgress) onUiProgress('جاري تحميل أدوات التحويل…', 0);
+        const blob = await blobFromVideoPlayUrl(playUrl, mimeType);
+        if (onUiProgress) onUiProgress('جاري تحويل الفيديو إلى H.264…', 0);
+        const converted = await transcodeVideoBlobToH264(blob, (pct) => {
+          if (onUiProgress) onUiProgress('جاري تحويل الفيديو إلى H.264…', pct);
+        });
+        const blobUrl = URL.createObjectURL(converted);
+        if (ck) _transcodedPlayCache[ck] = blobUrl;
+        resetAttViewerVideo(vid);
+        await attachVideoSourceAndWait(vid, blobUrl, 'video/mp4', 25000, false);
+        if (!(await waitVideoElementPlayable(vid, 10000))) {
+          throw new Error('فشل تشغيل الفيديو بعد التحويل');
+        }
+        return blobUrl;
       }
 
       async function fetchR2VideoBlob(url, mimeType) {
@@ -36517,12 +36611,6 @@
 
         const r2Direct = isDirectR2SignedUrl(url);
         const waitMs = r2Direct ? 28000 : 18000;
-
-        if (r2Direct) {
-          const earlyCodec = await sniffMp4VideoCodec(url);
-          if (earlyCodec === 'h265') throw new Error(videoCodecErrorMessage('h265'));
-        }
-
         let lastCodec = 'unknown';
 
         try {
@@ -36535,13 +36623,12 @@
               if (isMirsadDebugLog()) console.warn('[Viewer] جرّب تحميل blob محلي من R2', e1);
               const { blob, blobUrl } = await fetchR2VideoBlob(url, mime);
               lastCodec = await sniffMp4VideoCodec(blob);
-              if (lastCodec === 'h265') throw new Error(videoCodecErrorMessage('h265'));
               vid.src = '';
               vid.innerHTML = '';
               await attachVideoSourceAndWait(vid, blobUrl, mime, 20000, false);
               if (await waitVideoElementPlayable(vid, 6000)) return blobUrl;
             } catch (eBlob) {
-              if (/H\.265|HEVC/i.test(String(eBlob?.message || ''))) throw eBlob;
+              if (isMirsadDebugLog()) console.warn('[Viewer] blob محلي فشل', eBlob);
             }
           }
           if (fb && fb !== url && isR2StreamPlayUrl(fb)) {
@@ -36556,6 +36643,51 @@
           if (lastCodec === 'h265') throw new Error(videoCodecErrorMessage('h265'));
           throw e1;
         }
+      }
+
+      async function resolveAttachmentVideoPlayback(vid, fileId, name, ticketCtx, mime, ck, viewerLoadGen) {
+        const streamFb = readVideoStreamFallback(ck);
+        let playUrl = await loadAttachmentPlayUrl(fileId, name, ticketCtx);
+        if (viewerLoadGen !== state._attViewerLoadGen) return null;
+
+        const codec = await sniffMp4VideoCodec(playUrl);
+        if (needsBrowserVideoTranscode(codec)) {
+          showAttViewerLoader(`
+            <div style="text-align:center;padding:12px 8px">
+              <i class="fas fa-cog fa-spin fa-2x" style="margin-bottom:10px"></i>
+              <p id="att-transcode-msg" style="margin:0;font-size:14px">${Sec.escapeHTML(videoCodecErrorMessage(codec))}</p>
+              <p id="att-transcode-pct" style="margin:8px 0 0;font-size:12px;color:#cbd5e1">0%</p>
+            </div>`);
+          const onUi = (msg, pct) => {
+            if (viewerLoadGen !== state._attViewerLoadGen) return;
+            const m = document.getElementById('att-transcode-msg');
+            const p = document.getElementById('att-transcode-pct');
+            if (m) m.textContent = msg;
+            if (p) p.textContent = (pct | 0) + '%';
+          };
+          playUrl = await transcodeAndPlayVideoInViewer(vid, playUrl, mime, ck, onUi);
+          return playUrl;
+        }
+
+        playUrl = await playVideoInViewer(vid, playUrl, mime, streamFb);
+        if (await waitVideoElementPlayable(vid, 4000)) return playUrl;
+
+        showAttViewerLoader(`
+          <div style="text-align:center;padding:12px 8px">
+            <i class="fas fa-cog fa-spin fa-2x" style="margin-bottom:10px"></i>
+            <p id="att-transcode-msg" style="margin:0;font-size:14px">محاولة تحويل الفيديو لصيغة مدعومة…</p>
+            <p id="att-transcode-pct" style="margin:8px 0 0;font-size:12px;color:#cbd5e1">0%</p>
+          </div>`);
+        const onUi = (msg, pct) => {
+          if (viewerLoadGen !== state._attViewerLoadGen) return;
+          const m = document.getElementById('att-transcode-msg');
+          const p = document.getElementById('att-transcode-pct');
+          if (m) m.textContent = msg;
+          if (p) p.textContent = (pct | 0) + '%';
+        };
+        const src = /^https?:\/\//i.test(String(playUrl)) ? playUrl : readCfCache(ck);
+        playUrl = await transcodeAndPlayVideoInViewer(vid, src || playUrl, mime, ck, onUi);
+        return playUrl;
       }
 
       async function loadAttachmentPlayUrl(fileId, fileName, ticketCtx) {
@@ -36791,43 +36923,61 @@
           item.className = 'file-item';
 
           try {
-            // إذا كان الملف صورة، نحاول ضغطه، أما إذا كان فيديو فنحتفظ به كما هو لتقليل استهلاك الذاكرة
             const isImg = file.type.startsWith('image/');
+            const isVid = file.type.startsWith('video/') || /\.(mp4|mov|webm|avi|mkv)$/i.test(file.name);
             let base64Data = null;
             let finalType = file.type;
+            let uploadFile = file;
+
+            item.innerHTML = `
+            <div class="file-item-content">
+              <i class="fas fa-file-alt" style="color:var(--blue)"></i>
+              <span style="flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${Sec.escapeHTML(file.name)}">${Sec.escapeHTML(file.name)}</span>
+              <span class="file-item-status" style="font-size:11px; color:var(--text3);">جاري التحضير…</span>
+              <button disabled style="opacity:.5">حذف المرفق <i class="fas fa-times"></i></button>
+            </div>`;
+            area.appendChild(item);
+            const statusEl = item.querySelector('.file-item-status');
 
             if (isImg) {
               const compressResult = await compressImageFile(file);
               base64Data = compressResult.base64;
               finalType = 'image/jpeg';
-            } else if (file.type.startsWith('video/') || /\.(mp4|mov|webm|avi|mkv)$/i.test(file.name)) {
+            } else if (isVid) {
               const vCodec = await sniffMp4VideoCodec(file);
-              if (vCodec === 'h265') {
-                showToast('تحذير: فيديو H.265 لن يُشغّل داخل المنصة — غيّر الكاميرا إلى H.264 أو حوّله قبل الرفع.', 'error');
-              } else if (vCodec === 'unknown') {
-                showToast('تنبيه: قد لا يُشغّل هذا الفيديو في Chrome — يُفضّل H.264 من إعدادات الكاميرا.', 'info');
+              if (needsBrowserVideoTranscode(vCodec)) {
+                if (statusEl) statusEl.textContent = 'جاري التحويل لـ H.264… 0%';
+                showToast('جاري تحويل الفيديو لصيغة مدعومة في المنصة…', 'info');
+                try {
+                  const converted = await transcodeVideoBlobToH264(file, (pct) => {
+                    if (statusEl) statusEl.textContent = `جاري التحويل لـ H.264… ${pct}%`;
+                  });
+                  const baseName = file.name.replace(/\.[^.]+$/, '') || 'video';
+                  uploadFile = new File([converted], baseName + '_h264.mp4', { type: 'video/mp4' });
+                  finalType = 'video/mp4';
+                  showToast('تم تحويل الفيديو إلى H.264 — سيُشغّل داخل المنصة', 'info');
+                } catch (tcErr) {
+                  showToast('فشل التحويل — سيُرفع الملف الأصلي: ' + (tcErr.message || tcErr), 'error');
+                }
               }
             }
 
-            // تجهيز الملف فقط وعدم الرفع الفوري
             state.uploadedFiles[scope].push({
-              name: file.name,
+              name: uploadFile.name,
               type: finalType,
               base64: base64Data,
-              rawFile: isImg ? null : file, // نحفظ الملف الأصلي للفيديو
-              blobUrl: URL.createObjectURL(file)
+              rawFile: isImg ? null : uploadFile,
+              blobUrl: URL.createObjectURL(uploadFile)
             });
             const idx = state.uploadedFiles[scope].length - 1;
 
             item.innerHTML = `
             <div class="file-item-content">
               <i class="fas fa-file-alt" style="color:var(--blue)"></i>
-              <span style="flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${Sec.escapeHTML(file.name)}">${Sec.escapeHTML(file.name)}</span>
+              <span style="flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${Sec.escapeHTML(uploadFile.name)}">${Sec.escapeHTML(uploadFile.name)}</span>
               <span style="font-size:11px; color:var(--text3);">جاهز للرفع</span>
               <button onclick="removeFile('${scope}', ${idx}, this)">حذف المرفق <i class="fas fa-times"></i></button>
-            </div>
-          `;
-            area.appendChild(item);
+            </div>`;
           } catch (err) {
             item.innerHTML = `<i class="fas fa-times" style="color:var(--red)"></i><span>${Sec.escapeHTML(file.name)} - فشل التحضير</span>`;
             showToast('فشل معالجة الملف: ' + err.message, 'error');
@@ -38737,32 +38887,26 @@
               const ck = cfCacheKey(fileId, ticketCtx);
               let playUrl = '';
               try {
-                playUrl = await loadAttachmentPlayUrl(fileId, name, ticketCtx);
+                playUrl = await resolveAttachmentVideoPlayback(vid, fileId, name, ticketCtx, mime, ck, viewerLoadGen);
                 if (viewerLoadGen !== state._attViewerLoadGen) return;
-                const streamFb = readVideoStreamFallback(ck);
-                playUrl = await playVideoInViewer(vid, playUrl, mime, streamFb);
-                if (!(await waitVideoElementPlayable(vid, 4000))) {
-                  const probeUrl = /^https?:\/\//i.test(String(playUrl)) ? playUrl : readCfCache(ck);
-                  const codec = probeUrl ? await sniffMp4VideoCodec(probeUrl) : 'unknown';
-                  throw new Error(videoCodecErrorMessage(codec));
-                }
                 revealAttViewerMedia(vid);
               } catch (e) {
                 if (isMirsadDebugLog()) console.error('Lightbox Video Load Error:', e);
                 delete _cloudflareCache[ck];
                 delete _videoStreamFallback[ck];
+                delete _transcodedPlayCache[ck];
                 resetAttViewerVideo(vid);
                 const openHref = (playUrl && /^https?:\/\//i.test(String(playUrl).trim()))
                   ? String(playUrl).trim()
                   : (cfUrl && /^https?:\/\//i.test(String(cfUrl).trim()) ? String(cfUrl).trim() : '');
                 const extLink = openHref
-                  ? `<a href="${Sec.escapeHTML(openHref)}" target="_blank" rel="noopener noreferrer" download class="btn btn-sm btn-primary" style="text-decoration:none;margin-top:12px"><i class="fas fa-download"></i> تحميل وافتح في VLC</a>`
+                  ? `<a href="${Sec.escapeHTML(openHref)}" target="_blank" rel="noopener noreferrer" download class="btn btn-sm btn-primary" style="text-decoration:none;margin-top:12px"><i class="fas fa-download"></i> تحميل</a>`
                   : '';
-                let hint = '<p style="font-size:10px;color:#fbbf24;margin:8px 0 0;line-height:1.6">Chrome لا يشغّل هذا الترميز حتى من الرابط المباشر — ليس خللاً في المنصة.</p>';
+                let hint = '<p style="font-size:10px;color:#fbbf24;margin:8px 0 0;line-height:1.6">جرّب تحميل الملف أو أعد فتح المرفق.</p>';
                 if (/404|غير موجود/.test(String(e?.message || e))) {
                   hint = '<p style="font-size:10px;color:#fbbf24;margin:8px 0 0">الملف غير موجود في R2 — أعد رفع المرفق.</p>';
-                } else if (/H\.265|HEVC|VLC|كاميرا/i.test(String(e?.message || e))) {
-                  hint = '<p style="font-size:10px;color:#fbbf24;margin:8px 0 0;line-height:1.6">حمّل الملف وافتحه في VLC. للتسجيلات الجديدة: إعدادات كاميرا Jeddah-Office → H.264 بدل H.265.</p>';
+                } else if (/ffmpeg|تحويل|SharedArrayBuffer/i.test(String(e?.message || e))) {
+                  hint = '<p style="font-size:10px;color:#fbbf24;margin:8px 0 0;line-height:1.6">فشل التحويل — حمّل الملف وافتحه في VLC، أو اضبط الكاميرا على H.264.</p>';
                 } else if (/CORS|Failed to fetch/i.test(String(e?.message || e))) {
                   hint = '<p style="font-size:10px;color:#fbbf24;margin:8px 0 0">انشر Edge Function <span style="font-family:var(--mono)">r2-storage</span> المحدّث على Supabase.</p>';
                 }
