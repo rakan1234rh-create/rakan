@@ -104,7 +104,7 @@
   <link rel="stylesheet" href="styles/desktop/locations-shell.css" id="platform-locations-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/settings-shell.css" id="platform-settings-shell-link" media="screen and (min-width: 993px)">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script id="syncDesktopUiClassEarly">(function(){var isWide=window.matchMedia('(min-width:993px)').matches;var isTouch=window.matchMedia('(pointer:coarse)').matches;var isTablet=isTouch&&window.matchMedia('(min-width:600px)').matches;var d=isTablet||!isWide;document.documentElement.classList.toggle('mr-desktop-ui',!d);document.documentElement.classList.toggle('mr-mobile-ui',d);})();</script>
+  <script id="syncDesktopUiClassEarly">(function(){var isIpad=/iPad/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)||(/Android/i.test(navigator.userAgent)&&!/Mobile/i.test(navigator.userAgent));var isWide=window.matchMedia('(min-width:993px)').matches;var isTouch=window.matchMedia('(pointer:coarse)').matches;var d=isIpad||!isWide||isTouch;document.documentElement.classList.toggle('mr-desktop-ui',!d);document.documentElement.classList.toggle('mr-mobile-ui',d);})();</script>
   
   <style id="mr-ui-shell-early-lock">
     @media (max-width: 992px) {
@@ -28675,12 +28675,15 @@
 
       function isMobileViewport() {
         if (typeof window === 'undefined') return false;
+        // كشف iPad بدقة: userAgent + maxTouchPoints (يعمل حتى على iPad Chrome)
+        const isIpadOrTablet =
+          /iPad/i.test(navigator.userAgent) ||
+          (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) ||
+          (/Android/i.test(navigator.userAgent) && !/Mobile/i.test(navigator.userAgent));
+        if (isIpadOrTablet) return true;
         const isWide = window.matchMedia('(min-width: 993px)').matches;
         const isTouch = window.matchMedia('(pointer: coarse)').matches;
-        // الآيباد: شاشة لمس دائماً → يبقى mobile بغض النظر عن العرض أو الاتجاه
-        const isTablet = isTouch && window.matchMedia('(min-width: 600px)').matches;
-        if (isTablet) return true;
-        return !isWide;
+        return !isWide || isTouch;
       }
 
       const ATHAR_LOGO_VER = '388';
