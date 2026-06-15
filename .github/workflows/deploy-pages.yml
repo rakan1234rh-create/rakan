@@ -35,7 +35,6 @@ jobs:
           SHORT_SHA="$(git rev-parse --short HEAD)"
           mkdir -p site/icons
           cp index.html site/index.html
-          cp coi-serviceworker.js site/coi-serviceworker.js
           sed -i "s/<meta name=\"athar-build\" content=\"[^\"]*\">/<meta name=\"athar-build\" content=\"${SHORT_SHA}\">/" site/index.html
           printf '%s\n' "{\"build\":\"${SHORT_SHA}\",\"builtAt\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}" > site/app-version.json
           cp -r styles site/

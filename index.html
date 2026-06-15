@@ -11,7 +11,6 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <script src="coi-serviceworker.js"></script>
   <script id="mobPortraitLockEarly">(function () {
     function isMobLandscape() {
       if (window.matchMedia('(min-width: 993px)').matches) return false;
@@ -36419,17 +36418,6 @@
         return isVideoElementPlayable(vid);
       }
 
-      function videoCodecErrorMessage(codec) {
-        if (codec === 'h265') {
-          return 'ترميز H.265 — جارٍ تحويله تلقائياً لـ H.264…';
-        }
-        return 'ترميز غير مدعوم في Chrome — جارٍ التحويل تلقائياً…';
-      }
-
-      function needsBrowserVideoTranscode(codec) {
-        return codec === 'unknown';
-      }
-
       function isHevcCodec(codec) {
         return codec === 'h265';
       }
@@ -36449,173 +36437,14 @@
           </div>`;
       }
 
-      let _ffmpegWasmPromise = null;
-      const _transcodedPlayCache = {};
-      let _transcodeProgressCb = null;
-      let _ffmpegLogTail = '';
-
-      function withAsyncTimeout(promise, ms, label) {
-        let timer = null;
-        return Promise.race([
-          promise,
-          new Promise((_, reject) => {
-            timer = setTimeout(() => reject(new Error('انتهت مهلة ' + label)), ms);
-          }),
-        ]).finally(() => { if (timer) clearTimeout(timer); });
-      }
-
-      async function getFfmpegWasm(onLoadProgress) {
-        if (!_ffmpegWasmPromise) {
-          _ffmpegWasmPromise = (async () => {
-            const coreVer = '0.12.6';
-            const ffmpegVer = '0.12.10';
-            const coreBase = `https://cdn.jsdelivr.net/npm/@ffmpeg/core@${coreVer}/dist/esm`;
-            const ffmpegBase = `https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@${ffmpegVer}/dist/esm`;
-            let loadPct = 2;
-            const loadTicker = onLoadProgress ? setInterval(() => {
-              loadPct = Math.min(28, loadPct + 1);
-              onLoadProgress(loadPct);
-            }, 700) : null;
-            const { FFmpeg } = await import(`${ffmpegBase}/index.js`);
-            const { fetchFile, toBlobURL } = await import('https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/esm/index.js');
-            const ff = new FFmpeg();
-            _ffmpegLogTail = '';
-            ff.on('log', ({ message }) => {
-              _ffmpegLogTail = (_ffmpegLogTail + '\n' + String(message || '')).slice(-2000);
-              if (isMirsadDebugLog()) console.log('[ffmpeg]', message);
-            });
-            ff.on('progress', ({ progress }) => {
-              if (_transcodeProgressCb) {
-                _transcodeProgressCb(Math.min(99, Math.round((progress || 0) * 100)));
-              }
-            });
-            try {
-              await withAsyncTimeout(ff.load({
-                coreURL: await toBlobURL(`${coreBase}/ffmpeg-core.js`, 'text/javascript'),
-                wasmURL: await toBlobURL(`${coreBase}/ffmpeg-core.wasm`, 'application/wasm'),
-                classWorkerURL: await toBlobURL(`${ffmpegBase}/worker.js`, 'text/javascript'),
-              }), 120000, 'تحميل محرك التحويل');
-            } catch (loadErr) {
-              _ffmpegWasmPromise = null;
-              const msg = String(loadErr?.message || loadErr);
-              if (/Worker|cross-origin|SharedArrayBuffer|crossOriginIsolated/i.test(msg)) {
-                throw new Error('تعذّر تحميل محرّك التحويل — حدّث الصفحة (Ctrl+Shift+R) وانتظر إعادة التحميل التلقائية.');
-              }
-              throw loadErr;
-            } finally {
-              if (loadTicker) clearInterval(loadTicker);
-              if (onLoadProgress) onLoadProgress(30);
-            }
-            return { ff, fetchFile };
-          })();
-        }
-        return _ffmpegWasmPromise;
-      }
-
-      async function ffmpegExecOut(ff, args, timeoutMs) {
-        const outName = 'out_' + Math.random().toString(36).slice(2) + '.mp4';
-        await withAsyncTimeout(ff.exec([...args, '-y', outName]), timeoutMs, 'معالجة الفيديو');
-        const data = await ff.readFile(outName);
-        try { await ff.deleteFile(outName); } catch (_) { /* */ }
-        return new Blob([data.buffer], { type: 'video/mp4' });
-      }
-
-      async function prepareBrowserPlayableVideoBlob(blob, onPhase) {
-        if (!blob || !blob.size) throw new Error('ملف فيديو فارغ');
-        const phase = (msg, pct) => { if (onPhase) onPhase(msg, pct); };
-        const codec = await sniffMp4VideoCodec(blob);
-        if (isHevcCodec(codec)) {
-          const err = new Error('HEVC_NOT_SUPPORTED_IN_BROWSER');
-          err.code = 'HEVC';
-          throw err;
-        }
-
-        phase('جاري تحميل محرك التحويل (~31MB)…', 2);
-        _transcodeProgressCb = (pct) => phase('جاري معالجة الفيديو…', 30 + Math.round(pct * 0.65));
-        try {
-          const { ff, fetchFile } = await getFfmpegWasm((pct) => phase('جاري تحميل محرك التحويل (~31MB)…', pct));
-          const inName = 'in_' + Math.random().toString(36).slice(2) + '.mp4';
-          phase('جاري تجهيز الملف…', 32);
-          await ff.writeFile(inName, await fetchFile(blob));
-
-          phase('إصلاح بنية MP4 (faststart)…', 38);
-          try {
-            const remuxed = await ffmpegExecOut(ff, ['-i', inName, '-c', 'copy', '-movflags', '+faststart'], 90000);
-            try { await ff.deleteFile(inName); } catch (_) { /* */ }
-            phase('اكتمل — جاري التشغيل…', 100);
-            return remuxed;
-          } catch (remuxErr) {
-            if (/hevc|h265|h\.265/i.test(_ffmpegLogTail)) {
-              const err = new Error('HEVC_NOT_SUPPORTED_IN_BROWSER');
-              err.code = 'HEVC';
-              throw err;
-            }
-            if (codec !== 'h264') throw remuxErr;
-          }
-
-          phase('جاري إعادة الترميز إلى H.264…', 45);
-          try {
-            const outName = 'out_' + Math.random().toString(36).slice(2) + '.mp4';
-            await withAsyncTimeout(ff.exec([
-              '-i', inName,
-              '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '28',
-              '-c:a', 'aac', '-b:a', '128k',
-              '-movflags', '+faststart',
-              '-y', outName,
-            ]), 300000, 'إعادة الترميز');
-            const data = await ff.readFile(outName);
-            try {
-              await ff.deleteFile(inName);
-              await ff.deleteFile(outName);
-            } catch (_) { /* */ }
-            phase('اكتمل — جاري التشغيل…', 100);
-            return new Blob([data.buffer], { type: 'video/mp4' });
-          } catch (encErr) {
-            if (/hevc|h265|h\.265|Decoder.*not found/i.test(_ffmpegLogTail)) {
-              const err = new Error('HEVC_NOT_SUPPORTED_IN_BROWSER');
-              err.code = 'HEVC';
-              throw err;
-            }
-            throw encErr;
-          }
-        } finally {
-          _transcodeProgressCb = null;
-        }
-      }
-
-      async function transcodeVideoBlobToH264(blob, onProgress) {
-        return prepareBrowserPlayableVideoBlob(blob, (msg, pct) => {
-          if (onProgress) onProgress(pct);
-        });
-      }
-
-      async function blobFromVideoPlayUrl(playUrl, mimeType) {
-        const u = String(playUrl || '').trim();
-        if (!u) throw new Error('رابط فارغ');
-        if (u.startsWith('blob:')) return fetch(u).then((r) => r.blob());
-        const { blob } = await fetchR2VideoBlob(u, mimeType || 'video/mp4');
-        return blob;
-      }
-
-      async function transcodeAndPlayVideoInViewer(vid, playUrl, mimeType, cacheKey, onUiProgress) {
-        const ck = String(cacheKey || '').trim();
-        if (ck && _transcodedPlayCache[ck]) {
-          const cached = _transcodedPlayCache[ck];
-          resetAttViewerVideo(vid);
-          await attachVideoSourceAndWait(vid, cached, mimeType || 'video/mp4', 20000, false);
-          if (await waitVideoElementPlayable(vid, 8000)) return cached;
-        }
-        if (onUiProgress) onUiProgress('جاري تحميل الملف…', 0);
-        const blob = await blobFromVideoPlayUrl(playUrl, mimeType);
-        const converted = await prepareBrowserPlayableVideoBlob(blob, onUiProgress);
-        const blobUrl = URL.createObjectURL(converted);
-        if (ck) _transcodedPlayCache[ck] = blobUrl;
-        resetAttViewerVideo(vid);
-        await attachVideoSourceAndWait(vid, blobUrl, 'video/mp4', 25000, false);
-        if (!(await waitVideoElementPlayable(vid, 10000))) {
-          throw new Error('فشل تشغيل الفيديو بعد التحويل');
-        }
-        return blobUrl;
+      function showHevcPlaybackHelp(playUrl, cacheKey) {
+        const href = /^https?:\/\//i.test(String(playUrl || ''))
+          ? String(playUrl).trim()
+          : (readCfCache(cacheKey) || '');
+        showAttViewerLoader(hevcPlaybackHelpHtml(href));
+        const err = new Error('HEVC_NOT_SUPPORTED_IN_BROWSER');
+        err.code = 'HEVC';
+        throw err;
       }
 
       async function fetchR2VideoBlob(url, mimeType) {
@@ -36739,7 +36568,11 @@
               if (await waitVideoElementPlayable(vid, 5000)) return fb;
             } catch (_) { /* أدناه */ }
           }
-          if (lastCodec === 'h265') throw new Error(videoCodecErrorMessage('h265'));
+          if (lastCodec === 'h265') {
+            const err = new Error('HEVC_NOT_SUPPORTED_IN_BROWSER');
+            err.code = 'HEVC';
+            throw err;
+          }
           throw e1;
         }
       }
@@ -36751,50 +36584,13 @@
 
         const codec = await sniffMp4VideoCodec(playUrl);
         if (isHevcCodec(codec)) {
-          const href = /^https?:\/\//i.test(String(playUrl)) ? String(playUrl).trim() : (readCfCache(ck) || '');
-          showAttViewerLoader(hevcPlaybackHelpHtml(href));
-          const err = new Error('HEVC_NOT_SUPPORTED_IN_BROWSER');
-          err.code = 'HEVC';
-          throw err;
-        }
-
-        if (needsBrowserVideoTranscode(codec)) {
-          showAttViewerLoader(`
-            <div style="text-align:center;padding:12px 8px">
-              <i class="fas fa-cog fa-spin fa-2x" style="margin-bottom:10px"></i>
-              <p id="att-transcode-msg" style="margin:0;font-size:14px">${Sec.escapeHTML(videoCodecErrorMessage(codec))}</p>
-              <p id="att-transcode-pct" style="margin:8px 0 0;font-size:12px;color:#cbd5e1">0%</p>
-            </div>`);
-          const onUi = (msg, pct) => {
-            if (viewerLoadGen !== state._attViewerLoadGen) return;
-            const m = document.getElementById('att-transcode-msg');
-            const p = document.getElementById('att-transcode-pct');
-            if (m) m.textContent = msg;
-            if (p) p.textContent = (pct | 0) + '%';
-          };
-          playUrl = await transcodeAndPlayVideoInViewer(vid, playUrl, mime, ck, onUi);
-          return playUrl;
+          showHevcPlaybackHelp(playUrl, ck);
         }
 
         playUrl = await playVideoInViewer(vid, playUrl, mime, streamFb);
         if (await waitVideoElementPlayable(vid, 4000)) return playUrl;
 
-        showAttViewerLoader(`
-          <div style="text-align:center;padding:12px 8px">
-            <i class="fas fa-cog fa-spin fa-2x" style="margin-bottom:10px"></i>
-            <p id="att-transcode-msg" style="margin:0;font-size:14px">محاولة تحويل الفيديو لصيغة مدعومة…</p>
-            <p id="att-transcode-pct" style="margin:8px 0 0;font-size:12px;color:#cbd5e1">0%</p>
-          </div>`);
-        const onUi = (msg, pct) => {
-          if (viewerLoadGen !== state._attViewerLoadGen) return;
-          const m = document.getElementById('att-transcode-msg');
-          const p = document.getElementById('att-transcode-pct');
-          if (m) m.textContent = msg;
-          if (p) p.textContent = (pct | 0) + '%';
-        };
-        const src = /^https?:\/\//i.test(String(playUrl)) ? playUrl : readCfCache(ck);
-        playUrl = await transcodeAndPlayVideoInViewer(vid, src || playUrl, mime, ck, onUi);
-        return playUrl;
+        showHevcPlaybackHelp(playUrl, ck);
       }
 
       async function loadAttachmentPlayUrl(fileId, fileName, ticketCtx) {
@@ -37054,24 +36850,6 @@
               const vCodec = await sniffMp4VideoCodec(file);
               if (isHevcCodec(vCodec)) {
                 showToast('فيديو H.265 — لن يُشغّل في Chrome. غيّر الكاميرا إلى H.264 أو حمّله وافتحه في VLC.', 'error');
-              } else if (needsBrowserVideoTranscode(vCodec)) {
-                if (statusEl) statusEl.textContent = 'جاري إصلاح بنية MP4… 0%';
-                showToast('جاري تجهيز الفيديو ليعمل داخل المنصة…', 'info');
-                try {
-                  const converted = await prepareBrowserPlayableVideoBlob(file, (msg, pct) => {
-                    if (statusEl) statusEl.textContent = msg + ' ' + pct + '%';
-                  });
-                  const baseName = file.name.replace(/\.[^.]+$/, '') || 'video';
-                  uploadFile = new File([converted], baseName + '_web.mp4', { type: 'video/mp4' });
-                  finalType = 'video/mp4';
-                  showToast('تم تجهيز الفيديو — سيُشغّل داخل المنصة', 'info');
-                } catch (tcErr) {
-                  if (tcErr?.code === 'HEVC' || /HEVC/i.test(String(tcErr?.message))) {
-                    showToast('H.265 — غيّر إعدادات الكاميرا إلى H.264', 'error');
-                  } else {
-                    showToast('فشل التجهيز — سيُرفع الملف الأصلي: ' + (tcErr.message || tcErr), 'error');
-                  }
-                }
               }
             }
 
@@ -39008,7 +38786,6 @@
                 if (e?.code === 'HEVC' || /HEVC_NOT_SUPPORTED/i.test(String(e?.message || e))) return;
                 delete _cloudflareCache[ck];
                 delete _videoStreamFallback[ck];
-                delete _transcodedPlayCache[ck];
                 resetAttViewerVideo(vid);
                 const openHref = (playUrl && /^https?:\/\//i.test(String(playUrl).trim()))
                   ? String(playUrl).trim()
@@ -39019,8 +38796,6 @@
                 let hint = '<p style="font-size:10px;color:#fbbf24;margin:8px 0 0;line-height:1.6">جرّب تحميل الملف أو أعد فتح المرفق.</p>';
                 if (/404|غير موجود/.test(String(e?.message || e))) {
                   hint = '<p style="font-size:10px;color:#fbbf24;margin:8px 0 0">الملف غير موجود في R2 — أعد رفع المرفق.</p>';
-                } else if (/ffmpeg|تحويل|SharedArrayBuffer/i.test(String(e?.message || e))) {
-                  hint = '<p style="font-size:10px;color:#fbbf24;margin:8px 0 0;line-height:1.6">فشل التحويل — حمّل الملف وافتحه في VLC، أو اضبط الكاميرا على H.264.</p>';
                 } else if (/CORS|Failed to fetch/i.test(String(e?.message || e))) {
                   hint = '<p style="font-size:10px;color:#fbbf24;margin:8px 0 0">انشر Edge Function <span style="font-family:var(--mono)">r2-storage</span> المحدّث على Supabase.</p>';
                 }
