@@ -36398,14 +36398,15 @@
 
       function scanBytesForMp4Codec(buf) {
         if (!buf || !buf.length) return null;
-        const latin = new TextDecoder('latin1').decode(buf);
-        if (/hvc1|hev1|hvt1|hev2|hvcC|h265|hevc/i.test(latin)) return 'h265';
-        if (/avc1|avc3|mp4v|avcC/i.test(latin)) return 'h264';
+        let sawH264 = false;
+        let sawH265 = false;
         for (let i = 0; i < buf.length - 3; i++) {
           const c0 = buf[i], c1 = buf[i + 1], c2 = buf[i + 2], c3 = buf[i + 3];
-          if (c0 === 0x68 && c1 === 0x76 && (c2 === 0x63 || c2 === 0x65) && c3 === 0x31) return 'h265';
-          if (c0 === 0x61 && c1 === 0x76 && c2 === 0x63 && (c3 === 0x31 || c3 === 0x33)) return 'h264';
+          if (c0 === 0x61 && c1 === 0x76 && c2 === 0x63 && (c3 === 0x31 || c3 === 0x33)) sawH264 = true;
+          if (c0 === 0x68 && c1 === 0x76 && (c2 === 0x63 || c2 === 0x65) && c3 === 0x31) sawH265 = true;
         }
+        if (sawH264) return 'h264';
+        if (sawH265) return 'h265';
         return null;
       }
 
@@ -36480,13 +36481,27 @@
           </div>`;
       }
 
-      function showHevcPlaybackHelp(playUrl, cacheKey) {
+      function videoPlaybackFailedHtml(downloadHref, codec) {
+        const dl = downloadHref
+          ? `<a href="${Sec.escapeHTML(downloadHref)}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary" style="text-decoration:none;margin-top:12px"><i class="fas fa-external-link"></i> فتح / تحميل الفيديو</a>`
+          : '';
+        if (isHevcCodec(codec)) return hevcPlaybackHelpHtml(downloadHref);
+        return `
+          <div style="padding:20px;background:rgba(0,0,0,0.55);border-radius:10px;text-align:center;max-width:440px;line-height:1.7">
+            <i class="fas fa-exclamation-triangle" style="color:var(--amber);font-size:28px;margin-bottom:10px"></i>
+            <p style="margin:0 0 8px;font-weight:700">تعذّر تشغيل الفيديو داخل المنصة</p>
+            <p style="font-size:12px;color:#cbd5e1;margin:0">الملف موجود على R2 — جرّب فتحه في تبويب جديد.</p>
+            ${dl}
+          </div>`;
+      }
+
+      function showHevcPlaybackHelp(playUrl, cacheKey, codec) {
         const href = /^https?:\/\//i.test(String(playUrl || ''))
           ? String(playUrl).trim()
           : (readCfCache(cacheKey) || '');
-        showAttViewerLoader(hevcPlaybackHelpHtml(href));
-        const err = new Error('HEVC_NOT_SUPPORTED_IN_BROWSER');
-        err.code = 'HEVC';
+        showAttViewerLoader(videoPlaybackFailedHtml(href, codec || 'unknown'));
+        const err = new Error('VIDEO_PLAYBACK_FAILED');
+        err.code = 'VIDEO';
         throw err;
       }
 
@@ -36585,7 +36600,7 @@
         let lastCodec = 'unknown';
 
         try {
-          await attachVideoSourceAndWait(vid, url, mime, waitMs, r2Direct || isR2StreamPlayUrl(url));
+          await attachVideoSourceAndWait(vid, url, mime, waitMs, isR2StreamPlayUrl(url));
           if (await waitVideoElementPlayable(vid, 5000)) return url;
           throw new Error('تعذّر قراءة بيانات الفيديو');
         } catch (e1) {
@@ -36625,15 +36640,15 @@
         let playUrl = await loadAttachmentPlayUrl(fileId, name, ticketCtx);
         if (viewerLoadGen !== state._attViewerLoadGen) return null;
 
-        const codec = await sniffMp4VideoCodec(playUrl);
-        if (isHevcCodec(codec)) {
-          showHevcPlaybackHelp(playUrl, ck);
+        try {
+          playUrl = await playVideoInViewer(vid, playUrl, mime, streamFb);
+          if (await waitVideoElementPlayable(vid, 6000)) return playUrl;
+        } catch (playErr) {
+          if (isMirsadDebugLog()) console.warn('[Viewer] فشل تشغيل الفيديو', playErr);
         }
 
-        playUrl = await playVideoInViewer(vid, playUrl, mime, streamFb);
-        if (await waitVideoElementPlayable(vid, 4000)) return playUrl;
-
-        showHevcPlaybackHelp(playUrl, ck);
+        const codec = await sniffMp4VideoCodec(playUrl);
+        showHevcPlaybackHelp(playUrl, ck, codec);
       }
 
       async function loadAttachmentPlayUrl(fileId, fileName, ticketCtx) {
@@ -38826,7 +38841,7 @@
                 revealAttViewerMedia(vid);
               } catch (e) {
                 if (isMirsadDebugLog()) console.error('Lightbox Video Load Error:', e);
-                if (e?.code === 'HEVC' || /HEVC_NOT_SUPPORTED/i.test(String(e?.message || e))) return;
+                if (e?.code === 'HEVC' || e?.code === 'VIDEO' || /HEVC_NOT_SUPPORTED|VIDEO_PLAYBACK_FAILED/i.test(String(e?.message || e))) return;
                 delete _cloudflareCache[ck];
                 delete _videoStreamFallback[ck];
                 resetAttViewerVideo(vid);
