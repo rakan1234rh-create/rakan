@@ -36353,26 +36353,49 @@
         return String(_videoStreamFallback[cacheKey] || '').trim();
       }
 
+      function scanBytesForMp4Codec(buf) {
+        if (!buf || !buf.length) return null;
+        const latin = new TextDecoder('latin1').decode(buf);
+        if (/hvc1|hev1|hvt1|hev2|hvcC|h265|hevc/i.test(latin)) return 'h265';
+        if (/avc1|avc3|mp4v|avcC/i.test(latin)) return 'h264';
+        for (let i = 0; i < buf.length - 3; i++) {
+          const c0 = buf[i], c1 = buf[i + 1], c2 = buf[i + 2], c3 = buf[i + 3];
+          if (c0 === 0x68 && c1 === 0x76 && (c2 === 0x63 || c2 === 0x65) && c3 === 0x31) return 'h265';
+          if (c0 === 0x61 && c1 === 0x76 && c2 === 0x63 && (c3 === 0x31 || c3 === 0x33)) return 'h264';
+        }
+        return null;
+      }
+
       async function sniffMp4VideoCodec(urlOrBlob) {
         try {
-          let slice;
+          const scanSize = 524288;
+          const chunks = [];
           if (urlOrBlob instanceof Blob) {
-            slice = urlOrBlob.slice(0, Math.min(urlOrBlob.size, 524288));
+            chunks.push(urlOrBlob.slice(0, Math.min(urlOrBlob.size, scanSize)));
+            if (urlOrBlob.size > scanSize) {
+              chunks.push(urlOrBlob.slice(Math.max(0, urlOrBlob.size - scanSize)));
+            }
           } else {
-            const res = await fetch(String(urlOrBlob), { method: 'GET', headers: { Range: 'bytes=0-524287' } });
-            if (!res.ok && res.status !== 206) return 'unknown';
-            slice = await res.blob();
+            const url = String(urlOrBlob);
+            const headRes = await fetch(url, { method: 'GET', headers: { Range: `bytes=0-${scanSize - 1}` } });
+            if (headRes.ok || headRes.status === 206) chunks.push(await headRes.blob());
+            let total = 0;
+            try {
+              const metaRes = await fetch(url, { method: 'HEAD' });
+              total = parseInt(metaRes.headers.get('Content-Length') || '0', 10) || 0;
+            } catch (_) { /* */ }
+            if (total > scanSize) {
+              const tailRes = await fetch(url, { method: 'GET', headers: { Range: `bytes=${total - scanSize}-${total - 1}` } });
+              if (tailRes.ok || tailRes.status === 206) chunks.push(await tailRes.blob());
+            }
           }
-          const buf = new Uint8Array(await slice.arrayBuffer());
-          const latin = new TextDecoder('latin1').decode(buf);
-          if (/hvc1|hev1|hvt1|hev2|hvcC/i.test(latin)) return 'h265';
-          if (/avc1|avc3|mp4v|avcC/i.test(latin)) return 'h264';
-          for (let i = 0; i < buf.length - 3; i++) {
-            const c0 = buf[i], c1 = buf[i + 1], c2 = buf[i + 2], c3 = buf[i + 3];
-            if (c0 === 0x68 && c1 === 0x76 && (c2 === 0x63 || c2 === 0x65) && c3 === 0x31) return 'h265';
-            if (c0 === 0x61 && c1 === 0x76 && c2 === 0x63 && (c3 === 0x31 || c3 === 0x33)) return 'h264';
+          let sawH264 = false;
+          for (const chunk of chunks) {
+            const hit = scanBytesForMp4Codec(new Uint8Array(await chunk.arrayBuffer()));
+            if (hit === 'h265') return 'h265';
+            if (hit === 'h264') sawH264 = true;
           }
-          return 'unknown';
+          return sawH264 ? 'h264' : 'unknown';
         } catch (_) {
           return 'unknown';
         }
@@ -36397,9 +36420,9 @@
 
       function videoCodecErrorMessage(codec) {
         if (codec === 'h265') {
-          return 'ترميز H.265 (HEVC) غير مدعوم في متصفح Chrome — حمّل الملف أو أعد رفعه بصيغة H.264.';
+          return 'ترميز H.265 (HEVC) — Chrome لا يشغّله حتى من الرابط المباشر. حمّل الملف وافتحه في VLC، أو اضبط الكاميرا على H.264.';
         }
-        return 'تعذّر فك ترميز الفيديو في المتصفح — حمّل الملف أو افتحه في مشغّل خارجي.';
+        return 'الملف يُحمّل كاملاً لكن Chrome لا يفكّ ترميزه (كاميرا مراقبة). حمّله وافتحه في VLC — للتسجيلات الجديدة استخدم H.264.';
       }
 
       async function fetchR2VideoBlob(url, mimeType) {
@@ -36777,6 +36800,13 @@
               const compressResult = await compressImageFile(file);
               base64Data = compressResult.base64;
               finalType = 'image/jpeg';
+            } else if (file.type.startsWith('video/') || /\.(mp4|mov|webm|avi|mkv)$/i.test(file.name)) {
+              const vCodec = await sniffMp4VideoCodec(file);
+              if (vCodec === 'h265') {
+                showToast('تحذير: فيديو H.265 لن يُشغّل داخل المنصة — غيّر الكاميرا إلى H.264 أو حوّله قبل الرفع.', 'error');
+              } else if (vCodec === 'unknown') {
+                showToast('تنبيه: قد لا يُشغّل هذا الفيديو في Chrome — يُفضّل H.264 من إعدادات الكاميرا.', 'info');
+              }
             }
 
             // تجهيز الملف فقط وعدم الرفع الفوري
@@ -38726,13 +38756,13 @@
                   ? String(playUrl).trim()
                   : (cfUrl && /^https?:\/\//i.test(String(cfUrl).trim()) ? String(cfUrl).trim() : '');
                 const extLink = openHref
-                  ? `<a href="${Sec.escapeHTML(openHref)}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary" style="text-decoration:none;margin-top:12px"><i class="fas fa-external-link"></i> فتح / تحميل</a>`
+                  ? `<a href="${Sec.escapeHTML(openHref)}" target="_blank" rel="noopener noreferrer" download class="btn btn-sm btn-primary" style="text-decoration:none;margin-top:12px"><i class="fas fa-download"></i> تحميل وافتح في VLC</a>`
                   : '';
-                let hint = '';
+                let hint = '<p style="font-size:10px;color:#fbbf24;margin:8px 0 0;line-height:1.6">Chrome لا يشغّل هذا الترميز حتى من الرابط المباشر — ليس خللاً في المنصة.</p>';
                 if (/404|غير موجود/.test(String(e?.message || e))) {
                   hint = '<p style="font-size:10px;color:#fbbf24;margin:8px 0 0">الملف غير موجود في R2 — أعد رفع المرفق.</p>';
-                } else if (/H\.265|HEVC|فك ترميز|codec/i.test(String(e?.message || e))) {
-                  hint = '<p style="font-size:10px;color:#fbbf24;margin:8px 0 0">جرّب VLC أو حمّل الملف. للتسجيلات الجديدة اضبط الكاميرا على H.264.</p>';
+                } else if (/H\.265|HEVC|VLC|كاميرا/i.test(String(e?.message || e))) {
+                  hint = '<p style="font-size:10px;color:#fbbf24;margin:8px 0 0;line-height:1.6">حمّل الملف وافتحه في VLC. للتسجيلات الجديدة: إعدادات كاميرا Jeddah-Office → H.264 بدل H.265.</p>';
                 } else if (/CORS|Failed to fetch/i.test(String(e?.message || e))) {
                   hint = '<p style="font-size:10px;color:#fbbf24;margin:8px 0 0">انشر Edge Function <span style="font-family:var(--mono)">r2-storage</span> المحدّث على Supabase.</p>';
                 }
