@@ -25809,6 +25809,8 @@
 
       // تحميل ملف من R2: Edge Function (توقيع) أو المسار القديم AWS في المتصفح
       const _cloudflareCache = {};
+      /** رابط بث احتياطي عند فشل R2 المباشر (moov أو Content-Type) */
+      const _videoStreamFallback = {};
       let _r2HeadObjectOk = false;
       /** روابط التوقيع تنتهي (~ساعة)؛ لا نخزّنها دائماً */
       const _cfSignedTtlMs = 50 * 60 * 1000;
@@ -36347,43 +36349,84 @@
         return isR2StreamPlayUrl(url) || isDirectR2SignedUrl(url);
       }
 
-      async function playVideoInViewer(vid, playUrl, mimeType) {
-        const url = resolveMediaPlayUrl(playUrl);
-        vid.preload = 'auto';
-        vid.playsInline = true;
-        vid.controls = true;
-        vid.removeAttribute('crossorigin');
+      function readVideoStreamFallback(cacheKey) {
+        return String(_videoStreamFallback[cacheKey] || '').trim();
+      }
 
-        if (isFastVideoStreamUrl(url)) {
-          hideAttViewerLoader();
+      function attachVideoSourceAndWait(vid, url, mimeType, maxMs) {
+        const waitMs = maxMs || 12000;
+        const mime = mimeType || 'video/mp4';
+        return new Promise((resolve, reject) => {
+          if (!vid) return reject(new Error('عنصر الفيديو غير موجود'));
+          let done = false;
+          const cleanup = () => {
+            clearTimeout(maxTimer);
+            clearInterval(pollTimer);
+            vid.removeEventListener('loadedmetadata', onReady);
+            vid.removeEventListener('loadeddata', onReady);
+            vid.removeEventListener('canplay', onReady);
+            vid.removeEventListener('error', onErr);
+          };
+          const finish = (ok, err) => {
+            if (done) return;
+            done = true;
+            cleanup();
+            if (ok) resolve();
+            else reject(err || new Error('تعذّر تشغيل الفيديو'));
+          };
+          const hasMeta = () => vid.readyState >= 1
+            || (Number.isFinite(vid.duration) && vid.duration > 0);
+          const onReady = () => { if (hasMeta()) finish(true); };
+          const onErr = () => finish(false, new Error('تعذّر تشغيل الفيديو'));
+
+          vid.pause();
+          vid.removeAttribute('crossorigin');
+          vid.preload = 'auto';
+          vid.playsInline = true;
+          vid.controls = true;
           vid.style.display = 'block';
           vid.style.visibility = 'visible';
           vid.style.opacity = '1';
-          vid.src = url;
+          hideAttViewerLoader();
+          vid.innerHTML = '';
+          const source = document.createElement('source');
+          source.src = url;
+          source.type = mime;
+          vid.appendChild(source);
           vid.load();
-          return new Promise((resolve, reject) => {
-            let done = false;
-            const finish = (fn, val) => {
-              if (done) return;
-              done = true;
-              clearTimeout(fastTimer);
-              clearTimeout(maxTimer);
-              vid.removeEventListener('loadedmetadata', onMeta);
-              vid.removeEventListener('canplay', onMeta);
-              vid.removeEventListener('error', onErr);
-              fn(val);
-            };
-            const onMeta = () => finish(resolve, url);
-            const onErr = () => finish(reject, new Error('تعذّر تشغيل الفيديو'));
-            const fastTimer = setTimeout(() => finish(resolve, url), 350);
-            const maxTimer = setTimeout(() => {
-              if (vid.error) finish(reject, new Error('تعذّر تشغيل الفيديو'));
-              else finish(resolve, url);
-            }, 15000);
-            vid.addEventListener('loadedmetadata', onMeta, { once: true });
-            vid.addEventListener('canplay', onMeta, { once: true });
-            vid.addEventListener('error', onErr, { once: true });
-          });
+
+          const maxTimer = setTimeout(() => {
+            if (vid.error) finish(false);
+            else if (hasMeta()) finish(true);
+            else finish(false, new Error('انتهت مهلة تحميل بيانات الفيديو'));
+          }, waitMs);
+          const pollTimer = setInterval(() => { if (hasMeta()) finish(true); }, 300);
+
+          vid.addEventListener('loadedmetadata', onReady);
+          vid.addEventListener('loadeddata', onReady);
+          vid.addEventListener('canplay', onReady);
+          vid.addEventListener('error', onErr);
+        });
+      }
+
+      async function playVideoInViewer(vid, playUrl, mimeType, streamFallback) {
+        const url = resolveMediaPlayUrl(playUrl);
+        const fb = String(streamFallback || '').trim();
+
+        if (isFastVideoStreamUrl(url)) {
+          try {
+            await attachVideoSourceAndWait(vid, url, mimeType, isDirectR2SignedUrl(url) ? 8000 : 12000);
+            return url;
+          } catch (e) {
+            if (fb && fb !== url && isR2StreamPlayUrl(fb)) {
+              if (isMirsadDebugLog()) console.warn('[Viewer] R2 مباشر فشل — بث عبر Edge Function', e);
+              vid.src = '';
+              vid.innerHTML = '';
+              await attachVideoSourceAndWait(vid, fb, mimeType, 15000);
+              return fb;
+            }
+            throw e;
+          }
         }
 
         await setVideoElementSource(vid, url, mimeType);
@@ -36495,6 +36538,8 @@
                 const signed = await callR2StorageFn('signGet', { key, ...(ct ? { contentType: ct } : {}) });
                 if (!signed?.url) continue;
                 if (useStream) {
+                  const streamPlay = signed?.streamToken ? buildR2StreamPlayUrl(signed.streamToken) : '';
+                  if (streamPlay) _videoStreamFallback[cacheKey] = streamPlay;
                   // R2 مباشرة — Range أسرع من بروكسي Supabase (8MB+)
                   writeCfCache(cacheKey, signed.url);
                   return signed.url;
@@ -38529,11 +38574,13 @@
               try {
                 playUrl = await loadAttachmentPlayUrl(fileId, name, ticketCtx);
                 if (viewerLoadGen !== state._attViewerLoadGen) return;
-                playUrl = await playVideoInViewer(vid, playUrl, mime);
+                const streamFb = readVideoStreamFallback(ck);
+                playUrl = await playVideoInViewer(vid, playUrl, mime, streamFb);
                 revealAttViewerMedia(vid);
               } catch (e) {
                 if (isMirsadDebugLog()) console.error('Lightbox Video Load Error:', e);
                 delete _cloudflareCache[ck];
+                delete _videoStreamFallback[ck];
                 if (loader) {
                   loader.style.pointerEvents = 'auto';
                   const openHref = (playUrl && /^https?:\/\//i.test(String(playUrl).trim()))
