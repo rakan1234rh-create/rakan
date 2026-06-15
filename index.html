@@ -36427,24 +36427,61 @@
       }
 
       function needsBrowserVideoTranscode(codec) {
-        return codec === 'h265' || codec === 'unknown';
+        return codec === 'unknown';
+      }
+
+      function isHevcCodec(codec) {
+        return codec === 'h265';
+      }
+
+      function hevcPlaybackHelpHtml(downloadHref) {
+        const dl = downloadHref
+          ? `<a href="${Sec.escapeHTML(downloadHref)}" target="_blank" rel="noopener noreferrer" download class="btn btn-sm btn-primary" style="text-decoration:none;margin-top:12px"><i class="fas fa-download"></i> تحميل الفيديو</a>`
+          : '';
+        return `
+          <div style="padding:20px;background:rgba(0,0,0,0.55);border-radius:10px;text-align:center;max-width:440px;line-height:1.7">
+            <i class="fas fa-video-slash" style="color:var(--amber);font-size:28px;margin-bottom:10px"></i>
+            <p style="margin:0 0 8px;font-weight:700">ترميز H.265 — لا يُشغّل داخل Chrome</p>
+            <p style="font-size:12px;color:#cbd5e1;margin:0 0 10px">الملف سليم على R2، لكن المتصفح لا يفكّه. التحويل داخل المتصفح غير متاح لهذا الترميز.</p>
+            <p style="font-size:11px;color:#fbbf24;margin:0">للتسجيلات الجديدة: اضبط كاميرا Jeddah-Office على <b>H.264</b>.</p>
+            <p style="font-size:11px;color:#94a3b8;margin:10px 0 0">ويندوز: ثبّت <a href="https://apps.microsoft.com/detail/9nmzlz57r3t7" target="_blank" rel="noopener" style="color:#93c5fd">HEVC Video Extensions</a> ثم أعد فتح المرفق.</p>
+            ${dl}
+          </div>`;
       }
 
       let _ffmpegWasmPromise = null;
       const _transcodedPlayCache = {};
       let _transcodeProgressCb = null;
+      let _ffmpegLogTail = '';
 
-      async function getFfmpegWasm() {
+      function withAsyncTimeout(promise, ms, label) {
+        let timer = null;
+        return Promise.race([
+          promise,
+          new Promise((_, reject) => {
+            timer = setTimeout(() => reject(new Error('انتهت مهلة ' + label)), ms);
+          }),
+        ]).finally(() => { if (timer) clearTimeout(timer); });
+      }
+
+      async function getFfmpegWasm(onLoadProgress) {
         if (!_ffmpegWasmPromise) {
           _ffmpegWasmPromise = (async () => {
             const coreVer = '0.12.6';
             const ffmpegVer = '0.12.10';
             const coreBase = `https://cdn.jsdelivr.net/npm/@ffmpeg/core@${coreVer}/dist/esm`;
             const ffmpegBase = `https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@${ffmpegVer}/dist/esm`;
+            let loadPct = 2;
+            const loadTicker = onLoadProgress ? setInterval(() => {
+              loadPct = Math.min(28, loadPct + 1);
+              onLoadProgress(loadPct);
+            }, 700) : null;
             const { FFmpeg } = await import(`${ffmpegBase}/index.js`);
             const { fetchFile, toBlobURL } = await import('https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/esm/index.js');
             const ff = new FFmpeg();
+            _ffmpegLogTail = '';
             ff.on('log', ({ message }) => {
+              _ffmpegLogTail = (_ffmpegLogTail + '\n' + String(message || '')).slice(-2000);
               if (isMirsadDebugLog()) console.log('[ffmpeg]', message);
             });
             ff.on('progress', ({ progress }) => {
@@ -36453,11 +36490,11 @@
               }
             });
             try {
-              await ff.load({
+              await withAsyncTimeout(ff.load({
                 coreURL: await toBlobURL(`${coreBase}/ffmpeg-core.js`, 'text/javascript'),
                 wasmURL: await toBlobURL(`${coreBase}/ffmpeg-core.wasm`, 'application/wasm'),
                 classWorkerURL: await toBlobURL(`${ffmpegBase}/worker.js`, 'text/javascript'),
-              });
+              }), 120000, 'تحميل محرك التحويل');
             } catch (loadErr) {
               _ffmpegWasmPromise = null;
               const msg = String(loadErr?.message || loadErr);
@@ -36465,6 +36502,9 @@
                 throw new Error('تعذّر تحميل محرّك التحويل — حدّث الصفحة (Ctrl+Shift+R) وانتظر إعادة التحميل التلقائية.');
               }
               throw loadErr;
+            } finally {
+              if (loadTicker) clearInterval(loadTicker);
+              if (onLoadProgress) onLoadProgress(30);
             }
             return { ff, fetchFile };
           })();
@@ -36472,32 +36512,81 @@
         return _ffmpegWasmPromise;
       }
 
-      async function transcodeVideoBlobToH264(blob, onProgress) {
+      async function ffmpegExecOut(ff, args, timeoutMs) {
+        const outName = 'out_' + Math.random().toString(36).slice(2) + '.mp4';
+        await withAsyncTimeout(ff.exec([...args, '-y', outName]), timeoutMs, 'معالجة الفيديو');
+        const data = await ff.readFile(outName);
+        try { await ff.deleteFile(outName); } catch (_) { /* */ }
+        return new Blob([data.buffer], { type: 'video/mp4' });
+      }
+
+      async function prepareBrowserPlayableVideoBlob(blob, onPhase) {
         if (!blob || !blob.size) throw new Error('ملف فيديو فارغ');
-        if (onProgress) onProgress(0);
-        _transcodeProgressCb = onProgress || null;
+        const phase = (msg, pct) => { if (onPhase) onPhase(msg, pct); };
+        const codec = await sniffMp4VideoCodec(blob);
+        if (isHevcCodec(codec)) {
+          const err = new Error('HEVC_NOT_SUPPORTED_IN_BROWSER');
+          err.code = 'HEVC';
+          throw err;
+        }
+
+        phase('جاري تحميل محرك التحويل (~31MB)…', 2);
+        _transcodeProgressCb = (pct) => phase('جاري معالجة الفيديو…', 30 + Math.round(pct * 0.65));
         try {
-          const { ff, fetchFile } = await getFfmpegWasm();
-          const inName = 'in.mp4';
-          const outName = 'out.mp4';
+          const { ff, fetchFile } = await getFfmpegWasm((pct) => phase('جاري تحميل محرك التحويل (~31MB)…', pct));
+          const inName = 'in_' + Math.random().toString(36).slice(2) + '.mp4';
+          phase('جاري تجهيز الملف…', 32);
           await ff.writeFile(inName, await fetchFile(blob));
-          await ff.exec([
-            '-i', inName,
-            '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '28',
-            '-c:a', 'aac', '-b:a', '128k',
-            '-movflags', '+faststart',
-            '-y', outName,
-          ]);
-          const data = await ff.readFile(outName);
+
+          phase('إصلاح بنية MP4 (faststart)…', 38);
           try {
-            await ff.deleteFile(inName);
-            await ff.deleteFile(outName);
-          } catch (_) { /* */ }
-          if (onProgress) onProgress(100);
-          return new Blob([data.buffer], { type: 'video/mp4' });
+            const remuxed = await ffmpegExecOut(ff, ['-i', inName, '-c', 'copy', '-movflags', '+faststart'], 90000);
+            try { await ff.deleteFile(inName); } catch (_) { /* */ }
+            phase('اكتمل — جاري التشغيل…', 100);
+            return remuxed;
+          } catch (remuxErr) {
+            if (/hevc|h265|h\.265/i.test(_ffmpegLogTail)) {
+              const err = new Error('HEVC_NOT_SUPPORTED_IN_BROWSER');
+              err.code = 'HEVC';
+              throw err;
+            }
+            if (codec !== 'h264') throw remuxErr;
+          }
+
+          phase('جاري إعادة الترميز إلى H.264…', 45);
+          try {
+            const outName = 'out_' + Math.random().toString(36).slice(2) + '.mp4';
+            await withAsyncTimeout(ff.exec([
+              '-i', inName,
+              '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '28',
+              '-c:a', 'aac', '-b:a', '128k',
+              '-movflags', '+faststart',
+              '-y', outName,
+            ]), 300000, 'إعادة الترميز');
+            const data = await ff.readFile(outName);
+            try {
+              await ff.deleteFile(inName);
+              await ff.deleteFile(outName);
+            } catch (_) { /* */ }
+            phase('اكتمل — جاري التشغيل…', 100);
+            return new Blob([data.buffer], { type: 'video/mp4' });
+          } catch (encErr) {
+            if (/hevc|h265|h\.265|Decoder.*not found/i.test(_ffmpegLogTail)) {
+              const err = new Error('HEVC_NOT_SUPPORTED_IN_BROWSER');
+              err.code = 'HEVC';
+              throw err;
+            }
+            throw encErr;
+          }
         } finally {
           _transcodeProgressCb = null;
         }
+      }
+
+      async function transcodeVideoBlobToH264(blob, onProgress) {
+        return prepareBrowserPlayableVideoBlob(blob, (msg, pct) => {
+          if (onProgress) onProgress(pct);
+        });
       }
 
       async function blobFromVideoPlayUrl(playUrl, mimeType) {
@@ -36516,12 +36605,9 @@
           await attachVideoSourceAndWait(vid, cached, mimeType || 'video/mp4', 20000, false);
           if (await waitVideoElementPlayable(vid, 8000)) return cached;
         }
-        if (onUiProgress) onUiProgress('جاري تحميل أدوات التحويل…', 0);
+        if (onUiProgress) onUiProgress('جاري تحميل الملف…', 0);
         const blob = await blobFromVideoPlayUrl(playUrl, mimeType);
-        if (onUiProgress) onUiProgress('جاري تحويل الفيديو إلى H.264…', 0);
-        const converted = await transcodeVideoBlobToH264(blob, (pct) => {
-          if (onUiProgress) onUiProgress('جاري تحويل الفيديو إلى H.264…', pct);
-        });
+        const converted = await prepareBrowserPlayableVideoBlob(blob, onUiProgress);
         const blobUrl = URL.createObjectURL(converted);
         if (ck) _transcodedPlayCache[ck] = blobUrl;
         resetAttViewerVideo(vid);
@@ -36664,6 +36750,14 @@
         if (viewerLoadGen !== state._attViewerLoadGen) return null;
 
         const codec = await sniffMp4VideoCodec(playUrl);
+        if (isHevcCodec(codec)) {
+          const href = /^https?:\/\//i.test(String(playUrl)) ? String(playUrl).trim() : (readCfCache(ck) || '');
+          showAttViewerLoader(hevcPlaybackHelpHtml(href));
+          const err = new Error('HEVC_NOT_SUPPORTED_IN_BROWSER');
+          err.code = 'HEVC';
+          throw err;
+        }
+
         if (needsBrowserVideoTranscode(codec)) {
           showAttViewerLoader(`
             <div style="text-align:center;padding:12px 8px">
@@ -36958,19 +37052,25 @@
               finalType = 'image/jpeg';
             } else if (isVid) {
               const vCodec = await sniffMp4VideoCodec(file);
-              if (needsBrowserVideoTranscode(vCodec)) {
-                if (statusEl) statusEl.textContent = 'جاري التحويل لـ H.264… 0%';
-                showToast('جاري تحويل الفيديو لصيغة مدعومة في المنصة…', 'info');
+              if (isHevcCodec(vCodec)) {
+                showToast('فيديو H.265 — لن يُشغّل في Chrome. غيّر الكاميرا إلى H.264 أو حمّله وافتحه في VLC.', 'error');
+              } else if (needsBrowserVideoTranscode(vCodec)) {
+                if (statusEl) statusEl.textContent = 'جاري إصلاح بنية MP4… 0%';
+                showToast('جاري تجهيز الفيديو ليعمل داخل المنصة…', 'info');
                 try {
-                  const converted = await transcodeVideoBlobToH264(file, (pct) => {
-                    if (statusEl) statusEl.textContent = `جاري التحويل لـ H.264… ${pct}%`;
+                  const converted = await prepareBrowserPlayableVideoBlob(file, (msg, pct) => {
+                    if (statusEl) statusEl.textContent = msg + ' ' + pct + '%';
                   });
                   const baseName = file.name.replace(/\.[^.]+$/, '') || 'video';
-                  uploadFile = new File([converted], baseName + '_h264.mp4', { type: 'video/mp4' });
+                  uploadFile = new File([converted], baseName + '_web.mp4', { type: 'video/mp4' });
                   finalType = 'video/mp4';
-                  showToast('تم تحويل الفيديو إلى H.264 — سيُشغّل داخل المنصة', 'info');
+                  showToast('تم تجهيز الفيديو — سيُشغّل داخل المنصة', 'info');
                 } catch (tcErr) {
-                  showToast('فشل التحويل — سيُرفع الملف الأصلي: ' + (tcErr.message || tcErr), 'error');
+                  if (tcErr?.code === 'HEVC' || /HEVC/i.test(String(tcErr?.message))) {
+                    showToast('H.265 — غيّر إعدادات الكاميرا إلى H.264', 'error');
+                  } else {
+                    showToast('فشل التجهيز — سيُرفع الملف الأصلي: ' + (tcErr.message || tcErr), 'error');
+                  }
                 }
               }
             }
@@ -38905,6 +39005,7 @@
                 revealAttViewerMedia(vid);
               } catch (e) {
                 if (isMirsadDebugLog()) console.error('Lightbox Video Load Error:', e);
+                if (e?.code === 'HEVC' || /HEVC_NOT_SUPPORTED/i.test(String(e?.message || e))) return;
                 delete _cloudflareCache[ck];
                 delete _videoStreamFallback[ck];
                 delete _transcodedPlayCache[ck];
