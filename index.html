@@ -25435,7 +25435,7 @@
     <div id="printArea"></div>
 
     <!-- Attachment Viewer (Lightbox) -->
-    <div class="att-viewer" id="attViewer" onclick="closeAttViewer(event)">
+    <div class="att-viewer" id="attViewer">
       <div class="att-viewer-stage att-viewer-drag-zone">
         <button type="button" class="att-viewer-nav att-viewer-prev" id="attViewerPrev"
           onclick="event.stopPropagation(); navAttViewer(-1)" title="السابق">
@@ -38634,6 +38634,36 @@
           if (el.style.display === 'none') return;
           wrapAttMediaZoom(el);
         });
+        content.querySelectorAll('video').forEach((el) => guardAttViewerVideoClicks(el));
+      }
+
+      function guardAttViewerVideoClicks(el) {
+        if (!el || el.dataset.attClickGuard === '1') return;
+        el.dataset.attClickGuard = '1';
+        const stop = (e) => e.stopPropagation();
+        el.addEventListener('click', stop);
+        el.addEventListener('pointerup', stop);
+      }
+
+      function attViewerMediaHitPad(el) {
+        const tag = (el.tagName || '').toUpperCase();
+        if (tag === 'VIDEO') return { x: 8, y: 8, bottom: 52 };
+        if (tag === 'IMG' || tag === 'IFRAME') return { x: 4, y: 4, bottom: 4 };
+        return { x: 0, y: 0, bottom: 0 };
+      }
+
+      function attViewerPointHitsMedia(viewer, x, y) {
+        if (!viewer || typeof x !== 'number' || typeof y !== 'number') return false;
+        const nodes = viewer.querySelectorAll('video, iframe, img, .att-media-zoom-wrap, #att-loading, .att-fallback');
+        for (const el of nodes) {
+          const style = window.getComputedStyle(el);
+          if (style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) continue;
+          const r = el.getBoundingClientRect();
+          if (r.width < 1 && r.height < 1) continue;
+          const pad = attViewerMediaHitPad(el);
+          if (x >= r.left - pad.x && x <= r.right + pad.x && y >= r.top - pad.y && y <= r.bottom + pad.bottom) return true;
+        }
+        return false;
       }
 
       function revealAttViewerMedia(el) {
@@ -38647,6 +38677,7 @@
         el.style.pointerEvents = 'auto';
         const tag = (el.tagName || '').toUpperCase();
         if (tag === 'IMG') wrapAttMediaZoom(el);
+        if (tag === 'VIDEO') guardAttViewerVideoClicks(el);
       }
 
       function openAttViewerByIndex(idx) {
@@ -38964,15 +38995,20 @@
       }
 
       const _attViewerDrag = { active: false, startY: 0, deltaY: 0, pointerId: null };
+      const _attViewerPointer = { valid: false, downOnMedia: false };
 
       function closeAttViewer(event) {
-        if (event) {
-          const t = event.target;
-          if (t.closest('.att-viewer-nav')) return;
-          if (t.closest('.att-media-zoom-wrap, #att-loading, iframe, .att-fallback')) return;
-          if (!t.closest('#attViewer')) return;
-        }
         const viewer = document.getElementById('attViewer');
+        if (event && viewer) {
+          const t = event.target;
+          if (t.closest('.att-viewer-nav, button, a, input')) return;
+          const x = event.clientX;
+          const y = event.clientY;
+          if (typeof x === 'number' && typeof y === 'number') {
+            if (attViewerPointHitsMedia(viewer, x, y)) return;
+          }
+          if (_attViewerPointer.valid && _attViewerPointer.downOnMedia) return;
+        }
         const stage = viewer?.querySelector('.att-viewer-stage');
         viewer.classList.remove('open', 'att-dragging');
         if (stage) stage.style.transform = '';
@@ -38989,6 +39025,19 @@
         const stage = viewer?.querySelector('.att-viewer-stage');
         if (!viewer || !zone || !stage || viewer.dataset.dragInit === '1') return;
         viewer.dataset.dragInit = '1';
+
+        viewer.addEventListener('pointerdown', (e) => {
+          if (!viewer.classList.contains('open')) return;
+          _attViewerPointer.valid = true;
+          _attViewerPointer.downOnMedia = attViewerPointHitsMedia(viewer, e.clientX, e.clientY);
+        }, true);
+
+        viewer.addEventListener('click', (e) => {
+          if (!viewer.classList.contains('open')) return;
+          closeAttViewer(e);
+          _attViewerPointer.valid = false;
+          _attViewerPointer.downOnMedia = false;
+        });
 
         const dragEnd = () => {
           if (!_attViewerDrag.active) return;
@@ -39023,6 +39072,7 @@
         zone.addEventListener('pointerdown', (e) => {
           if (e.button !== undefined && e.button !== 0) return;
           if (e.target.closest('.att-media-zoom-wrap, video, button, a, input, .att-viewer-nav')) return;
+          if (attViewerPointHitsMedia(viewer, e.clientX, e.clientY)) return;
           _attViewerDrag.pointerId = e.pointerId;
           dragStart(e.clientY);
           try { zone.setPointerCapture(e.pointerId); } catch (_) { /* noop */ }
