@@ -129,8 +129,169 @@
       pointer-events: none !important
     }
 
-    html.mr-mobile-ui #mobileBottomNav.mobile-bottom-nav {
-      display: flex !important
+    html.mr-mobile-ui #mobileBottomNav.mobile-bottom-nav,
+    html.mr-mobile-ui #appWrap > .app-shell > #mobileBottomNav.mobile-bottom-nav {
+      display: flex !important;
+      flex-direction: row !important;
+      position: fixed;
+      bottom: 0 !important;
+      left: 0;
+      right: 0;
+      z-index: 2800;
+      width: 100% !important;
+      max-width: 100% !important;
+      align-self: stretch !important;
+      min-height: 56px;
+      padding-top: 6px;
+      padding-bottom: constant(safe-area-inset-bottom);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+      box-sizing: border-box;
+      padding-inline: 8px;
+      background: var(--mr-surface);
+      border-top: 1px solid var(--mr-border);
+      box-shadow: 0 -6px 24px rgba(15, 18, 36, 0.08);
+      align-items: stretch;
+      justify-content: space-evenly;
+      gap: 4px;
+      overflow-x: hidden;
+      overflow-y: hidden;
+      overscroll-behavior: none;
+      touch-action: pan-x;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      transform: none !important
+    }
+
+    html.mr-mobile-ui #mobileBottomNav.mobile-bottom-nav.mobile-bottom-nav--spread,
+    html.mr-mobile-ui #appWrap > .app-shell > #mobileBottomNav.mobile-bottom-nav.mobile-bottom-nav--spread {
+      justify-content: space-evenly;
+      overflow-x: hidden;
+      padding-inline: 10px;
+      gap: 6px
+    }
+
+    html.mr-mobile-ui #mobileBottomNav.mobile-bottom-nav.mobile-bottom-nav--spread .mob-nav-item,
+    html.mr-mobile-ui #appWrap > .app-shell > #mobileBottomNav.mobile-bottom-nav.mobile-bottom-nav--spread .mob-nav-item {
+      flex: 1 1 0;
+      min-width: 0;
+      max-width: none;
+      padding-inline: 6px
+    }
+
+    html.mr-mobile-ui #mobileBottomNav.mobile-bottom-nav.mobile-bottom-nav--spread .mob-nav-item span,
+    html.mr-mobile-ui #appWrap > .app-shell > #mobileBottomNav.mobile-bottom-nav.mobile-bottom-nav--spread .mob-nav-item span {
+      max-width: none
+    }
+
+    html.mr-mobile-ui #mobileBottomNav.mobile-bottom-nav.mobile-bottom-nav--scroll,
+    html.mr-mobile-ui #appWrap > .app-shell > #mobileBottomNav.mobile-bottom-nav.mobile-bottom-nav--scroll {
+      justify-content: flex-start !important;
+      overflow-x: auto !important
+    }
+
+    html.mr-mobile-ui #mobileBottomNav.mobile-bottom-nav.mobile-bottom-nav--scroll .mob-nav-item,
+    html.mr-mobile-ui #appWrap > .app-shell > #mobileBottomNav.mobile-bottom-nav.mobile-bottom-nav--scroll .mob-nav-item {
+      flex: 0 0 auto !important;
+      min-width: 62px !important
+    }
+
+    html.mr-mobile-ui #mobileBottomNav.mobile-bottom-nav:not(.mobile-bottom-nav--scroll) .mob-nav-item,
+    html.mr-mobile-ui #appWrap > .app-shell > #mobileBottomNav.mobile-bottom-nav:not(.mobile-bottom-nav--scroll) .mob-nav-item {
+      flex: 1 1 0 !important;
+      min-width: 0 !important;
+      max-width: none !important
+    }
+
+    html.mr-mobile-ui .mob-nav-item {
+      flex: 1 1 0;
+      min-width: 0;
+      max-width: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      padding: 6px 4px;
+      margin: 0;
+      border: 0;
+      background: transparent;
+      color: var(--mr-text-2);
+      font-family: var(--font);
+      font-size: 10px;
+      font-weight: 600;
+      line-height: 1.2;
+      cursor: pointer;
+      border-radius: 12px;
+      position: relative;
+      transition: color 0.15s ease
+    }
+
+    html.mr-mobile-ui .mob-nav-item > i {
+      width: 30px;
+      height: 30px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 11px;
+      font-size: 15px;
+      line-height: 1;
+      color: var(--mr-text-2);
+      background: var(--mr-primary-softer);
+      border: none;
+      transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease
+    }
+
+    html.mr-mobile-ui .mob-nav-item.active > i {
+      color: #fff;
+      background: var(--mr-blue);
+      border: none;
+      box-shadow: 0 4px 12px color-mix(in srgb, var(--mr-blue) 38%, transparent);
+      transform: translateY(-1px)
+    }
+
+    html.mr-mobile-ui .mob-nav-item span {
+      max-width: 68px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap
+    }
+
+    html.mr-mobile-ui .mob-nav-item.active {
+      color: var(--mr-text);
+      background: transparent
+    }
+
+    html.mr-mobile-ui .mob-nav-badge {
+      position: absolute;
+      top: 2px;
+      inset-inline-start: 50%;
+      margin-inline-start: 6px;
+      min-width: 16px;
+      height: 16px;
+      padding: 0 4px;
+      border-radius: 999px;
+      background: var(--red);
+      color: #fff;
+      font-size: 9px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1
+    }
+
+    html.mr-mobile-ui {
+      --mr-mob-bottom-nav-h: calc(56px + env(safe-area-inset-bottom, 0px))
+    }
+
+    html.mr-mobile-ui #appWrap .main {
+      padding-bottom: calc(var(--mr-mob-bottom-nav-h, 56px) + 16px) !important
+    }
+
+    html.mr-mobile-ui .sidebar-drawer-toggle.sidebar-toggle-btn {
+      display: none !important
     }
 
     html.mr-mobile-ui .wf-desk-tickets-host .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) {
