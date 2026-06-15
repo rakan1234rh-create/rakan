@@ -28674,7 +28674,10 @@
         if (typeof window === 'undefined') return false;
         const isWide = window.matchMedia('(min-width: 993px)').matches;
         const isTouch = window.matchMedia('(pointer: coarse)').matches;
-        return !isWide || isTouch;
+        // الآيباد: شاشة لمس دائماً → يبقى mobile بغض النظر عن العرض أو الاتجاه
+        const isTablet = isTouch && window.matchMedia('(min-width: 600px)').matches;
+        if (isTablet) return true;
+        return !isWide;
       }
 
       const ATHAR_LOGO_VER = '388';
