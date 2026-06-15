@@ -36357,16 +36357,21 @@
         try {
           let slice;
           if (urlOrBlob instanceof Blob) {
-            slice = urlOrBlob.slice(0, 65536);
+            slice = urlOrBlob.slice(0, Math.min(urlOrBlob.size, 524288));
           } else {
-            const res = await fetch(String(urlOrBlob), { method: 'GET', headers: { Range: 'bytes=0-65535' } });
+            const res = await fetch(String(urlOrBlob), { method: 'GET', headers: { Range: 'bytes=0-524287' } });
             if (!res.ok && res.status !== 206) return 'unknown';
             slice = await res.blob();
           }
-          const buf = await slice.arrayBuffer();
-          const s = new TextDecoder('latin1').decode(new Uint8Array(buf));
-          if (/hvc1|hev1|hvt1|hev2/i.test(s)) return 'h265';
-          if (/avc1|avc3|mp4v/i.test(s)) return 'h264';
+          const buf = new Uint8Array(await slice.arrayBuffer());
+          const latin = new TextDecoder('latin1').decode(buf);
+          if (/hvc1|hev1|hvt1|hev2|hvcC/i.test(latin)) return 'h265';
+          if (/avc1|avc3|mp4v|avcC/i.test(latin)) return 'h264';
+          for (let i = 0; i < buf.length - 3; i++) {
+            const c0 = buf[i], c1 = buf[i + 1], c2 = buf[i + 2], c3 = buf[i + 3];
+            if (c0 === 0x68 && c1 === 0x76 && (c2 === 0x63 || c2 === 0x65) && c3 === 0x31) return 'h265';
+            if (c0 === 0x61 && c1 === 0x76 && c2 === 0x63 && (c3 === 0x31 || c3 === 0x33)) return 'h264';
+          }
           return 'unknown';
         } catch (_) {
           return 'unknown';
@@ -36415,6 +36420,7 @@
 
       function attachVideoSourceAndWait(vid, url, mimeType, maxMs, useCors) {
         const waitMs = maxMs || 12000;
+        const deadline = Date.now() + waitMs;
         return new Promise((resolve, reject) => {
           if (!vid) return reject(new Error('عنصر الفيديو غير موجود'));
           let done = false;
@@ -36439,14 +36445,14 @@
           const onReady = () => { if (hasMeta()) finish(true); };
           const onErr = () => finish(false, new Error('تعذّر تشغيل الفيديو'));
           const onTimeout = () => {
-            if (vid.networkState === 2) { scheduleTimeout(); return; }
+            const remaining = deadline - Date.now();
+            if (remaining > 0 && vid.networkState === 2 && !vid.error) {
+              maxTimer = setTimeout(onTimeout, Math.min(1500, remaining));
+              return;
+            }
             if (vid.error) finish(false);
             else if (hasMeta()) finish(true);
             else finish(false, new Error('انتهت مهلة تحميل بيانات الفيديو'));
-          };
-          const scheduleTimeout = () => {
-            if (maxTimer) clearTimeout(maxTimer);
-            maxTimer = setTimeout(onTimeout, waitMs);
           };
 
           vid.pause();
@@ -36458,15 +36464,14 @@
           vid.preload = 'auto';
           vid.playsInline = true;
           vid.controls = true;
-          vid.style.display = 'block';
-          vid.style.visibility = 'visible';
-          vid.style.opacity = '1';
-          hideAttViewerLoader();
+          vid.style.display = 'none';
+          vid.style.visibility = 'hidden';
+          vid.style.opacity = '0';
           vid.innerHTML = '';
           vid.src = String(url);
           vid.load();
 
-          scheduleTimeout();
+          maxTimer = setTimeout(onTimeout, Math.min(2000, waitMs));
           const pollTimer = setInterval(() => { if (hasMeta()) finish(true); }, 300);
 
           vid.addEventListener('loadedmetadata', onReady);
@@ -36488,35 +36493,44 @@
         }
 
         const r2Direct = isDirectR2SignedUrl(url);
-        const waitMs = r2Direct ? 35000 : 18000;
+        const waitMs = r2Direct ? 28000 : 18000;
+
+        if (r2Direct) {
+          const earlyCodec = await sniffMp4VideoCodec(url);
+          if (earlyCodec === 'h265') throw new Error(videoCodecErrorMessage('h265'));
+        }
+
+        let lastCodec = 'unknown';
 
         try {
           await attachVideoSourceAndWait(vid, url, mime, waitMs, r2Direct || isR2StreamPlayUrl(url));
           if (await waitVideoElementPlayable(vid, 5000)) return url;
           throw new Error('تعذّر قراءة بيانات الفيديو');
         } catch (e1) {
+          if (r2Direct) {
+            try {
+              if (isMirsadDebugLog()) console.warn('[Viewer] جرّب تحميل blob محلي من R2', e1);
+              const { blob, blobUrl } = await fetchR2VideoBlob(url, mime);
+              lastCodec = await sniffMp4VideoCodec(blob);
+              if (lastCodec === 'h265') throw new Error(videoCodecErrorMessage('h265'));
+              vid.src = '';
+              vid.innerHTML = '';
+              await attachVideoSourceAndWait(vid, blobUrl, mime, 20000, false);
+              if (await waitVideoElementPlayable(vid, 6000)) return blobUrl;
+            } catch (eBlob) {
+              if (/H\.265|HEVC/i.test(String(eBlob?.message || ''))) throw eBlob;
+            }
+          }
           if (fb && fb !== url && isR2StreamPlayUrl(fb)) {
             try {
-              if (isMirsadDebugLog()) console.warn('[Viewer] R2 مباشر فشل — بث عبر Edge Function', e1);
+              if (isMirsadDebugLog()) console.warn('[Viewer] بث عبر Edge Function', e1);
               vid.src = '';
               vid.innerHTML = '';
               await attachVideoSourceAndWait(vid, fb, mime, 22000, true);
               if (await waitVideoElementPlayable(vid, 5000)) return fb;
-              throw new Error('تعذّر قراءة بيانات الفيديو');
-            } catch (_) { /* جرّب blob */ }
-          }
-          if (r2Direct) {
-            try {
-              if (isMirsadDebugLog()) console.warn('[Viewer] جرّب تحميل blob محلي من R2');
-              const { blob, blobUrl } = await fetchR2VideoBlob(url, mime);
-              vid.src = '';
-              vid.innerHTML = '';
-              await attachVideoSourceAndWait(vid, blobUrl, mime, 15000, false);
-              if (await waitVideoElementPlayable(vid, 5000)) return blobUrl;
-              const codec = await sniffMp4VideoCodec(blob);
-              throw new Error(videoCodecErrorMessage(codec));
             } catch (_) { /* أدناه */ }
           }
+          if (lastCodec === 'h265') throw new Error(videoCodecErrorMessage('h265'));
           throw e1;
         }
       }
@@ -38329,7 +38343,40 @@
       }
 
       function hideAttViewerLoader() {
-        document.getElementById('att-loading')?.remove();
+        const el = document.getElementById('att-loading');
+        if (el) el.style.display = 'none';
+      }
+
+      function showAttViewerLoader(html) {
+        const wrap = document.querySelector('.att-viewer-load-wrap');
+        let el = document.getElementById('att-loading');
+        if (!el && wrap) {
+          el = document.createElement('div');
+          el.id = 'att-loading';
+          el.style.color = '#fff';
+          el.style.zIndex = '30';
+          wrap.insertBefore(el, wrap.firstChild);
+        }
+        if (!el) return;
+        el.style.display = 'flex';
+        el.style.flexDirection = 'column';
+        el.style.alignItems = 'center';
+        el.style.justifyContent = 'center';
+        el.style.pointerEvents = 'auto';
+        if (html != null) el.innerHTML = html;
+      }
+
+      function resetAttViewerVideo(vid) {
+        if (!vid) return;
+        try {
+          vid.pause();
+          vid.removeAttribute('src');
+          vid.innerHTML = '';
+          vid.style.display = 'none';
+          vid.style.visibility = 'hidden';
+          vid.style.opacity = '0';
+          vid.load();
+        } catch (_) { /* */ }
       }
 
       function applyAttMediaZoom(wrap) {
@@ -38674,31 +38721,29 @@
                 if (isMirsadDebugLog()) console.error('Lightbox Video Load Error:', e);
                 delete _cloudflareCache[ck];
                 delete _videoStreamFallback[ck];
-                if (loader) {
-                  loader.style.pointerEvents = 'auto';
-                  const openHref = (playUrl && /^https?:\/\//i.test(String(playUrl).trim()))
-                    ? String(playUrl).trim()
-                    : (cfUrl && /^https?:\/\//i.test(String(cfUrl).trim()) ? String(cfUrl).trim() : '');
-                  const extLink = openHref
-                    ? `<a href="${Sec.escapeHTML(openHref)}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary" style="text-decoration:none;margin-top:12px"><i class="fas fa-external-link"></i> فتح الرابط</a>`
-                    : '';
-                  let hint = '';
-                  if (/404|غير موجود/.test(String(e?.message || e))) {
-                    hint = '<p style="font-size:10px;color:#fbbf24;margin:8px 0 0">الملف غير موجود في R2 — أعد رفع المرفق.</p>';
-                  } else if (/H\.265|HEVC|فك ترميز|codec/i.test(String(e?.message || e))) {
-                    hint = '<p style="font-size:10px;color:#fbbf24;margin:8px 0 0">جرّب تحميل الملف أو فتحه في VLC. للتسجيلات الجديدة استخدم H.264 من إعدادات الكاميرا.</p>';
-                  } else if (/CORS|Failed to fetch/i.test(String(e?.message || e))) {
-                    hint = '<p style="font-size:10px;color:#fbbf24;margin:8px 0 0">انشر Edge Function <span style="font-family:var(--mono)">r2-storage</span> المحدّث (يدعم streamToken) على Supabase.</p>';
-                  }
-                  loader.innerHTML = `
+                resetAttViewerVideo(vid);
+                const openHref = (playUrl && /^https?:\/\//i.test(String(playUrl).trim()))
+                  ? String(playUrl).trim()
+                  : (cfUrl && /^https?:\/\//i.test(String(cfUrl).trim()) ? String(cfUrl).trim() : '');
+                const extLink = openHref
+                  ? `<a href="${Sec.escapeHTML(openHref)}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary" style="text-decoration:none;margin-top:12px"><i class="fas fa-external-link"></i> فتح / تحميل</a>`
+                  : '';
+                let hint = '';
+                if (/404|غير موجود/.test(String(e?.message || e))) {
+                  hint = '<p style="font-size:10px;color:#fbbf24;margin:8px 0 0">الملف غير موجود في R2 — أعد رفع المرفق.</p>';
+                } else if (/H\.265|HEVC|فك ترميز|codec/i.test(String(e?.message || e))) {
+                  hint = '<p style="font-size:10px;color:#fbbf24;margin:8px 0 0">جرّب VLC أو حمّل الملف. للتسجيلات الجديدة اضبط الكاميرا على H.264.</p>';
+                } else if (/CORS|Failed to fetch/i.test(String(e?.message || e))) {
+                  hint = '<p style="font-size:10px;color:#fbbf24;margin:8px 0 0">انشر Edge Function <span style="font-family:var(--mono)">r2-storage</span> المحدّث على Supabase.</p>';
+                }
+                showAttViewerLoader(`
                     <div style="padding:20px;background:rgba(0,0,0,0.55);border-radius:10px;text-align:center;max-width:420px">
                       <i class="fas fa-exclamation-triangle" style="color:var(--amber);font-size:28px;margin-bottom:10px"></i>
                       <p style="margin:0 0 8px">تعذّر تشغيل الفيديو</p>
                       <p style="font-size:11px;color:#ccc;margin:0;font-family:var(--mono)">${Sec.escapeHTML(e.message || String(e))}</p>
                       ${hint}
                       ${extLink}
-                    </div>`;
-                }
+                    </div>`);
               }
             }, 50);
           }
