@@ -18106,66 +18106,72 @@
         overflow: visible
       }
 
-      #tab-workflow .wf-panel-banner:has(#wfMobTicketsHead:not(:empty)) {
+      #tab-workflow .wf-panel-banner:has(+ #ticketList > #wfMobTicketsHead:not(:empty)) {
         padding-bottom: 0;
         overflow: visible
       }
 
-      #tab-workflow .wf-panel-banner:has(#wfMobTicketsHead:not(:empty)) .wf-count {
+      #tab-workflow .wf-panel-banner:has(+ #ticketList > #wfMobTicketsHead:not(:empty)) .wf-count {
         margin-bottom: 6px !important
-      }
-
-      #tab-workflow .wf-panel-banner:has(#wfMobTicketsHead:not(:empty)) .wf-table-wrap--head {
-        margin-top: 0 !important;
-        padding-bottom: 0 !important
       }
 
       #tab-workflow #wfMobTicketsHead:empty {
         display: none
       }
 
-      #tab-workflow #wfMobTicketsHead:not(:empty) {
+      #tab-workflow #ticketList > #wfMobTicketsHead:not(:empty) {
         display: block;
-        margin-inline: -8px;
-        margin-bottom: 0;
-        width: calc(100% + 16px);
-        max-width: none;
-        padding-inline: 4px;
+        flex-shrink: 0;
+        margin: 0;
+        width: 100%;
+        max-width: 100%;
+        padding: 0;
         box-sizing: border-box;
         line-height: 0;
         background: var(--mr-bg);
         overflow: visible
       }
 
-      #tab-workflow #wfMobTicketsHead .wf-tickets-table--mob-head thead th:first-child {
+      #tab-workflow #ticketList > #wfMobTicketsHead .wf-tickets-table--mob-head thead th:first-child {
         border-radius: 0 12px 12px 0 !important
       }
 
-      #tab-workflow #wfMobTicketsHead .wf-tickets-table--mob-head thead th:last-child {
+      #tab-workflow #ticketList > #wfMobTicketsHead .wf-tickets-table--mob-head thead th:last-child {
         border-radius: 12px 0 0 12px !important
       }
 
-      #tab-workflow #wfMobTicketsHead .wf-table-wrap--head {
+      #tab-workflow #ticketList > #wfMobTicketsHead .wf-table-wrap--head {
         margin: 0;
         padding: 0;
         line-height: 0;
         overflow: hidden;
         box-sizing: border-box;
+        width: 100%;
         scrollbar-width: none
       }
 
-      #tab-workflow #wfMobTicketsHead .wf-table-wrap--head::-webkit-scrollbar {
+      #tab-workflow #ticketList > #wfMobTicketsHead .wf-table-wrap--head::-webkit-scrollbar {
         display: none
       }
 
-      #tab-workflow #wfMobTicketsHead .wf-tickets-table--mob-head {
+      #tab-workflow #ticketList > #wfMobTicketsHead .wf-tickets-table--mob-head {
         display: table;
         margin: 0 !important;
         font-size: 13px;
         line-height: normal;
         vertical-align: top;
         border-collapse: separate !important;
-        border-spacing: 0 !important
+        border-spacing: 0 !important;
+        width: 100% !important
+      }
+
+      #tab-workflow #ticketList > #wfMobTicketsHead .wf-tickets-table--mob-head thead th {
+        background: var(--mr-surface) !important;
+        opacity: 1 !important;
+        height: 34px !important;
+        border: 1px solid color-mix(in srgb, var(--mr-border) 88%, transparent) !important;
+        border-bottom: 1px solid color-mix(in srgb, var(--mr-border) 88%, transparent) !important;
+        box-shadow: 0 2px 10px rgba(15, 18, 36, 0.06) !important
       }
 
       #tab-workflow .wf-tickets-table--mob-head,
@@ -18179,15 +18185,7 @@
         border-spacing: 0 10px !important
       }
 
-      #tab-workflow #wfMobTicketsHead .wf-tickets-table--mob-head thead th {
-        background: var(--mr-surface) !important;
-        opacity: 1 !important;
-        height: 34px !important;
-        border-bottom: 1px solid var(--mr-border) !important;
-        box-shadow: none !important
-      }
-
-      #tab-workflow .wf-panel-banner:has(#wfMobTicketsHead:not(:empty)) + #ticketList > .wf-mob-tickets-body {
+      #tab-workflow #ticketList > #wfMobTicketsHead:not(:empty) + .wf-mob-tickets-body {
         margin-top: 0 !important;
         padding-top: 0 !important
       }
@@ -18203,7 +18201,9 @@
         border: none !important;
         overflow: visible;
         display: flex;
-        flex-direction: column
+        flex-direction: column;
+        box-sizing: border-box;
+        padding-inline: 4px
       }
 
       #tab-workflow #ticketList > .wf-mob-tickets-body {
@@ -18211,7 +18211,7 @@
         min-height: 0;
         width: 100%;
         box-sizing: border-box;
-        padding-inline: 4px;
+        padding-inline: 0;
         overflow-x: hidden;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
@@ -24934,9 +24934,10 @@
                   </div>
                 </div>
                 <div class="wf-count">عدد النتائج: <strong id="wf-count">0</strong></div>
+              </div>
+              <div id="ticketList" class="wf-desk-tickets-host">
                 <div id="wfMobTicketsHead" class="wf-mob-tickets-head" aria-hidden="true"></div>
               </div>
-              <div id="ticketList" class="wf-desk-tickets-host"></div>
             </div>
           </div>
 
@@ -37817,6 +37818,31 @@
         return parseDbJsonArray(t && t.attachments).length;
       }
 
+      function resetTicketListChildren(list, keepMobHead) {
+        if (!list) return;
+        const mobHead = keepMobHead ? list.querySelector('#wfMobTicketsHead') : null;
+        [...list.children].forEach((child) => {
+          if (child !== mobHead) child.remove();
+        });
+      }
+
+      function getOrCreateTicketMobBody(list) {
+        let body = list.querySelector(':scope > .wf-mob-tickets-body');
+        if (!body) {
+          body = document.createElement('div');
+          body.className = 'wf-mob-tickets-body';
+          list.appendChild(body);
+        }
+        return body;
+      }
+
+      function appendTicketListHtml(list, html, keepMobHead) {
+        resetTicketListChildren(list, keepMobHead);
+        const slot = document.createElement('div');
+        slot.innerHTML = html;
+        while (slot.firstChild) list.appendChild(slot.firstChild);
+      }
+
       function renderTicketList(tickets, opts) {
         const view = (opts && opts.view) || 'workflow';
         const reportHost = !!(opts && opts.host === 'reports');
@@ -37835,13 +37861,13 @@
             mobHead.innerHTML = '';
             mobHead.setAttribute('aria-hidden', 'true');
           }
-          if (isAppDataPending()) {
-            list.innerHTML = dataLoadingEmptyHTML(isReportsList ? 'جاري تحميل التقارير…' : 'جاري تحميل التذاكر…');
-          } else {
-            list.innerHTML = isReportsList
+          const emptyHtml = isAppDataPending()
+            ? dataLoadingEmptyHTML(isReportsList ? 'جاري تحميل التقارير…' : 'جاري تحميل التذاكر…')
+            : (isReportsList
               ? '<div class="empty"><i class="fas fa-inbox"></i><p>لا توجد بيانات في الفترة المحددة</p></div>'
-              : '<div class="empty"><i class="fas fa-inbox"></i><p>لا توجد تذاكر مطابقة</p></div>';
-          }
+              : '<div class="empty"><i class="fas fa-inbox"></i><p>لا توجد تذاكر مطابقة</p></div>');
+          if (isReportsList) list.innerHTML = emptyHtml;
+          else appendTicketListHtml(list, emptyHtml, true);
           return;
         }
 
@@ -37910,15 +37936,22 @@
         </div>`;
             mobHead.setAttribute('aria-hidden', 'false');
           }
-          list.innerHTML = `
-    <div class="wf-mob-tickets-body">
+          const mobBodyHtml = `
       <div class="wf-table-wrap wf-table-wrap--body">
         <table class="${bodyTableCls}">
           <colgroup>${colgroupHtml}</colgroup>
           <tbody>${tbodyHtml}</tbody>
         </table>
-      </div>
+      </div>`;
+          if (isReportsList) {
+            list.innerHTML = `
+    <div class="wf-mob-tickets-body">
+      ${mobBodyHtml}
     </div>`;
+          } else {
+            resetTicketListChildren(list, true);
+            getOrCreateTicketMobBody(list).innerHTML = mobBodyHtml;
+          }
           const scrollTab = isReportsList ? 'reports' : 'workflow';
           requestAnimationFrame(() => requestAnimationFrame(() => bindMobTicketsHeadScroll(scrollTab)));
           return;
@@ -38027,7 +38060,7 @@
           return;
         }
 
-        list.innerHTML = `
+        const deskHtml = `
     <div class="wf-table-wrap">
       <table class="data-table wf-tickets-table">
         <colgroup>${colgroupHtml}</colgroup>
@@ -38035,6 +38068,8 @@
         <tbody>${tbodyHtml}</tbody>
       </table>
     </div>`;
+        if (isReportsList) list.innerHTML = deskHtml;
+        else appendTicketListHtml(list, deskHtml, true);
         syncDesktopWfTableColWidthsNow(isReportsList ? 'reports' : 'workflow', { fast: false });
       }
 
@@ -38347,7 +38382,23 @@
         const scrollBarW = Math.max(0, outerW - innerW);
         const bodyCs = getComputedStyle(bodyScroll);
         const bodyPadX = (parseFloat(bodyCs.paddingLeft) || 0) + (parseFloat(bodyCs.paddingRight) || 0);
-        const tableW = Math.max(0, innerW - bodyPadX);
+        let tableW = Math.max(0, innerW - bodyPadX);
+        if (root.listId === 'ticketList') {
+          const listHost = document.getElementById('ticketList');
+          const listCs = listHost ? getComputedStyle(listHost) : null;
+          const listPadX = listCs
+            ? (parseFloat(listCs.paddingLeft) || 0) + (parseFloat(listCs.paddingRight) || 0)
+            : 0;
+          const listInnerW = listHost ? Math.max(0, listHost.clientWidth - listPadX) : tableW;
+          headHost.style.width = '100%';
+          headHost.style.maxWidth = '100%';
+          headWrap.style.width = '100%';
+          headWrap.style.maxWidth = '100%';
+          headWrap.style.paddingInline = '0';
+          headTable.style.width = '100%';
+          bodyTable.style.width = '100%';
+          tableW = bodyTable.offsetWidth || listInnerW;
+        }
         const tablePx = `${tableW}px`;
         const innerPx = `${innerW}px`;
         const outerPx = `${outerW}px`;
@@ -38364,11 +38415,7 @@
         }
         if (headWrap) {
           headWrap.style.boxSizing = 'border-box';
-          if (root.listId === 'ticketList') {
-            headWrap.style.width = '100%';
-            headWrap.style.maxWidth = '100%';
-            headWrap.style.paddingInline = '0';
-          } else {
+          if (root.listId !== 'ticketList') {
             headWrap.style.width = outerPx;
             headWrap.style.maxWidth = outerPx;
           }
@@ -38380,9 +38427,11 @@
           }
         }
 
-        headTable.style.width = root.listId === 'ticketList' ? tablePx : innerPx;
+        if (root.listId !== 'ticketList') {
+          headTable.style.width = innerPx;
+          bodyTable.style.width = innerPx;
+        }
         headTable.style.transform = '';
-        bodyTable.style.width = root.listId === 'ticketList' ? tablePx : innerPx;
 
         const setColW = (el, px) => {
           if (!el) return;
