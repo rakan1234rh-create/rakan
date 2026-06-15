@@ -11,6 +11,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
+  <script src="https://unpkg.com/coi-serviceworker@0.1.7/coi-serviceworker.min.js"></script>
   <script id="mobPortraitLockEarly">(function () {
     function isMobLandscape() {
       if (window.matchMedia('(min-width: 993px)').matches) return false;
@@ -36437,9 +36438,11 @@
         if (!_ffmpegWasmPromise) {
           _ffmpegWasmPromise = (async () => {
             const coreVer = '0.12.6';
-            const base = `https://cdn.jsdelivr.net/npm/@ffmpeg/core@${coreVer}/dist/esm`;
-            const { FFmpeg } = await import(`https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js`);
-            const { fetchFile, toBlobURL } = await import(`https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/esm/index.js`);
+            const ffmpegVer = '0.12.10';
+            const coreBase = `https://cdn.jsdelivr.net/npm/@ffmpeg/core@${coreVer}/dist/esm`;
+            const ffmpegBase = `https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@${ffmpegVer}/dist/esm`;
+            const { FFmpeg } = await import(`${ffmpegBase}/index.js`);
+            const { fetchFile, toBlobURL } = await import('https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/esm/index.js');
             const ff = new FFmpeg();
             ff.on('log', ({ message }) => {
               if (isMirsadDebugLog()) console.log('[ffmpeg]', message);
@@ -36449,10 +36452,21 @@
                 _transcodeProgressCb(Math.min(99, Math.round((progress || 0) * 100)));
               }
             });
-            await ff.load({
-              coreURL: await toBlobURL(`${base}/ffmpeg-core.js`, 'text/javascript'),
-              wasmURL: await toBlobURL(`${base}/ffmpeg-core.wasm`, 'application/wasm'),
-            });
+            try {
+              await ff.load({
+                coreURL: await toBlobURL(`${coreBase}/ffmpeg-core.js`, 'text/javascript'),
+                wasmURL: await toBlobURL(`${coreBase}/ffmpeg-core.wasm`, 'application/wasm'),
+                workerURL: await toBlobURL(`${coreBase}/ffmpeg-core.worker.js`, 'text/javascript'),
+                classWorkerURL: await toBlobURL(`${ffmpegBase}/worker.js`, 'text/javascript'),
+              });
+            } catch (loadErr) {
+              _ffmpegWasmPromise = null;
+              const msg = String(loadErr?.message || loadErr);
+              if (/Worker|cross-origin|SharedArrayBuffer|crossOriginIsolated/i.test(msg)) {
+                throw new Error('تعذّر تحميل محرّك التحويل — حدّث الصفحة (Ctrl+Shift+R) وانتظر إعادة التحميل التلقائية.');
+              }
+              throw loadErr;
+            }
             return { ff, fetchFile };
           })();
         }
