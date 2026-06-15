@@ -14994,7 +14994,8 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      will-change: transform
+      will-change: transform;
+      transition: transform 0.22s ease
     }
 
     .att-viewer-content {
@@ -15122,7 +15123,12 @@
     }
 
     .att-viewer-drag-zone {
-      touch-action: manipulation
+      touch-action: pan-y
+    }
+
+    .att-viewer-load-wrap video,
+    #attViewerContent > video {
+      touch-action: none
     }
 
     .att-viewer.att-dragging .att-viewer-stage {
@@ -38640,9 +38646,7 @@
       function guardAttViewerVideoClicks(el) {
         if (!el || el.dataset.attClickGuard === '1') return;
         el.dataset.attClickGuard = '1';
-        const stop = (e) => e.stopPropagation();
-        el.addEventListener('click', stop);
-        el.addEventListener('pointerup', stop);
+        el.addEventListener('click', (e) => e.stopPropagation());
       }
 
       function attViewerMediaHitPad(el) {
@@ -38994,8 +38998,25 @@
         renderAttViewer();
       }
 
-      const _attViewerDrag = { active: false, startY: 0, deltaY: 0, pointerId: null };
+      const _attViewerDrag = {
+        active: false,
+        pending: false,
+        didDrag: false,
+        startY: 0,
+        startX: 0,
+        deltaY: 0,
+        pointerId: null
+      };
       const _attViewerPointer = { valid: false, downOnMedia: false };
+      const ATT_VIEWER_DRAG_ACTIVATE_PX = 14;
+
+      function resetAttViewerDragVisual(viewer, stage) {
+        if (stage) {
+          stage.style.transition = '';
+          stage.style.transform = '';
+        }
+        if (viewer) viewer.style.background = '';
+      }
 
       function closeAttViewer(event) {
         const viewer = document.getElementById('attViewer');
@@ -39010,13 +39031,15 @@
           if (_attViewerPointer.valid && _attViewerPointer.downOnMedia) return;
         }
         const stage = viewer?.querySelector('.att-viewer-stage');
-        viewer.classList.remove('open', 'att-dragging');
-        if (stage) stage.style.transform = '';
+        viewer?.classList.remove('open', 'att-dragging');
+        resetAttViewerDragVisual(viewer, stage);
         document.getElementById('attViewerContent').innerHTML = '';
         document.body.style.overflow = '';
         _attViewerDrag.active = false;
+        _attViewerDrag.pending = false;
         _attViewerDrag.pointerId = null;
         _attViewerDrag.deltaY = 0;
+        _attViewerDrag.didDrag = false;
       }
 
       function initAttViewerDrag() {
@@ -39034,61 +39057,96 @@
 
         viewer.addEventListener('click', (e) => {
           if (!viewer.classList.contains('open')) return;
+          if (_attViewerDrag.didDrag) {
+            _attViewerDrag.didDrag = false;
+            _attViewerPointer.valid = false;
+            _attViewerPointer.downOnMedia = false;
+            return;
+          }
           closeAttViewer(e);
           _attViewerPointer.valid = false;
           _attViewerPointer.downOnMedia = false;
         });
 
+        const dragCloseThreshold = () => Math.max(72, window.innerHeight * 0.12);
+
         const dragEnd = () => {
-          if (!_attViewerDrag.active) return;
+          if (!_attViewerDrag.active && !_attViewerDrag.pending) return;
+          const threshold = dragCloseThreshold();
+          const shouldClose = _attViewerDrag.active && _attViewerDrag.deltaY > threshold;
+          const dragged = _attViewerDrag.active;
           _attViewerDrag.active = false;
+          _attViewerDrag.pending = false;
+          if (dragged) _attViewerDrag.didDrag = true;
           viewer.classList.remove('att-dragging');
           zone.style.cursor = '';
-          const threshold = Math.max(72, window.innerHeight * 0.12);
-          if (Math.abs(_attViewerDrag.deltaY) > threshold) {
+          if (shouldClose) {
             closeAttViewer();
           } else {
+            stage.style.transition = '';
             stage.style.transform = '';
+            viewer.style.background = '';
           }
           _attViewerDrag.deltaY = 0;
           _attViewerDrag.pointerId = null;
         };
 
-        const dragMove = (clientY) => {
+        const dragMove = (clientX, clientY) => {
+          if (_attViewerDrag.pending && !_attViewerDrag.active) {
+            const dy = clientY - _attViewerDrag.startY;
+            const dx = clientX - _attViewerDrag.startX;
+            if (dy > ATT_VIEWER_DRAG_ACTIVATE_PX && dy > Math.abs(dx) * 1.15) {
+              _attViewerDrag.pending = false;
+              _attViewerDrag.active = true;
+              viewer.classList.add('att-dragging');
+              zone.style.cursor = 'grabbing';
+            } else if (Math.abs(dy) > ATT_VIEWER_DRAG_ACTIVATE_PX || Math.abs(dx) > ATT_VIEWER_DRAG_ACTIVATE_PX) {
+              _attViewerDrag.pending = false;
+              _attViewerDrag.pointerId = null;
+              return;
+            } else {
+              return;
+            }
+          }
           if (!_attViewerDrag.active) return;
-          _attViewerDrag.deltaY = clientY - _attViewerDrag.startY;
-          stage.style.transform = `translateY(${_attViewerDrag.deltaY}px)`;
-        };
-
-        const dragStart = (clientY) => {
-          if (!viewer.classList.contains('open')) return;
-          _attViewerDrag.active = true;
-          _attViewerDrag.startY = clientY;
-          _attViewerDrag.deltaY = 0;
-          viewer.classList.add('att-dragging');
-          zone.style.cursor = 'grabbing';
+          const dy = Math.max(0, clientY - _attViewerDrag.startY);
+          _attViewerDrag.deltaY = dy;
+          stage.style.transition = 'none';
+          stage.style.transform = `translateY(${dy}px)`;
+          const threshold = dragCloseThreshold();
+          const fade = Math.max(0.35, 1 - (dy / (threshold * 1.35)));
+          viewer.style.background = `rgba(0, 0, 0, ${0.92 * fade})`;
         };
 
         zone.addEventListener('pointerdown', (e) => {
           if (e.button !== undefined && e.button !== 0) return;
-          if (e.target.closest('.att-media-zoom-wrap, video, button, a, input, .att-viewer-nav')) return;
-          if (attViewerPointHitsMedia(viewer, e.clientX, e.clientY)) return;
+          if (e.target.closest('button, a, input, .att-viewer-nav')) return;
+          if (e.target.closest('.att-media-zoom-wrap.is-zoomed')) return;
+          if (!viewer.classList.contains('open')) return;
           _attViewerDrag.pointerId = e.pointerId;
-          dragStart(e.clientY);
+          _attViewerDrag.pending = true;
+          _attViewerDrag.active = false;
+          _attViewerDrag.startY = e.clientY;
+          _attViewerDrag.startX = e.clientX;
+          _attViewerDrag.deltaY = 0;
           try { zone.setPointerCapture(e.pointerId); } catch (_) { /* noop */ }
         });
 
         zone.addEventListener('pointermove', (e) => {
-          if (!_attViewerDrag.active || e.pointerId !== _attViewerDrag.pointerId) return;
-          dragMove(e.clientY);
+          if (e.pointerId !== _attViewerDrag.pointerId) return;
+          dragMove(e.clientX, e.clientY);
         });
 
         zone.addEventListener('pointerup', (e) => {
           if (e.pointerId !== _attViewerDrag.pointerId) return;
           dragEnd();
+          try { zone.releasePointerCapture(e.pointerId); } catch (_) { /* noop */ }
         });
 
-        zone.addEventListener('pointercancel', dragEnd);
+        zone.addEventListener('pointercancel', (e) => {
+          if (e.pointerId !== _attViewerDrag.pointerId && _attViewerDrag.pointerId != null) return;
+          dragEnd();
+        });
       }
 
       // التحكم بالكيبورد
