@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <script src="https://unpkg.com/coi-serviceworker@0.1.7/coi-serviceworker.min.js"></script>
+  <script src="coi-serviceworker.js"></script>
   <script id="mobPortraitLockEarly">(function () {
     function isMobLandscape() {
       if (window.matchMedia('(min-width: 993px)').matches) return false;
@@ -36456,7 +36456,6 @@
               await ff.load({
                 coreURL: await toBlobURL(`${coreBase}/ffmpeg-core.js`, 'text/javascript'),
                 wasmURL: await toBlobURL(`${coreBase}/ffmpeg-core.wasm`, 'application/wasm'),
-                workerURL: await toBlobURL(`${coreBase}/ffmpeg-core.worker.js`, 'text/javascript'),
                 classWorkerURL: await toBlobURL(`${ffmpegBase}/worker.js`, 'text/javascript'),
               });
             } catch (loadErr) {
