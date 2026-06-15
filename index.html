@@ -18133,7 +18133,8 @@
         padding-inline: 4px;
         box-sizing: border-box;
         line-height: 0;
-        background: var(--mr-bg)
+        background: var(--mr-bg);
+        overflow: visible
       }
 
       #tab-workflow #wfMobTicketsHead .wf-tickets-table--mob-head thead th:first-child {
@@ -18148,10 +18149,8 @@
         margin: 0;
         padding: 0;
         line-height: 0;
-        overflow-x: visible;
-        overflow-y: visible;
+        overflow: hidden;
         box-sizing: border-box;
-        -webkit-overflow-scrolling: touch;
         scrollbar-width: none
       }
 
@@ -18213,7 +18212,7 @@
         width: 100%;
         box-sizing: border-box;
         padding-inline: 4px;
-        overflow-x: auto;
+        overflow-x: hidden;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
         overscroll-behavior: contain;
@@ -18796,9 +18795,13 @@
         line-height: 1.1 !important
       }
 
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-body td.wf-col-emp,
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-head th.wf-col-emp {
+        text-align: center !important
+      }
+
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-body td.wf-col-emp {
         padding: 2px 4px 2px 2px !important;
-        text-align: start !important;
         white-space: nowrap !important;
         word-break: normal !important;
         overflow-wrap: normal !important;
@@ -18811,7 +18814,7 @@
         direction: rtl;
         width: 100%;
         max-width: 100%;
-        text-align: start;
+        text-align: center;
         overflow: hidden
       }
 
@@ -18820,7 +18823,7 @@
         max-width: 100%;
         font-size: 10px !important;
         font-weight: 600;
-        text-align: start;
+        text-align: center;
         line-height: 1.25 !important;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -18948,7 +18951,7 @@
         order: 1;
         display: inline-flex;
         flex-direction: row;
-        direction: rtl;
+        direction: ltr;
         align-items: baseline;
         justify-content: center;
         gap: 3px;
@@ -27782,7 +27785,7 @@
           if (isNaN(h)) return Sec.escapeHTML(timeStr);
           const ampm = h >= 12 ? 'م' : 'ص';
           const h12 = h % 12 || 12;
-          return `<span class="wf-time-ampm">${Sec.escapeHTML(ampm)}</span><span class="wf-time-hm" dir="ltr">${Sec.escapeHTML(h12 + ':' + m)}</span>`;
+          return `<span class="wf-time-hm" dir="ltr">${Sec.escapeHTML(h12 + ':' + m)}</span><span class="wf-time-ampm">${Sec.escapeHTML(ampm)}</span>`;
         } catch {
           return Sec.escapeHTML(timeStr);
         }
@@ -38356,6 +38359,10 @@
           headWrap.style.maxWidth = outerPx;
           headWrap.style.marginInline = root.listId === 'reportList' ? 'auto' : '0';
           headWrap.style.paddingInlineEnd = (root.listId === 'reportList' && scrollBarW) ? `${scrollBarW}px` : '';
+          if (root.listId === 'ticketList') {
+            headWrap.style.overflow = 'hidden';
+            headWrap.scrollLeft = 0;
+          }
         }
 
         headTable.style.width = innerPx;
@@ -38456,7 +38463,7 @@
         });
 
         const slip = tds[0].getBoundingClientRect().left - ths[0].getBoundingClientRect().left;
-        if (root.listId !== 'ticketList' && Math.abs(slip) > 0.5) headTable.style.transform = `translateX(${slip}px)`;
+        if (Math.abs(slip) > 0.5) headTable.style.transform = `translateX(${slip}px)`;
       }
 
       function bindMobTicketsHeadScroll(tab) {
@@ -38465,8 +38472,13 @@
         const headWrap = document.querySelector(`${root.tabSel} #${root.headId} .wf-table-wrap--head`);
         if (!bodyScroll || !headWrap) return;
 
-        bodyScroll.onscroll = () => { headWrap.scrollLeft = bodyScroll.scrollLeft; };
-        headWrap.scrollLeft = bodyScroll.scrollLeft;
+        if (root.listId === 'ticketList') {
+          bodyScroll.onscroll = null;
+          headWrap.scrollLeft = 0;
+        } else {
+          bodyScroll.onscroll = () => { headWrap.scrollLeft = bodyScroll.scrollLeft; };
+          headWrap.scrollLeft = bodyScroll.scrollLeft;
+        }
         syncMobTicketsColWidths(tab);
         const syncKey = root.listId === 'reportList' ? 'rpColSyncBound' : 'wfColSyncBound';
         if (!bodyScroll.dataset[syncKey]) {
