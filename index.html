@@ -38345,18 +38345,33 @@
         const outerW = bodyScroll.offsetWidth;
         const innerW = bodyScroll.clientWidth;
         const scrollBarW = Math.max(0, outerW - innerW);
+        const bodyCs = getComputedStyle(bodyScroll);
+        const bodyPadX = (parseFloat(bodyCs.paddingLeft) || 0) + (parseFloat(bodyCs.paddingRight) || 0);
+        const tableW = Math.max(0, innerW - bodyPadX);
+        const tablePx = `${tableW}px`;
         const innerPx = `${innerW}px`;
         const outerPx = `${outerW}px`;
 
         if (headHost) {
-          headHost.style.width = outerPx;
-          headHost.style.maxWidth = outerPx;
+          if (root.listId === 'ticketList') {
+            headHost.style.width = '100%';
+            headHost.style.maxWidth = '100%';
+          } else {
+            headHost.style.width = outerPx;
+            headHost.style.maxWidth = outerPx;
+          }
           headHost.style.marginInline = '0';
         }
         if (headWrap) {
           headWrap.style.boxSizing = 'border-box';
-          headWrap.style.width = outerPx;
-          headWrap.style.maxWidth = outerPx;
+          if (root.listId === 'ticketList') {
+            headWrap.style.width = '100%';
+            headWrap.style.maxWidth = '100%';
+            headWrap.style.paddingInline = '0';
+          } else {
+            headWrap.style.width = outerPx;
+            headWrap.style.maxWidth = outerPx;
+          }
           headWrap.style.marginInline = root.listId === 'reportList' ? 'auto' : '0';
           headWrap.style.paddingInlineEnd = (root.listId === 'reportList' && scrollBarW) ? `${scrollBarW}px` : '';
           if (root.listId === 'ticketList') {
@@ -38365,9 +38380,9 @@
           }
         }
 
-        headTable.style.width = innerPx;
+        headTable.style.width = root.listId === 'ticketList' ? tablePx : innerPx;
         headTable.style.transform = '';
-        bodyTable.style.width = innerPx;
+        bodyTable.style.width = root.listId === 'ticketList' ? tablePx : innerPx;
 
         const setColW = (el, px) => {
           if (!el) return;
@@ -38379,9 +38394,10 @@
         const raw = Array.from(tds, td => td.offsetWidth);
         let sum = raw.reduce((a, b) => a + b, 0);
         if (!sum) return;
-        let widths = raw.map(w => Math.floor((w / sum) * innerW));
+        let widths = raw.map(w => Math.floor((w / sum) * (root.listId === 'ticketList' ? tableW : innerW)));
         let used = widths.reduce((a, b) => a + b, 0);
-        for (let i = 0; used < innerW; i = (i + 1) % widths.length) {
+        const targetW = root.listId === 'ticketList' ? tableW : innerW;
+        for (let i = 0; used < targetW; i = (i + 1) % widths.length) {
           widths[i] += 1;
           used += 1;
         }
