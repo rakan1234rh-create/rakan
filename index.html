@@ -18130,15 +18130,18 @@
         margin-bottom: 0;
         width: 100%;
         max-width: none;
-        padding: 0 8px;
+        padding: 0;
         box-sizing: border-box;
         line-height: 0;
         background: var(--mr-bg)
       }
 
-      #tab-workflow #wfMobTicketsHead .wf-tickets-table--mob-head thead th:first-child,
+      #tab-workflow #wfMobTicketsHead .wf-tickets-table--mob-head thead th:first-child {
+        border-radius: 0 12px 12px 0 !important
+      }
+
       #tab-workflow #wfMobTicketsHead .wf-tickets-table--mob-head thead th:last-child {
-        border-radius: 0 !important
+        border-radius: 12px 0 0 12px !important
       }
 
       #tab-workflow #wfMobTicketsHead .wf-table-wrap--head {
@@ -18209,7 +18212,7 @@
         min-height: 0;
         width: 100%;
         box-sizing: border-box;
-        padding-inline: 8px;
+        padding-inline: 0;
         overflow-x: auto;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
@@ -18475,6 +18478,10 @@
         opacity: 1 !important
       }
 
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob thead tr > th.wf-col-violation {
+        text-align: center !important
+      }
+
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob thead tr > th.wf-col-ticket,
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob thead tr > th.wf-col-emp,
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob thead tr > th.wf-col-violation,
@@ -18527,11 +18534,11 @@
       }
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob col.wf-col-emp-c {
-        width: 21% !important
+        width: 28% !important
       }
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob col.wf-col-viol-c {
-        width: 24% !important
+        width: 17% !important
       }
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob col.wf-col-branch-c,
@@ -18544,7 +18551,7 @@
       }
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob col.wf-col-datetime-c {
-        width: 12% !important
+        width: 14% !important
       }
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table col.wf-col-status-c {
@@ -18554,8 +18561,8 @@
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob col.wf-col-status-c,
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-head col.wf-col-status-c,
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-body col.wf-col-status-c {
-        width: 10% !important;
-        max-width: 10% !important
+        width: 25% !important;
+        max-width: 25% !important
       }
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob col.wf-col-action-c,
@@ -18570,36 +18577,37 @@
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-body col.wf-col-emp-c,
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-head th.wf-col-emp,
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-body td.wf-col-emp {
-        width: 21% !important;
+        width: 28% !important;
         min-width: 0 !important;
-        max-width: 21% !important
+        max-width: 28% !important
       }
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-head col.wf-col-viol-c,
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-body col.wf-col-viol-c,
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-head th.wf-col-violation,
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-body td.wf-col-violation {
-        width: 24% !important;
+        width: 17% !important;
         min-width: 0 !important;
-        max-width: 24% !important
+        max-width: 17% !important;
+        text-align: center !important
       }
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-head col.wf-col-datetime-c,
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-body col.wf-col-datetime-c,
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-head th.wf-col-datetime,
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-body td.wf-col-datetime {
-        width: 12% !important;
+        width: 14% !important;
         min-width: 0 !important;
-        max-width: 12% !important
+        max-width: 14% !important
       }
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-head col.wf-col-status-c,
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-body col.wf-col-status-c,
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-head th.wf-col-status,
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-body td.wf-col-status {
-        width: 10% !important;
+        width: 25% !important;
         min-width: 0 !important;
-        max-width: 10% !important
+        max-width: 25% !important
       }
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) col.wf-col-action-c {
@@ -18683,8 +18691,8 @@
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob col.wf-col-ticket-c,
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-head col.wf-col-ticket-c,
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-body col.wf-col-ticket-c {
-        width: 8% !important;
-        max-width: 8% !important
+        width: 7% !important;
+        max-width: 7% !important
       }
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-head th.wf-col-ticket,
@@ -18790,31 +18798,55 @@
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-body td.wf-col-emp {
         padding: 2px 4px 2px 2px !important;
-        text-align: start !important
+        text-align: start !important;
+        white-space: nowrap !important;
+        word-break: normal !important;
+        overflow-wrap: normal !important;
+        max-width: none !important;
+        width: 28% !important
       }
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob .wf-emp-cell {
-        display: inline-flex !important;
-        flex-direction: row;
+        display: block !important;
         direction: rtl;
-        justify-content: flex-start;
-        align-items: center;
         width: 100%;
         max-width: 100%;
-        text-align: start
+        text-align: start;
+        overflow: hidden
       }
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob .wf-emp-name {
-        flex: 0 1 auto;
-        min-width: 0;
+        display: block;
+        max-width: 100%;
         font-size: 10px !important;
         font-weight: 600;
-        text-align: start
+        text-align: start;
+        line-height: 1.25 !important;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap !important
+      }
+
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob .wf-viol-cell {
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        text-align: center !important
       }
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob .wf-viol-name {
         font-size: 10px !important;
-        font-weight: 700
+        font-weight: 700;
+        text-align: center !important;
+        line-height: 1.25 !important
+      }
+
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-body td.wf-col-violation {
+        text-align: center !important;
+        white-space: normal !important;
+        word-break: break-word !important;
+        overflow-wrap: anywhere !important;
+        max-width: none !important
       }
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob .wf-process-btn,
@@ -18901,44 +18933,51 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 15px;
+        gap: 2px;
         width: 100%;
         max-width: 100%;
-        line-height: 1.15;
+        line-height: 1.2;
         white-space: nowrap;
-        text-align: center
+        text-align: center;
+        font-family: var(--font);
+        font-size: 10px !important;
+        color: var(--mr-text)
       }
 
       #tab-workflow .wf-datetime-stack__time {
         order: 1;
         display: inline-flex;
         flex-direction: row;
-        direction: rtl;
+        direction: ltr;
         align-items: baseline;
         justify-content: center;
-        gap: 1px;
+        gap: 3px;
         unicode-bidi: isolate;
-        font-family: var(--mono);
-        line-height: 1.1;
-        white-space: nowrap
+        font-family: var(--font);
+        font-size: 10px !important;
+        line-height: 1.2;
+        white-space: nowrap;
+        color: var(--mr-text)
       }
 
       #tab-workflow .wf-time-hm {
         direction: ltr;
         unicode-bidi: embed;
-        font-size: 9px;
+        font-size: 10px !important;
         font-weight: 600;
+        font-family: var(--font);
         color: var(--mr-text) !important;
         opacity: 1 !important;
-        letter-spacing: 0.02em
+        letter-spacing: 0
       }
 
       #tab-workflow .wf-time-ampm {
-        font-size: 9px;
+        font-size: 10px !important;
         font-weight: 600;
+        font-family: var(--font);
         color: var(--mr-text) !important;
         opacity: 1 !important;
-        line-height: 1
+        line-height: 1.2
       }
 
       #tab-workflow .wf-datetime-stack__date {
@@ -18946,13 +18985,13 @@
         display: block;
         width: 100%;
         text-align: center;
-        font-family: var(--mono);
+        font-family: var(--font);
         font-weight: 600;
         color: var(--mr-text) !important;
         opacity: 1 !important;
-        font-size: 9px;
-        line-height: 1.1;
-        letter-spacing: 0.02em
+        font-size: 10px !important;
+        line-height: 1.2;
+        letter-spacing: 0
       }
 
       /* التقارير — الوقت فوق التاريخ */
@@ -19023,26 +19062,35 @@
       }
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob .wf-datetime-stack {
-        gap: 8px !important;
-        max-width: 100%
+        gap: 2px !important;
+        max-width: 100%;
+        font-size: 10px !important;
+        line-height: 1.2 !important;
+        font-family: var(--font) !important
       }
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob .wf-datetime-stack__date {
-        font-size: 9px !important;
+        font-size: 10px !important;
+        font-family: var(--font) !important;
+        line-height: 1.2 !important;
         overflow: hidden;
         text-overflow: ellipsis
       }
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob .wf-time-hm,
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob .wf-time-ampm {
-        font-size: 9px !important
+        font-size: 10px !important;
+        font-family: var(--font) !important
       }
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-head th.wf-col-status,
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-body td.wf-col-status {
-        padding: 2px 2px !important;
+        padding: 4px 5px !important;
         text-align: center !important;
-        overflow: hidden !important
+        overflow: visible !important;
+        white-space: normal !important;
+        word-break: break-word !important;
+        line-height: 1.3 !important
       }
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-head th.wf-col-action,
@@ -19300,11 +19348,11 @@
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob .badge {
         font-size: 9px !important;
-        padding: 4px 5px !important;
+        padding: 4px 6px !important;
         line-height: 1.35;
         white-space: normal !important;
         word-break: break-word !important;
-        overflow: hidden;
+        overflow: visible;
         max-width: 100%;
         border-radius: 8px;
         display: inline-block;
@@ -27721,7 +27769,7 @@
         } catch { return timeStr; }
       }
 
-      /** وقت الجوال وسطح المكتب: ص/م ثم الساعة */
+      /** وقت الجوال وسطح المكتب: الساعة ثم ص/م */
       function formatMobTicketTimeHtml(timeStr) {
         if (!timeStr) return '-';
         try {
@@ -27732,7 +27780,7 @@
           if (isNaN(h)) return Sec.escapeHTML(timeStr);
           const ampm = h >= 12 ? 'م' : 'ص';
           const h12 = h % 12 || 12;
-          return `<span class="wf-time-ampm">${Sec.escapeHTML(ampm)}</span><span class="wf-time-hm" dir="ltr">${Sec.escapeHTML(h12 + ':' + m)}</span>`;
+          return `<span class="wf-time-hm" dir="ltr">${Sec.escapeHTML(h12 + ':' + m)}</span><span class="wf-time-ampm">${Sec.escapeHTML(ampm)}</span>`;
         } catch {
           return Sec.escapeHTML(timeStr);
         }
@@ -38298,13 +38346,13 @@
         if (headHost) {
           headHost.style.width = outerPx;
           headHost.style.maxWidth = outerPx;
-          headHost.style.marginInline = root.listId === 'reportList' ? '0' : '';
+          headHost.style.marginInline = '0';
         }
         if (headWrap) {
           headWrap.style.boxSizing = 'border-box';
           headWrap.style.width = outerPx;
           headWrap.style.maxWidth = outerPx;
-          headWrap.style.marginInline = root.listId === 'reportList' ? 'auto' : '';
+          headWrap.style.marginInline = root.listId === 'reportList' ? 'auto' : '0';
           headWrap.style.paddingInlineEnd = scrollBarW ? `${scrollBarW}px` : '';
         }
 
@@ -38346,6 +38394,42 @@
           rpRedistribute(Array.from(tds).findIndex(td => td.classList.contains('wf-col-branch')), 73);
           rpRedistribute(Array.from(tds).findIndex(td => td.classList.contains('wf-col-datetime')), 58);
           rpRedistribute(Array.from(tds).findIndex(td => td.classList.contains('wf-col-status')), 45);
+        } else if (root.listId === 'ticketList') {
+          const findIdx = (cls) => Array.from(tds).findIndex(td => td.classList.contains(cls));
+          const capCol = (cls, capPx) => {
+            const idx = findIdx(cls);
+            if (idx < 0 || widths[idx] <= capPx) return;
+            let excess = widths[idx] - capPx;
+            widths[idx] = capPx;
+            const receivers = [findIdx('wf-col-status'), findIdx('wf-col-emp')].filter(i => i >= 0);
+            let n = 0;
+            while (excess > 0 && receivers.length) {
+              widths[receivers[n % receivers.length]] += 1;
+              excess -= 1;
+              n += 1;
+            }
+          };
+          const ensureMin = (cls, minPx) => {
+            const idx = findIdx(cls);
+            if (idx < 0 || widths[idx] >= minPx) return;
+            let need = minPx - widths[idx];
+            const donors = [findIdx('wf-col-violation'), findIdx('wf-col-ticket'), findIdx('wf-col-datetime')].filter(i => i >= 0);
+            let n = 0;
+            while (need > 0 && donors.length) {
+              const d = donors[n % donors.length];
+              if (widths[d] > 36) {
+                widths[d] -= 1;
+                widths[idx] += 1;
+                need -= 1;
+              }
+              n += 1;
+              if (n > 500) break;
+            }
+          };
+          capCol('wf-col-datetime', 58);
+          capCol('wf-col-ticket', 42);
+          ensureMin('wf-col-status', 82);
+          ensureMin('wf-col-emp', 96);
         }
 
         widths.forEach((w, i) => {
