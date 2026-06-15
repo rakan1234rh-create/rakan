@@ -385,6 +385,23 @@
       padding-bottom: calc(var(--mr-mob-bottom-nav-h, 56px) + 16px) !important
     }
 
+    html.mr-mobile-ui #appWrap .main:has(#tab-workflow.active),
+    html.mr-mobile-ui #appWrap .main:has(#tab-reports.active),
+    html.mr-mobile-ui #appWrap .main:has(#tab-departments.active),
+    html.mr-mobile-ui #appWrap .main:has(#tab-violations.active),
+    html.mr-mobile-ui #appWrap .main:has(#tab-compliance.active) {
+      padding-inline: 0 !important;
+      overflow-x: visible !important
+    }
+
+    html.mr-mobile-ui #appWrap .content:has(#tab-workflow.active),
+    html.mr-mobile-ui #appWrap .content:has(#tab-reports.active),
+    html.mr-mobile-ui #appWrap .content:has(#tab-departments.active),
+    html.mr-mobile-ui #appWrap .content:has(#tab-violations.active),
+    html.mr-mobile-ui #appWrap .content:has(#tab-compliance.active) {
+      padding: 0 !important
+    }
+
     html.mr-mobile-ui.mr-tablet-landscape,
     html.mr-mobile-ui.mr-tablet-landscape body {
       width: 100%;
@@ -18015,32 +18032,30 @@
     }
 
     @media (max-width: 992px) {
-      /* معالجة التذاكر — تنسيق الجوال (المقياس 0.90 على #appWrap .content) */
-      .main:has(#tab-workflow.active) {
+      /* معالجة التذاكر — تنسيق الجوال */
+      html.mr-mobile-ui #appWrap .main:has(#tab-workflow.active) {
         padding-inline: 0 !important;
-        padding-block: 2px !important;
-        background: var(--mr-bg) !important
+        padding-block: 2px 0 !important;
+        padding-bottom: 0 !important;
+        background: var(--mr-bg) !important;
+        overflow-y: hidden !important;
+        overflow-x: visible !important;
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 auto;
+        min-height: 0
       }
 
-      .content:has(#tab-workflow.active) {
-        padding-inline: 0 !important;
-        padding-block: 0 !important;
+      html.mr-mobile-ui #appWrap .content:has(#tab-workflow.active) {
+        padding: 0 !important;
         max-width: 100% !important;
         background: var(--mr-bg) !important;
-        overflow: hidden !important;
+        overflow-x: visible !important;
+        overflow-y: hidden !important;
         flex: 1 1 auto;
         min-height: 0;
         display: flex;
         flex-direction: column
-      }
-
-      #appWrap .main:has(#tab-workflow.active) {
-        overflow: hidden !important;
-        display: flex;
-        flex-direction: column;
-        flex: 1 1 auto;
-        min-height: 0;
-        padding-bottom: 0 !important
       }
 
       #tab-workflow.tab-content {
@@ -18079,7 +18094,7 @@
       }
 
       #tab-workflow .wf-panel-banner {
-        padding: 10px 12px 6px;
+        padding: 10px 8px 6px;
         margin-bottom: 0;
         background: var(--mr-bg) !important;
         flex-shrink: 0;
@@ -18111,11 +18126,12 @@
 
       #tab-workflow #wfMobTicketsHead:not(:empty) {
         display: block;
-        margin-inline: -12px;
+        margin: 0;
         margin-bottom: 0;
-        width: calc(100% + 24px);
+        width: 100%;
         max-width: none;
-        padding: 0;
+        padding: 0 8px;
+        box-sizing: border-box;
         line-height: 0;
         background: var(--mr-bg)
       }
@@ -18129,9 +18145,15 @@
         margin: 0;
         padding: 0;
         line-height: 0;
-        overflow-x: hidden;
+        overflow-x: auto;
         overflow-y: hidden;
-        box-sizing: border-box
+        box-sizing: border-box;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none
+      }
+
+      #tab-workflow #wfMobTicketsHead .wf-table-wrap--head::-webkit-scrollbar {
+        display: none
       }
 
       #tab-workflow #wfMobTicketsHead .wf-tickets-table--mob-head {
@@ -18152,7 +18174,7 @@
 
       #tab-workflow .wf-tickets-table--mob-body {
         border-collapse: separate !important;
-        border-spacing: 0 6px !important
+        border-spacing: 0 10px !important
       }
 
       #tab-workflow #wfMobTicketsHead .wf-tickets-table--mob-head thead th {
@@ -18186,12 +18208,19 @@
         flex: 1 1 auto;
         min-height: 0;
         width: 100%;
+        box-sizing: border-box;
+        padding-inline: 8px;
         overflow-x: auto;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
         overscroll-behavior: contain;
         touch-action: pan-x pan-y;
-        padding-bottom: calc(var(--mr-mob-bottom-nav-h, 56px) + 16px)
+        padding-bottom: calc(var(--mr-mob-bottom-nav-h, 56px) + 16px);
+        scrollbar-width: none
+      }
+
+      #tab-workflow #ticketList > .wf-mob-tickets-body::-webkit-scrollbar {
+        display: none
       }
 
       #tab-workflow #ticketList > .wf-mob-tickets-body .wf-table-wrap--body {
@@ -18403,8 +18432,8 @@
         max-width: 100% !important;
         table-layout: auto !important;
         border-collapse: separate !important;
-        border-spacing: 0 8px !important;
-        font-size: 8px !important
+        border-spacing: 0 10px !important;
+        font-size: 10px !important
       }
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-head thead th,
@@ -18437,11 +18466,11 @@
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob thead th:first-child {
         border-inline-end-color: color-mix(in srgb, var(--mr-border) 52%, transparent) !important;
-        border-radius: 0 6px 6px 0 !important
+        border-radius: 0 12px 12px 0 !important
       }
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob thead th:last-child {
-        border-radius: 6px 0 0 6px !important;
+        border-radius: 12px 0 0 12px !important;
         color: var(--mr-text) !important;
         opacity: 1 !important
       }
@@ -18461,16 +18490,21 @@
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob tbody tr.wf-ticket-row > td {
         height: auto !important;
-        min-height: 32px !important;
+        min-height: 44px !important;
         max-height: none !important;
-        padding: 4px 3px !important;
-        line-height: 1.6 !important;
+        padding: 8px 6px !important;
+        line-height: 1.45 !important;
         white-space: normal !important;
         word-break: break-word !important;
         overflow-wrap: anywhere !important;
         overflow: visible !important;
         box-sizing: border-box !important;
-        vertical-align: middle !important
+        vertical-align: middle !important;
+        background: var(--mr-surface) !important;
+        border: 1px solid color-mix(in srgb, var(--mr-border) 88%, transparent) !important;
+        border-top: 1px solid color-mix(in srgb, var(--mr-border) 88%, transparent) !important;
+        border-bottom: 1px solid color-mix(in srgb, var(--mr-border) 88%, transparent) !important;
+        box-shadow: 0 2px 10px rgba(15, 18, 36, 0.06)
       }
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob tbody tr.wf-ticket-row > td.wf-ticket-cell {
@@ -18600,7 +18634,7 @@
       }
 
       #tab-workflow .wf-panel .data-table tbody td {
-        font-size: 8px !important;
+        font-size: 10px !important;
         font-weight: 600 !important;
         color: var(--mr-text) !important;
         opacity: 1 !important;
@@ -18614,13 +18648,17 @@
       }
 
       #tab-workflow .wf-panel .data-table tbody tr td:first-child {
-        border-inline-end: 1px solid transparent !important;
-        border-radius: 0 6px 6px 0 !important
+        border-inline-end: 1px solid color-mix(in srgb, var(--mr-border) 55%, transparent) !important;
+        border-radius: 0 12px 12px 0 !important
       }
 
       #tab-workflow .wf-panel .data-table tbody tr td:last-child {
         border-inline-start: 1px solid color-mix(in srgb, var(--mr-border) 55%, transparent) !important;
-        border-radius: 6px 0 0 6px !important
+        border-radius: 12px 0 0 12px !important
+      }
+
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-body tbody tr.wf-ticket-row:active > td {
+        background: color-mix(in srgb, var(--mr-primary) 5%, var(--mr-surface)) !important
       }
 
       #tab-workflow .wf-panel .data-table th:nth-child(1),
@@ -18769,13 +18807,13 @@
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob .wf-emp-name {
         flex: 0 1 auto;
         min-width: 0;
-        font-size: 9px !important;
+        font-size: 10px !important;
         font-weight: 600;
         text-align: start
       }
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob .wf-viol-name {
-        font-size: 9px !important;
+        font-size: 10px !important;
         font-weight: 700
       }
 
@@ -19262,16 +19300,18 @@
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob .badge {
         font-size: 9px !important;
-        padding: 2px 2px !important;
-        line-height: 1.4;
+        padding: 4px 5px !important;
+        line-height: 1.35;
         white-space: normal !important;
         word-break: break-word !important;
         overflow: hidden;
         max-width: 100%;
-        border-radius: 3px;
+        border-radius: 8px;
         display: inline-block;
         vertical-align: middle;
-        text-align: center
+        text-align: center;
+        font-weight: 700;
+        border: 1px solid color-mix(in srgb, currentColor 22%, transparent)
       }
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob .ticket-id-cell,
