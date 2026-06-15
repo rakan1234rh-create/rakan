@@ -36353,18 +36353,30 @@
         return String(_videoStreamFallback[cacheKey] || '').trim();
       }
 
-      function attachVideoSourceAndWait(vid, url, mimeType, maxMs) {
+      async function fetchR2VideoBlobUrl(url, mimeType) {
+        const res = await fetch(url, { method: 'GET', mode: 'cors', credentials: 'omit' });
+        if (!res.ok && res.status !== 206 && res.status !== 200) {
+          throw new Error('تعذّر تحميل الفيديو (' + res.status + ')');
+        }
+        const blob = await res.blob();
+        const type = mimeType || blob.type || 'video/mp4';
+        const b = blob.type && blob.type.startsWith('video/') ? blob : new Blob([blob], { type });
+        return URL.createObjectURL(b);
+      }
+
+      function attachVideoSourceAndWait(vid, url, mimeType, maxMs, useCors) {
         const waitMs = maxMs || 12000;
-        const mime = mimeType || 'video/mp4';
         return new Promise((resolve, reject) => {
           if (!vid) return reject(new Error('عنصر الفيديو غير موجود'));
           let done = false;
+          let maxTimer = null;
           const cleanup = () => {
-            clearTimeout(maxTimer);
+            if (maxTimer) clearTimeout(maxTimer);
             clearInterval(pollTimer);
             vid.removeEventListener('loadedmetadata', onReady);
             vid.removeEventListener('loadeddata', onReady);
             vid.removeEventListener('canplay', onReady);
+            vid.removeEventListener('canplaythrough', onReady);
             vid.removeEventListener('error', onErr);
           };
           const finish = (ok, err) => {
@@ -36375,12 +36387,27 @@
             else reject(err || new Error('تعذّر تشغيل الفيديو'));
           };
           const hasMeta = () => vid.readyState >= 1
+            || vid.readyState >= 2
             || (Number.isFinite(vid.duration) && vid.duration > 0);
           const onReady = () => { if (hasMeta()) finish(true); };
           const onErr = () => finish(false, new Error('تعذّر تشغيل الفيديو'));
+          const onTimeout = () => {
+            if (vid.networkState === 2) { scheduleTimeout(); return; }
+            if (vid.error) finish(false);
+            else if (hasMeta()) finish(true);
+            else finish(false, new Error('انتهت مهلة تحميل بيانات الفيديو'));
+          };
+          const scheduleTimeout = () => {
+            if (maxTimer) clearTimeout(maxTimer);
+            maxTimer = setTimeout(onTimeout, waitMs);
+          };
 
           vid.pause();
-          vid.removeAttribute('crossorigin');
+          if (useCors && /^https?:\/\//i.test(String(url))) {
+            vid.crossOrigin = 'anonymous';
+          } else {
+            vid.removeAttribute('crossorigin');
+          }
           vid.preload = 'auto';
           vid.playsInline = true;
           vid.controls = true;
@@ -36389,22 +36416,16 @@
           vid.style.opacity = '1';
           hideAttViewerLoader();
           vid.innerHTML = '';
-          const source = document.createElement('source');
-          source.src = url;
-          source.type = mime;
-          vid.appendChild(source);
+          vid.src = String(url);
           vid.load();
 
-          const maxTimer = setTimeout(() => {
-            if (vid.error) finish(false);
-            else if (hasMeta()) finish(true);
-            else finish(false, new Error('انتهت مهلة تحميل بيانات الفيديو'));
-          }, waitMs);
+          scheduleTimeout();
           const pollTimer = setInterval(() => { if (hasMeta()) finish(true); }, 300);
 
           vid.addEventListener('loadedmetadata', onReady);
           vid.addEventListener('loadeddata', onReady);
           vid.addEventListener('canplay', onReady);
+          vid.addEventListener('canplaythrough', onReady);
           vid.addEventListener('error', onErr);
         });
       }
@@ -36412,25 +36433,42 @@
       async function playVideoInViewer(vid, playUrl, mimeType, streamFallback) {
         const url = resolveMediaPlayUrl(playUrl);
         const fb = String(streamFallback || '').trim();
+        const mime = mimeType || 'video/mp4';
 
-        if (isFastVideoStreamUrl(url)) {
-          try {
-            await attachVideoSourceAndWait(vid, url, mimeType, isDirectR2SignedUrl(url) ? 8000 : 12000);
-            return url;
-          } catch (e) {
-            if (fb && fb !== url && isR2StreamPlayUrl(fb)) {
-              if (isMirsadDebugLog()) console.warn('[Viewer] R2 مباشر فشل — بث عبر Edge Function', e);
-              vid.src = '';
-              vid.innerHTML = '';
-              await attachVideoSourceAndWait(vid, fb, mimeType, 15000);
-              return fb;
-            }
-            throw e;
-          }
+        if (!isFastVideoStreamUrl(url)) {
+          await setVideoElementSource(vid, url, mime);
+          return url;
         }
 
-        await setVideoElementSource(vid, url, mimeType);
-        return url;
+        const r2Direct = isDirectR2SignedUrl(url);
+        const waitMs = r2Direct ? 35000 : 18000;
+
+        try {
+          await attachVideoSourceAndWait(vid, url, mime, waitMs, r2Direct || isR2StreamPlayUrl(url));
+          if (!vid.error && vid.readyState >= 1) return url;
+          throw new Error('تعذّر قراءة بيانات الفيديو');
+        } catch (e1) {
+          if (fb && fb !== url && isR2StreamPlayUrl(fb)) {
+            try {
+              if (isMirsadDebugLog()) console.warn('[Viewer] R2 مباشر فشل — بث عبر Edge Function', e1);
+              vid.src = '';
+              vid.innerHTML = '';
+              await attachVideoSourceAndWait(vid, fb, mime, 22000, true);
+              return fb;
+            } catch (_) { /* جرّب blob */ }
+          }
+          if (r2Direct) {
+            try {
+              if (isMirsadDebugLog()) console.warn('[Viewer] جرّب تحميل blob محلي من R2');
+              const blobUrl = await fetchR2VideoBlobUrl(url, mime);
+              vid.src = '';
+              vid.innerHTML = '';
+              await attachVideoSourceAndWait(vid, blobUrl, mime, 15000, false);
+              return blobUrl;
+            } catch (_) { /* أدناه */ }
+          }
+          throw e1;
+        }
       }
 
       async function loadAttachmentPlayUrl(fileId, fileName, ticketCtx) {
