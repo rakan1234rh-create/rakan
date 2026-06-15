@@ -25859,6 +25859,31 @@
         Object.keys(_cloudflareCache).forEach((k) => { delete _cloudflareCache[k]; });
       }
 
+      /** تجديد الجلسة إن قاربت على الانتهاء — يمنع 401 على r2-storage */
+      async function ensureSupabaseSessionFresh() {
+        const { data: { session } } = await sb.auth.getSession();
+        if (!session?.access_token) return null;
+        const expMs = session.expires_at ? session.expires_at * 1000 : 0;
+        if (!expMs || expMs - Date.now() > 90_000) return session;
+        const { data, error } = await sb.auth.refreshSession();
+        if (error || !data.session?.access_token) return session;
+        return data.session;
+      }
+
+      async function r2StoragePing(session) {
+        const token = session?.access_token;
+        if (!token) return null;
+        return fetch(R2_STORAGE_FN_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': SUPABASE_ANON,
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({ action: 'ping' }),
+        });
+      }
+
       /**
        * يحدد مسار التخزين: Edge Function (مُفضّل) ثم احتياط `/config` + AWS في المتصفح.
        */
@@ -25873,29 +25898,29 @@
         }
         if (_r2ResolvedMode !== undefined) return _r2ResolvedMode;
 
-        const { data: { session } } = await sb.auth.getSession();
+        let session = await ensureSupabaseSessionFresh();
 
         let edgePingStatus = null;
         if (session?.access_token) {
           try {
             _r2LastResolveNote = '';
-            const res = await fetch(R2_STORAGE_FN_URL, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'apikey': SUPABASE_ANON,
-                'Authorization': `Bearer ${session.access_token}`
-              },
-              body: JSON.stringify({ action: 'ping' })
-            });
-            edgePingStatus = res.status;
-            if (res.ok) {
+            let res = await r2StoragePing(session);
+            edgePingStatus = res?.status ?? null;
+            if (res?.status === 401) {
+              const { data } = await sb.auth.refreshSession();
+              if (data.session?.access_token) {
+                session = data.session;
+                res = await r2StoragePing(session);
+                edgePingStatus = res?.status ?? null;
+              }
+            }
+            if (res?.ok) {
               _r2EdgeRecheckAt = 0;
               _r2ResolvedMode = 'edge';
               _r2LastResolveNote = '';
               return 'edge';
             }
-            if (res.status === 503) {
+            if (res?.status === 503) {
               let hint = 'أضف أسرار R2 في Supabase → Edge Functions → r2-storage → Secrets (R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_ACCOUNT_ID, R2_BUCKET_NAME).';
               try {
                 const j = await res.clone().json();
@@ -25904,7 +25929,11 @@
               _r2LastResolveNote = 'سبب التخطي: r2-storage أرجع 503 (أسرار R2 أو إعداد الدالة). ' + hint;
               if (isMirsadDebugLog()) console.warn('[R2] الدالة r2-storage أرجعت 503 (الخدمة غير جاهزة).', hint);
             }
-            if (res.status !== 404 && res.status !== 405 && res.status !== 503 && res.status !== 401 && res.status !== 403) {
+            if (res?.status === 401) {
+              _r2LastResolveNote = 'سبب التخطي: r2-storage أرجع 401 — سجّل الخروج ثم الدخول من جديد، أو عطّل Enforce JWT Verification على الدالة.';
+              invalidateR2BackendResolution();
+            }
+            if (res && res.status !== 404 && res.status !== 405 && res.status !== 503 && res.status !== 401 && res.status !== 403) {
               _r2ResolvedMode = 'none';
               return 'none';
             }
@@ -25933,8 +25962,12 @@
       /**
        * استدعاء Edge Function للتخزين على R2 (توقيع فقط — الرفع مباشرة إلى R2).
        */
-      async function callR2StorageFn(action, payload = {}) {
-        const { data: { session } } = await sb.auth.getSession();
+      async function callR2StorageFn(action, payload = {}, allowRetry = true) {
+        let session = await ensureSupabaseSessionFresh();
+        if (!session?.access_token) {
+          const { data: { session: s2 } } = await sb.auth.getSession();
+          session = s2;
+        }
         if (!session?.access_token) {
           throw new Error('انتهت الجلسة، يرجى تسجيل الدخول من جديد');
         }
@@ -25952,9 +25985,19 @@
         let data = {};
         try { data = await res.json(); } catch (_) { }
 
+        if (res.status === 401 && allowRetry) {
+          invalidateR2BackendResolution();
+          const { data: refreshed } = await sb.auth.refreshSession();
+          if (refreshed.session?.access_token) {
+            return callR2StorageFn(action, payload, false);
+          }
+        }
+
         if (!res.ok) {
           const msg = data.error || data.message || `فشل التخزين (${res.status})`;
-          if (res.status === 401) throw new Error('انتهت الجلسة، يرجى تسجيل الدخول من جديد');
+          if (res.status === 401) {
+            throw new Error('انتهت الجلسة — سجّل الخروج ثم الدخول من جديد (أو تحقق من JWT على r2-storage في Supabase).');
+          }
           throw new Error(msg);
         }
         return data;
