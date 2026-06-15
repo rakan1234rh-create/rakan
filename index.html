@@ -11,6 +11,15 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
+  <script id="atharUnregisterCoiSw">(function () {
+    if (!('serviceWorker' in navigator)) return;
+    navigator.serviceWorker.getRegistrations().then(function (regs) {
+      regs.forEach(function (reg) {
+        var url = (reg.active && reg.active.scriptURL) || (reg.installing && reg.installing.scriptURL) || '';
+        if (/coi-serviceworker/i.test(url)) reg.unregister();
+      });
+    }).catch(function () {});
+  })();</script>
   <script id="mobPortraitLockEarly">(function () {
     function isMobLandscape() {
       if (window.matchMedia('(min-width: 993px)').matches) return false;
@@ -36412,26 +36421,15 @@
 
       async function sniffMp4VideoCodec(urlOrBlob) {
         try {
+          if (!(urlOrBlob instanceof Blob)) {
+            // لا fetch لروابط R2 — يتعارض مع Service Worker القديم وCORP
+            return 'unknown';
+          }
           const scanSize = 524288;
           const chunks = [];
-          if (urlOrBlob instanceof Blob) {
-            chunks.push(urlOrBlob.slice(0, Math.min(urlOrBlob.size, scanSize)));
-            if (urlOrBlob.size > scanSize) {
-              chunks.push(urlOrBlob.slice(Math.max(0, urlOrBlob.size - scanSize)));
-            }
-          } else {
-            const url = String(urlOrBlob);
-            const headRes = await fetch(url, { method: 'GET', headers: { Range: `bytes=0-${scanSize - 1}` } });
-            if (headRes.ok || headRes.status === 206) chunks.push(await headRes.blob());
-            let total = 0;
-            try {
-              const metaRes = await fetch(url, { method: 'HEAD' });
-              total = parseInt(metaRes.headers.get('Content-Length') || '0', 10) || 0;
-            } catch (_) { /* */ }
-            if (total > scanSize) {
-              const tailRes = await fetch(url, { method: 'GET', headers: { Range: `bytes=${total - scanSize}-${total - 1}` } });
-              if (tailRes.ok || tailRes.status === 206) chunks.push(await tailRes.blob());
-            }
+          chunks.push(urlOrBlob.slice(0, Math.min(urlOrBlob.size, scanSize)));
+          if (urlOrBlob.size > scanSize) {
+            chunks.push(urlOrBlob.slice(Math.max(0, urlOrBlob.size - scanSize)));
           }
           let sawH264 = false;
           for (const chunk of chunks) {
@@ -36907,7 +36905,7 @@
             } else if (isVid) {
               const vCodec = await sniffMp4VideoCodec(file);
               if (isHevcCodec(vCodec)) {
-                showToast('فيديو H.265 — لن يُشغّل في Chrome. غيّر الكاميرا إلى H.264 أو حمّله وافتحه في VLC.', 'error');
+                showToast('تحذير: قد لا يُشغّل هذا الفيديو داخل المنصة — جرّب H.264 من إعدادات التسجيل.', 'info');
               }
             }
 
