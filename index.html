@@ -104,7 +104,7 @@
   <link rel="stylesheet" href="styles/desktop/locations-shell.css" id="platform-locations-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/settings-shell.css" id="platform-settings-shell-link" media="screen and (min-width: 993px)">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script id="syncDesktopUiClassEarly">(function(){var isIpad=/iPad/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)||(/Android/i.test(navigator.userAgent)&&!/Mobile/i.test(navigator.userAgent));var isWide=window.matchMedia('(min-width:993px)').matches;var isTouch=window.matchMedia('(pointer:coarse)').matches;var d=isIpad||!isWide||isTouch;document.documentElement.classList.toggle('mr-desktop-ui',!d);document.documentElement.classList.toggle('mr-mobile-ui',d);})();</script>
+  <script id="syncDesktopUiClassEarly">(function(){var isIpad=/iPad/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)||(/Android/i.test(navigator.userAgent)&&!/Mobile/i.test(navigator.userAgent));var isWide=window.matchMedia('(min-width:993px)').matches;var isTouch=window.matchMedia('(pointer:coarse)').matches;var mob=isIpad||!isWide||isTouch;document.documentElement.classList.toggle('mr-desktop-ui',!mob);document.documentElement.classList.toggle('mr-mobile-ui',mob);var deskIds=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link'];for(var i=0;i<deskIds.length;i++){var el=document.getElementById(deskIds[i]);if(el)el.disabled=mob;}})();</script>
   
   <style id="mr-ui-shell-early-lock">
     html.mr-mobile-ui #appWrap #sidebar,
@@ -283,7 +283,102 @@
     }
 
     html.mr-mobile-ui {
-      --mr-mob-bottom-nav-h: calc(56px + env(safe-area-inset-bottom, 0px))
+      --mr-mob-bottom-nav-h: calc(56px + env(safe-area-inset-bottom, 0px));
+      --unified-topbar-h: calc(76px + var(--mr-safe-top, env(safe-area-inset-top, 0px)));
+      touch-action: manipulation;
+      -webkit-text-size-adjust: 100%
+    }
+
+    html.mr-mobile-ui #appWrap .topbar.unified-banner,
+    html.mr-mobile-ui .topbar.unified-banner {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      width: 100% !important;
+      z-index: 3000 !important;
+      height: calc(56px + var(--mr-safe-top, env(safe-area-inset-top, 0px))) !important;
+      min-height: calc(56px + var(--mr-safe-top, env(safe-area-inset-top, 0px))) !important;
+      max-height: calc(56px + var(--mr-safe-top, env(safe-area-inset-top, 0px))) !important;
+      flex-wrap: nowrap !important;
+      align-items: center !important;
+      padding-block-end: 8px !important;
+      padding-block-start: calc(8px + var(--mr-safe-top, env(safe-area-inset-top, 0px))) !important;
+      padding-inline-start: max(12px, var(--mr-safe-left, env(safe-area-inset-left, 0px))) !important;
+      padding-inline-end: max(4px, var(--mr-safe-right, env(safe-area-inset-right, 0px))) !important;
+      gap: 8px !important;
+      touch-action: none;
+      user-select: none
+    }
+
+    html.mr-mobile-ui .topbar-brand-zone {
+      flex: 1 1 auto;
+      min-width: 0;
+      gap: 10px !important
+    }
+
+    html.mr-mobile-ui .topbar-brand-divider {
+      display: none !important
+    }
+
+    html.mr-mobile-ui .topbar-actions-zone {
+      flex: 0 0 auto !important;
+      gap: 6px !important;
+      margin-inline-start: auto !important
+    }
+
+    html.mr-mobile-ui #appWrap.app {
+      display: flex;
+      flex-direction: column;
+      max-height: none;
+      overflow: hidden
+    }
+
+    html.mr-mobile-ui #appWrap > .app-shell {
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 auto;
+      width: 100%;
+      min-height: 0;
+      max-height: 100%;
+      padding-top: var(--unified-topbar-h, 76px);
+      padding-bottom: 0;
+      box-sizing: border-box;
+      overflow: hidden
+    }
+
+    html.mr-mobile-ui #appWrap .app-body {
+      flex: 1 1 auto;
+      min-height: 0;
+      margin-top: 0 !important;
+      overflow: hidden !important;
+      display: flex;
+      flex-direction: column
+    }
+
+    html.mr-mobile-ui #appWrap .main,
+    html.mr-mobile-ui .main {
+      flex: 1 1 auto;
+      min-height: 0;
+      padding: 12px !important;
+      max-width: 100% !important;
+      overflow-y: auto !important;
+      overflow-x: clip
+    }
+
+    html.mr-mobile-ui #appWrap .content,
+    html.mr-mobile-ui .content {
+      padding: clamp(12px, 3vw, 16px) !important;
+      max-width: 100% !important
+    }
+
+    html.mr-mobile-ui body.mirsad-app-active #appWrap.app {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      height: 100dvh;
+      max-height: none
     }
 
     html.mr-mobile-ui #appWrap .main {
@@ -291,6 +386,13 @@
     }
 
     html.mr-mobile-ui .sidebar-drawer-toggle.sidebar-toggle-btn {
+      display: none !important
+    }
+
+    html.mr-mobile-ui .topbar-clock,
+    html.mr-mobile-ui #topbarClock,
+    html.mr-mobile-ui #appWrap .topbar-clock,
+    html.mr-mobile-ui #appWrap #topbarClock {
       display: none !important
     }
 
@@ -17610,7 +17712,7 @@
     }
 
   @media (min-width: 993px) and (max-width: 1320px) {
-      .topbar.unified-banner {
+      html.mr-desktop-ui .topbar.unified-banner {
         height: auto;
         min-height: 64px;
         flex-wrap: wrap;
@@ -17619,16 +17721,16 @@
         gap: 10px 12px
       }
 
-      .topbar.unified-banner .brand-area {
+      html.mr-desktop-ui .topbar.unified-banner .brand-area {
         flex: 0 1 auto;
         min-width: 0
       }
 
-      .brand-area .brand-text strong {
+      html.mr-desktop-ui .brand-area .brand-text strong {
         font-size: clamp(15px, 2vw, 18px)
       }
 
-      .topbar-actions-zone {
+      html.mr-desktop-ui .topbar-actions-zone {
         flex: 0 0 auto;
         min-width: 0;
         flex-wrap: nowrap;
@@ -17637,17 +17739,17 @@
         margin-inline-start: auto
       }
 
-      .figma-search-wrap {
+      html.mr-desktop-ui .figma-search-wrap {
         flex: 1 1 200px;
         min-width: 0
       }
 
-      .topbar-divider,
-      .topbar-vdivider:not(.topbar-brand-divider) {
+      html.mr-desktop-ui .topbar-divider,
+      html.mr-desktop-ui .topbar-vdivider:not(.topbar-brand-divider) {
         display: none
       }
 
-      .mr-topbar-user {
+      html.mr-desktop-ui .mr-topbar-user {
         flex-shrink: 0;
         min-width: 0;
         max-width: none
@@ -24138,6 +24240,7 @@
   <link rel="stylesheet" href="styles/desktop/compliance-shell.css" id="platform-compliance-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
+  <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
   <meta name="app-build" content="athar-figma-v633-desktop-narrow-lock">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
@@ -28815,6 +28918,9 @@
         const desktop = isDesktopUi();
         document.documentElement.classList.toggle('mr-desktop-ui', desktop);
         document.documentElement.classList.toggle('mr-mobile-ui', !desktop);
+        if (typeof window.syncPlatformDesktopStylesheets === 'function') {
+          window.syncPlatformDesktopStylesheets(desktop);
+        }
         if (!desktop) {
           const sb = document.getElementById('sidebar');
           if (sb) {
