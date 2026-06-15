@@ -36341,23 +36341,43 @@
 
       async function playVideoInViewer(vid, playUrl, mimeType) {
         const url = resolveMediaPlayUrl(playUrl);
+        vid.preload = 'auto';
+        vid.playsInline = true;
+        vid.controls = true;
+        vid.removeAttribute('crossorigin');
+
         if (isR2StreamPlayUrl(url)) {
-          // JWT مغلق — البث المباشر عبر src (يدعم Range / 206)
-          try {
-            await setVideoElementSource(vid, url, mimeType);
-            return url;
-          } catch (_) {
-            const blobUrl = await fetchAuthedStreamBlobUrl(url, mimeType);
-            try {
-              await setVideoElementSource(vid, blobUrl, mimeType);
-              vid.dataset.blobPlayUrl = blobUrl;
-              return blobUrl;
-            } catch (e) {
-              URL.revokeObjectURL(blobUrl);
-              throw e;
-            }
-          }
+          hideAttViewerLoader();
+          vid.style.display = 'block';
+          vid.style.visibility = 'visible';
+          vid.style.opacity = '1';
+          vid.src = url;
+          vid.load();
+          return new Promise((resolve, reject) => {
+            let done = false;
+            const finish = (fn, val) => {
+              if (done) return;
+              done = true;
+              clearTimeout(fastTimer);
+              clearTimeout(maxTimer);
+              vid.removeEventListener('loadedmetadata', onMeta);
+              vid.removeEventListener('canplay', onMeta);
+              vid.removeEventListener('error', onErr);
+              fn(val);
+            };
+            const onMeta = () => finish(resolve, url);
+            const onErr = () => finish(reject, new Error('تعذّر تشغيل الفيديو'));
+            const fastTimer = setTimeout(() => finish(resolve, url), 350);
+            const maxTimer = setTimeout(() => {
+              if (vid.error) finish(reject, new Error('تعذّر تشغيل الفيديو'));
+              else finish(resolve, url);
+            }, 15000);
+            vid.addEventListener('loadedmetadata', onMeta, { once: true });
+            vid.addEventListener('canplay', onMeta, { once: true });
+            vid.addEventListener('error', onErr, { once: true });
+          });
         }
+
         await setVideoElementSource(vid, url, mimeType);
         return url;
       }
@@ -36388,6 +36408,10 @@
           };
           const onOk = () => finish(true);
           let errTimer = null;
+          let readyTimer = setTimeout(() => {
+            if (settled) return;
+            if (vid.readyState >= 1 || vid.networkState === 2) finish(true);
+          }, 3000);
           const onErr = () => {
             const code = vid.error ? vid.error.code : 0;
             if (code === 0 || code === 2) { finish(true); return; }
@@ -36397,6 +36421,7 @@
             }, 1200);
           };
           const cleanup = () => {
+            clearTimeout(readyTimer);
             vid.removeEventListener('loadedmetadata', onOk);
             vid.removeEventListener('loadeddata', onOk);
             vid.removeEventListener('canplay', onOk);
@@ -36406,21 +36431,17 @@
           vid.pause();
           vid.removeAttribute('crossorigin');
           vid.innerHTML = '';
-          const wasHidden = vid.style.display === 'none';
-          if (wasHidden) { vid.style.visibility = 'hidden'; vid.style.display = ''; }
+          vid.style.display = 'block';
+          vid.style.visibility = 'visible';
+          vid.style.opacity = '1';
+          vid.preload = 'auto';
+          vid.playsInline = true;
           vid.addEventListener('loadedmetadata', onOk, { once: true });
           vid.addEventListener('loadeddata', onOk, { once: true });
           vid.addEventListener('canplay', onOk, { once: true });
           vid.addEventListener('canplaythrough', onOk, { once: true });
           vid.addEventListener('error', onErr, { once: true });
-          if (mimeType && /^https?:\/\//i.test(String(src))) {
-            const source = document.createElement('source');
-            source.src = src;
-            source.type = mimeType;
-            vid.appendChild(source);
-          } else {
-            vid.src = src;
-          }
+          vid.src = src;
           vid.load();
         });
       }
@@ -38484,7 +38505,7 @@
                   <i class="fas fa-spinner fa-spin fa-2x"></i>
                   <p style="font-size:14px">جاري تحميل الفيديو…</p>
                 </div>
-                <video id="att-proxy-vid" controls playsinline style="max-width:100%;max-height:70vh;display:none"></video>
+                <video id="att-proxy-vid" controls playsinline preload="auto" style="max-width:100%;max-height:70vh;display:none"></video>
               </div>`;
             setTimeout(async () => {
               if (viewerLoadGen !== state._attViewerLoadGen) return;
