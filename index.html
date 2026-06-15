@@ -31178,10 +31178,12 @@
           }, { passive: true });
           window.addEventListener('orientationchange', () => {
             setTimeout(() => {
+              syncDesktopUiClass();
               syncSafeAreaInsets();
               syncMobBottomNavHeight();
               if (typeof syncMobilePortraitLock === 'function') syncMobilePortraitLock();
             }, 120);
+            setTimeout(() => { syncDesktopUiClass(); }, 400);
           }, { passive: true });
         }
         syncMobileBottomNavLayout();
