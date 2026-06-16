@@ -18232,7 +18232,8 @@
         overscroll-behavior: contain;
         touch-action: pan-x pan-y;
         padding-bottom: calc(var(--mr-mob-bottom-nav-h, 56px) + 16px);
-        scrollbar-width: none
+        scrollbar-width: none;
+        scrollbar-gutter: stable
       }
 
       #tab-workflow #ticketList > .wf-mob-tickets-body::-webkit-scrollbar {
@@ -38401,14 +38402,13 @@
           bodyTable.style.width = '100%';
           bodyTable.style.maxWidth = '100%';
           tableW = bodyTable.offsetWidth || bodyScroll.clientWidth;
-          const tablePxFixed = `${tableW}px`;
           headHost.style.width = '100%';
           headHost.style.maxWidth = '100%';
           headWrap.style.width = '100%';
           headWrap.style.maxWidth = '100%';
           headWrap.style.paddingInline = '0';
-          headWrap.style.paddingInlineEnd = scrollBarW > 0 ? `${scrollBarW}px` : '0';
-          headTable.style.width = tablePxFixed;
+          headWrap.style.paddingInlineEnd = '0';
+          headTable.style.width = '100%';
         }
         const tablePx = `${tableW}px`;
         const innerPx = `${innerW}px`;
@@ -38436,7 +38436,7 @@
           } else if (root.listId === 'ticketList') {
             headWrap.style.overflow = 'hidden';
             headWrap.scrollLeft = 0;
-            headWrap.style.paddingInlineEnd = scrollBarW > 0 ? `${scrollBarW}px` : '0';
+            headWrap.style.paddingInlineEnd = '0';
           } else {
             headWrap.style.paddingInlineEnd = '';
           }
@@ -38546,6 +38546,16 @@
             tds[i].style.removeProperty('max-width');
           }
         });
+
+        if (root.listId === 'ticketList') {
+          const measured = Array.from(tds, td => td.getBoundingClientRect().width);
+          measured.forEach((w, i) => {
+            const px = `${Math.round(w)}px`;
+            setColW(ths[i], px);
+            setColW(headCols[i], px);
+          });
+          headTable.style.width = `${Math.round(bodyTable.getBoundingClientRect().width)}px`;
+        }
 
         const slip = tds[0].getBoundingClientRect().left - ths[0].getBoundingClientRect().left;
         if (Math.abs(slip) > 0.5) headTable.style.transform = `translateX(${slip}px)`;
