@@ -11279,23 +11279,32 @@
       bottom: 0;
       width: 72px;
       border: 0;
-      background: linear-gradient(180deg, #f87171 0%, #dc2626 100%);
-      color: #fff;
+      background: transparent;
+      color: var(--red-text);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 3px;
+      gap: 4px;
       font-family: var(--font);
       font-size: 10px;
-      font-weight: 700;
+      font-weight: 600;
       cursor: pointer;
       padding: 0
     }
 
-    .notif-swipe-delete i {
-      font-size: 14px;
-      line-height: 1
+    .notif-swipe-delete .notif-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: var(--red-light);
+      color: var(--red-text);
+      font-size: 13px
+    }
+
+    .notif-swipe-delete span:not(.notif-icon) {
+      color: var(--red-text);
+      line-height: 1.1
     }
 
     .notif-item:last-child {
@@ -46166,7 +46175,7 @@
           const tid = Sec.escapeHTML(n.ticketId || '');
           return `
       <div class="notif-swipe" data-notif-id="${nid}">
-        <button type="button" class="notif-swipe-delete" aria-label="حذف التنبيه"><i class="fas fa-trash-alt" aria-hidden="true"></i><span>حذف</span></button>
+        <button type="button" class="notif-swipe-delete" aria-label="حذف التنبيه"><span class="notif-icon red"><i class="fas fa-trash-alt" aria-hidden="true"></i></span><span>حذف</span></button>
         <div class="notif-item ${isUnread ? 'unread' : ''}" onclick="handleNotifClick('${nid}','${tid}')">
         <div class="notif-icon ${n.type}">
           <i class="fas ${n.icon}"></i>
