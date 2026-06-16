@@ -19026,7 +19026,7 @@
         width: 58px !important;
         min-width: 58px !important;
         max-width: 58px !important;
-        font-size: 10px !important;
+        font-size: 9px !important;
         padding: 2px 2px !important;
         text-align: center !important;
         vertical-align: middle !important;
@@ -19038,11 +19038,12 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 2px;
+        gap: 2px !important;
         width: 100%;
         max-width: 100%;
         font-size: 10px !important;
         line-height: 1.2 !important;
+        font-family: var(--font) !important;
         white-space: nowrap;
         text-align: center;
         color: var(--mr-text)
@@ -19059,13 +19060,20 @@
         white-space: nowrap
       }
 
+      #tab-reports #reportList .rp-tickets-table--mob .wf-datetime-stack__date,
+      #tab-reports #reportList .rp-tickets-table--mob .wf-time-hm,
+      #tab-reports #reportList .rp-tickets-table--mob .wf-time-ampm {
+        font-size: 10px !important;
+        font-family: var(--font) !important;
+        font-weight: 400 !important;
+        line-height: 1.2 !important
+      }
+
       #tab-reports #reportList .rp-tickets-table--mob .wf-datetime-stack__date {
         order: 2;
         display: block;
         width: 100%;
         text-align: center;
-        font-size: 10px !important;
-        line-height: 1.2 !important;
         color: var(--mr-text);
         white-space: nowrap
       }
@@ -21386,14 +21394,14 @@
         background: var(--mr-surface) !important;
         opacity: 1 !important;
         height: 34px !important;
-        padding: 8px 4px !important;
-        font-size: 10px !important;
-        font-weight: 600 !important;
-        line-height: 1.25 !important;
+        padding: 2px 6px !important;
+        font-size: 13px !important;
+        font-weight: 700 !important;
+        line-height: 1.15 !important;
         color: var(--mr-text) !important;
-        white-space: normal !important;
-        word-break: break-word !important;
-        overflow-wrap: anywhere !important;
+        white-space: nowrap !important;
+        word-break: normal !important;
+        overflow-wrap: normal !important;
         text-align: center !important;
         vertical-align: middle !important;
         border: 1px solid color-mix(in srgb, var(--mr-border) 88%, transparent) !important;
@@ -21810,6 +21818,9 @@
         width: auto !important;
         margin: 0;
         padding: 0;
+        font-size: 9px !important;
+        line-height: 1.1 !important;
+        font-weight: 800 !important;
         text-align: center !important;
         direction: ltr;
         unicode-bidi: embed;
@@ -21830,22 +21841,22 @@
         width: max-content !important;
         max-width: 100% !important;
         margin: 0 !important;
-        padding: 2px 3px !important;
-        gap: 1px !important;
-        border-radius: 5px !important;
-        font-size: 8px !important;
+        padding: 1px 2px 3px !important;
+        gap: 2px !important;
+        border-radius: 4px !important;
+        font-size: 7px !important;
         line-height: 1 !important;
         font-weight: 700 !important;
         white-space: nowrap !important
       }
 
       #tab-reports #reportList .wf-auto-flag--under-id i {
-        font-size: 8px !important;
+        font-size: 7px !important;
         line-height: 1 !important
       }
 
       #tab-reports #reportList .wf-auto-flag--under-id .overdue-flag__txt {
-        font-size: 8px !important;
+        font-size: 7px !important;
         line-height: 1 !important;
         font-weight: 700 !important
       }
@@ -21890,9 +21901,15 @@
         display: inline-block !important;
         width: auto !important;
         margin: 0 auto !important;
+        padding: 0;
+        font-family: var(--mono) !important;
+        font-size: 9px !important;
+        font-weight: 800 !important;
+        line-height: 1.1 !important;
         text-align: center !important;
         direction: ltr;
         unicode-bidi: embed;
+        color: var(--mr-text) !important;
         overflow: visible;
         text-overflow: clip;
         white-space: nowrap !important
@@ -21908,14 +21925,14 @@
       }
 
       #tab-reports #reportList .rp-tickets-table--mob thead th {
-        padding: 8px 4px !important;
-        font-size: 10px !important;
-        font-weight: 600 !important;
-        line-height: 1.25 !important;
+        padding: 2px 3px !important;
+        font-size: 13px !important;
+        font-weight: 700 !important;
+        line-height: 1.15 !important;
         color: var(--mr-text) !important;
-        white-space: normal !important;
-        word-break: break-word !important;
-        overflow-wrap: anywhere !important;
+        white-space: nowrap !important;
+        word-break: normal !important;
+        overflow-wrap: normal !important;
         text-align: center !important;
         vertical-align: middle !important
       }
@@ -21939,12 +21956,12 @@
         display: block;
         width: auto;
         max-width: 100%;
-        font-size: 9px !important;
-        font-weight: 700;
-        line-height: 1.6 !important;
+        font-size: 10px !important;
+        font-weight: 600;
+        line-height: 1.25 !important;
         color: var(--mr-text) !important;
-        overflow: visible;
-        text-overflow: clip;
+        overflow: hidden;
+        text-overflow: ellipsis;
         white-space: nowrap !important
       }
 
@@ -21979,21 +21996,29 @@
         max-width: none !important
       }
 
-      #tab-reports #reportList .rp-tickets-table--mob tbody td.wf-col-branch .wf-branch-cell,
+      #tab-reports #reportList .rp-tickets-table--mob tbody td.wf-col-branch .wf-branch-cell {
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        margin: 0;
+        padding: 0;
+        text-align: center !important
+      }
+
       #tab-reports #reportList .rp-tickets-table--mob tbody td.wf-col-branch .wf-branch-name {
         display: block;
         width: 100%;
         max-width: 100%;
         margin: 0;
         padding: 0;
-        font-size: 10px !important;
-        font-weight: 600;
+        font-size: 7px !important;
+        font-weight: 700;
         overflow: visible !important;
         text-overflow: clip;
         white-space: normal !important;
         word-break: break-word !important;
         overflow-wrap: anywhere !important;
-        line-height: 1.25 !important;
+        line-height: 1.6 !important;
         text-align: center !important;
         color: var(--mr-text) !important
       }
@@ -22111,15 +22136,15 @@
         white-space: normal !important;
         word-break: break-word !important;
         overflow-wrap: anywhere !important;
-        line-height: 1.6 !important;
+        line-height: 1.25 !important;
         text-align: center !important;
         overflow: visible
       }
 
       #tab-reports #reportList .rp-tickets-table--mob .wf-viol-name {
-        font-size: 9px !important;
+        font-size: 10px !important;
         font-weight: 700;
-        line-height: 1.6 !important;
+        line-height: 1.25 !important;
         color: var(--mr-text) !important
       }
 
@@ -38606,8 +38631,8 @@
             const probe = document.createElement('span');
             const cs = getComputedStyle(refEl || document.body);
             probe.style.cssText = 'position:fixed;left:-9999px;top:0;white-space:nowrap;visibility:hidden;pointer-events:none;';
-            probe.style.fontSize = cs.fontSize || '12px';
-            probe.style.fontWeight = cs.fontWeight || '800';
+            probe.style.fontSize = cs.fontSize || (refEl && refEl.classList.contains('wf-ticket-id') ? '9px' : '10px');
+            probe.style.fontWeight = cs.fontWeight || (refEl && refEl.classList.contains('wf-ticket-id') ? '800' : '600');
             probe.style.fontFamily = cs.fontFamily;
             probe.style.fontVariantNumeric = cs.fontVariantNumeric || 'lining-nums tabular-nums';
             probe.textContent = text;
