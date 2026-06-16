@@ -21616,16 +21616,19 @@
         box-shadow: none !important
       }
 
-      [data-theme="light"] #tab-reports #reportList .rp-tickets-table--mob tbody tr.wf-ticket-row > td + td {
-        border-inline-start: 1px solid color-mix(in srgb, var(--mr-border) 55%, transparent) !important
+      [data-theme="light"] #tab-reports #reportList .rp-tickets-table--mob tbody tr.wf-ticket-row > td + td,
+      [data-theme="light"] #tab-reports #reportList .rp-tickets-table--mob tbody tr.wf-ticket-row > td:first-child,
+      [data-theme="light"] #tab-reports #reportList .rp-tickets-table--mob tbody tr.wf-ticket-row > td:last-child {
+        border-inline-start: none !important;
+        border-inline-end: none !important
       }
 
       [data-theme="light"] #tab-reports #reportList .rp-tickets-table--mob tbody tr.wf-ticket-row > td:first-child {
-        border-inline-end: 1px solid #000 !important
+        border-inline-start: 1px solid #000 !important
       }
 
       [data-theme="light"] #tab-reports #reportList .rp-tickets-table--mob tbody tr.wf-ticket-row > td:last-child {
-        border-inline-start: 1px solid #000 !important
+        border-inline-end: 1px solid #000 !important
       }
 
       #tab-reports .wf-panel-intro {
