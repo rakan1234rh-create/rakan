@@ -11123,13 +11123,13 @@
       display: none;
       flex-direction: column;
       overflow: hidden;
-      animation: notifPanelIn 0.18s ease
+      animation: notifPanelIn 0.07s ease-out
     }
 
     @keyframes notifPanelIn {
       from {
         opacity: 0;
-        transform: translateY(-6px)
+        transform: translateY(-3px)
       }
 
       to {
@@ -28757,6 +28757,8 @@
         state.violations = [];
         state.violationTypes = [];
         state.notifications = [];
+        state._readNotifsSet = null;
+        invalidateNotifCache();
         state._dataLoading = false;
         state._dataReady = false;
 
@@ -29109,6 +29111,7 @@
           state.violations = (violations || []).map(enrichRow);
           state.violationTypes = vTypes || [];
           state.notifications = mobLoad ? [] : (notifs || []);
+          invalidateNotifCache();
 
           const nR = state.regions.length;
           const nB = state.branches.length;
@@ -45581,15 +45584,34 @@
       }
 
       function getReadNotifs() {
+        if (state._readNotifsSet) return state._readNotifsSet;
         try {
-          return new Set(JSON.parse(localStorage.getItem(notifReadKey()) || '[]'));
-        } catch { return new Set(); }
+          state._readNotifsSet = new Set(JSON.parse(localStorage.getItem(notifReadKey()) || '[]'));
+        } catch { state._readNotifsSet = new Set(); }
+        return state._readNotifsSet;
       }
 
       function saveReadNotifs(set) {
+        state._readNotifsSet = set;
         try {
           localStorage.setItem(notifReadKey(), JSON.stringify([...set]));
         } catch { }
+      }
+
+      function invalidateNotifCache() {
+        state._notifCache = null;
+        state._notifCacheAt = 0;
+      }
+
+      function buildUserNotificationsCached(force) {
+        const now = Date.now();
+        if (!force && state._notifCache && (now - (state._notifCacheAt || 0)) < 25000) {
+          return state._notifCache;
+        }
+        const notifs = buildUserNotifications();
+        state._notifCache = notifs;
+        state._notifCacheAt = now;
+        return notifs;
       }
 
       // توليد التنبيهات للمستخدم الحالي بناءً على المخالفات
@@ -45925,7 +45947,7 @@
         const panelOpen = document.getElementById('notifPanel')?.classList.contains('open');
         if (panelOpen) { renderNotifications(); return; }
         try {
-          const notifs = buildUserNotifications();
+          const notifs = buildUserNotificationsCached();
           state._currentNotifs = notifs;
           const read = getReadNotifs();
           const unread = notifs.filter(n => !read.has(n.id));
@@ -45984,14 +46006,62 @@
         }).join('');
       }
 
-      function renderNotifications() {
+      function renderNotifications(force) {
         if (!state.currentUser) return;
-        const notifs = buildUserNotifications();
+        const notifs = buildUserNotificationsCached(!!force);
         state._currentNotifs = notifs;
         paintNotifList(notifs, getReadNotifs());
         if (document.getElementById('notifPanel')?.classList.contains('open')) {
           notifPanelPosition();
         }
+      }
+
+      function notifPanelPositionQuick() {
+        const panel = document.getElementById('notifPanel');
+        const bell = document.getElementById('notifBellBtn');
+        if (!panel || !bell || !panel.classList.contains('open')) return;
+
+        const pad = 10;
+        const gap = 8;
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        const bellR = bell.getBoundingClientRect();
+        const isMobile = document.documentElement.classList.contains('mr-mobile-ui');
+        const panelW = Math.min(isMobile ? 300 : 320, vw - pad * 2);
+
+        panel.style.width = `${panelW}px`;
+        panel.style.maxHeight = `${Math.min(isMobile ? 320 : 360, vh - bellR.bottom - gap - pad)}px`;
+
+        let top = bellR.bottom + gap;
+        let left = bellR.right - panelW;
+
+        if (left < pad) left = pad;
+        if (left + panelW > vw - pad) left = vw - panelW - pad;
+
+        panel.style.top = `${top}px`;
+        panel.style.left = `${left}px`;
+        panel.style.right = 'auto';
+      }
+
+      function scheduleNotifPanelRefresh() {
+        if (state._notifRefreshTimer) clearTimeout(state._notifRefreshTimer);
+        state._notifRefreshTimer = setTimeout(() => {
+          state._notifRefreshTimer = null;
+          if (!document.getElementById('notifPanel')?.classList.contains('open')) return;
+          requestAnimationFrame(() => renderNotifications(true));
+        }, 0);
+      }
+
+      function openNotifPanelFast() {
+        const panel = document.getElementById('notifPanel');
+        const bell = document.getElementById('notifBellBtn');
+        if (!panel || panel.classList.contains('open')) return;
+        state._notifPanelSkipClose = true;
+        panel.classList.add('open');
+        if (bell) bell.setAttribute('aria-expanded', 'true');
+        notifPanelPositionQuick();
+        setTimeout(() => { state._notifPanelSkipClose = false; }, 0);
+        scheduleNotifPanelRefresh();
       }
 
       function notifPanelClearPosition() {
@@ -46040,28 +46110,28 @@
       }
 
       function toggleNotifPanel(event) {
-        if (event) {
-          event.stopPropagation();
-          event.preventDefault();
-        }
+        if (event) event.stopPropagation();
         const panel = document.getElementById('notifPanel');
         const bell = document.getElementById('notifBellBtn');
         if (!panel) return;
+        if (state._notifOpenedOnPointer) {
+          state._notifOpenedOnPointer = false;
+          if (event) event.preventDefault();
+          return;
+        }
         const opening = !panel.classList.contains('open');
         panel.classList.toggle('open');
         if (bell) bell.setAttribute('aria-expanded', panel.classList.contains('open') ? 'true' : 'false');
         if (opening) {
           state._notifPanelSkipClose = true;
-          if (Array.isArray(state._currentNotifs)) {
-            paintNotifList(state._currentNotifs, getReadNotifs());
-          }
-          notifPanelPosition();
-          requestAnimationFrame(() => {
-            renderNotifications();
-            notifPanelPosition();
-            state._notifPanelSkipClose = false;
-          });
+          notifPanelPositionQuick();
+          setTimeout(() => { state._notifPanelSkipClose = false; }, 0);
+          scheduleNotifPanelRefresh();
         } else {
+          if (state._notifRefreshTimer) {
+            clearTimeout(state._notifRefreshTimer);
+            state._notifRefreshTimer = null;
+          }
           notifPanelClearPosition();
         }
       }
@@ -46100,6 +46170,19 @@
       }
 
       // إغلاق لوحة التنبيهات عند الضغط خارجها
+      (function bindNotifBellFastOpen() {
+        const bell = document.getElementById('notifBellBtn');
+        if (!bell || bell._notifFastBound) return;
+        bell._notifFastBound = true;
+        bell.addEventListener('pointerdown', (e) => {
+          if (e.button !== 0) return;
+          const panel = document.getElementById('notifPanel');
+          if (!panel || panel.classList.contains('open')) return;
+          state._notifOpenedOnPointer = true;
+          openNotifPanelFast();
+        }, { passive: true });
+      })();
+
       document.addEventListener('click', (e) => {
         if (state._notifPanelSkipClose) return;
         const panel = document.getElementById('notifPanel');
