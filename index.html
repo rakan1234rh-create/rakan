@@ -408,6 +408,33 @@
       padding: 0 !important
     }
 
+    html.mr-mobile-ui.mr-viol-tab-active #appWrap .main,
+    html.mr-mobile-ui.mr-viol-tab-active #appWrap .content {
+      overflow: hidden !important;
+      touch-action: pan-y
+    }
+
+    html.mr-mobile-ui #tab-violations #violGrid.viol-grid--mob-list {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      -webkit-overflow-scrolling: touch !important;
+      touch-action: pan-y !important;
+      overscroll-behavior-y: contain
+    }
+
+    html.mr-mobile-ui #tab-violations #violGrid.viol-grid--mob-list > .viol-type-list-item,
+    html.mr-mobile-ui #tab-violations #violGrid.viol-grid--mob-list > .empty {
+      flex: 0 0 auto;
+      flex-shrink: 0;
+      min-height: min-content
+    }
+
+    html.mr-mobile-ui #tab-violations #violGrid.viol-grid--mob-list .viol-type-list-item {
+      touch-action: pan-y
+    }
+
     html.mr-mobile-ui.mr-tablet-landscape,
     html.mr-mobile-ui.mr-tablet-landscape body {
       width: 100%;
@@ -19990,7 +20017,21 @@
         overflow-x: hidden;
         -webkit-overflow-scrolling: touch;
         touch-action: pan-y;
-        overscroll-behavior-y: contain
+        overscroll-behavior-y: contain;
+        align-items: stretch
+      }
+
+      #tab-violations .viol-grid--mob-list > .viol-type-list-item,
+      #tab-violations .viol-grid--mob-list > .empty,
+      #tab-violations #violGrid.viol-grid--mob-list > .viol-type-list-item,
+      #tab-violations #violGrid.viol-grid--mob-list > .empty {
+        flex: 0 0 auto;
+        flex-shrink: 0;
+        min-height: min-content
+      }
+
+      #tab-violations .viol-grid--mob-list .viol-type-list-item {
+        touch-action: pan-y
       }
 
       html.mr-mobile-ui.mr-viol-tab-active body.mirsad-app-active #appWrap .main {
@@ -24695,7 +24736,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v635-observer-status-notifs">
+  <meta name="app-build" content="athar-figma-v636-viol-mob-scroll">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
