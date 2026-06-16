@@ -38547,6 +38547,29 @@
           }
         });
 
+        if (root.listId === 'ticketList') {
+          const empIdx = Array.from(tds).findIndex(td => td.classList.contains('wf-col-emp'));
+          if (empIdx >= 0) {
+            const headEmpCap = 82;
+            const curEmp = parseFloat(ths[empIdx].style.width) || widths[empIdx];
+            if (curEmp > headEmpCap) {
+              let excess = Math.round(curEmp - headEmpCap);
+              setColW(ths[empIdx], `${headEmpCap}px`);
+              setColW(headCols[empIdx], `${headEmpCap}px`);
+              const others = widths.map((_, i) => i).filter(i => i !== empIdx);
+              let n = 0;
+              while (excess > 0 && others.length) {
+                const i = others[n % others.length];
+                const next = (parseFloat(ths[i].style.width) || widths[i]) + 1;
+                setColW(ths[i], `${next}px`);
+                setColW(headCols[i], `${next}px`);
+                excess -= 1;
+                n += 1;
+              }
+            }
+          }
+        }
+
         const slip = tds[0].getBoundingClientRect().left - ths[0].getBoundingClientRect().left;
         if (Math.abs(slip) > 0.5) headTable.style.transform = `translateX(${slip}px)`;
       }
