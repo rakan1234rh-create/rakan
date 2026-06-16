@@ -324,7 +324,13 @@
     html.mr-mobile-ui .topbar-actions-zone {
       flex: 0 0 auto !important;
       gap: 6px !important;
-      margin-inline-start: auto !important
+      margin-inline-start: auto !important;
+      overflow: visible !important
+    }
+
+    html.mr-mobile-ui .topbar.unified-banner,
+    html.mr-mobile-ui #appWrap .topbar.unified-banner {
+      overflow: visible !important
     }
 
     html.mr-mobile-ui #appWrap.app {
@@ -2569,24 +2575,24 @@
 
     .notif-bell-count {
       position: absolute;
-      top: -6px;
-      inset-inline-end: -2px;
+      top: 2px;
+      inset-inline-end: 2px;
       inset-inline-start: auto;
-      z-index: 3;
+      z-index: 5;
       background: linear-gradient(180deg, #f87171 0%, #ef4444 52%, #dc2626 100%);
       color: #fff;
       font-family: var(--mono);
-      font-size: 10px;
+      font-size: 9px;
       font-weight: 700;
       line-height: 1;
-      min-width: 17px;
-      height: 17px;
-      padding: 0 4px;
+      min-width: 16px;
+      height: 16px;
+      padding: 0 3px;
       border-radius: 999px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      border: 2px solid var(--mr-bg);
+      border: 1.5px solid var(--mr-surface);
       box-shadow: 0 1px 4px rgba(220, 38, 38, 0.32);
       font-variant-numeric: lining-nums tabular-nums;
       pointer-events: none
@@ -2666,7 +2672,7 @@
     }
 
     [data-theme="dark"] .notif-bell-count {
-      border-color: var(--mr-bg)
+      border-color: var(--mr-surface)
     }
 
     .content {
@@ -11123,7 +11129,22 @@
       display: none;
       flex-direction: column;
       overflow: hidden;
-      animation: notifPanelIn 0.07s ease-out
+      animation: notifPanelIn 0.07s ease-out;
+      touch-action: pan-y;
+      overscroll-behavior: contain
+    }
+
+    .notif-panel-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 1095;
+      background: transparent;
+      touch-action: none
+    }
+
+    body.notif-panel-open .notif-panel-backdrop {
+      display: block
     }
 
     @keyframes notifPanelIn {
@@ -11198,7 +11219,10 @@
     .notif-list {
       overflow-y: auto;
       flex: 1 1 auto;
-      min-height: 0
+      min-height: 0;
+      touch-action: pan-y;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch
     }
 
     .notif-list::-webkit-scrollbar {
@@ -17642,8 +17666,23 @@
 
       .notif-panel {
         width: min(300px, calc(100vw - 16px));
-        max-height: min(320px, calc(100dvh - 88px));
-        border-radius: 12px
+        max-height: min(280px, calc(100dvh - var(--unified-topbar-h, 76px) - var(--mr-mob-bottom-nav-h, 56px) - 20px));
+        border-radius: 12px;
+        z-index: 3060
+      }
+
+      body.notif-panel-open #appWrap > .app-shell > #mobileBottomNav.mobile-bottom-nav {
+        visibility: visible !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        z-index: 2900 !important
+      }
+
+      body.notif-panel-open #appWrap .main,
+      body.notif-panel-open #appWrap .content {
+        overflow: hidden !important;
+        overscroll-behavior: none !important;
+        touch-action: none !important
       }
 
       .notif-header {
@@ -24807,6 +24846,7 @@
             </div>
 
         </div>
+        <div class="notif-panel-backdrop" id="notifPanelBackdrop" aria-hidden="true"></div>
         <!-- Notifications Panel -->
         <div class="notif-panel" id="notifPanel">
           <div class="notif-header">
@@ -45944,16 +45984,27 @@
         return notifs;
       }
 
+      function getMobBottomNavHeight() {
+        if (!document.documentElement.classList.contains('mr-mobile-ui')) return 0;
+        const nav = document.getElementById('mobileBottomNav');
+        const measured = nav ? Math.ceil(nav.getBoundingClientRect().height) : 0;
+        if (measured > 0) return measured;
+        const css = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--mr-mob-bottom-nav-h'), 10);
+        return Number.isFinite(css) && css > 0 ? css : 56;
+      }
+
       function updateNotifBellBadge(unreadCount) {
         const bellCount = document.getElementById('notifBellCount');
         if (!bellCount) return;
         const unread = Math.max(0, Number(unreadCount) || 0);
         if (unread > 0) {
           state._bellUnreadShown = unread;
+          bellCount.hidden = false;
           bellCount.style.display = 'inline-flex';
           bellCount.textContent = unread > 99 ? '99+' : String(unread);
         } else {
           state._bellUnreadShown = 0;
+          bellCount.hidden = true;
           bellCount.style.display = 'none';
         }
       }
@@ -45962,7 +46013,7 @@
         const bellCount = document.getElementById('notifBellCount');
         if (!bellCount || !state.currentUser) return;
         const panelOpen = document.getElementById('notifPanel')?.classList.contains('open');
-        if (panelOpen) { renderNotifications(); return; }
+        if (panelOpen) { refreshOpenNotifPanel(false); return; }
         try {
           const notifs = buildUserNotificationsCached();
           state._currentNotifs = notifs;
@@ -46015,10 +46066,22 @@
         if (!state.currentUser) return;
         const notifs = buildUserNotificationsCached(!!force);
         state._currentNotifs = notifs;
-        paintNotifList(notifs, getReadNotifs());
-        if (document.getElementById('notifPanel')?.classList.contains('open')) {
-          notifPanelPosition();
-        }
+        const panelOpen = document.getElementById('notifPanel')?.classList.contains('open');
+        paintNotifList(notifs, getReadNotifs(), { skipBadge: panelOpen });
+        if (panelOpen) notifPanelPosition();
+      }
+
+      function refreshOpenNotifPanel(force) {
+        if (!document.getElementById('notifPanel')?.classList.contains('open')) return;
+        const notifs = buildUserNotificationsCached(!!force);
+        state._currentNotifs = notifs;
+        paintNotifList(notifs, getReadNotifs(), { skipBadge: true });
+        notifPanelPosition();
+      }
+
+      function notifPanelBottomLimit(vh, isMobile) {
+        if (!isMobile) return vh - 10;
+        return vh - getMobBottomNavHeight() - 10;
       }
 
       function notifPanelPositionQuick() {
@@ -46033,9 +46096,10 @@
         const bellR = bell.getBoundingClientRect();
         const isMobile = document.documentElement.classList.contains('mr-mobile-ui');
         const panelW = Math.min(isMobile ? 300 : 320, vw - pad * 2);
+        const bottomLimit = notifPanelBottomLimit(vh, isMobile);
 
         panel.style.width = `${panelW}px`;
-        panel.style.maxHeight = `${Math.min(isMobile ? 320 : 360, vh - bellR.bottom - gap - pad)}px`;
+        panel.style.maxHeight = `${Math.max(120, Math.min(isMobile ? 280 : 360, bottomLimit - bellR.bottom - gap))}px`;
 
         let top = bellR.bottom + gap;
         let left = bellR.right - panelW;
@@ -46052,14 +46116,7 @@
         if (state._notifRefreshTimer) clearTimeout(state._notifRefreshTimer);
         state._notifRefreshTimer = setTimeout(() => {
           state._notifRefreshTimer = null;
-          if (!document.getElementById('notifPanel')?.classList.contains('open')) return;
-          if (Array.isArray(state._currentNotifs)) {
-            paintNotifList(state._currentNotifs, getReadNotifs(), { skipBadge: true });
-          }
-          requestAnimationFrame(() => {
-            if (!document.getElementById('notifPanel')?.classList.contains('open')) return;
-            renderNotifications(true);
-          });
+          requestAnimationFrame(() => refreshOpenNotifPanel(true));
         }, 0);
       }
 
@@ -46068,6 +46125,7 @@
         const bell = document.getElementById('notifBellBtn');
         if (!panel || panel.classList.contains('open')) return;
         state._notifPanelSkipClose = true;
+        document.body.classList.add('notif-panel-open');
         panel.classList.add('open');
         if (bell) bell.setAttribute('aria-expanded', 'true');
         notifPanelPositionQuick();
@@ -46079,6 +46137,7 @@
         const panel = document.getElementById('notifPanel');
         const bell = document.getElementById('notifBellBtn');
         if (!panel || !panel.classList.contains('open')) return;
+        document.body.classList.remove('notif-panel-open');
         panel.classList.remove('open');
         if (bell) bell.setAttribute('aria-expanded', 'false');
         if (state._notifRefreshTimer) {
@@ -46110,10 +46169,11 @@
         const bellR = bell.getBoundingClientRect();
         const isMobile = document.documentElement.classList.contains('mr-mobile-ui');
         const panelW = Math.min(isMobile ? 300 : 320, vw - pad * 2);
-        const panelMaxH = Math.min(isMobile ? 320 : 360, vh - pad * 2);
+        const bottomLimit = notifPanelBottomLimit(vh, isMobile);
+        const panelMaxH = Math.min(isMobile ? 280 : 360, bottomLimit - pad);
 
         panel.style.width = `${panelW}px`;
-        panel.style.maxHeight = `${Math.min(panelMaxH, vh - bellR.bottom - gap - pad)}px`;
+        panel.style.maxHeight = `${Math.max(120, Math.min(panelMaxH, bottomLimit - bellR.bottom - gap))}px`;
 
         let top = bellR.bottom + gap;
         let left = bellR.right - panelW;
@@ -46137,16 +46197,8 @@
         if (event) event.stopPropagation();
         const panel = document.getElementById('notifPanel');
         if (!panel) return;
-        if (state._notifPointerToggled) {
-          state._notifPointerToggled = false;
-          if (event) event.preventDefault();
-          return;
-        }
-        if (panel.classList.contains('open')) {
-          closeNotifPanel();
-        } else {
-          openNotifPanel();
-        }
+        if (panel.classList.contains('open')) closeNotifPanel();
+        else openNotifPanel();
       }
 
       function handleNotifClick(notifId, ticketId) {
@@ -46177,23 +46229,11 @@
         notifs.forEach(n => read.add(n.id));
         saveReadNotifs(read);
         renderNotifications();
+        updateNotifBellBadge(0);
         showToast('تم تعليم كل التنبيهات كمقروءة ✓', 'success');
       }
 
-      // إغلاق لوحة التنبيهات عند الضغط خارجها
-      (function bindNotifBellFastOpen() {
-        const bell = document.getElementById('notifBellBtn');
-        if (!bell || bell._notifFastBound) return;
-        bell._notifFastBound = true;
-        bell.addEventListener('pointerdown', (e) => {
-          if (e.button !== 0) return;
-          const panel = document.getElementById('notifPanel');
-          if (!panel) return;
-          state._notifPointerToggled = true;
-          if (panel.classList.contains('open')) closeNotifPanel();
-          else openNotifPanel();
-        }, { passive: true });
-      })();
+      document.getElementById('notifPanelBackdrop')?.addEventListener('click', () => closeNotifPanel());
 
       document.addEventListener('click', (e) => {
         if (state._notifPanelSkipClose) return;
