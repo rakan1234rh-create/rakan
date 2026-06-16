@@ -2618,6 +2618,8 @@
       background: color-mix(in srgb, var(--mr-surface) 94%, var(--mr-bg));
       color: var(--mr-text-2);
       box-shadow: 0 1px 3px rgba(15, 18, 36, 0.05);
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
       transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, color 0.15s ease, transform 0.12s ease
     }
 
@@ -45936,18 +45938,14 @@
         } catch (_) { /* noop */ }
       }
 
-      function renderNotifications() {
+      function paintNotifList(notifs, read) {
         const list = document.getElementById('notifList');
         const count = document.getElementById('notifPanelCount');
         const bellCount = document.getElementById('notifBellCount');
         if (!bellCount || !state.currentUser) return;
 
-        const notifs = buildUserNotifications();
-        state._currentNotifs = notifs;
-        const read = getReadNotifs();
         const unread = notifs.filter(n => !read.has(n.id));
 
-        // ─── تحديث الجرس (دائماً) ───
         if (unread.length > 0) {
           bellCount.style.display = '';
           bellCount.textContent = unread.length > 99 ? '99+' : unread.length;
@@ -45955,8 +45953,7 @@
           bellCount.style.display = 'none';
         }
 
-        // ─── تحديث القائمة (إذا كانت موجودة) ───
-        if (!list) return;
+        if (!list || !count) return;
 
         count.textContent = unread.length
           ? `${unread.length} جديد · ${notifs.length} إجمالاً`
@@ -45985,7 +45982,13 @@
         </div>
       </div>`;
         }).join('');
+      }
 
+      function renderNotifications() {
+        if (!state.currentUser) return;
+        const notifs = buildUserNotifications();
+        state._currentNotifs = notifs;
+        paintNotifList(notifs, getReadNotifs());
         if (document.getElementById('notifPanel')?.classList.contains('open')) {
           notifPanelPosition();
         }
@@ -46037,15 +46040,27 @@
       }
 
       function toggleNotifPanel(event) {
-        if (event) event.stopPropagation();
+        if (event) {
+          event.stopPropagation();
+          event.preventDefault();
+        }
         const panel = document.getElementById('notifPanel');
         const bell = document.getElementById('notifBellBtn');
+        if (!panel) return;
+        const opening = !panel.classList.contains('open');
         panel.classList.toggle('open');
         if (bell) bell.setAttribute('aria-expanded', panel.classList.contains('open') ? 'true' : 'false');
-        if (panel.classList.contains('open')) {
-          renderNotifications();
+        if (opening) {
+          state._notifPanelSkipClose = true;
+          if (Array.isArray(state._currentNotifs)) {
+            paintNotifList(state._currentNotifs, getReadNotifs());
+          }
           notifPanelPosition();
-          requestAnimationFrame(notifPanelPosition);
+          requestAnimationFrame(() => {
+            renderNotifications();
+            notifPanelPosition();
+            state._notifPanelSkipClose = false;
+          });
         } else {
           notifPanelClearPosition();
         }
@@ -46086,6 +46101,7 @@
 
       // إغلاق لوحة التنبيهات عند الضغط خارجها
       document.addEventListener('click', (e) => {
+        if (state._notifPanelSkipClose) return;
         const panel = document.getElementById('notifPanel');
         const bell = document.getElementById('notifBellBtn');
         if (!panel || !bell) return;
