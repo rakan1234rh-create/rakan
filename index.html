@@ -33609,7 +33609,8 @@
 
       function rpRenderReportListAnimated(items, opts) {
         const list = document.getElementById('reportList');
-        if (!list || !rpMotionOk() || (opts && opts.instant)) {
+        const mobInstant = typeof isMobileViewport === 'function' && isMobileViewport();
+        if (!list || !rpMotionOk() || (opts && opts.instant) || mobInstant) {
           renderReportList(items);
           return;
         }
@@ -38093,10 +38094,7 @@
           resetTicketListChildren(list, true);
           getOrCreateTicketMobBody(list).innerHTML = mobBodyHtml;
           const mobBodyScroll = list.querySelector('.wf-mob-tickets-body');
-          if (mobBodyScroll) {
-            delete mobBodyScroll.dataset.rpColSig;
-            delete mobBodyScroll.dataset.rpSlip;
-          }
+          if (mobBodyScroll) delete mobBodyScroll.dataset.rpColSig;
           const scrollTab = isReportsList ? 'reports' : 'workflow';
           requestAnimationFrame(() => requestAnimationFrame(() => bindMobTicketsHeadScroll(scrollTab)));
           return;
@@ -38604,63 +38602,9 @@
           el.style.setProperty('max-width', px, 'important');
         };
 
-        const raw = Array.from(tds, td => td.offsetWidth);
-        let sum = raw.reduce((a, b) => a + b, 0);
-        if (!sum) return;
-        let widths = raw.map(w => Math.floor((w / sum) * (useMeasuredHead ? tableW : innerW)));
-        let used = widths.reduce((a, b) => a + b, 0);
-        const targetW = useMeasuredHead ? tableW : innerW;
-        for (let i = 0; used < targetW; i = (i + 1) % widths.length) {
-          widths[i] += 1;
-          used += 1;
-        }
-
+        let widths;
         if (root.listId === 'reportList') {
-          const rpRedistribute = (idx, capPx) => {
-            if (idx < 0 || widths[idx] <= capPx) return;
-            let excess = widths[idx] - capPx;
-            widths[idx] = capPx;
-            const flexCols = widths.map((_, i) => i).filter(i => i !== idx);
-            let n = 0;
-            while (excess > 0 && flexCols.length) {
-              widths[flexCols[n % flexCols.length]] += 1;
-              excess -= 1;
-              n += 1;
-            }
-          };
-          const rpSetCol = (idx, px) => {
-            if (idx < 0 || px < 0) return;
-            const prev = widths[idx];
-            if (prev === px) return;
-            widths[idx] = px;
-            if (px < prev) {
-              let excess = prev - px;
-              const flexCols = widths.map((_, i) => i).filter(i => i !== idx);
-              let n = 0;
-              while (excess > 0 && flexCols.length) {
-                widths[flexCols[n % flexCols.length]] += 1;
-                excess -= 1;
-                n += 1;
-              }
-            } else {
-              let need = px - prev;
-              const donors = widths.map((_, i) => i).filter(i => i !== idx);
-              let n = 0;
-              while (need > 0 && donors.length) {
-                const d = donors[n % donors.length];
-                if (widths[d] > 28) {
-                  widths[d] -= 1;
-                  need -= 1;
-                }
-                n += 1;
-                if (n > 600) break;
-              }
-            }
-          };
-          rpRedistribute(Array.from(tds).findIndex(td => td.classList.contains('wf-col-violation')), 76);
-          rpRedistribute(Array.from(tds).findIndex(td => td.classList.contains('wf-col-branch')), 73);
-          rpRedistribute(Array.from(tds).findIndex(td => td.classList.contains('wf-col-datetime')), 58);
-          rpRedistribute(Array.from(tds).findIndex(td => td.classList.contains('wf-col-status')), 52);
+          const findIdx = (cls) => Array.from(tds).findIndex(td => td.classList.contains(cls));
           const measureRpMobText = (text, refEl) => {
             const probe = document.createElement('span');
             const cs = getComputedStyle(refEl || document.body);
@@ -38675,7 +38619,15 @@
             probe.remove();
             return w;
           };
-          const ticketIdx = Array.from(tds).findIndex(td => td.classList.contains('wf-ticket-cell'));
+
+          const ticketIdx = findIdx('wf-ticket-cell');
+          const empIdx = findIdx('wf-col-emp');
+          const violIdx = findIdx('wf-col-violation');
+          const branchIdx = findIdx('wf-col-branch');
+          const dtIdx = findIdx('wf-col-datetime');
+          const statusIdx = findIdx('wf-col-status');
+
+          let ticketW = 40;
           if (ticketIdx >= 0) {
             const sampleId = bodyTable.querySelector('td.wf-ticket-cell .wf-ticket-id');
             let maxTicketW = measureRpMobText('ID', sampleId || headTable.querySelector('th.wf-col-ticket'));
@@ -38689,9 +38641,10 @@
               const padX = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
               maxTicketW = Math.max(maxTicketW, Math.ceil(cellW) + padX);
             });
-            rpSetCol(ticketIdx, Math.min(52, Math.ceil(maxTicketW) + 4));
+            ticketW = Math.min(52, Math.ceil(maxTicketW) + 4);
           }
-          const empIdx = Array.from(tds).findIndex(td => td.classList.contains('wf-col-emp'));
+
+          let empW = 52;
           if (empIdx >= 0) {
             const sampleName = bodyTable.querySelector('td.wf-col-emp .wf-emp-name');
             let maxNameW = measureRpMobText('الموظف', sampleName);
@@ -38699,70 +38652,107 @@
               const t = (nameEl.textContent || '').trim();
               if (t) maxNameW = Math.max(maxNameW, measureRpMobText(t, nameEl));
             });
-            rpSetCol(empIdx, Math.ceil(maxNameW) + 12);
+            empW = Math.ceil(maxNameW) + 12;
           }
-          const statusIdx = Array.from(tds).findIndex(td => td.classList.contains('wf-col-status'));
+
+          let statusW = 44;
           if (statusIdx >= 0) {
             let maxStatusW = measureRpMobText('الحالة', headTable.querySelector('th.wf-col-status'));
             bodyTable.querySelectorAll('tbody tr.wf-ticket-row td.wf-col-status .badge').forEach((badge) => {
               const t = (badge.textContent || '').trim();
               if (t) maxStatusW = Math.max(maxStatusW, measureRpMobText(t, badge));
             });
-            rpSetCol(statusIdx, Math.min(52, Math.ceil(maxStatusW) + 4));
+            statusW = Math.min(52, Math.ceil(maxStatusW) + 4);
           }
-          const colSig = widths.join(',');
+
+          const branchW = branchIdx >= 0 ? 73 : 0;
+          const dtW = dtIdx >= 0 ? 58 : 0;
+          const violMin = 50;
+          const reserved = ticketW + branchW + dtW + statusW + violMin;
+          empW = Math.min(empW, Math.max(40, tableW - reserved));
+          let violW = violIdx >= 0 ? Math.max(violMin, tableW - ticketW - empW - branchW - dtW - statusW) : 0;
+
+          widths = Array.from(tds, (_, i) => {
+            if (i === ticketIdx) return ticketW;
+            if (i === empIdx) return empW;
+            if (i === violIdx) return violW;
+            if (i === branchIdx) return branchW;
+            if (i === dtIdx) return dtW;
+            if (i === statusIdx) return statusW;
+            return 0;
+          });
+
+          let sumW = widths.reduce((a, b) => a + b, 0);
+          if (sumW !== tableW && violIdx >= 0) {
+            widths[violIdx] = Math.max(violMin, widths[violIdx] + (tableW - sumW));
+          }
+
+          const colSig = `${tableW}|${widths.join(',')}`;
           if (bodyScroll.dataset.rpColSig === colSig) return;
           bodyScroll.dataset.rpColSig = colSig;
-        } else if (root.listId === 'ticketList') {
-          const findIdx = (cls) => Array.from(tds).findIndex(td => td.classList.contains(cls));
-          const capCol = (cls, capPx) => {
-            const idx = findIdx(cls);
-            if (idx < 0 || widths[idx] <= capPx) return;
-            let excess = widths[idx] - capPx;
-            widths[idx] = capPx;
-            const receivers = [findIdx('wf-col-violation'), findIdx('wf-col-emp')].filter(i => i >= 0);
-            let n = 0;
-            while (excess > 0 && receivers.length) {
-              widths[receivers[n % receivers.length]] += 1;
-              excess -= 1;
-              n += 1;
-            }
-          };
-          const capColMax = (cls, maxPx) => {
-            const idx = findIdx(cls);
-            if (idx < 0 || widths[idx] <= maxPx) return;
-            let excess = widths[idx] - maxPx;
-            widths[idx] = maxPx;
-            const receivers = [findIdx('wf-col-violation'), findIdx('wf-col-emp')].filter(i => i >= 0);
-            let n = 0;
-            while (excess > 0 && receivers.length) {
-              widths[receivers[n % receivers.length]] += 1;
-              excess -= 1;
-              n += 1;
-            }
-          };
-          const ensureMin = (cls, minPx) => {
-            const idx = findIdx(cls);
-            if (idx < 0 || widths[idx] >= minPx) return;
-            let need = minPx - widths[idx];
-            const donors = [findIdx('wf-col-status'), findIdx('wf-col-ticket'), findIdx('wf-col-datetime')].filter(i => i >= 0 && i !== idx);
-            let n = 0;
-            while (need > 0 && donors.length) {
-              const d = donors[n % donors.length];
-              if (widths[d] > 36) {
-                widths[d] -= 1;
-                widths[idx] += 1;
-                need -= 1;
+        } else {
+          const raw = Array.from(tds, td => td.offsetWidth);
+          let sum = raw.reduce((a, b) => a + b, 0);
+          if (!sum) return;
+          widths = raw.map(w => Math.floor((w / sum) * (useMeasuredHead ? tableW : innerW)));
+          let used = widths.reduce((a, b) => a + b, 0);
+          const targetW = useMeasuredHead ? tableW : innerW;
+          for (let i = 0; used < targetW; i = (i + 1) % widths.length) {
+            widths[i] += 1;
+            used += 1;
+          }
+
+          if (root.listId === 'ticketList') {
+            const findIdx = (cls) => Array.from(tds).findIndex(td => td.classList.contains(cls));
+            const capCol = (cls, capPx) => {
+              const idx = findIdx(cls);
+              if (idx < 0 || widths[idx] <= capPx) return;
+              let excess = widths[idx] - capPx;
+              widths[idx] = capPx;
+              const receivers = [findIdx('wf-col-violation'), findIdx('wf-col-emp')].filter(i => i >= 0);
+              let n = 0;
+              while (excess > 0 && receivers.length) {
+                widths[receivers[n % receivers.length]] += 1;
+                excess -= 1;
+                n += 1;
               }
-              n += 1;
-              if (n > 500) break;
-            }
-          };
-          capCol('wf-col-datetime', 58);
-          capCol('wf-col-ticket', 42);
-          capColMax('wf-col-status', 72);
-          ensureMin('wf-col-violation', 84);
-          ensureMin('wf-col-emp', 96);
+            };
+            const capColMax = (cls, maxPx) => {
+              const idx = findIdx(cls);
+              if (idx < 0 || widths[idx] <= maxPx) return;
+              let excess = widths[idx] - maxPx;
+              widths[idx] = maxPx;
+              const receivers = [findIdx('wf-col-violation'), findIdx('wf-col-emp')].filter(i => i >= 0);
+              let n = 0;
+              while (excess > 0 && receivers.length) {
+                widths[receivers[n % receivers.length]] += 1;
+                excess -= 1;
+                n += 1;
+              }
+            };
+            const ensureMin = (cls, minPx) => {
+              const idx = findIdx(cls);
+              if (idx < 0 || widths[idx] >= minPx) return;
+              let need = minPx - widths[idx];
+              const donors = [findIdx('wf-col-status'), findIdx('wf-col-ticket'), findIdx('wf-col-datetime')].filter(i => i >= 0 && i !== idx);
+              let n = 0;
+              while (need > 0 && donors.length) {
+                const d = donors[n % donors.length];
+                if (widths[d] > 36) {
+                  widths[d] -= 1;
+                  widths[idx] += 1;
+                  need -= 1;
+                }
+                n += 1;
+                if (n > 500) break;
+              }
+            };
+            capCol('wf-col-datetime', 58);
+            capCol('wf-col-ticket', 42);
+            capColMax('wf-col-status', 72);
+            ensureMin('wf-col-violation', 84);
+            ensureMin('wf-col-emp', 96);
+          }
         }
 
         widths.forEach((w, i) => {
@@ -38790,24 +38780,16 @@
           });
           headTable.style.width = `${Math.round(bodyTable.getBoundingClientRect().width)}px`;
         } else if (root.listId === 'reportList') {
-          widths.forEach((w, i) => {
-            const px = `${w}px`;
-            setColW(ths[i], px);
-            setColW(headCols[i], px);
-            setColW(bodyCols[i], px);
-          });
-          headTable.style.width = `${Math.round(bodyTable.getBoundingClientRect().width)}px`;
+          const totalW = widths.reduce((a, b) => a + b, 0);
+          const wpx = `${totalW}px`;
+          headTable.style.width = wpx;
+          bodyTable.style.width = wpx;
+          headTable.style.transform = '';
         }
 
-        const slip = Math.round(tds[0].getBoundingClientRect().left - ths[0].getBoundingClientRect().left);
-        if (root.listId === 'reportList') {
-          const slipKey = String(Math.abs(slip) >= 1 ? slip : 0);
-          if (headTable.dataset.rpSlip !== slipKey) {
-            headTable.dataset.rpSlip = slipKey;
-            headTable.style.transform = slipKey === '0' ? '' : `translate3d(${slipKey}px,0,0)`;
-          }
-        } else if (Math.abs(slip) > 0.5) {
-          headTable.style.transform = `translateX(${slip}px)`;
+        if (root.listId !== 'reportList') {
+          const slip = Math.round(tds[0].getBoundingClientRect().left - ths[0].getBoundingClientRect().left);
+          if (Math.abs(slip) > 0.5) headTable.style.transform = `translateX(${slip}px)`;
         }
       }
 
@@ -38824,24 +38806,30 @@
           bodyScroll.onscroll = () => { headWrap.scrollLeft = bodyScroll.scrollLeft; };
           headWrap.scrollLeft = bodyScroll.scrollLeft;
         }
+        const hideDuringSync = root.listId === 'reportList';
+        if (hideDuringSync) bodyScroll.style.visibility = 'hidden';
         syncMobTicketsColWidths(tab);
+        if (hideDuringSync) bodyScroll.style.visibility = '';
         const syncKey = root.listId === 'reportList' ? 'rpColSyncBound' : 'wfColSyncBound';
         if (!bodyScroll.dataset[syncKey]) {
           bodyScroll.dataset[syncKey] = '1';
-          let roTimer = 0;
-          const ro = new ResizeObserver(() => {
-            if (root.listId !== 'reportList') {
-              syncMobTicketsColWidths(tab);
-              return;
-            }
-            clearTimeout(roTimer);
-            roTimer = setTimeout(() => syncMobTicketsColWidths(tab), 48);
-          });
-          ro.observe(bodyScroll);
-          const bodyTable = bodyScroll.querySelector('.wf-tickets-table--mob-body');
-          if (bodyTable) ro.observe(bodyTable);
-          const headHost = document.getElementById(root.headId);
-          if (headHost) ro.observe(headHost);
+          if (root.listId === 'reportList') {
+            let resizeTimer = 0;
+            window.addEventListener('resize', () => {
+              clearTimeout(resizeTimer);
+              resizeTimer = setTimeout(() => {
+                delete bodyScroll.dataset.rpColSig;
+                syncMobTicketsColWidths('reports');
+              }, 100);
+            }, { passive: true });
+          } else {
+            const ro = new ResizeObserver(() => syncMobTicketsColWidths(tab));
+            ro.observe(bodyScroll);
+            const bodyTable = bodyScroll.querySelector('.wf-tickets-table--mob-body');
+            if (bodyTable) ro.observe(bodyTable);
+            const headHost = document.getElementById(root.headId);
+            if (headHost) ro.observe(headHost);
+          }
         }
       }
 
