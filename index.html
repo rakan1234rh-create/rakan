@@ -21543,9 +21543,8 @@
       }
 
       #tab-reports #reportList .rp-tickets-table--mob tbody tr.wf-ticket-row > td.wf-col-status {
-        padding: 2px 1px !important;
-        padding-inline-start: 0 !important;
-        padding-inline-end: 2px !important;
+        padding-block: 2px !important;
+        padding-inline: 0 2px !important;
         text-align: center !important;
         overflow: visible !important;
         white-space: normal !important;
@@ -22082,9 +22081,8 @@
         width: 0 !important;
         min-width: 0 !important;
         max-width: none !important;
-        padding: 2px 1px !important;
-        padding-inline-start: 0 !important;
-        padding-inline-end: 2px !important;
+        padding-block: 2px !important;
+        padding-inline: 0 2px !important;
         white-space: normal !important;
         word-break: break-word !important;
         overflow-wrap: anywhere !important;
@@ -22110,16 +22108,17 @@
 
       #tab-reports #reportList .rp-tickets-table--mob td.wf-col-status .badge {
         font-size: 9px !important;
-        padding: 1px 2px !important;
+        padding: 2px 2px !important;
+        min-height: 38px !important;
         line-height: 1.35;
         white-space: normal !important;
         word-break: break-word !important;
         overflow: visible;
         max-width: 100%;
         border-radius: 8px;
-        display: inline-block;
-        vertical-align: middle;
-        text-align: center;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
         font-weight: 700;
         border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
         position: static !important;
