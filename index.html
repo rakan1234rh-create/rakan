@@ -38398,7 +38398,9 @@
         const bodyPadX = (parseFloat(bodyCs.paddingLeft) || 0) + (parseFloat(bodyCs.paddingRight) || 0);
         let tableW = Math.max(0, innerW - bodyPadX);
         if (root.listId === 'ticketList') {
-          tableW = bodyScroll.clientWidth;
+          bodyTable.style.width = '100%';
+          bodyTable.style.maxWidth = '100%';
+          tableW = bodyTable.offsetWidth || bodyScroll.clientWidth;
           const tablePxFixed = `${tableW}px`;
           headHost.style.width = '100%';
           headHost.style.maxWidth = '100%';
@@ -38407,7 +38409,6 @@
           headWrap.style.paddingInline = '0';
           headWrap.style.paddingInlineEnd = scrollBarW > 0 ? `${scrollBarW}px` : '0';
           headTable.style.width = tablePxFixed;
-          bodyTable.style.width = tablePxFixed;
         }
         const tablePx = `${tableW}px`;
         const innerPx = `${innerW}px`;
@@ -38539,7 +38540,11 @@
           setColW(ths[i], px);
           setColW(headCols[i], px);
           setColW(bodyCols[i], px);
-          setColW(tds[i], px);
+          if (root.listId === 'ticketList' && tds[i]) {
+            tds[i].style.removeProperty('width');
+            tds[i].style.removeProperty('min-width');
+            tds[i].style.removeProperty('max-width');
+          }
         });
 
         const slip = tds[0].getBoundingClientRect().left - ths[0].getBoundingClientRect().left;
