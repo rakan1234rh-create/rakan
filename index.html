@@ -21543,7 +21543,7 @@
       }
 
       #tab-reports #reportList .rp-tickets-table--mob tbody tr.wf-ticket-row > td.wf-col-status {
-        padding: 4px 5px !important;
+        padding: 3px 4px !important;
         text-align: center !important;
         overflow: visible !important;
         white-space: normal !important;
@@ -22069,18 +22069,18 @@
 
       #tab-reports #reportList .rp-tickets-table--mob col.wf-col-status-c,
       #tab-reports #reportList > #rpMobTicketsHead .rp-tickets-table--mob col.wf-col-status-c {
-        width: 20% !important;
+        width: 0 !important;
         min-width: 0 !important;
-        max-width: 20% !important
+        max-width: none !important
       }
 
       #tab-reports #reportList .rp-tickets-table--mob th.wf-col-status,
       #tab-reports #reportList > #rpMobTicketsHead .rp-tickets-table--mob th.wf-col-status,
       #tab-reports #reportList .rp-tickets-table--mob td.wf-col-status {
-        width: 20% !important;
+        width: 0 !important;
         min-width: 0 !important;
-        max-width: 20% !important;
-        padding: 4px 5px !important;
+        max-width: none !important;
+        padding: 3px 4px !important;
         white-space: normal !important;
         word-break: break-word !important;
         overflow-wrap: anywhere !important;
@@ -22106,7 +22106,7 @@
 
       #tab-reports #reportList .rp-tickets-table--mob td.wf-col-status .badge {
         font-size: 9px !important;
-        padding: 4px 6px !important;
+        padding: 3px 4px !important;
         line-height: 1.35;
         white-space: normal !important;
         word-break: break-word !important;
@@ -38626,7 +38626,7 @@
           rpRedistribute(Array.from(tds).findIndex(td => td.classList.contains('wf-col-violation')), 76);
           rpRedistribute(Array.from(tds).findIndex(td => td.classList.contains('wf-col-branch')), 73);
           rpRedistribute(Array.from(tds).findIndex(td => td.classList.contains('wf-col-datetime')), 58);
-          rpRedistribute(Array.from(tds).findIndex(td => td.classList.contains('wf-col-status')), 72);
+          rpRedistribute(Array.from(tds).findIndex(td => td.classList.contains('wf-col-status')), 52);
           const measureRpMobText = (text, refEl) => {
             const probe = document.createElement('span');
             const cs = getComputedStyle(refEl || document.body);
@@ -38660,6 +38660,16 @@
               if (t) maxNameW = Math.max(maxNameW, measureRpMobText(t, nameEl));
             });
             rpForceCol(empIdx, Math.ceil(maxNameW) + 12);
+          }
+          const statusIdx = Array.from(tds).findIndex(td => td.classList.contains('wf-col-status'));
+          if (statusIdx >= 0) {
+            const sampleBadge = bodyTable.querySelector('td.wf-col-status .badge');
+            let maxStatusW = measureRpMobText('الحالة', headTable.querySelector('th.wf-col-status'));
+            bodyTable.querySelectorAll('tbody tr.wf-ticket-row td.wf-col-status .badge').forEach((badge) => {
+              const t = (badge.textContent || '').trim();
+              if (t) maxStatusW = Math.max(maxStatusW, measureRpMobText(t, badge));
+            });
+            rpForceCol(statusIdx, Math.min(52, Math.ceil(maxStatusW) + 6));
           }
         } else if (root.listId === 'ticketList') {
           const findIdx = (cls) => Array.from(tds).findIndex(td => td.classList.contains(cls));
