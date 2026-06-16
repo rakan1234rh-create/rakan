@@ -18616,9 +18616,13 @@
       }
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-head col.wf-col-status-c,
-      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-body col.wf-col-status-c,
-      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-head th.wf-col-status,
-      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-body td.wf-col-status {
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-body col.wf-col-status-c {
+        width: 20% !important;
+        min-width: 0 !important;
+        max-width: 20% !important
+      }
+
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-head th.wf-col-status {
         width: 20% !important;
         min-width: 0 !important;
         max-width: 20% !important
@@ -19165,14 +19169,33 @@
         font-weight: 400 !important
       }
 
-      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-head th.wf-col-status,
-      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-body td.wf-col-status {
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-head th.wf-col-status {
         padding: 4px 5px !important;
         text-align: center !important;
         overflow: visible !important;
         white-space: normal !important;
         word-break: break-word !important;
         line-height: 1.3 !important
+      }
+
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-body td.wf-col-status {
+        width: 20% !important;
+        min-width: 0 !important;
+        max-width: 20% !important;
+        padding: 0 !important;
+        text-align: center !important;
+        overflow: hidden !important;
+        white-space: normal !important;
+        word-break: break-word !important;
+        line-height: 1.3 !important;
+        vertical-align: middle !important;
+        position: relative !important
+      }
+
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-body tbody tr.wf-ticket-row > td.wf-col-status {
+        padding: 0 !important;
+        overflow: hidden !important;
+        position: relative !important
       }
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-head th.wf-col-action,
@@ -19430,18 +19453,30 @@
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob .badge {
         font-size: 9px !important;
-        padding: 4px 6px !important;
         line-height: 1.35;
         white-space: normal !important;
         word-break: break-word !important;
-        overflow: visible;
-        max-width: 100%;
-        border-radius: 8px;
-        display: inline-block;
-        vertical-align: middle;
-        text-align: center;
-        font-weight: 700;
-        border: 1px solid color-mix(in srgb, currentColor 22%, transparent)
+        font-weight: 700
+      }
+
+      #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-body td.wf-col-status .badge {
+        padding: 2px 3px !important;
+        overflow: hidden;
+        max-width: none;
+        border-radius: 12px 0 0 12px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        border: none !important;
+        position: absolute !important;
+        inset: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        min-height: 44px !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+        text-align: center !important;
+        vertical-align: middle
       }
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob .ticket-id-cell,
