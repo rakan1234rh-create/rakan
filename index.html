@@ -21827,7 +21827,7 @@
       }
 
       #tab-reports #reportList .rp-tickets-table--mob col.wf-col-ticket-c {
-        width: auto !important;
+        width: 0 !important;
         min-width: 0 !important;
         max-width: none !important
       }
@@ -21835,10 +21835,10 @@
       #tab-reports #reportList .rp-tickets-table--mob th.wf-col-ticket,
       #tab-reports #reportList .rp-tickets-table--mob td.wf-ticket-cell,
       #tab-reports #reportList > #rpMobTicketsHead .rp-tickets-table--mob th.wf-col-ticket {
-        width: auto !important;
+        width: 0 !important;
         min-width: 0 !important;
         max-width: none !important;
-        padding: 4px 2px !important;
+        padding: 2px !important;
         text-align: center !important;
         vertical-align: middle !important
       }
@@ -21871,8 +21871,11 @@
 
       #tab-reports #reportList .rp-tickets-table--mob {
         width: 100% !important;
-        max-width: 100% !important;
-        table-layout: auto !important
+        max-width: 100% !important
+      }
+
+      #tab-reports #reportList .rp-tickets-table--mob.wf-tickets-table--mob-head {
+        table-layout: fixed !important
       }
 
       #tab-reports #reportList .rp-tickets-table--mob thead th {
@@ -21935,7 +21938,13 @@
       #tab-reports #reportList > #rpMobTicketsHead .rp-tickets-table--mob th.wf-col-emp {
         padding-inline: 4px !important;
         text-align: center !important;
-        width: auto !important;
+        width: 0 !important;
+        min-width: 0 !important;
+        max-width: none !important
+      }
+
+      #tab-reports #reportList .rp-tickets-table--mob col.wf-col-emp-c {
+        width: 0 !important;
         min-width: 0 !important;
         max-width: none !important
       }
@@ -38566,6 +38575,20 @@
               n += 1;
             }
           };
+          const rpForceCol = (idx, px) => {
+            if (idx < 0 || px < 0) return;
+            const prev = widths[idx];
+            if (prev <= px) return;
+            let excess = prev - px;
+            widths[idx] = px;
+            const flexCols = widths.map((_, i) => i).filter(i => i !== idx);
+            let n = 0;
+            while (excess > 0 && flexCols.length) {
+              widths[flexCols[n % flexCols.length]] += 1;
+              excess -= 1;
+              n += 1;
+            }
+          };
           rpRedistribute(Array.from(tds).findIndex(td => td.classList.contains('wf-col-violation')), 76);
           rpRedistribute(Array.from(tds).findIndex(td => td.classList.contains('wf-col-branch')), 73);
           rpRedistribute(Array.from(tds).findIndex(td => td.classList.contains('wf-col-datetime')), 58);
@@ -38574,9 +38597,10 @@
             const probe = document.createElement('span');
             const cs = getComputedStyle(refEl || document.body);
             probe.style.cssText = 'position:fixed;left:-9999px;top:0;white-space:nowrap;visibility:hidden;pointer-events:none;';
-            probe.style.fontSize = cs.fontSize || '10px';
-            probe.style.fontWeight = cs.fontWeight || '600';
+            probe.style.fontSize = cs.fontSize || '12px';
+            probe.style.fontWeight = cs.fontWeight || '800';
             probe.style.fontFamily = cs.fontFamily;
+            probe.style.fontVariantNumeric = cs.fontVariantNumeric || 'lining-nums tabular-nums';
             probe.textContent = text;
             document.body.appendChild(probe);
             const w = probe.offsetWidth;
@@ -38587,16 +38611,11 @@
           if (ticketIdx >= 0) {
             const sampleId = bodyTable.querySelector('td.wf-ticket-cell .wf-ticket-id');
             let maxTicketW = measureRpMobText('ID', sampleId || headTable.querySelector('th.wf-col-ticket'));
-            bodyTable.querySelectorAll('tbody tr.wf-ticket-row td.wf-ticket-cell').forEach((cell) => {
-              const idEl = cell.querySelector('.wf-ticket-id');
-              if (idEl) {
-                const t = (idEl.textContent || '').trim();
-                if (t) maxTicketW = Math.max(maxTicketW, measureRpMobText(t, idEl));
-              }
-              const flagEl = cell.querySelector('.wf-auto-flag--under-id');
-              if (flagEl) maxTicketW = Math.max(maxTicketW, flagEl.offsetWidth);
+            bodyTable.querySelectorAll('tbody tr.wf-ticket-row td.wf-ticket-cell .wf-ticket-id').forEach((idEl) => {
+              const t = (idEl.textContent || '').trim();
+              if (t) maxTicketW = Math.max(maxTicketW, measureRpMobText(t, idEl));
             });
-            rpRedistribute(ticketIdx, Math.ceil(maxTicketW) + 8);
+            rpForceCol(ticketIdx, Math.min(40, Math.ceil(maxTicketW) + 4));
           }
           const empIdx = Array.from(tds).findIndex(td => td.classList.contains('wf-col-emp'));
           if (empIdx >= 0) {
@@ -38606,7 +38625,7 @@
               const t = (nameEl.textContent || '').trim();
               if (t) maxNameW = Math.max(maxNameW, measureRpMobText(t, nameEl));
             });
-            rpRedistribute(empIdx, Math.ceil(maxNameW) + 10);
+            rpForceCol(empIdx, Math.ceil(maxNameW) + 8);
           }
         } else if (root.listId === 'ticketList') {
           const findIdx = (cls) => Array.from(tds).findIndex(td => td.classList.contains(cls));
@@ -38685,11 +38704,11 @@
           });
           headTable.style.width = `${Math.round(bodyTable.getBoundingClientRect().width)}px`;
         } else if (root.listId === 'reportList') {
-          const measured = Array.from(tds, td => td.getBoundingClientRect().width);
-          measured.forEach((w, i) => {
-            const px = `${Math.round(w)}px`;
+          widths.forEach((w, i) => {
+            const px = `${w}px`;
             setColW(ths[i], px);
             setColW(headCols[i], px);
+            setColW(bodyCols[i], px);
           });
           headTable.style.width = `${Math.round(bodyTable.getBoundingClientRect().width)}px`;
         }
