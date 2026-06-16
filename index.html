@@ -19070,26 +19070,34 @@
       }
 
       #tab-reports #reportList .rp-tickets-table--mob .wf-datetime-stack {
-        display: inline-flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
         gap: 2px !important;
-        width: 100%;
-        max-width: 100%;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-height: 38px !important;
+        margin: 0 auto !important;
+        padding: 0;
         font-size: 10px !important;
         line-height: 1.2 !important;
         font-family: var(--font) !important;
         white-space: nowrap;
-        text-align: center;
+        text-align: center !important;
         color: var(--mr-text)
       }
 
       #tab-reports #reportList .rp-tickets-table--mob .wf-datetime-stack__time {
         order: 1;
-        display: block;
-        width: 100%;
-        text-align: center;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 2px;
+        width: 100% !important;
+        max-width: 100%;
+        margin: 0 auto;
+        text-align: center !important;
         font-size: 10px !important;
         line-height: 1.2 !important;
         color: var(--mr-text);
@@ -19102,16 +19110,28 @@
         font-size: 10px !important;
         font-family: var(--font) !important;
         font-weight: 400 !important;
-        line-height: 1.2 !important
+        line-height: 1.2 !important;
+        text-align: center !important
       }
 
       #tab-reports #reportList .rp-tickets-table--mob .wf-datetime-stack__date {
         order: 2;
-        display: block;
-        width: 100%;
-        text-align: center;
+        display: block !important;
+        width: 100% !important;
+        max-width: 100%;
+        margin: 0 auto;
+        text-align: center !important;
+        direction: ltr;
+        unicode-bidi: embed;
         color: var(--mr-text);
         white-space: nowrap
+      }
+
+      #tab-reports #reportList .rp-tickets-table--mob .wf-time-hm,
+      #tab-reports #reportList .rp-tickets-table--mob .wf-time-ampm {
+        display: inline-block;
+        vertical-align: middle;
+        text-align: center !important
       }
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-head th.wf-col-datetime,
@@ -22113,7 +22133,8 @@
       #tab-reports #reportList .rp-tickets-table--mob td.wf-col-datetime {
         padding: 2px 2px !important;
         text-align: center !important;
-        overflow: hidden !important
+        vertical-align: middle !important;
+        overflow: visible !important
       }
 
       #tab-reports #reportList .rp-tickets-table--mob td.wf-col-status .badge {
