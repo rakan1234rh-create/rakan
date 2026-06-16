@@ -459,7 +459,8 @@
       -webkit-overflow-scrolling: touch !important;
       touch-action: pan-y !important;
       overscroll-behavior-y: contain;
-      align-items: stretch
+      align-items: stretch;
+      padding-bottom: 8px !important
     }
 
     html.mr-mobile-ui #tab-violations #violGrid.viol-grid--mob-list > .viol-type-list-item,
@@ -20044,7 +20045,7 @@
         flex-direction: column !important;
         gap: 0 !important;
         padding: 0 !important;
-        padding-bottom: calc(var(--mr-mob-bottom-nav-h, 56px) + 12px) !important;
+        padding-bottom: 8px !important;
         margin: 0 !important;
         width: 100% !important;
         max-width: none !important;
@@ -24774,7 +24775,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v637-viol-ios-scroll">
+  <meta name="app-build" content="athar-figma-v638-viol-ios-pad-fix">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -32189,6 +32190,7 @@
           grid.style.removeProperty('max-height');
           grid.style.removeProperty('overflow-y');
           grid.style.removeProperty('-webkit-overflow-scrolling');
+          grid.style.removeProperty('padding-bottom');
           return;
         }
         const top = grid.getBoundingClientRect().top;
@@ -32203,6 +32205,7 @@
           grid.style.maxHeight = h;
           grid.style.overflowY = 'scroll';
           grid.style.webkitOverflowScrolling = 'touch';
+          grid.style.paddingBottom = '8px';
         }
       }
 
