@@ -397,6 +397,7 @@
     html.mr-mobile-ui #appWrap .main:has(#tab-violations.active),
     html.mr-mobile-ui #appWrap .main:has(#tab-compliance.active) {
       padding-inline: 0 !important;
+      padding-bottom: 0 !important;
       overflow-x: visible !important
     }
 
@@ -460,7 +461,7 @@
       touch-action: pan-y !important;
       overscroll-behavior-y: contain;
       align-items: stretch;
-      padding-bottom: 8px !important
+      padding-bottom: 0 !important
     }
 
     html.mr-mobile-ui #tab-violations #violGrid.viol-grid--mob-list > .viol-type-list-item,
@@ -20045,7 +20046,7 @@
         flex-direction: column !important;
         gap: 0 !important;
         padding: 0 !important;
-        padding-bottom: 8px !important;
+        padding-bottom: 0 !important;
         margin: 0 !important;
         width: 100% !important;
         max-width: none !important;
@@ -20124,9 +20125,8 @@
       }
 
       html.mr-mobile-ui.mr-viol-tab-active #tab-violations #violDeskHost > .mr-users-list-wrap {
-        flex: 1 1 auto !important;
+        flex: 0 0 auto !important;
         min-height: 0 !important;
-        height: 0 !important;
         overflow: hidden !important;
         display: flex !important;
         flex-direction: column !important;
@@ -20139,12 +20139,12 @@
       html.mr-mobile-ui.mr-viol-tab-active #tab-violations #violGrid.viol-grid--mob-list {
         flex: 1 1 auto !important;
         min-height: 0 !important;
-        height: 0 !important;
-        overflow-y: auto !important;
+        overflow-y: scroll !important;
         overflow-x: hidden !important;
         -webkit-overflow-scrolling: touch !important;
         touch-action: pan-y !important;
-        overscroll-behavior-y: contain
+        overscroll-behavior-y: contain;
+        padding-bottom: 0 !important
       }
 
       #tab-violations .viol-type-list-item {
@@ -24775,7 +24775,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v638-viol-ios-pad-fix">
+  <meta name="app-build" content="athar-figma-v639-viol-bottom-gap-fix">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -32183,30 +32183,42 @@
       function syncViolMobListHeight() {
         const grid = document.getElementById('violGrid');
         if (!grid) return;
-        const mob = typeof isMobileViewport === 'function' && isMobileViewport();
-        const active = document.getElementById('tab-violations')?.classList.contains('active');
-        if (!mob || !active || !grid.classList.contains('viol-grid--mob-list')) {
-          grid.style.removeProperty('height');
-          grid.style.removeProperty('max-height');
+        const wrap = grid.closest('.mr-users-list-wrap');
+        const clearViolMobListHeight = () => {
+          [grid, wrap].filter(Boolean).forEach(el => {
+            el.style.removeProperty('height');
+            el.style.removeProperty('max-height');
+            el.style.removeProperty('flex');
+          });
           grid.style.removeProperty('overflow-y');
           grid.style.removeProperty('-webkit-overflow-scrolling');
           grid.style.removeProperty('padding-bottom');
+        };
+        const mob = typeof isMobileViewport === 'function' && isMobileViewport();
+        const active = document.getElementById('tab-violations')?.classList.contains('active');
+        if (!mob || !active || !grid.classList.contains('viol-grid--mob-list')) {
+          clearViolMobListHeight();
           return;
         }
-        const top = grid.getBoundingClientRect().top;
-        const rootStyle = getComputedStyle(document.documentElement);
-        const navVar = rootStyle.getPropertyValue('--mr-mob-bottom-nav-h').trim();
-        const navH = navVar ? (parseFloat(navVar) || 56) : 56;
-        const safeBottom = parseFloat(rootStyle.getPropertyValue('--mr-safe-bottom') || '0') || 0;
-        const maxH = window.innerHeight - top - navH - safeBottom - 2;
-        if (maxH > 100) {
-          const h = Math.floor(maxH) + 'px';
-          grid.style.height = h;
-          grid.style.maxHeight = h;
-          grid.style.overflowY = 'scroll';
-          grid.style.webkitOverflowScrolling = 'touch';
-          grid.style.paddingBottom = '8px';
+        const host = wrap || grid;
+        const top = host.getBoundingClientRect().top;
+        const nav = document.getElementById('mobileBottomNav');
+        const viewportH = window.visualViewport?.height || window.innerHeight;
+        const bottom = nav ? nav.getBoundingClientRect().top : viewportH;
+        const maxH = Math.floor(bottom - top);
+        if (maxH < 100) return;
+        const h = maxH + 'px';
+        if (wrap) {
+          wrap.style.setProperty('height', h, 'important');
+          wrap.style.setProperty('max-height', h, 'important');
+          wrap.style.setProperty('flex', '0 0 auto', 'important');
         }
+        grid.style.setProperty('height', '100%', 'important');
+        grid.style.setProperty('max-height', '100%', 'important');
+        grid.style.setProperty('flex', '1 1 auto', 'important');
+        grid.style.setProperty('overflow-y', 'scroll', 'important');
+        grid.style.setProperty('-webkit-overflow-scrolling', 'touch', 'important');
+        grid.style.setProperty('padding-bottom', '0', 'important');
       }
 
       function syncViolMobileScrollShell(tab) {
