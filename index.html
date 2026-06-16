@@ -31920,8 +31920,11 @@
         if (typeof usersIoMenuClose === 'function') usersIoMenuClose();
         if (typeof settingsUserDdClose === 'function') settingsUserDdClose();
 
-        document.getElementById('notifPanel')?.classList.remove('open');
-        if (typeof notifPanelClearPosition === 'function') notifPanelClearPosition();
+        if (typeof closeNotifPanel === 'function') closeNotifPanel();
+        else {
+          document.getElementById('notifPanel')?.classList.remove('open');
+          if (typeof notifPanelClearPosition === 'function') notifPanelClearPosition();
+        }
 
         if (typeof dpFloatClose === 'function') {
           dpFloatClose(document.getElementById('datePickerPopup'));
@@ -46052,7 +46055,7 @@
         }, 0);
       }
 
-      function openNotifPanelFast() {
+      function openNotifPanel() {
         const panel = document.getElementById('notifPanel');
         const bell = document.getElementById('notifBellBtn');
         if (!panel || panel.classList.contains('open')) return;
@@ -46062,6 +46065,19 @@
         notifPanelPositionQuick();
         setTimeout(() => { state._notifPanelSkipClose = false; }, 0);
         scheduleNotifPanelRefresh();
+      }
+
+      function closeNotifPanel() {
+        const panel = document.getElementById('notifPanel');
+        const bell = document.getElementById('notifBellBtn');
+        if (!panel || !panel.classList.contains('open')) return;
+        panel.classList.remove('open');
+        if (bell) bell.setAttribute('aria-expanded', 'false');
+        if (state._notifRefreshTimer) {
+          clearTimeout(state._notifRefreshTimer);
+          state._notifRefreshTimer = null;
+        }
+        notifPanelClearPosition();
       }
 
       function notifPanelClearPosition() {
@@ -46112,27 +46128,16 @@
       function toggleNotifPanel(event) {
         if (event) event.stopPropagation();
         const panel = document.getElementById('notifPanel');
-        const bell = document.getElementById('notifBellBtn');
         if (!panel) return;
-        if (state._notifOpenedOnPointer) {
-          state._notifOpenedOnPointer = false;
+        if (state._notifPointerToggled) {
+          state._notifPointerToggled = false;
           if (event) event.preventDefault();
           return;
         }
-        const opening = !panel.classList.contains('open');
-        panel.classList.toggle('open');
-        if (bell) bell.setAttribute('aria-expanded', panel.classList.contains('open') ? 'true' : 'false');
-        if (opening) {
-          state._notifPanelSkipClose = true;
-          notifPanelPositionQuick();
-          setTimeout(() => { state._notifPanelSkipClose = false; }, 0);
-          scheduleNotifPanelRefresh();
+        if (panel.classList.contains('open')) {
+          closeNotifPanel();
         } else {
-          if (state._notifRefreshTimer) {
-            clearTimeout(state._notifRefreshTimer);
-            state._notifRefreshTimer = null;
-          }
-          notifPanelClearPosition();
+          openNotifPanel();
         }
       }
 
@@ -46143,9 +46148,7 @@
         saveReadNotifs(read);
 
         // إغلاق اللوحة
-        document.getElementById('notifPanel').classList.remove('open');
-        document.getElementById('notifBellBtn')?.setAttribute('aria-expanded', 'false');
-        notifPanelClearPosition();
+        closeNotifPanel();
 
         // الانتقال للتذكرة المرتبطة
         if (ticketId) {
@@ -46177,9 +46180,10 @@
         bell.addEventListener('pointerdown', (e) => {
           if (e.button !== 0) return;
           const panel = document.getElementById('notifPanel');
-          if (!panel || panel.classList.contains('open')) return;
-          state._notifOpenedOnPointer = true;
-          openNotifPanelFast();
+          if (!panel) return;
+          state._notifPointerToggled = true;
+          if (panel.classList.contains('open')) closeNotifPanel();
+          else openNotifPanel();
         }, { passive: true });
       })();
 
@@ -46191,9 +46195,7 @@
         if (panel.classList.contains('open') &&
           !panel.contains(e.target) &&
           !bell.contains(e.target)) {
-          panel.classList.remove('open');
-          bell.setAttribute('aria-expanded', 'false');
-          notifPanelClearPosition();
+          closeNotifPanel();
         }
       });
 
