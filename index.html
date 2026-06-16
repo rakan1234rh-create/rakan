@@ -21599,14 +21599,14 @@
       }
 
       #tab-reports #reportList .rp-tickets-table--mob tbody tr.wf-ticket-row > td.wf-col-status {
-        padding-block: 1px !important;
-        padding-inline: 0 2px !important;
+        padding: 0 !important;
         text-align: center !important;
-        overflow: visible !important;
+        overflow: hidden !important;
         white-space: normal !important;
         word-break: break-word !important;
         line-height: 1.3 !important;
-        vertical-align: middle !important
+        vertical-align: middle !important;
+        position: relative !important
       }
 
       [data-theme="light"] #tab-reports #reportList .rp-tickets-table--mob tbody tr.wf-ticket-row > td {
@@ -22131,16 +22131,24 @@
       }
 
       #tab-reports #reportList .rp-tickets-table--mob th.wf-col-status,
-      #tab-reports #reportList > #rpMobTicketsHead .rp-tickets-table--mob th.wf-col-status,
+      #tab-reports #reportList > #rpMobTicketsHead .rp-tickets-table--mob th.wf-col-status {
+        padding: 2px 6px !important;
+        white-space: normal !important;
+        word-break: break-word !important;
+        overflow-wrap: anywhere !important;
+        vertical-align: middle !important;
+        text-align: center !important
+      }
+
       #tab-reports #reportList .rp-tickets-table--mob td.wf-col-status {
-        padding-block: 2px !important;
-        padding-inline: 0 2px !important;
+        padding: 0 !important;
         white-space: normal !important;
         word-break: break-word !important;
         overflow-wrap: anywhere !important;
         vertical-align: middle !important;
         text-align: center !important;
-        overflow: visible !important
+        overflow: hidden !important;
+        position: relative !important
       }
 
       #tab-reports #reportList .rp-tickets-table--mob tbody tr.wf-ticket-row > td.wf-col-ticket,
@@ -22161,22 +22169,23 @@
 
       #tab-reports #reportList .rp-tickets-table--mob td.wf-col-status .badge {
         font-size: 9px !important;
-        padding: 2px 2px !important;
-        min-height: 42px !important;
+        padding: 2px 3px !important;
         line-height: 1.35;
         white-space: normal !important;
         word-break: break-word !important;
-        overflow: visible;
-        max-width: 100%;
-        border-radius: 8px;
-        display: inline-flex !important;
+        overflow: hidden;
+        max-width: none;
+        border-radius: 12px 0 0 12px !important;
+        display: flex !important;
         align-items: center !important;
         justify-content: center !important;
         font-weight: 700;
-        border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
-        position: static !important;
-        width: auto !important;
-        height: auto !important;
+        border: none !important;
+        position: absolute !important;
+        inset: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        min-height: 44px !important;
         margin: 0 !important;
         box-sizing: border-box !important
       }
