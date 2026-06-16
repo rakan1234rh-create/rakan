@@ -21492,10 +21492,22 @@
         line-height: 1.2 !important;
         vertical-align: middle !important;
         background: var(--mr-surface) !important;
-        border-top: 1px solid var(--mr-border) !important;
-        border-bottom: 1px solid var(--mr-border) !important;
-        border-inline-start: none !important;
-        border-inline-end: none !important
+        border: 1px solid color-mix(in srgb, var(--mr-border) 88%, transparent) !important;
+        border-top: 1px solid color-mix(in srgb, var(--mr-border) 88%, transparent) !important;
+        border-bottom: 1px solid color-mix(in srgb, var(--mr-border) 88%, transparent) !important;
+        box-sizing: border-box !important
+      }
+
+      #tab-reports #reportList .rp-tickets-table--mob tbody tr.wf-ticket-row > td + td {
+        border-inline-start: 1px solid color-mix(in srgb, var(--mr-border) 55%, transparent) !important
+      }
+
+      #tab-reports #reportList .rp-tickets-table--mob tbody tr.wf-ticket-row > td:first-child {
+        border-inline-end: 1px solid color-mix(in srgb, var(--mr-border) 55%, transparent) !important
+      }
+
+      #tab-reports #reportList .rp-tickets-table--mob tbody tr.wf-ticket-row > td:last-child {
+        border-inline-start: 1px solid color-mix(in srgb, var(--mr-border) 55%, transparent) !important
       }
 
       #tab-reports #reportList .rp-tickets-table--mob tbody tr.wf-ticket-row:last-child > td {
@@ -21503,11 +21515,8 @@
         margin-bottom: 0 !important
       }
 
-      #tab-reports #reportList .rp-tickets-table--mob tbody tr.wf-ticket-row:hover > td,
-      #tab-reports #reportList .rp-tickets-table--mob tbody tr.wf-ticket-row:hover > td:first-child,
-      #tab-reports #reportList .rp-tickets-table--mob tbody tr.wf-ticket-row:hover > td:last-child {
-        border-inline-start: none !important;
-        border-inline-end: none !important
+      #tab-reports #reportList .rp-tickets-table--mob tbody tr.wf-ticket-row:hover > td {
+        background: var(--mr-surface) !important
       }
 
       #tab-reports #reportList .rp-tickets-table--mob tbody tr.wf-ticket-row > td.wf-col-status {
