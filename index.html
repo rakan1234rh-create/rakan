@@ -21543,7 +21543,9 @@
       }
 
       #tab-reports #reportList .rp-tickets-table--mob tbody tr.wf-ticket-row > td.wf-col-status {
-        padding: 3px 4px !important;
+        padding: 2px 1px !important;
+        padding-inline-start: 0 !important;
+        padding-inline-end: 2px !important;
         text-align: center !important;
         overflow: visible !important;
         white-space: normal !important;
@@ -22080,7 +22082,9 @@
         width: 0 !important;
         min-width: 0 !important;
         max-width: none !important;
-        padding: 3px 4px !important;
+        padding: 2px 1px !important;
+        padding-inline-start: 0 !important;
+        padding-inline-end: 2px !important;
         white-space: normal !important;
         word-break: break-word !important;
         overflow-wrap: anywhere !important;
@@ -22106,7 +22110,7 @@
 
       #tab-reports #reportList .rp-tickets-table--mob td.wf-col-status .badge {
         font-size: 9px !important;
-        padding: 3px 4px !important;
+        padding: 1px 2px !important;
         line-height: 1.35;
         white-space: normal !important;
         word-break: break-word !important;
@@ -38669,7 +38673,7 @@
               const t = (badge.textContent || '').trim();
               if (t) maxStatusW = Math.max(maxStatusW, measureRpMobText(t, badge));
             });
-            rpForceCol(statusIdx, Math.min(52, Math.ceil(maxStatusW) + 6));
+            rpForceCol(statusIdx, Math.min(52, Math.ceil(maxStatusW) + 4));
           }
         } else if (root.listId === 'ticketList') {
           const findIdx = (cls) => Array.from(tds).findIndex(td => td.classList.contains(cls));
