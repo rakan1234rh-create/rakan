@@ -19012,20 +19012,56 @@
         letter-spacing: 0
       }
 
-      /* التقارير — الوقت فوق التاريخ */
+      #tab-reports #reportList.rp-mob-measuring > #rpMobTicketsHead,
+      #tab-reports #reportList.rp-mob-measuring > .wf-mob-tickets-body {
+        visibility: hidden !important
+      }
+
+      #tab-reports #reportList .rp-tickets-table--mob col.wf-col-ticket-c,
+      #tab-reports #reportList > #rpMobTicketsHead .rp-tickets-table--mob col.wf-col-ticket-c {
+        width: 12% !important;
+        min-width: 0 !important;
+        max-width: none !important
+      }
+
+      #tab-reports #reportList .rp-tickets-table--mob col.wf-col-emp-c,
+      #tab-reports #reportList > #rpMobTicketsHead .rp-tickets-table--mob col.wf-col-emp-c {
+        width: 18% !important;
+        min-width: 0 !important;
+        max-width: none !important
+      }
+
+      #tab-reports #reportList .rp-tickets-table--mob col.wf-col-viol-c,
+      #tab-reports #reportList > #rpMobTicketsHead .rp-tickets-table--mob col.wf-col-viol-c {
+        width: 22% !important;
+        min-width: 0 !important;
+        max-width: none !important
+      }
+
+      #tab-reports #reportList .rp-tickets-table--mob col.wf-col-branch-c,
+      #tab-reports #reportList > #rpMobTicketsHead .rp-tickets-table--mob col.wf-col-branch-c {
+        width: 20% !important;
+        min-width: 0 !important;
+        max-width: none !important
+      }
+
       #tab-reports #reportList .rp-tickets-table--mob col.wf-col-datetime-c,
       #tab-reports #reportList > #rpMobTicketsHead .rp-tickets-table--mob col.wf-col-datetime-c {
-        width: 58px !important;
-        min-width: 58px !important;
-        max-width: 58px !important
+        width: 16% !important;
+        min-width: 0 !important;
+        max-width: none !important
+      }
+
+      #tab-reports #reportList .rp-tickets-table--mob col.wf-col-status-c,
+      #tab-reports #reportList > #rpMobTicketsHead .rp-tickets-table--mob col.wf-col-status-c {
+        width: 12% !important;
+        min-width: 0 !important;
+        max-width: none !important
       }
 
       #tab-reports #reportList .rp-tickets-table--mob th.wf-col-datetime,
       #tab-reports #reportList .rp-tickets-table--mob td.wf-col-datetime,
       #tab-reports #reportList > #rpMobTicketsHead .rp-tickets-table--mob th.wf-col-datetime {
-        width: 58px !important;
-        min-width: 58px !important;
-        max-width: 58px !important;
         font-size: 9px !important;
         padding: 2px 2px !important;
         text-align: center !important;
@@ -21869,7 +21905,6 @@
       }
 
       #tab-reports #reportList .rp-tickets-table--mob col.wf-col-ticket-c {
-        width: 0 !important;
         min-width: 0 !important;
         max-width: none !important
       }
@@ -21877,7 +21912,6 @@
       #tab-reports #reportList .rp-tickets-table--mob th.wf-col-ticket,
       #tab-reports #reportList .rp-tickets-table--mob td.wf-ticket-cell,
       #tab-reports #reportList > #rpMobTicketsHead .rp-tickets-table--mob th.wf-col-ticket {
-        width: 0 !important;
         min-width: 0 !important;
         max-width: none !important;
         padding: 8px 6px !important;
@@ -21994,13 +22028,11 @@
       #tab-reports #reportList > #rpMobTicketsHead .rp-tickets-table--mob th.wf-col-emp {
         padding: 8px 6px !important;
         text-align: center !important;
-        width: 0 !important;
         min-width: 0 !important;
         max-width: none !important
       }
 
       #tab-reports #reportList .rp-tickets-table--mob col.wf-col-emp-c {
-        width: 0 !important;
         min-width: 0 !important;
         max-width: none !important
       }
@@ -22032,19 +22064,9 @@
         color: var(--mr-text) !important
       }
 
-      #tab-reports #reportList .rp-tickets-table--mob col.wf-col-branch-c,
-      #tab-reports #reportList > #rpMobTicketsHead .rp-tickets-table--mob col.wf-col-branch-c {
-        width: 73px !important;
-        min-width: 73px !important;
-        max-width: 73px !important
-      }
-
       #tab-reports #reportList .rp-tickets-table--mob th.wf-col-branch,
       #tab-reports #reportList .rp-tickets-table--mob td.wf-col-branch,
       #tab-reports #reportList > #rpMobTicketsHead .rp-tickets-table--mob th.wf-col-branch {
-        width: 73px !important;
-        min-width: 73px !important;
-        max-width: 73px !important;
         padding: 4px 2px !important;
         white-space: normal !important;
         word-break: break-word !important;
@@ -22054,19 +22076,9 @@
         overflow: visible !important
       }
 
-      #tab-reports #reportList .rp-tickets-table--mob col.wf-col-viol-c,
-      #tab-reports #reportList > #rpMobTicketsHead .rp-tickets-table--mob col.wf-col-viol-c {
-        width: 76px !important;
-        min-width: 76px !important;
-        max-width: 76px !important
-      }
-
       #tab-reports #reportList .rp-tickets-table--mob th.wf-col-violation,
       #tab-reports #reportList .rp-tickets-table--mob td.wf-col-violation,
       #tab-reports #reportList > #rpMobTicketsHead .rp-tickets-table--mob th.wf-col-violation {
-        width: 76px !important;
-        min-width: 76px !important;
-        max-width: 76px !important;
         padding: 4px 2px !important;
         white-space: normal !important;
         vertical-align: middle !important;
@@ -22076,19 +22088,9 @@
         overflow-wrap: anywhere !important
       }
 
-      #tab-reports #reportList .rp-tickets-table--mob col.wf-col-status-c,
-      #tab-reports #reportList > #rpMobTicketsHead .rp-tickets-table--mob col.wf-col-status-c {
-        width: 0 !important;
-        min-width: 0 !important;
-        max-width: none !important
-      }
-
       #tab-reports #reportList .rp-tickets-table--mob th.wf-col-status,
       #tab-reports #reportList > #rpMobTicketsHead .rp-tickets-table--mob th.wf-col-status,
       #tab-reports #reportList .rp-tickets-table--mob td.wf-col-status {
-        width: 0 !important;
-        min-width: 0 !important;
-        max-width: none !important;
         padding-block: 2px !important;
         padding-inline: 0 2px !important;
         white-space: normal !important;
@@ -31997,6 +31999,18 @@
         if (tab === 'reports' && typeof syncDesktopWfTableColWidths === 'function') {
           requestAnimationFrame(() => requestAnimationFrame(() => syncDesktopWfTableColWidths('reports')));
         }
+        if (tab === 'reports' && typeof isMobileViewport === 'function' && isMobileViewport()) {
+          requestAnimationFrame(() => {
+            const list = document.getElementById('reportList');
+            const bodyScroll = list?.querySelector('.wf-mob-tickets-body');
+            if (!bodyScroll?.querySelector('.wf-tickets-table--mob-body')) return;
+            list.classList.add('rp-mob-measuring');
+            delete bodyScroll.dataset.rpColSig;
+            bindMobTicketsHeadScroll('reports');
+            list.classList.remove('rp-mob-measuring');
+            list.classList.add('rp-mob-cols-ready');
+          });
+        }
         syncViolMobileScrollShell(tab);
         syncUsersMobileScrollShell(tab);
         syncCmpMobileScrollShell(tab);
@@ -38092,11 +38106,18 @@
         </table>
       </div>`;
           resetTicketListChildren(list, true);
+          if (rpMob) list.classList.add('rp-mob-measuring');
           getOrCreateTicketMobBody(list).innerHTML = mobBodyHtml;
           const mobBodyScroll = list.querySelector('.wf-mob-tickets-body');
           if (mobBodyScroll) delete mobBodyScroll.dataset.rpColSig;
           const scrollTab = isReportsList ? 'reports' : 'workflow';
-          requestAnimationFrame(() => requestAnimationFrame(() => bindMobTicketsHeadScroll(scrollTab)));
+          if (rpMob) {
+            bindMobTicketsHeadScroll(scrollTab);
+            list.classList.remove('rp-mob-measuring');
+            list.classList.add('rp-mob-cols-ready');
+          } else {
+            requestAnimationFrame(() => requestAnimationFrame(() => bindMobTicketsHeadScroll(scrollTab)));
+          }
           return;
         }
 
@@ -38526,6 +38547,7 @@
         const bodyCs = getComputedStyle(bodyScroll);
         const bodyPadX = (parseFloat(bodyCs.paddingLeft) || 0) + (parseFloat(bodyCs.paddingRight) || 0);
         let tableW = Math.max(0, innerW - bodyPadX);
+        if (root.listId === 'reportList' && tableW < 48) return;
         const useMeasuredHead = root.listId === 'ticketList' || root.listId === 'reportList';
         if (root.listId === 'ticketList') {
           bodyTable.style.width = '100%';
@@ -38780,10 +38802,10 @@
           });
           headTable.style.width = `${Math.round(bodyTable.getBoundingClientRect().width)}px`;
         } else if (root.listId === 'reportList') {
-          const totalW = widths.reduce((a, b) => a + b, 0);
-          const wpx = `${totalW}px`;
-          headTable.style.width = wpx;
-          bodyTable.style.width = wpx;
+          headTable.style.width = '100%';
+          bodyTable.style.width = '100%';
+          headTable.style.maxWidth = '100%';
+          bodyTable.style.maxWidth = '100%';
           headTable.style.transform = '';
         }
 
@@ -38806,10 +38828,7 @@
           bodyScroll.onscroll = () => { headWrap.scrollLeft = bodyScroll.scrollLeft; };
           headWrap.scrollLeft = bodyScroll.scrollLeft;
         }
-        const hideDuringSync = root.listId === 'reportList';
-        if (hideDuringSync) bodyScroll.style.visibility = 'hidden';
         syncMobTicketsColWidths(tab);
-        if (hideDuringSync) bodyScroll.style.visibility = '';
         const syncKey = root.listId === 'reportList' ? 'rpColSyncBound' : 'wfColSyncBound';
         if (!bodyScroll.dataset[syncKey]) {
           bodyScroll.dataset[syncKey] = '1';
