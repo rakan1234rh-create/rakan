@@ -21878,7 +21878,7 @@
         width: 0 !important;
         min-width: 0 !important;
         max-width: none !important;
-        padding: 8px 4px !important;
+        padding: 8px 6px !important;
         text-align: center !important;
         vertical-align: middle !important
       }
@@ -21983,7 +21983,7 @@
 
       #tab-reports #reportList .rp-tickets-table--mob tbody td.wf-col-emp,
       #tab-reports #reportList > #rpMobTicketsHead .rp-tickets-table--mob th.wf-col-emp {
-        padding: 8px 4px !important;
+        padding: 8px 6px !important;
         text-align: center !important;
         width: 0 !important;
         min-width: 0 !important;
@@ -38649,7 +38649,7 @@
               const t = (idEl.textContent || '').trim();
               if (t) maxTicketW = Math.max(maxTicketW, measureRpMobText(t, idEl));
             });
-            rpForceCol(ticketIdx, Math.min(40, Math.ceil(maxTicketW) + 4));
+            rpForceCol(ticketIdx, Math.min(46, Math.ceil(maxTicketW) + 8));
           }
           const empIdx = Array.from(tds).findIndex(td => td.classList.contains('wf-col-emp'));
           if (empIdx >= 0) {
@@ -38659,7 +38659,7 @@
               const t = (nameEl.textContent || '').trim();
               if (t) maxNameW = Math.max(maxNameW, measureRpMobText(t, nameEl));
             });
-            rpForceCol(empIdx, Math.ceil(maxNameW) + 8);
+            rpForceCol(empIdx, Math.ceil(maxNameW) + 12);
           }
         } else if (root.listId === 'ticketList') {
           const findIdx = (cls) => Array.from(tds).findIndex(td => td.classList.contains(cls));
