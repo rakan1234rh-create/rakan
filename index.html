@@ -18169,9 +18169,11 @@
         background: var(--mr-surface) !important;
         opacity: 1 !important;
         height: 34px !important;
+        padding: 2px 6px !important;
         border: 1px solid color-mix(in srgb, var(--mr-border) 88%, transparent) !important;
         border-bottom: 1px solid color-mix(in srgb, var(--mr-border) 88%, transparent) !important;
-        box-shadow: 0 2px 10px rgba(15, 18, 36, 0.06) !important
+        box-shadow: 0 2px 10px rgba(15, 18, 36, 0.06) !important;
+        box-sizing: border-box !important
       }
 
       #tab-workflow #ticketList > #wfMobTicketsHead .wf-tickets-table--mob-head thead th + th {
@@ -38396,20 +38398,16 @@
         const bodyPadX = (parseFloat(bodyCs.paddingLeft) || 0) + (parseFloat(bodyCs.paddingRight) || 0);
         let tableW = Math.max(0, innerW - bodyPadX);
         if (root.listId === 'ticketList') {
-          const listHost = document.getElementById('ticketList');
-          const listCs = listHost ? getComputedStyle(listHost) : null;
-          const listPadX = listCs
-            ? (parseFloat(listCs.paddingLeft) || 0) + (parseFloat(listCs.paddingRight) || 0)
-            : 0;
-          const listInnerW = listHost ? Math.max(0, listHost.clientWidth - listPadX) : tableW;
+          tableW = bodyScroll.clientWidth;
+          const tablePxFixed = `${tableW}px`;
           headHost.style.width = '100%';
           headHost.style.maxWidth = '100%';
           headWrap.style.width = '100%';
           headWrap.style.maxWidth = '100%';
           headWrap.style.paddingInline = '0';
-          headTable.style.width = '100%';
-          bodyTable.style.width = '100%';
-          tableW = bodyTable.offsetWidth || listInnerW;
+          headWrap.style.paddingInlineEnd = scrollBarW > 0 ? `${scrollBarW}px` : '0';
+          headTable.style.width = tablePxFixed;
+          bodyTable.style.width = tablePxFixed;
         }
         const tablePx = `${tableW}px`;
         const innerPx = `${innerW}px`;
@@ -38432,10 +38430,14 @@
             headWrap.style.maxWidth = outerPx;
           }
           headWrap.style.marginInline = root.listId === 'reportList' ? 'auto' : '0';
-          headWrap.style.paddingInlineEnd = (root.listId === 'reportList' && scrollBarW) ? `${scrollBarW}px` : '';
-          if (root.listId === 'ticketList') {
+          if (root.listId === 'reportList') {
+            headWrap.style.paddingInlineEnd = scrollBarW ? `${scrollBarW}px` : '';
+          } else if (root.listId === 'ticketList') {
             headWrap.style.overflow = 'hidden';
             headWrap.scrollLeft = 0;
+            headWrap.style.paddingInlineEnd = scrollBarW > 0 ? `${scrollBarW}px` : '0';
+          } else {
+            headWrap.style.paddingInlineEnd = '';
           }
         }
 
@@ -38537,6 +38539,7 @@
           setColW(ths[i], px);
           setColW(headCols[i], px);
           setColW(bodyCols[i], px);
+          setColW(tds[i], px);
         });
 
         const slip = tds[0].getBoundingClientRect().left - ths[0].getBoundingClientRect().left;
