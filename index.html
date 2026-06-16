@@ -21807,6 +21807,7 @@
         justify-content: center !important;
         gap: 2px !important;
         direction: rtl;
+        width: 100% !important;
         min-width: 0;
         max-width: 100%;
         white-space: nowrap
@@ -21814,9 +21815,9 @@
 
       #tab-reports #reportList .ticket-id-cell--under-id .wf-ticket-id {
         order: 1;
-        display: inline-block !important;
+        display: block !important;
         flex: 0 0 auto !important;
-        width: auto !important;
+        width: 100% !important;
         margin: 0;
         padding: 0;
         font-size: 9px !important;
@@ -21825,7 +21826,7 @@
         text-align: center !important;
         direction: ltr;
         unicode-bidi: embed;
-        max-width: none;
+        max-width: 100%;
         overflow: visible;
         text-overflow: clip;
         white-space: nowrap
@@ -21881,7 +21882,8 @@
         max-width: none !important;
         padding: 8px 6px !important;
         text-align: center !important;
-        vertical-align: middle !important
+        vertical-align: middle !important;
+        overflow: visible !important
       }
 
       #tab-reports #reportList .rp-tickets-table--mob .ticket-id-cell,
@@ -21891,17 +21893,18 @@
         flex-direction: column !important;
         align-items: center !important;
         justify-content: center !important;
-        width: auto !important;
-        max-width: none !important;
-        margin: 0 auto !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        margin: 0 !important;
         text-align: center !important;
         direction: rtl
       }
 
       #tab-reports #reportList .rp-tickets-table--mob .wf-ticket-id {
-        display: inline-block !important;
-        width: auto !important;
-        margin: 0 auto !important;
+        display: block !important;
+        width: 100% !important;
+        margin: 0 !important;
         padding: 0;
         font-family: var(--mono) !important;
         font-size: 9px !important;
