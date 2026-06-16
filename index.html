@@ -2572,7 +2572,7 @@
       top: -6px;
       inset-inline-end: -2px;
       inset-inline-start: auto;
-      z-index: 2;
+      z-index: 3;
       background: linear-gradient(180deg, #f87171 0%, #ef4444 52%, #dc2626 100%);
       color: #fff;
       font-family: var(--mono);
@@ -2586,7 +2586,7 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      border: 2px solid var(--mr-surface);
+      border: 2px solid var(--mr-bg);
       box-shadow: 0 1px 4px rgba(220, 38, 38, 0.32);
       font-variant-numeric: lining-nums tabular-nums;
       pointer-events: none
@@ -2612,6 +2612,8 @@
     .topbar-btn--notif {
       width: 36px;
       height: 36px;
+      min-width: 36px;
+      min-height: 36px;
       flex-shrink: 0;
       border: 1px solid color-mix(in srgb, var(--mr-border) 55%, transparent);
       border-radius: 50%;
@@ -2620,7 +2622,9 @@
       box-shadow: 0 1px 3px rgba(15, 18, 36, 0.05);
       touch-action: manipulation;
       -webkit-tap-highlight-color: transparent;
-      transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, color 0.15s ease, transform 0.12s ease
+      transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+      transform: none;
+      overflow: visible
     }
 
     .topbar-btn--notif i {
@@ -2635,15 +2639,11 @@
       box-shadow: 0 2px 8px rgba(15, 18, 36, 0.06)
     }
 
-    .topbar-btn--notif:active {
-      transform: scale(0.94)
-    }
-
-    .topbar-actions-zone:has(#notifPanel.open) .topbar-btn--notif {
+    .topbar-btn--notif[aria-expanded="true"] {
       border-color: color-mix(in srgb, var(--mr-primary) 35%, var(--mr-border));
       background: var(--mr-surface);
-      box-shadow: 0 0 0 3px color-mix(in srgb, var(--mr-primary) 12%, transparent);
-      color: var(--mr-primary)
+      color: var(--mr-primary);
+      box-shadow: 0 1px 3px rgba(15, 18, 36, 0.05)
     }
 
     [data-theme="dark"] .topbar-btn--notif {
@@ -2659,14 +2659,14 @@
       color: var(--mr-text)
     }
 
-    [data-theme="dark"] .topbar-actions-zone:has(#notifPanel.open) .topbar-btn--notif {
+    [data-theme="dark"] .topbar-btn--notif[aria-expanded="true"] {
       background: rgba(255, 255, 255, 0.08);
       border-color: color-mix(in srgb, var(--mr-primary) 40%, var(--mr-border-2));
       color: var(--mr-primary)
     }
 
     [data-theme="dark"] .notif-bell-count {
-      border-color: color-mix(in srgb, var(--mr-bg) 55%, var(--mr-surface))
+      border-color: var(--mr-bg)
     }
 
     .content {
@@ -23614,10 +23614,10 @@
       box-shadow: none !important
     }
 
-    #appWrap .topbar-actions-zone:has(#notifPanel.open) .topbar-btn--notif {
+    #appWrap .topbar-btn--notif[aria-expanded="true"] {
       border-color: color-mix(in srgb, var(--mr-primary) 35%, var(--mr-border)) !important;
       background: var(--mr-surface) !important;
-      box-shadow: 0 0 0 3px color-mix(in srgb, var(--mr-primary) 12%, transparent) !important;
+      box-shadow: 0 1px 3px rgba(15, 18, 36, 0.05) !important;
       color: var(--mr-primary) !important
     }
   </style>
@@ -24806,6 +24806,7 @@
               </div>
             </div>
 
+        </div>
         <!-- Notifications Panel -->
         <div class="notif-panel" id="notifPanel">
           <div class="notif-header">
@@ -24820,7 +24821,6 @@
               <p>لا توجد تنبيهات</p>
             </div>
           </div>
-        </div>
         </div>
     </header>
       <div class="app-body">
@@ -45944,6 +45944,20 @@
         return notifs;
       }
 
+      function updateNotifBellBadge(unreadCount) {
+        const bellCount = document.getElementById('notifBellCount');
+        if (!bellCount) return;
+        const unread = Math.max(0, Number(unreadCount) || 0);
+        if (unread > 0) {
+          state._bellUnreadShown = unread;
+          bellCount.style.display = 'inline-flex';
+          bellCount.textContent = unread > 99 ? '99+' : String(unread);
+        } else {
+          state._bellUnreadShown = 0;
+          bellCount.style.display = 'none';
+        }
+      }
+
       function renderNotifBadge() {
         const bellCount = document.getElementById('notifBellCount');
         if (!bellCount || !state.currentUser) return;
@@ -45953,30 +45967,18 @@
           const notifs = buildUserNotificationsCached();
           state._currentNotifs = notifs;
           const read = getReadNotifs();
-          const unread = notifs.filter(n => !read.has(n.id));
-          if (unread.length > 0) {
-            bellCount.style.display = '';
-            bellCount.textContent = unread.length > 99 ? '99+' : unread.length;
-          } else {
-            bellCount.style.display = 'none';
-          }
+          updateNotifBellBadge(notifs.filter(n => !read.has(n.id)).length);
         } catch (_) { /* noop */ }
       }
 
-      function paintNotifList(notifs, read) {
+      function paintNotifList(notifs, read, opts) {
         const list = document.getElementById('notifList');
         const count = document.getElementById('notifPanelCount');
-        const bellCount = document.getElementById('notifBellCount');
-        if (!bellCount || !state.currentUser) return;
+        if (!state.currentUser) return;
 
         const unread = notifs.filter(n => !read.has(n.id));
-
-        if (unread.length > 0) {
-          bellCount.style.display = '';
-          bellCount.textContent = unread.length > 99 ? '99+' : unread.length;
-        } else {
-          bellCount.style.display = 'none';
-        }
+        const skipBadge = opts && opts.skipBadge;
+        if (!skipBadge) updateNotifBellBadge(unread.length);
 
         if (!list || !count) return;
 
@@ -46051,7 +46053,13 @@
         state._notifRefreshTimer = setTimeout(() => {
           state._notifRefreshTimer = null;
           if (!document.getElementById('notifPanel')?.classList.contains('open')) return;
-          requestAnimationFrame(() => renderNotifications(true));
+          if (Array.isArray(state._currentNotifs)) {
+            paintNotifList(state._currentNotifs, getReadNotifs(), { skipBadge: true });
+          }
+          requestAnimationFrame(() => {
+            if (!document.getElementById('notifPanel')?.classList.contains('open')) return;
+            renderNotifications(true);
+          });
         }, 0);
       }
 
