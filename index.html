@@ -46742,7 +46742,11 @@
         if (e) e.stopPropagation();
         const popup = document.getElementById('datePickerPopup');
         const btn = document.getElementById('rp-date-btn');
-        if (popup.classList.contains('open')) return;
+        if (!popup || !btn) return;
+        if (popup.classList.contains('open')) {
+          dpFloatClose(popup);
+          return;
+        }
         const fromIso = document.getElementById('rp-from')?.value || '';
         const toIso = document.getElementById('rp-to')?.value || '';
         dpState.from = fromIso ? ksaDateFromIso(fromIso) : null;
