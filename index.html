@@ -21768,6 +21768,28 @@
         border-inline-start: 1px solid color-mix(in srgb, var(--mr-border) 55%, transparent) !important
       }
 
+      [data-theme="light"] #tab-workflow .wf-panel .data-table.wf-tickets-table--mob tbody tr.wf-ticket-row > td {
+        --wf-card-outer-edge: color-mix(in srgb, #000 30%, var(--mr-border));
+        border: none !important;
+        border-top: 1px solid var(--wf-card-outer-edge) !important;
+        border-bottom: 1px solid var(--wf-card-outer-edge) !important;
+        box-shadow: none !important
+      }
+
+      [data-theme="light"] #tab-workflow .wf-panel .data-table.wf-tickets-table--mob tbody tr.wf-ticket-row > td + td {
+        border-inline-start: 1px solid color-mix(in srgb, var(--mr-border) 55%, transparent) !important
+      }
+
+      [data-theme="light"] #tab-workflow .wf-panel .data-table.wf-tickets-table--mob tbody tr.wf-ticket-row > td:first-child {
+        border-inline-start: 1px solid var(--wf-card-outer-edge) !important;
+        border-inline-end: 1px solid color-mix(in srgb, var(--mr-border) 55%, transparent) !important
+      }
+
+      [data-theme="light"] #tab-workflow .wf-panel .data-table.wf-tickets-table--mob tbody tr.wf-ticket-row > td:last-child {
+        border-inline-end: 1px solid var(--wf-card-outer-edge) !important;
+        border-inline-start: 1px solid color-mix(in srgb, var(--mr-border) 55%, transparent) !important
+      }
+
       #tab-reports .wf-panel-intro {
         padding: 0;
         margin-bottom: 10px
@@ -24673,7 +24695,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v633-desktop-narrow-lock">
+  <meta name="app-build" content="athar-figma-v634-desktop-narrow-lock">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
