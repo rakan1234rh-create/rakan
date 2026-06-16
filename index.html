@@ -21903,15 +21903,35 @@
       }
 
       #tab-reports #reportList .rp-tickets-table--mob tbody td.wf-col-emp .wf-emp-name {
-        display: block;
-        max-width: 100%;
+        display: inline-block;
+        width: auto;
+        max-width: none;
         font-size: 10px !important;
         font-weight: 600;
         line-height: 1.25 !important;
         color: var(--mr-text) !important;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        overflow: visible;
+        text-overflow: clip;
         white-space: nowrap !important
+      }
+
+      #tab-reports #reportList .rp-tickets-table--mob tbody td.wf-col-emp .wf-emp-cell {
+        display: inline-block;
+        width: auto;
+        max-width: 100%
+      }
+
+      #tab-reports #reportList .rp-tickets-table--mob .wf-emp-num {
+        display: none !important
+      }
+
+      #tab-reports #reportList .rp-tickets-table--mob tbody td.wf-col-emp,
+      #tab-reports #reportList > #rpMobTicketsHead .rp-tickets-table--mob th.wf-col-emp {
+        padding-inline: 4px !important;
+        text-align: center !important;
+        width: auto !important;
+        min-width: 0 !important;
+        max-width: none !important
       }
 
       #tab-reports #reportList .rp-tickets-table--mob tbody td.wf-col-branch .wf-branch-cell,
@@ -37982,7 +38002,7 @@
             return `
             <tr class="wf-ticket-row${autoRowCls}" ontouchstart="prefetchTicketDetail('${t.id}')" onclick="openTicket('${t.id}')">
               <td class="wf-ticket-cell">${ticketIdCellHtml}</td>
-              <td class="wf-col-emp"><span class="wf-emp-cell"><span class="wf-emp-name">${Sec.escapeHTML(empName)}</span>${empNumber ? `<span class="wf-emp-num">${Sec.escapeHTML(empNumber)}</span>` : ''}</span></td>
+              <td class="wf-col-emp"><span class="wf-emp-cell"><span class="wf-emp-name">${Sec.escapeHTML(empName)}</span>${empNumber && !rpMob ? `<span class="wf-emp-num">${Sec.escapeHTML(empNumber)}</span>` : ''}</span></td>
               <td class="wf-col-violation"><span class="wf-viol-cell"><span class="wf-viol-name">${Sec.escapeHTML(violName)}</span></span></td>
               ${branchTdHtml}
               <td class="wf-col-datetime wf-datetime">${dateTime}</td>
@@ -38544,6 +38564,29 @@
           rpRedistribute(Array.from(tds).findIndex(td => td.classList.contains('wf-col-branch')), 73);
           rpRedistribute(Array.from(tds).findIndex(td => td.classList.contains('wf-col-datetime')), 58);
           rpRedistribute(Array.from(tds).findIndex(td => td.classList.contains('wf-col-status')), 45);
+          const empIdx = Array.from(tds).findIndex(td => td.classList.contains('wf-col-emp'));
+          if (empIdx >= 0) {
+            const sampleName = bodyTable.querySelector('td.wf-col-emp .wf-emp-name');
+            const measureRpEmpText = (text, refEl) => {
+              const probe = document.createElement('span');
+              const cs = getComputedStyle(refEl || document.body);
+              probe.style.cssText = 'position:fixed;left:-9999px;top:0;white-space:nowrap;visibility:hidden;pointer-events:none;';
+              probe.style.fontSize = cs.fontSize || '10px';
+              probe.style.fontWeight = cs.fontWeight || '600';
+              probe.style.fontFamily = cs.fontFamily;
+              probe.textContent = text;
+              document.body.appendChild(probe);
+              const w = probe.offsetWidth;
+              probe.remove();
+              return w;
+            };
+            let maxNameW = measureRpEmpText('الموظف', sampleName);
+            bodyTable.querySelectorAll('tbody tr.wf-ticket-row td.wf-col-emp .wf-emp-name').forEach((nameEl) => {
+              const t = (nameEl.textContent || '').trim();
+              if (t) maxNameW = Math.max(maxNameW, measureRpEmpText(t, nameEl));
+            });
+            rpRedistribute(empIdx, Math.ceil(maxNameW) + 10);
+          }
         } else if (root.listId === 'ticketList') {
           const findIdx = (cls) => Array.from(tds).findIndex(td => td.classList.contains(cls));
           const capCol = (cls, capPx) => {
