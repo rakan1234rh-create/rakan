@@ -21609,6 +21609,25 @@
         vertical-align: middle !important
       }
 
+      [data-theme="light"] #tab-reports #reportList .rp-tickets-table--mob tbody tr.wf-ticket-row > td {
+        border: none !important;
+        border-top: 1px solid #000 !important;
+        border-bottom: 1px solid #000 !important;
+        box-shadow: none !important
+      }
+
+      [data-theme="light"] #tab-reports #reportList .rp-tickets-table--mob tbody tr.wf-ticket-row > td + td {
+        border-inline-start: 1px solid color-mix(in srgb, var(--mr-border) 55%, transparent) !important
+      }
+
+      [data-theme="light"] #tab-reports #reportList .rp-tickets-table--mob tbody tr.wf-ticket-row > td:first-child {
+        border-inline-end: 1px solid #000 !important
+      }
+
+      [data-theme="light"] #tab-reports #reportList .rp-tickets-table--mob tbody tr.wf-ticket-row > td:last-child {
+        border-inline-start: 1px solid #000 !important
+      }
+
       #tab-reports .wf-panel-intro {
         padding: 0;
         margin-bottom: 10px
