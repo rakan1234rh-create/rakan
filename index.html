@@ -31908,6 +31908,7 @@
         }
 
         const leavingTab = getActiveTabKey();
+        const alreadyOnTab = leavingTab === tab;
         if (leavingTab && leavingTab !== tab) {
           dismissPageOverlaysOnTabLeave();
           if (leavingTab === 'workflow' && typeof resetWorkflowTabFilters === 'function') {
@@ -31969,8 +31970,10 @@
             });
           }
           if (tab === 'reports') {
+            const skipReportsReload = alreadyOnTab && !opts.force
+              && typeof isMobileViewport === 'function' && isMobileViewport();
             if (isAppDataPending()) renderReportsLoadingState();
-            if (!opts.shellOnly) {
+            if (!opts.shellOnly && !skipReportsReload) {
               syncWorkflowAccessAndRender().finally(() => filterReports());
             }
           }
@@ -38089,6 +38092,11 @@
       </div>`;
           resetTicketListChildren(list, true);
           getOrCreateTicketMobBody(list).innerHTML = mobBodyHtml;
+          const mobBodyScroll = list.querySelector('.wf-mob-tickets-body');
+          if (mobBodyScroll) {
+            delete mobBodyScroll.dataset.rpColSig;
+            delete mobBodyScroll.dataset.rpSlip;
+          }
           const scrollTab = isReportsList ? 'reports' : 'workflow';
           requestAnimationFrame(() => requestAnimationFrame(() => bindMobTicketsHeadScroll(scrollTab)));
           return;
@@ -38620,18 +38628,33 @@
               n += 1;
             }
           };
-          const rpForceCol = (idx, px) => {
+          const rpSetCol = (idx, px) => {
             if (idx < 0 || px < 0) return;
             const prev = widths[idx];
-            if (prev <= px) return;
-            let excess = prev - px;
+            if (prev === px) return;
             widths[idx] = px;
-            const flexCols = widths.map((_, i) => i).filter(i => i !== idx);
-            let n = 0;
-            while (excess > 0 && flexCols.length) {
-              widths[flexCols[n % flexCols.length]] += 1;
-              excess -= 1;
-              n += 1;
+            if (px < prev) {
+              let excess = prev - px;
+              const flexCols = widths.map((_, i) => i).filter(i => i !== idx);
+              let n = 0;
+              while (excess > 0 && flexCols.length) {
+                widths[flexCols[n % flexCols.length]] += 1;
+                excess -= 1;
+                n += 1;
+              }
+            } else {
+              let need = px - prev;
+              const donors = widths.map((_, i) => i).filter(i => i !== idx);
+              let n = 0;
+              while (need > 0 && donors.length) {
+                const d = donors[n % donors.length];
+                if (widths[d] > 28) {
+                  widths[d] -= 1;
+                  need -= 1;
+                }
+                n += 1;
+                if (n > 600) break;
+              }
             }
           };
           rpRedistribute(Array.from(tds).findIndex(td => td.classList.contains('wf-col-violation')), 76);
@@ -38656,11 +38679,17 @@
           if (ticketIdx >= 0) {
             const sampleId = bodyTable.querySelector('td.wf-ticket-cell .wf-ticket-id');
             let maxTicketW = measureRpMobText('ID', sampleId || headTable.querySelector('th.wf-col-ticket'));
-            bodyTable.querySelectorAll('tbody tr.wf-ticket-row td.wf-ticket-cell .wf-ticket-id').forEach((idEl) => {
-              const t = (idEl.textContent || '').trim();
-              if (t) maxTicketW = Math.max(maxTicketW, measureRpMobText(t, idEl));
+            bodyTable.querySelectorAll('tbody tr.wf-ticket-row td.wf-ticket-cell').forEach((cell) => {
+              const idEl = cell.querySelector('.wf-ticket-id');
+              const t = (idEl?.textContent || '').trim();
+              let cellW = t ? measureRpMobText(t, idEl) : 0;
+              const autoEl = cell.querySelector('.wf-auto-flag');
+              if (autoEl) cellW = Math.max(cellW, Math.ceil(autoEl.getBoundingClientRect().width));
+              const cs = getComputedStyle(cell);
+              const padX = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
+              maxTicketW = Math.max(maxTicketW, Math.ceil(cellW) + padX);
             });
-            rpForceCol(ticketIdx, Math.min(46, Math.ceil(maxTicketW) + 8));
+            rpSetCol(ticketIdx, Math.min(52, Math.ceil(maxTicketW) + 4));
           }
           const empIdx = Array.from(tds).findIndex(td => td.classList.contains('wf-col-emp'));
           if (empIdx >= 0) {
@@ -38670,18 +38699,20 @@
               const t = (nameEl.textContent || '').trim();
               if (t) maxNameW = Math.max(maxNameW, measureRpMobText(t, nameEl));
             });
-            rpForceCol(empIdx, Math.ceil(maxNameW) + 12);
+            rpSetCol(empIdx, Math.ceil(maxNameW) + 12);
           }
           const statusIdx = Array.from(tds).findIndex(td => td.classList.contains('wf-col-status'));
           if (statusIdx >= 0) {
-            const sampleBadge = bodyTable.querySelector('td.wf-col-status .badge');
             let maxStatusW = measureRpMobText('الحالة', headTable.querySelector('th.wf-col-status'));
             bodyTable.querySelectorAll('tbody tr.wf-ticket-row td.wf-col-status .badge').forEach((badge) => {
               const t = (badge.textContent || '').trim();
               if (t) maxStatusW = Math.max(maxStatusW, measureRpMobText(t, badge));
             });
-            rpForceCol(statusIdx, Math.min(52, Math.ceil(maxStatusW) + 4));
+            rpSetCol(statusIdx, Math.min(52, Math.ceil(maxStatusW) + 4));
           }
+          const colSig = widths.join(',');
+          if (bodyScroll.dataset.rpColSig === colSig) return;
+          bodyScroll.dataset.rpColSig = colSig;
         } else if (root.listId === 'ticketList') {
           const findIdx = (cls) => Array.from(tds).findIndex(td => td.classList.contains(cls));
           const capCol = (cls, capPx) => {
@@ -38768,8 +38799,16 @@
           headTable.style.width = `${Math.round(bodyTable.getBoundingClientRect().width)}px`;
         }
 
-        const slip = tds[0].getBoundingClientRect().left - ths[0].getBoundingClientRect().left;
-        if (Math.abs(slip) > 0.5) headTable.style.transform = `translateX(${slip}px)`;
+        const slip = Math.round(tds[0].getBoundingClientRect().left - ths[0].getBoundingClientRect().left);
+        if (root.listId === 'reportList') {
+          const slipKey = String(Math.abs(slip) >= 1 ? slip : 0);
+          if (headTable.dataset.rpSlip !== slipKey) {
+            headTable.dataset.rpSlip = slipKey;
+            headTable.style.transform = slipKey === '0' ? '' : `translate3d(${slipKey}px,0,0)`;
+          }
+        } else if (Math.abs(slip) > 0.5) {
+          headTable.style.transform = `translateX(${slip}px)`;
+        }
       }
 
       function bindMobTicketsHeadScroll(tab) {
@@ -38789,7 +38828,15 @@
         const syncKey = root.listId === 'reportList' ? 'rpColSyncBound' : 'wfColSyncBound';
         if (!bodyScroll.dataset[syncKey]) {
           bodyScroll.dataset[syncKey] = '1';
-          const ro = new ResizeObserver(() => syncMobTicketsColWidths(tab));
+          let roTimer = 0;
+          const ro = new ResizeObserver(() => {
+            if (root.listId !== 'reportList') {
+              syncMobTicketsColWidths(tab);
+              return;
+            }
+            clearTimeout(roTimer);
+            roTimer = setTimeout(() => syncMobTicketsColWidths(tab), 48);
+          });
           ro.observe(bodyScroll);
           const bodyTable = bodyScroll.querySelector('.wf-tickets-table--mob-body');
           if (bodyTable) ro.observe(bodyTable);
