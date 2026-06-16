@@ -24695,7 +24695,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v634-desktop-narrow-lock">
+  <meta name="app-build" content="athar-figma-v635-observer-status-notifs">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -45789,6 +45789,19 @@
         return notifs;
       }
 
+      /** أسلوب تنبيه الراصد حسب إجراء السجل أو حالة التذكرة */
+      function observerLogNotifStyle(t, log) {
+        const a = String(log?.action || '');
+        const st = String(t?.status_text || '');
+        const combo = a + ' ' + st;
+        const isAuto = /تلقائي|النظام/i.test(String(log?.user || '')) || /تلقائي/i.test(a);
+        if (/معتمد/.test(combo) && !/تنبيه/i.test(combo)) return { type: 'green', icon: 'fa-circle-check', isAuto };
+        if (/تنبيه|اكتفاء بالتنبيه|Warning_Issued/i.test(combo)) return { type: 'amber', icon: 'fa-hand', isAuto };
+        if (/ملغ|إلغاء|مرفوض/i.test(combo)) return { type: 'red', icon: 'fa-circle-xmark', isAuto };
+        if (isAuto) return { type: 'amber', icon: 'fa-robot', isAuto: true };
+        return { type: 'blue', icon: 'fa-bell', isAuto: false };
+      }
+
       // توليد التنبيهات للمستخدم الحالي بناءً على المخالفات
       function buildUserNotifications() {
         if (!state.currentUser) return [];
@@ -45854,21 +45867,48 @@
           }
         });
 
-        // ب. تنبيه للراصد عند تغير حالة تذكرته
+        // ب. تنبيه للراصد عند كل تغيّر حالة لتذاكره
         if (role === 'observer') {
           visible.forEach(t => {
             if (t.observer_id !== me.id) return;
-            if (t.state === 'closed') {
-              notifs.push({
-                id: `closed_${t.id}`,
-                ticketId: t.id,
-                type: t.status_text?.includes('معتمد') && !/تنبيه/i.test(t.status_text || '') ? 'green' : (t.status_text?.includes('تنبيه') ? 'amber' : 'red'),
-                icon: t.status_text?.includes('معتمد') && !/تنبيه/i.test(t.status_text || '') ? 'fa-circle-check' : (t.status_text?.includes('تنبيه') ? 'fa-hand' : 'fa-circle-xmark'),
-                title: `تذكرتك ${t.status_text || 'مغلقة'}`,
-                msg: `${shortTicketNum(t.ticket_number)} — ${t.violation_type}`,
-                time: t.updated_at || t.created_at
+            const logs = parseDbJsonArray(t.logs);
+            const statusChanges = logs.filter((log, idx) => {
+              if (idx === 0 && /إنشاء\s*التذكرة/i.test(String(log?.action || ''))) return false;
+              return !!(log?.action || log?.note);
+            });
+
+            if (statusChanges.length) {
+              statusChanges.forEach((log, idx) => {
+                const style = observerLogNotifStyle(t, log);
+                const logIdx = logs.indexOf(log);
+                notifs.push({
+                  id: `observer_log_${t.id}_${logIdx >= 0 ? logIdx : idx}`,
+                  ticketId: t.id,
+                  type: style.type,
+                  icon: style.icon,
+                  title: log.action || STATE_LABELS[t.state] || 'تحديث على تذكرتك',
+                  msg: `${shortTicketNum(t.ticket_number)} — ${t.violation_type}`,
+                  time: log.date || t.updated_at || t.created_at,
+                  isAuto: style.isAuto
+                });
               });
+              return;
             }
+
+            if (!t.state || t.state === 'uploading') return;
+            if (t.state === 'emp' && logs.length === 1 && /إنشاء\s*التذكرة/i.test(String(logs[0]?.action || ''))) return;
+            const style = observerLogNotifStyle(t, { action: t.status_text || STATE_LABELS[t.state] || '' });
+            const stateKey = `${t.state}_${String(t.updated_at || t.created_at || '').slice(0, 19)}`;
+            notifs.push({
+              id: `observer_state_${t.id}_${stateKey}`,
+              ticketId: t.id,
+              type: style.type,
+              icon: style.icon,
+              title: t.status_text || STATE_LABELS[t.state] || 'تحديث على تذكرتك',
+              msg: `${shortTicketNum(t.ticket_number)} — ${t.violation_type}`,
+              time: t.updated_at || t.created_at,
+              isAuto: style.isAuto
+            });
           });
         }
 
