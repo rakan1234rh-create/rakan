@@ -2630,7 +2630,8 @@
       -webkit-tap-highlight-color: transparent;
       transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
       transform: none;
-      overflow: visible
+      overflow: visible;
+      user-select: none
     }
 
     .topbar-btn--notif i {
@@ -11132,41 +11133,38 @@
       border: 1px solid var(--mr-border);
       border-radius: 14px;
       box-shadow: 0 10px 36px rgba(15, 18, 36, 0.12), 0 2px 8px rgba(15, 18, 36, 0.06);
-      display: none;
+      display: flex;
       flex-direction: column;
       overflow: hidden;
-      animation: notifPanelIn 0.07s ease-out;
+      visibility: hidden;
+      opacity: 0;
+      pointer-events: none;
       touch-action: pan-y;
       overscroll-behavior: contain
     }
 
     .notif-panel-backdrop {
-      display: none;
+      display: block;
       position: fixed;
       inset: 0;
       z-index: 1095;
       background: transparent;
-      touch-action: none
+      touch-action: none;
+      visibility: hidden;
+      opacity: 0;
+      pointer-events: none
     }
 
     body.notif-panel-open .notif-panel-backdrop {
-      display: block
-    }
-
-    @keyframes notifPanelIn {
-      from {
-        opacity: 0;
-        transform: translateY(-3px)
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0)
-      }
+      visibility: visible;
+      opacity: 1;
+      pointer-events: auto
     }
 
     .notif-panel.open {
-      display: flex
+      visibility: visible;
+      opacity: 1;
+      pointer-events: auto
     }
 
     [data-theme="dark"] .notif-panel {
@@ -46214,7 +46212,8 @@
 
       function notifPanelBottomLimit(vh, isMobile) {
         if (!isMobile) return vh - 10;
-        return vh - getMobBottomNavHeight() - 10;
+        const css = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--mr-mob-bottom-nav-h'), 10);
+        return vh - (Number.isFinite(css) && css > 0 ? css : 56) - 10;
       }
 
       function notifPanelPositionQuick() {
@@ -46245,33 +46244,46 @@
         panel.style.right = 'auto';
       }
 
+      function notifUi() {
+        if (!state._notifUi) {
+          state._notifUi = {
+            panel: document.getElementById('notifPanel'),
+            bell: document.getElementById('notifBellBtn'),
+            backdrop: document.getElementById('notifPanelBackdrop'),
+            list: document.getElementById('notifList')
+          };
+        }
+        return state._notifUi;
+      }
+
       function scheduleNotifPanelRefresh() {
         if (state._notifRefreshTimer) clearTimeout(state._notifRefreshTimer);
         state._notifRefreshTimer = setTimeout(() => {
           state._notifRefreshTimer = null;
-          requestAnimationFrame(() => refreshOpenNotifPanel(true));
-        }, 0);
+          const run = () => {
+            if (!notifUi().panel?.classList.contains('open')) return;
+            refreshOpenNotifPanel(true);
+          };
+          if (typeof requestIdleCallback === 'function') requestIdleCallback(run, { timeout: 600 });
+          else requestAnimationFrame(run);
+        }, 16);
       }
 
       function openNotifPanel() {
-        const panel = document.getElementById('notifPanel');
-        const bell = document.getElementById('notifBellBtn');
+        const { panel, bell } = notifUi();
         if (!panel || panel.classList.contains('open')) return;
-        syncNotifBellBadge(true);
         state._bellBadgeLocked = state._bellUnreadShown || 0;
         state._notifPanelSkipClose = true;
         document.body.classList.add('notif-panel-open');
         panel.classList.add('open');
         if (bell) bell.setAttribute('aria-expanded', 'true');
-        if (state._bellBadgeLocked > 0) updateNotifBellBadge(state._bellBadgeLocked);
         notifPanelPositionQuick();
-        setTimeout(() => { state._notifPanelSkipClose = false; }, 0);
+        requestAnimationFrame(() => { state._notifPanelSkipClose = false; });
         scheduleNotifPanelRefresh();
       }
 
       function closeNotifPanel() {
-        const panel = document.getElementById('notifPanel');
-        const bell = document.getElementById('notifBellBtn');
+        const { panel, bell } = notifUi();
         if (!panel || !panel.classList.contains('open')) return;
         document.body.classList.remove('notif-panel-open');
         panel.classList.remove('open');
@@ -46282,7 +46294,6 @@
         }
         state._bellBadgeLocked = 0;
         notifPanelClearPosition();
-        syncNotifBellBadge(true);
       }
 
       function notifPanelClearPosition() {
@@ -46333,8 +46344,13 @@
 
       function toggleNotifPanel(event) {
         if (event) event.stopPropagation();
-        const panel = document.getElementById('notifPanel');
+        const panel = notifUi().panel;
         if (!panel) return;
+        if (state._notifBellInstantToggle) {
+          state._notifBellInstantToggle = false;
+          if (event) event.preventDefault();
+          return;
+        }
         if (panel.classList.contains('open')) closeNotifPanel();
         else openNotifPanel();
       }
@@ -46373,6 +46389,20 @@
       }
 
       document.getElementById('notifPanelBackdrop')?.addEventListener('click', () => closeNotifPanel());
+
+      (function bindNotifBellInstant() {
+        const bell = document.getElementById('notifBellBtn');
+        if (!bell || bell._notifInstantBound) return;
+        bell._notifInstantBound = true;
+        bell.addEventListener('pointerdown', (e) => {
+          if (e.button !== 0) return;
+          const panel = notifUi().panel;
+          if (!panel) return;
+          state._notifBellInstantToggle = true;
+          if (panel.classList.contains('open')) closeNotifPanel();
+          else openNotifPanel();
+        }, { passive: true });
+      })();
 
       (function bindNotifSwipe() {
         const list = document.getElementById('notifList');
