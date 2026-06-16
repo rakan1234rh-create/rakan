@@ -21510,6 +21510,7 @@
       }
 
       #tab-reports #reportList .rp-tickets-table--mob tbody tr.wf-ticket-row > td.wf-ticket-cell,
+      #tab-reports #reportList .rp-tickets-table--mob tbody tr.wf-ticket-row > td.wf-col-emp,
       #tab-reports #reportList .rp-tickets-table--mob tbody tr.wf-ticket-row > td.wf-col-datetime {
         white-space: nowrap !important;
         word-break: normal !important;
@@ -21945,6 +21946,7 @@
       }
 
       #tab-reports #reportList .rp-tickets-table--mob tbody td.wf-ticket-cell,
+      #tab-reports #reportList .rp-tickets-table--mob tbody td.wf-col-emp,
       #tab-reports #reportList .rp-tickets-table--mob tbody td.wf-col-datetime {
         white-space: nowrap !important;
         word-break: normal !important;
@@ -21953,8 +21955,8 @@
 
       #tab-reports #reportList .rp-tickets-table--mob tbody td.wf-col-emp .wf-emp-name {
         display: block;
-        width: 100%;
-        max-width: 100%;
+        width: auto;
+        max-width: none;
         margin: 0;
         padding: 0;
         font-size: 7px !important;
@@ -21963,9 +21965,9 @@
         color: var(--mr-text) !important;
         overflow: visible !important;
         text-overflow: clip;
-        white-space: normal !important;
-        word-break: break-word !important;
-        overflow-wrap: anywhere !important;
+        white-space: nowrap !important;
+        word-break: normal !important;
+        overflow-wrap: normal !important;
         text-align: center !important
       }
 
