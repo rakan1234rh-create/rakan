@@ -21776,16 +21776,17 @@
 
       #tab-reports #reportList .ticket-id-cell--under-id .wf-ticket-id {
         order: 1;
-        display: block !important;
+        display: inline-block !important;
         flex: 0 0 auto !important;
+        width: auto !important;
         margin: 0;
         padding: 0;
         text-align: center !important;
         direction: ltr;
         unicode-bidi: embed;
-        max-width: 100%;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        max-width: none;
+        overflow: visible;
+        text-overflow: clip;
         white-space: nowrap
       }
 
@@ -21826,16 +21827,18 @@
       }
 
       #tab-reports #reportList .rp-tickets-table--mob col.wf-col-ticket-c {
-        width: 9% !important;
-        max-width: 9% !important
+        width: auto !important;
+        min-width: 0 !important;
+        max-width: none !important
       }
 
       #tab-reports #reportList .rp-tickets-table--mob th.wf-col-ticket,
-      #tab-reports #reportList .rp-tickets-table--mob td.wf-ticket-cell {
-        width: 9% !important;
+      #tab-reports #reportList .rp-tickets-table--mob td.wf-ticket-cell,
+      #tab-reports #reportList > #rpMobTicketsHead .rp-tickets-table--mob th.wf-col-ticket {
+        width: auto !important;
         min-width: 0 !important;
-        max-width: 9% !important;
-        padding: 6px 2px !important;
+        max-width: none !important;
+        padding: 4px 2px !important;
         text-align: center !important;
         vertical-align: middle !important
       }
@@ -21847,20 +21850,23 @@
         flex-direction: column !important;
         align-items: center !important;
         justify-content: center !important;
-        width: 100% !important;
-        max-width: 100% !important;
+        width: auto !important;
+        max-width: none !important;
         margin: 0 auto !important;
         text-align: center !important;
         direction: rtl
       }
 
       #tab-reports #reportList .rp-tickets-table--mob .wf-ticket-id {
-        display: block !important;
-        width: 100% !important;
+        display: inline-block !important;
+        width: auto !important;
         margin: 0 auto !important;
         text-align: center !important;
         direction: ltr;
-        unicode-bidi: embed
+        unicode-bidi: embed;
+        overflow: visible;
+        text-overflow: clip;
+        white-space: nowrap !important
       }
 
       #tab-reports #reportList .rp-tickets-table--mob {
@@ -38564,26 +38570,41 @@
           rpRedistribute(Array.from(tds).findIndex(td => td.classList.contains('wf-col-branch')), 73);
           rpRedistribute(Array.from(tds).findIndex(td => td.classList.contains('wf-col-datetime')), 58);
           rpRedistribute(Array.from(tds).findIndex(td => td.classList.contains('wf-col-status')), 45);
+          const measureRpMobText = (text, refEl) => {
+            const probe = document.createElement('span');
+            const cs = getComputedStyle(refEl || document.body);
+            probe.style.cssText = 'position:fixed;left:-9999px;top:0;white-space:nowrap;visibility:hidden;pointer-events:none;';
+            probe.style.fontSize = cs.fontSize || '10px';
+            probe.style.fontWeight = cs.fontWeight || '600';
+            probe.style.fontFamily = cs.fontFamily;
+            probe.textContent = text;
+            document.body.appendChild(probe);
+            const w = probe.offsetWidth;
+            probe.remove();
+            return w;
+          };
+          const ticketIdx = Array.from(tds).findIndex(td => td.classList.contains('wf-ticket-cell'));
+          if (ticketIdx >= 0) {
+            const sampleId = bodyTable.querySelector('td.wf-ticket-cell .wf-ticket-id');
+            let maxTicketW = measureRpMobText('ID', sampleId || headTable.querySelector('th.wf-col-ticket'));
+            bodyTable.querySelectorAll('tbody tr.wf-ticket-row td.wf-ticket-cell').forEach((cell) => {
+              const idEl = cell.querySelector('.wf-ticket-id');
+              if (idEl) {
+                const t = (idEl.textContent || '').trim();
+                if (t) maxTicketW = Math.max(maxTicketW, measureRpMobText(t, idEl));
+              }
+              const flagEl = cell.querySelector('.wf-auto-flag--under-id');
+              if (flagEl) maxTicketW = Math.max(maxTicketW, flagEl.offsetWidth);
+            });
+            rpRedistribute(ticketIdx, Math.ceil(maxTicketW) + 8);
+          }
           const empIdx = Array.from(tds).findIndex(td => td.classList.contains('wf-col-emp'));
           if (empIdx >= 0) {
             const sampleName = bodyTable.querySelector('td.wf-col-emp .wf-emp-name');
-            const measureRpEmpText = (text, refEl) => {
-              const probe = document.createElement('span');
-              const cs = getComputedStyle(refEl || document.body);
-              probe.style.cssText = 'position:fixed;left:-9999px;top:0;white-space:nowrap;visibility:hidden;pointer-events:none;';
-              probe.style.fontSize = cs.fontSize || '10px';
-              probe.style.fontWeight = cs.fontWeight || '600';
-              probe.style.fontFamily = cs.fontFamily;
-              probe.textContent = text;
-              document.body.appendChild(probe);
-              const w = probe.offsetWidth;
-              probe.remove();
-              return w;
-            };
-            let maxNameW = measureRpEmpText('الموظف', sampleName);
+            let maxNameW = measureRpMobText('الموظف', sampleName);
             bodyTable.querySelectorAll('tbody tr.wf-ticket-row td.wf-col-emp .wf-emp-name').forEach((nameEl) => {
               const t = (nameEl.textContent || '').trim();
-              if (t) maxNameW = Math.max(maxNameW, measureRpEmpText(t, nameEl));
+              if (t) maxNameW = Math.max(maxNameW, measureRpMobText(t, nameEl));
             });
             rpRedistribute(empIdx, Math.ceil(maxNameW) + 10);
           }
