@@ -2652,6 +2652,12 @@
       box-shadow: 0 1px 3px rgba(15, 18, 36, 0.05)
     }
 
+    .topbar-btn--notif[data-has-unread="1"] .notif-bell-count {
+      display: inline-flex !important;
+      visibility: visible !important;
+      opacity: 1 !important
+    }
+
     [data-theme="dark"] .topbar-btn--notif {
       background: rgba(255, 255, 255, 0.05);
       border-color: var(--mr-border-2);
@@ -29483,6 +29489,7 @@
         const vCh = sb.channel('public:violations')
           .on('postgres_changes', { event: '*', schema: 'public', table: 'violations' }, (payload) => {
             applyRealtimeChange(state.violations, payload, enrichViolation);
+            invalidateNotifCache();
             scheduleRenderAll();
             renderNotifBadgeDebounced();
           })
@@ -31343,6 +31350,7 @@
               const enrichRow = mobLoad ? enrichViolationLite : enrichViolation;
               state.violations = rows.map(enrichRow);
               rebuildLookupMaps();
+              invalidateNotifCache();
             }
           } catch (e) {
             if (isMirsadDebugLog()) console.warn('[workflow] violations reload failed', e);
@@ -32219,7 +32227,8 @@
 
         updatePendingBadge();
         const notifPanelOpen = document.getElementById('notifPanel')?.classList.contains('open');
-        if (notifPanelOpen) renderNotifications(); else renderNotifBadge();
+        if (notifPanelOpen) refreshOpenNotifPanel(false);
+        else syncNotifBellBadge(false);
       }
 
       // عداد التذاكر المعلقة في القائمة الجانبية
@@ -45799,7 +45808,7 @@
           const currentScore = Math.round(calcEmployeeCommitment(me.id));
           if (currentScore < 40 && myRecentDeduct.length > 0) {
             notifs.push({
-              id: `score_critical_${me.id}_${currentScore}`,
+              id: `score_critical_${me.id}`,
               ticketId: '',
               type: 'red',
               icon: 'fa-exclamation-triangle',
@@ -45809,7 +45818,7 @@
             });
           } else if (currentScore < 75 && currentScore >= 40 && myRecentDeduct.length > 0) {
             notifs.push({
-              id: `score_warning_${me.id}_${currentScore}`,
+              id: `score_warning_${me.id}`,
               ticketId: '',
               type: 'amber',
               icon: 'fa-chart-line',
@@ -45995,41 +46004,50 @@
 
       function updateNotifBellBadge(unreadCount) {
         const bellCount = document.getElementById('notifBellCount');
+        const bell = document.getElementById('notifBellBtn');
         if (!bellCount) return;
-        const unread = Math.max(0, Number(unreadCount) || 0);
+        const panelOpen = document.getElementById('notifPanel')?.classList.contains('open');
+        let unread = Math.max(0, Number(unreadCount) || 0);
+        if (panelOpen && state._bellBadgeLocked > 0) unread = state._bellBadgeLocked;
         if (unread > 0) {
           state._bellUnreadShown = unread;
-          bellCount.hidden = false;
+          bell?.setAttribute('data-has-unread', '1');
+          bellCount.removeAttribute('hidden');
           bellCount.style.display = 'inline-flex';
           bellCount.textContent = unread > 99 ? '99+' : String(unread);
-        } else {
+        } else if (!panelOpen || !state._bellBadgeLocked) {
           state._bellUnreadShown = 0;
-          bellCount.hidden = true;
+          state._bellBadgeLocked = 0;
+          bell?.removeAttribute('data-has-unread');
+          bellCount.setAttribute('hidden', '');
           bellCount.style.display = 'none';
         }
       }
 
-      function renderNotifBadge() {
-        const bellCount = document.getElementById('notifBellCount');
-        if (!bellCount || !state.currentUser) return;
-        const panelOpen = document.getElementById('notifPanel')?.classList.contains('open');
-        if (panelOpen) { refreshOpenNotifPanel(false); return; }
-        try {
-          const notifs = buildUserNotificationsCached();
-          state._currentNotifs = notifs;
-          const read = getReadNotifs();
-          updateNotifBellBadge(notifs.filter(n => !read.has(n.id)).length);
-        } catch (_) { /* noop */ }
+      function syncNotifBellBadge(force) {
+        if (!state.currentUser) return;
+        if (document.getElementById('notifPanel')?.classList.contains('open')) return;
+        const notifs = buildUserNotificationsCached(!!force);
+        state._currentNotifs = notifs;
+        const read = getReadNotifs();
+        updateNotifBellBadge(notifs.filter(n => !read.has(n.id)).length);
       }
 
-      function paintNotifList(notifs, read, opts) {
+      function renderNotifBadge() {
+        if (!document.getElementById('notifBellCount') || !state.currentUser) return;
+        if (document.getElementById('notifPanel')?.classList.contains('open')) {
+          refreshOpenNotifPanel(false);
+          return;
+        }
+        try { syncNotifBellBadge(true); } catch (_) { /* noop */ }
+      }
+
+      function paintNotifList(notifs, read) {
         const list = document.getElementById('notifList');
         const count = document.getElementById('notifPanelCount');
         if (!state.currentUser) return;
 
         const unread = notifs.filter(n => !read.has(n.id));
-        const skipBadge = opts && opts.skipBadge;
-        if (!skipBadge) updateNotifBellBadge(unread.length);
 
         if (!list || !count) return;
 
@@ -46066,16 +46084,21 @@
         if (!state.currentUser) return;
         const notifs = buildUserNotificationsCached(!!force);
         state._currentNotifs = notifs;
-        const panelOpen = document.getElementById('notifPanel')?.classList.contains('open');
-        paintNotifList(notifs, getReadNotifs(), { skipBadge: panelOpen });
-        if (panelOpen) notifPanelPosition();
+        const read = getReadNotifs();
+        paintNotifList(notifs, read);
+        if (!document.getElementById('notifPanel')?.classList.contains('open')) {
+          updateNotifBellBadge(notifs.filter(n => !read.has(n.id)).length);
+        }
+        if (document.getElementById('notifPanel')?.classList.contains('open')) {
+          notifPanelPosition();
+        }
       }
 
       function refreshOpenNotifPanel(force) {
         if (!document.getElementById('notifPanel')?.classList.contains('open')) return;
         const notifs = buildUserNotificationsCached(!!force);
         state._currentNotifs = notifs;
-        paintNotifList(notifs, getReadNotifs(), { skipBadge: true });
+        paintNotifList(notifs, getReadNotifs());
         notifPanelPosition();
       }
 
@@ -46124,10 +46147,13 @@
         const panel = document.getElementById('notifPanel');
         const bell = document.getElementById('notifBellBtn');
         if (!panel || panel.classList.contains('open')) return;
+        syncNotifBellBadge(true);
+        state._bellBadgeLocked = state._bellUnreadShown || 0;
         state._notifPanelSkipClose = true;
         document.body.classList.add('notif-panel-open');
         panel.classList.add('open');
         if (bell) bell.setAttribute('aria-expanded', 'true');
+        if (state._bellBadgeLocked > 0) updateNotifBellBadge(state._bellBadgeLocked);
         notifPanelPositionQuick();
         setTimeout(() => { state._notifPanelSkipClose = false; }, 0);
         scheduleNotifPanelRefresh();
@@ -46144,7 +46170,9 @@
           clearTimeout(state._notifRefreshTimer);
           state._notifRefreshTimer = null;
         }
+        state._bellBadgeLocked = 0;
         notifPanelClearPosition();
+        syncNotifBellBadge(true);
       }
 
       function notifPanelClearPosition() {
@@ -46228,8 +46256,9 @@
         const read = getReadNotifs();
         notifs.forEach(n => read.add(n.id));
         saveReadNotifs(read);
+        state._bellBadgeLocked = 0;
         renderNotifications();
-        updateNotifBellBadge(0);
+        syncNotifBellBadge(true);
         showToast('تم تعليم كل التنبيهات كمقروءة ✓', 'success');
       }
 
