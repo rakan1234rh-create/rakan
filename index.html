@@ -19014,7 +19014,7 @@
 
       /* التقارير — الوقت فوق التاريخ */
       #tab-reports #reportList .rp-tickets-table--mob col.wf-col-datetime-c,
-      #tab-reports #rpMobTicketsHead .rp-tickets-table--mob col.wf-col-datetime-c {
+      #tab-reports #reportList > #rpMobTicketsHead .rp-tickets-table--mob col.wf-col-datetime-c {
         width: 58px !important;
         min-width: 58px !important;
         max-width: 58px !important
@@ -19022,7 +19022,7 @@
 
       #tab-reports #reportList .rp-tickets-table--mob th.wf-col-datetime,
       #tab-reports #reportList .rp-tickets-table--mob td.wf-col-datetime,
-      #tab-reports #rpMobTicketsHead .rp-tickets-table--mob th.wf-col-datetime {
+      #tab-reports #reportList > #rpMobTicketsHead .rp-tickets-table--mob th.wf-col-datetime {
         width: 58px !important;
         min-width: 58px !important;
         max-width: 58px !important;
@@ -21324,61 +21324,67 @@
         overflow-y: visible
       }
 
-      #tab-reports .wf-panel-banner:has(#rpMobTicketsHead:not(:empty)) {
+      #tab-reports .wf-panel-banner:has(+ #reportList > #rpMobTicketsHead:not(:empty)) {
         padding-bottom: 0;
         overflow: visible
       }
 
-      #tab-reports .wf-panel-banner:has(#rpMobTicketsHead:not(:empty)) .wf-count {
+      #tab-reports .wf-panel-banner:has(+ #reportList > #rpMobTicketsHead:not(:empty)) .wf-count {
         margin-bottom: 6px !important
       }
 
-      #tab-reports .wf-panel-banner:has(#rpMobTicketsHead:not(:empty)) .wf-table-wrap--head {
-        margin-top: 0 !important;
-        padding-bottom: 0 !important
-      }
-
-      #tab-reports #rpMobTicketsHead:empty {
+      #tab-reports #reportList > #rpMobTicketsHead:empty {
         display: none
       }
 
-      #tab-reports #rpMobTicketsHead:not(:empty) {
+      #tab-reports #reportList > #rpMobTicketsHead:not(:empty) {
         display: block;
-        width: calc(100% + 24px);
-        max-width: none;
-        margin-inline: -12px;
-        margin-bottom: 0;
+        flex-shrink: 0;
+        margin: 0;
+        width: 100%;
+        max-width: 100%;
         padding: 0;
+        box-sizing: border-box;
         line-height: 0;
-        background: transparent;
-        box-sizing: border-box
+        background: var(--mr-bg);
+        overflow: visible
       }
 
-      #tab-reports #rpMobTicketsHead .wf-tickets-table--mob-head thead th:first-child,
-      #tab-reports #rpMobTicketsHead .wf-tickets-table--mob-head thead th:last-child {
-        border-radius: 0 !important
+      #tab-reports #reportList > #rpMobTicketsHead .wf-tickets-table--mob-head thead th:first-child {
+        border-radius: 0 12px 12px 0 !important
       }
 
-      #tab-reports #rpMobTicketsHead .wf-table-wrap--head {
+      #tab-reports #reportList > #rpMobTicketsHead .wf-tickets-table--mob-head thead th:last-child {
+        border-radius: 12px 0 0 12px !important
+      }
+
+      #tab-reports #reportList > #rpMobTicketsHead .wf-table-wrap--head {
         margin: 0;
         padding: 0;
         line-height: 0;
-        overflow-x: hidden;
-        overflow-y: hidden;
-        box-sizing: border-box
+        overflow: hidden;
+        box-sizing: border-box;
+        width: 100%;
+        scrollbar-width: none
       }
 
-      #tab-reports #rpMobTicketsHead .wf-tickets-table--mob-head {
+      #tab-reports #reportList > #rpMobTicketsHead .wf-table-wrap--head::-webkit-scrollbar {
+        display: none
+      }
+
+      #tab-reports #reportList > #rpMobTicketsHead .wf-tickets-table--mob-head {
         display: table;
         margin: 0 !important;
         font-size: 10px;
         line-height: 1.25;
         vertical-align: top;
         border-collapse: separate !important;
-        border-spacing: 0 !important
+        border-spacing: 0 !important;
+        width: 100% !important;
+        table-layout: fixed !important
       }
 
-      #tab-reports #rpMobTicketsHead .wf-tickets-table--mob-head thead th {
+      #tab-reports #reportList > #rpMobTicketsHead .wf-tickets-table--mob-head thead th {
         background: var(--mr-surface) !important;
         opacity: 1 !important;
         height: 34px !important;
@@ -21392,22 +21398,42 @@
         overflow-wrap: anywhere !important;
         text-align: center !important;
         vertical-align: middle !important;
-        border-bottom: 1px solid var(--mr-border) !important;
-        box-shadow: none !important
+        border: 1px solid color-mix(in srgb, var(--mr-border) 88%, transparent) !important;
+        border-bottom: 1px solid color-mix(in srgb, var(--mr-border) 88%, transparent) !important;
+        box-shadow: 0 2px 10px rgba(15, 18, 36, 0.06) !important;
+        box-sizing: border-box !important
+      }
+
+      #tab-reports #reportList > #rpMobTicketsHead .wf-tickets-table--mob-head thead th + th {
+        border-inline-start: 1px solid color-mix(in srgb, var(--mr-border) 55%, transparent) !important
+      }
+
+      #tab-reports #reportList > #rpMobTicketsHead .wf-tickets-table--mob-head thead th:first-child {
+        border-inline-end-color: color-mix(in srgb, var(--mr-border) 55%, transparent) !important
+      }
+
+      #tab-reports #reportList > #rpMobTicketsHead .wf-tickets-table--mob-head thead th:last-child {
+        border-inline-start-color: color-mix(in srgb, var(--mr-border) 55%, transparent) !important
+      }
+
+      #tab-reports #reportList > #rpMobTicketsHead:not(:empty) + .wf-mob-tickets-body {
+        margin-top: 0 !important;
+        padding-top: 0 !important
       }
 
       #tab-reports #reportList {
         flex: 1 1 0;
-        background: transparent;
+        background: var(--mr-bg);
         min-height: 0;
         border: none !important;
         margin-bottom: 0 !important;
-        padding: 0 !important;
+        padding: 0 4px !important;
         overflow: hidden;
         overflow-x: hidden !important;
         max-width: 100% !important;
         display: flex;
-        flex-direction: column
+        flex-direction: column;
+        box-sizing: border-box
       }
 
       #tab-reports #reportList > .wf-mob-tickets-body {
@@ -21419,6 +21445,7 @@
         margin-inline: 0 !important;
         margin-bottom: 0 !important;
         box-sizing: border-box;
+        padding-inline: 0;
         overflow-x: hidden !important;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
@@ -21426,12 +21453,13 @@
         overscroll-behavior-y: contain;
         touch-action: pan-y;
         padding-bottom: var(--rp-scroll-pad-bottom) !important;
-        scroll-padding-bottom: var(--rp-scroll-pad-bottom)
+        scroll-padding-bottom: var(--rp-scroll-pad-bottom);
+        scrollbar-gutter: stable
       }
 
       #tab-reports #reportList .wf-table-wrap,
       #tab-reports #reportList > .wf-mob-tickets-body .wf-table-wrap--body,
-      #tab-reports #rpMobTicketsHead .wf-table-wrap--head {
+      #tab-reports #reportList > #rpMobTicketsHead .wf-table-wrap--head {
         margin: 0 !important;
         padding: 0 !important;
         border: none !important;
@@ -21445,9 +21473,8 @@
         overflow: visible !important
       }
 
-      #tab-reports .wf-panel-banner:has(#rpMobTicketsHead:not(:empty)) + #reportList > .wf-mob-tickets-body {
-        margin-top: 0 !important;
-        padding-top: 0 !important
+      #tab-reports #reportList > #rpMobTicketsHead .wf-table-wrap--head {
+        overflow: hidden !important
       }
 
       #tab-reports #reportList .rp-tickets-table--mob.wf-tickets-table--mob-body {
@@ -21907,7 +21934,7 @@
       }
 
       #tab-reports #reportList .rp-tickets-table--mob col.wf-col-branch-c,
-      #tab-reports #rpMobTicketsHead .rp-tickets-table--mob col.wf-col-branch-c {
+      #tab-reports #reportList > #rpMobTicketsHead .rp-tickets-table--mob col.wf-col-branch-c {
         width: 73px !important;
         min-width: 73px !important;
         max-width: 73px !important
@@ -21915,7 +21942,7 @@
 
       #tab-reports #reportList .rp-tickets-table--mob th.wf-col-branch,
       #tab-reports #reportList .rp-tickets-table--mob td.wf-col-branch,
-      #tab-reports #rpMobTicketsHead .rp-tickets-table--mob th.wf-col-branch {
+      #tab-reports #reportList > #rpMobTicketsHead .rp-tickets-table--mob th.wf-col-branch {
         width: 73px !important;
         min-width: 73px !important;
         max-width: 73px !important;
@@ -21929,7 +21956,7 @@
       }
 
       #tab-reports #reportList .rp-tickets-table--mob col.wf-col-viol-c,
-      #tab-reports #rpMobTicketsHead .rp-tickets-table--mob col.wf-col-viol-c {
+      #tab-reports #reportList > #rpMobTicketsHead .rp-tickets-table--mob col.wf-col-viol-c {
         width: 76px !important;
         min-width: 76px !important;
         max-width: 76px !important
@@ -21937,7 +21964,7 @@
 
       #tab-reports #reportList .rp-tickets-table--mob th.wf-col-violation,
       #tab-reports #reportList .rp-tickets-table--mob td.wf-col-violation,
-      #tab-reports #rpMobTicketsHead .rp-tickets-table--mob th.wf-col-violation {
+      #tab-reports #reportList > #rpMobTicketsHead .rp-tickets-table--mob th.wf-col-violation {
         width: 76px !important;
         min-width: 76px !important;
         max-width: 76px !important;
@@ -21951,14 +21978,14 @@
       }
 
       #tab-reports #reportList .rp-tickets-table--mob col.wf-col-status-c,
-      #tab-reports #rpMobTicketsHead .rp-tickets-table--mob col.wf-col-status-c {
+      #tab-reports #reportList > #rpMobTicketsHead .rp-tickets-table--mob col.wf-col-status-c {
         width: 45px !important;
         min-width: 45px !important;
         max-width: 45px !important
       }
 
       #tab-reports #reportList .rp-tickets-table--mob th.wf-col-status,
-      #tab-reports #rpMobTicketsHead .rp-tickets-table--mob th.wf-col-status {
+      #tab-reports #reportList > #rpMobTicketsHead .rp-tickets-table--mob th.wf-col-status {
         width: 45px !important;
         min-width: 45px !important;
         max-width: 45px !important;
@@ -25107,9 +25134,10 @@
                   <div id="activeFiltersTags" style="display:flex;flex-wrap:wrap;gap:6px"></div>
                 </div>
                 <div class="wf-count">عدد النتائج: <strong id="rp-count">0</strong><span id="rp-period" class="wf-count__period" style="display:none"></span></div>
-                <div id="rpMobTicketsHead" aria-hidden="true"></div>
               </div>
-              <div id="reportList" class="wf-desk-tickets-host"></div>
+              <div id="reportList" class="wf-desk-tickets-host">
+                <div id="rpMobTicketsHead" class="wf-mob-tickets-head" aria-hidden="true"></div>
+              </div>
             </div>
           </div>
 
@@ -25369,7 +25397,23 @@
               if (sideBtn) sideBtn.classList.add('active');
               if (saved === 'reports') {
                 var rl = document.getElementById('reportList');
-                if (rl) rl.innerHTML = '<div class="empty mr-data-loading"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i><p>جاري تحميل التقارير…</p></div>';
+                if (rl) {
+                  var rpHead = rl.querySelector('#rpMobTicketsHead');
+                  if (!rpHead) {
+                    rpHead = document.createElement('div');
+                    rpHead.id = 'rpMobTicketsHead';
+                    rpHead.className = 'wf-mob-tickets-head';
+                    rpHead.setAttribute('aria-hidden', 'true');
+                    rl.insertBefore(rpHead, rl.firstChild);
+                  } else {
+                    rpHead.innerHTML = '';
+                    rpHead.setAttribute('aria-hidden', 'true');
+                  }
+                  Array.from(rl.children).forEach(function (ch) {
+                    if (ch !== rpHead) ch.remove();
+                  });
+                  rl.insertAdjacentHTML('beforeend', '<div class="empty mr-data-loading"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i><p>جاري تحميل التقارير…</p></div>');
+                }
                 var rpc = document.getElementById('rp-count');
                 if (rpc) rpc.textContent = '…';
                 ['rp-total', 'rp-approved', 'rp-pending', 'rp-rejected'].forEach(function (id) {
@@ -26476,7 +26520,12 @@
 
       function renderReportsLoadingState() {
         const list = document.getElementById('reportList');
-        if (list) list.innerHTML = dataLoadingEmptyHTML('جاري تحميل التقارير…');
+        const mobHead = document.getElementById('rpMobTicketsHead');
+        if (mobHead) {
+          mobHead.innerHTML = '';
+          mobHead.setAttribute('aria-hidden', 'true');
+        }
+        if (list) appendTicketListHtml(list, dataLoadingEmptyHTML('جاري تحميل التقارير…'), true);
         const countEl = document.getElementById('rp-count');
         if (countEl) countEl.textContent = '…';
         ['rp-total', 'rp-approved', 'rp-pending', 'rp-rejected'].forEach(id => {
@@ -37835,7 +37884,8 @@
 
       function resetTicketListChildren(list, keepMobHead) {
         if (!list) return;
-        const mobHead = keepMobHead ? list.querySelector('#wfMobTicketsHead') : null;
+        const mobHeadId = list.id === 'reportList' ? 'rpMobTicketsHead' : 'wfMobTicketsHead';
+        const mobHead = keepMobHead ? list.querySelector(`#${mobHeadId}`) : null;
         [...list.children].forEach((child) => {
           if (child !== mobHead) child.remove();
         });
@@ -37881,8 +37931,7 @@
             : (isReportsList
               ? '<div class="empty"><i class="fas fa-inbox"></i><p>لا توجد بيانات في الفترة المحددة</p></div>'
               : '<div class="empty"><i class="fas fa-inbox"></i><p>لا توجد تذاكر مطابقة</p></div>');
-          if (isReportsList) list.innerHTML = emptyHtml;
-          else appendTicketListHtml(list, emptyHtml, true);
+          appendTicketListHtml(list, emptyHtml, true);
           return;
         }
 
@@ -37958,15 +38007,8 @@
           <tbody>${tbodyHtml}</tbody>
         </table>
       </div>`;
-          if (isReportsList) {
-            list.innerHTML = `
-    <div class="wf-mob-tickets-body">
-      ${mobBodyHtml}
-    </div>`;
-          } else {
-            resetTicketListChildren(list, true);
-            getOrCreateTicketMobBody(list).innerHTML = mobBodyHtml;
-          }
+          resetTicketListChildren(list, true);
+          getOrCreateTicketMobBody(list).innerHTML = mobBodyHtml;
           const scrollTab = isReportsList ? 'reports' : 'workflow';
           requestAnimationFrame(() => requestAnimationFrame(() => bindMobTicketsHeadScroll(scrollTab)));
           return;
@@ -38374,8 +38416,13 @@
         };
       }
 
+      function isMobTicketsListSync(listId) {
+        return listId === 'ticketList' || listId === 'reportList';
+      }
+
       function syncMobTicketsColWidths(tab) {
         const root = mobTicketsScrollRoot(tab || 'workflow');
+        const mobSync = isMobTicketsListSync(root.listId);
         const headHost = document.getElementById(root.headId);
         const headTable = document.querySelector(`${root.tabSel} #${root.headId} .wf-tickets-table--mob-head`);
         const bodyTable = document.querySelector(`${root.tabSel} #${root.listId} .wf-tickets-table--mob-body`);
@@ -38398,7 +38445,7 @@
         const bodyCs = getComputedStyle(bodyScroll);
         const bodyPadX = (parseFloat(bodyCs.paddingLeft) || 0) + (parseFloat(bodyCs.paddingRight) || 0);
         let tableW = Math.max(0, innerW - bodyPadX);
-        if (root.listId === 'ticketList') {
+        if (mobSync) {
           bodyTable.style.width = '100%';
           bodyTable.style.maxWidth = '100%';
           tableW = bodyTable.offsetWidth || bodyScroll.clientWidth;
@@ -38415,7 +38462,7 @@
         const outerPx = `${outerW}px`;
 
         if (headHost) {
-          if (root.listId === 'ticketList') {
+          if (mobSync) {
             headHost.style.width = '100%';
             headHost.style.maxWidth = '100%';
           } else {
@@ -38426,14 +38473,12 @@
         }
         if (headWrap) {
           headWrap.style.boxSizing = 'border-box';
-          if (root.listId !== 'ticketList') {
+          if (!mobSync) {
             headWrap.style.width = outerPx;
             headWrap.style.maxWidth = outerPx;
           }
-          headWrap.style.marginInline = root.listId === 'reportList' ? 'auto' : '0';
-          if (root.listId === 'reportList') {
-            headWrap.style.paddingInlineEnd = scrollBarW ? `${scrollBarW}px` : '';
-          } else if (root.listId === 'ticketList') {
+          headWrap.style.marginInline = '0';
+          if (mobSync) {
             headWrap.style.overflow = 'hidden';
             headWrap.scrollLeft = 0;
             headWrap.style.paddingInlineEnd = '0';
@@ -38442,7 +38487,7 @@
           }
         }
 
-        if (root.listId !== 'ticketList') {
+        if (!mobSync) {
           headTable.style.width = innerPx;
           bodyTable.style.width = innerPx;
         }
@@ -38458,9 +38503,9 @@
         const raw = Array.from(tds, td => td.offsetWidth);
         let sum = raw.reduce((a, b) => a + b, 0);
         if (!sum) return;
-        let widths = raw.map(w => Math.floor((w / sum) * (root.listId === 'ticketList' ? tableW : innerW)));
+        let widths = raw.map(w => Math.floor((w / sum) * (mobSync ? tableW : innerW)));
         let used = widths.reduce((a, b) => a + b, 0);
-        const targetW = root.listId === 'ticketList' ? tableW : innerW;
+        const targetW = mobSync ? tableW : innerW;
         for (let i = 0; used < targetW; i = (i + 1) % widths.length) {
           widths[i] += 1;
           used += 1;
@@ -38540,14 +38585,14 @@
           setColW(ths[i], px);
           setColW(headCols[i], px);
           setColW(bodyCols[i], px);
-          if (root.listId === 'ticketList' && tds[i]) {
+          if (mobSync && tds[i]) {
             tds[i].style.removeProperty('width');
             tds[i].style.removeProperty('min-width');
             tds[i].style.removeProperty('max-width');
           }
         });
 
-        if (root.listId === 'ticketList') {
+        if (mobSync) {
           const measured = Array.from(tds, td => td.getBoundingClientRect().width);
           measured.forEach((w, i) => {
             const px = `${Math.round(w)}px`;
@@ -38567,7 +38612,7 @@
         const headWrap = document.querySelector(`${root.tabSel} #${root.headId} .wf-table-wrap--head`);
         if (!bodyScroll || !headWrap) return;
 
-        if (root.listId === 'ticketList') {
+        if (mobSync) {
           bodyScroll.onscroll = null;
           headWrap.scrollLeft = 0;
         } else {
@@ -45033,10 +45078,16 @@
       function renderReportList(items) {
         const c = document.getElementById('reportList');
         if (!c) return;
+        const mobHead = document.getElementById('rpMobTicketsHead');
         if (!items.length) {
-          c.innerHTML = isAppDataPending()
+          if (mobHead) {
+            mobHead.innerHTML = '';
+            mobHead.setAttribute('aria-hidden', 'true');
+          }
+          const emptyHtml = isAppDataPending()
             ? dataLoadingEmptyHTML('جاري تحميل التقارير…')
             : '<div class="empty"><i class="fas fa-inbox"></i><p>لا توجد بيانات في الفترة المحددة</p></div>';
+          appendTicketListHtml(c, emptyHtml, true);
           return;
         }
 
