@@ -38416,13 +38416,8 @@
         };
       }
 
-      function isMobTicketsListSync(listId) {
-        return listId === 'ticketList' || listId === 'reportList';
-      }
-
       function syncMobTicketsColWidths(tab) {
         const root = mobTicketsScrollRoot(tab || 'workflow');
-        const mobSync = isMobTicketsListSync(root.listId);
         const headHost = document.getElementById(root.headId);
         const headTable = document.querySelector(`${root.tabSel} #${root.headId} .wf-tickets-table--mob-head`);
         const bodyTable = document.querySelector(`${root.tabSel} #${root.listId} .wf-tickets-table--mob-body`);
@@ -38445,7 +38440,8 @@
         const bodyCs = getComputedStyle(bodyScroll);
         const bodyPadX = (parseFloat(bodyCs.paddingLeft) || 0) + (parseFloat(bodyCs.paddingRight) || 0);
         let tableW = Math.max(0, innerW - bodyPadX);
-        if (mobSync) {
+        const useMeasuredHead = root.listId === 'ticketList' || root.listId === 'reportList';
+        if (root.listId === 'ticketList') {
           bodyTable.style.width = '100%';
           bodyTable.style.maxWidth = '100%';
           tableW = bodyTable.offsetWidth || bodyScroll.clientWidth;
@@ -38456,13 +38452,27 @@
           headWrap.style.paddingInline = '0';
           headWrap.style.paddingInlineEnd = '0';
           headTable.style.width = '100%';
+        } else if (root.listId === 'reportList') {
+          bodyTable.style.width = '100%';
+          bodyTable.style.maxWidth = '100%';
+          tableW = bodyTable.offsetWidth || bodyScroll.clientWidth;
+          if (headHost) {
+            headHost.style.width = '100%';
+            headHost.style.maxWidth = '100%';
+          }
+          if (headWrap) {
+            headWrap.style.width = '100%';
+            headWrap.style.maxWidth = '100%';
+            headWrap.style.paddingInline = '0';
+            headWrap.style.paddingInlineEnd = '0';
+          }
+          headTable.style.width = '100%';
         }
-        const tablePx = `${tableW}px`;
         const innerPx = `${innerW}px`;
         const outerPx = `${outerW}px`;
 
         if (headHost) {
-          if (mobSync) {
+          if (useMeasuredHead) {
             headHost.style.width = '100%';
             headHost.style.maxWidth = '100%';
           } else {
@@ -38473,21 +38483,27 @@
         }
         if (headWrap) {
           headWrap.style.boxSizing = 'border-box';
-          if (!mobSync) {
+          if (!useMeasuredHead) {
             headWrap.style.width = outerPx;
             headWrap.style.maxWidth = outerPx;
           }
-          headWrap.style.marginInline = '0';
-          if (mobSync) {
+          if (root.listId === 'ticketList') {
+            headWrap.style.marginInline = '0';
+            headWrap.style.overflow = 'hidden';
+            headWrap.scrollLeft = 0;
+            headWrap.style.paddingInlineEnd = '0';
+          } else if (root.listId === 'reportList') {
+            headWrap.style.marginInline = '0';
             headWrap.style.overflow = 'hidden';
             headWrap.scrollLeft = 0;
             headWrap.style.paddingInlineEnd = '0';
           } else {
+            headWrap.style.marginInline = '0';
             headWrap.style.paddingInlineEnd = '';
           }
         }
 
-        if (!mobSync) {
+        if (!useMeasuredHead) {
           headTable.style.width = innerPx;
           bodyTable.style.width = innerPx;
         }
@@ -38503,9 +38519,9 @@
         const raw = Array.from(tds, td => td.offsetWidth);
         let sum = raw.reduce((a, b) => a + b, 0);
         if (!sum) return;
-        let widths = raw.map(w => Math.floor((w / sum) * (mobSync ? tableW : innerW)));
+        let widths = raw.map(w => Math.floor((w / sum) * (useMeasuredHead ? tableW : innerW)));
         let used = widths.reduce((a, b) => a + b, 0);
-        const targetW = mobSync ? tableW : innerW;
+        const targetW = useMeasuredHead ? tableW : innerW;
         for (let i = 0; used < targetW; i = (i + 1) % widths.length) {
           widths[i] += 1;
           used += 1;
@@ -38585,14 +38601,26 @@
           setColW(ths[i], px);
           setColW(headCols[i], px);
           setColW(bodyCols[i], px);
-          if (mobSync && tds[i]) {
+          if (root.listId === 'ticketList' && tds[i]) {
+            tds[i].style.removeProperty('width');
+            tds[i].style.removeProperty('min-width');
+            tds[i].style.removeProperty('max-width');
+          } else if (root.listId === 'reportList' && tds[i]) {
             tds[i].style.removeProperty('width');
             tds[i].style.removeProperty('min-width');
             tds[i].style.removeProperty('max-width');
           }
         });
 
-        if (mobSync) {
+        if (root.listId === 'ticketList') {
+          const measured = Array.from(tds, td => td.getBoundingClientRect().width);
+          measured.forEach((w, i) => {
+            const px = `${Math.round(w)}px`;
+            setColW(ths[i], px);
+            setColW(headCols[i], px);
+          });
+          headTable.style.width = `${Math.round(bodyTable.getBoundingClientRect().width)}px`;
+        } else if (root.listId === 'reportList') {
           const measured = Array.from(tds, td => td.getBoundingClientRect().width);
           measured.forEach((w, i) => {
             const px = `${Math.round(w)}px`;
@@ -38612,7 +38640,7 @@
         const headWrap = document.querySelector(`${root.tabSel} #${root.headId} .wf-table-wrap--head`);
         if (!bodyScroll || !headWrap) return;
 
-        if (mobSync) {
+        if (root.listId === 'ticketList' || root.listId === 'reportList') {
           bodyScroll.onscroll = null;
           headWrap.scrollLeft = 0;
         } else {
