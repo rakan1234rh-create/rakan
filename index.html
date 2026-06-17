@@ -23179,7 +23179,21 @@
         margin: 0 !important;
         padding: 0 !important;
         align-items: start;
-        background: transparent
+        background: transparent;
+        position: relative
+      }
+
+      #tab-dashboard #personalIndicators.indicators-row--score-duo::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        inset-inline-start: 50%;
+        width: 1px;
+        margin-inline-start: -0.5px;
+        background: var(--mr-border);
+        pointer-events: none;
+        z-index: 4
       }
 
       #tab-dashboard #personalIndicators.indicators-row--score-duo .indicator-card--score {
@@ -23198,8 +23212,15 @@
         gap: 0
       }
 
+      #tab-dashboard #personalIndicators.indicators-row--score-duo .indicator-card--commitment {
+        border-inline-end: 1px solid var(--border)
+      }
+
       #tab-dashboard #personalIndicators.indicators-row--score-duo .indicator-card--response {
-        --score-tile-accent: var(--purple);
+        --score-tile-accent: var(--purple)
+      }
+
+      #tab-dashboard #personalIndicators.indicators-row--score-duo .indicator-card--response:has(.score-breakdown-panel.open) {
         border-inline-start: 1px solid var(--border)
       }
 
@@ -25524,7 +25545,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v657-dash-commit-divider">
+  <meta name="app-build" content="athar-figma-v658-dash-duo-divider-full">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
