@@ -22572,7 +22572,7 @@
       margin-bottom: 0;
       padding-bottom: 0;
     }
-    #tab-dashboard .mk-dash__split > .indicators-row--branch-staff {
+    #tab-dashboard .mk-dash > #branchStaffPanel {
       margin-top: 0;
       margin-bottom: 0;
     }
@@ -22846,7 +22846,7 @@
     .mk-dash__split { display:grid; grid-template-columns:minmax(0,1.05fr) minmax(0,1fr); gap:16px; }
 
     @media (min-width: 993px) {
-#tab-dashboard .mk-dash__split > #branchStaffPanel {
+#tab-dashboard #branchStaffPanel {
         grid-column: 1 / -1;
       }
 }
@@ -23709,16 +23709,78 @@
         grid-column: 1 / -1
       }
 
-      #tab-dashboard .indicators-row--branch-staff {
+      #tab-dashboard .indicators-row--branch-staff,
+      #tab-dashboard #branchStaffPanel {
         grid-template-columns: 1fr !important;
-        gap: 10px;
-        margin-bottom: 0;
-        padding-bottom: 0
+        gap: 0;
+        width: 100%;
+        margin: 0 !important;
+        padding-inline: 4px !important;
+        box-sizing: border-box
       }
 
-      #tab-dashboard #branchStaffPanel .indicator-card {
-        padding: 10px;
-        gap: 8px
+      #tab-dashboard #branchStaffPanel .indicator-card--branch-staff {
+        width: 100%;
+        min-width: 0;
+        padding: 0 !important;
+        margin: 0;
+        border-radius: 11px;
+        border: 1px solid var(--mr-border);
+        background: var(--mr-surface);
+        box-shadow: var(--mr-shadow-soft);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0;
+        box-sizing: border-box
+      }
+
+      #tab-dashboard #branchStaffPanel .indicator-title--branch-staff {
+        padding: 8px 3px 6px;
+        margin: 0 !important;
+        font-size: 11px;
+        font-weight: 700;
+        line-height: 1.25;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        box-sizing: border-box;
+        color: var(--mr-text)
+      }
+
+      #tab-dashboard #branchStaffPanel .indicator-title--branch-staff i {
+        font-size: 11px;
+        flex-shrink: 0;
+        color: var(--amber)
+      }
+
+      #tab-dashboard #branchStaffPanel .indicator-title--branch-staff.indicator-title--warn {
+        color: var(--amber)
+      }
+
+      #tab-dashboard #branchStaffPanel .indicator-title--branch-staff.indicator-title--warn i {
+        color: var(--amber)
+      }
+
+      #tab-dashboard #branchStaffPanel .indicator-desc--branch-staff {
+        margin: 0;
+        padding: 0 3px 10px;
+        font-size: 9.5px;
+        line-height: 1.35
+      }
+
+      #tab-dashboard #branchStaffPanel .score-viol-list--branch-staff {
+        margin: 0;
+        padding: 0 3px 8px;
+        gap: 4px;
+        display: flex;
+        flex-direction: column
+      }
+
+      #tab-dashboard #branchStaffPanel .score-viol-list--branch-staff .score-viol-row {
+        padding: 5px 7px;
+        border-radius: 7px
       }
 
       #tab-dashboard .indicator-ring {
@@ -25733,7 +25795,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v692-dash-kpi-text-align">
+  <meta name="app-build" content="athar-figma-v693-dash-branch-staff-card">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -26094,8 +26156,9 @@
                 </article>
               </div>
 
+              <div class="indicators-row indicators-row--branch-staff" id="branchStaffPanel" style="display:none"></div>
+
               <div class="mk-dash__split" id="dashStaffFunnelSplit">
-                <div class="indicators-row indicators-row--branch-staff" id="branchStaffPanel" style="display:none"></div>
                 <section class="mk-funnel">
                   <header class="mk-funnel__head">
                     <div>
@@ -33872,9 +33935,6 @@
         const me = state.currentUser;
         const role = me.role;
 
-        const dashSplit = document.getElementById('dashStaffFunnelSplit');
-        if (dashSplit) dashSplit.classList.remove('mk-dash__split--duo');
-
         if (branchPanel) {
           branchPanel.innerHTML = '';
           branchPanel.style.display = 'none';
@@ -34148,11 +34208,12 @@
           const bid = me.branch_id;
           if (!bid) {
             branchStaffHtml = `
-          <div class="indicator-card indicator-card--branch-staff" style="flex-direction:column;align-items:stretch">
-            <div class="indicator-title" style="display:flex;align-items:center;gap:8px;color:var(--amber)">
-              <i class="fas fa-circle-exclamation"></i> فرع الإدارة غير مضبوط
+          <div class="indicator-card indicator-card--branch-staff">
+            <div class="indicator-title indicator-title--branch-staff indicator-title--warn">
+              <i class="fas fa-circle-exclamation"></i>
+              <span>فرع الإدارة غير مضبوط</span>
             </div>
-            <p class="indicator-desc" style="margin:0">لا يوجد <strong>branch_id</strong> على حسابك — اطلب من المدير ربطك بفرع. يمكنك بعدها عرض موظفي الفرع هنا ومؤشر امتثال الفرع من قائمة <strong>مؤشرات الامتثال</strong>.</p>
+            <p class="indicator-desc indicator-desc--branch-staff">لا يوجد <strong>branch_id</strong> على حسابك — اطلب من المدير ربطك بفرع. يمكنك بعدها عرض موظفي الفرع هنا ومؤشر امتثال الفرع من قائمة <strong>مؤشرات الامتثال</strong>.</p>
           </div>`;
           } else {
           const empRows = getBranchStaff(bid)
@@ -34178,11 +34239,12 @@
           }
 
           branchStaffHtml = `
-          <div class="indicator-card indicator-card--branch-staff" style="flex-direction:column;align-items:stretch">
-            <div class="indicator-title" style="margin-bottom:10px;display:flex;align-items:center;gap:8px">
-              <i class="fas fa-id-badge" style="color:var(--amber)"></i> موظفو الفرع — الالتزام
+          <div class="indicator-card indicator-card--branch-staff">
+            <div class="indicator-title indicator-title--branch-staff">
+              <i class="fas fa-id-badge"></i>
+              <span>موظفو الفرع — الالتزام</span>
             </div>
-            <div class="score-viol-list">${empListHtml}</div>
+            <div class="score-viol-list score-viol-list--branch-staff">${empListHtml}</div>
           </div>
         `;
           }
@@ -34275,10 +34337,6 @@
         if (branchPanel) {
           branchPanel.innerHTML = branchStaffHtml;
           branchPanel.style.display = branchStaffHtml ? 'grid' : 'none';
-        }
-        if (dashSplit) {
-          if (branchStaffHtml) dashSplit.classList.add('mk-dash__split--duo');
-          else dashSplit.classList.remove('mk-dash__split--duo');
         }
       }
 
