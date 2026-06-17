@@ -11366,6 +11366,26 @@
       text-decoration: none
     }
 
+    [data-theme="dark"] .notif-page-topbar .notif-mark-all:not(.notif-mark-all--danger),
+    [data-theme="dark"] .notif-page-topbar .notif-mark-all:not(.notif-mark-all--danger) i {
+      color: #fff
+    }
+
+    [data-theme="dark"] .notif-page-topbar .notif-mark-all:not(.notif-mark-all--danger):hover,
+    [data-theme="dark"] .notif-page-topbar .notif-mark-all:not(.notif-mark-all--danger):active,
+    [data-theme="dark"] .notif-page-topbar .notif-mark-all:not(.notif-mark-all--danger):focus,
+    [data-theme="dark"] .notif-page-topbar .notif-mark-all:not(.notif-mark-all--danger):focus-visible {
+      color: #fff;
+      background: transparent;
+      border-color: transparent
+    }
+
+    [data-theme="dark"] .notif-page-topbar .notif-mark-all:not(.notif-mark-all--danger):hover i,
+    [data-theme="dark"] .notif-page-topbar .notif-mark-all:not(.notif-mark-all--danger):active i,
+    [data-theme="dark"] .notif-page-topbar .notif-mark-all:not(.notif-mark-all--danger):focus i {
+      color: #fff
+    }
+
     .notif-list {
       overflow-y: auto;
       flex: 1 1 auto;
@@ -11753,8 +11773,20 @@
       .notif-page-back:hover,
       .notif-filter-btn:not(.is-active):hover {
         background: transparent;
-        border-color: transparent;
-        color: inherit
+        border-color: transparent
+      }
+
+      .notif-mark-all:not(.notif-mark-all--danger):hover {
+        color: var(--mr-primary)
+      }
+
+      .notif-mark-all--danger:hover {
+        color: var(--red-text)
+      }
+
+      [data-theme="dark"] .notif-page-topbar .notif-mark-all:not(.notif-mark-all--danger):hover,
+      [data-theme="dark"] .notif-page-topbar .notif-mark-all:not(.notif-mark-all--danger):hover i {
+        color: #fff
       }
 
       .notif-filter-btn:not(.is-active):hover {
@@ -26282,7 +26314,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v731-dash-scroll-end">
+  <meta name="app-build" content="athar-figma-v732-notif-readall-white">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
