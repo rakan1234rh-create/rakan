@@ -20,10 +20,17 @@ ATHAR — تفعيل تنبيهات الجوال خارج التطبيق (Web Pu
 
    ⚠ المفتاح العام في Secrets يجب أن يطابق index.html:
      ATHAR_VAPID_PUBLIC_KEY
-   إن اختلفا لن يعمل الاشتراك ولا الإرسال.
+   إن اغيّرت المفاتيح أعد «تفعيل تنبيهات الجوال» من القائمة.
 
-3) نشر الدالة
-     supabase functions deploy violation-push --no-verify-jwt
+3) نشر الدالة (إلزامي — بدونها لن يصل أي تنبيه من الخادم)
+     npx supabase@latest login
+     npx supabase@latest link --project-ref rizoafuxmqsddjfhbsmf
+     npx supabase@latest functions deploy violation-push --no-verify-jwt
+
+   تحقق: افتح في المتصفح
+     https://rizoafuxmqsddjfhbsmf.supabase.co/functions/v1/violation-push
+   يجب أن يظهر {"ok":true,"service":"violation-push",...}
+   إن ظهر 404 فالدالة غير منشورة بعد.
 
 4) Database Webhook (Supabase Dashboard)
    Database → Webhooks → Create hook

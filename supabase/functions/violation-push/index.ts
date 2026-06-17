@@ -136,6 +136,16 @@ async function resolveUserIdFromJwt(req: Request) {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
+  if (req.method === 'GET') {
+    const vapidPublic = Deno.env.get('VAPID_PUBLIC_KEY') ?? '';
+    const vapidPrivate = Deno.env.get('VAPID_PRIVATE_KEY') ?? '';
+    return json({
+      ok: true,
+      service: 'violation-push',
+      vapidConfigured: !!(vapidPublic && vapidPrivate),
+    });
+  }
+
   let payload: Record<string, unknown> = {};
   try {
     payload = await req.json();
