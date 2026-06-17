@@ -26170,7 +26170,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v723-notif-time-fix">
+  <meta name="app-build" content="athar-figma-v724-bm-team-reply-now">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -34803,7 +34803,7 @@
         const t = new Date(iso).getTime();
         if (Number.isNaN(t)) return '';
         const sec = Math.floor((Date.now() - t) / 1000);
-        if (sec < 45) return 'الآن';
+        if (sec < 60) return 'الآن';
         if (sec < 3600) {
           const m = Math.floor(sec / 60);
           return m === 1 ? 'منذ دقيقة' : 'منذ ' + m + ' دقائق';
@@ -47848,7 +47848,29 @@
               });
               return;
             }
-            if (t.state !== 'closed') return;
+            if (t.state !== 'closed') {
+              const teamStatusMeta = {
+                sup: { title: 'رد موظف ضمن فريقك على المخالفة', type: 'blue', icon: 'fa-reply' },
+                aud: { title: 'مخالفة موظف فريقك بانتظار التدقيق', type: 'purple', icon: 'fa-magnifying-glass' },
+                mgt: { title: 'مخالفة موظف فريقك بانتظار القرار الإداري', type: 'red', icon: 'fa-gavel' },
+                hr: { title: 'مخالفة موظف فريقك بانتظار الموارد البشرية', type: 'orange', icon: 'fa-users-gear' },
+                Warning_Issued: { title: 'تنبيه إداري صادر على موظف ضمن فريقك', type: 'amber', icon: 'fa-hand' }
+              };
+              const meta = teamStatusMeta[t.state];
+              if (meta) {
+                notifs.push({
+                  id: `bm_team_status_${t.id}_${t.state}`,
+                  ticketId: t.id,
+                  type: meta.type,
+                  icon: meta.icon,
+                  title: meta.title,
+                  msg: `${t._empName} — ${t.violation_type} — ${shortTicketNum(t.ticket_number)}`,
+                  time: t.updated_at || t.created_at,
+                  scope: 'team'
+                });
+              }
+              return;
+            }
             const st = t.status_text || '';
             const isWarn = /تنبيه|اكتفاء بالتنبيه/i.test(st);
             const isPenalty = /معتمد/.test(st) && !isWarn;
