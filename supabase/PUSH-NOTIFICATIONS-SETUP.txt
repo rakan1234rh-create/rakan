@@ -13,14 +13,15 @@ ATHAR — تفعيل تنبيهات الجوال خارج التطبيق (Web Pu
    من جهازك:
      npx web-push generate-vapid-keys
 
-   في Supabase → Project Settings → Edge Functions → Secrets:
-     VAPID_PUBLIC_KEY  = المفتاح العام
-     VAPID_PRIVATE_KEY = المفتاح الخاص (لا ترفعه على GitHub)
-     VAPID_SUBJECT     = mailto:your-email@example.com
+   في Supabase → Project Settings → Edge Functions → Secrets (يجب الثلاثة معاً):
+     VAPID_PUBLIC_KEY  = نفس قيمة ATHAR_VAPID_PUBLIC_KEY في index.html
+     VAPID_PRIVATE_KEY = المفتاح الخاص المقترن (من npx web-push generate-vapid-keys)
+     VAPID_SUBJECT     = mailto:admin@athar.app
 
-   ⚠ المفتاح العام في Secrets يجب أن يطابق index.html:
-     ATHAR_VAPID_PUBLIC_KEY
-   إن اغيّرت المفاتيح أعد «تفعيل تنبيهات الجوال» من القائمة.
+   تحقق بعد الحفظ:
+     https://rizoafuxmqsddjfhbsmf.supabase.co/functions/v1/violation-push
+   يجب: "vapidConfigured":true و "vapidValid":true
+   إن ظهر vapidValid:false فالعام والخاص لا يتطابقان — أعد توليد الزوج وأعد تفعيل التنبيهات.
 
 3) نشر الدالة (إلزامي — بدونها لن يصل أي تنبيه من الخادم)
      npx supabase@latest login

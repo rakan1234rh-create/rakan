@@ -26321,7 +26321,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v739-push-welcome">
+  <meta name="app-build" content="athar-figma-v740-vapid-resync">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -27881,6 +27881,7 @@
 
       /** Web Push — المفتاح العام VAPID (الخاص في Supabase Secrets فقط) */
       const ATHAR_VAPID_PUBLIC_KEY = 'BAAE2sxYeIGbYADV7uimLzIFB_en9SBWQ3a4-LBULuOIVm40YI7YfjXL2Fddttr1L1tHFkoaiPzmZankfUk_2jc';
+      const ATHAR_VAPID_STORAGE_KEY = 'athar_vapid_public_key';
       const ATHAR_SW_URL = './sw.js?v=3';
       const ATHAR_VIOLATION_PUSH_URL = `${SUPABASE_URL}/functions/v1/violation-push`;
 
@@ -48198,8 +48199,14 @@
         if (/row-level security|42501/i.test(msg)) {
           return 'صلاحيات RLS تمنع الحفظ — أعد تشغيل push_notifications.sql';
         }
-        if (/applicationServerKey|vapid|mismatch|Vapid/i.test(msg)) {
-          return 'مفاتيح VAPID غير متطابقة — راجع Secrets في Supabase';
+        if (/VAPID keys not configured/i.test(msg)) {
+          return 'مفاتيح VAPID غير مضبوطة في Supabase → Edge Functions → Secrets';
+        }
+        if (/VAPID mismatch|أوقف التنبيهات|key pair invalid|must match/i.test(msg)) {
+          return 'مفاتيح VAPID غير متطابقة — أوقف التنبيهات ثم فعّلها من جديد';
+        }
+        if (/applicationServerKey|vapid|Vapid/i.test(msg)) {
+          return 'خطأ VAPID — تأكد من Secrets ثم أعد تفعيل التنبيهات';
         }
         if (/404|not found|violation-push غير منشورة|Failed to send a request/i.test(msg)) {
           return 'دالة violation-push غير منشورة على Supabase — راجع PUSH-NOTIFICATIONS-SETUP.txt';
@@ -48238,7 +48245,10 @@
           _violationPushProbeCache = {
             deployed: true,
             ok: !!(json?.ok ?? res.ok),
-            vapidConfigured: json?.vapidConfigured
+            vapidConfigured: json?.vapidConfigured,
+            vapidValid: json?.vapidValid,
+            vapidPublicKey: json?.vapidPublicKey || '',
+            vapidMatchesClient: !!(json?.vapidPublicKey && json.vapidPublicKey === ATHAR_VAPID_PUBLIC_KEY)
           };
           return _violationPushProbeCache;
         } catch (e) {
@@ -48336,6 +48346,32 @@
         if (testBtn) testBtn.hidden = !on;
       }
 
+      async function refreshPushSubscription(reg, opts = {}) {
+        let stored = '';
+        try { stored = localStorage.getItem(ATHAR_VAPID_STORAGE_KEY) || ''; } catch (_) {}
+        const mustRefresh = !!(
+          opts.welcomeNotify
+          || opts.forceResubscribe
+          || (stored && stored !== ATHAR_VAPID_PUBLIC_KEY)
+        );
+        if (mustRefresh) {
+          const old = await reg.pushManager.getSubscription();
+          if (old) {
+            try { await removePushSubscriptionFromDb(old.endpoint); } catch (_) {}
+            try { await old.unsubscribe(); } catch (_) {}
+          }
+        }
+        let sub = await reg.pushManager.getSubscription();
+        if (!sub) {
+          sub = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(ATHAR_VAPID_PUBLIC_KEY)
+          });
+        }
+        try { localStorage.setItem(ATHAR_VAPID_STORAGE_KEY, ATHAR_VAPID_PUBLIC_KEY); } catch (_) {}
+        return sub;
+      }
+
       async function ensureAtharWebPushSubscribed(opts = {}) {
         if (!isWebPushSupported() || !state.currentUser) return false;
         try {
@@ -48343,13 +48379,7 @@
           if (perm !== 'granted') return false;
           const reg = await getAtharSwRegistration();
           if (!reg?.pushManager) throw new Error('PushManager غير متاح');
-          let sub = await reg.pushManager.getSubscription();
-          if (!sub) {
-            sub = await reg.pushManager.subscribe({
-              userVisibleOnly: true,
-              applicationServerKey: urlBase64ToUint8Array(ATHAR_VAPID_PUBLIC_KEY)
-            });
-          }
+          const sub = await refreshPushSubscription(reg, opts);
           await savePushSubscriptionToDb(sub);
           syncWebPushMenuLabel();
           if (opts.welcomeNotify) {
@@ -48427,7 +48457,7 @@
           return;
         }
         try {
-          await ensureAtharWebPushSubscribed({ welcomeNotify: false });
+          await ensureAtharWebPushSubscribed({ welcomeNotify: false, forceResubscribe: true });
         } catch (e) {
           showToast('فشل حفظ الاشتراك: ' + formatPushError(e), 'error');
           return;
@@ -48454,6 +48484,18 @@
             + 'التفاصيل في: supabase/PUSH-NOTIFICATIONS-SETUP.txt',
             { type: 'warn', title: 'خادم التنبيهات غير منشور', okText: 'فهمت', cancelText: 'إغلاق' }
           );
+          return;
+        }
+        if (!backend.vapidConfigured) {
+          showToast('أضف VAPID_PUBLIC_KEY و VAPID_PRIVATE_KEY في Supabase Secrets', 'error');
+          return;
+        }
+        if (backend.vapidValid === false) {
+          showToast('زوج مفاتيح VAPID في Secrets غير صالح — العام والخاص لا يتطابقان', 'error');
+          return;
+        }
+        if (backend.vapidPublicKey && !backend.vapidMatchesClient) {
+          showToast('المفتاح العام في Secrets لا يطابق التطبيق — راجع PUSH-NOTIFICATIONS-SETUP.txt', 'error');
           return;
         }
         showToast('جاري إرسال تنبيه من الخادم… (أغلق التطبيق أو انتظر شريط الإشعارات)', 'info');

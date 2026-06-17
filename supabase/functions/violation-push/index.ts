@@ -67,6 +67,15 @@ async function sendPushToUserIds(
   if (!vapidPublic || !vapidPrivate) {
     return { error: 'VAPID keys not configured in Edge Function secrets', sent: 0 };
   }
+  try {
+    webpush.setVapidDetails(vapidSubject, vapidPublic, vapidPrivate);
+  } catch (err) {
+    return {
+      error: 'VAPID key pair invalid in secrets — public and private must match',
+      sent: 0,
+      detail: String(err).slice(0, 120),
+    };
+  }
 
   const { data: subs, error: subsErr } = await supabase
     .from('push_subscriptions')
@@ -77,7 +86,6 @@ async function sendPushToUserIds(
     return { error: 'no push_subscriptions for recipients — فعّل التنبيه من الجوال أولاً', sent: 0 };
   }
 
-  webpush.setVapidDetails(vapidSubject, vapidPublic, vapidPrivate);
   const staleEndpoints: string[] = [];
   let sent = 0;
   const errors: string[] = [];
@@ -100,7 +108,9 @@ async function sendPushToUserIds(
       const status = (err as { statusCode?: number; body?: string })?.statusCode;
       const detail = (err as { body?: string })?.body || String(err);
       if (status === 404 || status === 410) staleEndpoints.push(sub.endpoint);
-      else errors.push(detail.slice(0, 120));
+      else if (status === 403 || /vapid|credentials|authorization/i.test(detail)) {
+        errors.push('VAPID mismatch — أوقف التنبيهات ثم فعّلها من جديد على الجهاز');
+      } else errors.push(detail.slice(0, 120));
     }
   }
 
@@ -139,10 +149,23 @@ Deno.serve(async (req) => {
   if (req.method === 'GET') {
     const vapidPublic = Deno.env.get('VAPID_PUBLIC_KEY') ?? '';
     const vapidPrivate = Deno.env.get('VAPID_PRIVATE_KEY') ?? '';
+    let vapidValid = false;
+    if (vapidPublic && vapidPrivate) {
+      try {
+        webpush.setVapidDetails(
+          Deno.env.get('VAPID_SUBJECT') ?? 'mailto:admin@athar.local',
+          vapidPublic,
+          vapidPrivate,
+        );
+        vapidValid = true;
+      } catch (_) { /* invalid pair */ }
+    }
     return json({
       ok: true,
       service: 'violation-push',
       vapidConfigured: !!(vapidPublic && vapidPrivate),
+      vapidValid,
+      vapidPublicKey: vapidPublic || null,
     });
   }
 
