@@ -4,6 +4,7 @@ ATHAR — تفعيل تنبيهات الجوال خارج التطبيق (Web Pu
 
 1) SQL
    شغّل: supabase/push_notifications.sql في SQL Editor
+   تحقق: supabase/تحقق-التنبيهات-الخارجية.sql — يجب أن يظهر اشتراكك بعد التفعيل
 
 2) مفاتيح VAPID (مرة واحدة)
    من جهازك:
@@ -14,8 +15,9 @@ ATHAR — تفعيل تنبيهات الجوال خارج التطبيق (Web Pu
      VAPID_PRIVATE_KEY = المفتاح الخاص (لا ترفعه على GitHub)
      VAPID_SUBJECT     = mailto:your-email@example.com
 
-   انسخ المفتاح العام أيضاً إلى index.html:
+   ⚠ المفتاح العام في Secrets يجب أن يطابق index.html:
      ATHAR_VAPID_PUBLIC_KEY
+   إن اختلفا لن يعمل الاشتراك ولا الإرسال.
 
 3) نشر الدالة
      supabase functions deploy violation-push --no-verify-jwt
@@ -27,17 +29,41 @@ ATHAR — تفعيل تنبيهات الجوال خارج التطبيق (Web Pu
    • Events: Insert
    • Type: Supabase Edge Function
    • Function: violation-push
-   • HTTP Headers: Authorization = Bearer <SERVICE_ROLE_KEY>
+   • HTTP Headers (أحد الخيارين):
+     Authorization = Bearer <SERVICE_ROLE_KEY>
+     — أو —
+     x-athar-push-secret = <قيمة سرية>
+     وأضف نفس القيمة في Secrets: PUSH_WEBHOOK_SECRET
 
-5) الجوال
+5) اختبار من التطبيق (بعد النشر)
+   • سجّل دخول من الجوال
+   • قائمة المستخدم → «تفعيل تنبيهات الجوال» → اسمح بالإشعارات
+   • نفس القائمة → «اختبار تنبيه الجوال»
+   • إن ظهر خطأ، اقرأ الرسالة (جدول ناقص / VAPID / الدالة غير منشورة)
+
+6) الجوال
    • أضف الموقع إلى الشاشة الرئيسية (PWA)
-   • iOS 16.4+: التنبيهات تعمل فقط للتطبيق المثبّت
+   • iOS 16.4+: التنبيهات تعمل فقط للتطبيق المثبّت على الشاشة الرئيسية
    • Android Chrome: يعمل من المتصفح أو PWA
-   • من قائمة المستخدم → «تفعيل تنبيهات الجوال»
+   • Safari على سطح المكتب: لا يدعم Web Push
 
-6) من يستلم التنبيه عند رصد مخالفة؟
-   • الموظف المعني
+7) من يستلم التنبيه عند رصد مخالفة؟
+   • الموظف المعني (employee_id)
    • مدير فرع نفس الفرع
    • مشرف المنطقة
+   ملاحظة: من يسجّل المخالفة بنفسه قد لا يكون ضمن المستلمين.
+
+8) تشخيص سريع
+   ┌─────────────────────────────────────┬──────────────────────────────────┐
+   │ العرض                               │ السبب المحتمل                    │
+   ├─────────────────────────────────────┼──────────────────────────────────┤
+   │ فشل حفظ الاشتراك / جدول غير موجود   │ لم يُشغَّل push_notifications.sql │
+   │ لم يُرسل: no push_subscriptions     │ التفعيل من الجوال لم يُحفظ في DB  │
+   │ لم يُرسل: VAPID keys not configured │ Secrets ناقصة في Edge Functions  │
+   │ unauthorized من Webhook             │ Authorization أو PUSH_WEBHOOK    │
+   │ الاختبار ينجح لكن المخالفة لا       │ Webhook غير مربوط على violations │
+   └─────────────────────────────────────┴──────────────────────────────────┘
+
+   سجلات الدالة: Supabase → Edge Functions → violation-push → Logs
 
 ═══════════════════════════════════════════════════════════════════════════

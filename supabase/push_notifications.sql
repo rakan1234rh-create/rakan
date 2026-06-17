@@ -22,10 +22,27 @@ create index if not exists push_subscriptions_user_id_idx
 alter table public.push_subscriptions enable row level security;
 
 drop policy if exists push_subscriptions_own on public.push_subscriptions;
-create policy push_subscriptions_own on public.push_subscriptions
-  for all to authenticated
+drop policy if exists push_subscriptions_insert on public.push_subscriptions;
+drop policy if exists push_subscriptions_update on public.push_subscriptions;
+drop policy if exists push_subscriptions_delete on public.push_subscriptions;
+drop policy if exists push_subscriptions_select on public.push_subscriptions;
+
+create policy push_subscriptions_select on public.push_subscriptions
+  for select to authenticated
+  using (user_id = public.current_user_id());
+
+create policy push_subscriptions_insert on public.push_subscriptions
+  for insert to authenticated
+  with check (user_id = public.current_user_id());
+
+create policy push_subscriptions_update on public.push_subscriptions
+  for update to authenticated
   using (user_id = public.current_user_id())
   with check (user_id = public.current_user_id());
+
+create policy push_subscriptions_delete on public.push_subscriptions
+  for delete to authenticated
+  using (user_id = public.current_user_id());
 
 -- للدالة violation-push (service role) — قراءة اشتراكات المستلمين
 drop policy if exists push_subscriptions_service on public.push_subscriptions;

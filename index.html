@@ -26321,7 +26321,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v734-web-push">
+  <meta name="app-build" content="athar-figma-v735-push-debug">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -26548,6 +26548,10 @@
                 <button type="button" role="menuitem" id="topbarPushToggle" onclick="toggleWebPushFromMenu(event)" hidden>
                   <i class="fas fa-mobile-screen-button" aria-hidden="true"></i>
                   <span id="topbarPushToggleLabel">تفعيل تنبيهات الجوال</span>
+                </button>
+                <button type="button" role="menuitem" id="topbarPushTest" onclick="testWebPushFromMenu(event)" hidden>
+                  <i class="fas fa-paper-plane" aria-hidden="true"></i>
+                  <span>اختبار تنبيه الجوال</span>
                 </button>
                 <div class="mr-topbar-user-menu__divider" role="separator"></div>
                 <button type="button" role="menuitem" class="mr-topbar-user-menu__logout"
@@ -48158,10 +48162,12 @@
       }
 
       async function savePushSubscriptionToDb(sub) {
-        if (!state.currentUser?.id || !sub) return;
+        if (!state.currentUser?.id || !sub) throw new Error('لا يوجد مستخدم أو اشتراك');
         const json = sub.toJSON();
         const keys = json.keys || {};
-        if (!json.endpoint || !keys.p256dh || !keys.auth) return;
+        if (!json.endpoint || !keys.p256dh || !keys.auth) {
+          throw new Error('بيانات الاشتراك ناقصة من المتصفح');
+        }
         const row = {
           user_id: state.currentUser.id,
           endpoint: json.endpoint,
@@ -48172,6 +48178,43 @@
         };
         const { error } = await sb.from('push_subscriptions').upsert(row, { onConflict: 'endpoint' });
         if (error) throw error;
+        const { data: check, error: checkErr } = await sb
+          .from('push_subscriptions')
+          .select('id')
+          .eq('user_id', state.currentUser.id)
+          .limit(1);
+        if (checkErr) throw checkErr;
+        if (!check?.length) {
+          throw new Error('لم يُحفظ الاشتراك — شغّل supabase/push_notifications.sql');
+        }
+      }
+
+      function formatPushError(err) {
+        const msg = String(err?.message || err?.details || err || '');
+        if (/push_subscriptions|relation|does not exist|42P01/i.test(msg)) {
+          return 'جدول push_subscriptions غير موجود — شغّل push_notifications.sql';
+        }
+        if (/row-level security|42501/i.test(msg)) {
+          return 'صلاحيات RLS تمنع الحفظ — أعد تشغيل push_notifications.sql';
+        }
+        if (/applicationServerKey|vapid|mismatch/i.test(msg)) {
+          return 'مفاتيح VAPID غير متطابقة بين الواجهة وSupabase Secrets';
+        }
+        return msg || 'خطأ غير معروف';
+      }
+
+      async function verifyPushSubscriptionInDb() {
+        if (!state.currentUser?.id) return false;
+        const { data, error } = await sb
+          .from('push_subscriptions')
+          .select('id')
+          .eq('user_id', state.currentUser.id)
+          .limit(1);
+        if (error) {
+          if (isMirsadDebugLog()) console.warn('[webPush] verify', error);
+          return false;
+        }
+        return !!(data && data.length);
       }
 
       async function removePushSubscriptionFromDb(endpoint) {
@@ -48182,33 +48225,41 @@
       function syncWebPushMenuLabel() {
         const btn = document.getElementById('topbarPushToggle');
         const label = document.getElementById('topbarPushToggleLabel');
+        const testBtn = document.getElementById('topbarPushTest');
         if (!btn || !label) return;
         if (!isWebPushSupported()) {
           btn.hidden = true;
+          if (testBtn) testBtn.hidden = true;
           return;
         }
         btn.hidden = false;
         const on = Notification.permission === 'granted';
         label.textContent = on ? 'تنبيهات الجوال مفعّلة' : 'تفعيل تنبيهات الجوال';
         btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+        if (testBtn) testBtn.hidden = !on;
       }
 
       async function ensureAtharWebPushSubscribed() {
         if (!isWebPushSupported() || !state.currentUser) return false;
-        const perm = await Notification.requestPermission();
-        if (perm !== 'granted') return false;
-        const reg = await getAtharSwRegistration();
-        if (!reg?.pushManager) return false;
-        let sub = await reg.pushManager.getSubscription();
-        if (!sub) {
-          sub = await reg.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: urlBase64ToUint8Array(ATHAR_VAPID_PUBLIC_KEY)
-          });
+        try {
+          const perm = await Notification.requestPermission();
+          if (perm !== 'granted') return false;
+          const reg = await getAtharSwRegistration();
+          if (!reg?.pushManager) throw new Error('PushManager غير متاح');
+          let sub = await reg.pushManager.getSubscription();
+          if (!sub) {
+            sub = await reg.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: urlBase64ToUint8Array(ATHAR_VAPID_PUBLIC_KEY)
+            });
+          }
+          await savePushSubscriptionToDb(sub);
+          syncWebPushMenuLabel();
+          return true;
+        } catch (e) {
+          if (isMirsadDebugLog()) console.error('[webPush] subscribe', e);
+          throw e;
         }
-        await savePushSubscriptionToDb(sub);
-        syncWebPushMenuLabel();
-        return true;
       }
 
       async function disableAtharWebPush(opts = {}) {
@@ -48232,7 +48283,8 @@
         if (!isWebPushSupported() || !state.currentUser) return;
         if (Notification.permission === 'granted') {
           try { await ensureAtharWebPushSubscribed(); } catch (e) {
-            if (isMirsadDebugLog()) console.warn('[webPush] resync', e);
+            if (!opts.silent) showToast('تنبيهات الجوال: ' + formatPushError(e), 'error');
+            else if (isMirsadDebugLog()) console.warn('[webPush] resync', e);
           }
           return;
         }
@@ -48247,9 +48299,49 @@
           { type: 'info', title: 'تنبيهات الجوال', okText: 'تفعيل', cancelText: 'لاحقاً' }
         );
         if (!ok) return;
-        const enabled = await ensureAtharWebPushSubscribed();
-        if (enabled) showToast('تم تفعيل تنبيهات الجوال ✓', 'success');
-        else showToast('لم يُفعَّل الإذن — يمكنك التفعيل من قائمة المستخدم', 'warning');
+        try {
+          const enabled = await ensureAtharWebPushSubscribed();
+          if (enabled) showToast('تم تفعيل تنبيهات الجوال ✓', 'success');
+          else showToast('لم يُفعَّل الإذن — يمكنك التفعيل من قائمة المستخدم', 'warning');
+        } catch (e) {
+          showToast('فشل التفعيل: ' + formatPushError(e), 'error');
+        }
+      }
+
+      async function testWebPushFromMenu(event) {
+        if (event) {
+          event.stopPropagation();
+          event.preventDefault();
+        }
+        closeTopbarUserMenu();
+        if (!isWebPushSupported()) {
+          showToast('المتصفح لا يدعم تنبيهات الجوال', 'warning');
+          return;
+        }
+        if (Notification.permission !== 'granted') {
+          showToast('فعّل التنبيهات أولاً من نفس القائمة', 'warning');
+          return;
+        }
+        try {
+          await ensureAtharWebPushSubscribed();
+        } catch (e) {
+          showToast('فشل حفظ الاشتراك: ' + formatPushError(e), 'error');
+          return;
+        }
+        showToast('جاري إرسال تنبيه تجريبي…', 'info');
+        try {
+          const { data, error } = await sb.functions.invoke('violation-push', { body: { test: true } });
+          if (error) throw error;
+          if (data?.ok && (data.sent || 0) > 0) {
+            showToast('وصل التنبيه التجريبي ✓ — أغلق التطبيق وجرب مرة أخرى', 'success');
+            return;
+          }
+          const hint = data?.error || data?.errors?.[0] || 'تحقق من نشر الدالة ومفاتيح VAPID';
+          showToast('لم يُرسل التنبيه: ' + hint, 'error');
+          if (isMirsadDebugLog()) console.warn('[webPush] test', data);
+        } catch (e) {
+          showToast('فشل اختبار التنبيه: ' + formatPushError(e), 'error');
+        }
       }
 
       async function toggleWebPushFromMenu(event) {
@@ -48271,9 +48363,13 @@
           showToast('تم إيقاف تنبيهات الجوال', 'info');
           return;
         }
-        const enabled = await ensureAtharWebPushSubscribed();
-        if (enabled) showToast('تم تفعيل تنبيهات الجوال ✓', 'success');
-        else showToast('يُحتاج إذن الإشعارات من إعدادات الجوال/المتصفح', 'warning');
+        try {
+          const enabled = await ensureAtharWebPushSubscribed();
+          if (enabled) showToast('تم تفعيل تنبيهات الجوال ✓', 'success');
+          else showToast('يُحتاج إذن الإشعارات من إعدادات الجوال/المتصفح', 'warning');
+        } catch (e) {
+          showToast('فشل التفعيل: ' + formatPushError(e), 'error');
+        }
       }
 
       function maybeOpenTicketFromPushUrl() {
@@ -50594,6 +50690,7 @@
       window.triggerUsersImport = triggerUsersImport;
       window.handleUsersImportFile = handleUsersImportFile;
       window.toggleWebPushFromMenu = toggleWebPushFromMenu;
+      window.testWebPushFromMenu = testWebPushFromMenu;
       window.openNotificationsPage = openNotificationsPage;
       window.closeNotificationsPage = closeNotificationsPage;
       window.setNotifFilter = setNotifFilter;
