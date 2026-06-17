@@ -23350,7 +23350,61 @@
         border: none;
         border-top: 1px solid var(--border);
         border-radius: 0;
+        padding: 8px 0 0
+      }
+
+      #tab-dashboard #personalIndicators .score-breakdown-panel {
+        padding: 8px 0 0 !important;
+        border-radius: 0
+      }
+
+      #tab-dashboard #personalIndicators .score-equation {
+        margin-inline: 8px;
+        margin-bottom: 6px
+      }
+
+      #tab-dashboard #personalIndicators .score-section-title {
+        padding-inline: 8px;
+        margin-bottom: 4px
+      }
+
+      #tab-dashboard #personalIndicators .score-breakdown-records {
+        padding: 0
+      }
+
+      #tab-dashboard #personalIndicators .score-breakdown-panel .score-viol-list {
+        gap: 1px;
+        margin-bottom: 0;
+        padding-inline-end: 0;
+        background: var(--border);
+        border-top: 1px solid var(--border)
+      }
+
+      #tab-dashboard #personalIndicators .score-viol-row {
+        border-radius: 0 !important;
+        border: none !important;
+        padding: 7px 8px !important;
+        gap: 6px;
+        background: var(--mr-surface) !important
+      }
+
+      #tab-dashboard #personalIndicators .score-viol-row.score-viol-row--admin-warn,
+      #tab-dashboard #personalIndicators .score-viol-row.score-viol-row--on-time {
+        border: none !important
+      }
+
+      #tab-dashboard #personalIndicators .score-bonus-row {
+        margin: 0;
+        border-radius: 0;
+        border-top: 1px solid var(--border);
         padding: 8px
+      }
+
+      #tab-dashboard #personalIndicators .score-no-viols {
+        margin: 0;
+        border-radius: 0;
+        border-top: 1px solid var(--border);
+        padding: 12px 8px
       }
 
       #tab-dashboard #personalIndicators.indicators-row--score-duo .score-equation {
@@ -23375,11 +23429,6 @@
 
       #tab-dashboard #personalIndicators.indicators-row--score-duo .score-section-title {
         font-size: 9px
-      }
-
-      #tab-dashboard #personalIndicators.indicators-row--score-duo .score-viol-row {
-        padding: 6px 0;
-        gap: 6px
       }
 
       #tab-dashboard #personalIndicators.indicators-row--score-duo .score-viol-name {
@@ -25433,7 +25482,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v648-dash-help-no-dim">
+  <meta name="app-build" content="athar-figma-v649-dash-viol-edge">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
