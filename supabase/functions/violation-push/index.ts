@@ -22,10 +22,11 @@ function json(body: unknown, status = 200) {
   });
 }
 
+/** نفس منطق index.html: V-2026-0282 → 0282 */
 function shortTicketNum(n: unknown) {
-  const s = String(n ?? '').trim();
-  if (!s) return '—';
-  return s.length > 12 ? s.slice(-8) : s;
+  if (n == null || n === '') return '—';
+  const parts = String(n).trim().split('-');
+  return parts.length >= 3 ? parts[parts.length - 1] : String(n).trim();
 }
 
 function extractRecord(payload: Record<string, unknown>): ViolationRow | null {
