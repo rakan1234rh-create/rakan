@@ -22944,7 +22944,8 @@
     /* لوحة القيادة — جوال: بطاقات أصغر وتنسيق موحّد */
     @media (max-width: 992px) {
       html.mr-mobile-ui #appWrap .main:has(#tab-dashboard.active) {
-        padding: 8px 12px calc(var(--mr-mob-bottom-nav-h, 56px) + 8px) !important
+        padding: 8px 0 calc(var(--mr-mob-bottom-nav-h, 56px) + 8px) !important;
+        overflow-x: visible !important
       }
 
       html.mr-mobile-ui #appWrap .content:has(#tab-dashboard.active) {
@@ -22953,6 +22954,13 @@
 
       #appWrap .content:has(#tab-dashboard.active) {
         padding-top: 0 !important
+      }
+
+      #tab-dashboard .mk-dash__hero,
+      #tab-dashboard .mk-kpi-grid,
+      #tab-dashboard .mk-dash__split {
+        padding-inline: 12px;
+        box-sizing: border-box
       }
 
       #tab-dashboard .mk-dash {
@@ -23172,10 +23180,12 @@
       #tab-dashboard #personalIndicators.indicators-row--score-duo {
         display: grid !important;
         grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-        gap: 10px;
-        margin: 0 0 4px;
+        gap: 1px;
+        width: 100%;
+        margin: 0;
         padding: 0;
-        align-items: stretch
+        align-items: stretch;
+        background: var(--border)
       }
 
       #tab-dashboard #personalIndicators.indicators-row--score-duo .indicator-card--score {
@@ -23185,11 +23195,11 @@
         margin: 0;
         height: 100%;
         box-sizing: border-box;
-        border-radius: 14px;
+        border-radius: 0;
         overflow: hidden;
-        border: 1px solid var(--mr-border);
+        border: none;
         background: var(--mr-surface);
-        box-shadow: var(--mr-shadow-soft);
+        box-shadow: none;
         gap: 0
       }
 
@@ -23215,7 +23225,7 @@
         align-items: center !important;
         text-align: center;
         gap: 8px !important;
-        padding: 10px 8px 8px
+        padding: 10px 10px 8px
       }
 
       #tab-dashboard #personalIndicators.indicators-row--score-duo .indicator-info {
@@ -23340,7 +23350,19 @@
         border: none;
         border-top: 1px solid var(--border);
         border-radius: 0;
-        padding: 10px
+        padding: 12px
+      }
+
+      #tab-dashboard #personalIndicators:not(.indicators-row--score-duo) {
+        width: 100%;
+        margin: 0;
+        padding: 0
+      }
+
+      #tab-dashboard #personalIndicators:not(.indicators-row--score-duo) .indicator-card--score {
+        border-radius: 0;
+        border-inline: none;
+        box-shadow: none
       }
 
       #tab-dashboard #personalIndicators:not(.indicators-row--score-duo) .indicator-card--score:only-child {
@@ -25374,7 +25396,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v643-dash-score-pro">
+  <meta name="app-build" content="athar-figma-v644-dash-score-edge">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
