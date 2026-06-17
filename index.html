@@ -23027,15 +23027,18 @@
       }
 
       #tab-dashboard .mk-kpi__top {
-        flex-direction: column;
+        flex-direction: row;
         align-items: flex-start;
-        gap: 2px
+        justify-content: space-between;
+        gap: 4px;
+        width: 100%
       }
 
       #tab-dashboard .mk-kpi__title {
-        width: 100%;
+        flex: 1 1 auto;
+        min-width: 0;
         flex-wrap: nowrap;
-        min-width: 0
+        align-items: flex-start
       }
 
       #tab-dashboard .mk-kpi__title-line {
@@ -23047,10 +23050,12 @@
       }
 
       #tab-dashboard .mk-kpi__top .mk-kpi__value {
+        flex-shrink: 0;
+        align-self: flex-start;
         font-size: 18px !important;
         letter-spacing: -0.02em;
         line-height: 1;
-        margin-top: 1px;
+        margin-top: 0;
         white-space: nowrap
       }
 
@@ -25698,7 +25703,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v680-dash-kpi-label-nowrap">
+  <meta name="app-build" content="athar-figma-v681-dash-kpi-value-corner">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -35057,7 +35062,7 @@
           }
         }
 
-        // إجمالي المخالفات (للشهر الحالي فقط)
+        // الإجمالي (للشهر الحالي فقط)
         dashSet('st-total', total.toLocaleString('en-US'));
         dashSet('st-total-trend', ' هذا الشهر');
 
