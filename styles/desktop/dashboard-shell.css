@@ -105,7 +105,15 @@ html.mr-desktop-ui #tab-dashboard .mk-dash__split {
   align-items: stretch !important
 }
 
+html.mr-desktop-ui #tab-dashboard .mk-funnel__head .mk-link,
+html.mr-desktop-ui #tab-dashboard .mk-attn__head .mk-link {
+  font-size: 12px !important;
+  padding: 2px 8px !important;
+  line-height: 1.25 !important
+}
+
 html.mr-desktop-ui #tab-dashboard .mk-funnel__title,
 html.mr-desktop-ui #tab-dashboard .mk-attn__title {
-  font-size: 15px !important
+  font-size: 15px !important;
+  line-height: 1.25 !important
 }

@@ -23082,7 +23082,8 @@
       }
 }
     .mk-funnel, .mk-attn { background:var(--mr-surface); border:1px solid var(--mr-border); border-radius:var(--mr-radius-card); padding:22px; display:flex; flex-direction:column; gap:16px; box-shadow:var(--mr-shadow-card); height:100%; box-sizing:border-box; }
-    .mk-funnel__head, .mk-attn__head { display:flex; align-items:flex-end; justify-content:space-between; gap:12px; flex-shrink:0; }
+    .mk-funnel__head, .mk-attn__head { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-shrink:0; }
+    .mk-funnel__head .mk-link, .mk-attn__head .mk-link { flex-shrink:0; align-self:center; line-height:1.25; padding:2px 8px; }
     .mk-funnel__title, .mk-attn__title { margin:0; font-size:17px; font-weight:600; color:var(--mr-text); letter-spacing:-0.01em; }
     .mk-funnel__sub, .mk-attn__sub { margin:4px 0 0; font-size:12px; color:var(--mk-text-3); }
     .mk-funnel__body { display:flex; flex-direction:column; gap:12px; flex:1 1 auto; min-height:0; }
@@ -23369,8 +23370,16 @@
 
       #tab-dashboard .mk-funnel__head,
       #tab-dashboard .mk-attn__head {
-        align-items: flex-start;
-        gap: 6px
+        align-items: center;
+        gap: 8px
+      }
+
+      #tab-dashboard .mk-funnel__head .mk-link,
+      #tab-dashboard .mk-attn__head .mk-link {
+        font-size: 10px;
+        padding: 2px 6px;
+        line-height: 1.25;
+        white-space: nowrap
       }
 
       #tab-dashboard .mk-funnel__title,
@@ -23384,12 +23393,6 @@
         font-size: 10px;
         line-height: 1.35;
         margin-top: 2px
-      }
-
-      #tab-dashboard .mk-link {
-        font-size: 10px;
-        padding: 4px 7px;
-        white-space: nowrap
       }
 
       #tab-dashboard .mk-funnel__body {
@@ -26164,7 +26167,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v727-dash-attn-height">
+  <meta name="app-build" content="athar-figma-v728-dash-head-link-align">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
