@@ -2720,6 +2720,17 @@
       box-shadow: 0 1px 3px rgba(15, 18, 36, 0.05)
     }
 
+    .topbar-btn--notif:focus {
+      outline: none
+    }
+
+    .topbar-btn--notif:focus:not(:focus-visible) {
+      background: transparent;
+      border-color: var(--mr-border);
+      color: var(--mr-text);
+      box-shadow: none
+    }
+
     .topbar-btn--notif[data-has-unread="1"] .notif-bell-count {
       display: inline-flex !important;
       visibility: visible !important;
@@ -11306,7 +11317,18 @@
       font-weight: 600;
       cursor: pointer;
       white-space: nowrap;
-      transition: background 0.15s ease, border-color 0.15s ease
+      transition: background 0.15s ease, border-color 0.15s ease;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation
+    }
+
+    .notif-mark-all:focus {
+      outline: none
+    }
+
+    .notif-mark-all:focus-visible {
+      outline: 2px solid var(--mr-primary-soft);
+      outline-offset: 2px
     }
 
     .notif-page-actions {
@@ -11630,11 +11652,21 @@
       cursor: pointer;
       flex-shrink: 0;
       font-size: 15px;
-      box-shadow: var(--mr-shadow-soft)
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation
     }
 
     .notif-page-back:hover {
       background: var(--mr-bg-2)
+    }
+
+    .notif-page-back:focus {
+      outline: none
+    }
+
+    .notif-page-back:focus-visible {
+      outline: 2px solid var(--mr-primary-soft);
+      outline-offset: 2px
     }
 
     .notif-page-topbar__title {
@@ -11686,13 +11718,49 @@
       padding: 8px 14px;
       cursor: pointer;
       white-space: nowrap;
-      transition: background .15s, color .15s, border-color .15s
+      transition: background .15s, color .15s, border-color .15s;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation
+    }
+
+    .notif-filter-btn:focus {
+      outline: none
+    }
+
+    .notif-filter-btn:focus-visible {
+      outline: 2px solid var(--mr-primary-soft);
+      outline-offset: 2px
     }
 
     .notif-filter-btn.is-active {
       background: var(--mr-primary);
       border-color: var(--mr-primary);
       color: #fff
+    }
+
+    @media (hover: hover) {
+      .notif-filter-btn:not(.is-active):hover {
+        background: var(--mr-primary-softer);
+        border-color: color-mix(in srgb, var(--mr-primary) 22%, var(--mr-border));
+        color: var(--mr-text)
+      }
+    }
+
+    @media (hover: none) {
+      .notif-mark-all:hover,
+      .notif-mark-all--danger:hover,
+      .notif-page-back:hover,
+      .notif-filter-btn:not(.is-active):hover {
+        background: transparent;
+        border-color: transparent;
+        color: inherit
+      }
+
+      .notif-filter-btn:not(.is-active):hover {
+        background: var(--mr-surface);
+        border-color: var(--mr-border);
+        color: var(--mr-text-2)
+      }
     }
 
     .notif-filter-btn[hidden] {
@@ -26167,7 +26235,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v728-dash-head-link-align">
+  <meta name="app-build" content="athar-figma-v729-notif-btn-ghost">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -33759,6 +33827,10 @@
             state._bellBadgeLocked = state._bellUnreadShown || 0;
             if (!state._notifFilter) state._notifFilter = 'all';
             renderNotifications(true);
+            requestAnimationFrame(() => {
+              document.getElementById('notifBellBtn')?.blur();
+              blurHiddenChromeFocus();
+            });
           } else {
             syncNotifPageShell(false);
           }
@@ -48100,6 +48172,14 @@
           || getActiveTabKey() === 'notifications';
       }
 
+      function blurHiddenChromeFocus() {
+        const ae = document.activeElement;
+        if (!ae || ae === document.body) return;
+        if (ae.closest?.('.topbar, .sidebar, #mobileBottomNav, .notif-panel')) {
+          ae.blur();
+        }
+      }
+
       function openNotificationsPage(event) {
         if (event) {
           event.stopPropagation();
@@ -48112,7 +48192,12 @@
         }
         if (!state._notifFilter) state._notifFilter = 'all';
         if (current === 'notifications') return;
+        document.getElementById('notifBellBtn')?.blur();
         goTab('notifications', null);
+        requestAnimationFrame(() => {
+          document.getElementById('notifBellBtn')?.blur();
+          blurHiddenChromeFocus();
+        });
       }
 
       function paintNotifList(notifs, read) {
