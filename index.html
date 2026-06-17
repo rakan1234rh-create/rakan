@@ -23226,20 +23226,6 @@
         position: relative
       }
 
-      #tab-dashboard #personalIndicators.indicators-row--score-duo:has(.indicator-card--commitment .score-breakdown-panel.open):has(.indicator-card--response .score-breakdown-panel.open) {
-        align-items: stretch
-      }
-
-      #tab-dashboard #personalIndicators.indicators-row--score-duo:has(.indicator-card--commitment .score-breakdown-panel.open):has(.indicator-card--response .score-breakdown-panel.open) .indicator-card--score {
-        height: 100%;
-        align-self: stretch
-      }
-
-      #tab-dashboard #personalIndicators.indicators-row--score-duo:has(.indicator-card--commitment .score-breakdown-panel.open):has(.indicator-card--response .score-breakdown-panel.open) .indicator-card--response .score-breakdown-records {
-        padding-bottom: 28px;
-        box-sizing: border-box
-      }
-
       #tab-dashboard #personalIndicators.indicators-row--score-duo .indicator-card__head {
         flex: 0 0 auto;
         flex-direction: column !important;
@@ -25589,7 +25575,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v667-dash-duo-equal-clean">
+  <meta name="app-build" content="athar-figma-v668-dash-duo-spacer">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -33568,11 +33554,18 @@
         }).join('');
       }
 
+      /** مساحة توازن أسفل سجل الاستجابة = ارتفاع صف بونص الالتزام عند فتح البطاقتين */
+      function buildScoreDuoBalanceSpacer() {
+        return `<div class="score-bonus-row score-bonus-row--duo-balance" aria-hidden="true"><span><i class="fas fa-fire"></i> &#8203;</span><span class="score-bonus-val">+0</span></div>`;
+      }
+
       /** سجل الاستجابة في لوحة القيادة — بدون قائمة فارغة بارتفاع محجوز */
       function buildDashboardResponseRecordsBlock(isEmpty, emptyHtml, listTitle, listHtml) {
-        if (isEmpty) return emptyHtml;
+        const spacer = buildScoreDuoBalanceSpacer();
+        if (isEmpty) return emptyHtml + spacer;
         return `<div class="score-section-title"><i class="fas fa-list"></i> ${listTitle}</div>
-          <div class="score-viol-list">${listHtml}</div>`;
+          <div class="score-viol-list">${listHtml}</div>
+          ${spacer}`;
       }
 
       function buildCombinedResponseViolList(lateViols, onTimeViols, latePts, bonusPts, opts = {}) {
