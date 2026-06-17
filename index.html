@@ -23778,9 +23778,76 @@
         flex-direction: column
       }
 
-      #tab-dashboard #branchStaffPanel .score-viol-list--branch-staff .score-viol-row {
-        padding: 5px 7px;
-        border-radius: 7px
+      #tab-dashboard #branchStaffPanel .branch-staff-emp {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        min-height: 44px;
+        background: var(--bg2);
+        border: 1px solid var(--mr-border);
+        border-radius: 8px;
+        box-sizing: border-box
+      }
+
+      #tab-dashboard #branchStaffPanel .branch-staff-emp__body {
+        min-width: 0
+      }
+
+      #tab-dashboard #branchStaffPanel .branch-staff-emp__name {
+        font-size: 10.5px;
+        font-weight: 700;
+        line-height: 1.25;
+        color: var(--mr-text);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis
+      }
+
+      #tab-dashboard #branchStaffPanel .branch-staff-emp__num {
+        font-size: 9px;
+        font-weight: 600;
+        color: var(--text3);
+        margin-inline-start: 4px
+      }
+
+      #tab-dashboard #branchStaffPanel .branch-staff-emp__meta {
+        margin-top: 2px;
+        font-size: 8.5px;
+        line-height: 1.25;
+        color: var(--text3);
+        display: flex;
+        align-items: center;
+        gap: 4px
+      }
+
+      #tab-dashboard #branchStaffPanel .branch-staff-emp__meta i {
+        font-size: 8px;
+        opacity: 0.85
+      }
+
+      #tab-dashboard #branchStaffPanel .branch-staff-emp__score {
+        flex-shrink: 0;
+        min-width: 28px;
+        padding: 4px 8px;
+        border-radius: 7px;
+        background: var(--mr-surface);
+        border: 1px solid var(--mr-border);
+        font-size: 12px;
+        font-weight: 800;
+        line-height: 1;
+        text-align: center;
+        color: var(--mr-blue);
+        font-variant-numeric: tabular-nums
+      }
+
+      #tab-dashboard #branchStaffPanel .score-viol-list--branch-staff .score-no-viols {
+        padding: 12px 10px;
+        border-radius: 8px;
+        border: 1px dashed var(--mr-border);
+        background: var(--bg2);
+        font-size: 10px
       }
 
       #tab-dashboard .indicator-ring {
@@ -25795,7 +25862,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v693-dash-branch-staff-card">
+  <meta name="app-build" content="athar-figma-v694-dash-branch-emp-box">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -34228,12 +34295,12 @@
             empListHtml = '<div class="score-no-viols"><i class="fas fa-users"></i><div>لا يوجد موظفون نشطون في الفرع</div></div>';
           } else {
             empListHtml = empRows.map(e =>
-              `<div class="score-viol-row" style="cursor:default" role="listitem">
-                <div>
-                  <div class="score-viol-name">${Sec.escapeHTML(e.name)} <span style="font-size:10px;color:var(--text3);font-weight:600">${Sec.escapeHTML(String(e.num))}</span></div>
-                  <div class="score-viol-meta"><span><i class="fas fa-chart-pie"></i> معدل الالتزام</span></div>
+              `<div class="branch-staff-emp" role="listitem">
+                <div class="branch-staff-emp__body">
+                  <div class="branch-staff-emp__name">${Sec.escapeHTML(e.name)} <span class="branch-staff-emp__num">${Sec.escapeHTML(String(e.num))}</span></div>
+                  <div class="branch-staff-emp__meta"><i class="fas fa-chart-pie"></i> معدل الالتزام</div>
                 </div>
-                <div class="score-viol-weight">${Math.round(e.score)}</div>
+                <div class="branch-staff-emp__score">${Math.round(e.score)}</div>
               </div>`
             ).join('');
           }
