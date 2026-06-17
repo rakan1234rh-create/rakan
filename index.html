@@ -23388,9 +23388,19 @@
         background: var(--mr-surface) !important
       }
 
-      #tab-dashboard #personalIndicators .score-viol-row.score-viol-row--admin-warn,
+      #tab-dashboard #personalIndicators .score-viol-row.score-viol-row--admin-warn {
+        background: color-mix(in srgb, #ea580c 12%, var(--mr-surface)) !important;
+        border: 1px solid #ea580c !important
+      }
+
       #tab-dashboard #personalIndicators .score-viol-row.score-viol-row--on-time {
-        border: none !important
+        background: color-mix(in srgb, var(--green) 10%, var(--mr-surface)) !important;
+        border: 1px solid color-mix(in srgb, var(--green) 40%, var(--border)) !important
+      }
+
+      [data-theme="dark"] #tab-dashboard #personalIndicators .score-viol-row.score-viol-row--admin-warn {
+        background: color-mix(in srgb, #ea580c 14%, var(--mr-surface)) !important;
+        border-color: #ea580c !important
       }
 
       #tab-dashboard #personalIndicators .score-bonus-row {
@@ -25482,7 +25492,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v649-dash-viol-edge">
+  <meta name="app-build" content="athar-figma-v650-dash-viol-borders">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
