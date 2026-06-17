@@ -11310,31 +11310,27 @@
     }
 
     .notif-page-actions {
+      display: none !important
+    }
+
+    .notif-page-topbar__tools {
       display: flex;
-      align-items: stretch;
-      gap: 8px;
-      padding: 0 4px 8px;
+      align-items: center;
+      gap: 0;
       flex-shrink: 0
     }
 
-    .notif-page-actions .notif-mark-all {
-      flex: 1 1 0;
-      justify-content: center;
-      min-height: 42px;
-      padding: 8px 14px;
-      font-size: 12px;
-      border: 1px solid var(--mr-border);
-      background: var(--mr-surface);
-      border-radius: 8px
+    .notif-page-topbar .notif-mark-all {
+      flex-shrink: 0
     }
 
-    .notif-page-actions .notif-mark-all--danger {
+    .notif-mark-all--danger {
       color: var(--red-text)
     }
 
-    .notif-page-actions .notif-mark-all--danger:hover {
-      background: color-mix(in srgb, var(--red-text) 8%, var(--mr-surface));
-      border-color: color-mix(in srgb, var(--red-text) 22%, var(--mr-border))
+    .notif-mark-all--danger:hover {
+      background: color-mix(in srgb, var(--red-text) 8%, transparent);
+      border-color: color-mix(in srgb, var(--red-text) 18%, transparent)
     }
 
     .notif-action-btn {
@@ -23176,8 +23172,9 @@
     /* لوحة القيادة — جوال: بطاقات أصغر وتنسيق موحّد */
     @media (max-width: 992px) {
       html.mr-mobile-ui #appWrap .main:has(#tab-dashboard.active) {
-        padding: 8px 0 calc(var(--mr-mob-bottom-nav-h, 56px) + 24px) !important;
-        overflow-x: visible !important
+        padding: 8px 0 calc(var(--mr-mob-bottom-nav-h, 56px) + 44px) !important;
+        overflow-x: visible !important;
+        scroll-padding-bottom: calc(var(--mr-mob-bottom-nav-h, 56px) + 20px)
       }
 
       html.mr-notif-page-active.mr-mobile-ui #appWrap .main:has(#tab-notifications.active) {
@@ -23207,7 +23204,8 @@
       }
 
       #tab-dashboard .mk-dash {
-        gap: 12px
+        gap: 12px;
+        padding-bottom: 12px
       }
 
       #tab-dashboard .mk-dash__hero {
@@ -23424,7 +23422,8 @@
         display: flex;
         flex-direction: column;
         min-height: 0;
-        margin-bottom: 4px
+        margin-bottom: 0;
+        overflow: visible
       }
 
       #tab-dashboard .mk-attn__body {
@@ -23433,7 +23432,8 @@
         flex-direction: column;
         min-height: 0;
         gap: 0;
-        padding-bottom: 6px
+        padding-bottom: 10px;
+        overflow: visible
       }
 
       #tab-dashboard .mk-attn__row {
@@ -26158,7 +26158,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v716-notif-wording-delete">
+  <meta name="app-build" content="athar-figma-v717-notif-ui-fix">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -26467,11 +26467,11 @@
                     <h4>التنبيهات</h4>
                     <div class="notif-count" id="notifPageCount">0 تنبيه</div>
                   </div>
+                  <div class="notif-page-topbar__tools">
+                    <button type="button" class="notif-mark-all" onclick="markAllNotifsRead()"><i class="fas fa-check-double" aria-hidden="true"></i> قراءة الكل</button>
+                    <button type="button" class="notif-mark-all notif-mark-all--danger" onclick="dismissAllNotifs()"><i class="fas fa-trash-alt" aria-hidden="true"></i> حذف الكل</button>
+                  </div>
                 </header>
-                <div class="notif-page-actions">
-                  <button type="button" class="notif-mark-all" onclick="markAllNotifsRead()"><i class="fas fa-check-double" aria-hidden="true"></i> قراءة الكل</button>
-                  <button type="button" class="notif-mark-all notif-mark-all--danger" onclick="dismissAllNotifs()"><i class="fas fa-trash-alt" aria-hidden="true"></i> حذف الكل</button>
-                </div>
                 <div class="notif-page-filters" id="notifPageFilters" role="tablist" aria-label="تصنيف التنبيهات">
                   <button type="button" class="notif-filter-btn is-active" data-filter="all" role="tab" aria-selected="true" onclick="setNotifFilter('all', this)">الكل</button>
                   <button type="button" class="notif-filter-btn" data-filter="mine" role="tab" aria-selected="false" onclick="setNotifFilter('mine', this)">تنبيهاتي</button>
@@ -47317,6 +47317,35 @@
         } catch { }
       }
 
+      const NOTIF_RESTORE_ONCE_KEY = 'athar_notif_restore_v718_bm';
+
+      function restoreDismissedNotifs() {
+        if (!state.currentUser) return;
+        try {
+          localStorage.removeItem(notifDismissedKey());
+          state._dismissedNotifsSet = new Set();
+          invalidateNotifCache();
+          renderNotifications(true);
+          syncNotifBellBadge(true);
+          showToast('تم استعادة التنبيهات المحذوفة ✓', 'success');
+        } catch (_) {
+          showToast('تعذّر استعادة التنبيهات', 'error');
+        }
+      }
+
+      function maybeRestoreDismissedNotifsOnce() {
+        if (!state.currentUser) return;
+        if (normalizeUserRole(state.currentUser.role) !== 'branch_manager') return;
+        try {
+          const doneFor = localStorage.getItem(NOTIF_RESTORE_ONCE_KEY);
+          if (doneFor === state.currentUser.id) return;
+          localStorage.removeItem(notifDismissedKey());
+          state._dismissedNotifsSet = new Set();
+          invalidateNotifCache();
+          localStorage.setItem(NOTIF_RESTORE_ONCE_KEY, state.currentUser.id);
+        } catch (_) { /* noop */ }
+      }
+
       function countVisibleUnreadNotifs(notifs, read) {
         const dismissed = getDismissedNotifs();
         return notifs.filter(n => !dismissed.has(n.id) && !read.has(n.id)).length;
@@ -47969,7 +47998,13 @@
             : `${visible.length} ${visible.length === 1 ? 'تنبيه' : 'تنبيهات'}`;
         }
 
-        const emptyHtml = `
+        const dismissedCount = notifs.filter(n => dismissed.has(n.id)).length;
+        const emptyHtml = dismissedCount > 0 ? `
+      <div class="notif-empty">
+        <i class="fas fa-bell-slash"></i>
+        <p>لا توجد تنبيهات ظاهرة</p>
+        <button type="button" class="notif-mark-all" style="margin-top:10px" onclick="restoreDismissedNotifs()"><i class="fas fa-rotate-left" aria-hidden="true"></i> استعادة المحذوفة (${dismissedCount})</button>
+      </div>` : `
       <div class="notif-empty">
         <i class="fas fa-bell-slash"></i>
         <p>لا توجد تنبيهات</p>
@@ -48016,6 +48051,7 @@
 
       function renderNotifications(force) {
         if (!state.currentUser) return;
+        maybeRestoreDismissedNotifsOnce();
         const notifs = buildUserNotificationsCached(!!force);
         state._currentNotifs = notifs;
         const read = getReadNotifs();
@@ -48221,6 +48257,7 @@
           showToast('لا توجد تنبيهات للحذف', 'info');
           return;
         }
+        if (!confirm(`حذف ${visible.length} تنبيه؟ يمكنك استعادتها لاحقاً من نفس الصفحة.`)) return;
         const read = getReadNotifs();
         visible.forEach(n => {
           dismissed.add(n.id);
@@ -50093,6 +50130,7 @@
       window.toggleNotifPanel = toggleNotifPanel;
       window.dismissNotif = dismissNotif;
       window.dismissAllNotifs = dismissAllNotifs;
+      window.restoreDismissedNotifs = restoreDismissedNotifs;
       window.handleNotifClick = handleNotifClick;
       window.markAllNotifsRead = markAllNotifsRead;
       window.printTicketDetail = printTicketDetail;
