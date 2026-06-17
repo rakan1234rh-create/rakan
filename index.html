@@ -23775,69 +23775,53 @@
         padding: 0 3px 8px;
         gap: 4px;
         display: flex;
-        flex-direction: column
+        flex-wrap: wrap;
+        align-items: flex-start;
+        align-content: flex-start
       }
 
       #tab-dashboard #branchStaffPanel .branch-staff-emp {
-        display: grid;
-        grid-template-columns: 1fr auto;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 10px;
-        min-height: 44px;
+        display: inline-flex;
+        flex-direction: column;
+        align-items: stretch;
+        width: fit-content;
+        max-width: 100%;
+        padding: 6px 8px;
+        gap: 2px;
         background: var(--bg2);
         border: 1px solid var(--mr-border);
         border-radius: 8px;
         box-sizing: border-box
       }
 
-      #tab-dashboard #branchStaffPanel .branch-staff-emp__body {
-        min-width: 0
-      }
-
       #tab-dashboard #branchStaffPanel .branch-staff-emp__name {
-        font-size: 10.5px;
+        font-size: 10px;
         font-weight: 700;
         line-height: 1.25;
         color: var(--mr-text);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis
-      }
-
-      #tab-dashboard #branchStaffPanel .branch-staff-emp__num {
-        font-size: 9px;
-        font-weight: 600;
-        color: var(--text3);
-        margin-inline-start: 4px
+        white-space: nowrap
       }
 
       #tab-dashboard #branchStaffPanel .branch-staff-emp__meta {
-        margin-top: 2px;
-        font-size: 8.5px;
-        line-height: 1.25;
+        font-size: 8px;
+        line-height: 1.2;
         color: var(--text3);
         display: flex;
         align-items: center;
-        gap: 4px
+        gap: 3px;
+        white-space: nowrap
       }
 
       #tab-dashboard #branchStaffPanel .branch-staff-emp__meta i {
-        font-size: 8px;
+        font-size: 7px;
         opacity: 0.85
       }
 
       #tab-dashboard #branchStaffPanel .branch-staff-emp__score {
-        flex-shrink: 0;
-        min-width: 28px;
-        padding: 4px 8px;
-        border-radius: 7px;
-        background: var(--mr-surface);
-        border: 1px solid var(--mr-border);
+        margin-top: 2px;
         font-size: 12px;
         font-weight: 800;
         line-height: 1;
-        text-align: center;
         color: var(--mr-blue);
         font-variant-numeric: tabular-nums
       }
@@ -25862,7 +25846,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v694-dash-branch-emp-box">
+  <meta name="app-build" content="athar-figma-v695-dash-branch-emp-chip">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -34286,7 +34270,7 @@
           const empRows = getBranchStaff(bid)
             .map(e => {
               const es = calcEmpScore(e.id, violations);
-              return { id: e.id, name: e.name, score: es.score, num: padEmpNum(e.employee_number) };
+              return { id: e.id, name: e.name, score: es.score };
             })
             .sort((a, b) => b.score - a.score);
 
@@ -34296,10 +34280,8 @@
           } else {
             empListHtml = empRows.map(e =>
               `<div class="branch-staff-emp" role="listitem">
-                <div class="branch-staff-emp__body">
-                  <div class="branch-staff-emp__name">${Sec.escapeHTML(e.name)} <span class="branch-staff-emp__num">${Sec.escapeHTML(String(e.num))}</span></div>
-                  <div class="branch-staff-emp__meta"><i class="fas fa-chart-pie"></i> معدل الالتزام</div>
-                </div>
+                <div class="branch-staff-emp__name">${Sec.escapeHTML(e.name)}</div>
+                <div class="branch-staff-emp__meta"><i class="fas fa-chart-pie"></i> معدل الالتزام</div>
                 <div class="branch-staff-emp__score">${Math.round(e.score)}</div>
               </div>`
             ).join('');
