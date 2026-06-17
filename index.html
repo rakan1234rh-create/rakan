@@ -23775,16 +23775,18 @@
         padding: 0 3px 8px;
         gap: 4px;
         display: flex;
+        flex-direction: row;
         flex-wrap: wrap;
         align-items: flex-start;
         align-content: flex-start
       }
 
       #tab-dashboard #branchStaffPanel .branch-staff-emp {
+        flex: 0 0 auto;
         display: inline-flex;
         flex-direction: column;
         align-items: stretch;
-        width: fit-content;
+        width: auto;
         max-width: 100%;
         padding: 6px 8px;
         gap: 2px;
@@ -23807,23 +23809,46 @@
         line-height: 1.2;
         color: var(--text3);
         display: flex;
+        flex-direction: row;
         align-items: center;
-        gap: 3px;
+        gap: 4px;
         white-space: nowrap
       }
 
-      #tab-dashboard #branchStaffPanel .branch-staff-emp__meta i {
+      #tab-dashboard #branchStaffPanel .branch-staff-emp__meta-txt {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px
+      }
+
+      #tab-dashboard #branchStaffPanel .branch-staff-emp__meta-txt i {
         font-size: 7px;
         opacity: 0.85
       }
 
       #tab-dashboard #branchStaffPanel .branch-staff-emp__score {
-        margin-top: 2px;
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 800;
         line-height: 1;
-        color: var(--mr-blue);
-        font-variant-numeric: tabular-nums
+        font-variant-numeric: tabular-nums;
+        flex-shrink: 0
+      }
+
+      #tab-dashboard #branchStaffPanel .branch-staff-emp__score.lvl-excellent {
+        color: var(--green-text)
+      }
+
+      #tab-dashboard #branchStaffPanel .branch-staff-emp__score.lvl-good {
+        color: var(--blue-text)
+      }
+
+      #tab-dashboard #branchStaffPanel .branch-staff-emp__score.lvl-warn {
+        color: var(--amber-text)
+      }
+
+      #tab-dashboard #branchStaffPanel .branch-staff-emp__score.lvl-danger,
+      #tab-dashboard #branchStaffPanel .branch-staff-emp__score.is-negative {
+        color: var(--red-text)
       }
 
       #tab-dashboard #branchStaffPanel .score-viol-list--branch-staff .score-no-viols {
@@ -25846,7 +25871,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v695-dash-branch-emp-chip">
+  <meta name="app-build" content="athar-figma-v696-dash-branch-emp-row">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -34278,13 +34303,18 @@
           if (!empRows.length) {
             empListHtml = '<div class="score-no-viols"><i class="fas fa-users"></i><div>لا يوجد موظفون نشطون في الفرع</div></div>';
           } else {
-            empListHtml = empRows.map(e =>
-              `<div class="branch-staff-emp" role="listitem">
+            empListHtml = empRows.map(e => {
+              const rounded = Math.round(e.score);
+              const lvl = levelClass(rounded);
+              const negCls = rounded < 0 ? ' is-negative' : '';
+              return `<div class="branch-staff-emp" role="listitem">
                 <div class="branch-staff-emp__name">${Sec.escapeHTML(e.name)}</div>
-                <div class="branch-staff-emp__meta"><i class="fas fa-chart-pie"></i> معدل الالتزام</div>
-                <div class="branch-staff-emp__score">${Math.round(e.score)}</div>
-              </div>`
-            ).join('');
+                <div class="branch-staff-emp__meta">
+                  <span class="branch-staff-emp__score ${lvl}${negCls}">${rounded}</span>
+                  <span class="branch-staff-emp__meta-txt"><i class="fas fa-chart-pie"></i> معدل الالتزام</span>
+                </div>
+              </div>`;
+            }).join('');
           }
 
           branchStaffHtml = `
