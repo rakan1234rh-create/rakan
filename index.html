@@ -23350,17 +23350,22 @@
         border: none;
         border-top: 1px solid var(--border);
         border-radius: 0;
-        padding: 8px 0 0
+        padding: 0
       }
 
       #tab-dashboard #personalIndicators .score-breakdown-panel {
-        padding: 8px 0 0 !important;
+        padding: 0 !important;
         border-radius: 0
       }
 
       #tab-dashboard #personalIndicators .score-equation {
-        margin-inline: 8px;
-        margin-bottom: 6px
+        margin: 0 !important;
+        margin-bottom: 0 !important;
+        border-radius: 0 !important;
+        border-inline: none !important;
+        border-top: none !important;
+        border-bottom: 1px solid var(--border) !important;
+        padding: 8px 6px !important
       }
 
       #tab-dashboard #personalIndicators .score-section-title {
@@ -23418,11 +23423,11 @@
       }
 
       #tab-dashboard #personalIndicators.indicators-row--score-duo .score-equation {
-        padding: 6px 3px;
+        padding: 6px 4px !important;
         gap: 2px 3px;
-        margin-bottom: 6px;
+        margin-bottom: 0 !important;
         font-size: 8px;
-        border-radius: 6px
+        border-radius: 0 !important
       }
 
       #tab-dashboard #personalIndicators.indicators-row--score-duo .eq-num {
@@ -25492,7 +25497,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v650-dash-viol-borders">
+  <meta name="app-build" content="athar-figma-v651-dash-equation-edge">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
