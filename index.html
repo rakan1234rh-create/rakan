@@ -11510,8 +11510,129 @@
     }
 
     #tab-notifications .notif-page-shell {
-      padding: 0 4px calc(var(--mr-mob-bottom-nav-h, 56px) + 8px);
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      padding: calc(env(safe-area-inset-top, 0px) + 8px) 4px calc(env(safe-area-inset-bottom, 0px) + 8px);
       box-sizing: border-box
+    }
+    html.mr-notif-page-active #appWrap .topbar,
+    html.mr-notif-page-active #appWrap .sidebar,
+    html.mr-notif-page-active #appWrap .page-title-bar,
+    html.mr-notif-page-active #mobileBottomNav {
+      display: none !important
+    }
+
+    html.mr-notif-page-active #appWrap .main {
+      margin-inline-start: 0 !important;
+      width: 100% !important;
+      max-width: none !important;
+      padding: 0 !important;
+      min-height: 100dvh
+    }
+
+    html.mr-notif-page-active #appWrap .content {
+      padding: 0 !important;
+      min-height: 100dvh
+    }
+
+    html.mr-notif-page-active #tab-notifications.active {
+      display: flex !important;
+      flex-direction: column;
+      min-height: 100dvh;
+      height: 100dvh;
+      background: var(--mr-bg)
+    }
+
+    .notif-page-topbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 4px 4px 10px;
+      flex-shrink: 0
+    }
+
+    .notif-page-back {
+      width: 40px;
+      height: 40px;
+      border: 1px solid var(--mr-border);
+      border-radius: 11px;
+      background: var(--mr-surface);
+      color: var(--mr-text);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      font-size: 15px;
+      box-shadow: var(--mr-shadow-soft)
+    }
+
+    .notif-page-back:hover {
+      background: var(--mr-bg-2)
+    }
+
+    .notif-page-topbar__title {
+      flex: 1 1 auto;
+      min-width: 0
+    }
+
+    .notif-page-topbar__title h4 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--mr-text)
+    }
+
+    .notif-page-topbar__title .notif-count {
+      font-size: 11px;
+      color: var(--mr-text-3);
+      margin-top: 2px
+    }
+
+    .notif-page-topbar .notif-mark-all {
+      flex-shrink: 0
+    }
+
+    .notif-page-filters {
+      display: flex;
+      gap: 6px;
+      padding: 0 4px 10px;
+      flex-shrink: 0;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none
+    }
+
+    .notif-page-filters::-webkit-scrollbar {
+      display: none
+    }
+
+    .notif-filter-btn {
+      flex: 1 1 0;
+      min-width: max-content;
+      border: 1px solid var(--mr-border);
+      border-radius: 999px;
+      background: var(--mr-surface);
+      color: var(--mr-text-2);
+      font-family: var(--font);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 8px 14px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background .15s, color .15s, border-color .15s
+    }
+
+    .notif-filter-btn.is-active {
+      background: var(--mr-primary);
+      border-color: var(--mr-primary);
+      color: #fff
+    }
+
+    .notif-filter-btn[hidden] {
+      display: none !important
     }
 
     #tab-notifications .notif-page-card {
@@ -11536,7 +11657,11 @@
       max-height: none;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
-      overscroll-behavior: contain
+      overscroll-behavior: contain;
+      border-radius: 11px;
+      border: 1px solid var(--mr-border);
+      background: var(--mr-surface);
+      box-shadow: var(--mr-shadow-soft)
     }
 
     /* Ticket Detail Modal */
@@ -25951,7 +26076,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v712-notif-page-fix">
+  <meta name="app-build" content="athar-figma-v713-notif-full-page">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -26251,18 +26376,24 @@
           <!-- NOTIFICATIONS -->
           <div class="tab-content" id="tab-notifications" hidden>
             <div class="notif-page-shell">
-              <div class="notif-page-card">
-                <div class="notif-header">
-                  <div>
-                    <h4>التنبيهات</h4>
-                    <div class="notif-count" id="notifPageCount">0 تنبيه</div>
-                  </div>
-                  <button type="button" class="notif-mark-all" onclick="markAllNotifsRead()"><i class="fas fa-check-double"></i> قراءة الكل</button>
+              <header class="notif-page-topbar">
+                <button type="button" class="notif-page-back" onclick="closeNotificationsPage(event)" aria-label="رجوع">
+                  <i class="fas fa-arrow-right" aria-hidden="true"></i>
+                </button>
+                <div class="notif-page-topbar__title">
+                  <h4>التنبيهات</h4>
+                  <div class="notif-count" id="notifPageCount">0 تنبيه</div>
                 </div>
-                <div class="notif-list notif-list--page" id="notifPageList">
-                  <div class="notif-empty"><i class="fas fa-bell-slash"></i>
-                    <p>لا توجد تنبيهات</p>
-                  </div>
+                <button type="button" class="notif-mark-all" onclick="markAllNotifsRead()"><i class="fas fa-check-double"></i> قراءة الكل</button>
+              </header>
+              <div class="notif-page-filters" id="notifPageFilters" role="tablist" aria-label="تصنيف التنبيهات">
+                <button type="button" class="notif-filter-btn is-active" data-filter="all" role="tab" aria-selected="true" onclick="setNotifFilter('all', this)">الكل</button>
+                <button type="button" class="notif-filter-btn" data-filter="mine" role="tab" aria-selected="false" onclick="setNotifFilter('mine', this)">تنبيهاتي</button>
+                <button type="button" class="notif-filter-btn" data-filter="team" role="tab" aria-selected="false" onclick="setNotifFilter('team', this)" hidden>تنبيهات الفريق</button>
+              </div>
+              <div class="notif-list notif-list--page" id="notifPageList">
+                <div class="notif-empty"><i class="fas fa-bell-slash"></i>
+                  <p>لا توجد تنبيهات</p>
                 </div>
               </div>
             </div>
@@ -33470,6 +33601,7 @@
           dismissPageOverlaysOnTabLeave();
           if (leavingTab === 'notifications') {
             state._bellBadgeLocked = 0;
+            syncNotifPageShell(false);
             syncNotifBellBadge(true);
           }
           if (leavingTab === 'workflow' && typeof resetWorkflowTabFilters === 'function') {
@@ -33525,8 +33657,12 @@
             renderDashboard();
           }
           if (tab === 'notifications') {
+            syncNotifPageShell(true);
             state._bellBadgeLocked = state._bellUnreadShown || 0;
+            if (!state._notifFilter) state._notifFilter = 'all';
             renderNotifications(true);
+          } else {
+            syncNotifPageShell(false);
           }
           if (tab === 'workflow') {
             syncWorkflowAccessAndRender().finally(() => {
@@ -47450,7 +47586,8 @@
                 icon: 'fa-user-xmark',
                 title: `⚠️ درجة ${emp.name} حرجة (${empScore})`,
                 msg: `الموظف ${emp.emp_number || ''} يحتاج متابعة عاجلة — درجة الالتزام أقل من 40`,
-                time: new Date().toISOString()
+                time: new Date().toISOString(),
+                scope: 'team'
               });
             }
 
@@ -47464,7 +47601,8 @@
                 icon: 'fa-medal',
                 title: `🏅 ${emp.name} تعافى للمعدل 100`,
                 msg: `تمت معالجة ${empStat.grossDeducted} نقطة خصم بالبونص — أداء ممتاز`,
-                time: new Date().toISOString()
+                time: new Date().toISOString(),
+                scope: 'team'
               });
             }
           });
@@ -47488,8 +47626,62 @@
               icon: 'fa-stopwatch',
               title: 'تم خصم 20 نقاط من مؤشر الاستجابة',
               msg: `لم يتم الرد على المخالفة ${shortTicketNum(v.ticket_number)} خلال المهلة المحددة`,
-              time: v.updated_at || v.created_at
+              time: v.updated_at || v.created_at,
+              scope: 'mine'
             });
+          });
+        }
+
+        // ─── و. تنبيهات فريق مدير الفرع ───
+        if (role === 'branch_manager' && me.branch_id) {
+          const branchEmps = state.users.filter(u =>
+            u.branch_id === me.branch_id && u.role === 'employee' && u.id !== me.id
+          );
+
+          branchEmps.forEach(emp => {
+            const empScore = Math.round(calcEmployeeCommitment(emp.id));
+            if (empScore < 40) {
+              notifs.push({
+                id: `bm_team_critical_${emp.id}_${empScore}`,
+                ticketId: '',
+                type: 'red',
+                icon: 'fa-user-xmark',
+                title: `⚠️ درجة ${emp.name} حرجة (${empScore})`,
+                msg: `موظف الفرع ${emp.emp_number || ''} يحتاج متابعة — درجة الالتزام أقل من 40`,
+                time: new Date().toISOString(),
+                scope: 'team'
+              });
+            }
+
+            const empStat = calcEmpScore(emp.id, state.violations || []);
+            if (empStat.scoreHealed) {
+              notifs.push({
+                id: `bm_team_healed_${emp.id}`,
+                ticketId: '',
+                type: 'green',
+                icon: 'fa-medal',
+                title: `🏅 ${emp.name} تعافى للمعدل 100`,
+                msg: `تمت معالجة ${empStat.grossDeducted} نقطة خصم بالبونص`,
+                time: new Date().toISOString(),
+                scope: 'team'
+              });
+            }
+          });
+
+          visible.forEach(t => {
+            if (t.branch_id !== me.branch_id || t.employee_id === me.id || t.state === 'closed') return;
+            if (t.state === 'emp') {
+              notifs.push({
+                id: `bm_team_pending_${t.id}`,
+                ticketId: t.id,
+                type: 'amber',
+                icon: 'fa-users',
+                title: 'مخالفة بانتظار رد موظف الفرع',
+                msg: `${t._empName} — ${t.violation_type}`,
+                time: t.updated_at || t.created_at,
+                scope: 'team'
+              });
+            }
           });
         }
 
@@ -47500,7 +47692,91 @@
           return tb - ta;
         });
 
-        return notifs;
+        return tagNotifScopes(notifs, me);
+      }
+
+      const NOTIF_FILTER_LABELS = { all: 'الكل', mine: 'تنبيهاتي', team: 'تنبيهات الفريق' };
+
+      function notifRoleHasTeamTab(role) {
+        return ['supervisor', 'branch_manager', 'manager', 'admin'].includes(normalizeUserRole(role));
+      }
+
+      function tagNotifScopes(notifs, me) {
+        const role = normalizeUserRole(me?.role);
+        const canTeam = notifRoleHasTeamTab(role);
+        return notifs.map(n => {
+          if (n.scope) return n;
+          let scope = 'mine';
+          const id = String(n.id || '');
+          if (/^(sup_emp_|bm_team_)/.test(id)) scope = 'team';
+          else if (/^pending_/.test(id) && n.ticketId) {
+            const t = state.violations?.find(v => v.id === n.ticketId);
+            if (t) {
+              if (role === 'branch_manager' && t.branch_id === me.branch_id && t.employee_id !== me.id) scope = 'team';
+              else if ((role === 'manager' || role === 'admin') && t.state !== 'mgt') scope = 'team';
+            }
+          }
+          if (!canTeam) scope = 'mine';
+          return Object.assign({}, n, { scope });
+        });
+      }
+
+      function filterNotifsByScope(notifs, filter) {
+        const f = filter || state._notifFilter || 'all';
+        if (f === 'all') return notifs;
+        return notifs.filter(n => (n.scope || 'mine') === f);
+      }
+
+      function syncNotifPageShell(active) {
+        document.documentElement.classList.toggle('mr-notif-page-active', !!active);
+        document.body.classList.toggle('mr-notif-page-active', !!active);
+      }
+
+      function syncNotifFilterTabs(notifs) {
+        const wrap = document.getElementById('notifPageFilters');
+        if (!wrap || !state.currentUser) return;
+        const role = state.currentUser.role;
+        const showTeam = notifRoleHasTeamTab(role);
+        const teamBtn = wrap.querySelector('[data-filter="team"]');
+        if (teamBtn) teamBtn.hidden = !showTeam;
+
+        const dismissed = getDismissedNotifs();
+        const visible = (notifs || []).filter(n => !dismissed.has(n.id));
+        wrap.querySelectorAll('.notif-filter-btn').forEach(btn => {
+          const f = btn.dataset.filter;
+          if (f === 'team' && !showTeam) return;
+          let subset = visible;
+          if (f === 'mine') subset = visible.filter(n => (n.scope || 'mine') === 'mine');
+          else if (f === 'team') subset = visible.filter(n => n.scope === 'team');
+          const label = NOTIF_FILTER_LABELS[f] || f;
+          btn.textContent = subset.length ? `${label} · ${subset.length}` : label;
+          const active = (state._notifFilter || 'all') === f;
+          btn.classList.toggle('is-active', active);
+          btn.setAttribute('aria-selected', active ? 'true' : 'false');
+        });
+      }
+
+      function setNotifFilter(filter, btn) {
+        state._notifFilter = filter || 'all';
+        const wrap = document.getElementById('notifPageFilters');
+        wrap?.querySelectorAll('.notif-filter-btn').forEach(b => {
+          const active = b.dataset.filter === state._notifFilter;
+          b.classList.toggle('is-active', active);
+          b.setAttribute('aria-selected', active ? 'true' : 'false');
+        });
+        if (btn) btn.classList.add('is-active');
+        renderNotifications(false);
+      }
+
+      function closeNotificationsPage(event) {
+        if (event) {
+          event.stopPropagation();
+          event.preventDefault();
+        }
+        const returnTab = state._notifReturnTab || getRestorableTab() || getFirstAllowedTab() || 'dashboard';
+        state._bellBadgeLocked = 0;
+        syncNotifPageShell(false);
+        goTab(returnTab, getNavButtonForTab(returnTab));
       }
 
       function getMobBottomNavHeight() {
@@ -47567,23 +47843,30 @@
           event.preventDefault();
         }
         closeNotifPanel();
-        if (getActiveTabKey() === 'notifications') return;
+        const current = getActiveTabKey();
+        if (current !== 'notifications') {
+          state._notifReturnTab = current || getRestorableTab() || 'dashboard';
+        }
+        if (!state._notifFilter) state._notifFilter = 'all';
+        if (current === 'notifications') return;
         goTab('notifications', null);
       }
 
       function paintNotifList(notifs, read) {
-        const targets = [
-          { listId: 'notifList', countId: 'notifPanelCount' },
-          { listId: 'notifPageList', countId: 'notifPageCount' }
-        ];
+        const panelTarget = { listId: 'notifList', countId: 'notifPanelCount' };
+        const pageTarget = { listId: 'notifPageList', countId: 'notifPageCount' };
         if (!state.currentUser) return;
 
         const dismissed = getDismissedNotifs();
-        const visible = notifs.filter(n => !dismissed.has(n.id));
-        const unread = visible.filter(n => !read.has(n.id));
-        const countText = unread.length
-          ? `${unread.length} جديد · ${visible.length} إجمالاً`
-          : `${visible.length} ${visible.length === 1 ? 'تنبيه' : 'تنبيهات'}`;
+        const allVisible = notifs.filter(n => !dismissed.has(n.id));
+        const pageVisible = filterNotifsByScope(allVisible, state._notifFilter || 'all');
+        syncNotifFilterTabs(notifs);
+
+        function buildCountText(visible, unread) {
+          return unread.length
+            ? `${unread.length} جديد · ${visible.length} إجمالاً`
+            : `${visible.length} ${visible.length === 1 ? 'تنبيه' : 'تنبيهات'}`;
+        }
 
         const emptyHtml = `
       <div class="notif-empty">
@@ -47591,11 +47874,12 @@
         <p>لا توجد تنبيهات</p>
       </div>`;
 
-        const itemsHtml = visible.map(n => {
-          const isUnread = !read.has(n.id);
-          const nid = Sec.escapeHTML(n.id);
-          const tid = Sec.escapeHTML(n.ticketId || '');
-          return `
+        function buildItemsHtml(visible) {
+          return visible.map(n => {
+            const isUnread = !read.has(n.id);
+            const nid = Sec.escapeHTML(n.id);
+            const tid = Sec.escapeHTML(n.ticketId || '');
+            return `
       <div class="notif-swipe" data-notif-id="${nid}">
         <button type="button" class="notif-swipe-delete" aria-label="حذف التنبيه"><span class="notif-icon red"><i class="fas fa-trash-alt" aria-hidden="true"></i></span><span>حذف</span></button>
         <div class="notif-item ${isUnread ? 'unread' : ''}" onclick="handleNotifClick('${nid}','${tid}')">
@@ -47609,15 +47893,24 @@
         </div>
       </div>
       </div>`;
-        }).join('');
+          }).join('');
+        }
 
-        targets.forEach(({ listId, countId }) => {
-          const list = document.getElementById(listId);
-          const count = document.getElementById(countId);
-          if (!list || !count) return;
-          count.textContent = countText;
-          list.innerHTML = visible.length ? itemsHtml : emptyHtml;
-        });
+        const panelUnread = allVisible.filter(n => !read.has(n.id));
+        const panelList = document.getElementById(panelTarget.listId);
+        const panelCount = document.getElementById(panelTarget.countId);
+        if (panelList && panelCount) {
+          panelCount.textContent = buildCountText(allVisible, panelUnread);
+          panelList.innerHTML = allVisible.length ? buildItemsHtml(allVisible) : emptyHtml;
+        }
+
+        const pageUnread = pageVisible.filter(n => !read.has(n.id));
+        const pageList = document.getElementById(pageTarget.listId);
+        const pageCount = document.getElementById(pageTarget.countId);
+        if (pageList && pageCount) {
+          pageCount.textContent = buildCountText(pageVisible, pageUnread);
+          pageList.innerHTML = pageVisible.length ? buildItemsHtml(pageVisible) : emptyHtml;
+        }
       }
 
       function renderNotifications(force) {
@@ -47779,22 +48072,22 @@
       }
 
       function handleNotifClick(notifId, ticketId) {
-        // تعليم التنبيه كمقروء
         const read = getReadNotifs();
         read.add(notifId);
         saveReadNotifs(read);
 
-        // إغلاق اللوحة
-        closeNotifPanel();
+        const onNotifPage = getActiveTabKey() === 'notifications';
+        if (onNotifPage) syncNotifPageShell(false);
+        else closeNotifPanel();
 
-        // الانتقال للتذكرة المرتبطة
         if (ticketId) {
-          // التأكد إنا في تبويب يحتوي على التذاكر، الأفضل workflow
           const wfBtn = document.querySelector('[onclick*="goTab(\'workflow"]');
           if (wfBtn && !document.getElementById('tab-workflow')?.classList.contains('active')) {
             goTab('workflow', wfBtn);
           }
           setTimeout(() => openTicket(ticketId), 100);
+        } else if (onNotifPage) {
+          closeNotificationsPage();
         }
 
         renderNotifications();
@@ -47802,13 +48095,18 @@
 
       function markAllNotifsRead() {
         const notifs = state._currentNotifs || buildUserNotifications();
+        const dismissed = getDismissedNotifs();
+        const allVisible = notifs.filter(n => !dismissed.has(n.id));
+        const visible = getActiveTabKey() === 'notifications'
+          ? filterNotifsByScope(allVisible, state._notifFilter || 'all')
+          : allVisible;
         const read = getReadNotifs();
-        notifs.forEach(n => read.add(n.id));
+        visible.forEach(n => read.add(n.id));
         saveReadNotifs(read);
         state._bellBadgeLocked = 0;
         renderNotifications();
         syncNotifBellBadge(true);
-        showToast('تم تعليم كل التنبيهات كمقروءة ✓', 'success');
+        showToast('تم تعليم التنبيهات كمقروءة ✓', 'success');
       }
 
       document.getElementById('notifPanelBackdrop')?.addEventListener('click', () => closeNotifPanel());
@@ -49665,6 +49963,8 @@
       window.triggerUsersImport = triggerUsersImport;
       window.handleUsersImportFile = handleUsersImportFile;
       window.openNotificationsPage = openNotificationsPage;
+      window.closeNotificationsPage = closeNotificationsPage;
+      window.setNotifFilter = setNotifFilter;
       window.toggleNotifPanel = toggleNotifPanel;
       window.dismissNotif = dismissNotif;
       window.handleNotifClick = handleNotifClick;
