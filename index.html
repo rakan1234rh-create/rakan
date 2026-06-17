@@ -22926,6 +22926,187 @@
     .mk-attn__sep { opacity:.5; }
     .mk-attn__right { display:flex; flex-direction:column; align-items:flex-end; gap:4px; align-self:center; }
 
+    /* لوحة القيادة — جوال: بطاقات أصغر وتنسيق موحّد */
+    @media (max-width: 992px) {
+      html.mr-mobile-ui #appWrap .main:has(#tab-dashboard.active) {
+        padding: 8px 12px calc(var(--mr-mob-bottom-nav-h, 56px) + 8px) !important
+      }
+
+      html.mr-mobile-ui #appWrap .content:has(#tab-dashboard.active) {
+        padding: 0 !important
+      }
+
+      #appWrap .content:has(#tab-dashboard.active) {
+        padding-top: 0 !important
+      }
+
+      #tab-dashboard .mk-dash {
+        gap: 12px
+      }
+
+      #tab-dashboard .mk-dash__hero {
+        padding: 0;
+        gap: 6px
+      }
+
+      #tab-dashboard .mk-dash__title {
+        font-size: 1.28rem;
+        margin-bottom: 4px;
+        line-height: 1.2
+      }
+
+      #tab-dashboard .mk-dash__date,
+      #tab-dashboard .mk-dash__sub {
+        font-size: 12px;
+        line-height: 1.4
+      }
+
+      #tab-dashboard .mk-dash__sub {
+        max-width: none
+      }
+
+      #tab-dashboard .mk-kpi-grid {
+        gap: 8px
+      }
+
+      #tab-dashboard .mk-kpi {
+        min-height: 0 !important;
+        padding: 10px 10px 8px !important;
+        gap: 6px !important;
+        border-radius: 12px;
+        box-shadow: var(--mr-shadow-soft)
+      }
+
+      #tab-dashboard .mk-kpi__top {
+        gap: 6px
+      }
+
+      #tab-dashboard .mk-kpi__top .mk-kpi__value {
+        font-size: 22px !important;
+        letter-spacing: -0.02em
+      }
+
+      #tab-dashboard .mk-kpi__label,
+      #tab-dashboard .mk-kpi__title-line .mk-kpi__label,
+      #tab-dashboard .mk-kpi__title-line .mk-kpi__period {
+        font-size: 9px !important;
+        line-height: 1.25
+      }
+
+      #tab-dashboard .mk-kpi__dot {
+        width: 6px;
+        height: 6px
+      }
+
+      #tab-dashboard .mk-kpi__spark {
+        height: 16px !important;
+        margin-top: 2px
+      }
+
+      #tab-dashboard .mk-kpi__spark > div.mk-kpi__spark-hit--on {
+        min-height: 3px
+      }
+
+      #tab-dashboard .mk-dash__split {
+        gap: 10px
+      }
+
+      #tab-dashboard .mk-funnel,
+      #tab-dashboard .mk-attn {
+        padding: 14px 12px !important;
+        gap: 10px;
+        border-radius: 12px;
+        box-shadow: var(--mr-shadow-soft)
+      }
+
+      #tab-dashboard .mk-funnel__title,
+      #tab-dashboard .mk-attn__title {
+        font-size: 14px
+      }
+
+      #tab-dashboard .mk-funnel__sub,
+      #tab-dashboard .mk-attn__sub {
+        font-size: 11px
+      }
+
+      #tab-dashboard .mk-funnel__count {
+        font-size: 18px
+      }
+
+      #tab-dashboard .mk-funnel__pill {
+        width: 28px;
+        height: 28px;
+        font-size: 11px;
+        border-radius: 8px
+      }
+
+      #tab-dashboard .mk-funnel__label {
+        font-size: 12px
+      }
+
+      #tab-dashboard .mk-funnel__meta-sub {
+        font-size: 10px
+      }
+
+      #tab-dashboard .mk-funnel__row {
+        padding: 8px 6px;
+        gap: 3px 10px
+      }
+
+      #tab-dashboard .mk-attn__row {
+        padding: 8px 6px;
+        gap: 10px;
+        grid-template-columns: 30px minmax(0, 1fr) auto
+      }
+
+      #tab-dashboard .mk-attn__avatar {
+        width: 30px;
+        height: 30px;
+        font-size: 12px
+      }
+
+      #tab-dashboard .mk-attn__name {
+        font-size: 12px
+      }
+
+      #tab-dashboard .indicators-row,
+      #tab-dashboard .indicators-row--branch-staff {
+        grid-template-columns: 1fr !important;
+        gap: 10px;
+        margin-bottom: 0;
+        padding-bottom: 0
+      }
+
+      #tab-dashboard .indicator-card {
+        padding: 12px;
+        gap: 12px
+      }
+
+      #tab-dashboard .indicator-ring {
+        width: 68px;
+        height: 68px
+      }
+
+      #tab-dashboard .indicator-ring-num {
+        font-size: 17px
+      }
+
+      #tab-dashboard .indicator-title {
+        font-size: 13px
+      }
+
+      #tab-dashboard .indicator-desc {
+        font-size: 10px;
+        margin-bottom: 4px;
+        line-height: 1.4
+      }
+
+      #tab-dashboard .indicator-stat {
+        font-size: 11px;
+        gap: 6px
+      }
+    }
+
     /* Compliance */
     #tab-compliance .mk-cmp-shell { display:flex; flex-direction:column; gap:18px; }
     .mk-section-hd { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; }
@@ -24775,7 +24956,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v639-viol-bottom-gap-fix">
+  <meta name="app-build" content="athar-figma-v640-dash-mob-compact">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
