@@ -35,7 +35,74 @@ function extractRecord(payload: Record<string, unknown>): ViolationRow | null {
   if (payload?.id && payload?.employee_id !== undefined) {
     return payload as ViolationRow;
   }
+  if (payload?.violation_id) {
+    return {
+      id: String(payload.violation_id),
+      ticket_number: payload.ticket_number as ViolationRow['ticket_number'],
+      violation_type: payload.violation_type as string | null,
+      employee_id: payload.employee_id as string | null,
+      branch_id: payload.branch_id as string | null,
+      state: payload.state as string | null,
+    };
+  }
   return null;
+}
+
+async function dispatchViolationInsertPush(
+  supabase: ReturnType<typeof createClient>,
+  record: ViolationRow,
+) {
+  const recipientIds = new Set<string>();
+  if (record.employee_id) recipientIds.add(String(record.employee_id));
+
+  if (record.branch_id) {
+    const branchId = String(record.branch_id);
+    const { data: branchMgrs } = await supabase
+      .from('users')
+      .select('id')
+      .eq('branch_id', branchId)
+      .eq('role', 'branch_manager')
+      .eq('is_active', true);
+    for (const u of branchMgrs ?? []) {
+      if (u?.id && u.id !== record.employee_id) recipientIds.add(u.id);
+    }
+
+    const { data: branch } = await supabase
+      .from('branches')
+      .select('region_id')
+      .eq('id', branchId)
+      .maybeSingle();
+    if (branch?.region_id) {
+      const { data: region } = await supabase
+        .from('regions')
+        .select('supervisor_id')
+        .eq('id', branch.region_id)
+        .maybeSingle();
+      if (region?.supervisor_id) recipientIds.add(region.supervisor_id);
+    }
+  }
+
+  if (!recipientIds.size) return { sent: 0, reason: 'no recipients' };
+
+  const ticket = shortTicketNum(record.ticket_number);
+  const vtype = String(record.violation_type || 'مخالفة').trim();
+  let totalSent = 0;
+  const allErrors: string[] = [];
+
+  for (const uid of recipientIds) {
+    const isEmployee = uid === record.employee_id;
+    const title = isEmployee ? 'تم تسجيل مخالفة بحقك' : 'مخالفة جديدة في فريقك';
+    const body = `${vtype} — تذكرة ${ticket}`;
+    const result = await sendPushToUserIds(supabase, new Set([uid]), title, body, String(record.id));
+    totalSent += result.sent || 0;
+    if (result.error) allErrors.push(String(result.error));
+  }
+
+  return {
+    sent: totalSent,
+    recipients: recipientIds.size,
+    errors: allErrors.length ? allErrors.slice(0, 5) : undefined,
+  };
 }
 
 function getAuthToken(req: Request) {
@@ -197,6 +264,27 @@ Deno.serve(async (req) => {
     return json({ ok: true, ...result });
   }
 
+  // ─── إشعار من التطبيق بعد إنشاء مخالفة (JWT) ───
+  if (payload.notify === true) {
+    const userId = await resolveUserIdFromJwt(req);
+    if (!userId) return json({ error: 'يجب تسجيل الدخول لإرسال التنبيه' }, 401);
+    const record = extractRecord(payload);
+    if (!record?.id) return json({ error: 'missing violation record in payload' }, 400);
+    const { data: row, error: rowErr } = await supabase
+      .from('violations')
+      .select('id, ticket_number, violation_type, employee_id, branch_id, state')
+      .eq('id', record.id)
+      .maybeSingle();
+    if (rowErr) return json({ error: rowErr.message }, 500);
+    if (!row) return json({ error: 'violation not found' }, 404);
+    const merged: ViolationRow = { ...row, ...record, id: row.id };
+    const result = await dispatchViolationInsertPush(supabase, merged);
+    if (result.errors?.length && !result.sent) {
+      return json({ ok: false, ...result }, 500);
+    }
+    return json({ ok: true, ...result });
+  }
+
   // ─── رصد مخالفة (webhook / service role) ───
   if (!isServiceCall(req)) {
     return json({
@@ -210,55 +298,6 @@ Deno.serve(async (req) => {
   const eventType = String(payload.type || 'INSERT');
   if (eventType !== 'INSERT') return json({ skipped: true, reason: 'not insert' });
 
-  const recipientIds = new Set<string>();
-  if (record.employee_id) recipientIds.add(String(record.employee_id));
-
-  if (record.branch_id) {
-    const branchId = String(record.branch_id);
-    const { data: branchMgrs } = await supabase
-      .from('users')
-      .select('id')
-      .eq('branch_id', branchId)
-      .eq('role', 'branch_manager')
-      .eq('is_active', true);
-    for (const u of branchMgrs ?? []) {
-      if (u?.id && u.id !== record.employee_id) recipientIds.add(u.id);
-    }
-
-    const { data: branch } = await supabase
-      .from('branches')
-      .select('region_id')
-      .eq('id', branchId)
-      .maybeSingle();
-    if (branch?.region_id) {
-      const { data: region } = await supabase
-        .from('regions')
-        .select('supervisor_id')
-        .eq('id', branch.region_id)
-        .maybeSingle();
-      if (region?.supervisor_id) recipientIds.add(region.supervisor_id);
-    }
-  }
-
-  if (!recipientIds.size) return json({ sent: 0, reason: 'no recipients' });
-
-  const ticket = shortTicketNum(record.ticket_number);
-  const vtype = String(record.violation_type || 'مخالفة').trim();
-  let totalSent = 0;
-  const allErrors: string[] = [];
-
-  for (const uid of recipientIds) {
-    const isEmployee = uid === record.employee_id;
-    const title = isEmployee ? 'تم تسجيل مخالفة بحقك' : 'مخالفة جديدة في فريقك';
-    const body = `${vtype} — تذكرة ${ticket}`;
-    const result = await sendPushToUserIds(supabase, new Set([uid]), title, body, String(record.id));
-    totalSent += result.sent || 0;
-    if (result.error) allErrors.push(String(result.error));
-  }
-
-  return json({
-    sent: totalSent,
-    recipients: recipientIds.size,
-    errors: allErrors.length ? allErrors.slice(0, 5) : undefined,
-  });
+  const result = await dispatchViolationInsertPush(supabase, record);
+  return json(result);
 });
