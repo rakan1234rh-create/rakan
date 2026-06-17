@@ -3,7 +3,7 @@ import webpush from 'npm:web-push@3.6.7';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-athar-push-secret',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
 type ViolationRow = {
@@ -33,18 +33,8 @@ function extractRecord(payload: Record<string, unknown>): ViolationRow | null {
   if (payload?.record && typeof payload.record === 'object') {
     return payload.record as ViolationRow;
   }
-  if (payload?.id && payload?.employee_id !== undefined) {
+  if (payload?.id) {
     return payload as ViolationRow;
-  }
-  if (payload?.violation_id) {
-    return {
-      id: String(payload.violation_id),
-      ticket_number: payload.ticket_number as ViolationRow['ticket_number'],
-      violation_type: payload.violation_type as string | null,
-      employee_id: payload.employee_id as string | null,
-      branch_id: payload.branch_id as string | null,
-      state: payload.state as string | null,
-    };
   }
   return null;
 }
@@ -117,22 +107,6 @@ async function dispatchViolationInsertPush(
     recipients: recipientIds.size,
     errors: allErrors.length ? allErrors.slice(0, 5) : undefined,
   };
-}
-
-function getAuthToken(req: Request) {
-  const auth = req.headers.get('Authorization') ?? '';
-  if (auth.startsWith('Bearer ')) return auth.slice(7);
-  return req.headers.get('apikey') ?? '';
-}
-
-function isServiceCall(req: Request) {
-  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-  if (!serviceKey) return false;
-  const token = getAuthToken(req);
-  if (token === serviceKey) return true;
-  const secret = Deno.env.get('PUSH_WEBHOOK_SECRET') ?? '';
-  const headerSecret = req.headers.get('x-athar-push-secret') ?? '';
-  return !!(secret && headerSecret && secret === headerSecret);
 }
 
 async function sendPushToUserIds(
@@ -299,19 +273,5 @@ Deno.serve(async (req) => {
     return json({ ok: true, ...result });
   }
 
-  // ─── رصد مخالفة (webhook / service role) ───
-  if (!isServiceCall(req)) {
-    return json({
-      error: 'unauthorized',
-      hint: 'أضف Authorization: Bearer SERVICE_ROLE_KEY أو x-athar-push-secret في Webhook',
-    }, 401);
-  }
-
-  const record = extractRecord(payload);
-  if (!record?.id) return json({ error: 'missing violation record in payload' }, 400);
-  const eventType = String(payload.type || 'INSERT');
-  if (eventType !== 'INSERT') return json({ skipped: true, reason: 'not insert' });
-
-  const result = await dispatchViolationInsertPush(supabase, record);
-  return json(result);
+  return json({ error: 'استخدم test:true أو notify:true' }, 400);
 });

@@ -26321,7 +26321,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v745-push-text-clean">
+  <meta name="app-build" content="athar-figma-v746-push-cleanup">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -26548,10 +26548,6 @@
                 <button type="button" role="menuitem" id="topbarPushToggle" onclick="toggleWebPushFromMenu(event)" hidden>
                   <i class="fas fa-mobile-screen-button" aria-hidden="true"></i>
                   <span id="topbarPushToggleLabel">تفعيل تنبيهات الجوال</span>
-                </button>
-                <button type="button" role="menuitem" id="topbarPushTest" onclick="testWebPushFromMenu(event)" hidden>
-                  <i class="fas fa-paper-plane" aria-hidden="true"></i>
-                  <span>اختبار تنبيه الجوال</span>
                 </button>
                 <div class="mr-topbar-user-menu__divider" role="separator"></div>
                 <button type="button" role="menuitem" class="mr-topbar-user-menu__logout"
@@ -27883,7 +27879,6 @@
       const ATHAR_VAPID_PUBLIC_KEY = 'BAAE2sxYeIGbYADV7uimLzIFB_en9SBWQ3a4-LBULuOIVm40YI7YfjXL2Fddttr1L1tHFkoaiPzmZankfUk_2jc';
       const ATHAR_VAPID_STORAGE_KEY = 'athar_vapid_public_key';
       const ATHAR_SW_URL = './sw.js?v=4';
-      const ATHAR_VIOLATION_PUSH_URL = `${SUPABASE_URL}/functions/v1/violation-push`;
 
       /** رابط النشر — روابط استعادة كلمة المرور من file:// أو localhost */
       const ATHAR_PUBLIC_ORIGIN = 'https://rakan1234rh-create.github.io/rakan';
@@ -48215,49 +48210,6 @@
         return msg || 'خطأ غير معروف';
       }
 
-      async function readFnInvokePayload(error, data) {
-        if (data && typeof data === 'object') return data;
-        try {
-          const ctx = error?.context;
-          if (ctx && typeof ctx.json === 'function') return await ctx.json();
-        } catch (_) { /* noop */ }
-        return null;
-      }
-
-      async function readFnInvokeError(error, data) {
-        const body = await readFnInvokePayload(error, data);
-        if (body?.error) return String(body.error);
-        if (body?.errors?.[0]) return String(body.errors[0]);
-        if (body?.hint) return String(body.hint);
-        return formatPushError(error);
-      }
-
-      let _violationPushProbeCache = null;
-      async function probeViolationPushBackend(force) {
-        if (!force && _violationPushProbeCache) return _violationPushProbeCache;
-        try {
-          const res = await fetch(ATHAR_VIOLATION_PUSH_URL, { method: 'GET', cache: 'no-store' });
-          if (res.status === 404) {
-            _violationPushProbeCache = { deployed: false, reason: 'not_deployed' };
-            return _violationPushProbeCache;
-          }
-          let json = null;
-          try { json = await res.json(); } catch (_) { /* noop */ }
-          _violationPushProbeCache = {
-            deployed: true,
-            ok: !!(json?.ok ?? res.ok),
-            vapidConfigured: json?.vapidConfigured,
-            vapidValid: json?.vapidValid,
-            vapidPublicKey: json?.vapidPublicKey || '',
-            vapidMatchesClient: !!(json?.vapidPublicKey && json.vapidPublicKey === ATHAR_VAPID_PUBLIC_KEY)
-          };
-          return _violationPushProbeCache;
-        } catch (e) {
-          _violationPushProbeCache = { deployed: false, reason: String(e?.message || e) };
-          return _violationPushProbeCache;
-        }
-      }
-
       async function showPushWelcomeNotification() {
         const title = 'تم تفعيل تنبيهات الجوال';
         const body = 'تنبيه تجريبي — سيصلك إشعار عند رصد مخالفة حتى والتطبيق مغلق ✓';
@@ -48289,28 +48241,6 @@
         return false;
       }
 
-      async function showLocalPushTestNotification() {
-        const reg = await navigator.serviceWorker.ready;
-        await reg.showNotification('اختبار محلي', {
-          body: 'إن ظهر هذا التنبيه فالجهاز والإذن يعملان ✓',
-          icon: './icons/athar-pwa-192-v393.png',
-          badge: './icons/athar-pwa-192-v393.png',
-          tag: 'athar-local-push-test',
-          dir: 'rtl',
-          lang: 'ar'
-        });
-      }
-
-      async function sendServerWelcomePushSilently() {
-        try {
-          const backend = await probeViolationPushBackend(true);
-          if (!backend.deployed || backend.vapidConfigured === false) return;
-          await sb.functions.invoke('violation-push', { body: { test: true } });
-        } catch (e) {
-          if (isMirsadDebugLog()) console.warn('[webPush] server welcome', e);
-        }
-      }
-
       /** إشعار Push بعد إنشاء مخالفة — لا يوقف الواجهة */
       function notifyViolationPushAfterInsert(violationRow) {
         if (!violationRow?.id) return;
@@ -48332,20 +48262,6 @@
           });
       }
 
-      async function verifyPushSubscriptionInDb() {
-        if (!state.currentUser?.id) return false;
-        const { data, error } = await sb
-          .from('push_subscriptions')
-          .select('id')
-          .eq('user_id', state.currentUser.id)
-          .limit(1);
-        if (error) {
-          if (isMirsadDebugLog()) console.warn('[webPush] verify', error);
-          return false;
-        }
-        return !!(data && data.length);
-      }
-
       async function removePushSubscriptionFromDb(endpoint) {
         if (!endpoint) return;
         await sb.from('push_subscriptions').delete().eq('endpoint', endpoint);
@@ -48354,18 +48270,15 @@
       function syncWebPushMenuLabel() {
         const btn = document.getElementById('topbarPushToggle');
         const label = document.getElementById('topbarPushToggleLabel');
-        const testBtn = document.getElementById('topbarPushTest');
         if (!btn || !label) return;
         if (!isWebPushSupported()) {
           btn.hidden = true;
-          if (testBtn) testBtn.hidden = true;
           return;
         }
         btn.hidden = false;
         const on = Notification.permission === 'granted';
         label.textContent = on ? 'تنبيهات الجوال مفعّلة' : 'تفعيل تنبيهات الجوال';
         btn.setAttribute('aria-pressed', on ? 'true' : 'false');
-        if (testBtn) testBtn.hidden = !on;
       }
 
       async function refreshPushSubscription(reg, opts = {}) {
@@ -48408,9 +48321,6 @@
             const shown = await showPushWelcomeNotification();
             if (!shown) showToast('تم التفعيل — تحقق من إعدادات الإشعارات في الجوال', 'warning');
             else showToast('تم تفعيل تنبيهات الجوال ✓', 'success');
-            if (opts.tryServerWelcome !== false) {
-              setTimeout(() => { sendServerWelcomePushSilently(); }, 600);
-            }
           }
           return true;
         } catch (e) {
@@ -48461,81 +48371,6 @@
           if (!enabled) showToast('لم يُفعَّل الإذن — يمكنك التفعيل من قائمة المستخدم', 'warning');
         } catch (e) {
           showToast('فشل التفعيل: ' + formatPushError(e), 'error');
-        }
-      }
-
-      async function testWebPushFromMenu(event) {
-        if (event) {
-          event.stopPropagation();
-          event.preventDefault();
-        }
-        closeTopbarUserMenu();
-        if (!isWebPushSupported()) {
-          showToast('المتصفح لا يدعم تنبيهات الجوال', 'warning');
-          return;
-        }
-        if (Notification.permission !== 'granted') {
-          showToast('فعّل التنبيهات أولاً من نفس القائمة', 'warning');
-          return;
-        }
-        try {
-          await ensureAtharWebPushSubscribed({ welcomeNotify: false, forceResubscribe: true });
-        } catch (e) {
-          showToast('فشل حفظ الاشتراك: ' + formatPushError(e), 'error');
-          return;
-        }
-        const inDb = await verifyPushSubscriptionInDb();
-        if (!inDb) {
-          showToast('الاشتراك لم يُحفظ في قاعدة البيانات — شغّل push_notifications.sql', 'error');
-          return;
-        }
-        try {
-          await showLocalPushTestNotification();
-        } catch (e) {
-          showToast('فشل التنبيه المحلي: ' + formatPushError(e), 'error');
-          return;
-        }
-        const backend = await probeViolationPushBackend(true);
-        if (!backend.deployed) {
-          await confirmDialog(
-            'التنبيه المحلي يعمل على جهازك، لكن خادم الإرسال غير جاهز.\n\n'
-            + '1) نفّذ push_notifications.sql\n'
-            + '2) أضف VAPID_PUBLIC_KEY و VAPID_PRIVATE_KEY في Supabase Secrets\n'
-            + '3) انشر الدالة: npx supabase functions deploy violation-push --no-verify-jwt\n'
-            + '4) اربط Webhook على جدول violations (Insert)\n\n'
-            + 'التفاصيل في: supabase/PUSH-NOTIFICATIONS-SETUP.txt',
-            { type: 'warn', title: 'خادم التنبيهات غير منشور', okText: 'فهمت', cancelText: 'إغلاق' }
-          );
-          return;
-        }
-        if (!backend.vapidConfigured) {
-          showToast('أضف VAPID_PUBLIC_KEY و VAPID_PRIVATE_KEY في Supabase Secrets', 'error');
-          return;
-        }
-        if (backend.vapidValid === false) {
-          showToast('زوج مفاتيح VAPID في Secrets غير صالح — العام والخاص لا يتطابقان', 'error');
-          return;
-        }
-        if (backend.vapidPublicKey && !backend.vapidMatchesClient) {
-          showToast('المفتاح العام في Secrets لا يطابق التطبيق — راجع PUSH-NOTIFICATIONS-SETUP.txt', 'error');
-          return;
-        }
-        showToast('جاري إرسال تنبيه من الخادم… (أغلق التطبيق أو انتظر شريط الإشعارات)', 'info');
-        try {
-          const { data, error } = await sb.functions.invoke('violation-push', { body: { test: true } });
-          const payload = await readFnInvokePayload(error, data);
-          if (error && !(payload?.sent > 0)) {
-            throw new Error(await readFnInvokeError(error, payload));
-          }
-          if ((payload?.sent || 0) > 0) {
-            showToast('أُرسل من الخادم ✓ — إن لم يظهر، أغلق التطبيق تماماً وجرب مرة أخرى', 'success');
-            return;
-          }
-          const hint = payload?.error || payload?.errors?.[0] || 'تحقق من مفاتيح VAPID في Supabase Secrets';
-          showToast('لم يُرسل من الخادم: ' + hint, 'error');
-          if (isMirsadDebugLog()) console.warn('[webPush] test', payload);
-        } catch (e) {
-          showToast('فشل اختبار الخادم: ' + formatPushError(e), 'error');
         }
       }
 
@@ -50884,7 +50719,6 @@
       window.triggerUsersImport = triggerUsersImport;
       window.handleUsersImportFile = handleUsersImportFile;
       window.toggleWebPushFromMenu = toggleWebPushFromMenu;
-      window.testWebPushFromMenu = testWebPushFromMenu;
       window.openNotificationsPage = openNotificationsPage;
       window.closeNotificationsPage = closeNotificationsPage;
       window.setNotifFilter = setNotifFilter;

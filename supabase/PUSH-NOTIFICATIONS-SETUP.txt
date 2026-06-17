@@ -1,80 +1,35 @@
 ═══════════════════════════════════════════════════════════════════════════
-ATHAR — تفعيل تنبيهات الجوال خارج التطبيق (Web Push)
+ATHAR — تنبيهات الجوال (Web Push) — الإعداد النهائي
 ═══════════════════════════════════════════════════════════════════════════
 
-1) SQL
-   شغّل: supabase/push_notifications.sql في SQL Editor
-   تحقق: supabase/تحقق-التنبيهات-الخارجية.sql — يجب أن يظهر اشتراكك بعد التفعيل
+المسار العامل: التطبيق → violation-push → أجهزة المشتركين (عند رصد مخالفة).
 
-   ملاحظة: ملف sw.js يُنسخ تلقائياً مع النشر (GitHub Pages). إن ظهر 404 عند التفعيل
-   انتظر اكتمال نشر آخر push أو افتح: https://your-domain/sw.js يدوياً للتأكد.
+1) SQL (مرة واحدة)
+   supabase/push_notifications.sql
 
-2) مفاتيح VAPID (مرة واحدة)
-   من جهازك:
-     npx web-push generate-vapid-keys
+2) Secrets في Supabase → Edge Functions
+   VAPID_PUBLIC_KEY  = نفس ATHAR_VAPID_PUBLIC_KEY في index.html
+   VAPID_PRIVATE_KEY = المفتاح الخاص المقترن
+   VAPID_SUBJECT     = mailto:admin@athar.app
 
-   في Supabase → Project Settings → Edge Functions → Secrets (يجب الثلاثة معاً):
-     VAPID_PUBLIC_KEY  = نفس قيمة ATHAR_VAPID_PUBLIC_KEY في index.html
-     VAPID_PRIVATE_KEY = المفتاح الخاص المقترن (من npx web-push generate-vapid-keys)
-     VAPID_SUBJECT     = mailto:admin@athar.app
+3) نشر الدالة violation-push
+   تلقائياً: GitHub Action (يحتاج SUPABASE_ACCESS_TOKEN في secrets المستودع)
+   يدوياً: npx supabase functions deploy violation-push --no-verify-jwt
 
-   تحقق بعد الحفظ:
-     https://rizoafuxmqsddjfhbsmf.supabase.co/functions/v1/violation-push
-   يجب: "vapidConfigured":true و "vapidValid":true
-   إن ظهر vapidValid:false فالعام والخاص لا يتطابقان — أعد توليد الزوج وأعد تفعيل التنبيهات.
+4) الجوال
+   • أضف الموقع للشاشة الرئيسية (PWA) — خاصة iPhone
+   • قائمة المستخدم → تفعيل تنبيهات الجوال
 
-3) نشر الدالة (إلزامي — بدونها لن يصل أي تنبيه من الخادم)
-     npx supabase@latest login
-     npx supabase@latest link --project-ref rizoafuxmqsddjfhbsmf
-     npx supabase@latest functions deploy violation-push --no-verify-jwt
+5) من يستلم التنبيه؟
+   • الموظف المعني
+   • مدير فرع نفس الفرع (مع اسم الموظف)
+   • مشرف المنطقة (مع اسم الموظف)
 
-   تحقق: افتح في المتصفح
-     https://rizoafuxmqsddjfhbsmf.supabase.co/functions/v1/violation-push
-   يجب أن يظهر {"ok":true,"service":"violation-push",...}
-   إن ظهر 404 فالدالة غير منشورة بعد.
+6) إن شغّلت سابقاً violation-push-trigger.sql
+   شغّل: supabase/إزالة-trigger-التنبيهات-إن-وُجد.sql
+   (لتجنب إشعار مكرر)
 
-4) Database Webhook (Supabase Dashboard)
-   Database → Webhooks → Create hook
-   • Name: violation-push
-   • Table: violations
-   • Events: Insert
-   • Type: Supabase Edge Function
-   • Function: violation-push
-   • HTTP Headers (أحد الخيارين):
-     Authorization = Bearer <SERVICE_ROLE_KEY>
-     — أو —
-     x-athar-push-secret = <قيمة سرية>
-     وأضف نفس القيمة في Secrets: PUSH_WEBHOOK_SECRET
-
-5) اختبار من التطبيق (بعد النشر)
-   • سجّل دخول من الجوال
-   • قائمة المستخدم → «تفعيل تنبيهات الجوال» → اسمح بالإشعارات
-   • نفس القائمة → «اختبار تنبيه الجوال»
-   • إن ظهر خطأ، اقرأ الرسالة (جدول ناقص / VAPID / الدالة غير منشورة)
-
-6) الجوال
-   • أضف الموقع إلى الشاشة الرئيسية (PWA)
-   • iOS 16.4+: التنبيهات تعمل فقط للتطبيق المثبّت على الشاشة الرئيسية
-   • Android Chrome: يعمل من المتصفح أو PWA
-   • Safari على سطح المكتب: لا يدعم Web Push
-
-7) من يستلم التنبيه عند رصد مخالفة؟
-   • الموظف المعني (employee_id)
-   • مدير فرع نفس الفرع
-   • مشرف المنطقة
-   ملاحظة: من يسجّل المخالفة بنفسه قد لا يكون ضمن المستلمين.
-
-8) تشخيص سريع
-   ┌─────────────────────────────────────┬──────────────────────────────────┐
-   │ العرض                               │ السبب المحتمل                    │
-   ├─────────────────────────────────────┼──────────────────────────────────┤
-   │ فشل حفظ الاشتراك / جدول غير موجود   │ لم يُشغَّل push_notifications.sql │
-   │ لم يُرسل: no push_subscriptions     │ التفعيل من الجوال لم يُحفظ في DB  │
-   │ لم يُرسل: VAPID keys not configured │ Secrets ناقصة في Edge Functions  │
-   │ unauthorized من Webhook             │ Authorization أو PUSH_WEBHOOK    │
-   │ الاختبار ينجح لكن المخالفة لا       │ Webhook غير مربوط على violations │
-   └─────────────────────────────────────┴──────────────────────────────────┘
-
-   سجلات الدالة: Supabase → Edge Functions → violation-push → Logs
+تحقق: https://rizoafuxmqsddjfhbsmf.supabase.co/functions/v1/violation-push
+       يجب vapidConfigured:true و vapidValid:true
 
 ═══════════════════════════════════════════════════════════════════════════
