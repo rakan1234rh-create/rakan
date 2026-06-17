@@ -23564,7 +23564,29 @@
       }
 
       #tab-dashboard #personalIndicators.indicators-row--score-duo .score-viol-meta {
-        font-size: 8px
+        font-size: 8px;
+        flex-wrap: nowrap;
+        align-items: center;
+        gap: 2px 4px;
+        overflow-x: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none
+      }
+
+      #tab-dashboard #personalIndicators.indicators-row--score-duo .score-viol-meta::-webkit-scrollbar {
+        display: none
+      }
+
+      #tab-dashboard #personalIndicators.indicators-row--score-duo .score-viol-meta-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
+        flex-shrink: 0;
+        white-space: nowrap
+      }
+
+      #tab-dashboard #personalIndicators.indicators-row--score-duo .score-viol-meta-txt {
+        white-space: nowrap
       }
 
       #tab-dashboard #personalIndicators:not(.indicators-row--score-duo) {
@@ -25610,7 +25632,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v673-dash-duo-card-shell">
+  <meta name="app-build" content="athar-figma-v674-dash-viol-meta-nowrap">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -33850,7 +33872,7 @@
                   <div class="score-viol-meta">
                     <span class="score-viol-meta-item"><i class="fas fa-calendar-day"></i><span class="score-viol-meta-txt">${displayDate}</span></span>
                     <span class="score-viol-meta-item"><i class="fas fa-hourglass-half"></i><span class="score-viol-meta-txt">منذ ${ageDays} يوم</span></span>
-                    <span class="score-viol-meta-item"${freqMult > 1 ? ' style="color:var(--red-text)"' : ''}><i class="fas fa-repeat"></i><span class="score-viol-meta-txt">تكرار ${recentBefore + 1}: ×${freqMult}</span></span>
+                    <span class="score-viol-meta-item"${freqMult > 1 ? ' style="color:var(--red-text)"' : ''}><i class="fas fa-repeat"></i><span class="score-viol-meta-txt" title="تكرار ${recentBefore + 1}: ×${freqMult}">تكرار ${recentBefore + 1}×${freqMult}</span></span>
                   </div>
                 </div>
                 <div class="score-viol-weight">
