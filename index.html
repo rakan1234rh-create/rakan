@@ -26321,7 +26321,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v738-push-vapid">
+  <meta name="app-build" content="athar-figma-v739-push-welcome">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -27881,7 +27881,7 @@
 
       /** Web Push — المفتاح العام VAPID (الخاص في Supabase Secrets فقط) */
       const ATHAR_VAPID_PUBLIC_KEY = 'BAAE2sxYeIGbYADV7uimLzIFB_en9SBWQ3a4-LBULuOIVm40YI7YfjXL2Fddttr1L1tHFkoaiPzmZankfUk_2jc';
-      const ATHAR_SW_URL = './sw.js?v=2';
+      const ATHAR_SW_URL = './sw.js?v=3';
       const ATHAR_VIOLATION_PUSH_URL = `${SUPABASE_URL}/functions/v1/violation-push`;
 
       /** رابط النشر — روابط استعادة كلمة المرور من file:// أو localhost */
@@ -48247,6 +48247,37 @@
         }
       }
 
+      async function showPushWelcomeNotification() {
+        const title = 'تم تفعيل تنبيهات ATHAR';
+        const body = 'تنبيه تجريبي — سيصلك إشعار عند رصد مخالفة حتى والتطبيق مغلق ✓';
+        const icon = './icons/athar-pwa-192-v393.png';
+        const opts = {
+          body,
+          icon,
+          badge: icon,
+          tag: 'athar-push-welcome',
+          renotify: true,
+          dir: 'rtl',
+          lang: 'ar'
+        };
+        try {
+          const reg = await navigator.serviceWorker.ready;
+          await reg.showNotification(title, opts);
+          return true;
+        } catch (e) {
+          if (isMirsadDebugLog()) console.warn('[webPush] welcome sw', e);
+        }
+        if (Notification.permission === 'granted') {
+          try {
+            new Notification(title, opts);
+            return true;
+          } catch (e2) {
+            if (isMirsadDebugLog()) console.warn('[webPush] welcome api', e2);
+          }
+        }
+        return false;
+      }
+
       async function showLocalPushTestNotification() {
         const reg = await navigator.serviceWorker.ready;
         await reg.showNotification('اختبار محلي — ATHAR', {
@@ -48257,6 +48288,16 @@
           dir: 'rtl',
           lang: 'ar'
         });
+      }
+
+      async function sendServerWelcomePushSilently() {
+        try {
+          const backend = await probeViolationPushBackend(true);
+          if (!backend.deployed || backend.vapidConfigured === false) return;
+          await sb.functions.invoke('violation-push', { body: { test: true } });
+        } catch (e) {
+          if (isMirsadDebugLog()) console.warn('[webPush] server welcome', e);
+        }
       }
 
       async function verifyPushSubscriptionInDb() {
@@ -48295,7 +48336,7 @@
         if (testBtn) testBtn.hidden = !on;
       }
 
-      async function ensureAtharWebPushSubscribed() {
+      async function ensureAtharWebPushSubscribed(opts = {}) {
         if (!isWebPushSupported() || !state.currentUser) return false;
         try {
           const perm = await Notification.requestPermission();
@@ -48311,6 +48352,14 @@
           }
           await savePushSubscriptionToDb(sub);
           syncWebPushMenuLabel();
+          if (opts.welcomeNotify) {
+            const shown = await showPushWelcomeNotification();
+            if (!shown) showToast('تم التفعيل — تحقق من إعدادات الإشعارات في الجوال', 'warning');
+            else showToast('تم تفعيل تنبيهات الجوال ✓', 'success');
+            if (opts.tryServerWelcome !== false) {
+              setTimeout(() => { sendServerWelcomePushSilently(); }, 600);
+            }
+          }
           return true;
         } catch (e) {
           if (isMirsadDebugLog()) console.error('[webPush] subscribe', e);
@@ -48338,7 +48387,7 @@
         syncWebPushMenuLabel();
         if (!isWebPushSupported() || !state.currentUser) return;
         if (Notification.permission === 'granted') {
-          try { await ensureAtharWebPushSubscribed(); } catch (e) {
+          try { await ensureAtharWebPushSubscribed({ welcomeNotify: false }); } catch (e) {
             if (!opts.silent) showToast('تنبيهات الجوال: ' + formatPushError(e), 'error');
             else if (isMirsadDebugLog()) console.warn('[webPush] resync', e);
           }
@@ -48356,9 +48405,8 @@
         );
         if (!ok) return;
         try {
-          const enabled = await ensureAtharWebPushSubscribed();
-          if (enabled) showToast('تم تفعيل تنبيهات الجوال ✓', 'success');
-          else showToast('لم يُفعَّل الإذن — يمكنك التفعيل من قائمة المستخدم', 'warning');
+          const enabled = await ensureAtharWebPushSubscribed({ welcomeNotify: true });
+          if (!enabled) showToast('لم يُفعَّل الإذن — يمكنك التفعيل من قائمة المستخدم', 'warning');
         } catch (e) {
           showToast('فشل التفعيل: ' + formatPushError(e), 'error');
         }
@@ -48379,7 +48427,7 @@
           return;
         }
         try {
-          await ensureAtharWebPushSubscribed();
+          await ensureAtharWebPushSubscribed({ welcomeNotify: false });
         } catch (e) {
           showToast('فشل حفظ الاشتراك: ' + formatPushError(e), 'error');
           return;
@@ -48447,9 +48495,8 @@
           return;
         }
         try {
-          const enabled = await ensureAtharWebPushSubscribed();
-          if (enabled) showToast('تم تفعيل تنبيهات الجوال ✓', 'success');
-          else showToast('يُحتاج إذن الإشعارات من إعدادات الجوال/المتصفح', 'warning');
+          const enabled = await ensureAtharWebPushSubscribed({ welcomeNotify: true });
+          if (!enabled) showToast('يُحتاج إذن الإشعارات من إعدادات الجوال/المتصفح', 'warning');
         } catch (e) {
           showToast('فشل التفعيل: ' + formatPushError(e), 'error');
         }
