@@ -23179,21 +23179,7 @@
         margin: 0 !important;
         padding: 0 !important;
         align-items: start;
-        background: transparent;
-        position: relative
-      }
-
-      #tab-dashboard #personalIndicators.indicators-row--score-duo::after {
-        content: '';
-        position: absolute;
-        top: 0;
-        bottom: 0;
-        inset-inline-start: 50%;
-        width: 1px;
-        margin-inline-start: -0.5px;
-        background: var(--mr-border);
-        pointer-events: none;
-        z-index: 4
+        background: transparent
       }
 
       #tab-dashboard #personalIndicators.indicators-row--score-duo .indicator-card--score {
@@ -23205,15 +23191,16 @@
         box-sizing: border-box;
         border-radius: 0 0 8px 8px;
         overflow: hidden;
-        border: none;
-        border-bottom: 1px solid var(--mr-border);
+        border-style: solid;
+        border-width: 0 0 1px;
+        border-color: var(--mr-border);
         background: var(--mr-surface);
         box-shadow: none;
         gap: 0
       }
 
       #tab-dashboard #personalIndicators.indicators-row--score-duo .indicator-card--commitment {
-        border-inline-end: 1px solid var(--border)
+        border-inline-end-width: 1px
       }
 
       #tab-dashboard #personalIndicators.indicators-row--score-duo .indicator-card--response {
@@ -23221,7 +23208,7 @@
       }
 
       #tab-dashboard #personalIndicators.indicators-row--score-duo .indicator-card--response:has(.score-breakdown-panel.open) {
-        border-inline-start: 1px solid var(--border)
+        border-inline-start-width: 1px
       }
 
       #tab-dashboard #personalIndicators.indicators-row--score-duo .indicator-card--score::before {
@@ -23235,7 +23222,8 @@
       #tab-dashboard #personalIndicators.indicators-row--score-duo .indicator-card--score:has(.score-breakdown-panel.open) {
         align-self: start;
         z-index: 2;
-        overflow: hidden
+        overflow: hidden;
+        position: relative
       }
 
       #tab-dashboard #personalIndicators.indicators-row--score-duo .indicator-card__head {
@@ -25545,7 +25533,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v658-dash-duo-divider-full">
+  <meta name="app-build" content="athar-figma-v659-dash-divider-round">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
