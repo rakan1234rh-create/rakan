@@ -23184,7 +23184,7 @@
         width: 100%;
         margin: 0;
         padding: 0;
-        align-items: stretch;
+        align-items: start;
         background: var(--border)
       }
 
@@ -23216,7 +23216,9 @@
       }
 
       #tab-dashboard #personalIndicators.indicators-row--score-duo .indicator-card--score:has(.score-breakdown-panel.open) {
-        grid-column: 1 / -1
+        align-self: start;
+        z-index: 2;
+        overflow: visible
       }
 
       #tab-dashboard #personalIndicators.indicators-row--score-duo .indicator-card__head {
@@ -23345,12 +23347,53 @@
         margin: 0
       }
 
+      #tab-dashboard #personalIndicators.indicators-row--score-duo .score-breakdown-toggle.open::after {
+        content: 'إخفاء'
+      }
+
       #tab-dashboard #personalIndicators.indicators-row--score-duo .score-breakdown-panel {
         margin: 0;
         border: none;
         border-top: 1px solid var(--border);
         border-radius: 0;
-        padding: 12px
+        padding: 8px
+      }
+
+      #tab-dashboard #personalIndicators.indicators-row--score-duo .score-equation {
+        padding: 6px 3px;
+        gap: 2px 3px;
+        margin-bottom: 6px;
+        font-size: 8px;
+        border-radius: 6px
+      }
+
+      #tab-dashboard #personalIndicators.indicators-row--score-duo .eq-num {
+        font-size: 11px
+      }
+
+      #tab-dashboard #personalIndicators.indicators-row--score-duo .eq-op {
+        font-size: 9px
+      }
+
+      #tab-dashboard #personalIndicators.indicators-row--score-duo .eq-label {
+        font-size: 7px
+      }
+
+      #tab-dashboard #personalIndicators.indicators-row--score-duo .score-section-title {
+        font-size: 9px
+      }
+
+      #tab-dashboard #personalIndicators.indicators-row--score-duo .score-viol-row {
+        padding: 6px 0;
+        gap: 6px
+      }
+
+      #tab-dashboard #personalIndicators.indicators-row--score-duo .score-viol-name {
+        font-size: 9px
+      }
+
+      #tab-dashboard #personalIndicators.indicators-row--score-duo .score-viol-meta {
+        font-size: 8px
       }
 
       #tab-dashboard #personalIndicators:not(.indicators-row--score-duo) {
@@ -25396,7 +25439,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v644-dash-score-edge">
+  <meta name="app-build" content="athar-figma-v645-dash-score-inline">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -33171,8 +33214,20 @@
       }
 
       function toggleScoreBreakdown(btn) {
-        const panel = btn.closest('.indicator-card')?.querySelector('.score-breakdown-panel');
+        const card = btn.closest('.indicator-card');
+        const panel = card?.querySelector('.score-breakdown-panel');
         if (!panel) return;
+        const willOpen = !panel.classList.contains('open');
+        if (willOpen) {
+          const duo = card?.closest('#personalIndicators.indicators-row--score-duo');
+          if (duo) {
+            duo.querySelectorAll('.indicator-card--score').forEach(other => {
+              if (other === card) return;
+              other.querySelector('.score-breakdown-toggle')?.classList.remove('open');
+              other.querySelector('.score-breakdown-panel')?.classList.remove('open');
+            });
+          }
+        }
         btn.classList.toggle('open');
         panel.classList.toggle('open');
       }
