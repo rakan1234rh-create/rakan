@@ -25880,7 +25880,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v703-dash-attn-ticket-num">
+  <meta name="app-build" content="athar-figma-v704-dash-attn-time">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -35311,8 +35311,6 @@
             const observerLine = shouldHideObserverName() ? '' : ` · رصد: ${Sec.escapeHTML(t._obsName)}`;
             const rel = formatRelativeAr(t.created_at);
             const initials = (t._empName || '—').trim().charAt(0) || '—';
-            const ageMs = t.created_at ? (Date.now() - new Date(t.created_at).getTime()) : 0;
-            const ageHours = Math.round(ageMs / 36e5);
             const overdueCls = (t.auto_forwarded_emp || t.auto_forwarded_sup) ? ' is-overdue' : '';
             return `
         <button type="button" class="mk-attn__row" onclick="openTicket('${t.id}')">
@@ -35328,7 +35326,7 @@
             </span>
           </span>
           <span class="mk-attn__right">
-            <span class="mk-attn__age${overdueCls}">${Sec.escapeHTML(rel)}${ageHours > 48 ? ' · ' + ageHours + 'س' : ''}</span>
+            <span class="mk-attn__age${overdueCls}">${Sec.escapeHTML(rel)}</span>
           </span>
         </button>
       `;
