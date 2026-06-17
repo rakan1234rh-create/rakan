@@ -11309,6 +11309,46 @@
       transition: background 0.15s ease, border-color 0.15s ease
     }
 
+    .notif-page-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 4px 6px;
+      flex-shrink: 0
+    }
+
+    .notif-action-btn {
+      flex: 1 1 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      min-height: 34px;
+      padding: 6px 10px;
+      border-radius: 9px;
+      border: 1px solid var(--mr-border);
+      background: var(--mr-surface);
+      color: var(--mr-text-2);
+      font-family: var(--font);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap
+    }
+
+    .notif-action-btn:hover {
+      background: var(--mr-bg-2)
+    }
+
+    .notif-action-btn--danger {
+      color: var(--red-text);
+      border-color: color-mix(in srgb, var(--red-text) 22%, var(--mr-border))
+    }
+
+    .notif-action-btn--danger:hover {
+      background: color-mix(in srgb, var(--red-text) 8%, var(--mr-surface))
+    }
+
     .notif-mark-all:hover {
       background: var(--mr-primary-softer);
       border-color: color-mix(in srgb, var(--mr-primary) 18%, transparent);
@@ -11334,7 +11374,7 @@
     }
 
     .notif-item {
-      padding: 10px 12px;
+      padding: 8px 10px;
       cursor: pointer;
       transition: background 0.15s ease, transform 0.2s ease;
       display: flex;
@@ -11492,7 +11532,7 @@
     }
 
     .notif-empty {
-      padding: 28px 16px;
+      padding: 20px 12px;
       text-align: center;
       color: var(--mr-text-3)
     }
@@ -11572,14 +11612,14 @@
       flex-shrink: 0;
       z-index: 30;
       background: var(--mr-bg);
-      padding-top: calc(env(safe-area-inset-top, 0px) + 8px)
+      padding-top: max(4px, env(safe-area-inset-top, 0px))
     }
 
     .notif-page-topbar {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 4px 4px 10px;
+      gap: 8px;
+      padding: 0 4px 4px;
       flex-shrink: 0
     }
 
@@ -11628,7 +11668,7 @@
     .notif-page-filters {
       display: flex;
       gap: 6px;
-      padding: 0 4px 10px;
+      padding: 0 4px 6px;
       flex-shrink: 0;
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
@@ -26114,7 +26154,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v714-notif-sticky-head">
+  <meta name="app-build" content="athar-figma-v715-notif-head-up">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -26423,8 +26463,11 @@
                     <h4>التنبيهات</h4>
                     <div class="notif-count" id="notifPageCount">0 تنبيه</div>
                   </div>
-                  <button type="button" class="notif-mark-all" onclick="markAllNotifsRead()"><i class="fas fa-check-double"></i> قراءة الكل</button>
                 </header>
+                <div class="notif-page-actions">
+                  <button type="button" class="notif-action-btn" onclick="markAllNotifsRead()"><i class="fas fa-check-double" aria-hidden="true"></i> قراءة الكل</button>
+                  <button type="button" class="notif-action-btn notif-action-btn--danger" onclick="dismissAllNotifs()"><i class="fas fa-trash-alt" aria-hidden="true"></i> حذف الكل</button>
+                </div>
                 <div class="notif-page-filters" id="notifPageFilters" role="tablist" aria-label="تصنيف التنبيهات">
                   <button type="button" class="notif-filter-btn is-active" data-filter="all" role="tab" aria-selected="true" onclick="setNotifFilter('all', this)">الكل</button>
                   <button type="button" class="notif-filter-btn" data-filter="mine" role="tab" aria-selected="false" onclick="setNotifFilter('mine', this)">تنبيهاتي</button>
@@ -47447,7 +47490,7 @@
               let type = 'green';
               let icon = 'fa-circle-check';
               let title = 'تم تحديث تذكرة بحقك';
-              if (isPenalty) { type = 'red'; icon = 'fa-triangle-exclamation'; title = 'تم اعتماد خصم مخالفة بحقك'; }
+              if (isPenalty) { type = 'red'; icon = 'fa-triangle-exclamation'; title = 'تم اعتماد مخالفة بحقك'; }
               else if (isWarn) { type = 'amber'; icon = 'fa-hand'; title = 'تم إصدار تنبيه إداري بحقك'; }
               else if (isCancelled) { type = 'green'; icon = 'fa-circle-check'; title = 'تم إلغاء مخالفة بحقك'; }
               notifs.push({
@@ -47456,7 +47499,9 @@
                 type,
                 icon,
                 title,
-                msg: `${shortTicketNum(t.ticket_number)} — ${t.violation_type}`,
+                msg: isPenalty
+                  ? `${t.violation_type} — ${shortTicketNum(t.ticket_number)}`
+                  : `${shortTicketNum(t.ticket_number)} — ${t.violation_type}`,
                 time: t.updated_at || t.created_at
               });
             }
@@ -47473,19 +47518,31 @@
           );
 
           myRecentDeduct.forEach(v => {
-            const type = state.violationTypes.find(t => t.name === v.violation_type);
-            const weight = type?.weight || 5;
-
+            const typeRow = state.violationTypes.find(t => t.name === v.violation_type);
+            const weight = typeRow?.weight || 5;
             const currentScore = Math.round(calcEmployeeCommitment(me.id));
-
             const decideDate = (v.updated_at || v.created_at || '').slice(0, 10);
+            const ticketRef = shortTicketNum(v.ticket_number);
+            const finalPenalty = isFinalPenaltyApproved(v);
+            let notifType = 'amber';
+            let notifIcon = 'fa-clipboard-list';
+            let title = 'تم تسجيل مخالفة بحقك';
+            let msg = `${ticketRef} — ${v.violation_type}`;
+            if (finalPenalty) {
+              notifType = 'red';
+              notifIcon = 'fa-triangle-exclamation';
+              title = 'تم اعتماد مخالفة بحقك';
+              msg = `${v.violation_type} — خصم ${weight} نقطة — درجتك: ${currentScore}`;
+            } else if (v.state !== 'closed') {
+              msg = `${v.violation_type} — ${ticketRef} — قيد المراجعة`;
+            }
             notifs.push({
               id: `score_deduct_${v.id}_${decideDate}`,
               ticketId: v.id,
-              type: 'red',
-              icon: 'fa-minus-circle',
-              title: isFinalPenaltyApproved(v) ? `تم تثبيت خصم ${weight} نقطة` : `تسجيل خصم مبدئي ${weight} نقطة (قيد المراجعة)`,
-              msg: `مخالفة "${v.violation_type}" — درجتك الحالية: ${currentScore}`,
+              type: notifType,
+              icon: notifIcon,
+              title,
+              msg,
               time: v.updated_at || v.created_at
             });
           });
@@ -48147,6 +48204,30 @@
         renderNotifications();
         syncNotifBellBadge(true);
         showToast('تم تعليم التنبيهات كمقروءة ✓', 'success');
+      }
+
+      function dismissAllNotifs() {
+        const notifs = state._currentNotifs || buildUserNotifications();
+        const dismissed = getDismissedNotifs();
+        const allVisible = notifs.filter(n => !dismissed.has(n.id));
+        const visible = getActiveTabKey() === 'notifications'
+          ? filterNotifsByScope(allVisible, state._notifFilter || 'all')
+          : allVisible;
+        if (!visible.length) {
+          showToast('لا توجد تنبيهات للحذف', 'info');
+          return;
+        }
+        const read = getReadNotifs();
+        visible.forEach(n => {
+          dismissed.add(n.id);
+          read.add(n.id);
+        });
+        saveDismissedNotifs(dismissed);
+        saveReadNotifs(read);
+        state._bellBadgeLocked = 0;
+        renderNotifications();
+        syncNotifBellBadge(true);
+        showToast('تم حذف التنبيهات ✓', 'success');
       }
 
       document.getElementById('notifPanelBackdrop')?.addEventListener('click', () => closeNotifPanel());
@@ -50007,6 +50088,7 @@
       window.setNotifFilter = setNotifFilter;
       window.toggleNotifPanel = toggleNotifPanel;
       window.dismissNotif = dismissNotif;
+      window.dismissAllNotifs = dismissAllNotifs;
       window.handleNotifClick = handleNotifClick;
       window.markAllNotifsRead = markAllNotifsRead;
       window.printTicketDetail = printTicketDetail;
