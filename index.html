@@ -23235,29 +23235,9 @@
         align-self: stretch
       }
 
-      #tab-dashboard #personalIndicators.indicators-row--score-duo:has(.indicator-card--commitment .score-breakdown-panel.open):has(.indicator-card--response .score-breakdown-panel.open) .score-breakdown-panel.open {
-        flex: 1 1 auto;
-        display: flex !important;
-        flex-direction: column;
-        min-height: 0
-      }
-
-      #tab-dashboard #personalIndicators.indicators-row--score-duo:has(.indicator-card--commitment .score-breakdown-panel.open):has(.indicator-card--response .score-breakdown-panel.open) .score-breakdown-records {
-        flex: 1 1 auto;
-        display: flex;
-        flex-direction: column;
-        min-height: 0
-      }
-
-      #tab-dashboard #personalIndicators.indicators-row--score-duo:has(.indicator-card--commitment .score-breakdown-panel.open):has(.indicator-card--response .score-breakdown-panel.open) .indicator-card--response .score-viol-list {
-        flex: 1 1 auto;
-        max-height: none;
-        min-height: 0
-      }
-
-      #tab-dashboard #personalIndicators.indicators-row--score-duo:has(.indicator-card--commitment .score-breakdown-panel.open):has(.indicator-card--response .score-breakdown-panel.open) .score-bonus-row {
-        flex-shrink: 0;
-        margin-top: auto
+      #tab-dashboard #personalIndicators.indicators-row--score-duo:has(.indicator-card--commitment .score-breakdown-panel.open):has(.indicator-card--response .score-breakdown-panel.open) .indicator-card--response .score-breakdown-records {
+        padding-bottom: 28px;
+        box-sizing: border-box
       }
 
       #tab-dashboard #personalIndicators.indicators-row--score-duo .indicator-card__head {
@@ -25609,7 +25589,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v665-dash-duo-equal-open">
+  <meta name="app-build" content="athar-figma-v666-dash-duo-equal-fix">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
