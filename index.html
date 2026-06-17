@@ -47365,6 +47365,23 @@
         return ms > 0 ? new Date(ms).toISOString() : '';
       }
 
+      function notifPinnedThresholdTime(storageKey, isActive, seedMs) {
+        if (!isActive) {
+          try { localStorage.removeItem(storageKey); } catch (_) { /* noop */ }
+          return '';
+        }
+        try {
+          let saved = localStorage.getItem(storageKey);
+          if (!saved) {
+            saved = notifIsoFromMs(seedMs) || new Date().toISOString();
+            localStorage.setItem(storageKey, saved);
+          }
+          return saved;
+        } catch (_) {
+          return notifIsoFromMs(seedMs);
+        }
+      }
+
       const NOTIF_RESTORE_ONCE_KEY = 'athar_notif_restore_v718_bm';
 
       function maybeRestoreDismissedNotifsOnce() {
@@ -47617,26 +47634,34 @@
           // ─── تنبيه عتبات الدرجة (تحذير عند الانخفاض) ───
           const currentScore = Math.round(calcEmployeeCommitment(me.id));
           const scoreAlertMs = notifLatestListMs(myRecentDeduct);
+          const scoreCriticalKey = `mp_notif_thr_${me.id}_critical`;
+          const scoreWarningKey = `mp_notif_thr_${me.id}_warning`;
           if (currentScore < 40 && myRecentDeduct.length > 0) {
+            notifPinnedThresholdTime(scoreWarningKey, false, 0);
             notifs.push({
               id: `score_critical_${me.id}`,
               ticketId: '',
               type: 'red',
               icon: 'fa-exclamation-triangle',
-              title: `⚠️ تحذير: درجة الالتزام حرجة (${currentScore})`,
+              title: '⚠️ تحذير: درجة الالتزام حرجة',
               msg: 'درجتك أقل من 40 — يرجى الالتزام بالأنظمة لتجنب الإجراءات الإدارية',
-              time: notifIsoFromMs(scoreAlertMs)
+              time: notifPinnedThresholdTime(scoreCriticalKey, true, scoreAlertMs)
             });
-          } else if (currentScore < 75 && currentScore >= 40 && myRecentDeduct.length > 0) {
-            notifs.push({
-              id: `score_warning_${me.id}`,
-              ticketId: '',
-              type: 'amber',
-              icon: 'fa-chart-line',
-              title: `تنبيه: درجة الالتزام منخفضة (${currentScore})`,
-              msg: 'حافظ على الانضباط لاستعادة نقاطك والحصول على مكافأة الالتزام',
-              time: notifIsoFromMs(scoreAlertMs)
-            });
+          } else {
+            notifPinnedThresholdTime(scoreCriticalKey, false, 0);
+            if (currentScore < 75 && currentScore >= 40 && myRecentDeduct.length > 0) {
+              notifs.push({
+                id: `score_warning_${me.id}`,
+                ticketId: '',
+                type: 'amber',
+                icon: 'fa-chart-line',
+                title: 'تنبيه: درجة الالتزام منخفضة',
+                msg: 'حافظ على الانضباط لاستعادة نقاطك والحصول على مكافأة الالتزام',
+                time: notifPinnedThresholdTime(scoreWarningKey, true, scoreAlertMs)
+              });
+            } else {
+              notifPinnedThresholdTime(scoreWarningKey, false, 0);
+            }
           }
 
           // ─── بونص الالتزام (Streak Bonus) ───
@@ -47744,16 +47769,19 @@
 
             // تنبيه المشرف عند انخفاض درجة موظف تحت 40
             if (empScore < 40) {
+              const thrKey = `mp_notif_thr_emp_${empId}_critical`;
               notifs.push({
-                id: `sup_emp_critical_${empId}_${empScore}`,
+                id: `sup_emp_critical_${empId}`,
                 ticketId: '',
                 type: 'red',
                 icon: 'fa-user-xmark',
-                title: `⚠️ درجة ${emp.name} حرجة (${empScore})`,
-                msg: `الموظف ${emp.emp_number || ''} يحتاج متابعة عاجلة — درجة الالتزام أقل من 40`,
-                time: notifIsoFromMs(notifEmpActivityMs(empId)),
+                title: `⚠️ درجة ${emp.name} حرجة`,
+                msg: `الموظف ${emp.emp_number || ''} يحتاج متابعة — درجة الالتزام أقل من 40`,
+                time: notifPinnedThresholdTime(thrKey, true, notifEmpActivityMs(empId)),
                 scope: 'team'
               });
+            } else {
+              notifPinnedThresholdTime(`mp_notif_thr_emp_${empId}_critical`, false, 0);
             }
 
             // تنبيه المشرف عند حصول موظف على بونص الالتزام الكامل
@@ -47806,16 +47834,19 @@
           branchEmps.forEach(emp => {
             const empScore = Math.round(calcEmployeeCommitment(emp.id));
             if (empScore < 40) {
+              const thrKey = `mp_notif_thr_emp_${emp.id}_critical`;
               notifs.push({
-                id: `bm_team_critical_${emp.id}_${empScore}`,
+                id: `bm_team_critical_${emp.id}`,
                 ticketId: '',
                 type: 'red',
                 icon: 'fa-user-xmark',
-                title: `⚠️ درجة ${emp.name} حرجة (${empScore})`,
+                title: `⚠️ درجة ${emp.name} حرجة`,
                 msg: `موظف الفرع ${emp.emp_number || ''} يحتاج متابعة — درجة الالتزام أقل من 40`,
-                time: notifIsoFromMs(notifEmpActivityMs(emp.id)),
+                time: notifPinnedThresholdTime(thrKey, true, notifEmpActivityMs(emp.id)),
                 scope: 'team'
               });
+            } else {
+              notifPinnedThresholdTime(`mp_notif_thr_emp_${emp.id}_critical`, false, 0);
             }
 
             const empStat = calcEmpScore(emp.id, state.violations || []);
