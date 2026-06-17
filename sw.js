@@ -1,11 +1,11 @@
 /* ATHAR — Web Push (يعمل عند إغلاق التطبيق إن كان مثبتاً على الشاشة الرئيسية) */
 self.addEventListener('push', (event) => {
-  let payload = { title: 'ATHAR', body: 'تنبيه جديد من منصة الرصد', url: './index.html' };
+  let payload = { title: 'تنبيه', body: 'تنبيه جديد', url: './index.html' };
   try {
     if (event.data) payload = { ...payload, ...event.data.json() };
   } catch (_) { /* noop */ }
 
-  const title = payload.title || 'ATHAR';
+  const title = payload.title || 'تنبيه';
   const options = {
     body: payload.body || '',
     icon: './icons/athar-pwa-192-v393.png',

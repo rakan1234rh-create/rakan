@@ -7,7 +7,7 @@
   <meta name="format-detection" content="telephone=no">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="theme-color" content="#121212" id="metaThemeColor">
-  <meta name="apple-mobile-web-app-title" content="ATHAR">
+  <meta name="apple-mobile-web-app-title" content="الرصد">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
@@ -26321,7 +26321,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v744-push-emp-name">
+  <meta name="app-build" content="athar-figma-v745-push-text-clean">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -27882,7 +27882,7 @@
       /** Web Push — المفتاح العام VAPID (الخاص في Supabase Secrets فقط) */
       const ATHAR_VAPID_PUBLIC_KEY = 'BAAE2sxYeIGbYADV7uimLzIFB_en9SBWQ3a4-LBULuOIVm40YI7YfjXL2Fddttr1L1tHFkoaiPzmZankfUk_2jc';
       const ATHAR_VAPID_STORAGE_KEY = 'athar_vapid_public_key';
-      const ATHAR_SW_URL = './sw.js?v=3';
+      const ATHAR_SW_URL = './sw.js?v=4';
       const ATHAR_VIOLATION_PUSH_URL = `${SUPABASE_URL}/functions/v1/violation-push`;
 
       /** رابط النشر — روابط استعادة كلمة المرور من file:// أو localhost */
@@ -48259,7 +48259,7 @@
       }
 
       async function showPushWelcomeNotification() {
-        const title = 'تم تفعيل تنبيهات ATHAR';
+        const title = 'تم تفعيل تنبيهات الجوال';
         const body = 'تنبيه تجريبي — سيصلك إشعار عند رصد مخالفة حتى والتطبيق مغلق ✓';
         const icon = './icons/athar-pwa-192-v393.png';
         const opts = {
@@ -48291,7 +48291,7 @@
 
       async function showLocalPushTestNotification() {
         const reg = await navigator.serviceWorker.ready;
-        await reg.showNotification('اختبار محلي — ATHAR', {
+        await reg.showNotification('اختبار محلي', {
           body: 'إن ظهر هذا التنبيه فالجهاز والإذن يعملان ✓',
           icon: './icons/athar-pwa-192-v393.png',
           badge: './icons/athar-pwa-192-v393.png',

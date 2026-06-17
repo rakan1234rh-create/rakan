@@ -86,7 +86,6 @@ async function dispatchViolationInsertPush(
   if (!recipientIds.size) return { sent: 0, reason: 'no recipients' };
 
   const ticket = shortTicketNum(record.ticket_number);
-  const vtype = String(record.violation_type || 'مخالفة').trim();
   let employeeName = '';
   if (record.employee_id) {
     const { data: emp } = await supabase
@@ -104,10 +103,10 @@ async function dispatchViolationInsertPush(
     const isEmployee = uid === record.employee_id;
     const title = isEmployee ? 'تم تسجيل مخالفة بحقك' : 'مخالفة جديدة في فريقك';
     const body = isEmployee
-      ? `${vtype} — تذكرة ${ticket}`
+      ? `تذكرة ${ticket}`
       : employeeName
-        ? `${employeeName} — ${vtype} — تذكرة ${ticket}`
-        : `${vtype} — تذكرة ${ticket}`;
+        ? `${employeeName} — تذكرة ${ticket}`
+        : `تذكرة ${ticket}`;
     const result = await sendPushToUserIds(supabase, new Set([uid]), title, body, String(record.id));
     totalSent += result.sent || 0;
     if (result.error) allErrors.push(String(result.error));
@@ -272,7 +271,7 @@ Deno.serve(async (req) => {
     const result = await sendPushToUserIds(
       supabase,
       new Set([userId]),
-      'اختبار ATHAR',
+      'اختبار التنبيهات',
       'التنبيهات الخارجية تعمل ✓',
     );
     if (result.error && !result.sent) return json({ ok: false, ...result }, 500);
