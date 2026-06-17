@@ -23019,45 +23019,67 @@
       }
 
       #tab-dashboard .mk-kpi {
-        min-height: 76px !important;
-        padding: 10px 9px 8px !important;
-        gap: 6px !important;
+        min-height: 80px !important;
+        padding: 10px 9px 0 !important;
+        gap: 0 !important;
         border-radius: 11px;
-        box-shadow: var(--mr-shadow-soft)
+        box-shadow: var(--mr-shadow-soft);
+        display: flex;
+        flex-direction: column
       }
 
       #tab-dashboard .mk-kpi__top {
+        flex: 1 1 auto;
         flex-direction: row;
-        align-items: flex-start;
+        align-items: center;
         justify-content: space-between;
         gap: 6px;
-        width: 100%
+        width: 100%;
+        padding-bottom: 8px;
+        min-height: 28px
       }
 
       #tab-dashboard .mk-kpi__title {
         flex: 1 1 auto;
         min-width: 0;
-        flex-wrap: wrap;
-        align-items: flex-start;
+        flex-wrap: nowrap;
+        align-items: center;
         gap: 0
       }
 
       #tab-dashboard .mk-kpi__title-line {
         display: block;
         line-height: 1.3;
-        white-space: normal;
-        overflow: visible;
-        text-overflow: clip
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis
       }
 
       #tab-dashboard .mk-kpi__top .mk-kpi__value {
         flex-shrink: 0;
-        align-self: flex-start;
-        font-size: 15px !important;
+        align-self: center;
+        font-size: 14px !important;
+        font-weight: 700 !important;
         letter-spacing: -0.02em;
-        line-height: 1;
+        line-height: 1.3;
         margin-top: 0;
         white-space: nowrap
+      }
+
+      #tab-dashboard .mk-kpi-grid .mk-kpi:nth-child(1) .mk-kpi__value {
+        color: var(--mr-blue) !important
+      }
+
+      #tab-dashboard .mk-kpi-grid .mk-kpi:nth-child(2) .mk-kpi__value {
+        color: var(--mr-success) !important
+      }
+
+      #tab-dashboard .mk-kpi-grid .mk-kpi:nth-child(3) .mk-kpi__value {
+        color: var(--mr-warning) !important
+      }
+
+      #tab-dashboard .mk-kpi-grid .mk-kpi:nth-child(4) .mk-kpi__value {
+        color: var(--mk-danger) !important
       }
 
       #tab-dashboard .mk-kpi__label,
@@ -23065,7 +23087,7 @@
       #tab-dashboard .mk-kpi__title-line .mk-kpi__period {
         font-size: 8.5px !important;
         line-height: 1.3;
-        white-space: normal
+        white-space: nowrap
       }
 
       #tab-dashboard .mk-kpi__dot {
@@ -23073,8 +23095,12 @@
       }
 
       #tab-dashboard .mk-kpi__spark {
-        height: 16px !important;
-        margin-top: 2px
+        height: 18px !important;
+        margin-top: auto;
+        margin-bottom: 0;
+        margin-inline: -9px;
+        width: calc(100% + 18px);
+        flex-shrink: 0
       }
 
       #tab-dashboard .mk-kpi__spark > div.mk-kpi__spark-hit--on {
@@ -25703,7 +25729,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v682-dash-kpi-refine">
+  <meta name="app-build" content="athar-figma-v683-dash-kpi-align">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -26058,7 +26084,7 @@
                       <span class="mk-kpi__dot" style="background:var(--mk-danger)"></span>
                       <span class="mk-kpi__label">تجاوزت المدة</span>
                     </div>
-                    <div class="mk-kpi__value" id="st-overdue" style="color:var(--mk-danger)">0</div>
+                    <div class="mk-kpi__value" id="st-overdue">0</div>
                   </div>
                   <div class="mk-kpi__spark" id="st-overdue-spark" aria-hidden="true"></div>
                 </article>
