@@ -22625,16 +22625,10 @@
       }
     }
 
-    /* عند الفتح: ارتفاع موحّد للسجلين (مخالفات + بونص الالتزام) — سطح المكتب */
+    /* بطاقتا الالتزام والاستجابة — سطح المكتب */
     @media (min-width: 993px) {
-      #tab-dashboard #personalIndicators .indicator-card--score .score-help-open-btn {
-        display: none !important;
-      }
       #tab-dashboard #personalIndicators .indicator-card--score .score-toggle-label--record {
         display: none;
-      }
-      #tab-dashboard #personalIndicators .indicator-card--score .score-decay-info--in-panel {
-        display: block !important;
       }
     }
     .mk-dash__hero { display:flex; align-items:flex-end; justify-content:space-between; gap:18px; padding:0 4px 4px; flex-wrap:wrap; }
@@ -25439,7 +25433,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v645-dash-score-inline">
+  <meta name="app-build" content="athar-figma-v646-dash-no-panel-help">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -33239,16 +33233,10 @@
         </div>`;
       }
 
-      function buildCommitmentScoreHelpHtml(opts) {
-        const forPanel = opts && opts.forPanel;
+      function buildCommitmentScoreHelpHtml() {
         const d = COMPLIANCE_CONFIG.streakDays;
         const p = COMPLIANCE_CONFIG.streakPoints;
         const streakDaysPhrase = 'كل <bdi dir="ltr">' + d + '</bdi> أيام';
-        const streakBonusPanel =
-          streakDaysPhrase +
-          ' دون مخالفات يمنحك النظام +' +
-          p +
-          ' نقاطاً حتى يصل المعدل <strong>100</strong>. عند إصدار <strong>تنبيه إداري</strong> لا يُخصم من نقاطك، لكنه يعيد ضبط عداد أيام نقاط الالتزام.';
         const streakBonusSheet =
           streakDaysPhrase +
           ' دون مخالفات يمنحك النظام +' +
@@ -33258,15 +33246,6 @@
           'تُخصم النقاط بمجرد رصد المخالفة وتُسترد النقاط عند إلغائها أو إصدار تنبيه إداري.';
         const pendingReviewLine =
           'المخالفات قيد المراجعة: عند إلغائها أو إصدار تنبيه إداري تُسترد نقاطها المخصومة.';
-        if (forPanel) {
-          return `<div class="score-help-body-inner score-help-body-inner--plain"><p style="margin:0 0 8px;font-weight:700;color:var(--text);font-size:11px"><i class="fas fa-lightbulb" style="color:var(--amber)"></i> كيف يتم حساب نقاطك بوضوح؟</p><ul>
-            <li><strong>وزن المخالفة:</strong> الخصم يعتمد على حجم المخالفة؛ المخالفة الكبيرة تؤثر أكثر من البسيطة.</li>
-            <li><strong>عدم التكرار:</strong> تكرار <strong>نفس نوع</strong> المخالفة خلال الشهر الجاري يضاعف الخصم.</li>
-            <li><strong>الخصم الفوري:</strong> ${instantDeductionLine}</li>
-            <li><strong>نقاط قيد المراجعة:</strong> ${pendingReviewLine} يظهر الخصم المبدئي باللون البرتقالي في بطاقة الالتزام.</li>
-            <li><strong>مكافأة الانضباط:</strong> ${streakBonusPanel}</li>
-          </ul></div>`;
-        }
         return `<div class="score-help-body-inner">
           ${scoreHelpItem('fa-weight-hanging', 'var(--blue-text)', 'var(--blue-light)', 'وزن المخالفة', 'الخصم يعتمد على حجم المخالفة؛ المخالفة الكبيرة تؤثر أكثر من البسيطة.')}
           ${scoreHelpItem('fa-repeat', 'var(--red-text)', 'var(--red-light)', 'عدم التكرار', 'تكرار نفس نوع المخالفة خلال الشهر الجاري يضاعف الخصم.')}
@@ -33766,10 +33745,6 @@
               <span class="score-bonus-val">${scoreHealed ? `معالج +${streakBonus}` : `+${streakBonus}`}</span>
             </div>
             </div>
-
-            <div class="score-decay-info score-decay-info--in-panel">
-              ${buildCommitmentScoreHelpHtml({ forPanel: true })}
-            </div>
           </div>
         `;
 
@@ -33852,9 +33827,6 @@
               </div>
               <div class="score-breakdown-records">
                 ${respRecordsBlock}
-              </div>
-              <div class="score-decay-info score-decay-info--in-panel">
-                ${buildResponseScoreHelpHtml()}
               </div>
             </div>
           `;
@@ -33977,9 +33949,6 @@
               </div>
               <div class="score-breakdown-records">
                 ${respRecordsBlock}
-              </div>
-              <div class="score-decay-info score-decay-info--in-panel">
-                ${buildResponseSupervisorScoreHelpHtml()}
               </div>
             </div>
           `;
