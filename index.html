@@ -26170,7 +26170,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v724-bm-team-reply-now">
+  <meta name="app-build" content="athar-figma-v726-transfer-score-fix">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -32973,19 +32973,21 @@
       }
 
       /**
-       * نطاق مخالفات مدير الفرع: كالموظف (employee_id = هو) + كالإشراف (branch_id = فرعه).
-       * يضمن وصول التذاكر «عليه» حتى لو branch_id في السجل ناقص أو غير متطابق.
+       * نطاق مخالفات مدير الفرع: فرعه (branch_id) + موظفوه الحاليون (employee_id) حتى بعد النقل.
+       * يضمن أن معدل الالتزام يتبع الموظف عند نقله من فرع لآخر.
        */
       function violationsForBranchManagerScope(list) {
         if (!state.currentUser || state.currentUser.role !== 'branch_manager') return null;
         const id = state.currentUser.id;
         const bid = state.currentUser.branch_id;
-        const ownAsEmp = list.filter(v => v.employee_id === id);
-        if (!bid) return ownAsEmp;
+        const staffIds = new Set(getBranchStaff(bid).map(e => e.id));
+        staffIds.add(id);
+        const byStaff = list.filter(v => staffIds.has(v.employee_id));
+        if (!bid) return byStaff;
         const inBranch = list.filter(v => v.branch_id === bid);
         const merged = new Map();
         for (const v of inBranch) merged.set(v.id, v);
-        for (const v of ownAsEmp) merged.set(v.id, v);
+        for (const v of byStaff) merged.set(v.id, v);
         return Array.from(merged.values());
       }
 
@@ -36744,6 +36746,19 @@
 
             const { error } = await sb.from('users').update(updatePayload).eq('id', editId);
             if (error) throw error;
+
+            const branchChanged = needsBranch && oldUser && oldUser.branch_id !== branchId;
+            if (branchChanged) {
+              try {
+                const { error: violErr } = await sb.from('violations')
+                  .update({ branch_id: branchId })
+                  .eq('employee_id', editId);
+                if (violErr && isMirsadDebugLog()) console.warn('[saveUser] branch sync violations', violErr);
+              } catch (syncErr) {
+                if (isMirsadDebugLog()) console.warn('[saveUser] branch sync violations', syncErr);
+              }
+            }
+
             showToast('تم تحديث المستخدم ✓', 'success');
           } else {
             // ── إضافة جديدة ──
