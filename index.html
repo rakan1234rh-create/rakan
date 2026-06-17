@@ -11514,14 +11514,15 @@
       display: flex;
       flex-direction: column;
       min-height: 0;
-      padding: calc(env(safe-area-inset-top, 0px) + 8px) 4px calc(env(safe-area-inset-bottom, 0px) + 8px);
+      height: 100%;
+      overflow: hidden;
+      padding: 0 4px calc(env(safe-area-inset-bottom, 0px) + 8px);
       box-sizing: border-box
     }
-    html.mr-notif-page-active #appWrap .topbar,
-    html.mr-notif-page-active #appWrap .sidebar,
-    html.mr-notif-page-active #appWrap .page-title-bar,
-    html.mr-notif-page-active #mobileBottomNav {
-      display: none !important
+
+    html.mr-notif-page-active #appWrap .app-body {
+      overflow: hidden;
+      min-height: 0
     }
 
     html.mr-notif-page-active #appWrap .main {
@@ -11529,20 +11530,45 @@
       width: 100% !important;
       max-width: none !important;
       padding: 0 !important;
-      min-height: 100dvh
+      min-height: 0 !important;
+      height: 100dvh !important;
+      overflow: hidden !important;
+      display: flex !important;
+      flex-direction: column !important
     }
 
     html.mr-notif-page-active #appWrap .content {
       padding: 0 !important;
-      min-height: 100dvh
+      min-height: 0 !important;
+      flex: 1 1 auto;
+      overflow: hidden !important;
+      display: flex !important;
+      flex-direction: column !important;
+      max-width: none !important
+    }
+
+    html.mr-notif-page-active #appWrap .topbar,
+    html.mr-notif-page-active #appWrap .sidebar,
+    html.mr-notif-page-active #appWrap .page-title-bar,
+    html.mr-notif-page-active #mobileBottomNav {
+      display: none !important
     }
 
     html.mr-notif-page-active #tab-notifications.active {
       display: flex !important;
       flex-direction: column;
-      min-height: 100dvh;
-      height: 100dvh;
+      flex: 1 1 auto;
+      min-height: 0;
+      height: auto;
+      overflow: hidden;
       background: var(--mr-bg)
+    }
+
+    .notif-page-head {
+      flex-shrink: 0;
+      z-index: 30;
+      background: var(--mr-bg);
+      padding-top: calc(env(safe-area-inset-top, 0px) + 8px)
     }
 
     .notif-page-topbar {
@@ -11656,6 +11682,7 @@
       min-height: 0;
       max-height: none;
       overflow-y: auto;
+      overflow-x: hidden;
       -webkit-overflow-scrolling: touch;
       overscroll-behavior: contain;
       border-radius: 11px;
@@ -23106,19 +23133,26 @@
 
     /* لوحة القيادة — جوال: بطاقات أصغر وتنسيق موحّد */
     @media (max-width: 992px) {
-      html.mr-mobile-ui #appWrap .main:has(#tab-dashboard.active),
-      html.mr-mobile-ui #appWrap .main:has(#tab-notifications.active) {
+      html.mr-mobile-ui #appWrap .main:has(#tab-dashboard.active) {
         padding: 8px 0 calc(var(--mr-mob-bottom-nav-h, 56px) + 8px) !important;
         overflow-x: visible !important
       }
 
-      html.mr-mobile-ui #appWrap .content:has(#tab-dashboard.active),
-      html.mr-mobile-ui #appWrap .content:has(#tab-notifications.active) {
+      html.mr-notif-page-active.mr-mobile-ui #appWrap .main:has(#tab-notifications.active) {
+        padding: 0 !important;
+        overflow: hidden !important
+      }
+
+      html.mr-mobile-ui #appWrap .content:has(#tab-dashboard.active) {
         padding: 0 !important
       }
 
-      #appWrap .content:has(#tab-dashboard.active),
-      #appWrap .content:has(#tab-notifications.active) {
+      html.mr-notif-page-active #appWrap .content:has(#tab-notifications.active) {
+        padding: 0 !important;
+        overflow: hidden !important
+      }
+
+      #appWrap .content:has(#tab-dashboard.active) {
         padding-top: 0 !important
       }
 
@@ -26076,7 +26110,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v713-notif-full-page">
+  <meta name="app-build" content="athar-figma-v714-notif-sticky-head">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -26376,20 +26410,22 @@
           <!-- NOTIFICATIONS -->
           <div class="tab-content" id="tab-notifications" hidden>
             <div class="notif-page-shell">
-              <header class="notif-page-topbar">
-                <button type="button" class="notif-page-back" onclick="closeNotificationsPage(event)" aria-label="رجوع">
-                  <i class="fas fa-arrow-right" aria-hidden="true"></i>
-                </button>
-                <div class="notif-page-topbar__title">
-                  <h4>التنبيهات</h4>
-                  <div class="notif-count" id="notifPageCount">0 تنبيه</div>
+              <div class="notif-page-head">
+                <header class="notif-page-topbar">
+                  <button type="button" class="notif-page-back" onclick="closeNotificationsPage(event)" aria-label="رجوع">
+                    <i class="fas fa-arrow-right" aria-hidden="true"></i>
+                  </button>
+                  <div class="notif-page-topbar__title">
+                    <h4>التنبيهات</h4>
+                    <div class="notif-count" id="notifPageCount">0 تنبيه</div>
+                  </div>
+                  <button type="button" class="notif-mark-all" onclick="markAllNotifsRead()"><i class="fas fa-check-double"></i> قراءة الكل</button>
+                </header>
+                <div class="notif-page-filters" id="notifPageFilters" role="tablist" aria-label="تصنيف التنبيهات">
+                  <button type="button" class="notif-filter-btn is-active" data-filter="all" role="tab" aria-selected="true" onclick="setNotifFilter('all', this)">الكل</button>
+                  <button type="button" class="notif-filter-btn" data-filter="mine" role="tab" aria-selected="false" onclick="setNotifFilter('mine', this)">تنبيهاتي</button>
+                  <button type="button" class="notif-filter-btn" data-filter="team" role="tab" aria-selected="false" onclick="setNotifFilter('team', this)" hidden>تنبيهات الفريق</button>
                 </div>
-                <button type="button" class="notif-mark-all" onclick="markAllNotifsRead()"><i class="fas fa-check-double"></i> قراءة الكل</button>
-              </header>
-              <div class="notif-page-filters" id="notifPageFilters" role="tablist" aria-label="تصنيف التنبيهات">
-                <button type="button" class="notif-filter-btn is-active" data-filter="all" role="tab" aria-selected="true" onclick="setNotifFilter('all', this)">الكل</button>
-                <button type="button" class="notif-filter-btn" data-filter="mine" role="tab" aria-selected="false" onclick="setNotifFilter('mine', this)">تنبيهاتي</button>
-                <button type="button" class="notif-filter-btn" data-filter="team" role="tab" aria-selected="false" onclick="setNotifFilter('team', this)" hidden>تنبيهات الفريق</button>
               </div>
               <div class="notif-list notif-list--page" id="notifPageList">
                 <div class="notif-empty"><i class="fas fa-bell-slash"></i>
