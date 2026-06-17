@@ -6889,14 +6889,32 @@
       filter: none
     }
 
-    .cmp-neo-ring--alert::after {
-      content: '';
+    .cmp-donut-ripple {
       position: absolute;
-      inset: -4px;
+      inset: -8px;
+      border: 2px solid #FF0000;
       border-radius: 50%;
-      border: 2px solid rgba(255, 0, 0, 0.22);
+      opacity: 0;
       pointer-events: none;
-      animation: mk-donut-ripple-red 3s ease-out infinite
+      z-index: 0
+    }
+
+    .cmp-neo-ring--alert .cmp-donut-ripple,
+    .mk-donut--pulse-red .cmp-donut-ripple {
+      animation: donut-ripple-anim 2s infinite
+    }
+
+    #tab-compliance .cmp-neo-ring,
+    #tab-compliance .mk-donut,
+    #tab-compliance .mk-cmp-donut-wrap,
+    #tab-compliance .mk-cmp-emp-metric__ring {
+      overflow: visible
+    }
+
+    #tab-compliance .cmp-neo-card,
+    #tab-compliance .mk-cmp-emp-card,
+    #tab-compliance .mk-cmp-emp-metric {
+      overflow: visible
     }
 
     .cmp-neo-ring-core--neg,
@@ -24099,16 +24117,6 @@
       filter: none
     }
 
-    .mk-donut--pulse-red::after {
-      content: '';
-      position: absolute;
-      inset: -2px;
-      border-radius: 50%;
-      border: 1px solid rgba(255, 0, 0, 0.18);
-      pointer-events: none;
-      animation: mk-donut-ripple-red 3s ease-out infinite
-    }
-
     .mk-donut--pulse-red .mk-donut__fg {
       animation: none
     }
@@ -24126,9 +24134,10 @@
 
     @media (prefers-reduced-motion: reduce) {
 .mk-donut--pulse-red,
-      .mk-donut--pulse-red::after,
       .mk-donut--pulse-red .mk-donut__fg,
-      .mk-donut--pulse-red .mk-donut__val { animation: none; }
+      .mk-donut--pulse-red .mk-donut__val,
+      .mk-donut--pulse-red .cmp-donut-ripple,
+      .cmp-neo-ring--alert .cmp-donut-ripple { animation: none; }
 }
     .mk-cmp-emp-card__ft {
       display:flex; align-items:center; justify-content:space-between;
@@ -24226,7 +24235,8 @@
     .mk-donut__fg { stroke-linecap:round; transition:stroke-dashoffset .6s ease, d .6s ease; }
     .mk-donut--animating .mk-donut__fg { transition:none !important; }
     .mk-donut--animating { animation:none !important; }
-    .mk-donut--animating::after { animation:none !important; opacity:0; }
+    .mk-donut--animating .cmp-donut-ripple { animation:none !important; opacity:0; }
+    .cmp-neo-ring--animating .cmp-donut-ripple { animation:none !important; opacity:0; }
     .mk-donut__val { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:700; color:var(--mr-text); font-variant-numeric:lining-nums tabular-nums; }
     .mk-donut--sm { width:56px; height:56px; }
     .mk-donut--sm .mk-donut__val { font-size:13px; }
@@ -25677,7 +25687,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v677-cmp-slider-red-waves">
+  <meta name="app-build" content="athar-figma-v678-cmp-red-waves-fix">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -43763,6 +43773,30 @@
         return withPct ? numPart + '%' : numPart;
       }
 
+      /** موجة خارجية حول السلايدر — تظهر فقط عند النطاق الأحمر */
+      function cmpDonutRippleHTML(ringColor) {
+        return `<div class="cmp-donut-ripple" style="border-color:${ringColor}" aria-hidden="true"></div>`;
+      }
+
+      function cmpSyncDonutRipple(el, val) {
+        if (!el) return;
+        const raw = Math.round(val);
+        const isRed = cmpSliderBandIsRed(raw);
+        let ripple = el.querySelector('.cmp-donut-ripple');
+        if (isRed) {
+          const color = cmpDonutRingColor(raw);
+          if (!ripple) {
+            ripple = document.createElement('div');
+            ripple.className = 'cmp-donut-ripple';
+            ripple.setAttribute('aria-hidden', 'true');
+            el.appendChild(ripple);
+          }
+          ripple.style.borderColor = color;
+        } else if (ripple) {
+          ripple.remove();
+        }
+      }
+
       /** دائرة امتثال neo — تدعم القيم السالبة (قوس عكس عقارب الساعة + رقم سالب) */
       function cmpNeoRingSVG(score, opts = {}) {
         const raw = Number(score);
@@ -43789,6 +43823,7 @@
           html: `<div class="cmp-neo-ring${alertCls}${negCls}"${animAttr} role="img" aria-label="معدل الامتثال: ${Sec.escapeHTML(centerText)}">
               <svg viewBox="0 0 64 64" aria-hidden="true">${arcs}</svg>
               <div class="${coreClass}">${Sec.escapeHTML(centerText)}</div>
+              ${cmpSliderBandIsRed(raw) ? cmpDonutRippleHTML(ringColor) : ''}
             </div>`,
           isNeg,
           tone
@@ -43824,6 +43859,7 @@
             <div class="mk-donut mk-donut--arc${sm}${pulseCls}${negCls}"${animAttr} role="img" aria-label="${Sec.escapeHTML(label || 'مؤشر')}: ${raw}">
               <svg viewBox="0 0 64 64" aria-hidden="true">${arcs}</svg>
               <span class="mk-donut__val">${raw}</span>
+              ${cmpSliderBandIsRed(raw) ? cmpDonutRippleHTML(ringColor) : ''}
             </div>
             ${lbl}
           </div>`;
@@ -43848,6 +43884,7 @@
         const raw = Math.round(val);
         el.classList.toggle('mk-donut--pulse-red', cmpSliderBandIsRed(raw));
         el.classList.toggle('mk-donut--negative', raw < 0);
+        cmpSyncDonutRipple(el, raw);
       }
 
       /** تحديث قوس الدائرة (مسار SVG) */
@@ -43997,6 +44034,7 @@
         }
         el.classList.toggle('cmp-neo-ring--negative', isNegative);
         el.classList.toggle('cmp-neo-ring--alert', cmpSliderBandIsRed(raw));
+        cmpSyncDonutRipple(el, raw);
       }
 
       function cmpAnimateNeoRing(el, from, to, duration) {
