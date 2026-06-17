@@ -11509,6 +11509,36 @@
       font-size: 12px
     }
 
+    #tab-notifications .notif-page-shell {
+      padding: 0 4px calc(var(--mr-mob-bottom-nav-h, 56px) + 8px);
+      box-sizing: border-box
+    }
+
+    #tab-notifications .notif-page-card {
+      display: flex;
+      flex-direction: column;
+      min-height: calc(100dvh - var(--unified-topbar-h, 76px) - var(--mr-mob-bottom-nav-h, 56px) - 16px);
+      border-radius: 11px;
+      border: 1px solid var(--mr-border);
+      background: var(--mr-surface);
+      box-shadow: var(--mr-shadow-soft);
+      overflow: hidden
+    }
+
+    #tab-notifications .notif-page-card .notif-header {
+      flex-shrink: 0;
+      border-bottom: 1px solid var(--mr-border)
+    }
+
+    #tab-notifications .notif-list--page {
+      flex: 1 1 auto;
+      min-height: 0;
+      max-height: none;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain
+    }
+
     /* Ticket Detail Modal */
     .modal-card.modal-detail {
       max-width: 900px !important;
@@ -22951,16 +22981,19 @@
 
     /* لوحة القيادة — جوال: بطاقات أصغر وتنسيق موحّد */
     @media (max-width: 992px) {
-      html.mr-mobile-ui #appWrap .main:has(#tab-dashboard.active) {
+      html.mr-mobile-ui #appWrap .main:has(#tab-dashboard.active),
+      html.mr-mobile-ui #appWrap .main:has(#tab-notifications.active) {
         padding: 8px 0 calc(var(--mr-mob-bottom-nav-h, 56px) + 8px) !important;
         overflow-x: visible !important
       }
 
-      html.mr-mobile-ui #appWrap .content:has(#tab-dashboard.active) {
+      html.mr-mobile-ui #appWrap .content:has(#tab-dashboard.active),
+      html.mr-mobile-ui #appWrap .content:has(#tab-notifications.active) {
         padding: 0 !important
       }
 
-      #appWrap .content:has(#tab-dashboard.active) {
+      #appWrap .content:has(#tab-dashboard.active),
+      #appWrap .content:has(#tab-notifications.active) {
         padding-top: 0 !important
       }
 
@@ -25918,7 +25951,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v710-dash-bm-month">
+  <meta name="app-build" content="athar-figma-v711-notif-page">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -26123,7 +26156,7 @@
               </div>
               <div class="topbar-clock-date" id="clockDate">---</div>
             </div>
-            <button class="topbar-btn topbar-btn--notif" id="notifBellBtn" onclick="toggleNotifPanel(event)" title="التنبيهات" aria-label="التنبيهات" aria-expanded="false" aria-controls="notifPanel"><i
+            <button class="topbar-btn topbar-btn--notif" id="notifBellBtn" onclick="openNotificationsPage(event)" title="التنبيهات" aria-label="التنبيهات" aria-controls="tab-notifications"><i
                 class="fas fa-bell"></i><span class="notif-bell-count" id="notifBellCount"
                 style="display:none">0</span></button>
             <div class="mr-topbar-user" id="topbarUserChip" dir="rtl">
@@ -26213,6 +26246,25 @@
               <div class="mr-no-access-panel__ico" aria-hidden="true"><i class="fas fa-lock"></i></div>
               <h2>جميع الصلاحيات مغلقة</h2>
               <p>لا يمكنك الوصول إلى أي قسم في المنصة حالياً.<br>يرجى التواصل مع إدارة النظام لفتح الصلاحيات المناسبة لدورك.</p>
+            </div>
+          </div>
+          <!-- NOTIFICATIONS -->
+          <div class="tab-content" id="tab-notifications" hidden>
+            <div class="notif-page-shell">
+              <div class="notif-page-card">
+                <div class="notif-header">
+                  <div>
+                    <h4>التنبيهات</h4>
+                    <div class="notif-count" id="notifPageCount">0 تنبيه</div>
+                  </div>
+                  <button type="button" class="notif-mark-all" onclick="markAllNotifsRead()"><i class="fas fa-check-double"></i> قراءة الكل</button>
+                </div>
+                <div class="notif-list notif-list--page" id="notifPageList">
+                  <div class="notif-empty"><i class="fas fa-bell-slash"></i>
+                    <p>لا توجد تنبيهات</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
           <!-- DASHBOARD -->
@@ -32418,6 +32470,7 @@
           return;
         }
         if (!current) return;
+        if (current === 'notifications') return;
         const perm = MR_TAB_PERM_MAP[current];
         if (perm && !hasPermission(perm)) {
           const tab = getFirstAllowedTab();
@@ -32921,7 +32974,8 @@
         locations: { title: 'المناطق والفروع', sub: 'regions & branches' },
         departments: { title: 'إدارة المستخدمين', sub: 'users management' },
         violations: { title: 'أنواع المخالفات', sub: 'violation types' },
-        settings: { title: 'صلاحيات المنصة', sub: 'platform permissions' }
+        settings: { title: 'صلاحيات المنصة', sub: 'platform permissions' },
+        notifications: { title: 'التنبيهات', sub: 'notifications' }
       };
 
       // ═══════════════════════════════════════════════════════════════════════════
@@ -33392,6 +33446,7 @@
       window.dismissPageOverlaysOnTabLeave = dismissPageOverlaysOnTabLeave;
 
       function goTab(tab, btn, opts = {}) {
+        if (tab !== 'notifications') {
         const tabPerm = MR_TAB_PERM_MAP[tab];
         if (tabPerm && !hasPermission(tabPerm)) {
           const fallback = getFirstAllowedTab();
@@ -33407,11 +33462,16 @@
           }
           return;
         }
+        }
 
         const leavingTab = getActiveTabKey();
         const alreadyOnTab = leavingTab === tab;
         if (leavingTab && leavingTab !== tab) {
           dismissPageOverlaysOnTabLeave();
+          if (leavingTab === 'notifications') {
+            state._bellBadgeLocked = 0;
+            syncNotifBellBadge(true);
+          }
           if (leavingTab === 'workflow' && typeof resetWorkflowTabFilters === 'function') {
             resetWorkflowTabFilters();
           }
@@ -33448,7 +33508,7 @@
         // إظهار/إخفاء بنر اسم القسم
         const titleBar = document.getElementById('pageTitleBar');
         if (titleBar) {
-          const tabsWithOwnTitle = ['dashboard', 'newTicket', 'workflow', 'reports', 'locations', 'departments', 'violations', 'compliance', 'settings'];
+          const tabsWithOwnTitle = ['dashboard', 'newTicket', 'workflow', 'reports', 'locations', 'departments', 'violations', 'compliance', 'settings', 'notifications'];
           if (tabsWithOwnTitle.includes(tab)) {
             titleBar.classList.remove('visible');
           } else {
@@ -33463,6 +33523,10 @@
           if (tab === 'dashboard') {
             state._dashHandPlayEntryWave = true;
             renderDashboard();
+          }
+          if (tab === 'notifications') {
+            state._bellBadgeLocked = state._bellUnreadShown || 0;
+            renderNotifications(true);
           }
           if (tab === 'workflow') {
             syncWorkflowAccessAndRender().finally(() => {
@@ -47472,7 +47536,7 @@
 
       function syncNotifBellBadge(force) {
         if (!state.currentUser) return;
-        if (document.getElementById('notifPanel')?.classList.contains('open')) return;
+        if (isNotifSurfaceOpen()) return;
         const notifs = buildUserNotificationsCached(!!force);
         state._currentNotifs = notifs;
         const read = getReadNotifs();
@@ -47481,38 +47545,53 @@
 
       function renderNotifBadge() {
         if (!document.getElementById('notifBellCount') || !state.currentUser) return;
-        if (document.getElementById('notifPanel')?.classList.contains('open')) {
-          refreshOpenNotifPanel(false);
+        if (isNotifSurfaceOpen()) {
+          if (document.getElementById('notifPanel')?.classList.contains('open')) {
+            refreshOpenNotifPanel(false);
+          } else {
+            renderNotifications(false);
+          }
           return;
         }
         try { syncNotifBellBadge(true); } catch (_) { /* noop */ }
       }
 
+      function isNotifSurfaceOpen() {
+        return !!document.getElementById('notifPanel')?.classList.contains('open')
+          || getActiveTabKey() === 'notifications';
+      }
+
+      function openNotificationsPage(event) {
+        if (event) {
+          event.stopPropagation();
+          event.preventDefault();
+        }
+        closeNotifPanel();
+        if (getActiveTabKey() === 'notifications') return;
+        goTab('notifications', null);
+      }
+
       function paintNotifList(notifs, read) {
-        const list = document.getElementById('notifList');
-        const count = document.getElementById('notifPanelCount');
+        const targets = [
+          { listId: 'notifList', countId: 'notifPanelCount' },
+          { listId: 'notifPageList', countId: 'notifPageCount' }
+        ];
         if (!state.currentUser) return;
 
         const dismissed = getDismissedNotifs();
         const visible = notifs.filter(n => !dismissed.has(n.id));
         const unread = visible.filter(n => !read.has(n.id));
-
-        if (!list || !count) return;
-
-        count.textContent = unread.length
+        const countText = unread.length
           ? `${unread.length} جديد · ${visible.length} إجمالاً`
           : `${visible.length} ${visible.length === 1 ? 'تنبيه' : 'تنبيهات'}`;
 
-        if (!visible.length) {
-          list.innerHTML = `
+        const emptyHtml = `
       <div class="notif-empty">
         <i class="fas fa-bell-slash"></i>
         <p>لا توجد تنبيهات</p>
       </div>`;
-          return;
-        }
 
-        list.innerHTML = visible.map(n => {
+        const itemsHtml = visible.map(n => {
           const isUnread = !read.has(n.id);
           const nid = Sec.escapeHTML(n.id);
           const tid = Sec.escapeHTML(n.ticketId || '');
@@ -47531,6 +47610,14 @@
       </div>
       </div>`;
         }).join('');
+
+        targets.forEach(({ listId, countId }) => {
+          const list = document.getElementById(listId);
+          const count = document.getElementById(countId);
+          if (!list || !count) return;
+          count.textContent = countText;
+          list.innerHTML = visible.length ? itemsHtml : emptyHtml;
+        });
       }
 
       function renderNotifications(force) {
@@ -47539,7 +47626,7 @@
         state._currentNotifs = notifs;
         const read = getReadNotifs();
         paintNotifList(notifs, read);
-        if (!document.getElementById('notifPanel')?.classList.contains('open')) {
+        if (!isNotifSurfaceOpen()) {
           updateNotifBellBadge(countVisibleUnreadNotifs(notifs, read));
         }
         if (document.getElementById('notifPanel')?.classList.contains('open')) {
@@ -47688,16 +47775,7 @@
       }
 
       function toggleNotifPanel(event) {
-        if (event) event.stopPropagation();
-        const panel = notifUi().panel;
-        if (!panel) return;
-        if (state._notifBellInstantToggle) {
-          state._notifBellInstantToggle = false;
-          if (event) event.preventDefault();
-          return;
-        }
-        if (panel.classList.contains('open')) closeNotifPanel();
-        else openNotifPanel();
+        openNotificationsPage(event);
       }
 
       function handleNotifClick(notifId, ticketId) {
@@ -47741,16 +47819,13 @@
         bell._notifInstantBound = true;
         bell.addEventListener('pointerdown', (e) => {
           if (e.button !== 0) return;
-          const panel = notifUi().panel;
-          if (!panel) return;
-          state._notifBellInstantToggle = true;
-          if (panel.classList.contains('open')) closeNotifPanel();
-          else openNotifPanel();
-        }, { passive: true });
+          openNotificationsPage(e);
+        }, { passive: false });
       })();
 
       (function bindNotifSwipe() {
-        const list = document.getElementById('notifList');
+        const lists = ['notifList', 'notifPageList'].map(id => document.getElementById(id)).filter(Boolean);
+        lists.forEach((list) => {
         if (!list || list._notifSwipeBound) return;
         list._notifSwipeBound = true;
         let activeWrap = null;
@@ -47827,6 +47902,7 @@
             e.stopPropagation();
             closeNotifSwipe(wrap);
           }
+        });
         });
       })();
 
@@ -49588,6 +49664,7 @@
       window.downloadUsersImportTemplate = downloadUsersImportTemplate;
       window.triggerUsersImport = triggerUsersImport;
       window.handleUsersImportFile = handleUsersImportFile;
+      window.openNotificationsPage = openNotificationsPage;
       window.toggleNotifPanel = toggleNotifPanel;
       window.dismissNotif = dismissNotif;
       window.handleNotifClick = handleNotifClick;
