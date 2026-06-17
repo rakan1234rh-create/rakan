@@ -23172,9 +23172,9 @@
     /* لوحة القيادة — جوال: بطاقات أصغر وتنسيق موحّد */
     @media (max-width: 992px) {
       html.mr-mobile-ui #appWrap .main:has(#tab-dashboard.active) {
-        padding: 8px 0 calc(var(--mr-mob-bottom-nav-h, 56px) + 44px) !important;
+        padding: 8px 0 calc(var(--mr-mob-bottom-nav-h, 56px) + 72px) !important;
         overflow-x: visible !important;
-        scroll-padding-bottom: calc(var(--mr-mob-bottom-nav-h, 56px) + 20px)
+        scroll-padding-bottom: calc(var(--mr-mob-bottom-nav-h, 56px) + 32px)
       }
 
       html.mr-notif-page-active.mr-mobile-ui #appWrap .main:has(#tab-notifications.active) {
@@ -23205,7 +23205,7 @@
 
       #tab-dashboard .mk-dash {
         gap: 12px;
-        padding-bottom: 12px
+        padding-bottom: calc(var(--mr-mob-bottom-nav-h, 56px) + 16px)
       }
 
       #tab-dashboard .mk-dash__hero {
@@ -23423,7 +23423,8 @@
         flex-direction: column;
         min-height: 0;
         margin-bottom: 0;
-        overflow: visible
+        overflow: visible;
+        padding-bottom: 14px !important
       }
 
       #tab-dashboard .mk-attn__body {
@@ -23432,7 +23433,7 @@
         flex-direction: column;
         min-height: 0;
         gap: 0;
-        padding-bottom: 10px;
+        padding-bottom: 4px;
         overflow: visible
       }
 
@@ -47785,7 +47786,7 @@
           });
 
           visible.forEach(t => {
-            if (t.branch_id !== me.branch_id || t.employee_id === me.id || t.state === 'closed') return;
+            if (t.branch_id !== me.branch_id || t.employee_id === me.id) return;
             if (t.state === 'emp') {
               notifs.push({
                 id: `bm_team_pending_${t.id}`,
@@ -47797,7 +47798,40 @@
                 time: t.updated_at || t.created_at,
                 scope: 'team'
               });
+              return;
             }
+            if (t.state !== 'closed') return;
+            const st = t.status_text || '';
+            const isWarn = /تنبيه|اكتفاء بالتنبيه/i.test(st);
+            const isPenalty = /معتمد/.test(st) && !isWarn;
+            const isCancelled = /ملغ|مرفوض/i.test(st);
+            if (!isPenalty && !isWarn && !isCancelled) return;
+            let type = 'green';
+            let icon = 'fa-circle-check';
+            let title = 'تم تحديث مخالفة موظف ضمن فريقك';
+            if (isPenalty) {
+              type = 'red';
+              icon = 'fa-triangle-exclamation';
+              title = 'تم اعتماد مخالفة على موظف ضمن فريقك';
+            } else if (isWarn) {
+              type = 'amber';
+              icon = 'fa-hand';
+              title = 'تم إصدار تنبيه إداري على موظف ضمن فريقك';
+            } else if (isCancelled) {
+              type = 'green';
+              icon = 'fa-circle-check';
+              title = 'تم إلغاء مخالفة موظف ضمن فريقك';
+            }
+            notifs.push({
+              id: `bm_team_decided_${t.id}`,
+              ticketId: t.id,
+              type,
+              icon,
+              title,
+              msg: `${t._empName} — ${t.violation_type} — ${shortTicketNum(t.ticket_number)}`,
+              time: t.updated_at || t.created_at,
+              scope: 'team'
+            });
           });
         }
 
