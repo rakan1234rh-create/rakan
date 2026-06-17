@@ -25951,7 +25951,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v711-notif-page">
+  <meta name="app-build" content="athar-figma-v712-notif-page-fix">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -47114,8 +47114,8 @@
         read.add(notifId);
         saveReadNotifs(read);
         state._bellBadgeLocked = 0;
-        const panelOpen = document.getElementById('notifPanel')?.classList.contains('open');
-        if (panelOpen) refreshOpenNotifPanel(false);
+        const panelOpen = isNotifSurfaceOpen();
+        if (panelOpen && getActiveTabKey() !== 'notifications') refreshOpenNotifPanel(false);
         else renderNotifications(false);
         syncNotifBellBadge(true);
       }
@@ -47516,7 +47516,7 @@
         const bellCount = document.getElementById('notifBellCount');
         const bell = document.getElementById('notifBellBtn');
         if (!bellCount) return;
-        const panelOpen = document.getElementById('notifPanel')?.classList.contains('open');
+        const panelOpen = isNotifSurfaceOpen();
         let unread = Math.max(0, Number(unreadCount) || 0);
         if (panelOpen && state._bellBadgeLocked > 0) unread = state._bellBadgeLocked;
         if (unread > 0) {
