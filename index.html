@@ -11578,8 +11578,12 @@
     html.mr-notif-page-active #appWrap .topbar,
     html.mr-notif-page-active #appWrap .sidebar,
     html.mr-notif-page-active #appWrap .page-title-bar,
-    html.mr-notif-page-active #mobileBottomNav {
-      display: none !important
+    html.mr-notif-page-active #mobileBottomNav,
+    html.mr-notif-page-active.mr-mobile-ui #appWrap > .app-shell > #mobileBottomNav.mobile-bottom-nav,
+    html.mr-notif-page-active.mr-mobile-ui #mobileBottomNav.mobile-bottom-nav {
+      display: none !important;
+      visibility: hidden !important;
+      pointer-events: none !important
     }
 
     html.mr-notif-page-active.mr-mobile-ui #appWrap > .app-shell {
@@ -11723,6 +11727,10 @@
       box-shadow: var(--mr-shadow-soft);
       padding-bottom: max(14px, env(safe-area-inset-bottom, 0px));
       box-sizing: border-box
+    }
+
+    html.mr-mobile-ui #tab-notifications.active .notif-list--page {
+      padding-bottom: calc(var(--mr-mob-bottom-nav-h, 56px) + 20px)
     }
 
     #tab-notifications .notif-list--page .notif-swipe:last-child {
@@ -26159,7 +26167,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v720-bm-team-notif-text">
+  <meta name="app-build" content="athar-figma-v722-notif-time-sort-nav">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -34793,12 +34801,25 @@
         if (Number.isNaN(t)) return '';
         const sec = Math.floor((Date.now() - t) / 1000);
         if (sec < 45) return 'الآن';
-        if (sec < 3600) return 'منذ ' + Math.floor(sec / 60) + ' دقيقة';
+        if (sec < 3600) {
+          const m = Math.floor(sec / 60);
+          return m === 1 ? 'منذ دقيقة' : 'منذ ' + m + ' دقائق';
+        }
         const hr = Math.floor(sec / 3600);
         if (hr < 24) return hr === 1 ? 'منذ ساعة' : 'منذ ' + hr + ' ساعات';
         const d = Math.floor(hr / 24);
         if (d < 7) return d === 1 ? 'منذ يوم' : 'منذ ' + d + ' أيام';
+        const w = Math.floor(d / 7);
+        if (w < 5) return w === 1 ? 'منذ أسبوع' : 'منذ ' + w + ' أسابيع';
         return ksaLocaleDateAr(iso);
+      }
+
+      function sortNotifsNewestFirst(notifs) {
+        return [...notifs].sort((a, b) => {
+          const ta = a?.time ? new Date(a.time).getTime() : 0;
+          const tb = b?.time ? new Date(b.time).getTime() : 0;
+          return (Number.isFinite(tb) ? tb : 0) - (Number.isFinite(ta) ? ta : 0);
+        });
       }
 
       function dashRecentIconMeta(t) {
@@ -35627,7 +35648,10 @@
 
         // ─── آخر المخالفات ───
         const recentList = document.getElementById('recentList');
-        const recent = visible.slice(0, 7);
+        const recent = sortNotifsNewestFirst(visible.map(v => ({
+          ...v,
+          time: v.updated_at || v.created_at
+        }))).slice(0, 7);
 
         if (recentList) {
         if (!recent.length) {
@@ -48008,7 +48032,7 @@
         if (!state.currentUser) return;
 
         const dismissed = getDismissedNotifs();
-        const allVisible = notifs.filter(n => !dismissed.has(n.id));
+        const allVisible = sortNotifsNewestFirst(notifs.filter(n => !dismissed.has(n.id)));
         const pageVisible = filterNotifsByScope(allVisible, state._notifFilter || 'all');
         syncNotifFilterTabs(notifs);
 
@@ -48039,7 +48063,7 @@
         <div class="notif-body">
           <div class="notif-title">${Sec.escapeHTML(n.title)}</div>
           <div class="notif-msg">${Sec.escapeHTML(n.msg)}</div>
-          <div class="notif-time">${Sec.escapeHTML(formatDateTime(n.time))}</div>
+          <div class="notif-time">${Sec.escapeHTML(formatRelativeAr(n.time))}</div>
         </div>
       </div>
       </div>`;
