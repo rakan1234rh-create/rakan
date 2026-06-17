@@ -35308,7 +35308,7 @@
           recentList.innerHTML = '<div class="mk-empty"><i class="fas fa-inbox"></i><p>لا توجد تذاكر بعد</p></div>';
         } else {
           recentList.innerHTML = recent.map(t => {
-            const observerLine = shouldHideObserverName() ? '' : ` · رصد: ${Sec.escapeHTML(t._obsName)}`;
+            const observerSuffix = shouldHideObserverName() ? '' : `<span class="mk-attn__sep">·</span><span>رصد: ${Sec.escapeHTML(t._obsName)}</span>`;
             const rel = formatRelativeAr(t.created_at);
             const initials = (t._empName || '—').trim().charAt(0) || '—';
             const overdueCls = (t.auto_forwarded_emp || t.auto_forwarded_sup) ? ' is-overdue' : '';
@@ -35320,9 +35320,7 @@
               <span class="mk-attn__name">${Sec.escapeHTML(t._empName || '—')}</span>
             </span>
             <span class="mk-attn__row-bottom">
-              <span class="mk-attn__id">${Sec.escapeHTML(shortTicketNum(t.ticket_number))}</span>
-              <span class="mk-attn__sep">·</span>
-              <span>${Sec.escapeHTML(t._branchName || '')}${observerLine}</span>
+              <span class="mk-attn__id">${Sec.escapeHTML(shortTicketNum(t.ticket_number))}</span>${observerSuffix}
             </span>
           </span>
           <span class="mk-attn__right">
