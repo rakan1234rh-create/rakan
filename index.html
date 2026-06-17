@@ -23774,21 +23774,20 @@
         margin: 0;
         padding: 6px 3px 8px;
         gap: 4px;
-        display: flex;
-        flex-direction: row;
-        flex-wrap: wrap;
-        align-items: flex-start;
-        align-content: flex-start
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        align-items: stretch;
+        box-sizing: border-box
       }
 
       #tab-dashboard #branchStaffPanel .branch-staff-emp {
-        flex: 0 0 auto;
-        display: inline-flex;
+        display: flex;
         flex-direction: column;
         align-items: stretch;
-        width: auto;
-        max-width: 100%;
-        padding: 6px 8px;
+        justify-content: center;
+        width: 100%;
+        min-width: 0;
+        padding: 6px 5px;
         gap: 2px;
         background: var(--bg2);
         border: 1px solid var(--mr-border);
@@ -23797,28 +23796,37 @@
       }
 
       #tab-dashboard #branchStaffPanel .branch-staff-emp__name {
-        font-size: 10px;
+        font-size: 9.5px;
         font-weight: 700;
         line-height: 1.25;
         color: var(--mr-text);
-        white-space: nowrap
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        width: 100%
       }
 
       #tab-dashboard #branchStaffPanel .branch-staff-emp__meta {
-        font-size: 8px;
+        font-size: 7.5px;
         line-height: 1.2;
         color: var(--text3);
         display: flex;
         flex-direction: row;
         align-items: center;
-        gap: 4px;
-        white-space: nowrap
+        justify-content: flex-start;
+        gap: 3px;
+        min-width: 0;
+        width: 100%
       }
 
       #tab-dashboard #branchStaffPanel .branch-staff-emp__meta-txt {
         display: inline-flex;
         align-items: center;
-        gap: 3px
+        gap: 2px;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap
       }
 
       #tab-dashboard #branchStaffPanel .branch-staff-emp__meta-txt i {
@@ -23827,7 +23835,7 @@
       }
 
       #tab-dashboard #branchStaffPanel .branch-staff-emp__score {
-        font-size: 11px;
+        font-size: 10px;
         font-weight: 800;
         line-height: 1;
         font-variant-numeric: tabular-nums;
@@ -23852,6 +23860,7 @@
       }
 
       #tab-dashboard #branchStaffPanel .score-viol-list--branch-staff .score-no-viols {
+        grid-column: 1 / -1;
         padding: 12px 10px;
         border-radius: 8px;
         border: 1px dashed var(--mr-border);
@@ -25871,7 +25880,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v697-dash-branch-emp-pad">
+  <meta name="app-build" content="athar-figma-v698-dash-branch-emp-grid3">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
