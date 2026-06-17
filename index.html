@@ -395,7 +395,8 @@
     html.mr-mobile-ui #appWrap .main:has(#tab-reports.active),
     html.mr-mobile-ui #appWrap .main:has(#tab-departments.active),
     html.mr-mobile-ui #appWrap .main:has(#tab-violations.active),
-    html.mr-mobile-ui #appWrap .main:has(#tab-compliance.active) {
+    html.mr-mobile-ui #appWrap .main:has(#tab-compliance.active),
+    html.mr-mobile-ui #appWrap .main:has(#tab-dashboard.active) {
       padding-inline: 0 !important;
       padding-bottom: 0 !important;
       overflow-x: visible !important
@@ -23292,18 +23293,19 @@
     /* لوحة القيادة — جوال: بطاقات أصغر وتنسيق موحّد */
     @media (max-width: 992px) {
       html.mr-mobile-ui #appWrap .main:has(#tab-dashboard.active) {
-        padding: 8px 0 calc(var(--mr-mob-bottom-nav-h, 56px) + 72px) !important;
+        padding: 8px 0 0 !important;
         overflow-x: visible !important;
-        scroll-padding-bottom: calc(var(--mr-mob-bottom-nav-h, 56px) + 32px)
+        overscroll-behavior-y: none;
+        -webkit-overflow-scrolling: touch
+      }
+
+      html.mr-mobile-ui #appWrap .content:has(#tab-dashboard.active) {
+        padding: 0 !important
       }
 
       html.mr-notif-page-active.mr-mobile-ui #appWrap .main:has(#tab-notifications.active) {
         padding: 0 !important;
         overflow: hidden !important
-      }
-
-      html.mr-mobile-ui #appWrap .content:has(#tab-dashboard.active) {
-        padding: 0 !important
       }
 
       html.mr-notif-page-active #appWrap .content:has(#tab-notifications.active) {
@@ -23325,7 +23327,12 @@
 
       #tab-dashboard .mk-dash {
         gap: 12px;
-        padding-bottom: calc(var(--mr-mob-bottom-nav-h, 56px) + 16px)
+        padding-bottom: calc(var(--mr-mob-bottom-nav-h, 56px) + 10px);
+        box-sizing: border-box
+      }
+
+      #tab-dashboard .mk-dash__split {
+        margin-bottom: 0
       }
 
       #tab-dashboard .mk-dash__hero {
@@ -26275,7 +26282,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v730-dash-scroll-hover">
+  <meta name="app-build" content="athar-figma-v731-dash-scroll-end">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
