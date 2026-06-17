@@ -10,3 +10,6 @@ content_path = "./supabase/email-templates/athar-recovery.html"
 
 [functions.r2-storage]
 verify_jwt = false
+
+[functions.violation-push]
+verify_jwt = false

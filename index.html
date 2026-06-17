@@ -26321,7 +26321,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v733-oklch-status-colors">
+  <meta name="app-build" content="athar-figma-v734-web-push">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -26544,6 +26544,10 @@
                 <button type="button" role="menuitem" onclick="toggleThemeFromUserMenu(event)">
                   <i class="fas fa-moon" id="topbarUserMenuThemeIcon" aria-hidden="true"></i>
                   <span id="topbarUserMenuThemeLabel">الوضع الداكن</span>
+                </button>
+                <button type="button" role="menuitem" id="topbarPushToggle" onclick="toggleWebPushFromMenu(event)" hidden>
+                  <i class="fas fa-mobile-screen-button" aria-hidden="true"></i>
+                  <span id="topbarPushToggleLabel">تفعيل تنبيهات الجوال</span>
                 </button>
                 <div class="mr-topbar-user-menu__divider" role="separator"></div>
                 <button type="button" role="menuitem" class="mr-topbar-user-menu__logout"
@@ -27870,6 +27874,10 @@
       // استبدل القيمة أدناه بالـ Publishable Key الجديد من:
       // Supabase Dashboard → Settings → API Keys → Publishable and secret API keys
       const SUPABASE_ANON = 'sb_publishable__nGAMUih_RNZ_6FMpwzDNw_116hvA7K';
+
+      /** Web Push — المفتاح العام VAPID (الخاص في Supabase Secrets فقط) */
+      const ATHAR_VAPID_PUBLIC_KEY = 'BHLvQNq0TPmDqYQxmeymjOjG7EGmGDpIn5FzGTZhfv0UYclcMRfqWqI1pLRldFio8cXem58fdfyjgcbHi89r0-I';
+      const ATHAR_SW_URL = './sw.js?v=1';
 
       /** رابط النشر — روابط استعادة كلمة المرور من file:// أو localhost */
       const ATHAR_PUBLIC_ORIGIN = 'https://rakan1234rh-create.github.io/rakan';
@@ -30433,6 +30441,9 @@
             if (state._autoForwardTimer) clearInterval(state._autoForwardTimer);
             state._autoForwardTimer = setInterval(checkAndAutoForward, 5 * 60 * 1000);
 
+            try { initAtharWebPush({ promptIfNeeded: true }); } catch (_) { /* noop */ }
+            try { maybeOpenTicketFromPushUrl(); } catch (_) { /* noop */ }
+
             if (state._notifTimer) clearInterval(state._notifTimer);
             state._notifTimer = setInterval(() => {
               if (document.hidden) return;
@@ -30513,7 +30524,9 @@
         // إيقاف المؤقتات
         if (state._autoForwardTimer) { clearInterval(state._autoForwardTimer); state._autoForwardTimer = null; }
         if (state._notifTimer) { clearInterval(state._notifTimer); state._notifTimer = null; }
-        if (state._scoreTimer) { clearInterval(state._scoreTimer); state._scoreTimer = null; }
+            if (state._scoreTimer) { clearInterval(state._scoreTimer); state._scoreTimer = null; }
+
+        try { await disableAtharWebPush({ silent: true }); } catch (_) { /* noop */ }
 
         // حذف session التبويب الحالي فقط (مو كل التبويبات!)
         const scopeId = sessionStorage.getItem(AUTH_SCOPE_SESSION_KEY) || sessionStorage.getItem('tab_id');
@@ -48118,6 +48131,160 @@
 
       const NOTIF_FILTER_LABELS = { all: 'الكل', mine: 'تنبيهاتي', team: 'تنبيهات الفريق' };
 
+      // ─── Web Push (تنبيهات خارج التطبيق) ───────────────────────────────────
+      function isWebPushSupported() {
+        return !!(typeof window !== 'undefined'
+          && window.isSecureContext
+          && 'serviceWorker' in navigator
+          && 'PushManager' in window
+          && 'Notification' in window
+          && ATHAR_VAPID_PUBLIC_KEY);
+      }
+
+      function urlBase64ToUint8Array(base64String) {
+        const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+        const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+        const raw = atob(base64);
+        const out = new Uint8Array(raw.length);
+        for (let i = 0; i < raw.length; ++i) out[i] = raw.charCodeAt(i);
+        return out;
+      }
+
+      async function getAtharSwRegistration() {
+        if (!('serviceWorker' in navigator)) return null;
+        const reg = await navigator.serviceWorker.register(ATHAR_SW_URL, { scope: './' });
+        await navigator.serviceWorker.ready;
+        return reg;
+      }
+
+      async function savePushSubscriptionToDb(sub) {
+        if (!state.currentUser?.id || !sub) return;
+        const json = sub.toJSON();
+        const keys = json.keys || {};
+        if (!json.endpoint || !keys.p256dh || !keys.auth) return;
+        const row = {
+          user_id: state.currentUser.id,
+          endpoint: json.endpoint,
+          p256dh: keys.p256dh,
+          auth_key: keys.auth,
+          user_agent: navigator.userAgent || null,
+          updated_at: new Date().toISOString()
+        };
+        const { error } = await sb.from('push_subscriptions').upsert(row, { onConflict: 'endpoint' });
+        if (error) throw error;
+      }
+
+      async function removePushSubscriptionFromDb(endpoint) {
+        if (!endpoint) return;
+        await sb.from('push_subscriptions').delete().eq('endpoint', endpoint);
+      }
+
+      function syncWebPushMenuLabel() {
+        const btn = document.getElementById('topbarPushToggle');
+        const label = document.getElementById('topbarPushToggleLabel');
+        if (!btn || !label) return;
+        if (!isWebPushSupported()) {
+          btn.hidden = true;
+          return;
+        }
+        btn.hidden = false;
+        const on = Notification.permission === 'granted';
+        label.textContent = on ? 'تنبيهات الجوال مفعّلة' : 'تفعيل تنبيهات الجوال';
+        btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      }
+
+      async function ensureAtharWebPushSubscribed() {
+        if (!isWebPushSupported() || !state.currentUser) return false;
+        const perm = await Notification.requestPermission();
+        if (perm !== 'granted') return false;
+        const reg = await getAtharSwRegistration();
+        if (!reg?.pushManager) return false;
+        let sub = await reg.pushManager.getSubscription();
+        if (!sub) {
+          sub = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(ATHAR_VAPID_PUBLIC_KEY)
+          });
+        }
+        await savePushSubscriptionToDb(sub);
+        syncWebPushMenuLabel();
+        return true;
+      }
+
+      async function disableAtharWebPush(opts = {}) {
+        if (!('serviceWorker' in navigator)) return;
+        try {
+          const reg = await navigator.serviceWorker.getRegistration('./');
+          const sub = await reg?.pushManager?.getSubscription();
+          if (sub) {
+            const ep = sub.endpoint;
+            await sub.unsubscribe();
+            await removePushSubscriptionFromDb(ep);
+          }
+        } catch (e) {
+          if (!opts.silent && isMirsadDebugLog()) console.warn('[webPush] disable', e);
+        }
+        syncWebPushMenuLabel();
+      }
+
+      async function initAtharWebPush(opts = {}) {
+        syncWebPushMenuLabel();
+        if (!isWebPushSupported() || !state.currentUser) return;
+        if (Notification.permission === 'granted') {
+          try { await ensureAtharWebPushSubscribed(); } catch (e) {
+            if (isMirsadDebugLog()) console.warn('[webPush] resync', e);
+          }
+          return;
+        }
+        if (!opts.promptIfNeeded || Notification.permission !== 'default') return;
+        const key = 'athar_push_prompt_v1';
+        try { if (localStorage.getItem(key)) return; } catch (_) { return; }
+        const isMob = document.documentElement.classList.contains('mr-mobile-ui');
+        if (!isMob) return;
+        try { localStorage.setItem(key, '1'); } catch (_) { /* noop */ }
+        const ok = await confirmDialog(
+          'فعّل تنبيهات الجوال لتصلك إشعارات عند رصد مخالفة حتى والتطبيق مغلق.\n\nعلى iPhone: أضف ATHAR إلى الشاشة الرئيسية أولاً.',
+          { type: 'info', title: 'تنبيهات الجوال', okText: 'تفعيل', cancelText: 'لاحقاً' }
+        );
+        if (!ok) return;
+        const enabled = await ensureAtharWebPushSubscribed();
+        if (enabled) showToast('تم تفعيل تنبيهات الجوال ✓', 'success');
+        else showToast('لم يُفعَّل الإذن — يمكنك التفعيل من قائمة المستخدم', 'warning');
+      }
+
+      async function toggleWebPushFromMenu(event) {
+        if (event) {
+          event.stopPropagation();
+          event.preventDefault();
+        }
+        closeTopbarUserMenu();
+        if (!isWebPushSupported()) {
+          showToast('المتصفح لا يدعم تنبيهات الجوال على هذا الجهاز', 'warning');
+          return;
+        }
+        if (Notification.permission === 'granted') {
+          const off = await confirmDialog('إيقاف تنبيهات الجوال على هذا الجهاز؟', {
+            type: 'warn', title: 'تنبيهات الجوال', okText: 'إيقاف', cancelText: 'إلغاء'
+          });
+          if (!off) return;
+          await disableAtharWebPush();
+          showToast('تم إيقاف تنبيهات الجوال', 'info');
+          return;
+        }
+        const enabled = await ensureAtharWebPushSubscribed();
+        if (enabled) showToast('تم تفعيل تنبيهات الجوال ✓', 'success');
+        else showToast('يُحتاج إذن الإشعارات من إعدادات الجوال/المتصفح', 'warning');
+      }
+
+      function maybeOpenTicketFromPushUrl() {
+        const ticketId = new URLSearchParams(window.location.search).get('ticket');
+        if (!ticketId || !state.currentUser) return;
+        const t = state.violations?.find(v => v.id === ticketId);
+        if (t && typeof openTicket === 'function') {
+          setTimeout(() => openTicket(ticketId), 400);
+        }
+      }
+
       function notifRoleHasTeamTab(role) {
         return ['supervisor', 'branch_manager', 'manager', 'admin'].includes(normalizeUserRole(role));
       }
@@ -50426,6 +50593,7 @@
       window.downloadUsersImportTemplate = downloadUsersImportTemplate;
       window.triggerUsersImport = triggerUsersImport;
       window.handleUsersImportFile = handleUsersImportFile;
+      window.toggleWebPushFromMenu = toggleWebPushFromMenu;
       window.openNotificationsPage = openNotificationsPage;
       window.closeNotificationsPage = closeNotificationsPage;
       window.setNotifFilter = setNotifFilter;

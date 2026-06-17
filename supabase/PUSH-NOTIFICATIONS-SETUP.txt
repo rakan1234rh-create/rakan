@@ -1,0 +1,43 @@
+═══════════════════════════════════════════════════════════════════════════
+ATHAR — تفعيل تنبيهات الجوال خارج التطبيق (Web Push)
+═══════════════════════════════════════════════════════════════════════════
+
+1) SQL
+   شغّل: supabase/push_notifications.sql في SQL Editor
+
+2) مفاتيح VAPID (مرة واحدة)
+   من جهازك:
+     npx web-push generate-vapid-keys
+
+   في Supabase → Project Settings → Edge Functions → Secrets:
+     VAPID_PUBLIC_KEY  = المفتاح العام
+     VAPID_PRIVATE_KEY = المفتاح الخاص (لا ترفعه على GitHub)
+     VAPID_SUBJECT     = mailto:your-email@example.com
+
+   انسخ المفتاح العام أيضاً إلى index.html:
+     ATHAR_VAPID_PUBLIC_KEY
+
+3) نشر الدالة
+     supabase functions deploy violation-push --no-verify-jwt
+
+4) Database Webhook (Supabase Dashboard)
+   Database → Webhooks → Create hook
+   • Name: violation-push
+   • Table: violations
+   • Events: Insert
+   • Type: Supabase Edge Function
+   • Function: violation-push
+   • HTTP Headers: Authorization = Bearer <SERVICE_ROLE_KEY>
+
+5) الجوال
+   • أضف الموقع إلى الشاشة الرئيسية (PWA)
+   • iOS 16.4+: التنبيهات تعمل فقط للتطبيق المثبّت
+   • Android Chrome: يعمل من المتصفح أو PWA
+   • من قائمة المستخدم → «تفعيل تنبيهات الجوال»
+
+6) من يستلم التنبيه عند رصد مخالفة؟
+   • الموظف المعني
+   • مدير فرع نفس الفرع
+   • مشرف المنطقة
+
+═══════════════════════════════════════════════════════════════════════════
