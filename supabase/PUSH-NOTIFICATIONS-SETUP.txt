@@ -6,6 +6,9 @@ ATHAR — تفعيل تنبيهات الجوال خارج التطبيق (Web Pu
    شغّل: supabase/push_notifications.sql في SQL Editor
    تحقق: supabase/تحقق-التنبيهات-الخارجية.sql — يجب أن يظهر اشتراكك بعد التفعيل
 
+   ملاحظة: ملف sw.js يُنسخ تلقائياً مع النشر (GitHub Pages). إن ظهر 404 عند التفعيل
+   انتظر اكتمال نشر آخر push أو افتح: https://your-domain/sw.js يدوياً للتأكد.
+
 2) مفاتيح VAPID (مرة واحدة)
    من جهازك:
      npx web-push generate-vapid-keys
