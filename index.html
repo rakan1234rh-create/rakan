@@ -6886,7 +6886,17 @@
     }
 
     .cmp-neo-ring--alert svg {
-      filter: drop-shadow(0 0 2px rgba(255, 0, 0, 0.1));
+      filter: none
+    }
+
+    .cmp-neo-ring--alert::after {
+      content: '';
+      position: absolute;
+      inset: -4px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 0, 0, 0.22);
+      pointer-events: none;
+      animation: mk-donut-ripple-red 3s ease-out infinite
     }
 
     .cmp-neo-ring-core--neg,
@@ -7202,7 +7212,7 @@
     }
 
     [data-theme="dark"] .cmp-neo-ring--alert svg {
-      filter: drop-shadow(0 0 2px rgba(255, 0, 0, 0.12));
+      filter: none
     }
 
     [data-theme="dark"] .cmp-neo-ring--alert:not(.cmp-neo-ring--negative) .cmp-neo-ring-core {
@@ -24084,8 +24094,11 @@
       50% { color: #ef5350; }
     }
     .mk-donut--pulse-red {
-      animation: mk-donut-pulse-red 3s ease-in-out infinite;
+      animation: none;
+      transform: none;
+      filter: none
     }
+
     .mk-donut--pulse-red::after {
       content: '';
       position: absolute;
@@ -24093,13 +24106,15 @@
       border-radius: 50%;
       border: 1px solid rgba(255, 0, 0, 0.18);
       pointer-events: none;
-      animation: mk-donut-ripple-red 3s ease-out infinite;
+      animation: mk-donut-ripple-red 3s ease-out infinite
     }
+
     .mk-donut--pulse-red .mk-donut__fg {
-      animation: mk-donut-stroke-pulse-red 3s ease-in-out infinite;
+      animation: none
     }
+
     .mk-donut--pulse-red .mk-donut__val {
-      animation: mk-donut-val-pulse-red 3s ease-in-out infinite;
+      animation: none
     }
     .mk-donut--negative .mk-donut__val {
       color: #FF0000;
@@ -25662,7 +25677,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v676-dash-ring-red-waves">
+  <meta name="app-build" content="athar-figma-v677-cmp-slider-red-waves">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
