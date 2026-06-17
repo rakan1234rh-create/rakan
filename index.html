@@ -26158,7 +26158,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v717-notif-ui-fix">
+  <meta name="app-build" content="athar-figma-v719-notif-delete-warn">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -47319,20 +47319,6 @@
 
       const NOTIF_RESTORE_ONCE_KEY = 'athar_notif_restore_v718_bm';
 
-      function restoreDismissedNotifs() {
-        if (!state.currentUser) return;
-        try {
-          localStorage.removeItem(notifDismissedKey());
-          state._dismissedNotifsSet = new Set();
-          invalidateNotifCache();
-          renderNotifications(true);
-          syncNotifBellBadge(true);
-          showToast('تم استعادة التنبيهات المحذوفة ✓', 'success');
-        } catch (_) {
-          showToast('تعذّر استعادة التنبيهات', 'error');
-        }
-      }
-
       function maybeRestoreDismissedNotifsOnce() {
         if (!state.currentUser) return;
         if (normalizeUserRole(state.currentUser.role) !== 'branch_manager') return;
@@ -47998,13 +47984,7 @@
             : `${visible.length} ${visible.length === 1 ? 'تنبيه' : 'تنبيهات'}`;
         }
 
-        const dismissedCount = notifs.filter(n => dismissed.has(n.id)).length;
-        const emptyHtml = dismissedCount > 0 ? `
-      <div class="notif-empty">
-        <i class="fas fa-bell-slash"></i>
-        <p>لا توجد تنبيهات ظاهرة</p>
-        <button type="button" class="notif-mark-all" style="margin-top:10px" onclick="restoreDismissedNotifs()"><i class="fas fa-rotate-left" aria-hidden="true"></i> استعادة المحذوفة (${dismissedCount})</button>
-      </div>` : `
+        const emptyHtml = `
       <div class="notif-empty">
         <i class="fas fa-bell-slash"></i>
         <p>لا توجد تنبيهات</p>
@@ -48246,7 +48226,7 @@
         showToast('تم تعليم التنبيهات كمقروءة ✓', 'success');
       }
 
-      function dismissAllNotifs() {
+      async function dismissAllNotifs() {
         const notifs = state._currentNotifs || buildUserNotifications();
         const dismissed = getDismissedNotifs();
         const allVisible = notifs.filter(n => !dismissed.has(n.id));
@@ -48257,7 +48237,11 @@
           showToast('لا توجد تنبيهات للحذف', 'info');
           return;
         }
-        if (!confirm(`حذف ${visible.length} تنبيه؟ يمكنك استعادتها لاحقاً من نفس الصفحة.`)) return;
+        const ok = await confirmDialog(
+          `سيتم حذف ${visible.length} ${visible.length === 1 ? 'تنبيه' : 'تنبيهات'} من القائمة. لا يمكن التراجع عن هذا الإجراء.`,
+          { title: 'تنبيه', type: 'warn', okText: 'حذف الكل', cancelText: 'إلغاء' }
+        );
+        if (!ok) return;
         const read = getReadNotifs();
         visible.forEach(n => {
           dismissed.add(n.id);
@@ -50130,7 +50114,6 @@
       window.toggleNotifPanel = toggleNotifPanel;
       window.dismissNotif = dismissNotif;
       window.dismissAllNotifs = dismissAllNotifs;
-      window.restoreDismissedNotifs = restoreDismissedNotifs;
       window.handleNotifClick = handleNotifClick;
       window.markAllNotifsRead = markAllNotifsRead;
       window.printTicketDetail = printTicketDetail;
