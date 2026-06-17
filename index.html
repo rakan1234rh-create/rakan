@@ -25522,7 +25522,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v653-dash-resp-auto-label">
+  <meta name="app-build" content="athar-figma-v654-dash-resp-ontime-label">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -33550,7 +33550,7 @@
                   <span class="score-viol-meta-item"><i class="fas fa-calendar-day"></i><span class="score-viol-meta-txt">${displayDate}</span></span>
                   <span class="score-viol-meta-item"><i class="fas fa-ticket"></i><span class="score-viol-meta-txt">${Sec.escapeHTML(shortTicketNum(v.ticket_number))}</span></span>
                   ${empMeta}
-                  <span class="score-viol-meta-item"><i class="fas fa-${isLate ? 'forward' : 'check'}"></i><span class="score-viol-meta-txt">${isLate ? 'تمرير تلقائي' : 'بونص'}</span></span>
+                  <span class="score-viol-meta-item"><i class="fas fa-${isLate ? 'forward' : 'check'}"></i><span class="score-viol-meta-txt">${isLate ? 'تمرير تلقائي' : 'رد بالوقت'}</span></span>
                 </div>
               </div>
               <div class="score-viol-weight" style="color:${isLate ? 'var(--red-text)' : 'var(--green-text)'}">${isLate ? '-' + latePts : '+' + bonusPts}</div>
@@ -33558,7 +33558,7 @@
         }).join('');
         let title = `سجل مؤشر الاستجابة (${total})`;
         if (lateViols.length && onTimeViols.length) {
-          title = `سجل مؤشر الاستجابة (${lateViols.length} تأخير · ${onTimeViols.length} بونص)`;
+          title = `سجل مؤشر الاستجابة (${lateViols.length} تمرير تلقائي · ${onTimeViols.length} بونص)`;
         } else if (lateViols.length) {
           title = `مخالفات تجاوزت المهلة (${lateViols.length})`;
         } else {
