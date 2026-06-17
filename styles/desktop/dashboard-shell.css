@@ -96,7 +96,13 @@ html.mr-desktop-ui #tab-dashboard .mk-dash__split {
 html.mr-desktop-ui #tab-dashboard .mk-funnel,
 html.mr-desktop-ui #tab-dashboard .mk-attn {
   padding: 16px !important;
-  gap: 12px !important
+  gap: 12px !important;
+  height: 100% !important;
+  box-sizing: border-box !important
+}
+
+html.mr-desktop-ui #tab-dashboard .mk-dash__split {
+  align-items: stretch !important
 }
 
 html.mr-desktop-ui #tab-dashboard .mk-funnel__title,
