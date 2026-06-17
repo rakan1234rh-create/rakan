@@ -23482,6 +23482,54 @@
         font-size: 8px
       }
 
+      #tab-dashboard #personalIndicators .score-response-summary-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 4px;
+        margin: 0;
+        padding: 4px 6px;
+        border-top: 1px solid var(--border);
+        background: color-mix(in srgb, var(--purple) 6%, var(--mr-surface));
+        font-size: 8px;
+        font-weight: 600;
+        line-height: 1.25;
+        flex-shrink: 0
+      }
+
+      #tab-dashboard #personalIndicators .score-response-summary-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        min-width: 0;
+        white-space: nowrap
+      }
+
+      #tab-dashboard #personalIndicators .score-response-summary-chip i {
+        font-size: 8px;
+        flex-shrink: 0
+      }
+
+      #tab-dashboard #personalIndicators .score-response-summary-chip b {
+        font-family: var(--mono);
+        font-size: 10px;
+        font-weight: 800;
+        line-height: 1
+      }
+
+      #tab-dashboard #personalIndicators .score-response-summary-chip--late {
+        color: var(--red-text)
+      }
+
+      #tab-dashboard #personalIndicators .score-response-summary-chip--ontime {
+        color: var(--green-text)
+      }
+
+      #tab-dashboard #personalIndicators.indicators-row--score-duo .indicator-card--commitment .score-bonus-row {
+        margin-top: 0;
+        flex-shrink: 0
+      }
+
       #tab-dashboard #personalIndicators.indicators-row--score-duo .score-bonus-val {
         font-size: 10px
       }
@@ -25575,7 +25623,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v668-dash-duo-spacer">
+  <meta name="app-build" content="athar-figma-v670-dash-response-summary">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -33554,18 +33602,25 @@
         }).join('');
       }
 
-      /** مساحة توازن أسفل سجل الاستجابة = ارتفاع صف بونص الالتزام عند فتح البطاقتين */
-      function buildScoreDuoBalanceSpacer() {
-        return `<div class="score-bonus-row score-bonus-row--duo-balance" aria-hidden="true"><span><i class="fas fa-fire"></i> &#8203;</span><span class="score-bonus-val">+0</span></div>`;
+      /** ملخص أسفل سجل الاستجابة — عدد التمرير التلقائي ورد بالوقت */
+      function buildResponseSummaryRow(autoCount, onTimeCount) {
+        return `<div class="score-response-summary-row">
+          <span class="score-response-summary-chip score-response-summary-chip--late">
+            <i class="fas fa-forward"></i> تمرير تلقائي <b>${autoCount}</b>
+          </span>
+          <span class="score-response-summary-chip score-response-summary-chip--ontime">
+            <i class="fas fa-check"></i> رد بالوقت <b>${onTimeCount}</b>
+          </span>
+        </div>`;
       }
 
-      /** سجل الاستجابة في لوحة القيادة — بدون قائمة فارغة بارتفاع محجوز */
-      function buildDashboardResponseRecordsBlock(isEmpty, emptyHtml, listTitle, listHtml) {
-        const spacer = buildScoreDuoBalanceSpacer();
-        if (isEmpty) return emptyHtml + spacer;
+      /** سجل الاستجابة في لوحة القيادة */
+      function buildDashboardResponseRecordsBlock(isEmpty, emptyHtml, listTitle, listHtml, autoCount, onTimeCount) {
+        const summaryRow = buildResponseSummaryRow(autoCount, onTimeCount);
+        if (isEmpty) return emptyHtml + summaryRow;
         return `<div class="score-section-title"><i class="fas fa-list"></i> ${listTitle}</div>
           <div class="score-viol-list">${listHtml}</div>
-          ${spacer}`;
+          ${summaryRow}`;
       }
 
       function buildCombinedResponseViolList(lateViols, onTimeViols, latePts, bonusPts, opts = {}) {
@@ -33605,14 +33660,7 @@
               <div class="score-viol-weight" style="color:${isLate ? 'var(--red-text)' : 'var(--green-text)'}">${isLate ? '-' + latePts : '+' + bonusPts}</div>
             </div>`;
         }).join('');
-        let title = `سجل مؤشر الاستجابة (${total})`;
-        if (lateViols.length && onTimeViols.length) {
-          title = `سجل مؤشر الاستجابة (${lateViols.length} تمرير تلقائي · ${onTimeViols.length} رد بالوقت)`;
-        } else if (lateViols.length) {
-          title = `مخالفات تجاوزت المهلة (${lateViols.length})`;
-        } else {
-          title = `مخالفات رد بالوقت (${onTimeViols.length})`;
-        }
+        const title = `سجل مؤشر الاستجابة (${total})`;
         return { html, title };
       }
 
@@ -33935,7 +33983,9 @@
             respEmpty,
             respEmptyHtml,
             respListTitle,
-            respList.html
+            respList.html,
+            autoCount,
+            respondedCount
           );
           const responseRounded = Math.round(response);
           const responseResultClass = responseRounded < 0 ? ' eq-result--low' : '';
@@ -34057,7 +34107,9 @@
             respEmpty,
             respEmptyHtml,
             respListTitle,
-            respList.html
+            respList.html,
+            autoCount,
+            respondedCount
           );
           const responseRounded = Math.round(response);
           const responseResultClass = responseRounded < 0 ? ' eq-result--low' : '';
