@@ -87,13 +87,27 @@ async function dispatchViolationInsertPush(
 
   const ticket = shortTicketNum(record.ticket_number);
   const vtype = String(record.violation_type || 'مخالفة').trim();
+  let employeeName = '';
+  if (record.employee_id) {
+    const { data: emp } = await supabase
+      .from('users')
+      .select('name')
+      .eq('id', record.employee_id)
+      .maybeSingle();
+    employeeName = String(emp?.name || '').trim();
+  }
+
   let totalSent = 0;
   const allErrors: string[] = [];
 
   for (const uid of recipientIds) {
     const isEmployee = uid === record.employee_id;
     const title = isEmployee ? 'تم تسجيل مخالفة بحقك' : 'مخالفة جديدة في فريقك';
-    const body = `${vtype} — تذكرة ${ticket}`;
+    const body = isEmployee
+      ? `${vtype} — تذكرة ${ticket}`
+      : employeeName
+        ? `${employeeName} — ${vtype} — تذكرة ${ticket}`
+        : `${vtype} — تذكرة ${ticket}`;
     const result = await sendPushToUserIds(supabase, new Set([uid]), title, body, String(record.id));
     totalSent += result.sent || 0;
     if (result.error) allErrors.push(String(result.error));
