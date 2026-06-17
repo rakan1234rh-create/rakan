@@ -23006,7 +23006,7 @@
 
       #tab-dashboard .mk-kpi {
         min-height: 78px !important;
-        padding: 4px 0 !important;
+        padding: 4px 0 0 !important;
         gap: 0 !important;
         border-radius: 11px;
         box-shadow: var(--mr-shadow-soft);
@@ -23024,9 +23024,10 @@
         justify-content: space-between;
         gap: 0 !important;
         width: 100%;
-        padding: 0;
+        padding: 0 6px 4px;
         margin: 0;
-        min-height: 0
+        min-height: 0;
+        box-sizing: border-box
       }
 
       #tab-dashboard .mk-kpi__title {
@@ -23098,7 +23099,7 @@
       #tab-dashboard .mk-kpi__spark {
         height: 16px !important;
         margin-top: auto;
-        margin-bottom: 0;
+        margin-bottom: 6px;
         margin-inline: 0;
         width: 100%;
         flex-shrink: 0
@@ -25730,7 +25731,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v687-dash-kpi-flush">
+  <meta name="app-build" content="athar-figma-v688-dash-kpi-pad-spark">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
