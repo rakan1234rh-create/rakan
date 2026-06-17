@@ -23115,7 +23115,8 @@
       #tab-dashboard .mk-dash__split {
         gap: 4px;
         width: 100%;
-        margin: 0
+        margin: 0;
+        align-items: stretch
       }
 
       #tab-dashboard .mk-funnel,
@@ -23124,6 +23125,12 @@
         gap: 8px;
         border-radius: 11px;
         box-shadow: var(--mr-shadow-soft)
+      }
+
+      #tab-dashboard .mk-attn {
+        display: flex;
+        flex-direction: column;
+        min-height: 0
       }
 
       #tab-dashboard .mk-funnel__head,
@@ -23189,6 +23196,10 @@
       }
 
       #tab-dashboard .mk-attn__body {
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
         gap: 0
       }
 
@@ -23196,7 +23207,9 @@
         padding: 7px 4px;
         gap: 8px;
         grid-template-columns: 26px minmax(0, 1fr) auto;
-        border-radius: 9px
+        border-radius: 9px;
+        flex: 1 1 0;
+        min-height: 34px
       }
 
       #tab-dashboard .mk-attn__avatar {
