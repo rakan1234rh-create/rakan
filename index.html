@@ -14892,6 +14892,21 @@
       line-height: 1;
     }
 
+    .indicator-card--score {
+      flex-direction: column;
+      align-items: stretch
+    }
+
+    .indicator-card__head {
+      display: flex;
+      align-items: center;
+      gap: 16px
+    }
+
+    .indicator-title__short {
+      display: none
+    }
+
     .indicator-ring.lvl-excellent .indicator-ring-fg {
       stroke: var(--green)
     }
@@ -23154,106 +23169,182 @@
         font-weight: 600
       }
 
-      #tab-dashboard #personalIndicators {
+      #tab-dashboard #personalIndicators.indicators-row--score-duo {
+        display: grid !important;
         grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-        gap: 8px;
-        margin-bottom: 0;
-        padding-bottom: 0;
+        gap: 10px;
+        margin: 0 0 4px;
+        padding: 0;
         align-items: stretch
       }
 
-      #tab-dashboard #personalIndicators .indicator-card--score {
+      #tab-dashboard #personalIndicators.indicators-row--score-duo .indicator-card--score {
+        --score-tile-accent: var(--blue);
         min-width: 0;
-        padding: 8px 7px !important;
+        padding: 0 !important;
+        margin: 0;
         height: 100%;
-        box-sizing: border-box
+        box-sizing: border-box;
+        border-radius: 14px;
+        overflow: hidden;
+        border: 1px solid var(--mr-border);
+        background: var(--mr-surface);
+        box-shadow: var(--mr-shadow-soft);
+        gap: 0
       }
 
-      #tab-dashboard #personalIndicators .indicator-card--score:only-child {
-        grid-column: 1 / -1;
-        max-width: 220px;
-        justify-self: center
+      #tab-dashboard #personalIndicators.indicators-row--score-duo .indicator-card--response {
+        --score-tile-accent: var(--purple)
       }
 
-      #tab-dashboard #personalIndicators .indicator-card--score:has(.score-breakdown-panel.open) {
+      #tab-dashboard #personalIndicators.indicators-row--score-duo .indicator-card--score::before {
+        content: '';
+        display: block;
+        height: 3px;
+        background: linear-gradient(90deg, var(--score-tile-accent), color-mix(in srgb, var(--score-tile-accent) 18%, transparent));
+        flex-shrink: 0
+      }
+
+      #tab-dashboard #personalIndicators.indicators-row--score-duo .indicator-card--score:has(.score-breakdown-panel.open) {
         grid-column: 1 / -1
       }
 
-      #tab-dashboard #personalIndicators .indicator-card--score > div:first-child {
+      #tab-dashboard #personalIndicators.indicators-row--score-duo .indicator-card__head {
+        flex: 1;
         flex-direction: column !important;
         align-items: center !important;
         text-align: center;
-        gap: 6px !important
+        gap: 8px !important;
+        padding: 10px 8px 8px
       }
 
-      #tab-dashboard #personalIndicators .indicator-info {
+      #tab-dashboard #personalIndicators.indicators-row--score-duo .indicator-info {
         width: 100%;
         min-width: 0;
         display: flex;
         flex-direction: column;
-        align-items: center
+        align-items: center;
+        gap: 4px
       }
 
-      #tab-dashboard #personalIndicators .indicator-ring {
-        width: 46px;
-        height: 46px
+      #tab-dashboard #personalIndicators.indicators-row--score-duo .indicator-ring {
+        width: 54px !important;
+        height: 54px !important
       }
 
-      #tab-dashboard #personalIndicators .indicator-ring-num {
-        font-size: 13px
+      #tab-dashboard #personalIndicators.indicators-row--score-duo .indicator-ring-num {
+        font-size: 15px;
+        font-weight: 800
       }
 
-      #tab-dashboard #personalIndicators .indicator-title {
-        font-size: 10px;
+      #tab-dashboard #personalIndicators.indicators-row--score-duo .indicator-title {
+        font-size: 11px;
+        font-weight: 700;
+        margin: 0;
         justify-content: center;
         text-align: center;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
+        line-height: 1.25;
         width: 100%
       }
 
-      #tab-dashboard #personalIndicators .indicator-desc {
+      #tab-dashboard #personalIndicators.indicators-row--score-duo .indicator-title i,
+      #tab-dashboard #personalIndicators.indicators-row--score-duo .indicator-title__full {
+        display: none !important
+      }
+
+      #tab-dashboard #personalIndicators.indicators-row--score-duo .indicator-title__short {
+        display: block
+      }
+
+      #tab-dashboard #personalIndicators.indicators-row--score-duo .indicator-desc {
         display: none
       }
 
-      #tab-dashboard #personalIndicators .indicator-stat {
+      #tab-dashboard #personalIndicators.indicators-row--score-duo .indicator-stat {
         justify-content: center;
-        text-align: center
-      }
-
-      #tab-dashboard #personalIndicators .indicator-stat .badge {
-        font-size: 7.5px !important;
-        padding: 2px 4px !important;
-        max-width: 100%;
-        white-space: normal;
         text-align: center;
-        line-height: 1.2
+        width: 100%;
+        min-height: 18px
       }
 
-      #tab-dashboard #personalIndicators .score-breakdown-actions {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 4px;
-        margin-top: 4px;
-        width: 100%
+      #tab-dashboard #personalIndicators.indicators-row--score-duo .indicator-stat .badge {
+        font-size: 8px !important;
+        padding: 2px 7px !important;
+        max-width: 100%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1.25;
+        border-radius: 999px
       }
 
-      #tab-dashboard #personalIndicators .score-breakdown-toggle,
-      #tab-dashboard #personalIndicators .score-help-open-btn {
+      #tab-dashboard #personalIndicators.indicators-row--score-duo .indicator-stat .badge:nth-child(n+2) {
+        display: none
+      }
+
+      #tab-dashboard #personalIndicators.indicators-row--score-duo .score-breakdown-actions {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 0;
+        margin: 0;
+        width: 100%;
+        border-top: 1px solid var(--border)
+      }
+
+      #tab-dashboard #personalIndicators.indicators-row--score-duo .score-breakdown-toggle {
         width: 100%;
         justify-content: center;
-        font-size: 8.5px !important;
-        padding: 4px 6px !important
+        margin: 0 !important;
+        padding: 8px 6px !important;
+        font-size: 9px !important;
+        border: none;
+        border-radius: 0;
+        background: transparent;
+        color: var(--text2)
       }
 
-      #tab-dashboard #personalIndicators .score-help-open-btn span {
+      #tab-dashboard #personalIndicators.indicators-row--score-duo .score-breakdown-toggle .score-toggle-label {
+        display: none !important
+      }
+
+      #tab-dashboard #personalIndicators.indicators-row--score-duo .score-breakdown-toggle::after {
+        content: 'التفاصيل';
+        font-size: inherit;
+        font-weight: 600
+      }
+
+      #tab-dashboard #personalIndicators.indicators-row--score-duo .score-help-open-btn {
+        width: 38px;
+        min-width: 38px;
+        margin: 0 !important;
+        padding: 8px 0 !important;
+        justify-content: center;
+        font-size: 10px !important;
+        border: none;
+        border-radius: 0;
+        border-inline-start: 1px solid var(--border);
+        background: transparent;
+        color: var(--text3)
+      }
+
+      #tab-dashboard #personalIndicators.indicators-row--score-duo .score-help-open-btn span {
         display: none
       }
 
-      #tab-dashboard #personalIndicators .score-help-open-btn i {
+      #tab-dashboard #personalIndicators.indicators-row--score-duo .score-help-open-btn i {
         margin: 0
+      }
+
+      #tab-dashboard #personalIndicators.indicators-row--score-duo .score-breakdown-panel {
+        margin: 0;
+        border: none;
+        border-top: 1px solid var(--border);
+        border-radius: 0;
+        padding: 10px
+      }
+
+      #tab-dashboard #personalIndicators:not(.indicators-row--score-duo) .indicator-card--score:only-child {
+        grid-column: 1 / -1
       }
 
       #tab-dashboard .indicators-row--branch-staff {
@@ -23263,14 +23354,9 @@
         padding-bottom: 0
       }
 
-      #tab-dashboard .indicator-card {
+      #tab-dashboard #branchStaffPanel .indicator-card {
         padding: 10px;
         gap: 8px
-      }
-
-      #tab-dashboard .indicator-card--score > div:first-child {
-        gap: 10px !important;
-        align-items: flex-start !important
       }
 
       #tab-dashboard .indicator-ring {
@@ -25288,7 +25374,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v642-dash-score-duo">
+  <meta name="app-build" content="athar-figma-v643-dash-score-pro">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -33405,6 +33491,24 @@
         return html;
       }
 
+      function buildScoreIndicatorCard(variant, ringHtml, icon, iconColor, shortTitle, fullTitle, descHtml, badgesHtml, breakdownHtml) {
+        return `<div class="indicator-card indicator-card--score indicator-card--${variant}">
+            <div class="indicator-card__head">
+              ${ringHtml}
+              <div class="indicator-info">
+                <div class="indicator-title">
+                  <i class="fas ${icon}" style="color:${iconColor}" aria-hidden="true"></i>
+                  <span class="indicator-title__short">${Sec.escapeHTML(shortTitle)}</span>
+                  <span class="indicator-title__full">${fullTitle}</span>
+                </div>
+                <div class="indicator-desc">${descHtml}</div>
+                <div class="indicator-stat">${badgesHtml}</div>
+              </div>
+            </div>
+            ${breakdownHtml}
+          </div>`;
+      }
+
       /**
        * عرض المؤشرات الشخصية
        */
@@ -33592,38 +33696,28 @@
           </div>
         `;
 
-          cards.push(`
-          <div class="indicator-card indicator-card--score indicator-card--commitment" style="flex-direction:column;align-items:stretch">
-            <div style="display:flex;align-items:center;gap:16px">
-              ${buildIndicatorRing(commitment, '')}
-              <div class="indicator-info">
-                <div class="indicator-title">
-                  <i class="fas fa-shield-halved" style="color:var(--blue)"></i>
-                  سجل الالتزام الشخصي
-                </div>
-                <div class="indicator-desc">
-                  ${scoreHealed
+          cards.push(buildScoreIndicatorCard(
+            'commitment',
+            buildIndicatorRing(commitment, ''),
+            'fa-shield-halved',
+            'var(--blue)',
+            'الالتزام',
+            'سجل الالتزام الشخصي',
+            scoreHealed
               ? '<i class="fas fa-heart-pulse" style="color:var(--green)"></i> تعافيت للمعدل 100 — تمت معالجة الخصومات بالبونص'
               : streakBonus > 0
               ? `<i class="fas fa-fire" style="color:var(--amber)"></i> أنت محافظ على الانضباط — بونص مُطبَّق +${streakBonus} نقطة`
-              : 'نقاطك من 100. كل مخالفة تُخصم فوراً حسب وزنها؛ التعافي عبر بونص الالتزام عند الانضباط.'
-            }
-                </div>
-                <div class="indicator-stat">
-                  ${warnCount > 0 ? `<span class="badge b-orange"><i class="fas fa-bell"></i> ${warnCount} تنبيه إداري</span>` : ''}
-                  ${totalApproved > 0
+              : 'نقاطك من 100. كل مخالفة تُخصم فوراً حسب وزنها؛ التعافي عبر بونص الالتزام عند الانضباط.',
+            `${totalApproved > 0
               ? `<span class="badge b-red"><i class="fas fa-list"></i> ${totalApproved} مخالفة تؤثر على التقييم</span>`
               : '<span class="badge b-green"><i class="fas fa-shield-halved"></i> لا مخالفات مؤثرة</span>'
             }
                   ${scoreHealed ? `<span class="badge b-green"><i class="fas fa-heart-pulse"></i> معدل 100 — خصومات مُعالجة</span>` : ''}
+                  ${warnCount > 0 ? `<span class="badge b-orange"><i class="fas fa-bell"></i> ${warnCount} تنبيه إداري</span>` : ''}
                   ${empStat.pendingCount > 0 && !scoreHealed ? `<span class="badge b-amber"><i class="fas fa-hourglass-half"></i> قيد المراجعة: −${empStat.pendingDeducted}</span>` : ''}
-                  ${streakBonus > 0 && !scoreHealed ? `<span class="badge b-green"><i class="fas fa-plus"></i> ${streakBonus} بونص</span>` : ''}
-                </div>
-              </div>
-            </div>
-            ${breakdownHTML}
-          </div>
-        `);
+                  ${streakBonus > 0 && !scoreHealed ? `<span class="badge b-green"><i class="fas fa-plus"></i> ${streakBonus} بونص</span>` : ''}`,
+            breakdownHTML
+          ));
 
           const responseData = calcResponseRate(me.id, 'employee');
           const response = responseData.score;
@@ -33688,26 +33782,17 @@
             </div>
           `;
 
-          cards.push(`
-          <div class="indicator-card indicator-card--score indicator-card--response" style="flex-direction:column;align-items:stretch">
-            <div style="display:flex;align-items:center;gap:16px">
-              ${buildIndicatorRing(response, '')}
-              <div class="indicator-info">
-                <div class="indicator-title">
-                  <i class="fas fa-reply" style="color:var(--purple)"></i>
-                  مؤشر الاستجابة
-                </div>
-                <div class="indicator-desc">
-                  يقيس سرعة ردك على المخالفات. ينقص 20 نقاط لكل مخالفة مررت تلقائياً.
-                </div>
-                <div class="indicator-stat">
-                  ${buildResponseRateBadges(response, autoCount, respondedCount, bonus)}
-                </div>
-              </div>
-            </div>
-            ${responseBreakdownHTML}
-          </div>
-        `);
+          cards.push(buildScoreIndicatorCard(
+            'response',
+            buildIndicatorRing(response, ''),
+            'fa-reply',
+            'var(--purple)',
+            'الاستجابة',
+            'مؤشر الاستجابة',
+            'يقيس سرعة ردك على المخالفات. ينقص 20 نقاط لكل مخالفة مررت تلقائياً.',
+            buildResponseRateBadges(response, autoCount, respondedCount, bonus),
+            responseBreakdownHTML
+          ));
         }
 
         // ─── مدير الفرع: قائمة موظفي الفرع تحت بطاقتي الالتزام والاستجابة
@@ -33822,30 +33907,23 @@
             </div>
           `;
 
-          cards.push(`
-          <div class="indicator-card indicator-card--score indicator-card--response" style="flex-direction:column;align-items:stretch">
-            <div style="display:flex;align-items:center;gap:16px">
-              ${buildIndicatorRing(response, '')}
-              <div class="indicator-info">
-                <div class="indicator-title">
-                  <i class="fas fa-user-tie" style="color:var(--amber)"></i>
-                  مؤشر استجابة المشرف
-                </div>
-                <div class="indicator-desc">
-                  يقيس سرعة معالجتك للمخالفات. ينقص 20 نقاط لكل مخالفة مررت تلقائياً للتدقيق.
-                </div>
-                <div class="indicator-stat">
-                  <span class="badge b-blue"><i class="fas fa-folder"></i> ${totalAssigned} مخالفة كلياً</span>
-                  ${buildResponseRateBadges(response, autoCount, respondedCount, bonus, { variant: 'supervisor' })}
-                </div>
-              </div>
-            </div>
-            ${responseBreakdownHTML}
-          </div>
-        `);
+          cards.push(buildScoreIndicatorCard(
+            'response',
+            buildIndicatorRing(response, ''),
+            'fa-user-tie',
+            'var(--amber)',
+            'الاستجابة',
+            'مؤشر استجابة المشرف',
+            'يقيس سرعة معالجتك للمخالفات. ينقص 20 نقاط لكل مخالفة مررت تلقائياً للتدقيق.',
+            `<span class="badge b-blue"><i class="fas fa-folder"></i> ${totalAssigned} مخالفة كلياً</span>
+                  ${buildResponseRateBadges(response, autoCount, respondedCount, bonus, { variant: 'supervisor' })}`,
+            responseBreakdownHTML
+          ));
         }
 
         container.innerHTML = cards.join('');
+        const isScoreDuo = (role === 'employee' || role === 'branch_manager') && cards.length >= 2;
+        container.className = 'indicators-row' + (isScoreDuo ? ' indicators-row--score-duo' : '');
         container.style.display = cards.length ? 'grid' : 'none';
 
         if (branchPanel) {
