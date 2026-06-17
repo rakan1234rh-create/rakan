@@ -11311,42 +11311,34 @@
 
     .notif-page-actions {
       display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 0 4px 6px;
+      align-items: stretch;
+      gap: 8px;
+      padding: 0 4px 8px;
       flex-shrink: 0
     }
 
-    .notif-action-btn {
+    .notif-page-actions .notif-mark-all {
       flex: 1 1 0;
-      display: inline-flex;
-      align-items: center;
       justify-content: center;
-      gap: 5px;
-      min-height: 34px;
-      padding: 6px 10px;
-      border-radius: 9px;
+      min-height: 42px;
+      padding: 8px 14px;
+      font-size: 12px;
       border: 1px solid var(--mr-border);
       background: var(--mr-surface);
-      color: var(--mr-text-2);
-      font-family: var(--font);
-      font-size: 11px;
-      font-weight: 600;
-      cursor: pointer;
-      white-space: nowrap
+      border-radius: 8px
     }
 
-    .notif-action-btn:hover {
-      background: var(--mr-bg-2)
+    .notif-page-actions .notif-mark-all--danger {
+      color: var(--red-text)
     }
 
-    .notif-action-btn--danger {
-      color: var(--red-text);
+    .notif-page-actions .notif-mark-all--danger:hover {
+      background: color-mix(in srgb, var(--red-text) 8%, var(--mr-surface));
       border-color: color-mix(in srgb, var(--red-text) 22%, var(--mr-border))
     }
 
-    .notif-action-btn--danger:hover {
-      background: color-mix(in srgb, var(--red-text) 8%, var(--mr-surface))
+    .notif-action-btn {
+      display: none
     }
 
     .notif-mark-all:hover {
@@ -11732,7 +11724,13 @@
       border-radius: 11px;
       border: 1px solid var(--mr-border);
       background: var(--mr-surface);
-      box-shadow: var(--mr-shadow-soft)
+      box-shadow: var(--mr-shadow-soft);
+      padding-bottom: max(14px, env(safe-area-inset-bottom, 0px));
+      box-sizing: border-box
+    }
+
+    #tab-notifications .notif-list--page .notif-swipe:last-child {
+      border-bottom: 1px solid var(--mr-border)
     }
 
     /* Ticket Detail Modal */
@@ -23178,7 +23176,7 @@
     /* لوحة القيادة — جوال: بطاقات أصغر وتنسيق موحّد */
     @media (max-width: 992px) {
       html.mr-mobile-ui #appWrap .main:has(#tab-dashboard.active) {
-        padding: 8px 0 calc(var(--mr-mob-bottom-nav-h, 56px) + 8px) !important;
+        padding: 8px 0 calc(var(--mr-mob-bottom-nav-h, 56px) + 24px) !important;
         overflow-x: visible !important
       }
 
@@ -23360,12 +23358,6 @@
         box-shadow: var(--mr-shadow-soft)
       }
 
-      #tab-dashboard .mk-attn {
-        display: flex;
-        flex-direction: column;
-        min-height: 0
-      }
-
       #tab-dashboard .mk-funnel__head,
       #tab-dashboard .mk-attn__head {
         align-items: flex-start;
@@ -23428,12 +23420,20 @@
         border-radius: 9px
       }
 
-      #tab-dashboard .mk-attn__body {
-        flex: 1 1 auto;
+      #tab-dashboard .mk-attn {
         display: flex;
         flex-direction: column;
         min-height: 0;
-        gap: 0
+        margin-bottom: 4px
+      }
+
+      #tab-dashboard .mk-attn__body {
+        flex: 0 1 auto;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        gap: 0;
+        padding-bottom: 6px
       }
 
       #tab-dashboard .mk-attn__row {
@@ -23441,9 +23441,13 @@
         gap: 6px 8px;
         grid-template-columns: 26px minmax(0, 1fr);
         border-radius: 9px;
-        flex: 1 1 0;
+        flex: 0 0 auto;
         min-height: 34px;
         align-items: start
+      }
+
+      #tab-dashboard .mk-attn__row:last-child {
+        border-bottom: 1px solid var(--mr-border)
       }
 
       #tab-dashboard .mk-attn__avatar {
@@ -26154,7 +26158,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v715-notif-head-up">
+  <meta name="app-build" content="athar-figma-v716-notif-wording-delete">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -26465,8 +26469,8 @@
                   </div>
                 </header>
                 <div class="notif-page-actions">
-                  <button type="button" class="notif-action-btn" onclick="markAllNotifsRead()"><i class="fas fa-check-double" aria-hidden="true"></i> قراءة الكل</button>
-                  <button type="button" class="notif-action-btn notif-action-btn--danger" onclick="dismissAllNotifs()"><i class="fas fa-trash-alt" aria-hidden="true"></i> حذف الكل</button>
+                  <button type="button" class="notif-mark-all" onclick="markAllNotifsRead()"><i class="fas fa-check-double" aria-hidden="true"></i> قراءة الكل</button>
+                  <button type="button" class="notif-mark-all notif-mark-all--danger" onclick="dismissAllNotifs()"><i class="fas fa-trash-alt" aria-hidden="true"></i> حذف الكل</button>
                 </div>
                 <div class="notif-page-filters" id="notifPageFilters" role="tablist" aria-label="تصنيف التنبيهات">
                   <button type="button" class="notif-filter-btn is-active" data-filter="all" role="tab" aria-selected="true" onclick="setNotifFilter('all', this)">الكل</button>
