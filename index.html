@@ -22964,14 +22964,10 @@
         padding-top: 0 !important
       }
 
-      #tab-dashboard .mk-dash__hero {
-        padding-inline: 12px;
-        box-sizing: border-box
-      }
-
       #tab-dashboard .mk-kpi-grid,
       #tab-dashboard #branchStaffPanel,
-      #tab-dashboard .mk-dash__split {
+      #tab-dashboard .mk-dash__split,
+      #tab-dashboard .mk-dash__hero {
         padding-inline: 4px;
         box-sizing: border-box
       }
@@ -22981,7 +22977,8 @@
       }
 
       #tab-dashboard .mk-dash__hero {
-        padding: 0;
+        padding-top: 0;
+        padding-bottom: 0;
         gap: 6px
       }
 
@@ -25921,7 +25918,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v708-dash-attn-name">
+  <meta name="app-build" content="athar-figma-v709-dash-hero-pad">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -29271,7 +29268,7 @@
         const suffix = ` · ${monthLbl}`;
         const byRole = {
           employee: `إليك نظرة عامة على أدائك لشهر${suffix}`,
-          branch_manager: `إليك نظرة عامة على أدائك لشهر${suffix}`,
+          branch_manager: 'إليك نظرة عامة على أدائك وأداء فريقك',
           supervisor: `إليك نظرة عامة على أداء منطقتك لشهر${suffix}`,
           admin: `إليك نظرة عامة على أداء المناطق لشهر${suffix}`,
           manager: `إليك نظرة عامة على أداء المناطق لشهر${suffix}`,
