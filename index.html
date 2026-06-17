@@ -23174,12 +23174,12 @@
       #tab-dashboard #personalIndicators.indicators-row--score-duo {
         display: grid !important;
         grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-        gap: 1px;
+        gap: 0;
         width: 100%;
-        margin: 0;
-        padding: 0;
+        margin: 0 !important;
+        padding: 0 !important;
         align-items: start;
-        background: var(--border)
+        background: transparent
       }
 
       #tab-dashboard #personalIndicators.indicators-row--score-duo .indicator-card--score {
@@ -23187,18 +23187,20 @@
         min-width: 0;
         padding: 0 !important;
         margin: 0;
-        height: 100%;
+        height: auto;
         box-sizing: border-box;
-        border-radius: 0 0 14px 14px;
+        border-radius: 0 0 8px 8px;
         overflow: hidden;
         border: none;
+        border-bottom: 1px solid var(--mr-border);
         background: var(--mr-surface);
         box-shadow: none;
         gap: 0
       }
 
       #tab-dashboard #personalIndicators.indicators-row--score-duo .indicator-card--response {
-        --score-tile-accent: var(--purple)
+        --score-tile-accent: var(--purple);
+        border-inline-start: 1px solid var(--border)
       }
 
       #tab-dashboard #personalIndicators.indicators-row--score-duo .indicator-card--score::before {
@@ -25522,7 +25524,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v655-dash-score-round-bottom">
+  <meta name="app-build" content="athar-figma-v656-dash-score-compact-bottom">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
