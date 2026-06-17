@@ -23084,8 +23084,10 @@
 
     .mk-kpi-grid { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:12px; }
     .mk-kpi { background:var(--mr-surface); border:1px solid var(--mr-border); border-radius:var(--mr-radius-card); padding:18px; display:flex; flex-direction:column; gap:12px; min-height:168px; box-shadow:var(--mr-shadow-card); transition:border-color .18s, box-shadow .18s; }
-    .mk-kpi:hover { border-color:var(--mr-border-2); box-shadow:var(--mr-shadow-card), 0 8px 24px rgba(0,0,0,0.06); }
     .mk-kpi--click { cursor:pointer; }
+    @media (hover: hover) {
+      .mk-kpi:hover { border-color:var(--mr-border-2); box-shadow:var(--mr-shadow-card), 0 8px 24px rgba(0,0,0,0.06); }
+    }
     .mk-kpi--click:focus-visible {
       outline:2px solid var(--mr-primary-soft);
       outline-offset:2px;
@@ -23172,17 +23174,21 @@
       color:inherit;
       transition:background .18s ease, border-color .18s ease, box-shadow .18s ease;
       -webkit-appearance:none;
-      appearance:none
+      appearance:none;
+      -webkit-tap-highlight-color:transparent;
+      touch-action:manipulation
     }
-    .mk-funnel__row:hover {
-      background:var(--mr-primary-softer);
-      border-color:var(--mr-border);
-      box-shadow:0 2px 8px rgba(15, 18, 36, 0.06)
-    }
-    [data-theme="dark"] .mk-funnel__row:hover {
-      background:rgba(255, 255, 255, 0.06);
-      border-color:var(--mr-border);
-      box-shadow:0 2px 10px rgba(0, 0, 0, 0.25)
+    @media (hover: hover) {
+      .mk-funnel__row:hover {
+        background:var(--mr-primary-softer);
+        border-color:var(--mr-border);
+        box-shadow:0 2px 8px rgba(15, 18, 36, 0.06)
+      }
+      [data-theme="dark"] .mk-funnel__row:hover {
+        background:rgba(255, 255, 255, 0.06);
+        border-color:var(--mr-border);
+        box-shadow:0 2px 10px rgba(0, 0, 0, 0.25)
+      }
     }
     .mk-funnel__row:focus { outline:none; }
     .mk-funnel__row:focus-visible {
@@ -23220,17 +23226,21 @@
       transition:background .18s ease, border-color .18s ease, box-shadow .18s ease;
       align-items:center;
       -webkit-appearance:none;
-      appearance:none
+      appearance:none;
+      -webkit-tap-highlight-color:transparent;
+      touch-action:manipulation
     }
-    .mk-attn__row:hover {
-      background:var(--mr-primary-softer);
-      border-color:var(--mr-border);
-      box-shadow:0 2px 8px rgba(15, 18, 36, 0.06)
-    }
-    [data-theme="dark"] .mk-attn__row:hover {
-      background:rgba(255, 255, 255, 0.06);
-      border-color:var(--mr-border);
-      box-shadow:0 2px 10px rgba(0, 0, 0, 0.25)
+    @media (hover: hover) {
+      .mk-attn__row:hover {
+        background:var(--mr-primary-softer);
+        border-color:var(--mr-border);
+        box-shadow:0 2px 8px rgba(15, 18, 36, 0.06)
+      }
+      [data-theme="dark"] .mk-attn__row:hover {
+        background:rgba(255, 255, 255, 0.06);
+        border-color:var(--mr-border);
+        box-shadow:0 2px 10px rgba(0, 0, 0, 0.25)
+      }
     }
     .mk-attn__row:focus { outline:none; }
     .mk-attn__row:focus-visible {
@@ -23248,6 +23258,36 @@
     .mk-attn__subject { color:var(--mk-text-2); }
     .mk-attn__sep { opacity:.5; }
     .mk-attn__right { display:flex; flex-direction:column; align-items:flex-end; gap:4px; align-self:center; }
+
+    /* لوحة القيادة — لا تظليل وهمي أثناء السحب على الشاشات اللمسية */
+    @media (hover: none) {
+      #tab-dashboard .mk-funnel__row:active,
+      #tab-dashboard .mk-attn__row:active {
+        background:var(--mr-primary-softer);
+        border-color:var(--mr-border);
+        box-shadow:0 2px 8px rgba(15, 18, 36, 0.06)
+      }
+      [data-theme="dark"] #tab-dashboard .mk-funnel__row:active,
+      [data-theme="dark"] #tab-dashboard .mk-attn__row:active {
+        background:rgba(255, 255, 255, 0.06);
+        border-color:var(--mr-border);
+        box-shadow:0 2px 10px rgba(0, 0, 0, 0.25)
+      }
+      #tab-dashboard .mk-kpi--click:active {
+        border-color:var(--mr-border-2);
+        box-shadow:var(--mr-shadow-card), 0 4px 12px rgba(0, 0, 0, 0.05)
+      }
+      #tab-dashboard .mk-funnel__head .mk-link:active,
+      #tab-dashboard .mk-attn__head .mk-link:active {
+        background:var(--mr-primary-softer);
+        color:var(--mr-primary)
+      }
+    }
+
+    #tab-dashboard .mk-kpi--click {
+      -webkit-tap-highlight-color:transparent;
+      touch-action:manipulation
+    }
 
     /* لوحة القيادة — جوال: بطاقات أصغر وتنسيق موحّد */
     @media (max-width: 992px) {
@@ -26235,7 +26275,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v729-notif-btn-ghost">
+  <meta name="app-build" content="athar-figma-v730-dash-scroll-hover">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
