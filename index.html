@@ -9739,9 +9739,9 @@
 
     /* شرح حساب الدرجة — ورقة مركزية */
     #scoreHelpOverlay.score-help-overlay {
-      background: rgba(15, 18, 36, 0.4);
-      backdrop-filter: none;
-      -webkit-backdrop-filter: none
+      background: transparent !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important
     }
 
     #scoreHelpPanel.score-help-panel {
@@ -15015,32 +15015,6 @@
 
     .score-breakdown-panel.open {
       display: block
-    }
-
-    .score-inline-help {
-      display: none;
-      border-top: 1px solid var(--border);
-      padding: 10px 12px;
-      background: var(--surface2)
-    }
-
-    .score-inline-help.open {
-      display: block;
-      animation: fadeIn 0.2s ease
-    }
-
-    .score-inline-help .score-help-body-inner {
-      gap: 8px
-    }
-
-    .score-inline-help .score-help-item {
-      padding: 8px 10px
-    }
-
-    .score-inline-help .score-help-item__text,
-    .score-inline-help .score-help-item__text strong {
-      font-size: 11px;
-      line-height: 1.45
     }
 
     .score-equation {
@@ -23367,33 +23341,6 @@
         margin: 0
       }
 
-      #tab-dashboard #personalIndicators.indicators-row--score-duo .score-help-open-btn.open {
-        color: var(--blue-text);
-        background: color-mix(in srgb, var(--blue) 10%, transparent)
-      }
-
-      #tab-dashboard #personalIndicators.indicators-row--score-duo .score-inline-help {
-        padding: 8px;
-        background: var(--mr-surface)
-      }
-
-      #tab-dashboard #personalIndicators.indicators-row--score-duo .score-inline-help .score-help-item {
-        padding: 6px 7px;
-        gap: 6px
-      }
-
-      #tab-dashboard #personalIndicators.indicators-row--score-duo .score-inline-help .score-help-item__ico {
-        width: 24px;
-        height: 24px;
-        font-size: 10px
-      }
-
-      #tab-dashboard #personalIndicators.indicators-row--score-duo .score-inline-help .score-help-item__text,
-      #tab-dashboard #personalIndicators.indicators-row--score-duo .score-inline-help .score-help-item__text strong {
-        font-size: 9px;
-        line-height: 1.4
-      }
-
       #tab-dashboard #personalIndicators.indicators-row--score-duo .score-breakdown-toggle.open::after {
         content: 'إخفاء'
       }
@@ -25486,7 +25433,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v647-dash-help-inline">
+  <meta name="app-build" content="athar-figma-v648-dash-help-no-dim">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -32870,8 +32817,6 @@
           btn.nextElementSibling?.classList.remove('open');
         });
         document.querySelectorAll('.score-breakdown-panel.open').forEach(p => p.classList.remove('open'));
-        document.querySelectorAll('.score-inline-help.open').forEach(h => h.classList.remove('open'));
-        document.querySelectorAll('.score-help-open-btn.open').forEach(b => b.classList.remove('open'));
 
         document.querySelectorAll('.mk-cmp-branch-shell.is-open').forEach(shell => {
           shell.classList.remove('is-open');
@@ -33330,38 +33275,6 @@
         </div>`;
       }
 
-      function toggleScoreCardHelp(btn, kind) {
-        if (window.innerWidth > 992) {
-          openScoreHelpSheet(kind);
-          return;
-        }
-        const card = btn.closest('.indicator-card');
-        if (!card) return;
-        let help = card.querySelector('.score-inline-help');
-        if (!help) return;
-        const builders = {
-          commitment: buildCommitmentScoreHelpHtml,
-          response: buildResponseScoreHelpHtml,
-          responseSupervisor: buildResponseSupervisorScoreHelpHtml
-        };
-        if (!help.dataset.loaded) {
-          help.innerHTML = (builders[kind] || builders.commitment)();
-          help.dataset.loaded = '1';
-        }
-        const willOpen = !help.classList.contains('open');
-        const duo = card.closest('#personalIndicators.indicators-row--score-duo');
-        if (willOpen && duo) {
-          duo.querySelectorAll('.indicator-card--score').forEach(other => {
-            if (other === card) return;
-            other.querySelector('.score-inline-help')?.classList.remove('open');
-            other.querySelector('.score-help-open-btn')?.classList.remove('open');
-          });
-        }
-        help.classList.toggle('open', willOpen);
-        btn.classList.toggle('open', willOpen);
-      }
-      window.toggleScoreCardHelp = toggleScoreCardHelp;
-
       function openScoreHelpSheet(kind) {
         const panel = document.getElementById('scoreHelpPanel');
         const overlay = document.getElementById('scoreHelpOverlay');
@@ -33788,12 +33701,11 @@
               <span class="score-toggle-label score-toggle-label--full">كيف تُحسب درجتي؟</span>
               <span class="score-toggle-label score-toggle-label--record">تفاصيل السجل</span>
             </button>
-            <button type="button" class="score-help-open-btn" onclick="toggleScoreCardHelp(this,'commitment')">
+            <button type="button" class="score-help-open-btn" onclick="openScoreHelpSheet('commitment')">
               <i class="fas fa-circle-info"></i>
               <span>كيف تحسب درجتي؟</span>
             </button>
           </div>
-          <div class="score-inline-help" data-help-kind="commitment"></div>
           <div class="score-breakdown-panel" id="scoreBreakdownPanel">
             <div class="score-equation">
               <div class="eq-item">
@@ -33898,12 +33810,11 @@
                 <span class="score-toggle-label score-toggle-label--full">تفاصيل مؤشر الاستجابة</span>
                 <span class="score-toggle-label score-toggle-label--record">تفاصيل السجل</span>
               </button>
-              <button type="button" class="score-help-open-btn" onclick="toggleScoreCardHelp(this,'response')">
+              <button type="button" class="score-help-open-btn" onclick="openScoreHelpSheet('response')">
                 <i class="fas fa-circle-info"></i>
                 <span>كيف تحسب درجتي؟</span>
               </button>
             </div>
-            <div class="score-inline-help" data-help-kind="response"></div>
             <div class="score-breakdown-panel">
               <div class="score-equation">
                 <div class="eq-item"><span class="eq-num">100</span><span class="eq-label">الأساس</span></div>
@@ -34021,12 +33932,11 @@
                 <span class="score-toggle-label score-toggle-label--full">تفاصيل مؤشر الاستجابة</span>
                 <span class="score-toggle-label score-toggle-label--record">تفاصيل السجل</span>
               </button>
-              <button type="button" class="score-help-open-btn" onclick="toggleScoreCardHelp(this,'responseSupervisor')">
+              <button type="button" class="score-help-open-btn" onclick="openScoreHelpSheet('responseSupervisor')">
                 <i class="fas fa-circle-info"></i>
                 <span>كيف تحسب درجتي؟</span>
               </button>
             </div>
-            <div class="score-inline-help" data-help-kind="responseSupervisor"></div>
             <div class="score-breakdown-panel">
               <div class="score-equation">
                 <div class="eq-item"><span class="eq-num">100</span><span class="eq-label">الأساس</span></div>
