@@ -11514,9 +11514,11 @@
     }
 
     .notif-time {
-      font-size: 10px;
-      color: var(--mr-text-3);
-      font-family: var(--mono)
+      font-size: 9px;
+      line-height: 1.2;
+      color: var(--mk-text-3);
+      font-family: var(--font);
+      white-space: nowrap
     }
 
     .notif-empty {
@@ -11725,12 +11727,13 @@
       border: 1px solid var(--mr-border);
       background: var(--mr-surface);
       box-shadow: var(--mr-shadow-soft);
-      padding-bottom: max(14px, env(safe-area-inset-bottom, 0px));
+      padding-bottom: 0;
       box-sizing: border-box
     }
 
-    html.mr-mobile-ui #tab-notifications.active .notif-list--page {
-      padding-bottom: calc(var(--mr-mob-bottom-nav-h, 56px) + 20px)
+    html.mr-notif-page-active #tab-notifications .notif-list--page {
+      padding-bottom: 0 !important;
+      overscroll-behavior-y: contain
     }
 
     #tab-notifications .notif-list--page .notif-swipe:last-child {
@@ -26167,7 +26170,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v722-notif-time-sort-nav">
+  <meta name="app-build" content="athar-figma-v723-notif-time-fix">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -47342,6 +47345,26 @@
         } catch { }
       }
 
+      function notifLatestListMs(viols) {
+        return (viols || []).reduce((max, v) => {
+          const t = new Date(v?.updated_at || v?.created_at || '').getTime();
+          return !isNaN(t) && t > max ? t : max;
+        }, 0);
+      }
+
+      function notifEmpActivityMs(employeeId) {
+        if (!employeeId) return 0;
+        const viols = (state.violations || []).filter(v =>
+          v.employee_id === employeeId &&
+          v.state !== 'uploading' && v.state !== 'draft'
+        );
+        return notifLatestListMs(viols);
+      }
+
+      function notifIsoFromMs(ms) {
+        return ms > 0 ? new Date(ms).toISOString() : '';
+      }
+
       const NOTIF_RESTORE_ONCE_KEY = 'athar_notif_restore_v718_bm';
 
       function maybeRestoreDismissedNotifsOnce() {
@@ -47593,6 +47616,7 @@
 
           // ─── تنبيه عتبات الدرجة (تحذير عند الانخفاض) ───
           const currentScore = Math.round(calcEmployeeCommitment(me.id));
+          const scoreAlertMs = notifLatestListMs(myRecentDeduct);
           if (currentScore < 40 && myRecentDeduct.length > 0) {
             notifs.push({
               id: `score_critical_${me.id}`,
@@ -47601,7 +47625,7 @@
               icon: 'fa-exclamation-triangle',
               title: `⚠️ تحذير: درجة الالتزام حرجة (${currentScore})`,
               msg: 'درجتك أقل من 40 — يرجى الالتزام بالأنظمة لتجنب الإجراءات الإدارية',
-              time: new Date().toISOString()
+              time: notifIsoFromMs(scoreAlertMs)
             });
           } else if (currentScore < 75 && currentScore >= 40 && myRecentDeduct.length > 0) {
             notifs.push({
@@ -47611,7 +47635,7 @@
               icon: 'fa-chart-line',
               title: `تنبيه: درجة الالتزام منخفضة (${currentScore})`,
               msg: 'حافظ على الانضباط لاستعادة نقاطك والحصول على مكافأة الالتزام',
-              time: new Date().toISOString()
+              time: notifIsoFromMs(scoreAlertMs)
             });
           }
 
@@ -47659,7 +47683,7 @@
               icon: 'fa-heart-pulse',
               title: '🏆 تعافيت للمعدل 100!',
               msg: `تمت معالجة ${streakStat.grossDeducted} نقطة خصم بالبونص — البونص متوقف حتى رصد جديد`,
-              time: new Date().toISOString()
+              time: notifIsoFromMs(Math.max(notifEmpActivityMs(me.id), streakStartMs))
             });
           } else if (maxStreaks > 0) {
           for (let lvl = 1; lvl <= currentStreakLevel; lvl++) {
@@ -47699,7 +47723,7 @@
                 icon: 'fa-hourglass-half',
                 title: `باقي ${daysRemaining} يوم للحصول على +${nextBonus} نقاط بونص!`,
                 msg: 'حافظ على الانضباط — أنت قريب من مكافأة الالتزام القادمة',
-                time: new Date().toISOString()
+                time: notifIsoFromMs(streakStartMs)
               });
             }
           }
@@ -47727,7 +47751,7 @@
                 icon: 'fa-user-xmark',
                 title: `⚠️ درجة ${emp.name} حرجة (${empScore})`,
                 msg: `الموظف ${emp.emp_number || ''} يحتاج متابعة عاجلة — درجة الالتزام أقل من 40`,
-                time: new Date().toISOString(),
+                time: notifIsoFromMs(notifEmpActivityMs(empId)),
                 scope: 'team'
               });
             }
@@ -47742,7 +47766,7 @@
                 icon: 'fa-medal',
                 title: `🏅 ${emp.name} تعافى للمعدل 100`,
                 msg: `تمت معالجة ${empStat.grossDeducted} نقطة خصم بالبونص — أداء ممتاز`,
-                time: new Date().toISOString(),
+                time: notifIsoFromMs(notifEmpActivityMs(empId)),
                 scope: 'team'
               });
             }
@@ -47789,7 +47813,7 @@
                 icon: 'fa-user-xmark',
                 title: `⚠️ درجة ${emp.name} حرجة (${empScore})`,
                 msg: `موظف الفرع ${emp.emp_number || ''} يحتاج متابعة — درجة الالتزام أقل من 40`,
-                time: new Date().toISOString(),
+                time: notifIsoFromMs(notifEmpActivityMs(emp.id)),
                 scope: 'team'
               });
             }
@@ -47803,7 +47827,7 @@
                 icon: 'fa-medal',
                 title: `🏅 ${emp.name} تعافى للمعدل 100`,
                 msg: `تمت معالجة ${empStat.grossDeducted} نقطة خصم بالبونص`,
-                time: new Date().toISOString(),
+                time: notifIsoFromMs(notifEmpActivityMs(emp.id)),
                 scope: 'team'
               });
             }
