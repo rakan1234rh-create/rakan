@@ -23099,10 +23099,11 @@
       #tab-dashboard .mk-kpi__spark {
         height: 14px !important;
         margin-top: auto;
-        margin-bottom: 4px;
-        margin-inline: 0;
-        width: 100%;
-        flex-shrink: 0
+        margin-bottom: 7px;
+        margin-inline: 2px;
+        width: calc(100% - 4px);
+        flex-shrink: 0;
+        box-sizing: border-box
       }
 
       #tab-dashboard .mk-kpi__spark > div.mk-kpi__spark-hit--on {
@@ -25731,7 +25732,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v690-dash-kpi-shorter">
+  <meta name="app-build" content="athar-figma-v691-dash-kpi-spark">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
