@@ -340,7 +340,7 @@ async function sendPushToUserIds(
         ? `ticket_${ticketId}${tagSuffix ? `_${tagSuffix}` : ''}_${sub.user_id}`
         : `test_${sub.user_id}`);
     const url = broadcastId
-      ? `./index.html?broadcast=${encodeURIComponent(broadcastId)}`
+      ? `./index.html?broadcast=${encodeURIComponent(broadcastId)}&bckind=${encodeURIComponent(kind)}`
       : (ticketId
         ? `./index.html?ticket=${encodeURIComponent(ticketId)}`
         : './index.html');
@@ -480,12 +480,16 @@ async function insertBroadcastInboxRows(
   supabase: ReturnType<typeof createClient>,
   broadcastId: string,
   userIds: string[],
+  meta: { title: string; body: string; kind: BroadcastKind },
 ) {
   const chunkSize = 200;
   for (let i = 0; i < userIds.length; i += chunkSize) {
     const chunk = userIds.slice(i, i + chunkSize).map((user_id) => ({
       broadcast_id: broadcastId,
       user_id,
+      title: meta.title,
+      body: meta.body,
+      kind: meta.kind,
     }));
     const { error } = await supabase.from('broadcast_inbox').insert(chunk);
     if (error) throw new Error(error.message);
@@ -547,7 +551,7 @@ async function dispatchBroadcastPush(
 
   const broadcastId = broadcastRow.id;
   try {
-    await insertBroadcastInboxRows(supabase, broadcastId, recipientIds);
+    await insertBroadcastInboxRows(supabase, broadcastId, recipientIds, { title, body, kind });
   } catch (err) {
     await supabase.from('broadcasts').delete().eq('id', broadcastId);
     return { status: 500, body: { error: String(err) } };

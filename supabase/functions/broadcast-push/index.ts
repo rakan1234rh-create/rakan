@@ -149,7 +149,7 @@ async function sendPushToUserIds(
       broadcastId: opts.broadcastId,
       kind: opts.kind,
       tag: kindTag(opts.kind, opts.broadcastId, sub.user_id),
-      url: './index.html?broadcast=' + encodeURIComponent(opts.broadcastId),
+      url: './index.html?broadcast=' + encodeURIComponent(opts.broadcastId) + '&bckind=' + encodeURIComponent(opts.kind),
     });
     try {
       await webpush.sendNotification(
@@ -180,12 +180,16 @@ async function insertInboxRows(
   supabase: ReturnType<typeof createClient>,
   broadcastId: string,
   userIds: string[],
+  meta: { title: string; body: string; kind: BroadcastKind },
 ) {
   const chunkSize = 200;
   for (let i = 0; i < userIds.length; i += chunkSize) {
     const chunk = userIds.slice(i, i + chunkSize).map((user_id) => ({
       broadcast_id: broadcastId,
       user_id,
+      title: meta.title,
+      body: meta.body,
+      kind: meta.kind,
     }));
     const { error } = await supabase.from('broadcast_inbox').insert(chunk);
     if (error) throw new Error(error.message);
@@ -269,7 +273,7 @@ Deno.serve(async (req) => {
   const broadcastId = broadcastRow.id;
 
   try {
-    await insertInboxRows(supabase, broadcastId, recipientIds);
+    await insertInboxRows(supabase, broadcastId, recipientIds, { title, body, kind });
   } catch (err) {
     await supabase.from('broadcasts').delete().eq('id', broadcastId);
     return json({ error: String(err) }, 500);

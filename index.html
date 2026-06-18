@@ -11824,6 +11824,70 @@
       overflow: hidden
     }
 
+    .notif-item--broadcast {
+      align-items: flex-start;
+      padding: 12px 10px;
+      gap: 12px
+    }
+
+    .notif-item--broadcast .notif-icon {
+      width: 40px;
+      height: 40px;
+      font-size: 16px;
+      margin-top: 2px;
+      flex-shrink: 0
+    }
+
+    .notif-item--broadcast .notif-title {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 4px;
+      line-height: 1.4
+    }
+
+    .notif-bc-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 999px;
+      margin-bottom: 6px;
+      line-height: 1.2
+    }
+
+    .notif-bc-tag--circular {
+      background: color-mix(in srgb, var(--mr-blue) 14%, var(--mr-surface));
+      color: var(--mr-blue)
+    }
+
+    .notif-bc-tag--motivational {
+      background: color-mix(in srgb, var(--mk-success) 16%, var(--mr-surface));
+      color: var(--green-text)
+    }
+
+    .notif-bc-tag--alert {
+      background: color-mix(in srgb, var(--mk-warning) 18%, var(--mr-surface));
+      color: var(--amber-text, #b45309)
+    }
+
+    .notif-msg--broadcast {
+      display: block;
+      overflow: visible;
+      -webkit-line-clamp: unset;
+      font-size: 12px;
+      line-height: 1.55;
+      color: var(--mr-text);
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin-bottom: 6px
+    }
+
+    .notif-item--broadcast .notif-time {
+      font-size: 10px
+    }
+
     .notif-time {
       font-size: 9px;
       line-height: 1.2;
@@ -26891,7 +26955,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v768-broadcast-notif-tabs">
+  <meta name="app-build" content="athar-figma-v769-broadcast-inbox-kind">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -31483,7 +31547,7 @@
             mobLoad || !state.currentUser?.id
               ? Promise.resolve({ data: [], error: null })
               : sb.from('broadcast_inbox')
-                .select('id,broadcast_id,created_at,broadcasts(id,title,body,kind,created_at)')
+                .select('id,broadcast_id,title,body,kind,created_at,broadcasts(id,title,body,kind,created_at)')
                 .eq('user_id', state.currentUser.id)
                 .order('created_at', { ascending: false })
                 .limit(40),
@@ -48867,18 +48931,17 @@
           circular: { type: 'blue', icon: 'fa-bullhorn' }
         };
         (state.broadcastInbox || []).forEach((row) => {
-          const b = row.broadcasts || {};
-          const kind = b.kind || 'circular';
+          const meta = getBroadcastInboxMeta(row);
+          const kind = meta.kind;
           const style = BROADCAST_KIND_STYLES[kind] || BROADCAST_KIND_STYLES.circular;
-          const bid = row.broadcast_id || b.id || row.id;
           notifs.push({
-            id: `broadcast_${bid}`,
+            id: `broadcast_${meta.id}`,
             ticketId: '',
             type: style.type,
             icon: style.icon,
-            title: b.title || 'نشرة',
-            msg: b.body || '',
-            time: row.created_at || b.created_at,
+            title: meta.title,
+            msg: meta.body,
+            time: meta.createdAt,
             scope: 'mine',
             broadcastKind: kind
           });
@@ -48920,6 +48983,42 @@
       ];
       const BC_KIND_LABELS = { motivational: 'إنجازات', alert: 'تنبيهات', circular: 'تعاميم' };
       const BC_MODE_LABELS = { all: 'الكل', roles: 'حسب الدور', branches: 'حسب الفرع', users: 'مستخدمون محددون' };
+      const BROADCAST_INBOX_SELECT = 'id,broadcast_id,title,body,kind,created_at,broadcasts(id,title,body,kind,created_at)';
+
+      function getBroadcastInboxMeta(row) {
+        const embedded = row?.broadcasts;
+        const b = Array.isArray(embedded) ? embedded[0] : (embedded || {});
+        const kind = String(row?.kind || b?.kind || 'circular').trim();
+        const safeKind = ['motivational', 'alert', 'circular'].includes(kind) ? kind : 'circular';
+        return {
+          id: row?.broadcast_id || b?.id || row?.id,
+          title: String(row?.title || b?.title || 'نشرة').trim() || 'نشرة',
+          body: String(row?.body || b?.body || '').trim(),
+          kind: safeKind,
+          createdAt: row?.created_at || b?.created_at
+        };
+      }
+
+      async function refreshBroadcastInbox() {
+        if (!state.currentUser?.id) return false;
+        try {
+          const { data, error } = await sb.from('broadcast_inbox')
+            .select(BROADCAST_INBOX_SELECT)
+            .eq('user_id', state.currentUser.id)
+            .order('created_at', { ascending: false })
+            .limit(40);
+          if (error) {
+            if (isMirsadDebugLog()) console.warn('[BroadcastInbox]', error.message, error);
+            return false;
+          }
+          state.broadcastInbox = data || [];
+          invalidateNotifCache();
+          return true;
+        } catch (e) {
+          if (isMirsadDebugLog()) console.warn('[BroadcastInbox]', e);
+          return false;
+        }
+      }
 
       function getBroadcastTargetFromUI() {
         const mode = document.getElementById('bc-target-mode')?.value || 'all';
@@ -49099,7 +49198,7 @@
           await renderBroadcastHistory();
           try {
             const { data: inbox } = await sb.from('broadcast_inbox')
-              .select('id,broadcast_id,created_at,broadcasts(id,title,body,kind,created_at)')
+              .select(BROADCAST_INBOX_SELECT)
               .eq('user_id', state.currentUser.id)
               .order('created_at', { ascending: false })
               .limit(40);
@@ -49115,10 +49214,20 @@
       }
 
       function maybeOpenBroadcastFromPushUrl() {
-        const broadcastId = new URLSearchParams(window.location.search).get('broadcast');
+        const params = new URLSearchParams(window.location.search);
+        const broadcastId = params.get('broadcast');
         if (!broadcastId || !state.currentUser) return;
-        setTimeout(() => {
+        const bckind = String(params.get('bckind') || '').trim();
+        const filterByKind = {
+          circular: 'bc_circular',
+          motivational: 'bc_motivational',
+          alert: 'bc_alert'
+        }[bckind];
+        if (filterByKind) state._notifFilter = filterByKind;
+        setTimeout(async () => {
+          await refreshBroadcastInbox();
           if (typeof openNotificationsPage === 'function') openNotificationsPage();
+          if (filterByKind) setNotifFilter(filterByKind);
         }, 500);
       }
 
@@ -49511,6 +49620,20 @@
         return notifs.filter(n => (n.scope || 'mine') === f);
       }
 
+      function getNotifEmptyHtml(filter) {
+        const f = filter || state._notifFilter || 'all';
+        const bcKind = NOTIF_BC_FILTER_KIND[f];
+        const label = NOTIF_FILTER_LABELS[f] || 'تنبيهات';
+        const msg = bcKind
+          ? `لا توجد ${label} بعد`
+          : (f === 'mine' ? 'لا توجد تنبيهات خاصة بك' : (f === 'team' ? 'لا توجد تنبيهات للفريق' : 'لا توجد تنبيهات'));
+        return `
+      <div class="notif-empty">
+        <i class="fas fa-bell-slash"></i>
+        <p>${Sec.escapeHTML(msg)}</p>
+      </div>`;
+      }
+
       function syncNotifPageShell(active) {
         document.documentElement.classList.toggle('mr-notif-page-active', !!active);
         document.body.classList.toggle('mr-notif-page-active', !!active);
@@ -49642,13 +49765,20 @@
           state._notifReturnTab = current || getRestorableTab() || 'dashboard';
         }
         if (!state._notifFilter) state._notifFilter = 'all';
-        if (current === 'notifications') return;
-        document.getElementById('notifBellBtn')?.blur();
-        goTab('notifications', null);
-        requestAnimationFrame(() => {
+        const openPage = () => {
+          if (current === 'notifications') {
+            renderNotifications(true);
+            return;
+          }
           document.getElementById('notifBellBtn')?.blur();
-          blurHiddenChromeFocus();
-        });
+          goTab('notifications', null);
+          requestAnimationFrame(() => {
+            document.getElementById('notifBellBtn')?.blur();
+            blurHiddenChromeFocus();
+            renderNotifications(true);
+          });
+        };
+        refreshBroadcastInbox().finally(openPage);
       }
 
       function paintNotifList(notifs, read) {
@@ -49667,27 +49797,32 @@
             : `${visible.length} ${visible.length === 1 ? 'تنبيه' : 'تنبيهات'}`;
         }
 
-        const emptyHtml = `
-      <div class="notif-empty">
-        <i class="fas fa-bell-slash"></i>
-        <p>لا توجد تنبيهات</p>
-      </div>`;
+        const emptyHtml = getNotifEmptyHtml(state._notifFilter || 'all');
 
         function buildItemsHtml(visible) {
           return visible.map(n => {
             const isUnread = !read.has(n.id);
             const nid = Sec.escapeHTML(n.id);
             const tid = Sec.escapeHTML(n.ticketId || '');
+            const isBroadcast = !!n.broadcastKind;
+            const bcKind = isBroadcast ? Sec.escapeHTML(n.broadcastKind) : '';
+            const bcLabel = isBroadcast ? Sec.escapeHTML(BC_KIND_LABELS[n.broadcastKind] || n.broadcastKind) : '';
+            const itemCls = isBroadcast ? ' notif-item--broadcast' : '';
+            const msgCls = isBroadcast ? ' notif-msg--broadcast' : '';
+            const bcTag = isBroadcast
+              ? `<div class="notif-bc-tag notif-bc-tag--${bcKind}"><i class="fas ${Sec.escapeHTML(n.icon)}" aria-hidden="true"></i> ${bcLabel}</div>`
+              : '';
             return `
       <div class="notif-swipe" data-notif-id="${nid}">
         <button type="button" class="notif-swipe-delete" aria-label="حذف التنبيه"><span class="notif-icon red"><i class="fas fa-trash-alt" aria-hidden="true"></i></span><span>حذف</span></button>
-        <div class="notif-item ${isUnread ? 'unread' : ''}" onclick="handleNotifClick('${nid}','${tid}')">
+        <div class="notif-item${itemCls} ${isUnread ? 'unread' : ''}" onclick="handleNotifClick('${nid}','${tid}')">
         <div class="notif-icon ${n.type}">
           <i class="fas ${n.icon}"></i>
         </div>
         <div class="notif-body">
+          ${bcTag}
           <div class="notif-title">${Sec.escapeHTML(n.title)}</div>
-          <div class="notif-msg">${Sec.escapeHTML(n.msg)}</div>
+          <div class="notif-msg${msgCls}">${Sec.escapeHTML(n.msg || (isBroadcast ? '—' : ''))}</div>
           <div class="notif-time">${Sec.escapeHTML(formatRelativeAr(n.time))}</div>
         </div>
       </div>
