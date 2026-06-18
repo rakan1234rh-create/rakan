@@ -26418,7 +26418,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v762-push-required">
+  <meta name="app-build" content="athar-figma-v763-user-menu-admin">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -26646,6 +26646,10 @@
                   <i class="fas fa-mobile-screen-button" aria-hidden="true"></i>
                   <span id="topbarPushToggleLabel">تفعيل تنبيهات الجوال</span>
                 </button>
+                <button type="button" role="menuitem" onclick="openSettingsFromUserMenu(event)" data-perm="tab_settings">
+                  <i class="fas fa-shield-halved" aria-hidden="true"></i>
+                  <span>صلاحيات المنصة</span>
+                </button>
                 <button type="button" role="menuitem" onclick="openBroadcastsFromUserMenu(event)" data-perm="tab_broadcasts">
                   <i class="fas fa-bullhorn" aria-hidden="true"></i>
                   <span>نشرات الجوال</span>
@@ -26699,10 +26703,6 @@
               class="fas fa-location-dot" aria-hidden="true"></i></span><span class="nav-item-label">المناطق والفروع</span></button>
           <button class="nav-item" onclick="goTab('departments',this)" data-perm="tab_departments"><span class="nav-icon-wrap"><i
               class="fas fa-user-group" aria-hidden="true"></i></span><span class="nav-item-label">المستخدمون</span></button>
-          <button class="nav-item" onclick="goTab('settings',this)" data-perm="tab_settings"><span class="nav-icon-wrap"><i
-              class="fas fa-shield-halved" aria-hidden="true"></i></span><span class="nav-item-label">صلاحيات المنصة</span></button>
-          <button class="nav-item" onclick="goTab('broadcasts',this)" data-perm="tab_broadcasts"><span class="nav-icon-wrap"><i
-              class="fas fa-bullhorn" aria-hidden="true"></i></span><span class="nav-item-label">نشرات الجوال</span></button>
         </nav>
       </aside>
 
@@ -27589,16 +27589,6 @@
         onclick="mobileNavGo('departments', this)">
         <i class="fas fa-user-group" aria-hidden="true"></i>
         <span>مستخدمون</span>
-      </button>
-      <button type="button" class="mob-nav-item" data-tab="settings" data-perm="tab_settings"
-        onclick="mobileNavGo('settings', this)">
-        <i class="fas fa-shield-halved" aria-hidden="true"></i>
-        <span>صلاحيات</span>
-      </button>
-      <button type="button" class="mob-nav-item" data-tab="broadcasts" data-perm="tab_broadcasts"
-        onclick="mobileNavGo('broadcasts', this)">
-        <i class="fas fa-bullhorn" aria-hidden="true"></i>
-        <span>نشرات</span>
       </button>
     </nav>
 
@@ -48934,6 +48924,19 @@
         }
       }
 
+      function openSettingsFromUserMenu(event) {
+        if (event) {
+          event.stopPropagation();
+          event.preventDefault();
+        }
+        closeTopbarUserMenu();
+        if (!hasPermission('tab_settings')) {
+          showToast('صلاحيات المنصة غير متاحة لحسابك', 'warning');
+          return;
+        }
+        goTab('settings', null);
+      }
+
       function openBroadcastsFromUserMenu(event) {
         if (event) {
           event.stopPropagation();
@@ -48944,9 +48947,7 @@
           showToast('نشرات الجوال متاحة لمدير النظام فقط', 'warning');
           return;
         }
-        const btn = document.querySelector('#mobileBottomNav .mob-nav-item[data-tab="broadcasts"]:not([data-role-hide])')
-          || document.querySelector('#sidebarNav .nav-item[onclick*="broadcasts"]:not([data-role-hide])');
-        goTab('broadcasts', btn || null);
+        goTab('broadcasts', null);
       }
 
       async function toggleWebPushFromMenu(event) {
@@ -51295,6 +51296,7 @@
       window.downloadUsersImportTemplate = downloadUsersImportTemplate;
       window.triggerUsersImport = triggerUsersImport;
       window.handleUsersImportFile = handleUsersImportFile;
+      window.openSettingsFromUserMenu = openSettingsFromUserMenu;
       window.openBroadcastsFromUserMenu = openBroadcastsFromUserMenu;
       window.sendBroadcastFromUI = sendBroadcastFromUI;
       window.syncBroadcastTargetPanels = syncBroadcastTargetPanels;
