@@ -52,3 +52,5 @@ create policy push_subscriptions_service on public.push_subscriptions
 
 grant select, insert, update, delete on public.push_subscriptions to authenticated;
 grant all on public.push_subscriptions to service_role;
+
+-- عند تعطيل المستخدم: شغّل supabase/cleanup-user-notifications-on-deactivate.sql

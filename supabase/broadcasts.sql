@@ -51,3 +51,5 @@ grant select on public.broadcasts to authenticated;
 grant select on public.broadcast_inbox to authenticated;
 grant all on public.broadcasts to service_role;
 grant all on public.broadcast_inbox to service_role;
+
+-- عند تعطيل المستخدم: شغّل supabase/cleanup-user-notifications-on-deactivate.sql

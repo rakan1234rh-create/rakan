@@ -37185,7 +37185,7 @@
           if (local) local.is_active = false;
 
           renderUsers();
-          showToast('تم تعطيل المستخدم — سجلاته التاريخية محفوظة', 'info');
+          showToast('تم تعطيل المستخدم — سجلاته التاريخية محفوظة، وتُحذف اشتراكات التنبيه من Supabase تلقائياً', 'info');
         } catch (err) {
           if (isMirsadDebugLog()) console.error('[deleteUser]', err);
           showToast('فشل التعطيل: ' + formatPostgrestError(err), 'error');
