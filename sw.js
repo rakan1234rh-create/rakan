@@ -1,13 +1,22 @@
 /* ATHAR — Web Push (يعمل عند إغلاق التطبيق إن كان مثبتاً على الشاشة الرئيسية) */
+const ATHAR_PUSH_BRAND = 'ATHAR';
+
+function formatAtharPushDisplay(msgTitle, msgBody) {
+  const headline = String(msgTitle || 'تنبيه').trim();
+  const detail = String(msgBody || '').trim();
+  if (detail) return { title: ATHAR_PUSH_BRAND, body: `${headline}\n${detail}` };
+  return { title: ATHAR_PUSH_BRAND, body: headline };
+}
+
 self.addEventListener('push', (event) => {
   let payload = { title: 'تنبيه', body: 'تنبيه جديد', url: './index.html' };
   try {
     if (event.data) payload = { ...payload, ...event.data.json() };
   } catch (_) { /* noop */ }
 
-  const title = payload.title || 'تنبيه';
+  const display = formatAtharPushDisplay(payload.title, payload.body);
   const options = {
-    body: payload.body || '',
+    body: display.body,
     icon: './icons/athar-pwa-192-v393.png',
     badge: './icons/athar-pwa-192-v393.png',
     tag: payload.tag || payload.ticketId || 'athar-notif',
@@ -21,7 +30,7 @@ self.addEventListener('push', (event) => {
     }
   };
 
-  event.waitUntil(self.registration.showNotification(title, options));
+  event.waitUntil(self.registration.showNotification(display.title, options));
 });
 
 self.addEventListener('notificationclick', (event) => {
