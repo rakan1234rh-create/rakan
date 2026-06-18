@@ -16,7 +16,8 @@ self.addEventListener('push', (event) => {
     lang: 'ar',
     data: {
       url: payload.url || './index.html',
-      ticketId: payload.ticketId || ''
+      ticketId: payload.ticketId || '',
+      broadcastId: payload.broadcastId || ''
     }
   };
 
@@ -27,7 +28,10 @@ self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const data = event.notification.data || {};
   let target = data.url || './index.html';
-  if (data.ticketId) {
+  if (data.broadcastId && !/broadcast=/.test(target)) {
+    const sep = target.includes('?') ? '&' : '?';
+    target = `${target}${sep}broadcast=${encodeURIComponent(data.broadcastId)}`;
+  } else if (data.ticketId) {
     const sep = target.includes('?') ? '&' : '?';
     target = `${target}${sep}ticket=${encodeURIComponent(data.ticketId)}`;
   }

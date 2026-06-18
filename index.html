@@ -16199,6 +16199,103 @@
       margin-top: 16px
     }
 
+    #tab-broadcasts .bc-form-wrap {
+      padding: 0 4px 8px
+    }
+
+    #tab-broadcasts .bc-form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px 16px
+    }
+
+    #tab-broadcasts .bc-form-full {
+      grid-column: 1 / -1
+    }
+
+    #tab-broadcasts .bc-textarea {
+      min-height: 110px;
+      resize: vertical
+    }
+
+    #tab-broadcasts .bc-check-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 8px;
+      max-height: 220px;
+      overflow: auto;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface2)
+    }
+
+    #tab-broadcasts .bc-check-grid--users {
+      max-height: 260px
+    }
+
+    #tab-broadcasts .bc-check-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      cursor: pointer
+    }
+
+    #tab-broadcasts .bc-form-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border)
+    }
+
+    #tab-broadcasts .bc-preview {
+      font-size: 13px;
+      color: var(--text2)
+    }
+
+    #tab-broadcasts .bc-history {
+      margin-top: 24px;
+      padding-top: 18px;
+      border-top: 1px solid var(--border)
+    }
+
+    #tab-broadcasts .bc-history-title {
+      margin: 0 0 12px;
+      font-size: 15px
+    }
+
+    #tab-broadcasts .bc-history-item {
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface2);
+      margin-bottom: 8px
+    }
+
+    #tab-broadcasts .bc-history-item h4 {
+      margin: 0 0 6px;
+      font-size: 14px
+    }
+
+    #tab-broadcasts .bc-history-meta {
+      font-size: 12px;
+      color: var(--text-muted, #6b7280);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px
+    }
+
+    @media (max-width: 720px) {
+      #tab-broadcasts .bc-form-grid {
+        grid-template-columns: 1fr
+      }
+    }
+
     .mr-settings-seg {
       display: inline-flex;
       gap: 4px;
@@ -26321,7 +26418,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v746-push-cleanup">
+  <meta name="app-build" content="athar-figma-v747-broadcasts">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -26600,6 +26697,8 @@
               class="fas fa-user-group" aria-hidden="true"></i></span><span class="nav-item-label">المستخدمون</span></button>
           <button class="nav-item" onclick="goTab('settings',this)" data-perm="tab_settings"><span class="nav-icon-wrap"><i
               class="fas fa-shield-halved" aria-hidden="true"></i></span><span class="nav-item-label">صلاحيات المنصة</span></button>
+          <button class="nav-item" onclick="goTab('broadcasts',this)" data-perm="tab_broadcasts"><span class="nav-icon-wrap"><i
+              class="fas fa-bullhorn" aria-hidden="true"></i></span><span class="nav-item-label">نشرات الجوال</span></button>
         </nav>
       </aside>
 
@@ -27264,6 +27363,72 @@
               </div>
             </div>
           </div>
+          <!-- BROADCASTS (admin) -->
+          <div class="tab-content" id="tab-broadcasts">
+            <div class="panel wf-panel">
+              <div class="wf-panel-banner">
+                <div class="wf-panel-intro">
+                  <h2 class="wf-panel-title">نشرات الجوال</h2>
+                  <p class="wf-panel-sub">رسائل تحفيزية وتنبيهية وتعاميم — تصل خارج التطبيق</p>
+                </div>
+                <p class="mr-settings-note"><i class="fas fa-bullhorn"></i> مدير النظام فقط يمكنه الإرسال. يستلم التنبيه من فعّل «تنبيهات الجوال» في قائمته.</p>
+              </div>
+              <div class="bc-form-wrap">
+                <div class="bc-form-grid">
+                  <div class="form-group">
+                    <label class="form-label" for="bc-title">عنوان الرسالة <span class="required-mark">*</span></label>
+                    <input type="text" id="bc-title" class="form-input" maxlength="120" placeholder="مثال: تعميم بخصوص ساعات العمل">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="bc-kind">نوع الرسالة</label>
+                    <select id="bc-kind" class="form-select">
+                      <option value="circular">تعميم</option>
+                      <option value="motivational">تحفيزية</option>
+                      <option value="alert">تنبيهية</option>
+                    </select>
+                  </div>
+                  <div class="form-group bc-form-full">
+                    <label class="form-label" for="bc-body">نص الرسالة <span class="required-mark">*</span></label>
+                    <textarea id="bc-body" class="form-input bc-textarea" maxlength="500" rows="4" placeholder="اكتب نص النشرة…"></textarea>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="bc-target-mode">المستلمون</label>
+                    <select id="bc-target-mode" class="form-select" onchange="syncBroadcastTargetPanels()">
+                      <option value="all">كل المستخدمين النشطين</option>
+                      <option value="roles">حسب الدور</option>
+                      <option value="branches">حسب الفرع</option>
+                      <option value="users">مستخدمون محددون</option>
+                    </select>
+                  </div>
+                  <div class="form-group bc-target-panel" id="bc-panel-roles" hidden>
+                    <label class="form-label">الأدوار</label>
+                    <div class="bc-check-grid" id="bc-roles-list"></div>
+                  </div>
+                  <div class="form-group bc-target-panel bc-form-full" id="bc-panel-branches" hidden>
+                    <label class="form-label">الفروع</label>
+                    <div class="bc-check-grid" id="bc-branches-list"></div>
+                  </div>
+                  <div class="form-group bc-target-panel bc-form-full" id="bc-panel-users" hidden>
+                    <label class="form-label">المستخدمون</label>
+                    <input type="text" id="bc-user-search" class="form-input" placeholder="ابحث بالاسم…" oninput="filterBroadcastUserChecks()">
+                    <div class="bc-check-grid bc-check-grid--users" id="bc-users-list"></div>
+                  </div>
+                </div>
+                <div class="bc-form-actions">
+                  <div class="bc-preview" id="bc-preview">المستلمون المتوقعون: —</div>
+                  <button type="button" class="btn btn-primary" id="bc-send-btn" onclick="sendBroadcastFromUI()">
+                    <i class="fas fa-paper-plane"></i> إرسال الآن
+                  </button>
+                </div>
+              </div>
+              <div class="bc-history">
+                <h3 class="bc-history-title">آخر النشرات</h3>
+                <div id="bc-history-list" class="bc-history-list">
+                  <div class="empty"><p>لا توجد نشرات بعد</p></div>
+                </div>
+              </div>
+            </div>
+          </div>
           <!-- SETTINGS (admin) -->
           <div class="tab-content" id="tab-settings">
             <div class="panel wf-panel">
@@ -27326,7 +27491,7 @@
           <script>
             (function () {
               var KEY = 'mirsad_last_ui_tab';
-              var VALID = { dashboard: 1, workflow: 1, newTicket: 1, reports: 1, compliance: 1, violations: 1, locations: 1, departments: 1, settings: 1 };
+              var VALID = { dashboard: 1, workflow: 1, newTicket: 1, reports: 1, compliance: 1, violations: 1, locations: 1, departments: 1, settings: 1, broadcasts: 1 };
               var saved = 'dashboard';
               try {
                 var s = sessionStorage.getItem(KEY);
@@ -27878,7 +28043,7 @@
       /** Web Push — المفتاح العام VAPID (الخاص في Supabase Secrets فقط) */
       const ATHAR_VAPID_PUBLIC_KEY = 'BAAE2sxYeIGbYADV7uimLzIFB_en9SBWQ3a4-LBULuOIVm40YI7YfjXL2Fddttr1L1tHFkoaiPzmZankfUk_2jc';
       const ATHAR_VAPID_STORAGE_KEY = 'athar_vapid_public_key';
-      const ATHAR_SW_URL = './sw.js?v=4';
+      const ATHAR_SW_URL = './sw.js?v=5';
 
       /** رابط النشر — روابط استعادة كلمة المرور من file:// أو localhost */
       const ATHAR_PUBLIC_ORIGIN = 'https://rakan1234rh-create.github.io/rakan';
@@ -28433,6 +28598,7 @@
         violations: [],      // جميع المخالفات
         violationTypes: [],      // أنواع المخالفات
         notifications: [],      // الإشعارات
+        broadcastInbox: [],     // نشرات admin الواردة للمستخدم
         uploadedFiles: { nt: [], resp: [] },  // الملفات المرفوعة
         ntPickedEmployee: null,  // الموظف المختار في نموذج رصد المخالفة
         ntPickedViolationType: null,  // نوع المخالفة المختار في نموذج رصد المخالفة
@@ -30444,6 +30610,7 @@
 
             try { initAtharWebPush({ promptIfNeeded: true }); } catch (_) { /* noop */ }
             try { maybeOpenTicketFromPushUrl(); } catch (_) { /* noop */ }
+            try { maybeOpenBroadcastFromPushUrl(); } catch (_) { /* noop */ }
 
             if (state._notifTimer) clearInterval(state._notifTimer);
             state._notifTimer = setInterval(() => {
@@ -30549,6 +30716,7 @@
         state.violations = [];
         state.violationTypes = [];
         state.notifications = [];
+        state.broadcastInbox = [];
         state._readNotifsSet = null;
         invalidateNotifCache();
         state._dismissedNotifsSet = null;
@@ -30831,6 +30999,13 @@
             mobLoad
               ? Promise.resolve({ data: [], error: null })
               : sb.from('notifications').select('*').order('created_at', { ascending: false }).limit(50),
+            mobLoad || !state.currentUser?.id
+              ? Promise.resolve({ data: [], error: null })
+              : sb.from('broadcast_inbox')
+                .select('id,broadcast_id,created_at,broadcasts(id,title,body,kind,created_at)')
+                .eq('user_id', state.currentUser.id)
+                .order('created_at', { ascending: false })
+                .limit(40),
           ]);
 
           let pack;
@@ -30854,6 +31029,7 @@
             { data: violations, error: vErr },
             { data: vTypes, error: vtErr },
             { data: notifs, error: nErr },
+            { data: broadcastInbox, error: biErr },
           ] = pack;
 
           if (rErr) throw rErr;
@@ -30884,6 +31060,7 @@
             }
           }
           if (nErr && isMirsadDebugLog()) console.warn('[DataLoad] notifications:', nErr.message, nErr);
+          if (biErr && isMirsadDebugLog()) console.warn('[DataLoad] broadcast_inbox:', biErr.message, biErr);
 
           const _ms = Math.round(((typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now()) - _loadT0);
           if (isMirsadDebugLog()) {
@@ -30904,6 +31081,7 @@
           state.violations = (violations || []).map(enrichRow);
           state.violationTypes = vTypes || [];
           state.notifications = mobLoad ? [] : (notifs || []);
+          state.broadcastInbox = mobLoad ? [] : (broadcastInbox || []);
           invalidateNotifCache();
 
           const nR = state.regions.length;
@@ -31323,6 +31501,7 @@
         { id: 'tab_locations', label: 'المناطق والفروع', group: 'الإعدادات', roles: ['admin', 'supervisor', 'observer', 'manager'] },
         { id: 'tab_departments', label: 'إدارة المستخدمين', group: 'الإعدادات', roles: ['admin'] },
         { id: 'tab_settings', label: 'صفحة صلاحيات المنصة', group: 'الإعدادات', roles: [] },
+        { id: 'tab_broadcasts', label: 'نشرات الجوال', group: 'الإعدادات', roles: ['admin'] },
         { id: 'view_all_tickets', label: 'عرض جميع التذاكر (كل الفروع)', group: 'سير العمل', roles: ['admin', 'manager', 'auditor', 'hr'] },
         { id: 'respond_own_ticket', label: 'الرد على التذكرة الموجّهة إليه', group: 'سير العمل', roles: ['admin', 'employee', 'branch_manager'] },
         { id: 'act_as_supervisor', label: 'معالجة مرحلة المشرف', group: 'سير العمل', roles: ['admin', 'supervisor'] },
@@ -31360,7 +31539,8 @@
         violations: 'tab_violations',
         locations: 'tab_locations',
         departments: 'tab_departments',
-        settings: 'tab_settings'
+        settings: 'tab_settings',
+        broadcasts: 'tab_broadcasts'
       };
 
       function buildDefaultRolePermissions() {
@@ -31591,7 +31771,7 @@
           return canManagePlatformPermissions();
         }
         if (permId === 'section_settings') {
-          return ['tab_locations', 'tab_departments', 'tab_settings'].some(p => hasPermission(p));
+          return ['tab_locations', 'tab_departments', 'tab_settings', 'tab_broadcasts'].some(p => hasPermission(p));
         }
         if (permId === 'section_main') {
           return ['tab_dashboard', 'tab_newTicket', 'tab_workflow', 'tab_reports', 'tab_compliance', 'tab_violations'].some(p => hasPermission(p));
@@ -33372,6 +33552,7 @@
         departments: { title: 'إدارة المستخدمين', sub: 'users management' },
         violations: { title: 'أنواع المخالفات', sub: 'violation types' },
         settings: { title: 'صلاحيات المنصة', sub: 'platform permissions' },
+        broadcasts: { title: 'نشرات الجوال', sub: 'mobile broadcasts' },
         notifications: { title: 'التنبيهات', sub: 'notifications' }
       };
 
@@ -33906,7 +34087,7 @@
         // إظهار/إخفاء بنر اسم القسم
         const titleBar = document.getElementById('pageTitleBar');
         if (titleBar) {
-          const tabsWithOwnTitle = ['dashboard', 'newTicket', 'workflow', 'reports', 'locations', 'departments', 'violations', 'compliance', 'settings', 'notifications'];
+          const tabsWithOwnTitle = ['dashboard', 'newTicket', 'workflow', 'reports', 'locations', 'departments', 'violations', 'compliance', 'settings', 'broadcasts', 'notifications'];
           if (tabsWithOwnTitle.includes(tab)) {
             titleBar.classList.remove('visible');
           } else {
@@ -33955,6 +34136,7 @@
           if (tab === 'departments') renderUsers();
           if (tab === 'violations') renderViolTypes();
           if (tab === 'settings') renderSettingsPermissions();
+          if (tab === 'broadcasts') renderBroadcastsPage();
           if (tab === 'newTicket') prepareNewTicket();
         }
 
@@ -48121,6 +48303,29 @@
           });
         }
 
+        // نشرات admin الواردة (داخل التطبيق + Push)
+        const BROADCAST_KIND_STYLES = {
+          motivational: { type: 'green', icon: 'fa-star' },
+          alert: { type: 'amber', icon: 'fa-triangle-exclamation' },
+          circular: { type: 'blue', icon: 'fa-bullhorn' }
+        };
+        (state.broadcastInbox || []).forEach((row) => {
+          const b = row.broadcasts || {};
+          const kind = b.kind || 'circular';
+          const style = BROADCAST_KIND_STYLES[kind] || BROADCAST_KIND_STYLES.circular;
+          const bid = row.broadcast_id || b.id || row.id;
+          notifs.push({
+            id: `broadcast_${bid}`,
+            ticketId: '',
+            type: style.type,
+            icon: style.icon,
+            title: b.title || 'نشرة',
+            msg: b.body || '',
+            time: row.created_at || b.created_at,
+            scope: 'mine'
+          });
+        });
+
         // ترتيب من الأحدث للأقدم
         notifs.sort((a, b) => {
           const ta = a.time ? new Date(a.time).getTime() : 0;
@@ -48132,6 +48337,216 @@
       }
 
       const NOTIF_FILTER_LABELS = { all: 'الكل', mine: 'تنبيهاتي', team: 'تنبيهات الفريق' };
+
+      // ─── نشرات الجوال (admin) ─────────────────────────────────────────────
+      const BC_TARGET_ROLES = [
+        { id: 'employee', label: 'موظف' },
+        { id: 'branch_manager', label: 'مدير فرع' },
+        { id: 'supervisor', label: 'مشرف' },
+        { id: 'manager', label: 'مدير' },
+        { id: 'auditor', label: 'مدقق' },
+        { id: 'hr', label: 'موارد بشرية' },
+        { id: 'observer', label: 'راصد' }
+      ];
+      const BC_KIND_LABELS = { motivational: 'تحفيزية', alert: 'تنبيهية', circular: 'تعميم' };
+      const BC_MODE_LABELS = { all: 'الكل', roles: 'حسب الدور', branches: 'حسب الفرع', users: 'مستخدمون محددون' };
+
+      function getBroadcastTargetFromUI() {
+        const mode = document.getElementById('bc-target-mode')?.value || 'all';
+        const target = { mode };
+        if (mode === 'roles') {
+          target.roles = Array.from(document.querySelectorAll('#bc-roles-list input[type=checkbox]:checked'))
+            .map(el => el.value);
+        } else if (mode === 'branches') {
+          target.branchIds = Array.from(document.querySelectorAll('#bc-branches-list input[type=checkbox]:checked'))
+            .map(el => el.value);
+        } else if (mode === 'users') {
+          target.userIds = Array.from(document.querySelectorAll('#bc-users-list input[type=checkbox]:checked'))
+            .map(el => el.value);
+        }
+        return target;
+      }
+
+      function estimateBroadcastRecipients(target) {
+        const users = (state.users || []).filter(u => u.is_active !== false);
+        const mode = target?.mode || 'all';
+        const ids = new Set();
+        if (mode === 'all') {
+          users.forEach(u => ids.add(u.id));
+        } else if (mode === 'roles') {
+          const roles = new Set((target.roles || []).map(normalizeUserRole));
+          users.forEach(u => { if (roles.has(normalizeUserRole(u.role))) ids.add(u.id); });
+        } else if (mode === 'branches') {
+          const branchSet = new Set((target.branchIds || []).map(String));
+          users.forEach(u => { if (u.branch_id && branchSet.has(String(u.branch_id))) ids.add(u.id); });
+          (state.regions || []).forEach(reg => {
+            const hasBranch = (state.branches || []).some(b => branchSet.has(String(b.id)) && String(b.region_id) === String(reg.id));
+            if (hasBranch && reg.supervisor_id) ids.add(reg.supervisor_id);
+          });
+        } else if (mode === 'users') {
+          (target.userIds || []).forEach(id => { if (id) ids.add(String(id)); });
+        }
+        return ids.size;
+      }
+
+      function syncBroadcastTargetPanels() {
+        const mode = document.getElementById('bc-target-mode')?.value || 'all';
+        document.querySelectorAll('#tab-broadcasts .bc-target-panel').forEach(el => { el.hidden = true; });
+        if (mode === 'roles') document.getElementById('bc-panel-roles')?.removeAttribute('hidden');
+        if (mode === 'branches') document.getElementById('bc-panel-branches')?.removeAttribute('hidden');
+        if (mode === 'users') document.getElementById('bc-panel-users')?.removeAttribute('hidden');
+        updateBroadcastPreview();
+      }
+
+      function initBroadcastTargetPickers() {
+        const rolesEl = document.getElementById('bc-roles-list');
+        if (rolesEl && !rolesEl.dataset.ready) {
+          rolesEl.innerHTML = BC_TARGET_ROLES.map(r => `
+            <label class="bc-check-item">
+              <input type="checkbox" value="${Sec.escapeHTML(r.id)}" onchange="updateBroadcastPreview()">
+              <span>${Sec.escapeHTML(r.label)}</span>
+            </label>`).join('');
+          rolesEl.dataset.ready = '1';
+        }
+        const branchesEl = document.getElementById('bc-branches-list');
+        if (branchesEl) {
+          branchesEl.innerHTML = (state.branches || []).map(b => `
+            <label class="bc-check-item">
+              <input type="checkbox" value="${Sec.escapeHTML(b.id)}" onchange="updateBroadcastPreview()">
+              <span>${Sec.escapeHTML(b.name || b.id)}</span>
+            </label>`).join('') || '<p class="bc-preview">لا توجد فروع</p>';
+        }
+        const usersEl = document.getElementById('bc-users-list');
+        if (usersEl) {
+          usersEl.innerHTML = (state.users || [])
+            .filter(u => u.is_active !== false)
+            .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'ar'))
+            .map(u => `
+            <label class="bc-check-item" data-name="${Sec.escapeHTML(String(u.name || '').toLowerCase())}">
+              <input type="checkbox" value="${Sec.escapeHTML(u.id)}" onchange="updateBroadcastPreview()">
+              <span>${Sec.escapeHTML(u.name || u.id)} <small>(${Sec.escapeHTML(ROLE_LABELS[normalizeUserRole(u.role)] || u.role || '')})</small></span>
+            </label>`).join('') || '<p class="bc-preview">لا يوجد مستخدمون</p>';
+        }
+      }
+
+      function filterBroadcastUserChecks() {
+        const q = String(document.getElementById('bc-user-search')?.value || '').trim().toLowerCase();
+        document.querySelectorAll('#bc-users-list .bc-check-item').forEach(el => {
+          const name = el.getAttribute('data-name') || '';
+          el.style.display = !q || name.includes(q) ? '' : 'none';
+        });
+      }
+
+      function updateBroadcastPreview() {
+        const el = document.getElementById('bc-preview');
+        if (!el) return;
+        const target = getBroadcastTargetFromUI();
+        const count = estimateBroadcastRecipients(target);
+        el.textContent = count
+          ? `المستلمون المتوقعون: ${count} مستخدم`
+          : 'لا يوجد مستلمون مطابقون — راجع الاستهداف';
+      }
+
+      async function renderBroadcastHistory() {
+        const host = document.getElementById('bc-history-list');
+        if (!host) return;
+        if (normalizeUserRole(state.currentUser?.role) !== 'admin') {
+          host.innerHTML = '<div class="empty"><p>غير متاح</p></div>';
+          return;
+        }
+        host.innerHTML = '<div class="empty"><i class="fas fa-spinner fa-spin"></i><p>جاري التحميل…</p></div>';
+        const { data, error } = await sb.from('broadcasts')
+          .select('id,title,body,kind,target_mode,recipient_count,push_sent_count,created_at')
+          .order('created_at', { ascending: false })
+          .limit(25);
+        if (error) {
+          host.innerHTML = `<div class="empty"><p>${Sec.escapeHTML(error.message)}</p><p>شغّل supabase/broadcasts.sql</p></div>`;
+          return;
+        }
+        if (!data?.length) {
+          host.innerHTML = '<div class="empty"><p>لا توجد نشرات بعد</p></div>';
+          return;
+        }
+        host.innerHTML = data.map(row => `
+          <article class="bc-history-item">
+            <h4>${Sec.escapeHTML(row.title)}</h4>
+            <p>${Sec.escapeHTML(row.body)}</p>
+            <div class="bc-history-meta">
+              <span>${Sec.escapeHTML(BC_KIND_LABELS[row.kind] || row.kind)}</span>
+              <span>${Sec.escapeHTML(BC_MODE_LABELS[row.target_mode] || row.target_mode)}</span>
+              <span>مستلمون: ${row.recipient_count || 0}</span>
+              <span>Push: ${row.push_sent_count || 0}</span>
+              <span>${Sec.escapeHTML(formatRelativeAr(row.created_at))}</span>
+            </div>
+          </article>`).join('');
+      }
+
+      function renderBroadcastsPage() {
+        if (normalizeUserRole(state.currentUser?.role) !== 'admin') return;
+        initBroadcastTargetPickers();
+        syncBroadcastTargetPanels();
+        renderBroadcastHistory();
+      }
+
+      async function sendBroadcastFromUI() {
+        if (normalizeUserRole(state.currentUser?.role) !== 'admin') {
+          showToast('مدير النظام فقط يمكنه إرسال النشرات', 'error');
+          return;
+        }
+        const title = String(document.getElementById('bc-title')?.value || '').trim();
+        const body = String(document.getElementById('bc-body')?.value || '').trim();
+        const kind = document.getElementById('bc-kind')?.value || 'circular';
+        const target = getBroadcastTargetFromUI();
+        if (!title) { showToast('أدخل عنوان الرسالة', 'warning'); return; }
+        if (!body) { showToast('أدخل نص الرسالة', 'warning'); return; }
+        const count = estimateBroadcastRecipients(target);
+        if (!count) { showToast('لا يوجد مستلمون مطابقون', 'warning'); return; }
+        const ok = await confirmDialog(
+          `إرسال النشرة إلى ${count} مستخدم؟\n\nالعنوان: ${title}\n\nسيصل إشعار خارج التطبيق لمن فعّل تنبيهات الجوال.`,
+          { type: 'warn', title: 'تأكيد الإرسال', okText: 'إرسال', cancelText: 'إلغاء' }
+        );
+        if (!ok) return;
+        const btn = document.getElementById('bc-send-btn');
+        if (btn) btn.disabled = true;
+        try {
+          const { data, error } = await sb.functions.invoke('broadcast-push', {
+            body: { title, body, kind, target }
+          });
+          if (error) {
+            const msg = data?.error || data?.hint || formatPushError(error);
+            throw new Error(msg);
+          }
+          if (data?.error) throw new Error(data.error);
+          const pushSent = data?.pushSent || 0;
+          showToast(`تم الإرسال ✓ — ${data?.recipients || count} مستلم، ${pushSent} إشعار Push`, 'success');
+          document.getElementById('bc-title').value = '';
+          document.getElementById('bc-body').value = '';
+          updateBroadcastPreview();
+          await renderBroadcastHistory();
+          try {
+            const { data: inbox } = await sb.from('broadcast_inbox')
+              .select('id,broadcast_id,created_at,broadcasts(id,title,body,kind,created_at)')
+              .eq('user_id', state.currentUser.id)
+              .order('created_at', { ascending: false })
+              .limit(40);
+            state.broadcastInbox = inbox || [];
+            invalidateNotifCache();
+            renderNotifications(true);
+          } catch (_) { /* noop */ }
+        } catch (e) {
+          showToast('فشل الإرسال: ' + formatPushError(e), 'error');
+        } finally {
+          if (btn) btn.disabled = false;
+        }
+      }
+
+      function maybeOpenBroadcastFromPushUrl() {
+        const broadcastId = new URLSearchParams(window.location.search).get('broadcast');
+        if (!broadcastId || !state.currentUser) return;
+        setTimeout(() => {
+          if (typeof openNotificationsPage === 'function') openNotificationsPage();
+        }, 500);
+      }
 
       // ─── Web Push (تنبيهات خارج التطبيق) ───────────────────────────────────
       function isWebPushSupported() {
@@ -50718,6 +51133,10 @@
       window.downloadUsersImportTemplate = downloadUsersImportTemplate;
       window.triggerUsersImport = triggerUsersImport;
       window.handleUsersImportFile = handleUsersImportFile;
+      window.sendBroadcastFromUI = sendBroadcastFromUI;
+      window.syncBroadcastTargetPanels = syncBroadcastTargetPanels;
+      window.updateBroadcastPreview = updateBroadcastPreview;
+      window.filterBroadcastUserChecks = filterBroadcastUserChecks;
       window.toggleWebPushFromMenu = toggleWebPushFromMenu;
       window.openNotificationsPage = openNotificationsPage;
       window.closeNotificationsPage = closeNotificationsPage;

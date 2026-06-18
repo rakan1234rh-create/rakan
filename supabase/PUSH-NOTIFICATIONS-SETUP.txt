@@ -25,7 +25,12 @@ ATHAR — تنبيهات الجوال (Web Push) — الإعداد النهائ
    • مدير فرع نفس الفرع (مع اسم الموظف)
    • مشرف المنطقة (مع اسم الموظف)
 
-6) إن شغّلت سابقاً violation-push-trigger.sql
+6) نشرات admin (تحفيز / تنبيه / تعميم)
+   • شغّل: supabase/broadcasts.sql
+   • انشر: broadcast-push (مع violation-push في نفس GitHub Action)
+   • الواجهة: الإعدادات → نشرات الجوال (admin فقط)
+
+7) إن شغّلت سابقاً violation-push-trigger.sql
    شغّل: supabase/إزالة-trigger-التنبيهات-إن-وُجد.sql
    (لتجنب إشعار مكرر)
 
