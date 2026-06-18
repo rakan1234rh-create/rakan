@@ -26418,7 +26418,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v750-broadcasts-ipad-nav">
+  <meta name="app-build" content="athar-figma-v752-notif-dismiss-db">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -30731,6 +30731,7 @@
         state._readNotifsSet = null;
         invalidateNotifCache();
         state._dismissedNotifsSet = null;
+        state._dbDismissedNotifIds = null;
         state._dataLoading = false;
         state._dataReady = false;
 
@@ -31017,6 +31018,12 @@
                 .eq('user_id', state.currentUser.id)
                 .order('created_at', { ascending: false })
                 .limit(40),
+            mobLoad || !state.currentUser?.id
+              ? Promise.resolve({ data: [], error: null })
+              : sb.from('user_notif_dismissals')
+                .select('notif_id')
+                .eq('user_id', state.currentUser.id)
+                .limit(500),
           ]);
 
           let pack;
@@ -31041,6 +31048,7 @@
             { data: vTypes, error: vtErr },
             { data: notifs, error: nErr },
             { data: broadcastInbox, error: biErr },
+            { data: notifDismissals, error: ndErr },
           ] = pack;
 
           if (rErr) throw rErr;
@@ -31072,6 +31080,7 @@
           }
           if (nErr && isMirsadDebugLog()) console.warn('[DataLoad] notifications:', nErr.message, nErr);
           if (biErr && isMirsadDebugLog()) console.warn('[DataLoad] broadcast_inbox:', biErr.message, biErr);
+          if (ndErr && isMirsadDebugLog()) console.warn('[DataLoad] user_notif_dismissals:', ndErr.message, ndErr);
 
           const _ms = Math.round(((typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now()) - _loadT0);
           if (isMirsadDebugLog()) {
@@ -31093,6 +31102,10 @@
           state.violationTypes = vTypes || [];
           state.notifications = mobLoad ? [] : (notifs || []);
           state.broadcastInbox = mobLoad ? [] : (broadcastInbox || []);
+          state._dbDismissedNotifIds = mobLoad
+            ? new Set()
+            : new Set((notifDismissals || []).map(r => r.notif_id).filter(Boolean));
+          state._dismissedNotifsSet = null;
           invalidateNotifCache();
 
           const nR = state.regions.length;
@@ -37185,7 +37198,7 @@
           if (local) local.is_active = false;
 
           renderUsers();
-          showToast('تم تعطيل المستخدم — سجلاته التاريخية محفوظة، وتُحذف اشتراكات التنبيه من Supabase تلقائياً', 'info');
+          showToast('تم تعطيل المستخدم — سجلاته التاريخية محفوظة', 'info');
         } catch (err) {
           if (isMirsadDebugLog()) console.error('[deleteUser]', err);
           showToast('فشل التعطيل: ' + formatPostgrestError(err), 'error');
@@ -47710,11 +47723,19 @@
       }
 
       function getDismissedNotifs() {
-        if (state._dismissedNotifsSet) return state._dismissedNotifsSet;
-        try {
-          state._dismissedNotifsSet = new Set(JSON.parse(localStorage.getItem(notifDismissedKey()) || '[]'));
-        } catch { state._dismissedNotifsSet = new Set(); }
-        return state._dismissedNotifsSet;
+        let set;
+        if (state._dismissedNotifsSet) {
+          set = state._dismissedNotifsSet;
+        } else {
+          try {
+            set = new Set(JSON.parse(localStorage.getItem(notifDismissedKey()) || '[]'));
+          } catch { set = new Set(); }
+          state._dismissedNotifsSet = set;
+        }
+        if (state._dbDismissedNotifIds) {
+          state._dbDismissedNotifIds.forEach(id => set.add(id));
+        }
+        return set;
       }
 
       function saveDismissedNotifs(set) {
@@ -47787,8 +47808,44 @@
         wrap.style.removeProperty('--notif-swipe-x');
       }
 
-      function dismissNotif(notifId) {
+      function parseBroadcastNotifId(notifId) {
+        if (!notifId || !String(notifId).startsWith('broadcast_')) return null;
+        return String(notifId).slice('broadcast_'.length);
+      }
+
+      async function persistNotifDismissToDb(notifId) {
+        if (!state.currentUser?.id || !notifId) return;
+        const broadcastId = parseBroadcastNotifId(notifId);
+        if (broadcastId) {
+          const { error } = await sb.from('broadcast_inbox')
+            .delete()
+            .eq('user_id', state.currentUser.id)
+            .eq('broadcast_id', broadcastId);
+          if (error) throw error;
+          state.broadcastInbox = (state.broadcastInbox || []).filter(
+            r => String(r.broadcast_id) !== String(broadcastId)
+          );
+          invalidateNotifCache();
+          return;
+        }
+        const { error } = await sb.from('user_notif_dismissals')
+          .upsert(
+            { user_id: state.currentUser.id, notif_id: String(notifId) },
+            { onConflict: 'user_id,notif_id' }
+          );
+        if (error) throw error;
+        if (!state._dbDismissedNotifIds) state._dbDismissedNotifIds = new Set();
+        state._dbDismissedNotifIds.add(String(notifId));
+      }
+
+      async function dismissNotif(notifId) {
         if (!notifId) return;
+        try {
+          await persistNotifDismissToDb(notifId);
+        } catch (e) {
+          if (isMirsadDebugLog()) console.warn('[notif dismiss]', e);
+          showToast('تعذّر حفظ الحذف — شغّل supabase/user_notif_dismissals.sql', 'warning');
+        }
         const dismissed = getDismissedNotifs();
         dismissed.add(notifId);
         saveDismissedNotifs(dismissed);
@@ -49322,6 +49379,12 @@
         );
         if (!ok) return;
         const read = getReadNotifs();
+        try {
+          await Promise.all(visible.map(n => persistNotifDismissToDb(n.id)));
+        } catch (e) {
+          if (isMirsadDebugLog()) console.warn('[notif dismiss all]', e);
+          showToast('تعذّر حفظ بعض الحذوفات — شغّل supabase/user_notif_dismissals.sql', 'warning');
+        }
         visible.forEach(n => {
           dismissed.add(n.id);
           read.add(n.id);
