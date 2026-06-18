@@ -394,6 +394,7 @@
     html.mr-mobile-ui #appWrap .main:has(#tab-workflow.active),
     html.mr-mobile-ui #appWrap .main:has(#tab-reports.active),
     html.mr-mobile-ui #appWrap .main:has(#tab-departments.active),
+    html.mr-mobile-ui #appWrap .main:has(#tab-locations.active),
     html.mr-mobile-ui #appWrap .main:has(#tab-violations.active),
     html.mr-mobile-ui #appWrap .main:has(#tab-compliance.active),
     html.mr-mobile-ui #appWrap .main:has(#tab-dashboard.active) {
@@ -405,6 +406,7 @@
     html.mr-mobile-ui #appWrap .content:has(#tab-workflow.active),
     html.mr-mobile-ui #appWrap .content:has(#tab-reports.active),
     html.mr-mobile-ui #appWrap .content:has(#tab-departments.active),
+    html.mr-mobile-ui #appWrap .content:has(#tab-locations.active),
     html.mr-mobile-ui #appWrap .content:has(#tab-violations.active),
     html.mr-mobile-ui #appWrap .content:has(#tab-compliance.active) {
       padding: 0 !important
@@ -21542,6 +21544,216 @@
         overscroll-behavior-y: contain
       }
 
+      /* المناطق والفروع — جوال: صفحة كاملة + بطاقات للمناطق/الفروع */
+      @media (max-width: 992px) {
+        .content:has(#tab-locations.active) {
+          padding: 0 !important;
+          background: var(--mr-bg) !important;
+          overflow: hidden !important;
+          flex: 1 1 auto;
+          min-height: 0;
+          display: flex;
+          flex-direction: column
+        }
+
+        #appWrap .main:has(#tab-locations.active) {
+          overflow: hidden !important;
+          display: flex;
+          flex-direction: column;
+          flex: 1 1 auto;
+          min-height: 0
+        }
+
+        #tab-locations.tab-content.active {
+          display: flex !important;
+          flex-direction: column;
+          flex: 1 1 auto;
+          min-height: 0;
+          overflow: hidden;
+          background: var(--mr-bg) !important
+        }
+
+        #tab-locations .panel.wf-panel {
+          padding: 0 !important;
+          margin: 0 !important;
+          border: none !important;
+          border-radius: 0 !important;
+          box-shadow: none !important;
+          background: var(--mr-bg) !important;
+          flex: 1 1 auto;
+          min-height: 0;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden
+        }
+
+        #tab-locations .rb-locations-page-banner {
+          padding: 18px 14px 0 !important;
+          margin: 0 !important;
+          background: var(--mr-bg) !important;
+          border: none !important;
+          border-radius: 0 !important;
+          flex-shrink: 0
+        }
+
+        #tab-locations .rb-locations-page-banner .wf-panel-sub {
+          margin-top: 6px !important;
+          margin-bottom: 0 !important;
+          font-size: 13px;
+          color: var(--mr-text-2)
+        }
+
+        #tab-locations .rb-locations-page-banner .rb-drill-summary {
+          margin-top: 10px !important
+        }
+
+        #tab-locations .toolbar.wf-toolbar.rb-toolbar {
+          padding: 8px 14px 6px !important;
+          margin: 0 !important;
+          flex-direction: column !important;
+          align-items: stretch !important;
+          gap: 8px !important
+        }
+
+        #tab-locations .rb-search-combo.cmp-neo-search-combo {
+          width: 100% !important;
+          min-height: 42px !important
+        }
+
+        #tab-locations .rb-search-combo .cmp-neo-search-combo__field {
+          min-height: 40px !important;
+          padding-inline: 12px 8px !important
+        }
+
+        #tab-locations .rb-toolbar .rp-tool-btn {
+          width: 100% !important;
+          min-height: 42px !important;
+          justify-content: center
+        }
+
+        #tab-locations .wf-count {
+          padding: 0 14px 10px !important;
+          margin: 0 !important;
+          font-size: 12px !important;
+          color: var(--mr-text-2) !important;
+          flex-shrink: 0
+        }
+
+        #tab-locations #regionsDeskHost {
+          flex: 1 1 auto;
+          min-height: 0;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden
+        }
+
+        #tab-locations .mr-users-list-wrap.wf-table-wrap {
+          flex: 1 1 auto;
+          min-height: 0;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+          border: none !important;
+          border-radius: 0 !important;
+          box-shadow: none !important;
+          background: var(--mr-bg) !important;
+          padding: 0 !important
+        }
+
+        #tab-locations .rb-regions-scroll {
+          flex: 1 1 auto;
+          min-height: 0;
+          overflow-y: auto !important;
+          overflow-x: hidden !important;
+          -webkit-overflow-scrolling: touch !important;
+          touch-action: pan-y !important;
+          overscroll-behavior-y: contain;
+          padding: 4px 14px calc(var(--mr-mob-bottom-nav-h, 56px) + 20px) !important;
+          background: var(--mr-bg) !important
+        }
+
+        #tab-locations .rb-regions-scroll > .empty {
+          min-height: 160px;
+          border: none !important;
+          box-shadow: none !important;
+          background: transparent !important
+        }
+      }
+
+      html.mr-mobile-ui.mr-locations-tab-active body.mirsad-app-active #appWrap .main {
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        padding: 0 !important
+      }
+
+      html.mr-mobile-ui.mr-locations-tab-active body.mirsad-app-active #appWrap .main .content {
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        height: 0 !important;
+        padding: 0 !important;
+        max-width: none !important;
+        margin: 0 !important
+      }
+
+      html.mr-mobile-ui.mr-locations-tab-active #tab-locations.tab-content.active {
+        display: flex !important;
+        flex-direction: column !important;
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        height: 0 !important;
+        overflow: hidden !important
+      }
+
+      html.mr-mobile-ui.mr-locations-tab-active #tab-locations .panel.wf-panel {
+        padding: 0 !important;
+        margin: 0 !important;
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        height: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        overflow: hidden !important
+      }
+
+      html.mr-mobile-ui.mr-locations-tab-active #tab-locations #regionsDeskHost {
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        height: 0 !important;
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important
+      }
+
+      html.mr-mobile-ui.mr-locations-tab-active #tab-locations .mr-users-list-wrap.wf-table-wrap {
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        height: 0 !important;
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
+        border: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        background: var(--mr-bg) !important
+      }
+
+      html.mr-mobile-ui.mr-locations-tab-active #tab-locations .rb-regions-scroll {
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        height: 0 !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        -webkit-overflow-scrolling: touch !important;
+        touch-action: pan-y !important;
+        overscroll-behavior-y: contain
+      }
+
       /* تقييم الموظفين / الامتثال — جوال: تمرير داخلي + مسافة فوق الشريط السفلي */
       .main:has(#tab-compliance.active) {
         padding-inline: 0 !important;
@@ -26627,7 +26839,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v764-locations-ui">
+  <meta name="app-build" content="athar-figma-v765-locations-mob-page">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -27408,7 +27620,7 @@
           <!-- LOCATIONS -->
           <div class="tab-content" id="tab-locations">
             <div class="panel wf-panel">
-              <div class="wf-panel-banner">
+              <div class="wf-panel-banner rb-locations-page-banner">
                 <div class="wf-panel-intro" id="rbPanelIntro">
                   <h2 class="wf-panel-title" id="rbPanelTitle">المناطق والفروع</h2>
                   <p class="wf-panel-sub" id="rbPanelSub">regions &amp; branches</p>
@@ -33089,6 +33301,7 @@
         syncViolMobileScrollShell(null);
         syncUsersMobileScrollShell(null);
         syncCmpMobileScrollShell(null);
+        syncLocationsMobileScrollShell(null);
       }
 
       function getNavButtonForTab(tab) {
@@ -33996,6 +34209,7 @@
             syncViolMobListHeight();
             syncUsersMobileScrollShell(activeTab);
             syncCmpMobileScrollShell(activeTab);
+            syncLocationsMobileScrollShell(activeTab);
             if (typeof syncUserRoleDdFixedWidth === 'function') syncUserRoleDdFixedWidth();
             if (activeTab === 'departments' && typeof renderUsers === 'function') renderUsers();
             if (activeTab === 'violations' && typeof renderViolTypes === 'function') renderViolTypes();
@@ -34248,6 +34462,12 @@
         document.documentElement.classList.toggle('mr-cmp-tab-active', on);
       }
 
+      function syncLocationsMobileScrollShell(tab) {
+        const activeTab = tab || (typeof getActiveTabKey === 'function' ? getActiveTabKey() : null);
+        const on = typeof isMobileViewport === 'function' && isMobileViewport() && activeTab === 'locations';
+        document.documentElement.classList.toggle('mr-locations-tab-active', on);
+      }
+
       window.dismissPageOverlaysOnTabLeave = dismissPageOverlaysOnTabLeave;
 
       function goTab(tab, btn, opts = {}) {
@@ -34392,6 +34612,7 @@
         syncViolMobileScrollShell(tab);
         syncUsersMobileScrollShell(tab);
         syncCmpMobileScrollShell(tab);
+        syncLocationsMobileScrollShell(tab);
       }
 
       /** تفعيل تبويب من الشريط الجانبي (لوحة القيادة — إجراءات سريعة) */
