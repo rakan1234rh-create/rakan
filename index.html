@@ -8078,6 +8078,215 @@
       border-top-color: var(--mr-border-2)
     }
 
+    /* ═══════════════ المناطق والفروع — تحسينات احترافية ═══════════════ */
+    .rb-region-card,
+    .rb-branch-card {
+      --rb-accent: var(--mr-blue);
+      position: relative;
+      overflow: hidden;
+      border-radius: 18px;
+      padding: 16px 18px 14px;
+      transition: transform .24s cubic-bezier(.2, .7, .3, 1), box-shadow .24s ease, border-color .24s ease
+    }
+
+    .rb-region-card {
+      --rb-accent: var(--mr-green)
+    }
+
+    /* شريط لوني علوي رفيع */
+    .rb-region-card::before,
+    .rb-branch-card::before {
+      content: "";
+      position: absolute;
+      inset-inline: 0;
+      top: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--rb-accent), color-mix(in srgb, var(--rb-accent) 12%, transparent) 85%);
+      opacity: .9;
+      pointer-events: none
+    }
+
+    .rb-region-card:hover,
+    .rb-branch-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 14px 30px -16px color-mix(in srgb, var(--rb-accent) 55%, transparent), var(--mr-shadow-soft);
+      border-color: color-mix(in srgb, var(--rb-accent) 38%, var(--mr-border))
+    }
+
+    /* أيقونة بتدرّج لوني */
+    .rb-region-card__icon,
+    .rb-branch-card__icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      font-size: 16px;
+      background: linear-gradient(135deg, color-mix(in srgb, var(--rb-accent) 24%, var(--mr-surface)), color-mix(in srgb, var(--rb-accent) 7%, var(--mr-surface)));
+      border: 1px solid color-mix(in srgb, var(--rb-accent) 32%, var(--mr-border));
+      color: var(--rb-accent);
+      box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 28%, transparent);
+      transition: transform .24s cubic-bezier(.2, .7, .3, 1)
+    }
+
+    .rb-region-card:hover .rb-region-card__icon,
+    .rb-branch-card:hover .rb-branch-card__icon {
+      transform: scale(1.05)
+    }
+
+    /* رأس بطاقة المنطقة: الهوية + مؤشر الدخول */
+    .rb-region-card__head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px
+    }
+
+    .rb-region-card__name,
+    .rb-branch-card__name {
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: -0.02em
+    }
+
+    /* مؤشر الدخول (chevron) */
+    .rb-region-card__chevron {
+      flex-shrink: 0;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      color: var(--mr-text-3);
+      background: var(--mr-bg-2);
+      border: 1px solid var(--mr-border);
+      transition: transform .22s ease, background .22s ease, color .22s ease, border-color .22s ease
+    }
+
+    .rb-region-card:hover .rb-region-card__chevron,
+    .rb-region-card:focus-visible .rb-region-card__chevron {
+      color: var(--mr-green);
+      background: color-mix(in srgb, var(--mr-green) 16%, var(--mr-surface));
+      border-color: color-mix(in srgb, var(--mr-green) 34%, var(--mr-border));
+      transform: translateX(-4px)
+    }
+
+    /* رقائق الإحصاء الملوّنة */
+    .rb-region-card__stat--branches,
+    .rb-branch-card__stat {
+      background: color-mix(in srgb, var(--mr-blue) 10%, var(--mr-surface));
+      border-color: color-mix(in srgb, var(--mr-blue) 22%, var(--mr-border));
+      color: var(--mr-text)
+    }
+
+    .rb-region-card__stat--branches i,
+    .rb-branch-card__stat i {
+      color: var(--mr-blue)
+    }
+
+    .rb-region-card__stat--emps {
+      background: color-mix(in srgb, var(--mr-green) 10%, var(--mr-surface));
+      border-color: color-mix(in srgb, var(--mr-green) 22%, var(--mr-border));
+      color: var(--mr-text)
+    }
+
+    .rb-region-card__stat--emps i {
+      color: var(--mr-green)
+    }
+
+    /* رأس بطاقة الفرع: شارة عدد الموظفين أعلى */
+    .rb-branch-card__head {
+      align-items: center;
+      justify-content: space-between
+    }
+
+    /* قائمة موظفي الفرع — شريط تمرير أنيق */
+    .rb-branch-card__staff {
+      scrollbar-width: thin;
+      scrollbar-color: color-mix(in srgb, var(--mr-text-3) 38%, transparent) transparent;
+      padding-inline-end: 2px
+    }
+
+    .rb-branch-card__staff::-webkit-scrollbar {
+      width: 6px
+    }
+
+    .rb-branch-card__staff::-webkit-scrollbar-thumb {
+      background: color-mix(in srgb, var(--mr-text-3) 32%, transparent);
+      border-radius: 999px
+    }
+
+    .rb-branch-card .rb-emp-row {
+      transition: background .15s ease, border-color .15s ease
+    }
+
+    .rb-branch-card .rb-emp-row:hover {
+      background: color-mix(in srgb, var(--mr-blue) 7%, var(--mr-bg-2));
+      border-color: color-mix(in srgb, var(--mr-blue) 22%, var(--mr-border))
+    }
+
+    [data-theme="dark"] .rb-region-card__chevron {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: var(--mr-border-2)
+    }
+
+    /* ═══ المناطق والفروع — تحسينات الجوال ═══ */
+    @media (max-width: 992px) {
+      #tab-locations .rb-view--regions .viol-grid,
+      #tab-locations .rb-view--branches .viol-grid {
+        grid-template-columns: 1fr !important;
+        gap: 12px !important;
+        max-width: 100% !important
+      }
+
+      .rb-region-card,
+      .rb-branch-card {
+        padding: 15px 16px 13px;
+        border-radius: 16px
+      }
+
+      .rb-region-card:active,
+      .rb-branch-card:active {
+        transform: scale(.99)
+      }
+
+      .rb-region-card__icon,
+      .rb-branch-card__icon {
+        width: 40px;
+        height: 40px;
+        font-size: 15px
+      }
+
+      .rb-region-card__name,
+      .rb-branch-card__name {
+        font-size: 15px
+      }
+
+      .rb-region-card__sup,
+      .rb-branch-card__loc {
+        font-size: 12px
+      }
+
+      .rb-branch-card__staff {
+        max-height: 240px
+      }
+
+      .rb-branch-card .rb-emp-name {
+        font-size: 13px
+      }
+
+      .rb-emp-contact,
+      .rb-emp-num {
+        font-size: 11px
+      }
+
+      .rb-region-card__stat,
+      .rb-branch-card__stat {
+        font-size: 12px;
+        padding: 6px 12px
+      }
+    }
+
 
     .rb-card-body {
       display: flex;
@@ -26418,7 +26627,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v763-user-menu-admin">
+  <meta name="app-build" content="athar-figma-v764-locations-ui">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -36214,11 +36423,12 @@
                   ${supHtml}
                 </div>
               </div>
+              <span class="rb-region-card__chevron" aria-hidden="true"><i class="fas fa-chevron-left"></i></span>
             </header>
             <footer class="rb-region-card__foot" onclick="event.stopPropagation()">
               <div class="rb-region-card__stats">
-                <span class="rb-region-card__stat"><i class="fas fa-store" aria-hidden="true"></i><span data-numeric>${regionBranches.length}</span> فرع</span>
-                <span class="rb-region-card__stat"><i class="fas fa-users" aria-hidden="true"></i><span data-numeric>${totalEmps}</span> موظف</span>
+                <span class="rb-region-card__stat rb-region-card__stat--branches"><i class="fas fa-store" aria-hidden="true"></i><span data-numeric>${regionBranches.length}</span> فرع</span>
+                <span class="rb-region-card__stat rb-region-card__stat--emps"><i class="fas fa-users" aria-hidden="true"></i><span data-numeric>${totalEmps}</span> موظف</span>
               </div>
               ${adminActions ? `<div class="rb-region-card__actions">${adminActions}</div>` : ''}
             </footer>

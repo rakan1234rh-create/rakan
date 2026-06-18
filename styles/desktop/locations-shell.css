@@ -257,14 +257,16 @@ html.mr-desktop-ui #tab-locations .rb-branch-card {
   flex-direction: column !important
 }
 
-html.mr-desktop-ui #tab-locations .rb-branch-card__name {
-  font-size: 12px !important
+html.mr-desktop-ui #tab-locations .rb-branch-card__name,
+html.mr-desktop-ui #tab-locations .rb-region-card__name {
+  font-size: 14px !important
 }
 
-html.mr-desktop-ui #tab-locations .rb-branch-card__icon {
-  width: 36px !important;
-  height: 36px !important;
-  font-size: 14px !important
+html.mr-desktop-ui #tab-locations .rb-branch-card__icon,
+html.mr-desktop-ui #tab-locations .rb-region-card__icon {
+  width: 42px !important;
+  height: 42px !important;
+  font-size: 16px !important
 }
 
 html.mr-desktop-ui #tab-locations .rb-branch-card__act {
