@@ -26418,7 +26418,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v758-push-revert">
+  <meta name="app-build" content="athar-figma-v759-bc-users">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -34258,6 +34258,10 @@
         if (document.getElementById('tab-locations')?.classList.contains('active')) renderRegions();
         if (document.getElementById('tab-departments')?.classList.contains('active')) renderUsers();
         if (document.getElementById('tab-violations')?.classList.contains('active')) renderViolTypes();
+        if (document.getElementById('tab-broadcasts')?.classList.contains('active')) {
+          if (typeof refreshBroadcastTargetPickers === 'function') refreshBroadcastTargetPickers();
+          if (typeof updateBroadcastPreview === 'function') updateBroadcastPreview();
+        }
 
         updatePendingBadge();
         const notifPanelOpen = document.getElementById('notifPanel')?.classList.contains('open');
@@ -48463,25 +48467,7 @@
         return ids.size;
       }
 
-      function syncBroadcastTargetPanels() {
-        const mode = document.getElementById('bc-target-mode')?.value || 'all';
-        document.querySelectorAll('#tab-broadcasts .bc-target-panel').forEach(el => { el.hidden = true; });
-        if (mode === 'roles') document.getElementById('bc-panel-roles')?.removeAttribute('hidden');
-        if (mode === 'branches') document.getElementById('bc-panel-branches')?.removeAttribute('hidden');
-        if (mode === 'users') document.getElementById('bc-panel-users')?.removeAttribute('hidden');
-        updateBroadcastPreview();
-      }
-
-      function initBroadcastTargetPickers() {
-        const rolesEl = document.getElementById('bc-roles-list');
-        if (rolesEl && !rolesEl.dataset.ready) {
-          rolesEl.innerHTML = BC_TARGET_ROLES.map(r => `
-            <label class="bc-check-item">
-              <input type="checkbox" value="${Sec.escapeHTML(r.id)}" onchange="updateBroadcastPreview()">
-              <span>${Sec.escapeHTML(r.label)}</span>
-            </label>`).join('');
-          rolesEl.dataset.ready = '1';
-        }
+      function refreshBroadcastTargetPickers() {
         const branchesEl = document.getElementById('bc-branches-list');
         if (branchesEl) {
           branchesEl.innerHTML = (state.branches || []).map(b => `
@@ -48501,6 +48487,34 @@
               <span>${Sec.escapeHTML(u.name || u.id)} <small>(${Sec.escapeHTML(ROLE_LABELS[normalizeUserRole(u.role)] || u.role || '')})</small></span>
             </label>`).join('') || '<p class="bc-preview">لا يوجد مستخدمون</p>';
         }
+      }
+
+      function syncBroadcastTargetPanels() {
+        const mode = document.getElementById('bc-target-mode')?.value || 'all';
+        document.querySelectorAll('#tab-broadcasts .bc-target-panel').forEach(el => { el.hidden = true; });
+        if (mode === 'roles') document.getElementById('bc-panel-roles')?.removeAttribute('hidden');
+        if (mode === 'branches') {
+          document.getElementById('bc-panel-branches')?.removeAttribute('hidden');
+          refreshBroadcastTargetPickers();
+        }
+        if (mode === 'users') {
+          document.getElementById('bc-panel-users')?.removeAttribute('hidden');
+          refreshBroadcastTargetPickers();
+        }
+        updateBroadcastPreview();
+      }
+
+      function initBroadcastTargetPickers() {
+        const rolesEl = document.getElementById('bc-roles-list');
+        if (rolesEl && !rolesEl.dataset.ready) {
+          rolesEl.innerHTML = BC_TARGET_ROLES.map(r => `
+            <label class="bc-check-item">
+              <input type="checkbox" value="${Sec.escapeHTML(r.id)}" onchange="updateBroadcastPreview()">
+              <span>${Sec.escapeHTML(r.label)}</span>
+            </label>`).join('');
+          rolesEl.dataset.ready = '1';
+        }
+        refreshBroadcastTargetPickers();
       }
 
       function filterBroadcastUserChecks() {
