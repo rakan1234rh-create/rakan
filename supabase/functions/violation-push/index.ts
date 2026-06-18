@@ -428,6 +428,7 @@ Deno.serve(async (req) => {
     return json({
       ok: true,
       service: 'violation-push',
+      version: '2026-06-broadcast',
       vapidConfigured: !!(vapidPublic && vapidPrivate),
       vapidValid,
       vapidPublicKey: vapidPublic || null,

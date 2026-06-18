@@ -13,3 +13,6 @@ verify_jwt = false
 
 [functions.violation-push]
 verify_jwt = false
+
+[functions.broadcast-push]
+verify_jwt = false

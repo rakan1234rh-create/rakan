@@ -26418,7 +26418,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v748-broadcast-violation-push">
+  <meta name="app-build" content="athar-figma-v749-push-invoke-fix">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -28057,6 +28057,8 @@
 
       /** توقيع روابط R2 (رفع/تحميل/نقل) عبر Edge Function — المفاتيح لا تصل للمتصفح */
       const R2_STORAGE_FN_URL = `${SUPABASE_URL}/functions/v1/r2-storage`;
+      const VIOLATION_PUSH_FN_URL = `${SUPABASE_URL}/functions/v1/violation-push`;
+      const VIOLATION_PUSH_FN_VERSION = '2026-06-broadcast';
 
       /** يعمل فقط على المضيف المحلي — لا يُفعّل على نطاق الإنتاج */
       function isLocalDevHost() {
@@ -48509,13 +48511,7 @@
         const btn = document.getElementById('bc-send-btn');
         if (btn) btn.disabled = true;
         try {
-          const { data, error } = await sb.functions.invoke('violation-push', {
-            body: { broadcast: true, title, body, kind, target }
-          });
-          if (error) {
-            const msg = data?.error || data?.hint || formatPushError(error);
-            throw new Error(msg);
-          }
+          const data = await invokeViolationPush({ broadcast: true, title, body, kind, target });
           if (data?.error) throw new Error(data.error);
           const pushSent = data?.pushSent || 0;
           showToast(`تم الإرسال ✓ — ${data?.recipients || count} مستلم، ${pushSent} إشعار Push`, 'success');
@@ -48549,6 +48545,37 @@
       }
 
       // ─── Web Push (تنبيهات خارج التطبيق) ───────────────────────────────────
+      async function invokeViolationPush(body) {
+        const { data: { session } } = await sb.auth.getSession();
+        let token = session?.access_token;
+        if (!token) throw new Error('يجب تسجيل الدخول أولاً');
+        const post = async (bearer) => fetch(VIOLATION_PUSH_FN_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': SUPABASE_ANON,
+            'Authorization': `Bearer ${bearer}`,
+          },
+          body: JSON.stringify(body),
+        });
+        let res = await post(token);
+        if (res.status === 401) {
+          const { data } = await sb.auth.refreshSession();
+          token = data?.session?.access_token;
+          if (token) res = await post(token);
+        }
+        let payload = null;
+        try { payload = await res.json(); } catch (_) { /* noop */ }
+        if (!res.ok) {
+          const hint = String(payload?.error || payload?.hint || `HTTP ${res.status}`);
+          if (/SERVICE_ROLE_KEY|x-athar-push-secret|Webhook/i.test(hint)) {
+            throw new Error('دالة violation-push قديمة على السيرفر — أعد نشرها من Supabase');
+          }
+          throw new Error(hint);
+        }
+        return payload;
+      }
+
       function isWebPushSupported() {
         return !!(typeof window !== 'undefined'
           && window.isSecureContext
@@ -48622,6 +48649,9 @@
         if (/404|not found|violation-push غير منشورة|Failed to send a request/i.test(msg)) {
           return 'دالة violation-push غير منشورة على Supabase — راجع PUSH-NOTIFICATIONS-SETUP.txt';
         }
+        if (/SERVICE_ROLE_KEY|x-athar-push-secret|Webhook/i.test(msg)) {
+          return 'دالة violation-push قديمة على السيرفر — أعد نشرها (راجع supabase/DEPLOY-PUSH-FUNCTIONS.txt)';
+        }
         return msg || 'خطأ غير معروف';
       }
 
@@ -48667,10 +48697,9 @@
           branch_id: violationRow.branch_id,
           state: violationRow.state
         };
-        sb.functions.invoke('violation-push', { body: { notify: true, type: 'INSERT', record } })
-          .then(({ data, error }) => {
-            if (error && isMirsadDebugLog()) console.warn('[webPush] new violation notify', error, data);
-            else if (data?.errors?.length && isMirsadDebugLog()) console.warn('[webPush] new violation notify', data);
+        invokeViolationPush({ notify: true, type: 'INSERT', record })
+          .then((data) => {
+            if (data?.errors?.length && isMirsadDebugLog()) console.warn('[webPush] new violation notify', data);
           })
           .catch((e) => {
             if (isMirsadDebugLog()) console.warn('[webPush] new violation notify', e);

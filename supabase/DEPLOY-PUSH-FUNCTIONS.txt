@@ -1,0 +1,29 @@
+═══════════════════════════════════════════════════════════════════════════
+نشر دوال Push على Supabase (مهم — مرة بعد كل تحديث للكود)
+═══════════════════════════════════════════════════════════════════════════
+
+إذا ظهر 401 مع ذكر Webhook أو SERVICE_ROLE_KEY فالدالة على السيرفر قديمة.
+
+─── تحقق سريع ───
+افتح في المتصفح:
+https://rizoafuxmqsddjfhbsmf.supabase.co/functions/v1/violation-push
+
+يجب أن يظهر: "version":"2026-06-broadcast"
+إن لم يظهر → أعد النشر بالأسفل.
+
+─── الطريقة 1: GitHub Actions (مُفضّل) ───
+1) GitHub → المستودع rakan → Settings → Secrets → Actions
+2) أضف SUPABASE_ACCESS_TOKEN (من supabase.com/dashboard/account/tokens)
+3) Actions → Deploy push functions → Run workflow
+
+─── الطريقة 2: سطر أوامر ───
+set SUPABASE_ACCESS_TOKEN=التوكن_من_لوحة_Supabase
+npx supabase@2.30.4 functions deploy violation-push --no-verify-jwt --project-ref rizoafuxmqsddjfhbsmf --use-api
+
+─── الطريقة 3: Supabase Dashboard ───
+Edge Functions → violation-push → Deploy / Upload من المجلد:
+supabase/functions/violation-push/
+
+تأكد: Verify JWT = OFF (أو استخدم --no-verify-jwt)
+
+═══════════════════════════════════════════════════════════════════════════
