@@ -8,7 +8,7 @@
 افتح في المتصفح:
 https://rizoafuxmqsddjfhbsmf.supabase.co/functions/v1/violation-push
 
-يجب أن يظهر: "version":"2026-06-broadcast"
+يجب أن يظهر: "version":"2026-06-branch-mgr-push"
 إن لم يظهر → أعد النشر بالأسفل.
 
 ─── الطريقة 1: GitHub Actions (مُفضّل) ───

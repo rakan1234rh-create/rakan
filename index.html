@@ -26418,7 +26418,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v752-notif-dismiss-db">
+  <meta name="app-build" content="athar-figma-v754-branch-mgr-push">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -28067,7 +28067,7 @@
       /** توقيع روابط R2 (رفع/تحميل/نقل) عبر Edge Function — المفاتيح لا تصل للمتصفح */
       const R2_STORAGE_FN_URL = `${SUPABASE_URL}/functions/v1/r2-storage`;
       const VIOLATION_PUSH_FN_URL = `${SUPABASE_URL}/functions/v1/violation-push`;
-      const VIOLATION_PUSH_FN_VERSION = '2026-06-broadcast';
+      const VIOLATION_PUSH_FN_VERSION = '2026-06-branch-mgr-push';
 
       /** يعمل فقط على المضيف المحلي — لا يُفعّل على نطاق الإنتاج */
       function isLocalDevHost() {
@@ -42601,6 +42601,11 @@
           const { error } = await sb.from('violations').update(updatePayload).eq('id', t.id);
           if (error) throw error;
 
+          notifyViolationPushAfterStateChange(
+            { ...t, state: tr.newState, ticket_number: t.ticket_number },
+            t.state
+          );
+
           // بدء عملية الرفع بالخلفية إذا كان هناك مرفقات للرد
           if (respFiles.length > 0) {
             uploadReplyFilesInBackground(t.id, t.ticket_number, [...respFiles], tr.actionLabel, me);
@@ -48773,6 +48778,27 @@
           });
       }
 
+      /** إشعار Push عند تمرير التذكرة لمرحلة جديدة (مثلاً المدير عند mgt) */
+      function notifyViolationPushAfterStateChange(violationRow, previousState) {
+        if (!violationRow?.id || !violationRow?.state) return;
+        if (previousState && String(previousState) === String(violationRow.state)) return;
+        const record = {
+          id: violationRow.id,
+          ticket_number: violationRow.ticket_number,
+          violation_type: violationRow.violation_type,
+          employee_id: violationRow.employee_id,
+          branch_id: violationRow.branch_id,
+          state: violationRow.state
+        };
+        invokeViolationPush({ notifyState: true, previousState: previousState || null, record })
+          .then((data) => {
+            if (data?.errors?.length && isMirsadDebugLog()) console.warn('[webPush] state change notify', data);
+          })
+          .catch((e) => {
+            if (isMirsadDebugLog()) console.warn('[webPush] state change notify', e);
+          });
+      }
+
       async function removePushSubscriptionFromDb(endpoint) {
         if (!endpoint) return;
         await sb.from('push_subscriptions').delete().eq('endpoint', endpoint);
@@ -48856,6 +48882,11 @@
         syncWebPushMenuLabel();
       }
 
+      function webPushTeamLeadRole() {
+        const role = normalizeUserRole(state.currentUser?.role);
+        return role === 'branch_manager' || role === 'supervisor';
+      }
+
       async function initAtharWebPush(opts = {}) {
         syncWebPushMenuLabel();
         if (!isWebPushSupported() || !state.currentUser) return;
@@ -48867,13 +48898,16 @@
           return;
         }
         if (!opts.promptIfNeeded || Notification.permission !== 'default') return;
-        const key = 'athar_push_prompt_v1';
+        const isTeamLead = webPushTeamLeadRole();
+        const key = isTeamLead ? 'athar_push_prompt_team_v1' : 'athar_push_prompt_v1';
         try { if (localStorage.getItem(key)) return; } catch (_) { return; }
         const isMob = document.documentElement.classList.contains('mr-mobile-ui');
-        if (!isMob) return;
+        if (!isMob && !isTeamLead) return;
         try { localStorage.setItem(key, '1'); } catch (_) { /* noop */ }
         const ok = await confirmDialog(
-          'فعّل تنبيهات الجوال لتصلك إشعارات عند رصد مخالفة حتى والتطبيق مغلق.\n\nعلى iPhone: أضف ATHAR إلى الشاشة الرئيسية أولاً.',
+          isTeamLead
+            ? 'فعّل تنبيهات الجوال لتصلك إشعارات فريقك عند رصد مخالفة على موظفيك أو تحديث حالة تذاكرهم — حتى والتطبيق مغلق.\n\nعلى iPhone: أضف ATHAR إلى الشاشة الرئيسية أولاً.'
+            : 'فعّل تنبيهات الجوال لتصلك إشعارات عند رصد مخالفة حتى والتطبيق مغلق.\n\nعلى iPhone: أضف ATHAR إلى الشاشة الرئيسية أولاً.',
           { type: 'info', title: 'تنبيهات الجوال', okText: 'تفعيل', cancelText: 'لاحقاً' }
         );
         if (!ok) return;
@@ -49612,6 +49646,10 @@
           }
 
           await sb.from('violations').update(updatePayload).eq('id', t.id);
+          notifyViolationPushAfterStateChange(
+            { ...t, state: newState, ticket_number: t.ticket_number },
+            t.state
+          );
         } catch (err) {
           if (isMirsadDebugLog()) console.error('Auto-forward failed:', err);
         }

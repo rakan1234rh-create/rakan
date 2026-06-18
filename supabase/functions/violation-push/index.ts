@@ -30,6 +30,7 @@ type PushExtras = {
   ticketId?: string;
   broadcastId?: string;
   kind?: BroadcastKind;
+  tagSuffix?: string;
 };
 
 function json(body: unknown, status = 200) {
@@ -56,38 +57,44 @@ function extractRecord(payload: Record<string, unknown>): ViolationRow | null {
   return null;
 }
 
+async function getBranchManagerIds(
+  supabase: ReturnType<typeof createClient>,
+  branchId: string,
+  excludeUserId?: string | null,
+) {
+  const ids = new Set<string>();
+  const { data, error } = await supabase
+    .from('users')
+    .select('id, is_active')
+    .eq('branch_id', branchId)
+    .eq('role', 'branch_manager');
+  if (error) throw new Error(error.message);
+  for (const u of data ?? []) {
+    if (!u?.id) continue;
+    if (u.is_active === false) continue;
+    if (excludeUserId && String(u.id) === String(excludeUserId)) continue;
+    ids.add(String(u.id));
+  }
+  return ids;
+}
+
 async function dispatchViolationInsertPush(
   supabase: ReturnType<typeof createClient>,
   record: ViolationRow,
 ) {
   const recipientIds = new Set<string>();
+  const branchMgrIds = new Set<string>();
   if (record.employee_id) recipientIds.add(String(record.employee_id));
 
   if (record.branch_id) {
     const branchId = String(record.branch_id);
-    const { data: branchMgrs } = await supabase
-      .from('users')
-      .select('id')
-      .eq('branch_id', branchId)
-      .eq('role', 'branch_manager')
-      .eq('is_active', true);
-    for (const u of branchMgrs ?? []) {
-      if (u?.id && u.id !== record.employee_id) recipientIds.add(u.id);
+    for (const id of await getBranchManagerIds(supabase, branchId, record.employee_id)) {
+      branchMgrIds.add(id);
+      recipientIds.add(id);
     }
 
-    const { data: branch } = await supabase
-      .from('branches')
-      .select('region_id')
-      .eq('id', branchId)
-      .maybeSingle();
-    if (branch?.region_id) {
-      const { data: region } = await supabase
-        .from('regions')
-        .select('supervisor_id')
-        .eq('id', branch.region_id)
-        .maybeSingle();
-      if (region?.supervisor_id) recipientIds.add(region.supervisor_id);
-    }
+    const supId = await getRegionSupervisorId(supabase, branchId);
+    if (supId) recipientIds.add(supId);
   }
 
   if (!recipientIds.size) return { sent: 0, reason: 'no recipients' };
@@ -102,18 +109,22 @@ async function dispatchViolationInsertPush(
       .maybeSingle();
     employeeName = String(emp?.name || '').trim();
   }
+  const teamBody = employeeName
+    ? `${employeeName} — تذكرة ${ticket}`
+    : `تذكرة ${ticket}`;
 
   let totalSent = 0;
   const allErrors: string[] = [];
 
   for (const uid of recipientIds) {
     const isEmployee = uid === record.employee_id;
-    const title = isEmployee ? 'تم تسجيل مخالفة بحقك' : 'مخالفة جديدة في فريقك';
-    const body = isEmployee
-      ? `تذكرة ${ticket}`
-      : employeeName
-        ? `${employeeName} — تذكرة ${ticket}`
-        : `تذكرة ${ticket}`;
+    const isBranchMgr = branchMgrIds.has(uid);
+    const title = isEmployee
+      ? 'تم تسجيل مخالفة بحقك'
+      : isBranchMgr
+        ? 'تم تسجيل مخالفة على موظف ضمن فريقك'
+        : 'مخالفة جديدة في فريقك';
+    const body = isEmployee ? `تذكرة ${ticket}` : teamBody;
     const result = await sendPushToUserIds(supabase, new Set([uid]), title, body, { ticketId: String(record.id) });
     totalSent += result.sent || 0;
     if (result.error) allErrors.push(String(result.error));
@@ -122,6 +133,161 @@ async function dispatchViolationInsertPush(
   return {
     sent: totalSent,
     recipients: recipientIds.size,
+    branchManagers: branchMgrIds.size,
+    errors: allErrors.length ? allErrors.slice(0, 5) : undefined,
+  };
+}
+
+async function getRegionSupervisorId(
+  supabase: ReturnType<typeof createClient>,
+  branchId: string,
+) {
+  const { data: branch } = await supabase
+    .from('branches')
+    .select('region_id')
+    .eq('id', branchId)
+    .maybeSingle();
+  if (!branch?.region_id) return null;
+  const { data: region } = await supabase
+    .from('regions')
+    .select('supervisor_id')
+    .eq('id', branch.region_id)
+    .maybeSingle();
+  return region?.supervisor_id ? String(region.supervisor_id) : null;
+}
+
+async function resolveStateChangeRecipientIds(
+  supabase: ReturnType<typeof createClient>,
+  record: ViolationRow,
+) {
+  const state = String(record.state || '').trim();
+  const ids = new Set<string>();
+  const branchMgrIds = new Set<string>();
+  const addRoleUsers = async (roles: string[]) => {
+    const { data, error } = await supabase
+      .from('users')
+      .select('id, is_active')
+      .in('role', roles);
+    if (error) throw new Error(error.message);
+    for (const u of data ?? []) {
+      if (!u?.id || u.is_active === false) continue;
+      ids.add(u.id);
+    }
+  };
+
+  if (state === 'sup' && record.branch_id) {
+    const supId = await getRegionSupervisorId(supabase, String(record.branch_id));
+    if (supId) ids.add(supId);
+  } else if (state === 'aud') {
+    await addRoleUsers(['auditor', 'admin']);
+  } else if (state === 'mgt') {
+    await addRoleUsers(['manager', 'admin']);
+  } else if (state === 'hr') {
+    await addRoleUsers(['hr', 'admin']);
+  }
+
+  const branchTeamStates = new Set(['sup', 'aud', 'mgt', 'hr', 'closed', 'Warning_Issued']);
+  if (record.branch_id && branchTeamStates.has(state)) {
+    for (const id of await getBranchManagerIds(supabase, String(record.branch_id), record.employee_id)) {
+      branchMgrIds.add(id);
+      ids.add(id);
+    }
+  }
+
+  if (record.employee_id) ids.delete(String(record.employee_id));
+  return { ids, branchMgrIds };
+}
+
+const STATE_PUSH_COPY: Record<string, { title: string }> = {
+  sup: { title: 'مخالفة بانتظار رد المشرف' },
+  aud: { title: 'تذكرة بانتظار التدقيق' },
+  mgt: { title: 'قرار إداري مطلوب' },
+  hr: { title: 'قرار الموارد البشرية مطلوب' },
+};
+
+const BRANCH_MGR_STATE_PUSH_COPY: Record<string, { title: string }> = {
+  sup: { title: 'رد موظف ضمن فريقك على المخالفة' },
+  aud: { title: 'مخالفة موظف فريقك بانتظار التدقيق' },
+  mgt: { title: 'مخالفة موظف فريقك بانتظار القرار الإداري' },
+  hr: { title: 'مخالفة موظف فريقك بانتظار الموارد البشرية' },
+  closed: { title: 'تم تحديث مخالفة موظف ضمن فريقك' },
+  Warning_Issued: { title: 'تنبيه إداري صادر على موظف ضمن فريقك' },
+};
+
+async function dispatchViolationStatePush(
+  supabase: ReturnType<typeof createClient>,
+  record: ViolationRow,
+  previousState?: string | null,
+) {
+  const state = String(record.state || '').trim();
+  if (!state || state === 'uploading' || state === 'emp') {
+    return { sent: 0, reason: 'state does not need push' };
+  }
+  if (previousState && String(previousState) === state) {
+    return { sent: 0, reason: 'state unchanged' };
+  }
+
+  let recipientIds: Set<string>;
+  let branchMgrIds: Set<string>;
+  try {
+    const resolved = await resolveStateChangeRecipientIds(supabase, record);
+    recipientIds = resolved.ids;
+    branchMgrIds = resolved.branchMgrIds;
+  } catch (err) {
+    return { error: String(err), sent: 0 };
+  }
+  if (!recipientIds.size) return { sent: 0, reason: 'no recipients for state' };
+
+  const ticket = shortTicketNum(record.ticket_number);
+  let employeeName = '';
+  if (record.employee_id) {
+    const { data: emp } = await supabase
+      .from('users')
+      .select('name')
+      .eq('id', record.employee_id)
+      .maybeSingle();
+    employeeName = String(emp?.name || '').trim();
+  }
+  const body = employeeName
+    ? `${employeeName} — تذكرة ${ticket}`
+    : `تذكرة ${ticket}`;
+
+  let totalSent = 0;
+  const allErrors: string[] = [];
+  const workflowIds = new Set([...recipientIds].filter((id) => !branchMgrIds.has(id)));
+  const workflowCopy = STATE_PUSH_COPY[state];
+  if (workflowCopy && workflowIds.size) {
+    const result = await sendPushToUserIds(
+      supabase,
+      workflowIds,
+      workflowCopy.title,
+      body,
+      { ticketId: String(record.id), tagSuffix: `state_${state}` },
+    );
+    totalSent += result.sent || 0;
+    if (result.error) allErrors.push(String(result.error));
+    if (result.errors?.length) allErrors.push(...result.errors);
+  }
+
+  const bmCopy = BRANCH_MGR_STATE_PUSH_COPY[state];
+  if (bmCopy && branchMgrIds.size) {
+    const result = await sendPushToUserIds(
+      supabase,
+      branchMgrIds,
+      bmCopy.title,
+      body,
+      { ticketId: String(record.id), tagSuffix: `bm_state_${state}` },
+    );
+    totalSent += result.sent || 0;
+    if (result.error) allErrors.push(String(result.error));
+    if (result.errors?.length) allErrors.push(...result.errors);
+  }
+
+  return {
+    sent: totalSent,
+    recipients: recipientIds.size,
+    branchManagers: branchMgrIds.size,
+    state,
     errors: allErrors.length ? allErrors.slice(0, 5) : undefined,
   };
 }
@@ -167,12 +333,17 @@ async function sendPushToUserIds(
     const ticketId = extras.ticketId || '';
     const broadcastId = extras.broadcastId || '';
     const kind = extras.kind || 'circular';
+    const tagSuffix = extras.tagSuffix || '';
     const tag = broadcastId
       ? `broadcast_${kind}_${broadcastId}_${sub.user_id}`
-      : (ticketId ? `test_${ticketId}_${sub.user_id}` : `test_${sub.user_id}`);
+      : (ticketId
+        ? `ticket_${ticketId}${tagSuffix ? `_${tagSuffix}` : ''}_${sub.user_id}`
+        : `test_${sub.user_id}`);
     const url = broadcastId
       ? `./index.html?broadcast=${encodeURIComponent(broadcastId)}`
-      : './index.html';
+      : (ticketId
+        ? `./index.html?ticket=${encodeURIComponent(ticketId)}`
+        : './index.html');
     const pushPayload = JSON.stringify({
       title,
       body,
@@ -428,7 +599,7 @@ Deno.serve(async (req) => {
     return json({
       ok: true,
       service: 'violation-push',
-      version: '2026-06-broadcast',
+      version: '2026-06-branch-mgr-push',
       vapidConfigured: !!(vapidPublic && vapidPrivate),
       vapidValid,
       vapidPublicKey: vapidPublic || null,
@@ -463,6 +634,28 @@ Deno.serve(async (req) => {
     return json({ ok: true, ...result });
   }
 
+  // ─── إشعار عند تغيّر مرحلة التذكرة (مثلاً وصولها للمدير) ───
+  if (payload.notifyState === true) {
+    const userId = await resolveUserIdFromJwt(req);
+    if (!userId) return json({ error: 'يجب تسجيل الدخول لإرسال التنبيه' }, 401);
+    const record = extractRecord(payload);
+    if (!record?.id) return json({ error: 'missing violation record in payload' }, 400);
+    const { data: row, error: rowErr } = await supabase
+      .from('violations')
+      .select('id, ticket_number, violation_type, employee_id, branch_id, state')
+      .eq('id', record.id)
+      .maybeSingle();
+    if (rowErr) return json({ error: rowErr.message }, 500);
+    if (!row) return json({ error: 'violation not found' }, 404);
+    const merged: ViolationRow = { ...row, ...record, id: row.id };
+    const previousState = payload.previousState != null ? String(payload.previousState) : null;
+    const result = await dispatchViolationStatePush(supabase, merged, previousState);
+    if (result.error && !result.sent) {
+      return json({ ok: false, ...result }, 500);
+    }
+    return json({ ok: true, ...result });
+  }
+
   // ─── إشعار من التطبيق بعد إنشاء مخالفة (JWT) ───
   if (payload.notify === true) {
     const userId = await resolveUserIdFromJwt(req);
@@ -492,5 +685,5 @@ Deno.serve(async (req) => {
     return json(result.body, result.status);
   }
 
-  return json({ error: 'استخدم test:true أو notify:true أو broadcast:true' }, 400);
+  return json({ error: 'استخدم test:true أو notify:true أو notifyState:true أو broadcast:true' }, 400);
 });
