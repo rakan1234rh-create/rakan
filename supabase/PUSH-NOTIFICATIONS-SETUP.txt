@@ -12,7 +12,7 @@ ATHAR — تنبيهات الجوال (Web Push) — الإعداد النهائ
    VAPID_PRIVATE_KEY = المفتاح الخاص المقترن
    VAPID_SUBJECT     = mailto:admin@athar.app
 
-3) نشر الدالة violation-push
+3) نشر الدوال violation-push و broadcast-push (النشرات تُرسل عبر violation-push حتى يُنشر broadcast-push)
    تلقائياً: GitHub Action (يحتاج SUPABASE_ACCESS_TOKEN في secrets المستودع)
    يدوياً: npx supabase functions deploy violation-push --no-verify-jwt
 
