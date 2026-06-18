@@ -2,7 +2,7 @@
   "id": "athar-pwa-v393",
   "name": "ATHAR",
   "short_name": "ATHAR",
-  "description": "ATHAR — منصة الرصد المتكاملة",
+  "description": "ATHAR",
   "start_url": "./index.html?athar=393",
   "scope": "./",
   "display": "standalone",

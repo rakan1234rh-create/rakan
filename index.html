@@ -67,7 +67,7 @@
       if (!document.hidden) checkUpdate();
     });
   })();</script>
-  <title>منصة الرصد المتكاملة | Monitoring Platform</title>
+  <title>ATHAR</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <script>
@@ -26418,7 +26418,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v755-pwa-name">
+  <meta name="app-build" content="athar-figma-v756-web-brand">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -26515,7 +26515,7 @@
       <div id="loginCard" class="lp-card lp-card--in">
         <div class="lp-hd lp-hd--wefaq">
           <div class="lp-brand-ico wefaq-logo-slot" aria-hidden="true"></div>
-          <p class="lp-sub">أدخل بيانات الدخول للوصول إلى المنصة</p>
+          <p class="lp-sub">أدخل بيانات الدخول للوصول إلى ATHAR</p>
         </div>
         <div class="lp-bd">
           <div id="loginError" class="login-err" role="alert">
@@ -26712,7 +26712,7 @@
         <div class="page-title-bar" id="pageTitleBar">
           <div>
             <h1 id="pageTitle">لوحة القيادة</h1>
-            <p id="pageSubtitle">monitoring.system</p>
+            <p id="pageSubtitle">ATHAR</p>
           </div>
         </div>
 
@@ -26762,7 +26762,7 @@
                 <div>
                   <p class="mk-dash__date" id="dash-date-kicker">—</p>
                   <h1 class="mk-dash__title">مرحبًا، <span id="dash-welcome-name">—</span><span id="dash-welcome-hand" class="mk-dash__hand-slot" data-hand-mode="wave" role="img" aria-label="تحية"><span class="mk-dash__hand-emoji mk-dash__hand-emoji--wave" aria-hidden="true">👋</span><span class="mk-dash__hand-emoji mk-dash__hand-emoji--clap" aria-hidden="true">👏</span><span class="mk-dash__hand-emoji mk-dash__hand-emoji--sad" aria-hidden="true">😢</span></span></h1>
-                  <p class="mk-dash__sub" id="dash-welcome-sub">نظرة شاملة على نشاط منصة الرصد لشهرك الحالي.</p>
+                  <p class="mk-dash__sub" id="dash-welcome-sub">نظرة شاملة على نشاط ATHAR لشهرك الحالي.</p>
                 </div>
               </header>
 
@@ -33568,7 +33568,7 @@
       // 11. NAVIGATION
       // ═══════════════════════════════════════════════════════════════════════════
       const TAB_TITLES = {
-        dashboard: { title: 'لوحة القيادة', sub: 'monitoring.system' },
+        dashboard: { title: 'لوحة القيادة', sub: 'ATHAR' },
         newTicket: { title: 'رصد مخالفة جديدة', sub: 'create new violation' },
         workflow: { title: 'معالجة التذاكر', sub: 'tickets workflow' },
         reports: { title: 'التقارير', sub: 'reports & analytics' },
@@ -47177,12 +47177,12 @@
             <div class="cmp-pdf-panel"><h2>أفضل 5 فروع</h2>${cmpPdfMiniRankTable(dash.top5)}</div>
             <div class="cmp-pdf-panel"><h2>أدنى 5 فروع</h2>${cmpPdfMiniRankTable(dash.bottom5)}</div>
           </div>
-          <div class="cmp-pdf-foot"><span>منصة الرصد المتكاملة — ATHAR</span><span>صفحة 1 — لوحة القيادة</span></div>
+          <div class="cmp-pdf-foot"><span>ATHAR</span><span>صفحة 1 — لوحة القيادة</span></div>
         </div>
         <div class="cmp-pdf-page">
           ${cmpPdfDataTable('تفاصيل المناطق', ['#', 'المنطقة', 'الدرجة', 'المستوى', 'فروع', 'موظفون', 'مخالفات', 'المشرف'], regionPdfRows, 2)}
           ${cmpPdfDataTable('تفاصيل الفروع', ['#', 'الفرع', 'المنطقة', 'الدرجة', 'المستوى', 'منضبطون', 'مخالفات'], branchPdfRows, 3)}
-          <div class="cmp-pdf-foot"><span>منصة الرصد المتكاملة — ATHAR</span><span>صفحة 2 — المناطق والفروع</span></div>
+          <div class="cmp-pdf-foot"><span>ATHAR</span><span>صفحة 2 — المناطق والفروع</span></div>
         </div>
         <div class="cmp-pdf-page">
           ${cmpPdfDataTable('تفاصيل الموظفين', ['#', 'الموظف', 'الفرع', 'الدرجة', 'المستوى', 'مخالفات', 'مخصوم'], empPdfRows, 3)}
@@ -47192,7 +47192,7 @@
             violPdfRows,
             -1
           ) : ''}
-          <div class="cmp-pdf-foot"><span>منصة الرصد المتكاملة — ATHAR</span><span>صفحة 3 — الموظفون والمخالفات</span></div>
+          <div class="cmp-pdf-foot"><span>ATHAR</span><span>صفحة 3 — الموظفون والمخالفات</span></div>
         </div>`;
       }
 
@@ -49790,7 +49790,7 @@
         const printBody = `
     <div class="print-header">
       <h1>تقرير مخالفة — ${escape(shortTicketNum(t.ticket_number))}</h1>
-      <p>منصة أثر قسم الجودة · تاريخ الطباعة: ${escape(formatDateTime(new Date().toISOString()))}</p>
+      <p>ATHAR · تاريخ الطباعة: ${escape(formatDateTime(new Date().toISOString()))}</p>
     </div>
 
     <div class="print-section">
