@@ -26891,7 +26891,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v767-locations-mob">
+  <meta name="app-build" content="athar-figma-v768-broadcast-notif-tabs">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -27219,6 +27219,9 @@
                   <button type="button" class="notif-filter-btn is-active" data-filter="all" role="tab" aria-selected="true" onclick="setNotifFilter('all', this)">الكل</button>
                   <button type="button" class="notif-filter-btn" data-filter="mine" role="tab" aria-selected="false" onclick="setNotifFilter('mine', this)">تنبيهاتي</button>
                   <button type="button" class="notif-filter-btn" data-filter="team" role="tab" aria-selected="false" onclick="setNotifFilter('team', this)" hidden>تنبيهات الفريق</button>
+                  <button type="button" class="notif-filter-btn" data-filter="bc_circular" role="tab" aria-selected="false" onclick="setNotifFilter('bc_circular', this)">تعاميم</button>
+                  <button type="button" class="notif-filter-btn" data-filter="bc_motivational" role="tab" aria-selected="false" onclick="setNotifFilter('bc_motivational', this)">إنجازات</button>
+                  <button type="button" class="notif-filter-btn" data-filter="bc_alert" role="tab" aria-selected="false" onclick="setNotifFilter('bc_alert', this)">تنبيهات</button>
                 </div>
               </div>
               <div class="notif-list notif-list--page" id="notifPageList">
@@ -27846,7 +27849,7 @@
               <div class="wf-panel-banner">
                 <div class="wf-panel-intro">
                   <h2 class="wf-panel-title">نشرات الجوال</h2>
-                  <p class="wf-panel-sub">رسائل تحفيزية وتنبيهية وتعاميم — تصل خارج التطبيق</p>
+                  <p class="wf-panel-sub">تعاميم وإنجازات وتنبيهات — تصل خارج التطبيق</p>
                 </div>
                 <p class="mr-settings-note"><i class="fas fa-bullhorn"></i> مدير النظام فقط يمكنه الإرسال. يستلم التنبيه من فعّل «تنبيهات الجوال» في قائمته.</p>
               </div>
@@ -27859,9 +27862,9 @@
                   <div class="form-group">
                     <label class="form-label" for="bc-kind">نوع الرسالة</label>
                     <select id="bc-kind" class="form-select">
-                      <option value="circular">تعميم</option>
-                      <option value="motivational">تحفيزية</option>
-                      <option value="alert">تنبيهية</option>
+                      <option value="circular">تعاميم</option>
+                      <option value="motivational">إنجازات</option>
+                      <option value="alert">تنبيهات</option>
                     </select>
                   </div>
                   <div class="form-group bc-form-full">
@@ -48859,7 +48862,7 @@
 
         // نشرات admin الواردة (داخل التطبيق + Push)
         const BROADCAST_KIND_STYLES = {
-          motivational: { type: 'green', icon: 'fa-star' },
+          motivational: { type: 'green', icon: 'fa-trophy' },
           alert: { type: 'amber', icon: 'fa-triangle-exclamation' },
           circular: { type: 'blue', icon: 'fa-bullhorn' }
         };
@@ -48876,7 +48879,8 @@
             title: b.title || 'نشرة',
             msg: b.body || '',
             time: row.created_at || b.created_at,
-            scope: 'mine'
+            scope: 'mine',
+            broadcastKind: kind
           });
         });
 
@@ -48890,7 +48894,19 @@
         return tagNotifScopes(notifs, me);
       }
 
-      const NOTIF_FILTER_LABELS = { all: 'الكل', mine: 'تنبيهاتي', team: 'تنبيهات الفريق' };
+      const NOTIF_FILTER_LABELS = {
+        all: 'الكل',
+        mine: 'تنبيهاتي',
+        team: 'تنبيهات الفريق',
+        bc_circular: 'تعاميم',
+        bc_motivational: 'إنجازات',
+        bc_alert: 'تنبيهات'
+      };
+      const NOTIF_BC_FILTER_KIND = {
+        bc_circular: 'circular',
+        bc_motivational: 'motivational',
+        bc_alert: 'alert'
+      };
 
       // ─── نشرات الجوال (admin) ─────────────────────────────────────────────
       const BC_TARGET_ROLES = [
@@ -48902,7 +48918,7 @@
         { id: 'hr', label: 'موارد بشرية' },
         { id: 'observer', label: 'راصد' }
       ];
-      const BC_KIND_LABELS = { motivational: 'تحفيزية', alert: 'تنبيهية', circular: 'تعميم' };
+      const BC_KIND_LABELS = { motivational: 'إنجازات', alert: 'تنبيهات', circular: 'تعاميم' };
       const BC_MODE_LABELS = { all: 'الكل', roles: 'حسب الدور', branches: 'حسب الفرع', users: 'مستخدمون محددون' };
 
       function getBroadcastTargetFromUI() {
@@ -49488,6 +49504,10 @@
       function filterNotifsByScope(notifs, filter) {
         const f = filter || state._notifFilter || 'all';
         if (f === 'all') return notifs;
+        const bcKind = NOTIF_BC_FILTER_KIND[f];
+        if (bcKind) return notifs.filter(n => n.broadcastKind === bcKind);
+        if (f === 'mine') return notifs.filter(n => (n.scope || 'mine') === 'mine' && !n.broadcastKind);
+        if (f === 'team') return notifs.filter(n => n.scope === 'team');
         return notifs.filter(n => (n.scope || 'mine') === f);
       }
 
@@ -49510,7 +49530,9 @@
           const f = btn.dataset.filter;
           if (f === 'team' && !showTeam) return;
           let subset = visible;
-          if (f === 'mine') subset = visible.filter(n => (n.scope || 'mine') === 'mine');
+          const bcKind = NOTIF_BC_FILTER_KIND[f];
+          if (bcKind) subset = visible.filter(n => n.broadcastKind === bcKind);
+          else if (f === 'mine') subset = visible.filter(n => (n.scope || 'mine') === 'mine' && !n.broadcastKind);
           else if (f === 'team') subset = visible.filter(n => n.scope === 'team');
           const label = NOTIF_FILTER_LABELS[f] || f;
           btn.textContent = subset.length ? `${label} · ${subset.length}` : label;
