@@ -26418,7 +26418,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v749-push-invoke-fix">
+  <meta name="app-build" content="athar-figma-v750-broadcasts-ipad-nav">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -26645,6 +26645,10 @@
                 <button type="button" role="menuitem" id="topbarPushToggle" onclick="toggleWebPushFromMenu(event)" hidden>
                   <i class="fas fa-mobile-screen-button" aria-hidden="true"></i>
                   <span id="topbarPushToggleLabel">تفعيل تنبيهات الجوال</span>
+                </button>
+                <button type="button" role="menuitem" onclick="openBroadcastsFromUserMenu(event)" data-perm="tab_broadcasts">
+                  <i class="fas fa-bullhorn" aria-hidden="true"></i>
+                  <span>نشرات الجوال</span>
                 </button>
                 <div class="mr-topbar-user-menu__divider" role="separator"></div>
                 <button type="button" role="menuitem" class="mr-topbar-user-menu__logout"
@@ -27590,6 +27594,11 @@
         onclick="mobileNavGo('settings', this)">
         <i class="fas fa-shield-halved" aria-hidden="true"></i>
         <span>صلاحيات</span>
+      </button>
+      <button type="button" class="mob-nav-item" data-tab="broadcasts" data-perm="tab_broadcasts"
+        onclick="mobileNavGo('broadcasts', this)">
+        <i class="fas fa-bullhorn" aria-hidden="true"></i>
+        <span>نشرات</span>
       </button>
     </nav>
 
@@ -32819,12 +32828,13 @@
           else if (tab === 'locations' && typeof renderRegions === 'function') renderRegions();
           else if (tab === 'departments' && typeof renderUsers === 'function') renderUsers();
           else if (tab === 'settings' && typeof renderSettingsPermissions === 'function') renderSettingsPermissions();
+          else if (tab === 'broadcasts' && typeof renderBroadcastsPage === 'function') renderBroadcastsPage();
         } catch (e) {
           if (isMirsadDebugLog()) console.warn('[permissions] active tab refresh', e);
         }
       }
 
-      const MR_NAV_TAB_ORDER = ['dashboard', 'workflow', 'newTicket', 'reports', 'compliance', 'violations', 'locations', 'departments', 'settings'];
+      const MR_NAV_TAB_ORDER = ['dashboard', 'workflow', 'newTicket', 'reports', 'compliance', 'violations', 'locations', 'departments', 'settings', 'broadcasts'];
 
       function hasAnyNavTabPermission() {
         return MR_NAV_TAB_ORDER.some(tab => {
@@ -48818,6 +48828,21 @@
         }
       }
 
+      function openBroadcastsFromUserMenu(event) {
+        if (event) {
+          event.stopPropagation();
+          event.preventDefault();
+        }
+        closeTopbarUserMenu();
+        if (!hasPermission('tab_broadcasts')) {
+          showToast('نشرات الجوال متاحة لمدير النظام فقط', 'warning');
+          return;
+        }
+        const btn = document.querySelector('#mobileBottomNav .mob-nav-item[data-tab="broadcasts"]:not([data-role-hide])')
+          || document.querySelector('#sidebarNav .nav-item[onclick*="broadcasts"]:not([data-role-hide])');
+        goTab('broadcasts', btn || null);
+      }
+
       async function toggleWebPushFromMenu(event) {
         if (event) {
           event.stopPropagation();
@@ -51162,6 +51187,7 @@
       window.downloadUsersImportTemplate = downloadUsersImportTemplate;
       window.triggerUsersImport = triggerUsersImport;
       window.handleUsersImportFile = handleUsersImportFile;
+      window.openBroadcastsFromUserMenu = openBroadcastsFromUserMenu;
       window.sendBroadcastFromUI = sendBroadcastFromUI;
       window.syncBroadcastTargetPanels = syncBroadcastTargetPanels;
       window.updateBroadcastPreview = updateBroadcastPreview;
