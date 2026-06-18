@@ -26418,7 +26418,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v761-push-basic">
+  <meta name="app-build" content="athar-figma-v762-push-required">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -28977,6 +28977,9 @@
           okBtn.className = `confirm-btn confirm-ok ${type === 'info' ? 'info' : (type === 'warn' ? 'warn' : '')}`;
           okBtn.textContent = opts.okText || 'تأكيد';
           cancelBtn.textContent = opts.cancelText || 'إلغاء';
+          const hideCancel = !!opts.hideCancel;
+          cancelBtn.hidden = hideCancel;
+          cancelBtn.style.display = hideCancel ? 'none' : '';
 
           const cleanup = () => {
             overlay.classList.remove('open');
@@ -28987,9 +28990,9 @@
           };
           const onOk = () => { cleanup(); resolve(true); };
           const onCancel = () => { cleanup(); resolve(false); };
-          const onBackdrop = (e) => { if (e.target === overlay) onCancel(); };
+          const onBackdrop = (e) => { if (!hideCancel && e.target === overlay) onCancel(); };
           const onKey = (e) => {
-            if (e.key === 'Escape') onCancel();
+            if (!hideCancel && e.key === 'Escape') onCancel();
             if (e.key === 'Enter') onOk();
           };
 
@@ -28999,7 +29002,7 @@
           document.addEventListener('keydown', onKey);
 
           overlay.classList.add('open');
-          setTimeout(() => cancelBtn.focus(), 50);
+          setTimeout(() => (hideCancel ? okBtn : cancelBtn).focus(), 50);
         });
       }
 
@@ -48826,10 +48829,11 @@
           btn.hidden = true;
           return;
         }
-        btn.hidden = false;
         const on = Notification.permission === 'granted';
-        label.textContent = on ? 'تنبيهات الجوال مفعّلة' : 'تفعيل تنبيهات الجوال';
-        btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+        btn.hidden = on;
+        if (on) return;
+        label.textContent = 'تفعيل تنبيهات الجوال';
+        btn.setAttribute('aria-pressed', 'false');
       }
 
       async function refreshPushSubscription(reg, opts = {}) {
@@ -48913,21 +48917,18 @@
         }
         if (!opts.promptIfNeeded || Notification.permission !== 'default') return;
         const isTeamLead = webPushTeamLeadRole();
-        const key = isTeamLead ? 'athar_push_prompt_team_v1' : 'athar_push_prompt_v1';
-        try { if (localStorage.getItem(key)) return; } catch (_) { return; }
         const isMob = document.documentElement.classList.contains('mr-mobile-ui');
         if (!isMob && !isTeamLead) return;
-        try { localStorage.setItem(key, '1'); } catch (_) { /* noop */ }
         const ok = await confirmDialog(
           isTeamLead
             ? 'فعّل تنبيهات الجوال لتصلك إشعارات فريقك عند رصد مخالفة على موظفيك أو تحديث حالة تذاكرهم — حتى والتطبيق مغلق.\n\nعلى iPhone: أضف ATHAR إلى الشاشة الرئيسية أولاً.'
             : 'فعّل تنبيهات الجوال لتصلك إشعارات عند رصد مخالفة حتى والتطبيق مغلق.\n\nعلى iPhone: أضف ATHAR إلى الشاشة الرئيسية أولاً.',
-          { type: 'info', title: 'تنبيهات الجوال', okText: 'تفعيل', cancelText: 'لاحقاً' }
+          { type: 'info', title: 'تنبيهات الجوال', okText: 'تفعيل', hideCancel: true }
         );
         if (!ok) return;
         try {
           const enabled = await ensureAtharWebPushSubscribed({ welcomeNotify: true });
-          if (!enabled) showToast('لم يُفعَّل الإذن — يمكنك التفعيل من قائمة المستخدم', 'warning');
+          if (!enabled) showToast('يُحتاج إذن الإشعارات من إعدادات الجوال — فعّلها ثم أعد فتح التطبيق', 'warning');
         } catch (e) {
           showToast('فشل التفعيل: ' + formatPushError(e), 'error');
         }
@@ -48958,15 +48959,7 @@
           showToast('المتصفح لا يدعم تنبيهات الجوال على هذا الجهاز', 'warning');
           return;
         }
-        if (Notification.permission === 'granted') {
-          const off = await confirmDialog('إيقاف تنبيهات الجوال على هذا الجهاز؟', {
-            type: 'warn', title: 'تنبيهات الجوال', okText: 'إيقاف', cancelText: 'إلغاء'
-          });
-          if (!off) return;
-          await disableAtharWebPush();
-          showToast('تم إيقاف تنبيهات الجوال', 'info');
-          return;
-        }
+        if (Notification.permission === 'granted') return;
         try {
           const enabled = await ensureAtharWebPushSubscribed({ welcomeNotify: true });
           if (!enabled) showToast('يُحتاج إذن الإشعارات من إعدادات الجوال/المتصفح', 'warning');
