@@ -137,7 +137,7 @@
       background: #fff
     }
 
-    @media (max-width: 640px) {
+    @media (max-width: 640px) and (pointer: coarse) {
       .wf-status-filter {
         flex: 1 1 100%;
         min-width: 0;
@@ -330,7 +330,7 @@
   color: var(--mr-primary-text);
 }
 
-@media (max-width: 640px) {
+@media (max-width: 640px) and (pointer: coarse) {
   .mr-user-card {
     padding: 14px 14px;
     gap: 10px;

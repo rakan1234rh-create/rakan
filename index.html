@@ -22,6 +22,8 @@
   })();</script>
   <script id="mobPortraitLockEarly">(function () {
     function isMobLandscape() {
+      // كمبيوتر/لابتوب حقيقي (فأرة) لا يُقفل اتجاهه أبداً
+      if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) return false;
       const isTouch = window.matchMedia('(pointer: coarse)').matches;
       const isTablet = isTouch && window.matchMedia('(min-width: 600px)').matches;
       // الآيباد وأي تابلت → لا يُغلق الـ landscape أبداً (يبقى mobile)
@@ -94,17 +96,17 @@
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Petrona:wght@400&display=block" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
-  <link rel="stylesheet" href="styles/shared/tabs.css" id="platform-tabs-link" media="screen and (min-width: 993px)">
+  <link rel="stylesheet" href="styles/shared/tabs.css" id="platform-tabs-link" media="screen and (min-width: 993px), screen and (hover: hover) and (pointer: fine)">
   <!-- صفحة المستخدمين — CSS مفصول -->
-  <link rel="stylesheet" href="styles/shared/list-head.css" id="platform-list-head-link" media="screen and (min-width: 993px)">
+  <link rel="stylesheet" href="styles/shared/list-head.css" id="platform-list-head-link" media="screen and (min-width: 993px), screen and (hover: hover) and (pointer: fine)">
   <link rel="stylesheet" href="styles/shared/users.css" id="platform-users-shared-link">
-  <link rel="stylesheet" href="styles/desktop/users.css" id="platform-users-desktop-link" media="screen and (min-width: 993px)">
-  <link rel="stylesheet" href="styles/desktop/users-shell.css" id="platform-users-shell-link" media="screen and (min-width: 993px)">
-  <link rel="stylesheet" href="styles/desktop/violations-shell.css" id="platform-violations-shell-link" media="screen and (min-width: 993px)">
-  <link rel="stylesheet" href="styles/desktop/locations-shell.css" id="platform-locations-shell-link" media="screen and (min-width: 993px)">
-  <link rel="stylesheet" href="styles/desktop/settings-shell.css" id="platform-settings-shell-link" media="screen and (min-width: 993px)">
+  <link rel="stylesheet" href="styles/desktop/users.css" id="platform-users-desktop-link" media="screen and (min-width: 993px), screen and (hover: hover) and (pointer: fine)">
+  <link rel="stylesheet" href="styles/desktop/users-shell.css" id="platform-users-shell-link" media="screen and (min-width: 993px), screen and (hover: hover) and (pointer: fine)">
+  <link rel="stylesheet" href="styles/desktop/violations-shell.css" id="platform-violations-shell-link" media="screen and (min-width: 993px), screen and (hover: hover) and (pointer: fine)">
+  <link rel="stylesheet" href="styles/desktop/locations-shell.css" id="platform-locations-shell-link" media="screen and (min-width: 993px), screen and (hover: hover) and (pointer: fine)">
+  <link rel="stylesheet" href="styles/desktop/settings-shell.css" id="platform-settings-shell-link" media="screen and (min-width: 993px), screen and (hover: hover) and (pointer: fine)">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script id="syncDesktopUiClassEarly">(function(){var isIpad=/iPad/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);var isTab=isIpad||(/Android/i.test(navigator.userAgent)&&!/Mobile/i.test(navigator.userAgent));var isWide=window.matchMedia('(min-width:993px)').matches;var isTouch=window.matchMedia('(pointer:coarse)').matches;var mob=isTab||!isWide||isTouch;var meta=document.querySelector('meta[name="viewport"]');var vpDev='width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=overlays-content';function buildVpTab(){var layoutW=992;var landW=Math.max(window.screen&&window.screen.width||0,window.screen&&window.screen.height||0)||window.innerWidth||layoutW;var scale=Math.max(0.85,Math.min(1.35,landW/layoutW));var scaleStr=(Math.round(scale*10000)/10000).toFixed(4);return'width='+layoutW+', initial-scale='+scaleStr+', maximum-scale='+scaleStr+', minimum-scale='+scaleStr+', user-scalable=no, viewport-fit=cover, interactive-widget=overlays-content';}var tabLand=mob&&isTab&&window.matchMedia('(orientation: landscape)').matches;document.documentElement.classList.toggle('mr-desktop-ui',!mob);document.documentElement.classList.toggle('mr-mobile-ui',mob);document.documentElement.classList.toggle('mr-tablet-landscape',tabLand);if(meta){meta.setAttribute('content',tabLand?buildVpTab():vpDev);}var deskIds=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link'];for(var i=0;i<deskIds.length;i++){var el=document.getElementById(deskIds[i]);if(el)el.disabled=mob;}})();</script>
+  <script id="syncDesktopUiClassEarly">(function(){var isIpad=/iPad/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);var isTab=isIpad||(/Android/i.test(navigator.userAgent)&&!/Mobile/i.test(navigator.userAgent));var isWide=window.matchMedia('(min-width:993px)').matches;var isTouch=window.matchMedia('(pointer:coarse)').matches;var isRealDesktop=window.matchMedia('(hover: hover) and (pointer: fine)').matches;var mob=isTab||isTouch||(!isRealDesktop&&!isWide);var meta=document.querySelector('meta[name="viewport"]');var vpDev='width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=overlays-content';function buildVpTab(){var layoutW=992;var landW=Math.max(window.screen&&window.screen.width||0,window.screen&&window.screen.height||0)||window.innerWidth||layoutW;var scale=Math.max(0.85,Math.min(1.35,landW/layoutW));var scaleStr=(Math.round(scale*10000)/10000).toFixed(4);return'width='+layoutW+', initial-scale='+scaleStr+', maximum-scale='+scaleStr+', minimum-scale='+scaleStr+', user-scalable=no, viewport-fit=cover, interactive-widget=overlays-content';}var tabLand=mob&&isTab&&window.matchMedia('(orientation: landscape)').matches;document.documentElement.classList.toggle('mr-desktop-ui',!mob);document.documentElement.classList.toggle('mr-mobile-ui',mob);document.documentElement.classList.toggle('mr-tablet-landscape',tabLand);if(meta){meta.setAttribute('content',tabLand?buildVpTab():vpDev);}var deskIds=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link'];for(var i=0;i<deskIds.length;i++){var el=document.getElementById(deskIds[i]);if(el)el.disabled=mob;}})();</script>
   
   <style id="mr-ui-shell-early-lock">
     html.mr-mobile-ui #appWrap #sidebar,
@@ -523,7 +525,7 @@
       display: none !important
     }
 
-    @media (min-width: 993px) {
+    @media (min-width: 993px), (hover: hover) and (pointer: fine) {
       html.mr-desktop-ui #mobileBottomNav.mobile-bottom-nav {
         display: none !important
       }
@@ -1680,7 +1682,7 @@
       position: relative
     }
 
-    @media (min-width: 993px) {
+    @media (min-width: 993px), (hover: hover) and (pointer: fine) {
       html.mr-desktop-ui .sidebar:hover {
         width: var(--fig-sidebar-w);
         flex-basis: var(--fig-sidebar-w);
@@ -1790,7 +1792,7 @@
       transition: opacity 0.14s ease, max-width 0.16s ease
     }
 
-    @media (min-width: 993px) {
+    @media (min-width: 993px), (hover: hover) and (pointer: fine) {
       html.mr-desktop-ui .sidebar .nav-item,
       html.mr-desktop-ui .sidebar .logout-btn {
         justify-content: flex-start;
@@ -8226,7 +8228,7 @@
     }
 
     /* ═══ المناطق والفروع — تحسينات الجوال ═══ */
-    @media (max-width: 992px) {
+    @media (max-width: 992px) and (pointer: coarse) {
       #tab-locations .rb-view--regions .viol-grid,
       #tab-locations .viol-grid.rb-view--regions {
         grid-template-columns: 1fr !important;
@@ -12114,7 +12116,7 @@
       color: #fff
     }
 
-    @media (max-width: 992px) {
+    @media (max-width: 992px) and (pointer: coarse) {
       #broadcastNotifModal.modal.open {
         align-items: center !important;
         justify-content: center !important;
@@ -12231,7 +12233,7 @@
     }
 
     /* Notifications page — ديسكتوب: صفحة كاملة تحت الشريط العلوي مع سكرول داخلي */
-    @media (min-width: 993px) {
+    @media (min-width: 993px), (hover: hover) and (pointer: fine) {
       html.mr-notif-page-active.mr-desktop-ui #appWrap .main:has(#tab-notifications.active) {
         display: flex;
         flex-direction: column;
@@ -17732,7 +17734,7 @@
       opacity: 0.92
     }
 
-    @media (max-width: 720px) {
+    @media (max-width: 720px) and (pointer: coarse) {
       #tab-broadcasts .bc-form-grid,
       #tab-broadcasts .bc-form-grid.bc-form-grid--users,
       #tab-broadcasts .bc-form-grid.bc-form-grid--roles,
@@ -18107,13 +18109,13 @@
     }
   
     /* ═══ MOBILE UI (user source) ═══ */
-@media (max-width: 992px) {
+@media (max-width: 992px) and (pointer: coarse) {
       #loginScreen.lp-screen {
         justify-content: center
       }
     }
 
-    @media (max-width: 576px) {
+    @media (max-width: 576px) and (pointer: coarse) {
       #loginScreen #loginCard.lp-card .lp-hd--wefaq {
         padding-top: 1.55rem
       }
@@ -18128,7 +18130,7 @@
       }
     }
 
-    @media (max-width: 992px) {
+    @media (max-width: 992px) and (pointer: coarse) {
       .mr-topbar-user {
         width: auto;
         max-width: none;
@@ -18181,7 +18183,7 @@
       }
     }
 
-    @media (max-width: 992px) {
+    @media (max-width: 992px) and (pointer: coarse) {
       .topbar-clock,
       html.mr-mobile-ui .topbar-clock,
       html.mr-mobile-ui #topbarClock {
@@ -18199,7 +18201,7 @@
       }
     }
 
-    @media(max-width:480px) {
+    @media(max-width:480px) and (pointer: coarse) {
       .stats-grid-v2 {
         grid-template-columns: 1fr
       }
@@ -18215,7 +18217,7 @@
       }
     }
 
-    @media(max-width:520px) {
+    @media(max-width:520px) and (pointer: coarse) {
       #tab-dashboard .md-stats-grid {
         grid-template-columns: 1fr
       }
@@ -18231,7 +18233,7 @@
       display: none
     }
 
-    @media(max-width:992px) {
+    @media(max-width:992px) and (pointer: coarse) {
       html {
         touch-action: manipulation;
         -webkit-text-size-adjust: 100%;
@@ -18804,7 +18806,7 @@
       }
     }
 
-    @media (max-width: 640px) {
+    @media (max-width: 640px) and (pointer: coarse) {
       .wf-status-filter {
         flex: 1 1 100%;
         min-width: 0;
@@ -18819,7 +18821,7 @@
       }
     }
 
-    @media (max-width: 992px) {
+    @media (max-width: 992px) and (pointer: coarse) {
       #tab-compliance .cmp-neo-btn--pdf-export {
         display: none !important;
       }
@@ -18831,7 +18833,7 @@
       }
     }
 
-    @media (max-width: 760px) {
+    @media (max-width: 760px) and (pointer: coarse) {
       .cmp-neo-grid {
         grid-template-columns: minmax(0, 1fr);
       }
@@ -18851,7 +18853,7 @@
       }
     }
 
-    @media(max-width:640px) {
+    @media(max-width:640px) and (pointer: coarse) {
       .rp-stat-card {
         height: auto;
         min-height: 88px;
@@ -18874,7 +18876,7 @@
       }
     }
 
-    @media(max-width:480px) {
+    @media(max-width:480px) and (pointer: coarse) {
       .rp-stats {
         grid-template-columns: 1fr
       }
@@ -18884,7 +18886,7 @@
       }
     }
 
-    @media (max-width: 992px) {
+    @media (max-width: 992px) and (pointer: coarse) {
       :root {
         --fp-peek: clamp(44px, 12vw, 80px);
         --fp-z-overlay: 2100;
@@ -19021,7 +19023,7 @@
       }
     }
 
-    @media (max-width: 992px) and (orientation: landscape) {
+    @media (max-width: 992px) and (orientation: landscape) and (pointer: coarse) {
       :root {
         --fp-peek: clamp(72px, 22vw, 120px);
         --fp-w: clamp(
@@ -19032,7 +19034,7 @@
       }
     }
 
-    @media (max-width: 520px) {
+    @media (max-width: 520px) and (pointer: coarse) {
       .countdown-head {
         flex-wrap: wrap
       }
@@ -19062,7 +19064,7 @@
       }
     }
 
-    @media(max-width:480px) {
+    @media(max-width:480px) and (pointer: coarse) {
       .cmp-kpis {
         grid-template-columns: 1fr
       }
@@ -19074,7 +19076,7 @@
       }
     }
 
-    @media(max-width:768px) {
+    @media(max-width:768px) and (pointer: coarse) {
       .cmp-table thead {
         display: none
       }
@@ -19124,7 +19126,7 @@
       }
     }
 
-    @media (max-width: 768px) {
+    @media (max-width: 768px) and (pointer: coarse) {
       #cmpDetailModal.modal.open {
         align-items: flex-end !important;
         justify-content: flex-end !important;
@@ -19530,7 +19532,7 @@
       }
     }
 
-    @media (max-width: 400px) {
+    @media (max-width: 400px) and (pointer: coarse) {
       .modal-card.cmp-detail-card .cmp-detail-modal-header {
         padding: 10px 12px 8px
       }
@@ -19560,7 +19562,7 @@
       }
     }
 
-    @media (max-width: 340px) {
+    @media (max-width: 340px) and (pointer: coarse) {
       .modal-card.cmp-detail-card .cmp-detail-hero-badges:not(:has(.cmp-detail-hero-badge--branch)) {
         flex-wrap: wrap;
         overflow: visible;
@@ -19591,7 +19593,7 @@
       }
     }
 
-    @media(max-width:600px) {
+    @media(max-width:600px) and (pointer: coarse) {
       .cmp-detail-hero {
         grid-template-columns: 1fr;
         text-align: center
@@ -19606,7 +19608,7 @@
       }
     }
 
-    @media(max-width:600px) {
+    @media(max-width:600px) and (pointer: coarse) {
       .cmp-severity-grid {
         flex-direction: column-reverse;
         text-align: center
@@ -19626,7 +19628,7 @@
       }
     }
 
-    @media (max-width: 992px) {
+    @media (max-width: 992px) and (pointer: coarse) {
       .sidebar-drawer-toggle.sidebar-toggle-btn:hover {
         background: #f8f9fb;
         border-color: color-mix(in srgb, var(--mr-border) 70%, #c4c9d4);
@@ -19681,7 +19683,7 @@
       }
     }
 
-    @media(max-width:768px) {
+    @media(max-width:768px) and (pointer: coarse) {
       html {
         font-size: 13px
       }
@@ -19823,7 +19825,7 @@
       }
     }
 
-    @media(max-width:480px) {
+    @media(max-width:480px) and (pointer: coarse) {
       .topbar-title h1 {
         font-size: 14px
       }
@@ -19834,7 +19836,7 @@
     }
 
 @media (max-width:1024px){ .mk-kpi-grid{ grid-template-columns:repeat(2,1fr); } }
-    @media (max-width:992px) {
+    @media (max-width:992px) and (pointer: coarse) {
       .mk-kpi-grid { grid-template-columns:repeat(2, minmax(0, 1fr)); gap:6px; }
       .mk-kpi {
         padding:12px 10px;
@@ -19845,20 +19847,20 @@
     }
     @media (max-width:1100px){ .mk-dash__split{ grid-template-columns:1fr; } }
 
-@media (max-width: 720px) {
+@media (max-width: 720px) and (pointer: coarse) {
       #tab-newTicket .mk-form-grid {
         grid-template-columns: 1fr;
       }
     }
 
-    @media (max-width: 520px) {
+    @media (max-width: 520px) and (pointer: coarse) {
       #tab-newTicket .mk-dt-pair {
         grid-template-columns: 1fr;
         max-width: none;
       }
     }
 
-@media (max-width: 768px) {
+@media (max-width: 768px) and (pointer: coarse) {
       #toastContainer.mk-toast-stack {
         top: calc(var(--unified-topbar-h, 76px) + 8px);
         max-width: calc(100vw - 16px);
@@ -19918,7 +19920,7 @@
       }
     }
 
-    @media (max-width: 992px) {
+    @media (max-width: 992px) and (pointer: coarse) {
       /* تحسين المساحة العامة وحواف الجسم */
       .main {
         padding: 12px !important;
@@ -20063,14 +20065,14 @@
       }
     }
 
-    @media (max-width: 768px) {
+    @media (max-width: 768px) and (pointer: coarse) {
       .stats-grid-v2,
       .rp-stats {
         grid-template-columns: 1fr !important
       }
     }
 
-    @media (max-width: 576px) {
+    @media (max-width: 576px) and (pointer: coarse) {
       /* تحسين حجم الخطوط والعناوين على الشاشات الصغيرة جداً */
       .topbar.unified-banner {
         padding-block-end: 8px !important;
@@ -20151,7 +20153,7 @@
       }
     }
 
-    @media (max-width: 992px) {
+    @media (max-width: 992px) and (pointer: coarse) {
       /* معالجة التذاكر — تنسيق الجوال */
       html.mr-mobile-ui #appWrap .main:has(#tab-workflow.active) {
         padding-inline: 0 !important;
@@ -22399,7 +22401,7 @@
         display: none
       }
 
-      @media (min-width: 993px) {
+      @media (min-width: 993px), (hover: hover) and (pointer: fine) {
         html.mr-desktop-ui #tab-departments .users-meta-row {
           display: block;
           padding: 0 clamp(14px, 1.6vw, 18px) 12px;
@@ -22411,7 +22413,7 @@
         }
       }
 
-      @media (max-width: 992px) {
+      @media (max-width: 992px) and (pointer: coarse) {
         .content:has(#tab-departments.active) {
           padding: 0 !important;
           background: var(--mr-bg) !important;
@@ -22958,7 +22960,7 @@
       }
 
       /* المناطق والفروع — جوال: صفحة كاملة + بطاقات للمناطق/الفروع */
-      @media (max-width: 992px) {
+      @media (max-width: 992px) and (pointer: coarse) {
         .content:has(#tab-locations.active) {
           padding: 0 !important;
           background: var(--mr-bg) !important;
@@ -24761,7 +24763,7 @@
 
     }
 
-@media (max-width: 992px) {
+@media (max-width: 992px) and (pointer: coarse) {
       #mobileBottomNav.mobile-bottom-nav {
         display: flex !important;
         flex-direction: row !important;
@@ -24789,7 +24791,7 @@
       }
     }
 
-@media (max-width: 768px) {
+@media (max-width: 768px) and (pointer: coarse) {
             .modal-card.cmp-detail-card .cmp-detail-section--violations .cmp-viol-list,
             .modal-card.cmp-detail-card .cmp-detail-section--violations .cmp-viol-list.cmp-viol-list--scroll {
               --cmp-viol-row-h: 56px;
@@ -24910,7 +24912,7 @@
     }
 
     /* بطاقتا الالتزام والاستجابة — سطح المكتب */
-    @media (min-width: 993px) {
+    @media (min-width: 993px), (hover: hover) and (pointer: fine) {
       #tab-dashboard #personalIndicators .indicator-card--score .score-toggle-label--record {
         display: none;
       }
@@ -25117,7 +25119,7 @@
 
     .mk-dash__split { display:grid; grid-template-columns:minmax(0,1.05fr) minmax(0,1fr); gap:16px; align-items:stretch; }
 
-    @media (min-width: 993px) {
+    @media (min-width: 993px), (hover: hover) and (pointer: fine) {
 #tab-dashboard #branchStaffPanel {
         grid-column: 1 / -1;
       }
@@ -25261,7 +25263,7 @@
     }
 
     /* لوحة القيادة — جوال: بطاقات أصغر وتنسيق موحّد */
-    @media (max-width: 992px) {
+    @media (max-width: 992px) and (pointer: coarse) {
       html.mr-mobile-ui #appWrap .main:has(#tab-dashboard.active) {
         padding: 8px 0 0 !important;
         overflow-x: visible !important;
@@ -26852,7 +26854,7 @@
       color: var(--sidebar-text);
     }
 
-    @media (min-width: 993px) {
+    @media (min-width: 993px), (hover: hover) and (pointer: fine) {
       html.mr-desktop-ui #appWrap .sidebar::before {
         content: '';
         position: absolute;
@@ -26952,7 +26954,7 @@
       border-color: transparent;
     }
 
-    @media (min-width: 993px) {
+    @media (min-width: 993px), (hover: hover) and (pointer: fine) {
       html.mr-desktop-ui #appWrap .sidebar:not(:hover) .nav-item.active {
         background: transparent !important;
         color: var(--sidebar-text);
@@ -27196,7 +27198,7 @@
       padding: 0;
     }
 
-    @media (min-width: 993px) {
+    @media (min-width: 993px), (hover: hover) and (pointer: fine) {
       [data-theme="dark"] html.mr-desktop-ui #appWrap .sidebar:not(:hover) .nav-item.active,
       [data-theme="dark"] html.mr-desktop-ui #appWrap .sidebar:not(:hover) .nav-item.active .nav-item-label {
         background: transparent !important;
@@ -28246,13 +28248,13 @@
     }
   </style>
   <!-- واجهة سطح المكتب: تبقى حتى مع نافذة ضيقة (ماوس) — لا تتحول لواجهة الجوال -->
-  <link rel="stylesheet" href="styles/desktop/shell.css" id="desktop-ui-shell-lock-link" media="screen and (min-width: 993px)">
-  <link rel="stylesheet" href="styles/desktop/viewport-baseline.css" id="platform-viewport-baseline-link" media="screen and (min-width: 993px)">
-  <link rel="stylesheet" href="styles/desktop/compliance-shell.css" id="platform-compliance-shell-link" media="screen and (min-width: 993px)">
-  <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
-  <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
+  <link rel="stylesheet" href="styles/desktop/shell.css" id="desktop-ui-shell-lock-link" media="screen and (min-width: 993px), screen and (hover: hover) and (pointer: fine)">
+  <link rel="stylesheet" href="styles/desktop/viewport-baseline.css" id="platform-viewport-baseline-link" media="screen and (min-width: 993px), screen and (hover: hover) and (pointer: fine)">
+  <link rel="stylesheet" href="styles/desktop/compliance-shell.css" id="platform-compliance-shell-link" media="screen and (min-width: 993px), screen and (hover: hover) and (pointer: fine)">
+  <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px), screen and (hover: hover) and (pointer: fine)">
+  <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px), screen and (hover: hover) and (pointer: fine)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v831-cron-secret-in-body">
+  <meta name="app-build" content="athar-figma-v832-desktop-pointer-responsive">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -33254,7 +33256,9 @@
         if (isIpadOrTablet) return true;
         const isWide = window.matchMedia('(min-width: 993px)').matches;
         const isTouch = window.matchMedia('(pointer: coarse)').matches;
-        return !isWide || isTouch;
+        // كمبيوتر/لابتوب حقيقي (فأرة + hover) يبقى واجهة كمبيوتر مهما ضاق العرض
+        const isRealDesktop = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+        return isTouch || (!isRealDesktop && !isWide);
       }
 
       const ATHAR_LOGO_VER = '388';
