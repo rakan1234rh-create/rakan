@@ -303,13 +303,32 @@ Deno.serve(async (req) => {
 
     if (action === 'signGet') {
       const key = assertKey(body.key)
+      // [أمان] منع IDOR: لا نوقّع رابطاً/بثّاً إلا لملف يخص مخالفة يستطيع
+      // المستخدم رؤيتها (تُفرض عبر RLS داخل الدالة SECURITY INVOKER).
+      const { data: canSee, error: permErr } = await supabase.rpc(
+        'mirsad_user_can_see_attachment',
+        { p_key: key },
+      )
+      if (permErr) {
+        console.error('[r2-storage] perm check failed', permErr.message)
+        return json({ error: 'تعذّر التحقق من صلاحية الملف' }, 500)
+      }
+      if (!canSee) {
+        return json({ error: 'غير مصرح بالوصول لهذا الملف' }, 403)
+      }
+      const ct =
+        typeof body.contentType === 'string' && body.contentType.trim()
+          ? body.contentType.trim()
+          : guessContentTypeFromKey(key)
       const cmd = new GetObjectCommand({
         Bucket: bucket,
         Key: key,
+        ResponseContentType: ct,
+        ResponseContentDisposition: 'inline',
       })
       const url = await getSignedUrl(s3, cmd, { expiresIn: 3600 })
       const streamToken = await makeStreamToken(key, env)
-      return json({ url, key, streamToken })
+      return json({ url, key, streamToken, contentType: ct })
     }
 
     if (action === 'headObject') {
