@@ -14,6 +14,8 @@ type ViolationRow = {
   employee_id?: string | null;
   branch_id?: string | null;
   state?: string | null;
+  auto_forwarded_emp?: boolean | null;
+  auto_forwarded_sup?: boolean | null;
 };
 
 type TargetMode = 'all' | 'roles' | 'branches' | 'users';
@@ -214,10 +216,54 @@ const BRANCH_MGR_STATE_PUSH_COPY: Record<string, { title: string }> = {
   Warning_Issued: { title: 'تنبيه إداري صادر على موظف ضمن فريقك' },
 };
 
+const recentStatePush = new Map<string, number>();
+const STATE_PUSH_DEDUP_MS = 120_000;
+
+function isDbTruthy(val: unknown) {
+  return val === true || val === 1 || val === 'true' || val === 't';
+}
+
+function shouldSkipStatePush(dedupeKey: string) {
+  const key = String(dedupeKey || '').trim();
+  if (!key) return false;
+  const now = Date.now();
+  const last = recentStatePush.get(key);
+  if (last && now - last < STATE_PUSH_DEDUP_MS) return true;
+  recentStatePush.set(key, now);
+  return false;
+}
+
+function resolveStatePushTitles(
+  state: string,
+  previousState: string | null | undefined,
+  record: ViolationRow,
+  isAutoForward?: boolean,
+) {
+  const prev = previousState != null ? String(previousState) : '';
+  const autoEmpFwd = (isAutoForward && prev === 'emp' && state === 'sup')
+    || (state === 'sup' && isDbTruthy(record.auto_forwarded_emp) && (!prev || prev === 'emp'));
+  const autoSupFwd = (isAutoForward && prev === 'sup' && state === 'aud')
+    || (state === 'aud' && isDbTruthy(record.auto_forwarded_sup) && (!prev || prev === 'sup'));
+
+  let workflowCopy = STATE_PUSH_COPY[state] ? { ...STATE_PUSH_COPY[state] } : null;
+  let bmCopy = BRANCH_MGR_STATE_PUSH_COPY[state] ? { ...BRANCH_MGR_STATE_PUSH_COPY[state] } : null;
+
+  if (autoEmpFwd && state === 'sup') {
+    workflowCopy = { title: 'مخالفة بانتظار رد المشرف (تمرير تلقائي)' };
+    bmCopy = { title: 'تم تمرير مخالفة موظف فريقك للمشرف (تمرير تلقائي)' };
+  } else if (autoSupFwd && state === 'aud') {
+    workflowCopy = { title: 'تذكرة بانتظار التدقيق (تمرير تلقائي)' };
+    bmCopy = { title: 'تم تمرير مخالفة موظف فريقك للمدقق (تمرير تلقائي)' };
+  }
+
+  return { workflowCopy, bmCopy, autoEmpFwd, autoSupFwd };
+}
+
 async function dispatchViolationStatePush(
   supabase: ReturnType<typeof createClient>,
   record: ViolationRow,
   previousState?: string | null,
+  opts: { isAutoForward?: boolean; dedupeKey?: string } = {},
 ) {
   const state = String(record.state || '').trim();
   if (!state || state === 'uploading' || state === 'emp') {
@@ -225,6 +271,11 @@ async function dispatchViolationStatePush(
   }
   if (previousState && String(previousState) === state) {
     return { sent: 0, reason: 'state unchanged' };
+  }
+
+  const dedupeKey = String(opts.dedupeKey || `${record.id}:${previousState || 'none'}:${state}`);
+  if (shouldSkipStatePush(dedupeKey)) {
+    return { sent: 0, reason: 'duplicate transition suppressed', dedupeKey };
   }
 
   let recipientIds: Set<string>;
@@ -252,31 +303,37 @@ async function dispatchViolationStatePush(
     ? `${employeeName} — تذكرة ${ticket}`
     : `تذكرة ${ticket}`;
 
+  const { workflowCopy, bmCopy, autoEmpFwd } = resolveStatePushTitles(
+    state,
+    previousState,
+    record,
+    opts.isAutoForward,
+  );
+  const stateTag = autoEmpFwd && state === 'sup' ? `state_${state}_auto` : `state_${state}`;
+
   let totalSent = 0;
   const allErrors: string[] = [];
   const workflowIds = new Set([...recipientIds].filter((id) => !branchMgrIds.has(id)));
-  const workflowCopy = STATE_PUSH_COPY[state];
   if (workflowCopy && workflowIds.size) {
     const result = await sendPushToUserIds(
       supabase,
       workflowIds,
       workflowCopy.title,
       body,
-      { ticketId: String(record.id), tagSuffix: `state_${state}` },
+      { ticketId: String(record.id), tagSuffix: stateTag },
     );
     totalSent += result.sent || 0;
     if (result.error) allErrors.push(String(result.error));
     if (result.errors?.length) allErrors.push(...result.errors);
   }
 
-  const bmCopy = BRANCH_MGR_STATE_PUSH_COPY[state];
   if (bmCopy && branchMgrIds.size) {
     const result = await sendPushToUserIds(
       supabase,
       branchMgrIds,
       bmCopy.title,
       body,
-      { ticketId: String(record.id), tagSuffix: `bm_state_${state}` },
+      { ticketId: String(record.id), tagSuffix: `bm_${stateTag}` },
     );
     totalSent += result.sent || 0;
     if (result.error) allErrors.push(String(result.error));
@@ -288,6 +345,7 @@ async function dispatchViolationStatePush(
     recipients: recipientIds.size,
     branchManagers: branchMgrIds.size,
     state,
+    dedupeKey,
     errors: allErrors.length ? allErrors.slice(0, 5) : undefined,
   };
 }
@@ -325,11 +383,19 @@ async function sendPushToUserIds(
     return { error: 'no push_subscriptions for recipients — فعّل التنبيه من الجوال أولاً', sent: 0 };
   }
 
+  const seenEndpoints = new Set<string>();
+  const uniqueSubs = (subs ?? []).filter((sub) => {
+    const endpoint = String(sub?.endpoint || '');
+    if (!endpoint || seenEndpoints.has(endpoint)) return false;
+    seenEndpoints.add(endpoint);
+    return true;
+  });
+
   const staleEndpoints: string[] = [];
   let sent = 0;
   const errors: string[] = [];
 
-  for (const sub of subs) {
+  for (const sub of uniqueSubs) {
     const ticketId = extras.ticketId || '';
     const broadcastId = extras.broadcastId || '';
     const kind = extras.kind || 'circular';
@@ -375,7 +441,7 @@ async function sendPushToUserIds(
 
   return {
     sent,
-    subscriptions: subs.length,
+    subscriptions: uniqueSubs.length,
     errors: errors.length ? errors.slice(0, 3) : undefined,
   };
 }
@@ -603,7 +669,7 @@ Deno.serve(async (req) => {
     return json({
       ok: true,
       service: 'violation-push',
-      version: '2026-06-branch-mgr-push',
+      version: '2026-06-auto-forward-notif-fix',
       vapidConfigured: !!(vapidPublic && vapidPrivate),
       vapidValid,
       vapidPublicKey: vapidPublic || null,
@@ -646,14 +712,17 @@ Deno.serve(async (req) => {
     if (!record?.id) return json({ error: 'missing violation record in payload' }, 400);
     const { data: row, error: rowErr } = await supabase
       .from('violations')
-      .select('id, ticket_number, violation_type, employee_id, branch_id, state')
+      .select('id, ticket_number, violation_type, employee_id, branch_id, state, auto_forwarded_emp, auto_forwarded_sup')
       .eq('id', record.id)
       .maybeSingle();
     if (rowErr) return json({ error: rowErr.message }, 500);
     if (!row) return json({ error: 'violation not found' }, 404);
     const merged: ViolationRow = { ...row, ...record, id: row.id };
     const previousState = payload.previousState != null ? String(payload.previousState) : null;
-    const result = await dispatchViolationStatePush(supabase, merged, previousState);
+    const result = await dispatchViolationStatePush(supabase, merged, previousState, {
+      isAutoForward: payload.isAutoForward === true,
+      dedupeKey: payload.dedupeKey != null ? String(payload.dedupeKey) : undefined,
+    });
     if (result.error && !result.sent) {
       return json({ ok: false, ...result }, 500);
     }

@@ -28244,7 +28244,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v821-att-viewer-layout">
+  <meta name="app-build" content="athar-figma-v822-auto-forward-notif-fix">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -49795,6 +49795,28 @@
         return notifs;
       }
 
+      function dedupeUserNotifications(notifs) {
+        const seen = new Set();
+        const out = [];
+        for (const n of notifs) {
+          const key = n.ticketId
+            ? `t:${n.ticketId}|${String(n.title || '').trim()}|${n.scope || 'mine'}`
+            : `id:${n.id}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          out.push(n);
+        }
+        return out;
+      }
+
+      function isEmpAutoForwardedToSup(t) {
+        return !!t && t.state === 'sup' && isDbTruthy(t.auto_forwarded_emp);
+      }
+
+      function isSupAutoForwardedToAud(t) {
+        return !!t && t.state === 'aud' && isDbTruthy(t.auto_forwarded_sup);
+      }
+
       /** أسلوب تنبيه الراصد حسب إجراء السجل أو حالة التذكرة */
       function observerLogNotifStyle(t, log) {
         const a = String(log?.action || '');
@@ -50245,15 +50267,30 @@
               };
               const meta = teamStatusMeta[t.state];
               if (meta) {
+                const autoEmpFwd = isEmpAutoForwardedToSup(t);
+                const autoSupFwd = isSupAutoForwardedToAud(t);
+                let title = meta.title;
+                let type = meta.type;
+                let icon = meta.icon;
+                if (autoEmpFwd && t.state === 'sup') {
+                  title = 'تم تمرير مخالفة موظف فريقك للمشرف (تمرير تلقائي)';
+                  type = 'amber';
+                  icon = 'fa-robot';
+                } else if (autoSupFwd && t.state === 'aud') {
+                  title = 'تم تمرير مخالفة موظف فريقك للمدقق (تمرير تلقائي)';
+                  type = 'amber';
+                  icon = 'fa-robot';
+                }
                 notifs.push({
-                  id: `bm_team_status_${t.id}_${t.state}`,
+                  id: `bm_team_status_${t.id}_${t.state}${autoEmpFwd || autoSupFwd ? '_auto' : ''}`,
                   ticketId: t.id,
-                  type: meta.type,
-                  icon: meta.icon,
-                  title: meta.title,
+                  type,
+                  icon,
+                  title,
                   msg: `${t._empName} — ${t.violation_type} — ${shortTicketNum(t.ticket_number)}`,
                   time: t.updated_at || t.created_at,
-                  scope: 'team'
+                  scope: 'team',
+                  isAuto: autoEmpFwd || autoSupFwd
                 });
               }
               return;
@@ -50323,7 +50360,7 @@
           return tb - ta;
         });
 
-        return tagNotifScopes(notifs, me);
+        return tagNotifScopes(dedupeUserNotifications(notifs), me);
       }
 
       const NOTIF_FILTER_LABELS = {
@@ -51244,19 +51281,36 @@
           });
       }
 
+      const _violationPushDedup = new Map();
+
       /** إشعار Push عند تمرير التذكرة لمرحلة جديدة (مثلاً المدير عند mgt) */
-      function notifyViolationPushAfterStateChange(violationRow, previousState) {
+      function notifyViolationPushAfterStateChange(violationRow, previousState, opts = {}) {
         if (!violationRow?.id || !violationRow?.state) return;
         if (previousState && String(previousState) === String(violationRow.state)) return;
+
+        const dedupeKey = `${violationRow.id}:${previousState || ''}->${violationRow.state}`;
+        const now = Date.now();
+        const lastSent = _violationPushDedup.get(dedupeKey);
+        if (lastSent && now - lastSent < 120000) return;
+        _violationPushDedup.set(dedupeKey, now);
+
         const record = {
           id: violationRow.id,
           ticket_number: violationRow.ticket_number,
           violation_type: violationRow.violation_type,
           employee_id: violationRow.employee_id,
           branch_id: violationRow.branch_id,
-          state: violationRow.state
+          state: violationRow.state,
+          auto_forwarded_emp: violationRow.auto_forwarded_emp,
+          auto_forwarded_sup: violationRow.auto_forwarded_sup
         };
-        invokeViolationPush({ notifyState: true, previousState: previousState || null, record })
+        invokeViolationPush({
+          notifyState: true,
+          previousState: previousState || null,
+          record,
+          isAutoForward: !!opts.autoForward,
+          dedupeKey
+        })
           .then((data) => {
             if (data?.errors?.length && isMirsadDebugLog()) console.warn('[webPush] state change notify', data);
           })
@@ -52292,10 +52346,9 @@
         try {
           const flagCol = direction === 'emp_to_sup' ? 'auto_forwarded_emp' : 'auto_forwarded_sup';
           const expectedState = direction === 'emp_to_sup' ? 'emp' : 'sup';
-          const fieldKey = direction === 'emp_to_sup' ? 'employee_reply' : 'supervisor_reply';
 
           const { data: current, error: readErr } = await sb.from('violations')
-            .select(`logs, state, ${flagCol}, employee_reply, supervisor_reply`)
+            .select(`logs, state, ${flagCol}`)
             .eq('id', t.id)
             .single();
           if (readErr || !current) return false;
@@ -52333,10 +52386,6 @@
             logs: newLogs,
             [flagCol]: true
           };
-          const existingReply = current[fieldKey] ?? t[fieldKey];
-          if (!existingReply) {
-            updatePayload[fieldKey] = `(لم يتم تقديم رد — مررت التذكرة تلقائياً بعد ${direction === 'emp_to_sup' ? EMP_TIMEOUT_HOURS : SUP_TIMEOUT_HOURS} ساعة)`;
-          }
 
           let updateQuery = sb.from('violations')
             .update(updatePayload)
@@ -52348,8 +52397,15 @@
           if (updErr || !updated?.length) return false;
 
           notifyViolationPushAfterStateChange(
-            { ...t, state: newState, ticket_number: t.ticket_number },
-            t.state
+            {
+              ...t,
+              state: newState,
+              ticket_number: t.ticket_number,
+              auto_forwarded_emp: direction === 'emp_to_sup' ? true : t.auto_forwarded_emp,
+              auto_forwarded_sup: direction === 'sup_to_aud' ? true : t.auto_forwarded_sup
+            },
+            t.state,
+            { autoForward: true }
           );
           return true;
         } catch (err) {

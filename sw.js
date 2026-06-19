@@ -11,7 +11,7 @@ self.addEventListener('push', (event) => {
     icon: './icons/athar-pwa-192-v393.png',
     badge: './icons/athar-pwa-192-v393.png',
     tag: payload.tag || payload.ticketId || 'athar-notif',
-    renotify: true,
+    renotify: !!(payload.broadcastId),
     dir: 'rtl',
     lang: 'ar',
     data: {
