@@ -397,8 +397,10 @@
     html.mr-mobile-ui #appWrap .main:has(#tab-locations.active),
     html.mr-mobile-ui #appWrap .main:has(#tab-violations.active),
     html.mr-mobile-ui #appWrap .main:has(#tab-compliance.active),
-    html.mr-mobile-ui #appWrap .main:has(#tab-dashboard.active) {
+    html.mr-mobile-ui #appWrap .main:has(#tab-dashboard.active),
+    html.mr-mobile-ui #appWrap .main:has(#tab-broadcasts.active) {
       padding-inline: 0 !important;
+      padding-top: 0 !important;
       padding-bottom: 0 !important;
       overflow-x: visible !important
     }
@@ -408,7 +410,8 @@
     html.mr-mobile-ui #appWrap .content:has(#tab-departments.active),
     html.mr-mobile-ui #appWrap .content:has(#tab-locations.active),
     html.mr-mobile-ui #appWrap .content:has(#tab-violations.active),
-    html.mr-mobile-ui #appWrap .content:has(#tab-compliance.active) {
+    html.mr-mobile-ui #appWrap .content:has(#tab-compliance.active),
+    html.mr-mobile-ui #appWrap .content:has(#tab-broadcasts.active) {
       padding: 0 !important
     }
 
@@ -16524,47 +16527,498 @@
       margin-top: 16px
     }
 
+    #appWrap .main:has(#tab-broadcasts.active) {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      min-height: 0;
+      padding-top: 6px;
+      padding-inline-start: clamp(4px, 0.5vw, 8px);
+      padding-inline-end: clamp(8px, 1vw, 14px)
+    }
+
+    #appWrap .content:has(#tab-broadcasts.active) {
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: hidden;
+      padding-top: 0;
+      padding-bottom: 0;
+      padding-inline: clamp(2px, 0.35vw, 6px);
+      max-width: none
+    }
+
+    #tab-broadcasts.tab-content.active {
+      display: flex !important;
+      flex-direction: column;
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: hidden;
+      width: 100%;
+      background: transparent;
+      font-family: var(--font)
+    }
+
+    #tab-broadcasts :where(input, textarea, select, button, option) {
+      font-family: inherit
+    }
+
+    #tab-broadcasts :where(.fas, .far, .fab, .fa) {
+      font-family: "Font Awesome 6 Free", "Font Awesome 6 Brands"
+    }
+
+    #bc-kind-menu,
+    #bc-target-menu,
+    #bc-kind-menu .wf-status-opt,
+    #bc-target-menu .wf-status-opt {
+      font-family: var(--font)
+    }
+
+    #tab-broadcasts .bc-page {
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 auto;
+      min-height: 0;
+      width: 100%;
+      background: transparent;
+      box-sizing: border-box
+    }
+
+    #tab-broadcasts .bc-page-head {
+      flex: 0 0 auto;
+      padding: 0 2px 6px;
+      border-bottom: 1px solid var(--mr-border)
+    }
+
+    #tab-broadcasts .bc-page-title {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--mr-text);
+      line-height: 1.15
+    }
+
+    #tab-broadcasts .bc-page-sub {
+      margin: 2px 0 0;
+      font-size: 10px;
+      color: var(--mr-text-3);
+      font-family: var(--mono);
+      letter-spacing: 0.02em
+    }
+
+    #tab-broadcasts .bc-page-note {
+      margin: 4px 0 0;
+      font-size: 10px;
+      line-height: 1.35;
+      color: var(--mr-text-3);
+      display: flex;
+      align-items: flex-start;
+      gap: 5px
+    }
+
+    #tab-broadcasts .bc-page-note i {
+      color: var(--mr-primary);
+      margin-top: 1px;
+      font-size: 10px
+    }
+
+    #tab-broadcasts .bc-page-form {
+      flex: 0 0 auto;
+      padding: 6px 2px 6px;
+      border-bottom: 1px solid var(--mr-border);
+      background: var(--mr-bg)
+    }
+
     #tab-broadcasts .bc-form-wrap {
-      padding: 0 4px 8px
+      padding: 0
     }
 
     #tab-broadcasts .bc-form-grid {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 14px 16px
+      grid-template-columns: minmax(0, 1.5fr) minmax(0, 0.85fr) minmax(0, 1fr);
+      gap: 8px 10px;
+      --bc-control-h: 34px;
+      --bc-focus-border: #ffffff
+    }
+
+    [data-theme="light"] #tab-broadcasts .bc-form-grid {
+      --bc-focus-border: var(--mr-text)
+    }
+
+    #tab-broadcasts .bc-form-grid.bc-form-grid--users,
+    #tab-broadcasts .bc-form-grid.bc-form-grid--roles,
+    #tab-broadcasts .bc-form-grid.bc-form-grid--branches {
+      grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.72fr) minmax(0, 0.88fr) minmax(0, 1fr)
     }
 
     #tab-broadcasts .bc-form-full {
       grid-column: 1 / -1
     }
 
+    #tab-broadcasts .form-group {
+      margin-bottom: 0;
+      position: relative
+    }
+
+    #tab-broadcasts .form-label {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--mr-text-2)
+    }
+
+    #tab-broadcasts .bc-field {
+      width: 100%;
+      box-sizing: border-box;
+      background: var(--mr-surface);
+      border: 1px solid color-mix(in srgb, var(--mr-border) 45%, var(--mr-text-3));
+      color: var(--mr-text);
+      font-family: var(--font);
+      font-size: 13px;
+      outline: none;
+      transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
+      box-shadow: 0 1px 2px rgba(15, 18, 36, 0.04)
+    }
+
+    #tab-broadcasts .bc-field:not(.bc-textarea) {
+      height: var(--bc-control-h, 34px);
+      padding: 0 12px;
+      border-radius: 999px;
+      font-size: 12px
+    }
+
+    #tab-broadcasts #bc-title.bc-field {
+      border: 1px solid color-mix(in srgb, var(--mr-border) 45%, var(--mr-text-3));
+      box-shadow: 0 1px 2px rgba(15, 18, 36, 0.04)
+    }
+
+    #appWrap #tab-broadcasts #bc-title.bc-field {
+      border-color: color-mix(in srgb, var(--mr-border) 45%, var(--mr-text-3))
+    }
+
+    #tab-broadcasts .bc-field:hover {
+      border-color: color-mix(in srgb, var(--mr-primary) 35%, var(--mr-border));
+      background: color-mix(in srgb, var(--mr-primary-softer) 55%, var(--mr-surface))
+    }
+
+    #tab-broadcasts .bc-field:focus,
+    #appWrap #tab-broadcasts .bc-field:focus {
+      border-width: 1px;
+      border-color: var(--bc-focus-border, #ffffff);
+      box-shadow: none !important;
+      outline: none;
+      background: var(--mr-surface)
+    }
+
+    #tab-broadcasts .bc-textarea:focus,
+    #appWrap #tab-broadcasts .bc-textarea:focus {
+      border-width: 1px;
+      border-color: var(--bc-focus-border, #ffffff);
+      box-shadow: none !important;
+      outline: none
+    }
+
     #tab-broadcasts .bc-textarea {
-      min-height: 110px;
+      min-height: 68px;
+      padding: 10px 14px;
+      border-radius: 14px;
+      line-height: 1.45;
       resize: vertical
     }
 
-    #tab-broadcasts .bc-check-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-      gap: 8px;
-      max-height: 220px;
-      overflow: auto;
-      padding: 10px;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      background: var(--surface2)
+    #tab-broadcasts .bc-dd {
+      position: relative;
+      width: 100%;
+      z-index: 20
     }
 
-    #tab-broadcasts .bc-check-grid--users {
-      max-height: 260px
+    #tab-broadcasts .bc-dd .wf-status-trigger {
+      width: 100%;
+      min-width: 0;
+      height: var(--bc-control-h, 34px);
+      padding: 0 10px 0 12px;
+      border: 1px solid color-mix(in srgb, var(--mr-border) 45%, var(--mr-text-3));
+      border-radius: 999px;
+      background: var(--mr-surface);
+      box-shadow: 0 1px 2px rgba(15, 18, 36, 0.04);
+      font-size: 12px;
+      font-weight: 600
     }
 
-    #tab-broadcasts .bc-check-item {
+    #tab-broadcasts .bc-dd .wf-status-trigger:hover {
+      border-color: color-mix(in srgb, var(--mr-primary) 35%, var(--mr-border));
+      background: color-mix(in srgb, var(--mr-primary-softer) 55%, var(--mr-surface))
+    }
+
+    #tab-broadcasts .bc-dd .wf-status-trigger__label {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      min-width: 0
+    }
+
+    #tab-broadcasts .bc-dd .wf-status-trigger[aria-expanded="true"] {
+      border-width: 1px;
+      border-color: var(--bc-focus-border, #ffffff);
+      box-shadow: none
+    }
+
+    #tab-broadcasts .bc-dd-menu {
+      border-radius: 14px
+    }
+
+    #tab-broadcasts .bc-user-pick {
+      position: relative
+    }
+
+    #tab-broadcasts .bc-user-pick__search-wrap {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
+      height: var(--bc-control-h, 34px);
+      padding: 0 10px 0 12px;
+      border: 1px solid color-mix(in srgb, var(--mr-border) 45%, var(--mr-text-3));
+      border-radius: 999px;
+      background: var(--mr-surface);
+      box-shadow: 0 1px 2px rgba(15, 18, 36, 0.04);
+      transition: border-color .2s ease, background .2s ease, box-shadow .2s ease;
+      overflow: hidden
+    }
+
+    #tab-broadcasts .bc-user-pick__search-wrap:hover {
+      border-color: color-mix(in srgb, var(--mr-primary) 35%, var(--mr-border));
+      background: color-mix(in srgb, var(--mr-primary-softer) 55%, var(--mr-surface))
+    }
+
+    #tab-broadcasts .bc-user-pick__search-wrap:focus-within {
+      border-width: 1px;
+      border-color: var(--bc-focus-border, #ffffff);
+      box-shadow: none;
+      outline: none;
+      background: var(--mr-surface)
+    }
+
+    #tab-broadcasts .bc-user-pick__search-wrap i {
+      color: var(--mr-text);
+      font-size: 11px;
+      flex-shrink: 0
+    }
+
+    #tab-broadcasts .bc-user-pick__search {
+      flex: 1;
+      min-width: 0;
+      border: 0;
+      background: transparent;
+      font-family: var(--font);
+      font-size: 12px;
+      color: var(--mr-text);
+      outline: none;
+      padding: 0;
+      margin: 0;
+      box-shadow: none;
+      -webkit-appearance: none;
+      appearance: none;
+      border-radius: 0
+    }
+
+    #tab-broadcasts .bc-user-pick__search,
+    #appWrap #tab-broadcasts .bc-user-pick__search {
+      background: transparent !important;
+      border: 0 !important;
+      box-shadow: none !important
+    }
+
+    #tab-broadcasts .bc-user-pick__search:focus,
+    #tab-broadcasts .bc-user-pick__search:focus-visible,
+    #appWrap #tab-broadcasts .bc-user-pick__search:focus,
+    #appWrap #tab-broadcasts .bc-user-pick__search:focus-visible {
+      background: transparent !important;
+      border: 0 !important;
+      box-shadow: none !important;
+      outline: none !important
+    }
+
+    #tab-broadcasts .bc-user-pick__search::-webkit-search-decoration,
+    #tab-broadcasts .bc-user-pick__search::-webkit-search-cancel-button {
+      -webkit-appearance: none;
+      appearance: none;
+      display: none
+    }
+
+    #tab-broadcasts .bc-user-pick__search:-webkit-autofill,
+    #tab-broadcasts .bc-user-pick__search:-webkit-autofill:focus {
+      -webkit-text-fill-color: var(--mr-text);
+      box-shadow: 0 0 0 1000px var(--mr-surface) inset;
+      -webkit-box-shadow: 0 0 0 1000px var(--mr-surface) inset;
+      transition: background-color 9999s ease-out 0s
+    }
+
+    #tab-broadcasts .bc-user-pick__search::placeholder {
+      color: var(--mr-text-3)
+    }
+
+    #tab-broadcasts .bc-user-pick__results {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      right: 0;
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      background: var(--mr-surface);
+      border: 1px solid var(--mr-border);
+      border-radius: 14px;
+      box-shadow: 0 12px 40px rgba(15, 18, 36, 0.14), 0 4px 12px rgba(15, 18, 36, 0.08);
+      max-height: min(200px, calc(100vh - 24px));
+      overflow-x: hidden;
+      overflow-y: auto;
+      padding: 8px;
+      box-sizing: border-box
+    }
+
+    [data-theme="dark"] #tab-broadcasts .bc-user-pick__results {
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45)
+    }
+
+    #tab-broadcasts .bc-user-pick__results[hidden] {
+      display: none !important
+    }
+
+    #tab-broadcasts .bc-user-pick__opt,
+    #appWrap #tab-broadcasts .bc-user-pick__opt {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      width: 100%;
+      padding: 10px 12px;
+      border: 0;
+      border-radius: 12px;
+      background: transparent !important;
+      box-shadow: none !important;
+      text-align: start;
+      cursor: pointer;
+      font-family: var(--font);
       font-size: 13px;
-      cursor: pointer
+      font-weight: 500;
+      color: var(--mr-text);
+      transition: background .15s ease, color .15s ease, transform .12s ease
+    }
+
+    @media (hover: hover) {
+      #tab-broadcasts .bc-user-pick__opt:hover,
+      #appWrap #tab-broadcasts .bc-user-pick__opt:hover {
+        background: var(--mr-primary-soft) !important;
+        color: var(--mr-text);
+        font-weight: 500
+      }
+
+      #tab-broadcasts .bc-user-pick__opt:hover .bc-user-pick__opt-meta,
+      #appWrap #tab-broadcasts .bc-user-pick__opt:hover .bc-user-pick__opt-meta {
+        color: var(--mr-text-2)
+      }
+
+      [data-theme="dark"] #tab-broadcasts .bc-user-pick__opt:hover,
+      [data-theme="dark"] #appWrap #tab-broadcasts .bc-user-pick__opt:hover {
+        background: rgba(255, 255, 255, 0.09) !important;
+        color: #fff
+      }
+
+      [data-theme="dark"] #tab-broadcasts .bc-user-pick__opt:hover .bc-user-pick__opt-meta,
+      [data-theme="dark"] #appWrap #tab-broadcasts .bc-user-pick__opt:hover .bc-user-pick__opt-meta {
+        color: rgba(255, 255, 255, 0.72)
+      }
+
+      #tab-broadcasts .bc-user-pick__results:has(.bc-user-pick__opt:hover) {
+        border-color: color-mix(in srgb, var(--mr-primary) 28%, var(--mr-border))
+      }
+    }
+
+    #tab-broadcasts .bc-user-pick__opt:focus-visible,
+    #appWrap #tab-broadcasts .bc-user-pick__opt:focus-visible {
+      outline: none;
+      box-shadow: inset 0 0 0 2px var(--mr-primary-soft)
+    }
+
+    #tab-broadcasts .bc-user-pick__opt.is-selected {
+      font-weight: 500
+    }
+
+    @media (hover: hover) {
+      #tab-broadcasts .bc-user-pick__opt.is-selected:hover i,
+      #appWrap #tab-broadcasts .bc-user-pick__opt.is-selected:hover i {
+        color: var(--mr-primary)
+      }
+    }
+
+    #tab-broadcasts .bc-user-pick__opt-name {
+      flex: 1;
+      min-width: 0;
+      font-size: 13px;
+      font-weight: inherit
+    }
+
+    #tab-broadcasts .bc-user-pick__opt-meta {
+      font-size: 11px;
+      color: var(--mr-text-3);
+      white-space: nowrap
+    }
+
+    #tab-broadcasts .bc-user-pick__opt i {
+      color: var(--mr-text);
+      font-size: 11px
+    }
+
+    #tab-broadcasts .bc-user-pick__empty,
+    #tab-broadcasts .bc-user-pick__hint {
+      margin: 0;
+      padding: 6px 8px;
+      font-size: 12px;
+      color: var(--mr-text-3);
+      line-height: 1.45;
+      background: transparent;
+      box-shadow: none
+    }
+
+    #tab-broadcasts .bc-user-pick__chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      max-width: 100%;
+      padding: 4px 6px 4px 10px;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--mr-primary) 12%, var(--mr-surface));
+      border: 1px solid color-mix(in srgb, var(--mr-primary) 22%, var(--mr-border));
+      font-size: 12px;
+      color: var(--mr-text);
+      line-height: 1.3
+    }
+
+    #tab-broadcasts .bc-user-pick__chip small {
+      color: var(--mr-text-3);
+      font-size: 10px
+    }
+
+    #tab-broadcasts .bc-user-pick__chip-remove {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+      border: 0;
+      border-radius: 50%;
+      background: transparent;
+      color: var(--mr-text-3);
+      cursor: pointer;
+      padding: 0;
+      flex-shrink: 0
+    }
+
+    #tab-broadcasts .bc-user-pick__chip-remove:hover {
+      background: color-mix(in srgb, var(--red-text, #dc2626) 12%, transparent);
+      color: var(--red-text, #dc2626)
     }
 
     #tab-broadcasts .bc-form-actions {
@@ -16572,52 +17026,321 @@
       flex-wrap: wrap;
       align-items: center;
       justify-content: space-between;
-      gap: 12px;
-      margin-top: 16px;
-      padding-top: 14px;
-      border-top: 1px solid var(--border)
+      gap: 8px;
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px solid var(--mr-border)
     }
 
     #tab-broadcasts .bc-preview {
-      font-size: 13px;
-      color: var(--text2)
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px 10px;
+      flex: 1 1 auto;
+      min-width: 0;
+      font-size: 12px;
+      color: var(--mr-text-2);
+      line-height: 1.4
+    }
+
+    #tab-broadcasts .bc-preview__summary {
+      flex: 0 0 auto
+    }
+
+    #tab-broadcasts .bc-preview__chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      min-width: 0
+    }
+
+    #tab-broadcasts .bc-preview.is-hint .bc-preview__summary {
+      color: var(--mr-text-3)
     }
 
     #tab-broadcasts .bc-history {
-      margin-top: 24px;
-      padding-top: 18px;
-      border-top: 1px solid var(--border)
+      flex: 1 1 0;
+      min-height: 42vh;
+      display: flex;
+      flex-direction: column;
+      margin: 0;
+      padding: 8px 2px 0;
+      border: none;
+      background: transparent;
+      overflow: hidden
+    }
+
+    #tab-broadcasts .bc-history-head {
+      flex: 0 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px 10px;
+      margin-bottom: 6px
     }
 
     #tab-broadcasts .bc-history-title {
-      margin: 0 0 12px;
-      font-size: 15px
+      flex: 0 0 auto;
+      margin: 0;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--mr-text)
+    }
+
+    #tab-broadcasts .bc-history-stats {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 5px;
+      min-width: 0
+    }
+
+    #tab-broadcasts .bc-history-stat {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      font-weight: 600;
+      font-family: var(--font);
+      color: var(--mr-text-2);
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--mr-border);
+      background: var(--mr-surface);
+      white-space: nowrap;
+      line-height: 1.2;
+      cursor: pointer;
+      transition: background .15s ease, border-color .15s ease, box-shadow .15s ease, transform .1s ease;
+      -webkit-tap-highlight-color: transparent
+    }
+
+    #tab-broadcasts .bc-history-stat:hover {
+      border-color: color-mix(in srgb, var(--mr-primary) 30%, var(--mr-border));
+      background: color-mix(in srgb, var(--mr-primary-softer) 50%, var(--mr-surface))
+    }
+
+    #tab-broadcasts .bc-history-stat.is-active {
+      font-weight: 700;
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--mr-primary) 22%, transparent)
+    }
+
+    #tab-broadcasts .bc-history-stat strong {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--mr-text)
+    }
+
+    #tab-broadcasts .bc-history-stat--total {
+      border-color: color-mix(in srgb, var(--mr-text-3) 35%, var(--mr-border));
+      background: color-mix(in srgb, var(--mr-border) 25%, var(--mr-surface))
+    }
+
+    #tab-broadcasts .bc-history-stat--circular {
+      border-color: color-mix(in srgb, var(--mr-blue) 28%, var(--mr-border));
+      background: color-mix(in srgb, var(--mr-blue) 10%, var(--mr-surface));
+      color: var(--mr-blue)
+    }
+
+    #tab-broadcasts .bc-history-stat--circular strong {
+      color: var(--mr-blue)
+    }
+
+    #tab-broadcasts .bc-history-stat--motivational {
+      border-color: color-mix(in srgb, var(--mk-success) 30%, var(--mr-border));
+      background: color-mix(in srgb, var(--mk-success) 12%, var(--mr-surface));
+      color: var(--green-text)
+    }
+
+    #tab-broadcasts .bc-history-stat--motivational strong {
+      color: var(--green-text)
+    }
+
+    #tab-broadcasts .bc-history-stat--total.is-active {
+      border-color: color-mix(in srgb, var(--mr-text) 25%, var(--mr-border));
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--mr-text-3) 20%, transparent)
+    }
+
+    #tab-broadcasts .bc-history-stat--circular.is-active {
+      border-color: var(--mr-blue);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--mr-blue) 22%, transparent)
+    }
+
+    #tab-broadcasts .bc-history-stat--motivational.is-active {
+      border-color: var(--green-text);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--mk-success) 22%, transparent)
+    }
+
+    #tab-broadcasts .bc-history-stat--alert {
+      border-color: color-mix(in srgb, var(--red-text) 35%, var(--mr-border));
+      background: color-mix(in srgb, var(--red-text) 10%, var(--mr-surface));
+      color: var(--red-text)
+    }
+
+    #tab-broadcasts .bc-history-stat--alert strong {
+      color: var(--red-text)
+    }
+
+    #tab-broadcasts .bc-history-stat--alert:hover {
+      border-color: color-mix(in srgb, var(--red-text) 45%, var(--mr-border));
+      background: color-mix(in srgb, var(--red-text) 14%, var(--mr-surface))
+    }
+
+    #tab-broadcasts .bc-history-stat--alert.is-active {
+      border-color: var(--red-text);
+      background: color-mix(in srgb, var(--red-text) 16%, var(--mr-surface));
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--red-text) 22%, transparent)
+    }
+
+    #tab-broadcasts .bc-history-list {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+      padding: 2px 2px 8px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--mr-border-2) transparent
+    }
+
+    #tab-broadcasts .bc-history-list::-webkit-scrollbar {
+      width: 6px
+    }
+
+    #tab-broadcasts .bc-history-list::-webkit-scrollbar-thumb {
+      background: var(--mr-border-2);
+      border-radius: 999px
     }
 
     #tab-broadcasts .bc-history-item {
-      padding: 12px 14px;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      background: var(--surface2);
-      margin-bottom: 8px
+      padding: 14px 16px;
+      border: 1px solid color-mix(in srgb, var(--mr-border) 70%, var(--mr-text-3));
+      border-radius: 14px;
+      background: var(--mr-surface);
+      margin-bottom: 10px;
+      box-shadow: 0 1px 2px rgba(15, 18, 36, 0.03)
     }
 
     #tab-broadcasts .bc-history-item h4 {
-      margin: 0 0 6px;
-      font-size: 14px
+      margin: 0 0 8px;
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.4;
+      color: var(--mr-text)
+    }
+
+    #tab-broadcasts .bc-history-item p {
+      margin: 0 0 10px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--mr-text-2);
+      white-space: pre-wrap;
+      word-break: break-word
     }
 
     #tab-broadcasts .bc-history-meta {
-      font-size: 12px;
-      color: var(--text-muted, #6b7280);
+      font-size: 11px;
+      color: var(--mr-text-3);
       display: flex;
       flex-wrap: wrap;
-      gap: 10px
+      gap: 8px 12px
+    }
+
+    #tab-broadcasts .bc-history-meta span {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--mr-border) 40%, transparent)
+    }
+
+    #tab-broadcasts .bc-history-kind {
+      font-weight: 700;
+      border: 1px solid transparent
+    }
+
+    #tab-broadcasts .bc-history-kind i {
+      font-size: 10px
+    }
+
+    #tab-broadcasts .bc-history-kind--circular {
+      border-color: color-mix(in srgb, var(--mr-blue) 28%, var(--mr-border));
+      background: color-mix(in srgb, var(--mr-blue) 10%, var(--mr-surface));
+      color: var(--mr-blue)
+    }
+
+    #tab-broadcasts .bc-history-kind--circular i {
+      color: var(--mr-blue)
+    }
+
+    #tab-broadcasts .bc-history-kind--motivational {
+      border-color: color-mix(in srgb, var(--mk-success) 30%, var(--mr-border));
+      background: color-mix(in srgb, var(--mk-success) 12%, var(--mr-surface));
+      color: var(--green-text)
+    }
+
+    #tab-broadcasts .bc-history-kind--motivational i {
+      color: var(--green-text)
+    }
+
+    #tab-broadcasts .bc-history-kind--alert {
+      border-color: color-mix(in srgb, var(--red-text) 35%, var(--mr-border));
+      background: color-mix(in srgb, var(--red-text) 10%, var(--mr-surface));
+      color: var(--red-text)
+    }
+
+    #tab-broadcasts .bc-history-kind--alert i {
+      color: var(--red-text)
+    }
+
+    #tab-broadcasts .bc-history-stat i {
+      font-size: 9px;
+      opacity: 0.92
     }
 
     @media (max-width: 720px) {
-      #tab-broadcasts .bc-form-grid {
-        grid-template-columns: 1fr
+      #tab-broadcasts .bc-form-grid,
+      #tab-broadcasts .bc-form-grid.bc-form-grid--users,
+      #tab-broadcasts .bc-form-grid.bc-form-grid--roles,
+      #tab-broadcasts .bc-form-grid.bc-form-grid--branches {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr)
+      }
+
+      #tab-broadcasts .bc-form-title,
+      #tab-broadcasts .bc-form-users,
+      #tab-broadcasts .bc-form-roles,
+      #tab-broadcasts .bc-form-branches {
+        grid-column: 1 / -1
+      }
+
+      #tab-broadcasts .bc-page-head {
+        padding-inline: 10px
+      }
+
+      #tab-broadcasts .bc-page-form,
+      #tab-broadcasts .bc-history {
+        padding-inline: 10px
+      }
+
+      #tab-broadcasts .bc-history {
+        min-height: 38vh
+      }
+
+      #tab-broadcasts .bc-textarea {
+        min-height: 60px
+      }
+
+      #tab-broadcasts .bc-form-actions {
+        flex-direction: column;
+        align-items: stretch
+      }
+
+      #tab-broadcasts .bc-form-actions .btn {
+        width: 100%;
+        justify-content: center
       }
     }
 
@@ -19033,6 +19756,66 @@
         flex: 1 1 auto;
         min-height: 0;
         overflow: hidden
+      }
+
+      #tab-broadcasts.tab-content {
+        margin-inline: 0;
+        max-width: none;
+        width: 100%;
+        background: var(--mr-bg);
+        box-sizing: border-box
+      }
+
+      #tab-broadcasts.tab-content.active {
+        display: flex !important;
+        flex-direction: column;
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: hidden;
+        touch-action: pan-y
+      }
+
+      html.mr-mobile-ui #appWrap .main:has(#tab-broadcasts.active) {
+        overflow: hidden !important;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        padding-bottom: 0 !important
+      }
+
+      html.mr-mobile-ui #appWrap .content:has(#tab-broadcasts.active) {
+        display: flex !important;
+        flex-direction: column;
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: hidden !important
+      }
+
+      #tab-broadcasts .bc-page {
+        flex: 1 1 auto;
+        min-height: 0;
+        height: 100%
+      }
+
+      #tab-broadcasts .bc-page-head {
+        padding: 4px 10px 5px
+      }
+
+      #tab-broadcasts .bc-page-form {
+        padding: 5px 10px 5px
+      }
+
+      #tab-broadcasts .bc-history {
+        padding: 6px 10px 0
+      }
+
+      #tab-broadcasts .bc-history-list {
+        min-height: 0;
+        padding-bottom: calc(var(--mr-mob-bottom-nav-h, 56px) + 12px)
+      }
+
+      #tab-broadcasts .bc-textarea {
+        min-height: 96px
       }
 
       #tab-workflow {
@@ -25709,7 +26492,7 @@
       color: var(--mr-text-3);
     }
 
-    #appWrap input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+    #appWrap input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not(.bc-user-pick__search),
     #appWrap select,
     #appWrap textarea,
     #appWrap .form-select,
@@ -25724,7 +26507,7 @@
       color: var(--mr-text-muted);
     }
 
-    #appWrap input:focus,
+    #appWrap input:not(.bc-user-pick__search):focus,
     #appWrap select:focus,
     #appWrap textarea:focus,
     #appWrap .form-select:focus,
@@ -26955,7 +27738,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v769-broadcast-inbox-kind">
+  <meta name="app-build" content="athar-figma-v794-broadcasts-pick-list-hover">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -27909,68 +28692,128 @@
           </div>
           <!-- BROADCASTS (admin) -->
           <div class="tab-content" id="tab-broadcasts">
-            <div class="panel wf-panel">
-              <div class="wf-panel-banner">
-                <div class="wf-panel-intro">
-                  <h2 class="wf-panel-title">نشرات الجوال</h2>
-                  <p class="wf-panel-sub">تعاميم وإنجازات وتنبيهات — تصل خارج التطبيق</p>
+            <div class="bc-page">
+              <header class="bc-page-head">
+                <div class="bc-page-intro">
+                  <h2 class="bc-page-title">نشرات الجوال</h2>
+                  <p class="bc-page-sub">تعاميم وإنجازات وتنبيهات — تصل خارج التطبيق</p>
                 </div>
-                <p class="mr-settings-note"><i class="fas fa-bullhorn"></i> مدير النظام فقط يمكنه الإرسال. يستلم التنبيه من فعّل «تنبيهات الجوال» في قائمته.</p>
+                <p class="bc-page-note"><i class="fas fa-bullhorn" aria-hidden="true"></i> مدير النظام فقط يمكنه الإرسال. يستلم التنبيه من فعّل «تنبيهات الجوال» في قائمته.</p>
+              </header>
+              <div class="bc-page-form">
+                <div class="bc-form-wrap">
+                  <div class="bc-form-grid" id="bc-form-grid">
+                    <div class="form-group bc-form-title">
+                      <label class="form-label" for="bc-title">عنوان الرسالة <span class="required-mark">*</span></label>
+                      <input type="text" id="bc-title" class="form-input bc-field" maxlength="120" placeholder="مثال: تعميم بخصوص ساعات العمل">
+                    </div>
+                    <div class="form-group bc-form-kind">
+                      <label class="form-label" for="bc-kind">نوع الرسالة</label>
+                      <div class="wf-status-filter bc-dd" id="bc-kind-dd">
+                        <button type="button" class="wf-status-trigger" id="bc-kind-trigger"
+                          onclick="bcDdToggle('kind', event)" aria-haspopup="listbox" aria-expanded="false">
+                          <span class="wf-status-trigger__label" id="bc-kind-label">تعاميم</span>
+                          <i class="fas fa-chevron-down wf-status-trigger__chev" aria-hidden="true"></i>
+                        </button>
+                        <div class="wf-status-menu bc-dd-menu" id="bc-kind-menu" role="listbox" aria-label="نوع الرسالة">
+                          <div class="wf-status-menu__scroll">
+                            <button type="button" class="wf-status-opt is-active" data-val="circular" onclick="bcDdPick('kind','circular')">تعاميم</button>
+                            <button type="button" class="wf-status-opt" data-val="motivational" onclick="bcDdPick('kind','motivational')">إنجازات</button>
+                            <button type="button" class="wf-status-opt" data-val="alert" onclick="bcDdPick('kind','alert')">تنبيهات</button>
+                          </div>
+                        </div>
+                        <select id="bc-kind" class="wf-status-select-native" tabindex="-1" aria-hidden="true">
+                          <option value="circular">تعاميم</option>
+                          <option value="motivational">إنجازات</option>
+                          <option value="alert">تنبيهات</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="form-group bc-form-target">
+                      <label class="form-label" for="bc-target-mode">المستلمون</label>
+                      <div class="wf-status-filter bc-dd" id="bc-target-dd">
+                        <button type="button" class="wf-status-trigger" id="bc-target-trigger"
+                          onclick="bcDdToggle('target', event)" aria-haspopup="listbox" aria-expanded="false">
+                          <span class="wf-status-trigger__label" id="bc-target-label">كل المستخدمين النشطين</span>
+                          <i class="fas fa-chevron-down wf-status-trigger__chev" aria-hidden="true"></i>
+                        </button>
+                        <div class="wf-status-menu bc-dd-menu" id="bc-target-menu" role="listbox" aria-label="المستلمون">
+                          <div class="wf-status-menu__scroll">
+                            <button type="button" class="wf-status-opt is-active" data-val="all" onclick="bcDdPick('target','all')">كل المستخدمين النشطين</button>
+                            <button type="button" class="wf-status-opt" data-val="roles" onclick="bcDdPick('target','roles')">حسب الدور</button>
+                            <button type="button" class="wf-status-opt" data-val="branches" onclick="bcDdPick('target','branches')">حسب الفرع</button>
+                            <button type="button" class="wf-status-opt" data-val="users" onclick="bcDdPick('target','users')">مستخدمون محددون</button>
+                          </div>
+                        </div>
+                        <select id="bc-target-mode" class="wf-status-select-native" tabindex="-1" aria-hidden="true">
+                          <option value="all">كل المستخدمين النشطين</option>
+                          <option value="roles">حسب الدور</option>
+                          <option value="branches">حسب الفرع</option>
+                          <option value="users">مستخدمون محددون</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="form-group bc-form-roles" id="bc-panel-roles" hidden>
+                      <label class="form-label" for="bc-role-search">اختيار الأدوار</label>
+                      <div class="bc-user-pick" id="bc-role-pick">
+                        <div class="bc-user-pick__search-wrap">
+                          <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
+                          <input type="text" id="bc-role-search" class="bc-user-pick__search"
+                            placeholder="ابحث عن دور…"
+                            oninput="bcPickSearch('roles')" onfocus="bcPickOpenResults('roles')">
+                        </div>
+                        <div class="bc-user-pick__results" id="bc-role-pick-results" hidden></div>
+                      </div>
+                    </div>
+                    <div class="form-group bc-form-branches" id="bc-panel-branches" hidden>
+                      <label class="form-label" for="bc-branch-search">اختيار الفروع</label>
+                      <div class="bc-user-pick" id="bc-branch-pick">
+                        <div class="bc-user-pick__search-wrap">
+                          <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
+                          <input type="text" id="bc-branch-search" class="bc-user-pick__search"
+                            placeholder="ابحث باسم الفرع…"
+                            oninput="bcPickSearch('branches')" onfocus="bcPickOpenResults('branches')">
+                        </div>
+                        <div class="bc-user-pick__results" id="bc-branch-pick-results" hidden></div>
+                      </div>
+                    </div>
+                    <div class="form-group bc-form-users" id="bc-panel-users" hidden>
+                      <label class="form-label" for="bc-user-search">اختيار مستخدمين</label>
+                      <div class="bc-user-pick" id="bc-user-pick">
+                        <div class="bc-user-pick__search-wrap">
+                          <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
+                          <input type="text" id="bc-user-search" class="bc-user-pick__search"
+                            placeholder="ابحث بالاسم أو الرقم الوظيفي…"
+                            oninput="bcUserPickSearch()" onfocus="bcUserPickOpenResults()">
+                        </div>
+                        <div class="bc-user-pick__results" id="bc-user-pick-results" hidden></div>
+                      </div>
+                    </div>
+                    <div class="form-group bc-form-full">
+                      <label class="form-label" for="bc-body">نص الرسالة <span class="required-mark">*</span></label>
+                      <textarea id="bc-body" class="form-input bc-field bc-textarea" maxlength="500" rows="2" placeholder="اكتب نص النشرة…"></textarea>
+                    </div>
+                  </div>
+                  <div class="bc-form-actions">
+                    <div class="bc-preview" id="bc-preview">
+                      <span class="bc-preview__summary" id="bc-preview-summary">المستلمون المتوقعون: —</span>
+                      <div class="bc-preview__chips" id="bc-preview-chips"></div>
+                    </div>
+                    <button type="button" class="btn btn-primary" id="bc-send-btn" onclick="sendBroadcastFromUI()">
+                      <i class="fas fa-paper-plane"></i> إرسال الآن
+                    </button>
+                  </div>
+                </div>
               </div>
-              <div class="bc-form-wrap">
-                <div class="bc-form-grid">
-                  <div class="form-group">
-                    <label class="form-label" for="bc-title">عنوان الرسالة <span class="required-mark">*</span></label>
-                    <input type="text" id="bc-title" class="form-input" maxlength="120" placeholder="مثال: تعميم بخصوص ساعات العمل">
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label" for="bc-kind">نوع الرسالة</label>
-                    <select id="bc-kind" class="form-select">
-                      <option value="circular">تعاميم</option>
-                      <option value="motivational">إنجازات</option>
-                      <option value="alert">تنبيهات</option>
-                    </select>
-                  </div>
-                  <div class="form-group bc-form-full">
-                    <label class="form-label" for="bc-body">نص الرسالة <span class="required-mark">*</span></label>
-                    <textarea id="bc-body" class="form-input bc-textarea" maxlength="500" rows="4" placeholder="اكتب نص النشرة…"></textarea>
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label" for="bc-target-mode">المستلمون</label>
-                    <select id="bc-target-mode" class="form-select" onchange="syncBroadcastTargetPanels()">
-                      <option value="all">كل المستخدمين النشطين</option>
-                      <option value="roles">حسب الدور</option>
-                      <option value="branches">حسب الفرع</option>
-                      <option value="users">مستخدمون محددون</option>
-                    </select>
-                  </div>
-                  <div class="form-group bc-target-panel" id="bc-panel-roles" hidden>
-                    <label class="form-label">الأدوار</label>
-                    <div class="bc-check-grid" id="bc-roles-list"></div>
-                  </div>
-                  <div class="form-group bc-target-panel bc-form-full" id="bc-panel-branches" hidden>
-                    <label class="form-label">الفروع</label>
-                    <div class="bc-check-grid" id="bc-branches-list"></div>
-                  </div>
-                  <div class="form-group bc-target-panel bc-form-full" id="bc-panel-users" hidden>
-                    <label class="form-label">المستخدمون</label>
-                    <input type="text" id="bc-user-search" class="form-input" placeholder="ابحث بالاسم…" oninput="filterBroadcastUserChecks()">
-                    <div class="bc-check-grid bc-check-grid--users" id="bc-users-list"></div>
-                  </div>
+              <section class="bc-history" aria-label="آخر النشرات">
+                <div class="bc-history-head">
+                  <h3 class="bc-history-title">آخر النشرات</h3>
+                  <div class="bc-history-stats" id="bc-history-stats" aria-label="إحصائيات النشرات"></div>
                 </div>
-                <div class="bc-form-actions">
-                  <div class="bc-preview" id="bc-preview">المستلمون المتوقعون: —</div>
-                  <button type="button" class="btn btn-primary" id="bc-send-btn" onclick="sendBroadcastFromUI()">
-                    <i class="fas fa-paper-plane"></i> إرسال الآن
-                  </button>
-                </div>
-              </div>
-              <div class="bc-history">
-                <h3 class="bc-history-title">آخر النشرات</h3>
                 <div id="bc-history-list" class="bc-history-list">
                   <div class="empty"><p>لا توجد نشرات بعد</p></div>
                 </div>
-              </div>
+              </section>
             </div>
           </div>
           <!-- SETTINGS (admin) -->
@@ -41003,9 +41846,11 @@
 
       function syncDeskColsDuringSidebarTransition() {
         scheduleDeskColSyncForActiveTab(true);
+        if (typeof bcDdRepositionOpen === 'function') bcDdRepositionOpen();
         const start = performance.now();
         const step = () => {
           scheduleDeskColSyncForActiveTab(true);
+          if (typeof bcDdRepositionOpen === 'function') bcDdRepositionOpen();
           if (performance.now() - start < 220) requestAnimationFrame(step);
         };
         requestAnimationFrame(step);
@@ -48982,7 +49827,79 @@
         { id: 'observer', label: 'راصد' }
       ];
       const BC_KIND_LABELS = { motivational: 'إنجازات', alert: 'تنبيهات', circular: 'تعاميم' };
+      const BC_KIND_META = {
+        circular: { label: 'تعاميم', icon: 'fa-bullhorn' },
+        motivational: { label: 'إنجازات', icon: 'fa-trophy' },
+        alert: { label: 'تنبيهات', icon: 'fa-triangle-exclamation' }
+      };
       const BC_MODE_LABELS = { all: 'الكل', roles: 'حسب الدور', branches: 'حسب الفرع', users: 'مستخدمون محددون' };
+      const BC_KIND_DD_OPTIONS = [
+        { val: 'circular', label: 'تعاميم' },
+        { val: 'motivational', label: 'إنجازات' },
+        { val: 'alert', label: 'تنبيهات' }
+      ];
+      const BC_TARGET_DD_OPTIONS = [
+        { val: 'all', label: 'كل المستخدمين النشطين' },
+        { val: 'roles', label: 'حسب الدور' },
+        { val: 'branches', label: 'حسب الفرع' },
+        { val: 'users', label: 'مستخدمون محددون' }
+      ];
+      const BC_TARGET_EMPTY_HINTS = {
+        roles: 'لم يُختر دور بعد — ابحث ثم اختر دوراً أو أكثر',
+        branches: 'لم يُختر فرع بعد — ابحث ثم اختر فرعاً أو أكثر',
+        users: 'لم يُختر أحد بعد — ابحث ثم اختر مستخدماً أو أكثر'
+      };
+      const BC_PICK_META = {
+        roles: {
+          stateKey: '_bcSelectedRoleIds',
+          resultsId: 'bc-role-pick-results',
+          searchId: 'bc-role-search',
+          emptyResults: 'لا توجد نتائج — جرّب اسم دور آخر',
+          getCandidates(q) {
+            const query = String(q || '').trim().toLowerCase();
+            return BC_TARGET_ROLES.filter(r => {
+              if (!query) return true;
+              return `${r.label} ${r.id}`.toLowerCase().includes(query);
+            });
+          },
+          getItem(id) {
+            return BC_TARGET_ROLES.find(r => r.id === id);
+          },
+          optLabel(item) {
+            return item?.label || item?.id || '—';
+          },
+          optMeta() {
+            return '';
+          }
+        },
+        branches: {
+          stateKey: '_bcSelectedBranchIds',
+          resultsId: 'bc-branch-pick-results',
+          searchId: 'bc-branch-search',
+          emptyResults: 'لا توجد نتائج — جرّب اسم فرع آخر',
+          getCandidates(q) {
+            const query = String(q || '').trim().toLowerCase();
+            return (state.branches || [])
+              .filter(b => {
+                if (!query) return true;
+                const reg = (state.regions || []).find(r => String(r.id) === String(b.region_id));
+                return `${b.name || ''} ${reg?.name || ''}`.toLowerCase().includes(query);
+              })
+              .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'ar'))
+              .slice(0, 14);
+          },
+          getItem(id) {
+            return (state.branches || []).find(b => String(b.id) === String(id));
+          },
+          optLabel(item) {
+            return item?.name || item?.id || '—';
+          },
+          optMeta(item) {
+            const reg = (state.regions || []).find(r => String(r.id) === String(item?.region_id));
+            return reg?.name || '';
+          }
+        }
+      };
       const BROADCAST_INBOX_SELECT = 'id,broadcast_id,title,body,kind,created_at,broadcasts(id,title,body,kind,created_at)';
 
       function getBroadcastInboxMeta(row) {
@@ -49024,16 +49941,274 @@
         const mode = document.getElementById('bc-target-mode')?.value || 'all';
         const target = { mode };
         if (mode === 'roles') {
-          target.roles = Array.from(document.querySelectorAll('#bc-roles-list input[type=checkbox]:checked'))
-            .map(el => el.value);
+          bcPickEnsure('roles');
+          target.roles = Array.from(state._bcSelectedRoleIds);
         } else if (mode === 'branches') {
-          target.branchIds = Array.from(document.querySelectorAll('#bc-branches-list input[type=checkbox]:checked'))
-            .map(el => el.value);
+          bcPickEnsure('branches');
+          target.branchIds = Array.from(state._bcSelectedBranchIds);
         } else if (mode === 'users') {
-          target.userIds = Array.from(document.querySelectorAll('#bc-users-list input[type=checkbox]:checked'))
-            .map(el => el.value);
+          bcUserPickEnsureState();
+          target.userIds = Array.from(state._bcSelectedUserIds);
         }
         return target;
+      }
+
+      function bcDdPositionMenu(trigger, menu) {
+        if (!trigger || !menu) return;
+        const r = trigger.getBoundingClientRect();
+        const gap = 6;
+        const pad = 8;
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        const w = Math.ceil(r.width);
+        menu.style.width = `${w}px`;
+        let top = r.bottom + gap;
+        let left = r.left;
+        if (left < pad) left = pad;
+        if (left + w > vw - pad) left = Math.max(pad, vw - w - pad);
+        menu.style.left = `${left}px`;
+        menu.style.right = 'auto';
+        menu.style.top = `${top}px`;
+        menu.style.bottom = 'auto';
+        menu.style.maxHeight = '';
+        const menuH = menu.offsetHeight || 220;
+        if (top + menuH > vh - pad) {
+          const above = r.top - gap - menuH;
+          if (above >= pad) menu.style.top = `${above}px`;
+          else {
+            menu.style.top = `${Math.max(pad, vh - menuH - pad)}px`;
+            menu.style.maxHeight = `${vh - pad * 2}px`;
+          }
+        }
+      }
+
+      function bcDdRepositionOpen() {
+        ['kind', 'target'].forEach(field => {
+          const menu = document.getElementById(`bc-${field}-menu`);
+          const trigger = document.getElementById(`bc-${field}-trigger`);
+          if (menu?.classList.contains('open')) bcDdPositionMenu(trigger, menu);
+        });
+      }
+
+      function bcDdHome(field) {
+        const menu = document.getElementById(`bc-${field}-menu`);
+        const home = document.getElementById(`bc-${field}-dd`);
+        if (menu && home && menu.parentNode !== home) {
+          home.appendChild(menu);
+          menu.style.top = '';
+          menu.style.left = '';
+          menu.style.right = '';
+          menu.style.bottom = '';
+          menu.style.width = '';
+          menu.style.maxHeight = '';
+        }
+      }
+
+      function bcDdClose(field) {
+        const menu = document.getElementById(`bc-${field}-menu`);
+        const trigger = document.getElementById(`bc-${field}-trigger`);
+        menu?.classList.remove('open');
+        trigger?.setAttribute('aria-expanded', 'false');
+        bcDdHome(field);
+      }
+
+      function bcDdCloseAll() {
+        bcDdClose('kind');
+        bcDdClose('target');
+        bcPickCloseAllResults();
+      }
+
+      function bcDdSync(field) {
+        const isKind = field === 'kind';
+        const sel = document.getElementById(isKind ? 'bc-kind' : 'bc-target-mode');
+        const label = document.getElementById(isKind ? 'bc-kind-label' : 'bc-target-label');
+        const menu = document.getElementById(isKind ? 'bc-kind-menu' : 'bc-target-menu');
+        const val = sel?.value || (isKind ? 'circular' : 'all');
+        const opts = isKind ? BC_KIND_DD_OPTIONS : BC_TARGET_DD_OPTIONS;
+        if (label) label.textContent = opts.find(o => o.val === val)?.label || val;
+        menu?.querySelectorAll('.wf-status-opt').forEach(btn => {
+          btn.classList.toggle('is-active', btn.dataset.val === val);
+        });
+      }
+
+      function bcDdToggle(field, ev) {
+        if (ev) ev.stopPropagation();
+        const menu = document.getElementById(`bc-${field}-menu`);
+        const trigger = document.getElementById(`bc-${field}-trigger`);
+        if (!menu || !trigger) return;
+        const other = field === 'kind' ? 'target' : 'kind';
+        bcDdClose(other);
+        bcPickCloseAllResults();
+        const open = !menu.classList.contains('open');
+        const home = document.getElementById(`bc-${field}-dd`);
+        if (open && home && menu.parentNode !== document.body) document.body.appendChild(menu);
+        menu.classList.toggle('open', open);
+        trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+        if (open) {
+          bcDdPositionMenu(trigger, menu);
+          requestAnimationFrame(() => bcDdPositionMenu(trigger, menu));
+        } else {
+          bcDdHome(field);
+        }
+      }
+
+      function bcDdPick(field, val) {
+        const isKind = field === 'kind';
+        const sel = document.getElementById(isKind ? 'bc-kind' : 'bc-target-mode');
+        if (sel) sel.value = val;
+        bcDdSync(field);
+        bcDdClose(field);
+        if (isKind) updateBroadcastPreview();
+        else syncBroadcastTargetPanels();
+      }
+
+      function bcUserPickEnsureState() {
+        if (!state._bcSelectedUserIds) state._bcSelectedUserIds = new Set();
+      }
+
+      function bcUserPickGetCandidates(q) {
+        const query = String(q || '').trim().toLowerCase();
+        return (state.users || [])
+          .filter(u => u.is_active !== false)
+          .filter(u => {
+            if (!query) return true;
+            const roleLbl = ROLE_LABELS[normalizeUserRole(u.role)] || u.role || '';
+            const hay = `${u.name || ''} ${u.emp_number || u.employee_number || ''} ${u.email || ''} ${roleLbl}`.toLowerCase();
+            return hay.includes(query);
+          })
+          .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'ar'))
+          .slice(0, 14);
+      }
+
+      function bcUserPickRenderResults() {
+        const box = document.getElementById('bc-user-pick-results');
+        const input = document.getElementById('bc-user-search');
+        if (!box) return;
+        bcUserPickEnsureState();
+        const users = bcUserPickGetCandidates(input?.value || '');
+        if (!users.length) {
+          box.innerHTML = '<p class="bc-user-pick__empty">لا توجد نتائج — جرّب اسماً أو رقماً وظيفياً</p>';
+          box.hidden = false;
+          return;
+        }
+        box.innerHTML = users.map(u => {
+          const selected = state._bcSelectedUserIds.has(u.id);
+          const roleLbl = ROLE_LABELS[normalizeUserRole(u.role)] || u.role || '';
+          const empNo = u.emp_number || u.employee_number || '';
+          const uid = Sec.escapeHTML(u.id);
+          return `<button type="button" class="bc-user-pick__opt${selected ? ' is-selected' : ''}" onclick="bcUserPickToggle('${uid}')">
+            <span class="bc-user-pick__opt-name">${Sec.escapeHTML(u.name || '—')}</span>
+            <span class="bc-user-pick__opt-meta">${Sec.escapeHTML([empNo, roleLbl].filter(Boolean).join(' · '))}</span>
+            ${selected ? '<i class="fas fa-check" aria-hidden="true"></i>' : ''}
+          </button>`;
+        }).join('');
+        box.hidden = false;
+      }
+
+      function bcUserPickRenderChips() {
+        updateBroadcastPreview();
+      }
+
+      function bcUserPickToggle(uid) {
+        bcUserPickEnsureState();
+        const id = String(uid || '');
+        if (!id) return;
+        if (state._bcSelectedUserIds.has(id)) state._bcSelectedUserIds.delete(id);
+        else state._bcSelectedUserIds.add(id);
+        bcUserPickRenderChips();
+        bcUserPickRenderResults();
+        updateBroadcastPreview();
+      }
+
+      function bcUserPickRemove(uid) {
+        bcUserPickEnsureState();
+        state._bcSelectedUserIds.delete(String(uid || ''));
+        bcUserPickRenderChips();
+        bcUserPickRenderResults();
+        updateBroadcastPreview();
+      }
+
+      function bcUserPickSearch() {
+        bcUserPickRenderResults();
+      }
+
+      function bcUserPickOpenResults() {
+        bcUserPickRenderResults();
+      }
+
+      function bcPickEnsure(kind) {
+        const meta = BC_PICK_META[kind];
+        if (!meta) return new Set();
+        if (!state[meta.stateKey]) state[meta.stateKey] = new Set();
+        return state[meta.stateKey];
+      }
+
+      function bcPickCloseAllResults() {
+        ['bc-user-pick-results', 'bc-role-pick-results', 'bc-branch-pick-results'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.hidden = true;
+        });
+      }
+
+      function bcPickRenderResults(kind) {
+        const meta = BC_PICK_META[kind];
+        if (!meta) return;
+        const box = document.getElementById(meta.resultsId);
+        const input = document.getElementById(meta.searchId);
+        if (!box) return;
+        const selected = bcPickEnsure(kind);
+        const items = meta.getCandidates(input?.value || '');
+        if (!items.length) {
+          box.innerHTML = `<p class="bc-user-pick__empty">${Sec.escapeHTML(meta.emptyResults)}</p>`;
+          box.hidden = false;
+          return;
+        }
+        box.innerHTML = items.map(item => {
+          const id = String(item.id);
+          const isSelected = selected.has(id);
+          const safeId = Sec.escapeHTML(id);
+          const metaTxt = meta.optMeta(item);
+          return `<button type="button" class="bc-user-pick__opt${isSelected ? ' is-selected' : ''}" onclick="bcPickToggle('${kind}','${safeId}')">
+            <span class="bc-user-pick__opt-name">${Sec.escapeHTML(meta.optLabel(item))}</span>
+            ${metaTxt ? `<span class="bc-user-pick__opt-meta">${Sec.escapeHTML(metaTxt)}</span>` : ''}
+            ${isSelected ? '<i class="fas fa-check" aria-hidden="true"></i>' : ''}
+          </button>`;
+        }).join('');
+        box.hidden = false;
+      }
+
+      function bcPickRenderChips(kind) {
+        updateBroadcastPreview();
+      }
+
+      function bcPickToggle(kind, id) {
+        const meta = BC_PICK_META[kind];
+        if (!meta) return;
+        const selected = bcPickEnsure(kind);
+        const key = String(id || '');
+        if (!key) return;
+        if (selected.has(key)) selected.delete(key);
+        else selected.add(key);
+        bcPickRenderChips(kind);
+        bcPickRenderResults(kind);
+        updateBroadcastPreview();
+      }
+
+      function bcPickRemove(kind, id) {
+        const meta = BC_PICK_META[kind];
+        if (!meta) return;
+        bcPickEnsure(kind).delete(String(id || ''));
+        bcPickRenderChips(kind);
+        bcPickRenderResults(kind);
+        updateBroadcastPreview();
+      }
+
+      function bcPickSearch(kind) {
+        bcPickRenderResults(kind);
+      }
+
+      function bcPickOpenResults(kind) {
+        bcPickRenderResults(kind);
       }
 
       function estimateBroadcastRecipients(target) {
@@ -49058,110 +50233,232 @@
         return ids.size;
       }
 
+      function bcRenderPreviewChips(target) {
+        const host = document.getElementById('bc-preview-chips');
+        if (!host) return;
+        const mode = target?.mode || 'all';
+        let html = '';
+        if (mode === 'users') {
+          bcUserPickEnsureState();
+          html = Array.from(state._bcSelectedUserIds).map(id => {
+            const u = state.users?.find(x => String(x.id) === String(id));
+            if (!u) return '';
+            const roleLbl = ROLE_LABELS[normalizeUserRole(u.role)] || '';
+            const uid = Sec.escapeHTML(u.id);
+            return `<span class="bc-user-pick__chip">
+              <span>${Sec.escapeHTML(u.name || id)}${roleLbl ? ` <small>(${Sec.escapeHTML(roleLbl)})</small>` : ''}</span>
+              <button type="button" class="bc-user-pick__chip-remove" onclick="bcUserPickRemove('${uid}')" aria-label="إزالة"><i class="fas fa-times"></i></button>
+            </span>`;
+          }).join('');
+        } else if (mode === 'roles') {
+          const meta = BC_PICK_META.roles;
+          html = Array.from(bcPickEnsure('roles')).map(id => {
+            const item = meta.getItem(id);
+            if (!item) return '';
+            const safeId = Sec.escapeHTML(id);
+            return `<span class="bc-user-pick__chip">
+              <span>${Sec.escapeHTML(meta.optLabel(item))}</span>
+              <button type="button" class="bc-user-pick__chip-remove" onclick="bcPickRemove('roles','${safeId}')" aria-label="إزالة"><i class="fas fa-times"></i></button>
+            </span>`;
+          }).join('');
+        } else if (mode === 'branches') {
+          const meta = BC_PICK_META.branches;
+          html = Array.from(bcPickEnsure('branches')).map(id => {
+            const item = meta.getItem(id);
+            if (!item) return '';
+            const safeId = Sec.escapeHTML(id);
+            return `<span class="bc-user-pick__chip">
+              <span>${Sec.escapeHTML(meta.optLabel(item))}</span>
+              <button type="button" class="bc-user-pick__chip-remove" onclick="bcPickRemove('branches','${safeId}')" aria-label="إزالة"><i class="fas fa-times"></i></button>
+            </span>`;
+          }).join('');
+        }
+        host.innerHTML = html;
+      }
+
       function refreshBroadcastTargetPickers() {
-        const branchesEl = document.getElementById('bc-branches-list');
-        if (branchesEl) {
-          branchesEl.innerHTML = (state.branches || []).map(b => `
-            <label class="bc-check-item">
-              <input type="checkbox" value="${Sec.escapeHTML(b.id)}" onchange="updateBroadcastPreview()">
-              <span>${Sec.escapeHTML(b.name || b.id)}</span>
-            </label>`).join('') || '<p class="bc-preview">لا توجد فروع</p>';
+        if (document.getElementById('bc-target-mode')?.value === 'branches') {
+          bcPickRenderResults('branches');
         }
-        const usersEl = document.getElementById('bc-users-list');
-        if (usersEl) {
-          usersEl.innerHTML = (state.users || [])
-            .filter(u => u.is_active !== false)
-            .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'ar'))
-            .map(u => `
-            <label class="bc-check-item" data-name="${Sec.escapeHTML(String(u.name || '').toLowerCase())}">
-              <input type="checkbox" value="${Sec.escapeHTML(u.id)}" onchange="updateBroadcastPreview()">
-              <span>${Sec.escapeHTML(u.name || u.id)} <small>(${Sec.escapeHTML(ROLE_LABELS[normalizeUserRole(u.role)] || u.role || '')})</small></span>
-            </label>`).join('') || '<p class="bc-preview">لا يوجد مستخدمون</p>';
-        }
+        updateBroadcastPreview();
       }
 
       function syncBroadcastTargetPanels() {
         const mode = document.getElementById('bc-target-mode')?.value || 'all';
-        document.querySelectorAll('#tab-broadcasts .bc-target-panel').forEach(el => { el.hidden = true; });
-        if (mode === 'roles') document.getElementById('bc-panel-roles')?.removeAttribute('hidden');
+        const grid = document.getElementById('bc-form-grid');
+        const usersSearch = document.getElementById('bc-panel-users');
+        const rolesPanel = document.getElementById('bc-panel-roles');
+        const branchesPanel = document.getElementById('bc-panel-branches');
+        if (usersSearch) usersSearch.hidden = true;
+        if (rolesPanel) rolesPanel.hidden = true;
+        if (branchesPanel) branchesPanel.hidden = true;
+        grid?.classList.remove('bc-form-grid--users', 'bc-form-grid--roles', 'bc-form-grid--branches');
+        if (mode === 'roles') {
+          rolesPanel?.removeAttribute('hidden');
+          grid?.classList.add('bc-form-grid--roles');
+        }
         if (mode === 'branches') {
-          document.getElementById('bc-panel-branches')?.removeAttribute('hidden');
-          refreshBroadcastTargetPickers();
+          branchesPanel?.removeAttribute('hidden');
+          grid?.classList.add('bc-form-grid--branches');
         }
         if (mode === 'users') {
-          document.getElementById('bc-panel-users')?.removeAttribute('hidden');
-          refreshBroadcastTargetPickers();
+          usersSearch?.removeAttribute('hidden');
+          grid?.classList.add('bc-form-grid--users');
         }
         updateBroadcastPreview();
       }
 
       function initBroadcastTargetPickers() {
-        const rolesEl = document.getElementById('bc-roles-list');
-        if (rolesEl && !rolesEl.dataset.ready) {
-          rolesEl.innerHTML = BC_TARGET_ROLES.map(r => `
-            <label class="bc-check-item">
-              <input type="checkbox" value="${Sec.escapeHTML(r.id)}" onchange="updateBroadcastPreview()">
-              <span>${Sec.escapeHTML(r.label)}</span>
-            </label>`).join('');
-          rolesEl.dataset.ready = '1';
-        }
-        refreshBroadcastTargetPickers();
-      }
-
-      function filterBroadcastUserChecks() {
-        const q = String(document.getElementById('bc-user-search')?.value || '').trim().toLowerCase();
-        document.querySelectorAll('#bc-users-list .bc-check-item').forEach(el => {
-          const name = el.getAttribute('data-name') || '';
-          el.style.display = !q || name.includes(q) ? '' : 'none';
-        });
+        bcUserPickEnsureState();
+        bcPickEnsure('roles');
+        bcPickEnsure('branches');
+        bcDdSync('kind');
+        bcDdSync('target');
+        updateBroadcastPreview();
       }
 
       function updateBroadcastPreview() {
-        const el = document.getElementById('bc-preview');
-        if (!el) return;
+        const wrap = document.getElementById('bc-preview');
+        const summary = document.getElementById('bc-preview-summary');
+        if (!wrap || !summary) return;
         const target = getBroadcastTargetFromUI();
+        const mode = target?.mode || 'all';
+        const emptyHint = BC_TARGET_EMPTY_HINTS[mode];
+        const hasSelection = mode === 'roles'
+          ? (target.roles || []).length > 0
+          : mode === 'branches'
+            ? (target.branchIds || []).length > 0
+            : mode === 'users'
+              ? (target.userIds || []).length > 0
+              : true;
+        bcRenderPreviewChips(target);
+        if (emptyHint && !hasSelection) {
+          summary.textContent = emptyHint;
+          wrap.classList.add('is-hint');
+          return;
+        }
         const count = estimateBroadcastRecipients(target);
-        el.textContent = count
+        wrap.classList.toggle('is-hint', !count);
+        summary.textContent = count
           ? `المستلمون المتوقعون: ${count} مستخدم`
           : 'لا يوجد مستلمون مطابقون — راجع الاستهداف';
+      }
+
+      function computeBroadcastKindStats(rows) {
+        const stats = { total: 0, circular: 0, motivational: 0, alert: 0 };
+        (rows || []).forEach((row) => {
+          stats.total += 1;
+          const k = String(row?.kind || 'circular');
+          if (k in stats) stats[k] += 1;
+          else stats.circular += 1;
+        });
+        return stats;
+      }
+
+      const BC_HISTORY_FILTER_LABELS = {
+        all: 'الإجمالي',
+        circular: 'تعاميم',
+        motivational: 'إنجازات',
+        alert: 'تنبيهات'
+      };
+
+      function bcKindBadgeHtml(kind) {
+        const k = ['motivational', 'alert', 'circular'].includes(kind) ? kind : 'circular';
+        const meta = BC_KIND_META[k] || BC_KIND_META.circular;
+        return `<span class="bc-history-kind bc-history-kind--${k}"><i class="fas ${meta.icon}" aria-hidden="true"></i>${Sec.escapeHTML(meta.label)}</span>`;
+      }
+
+      function paintBroadcastHistoryStats(stats) {
+        const el = document.getElementById('bc-history-stats');
+        if (!el) return;
+        const s = stats || { total: 0, circular: 0, motivational: 0, alert: 0 };
+        const f = state._bcHistoryFilter || 'all';
+        const chip = (key, label, count, icon) => {
+          const active = f === key ? ' is-active' : '';
+          const ico = icon ? `<i class="fas ${icon}" aria-hidden="true"></i>` : '';
+          return `<button type="button" class="bc-history-stat bc-history-stat--${key}${active}" onclick="setBcHistoryFilter('${key}')" aria-pressed="${f === key ? 'true' : 'false'}">${ico}${label} <strong>${count}</strong></button>`;
+        };
+        el.innerHTML = [
+          chip('all', 'الإجمالي', s.total, ''),
+          chip('circular', 'تعاميم', s.circular, BC_KIND_META.circular.icon),
+          chip('motivational', 'إنجازات', s.motivational, BC_KIND_META.motivational.icon),
+          chip('alert', 'تنبيهات', s.alert, BC_KIND_META.alert.icon)
+        ].join('');
+      }
+
+      function setBcHistoryFilter(filter) {
+        const allowed = ['all', 'circular', 'motivational', 'alert'];
+        state._bcHistoryFilter = allowed.includes(filter) ? filter : 'all';
+        paintBroadcastHistoryStats(state._bcHistoryStats || { total: 0, circular: 0, motivational: 0, alert: 0 });
+        paintBroadcastHistoryList();
+      }
+
+      function paintBroadcastHistoryList() {
+        const host = document.getElementById('bc-history-list');
+        if (!host) return;
+        const rows = state._bcHistoryRows || [];
+        const f = state._bcHistoryFilter || 'all';
+        const visible = f === 'all' ? rows : rows.filter(r => String(r.kind || 'circular') === f);
+        if (!rows.length) {
+          host.innerHTML = '<div class="empty"><p>لا توجد نشرات بعد</p></div>';
+          return;
+        }
+        if (!visible.length) {
+          const label = BC_HISTORY_FILTER_LABELS[f] || f;
+          host.innerHTML = `<div class="empty"><p>لا توجد نشرات من نوع «${Sec.escapeHTML(label)}»</p></div>`;
+          return;
+        }
+        host.innerHTML = visible.map(row => {
+          const kind = ['motivational', 'alert', 'circular'].includes(row.kind) ? row.kind : 'circular';
+          return `
+          <article class="bc-history-item bc-history-item--${kind}">
+            <h4>${Sec.escapeHTML(row.title)}</h4>
+            <p>${Sec.escapeHTML(row.body)}</p>
+            <div class="bc-history-meta">
+              ${bcKindBadgeHtml(kind)}
+              <span>${Sec.escapeHTML(BC_MODE_LABELS[row.target_mode] || row.target_mode)}</span>
+              <span>مستلمون: ${row.recipient_count || 0}</span>
+              <span>Push: ${row.push_sent_count || 0}</span>
+              <span>${Sec.escapeHTML(formatRelativeAr(row.created_at))}</span>
+            </div>
+          </article>`;
+        }).join('');
       }
 
       async function renderBroadcastHistory() {
         const host = document.getElementById('bc-history-list');
         if (!host) return;
         if (normalizeUserRole(state.currentUser?.role) !== 'admin') {
+          state._bcHistoryRows = [];
+          state._bcHistoryStats = { total: 0, circular: 0, motivational: 0, alert: 0 };
+          paintBroadcastHistoryStats(state._bcHistoryStats);
           host.innerHTML = '<div class="empty"><p>غير متاح</p></div>';
           return;
         }
         host.innerHTML = '<div class="empty"><i class="fas fa-spinner fa-spin"></i><p>جاري التحميل…</p></div>';
-        const { data, error } = await sb.from('broadcasts')
-          .select('id,title,body,kind,target_mode,recipient_count,push_sent_count,created_at')
-          .order('created_at', { ascending: false })
-          .limit(25);
+        const [listRes, statsRes] = await Promise.all([
+          sb.from('broadcasts')
+            .select('id,title,body,kind,target_mode,recipient_count,push_sent_count,created_at')
+            .order('created_at', { ascending: false })
+            .limit(100),
+          sb.from('broadcasts').select('kind')
+        ]);
+        const { data, error } = listRes;
+        state._bcHistoryStats = computeBroadcastKindStats(statsRes.data);
+        state._bcHistoryRows = data || [];
+        if (!state._bcHistoryFilter) state._bcHistoryFilter = 'all';
+        paintBroadcastHistoryStats(state._bcHistoryStats);
         if (error) {
+          state._bcHistoryRows = [];
           host.innerHTML = `<div class="empty"><p>${Sec.escapeHTML(error.message)}</p><p>شغّل supabase/broadcasts.sql</p></div>`;
           return;
         }
-        if (!data?.length) {
-          host.innerHTML = '<div class="empty"><p>لا توجد نشرات بعد</p></div>';
-          return;
-        }
-        host.innerHTML = data.map(row => `
-          <article class="bc-history-item">
-            <h4>${Sec.escapeHTML(row.title)}</h4>
-            <p>${Sec.escapeHTML(row.body)}</p>
-            <div class="bc-history-meta">
-              <span>${Sec.escapeHTML(BC_KIND_LABELS[row.kind] || row.kind)}</span>
-              <span>${Sec.escapeHTML(BC_MODE_LABELS[row.target_mode] || row.target_mode)}</span>
-              <span>مستلمون: ${row.recipient_count || 0}</span>
-              <span>Push: ${row.push_sent_count || 0}</span>
-              <span>${Sec.escapeHTML(formatRelativeAr(row.created_at))}</span>
-            </div>
-          </article>`).join('');
+        paintBroadcastHistoryList();
       }
 
       function renderBroadcastsPage() {
         if (normalizeUserRole(state.currentUser?.role) !== 'admin') return;
+        state._bcHistoryFilter = 'all';
         initBroadcastTargetPickers();
         syncBroadcastTargetPanels();
         renderBroadcastHistory();
@@ -49194,6 +50491,19 @@
           showToast(`تم الإرسال ✓ — ${data?.recipients || count} مستلم، ${pushSent} إشعار Push`, 'success');
           document.getElementById('bc-title').value = '';
           document.getElementById('bc-body').value = '';
+          if (state._bcSelectedUserIds) state._bcSelectedUserIds.clear();
+          if (state._bcSelectedRoleIds) state._bcSelectedRoleIds.clear();
+          if (state._bcSelectedBranchIds) state._bcSelectedBranchIds.clear();
+          const bcUserSearch = document.getElementById('bc-user-search');
+          if (bcUserSearch) bcUserSearch.value = '';
+          const bcRoleSearch = document.getElementById('bc-role-search');
+          if (bcRoleSearch) bcRoleSearch.value = '';
+          const bcBranchSearch = document.getElementById('bc-branch-search');
+          if (bcBranchSearch) bcBranchSearch.value = '';
+          bcUserPickRenderChips();
+          bcPickRenderChips('roles');
+          bcPickRenderChips('branches');
+          updateBroadcastPreview();
           updateBroadcastPreview();
           await renderBroadcastHistory();
           try {
@@ -51319,6 +52629,38 @@
           settingsUserDdClose();
         }
 
+        const bcKindMenu = document.getElementById('bc-kind-menu');
+        const bcKindDd = document.getElementById('bc-kind-dd');
+        if (bcKindMenu && bcKindMenu.classList.contains('open') &&
+          !bcKindMenu.contains(e.target) && !bcKindDd?.contains(e.target)) {
+          bcDdClose('kind');
+        }
+
+        const bcTargetMenu = document.getElementById('bc-target-menu');
+        const bcTargetDd = document.getElementById('bc-target-dd');
+        if (bcTargetMenu && bcTargetMenu.classList.contains('open') &&
+          !bcTargetMenu.contains(e.target) && !bcTargetDd?.contains(e.target)) {
+          bcDdClose('target');
+        }
+
+        const bcUserPick = document.getElementById('bc-user-pick');
+        if (bcUserPick && !bcUserPick.contains(e.target)) {
+          const results = document.getElementById('bc-user-pick-results');
+          if (results) results.hidden = true;
+        }
+
+        const bcRolePick = document.getElementById('bc-role-pick');
+        if (bcRolePick && !bcRolePick.contains(e.target)) {
+          const results = document.getElementById('bc-role-pick-results');
+          if (results) results.hidden = true;
+        }
+
+        const bcBranchPick = document.getElementById('bc-branch-pick');
+        if (bcBranchPick && !bcBranchPick.contains(e.target)) {
+          const results = document.getElementById('bc-branch-pick-results');
+          if (results) results.hidden = true;
+        }
+
         // إغلاق النوافذ (Modals) عند الضغط على الخلفية خارج الكارد
         if (e.target.classList.contains('modal')) {
           if (e.target.id === 'violDetailModal') {
@@ -51336,9 +52678,13 @@
           if (document.getElementById('cmp-filter-menu')?.classList.contains('open')) cmpFilterClose();
           if (document.getElementById('user-role-dd-menu')?.classList.contains('open')) userRoleDdClose();
           if (document.getElementById('settings-user-dd-menu')?.classList.contains('open')) settingsUserDdClose();
+          if (document.getElementById('bc-kind-menu')?.classList.contains('open') ||
+            document.getElementById('bc-target-menu')?.classList.contains('open')) bcDdRepositionOpen();
         }, { passive: true });
       }
       window.addEventListener('resize', () => {
+        if (document.getElementById('bc-kind-menu')?.classList.contains('open') ||
+          document.getElementById('bc-target-menu')?.classList.contains('open')) bcDdRepositionOpen();
         const wfMenu = document.getElementById('wf-status-menu');
         if (wfMenu?.classList.contains('open')) wfStatusPositionMenu();
         const cmpMenu = document.getElementById('cmp-filter-menu');
@@ -51938,10 +53284,20 @@
       window.handleUsersImportFile = handleUsersImportFile;
       window.openSettingsFromUserMenu = openSettingsFromUserMenu;
       window.openBroadcastsFromUserMenu = openBroadcastsFromUserMenu;
+      window.setBcHistoryFilter = setBcHistoryFilter;
       window.sendBroadcastFromUI = sendBroadcastFromUI;
       window.syncBroadcastTargetPanels = syncBroadcastTargetPanels;
       window.updateBroadcastPreview = updateBroadcastPreview;
-      window.filterBroadcastUserChecks = filterBroadcastUserChecks;
+      window.bcDdToggle = bcDdToggle;
+      window.bcDdPick = bcDdPick;
+      window.bcUserPickSearch = bcUserPickSearch;
+      window.bcUserPickOpenResults = bcUserPickOpenResults;
+      window.bcUserPickToggle = bcUserPickToggle;
+      window.bcUserPickRemove = bcUserPickRemove;
+      window.bcPickSearch = bcPickSearch;
+      window.bcPickOpenResults = bcPickOpenResults;
+      window.bcPickToggle = bcPickToggle;
+      window.bcPickRemove = bcPickRemove;
       window.toggleWebPushFromMenu = toggleWebPushFromMenu;
       window.openNotificationsPage = openNotificationsPage;
       window.closeNotificationsPage = closeNotificationsPage;
