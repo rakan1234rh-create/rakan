@@ -21,9 +21,10 @@ select cron.unschedule(jobid)
 from cron.job
 where jobname = 'athar-violation-auto-forward';
 
+-- التمرير يعمل كل دقيقة (أقصى تأخير ~60 ثانية بعد انتهاء المهلة)
 select cron.schedule(
   'athar-violation-auto-forward',
-  '*/5 * * * *',
+  '* * * * *',
   $$
   select net.http_post(
     url := 'https://rizoafuxmqsddjfhbsmf.supabase.co/functions/v1/violation-auto-forward',
