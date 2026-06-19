@@ -28275,7 +28275,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v835-sec-harden-links">
+  <meta name="app-build" content="athar-figma-v836-remove-aws-sdk-legacy">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -29962,9 +29962,6 @@
     </div>
   </div><!-- /#appWrap -->
 
-    <!-- تحميل مكتبة S3 النسخة المستقرة للمتصفحات -->
-    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1530.0.min.js"></script>
-
     <script>
       // ═══════════════════════════════════════════════════════════════════════════
       // منصة الرصد المتكاملة - الكود الكامل المنظم
@@ -30083,22 +30080,6 @@
           return localStorage.getItem('mirsad_debug_log') === '1';
         } catch (_) {
           return false;
-        }
-      }
-
-      /** مسار قديم: جلب مفاتيح R2 من `/config` (يُفضّل Edge Function `r2-storage`) */
-      async function tryFetchR2Config() {
-        if (isFileProtocol()) return null;
-        /** على localhost بدون وضع الاختبار: لا نستدعي `/config` (تجنب 404 من Live Server) */
-        if (isLocalDevHost() && !isForceR2LocalTest()) return null;
-        try {
-          const r = await fetch('/config');
-          if (!r.ok) return null;
-          const j = await r.json();
-          if (!j || !j.R2_ACCESS_KEY_ID || !j.R2_SECRET_ACCESS_KEY || !j.R2_ACCOUNT_ID || !j.R2_BUCKET_NAME) return null;
-          return j;
-        } catch (_) {
-          return null;
         }
       }
 
@@ -30368,18 +30349,15 @@
         _cloudflareCache[fileId] = url;
       }
 
-      /** undefined = لم نُحلّ بعد؛ edge | legacy | none = نتيجة التحليل */
+      /** undefined = لم نُحلّ بعد؛ edge | none = نتيجة التحليل */
       let _r2ResolvedMode;
       /** بعد 503 (أسرار ناقصة) نُعيد فحص Edge تلقائياً دون إعادة تحميل الصفحة */
       let _r2EdgeRecheckAt = 0;
       /** يُملأ عند فشل ping (مثل 503) لتوضيح سبب تخطي الرفع في وضع التطوير */
       let _r2LastResolveNote = '';
-      /** إعدادات R2 عند استخدام المسار القديم `/config` فقط */
-      let _r2LegacyConfig;
 
       function invalidateR2BackendResolution() {
         _r2ResolvedMode = undefined;
-        _r2LegacyConfig = undefined;
         _r2EdgeRecheckAt = 0;
         _r2LastResolveNote = '';
         Object.keys(_cloudflareCache).forEach((k) => { delete _cloudflareCache[k]; });
@@ -30411,7 +30389,7 @@
       }
 
       /**
-       * يحدد مسار التخزين: Edge Function (مُفضّل) ثم احتياط `/config` + AWS في المتصفح.
+       * يحدد مسار التخزين: Edge Function r2-storage (الوحيد المدعوم).
        */
       async function resolveR2Backend() {
         if (isLocalDevHost() && !isForceR2LocalTest()) {
@@ -30475,12 +30453,6 @@
           return 'none';
         }
 
-        const legacy = await tryFetchR2Config();
-        if (legacy) {
-          _r2LegacyConfig = legacy;
-          _r2ResolvedMode = 'legacy';
-          return 'legacy';
-        }
         _r2ResolvedMode = 'none';
         return 'none';
       }
@@ -40487,7 +40459,7 @@
               }
               return { success: true, fileId: objectKey, devSkipR2: true, devDataUrl };
             }
-            throw new Error('لم يُجرَ إعداد تخزين المرفقات. انشر Edge Function باسم r2-storage على Supabase وعيّن متغيرات R2 (راجع README)، أو وفّر مسار /config على الخادم (قديم).');
+            throw new Error('لم يُجرَ إعداد تخزين المرفقات. انشر Edge Function باسم r2-storage على Supabase وعيّن متغيرات R2 (راجع README).');
           }
 
           let body;
@@ -40505,42 +40477,16 @@
           }
           const contentType = fileObj.type || 'image/jpeg';
 
-          if (backend === 'edge') {
-            const { url } = await callR2StorageFn('signPut', { key: objectKey, contentType });
-            const putRes = await fetch(url, {
-              method: 'PUT',
-              body,
-              headers: { 'Content-Type': contentType }
-            });
-            if (!putRes.ok) {
-              const t = await putRes.text().catch(() => '');
-              throw new Error('رفض التخزين (' + putRes.status + '): ' + (t || '').slice(0, 200));
-            }
-            return { success: true, fileId: objectKey };
-          }
-
-          const config = _r2LegacyConfig || await tryFetchR2Config();
-          if (!config) {
-            throw new Error('لم يُعثر على إعدادات R2 (المسار القديم /config).');
-          }
-          _r2LegacyConfig = config;
-
-          const s3 = new AWS.S3({
-            accessKeyId: config.R2_ACCESS_KEY_ID,
-            secretAccessKey: config.R2_SECRET_ACCESS_KEY,
-            endpoint: `https://${config.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-            signatureVersion: 'v4',
-            s3ForcePathStyle: true
+          const { url } = await callR2StorageFn('signPut', { key: objectKey, contentType });
+          const putRes = await fetch(url, {
+            method: 'PUT',
+            body,
+            headers: { 'Content-Type': contentType }
           });
-
-          const params = {
-            Bucket: config.R2_BUCKET_NAME,
-            Key: objectKey,
-            Body: body,
-            ContentType: contentType
-          };
-
-          await s3.putObject(params).promise();
+          if (!putRes.ok) {
+            const t = await putRes.text().catch(() => '');
+            throw new Error('رفض التخزين (' + putRes.status + '): ' + (t || '').slice(0, 200));
+          }
           return { success: true, fileId: objectKey };
         } catch (error) {
           if (isMirsadDebugLog()) console.error('R2 Upload Error:', error);
@@ -40581,7 +40527,7 @@
               if (isMirsadDebugLog()) console.info('[DEV] تحديث مسارات المرفقات محلياً (IndexedDB).');
               return movedAny ? updatedAtts : null;
             }
-            throw new Error('لم يُجرَ إعداد تخزين المرفقات لنقل الملفات (Edge Function r2-storage أو /config).');
+            throw new Error('لم يُجرَ إعداد تخزين المرفقات لنقل الملفات (انشر Edge Function r2-storage).');
           }
 
           for (let i = 0; i < updatedAtts.length; i++) {
@@ -40590,29 +40536,7 @@
               const newKey = `${r2Folder}/${oldKey.split('/').pop()}`;
 
               try {
-                if (backend === 'edge') {
-                  await callR2StorageFn('moveObject', { fromKey: oldKey, toKey: newKey });
-                } else {
-                  const config = _r2LegacyConfig || await tryFetchR2Config();
-                  if (!config) throw new Error('لا إعدادات R2');
-                  _r2LegacyConfig = config;
-                  const s3 = new AWS.S3({
-                    accessKeyId: config.R2_ACCESS_KEY_ID,
-                    secretAccessKey: config.R2_SECRET_ACCESS_KEY,
-                    endpoint: `https://${config.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-                    signatureVersion: 'v4',
-                    s3ForcePathStyle: true
-                  });
-                  await s3.copyObject({
-                    Bucket: config.R2_BUCKET_NAME,
-                    CopySource: encodeURI(`${config.R2_BUCKET_NAME}/${oldKey}`),
-                    Key: newKey
-                  }).promise();
-                  await s3.deleteObject({
-                    Bucket: config.R2_BUCKET_NAME,
-                    Key: oldKey
-                  }).promise();
-                }
+                await callR2StorageFn('moveObject', { fromKey: oldKey, toKey: newKey });
 
                 updatedAtts[i].p = newKey;
                 movedAny = true;
@@ -41533,25 +41457,6 @@
             throw lastSignErr || new Error('الملف غير موجود في R2. أعد رفع المرفق أو تحقق من إعدادات التخزين.');
           }
 
-          if (backend === 'legacy') {
-            const cfg = _r2LegacyConfig || await tryFetchR2Config();
-            if (!cfg) {
-              throw new Error('لا إعدادات R2');
-            }
-            _r2LegacyConfig = cfg;
-            const s3 = new AWS.S3({
-              accessKeyId: cfg.R2_ACCESS_KEY_ID,
-              secretAccessKey: cfg.R2_SECRET_ACCESS_KEY,
-              endpoint: `https://${cfg.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-              signatureVersion: 'v4',
-              s3ForcePathStyle: true
-            });
-            const params = { Bucket: cfg.R2_BUCKET_NAME, Key: fileId, Expires: 3600 };
-            const url = s3.getSignedUrl('getObject', params);
-            writeCfCache(cacheKey, url);
-            return url;
-          }
-
           if (allowAttachmentDevSkip()) {
             if (isLikelyVideoAttachmentKey(fileId)) {
               throw new Error('الفيديو يحتاج R2 — انشر r2-storage على Supabase مع أسرار Cloudflare R2، أو ارفع الفيديو بعد تفعيل التخزين');
@@ -41571,7 +41476,7 @@
             }
             throw new Error('الملف يحتاج R2 — انشر r2-storage على Supabase أو فعّل الرفع من الخادم');
           }
-          throw new Error('لا يوجد إعداد تخزين للمرفقات — انشر Edge Function r2-storage أو مسار /config');
+          throw new Error('لا يوجد إعداد تخزين للمرفقات — انشر Edge Function r2-storage');
         } catch (err) {
           if (isMirsadDebugLog()) console.error(`[R2 Error] Failed to load ${fileId}:`, err);
           throw err;
@@ -43795,7 +43700,7 @@
                     <div style="text-align:center;max-width:440px;margin:0 auto;padding:28px 20px;background:rgba(15,23,42,.94);border-radius:16px;border:1px solid rgba(148,163,184,.35);line-height:1.65">
                       <i class="fas fa-cloud-arrow-up" style="font-size:2rem;color:#94a3b8;margin-bottom:12px;display:block"></i>
                       <div style="font-weight:800;font-size:1.05rem;color:#f1f5f9;margin-bottom:8px">المرفق مخزّن على R2</div>
-                      <p style="font-size:0.9rem;color:#cbd5e1;margin:0 0 10px">لا يتوفر اتصال بتخزين R2 من هذا العنوان (مثلاً تطوير محلي بدون Edge Function). انشر الدالة <span style="font-family:var(--mono);background:#334155;padding:2px 8px;border-radius:6px">r2-storage</span> على Supabase أو وفّر إعدادات <span style="font-family:var(--mono);background:#334155;padding:2px 8px;border-radius:6px">/config</span> على الخادم.</p>
+                      <p style="font-size:0.9rem;color:#cbd5e1;margin:0 0 10px">لا يتوفر اتصال بتخزين R2 من هذا العنوان (مثلاً تطوير محلي بدون Edge Function). انشر الدالة <span style="font-family:var(--mono);background:#334155;padding:2px 8px;border-radius:6px">r2-storage</span> على Supabase.</p>
                       <p style="font-size:0.82rem;color:#94a3b8;margin:0">راجع README في المستودع لخطوات الربط النظامي.</p>
                       <p style="font-size:10px;color:#64748b;margin-top:14px;font-family:var(--mono);word-break:break-all;direction:ltr;text-align:left">${Sec.escapeHTML(String(fileId))}</p>
                     </div>`;
