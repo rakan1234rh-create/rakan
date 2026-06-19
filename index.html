@@ -6087,14 +6087,14 @@
 
     #appWrap:has(#tab-compliance.active) .sidebar {
       background: color-mix(in srgb, var(--sidebar-bg) 78%, transparent);
-      backdrop-filter: blur(28px) saturate(170%);
-      -webkit-backdrop-filter: blur(28px) saturate(170%);
+      backdrop-filter: blur(16px) saturate(140%);
+      -webkit-backdrop-filter: blur(16px) saturate(140%);
     }
 
     #appWrap:has(#tab-compliance.active) .topbar.unified-banner {
       background: rgba(255, 255, 255, 0.72);
-      backdrop-filter: blur(28px) saturate(170%);
-      -webkit-backdrop-filter: blur(28px) saturate(170%);
+      backdrop-filter: blur(16px) saturate(140%);
+      -webkit-backdrop-filter: blur(16px) saturate(140%);
     }
 
     [data-theme="dark"] #appWrap:has(#tab-compliance.active)::before {
@@ -28253,8 +28253,29 @@
   <link rel="stylesheet" href="styles/desktop/compliance-shell.css" id="platform-compliance-shell-link" media="screen and (min-width: 993px), screen and (hover: hover) and (pointer: fine)">
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px), screen and (hover: hover) and (pointer: fine)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px), screen and (hover: hover) and (pointer: fine)">
+  <style id="mr-perf-touch">
+    /* تحسين السلاسة على أجهزة اللمس: إلغاء backdrop-filter الثقيل على العناصر الدائمة
+       (يُعيد المتصفح رسمها مع كل تمرير = تقطيع). الخلفيات شبه معتمة أصلاً فلا يتأثر الوضوح. */
+    @media (pointer: coarse) {
+
+      .topbar.unified-banner,
+      #appWrap .topbar.unified-banner,
+      #appWrap:has(#tab-compliance.active) .topbar.unified-banner {
+        background: var(--mr-surface) !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+      }
+
+      #appWrap .sidebar,
+      #appWrap:has(#tab-compliance.active) .sidebar {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+      }
+
+    }
+  </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v832-desktop-pointer-responsive">
+  <meta name="app-build" content="athar-figma-v833-touch-perf-backdrop">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
