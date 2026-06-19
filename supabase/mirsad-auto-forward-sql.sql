@@ -181,7 +181,7 @@ begin
     v_logs := coalesce(r.logs, '[]'::jsonb) || v_log;
 
     update public.violations
-    set state = v_new_state,
+    set state = v_new_state::public.violation_state,
         logs = v_logs,
         auto_forwarded_emp = true,
         updated_at = now()
@@ -266,7 +266,7 @@ begin
       v_logs := coalesce(r.logs, '[]'::jsonb) || v_log;
 
       update public.violations
-      set state = v_new_state,
+      set state = v_new_state::public.violation_state,
           logs = v_logs,
           auto_forwarded_sup = true,
           updated_at = now()
