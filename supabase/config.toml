@@ -1,12 +1,11 @@
 # ربط محلي بمشروع Supabase: supabase link
 # نشر الدالة: supabase functions deploy r2-storage
 #
-# قالب بريد استعادة كلمة المرور (محلي): انسخ أيضاً إلى Dashboard → Email Templates → Reset password
+# قالب بريد استعادة كلمة المرور: انسخ يدوياً إلى Dashboard → Email Templates → Reset password
 # Subject: إعادة تعيين كلمة المرور — ATHAR
-
-[auth.email.template.recovery]
-subject = "إعادة تعيين كلمة المرور — ATHAR"
-content_path = "./email-templates/athar-recovery.html"
+# الملف: supabase/email-templates/athar-recovery.html
+#
+# [auth.email.template.recovery] معطّل هنا لتجنّب فشل نشر الدوال على GitHub Actions.
 
 [functions.r2-storage]
 verify_jwt = false

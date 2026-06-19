@@ -1,41 +1,40 @@
 -- ═══════════════════════════════════════════════════════════════════════════
--- مرصاد — جدولة التمرير التلقائي للمخالفات (بدون متصفح مفتوح)
--- شغّل مرة واحدة في Supabase → SQL Editor
+-- مرصاد — جدولة التمرير التلقائي (كل دقيقة)
+-- شغّل في Supabase → SQL Editor
 -- ═══════════════════════════════════════════════════════════════════════════
 --
 -- المتطلبات:
--- 1) نشر Edge Function: violation-auto-forward
--- 2) Edge Functions → Secrets → AUTO_FORWARD_CRON_SECRET = نص سري طويل
--- 3) استبدل YOUR_CRON_SECRET_HERE بالقيمة نفسها أدناه
+-- 1) نشر violation-push (إصدار 2026-06-auto-forward-cron-v2)
+-- 2) Edge Functions → Secrets → AUTO_FORWARD_CRON_SECRET
+-- 3) استبدل YOUR_CRON_SECRET_HERE بالسر الحقيقي (نفس قيمة Secrets)
 --
--- التحقق:
--- GET https://rizoafuxmqsddjfhbsmf.supabase.co/functions/v1/violation-auto-forward
--- POST يدوي (اختبار):
---   curl -X POST .../violation-auto-forward -H "x-cron-secret: YOUR_SECRET"
+-- ملاحظة: Cron يستدعي violation-push (موجودة أصلاً) وليس دالة منفصلة.
 
 create extension if not exists pg_cron with schema pg_catalog;
 create extension if not exists pg_net with schema extensions;
 
--- إزالة الجدولة القديمة إن وُجدت
 select cron.unschedule(jobid)
 from cron.job
 where jobname = 'athar-violation-auto-forward';
 
--- التمرير يعمل كل دقيقة (أقصى تأخير ~60 ثانية بعد انتهاء المهلة)
 select cron.schedule(
   'athar-violation-auto-forward',
   '* * * * *',
   $$
   select net.http_post(
-    url := 'https://rizoafuxmqsddjfhbsmf.supabase.co/functions/v1/violation-auto-forward',
+    url := 'https://rizoafuxmqsddjfhbsmf.supabase.co/functions/v1/violation-push',
     headers := jsonb_build_object(
       'Content-Type', 'application/json',
       'x-cron-secret', 'YOUR_CRON_SECRET_HERE'
     ),
-    body := '{}'::jsonb
+    body := '{"autoForwardCron":true}'::jsonb
   ) as request_id;
   $$
 );
 
--- تحقق من الجدولة:
--- select jobid, jobname, schedule, command from cron.job where jobname = 'athar-violation-auto-forward';
+-- تحقق (بدون عرض السر كاملاً):
+-- select jobid, jobname, schedule,
+--   case when command like '%violation-push%' then 'url ok' else 'url wrong' end,
+--   case when command like '%autoForwardCron%' then 'body ok' else 'body wrong' end,
+--   case when command like '%YOUR_CRON_SECRET_HERE%' then 'secret placeholder!' else 'secret set' end
+-- from cron.job where jobname = 'athar-violation-auto-forward';

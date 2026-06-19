@@ -1,9 +1,14 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 import webpush from 'npm:web-push@3.6.7';
+import {
+  AUTO_FORWARD_CRON_VERSION,
+  isAuthorizedCron,
+  runAutoForwardCron,
+} from './auto-forward-cron.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-cron-secret',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
 };
 
@@ -675,7 +680,9 @@ Deno.serve(async (req) => {
     return json({
       ok: true,
       service: 'violation-push',
-      version: '2026-06-auto-forward-cron',
+      version: '2026-06-auto-forward-cron-v2',
+      autoForwardCron: AUTO_FORWARD_CRON_VERSION,
+      cronSecretConfigured: !!(Deno.env.get('AUTO_FORWARD_CRON_SECRET')),
       vapidConfigured: !!(vapidPublic && vapidPrivate),
       vapidValid,
       vapidPublicKey: vapidPublic || null,
@@ -695,6 +702,26 @@ Deno.serve(async (req) => {
     serviceKey,
     { auth: { persistSession: false } },
   );
+
+  // ─── Cron: تمرير تلقائي للتذاكر المتأخرة (بدون متصفح) ───
+  if (payload.autoForwardCron === true) {
+    if (!isAuthorizedCron(req)) {
+      return json({ error: 'unauthorized — use x-cron-secret or service role bearer' }, 401);
+    }
+    try {
+      const result = await runAutoForwardCron(supabase, async (record, previousState) => {
+        const push = await dispatchViolationStatePush(supabase, record, previousState, {
+          isAutoForward: true,
+          dedupeKey: `cron:${record.id}:${previousState}:${record.state}`,
+        });
+        if (push.error && !push.sent) return { ok: false, error: String(push.error) };
+        return { ok: true };
+      });
+      return json({ ok: true, cron: AUTO_FORWARD_CRON_VERSION, ...result });
+    } catch (err) {
+      return json({ ok: false, error: String(err) }, 500);
+    }
+  }
 
   // ─── اختبار من التطبيق (المستخدم الحالي) ───
   if (payload.test === true) {
@@ -765,5 +792,5 @@ Deno.serve(async (req) => {
     return json(result.body, result.status);
   }
 
-  return json({ error: 'استخدم test:true أو notify:true أو notifyState:true أو broadcast:true' }, 400);
+  return json({ error: 'استخدم test:true أو notify:true أو notifyState:true أو autoForwardCron:true أو broadcast:true' }, 400);
 });

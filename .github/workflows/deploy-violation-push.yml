@@ -32,12 +32,8 @@ jobs:
         run: |
           if [ -z "$SUPABASE_ACCESS_TOKEN" ]; then
             echo "::error::أضف SUPABASE_ACCESS_TOKEN في GitHub → Settings → Secrets → Actions"
+            echo "::error::أو انشر يدوياً من Supabase Dashboard → Edge Functions → violation-push"
             exit 1
           fi
-          test -f supabase/email-templates/athar-recovery.html || {
-            echo "::error::ملف قالب البريد مفقود: supabase/email-templates/athar-recovery.html"
-            exit 1
-          }
           supabase functions deploy violation-push --no-verify-jwt --project-ref "$PROJECT_ID" --use-api
           supabase functions deploy broadcast-push --no-verify-jwt --project-ref "$PROJECT_ID" --use-api
-          supabase functions deploy violation-auto-forward --no-verify-jwt --project-ref "$PROJECT_ID" --use-api

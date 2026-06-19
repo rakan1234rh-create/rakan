@@ -1,45 +1,64 @@
 ═══════════════════════════════════════════════════════════════════════════
-نشر التمرير التلقائي على السيرفر (Cron — بدون متصفح)
+نشر التمرير التلقائي على السيرفر (Cron)
 ═══════════════════════════════════════════════════════════════════════════
 
-─── 1) نشر الدوال ───
+التمرير مدمج الآن في violation-push (الدالة الموجودة أصلاً على السيرفر).
+لا تحتاج دالة violation-auto-forward منفصلة.
 
-الطريقة أ — GitHub Actions:
+─── 1) نشر violation-push ───
+
+▸ الطريقة الأسهل — Supabase Dashboard:
+  1) supabase.com → مشروعك → Edge Functions → violation-push
+  2) Deploy / Edit → الصق محتوى:
+     supabase/functions/violation-push/index.ts
+     + supabase/functions/violation-push/auto-forward-cron.ts
+     (أو ارفع المجلد كاملاً إن وُجد خيار Upload)
+  3) Verify JWT = OFF
+  4) Deploy
+
+▸ تحقق — افتح في المتصفح:
+  https://rizoafuxmqsddjfhbsmf.supabase.co/functions/v1/violation-push
+
+  يجب أن يظهر:
+  "version":"2026-06-auto-forward-cron-v2"
+  "autoForwardCron":"2026-06-cron-v2"
+
+▸ GitHub Actions (إن وُجد SUPABASE_ACCESS_TOKEN في Secrets):
   Actions → Deploy push functions → Run workflow
-  (يشمل violation-auto-forward + violation-push)
 
-الطريقة ب — سطر أوامر:
-  set SUPABASE_ACCESS_TOKEN=...
-  npx supabase@2.30.4 functions deploy violation-auto-forward --no-verify-jwt --project-ref rizoafuxmqsddjfhbsmf --use-api
+▸ PowerShell:
+  $env:SUPABASE_ACCESS_TOKEN = "توكنك"
   npx supabase@2.30.4 functions deploy violation-push --no-verify-jwt --project-ref rizoafuxmqsddjfhbsmf --use-api
 
 ─── 2) سر الجدولة ───
-Supabase Dashboard → Edge Functions → Secrets:
-  AUTO_FORWARD_CRON_SECRET = نص عشوائي طويل (مثلاً 32+ حرف)
+Edge Functions → Secrets:
+  AUTO_FORWARD_CRON_SECRET = نص سري طويل
 
-─── 3) تفعيل Cron (كل دقيقة) ───
-افتح supabase/violation-auto-forward-cron.sql
-استبدل YOUR_CRON_SECRET_HERE بنفس السر من الخطوة 2
-شغّل الملف في SQL Editor
+─── 3) تحديث Cron ───
+إذا Cron يشير لـ violation-auto-forward (404) — أعد الجدولة:
+
+  1) افتح supabase/violation-auto-forward-cron.sql
+  2) استبدل YOUR_CRON_SECRET_HERE بالسر الحقيقي
+  3) شغّله في SQL Editor (يحذف القديم ويُنشئ جديد)
+
+  الـ Cron الآن يستدعي:
+  violation-push مع body: {"autoForwardCron":true}
 
 ─── 4) تحقق ───
-GET (متصفح):
-  https://rizoafuxmqsddjfhbsmf.supabase.co/functions/v1/violation-auto-forward
-  يجب: "service":"violation-auto-forward","version":"2026-06-v1"
+بعد دقيقة:
 
-POST (اختبار يدوي — PowerShell):
-  $secret = "YOUR_CRON_SECRET"
+  select status_code, left(content::text, 250), created
+  from net._http_response
+  order by created desc limit 3;
+
+  200 + "autoForwardCron" أو "forwarded" = يعمل
+  404 = violation-push قديم — أعد النشر
+  401 = السر في SQL ≠ Secrets
+
+─── اختبار يدوي (PowerShell) ───
   Invoke-RestMethod -Method POST `
-    -Uri "https://rizoafuxmqsddjfhbsmf.supabase.co/functions/v1/violation-auto-forward" `
-    -Headers @{ "x-cron-secret" = $secret; "Content-Type" = "application/json" } `
-    -Body "{}"
-
-violation-push يجب أن يظهر:
-  "version":"2026-06-auto-forward-cron"
-
-─── ملاحظات ───
-• التمرير يعمل كل دقيقة (أقصى تأخير ~60 ثانية بعد انتهاء المهلة).
-• المتصفح يبقى نسخة احتياطية فورية عند 00:00.
-• سجلات التمرير تُكتب باسم «النظام» مثل الواجهة.
+    -Uri "https://rizoafuxmqsddjfhbsmf.supabase.co/functions/v1/violation-push" `
+    -Headers @{ "x-cron-secret" = "السر"; "Content-Type" = "application/json" } `
+    -Body '{"autoForwardCron":true}'
 
 ═══════════════════════════════════════════════════════════════════════════
