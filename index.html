@@ -11769,6 +11769,7 @@
       bottom: 0;
       width: max(0px, calc(-1 * var(--notif-swipe-x, 0px)));
       min-width: 0;
+      max-width: 100%;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -11780,6 +11781,11 @@
       color: var(--red-text);
       overflow: hidden;
       transition: width 0.2s ease, background 0.18s ease
+    }
+
+    .notif-swipe:not(.is-dragging):not(.is-dismissing):not(.is-snap-back) .notif-swipe-delete__rail {
+      width: 0 !important;
+      background: var(--red-light)
     }
 
     .notif-swipe-delete__icon {
@@ -28246,7 +28252,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v824-notif-bell-instant">
+  <meta name="app-build" content="athar-figma-v825-notif-swipe-rail-fix">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -49715,18 +49721,22 @@
         if (!wrap) return;
         const raw = wrap.style.getPropertyValue('--notif-swipe-x') || '0px';
         const x = parseFloat(raw);
-        const animate = opts.animate !== false && x < 0;
-        wrap.classList.remove('is-open', 'is-dragging', 'is-past-delete', 'is-delete-ready', 'is-dismissing');
+        const animate = opts.animate !== false && x < -2;
+        wrap.classList.remove('is-open', 'is-dragging', 'is-past-delete', 'is-delete-ready', 'is-dismissing', 'is-snap-back');
+        if (wrap._notifSnapTimer) {
+          window.clearTimeout(wrap._notifSnapTimer);
+          wrap._notifSnapTimer = null;
+        }
         if (animate) {
           wrap.classList.add('is-snap-back');
           wrap.style.setProperty('--notif-swipe-x', '0px');
-          window.setTimeout(() => {
+          wrap._notifSnapTimer = window.setTimeout(() => {
+            wrap._notifSnapTimer = null;
             wrap.classList.remove('is-snap-back');
             wrap.style.removeProperty('--notif-swipe-x');
-          }, 280);
+          }, 360);
           return;
         }
-        wrap.classList.remove('is-snap-back');
         wrap.style.removeProperty('--notif-swipe-x');
       }
 
@@ -51696,7 +51706,13 @@
       }
 
       function paintNotifList(notifs, read) {
-        if (document.querySelector('.notif-swipe.is-dragging, .notif-swipe.is-dismissing')) return;
+        if (document.querySelector('.notif-swipe.is-dragging')) return;
+        document.querySelectorAll('.notif-swipe:not(.is-dragging)').forEach((wrap) => {
+          if (wrap.classList.contains('is-dismissing')) return;
+          const raw = wrap.style.getPropertyValue('--notif-swipe-x') || '0px';
+          const x = parseFloat(raw);
+          if (Number.isFinite(x) && x < -2) closeNotifSwipe(wrap, { animate: false });
+        });
         const panelTarget = { listId: 'notifList', countId: 'notifPanelCount' };
         const pageTarget = { listId: 'notifPageList', countId: 'notifPageCount' };
         if (!state.currentUser) return;
@@ -52172,10 +52188,16 @@
           document.addEventListener('pointercancel', onDocPointerEnd, { capture: true });
         }
 
+        function cancelNotifSwipeRaf() {
+          rafPending = false;
+        }
+
         function resetNotifSwipePointer(opts = {}) {
+          cancelNotifSwipeRaf();
           detachDocSwipeListeners();
-          if (activeItem && pointerId != null && opts.releaseCapture !== false) {
-            try { activeItem.releasePointerCapture(pointerId); } catch (_) {}
+          const captureEl = activeWrap || activeItem;
+          if (captureEl && pointerId != null && opts.releaseCapture !== false) {
+            try { captureEl.releasePointerCapture(pointerId); } catch (_) {}
           }
           dragging = false;
           lockAxis = null;
@@ -52197,16 +52219,20 @@
           const notifId = wrap.dataset.notifId || '';
           const w = getNotifSwipeWidth(wrap);
           wrap.classList.add('is-dismissing');
-          wrap.classList.remove('is-dragging', 'is-snap-back');
+          wrap.classList.remove('is-dragging', 'is-snap-back', 'is-past-delete', 'is-delete-ready');
           wrap.style.setProperty('--notif-swipe-x', `-${w}px`);
           window.setTimeout(() => {
+            wrap.classList.remove('is-dismissing');
+            wrap.style.removeProperty('--notif-swipe-x');
+            if (wrap.parentNode) wrap.remove();
             dismissNotif(notifId);
             wrap._notifDismissPending = false;
-          }, 220);
+          }, 240);
         }
 
         function finishNotifSwipe() {
           if (!activeWrap) return;
+          cancelNotifSwipeRaf();
           const wrap = activeWrap;
           const item = activeItem;
           const wasSwipe = lockAxis === 'x';
@@ -52235,6 +52261,7 @@
             if (dx < -HORIZONTAL_LOCK_PX && adx >= HORIZONTAL_LOCK_PX) {
               lockAxis = 'x';
             } else if (ady >= VERTICAL_CANCEL_PX && ady > adx * HORIZONTAL_BIAS) {
+              cancelNotifSwipeRaf();
               if (activeWrap) closeNotifSwipe(activeWrap, { animate: true });
               resetNotifSwipePointer();
               return;
