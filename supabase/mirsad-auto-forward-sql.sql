@@ -214,7 +214,8 @@ begin
               'auto_forwarded_emp', true,
               'auto_forwarded_sup', r.auto_forwarded_sup
             )
-          )
+          ),
+          timeout_milliseconds := 25000
         );
         v_pushed := v_pushed + 1;
       end if;
@@ -299,7 +300,8 @@ begin
                 'auto_forwarded_emp', r.auto_forwarded_emp,
                 'auto_forwarded_sup', true
               )
-            )
+            ),
+            timeout_milliseconds := 25000
           );
           v_pushed := v_pushed + 1;
         end if;
