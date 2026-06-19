@@ -11891,6 +11891,146 @@
       font-size: 10px
     }
 
+    .bc-notif-detail-card {
+      max-width: min(520px, calc(100vw - 32px));
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border: 2px solid var(--mr-border);
+      border-radius: 16px;
+      box-shadow: 0 18px 48px rgba(15, 18, 36, 0.16);
+      background: var(--mr-surface)
+    }
+
+    .bc-notif-detail-card--circular {
+      border-color: color-mix(in srgb, var(--mr-blue) 72%, var(--mr-border));
+      box-shadow: 0 18px 48px rgba(15, 18, 36, 0.14), 0 0 0 1px color-mix(in srgb, var(--mr-blue) 18%, transparent)
+    }
+
+    .bc-notif-detail-card--motivational {
+      border-color: color-mix(in srgb, var(--mk-success) 72%, var(--mr-border));
+      box-shadow: 0 18px 48px rgba(15, 18, 36, 0.14), 0 0 0 1px color-mix(in srgb, var(--mk-success) 18%, transparent)
+    }
+
+    .bc-notif-detail-card--alert {
+      border-color: color-mix(in srgb, var(--mk-warning, #f59e0b) 72%, var(--mr-border));
+      box-shadow: 0 18px 48px rgba(15, 18, 36, 0.14), 0 0 0 1px color-mix(in srgb, var(--mk-warning, #f59e0b) 18%, transparent)
+    }
+
+    .bc-notif-detail-head {
+      padding: 16px 18px 12px;
+      border-bottom: 1px solid color-mix(in srgb, var(--mr-border) 80%, transparent);
+      background: var(--mr-surface)
+    }
+
+    .bc-notif-detail-head__top {
+      margin-bottom: 10px
+    }
+
+    .bc-notif-detail-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 999px;
+      line-height: 1.2
+    }
+
+    .bc-notif-detail-tag--circular {
+      background: color-mix(in srgb, var(--mr-blue) 14%, var(--mr-surface));
+      color: var(--mr-blue)
+    }
+
+    .bc-notif-detail-tag--motivational {
+      background: color-mix(in srgb, var(--mk-success) 16%, var(--mr-surface));
+      color: var(--green-text)
+    }
+
+    .bc-notif-detail-tag--alert {
+      background: color-mix(in srgb, var(--mk-warning) 18%, var(--mr-surface));
+      color: var(--amber-text, #b45309)
+    }
+
+    .bc-notif-detail-head h3 {
+      margin: 0;
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--mr-text);
+      line-height: 1.45
+    }
+
+    .bc-notif-detail-time {
+      margin-top: 6px;
+      font-size: 11px;
+      color: var(--mr-text-3)
+    }
+
+    .bc-notif-detail-body {
+      padding: 16px 18px;
+      font-size: 14px;
+      line-height: 1.7;
+      color: var(--mr-text);
+      white-space: pre-wrap;
+      word-break: break-word;
+      overflow-y: auto;
+      max-height: min(52vh, 420px);
+      background: var(--mr-surface)
+    }
+
+    .bc-notif-detail-foot {
+      padding: 12px 18px 18px;
+      border-top: 1px solid color-mix(in srgb, var(--mr-border) 80%, transparent);
+      background: var(--mr-surface)
+    }
+
+    .bc-notif-detail-read-btn {
+      width: 100%;
+      min-height: 44px;
+      padding: 10px 18px;
+      border: 0;
+      border-radius: 999px;
+      font-family: var(--font);
+      font-size: 14px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: transform .15s ease, box-shadow .15s ease, filter .15s ease;
+      box-shadow: 0 4px 14px rgba(15, 18, 36, 0.12)
+    }
+
+    .bc-notif-detail-read-btn i {
+      font-size: 13px
+    }
+
+    .bc-notif-detail-read-btn:hover {
+      filter: brightness(1.05);
+      box-shadow: 0 6px 18px rgba(15, 18, 36, 0.16)
+    }
+
+    .bc-notif-detail-read-btn:active {
+      transform: scale(0.98)
+    }
+
+    .bc-notif-detail-card--circular .bc-notif-detail-read-btn {
+      background: linear-gradient(135deg, color-mix(in srgb, var(--mr-blue) 92%, #fff), var(--mr-blue));
+      color: #fff
+    }
+
+    .bc-notif-detail-card--motivational .bc-notif-detail-read-btn {
+      background: linear-gradient(135deg, color-mix(in srgb, var(--mk-success) 92%, #fff), var(--mk-success));
+      color: #fff
+    }
+
+    .bc-notif-detail-card--alert .bc-notif-detail-read-btn {
+      background: linear-gradient(135deg, color-mix(in srgb, var(--mk-warning, #f59e0b) 92%, #fff), var(--mk-warning, #f59e0b));
+      color: #fff
+    }
+
     .notif-time {
       font-size: 9px;
       line-height: 1.2;
@@ -11928,12 +12068,13 @@
       box-sizing: border-box
     }
 
-    html.mr-notif-page-active #appWrap .app-body {
+    /* Notifications page — جوال: ملء الشاشة وإخفاء الشريط */
+    html.mr-notif-page-active.mr-mobile-ui #appWrap .app-body {
       overflow: hidden;
       min-height: 0
     }
 
-    html.mr-notif-page-active #appWrap .main {
+    html.mr-notif-page-active.mr-mobile-ui #appWrap .main {
       margin-inline-start: 0 !important;
       width: 100% !important;
       max-width: none !important;
@@ -11945,7 +12086,7 @@
       flex-direction: column !important
     }
 
-    html.mr-notif-page-active #appWrap .content {
+    html.mr-notif-page-active.mr-mobile-ui #appWrap .content {
       padding: 0 !important;
       min-height: 0 !important;
       flex: 1 1 auto;
@@ -11955,10 +12096,10 @@
       max-width: none !important
     }
 
-    html.mr-notif-page-active #appWrap .topbar,
-    html.mr-notif-page-active #appWrap .sidebar,
-    html.mr-notif-page-active #appWrap .page-title-bar,
-    html.mr-notif-page-active #mobileBottomNav,
+    html.mr-notif-page-active.mr-mobile-ui #appWrap .topbar,
+    html.mr-notif-page-active.mr-mobile-ui #appWrap .sidebar,
+    html.mr-notif-page-active.mr-mobile-ui #appWrap .page-title-bar,
+    html.mr-notif-page-active.mr-mobile-ui #mobileBottomNav,
     html.mr-notif-page-active.mr-mobile-ui #appWrap > .app-shell > #mobileBottomNav.mobile-bottom-nav,
     html.mr-notif-page-active.mr-mobile-ui #mobileBottomNav.mobile-bottom-nav {
       display: none !important;
@@ -11970,7 +12111,7 @@
       padding-top: 0 !important
     }
 
-    html.mr-notif-page-active #tab-notifications.active {
+    html.mr-notif-page-active.mr-mobile-ui #tab-notifications.active {
       display: flex !important;
       flex-direction: column;
       flex: 1 1 auto;
@@ -11978,6 +12119,74 @@
       height: auto;
       overflow: hidden;
       background: var(--mr-bg)
+    }
+
+    /* Notifications page — ديسكتوب: صفحة كاملة تحت الشريط العلوي مع سكرول داخلي */
+    @media (min-width: 993px) {
+      html.mr-notif-page-active.mr-desktop-ui #appWrap .main:has(#tab-notifications.active) {
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: hidden !important;
+        padding: 4px 6px 6px !important
+      }
+
+      html.mr-notif-page-active.mr-desktop-ui #appWrap .content:has(#tab-notifications.active) {
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        width: 100%;
+        max-width: none;
+        padding: 0 !important
+      }
+
+      html.mr-notif-page-active.mr-desktop-ui #tab-notifications.active {
+        display: flex !important;
+        flex-direction: column;
+        flex: 1 1 auto;
+        min-height: 0;
+        height: 100%;
+        overflow: hidden;
+        background: var(--mr-bg)
+      }
+
+      html.mr-notif-page-active.mr-desktop-ui #tab-notifications .notif-page-shell {
+        flex: 1 1 auto;
+        min-height: 0;
+        height: 100%;
+        overflow: hidden;
+        padding: 0;
+        display: flex;
+        flex-direction: column
+      }
+
+      html.mr-notif-page-active.mr-desktop-ui #tab-notifications .notif-page-head {
+        padding-top: 0;
+        flex-shrink: 0
+      }
+
+      html.mr-notif-page-active.mr-desktop-ui #tab-notifications .notif-page-topbar {
+        padding: 0 0 2px
+      }
+
+      html.mr-notif-page-active.mr-desktop-ui #tab-notifications .notif-page-filters {
+        padding: 0 0 4px;
+        gap: 4px
+      }
+
+      html.mr-notif-page-active.mr-desktop-ui #tab-notifications .notif-list--page {
+        flex: 1 1 auto;
+        min-height: 0;
+        max-height: none;
+        overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+        border-radius: 10px
+      }
     }
 
     .notif-page-head {
@@ -24764,7 +24973,7 @@
         overflow: hidden !important
       }
 
-      html.mr-notif-page-active #appWrap .content:has(#tab-notifications.active) {
+      html.mr-notif-page-active.mr-mobile-ui #appWrap .content:has(#tab-notifications.active) {
         padding: 0 !important;
         overflow: hidden !important
       }
@@ -27738,7 +27947,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v796-broadcasts-title-70">
+  <meta name="app-build" content="athar-figma-v802-broadcast-notif-close-btn">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -29111,6 +29320,24 @@
           <h3 id="violDetailModalTitle">تفاصيل المخالفة</h3>
         </div>
         <div class="viol-paper-sheet-body" id="violDetailSheetBody"></div>
+      </div>
+    </div>
+
+    <div class="modal" id="broadcastNotifModal" role="dialog" aria-modal="true" aria-labelledby="bcNotifDetailTitle">
+      <div class="modal-card bc-notif-detail-card bc-notif-detail-card--circular">
+        <div class="bc-notif-detail-head">
+          <div class="bc-notif-detail-head__top">
+            <span class="bc-notif-detail-tag bc-notif-detail-tag--circular" id="bcNotifDetailTag">تعاميم</span>
+          </div>
+          <h3 id="bcNotifDetailTitle">—</h3>
+          <div class="bc-notif-detail-time" id="bcNotifDetailTime"></div>
+        </div>
+        <div class="bc-notif-detail-body" id="bcNotifDetailBody"></div>
+        <div class="bc-notif-detail-foot">
+          <button type="button" class="bc-notif-detail-read-btn" onclick="closeModal('broadcastNotifModal')">
+            <span>إغلاق</span>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -49782,6 +50009,7 @@
           notifs.push({
             id: `broadcast_${meta.id}`,
             ticketId: '',
+            broadcastId: meta.id,
             type: style.type,
             icon: style.icon,
             title: meta.title,
@@ -51067,6 +51295,7 @@
       }
 
       function blurHiddenChromeFocus() {
+        if (document.documentElement.classList.contains('mr-desktop-ui')) return;
         const ae = document.activeElement;
         if (!ae || ae === document.body) return;
         if (ae.closest?.('.topbar, .sidebar, #mobileBottomNav, .notif-panel')) {
@@ -51326,12 +51555,47 @@
         openNotificationsPage(event);
       }
 
+      function openBroadcastNotifDetail(notif) {
+        const kind = notif?.broadcastKind || 'circular';
+        const meta = BC_KIND_META[kind] || BC_KIND_META.circular;
+        const modal = document.getElementById('broadcastNotifModal');
+        if (!modal) return;
+        const card = modal.querySelector('.bc-notif-detail-card');
+        const tag = document.getElementById('bcNotifDetailTag');
+        const titleEl = document.getElementById('bcNotifDetailTitle');
+        const bodyEl = document.getElementById('bcNotifDetailBody');
+        const timeEl = document.getElementById('bcNotifDetailTime');
+        if (card) {
+          card.classList.remove('bc-notif-detail-card--circular', 'bc-notif-detail-card--motivational', 'bc-notif-detail-card--alert');
+          card.classList.add(`bc-notif-detail-card--${kind}`);
+        }
+        if (tag) {
+          tag.className = `bc-notif-detail-tag bc-notif-detail-tag--${kind}`;
+          tag.innerHTML = `<i class="fas ${Sec.escapeHTML(meta.icon)}" aria-hidden="true"></i> ${Sec.escapeHTML(BC_KIND_LABELS[kind] || kind)}`;
+        }
+        if (titleEl) titleEl.textContent = String(notif?.title || 'نشرة').trim() || 'نشرة';
+        if (bodyEl) bodyEl.textContent = String(notif?.msg || notif?.body || '').trim() || '—';
+        if (timeEl) timeEl.textContent = notif?.time ? formatRelativeAr(notif.time) : '';
+        openModal('broadcastNotifModal');
+      }
+
       function handleNotifClick(notifId, ticketId) {
         const read = getReadNotifs();
         read.add(notifId);
         saveReadNotifs(read);
 
         const onNotifPage = getActiveTabKey() === 'notifications';
+        const broadcastId = parseBroadcastNotifId(notifId);
+        if (broadcastId) {
+          const notif = (state._currentNotifs || buildUserNotifications()).find(n => n.id === notifId);
+          if (notif) {
+            if (!onNotifPage) closeNotifPanel();
+            openBroadcastNotifDetail(notif);
+            renderNotifications();
+            return;
+          }
+        }
+
         if (onNotifPage) syncNotifPageShell(false);
         else closeNotifPanel();
 
@@ -53316,6 +53580,7 @@
       window.dismissNotif = dismissNotif;
       window.dismissAllNotifs = dismissAllNotifs;
       window.handleNotifClick = handleNotifClick;
+      window.openBroadcastNotifDetail = openBroadcastNotifDetail;
       window.markAllNotifsRead = markAllNotifsRead;
       window.printTicketDetail = printTicketDetail;
       window.dashKpiNavigate = dashKpiNavigate;
