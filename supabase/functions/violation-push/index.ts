@@ -497,6 +497,32 @@ async function resolveUserIdFromJwt(req: Request) {
   return profile?.id ?? null;
 }
 
+// [أمان] هل يستطيع صاحب الـJWT رؤية هذه المخالفة (عبر RLS)؟
+// يُعيد true/false عند التحقق، و null عند تعذّر التحقق (نتعامل معها fail-open
+// حتى لا نكسر التنبيهات بسبب خطأ مؤقت).
+async function userCanSeeViolation(req: Request, violationId: string): Promise<boolean | null> {
+  try {
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) return null;
+    const url = Deno.env.get('SUPABASE_URL') ?? '';
+    const anon = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
+    if (!url || !anon) return null;
+    const uc = createClient(url, anon, {
+      global: { headers: { Authorization: authHeader } },
+      auth: { persistSession: false },
+    });
+    const { data, error } = await uc
+      .from('violations')
+      .select('id')
+      .eq('id', violationId)
+      .maybeSingle();
+    if (error) return null; // fail-open
+    return !!data;
+  } catch {
+    return null; // fail-open
+  }
+}
+
 async function resolveAdminFromJwt(req: Request) {
   const authHeader = req.headers.get('Authorization');
   if (!authHeader) return null;
@@ -776,6 +802,11 @@ Deno.serve(async (req) => {
     if (!userId && !serviceInternal) return json({ error: 'يجب تسجيل الدخول لإرسال التنبيه' }, 401);
     const record = extractRecord(payload);
     if (!record?.id) return json({ error: 'missing violation record in payload' }, 400);
+    // [أمان] منع إساءة الاستخدام: المستخدم العادي يرسل تنبيهاً فقط لتذكرة يراها
+    if (userId && !serviceInternal) {
+      const canSee = await userCanSeeViolation(req, String(record.id));
+      if (canSee === false) return json({ error: 'غير مصرح بإرسال تنبيه لهذه التذكرة' }, 403);
+    }
     const { data: row, error: rowErr } = await supabase
       .from('violations')
       .select('id, ticket_number, violation_type, employee_id, branch_id, state, auto_forwarded_emp, auto_forwarded_sup')
@@ -801,6 +832,11 @@ Deno.serve(async (req) => {
     if (!userId) return json({ error: 'يجب تسجيل الدخول لإرسال التنبيه' }, 401);
     const record = extractRecord(payload);
     if (!record?.id) return json({ error: 'missing violation record in payload' }, 400);
+    // [أمان] منع إساءة الاستخدام: المستخدم يرسل تنبيهاً فقط لتذكرة يراها
+    {
+      const canSee = await userCanSeeViolation(req, String(record.id));
+      if (canSee === false) return json({ error: 'غير مصرح بإرسال تنبيه لهذه التذكرة' }, 403);
+    }
     const { data: row, error: rowErr } = await supabase
       .from('violations')
       .select('id, ticket_number, violation_type, employee_id, branch_id, state')
