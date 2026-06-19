@@ -452,10 +452,31 @@ async function sendPushToUserIds(
   };
 }
 
+function jwtRoleClaim(token: string): string | null {
+  try {
+    const parts = token.split('.');
+    if (parts.length < 2) return null;
+    let b64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    while (b64.length % 4) b64 += '=';
+    const payload = JSON.parse(atob(b64));
+    return typeof payload?.role === 'string' ? payload.role : null;
+  } catch {
+    return null;
+  }
+}
+
 function isServiceRoleAuth(req: Request) {
   const auth = (req.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '').trim();
-  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-  return !!(serviceKey && auth && auth === serviceKey);
+  if (!auth) return false;
+
+  const serviceKey = (Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '').trim();
+  if (serviceKey && auth === serviceKey) return true;
+
+  // أكثر تسامحاً: أي مفتاح service_role صالح للمشروع (دوره service_role)
+  const role = jwtRoleClaim(auth);
+  if (role === 'service_role' || role === 'supabase_admin') return true;
+
+  return false;
 }
 
 async function resolveUserIdFromJwt(req: Request) {
@@ -681,7 +702,7 @@ Deno.serve(async (req) => {
     return json({
       ok: true,
       service: 'violation-push',
-      version: '2026-06-auto-forward-cron-v3',
+      version: '2026-06-auto-forward-cron-v4',
       autoForwardCron: AUTO_FORWARD_CRON_VERSION,
       cronSecretConfigured: !!(Deno.env.get('AUTO_FORWARD_CRON_SECRET')),
       vapidConfigured: !!(vapidPublic && vapidPrivate),
