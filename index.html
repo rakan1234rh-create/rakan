@@ -28246,7 +28246,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v823-notif-swipe-smooth">
+  <meta name="app-build" content="athar-figma-v824-notif-bell-instant">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -28451,7 +28451,7 @@
               </div>
               <div class="topbar-clock-date" id="clockDate">---</div>
             </div>
-            <button class="topbar-btn topbar-btn--notif" id="notifBellBtn" onclick="openNotificationsPage(event)" title="التنبيهات" aria-label="التنبيهات" aria-controls="tab-notifications"><i
+            <button type="button" class="topbar-btn topbar-btn--notif" id="notifBellBtn" title="التنبيهات" aria-label="التنبيهات" aria-controls="tab-notifications"><i
                 class="fas fa-bell"></i><span class="notif-bell-count" id="notifBellCount"
                 style="display:none">0</span></button>
             <div class="mr-topbar-user" id="topbarUserChip" dir="rtl">
@@ -36045,7 +36045,7 @@
             syncNotifPageShell(true);
             state._bellBadgeLocked = state._bellUnreadShown || 0;
             if (!state._notifFilter) state._notifFilter = 'all';
-            renderNotifications(true);
+            renderNotifications(false);
             requestAnimationFrame(() => {
               document.getElementById('notifBellBtn')?.blur();
               blurHiddenChromeFocus();
@@ -51667,26 +51667,32 @@
           event.stopPropagation();
           event.preventDefault();
         }
+        const now = Date.now();
+        if (state._notifOpenGuard && now - state._notifOpenGuard < 280) return;
+        state._notifOpenGuard = now;
+
         closeNotifPanel();
         const current = getActiveTabKey();
         if (current !== 'notifications') {
           state._notifReturnTab = current || getRestorableTab() || 'dashboard';
         }
         if (!state._notifFilter) state._notifFilter = 'all';
-        const openPage = () => {
-          if (current === 'notifications') {
-            renderNotifications(true);
-            return;
-          }
+
+        if (current === 'notifications') {
+          syncNotifPageShell(true);
+          state._bellBadgeLocked = state._bellUnreadShown || 0;
+          renderNotifications(false);
+          document.getElementById('notifBellBtn')?.blur();
+          blurHiddenChromeFocus();
+        } else {
           document.getElementById('notifBellBtn')?.blur();
           goTab('notifications', null);
-          requestAnimationFrame(() => {
-            document.getElementById('notifBellBtn')?.blur();
-            blurHiddenChromeFocus();
-            renderNotifications(true);
-          });
-        };
-        refreshBroadcastInbox().finally(openPage);
+        }
+
+        refreshBroadcastInbox().then((ok) => {
+          if (!ok || getActiveTabKey() !== 'notifications') return;
+          renderNotifications(true);
+        });
       }
 
       function paintNotifList(notifs, read) {
@@ -52041,10 +52047,32 @@
         const bell = document.getElementById('notifBellBtn');
         if (!bell || bell._notifInstantBound) return;
         bell._notifInstantBound = true;
+        const activate = (e) => {
+          if (e.type === 'pointerdown') {
+            if (e.pointerType === 'mouse' && e.button !== 0) return;
+            openNotificationsPage(e);
+            return;
+          }
+          if (e.type === 'click') {
+            if (state._notifBellClickFromPointer) {
+              state._notifBellClickFromPointer = false;
+              e.preventDefault();
+              return;
+            }
+            openNotificationsPage(e);
+          }
+        };
         bell.addEventListener('pointerdown', (e) => {
-          if (e.button !== 0) return;
-          openNotificationsPage(e);
+          if (e.pointerType !== 'mouse' || e.button === 0) state._notifBellClickFromPointer = true;
+          activate(e);
         }, { passive: false });
+        bell.addEventListener('click', activate);
+        bell.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            openNotificationsPage(e);
+          }
+        });
       })();
 
       (function bindNotifSwipe() {
