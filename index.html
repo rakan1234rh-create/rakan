@@ -11703,43 +11703,104 @@
       transition: none
     }
 
+    .notif-swipe.is-dragging {
+      touch-action: none
+    }
+
+    .notif-swipe.is-delete-ready .notif-swipe-delete__rail {
+      background: color-mix(in srgb, var(--red-text) 16%, var(--red-light))
+    }
+
+    .notif-swipe.is-delete-ready .notif-swipe-delete__icon {
+      transform: scale(1.1);
+      background: color-mix(in srgb, var(--red-text) 18%, transparent);
+      box-shadow: 0 2px 10px color-mix(in srgb, var(--red-text) 14%, transparent)
+    }
+
+    .notif-swipe.is-dismissing .notif-item {
+      transition: transform 0.22s ease;
+      opacity: 0.72
+    }
+
+    .notif-swipe.is-dismissing .notif-swipe-delete__rail {
+      width: 100% !important;
+      background: color-mix(in srgb, var(--red-text) 20%, var(--red-light))
+    }
+
     .notif-swipe.is-open .notif-item {
       transform: translateX(-72px)
     }
 
     .notif-swipe-delete {
       position: absolute;
+      inset: 0;
+      border: 0;
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      overflow: hidden;
+      pointer-events: none
+    }
+
+    .notif-swipe-delete__rail {
+      position: absolute;
       top: 0;
       right: 0;
       bottom: 0;
-      width: 72px;
-      border: 0;
-      background: var(--red-light);
-      color: var(--red-text);
+      width: max(0px, calc(-1 * var(--notif-swipe-x, 0px)));
+      min-width: 0;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       gap: 4px;
+      padding-inline: 6px;
+      box-sizing: border-box;
+      background: var(--red-light);
+      color: var(--red-text);
+      overflow: hidden;
+      transition: width 0.2s ease, background 0.18s ease
+    }
+
+    .notif-swipe.is-dragging .notif-swipe-delete__rail {
+      transition: none
+    }
+
+    .notif-swipe-delete__icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 14px;
+      color: var(--red-text);
+      background: color-mix(in srgb, var(--red-text) 12%, transparent);
+      border: 1px solid color-mix(in srgb, var(--red-text) 14%, transparent);
+      box-shadow: none;
+      transition: transform 0.16s ease, background 0.16s ease, box-shadow 0.16s ease
+    }
+
+    .notif-swipe-delete__label {
       font-family: var(--font);
       font-size: 10px;
-      font-weight: 600;
-      cursor: pointer;
-      padding: 0
+      font-weight: 700;
+      line-height: 1.1;
+      color: var(--red-text);
+      opacity: 0;
+      transform: translateY(5px) scale(0.94);
+      transition: opacity 0.16s ease, transform 0.16s ease;
+      white-space: nowrap
     }
 
-    .notif-swipe-delete .notif-icon {
-      width: 32px;
-      height: 32px;
-      border-radius: 8px;
-      background: color-mix(in srgb, var(--red-text) 12%, transparent);
-      color: var(--red-text);
-      font-size: 13px
+    .notif-swipe.is-past-delete .notif-swipe-delete__label {
+      opacity: 1;
+      transform: translateY(0) scale(1)
     }
 
-    .notif-swipe-delete span:not(.notif-icon) {
-      color: var(--red-text);
-      line-height: 1.1
+    [data-theme="dark"] .notif-swipe.is-delete-ready .notif-swipe-delete__rail {
+      background: color-mix(in srgb, var(--red-text) 22%, var(--red-light))
     }
 
     .notif-item:last-child {
@@ -12029,6 +12090,32 @@
     .bc-notif-detail-card--alert .bc-notif-detail-read-btn {
       background: linear-gradient(135deg, color-mix(in srgb, var(--mk-warning, #f59e0b) 92%, #fff), var(--mk-warning, #f59e0b));
       color: #fff
+    }
+
+    @media (max-width: 992px) {
+      #broadcastNotifModal.modal.open {
+        align-items: center !important;
+        justify-content: center !important;
+        padding: max(16px, env(safe-area-inset-top, 0px)) 16px max(16px, env(safe-area-inset-bottom, 0px)) !important;
+        box-sizing: border-box
+      }
+
+      #broadcastNotifModal .bc-notif-detail-card {
+        width: min(520px, calc(100vw - 32px)) !important;
+        max-width: min(520px, calc(100vw - 32px)) !important;
+        max-height: min(85dvh, calc(100dvh - 32px)) !important;
+        border-radius: 16px !important;
+        margin: 0 auto !important;
+        position: relative !important;
+        left: auto !important;
+        right: auto !important;
+        bottom: auto !important;
+        transform: none !important
+      }
+
+      #broadcastNotifModal .bc-notif-detail-body {
+        max-height: min(45dvh, 360px)
+      }
     }
 
     .notif-time {
@@ -27947,7 +28034,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v802-broadcast-notif-close-btn">
+  <meta name="app-build" content="athar-figma-v810-bc-send-loading">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -28200,8 +28287,7 @@
             <div>
               <h4>التنبيهات</h4>
               <div class="notif-count" id="notifPanelCount">0 تنبيه</div>
-            </div><button class="notif-mark-all" onclick="markAllNotifsRead()"><i class="fas fa-check-double"></i> قراءة
-              الكل</button>
+            </div>
           </div>
           <div class="notif-list" id="notifList">
             <div class="notif-empty"><i class="fas fa-bell-slash"></i>
@@ -28265,10 +28351,6 @@
                   <div class="notif-page-topbar__title">
                     <h4>التنبيهات</h4>
                     <div class="notif-count" id="notifPageCount">0 تنبيه</div>
-                  </div>
-                  <div class="notif-page-topbar__tools">
-                    <button type="button" class="notif-mark-all" onclick="markAllNotifsRead()"><i class="fas fa-check-double" aria-hidden="true"></i> قراءة الكل</button>
-                    <button type="button" class="notif-mark-all notif-mark-all--danger" onclick="dismissAllNotifs()"><i class="fas fa-trash-alt" aria-hidden="true"></i> حذف الكل</button>
                   </div>
                 </header>
                 <div class="notif-page-filters" id="notifPageFilters" role="tablist" aria-label="تصنيف التنبيهات">
@@ -49428,7 +49510,7 @@
 
       function closeNotifSwipe(wrap) {
         if (!wrap) return;
-        wrap.classList.remove('is-open', 'is-dragging');
+        wrap.classList.remove('is-open', 'is-dragging', 'is-past-delete', 'is-delete-ready', 'is-dismissing');
         wrap.style.removeProperty('--notif-swipe-x');
       }
 
@@ -50721,7 +50803,11 @@
         );
         if (!ok) return;
         const btn = document.getElementById('bc-send-btn');
-        if (btn) btn.disabled = true;
+        const originalBtnText = btn ? btn.innerHTML : '<i class="fas fa-paper-plane"></i> إرسال الآن';
+        if (btn) {
+          btn.disabled = true;
+          btn.innerHTML = '<i class="fas fa-spinner fa-spin" aria-hidden="true"></i> جاري الإرسال...';
+        }
         try {
           const data = await invokeViolationPush({ broadcast: true, title, body, kind, target });
           if (data?.error) throw new Error(data.error);
@@ -50757,7 +50843,10 @@
         } catch (e) {
           showToast('فشل الإرسال: ' + formatPushError(e), 'error');
         } finally {
-          if (btn) btn.disabled = false;
+          if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalBtnText;
+          }
         }
       }
 
@@ -51363,7 +51452,12 @@
               : '';
             return `
       <div class="notif-swipe" data-notif-id="${nid}">
-        <button type="button" class="notif-swipe-delete" aria-label="حذف التنبيه"><span class="notif-icon red"><i class="fas fa-trash-alt" aria-hidden="true"></i></span><span>حذف</span></button>
+        <button type="button" class="notif-swipe-delete" aria-hidden="true" tabindex="-1">
+          <span class="notif-swipe-delete__rail" aria-hidden="true">
+            <span class="notif-swipe-delete__icon"><i class="fas fa-trash-can" aria-hidden="true"></i></span>
+            <span class="notif-swipe-delete__label">حذف</span>
+          </span>
+        </button>
         <div class="notif-item${itemCls} ${isUnread ? 'unread' : ''}" onclick="handleNotifClick('${nid}','${tid}')">
         <div class="notif-icon ${n.type}">
           <i class="fas ${n.icon}"></i>
@@ -51580,6 +51674,13 @@
       }
 
       function handleNotifClick(notifId, ticketId) {
+        const clickTarget = (typeof event !== 'undefined' && event?.target)
+          ? event.target.closest?.('.notif-item')
+          : null;
+        if (clickTarget?._notifBlockNextClick) {
+          clickTarget._notifBlockNextClick = false;
+          return;
+        }
         const read = getReadNotifs();
         read.add(notifId);
         saveReadNotifs(read);
@@ -51676,69 +51777,149 @@
       })();
 
       (function bindNotifSwipe() {
+        const NOTIF_SWIPE_DELETE_RATIO = 0.42;
+        const NOTIF_SWIPE_DELETE_MIN = 96;
         const lists = ['notifList', 'notifPageList'].map(id => document.getElementById(id)).filter(Boolean);
         lists.forEach((list) => {
         if (!list || list._notifSwipeBound) return;
         list._notifSwipeBound = true;
         let activeWrap = null;
+        let activeItem = null;
         let startX = 0;
         let startY = 0;
         let dragging = false;
         let axisLock = false;
+        let pointerId = null;
 
-        list.addEventListener('touchstart', (e) => {
-          const item = e.target.closest('.notif-item');
+        function blockNotifItemClickAfterSwipe(item) {
           if (!item) return;
-          const wrap = item.closest('.notif-swipe');
+          item._notifBlockNextClick = true;
+          window.setTimeout(() => {
+            item._notifBlockNextClick = false;
+          }, 420);
+        }
+
+        function getNotifSwipeWidth(wrap) {
+          return Math.max(wrap?.offsetWidth || 0, 220);
+        }
+
+        function getNotifDeleteThreshold(wrap) {
+          const w = getNotifSwipeWidth(wrap);
+          return Math.max(NOTIF_SWIPE_DELETE_MIN, Math.round(w * NOTIF_SWIPE_DELETE_RATIO));
+        }
+
+        function syncNotifSwipeVisual(wrap, x) {
           if (!wrap) return;
-          if (activeWrap && activeWrap !== wrap) closeNotifSwipe(activeWrap);
-          activeWrap = wrap;
-          startX = e.touches[0].clientX;
-          startY = e.touches[0].clientY;
-          dragging = true;
-          axisLock = false;
-          wrap.classList.add('is-dragging');
-          wrap.style.setProperty('--notif-swipe-x', wrap.classList.contains('is-open') ? '-72px' : '0px');
-        }, { passive: true });
+          const pastDelete = x <= -56;
+          const ready = Math.abs(x) >= getNotifDeleteThreshold(wrap);
+          wrap.classList.toggle('is-past-delete', pastDelete);
+          wrap.classList.toggle('is-delete-ready', ready);
+        }
 
-        list.addEventListener('touchmove', (e) => {
-          if (!dragging || !activeWrap) return;
-          const dx = e.touches[0].clientX - startX;
-          const dy = e.touches[0].clientY - startY;
-          if (!axisLock) {
-            if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 10) {
-              dragging = false;
-              activeWrap.classList.remove('is-dragging');
-              activeWrap = null;
-              return;
-            }
-            if (Math.abs(dx) > 10) axisLock = true;
-          }
-          if (!axisLock) return;
-          e.preventDefault();
-          const base = activeWrap.classList.contains('is-open') ? -72 : 0;
-          const x = Math.max(-72, Math.min(0, base + dx));
-          activeWrap.style.setProperty('--notif-swipe-x', `${x}px`);
-        }, { passive: false });
-
-        list.addEventListener('touchend', () => {
-          if (!activeWrap) return;
-          const wrap = activeWrap;
-          wrap.classList.remove('is-dragging');
-          const raw = wrap.style.getPropertyValue('--notif-swipe-x') || '0px';
-          const x = parseFloat(raw);
-          if (x <= -36) {
-            wrap.classList.add('is-open');
-            wrap.style.setProperty('--notif-swipe-x', '-72px');
-          } else {
-            closeNotifSwipe(wrap);
+        function resetNotifSwipePointer() {
+          if (activeItem && pointerId != null) {
+            try { activeItem.releasePointerCapture(pointerId); } catch (_) {}
           }
           dragging = false;
           axisLock = false;
           activeWrap = null;
-        }, { passive: true });
+          activeItem = null;
+          pointerId = null;
+        }
+
+        function dismissNotifBySwipe(wrap) {
+          if (!wrap || wrap._notifDismissPending) return;
+          wrap._notifDismissPending = true;
+          const notifId = wrap.dataset.notifId || '';
+          const w = getNotifSwipeWidth(wrap);
+          wrap.classList.add('is-dismissing');
+          wrap.classList.remove('is-dragging');
+          wrap.style.setProperty('--notif-swipe-x', `-${w}px`);
+          window.setTimeout(() => {
+            dismissNotif(notifId);
+            wrap._notifDismissPending = false;
+          }, 220);
+        }
+
+        function finishNotifSwipe() {
+          if (!activeWrap) return;
+          const wrap = activeWrap;
+          const item = activeItem;
+          const wasSwipe = axisLock;
+          wrap.classList.remove('is-dragging');
+          const raw = wrap.style.getPropertyValue('--notif-swipe-x') || '0px';
+          const x = parseFloat(raw);
+          const threshold = getNotifDeleteThreshold(wrap);
+          if (Math.abs(x) >= threshold) {
+            dismissNotifBySwipe(wrap);
+          } else {
+            closeNotifSwipe(wrap);
+          }
+          if (wasSwipe) blockNotifItemClickAfterSwipe(item);
+          resetNotifSwipePointer();
+        }
+
+        list.addEventListener('pointerdown', (e) => {
+          if (e.pointerType === 'mouse' && e.button !== 0) return;
+          const item = e.target.closest('.notif-item');
+          if (!item) return;
+          const wrap = item.closest('.notif-swipe');
+          if (!wrap || wrap._notifDismissPending) return;
+          if (activeWrap && activeWrap !== wrap) closeNotifSwipe(activeWrap);
+          activeWrap = wrap;
+          activeItem = item;
+          pointerId = e.pointerId;
+          startX = e.clientX;
+          startY = e.clientY;
+          dragging = true;
+          axisLock = false;
+          try { item.setPointerCapture(e.pointerId); } catch (_) {}
+        });
+
+        list.addEventListener('pointermove', (e) => {
+          if (!dragging || !activeWrap || e.pointerId !== pointerId) return;
+          const dx = e.clientX - startX;
+          const dy = e.clientY - startY;
+          if (!axisLock) {
+            if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 10) {
+              dragging = false;
+              activeWrap.classList.remove('is-dragging', 'is-past-delete', 'is-delete-ready');
+              resetNotifSwipePointer();
+              return;
+            }
+            if (Math.abs(dx) > 10) {
+              axisLock = true;
+              activeWrap.classList.add('is-dragging');
+              activeWrap.classList.remove('is-open');
+              activeWrap.style.setProperty('--notif-swipe-x', '0px');
+            }
+          }
+          if (!axisLock) return;
+          if (e.cancelable) e.preventDefault();
+          const maxSwipe = getNotifSwipeWidth(activeWrap);
+          const x = Math.max(-maxSwipe, Math.min(0, dx));
+          activeWrap.style.setProperty('--notif-swipe-x', `${x}px`);
+          syncNotifSwipeVisual(activeWrap, x);
+        }, { passive: false });
+
+        list.addEventListener('pointerup', (e) => {
+          if (!dragging || e.pointerId !== pointerId) return;
+          finishNotifSwipe();
+        });
+
+        list.addEventListener('pointercancel', (e) => {
+          if (!dragging || e.pointerId !== pointerId) return;
+          finishNotifSwipe();
+        });
 
         list.addEventListener('click', (e) => {
+          const item = e.target.closest('.notif-item');
+          if (item?._notifBlockNextClick) {
+            e.preventDefault();
+            e.stopPropagation();
+            item._notifBlockNextClick = false;
+            return;
+          }
           const delBtn = e.target.closest('.notif-swipe-delete');
           if (delBtn) {
             e.preventDefault();
@@ -51747,14 +51928,13 @@
             dismissNotif(wrap?.dataset.notifId || '');
             return;
           }
-          const item = e.target.closest('.notif-item');
           const wrap = item?.closest('.notif-swipe');
           if (wrap?.classList.contains('is-open')) {
             e.preventDefault();
             e.stopPropagation();
             closeNotifSwipe(wrap);
           }
-        });
+        }, true);
         });
       })();
 
