@@ -6,6 +6,7 @@ on:
     paths:
       - 'supabase/functions/violation-push/**'
       - 'supabase/functions/broadcast-push/**'
+      - 'supabase/functions/violation-auto-forward/**'
       - '.github/workflows/deploy-violation-push.yml'
   workflow_dispatch:
 
@@ -33,3 +34,4 @@ jobs:
           fi
           supabase functions deploy violation-push --no-verify-jwt --project-ref "$PROJECT_ID"
           supabase functions deploy broadcast-push --no-verify-jwt --project-ref "$PROJECT_ID"
+          supabase functions deploy violation-auto-forward --no-verify-jwt --project-ref "$PROJECT_ID"

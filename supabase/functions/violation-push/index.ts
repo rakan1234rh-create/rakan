@@ -446,6 +446,12 @@ async function sendPushToUserIds(
   };
 }
 
+function isServiceRoleAuth(req: Request) {
+  const auth = (req.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '').trim();
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+  return !!(serviceKey && auth && auth === serviceKey);
+}
+
 async function resolveUserIdFromJwt(req: Request) {
   const authHeader = req.headers.get('Authorization');
   if (!authHeader) return null;
@@ -669,7 +675,7 @@ Deno.serve(async (req) => {
     return json({
       ok: true,
       service: 'violation-push',
-      version: '2026-06-auto-forward-notif-fix',
+      version: '2026-06-auto-forward-cron',
       vapidConfigured: !!(vapidPublic && vapidPrivate),
       vapidValid,
       vapidPublicKey: vapidPublic || null,
@@ -707,7 +713,8 @@ Deno.serve(async (req) => {
   // ─── إشعار عند تغيّر مرحلة التذكرة (مثلاً وصولها للمدير) ───
   if (payload.notifyState === true) {
     const userId = await resolveUserIdFromJwt(req);
-    if (!userId) return json({ error: 'يجب تسجيل الدخول لإرسال التنبيه' }, 401);
+    const serviceInternal = isServiceRoleAuth(req);
+    if (!userId && !serviceInternal) return json({ error: 'يجب تسجيل الدخول لإرسال التنبيه' }, 401);
     const record = extractRecord(payload);
     if (!record?.id) return json({ error: 'missing violation record in payload' }, 400);
     const { data: row, error: rowErr } = await supabase

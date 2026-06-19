@@ -8,8 +8,10 @@
 افتح في المتصفح:
 https://rizoafuxmqsddjfhbsmf.supabase.co/functions/v1/violation-push
 
-يجب أن يظهر: "version":"2026-06-branch-mgr-push"
+يجب أن يظهر: "version":"2026-06-auto-forward-cron"
 إن لم يظهر → أعد النشر بالأسفل.
+
+للتمرير التلقائي بدون متصفح راجع أيضاً: supabase/DEPLOY-AUTO-FORWARD.txt
 
 ─── الطريقة 1: GitHub Actions (مُفضّل) ───
 1) GitHub → المستودع rakan → Settings → Secrets → Actions
