@@ -222,8 +222,8 @@ Deno.serve(async (req) => {
     ? payload.target as TargetPayload
     : { mode: 'all' as TargetMode };
 
-  if (!title || title.length > 120) {
-    return json({ error: 'العنوان مطلوب (120 حرفاً كحد أقصى)' }, 400);
+  if (!title || title.length > 70) {
+    return json({ error: 'العنوان مطلوب (70 حرفاً كحد أقصى)' }, 400);
   }
   if (!body || body.length > 207) {
     return json({ error: 'نص الرسالة مطلوب (207 حرفاً كحد أقصى)' }, 400);

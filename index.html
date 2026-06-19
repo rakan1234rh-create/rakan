@@ -27738,7 +27738,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v795-broadcasts-body-207">
+  <meta name="app-build" content="athar-figma-v796-broadcasts-title-70">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -28705,7 +28705,7 @@
                   <div class="bc-form-grid" id="bc-form-grid">
                     <div class="form-group bc-form-title">
                       <label class="form-label" for="bc-title">عنوان الرسالة <span class="required-mark">*</span></label>
-                      <input type="text" id="bc-title" class="form-input bc-field" maxlength="120" placeholder="مثال: تعميم بخصوص ساعات العمل">
+                      <input type="text" id="bc-title" class="form-input bc-field" maxlength="70" placeholder="مثال: تعميم بخصوص ساعات العمل">
                     </div>
                     <div class="form-group bc-form-kind">
                       <label class="form-label" for="bc-kind">نوع الرسالة</label>
@@ -49901,6 +49901,7 @@
         }
       };
       const BROADCAST_INBOX_SELECT = 'id,broadcast_id,title,body,kind,created_at,broadcasts(id,title,body,kind,created_at)';
+      const BROADCAST_TITLE_MAX_LEN = 70;
       const BROADCAST_BODY_MAX_LEN = 207;
 
       function getBroadcastInboxMeta(row) {
@@ -50475,6 +50476,10 @@
         const kind = document.getElementById('bc-kind')?.value || 'circular';
         const target = getBroadcastTargetFromUI();
         if (!title) { showToast('أدخل عنوان الرسالة', 'warning'); return; }
+        if (title.length > BROADCAST_TITLE_MAX_LEN) {
+          showToast(`عنوان الرسالة طويل — الحد الأقصى ${BROADCAST_TITLE_MAX_LEN} حرفاً`, 'warning');
+          return;
+        }
         if (!body) { showToast('أدخل نص الرسالة', 'warning'); return; }
         if (body.length > BROADCAST_BODY_MAX_LEN) {
           showToast(`نص الرسالة طويل — الحد الأقصى ${BROADCAST_BODY_MAX_LEN} حرفاً`, 'warning');
