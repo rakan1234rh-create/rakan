@@ -28275,7 +28275,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v834-instant-tab-switch">
+  <meta name="app-build" content="athar-figma-v835-sec-harden-links">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -43827,7 +43827,7 @@
                       <i class="fas fa-exclamation-triangle" style="color:var(--amber);font-size:30px;margin-bottom:10px"></i>
                       <p>فشل تحميل الصورة عبر الوسيط</p>
                       <div style="margin-top:15px">
-                         <a href="${cfUrl}" target="_blank" class="btn btn-sm btn-primary" style="text-decoration:none">
+                         <a href="${Sec.escapeHTML(String(cfUrl||''))}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary" style="text-decoration:none">
                            <i class="fas fa-external-link"></i> فتح في كلاود فلير
                          </a>
                       </div>
@@ -43956,7 +43956,7 @@
           <div class="att-fallback">
             <i class="fas fa-file"></i>
             <p>هذا النوع من الملفات لا يمكن عرضه مباشرة</p>
-            <a href="${cfUrl}" target="_blank" download="${Sec.escapeHTML(name)}">
+            <a href="${Sec.escapeHTML(String(cfUrl||''))}" target="_blank" rel="noopener noreferrer" download="${Sec.escapeHTML(name)}">
               <i class="fas fa-download"></i> تحميل الملف / فتح في Cloudflare
             </a>
           </div>`;
