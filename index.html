@@ -28252,7 +28252,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v826-notif-bell-live">
+  <meta name="app-build" content="athar-figma-v827-auto-forward-on-expire">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -32526,9 +32526,12 @@
               setTimeout(startRealtime, 0);
             }
 
-            checkAndAutoForward();
+            checkAndAutoForwardForAnyone();
             if (state._autoForwardTimer) clearInterval(state._autoForwardTimer);
-            state._autoForwardTimer = setInterval(checkAndAutoForward, 5 * 60 * 1000);
+            state._autoForwardTimer = setInterval(() => {
+              if (document.hidden) return;
+              checkAndAutoForwardForAnyone();
+            }, 60 * 1000);
 
             try { initAtharWebPush({ promptIfNeeded: true }); } catch (_) { /* noop */ }
             try { maybeOpenTicketFromPushUrl(); } catch (_) { /* noop */ }
@@ -43214,19 +43217,24 @@
           const barEl = card.querySelector('#cd-bar');
 
           if (remainingMs <= 0) {
-            // المهلة انتهت
             hoursEl.textContent = '00';
             minsEl.textContent = '00';
             secsEl.textContent = '00';
             card.classList.remove('cd-ok', 'cd-warn');
             card.classList.add('cd-danger', 'cd-expired');
             if (barEl) barEl.style.width = '100%';
+            if (!card._autoForwardKick) {
+              card._autoForwardKick = true;
+              handleTicketCountdownExpired();
+            }
             if (state._countdownTimer) {
               clearInterval(state._countdownTimer);
               state._countdownTimer = null;
             }
             return;
           }
+
+          card._autoForwardKick = false;
 
           const totalSecs = Math.floor(remainingMs / 1000);
           const hours = Math.floor(totalSecs / 3600);
@@ -52415,29 +52423,93 @@
         });
       }
 
+      async function tryAutoForwardTicket(t) {
+        if (!t?.id) return false;
+        let direction = null;
+        if (t.state === 'emp' && !isDbTruthy(t.auto_forwarded_emp) && hoursSince(t.created_at) >= EMP_TIMEOUT_HOURS) {
+          direction = 'emp_to_sup';
+        } else if (t.state === 'sup' && !isDbTruthy(t.auto_forwarded_sup) && !isWorkflowStageSkipped('sup')) {
+          if (hoursSince(getStateStartTime(t)) >= SUP_TIMEOUT_HOURS) direction = 'sup_to_aud';
+        }
+        if (!direction) return false;
+
+        const ok = await autoForwardTicket(t, direction);
+        if (!ok) return false;
+
+        await loadAllData();
+        renderAll();
+        renderNotifications();
+        const refreshed = state.violations.find(v => v.id === t.id);
+        if (refreshed && state.editingTicket?.id === t.id) {
+          enrichViolationLite(refreshed);
+          state.editingTicket = refreshed;
+          renderTicketDetailUI(refreshed);
+        }
+        return true;
+      }
+
+      async function checkAndAutoForwardForAnyone() {
+        if (!state.currentUser || state._autoForwardRunning) return;
+        const role = normalizeUserRole(state.currentUser.role);
+
+        if (['admin', 'manager', 'auditor', 'supervisor'].includes(role)) {
+          await checkAndAutoForward();
+          return;
+        }
+
+        const me = state.currentUser;
+        const myOverdue = state.violations.filter(v =>
+          v.state === 'emp' &&
+          !isDbTruthy(v.auto_forwarded_emp) &&
+          hoursSince(v.created_at) >= EMP_TIMEOUT_HOURS &&
+          ((role === 'employee' || role === 'branch_manager') ? v.employee_id === me.id : false)
+        );
+        for (const v of myOverdue) {
+          await tryAutoForwardTicket(v);
+        }
+
+        const openT = state.editingTicket;
+        const modalOpen = document.getElementById('ticketModal')?.classList.contains('open');
+        if (openT && modalOpen) await tryAutoForwardTicket(openT);
+      }
+
+      function handleTicketCountdownExpired() {
+        const sub = document.querySelector('.countdown-card .countdown-sub');
+        if (sub && !sub.dataset.autoPending) {
+          sub.dataset.autoPending = '1';
+          sub.textContent = 'انتهت المهلة — جاري التمرير التلقائي...';
+        }
+        const t = state.editingTicket;
+        Promise.resolve()
+          .then(() => (t ? tryAutoForwardTicket(t) : checkAndAutoForwardForAnyone()))
+          .then(() => checkAndAutoForwardForAnyone())
+          .catch((e) => {
+            if (isMirsadDebugLog()) console.warn('[auto-forward countdown]', e);
+          });
+      }
+
       async function checkAndAutoForward() {
         if (!state.currentUser || state._autoForwardRunning) return;
-        // فقط الأدمن أو المدير يمكنه تشغيل هذا الفحص لتفادي التكرار
-        const role = state.currentUser.role;
-        if (!['admin', 'manager', 'auditor'].includes(role)) return;
+        const role = normalizeUserRole(state.currentUser.role);
+        if (!['admin', 'manager', 'auditor', 'supervisor'].includes(role)) return;
 
         state._autoForwardRunning = true;
         let didUpdate = false;
 
         try {
           const tickets = state.violations.filter(t =>
-            (t.state === 'emp' && !t.auto_forwarded_emp) ||
-            (t.state === 'sup' && !t.auto_forwarded_sup && !isWorkflowStageSkipped('sup'))
+            (t.state === 'emp' && !isDbTruthy(t.auto_forwarded_emp)) ||
+            (t.state === 'sup' && !isDbTruthy(t.auto_forwarded_sup) && !isWorkflowStageSkipped('sup'))
           );
 
           for (const t of tickets) {
-            if (t.state === 'emp' && !t.auto_forwarded_emp) {
+            if (t.state === 'emp' && !isDbTruthy(t.auto_forwarded_emp)) {
               const startedAt = t.created_at;
               if (hoursSince(startedAt) >= EMP_TIMEOUT_HOURS) {
                 const ok = await autoForwardTicket(t, 'emp_to_sup');
                 if (ok) didUpdate = true;
               }
-            } else if (t.state === 'sup' && !t.auto_forwarded_sup) {
+            } else if (t.state === 'sup' && !isDbTruthy(t.auto_forwarded_sup)) {
               const startedAt = getStateStartTime(t);
               if (hoursSince(startedAt) >= SUP_TIMEOUT_HOURS) {
                 const ok = await autoForwardTicket(t, 'sup_to_aud');
@@ -52785,6 +52857,7 @@
         }
         refreshPermissionsFromCloud()
           .catch(e => { if (isMirsadDebugLog()) console.warn('[permissions] refresh', e); });
+        checkAndAutoForwardForAnyone();
       });
 
       window.addEventListener('focus', () => {
