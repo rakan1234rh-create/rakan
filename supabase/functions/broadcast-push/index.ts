@@ -225,8 +225,8 @@ Deno.serve(async (req) => {
   if (!title || title.length > 120) {
     return json({ error: 'العنوان مطلوب (120 حرفاً كحد أقصى)' }, 400);
   }
-  if (!body || body.length > 500) {
-    return json({ error: 'نص الرسالة مطلوب (500 حرفاً كحد أقصى)' }, 400);
+  if (!body || body.length > 207) {
+    return json({ error: 'نص الرسالة مطلوب (207 حرفاً كحد أقصى)' }, 400);
   }
   if (!['motivational', 'alert', 'circular'].includes(kind)) {
     return json({ error: 'نوع الرسالة غير صالح' }, 400);

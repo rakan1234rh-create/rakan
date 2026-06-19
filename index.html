@@ -27738,7 +27738,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v794-broadcasts-pick-list-hover">
+  <meta name="app-build" content="athar-figma-v795-broadcasts-body-207">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -28791,7 +28791,7 @@
                     </div>
                     <div class="form-group bc-form-full">
                       <label class="form-label" for="bc-body">نص الرسالة <span class="required-mark">*</span></label>
-                      <textarea id="bc-body" class="form-input bc-field bc-textarea" maxlength="500" rows="2" placeholder="اكتب نص النشرة…"></textarea>
+                      <textarea id="bc-body" class="form-input bc-field bc-textarea" maxlength="207" rows="2" placeholder="اكتب نص النشرة…"></textarea>
                     </div>
                   </div>
                   <div class="bc-form-actions">
@@ -49901,6 +49901,7 @@
         }
       };
       const BROADCAST_INBOX_SELECT = 'id,broadcast_id,title,body,kind,created_at,broadcasts(id,title,body,kind,created_at)';
+      const BROADCAST_BODY_MAX_LEN = 207;
 
       function getBroadcastInboxMeta(row) {
         const embedded = row?.broadcasts;
@@ -50475,6 +50476,10 @@
         const target = getBroadcastTargetFromUI();
         if (!title) { showToast('أدخل عنوان الرسالة', 'warning'); return; }
         if (!body) { showToast('أدخل نص الرسالة', 'warning'); return; }
+        if (body.length > BROADCAST_BODY_MAX_LEN) {
+          showToast(`نص الرسالة طويل — الحد الأقصى ${BROADCAST_BODY_MAX_LEN} حرفاً`, 'warning');
+          return;
+        }
         const count = estimateBroadcastRecipients(target);
         if (!count) { showToast('لا يوجد مستلمون مطابقون', 'warning'); return; }
         const ok = await confirmDialog(

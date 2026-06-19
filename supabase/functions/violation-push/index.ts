@@ -511,8 +511,8 @@ async function dispatchBroadcastPush(
   if (!title || title.length > 120) {
     return { status: 400, body: { error: 'العنوان مطلوب (120 حرفاً كحد أقصى)' } };
   }
-  if (!body || body.length > 500) {
-    return { status: 400, body: { error: 'نص الرسالة مطلوب (500 حرفاً كحد أقصى)' } };
+  if (!body || body.length > 207) {
+    return { status: 400, body: { error: 'نص الرسالة مطلوب (207 حرفاً كحد أقصى)' } };
   }
   if (!['motivational', 'alert', 'circular'].includes(kind)) {
     return { status: 400, body: { error: 'نوع الرسالة غير صالح' } };
