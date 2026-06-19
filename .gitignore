@@ -10,3 +10,16 @@ node_modules/
 .env.local
 .supabase/
 supabase/.temp/
+
+# ─── مساعدات محلية (لا تُرفع) ───
+*.bat
+# نسخ/مصادر محلية للصفحة
+.merge-github-index.html
+index.local-desktop-backup.html
+index.user-mobile-source.html
+# سجلات المحادثات والعمل (محلية)
+محادثات-*.txt
+محادثات-*.jsonl
+سجل-*.md
+سجل-*.txt
+platform-urls.txt
