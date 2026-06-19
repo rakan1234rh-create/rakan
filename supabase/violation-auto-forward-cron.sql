@@ -15,7 +15,7 @@ where jobname = 'athar-violation-auto-forward';
 select cron.schedule(
   'athar-violation-auto-forward',
   '* * * * *',
-  $$ select public.mirsad_auto_forward_overdue_violations(); $$
+  $$ select public.mirsad_auto_forward_tick(); $$
 );
 
 -- تحقق:
