@@ -7,6 +7,8 @@ on:
       - 'supabase/functions/violation-push/**'
       - 'supabase/functions/broadcast-push/**'
       - 'supabase/functions/violation-auto-forward/**'
+      - 'supabase/config.toml'
+      - 'supabase/email-templates/**'
       - '.github/workflows/deploy-violation-push.yml'
   workflow_dispatch:
 
@@ -21,7 +23,7 @@ jobs:
 
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.30.4
 
       - name: Deploy push functions to Supabase
         env:
@@ -32,6 +34,10 @@ jobs:
             echo "::error::أضف SUPABASE_ACCESS_TOKEN في GitHub → Settings → Secrets → Actions"
             exit 1
           fi
-          supabase functions deploy violation-push --no-verify-jwt --project-ref "$PROJECT_ID"
-          supabase functions deploy broadcast-push --no-verify-jwt --project-ref "$PROJECT_ID"
-          supabase functions deploy violation-auto-forward --no-verify-jwt --project-ref "$PROJECT_ID"
+          test -f supabase/email-templates/athar-recovery.html || {
+            echo "::error::ملف قالب البريد مفقود: supabase/email-templates/athar-recovery.html"
+            exit 1
+          }
+          supabase functions deploy violation-push --no-verify-jwt --project-ref "$PROJECT_ID" --use-api
+          supabase functions deploy broadcast-push --no-verify-jwt --project-ref "$PROJECT_ID" --use-api
+          supabase functions deploy violation-auto-forward --no-verify-jwt --project-ref "$PROJECT_ID" --use-api

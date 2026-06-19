@@ -6,7 +6,7 @@
 
 [auth.email.template.recovery]
 subject = "إعادة تعيين كلمة المرور — ATHAR"
-content_path = "./supabase/email-templates/athar-recovery.html"
+content_path = "./email-templates/athar-recovery.html"
 
 [functions.r2-storage]
 verify_jwt = false
