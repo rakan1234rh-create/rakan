@@ -28252,7 +28252,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v825-notif-swipe-rail-fix">
+  <meta name="app-build" content="athar-figma-v826-notif-bell-live">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -36049,7 +36049,6 @@
           }
           if (tab === 'notifications') {
             syncNotifPageShell(true);
-            state._bellBadgeLocked = state._bellUnreadShown || 0;
             if (!state._notifFilter) state._notifFilter = 'all';
             renderNotifications(false);
             requestAnimationFrame(() => {
@@ -49772,23 +49771,24 @@
 
       async function dismissNotif(notifId) {
         if (!notifId) return;
-        try {
-          await persistNotifDismissToDb(notifId);
-        } catch (e) {
-          if (isMirsadDebugLog()) console.warn('[notif dismiss]', e);
-          showToast('تعذّر حفظ الحذف — شغّل supabase/user_notif_dismissals.sql', 'warning');
-        }
         const dismissed = getDismissedNotifs();
         dismissed.add(notifId);
         saveDismissedNotifs(dismissed);
         const read = getReadNotifs();
         read.add(notifId);
         saveReadNotifs(read);
+        invalidateNotifCache();
         state._bellBadgeLocked = 0;
+        refreshNotifBellBadge(true);
         const panelOpen = isNotifSurfaceOpen();
         if (panelOpen && getActiveTabKey() !== 'notifications') refreshOpenNotifPanel(false);
         else renderNotifications(false);
-        syncNotifBellBadge(true);
+        try {
+          await persistNotifDismissToDb(notifId);
+        } catch (e) {
+          if (isMirsadDebugLog()) console.warn('[notif dismiss]', e);
+          showToast('تعذّر حفظ الحذف — شغّل supabase/user_notif_dismissals.sql', 'warning');
+        }
       }
 
       function invalidateNotifCache() {
@@ -51618,16 +51618,14 @@
         const bellCount = document.getElementById('notifBellCount');
         const bell = document.getElementById('notifBellBtn');
         if (!bellCount) return;
-        const panelOpen = isNotifSurfaceOpen();
-        let unread = Math.max(0, Number(unreadCount) || 0);
-        if (panelOpen && state._bellBadgeLocked > 0) unread = state._bellBadgeLocked;
+        const unread = Math.max(0, Number(unreadCount) || 0);
         if (unread > 0) {
           state._bellUnreadShown = unread;
           bell?.setAttribute('data-has-unread', '1');
           bellCount.removeAttribute('hidden');
           bellCount.style.display = 'inline-flex';
           bellCount.textContent = unread > 99 ? '99+' : String(unread);
-        } else if (!panelOpen || !state._bellBadgeLocked) {
+        } else {
           state._bellUnreadShown = 0;
           state._bellBadgeLocked = 0;
           bell?.removeAttribute('data-has-unread');
@@ -51636,13 +51634,17 @@
         }
       }
 
-      function syncNotifBellBadge(force) {
+      function refreshNotifBellBadge(force = false) {
         if (!state.currentUser) return;
-        if (isNotifSurfaceOpen()) return;
         const notifs = buildUserNotificationsCached(!!force);
         state._currentNotifs = notifs;
         const read = getReadNotifs();
+        state._bellBadgeLocked = 0;
         updateNotifBellBadge(countVisibleUnreadNotifs(notifs, read));
+      }
+
+      function syncNotifBellBadge(force) {
+        refreshNotifBellBadge(!!force);
       }
 
       function renderNotifBadge() {
@@ -51690,7 +51692,6 @@
 
         if (current === 'notifications') {
           syncNotifPageShell(true);
-          state._bellBadgeLocked = state._bellUnreadShown || 0;
           renderNotifications(false);
           document.getElementById('notifBellBtn')?.blur();
           blurHiddenChromeFocus();
@@ -51790,9 +51791,8 @@
         state._currentNotifs = notifs;
         const read = getReadNotifs();
         paintNotifList(notifs, read);
-        if (!isNotifSurfaceOpen()) {
-          updateNotifBellBadge(countVisibleUnreadNotifs(notifs, read));
-        }
+        state._bellBadgeLocked = 0;
+        updateNotifBellBadge(countVisibleUnreadNotifs(notifs, read));
         if (document.getElementById('notifPanel')?.classList.contains('open')) {
           notifPanelPosition();
         }
@@ -51868,7 +51868,6 @@
       function openNotifPanel() {
         const { panel, bell } = notifUi();
         if (!panel || panel.classList.contains('open')) return;
-        state._bellBadgeLocked = state._bellUnreadShown || 0;
         state._notifPanelSkipClose = true;
         document.body.classList.add('notif-panel-open');
         panel.classList.add('open');
@@ -51977,6 +51976,8 @@
         const read = getReadNotifs();
         read.add(notifId);
         saveReadNotifs(read);
+        state._bellBadgeLocked = 0;
+        refreshNotifBellBadge(false);
 
         const onNotifPage = getActiveTabKey() === 'notifications';
         const broadcastId = parseBroadcastNotifId(notifId);
