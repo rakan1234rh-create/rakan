@@ -142,6 +142,8 @@ function normSecret(val: unknown) {
   return String(val ?? '').trim().replace(/\r?\n/g, '');
 }
 
+export { normSecret };
+
 /** يقبل السر من x-cron-secret أو cronSecret داخل JSON body (أفضل لـ pg_net Cron) */
 export function isAuthorizedCron(req: Request, payload?: Record<string, unknown>) {
   const cronSecret = normSecret(Deno.env.get('AUTO_FORWARD_CRON_SECRET'));

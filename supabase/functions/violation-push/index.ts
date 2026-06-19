@@ -3,6 +3,7 @@ import webpush from 'npm:web-push@3.6.7';
 import {
   AUTO_FORWARD_CRON_VERSION,
   isAuthorizedCron,
+  normSecret,
   runAutoForwardCron,
 } from './auto-forward-cron.ts';
 
@@ -706,7 +707,17 @@ Deno.serve(async (req) => {
   // ─── Cron: تمرير تلقائي للتذاكر المتأخرة (بدون متصفح) ───
   if (payload.autoForwardCron === true) {
     if (!isAuthorizedCron(req, payload)) {
-      return json({ error: 'unauthorized — use cronSecret in body, x-cron-secret header, or service role bearer' }, 401);
+      const gotBody = !!normSecret(payload?.cronSecret);
+      const gotHeader = !!normSecret(req.headers.get('x-cron-secret'));
+      return json({
+        error: 'unauthorized — use cronSecret in body, x-cron-secret header, or service role bearer',
+        hint: gotBody
+          ? 'cronSecret وصل لكنه لا يطابق AUTO_FORWARD_CRON_SECRET في Secrets'
+          : gotHeader
+            ? 'x-cron-secret وصل لكنه لا يطابق Secrets'
+            : 'لم يصل أي سر — حدّث Cron ليرسل cronSecret داخل body',
+        cronSecretConfigured: !!(Deno.env.get('AUTO_FORWARD_CRON_SECRET')),
+      }, 401);
     }
     try {
       const result = await runAutoForwardCron(supabase, async (record, previousState) => {
