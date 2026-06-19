@@ -1,6 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 
-export const AUTO_FORWARD_CRON_VERSION = '2026-06-cron-v2';
+export const AUTO_FORWARD_CRON_VERSION = '2026-06-cron-v3';
 const EMP_TIMEOUT_HOURS = 24;
 const SUP_TIMEOUT_HOURS = 48;
 const WORKFLOW_PROCESS_STAGES = ['emp', 'sup', 'aud', 'mgt', 'hr'] as const;
@@ -138,13 +138,21 @@ async function loadWorkflowSkips(supabase: ReturnType<typeof createClient>) {
   return {};
 }
 
-export function isAuthorizedCron(req: Request) {
-  const cronSecret = Deno.env.get('AUTO_FORWARD_CRON_SECRET') ?? '';
-  const headerSecret = req.headers.get('x-cron-secret') ?? '';
-  if (cronSecret && headerSecret && headerSecret === cronSecret) return true;
+function normSecret(val: unknown) {
+  return String(val ?? '').trim().replace(/\r?\n/g, '');
+}
 
-  const auth = (req.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '').trim();
-  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+/** يقبل السر من x-cron-secret أو cronSecret داخل JSON body (أفضل لـ pg_net Cron) */
+export function isAuthorizedCron(req: Request, payload?: Record<string, unknown>) {
+  const cronSecret = normSecret(Deno.env.get('AUTO_FORWARD_CRON_SECRET'));
+  const headerSecret = normSecret(req.headers.get('x-cron-secret'));
+  const bodySecret = normSecret(payload?.cronSecret);
+  const provided = headerSecret || bodySecret;
+
+  if (cronSecret && provided && provided === cronSecret) return true;
+
+  const auth = normSecret((req.headers.get('Authorization') || '').replace(/^Bearer\s+/i, ''));
+  const serviceKey = normSecret(Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'));
   if (serviceKey && auth && auth === serviceKey) return true;
 
   return false;

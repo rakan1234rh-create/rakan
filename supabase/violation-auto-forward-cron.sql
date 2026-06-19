@@ -4,11 +4,11 @@
 -- ═══════════════════════════════════════════════════════════════════════════
 --
 -- المتطلبات:
--- 1) نشر violation-push (إصدار 2026-06-auto-forward-cron-v2)
+-- 1) نشر violation-push (إصدار 2026-06-auto-forward-cron-v3)
 -- 2) Edge Functions → Secrets → AUTO_FORWARD_CRON_SECRET
 -- 3) استبدل YOUR_CRON_SECRET_HERE بالسر الحقيقي (نفس قيمة Secrets)
 --
--- ملاحظة: Cron يستدعي violation-push (موجودة أصلاً) وليس دالة منفصلة.
+-- ملاحظة: السر يُرسل داخل body (cronSecret) لأن pg_net قد لا يمرّر x-cron-secret.
 
 create extension if not exists pg_cron with schema pg_catalog;
 create extension if not exists pg_net with schema extensions;
@@ -23,18 +23,17 @@ select cron.schedule(
   $$
   select net.http_post(
     url := 'https://rizoafuxmqsddjfhbsmf.supabase.co/functions/v1/violation-push',
-    headers := jsonb_build_object(
-      'Content-Type', 'application/json',
-      'x-cron-secret', 'YOUR_CRON_SECRET_HERE'
-    ),
-    body := '{"autoForwardCron":true}'::jsonb
+    headers := jsonb_build_object('Content-Type', 'application/json'),
+    body := jsonb_build_object(
+      'autoForwardCron', true,
+      'cronSecret', 'YOUR_CRON_SECRET_HERE'
+    )
   ) as request_id;
   $$
 );
 
--- تحقق (بدون عرض السر كاملاً):
+-- تحقق:
 -- select jobid, jobname, schedule,
---   case when command like '%violation-push%' then 'url ok' else 'url wrong' end,
---   case when command like '%autoForwardCron%' then 'body ok' else 'body wrong' end,
---   case when command like '%YOUR_CRON_SECRET_HERE%' then 'secret placeholder!' else 'secret set' end
+--   case when command like '%YOUR_CRON_SECRET_HERE%' then 'secret placeholder!' else 'secret set' end,
+--   case when command like '%cronSecret%' then 'body ok' else 'body wrong' end
 -- from cron.job where jobname = 'athar-violation-auto-forward';

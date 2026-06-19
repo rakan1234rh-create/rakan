@@ -680,7 +680,7 @@ Deno.serve(async (req) => {
     return json({
       ok: true,
       service: 'violation-push',
-      version: '2026-06-auto-forward-cron-v2',
+      version: '2026-06-auto-forward-cron-v3',
       autoForwardCron: AUTO_FORWARD_CRON_VERSION,
       cronSecretConfigured: !!(Deno.env.get('AUTO_FORWARD_CRON_SECRET')),
       vapidConfigured: !!(vapidPublic && vapidPrivate),
@@ -705,8 +705,8 @@ Deno.serve(async (req) => {
 
   // ─── Cron: تمرير تلقائي للتذاكر المتأخرة (بدون متصفح) ───
   if (payload.autoForwardCron === true) {
-    if (!isAuthorizedCron(req)) {
-      return json({ error: 'unauthorized — use x-cron-secret or service role bearer' }, 401);
+    if (!isAuthorizedCron(req, payload)) {
+      return json({ error: 'unauthorized — use cronSecret in body, x-cron-secret header, or service role bearer' }, 401);
     }
     try {
       const result = await runAutoForwardCron(supabase, async (record, previousState) => {
