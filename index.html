@@ -11699,6 +11699,20 @@
       border-bottom: 0
     }
 
+    .notif-list.notif-list--swiping {
+      overflow: hidden;
+      touch-action: none;
+      overscroll-behavior: contain
+    }
+
+    .notif-swipe.is-snap-back .notif-item {
+      transition: transform 0.26s cubic-bezier(0.32, 0.72, 0, 1)
+    }
+
+    .notif-swipe.is-snap-back .notif-swipe-delete__rail {
+      transition: width 0.26s cubic-bezier(0.32, 0.72, 0, 1), background 0.18s ease
+    }
+
     .notif-swipe.is-dragging .notif-item {
       transition: none
     }
@@ -28034,7 +28048,7 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px)">
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v810-bc-send-loading">
+  <meta name="app-build" content="athar-figma-v811-notif-swipe-smooth">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -49508,9 +49522,22 @@
         return notifs.filter(n => !dismissed.has(n.id) && !read.has(n.id)).length;
       }
 
-      function closeNotifSwipe(wrap) {
+      function closeNotifSwipe(wrap, opts = {}) {
         if (!wrap) return;
+        const raw = wrap.style.getPropertyValue('--notif-swipe-x') || '0px';
+        const x = parseFloat(raw);
+        const animate = opts.animate !== false && x < 0;
         wrap.classList.remove('is-open', 'is-dragging', 'is-past-delete', 'is-delete-ready', 'is-dismissing');
+        if (animate) {
+          wrap.classList.add('is-snap-back');
+          wrap.style.setProperty('--notif-swipe-x', '0px');
+          window.setTimeout(() => {
+            wrap.classList.remove('is-snap-back');
+            wrap.style.removeProperty('--notif-swipe-x');
+          }, 280);
+          return;
+        }
+        wrap.classList.remove('is-snap-back');
         wrap.style.removeProperty('--notif-swipe-x');
       }
 
@@ -51779,16 +51806,19 @@
       (function bindNotifSwipe() {
         const NOTIF_SWIPE_DELETE_RATIO = 0.42;
         const NOTIF_SWIPE_DELETE_MIN = 96;
+        const AXIS_SLOP = 14;
+        const HORIZONTAL_BIAS = 1.18;
         const lists = ['notifList', 'notifPageList'].map(id => document.getElementById(id)).filter(Boolean);
         lists.forEach((list) => {
         if (!list || list._notifSwipeBound) return;
         list._notifSwipeBound = true;
         let activeWrap = null;
         let activeItem = null;
+        let activeList = null;
         let startX = 0;
         let startY = 0;
         let dragging = false;
-        let axisLock = false;
+        let lockAxis = null;
         let pointerId = null;
 
         function blockNotifItemClickAfterSwipe(item) {
@@ -51816,15 +51846,36 @@
           wrap.classList.toggle('is-delete-ready', ready);
         }
 
+        function clearNotifListSwipeLock() {
+          if (activeList) activeList.classList.remove('notif-list--swiping');
+          activeList = null;
+        }
+
+        function detachDocSwipeListeners() {
+          document.removeEventListener('pointermove', onDocPointerMove, true);
+          document.removeEventListener('pointerup', onDocPointerEnd, true);
+          document.removeEventListener('pointercancel', onDocPointerEnd, true);
+          document.removeEventListener('lostpointercapture', onDocPointerEnd, true);
+        }
+
+        function attachDocSwipeListeners() {
+          document.addEventListener('pointermove', onDocPointerMove, { passive: false, capture: true });
+          document.addEventListener('pointerup', onDocPointerEnd, { capture: true });
+          document.addEventListener('pointercancel', onDocPointerEnd, { capture: true });
+          document.addEventListener('lostpointercapture', onDocPointerEnd, { capture: true });
+        }
+
         function resetNotifSwipePointer() {
+          detachDocSwipeListeners();
           if (activeItem && pointerId != null) {
             try { activeItem.releasePointerCapture(pointerId); } catch (_) {}
           }
           dragging = false;
-          axisLock = false;
+          lockAxis = null;
           activeWrap = null;
           activeItem = null;
           pointerId = null;
+          clearNotifListSwipeLock();
         }
 
         function dismissNotifBySwipe(wrap) {
@@ -51833,7 +51884,7 @@
           const notifId = wrap.dataset.notifId || '';
           const w = getNotifSwipeWidth(wrap);
           wrap.classList.add('is-dismissing');
-          wrap.classList.remove('is-dragging');
+          wrap.classList.remove('is-dragging', 'is-snap-back');
           wrap.style.setProperty('--notif-swipe-x', `-${w}px`);
           window.setTimeout(() => {
             dismissNotif(notifId);
@@ -51845,7 +51896,7 @@
           if (!activeWrap) return;
           const wrap = activeWrap;
           const item = activeItem;
-          const wasSwipe = axisLock;
+          const wasSwipe = lockAxis === 'x';
           wrap.classList.remove('is-dragging');
           const raw = wrap.style.getPropertyValue('--notif-swipe-x') || '0px';
           const x = parseFloat(raw);
@@ -51853,10 +51904,49 @@
           if (Math.abs(x) >= threshold) {
             dismissNotifBySwipe(wrap);
           } else {
-            closeNotifSwipe(wrap);
+            closeNotifSwipe(wrap, { animate: true });
           }
           if (wasSwipe) blockNotifItemClickAfterSwipe(item);
           resetNotifSwipePointer();
+        }
+
+        function onDocPointerMove(e) {
+          if (!dragging || !activeWrap || e.pointerId !== pointerId) return;
+          const dx = e.clientX - startX;
+          const dy = e.clientY - startY;
+          const adx = Math.abs(dx);
+          const ady = Math.abs(dy);
+
+          if (!lockAxis) {
+            if (adx < AXIS_SLOP && ady < AXIS_SLOP) return;
+            if (ady > adx * HORIZONTAL_BIAS && ady >= AXIS_SLOP) {
+              lockAxis = 'y';
+              dragging = false;
+              resetNotifSwipePointer();
+              return;
+            }
+            if (adx >= AXIS_SLOP && adx >= ady / HORIZONTAL_BIAS) {
+              lockAxis = 'x';
+              activeWrap.classList.add('is-dragging');
+              activeWrap.classList.remove('is-open', 'is-snap-back');
+              if (activeList) activeList.classList.add('notif-list--swiping');
+            } else {
+              return;
+            }
+          }
+
+          if (lockAxis !== 'x') return;
+          if (e.cancelable) e.preventDefault();
+          const maxSwipe = getNotifSwipeWidth(activeWrap);
+          const x = Math.max(-maxSwipe, Math.min(0, dx));
+          activeWrap.style.setProperty('--notif-swipe-x', `${x}px`);
+          syncNotifSwipeVisual(activeWrap, x);
+        }
+
+        function onDocPointerEnd(e) {
+          if (!dragging || e.pointerId !== pointerId) return;
+          if (lockAxis === 'x') finishNotifSwipe();
+          else resetNotifSwipePointer();
         }
 
         list.addEventListener('pointerdown', (e) => {
@@ -51865,51 +51955,17 @@
           if (!item) return;
           const wrap = item.closest('.notif-swipe');
           if (!wrap || wrap._notifDismissPending) return;
-          if (activeWrap && activeWrap !== wrap) closeNotifSwipe(activeWrap);
+          if (activeWrap && activeWrap !== wrap) closeNotifSwipe(activeWrap, { animate: false });
           activeWrap = wrap;
           activeItem = item;
+          activeList = list;
           pointerId = e.pointerId;
           startX = e.clientX;
           startY = e.clientY;
           dragging = true;
-          axisLock = false;
+          lockAxis = null;
           try { item.setPointerCapture(e.pointerId); } catch (_) {}
-        });
-
-        list.addEventListener('pointermove', (e) => {
-          if (!dragging || !activeWrap || e.pointerId !== pointerId) return;
-          const dx = e.clientX - startX;
-          const dy = e.clientY - startY;
-          if (!axisLock) {
-            if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 10) {
-              dragging = false;
-              activeWrap.classList.remove('is-dragging', 'is-past-delete', 'is-delete-ready');
-              resetNotifSwipePointer();
-              return;
-            }
-            if (Math.abs(dx) > 10) {
-              axisLock = true;
-              activeWrap.classList.add('is-dragging');
-              activeWrap.classList.remove('is-open');
-              activeWrap.style.setProperty('--notif-swipe-x', '0px');
-            }
-          }
-          if (!axisLock) return;
-          if (e.cancelable) e.preventDefault();
-          const maxSwipe = getNotifSwipeWidth(activeWrap);
-          const x = Math.max(-maxSwipe, Math.min(0, dx));
-          activeWrap.style.setProperty('--notif-swipe-x', `${x}px`);
-          syncNotifSwipeVisual(activeWrap, x);
-        }, { passive: false });
-
-        list.addEventListener('pointerup', (e) => {
-          if (!dragging || e.pointerId !== pointerId) return;
-          finishNotifSwipe();
-        });
-
-        list.addEventListener('pointercancel', (e) => {
-          if (!dragging || e.pointerId !== pointerId) return;
-          finishNotifSwipe();
+          attachDocSwipeListeners();
         });
 
         list.addEventListener('click', (e) => {
