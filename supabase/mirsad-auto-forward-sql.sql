@@ -4,6 +4,29 @@
 -- ═══════════════════════════════════════════════════════════════════════════
 
 create extension if not exists pg_cron with schema pg_catalog;
+create extension if not exists pg_net with schema extensions;
+
+-- ─── جدول أسرار داخلي (لإرسال التنبيهات عبر violation-push) ───
+-- يُقفل بـ RLS بدون سياسات، فلا يُقرأ عبر API. الدوال security definer تتجاوزه.
+create table if not exists public.mirsad_secrets (
+  key text primary key,
+  value text not null
+);
+alter table public.mirsad_secrets enable row level security;
+
+-- خزّن المفتاحين مرة واحدة (Settings → API):
+--   select public.mirsad_set_secret('service_role_key', 'eyJ...مفتاح_service_role_الكامل');
+--   select public.mirsad_set_secret('supabase_url', 'https://rizoafuxmqsddjfhbsmf.supabase.co');
+create or replace function public.mirsad_set_secret(p_key text, p_value text)
+returns void
+language sql
+security definer
+set search_path = public, pg_temp
+as $$
+  insert into public.mirsad_secrets (key, value)
+  values (p_key, p_value)
+  on conflict (key) do update set value = excluded.value;
+$$;
 
 -- ─── هل مرحلة مُلغاة من إعدادات المنصة؟ ───
 create or replace function public.mirsad_workflow_stage_skipped(p_stage text)
@@ -109,8 +132,14 @@ declare
   v_started timestamptz;
   v_forwarded int := 0;
   v_scanned int := 0;
+  v_pushed int := 0;
   v_label text;
+  v_service_key text;
+  v_base_url text;
 begin
+  select value into v_service_key from public.mirsad_secrets where key = 'service_role_key';
+  select value into v_base_url from public.mirsad_secrets where key = 'supabase_url';
+
   -- emp → التالي (عادة sup) بعد 24 ساعة
   for r in
     select v.*
@@ -162,6 +191,33 @@ begin
 
     if found then
       v_forwarded := v_forwarded + 1;
+
+      if v_service_key is not null and v_base_url is not null then
+        perform net.http_post(
+          url := v_base_url || '/functions/v1/violation-push',
+          headers := jsonb_build_object(
+            'Content-Type', 'application/json',
+            'Authorization', 'Bearer ' || v_service_key
+          ),
+          body := jsonb_build_object(
+            'notifyState', true,
+            'isAutoForward', true,
+            'previousState', 'emp',
+            'dedupeKey', 'sqlcron:' || r.id || ':emp:' || v_new_state,
+            'record', jsonb_build_object(
+              'id', r.id,
+              'ticket_number', r.ticket_number,
+              'violation_type', r.violation_type,
+              'employee_id', r.employee_id,
+              'branch_id', r.branch_id,
+              'state', v_new_state,
+              'auto_forwarded_emp', true,
+              'auto_forwarded_sup', r.auto_forwarded_sup
+            )
+          )
+        );
+        v_pushed := v_pushed + 1;
+      end if;
     end if;
   end loop;
 
@@ -220,6 +276,33 @@ begin
 
       if found then
         v_forwarded := v_forwarded + 1;
+
+        if v_service_key is not null and v_base_url is not null then
+          perform net.http_post(
+            url := v_base_url || '/functions/v1/violation-push',
+            headers := jsonb_build_object(
+              'Content-Type', 'application/json',
+              'Authorization', 'Bearer ' || v_service_key
+            ),
+            body := jsonb_build_object(
+              'notifyState', true,
+              'isAutoForward', true,
+              'previousState', 'sup',
+              'dedupeKey', 'sqlcron:' || r.id || ':sup:' || v_new_state,
+              'record', jsonb_build_object(
+                'id', r.id,
+                'ticket_number', r.ticket_number,
+                'violation_type', r.violation_type,
+                'employee_id', r.employee_id,
+                'branch_id', r.branch_id,
+                'state', v_new_state,
+                'auto_forwarded_emp', r.auto_forwarded_emp,
+                'auto_forwarded_sup', true
+              )
+            )
+          );
+          v_pushed := v_pushed + 1;
+        end if;
       end if;
     end loop;
   end if;
@@ -229,12 +312,24 @@ begin
     'engine', 'postgres',
     'scanned', v_scanned,
     'forwarded', v_forwarded,
+    'pushed', v_pushed,
+    'push_configured', (v_service_key is not null and v_base_url is not null),
     'ran_at', now()
   );
 end;
 $$;
 
 grant execute on function public.mirsad_auto_forward_overdue_violations() to postgres;
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- مهم لإرسال التنبيهات والمنصة مغلقة — خزّن المفتاحين مرة واحدة:
+--   (Settings → API → service_role secret)
+--
+-- select public.mirsad_set_secret('service_role_key', 'eyJ...المفتاح_الكامل');
+-- select public.mirsad_set_secret('supabase_url', 'https://rizoafuxmqsddjfhbsmf.supabase.co');
+--
+-- بدون هذين المفتاحين: التمرير يعمل لكن التنبيهات لا تُرسل تلقائياً.
+-- ═══════════════════════════════════════════════════════════════════════════
 
 -- اختبار فوري:
 -- select public.mirsad_auto_forward_overdue_violations();
