@@ -970,7 +970,7 @@
       overscroll-behavior: none
     }
 
-    /* جوال / PWA: تثبيت ارتفاع الشاشة + سكرول داخلي للحقل النشط (بدون رفع البطاقة كاملة) */
+    /* جوال / PWA: تثبيت الشاشة + سكرول للحقل النشط — خلفية كاملة تحت safe-area */
     @media (max-width: 992px) and (pointer: coarse) {
       html.login-portal-open,
       body.login-portal-open {
@@ -979,7 +979,7 @@
         width: 100% !important;
         min-height: 100dvh !important;
         min-height: -webkit-fill-available !important;
-        height: var(--login-stable-h, 100dvh) !important;
+        height: auto !important;
         max-height: none !important;
         margin: 0 !important;
         overflow: hidden !important;
@@ -987,28 +987,25 @@
         background: var(--login-portal-bg) !important
       }
 
-      /* خلفية كاملة تحت safe-area — بدون خط فاصل أسفل الشاشة */
-      body.login-portal-open::before {
-        content: '';
+      body.login-portal-open #loginPortalBackdrop.login-portal-backdrop {
+        display: block;
         position: fixed;
-        inset: 0;
-        z-index: 9998;
-        min-height: 100dvh;
-        min-height: -webkit-fill-available;
+        top: calc(0px - env(safe-area-inset-top, 0px));
+        right: calc(0px - env(safe-area-inset-right, 0px));
+        bottom: calc(0px - env(safe-area-inset-bottom, 0px));
+        left: calc(0px - env(safe-area-inset-left, 0px));
+        z-index: 0;
         background: var(--login-portal-bg);
         pointer-events: none
       }
 
       body.login-portal-open #loginScreen.lp-screen {
         position: fixed !important;
-        top: 0 !important;
-        right: 0 !important;
-        bottom: 0 !important;
-        left: 0 !important;
+        inset: 0 !important;
         width: 100% !important;
         min-height: 100dvh !important;
         min-height: -webkit-fill-available !important;
-        height: 100% !important;
+        height: auto !important;
         max-height: none !important;
         justify-content: flex-start !important;
         overflow-x: hidden !important;
@@ -1019,7 +1016,13 @@
         padding-bottom: 0 !important
       }
 
+      body.login-portal-open #loginScreen .lp-bg-blobs {
+        z-index: 1
+      }
+
       body.login-portal-open #loginScreen .lp-center {
+        position: relative;
+        z-index: 2;
         margin-block: auto;
         padding-block: clamp(12px, 3vh, 40px);
         padding-bottom: max(clamp(16px, 4vw, 32px), env(safe-area-inset-bottom, 0px));
@@ -1119,7 +1122,12 @@
       position: absolute;
       inset: 0;
       pointer-events: none;
-      overflow: hidden
+      overflow: hidden;
+      z-index: 1
+    }
+
+    #loginPortalBackdrop.login-portal-backdrop {
+      display: none
     }
 
     #loginScreen .lp-blob {
@@ -28503,7 +28511,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-login-bottom-seam-v876">
+  <meta name="app-build" content="athar-login-bottom-seam-v877">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -28592,6 +28600,7 @@
   </div>
 
   <div id="loginScreen" class="lp-screen hidden" hidden aria-hidden="true">
+    <div id="loginPortalBackdrop" class="login-portal-backdrop" aria-hidden="true"></div>
     <div class="lp-bg-blobs">
       <div class="lp-blob lp-blob-a"></div>
       <div class="lp-blob lp-blob-b"></div>
@@ -32382,6 +32391,23 @@
       let _loginPortalScrollY = 0;
       let _loginVvRaf = 0;
       let _loginLockedVpH = 0;
+      let _loginPortalThemeColorSaved = '';
+
+      function syncLoginPortalChromePaint() {
+        const meta = document.getElementById('metaThemeColor');
+        if (!meta) return;
+        const theme = document.documentElement.getAttribute('data-theme') || 'light';
+        const on = document.body.classList.contains('login-portal-open') && isLoginMobileViewport();
+        if (on) {
+          if (!_loginPortalThemeColorSaved) _loginPortalThemeColorSaved = meta.getAttribute('content') || '';
+          meta.setAttribute('content', theme === 'dark' ? '#131316' : '#f5f5f7');
+        } else if (_loginPortalThemeColorSaved) {
+          meta.setAttribute('content', _loginPortalThemeColorSaved);
+          _loginPortalThemeColorSaved = '';
+        } else {
+          syncThemeMetaColor(theme);
+        }
+      }
 
       function isLoginMobileViewport() {
         if (window.innerWidth <= 992) return true;
@@ -32401,7 +32427,6 @@
         ].filter((n) => n > 0);
         const h = Math.max(...candidates, _loginLockedVpH || 0);
         _loginLockedVpH = h;
-        document.documentElement.style.setProperty('--login-stable-h', `${h}px`);
       }
 
       function refreshLoginStableViewportAfterKeyboard() {
@@ -32415,15 +32440,11 @@
           vv ? Math.round(vv.height + vv.offsetTop) : 0
         ].filter((n) => n > 0);
         const h = Math.max(...candidates);
-        if (h > 0) {
-          _loginLockedVpH = h;
-          document.documentElement.style.setProperty('--login-stable-h', `${h}px`);
-        }
+        if (h > 0) _loginLockedVpH = h;
       }
 
       function clearLoginStableViewport() {
         _loginLockedVpH = 0;
-        document.documentElement.style.removeProperty('--login-stable-h');
       }
 
       function clearLoginPortalViewportState() {
@@ -32512,12 +32533,14 @@
           root.classList.add('login-portal-open');
           body.classList.add('login-portal-open');
           body.style.top = '';
+          syncLoginPortalChromePaint();
           window.scrollTo(0, 0);
         } else {
           root.classList.remove('login-portal-open');
           body.classList.remove('login-portal-open');
           body.style.top = '';
           clearLoginPortalViewportState();
+          syncLoginPortalChromePaint();
           window.scrollTo(0, _loginPortalScrollY);
         }
       }
