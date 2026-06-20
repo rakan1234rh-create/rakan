@@ -21292,46 +21292,50 @@
         visibility: hidden !important
       }
 
-      #tab-reports #reportList .rp-tickets-table--mob col.wf-col-ticket-c,
-      #tab-reports #reportList > #rpMobTicketsHead .rp-tickets-table--mob col.wf-col-ticket-c {
+      #tab-reports #reportList:not(.rp-mob-cols-ready) .rp-tickets-table--mob col.wf-col-ticket-c,
+      #tab-reports #reportList:not(.rp-mob-cols-ready) > #rpMobTicketsHead .rp-tickets-table--mob col.wf-col-ticket-c {
         width: 12% !important;
         min-width: 0 !important;
         max-width: none !important
       }
 
-      #tab-reports #reportList .rp-tickets-table--mob col.wf-col-emp-c,
-      #tab-reports #reportList > #rpMobTicketsHead .rp-tickets-table--mob col.wf-col-emp-c {
+      #tab-reports #reportList:not(.rp-mob-cols-ready) .rp-tickets-table--mob col.wf-col-emp-c,
+      #tab-reports #reportList:not(.rp-mob-cols-ready) > #rpMobTicketsHead .rp-tickets-table--mob col.wf-col-emp-c {
         width: 18% !important;
         min-width: 0 !important;
         max-width: none !important
       }
 
-      #tab-reports #reportList .rp-tickets-table--mob col.wf-col-viol-c,
-      #tab-reports #reportList > #rpMobTicketsHead .rp-tickets-table--mob col.wf-col-viol-c {
+      #tab-reports #reportList:not(.rp-mob-cols-ready) .rp-tickets-table--mob col.wf-col-viol-c,
+      #tab-reports #reportList:not(.rp-mob-cols-ready) > #rpMobTicketsHead .rp-tickets-table--mob col.wf-col-viol-c {
         width: 22% !important;
         min-width: 0 !important;
         max-width: none !important
       }
 
-      #tab-reports #reportList .rp-tickets-table--mob col.wf-col-branch-c,
-      #tab-reports #reportList > #rpMobTicketsHead .rp-tickets-table--mob col.wf-col-branch-c {
+      #tab-reports #reportList:not(.rp-mob-cols-ready) .rp-tickets-table--mob col.wf-col-branch-c,
+      #tab-reports #reportList:not(.rp-mob-cols-ready) > #rpMobTicketsHead .rp-tickets-table--mob col.wf-col-branch-c {
         width: 20% !important;
         min-width: 0 !important;
         max-width: none !important
       }
 
-      #tab-reports #reportList .rp-tickets-table--mob col.wf-col-datetime-c,
-      #tab-reports #reportList > #rpMobTicketsHead .rp-tickets-table--mob col.wf-col-datetime-c {
+      #tab-reports #reportList:not(.rp-mob-cols-ready) .rp-tickets-table--mob col.wf-col-datetime-c,
+      #tab-reports #reportList:not(.rp-mob-cols-ready) > #rpMobTicketsHead .rp-tickets-table--mob col.wf-col-datetime-c {
         width: 16% !important;
         min-width: 0 !important;
         max-width: none !important
       }
 
-      #tab-reports #reportList .rp-tickets-table--mob col.wf-col-status-c,
-      #tab-reports #reportList > #rpMobTicketsHead .rp-tickets-table--mob col.wf-col-status-c {
+      #tab-reports #reportList:not(.rp-mob-cols-ready) .rp-tickets-table--mob col.wf-col-status-c,
+      #tab-reports #reportList:not(.rp-mob-cols-ready) > #rpMobTicketsHead .rp-tickets-table--mob col.wf-col-status-c {
         width: 12% !important;
         min-width: 0 !important;
         max-width: none !important
+      }
+
+      #tab-reports #reportList > #rpMobTicketsHead .wf-tickets-table--mob-head thead th.wf-col-datetime {
+        padding: 2px 2px !important
       }
 
       #tab-reports #reportList .rp-tickets-table--mob td.wf-col-datetime {
@@ -24811,9 +24815,8 @@
         overflow-wrap: anywhere !important
       }
 
-      #tab-reports #reportList .rp-tickets-table--mob th.wf-col-status,
-      #tab-reports #reportList > #rpMobTicketsHead .rp-tickets-table--mob th.wf-col-status {
-        padding: 2px 6px !important;
+      #tab-reports #reportList > #rpMobTicketsHead .wf-tickets-table--mob-head thead th.wf-col-status {
+        padding: 0 !important;
         white-space: normal !important;
         word-break: break-word !important;
         overflow-wrap: anywhere !important;
@@ -28416,7 +28419,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-rp-mob-head-borders-v853">
+  <meta name="app-build" content="athar-rp-mob-cols-align-v854">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -42419,11 +42422,17 @@
         return parseDbJsonArray(t && t.attachments).length;
       }
 
-      function buildWfMobTicketsHeadHtml(rpMob) {
+      function buildMobTicketsHeadHtml(opts = {}) {
+        const wfMob = !!opts.wfMob;
+        const rpMob = !!opts.rpMob;
+        const withBranch = !wfMob && !rpMob;
+        const branchColHtml = withBranch ? '<col class="wf-col-branch-c">' : '';
+        const branchThHtml = withBranch ? '<th class="wf-col-branch">الفرع</th>' : '';
         const colgroupHtml = `
           <col class="wf-col-ticket-c">
           <col class="wf-col-emp-c">
           <col class="wf-col-viol-c">
+          ${branchColHtml}
           <col class="wf-col-datetime-c">
           <col class="wf-col-status-c">`;
         const theadHtml = `
@@ -42431,6 +42440,7 @@
             <th class="wf-col-ticket">ID</th>
             <th class="wf-col-emp">الموظف</th>
             <th class="wf-col-violation">نوع المخالفة</th>
+            ${branchThHtml}
             <th class="wf-col-datetime">التاريخ</th>
             <th class="wf-col-status">الحالة</th>
           </tr>`;
@@ -42447,7 +42457,7 @@
         if (typeof isDesktopUi === 'function' ? isDesktopUi() : !(typeof isMobileViewport === 'function' && isMobileViewport())) return;
         const mobHead = document.getElementById('wfMobTicketsHead');
         if (!mobHead || mobHead.querySelector('.wf-tickets-table--mob-head')) return;
-        mobHead.innerHTML = buildWfMobTicketsHeadHtml(false);
+        mobHead.innerHTML = buildMobTicketsHeadHtml({ wfMob: true, rpMob: false });
         mobHead.setAttribute('aria-hidden', 'false');
       }
 
@@ -42509,8 +42519,9 @@
         }
 
         if (mobSplit) {
-          const branchColHtml = wfMob ? '' : '<col class="wf-col-branch-c">';
-          const branchThHtml = wfMob ? '' : '<th class="wf-col-branch">الفرع</th>';
+          const hideMobBranch = wfMob || rpMob;
+          const branchColHtml = hideMobBranch ? '' : '<col class="wf-col-branch-c">';
+          const branchThHtml = hideMobBranch ? '' : '<th class="wf-col-branch">الفرع</th>';
           const actionColHtml = '';
           const actionThHtml = '';
           const colgroupHtml = `
@@ -42543,7 +42554,7 @@
                 ? `<span class="wf-datetime-stack"><span class="wf-datetime-stack__time">${formatMobTicketTimeHtml(t.violation_time)}</span><span class="wf-datetime-stack__date">${Sec.escapeHTML(t.violation_date)}</span></span>`
                 : `<span class="wf-datetime-stack"><span class="wf-datetime-stack__time">${Sec.escapeHTML(formatTime12(t.violation_time))}</span><span class="wf-datetime-stack__date">${Sec.escapeHTML(t.violation_date)}</span></span>`)
               : '-';
-            const branchTdHtml = wfMob
+            const branchTdHtml = hideMobBranch
               ? ''
               : `<td class="wf-col-branch"><span class="wf-branch-cell"><span class="wf-branch-name">${Sec.escapeHTML(branchName)}</span></span></td>`;
             const ticketNumHtml = `<strong class="wf-ticket-id">${Sec.escapeHTML(shortTicketNum(t.ticket_number))}</strong>`;
@@ -42564,7 +42575,7 @@
           }).join('');
           const bodyTableCls = 'data-table wf-tickets-table wf-tickets-table--mob wf-tickets-table--mob-body' + (rpMob ? ' rp-tickets-table--mob' : '');
           if (mobHead) {
-            mobHead.innerHTML = buildWfMobTicketsHeadHtml(rpMob);
+            mobHead.innerHTML = buildMobTicketsHeadHtml({ wfMob, rpMob });
             mobHead.setAttribute('aria-hidden', 'false');
           }
           const mobBodyHtml = `
@@ -42581,6 +42592,12 @@
           if (mobBodyScroll) delete mobBodyScroll.dataset.rpColSig;
           const scrollTab = isReportsList ? 'reports' : 'workflow';
           bindMobTicketsHeadScroll(scrollTab);
+          if (rpMob) {
+            requestAnimationFrame(() => {
+              delete mobBodyScroll?.dataset.rpColSig;
+              syncMobTicketsColWidths(scrollTab);
+            });
+          }
           if (wfMob) {
             list.classList.remove('wf-mob-measuring');
             list.classList.add('wf-mob-cols-ready');
@@ -43265,23 +43282,21 @@
           }
         });
 
-        if (root.listId === 'ticketList') {
+        if (root.listId === 'ticketList' || root.listId === 'reportList') {
           const measured = Array.from(tds, td => td.getBoundingClientRect().width);
           measured.forEach((w, i) => {
             const px = `${Math.round(w)}px`;
             setColW(ths[i], px);
             setColW(headCols[i], px);
+            setColW(bodyCols[i], px);
           });
-          headTable.style.width = `${Math.round(bodyTable.getBoundingClientRect().width)}px`;
-        } else if (root.listId === 'reportList') {
-          headTable.style.width = '100%';
-          bodyTable.style.width = '100%';
-          headTable.style.maxWidth = '100%';
-          bodyTable.style.maxWidth = '100%';
+          const bodyTableW = Math.round(bodyTable.getBoundingClientRect().width);
+          headTable.style.width = `${bodyTableW}px`;
+          headTable.style.maxWidth = `${bodyTableW}px`;
           headTable.style.transform = '';
-        }
-
-        if (root.listId !== 'reportList') {
+          const slip = Math.round(tds[0].getBoundingClientRect().left - ths[0].getBoundingClientRect().left);
+          if (Math.abs(slip) > 0.5) headTable.style.transform = `translateX(${slip}px)`;
+        } else {
           const slip = Math.round(tds[0].getBoundingClientRect().left - ths[0].getBoundingClientRect().left);
           if (Math.abs(slip) > 0.5) headTable.style.transform = `translateX(${slip}px)`;
         }
@@ -43306,13 +43321,20 @@
           bodyScroll.dataset[syncKey] = '1';
           if (root.listId === 'reportList') {
             let resizeTimer = 0;
+            const resync = () => {
+              delete bodyScroll.dataset.rpColSig;
+              syncMobTicketsColWidths('reports');
+            };
             window.addEventListener('resize', () => {
               clearTimeout(resizeTimer);
-              resizeTimer = setTimeout(() => {
-                delete bodyScroll.dataset.rpColSig;
-                syncMobTicketsColWidths('reports');
-              }, 100);
+              resizeTimer = setTimeout(resync, 100);
             }, { passive: true });
+            const ro = new ResizeObserver(() => resync());
+            ro.observe(bodyScroll);
+            const bodyTable = bodyScroll.querySelector('.wf-tickets-table--mob-body');
+            if (bodyTable) ro.observe(bodyTable);
+            const headHost = document.getElementById(root.headId);
+            if (headHost) ro.observe(headHost);
           } else {
             const ro = new ResizeObserver(() => syncMobTicketsColWidths(tab));
             ro.observe(bodyScroll);
