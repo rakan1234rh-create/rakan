@@ -970,55 +970,54 @@
       overscroll-behavior: none
     }
 
-    /* جوال / PWA: تثبيت الشاشة + سكرول للحقل النشط — خلفية كاملة تحت safe-area */
+    /* جوال / PWA: خلفية كاملة على الشاشة + سكرول للحقل النشط */
     @media (max-width: 992px) and (pointer: coarse) {
       html.login-portal-open,
       body.login-portal-open {
         position: fixed !important;
         inset: 0 !important;
         width: 100% !important;
+        height: 100% !important;
         min-height: 100dvh !important;
         min-height: -webkit-fill-available !important;
-        height: auto !important;
         max-height: none !important;
         margin: 0 !important;
         overflow: hidden !important;
         touch-action: manipulation;
-        background: var(--login-portal-bg) !important;
-        --login-portal-shift-y: clamp(64px, 15vh, 120px)
+        background: var(--login-portal-bg) !important
       }
 
       body.login-portal-open #loginPortalBackdrop.login-portal-backdrop {
         display: block;
         position: fixed;
-        top: calc(var(--login-portal-shift-y, 0px) - env(safe-area-inset-top, 0px));
-        right: calc(0px - env(safe-area-inset-right, 0px));
-        bottom: calc(0px - env(safe-area-inset-bottom, 0px) - 80px);
-        left: calc(0px - env(safe-area-inset-left, 0px));
         z-index: 0;
+        pointer-events: none;
         background: var(--login-portal-bg);
-        pointer-events: none
+        top: calc(0px - env(safe-area-inset-top, 0px));
+        right: calc(0px - env(safe-area-inset-right, 0px));
+        bottom: calc(0px - env(safe-area-inset-bottom, 0px));
+        left: calc(0px - env(safe-area-inset-left, 0px))
       }
 
       body.login-portal-open #loginScreen.lp-screen {
         position: fixed !important;
-        top: var(--login-portal-shift-y, 0px) !important;
-        right: 0 !important;
-        left: 0 !important;
-        bottom: calc(0px - env(safe-area-inset-bottom, 0px) - 80px) !important;
+        inset: 0 !important;
         width: 100% !important;
+        height: 100% !important;
         min-height: 100dvh !important;
         min-height: -webkit-fill-available !important;
-        height: auto !important;
         max-height: none !important;
         justify-content: flex-start !important;
         overflow-x: hidden !important;
         overflow-y: auto !important;
         overscroll-behavior: contain;
         -webkit-overflow-scrolling: touch;
-        background: transparent !important;
-        padding-bottom: 0 !important;
-        padding-top: max(clamp(16px, 4vw, 32px), env(safe-area-inset-top, 0px)) !important
+        background: var(--login-portal-bg) !important;
+        padding: 0 !important;
+        padding-top: env(safe-area-inset-top, 0px) !important;
+        padding-left: env(safe-area-inset-left, 0px) !important;
+        padding-right: env(safe-area-inset-right, 0px) !important;
+        box-sizing: border-box
       }
 
       body.login-portal-open #loginScreen .lp-bg-blobs {
@@ -1028,8 +1027,12 @@
       body.login-portal-open #loginScreen .lp-center {
         position: relative;
         z-index: 2;
+        width: 100%;
+        max-width: 28rem;
         margin-block: auto;
         padding-block: clamp(12px, 3vh, 40px);
+        padding-inline: max(clamp(20px, 5vw, 36px), env(safe-area-inset-left, 0px));
+        padding-right: max(clamp(20px, 5vw, 36px), env(safe-area-inset-right, 0px));
         padding-bottom: max(clamp(16px, 4vw, 32px), env(safe-area-inset-bottom, 0px));
         transform: none;
         -webkit-transform: none
@@ -28516,7 +28519,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-login-page-shift-v881">
+  <meta name="app-build" content="athar-login-bg-full-v882">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
