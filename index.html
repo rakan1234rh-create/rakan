@@ -20590,12 +20590,8 @@
         flex-shrink: 0
       }
 
-      #tab-workflow .wf-status-trigger__chev {
-        font-size: 9px !important;
-        flex-shrink: 0;
-        margin-inline-start: auto;
-        color: var(--mr-text-2) !important;
-        opacity: 1 !important
+      #tab-workflow #wf-status-trigger .wf-status-trigger__chev {
+        display: none !important;
       }
 
       /* الجوال: منتقي النظام الأصلي (نفس قائمة الدور في إضافة مستخدم) */
@@ -20622,8 +20618,11 @@
         white-space: normal;
         cursor: pointer;
         -webkit-tap-highlight-color: transparent;
-        font-size: 16px;
+        -webkit-appearance: none;
+        appearance: none;
         background: transparent;
+        background-image: none;
+        font-size: 16px;
       }
 
       #tab-workflow #wf-status-menu {
@@ -28323,7 +28322,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-wf-stage-native-mob-v843">
+  <meta name="app-build" content="athar-wf-stage-no-chev-v844">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -28938,7 +28937,6 @@
                       onclick="wfStatusToggle(event)" aria-haspopup="listbox" aria-expanded="false">
                       <span class="wf-status-trigger__ico" aria-hidden="true"><i class="fas fa-filter"></i></span>
                       <span class="wf-status-trigger__label" id="wf-status-label">جميع المراحل</span>
-                      <i class="fas fa-chevron-down wf-status-trigger__chev" aria-hidden="true"></i>
                     </button>
                     <div class="wf-status-menu" id="wf-status-menu" role="listbox" aria-label="فلتر الحالة">
                       <div class="wf-status-menu__scroll">
