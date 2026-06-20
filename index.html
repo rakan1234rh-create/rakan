@@ -28419,7 +28419,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-rp-mob-cols-align-v854">
+  <meta name="app-build" content="athar-rp-mob-branch-restore-v855">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -42425,7 +42425,7 @@
       function buildMobTicketsHeadHtml(opts = {}) {
         const wfMob = !!opts.wfMob;
         const rpMob = !!opts.rpMob;
-        const withBranch = !wfMob && !rpMob;
+        const withBranch = !wfMob;
         const branchColHtml = withBranch ? '<col class="wf-col-branch-c">' : '';
         const branchThHtml = withBranch ? '<th class="wf-col-branch">الفرع</th>' : '';
         const colgroupHtml = `
@@ -42519,7 +42519,7 @@
         }
 
         if (mobSplit) {
-          const hideMobBranch = wfMob || rpMob;
+          const hideMobBranch = wfMob;
           const branchColHtml = hideMobBranch ? '' : '<col class="wf-col-branch-c">';
           const branchThHtml = hideMobBranch ? '' : '<th class="wf-col-branch">الفرع</th>';
           const actionColHtml = '';
