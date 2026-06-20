@@ -4538,6 +4538,33 @@
       font-weight: 600
     }
 
+    html.mr-desktop-ui #tab-reports .wf-toolbar .rp-date-wrap {
+      flex: 0 0 auto !important;
+      width: auto !important;
+      max-width: none !important;
+    }
+
+    html.mr-desktop-ui #tab-reports .wf-toolbar .rp-date-btn {
+      width: 46px !important;
+      min-width: 46px !important;
+      max-width: 46px !important;
+      padding: 0 !important;
+      justify-content: center !important;
+      gap: 0 !important;
+    }
+
+    html.mr-desktop-ui #tab-reports .wf-toolbar .rp-date-btn #rp-date-label {
+      position: absolute !important;
+      width: 1px !important;
+      height: 1px !important;
+      padding: 0 !important;
+      margin: -1px !important;
+      overflow: hidden !important;
+      clip: rect(0, 0, 0, 0) !important;
+      white-space: nowrap !important;
+      border: 0 !important;
+    }
+
 
 #cmpDatePickerPopup .dp-popup-body {
       padding-bottom: 12px;
@@ -28365,7 +28392,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-rp-date-icon-only-v847">
+  <meta name="app-build" content="athar-rp-date-clear-close-v848">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -53825,6 +53852,7 @@
 
       function dpClear() {
         const popup = document.getElementById('datePickerPopup');
+        state.rpDashPreset = null;
         dpState.from = null;
         dpState.to = null;
         dpState.hover = null;
@@ -53843,6 +53871,7 @@
         popup?.classList.remove('dp-range-dragging');
         dpPickerSyncChrome(popup, 'days');
         filterReports({ instant: true });
+        dpFloatClose(popup);
       }
 
       function dpApply() {
