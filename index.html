@@ -28489,7 +28489,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-login-logo-text-restore-v872">
+  <meta name="app-build" content="athar-login-logo-text-keep-v873">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -33821,20 +33821,21 @@
         return isTouch || (!isRealDesktop && !isWide);
       }
 
-      const ATHAR_LOGO_VER = '395';
+      const ATHAR_LOGO_VER = '396';
       const ATHAR_DECO_SHIFT = { x: -8, y: -210 }; /* الدخول / الانتقال / الشريط (الإزاحة العمودية للشريط عبر CSS) */
       const ATHAR_LOGO_R_DX = { default: -8 };
       const ATHAR_LOGO_R_DY = { default: 2 };
+      const ATHAR_LOGO_TEXT_Y = { default: 250, login: 392 };
       const ATHAR_LOGO_VIEWBOX = '-31 75 903 555';
 
       /** شعار ATHAR — الدخول / الانتقال / الشريط */
-      function atharWordmarkLogoHtml(decoShift = ATHAR_DECO_SHIFT, rDx = ATHAR_LOGO_R_DX.default, rDy = ATHAR_LOGO_R_DY.default) {
+      function atharWordmarkLogoHtml(decoShift = ATHAR_DECO_SHIFT, rDx = ATHAR_LOGO_R_DX.default, rDy = ATHAR_LOGO_R_DY.default, textY = ATHAR_LOGO_TEXT_Y.default) {
         const dx = decoShift.x;
         const dy = decoShift.y;
-        const decoTag = ` data-deco-shift="${dx},${dy}" data-r-dx="${rDx}" data-r-dy="${rDy}"`;
+        const decoTag = ` data-deco-shift="${dx},${dy}" data-r-dx="${rDx}" data-r-dy="${rDy}" data-text-y="${textY}"`;
         return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${ATHAR_LOGO_VIEWBOX}" overflow="visible" preserveAspectRatio="xMidYMid meet" role="img" aria-label="ATHAR" class="wefaq-app-logo wefaq-app-logo--athar" data-athar-ver="${ATHAR_LOGO_VER}"${decoTag} aria-hidden="true">
           <g fill="currentColor">
-            <text y="250" dominant-baseline="hanging" font-size="230" font-weight="400">
+            <text class="athar-logo-word" y="${textY}" dominant-baseline="hanging" font-size="230" font-weight="400">
               <tspan x="421" text-anchor="middle" font-family="'ZCOOL XiaoWei', Georgia, 'Times New Roman', serif">ATHA</tspan><tspan class="athar-logo-r" dx="${rDx}" dy="${rDy}" font-family="'Petrona', Georgia, 'Times New Roman', serif">R</tspan>
             </text>
             <g class="athar-logo-deco">
@@ -33860,17 +33861,20 @@
           if (!host) return;
           const rDx = ATHAR_LOGO_R_DX.default;
           const rDy = ATHAR_LOGO_R_DY.default;
+          const isLoginLogo = sel.includes('loginCard') || sel.includes('loginTransition');
+          const textY = isLoginLogo ? ATHAR_LOGO_TEXT_Y.login : ATHAR_LOGO_TEXT_Y.default;
           const existing = host.querySelector(':scope > .wefaq-app-logo--athar');
           if (existing?.dataset.atharVer === ATHAR_LOGO_VER &&
             existing.dataset.decoShift === decoShift &&
             existing.dataset.rDx === String(rDx) &&
-            existing.dataset.rDy === String(rDy)) {
+            existing.dataset.rDy === String(rDy) &&
+            existing.dataset.textY === String(textY)) {
             return;
           }
           host.classList.add('wefaq-logo-host');
           host.querySelector(':scope > .brand-mono')?.remove();
           host.querySelectorAll(':scope > .wefaq-app-logo, :scope > img').forEach((el) => el.remove());
-          host.insertAdjacentHTML('beforeend', atharWordmarkLogoHtml(ATHAR_DECO_SHIFT, rDx, rDy));
+          host.insertAdjacentHTML('beforeend', atharWordmarkLogoHtml(ATHAR_DECO_SHIFT, rDx, rDy, textY));
         });
       }
 
