@@ -28332,7 +28332,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-wf-stage-no-chev-v845">
+  <meta name="app-build" content="athar-fp-employee-scope-v846">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -54009,6 +54009,70 @@
         return normalizeUserRole(state.currentUser?.role) === 'branch_manager' && !canViewAllTickets();
       }
 
+      function isEmployeeFpScopedUser() {
+        return normalizeUserRole(state.currentUser?.role) === 'employee' && !canViewAllTickets();
+      }
+
+      function getFpScopedRegions() {
+        const u = state.currentUser;
+        if (!u) return state.regions || [];
+        if (isEmployeeFpScopedUser()) {
+          const bid = u.branch_id;
+          if (!bid) return [];
+          const branch = state.branches.find(b => b.id === bid);
+          if (!branch?.region_id) return [];
+          const region = state.regions.find(r => r.id === branch.region_id);
+          return region ? [region] : [];
+        }
+        return state.regions || [];
+      }
+
+      function getFpScopedBranches(regionFilter) {
+        const u = state.currentUser;
+        if (!u) return state.branches || [];
+        if (isEmployeeFpScopedUser()) {
+          const bid = u.branch_id;
+          if (!bid) return [];
+          const branch = state.branches.find(b => b.id === bid);
+          return branch ? [branch] : [];
+        }
+        let branches = state.branches || [];
+        if (regionFilter?.length) branches = branches.filter(b => regionFilter.includes(b.region_id));
+        return branches;
+      }
+
+      function getFpScopedSupervisors() {
+        const u = state.currentUser;
+        if (!u) return state.users.filter(x => x.role === 'supervisor' && isActiveUser(x));
+        if (isEmployeeFpScopedUser()) {
+          const bid = u.branch_id;
+          if (!bid) return [];
+          const branch = state.branches.find(b => b.id === bid);
+          const region = branch?.region_id
+            ? state.regions.find(r => r.id === branch.region_id)
+            : null;
+          if (!region?.supervisor_id) return [];
+          const sup = state.users.find(x => x.id === region.supervisor_id && isActiveUser(x));
+          return sup ? [sup] : [];
+        }
+        return state.users.filter(x => x.role === 'supervisor' && isActiveUser(x));
+      }
+
+      function shouldShowFpGeoSection(kind) {
+        if (isBranchManagerFpUser()) return false;
+        if (kind === 'region') return getFpScopedRegions().length > 1;
+        if (kind === 'branch') return getFpScopedBranches().length > 1;
+        if (kind === 'supervisor') return getFpScopedSupervisors().length > 1;
+        return true;
+      }
+
+      function pruneFpStateForHiddenSections() {
+        const st = fpPanelState();
+        if (!shouldShowFpGeoSection('region')) st.regions = [];
+        if (!shouldShowFpGeoSection('branch')) st.branches = [];
+        if (!shouldShowFpGeoSection('supervisor')) st.supervisors = [];
+      }
+
       function configureFilterPanelForRole() {
         const bm = isBranchManagerFpUser();
         document.querySelectorAll('[data-fp-admin-only]').forEach(el => {
@@ -54017,6 +54081,14 @@
         document.querySelectorAll('[data-fp-bm-only]').forEach(el => {
           el.style.display = bm ? '' : 'none';
         });
+        if (!bm) {
+          const regionSec = document.getElementById('fp-region-section');
+          const branchSec = document.getElementById('fp-branch-section');
+          const supSec = document.getElementById('fp-supervisor-section');
+          if (regionSec) regionSec.style.display = shouldShowFpGeoSection('region') ? '' : 'none';
+          if (branchSec) branchSec.style.display = shouldShowFpGeoSection('branch') ? '' : 'none';
+          if (supSec) supSec.style.display = shouldShowFpGeoSection('supervisor') ? '' : 'none';
+        }
       }
 
       function getBranchFilterEmployees() {
@@ -54199,6 +54271,7 @@
       function populateFpSelects() {
         const st = fpPanelState();
         configureFilterPanelForRole();
+        pruneFpStateForHiddenSections();
         populateFpVtypeList();
 
         if (isBranchManagerFpUser()) {
@@ -54236,7 +54309,7 @@
       function populateFpRegionList() {
         const wrap = document.getElementById('fp-region-list');
         if (!wrap) return;
-        const regions = state.regions || [];
+        const regions = getFpScopedRegions();
         if (!regions.length) {
           wrap.innerHTML = '<div class="fp-checklist-empty">لا توجد مناطق</div>';
           return;
@@ -54251,8 +54324,7 @@
         const wrap = document.getElementById('fp-branch-list');
         if (!wrap) return;
         const st = fpPanelState();
-        let branches = state.branches || [];
-        if (st.regions.length) branches = branches.filter(b => st.regions.includes(b.region_id));
+        let branches = getFpScopedBranches(st.regions);
         if (!branches.length) {
           wrap.innerHTML = '<div class="fp-checklist-empty">لا توجد فروع</div>';
           st.branches = [];
@@ -54270,7 +54342,7 @@
       function populateFpSupervisorList() {
         const wrap = document.getElementById('fp-supervisor-list');
         if (!wrap) return;
-        const sups = state.users.filter(u => u.role === 'supervisor' && isActiveUser(u));
+        const sups = getFpScopedSupervisors();
         if (!sups.length) {
           wrap.innerHTML = '<div class="fp-checklist-empty">لا يوجد مشرفون</div>';
           return;
