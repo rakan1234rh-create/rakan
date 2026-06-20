@@ -1,0 +1,35 @@
+<!--
+  قالب Resend — استعادة كلمة المرور
+  1) Resend → Templates → Create template
+  2) Alias: athar-recovery
+  3) Subject: إعادة تعيين كلمة المرور — ATHAR
+  4) ارفع الشعار: icons/athar-wordmark-email-v388.png (أسود)
+  5) المتغيرات: TOKEN ، CONFIRMATION_URL
+-->
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#f5f5f5;font-family:Segoe UI,Tahoma,Arial,sans-serif;">
+  <tr>
+    <td align="center" style="padding:40px 20px;background-color:#f5f5f5;">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#ffffff" style="max-width:480px;background-color:#ffffff;border-radius:16px;border:1px solid #e4e4e7;">
+        <tr>
+          <td align="center" bgcolor="#ffffff" style="padding:32px 28px 16px;background-color:#ffffff;">
+            <!-- ارفع الشعار من Resend مباشرة بدل هذا السطر إن أردت -->
+            <img src="https://rakan1234rh-create.github.io/rakan/icons/athar-wordmark-email-v388.png?v=2" width="240" height="148" alt="ATHAR" style="display:block;width:240px;max-width:100%;height:auto;border:0;margin:0 auto;">
+          </td>
+        </tr>
+        <tr>
+          <td dir="rtl" bgcolor="#ffffff" style="padding:8px 28px 28px;text-align:right;background-color:#ffffff;">
+            <p style="margin:0 0 16px;font-size:16px;line-height:1.7;color:#18181b;">مرحباً،</p>
+            <p style="margin:0 0 24px;font-size:15px;line-height:1.75;color:#3f3f46;">تلقّينا طلباً لإعادة تعيين كلمة المرور لحسابك.</p>
+            <p style="margin:0 0 10px;font-size:14px;line-height:1.7;color:#3f3f46;text-align:center;">رمز التحقق الخاص بك من 8 خانات</p>
+            <p dir="ltr" style="margin:0 0 24px;text-align:center;font-size:34px;letter-spacing:0.25em;font-weight:800;color:#18181b;background-color:#fafafa;border:1px solid #e4e4e7;border-radius:14px;padding:16px 18px;">
+              {{TOKEN}}
+            </p>
+            <p style="margin:0 0 18px;font-size:13px;line-height:1.7;color:#71717a;text-align:center;">اكتب هذا الرمز في صفحة استعادة كلمة المرور داخل المنصة.</p>
+            <p style="margin:0 0 12px;font-size:13px;line-height:1.65;color:#71717a;">إذا لم تطلب ذلك، تجاهل هذه الرسالة.</p>
+            <p style="margin:0;font-size:12px;line-height:1.6;color:#71717a;">الرمز صالح لمرة واحدة ولمدة محدودة.</p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>

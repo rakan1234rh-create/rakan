@@ -1,9 +1,9 @@
 # ربط محلي بمشروع Supabase: supabase link
 # نشر الدالة: supabase functions deploy r2-storage
 #
-# قالب بريد استعادة كلمة المرور: انسخ يدوياً إلى Dashboard → Email Templates → Reset password
-# Subject: إعادة تعيين كلمة المرور — ATHAR
-# الملف: supabase/email-templates/athar-recovery.html
+# قالب بريد استعادة كلمة المرور:
+# - الطريقة الموصى بها: Resend Template + Auth Hook (راجع supabase/RESEND-AUTH-EMAIL-SETUP.txt)
+# - الطريقة القديمة: انسخ supabase/email-templates/athar-recovery-simple.html إلى Dashboard → Email Templates
 #
 # [auth.email.template.recovery] معطّل هنا لتجنّب فشل نشر الدوال على GitHub Actions.
 
@@ -17,4 +17,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.violation-auto-forward]
+verify_jwt = false
+
+[functions.send-auth-emails]
 verify_jwt = false

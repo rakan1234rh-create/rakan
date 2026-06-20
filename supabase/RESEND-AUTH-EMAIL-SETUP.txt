@@ -1,0 +1,46 @@
+═══════════════════════════════════════════════════════════════════════════
+إرسال بريد الاستعادة عبر قوالب Resend (بدل قالب Supabase)
+═══════════════════════════════════════════════════════════════════════════
+
+لماذا؟
+- Supabase يرسل القالب عبر SMTP فقط → Gmail على الكمبيوتر يفسد الألوان
+- Resend Templates + Auth Hook = تحكم كامل في التصميم والمعاينة
+
+─── 1) أنشئ القالب في Resend ───
+1) resend.com/templates → Create template
+2) Alias (مهم): athar-recovery
+3) Subject: إعادة تعيين كلمة المرور — ATHAR
+4) انسخ HTML من: resend/athar-recovery-template.html
+5) ارفع الشعار: icons/athar-wordmark-email-v388.png (أو استبدل صورة img)
+6) أضف متغيرين في Resend:
+   - TOKEN
+   - CONFIRMATION_URL (اختياري)
+7) Publish القالب
+
+─── 2) أسرار Supabase ───
+Dashboard → Project Settings → Edge Functions → Secrets
+أو:
+  supabase secrets set RESEND_API_KEY=re_...
+  supabase secrets set SENDER_EMAIL="ATHAR <noreply@your-domain.com>"
+  supabase secrets set RESEND_RECOVERY_TEMPLATE_ID=athar-recovery
+
+─── 3) انشر الدالة ───
+  supabase functions deploy send-auth-emails --no-verify-jwt --project-ref rizoafuxmqsddjfhbsmf
+
+─── 4) فعّل Auth Hook ───
+Supabase → Authentication → Hooks → Send Email → HTTPS
+URL:
+  https://rizoafuxmqsddjfhbsmf.supabase.co/functions/v1/send-auth-emails
+Generate Secret → انسخه:
+  supabase secrets set SEND_EMAIL_HOOK_SECRET="v1,whsec_..."
+
+─── 5) عطّل القالب القديم ───
+بعد تفعيل الـ Hook، Supabase يتوقف عن إرسال قالب Reset password تلقائياً.
+يمكنك ترك القالب فارغاً أو بسيطاً كاحتياط.
+
+─── ملاحظات ───
+- Alias القالب يجب أن يطابق RESEND_RECOVERY_TEMPLATE_ID
+- SENDER_EMAIL يجب أن يكون من دومين مُتحقق في Resend
+- جرّب من Resend → Templates → Send test بعد الإنشاء
+
+═══════════════════════════════════════════════════════════════════════════
