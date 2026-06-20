@@ -2673,25 +2673,27 @@
 
     .notif-bell-count {
       position: absolute;
-      top: 2px;
-      inset-inline-end: 2px;
+      top: -6px;
+      inset-inline-end: -3px;
       inset-inline-start: auto;
       z-index: 5;
-      background: linear-gradient(180deg, #f87171 0%, #ef4444 52%, #dc2626 100%);
-      color: #fff;
+      background: color-mix(in srgb, var(--red) 14%, transparent);
+      color: var(--red);
       font-family: var(--mono);
       font-size: 9px;
       font-weight: 700;
       line-height: 1;
-      min-width: 16px;
-      height: 16px;
-      padding: 0 3px;
-      border-radius: 999px;
+      min-width: 17px;
+      height: 17px;
+      padding: 0 4px;
+      border-radius: 8px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      border: 1.5px solid var(--mr-surface);
-      box-shadow: 0 1px 4px rgba(220, 38, 38, 0.32);
+      border: 1px solid color-mix(in srgb, var(--red) 36%, transparent);
+      box-shadow: 0 1px 3px color-mix(in srgb, var(--red) 10%, transparent);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
       font-variant-numeric: lining-nums tabular-nums;
       pointer-events: none
     }
@@ -2788,7 +2790,10 @@
     }
 
     [data-theme="dark"] .notif-bell-count {
-      border-color: var(--mr-surface)
+      background: color-mix(in srgb, var(--red) 22%, transparent);
+      border-color: color-mix(in srgb, var(--red) 42%, transparent);
+      color: #fca5a5;
+      box-shadow: 0 1px 4px color-mix(in srgb, var(--red) 16%, transparent)
     }
 
     .content {
@@ -28419,7 +28424,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-rp-mob-branch-restore-v855">
+  <meta name="app-build" content="athar-notif-badge-red-glass-v856">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
