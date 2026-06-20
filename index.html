@@ -24076,11 +24076,11 @@
       }
 
       #tab-reports #reportList > #rpMobTicketsHead .wf-tickets-table--mob-head thead th:first-child {
-        border-inline-end-color: color-mix(in srgb, var(--mr-border) 55%, transparent) !important
+        border-inline-end: 1px solid color-mix(in srgb, var(--mr-border) 55%, transparent) !important
       }
 
       #tab-reports #reportList > #rpMobTicketsHead .wf-tickets-table--mob-head thead th:last-child {
-        border-inline-start-color: color-mix(in srgb, var(--mr-border) 55%, transparent) !important
+        border-inline-start: 1px solid color-mix(in srgb, var(--mr-border) 55%, transparent) !important
       }
 
       #tab-reports #reportList > #rpMobTicketsHead:not(:empty) + .wf-mob-tickets-body {
@@ -24232,6 +24232,28 @@
       }
 
       [data-theme="light"] #tab-reports #reportList .rp-tickets-table--mob tbody tr.wf-ticket-row > td:last-child {
+        border-inline-end: 1px solid var(--rp-card-outer-edge) !important;
+        border-inline-start: 1px solid color-mix(in srgb, var(--mr-border) 55%, transparent) !important
+      }
+
+      [data-theme="light"] #tab-reports #reportList > #rpMobTicketsHead .wf-tickets-table--mob-head thead th {
+        --rp-card-outer-edge: color-mix(in srgb, #000 30%, var(--mr-border));
+        border: none !important;
+        border-top: 1px solid var(--rp-card-outer-edge) !important;
+        border-bottom: 1px solid var(--rp-card-outer-edge) !important;
+        box-shadow: none !important
+      }
+
+      [data-theme="light"] #tab-reports #reportList > #rpMobTicketsHead .wf-tickets-table--mob-head thead th + th {
+        border-inline-start: 1px solid color-mix(in srgb, var(--mr-border) 55%, transparent) !important
+      }
+
+      [data-theme="light"] #tab-reports #reportList > #rpMobTicketsHead .wf-tickets-table--mob-head thead th:first-child {
+        border-inline-start: 1px solid var(--rp-card-outer-edge) !important;
+        border-inline-end: 1px solid color-mix(in srgb, var(--mr-border) 55%, transparent) !important
+      }
+
+      [data-theme="light"] #tab-reports #reportList > #rpMobTicketsHead .wf-tickets-table--mob-head thead th:last-child {
         border-inline-end: 1px solid var(--rp-card-outer-edge) !important;
         border-inline-start: 1px solid color-mix(in srgb, var(--mr-border) 55%, transparent) !important
       }
@@ -28394,7 +28416,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-rp-mob-stat-colors-v852">
+  <meta name="app-build" content="athar-rp-mob-head-borders-v853">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
