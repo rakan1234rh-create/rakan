@@ -1337,6 +1337,22 @@
       scroll-margin: 0
     }
 
+    #loginScreen .lp-input--otp {
+      direction: ltr;
+      text-align: center;
+      letter-spacing: 0.38em;
+      font-size: 1.18rem;
+      font-weight: 800;
+      padding-inline: 1.25rem 0.87rem
+    }
+
+    #loginScreen .lp-reset-email-hint {
+      direction: ltr;
+      display: inline-block;
+      color: var(--mr-text);
+      font-weight: 700
+    }
+
     #loginScreen .lp-input-wrap {
       position: relative
     }
@@ -28275,7 +28291,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-figma-v836-remove-aws-sdk-legacy">
+  <meta name="app-build" content="athar-otp-password-reset-v837">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -28417,7 +28433,7 @@
         <div class="lp-hd">
           <div class="lp-brand-ico"><i class="fas fa-key"></i></div>
           <h1 class="lp-title">استعادة كلمة المرور</h1>
-          <p class="lp-sub">أدخل بريدك لإرسال رابط إعادة التعيين</p>
+          <p class="lp-sub">أدخل بريدك المسجل لإرسال رمز التحقق</p>
         </div>
         <div class="lp-bd">
           <div id="forgotError" class="login-err" role="alert"><span id="forgotErrorMsg"></span></div>
@@ -28427,9 +28443,36 @@
             <input id="forgotEmail" class="lp-input" type="email" autocomplete="email" placeholder="you@example.com">
           </div>
           <button type="button" class="lp-btn-primary" id="forgotBtn" onclick="handleForgotPassword()"><i
-              class="fas fa-paper-plane"></i> إرسال رابط الاسترجاع</button>
+              class="fas fa-paper-plane"></i> إرسال الرمز</button>
           <div class="lp-divider"><a href="#" class="lp-link" onclick="event.preventDefault(); showLoginForm();">العودة
               لتسجيل الدخول</a></div>
+        </div>
+      </div>
+
+      <div id="otpCard" class="lp-card lp-card--in" style="display:none">
+        <div class="lp-hd">
+          <div class="lp-brand-ico"><i class="fas fa-shield-halved"></i></div>
+          <h1 class="lp-title">رمز التحقق</h1>
+          <p class="lp-sub">ضع الرقم المرسل إلى بريدك الإلكتروني</p>
+        </div>
+        <div class="lp-bd">
+          <div id="otpError" class="login-err" role="alert"><span id="otpErrorMsg"></span></div>
+          <div id="otpSuccess" class="login-ok" role="status"><span id="otpSuccessMsg"></span></div>
+          <div class="lp-row">
+            <label class="lp-label" for="resetOtp">رمز من 6 خانات</label>
+            <input id="resetOtp" class="lp-input lp-input--otp" type="text" inputmode="numeric"
+              autocomplete="one-time-code" maxlength="6" placeholder="000000" dir="ltr"
+              oninput="this.value=this.value.replace(/\D/g,'').slice(0,6)">
+          </div>
+          <button type="button" class="lp-btn-primary" id="otpBtn" onclick="handleVerifyResetCode()"><i
+              class="fas fa-check"></i> تحقق من الرمز</button>
+          <div class="lp-divider">
+            <span>أرسلنا الرمز إلى </span><span id="otpEmailHint" class="lp-reset-email-hint"></span>
+            <br>
+            <a href="#" class="lp-link" onclick="event.preventDefault(); handleResendPasswordCode();">إعادة إرسال الرمز</a>
+            <span> · </span>
+            <a href="#" class="lp-link" onclick="event.preventDefault(); showForgotPassword();">تغيير البريد</a>
+          </div>
         </div>
       </div>
 
@@ -30039,7 +30082,7 @@
           return 'التحقق من البريد غير متاح — شغّل supabase/check-email-for-password-reset.sql في SQL Editor';
         }
         if (status === 500 || /error sending recovery|recovery email|smtp/i.test(errMsg)) {
-          return 'تعذّر إرسال البريد من الخادم. (1) جرّب البريد نفسه اللي سجّلت فيه Resend — onboarding@resend.dev لا يرسل إلا له. (2) Supabase → Auth Logs لمعرفة السبب. (3) SMTP: Port 465، Username resend، مفتاح جديد بدون مسافات. (4) أعد قالب Reset password للافتراضي ثم جرّب.';
+          return 'تعذّر إرسال رمز التحقق من الخادم. (1) جرّب البريد نفسه اللي سجّلت فيه Resend — onboarding@resend.dev لا يرسل إلا له. (2) Supabase → Auth Logs لمعرفة السبب. (3) SMTP: Port 465، Username resend، مفتاح جديد بدون مسافات. (4) تأكد أن قالب Reset password يحتوي {{ .Token }}.';
         }
         return 'فشل الإرسال: ' + (errMsg || 'حاول مجدداً');
       }
@@ -32285,13 +32328,43 @@
         ico.className = inp.type === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash';
       }
 
+      const PASSWORD_RESET_EMAIL_KEY = 'athar_password_reset_email';
+      let passwordResetEmail = '';
+
+      function normalizeRecoveryCode(value) {
+        return String(value || '').replace(/\D/g, '').slice(0, 6);
+      }
+
+      function rememberPasswordResetEmail(email) {
+        passwordResetEmail = Sec.normalizeEmail(email || '');
+        try {
+          if (passwordResetEmail) sessionStorage.setItem(PASSWORD_RESET_EMAIL_KEY, passwordResetEmail);
+          else sessionStorage.removeItem(PASSWORD_RESET_EMAIL_KEY);
+        } catch (_) { /* noop */ }
+      }
+
+      function getPasswordResetEmail() {
+        if (passwordResetEmail) return passwordResetEmail;
+        try {
+          const stored = Sec.normalizeEmail(sessionStorage.getItem(PASSWORD_RESET_EMAIL_KEY) || '');
+          if (stored) passwordResetEmail = stored;
+        } catch (_) { /* noop */ }
+        return passwordResetEmail;
+      }
+
+      function clearPasswordResetEmail() {
+        rememberPasswordResetEmail('');
+      }
+
       function showLoginForm() {
         const lc = document.getElementById('loginCard');
         if (!lc) return;
         lc.style.display = '';
         const fc = document.getElementById('forgotCard');
+        const oc = document.getElementById('otpCard');
         const rc = document.getElementById('resetCard');
         if (fc) fc.style.display = 'none';
+        if (oc) oc.style.display = 'none';
         if (rc) rc.style.display = 'none';
         hideLoginError();
       }
@@ -32301,10 +32374,36 @@
         if (!lc) return;
         lc.style.display = 'none';
         const fc = document.getElementById('forgotCard');
+        const oc = document.getElementById('otpCard');
         const rc = document.getElementById('resetCard');
         if (fc) fc.style.display = '';
+        if (oc) oc.style.display = 'none';
         if (rc) rc.style.display = 'none';
         hideLoginError();
+      }
+
+      function showOtpForm(email) {
+        const lc = document.getElementById('loginCard');
+        if (!lc) return;
+        const resetEmail = Sec.normalizeEmail(email || getPasswordResetEmail());
+        if (resetEmail) rememberPasswordResetEmail(resetEmail);
+        lc.style.display = 'none';
+        const fc = document.getElementById('forgotCard');
+        const oc = document.getElementById('otpCard');
+        const rc = document.getElementById('resetCard');
+        if (fc) fc.style.display = 'none';
+        if (oc) oc.style.display = '';
+        if (rc) rc.style.display = 'none';
+        hideLoginError();
+        const hint = document.getElementById('otpEmailHint');
+        if (hint) hint.textContent = resetEmail || '';
+        const msg = document.getElementById('otpSuccessMsg');
+        const ok = document.getElementById('otpSuccess');
+        if (msg && ok) {
+          msg.textContent = 'تم إرسال رمز من 6 خانات إلى بريدك. أدخل الرمز للمتابعة.';
+          ok.classList.add('show');
+        }
+        setTimeout(() => document.getElementById('resetOtp')?.focus(), 80);
       }
 
       function showResetForm() {
@@ -32312,9 +32411,13 @@
         if (!lc) return;
         lc.style.display = 'none';
         const fc = document.getElementById('forgotCard');
+        const oc = document.getElementById('otpCard');
         const rc = document.getElementById('resetCard');
         if (fc) fc.style.display = 'none';
+        if (oc) oc.style.display = 'none';
         if (rc) rc.style.display = '';
+        hideLoginError();
+        setTimeout(() => document.getElementById('newPassword')?.focus(), 80);
       }
 
       function showLoginError(msg) {
@@ -32330,6 +32433,8 @@
         document.getElementById('loginError')?.classList.remove('show');
         document.getElementById('forgotError')?.classList.remove('show');
         document.getElementById('forgotSuccess')?.classList.remove('show');
+        document.getElementById('otpError')?.classList.remove('show');
+        document.getElementById('otpSuccess')?.classList.remove('show');
         document.getElementById('resetError')?.classList.remove('show');
       }
 
@@ -32665,11 +32770,11 @@
         const email = Sec.normalizeEmail(document.getElementById('forgotEmail').value);
         if (!email || !Sec.isEmail(email)) {
           document.getElementById('forgotError').classList.add('show');
-          document.getElementById('forgotErrorMsg').textContent = 'أدخل بريداً إلكترونياً صحيحاً';
+          document.getElementById('forgotErrorMsg').textContent = 'الايميل غير صحيح أو غير مسجل في المنصة';
           return;
         }
 
-        setLoginLoading(true, 'forgotBtn', '<i class="fas fa-paper-plane"></i><span>إرسال رابط الاسترجاع</span>');
+        setLoginLoading(true, 'forgotBtn', '<i class="fas fa-paper-plane"></i><span>إرسال الرمز</span>');
 
         try {
           const { data: isRegistered, error: checkErr } = await sb.rpc('check_platform_email_for_reset', {
@@ -32678,7 +32783,7 @@
           if (checkErr) throw checkErr;
           if (!isRegistered) {
             document.getElementById('forgotError').classList.add('show');
-            document.getElementById('forgotErrorMsg').textContent = 'هذا البريد غير مسجّل في المنصة';
+            document.getElementById('forgotErrorMsg').textContent = 'الايميل غير صحيح أو غير مسجل في المنصة';
             return;
           }
 
@@ -32688,16 +32793,92 @@
 
           if (error) throw error;
 
-          document.getElementById('forgotSuccess').classList.add('show');
-          document.getElementById('forgotSuccessMsg').textContent =
-            'إن وُجد الطلب في Resend كـ Delivered، راجع Gmail (وارد + spam + كل البريد) لبريد حساب Resend. الرابط يفتح: https://rakan1234rh-create.github.io/rakan/ — مع onboarding@resend.dev لا يصل البريد إلا لبريد تسجيل Resend.';
-          document.getElementById('forgotEmail').value = '';
+          rememberPasswordResetEmail(email);
+          showOtpForm(email);
         } catch (err) {
           if (isMirsadDebugLog()) console.error('[ForgotPassword]', err);
           document.getElementById('forgotError').classList.add('show');
           document.getElementById('forgotErrorMsg').textContent = formatForgotPasswordError(err);
         } finally {
-          setLoginLoading(false, 'forgotBtn', '<i class="fas fa-paper-plane"></i><span>إرسال رابط الاسترجاع</span>');
+          setLoginLoading(false, 'forgotBtn', '<i class="fas fa-paper-plane"></i><span>إرسال الرمز</span>');
+        }
+      }
+
+      async function handleResendPasswordCode() {
+        hideLoginError();
+        const email = getPasswordResetEmail();
+        const errEl = document.getElementById('otpError');
+        const errMsg = document.getElementById('otpErrorMsg');
+        if (!email || !Sec.isEmail(email)) {
+          if (errEl && errMsg) {
+            errEl.classList.add('show');
+            errMsg.textContent = 'ارجع واكتب الايميل المسجل في المنصة أولاً';
+          }
+          return;
+        }
+
+        setLoginLoading(true, 'otpBtn', '<i class="fas fa-check"></i><span>تحقق من الرمز</span>');
+        try {
+          const { error } = await sb.auth.resetPasswordForEmail(email, {
+            redirectTo: getPasswordResetRedirectUrl()
+          });
+          if (error) throw error;
+          const ok = document.getElementById('otpSuccess');
+          const okMsg = document.getElementById('otpSuccessMsg');
+          if (ok && okMsg) {
+            ok.classList.add('show');
+            okMsg.textContent = 'تم إرسال رمز جديد إلى بريدك الإلكتروني.';
+          }
+          document.getElementById('resetOtp').value = '';
+          document.getElementById('resetOtp')?.focus();
+        } catch (err) {
+          if (isMirsadDebugLog()) console.error('[ResendPasswordCode]', err);
+          if (errEl && errMsg) {
+            errEl.classList.add('show');
+            errMsg.textContent = formatForgotPasswordError(err);
+          }
+        } finally {
+          setLoginLoading(false, 'otpBtn', '<i class="fas fa-check"></i><span>تحقق من الرمز</span>');
+        }
+      }
+
+      async function handleVerifyResetCode() {
+        if (!document.getElementById('resetOtp')) {
+          showToast('التحقق من الرمز غير متاح من الواجهة.', 'info');
+          return;
+        }
+        hideLoginError();
+        const email = getPasswordResetEmail();
+        const code = normalizeRecoveryCode(document.getElementById('resetOtp').value);
+        const errEl = document.getElementById('otpError');
+        const errMsg = document.getElementById('otpErrorMsg');
+
+        if (!email || !Sec.isEmail(email)) {
+          errEl.classList.add('show');
+          errMsg.textContent = 'ارجع واكتب الايميل المسجل في المنصة أولاً';
+          return;
+        }
+        if (code.length !== 6) {
+          errEl.classList.add('show');
+          errMsg.textContent = 'أدخل الرمز المكوّن من 6 خانات';
+          return;
+        }
+
+        setLoginLoading(true, 'otpBtn', '<i class="fas fa-check"></i><span>تحقق من الرمز</span>');
+        try {
+          const { error } = await sb.auth.verifyOtp({
+            email,
+            token: code,
+            type: 'recovery'
+          });
+          if (error) throw error;
+          showResetForm();
+        } catch (err) {
+          if (isMirsadDebugLog()) console.error('[VerifyResetCode]', err);
+          errEl.classList.add('show');
+          errMsg.textContent = 'الرمز غير صحيح أو منتهي الصلاحية. تأكد من آخر رمز وصلك على البريد.';
+        } finally {
+          setLoginLoading(false, 'otpBtn', '<i class="fas fa-check"></i><span>تحقق من الرمز</span>');
         }
       }
 
@@ -32733,8 +32914,9 @@
           const { error } = await sb.auth.updateUser({ password: newPw });
           if (error) throw error;
 
+          try { await sb.auth.signOut(); } catch (_) { /* noop */ }
           showToast('تم تحديث كلمة المرور بنجاح ✓', 'success');
-          // مسح الـ hash من الـ URL
+          clearPasswordResetEmail();
           history.replaceState(null, '', window.location.pathname);
           showLoginForm();
           document.getElementById('newPassword').value = '';

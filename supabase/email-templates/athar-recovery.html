@@ -13,11 +13,16 @@
           <td dir="rtl" style="padding:8px 28px 28px;text-align:right;">
             <p style="margin:0 0 16px;font-size:16px;line-height:1.7;color:#fafafa;">مرحباً،</p>
             <p style="margin:0 0 24px;font-size:15px;line-height:1.75;color:#c8c8d0;">تلقّينا طلباً لإعادة تعيين كلمة المرور للحساب: <span dir="ltr" style="color:#fafafa;">{{ .Email }}</span></p>
+            <p style="margin:0 0 10px;font-size:14px;line-height:1.7;color:#c8c8d0;text-align:center;">رمز التحقق الخاص بك:</p>
+            <p dir="ltr" style="margin:0 0 24px;text-align:center;font-size:34px;letter-spacing:0.25em;font-weight:800;color:#ffffff;background-color:#131316;border:1px solid #2a2a30;border-radius:14px;padding:16px 18px;">
+              {{ .Token }}
+            </p>
+            <p style="margin:0 0 18px;font-size:13px;line-height:1.7;color:#a1a1aa;text-align:center;">اكتب هذا الرمز في صفحة استعادة كلمة المرور داخل المنصة.</p>
             <p style="margin:0 0 24px;text-align:center;">
-              <a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:14px 32px;background-color:#fafafa;color:#131316;text-decoration:none;font-size:15px;font-weight:700;border-radius:34px;">إعادة تعيين كلمة المرور</a>
+              <a href="{{ .ConfirmationURL }}" style="display:inline-block;color:#fafafa;text-decoration:underline;font-size:13px;">فتح رابط احتياطي لإعادة التعيين</a>
             </p>
             <p style="margin:0 0 12px;font-size:13px;line-height:1.65;color:#87879a;">إذا لم تطلب ذلك، تجاهل هذه الرسالة.</p>
-            <p style="margin:0;font-size:12px;line-height:1.6;color:#666670;">الرابط صالح لمرة واحدة ولمدة محدودة.</p>
+            <p style="margin:0;font-size:12px;line-height:1.6;color:#666670;">الرمز صالح لمرة واحدة ولمدة محدودة.</p>
           </td>
         </tr>
         <tr>
