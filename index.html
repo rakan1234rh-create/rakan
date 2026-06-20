@@ -976,21 +976,33 @@
         position: fixed !important;
         inset: 0 !important;
         width: 100% !important;
-        height: var(--login-stable-h, 100%) !important;
+        min-height: 100dvh !important;
+        min-height: -webkit-fill-available !important;
+        height: var(--login-stable-h, 100dvh) !important;
+        max-height: none !important;
         margin: 0 !important;
         overflow: hidden !important;
-        touch-action: manipulation
+        touch-action: manipulation;
+        background: linear-gradient(160deg, var(--mr-bg-2) 0%, var(--mr-bg) 42%, var(--mr-bg-2) 100%) !important
       }
 
       body.login-portal-open #loginScreen.lp-screen {
-        height: var(--login-stable-h, 100%) !important;
-        min-height: var(--login-stable-h, 100%) !important;
-        max-height: var(--login-stable-h, 100%) !important;
+        position: fixed !important;
+        top: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        min-height: 100dvh !important;
+        min-height: -webkit-fill-available !important;
+        height: 100% !important;
+        max-height: none !important;
         justify-content: flex-start !important;
         overflow-x: hidden !important;
         overflow-y: auto !important;
         overscroll-behavior: contain;
-        -webkit-overflow-scrolling: touch
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: max(clamp(16px, 4vw, 32px), env(safe-area-inset-bottom, 0px)) !important
       }
 
       body.login-portal-open #loginScreen .lp-center {
@@ -28476,7 +28488,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-login-kb-scroll-v874">
+  <meta name="app-build" content="athar-login-bottom-fill-v875">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -32366,13 +32378,32 @@
       }
 
       function applyLoginStableViewport() {
+        const vv = window.visualViewport;
         const candidates = [
           window.innerHeight,
-          document.documentElement.clientHeight
+          document.documentElement.clientHeight,
+          vv ? Math.round(vv.height + vv.offsetTop) : 0
         ].filter((n) => n > 0);
         const h = Math.max(...candidates, _loginLockedVpH || 0);
-        if (!_loginLockedVpH || h > _loginLockedVpH) _loginLockedVpH = h;
-        document.documentElement.style.setProperty('--login-stable-h', `${_loginLockedVpH}px`);
+        _loginLockedVpH = h;
+        document.documentElement.style.setProperty('--login-stable-h', `${h}px`);
+      }
+
+      function refreshLoginStableViewportAfterKeyboard() {
+        if (!document.body.classList.contains('login-portal-open')) return;
+        if (!isLoginMobileViewport()) return;
+        if (isLoginKeyboardOpen()) return;
+        const vv = window.visualViewport;
+        const candidates = [
+          window.innerHeight,
+          document.documentElement.clientHeight,
+          vv ? Math.round(vv.height + vv.offsetTop) : 0
+        ].filter((n) => n > 0);
+        const h = Math.max(...candidates);
+        if (h > 0) {
+          _loginLockedVpH = h;
+          document.documentElement.style.setProperty('--login-stable-h', `${h}px`);
+        }
       }
 
       function clearLoginStableViewport() {
@@ -32435,6 +32466,7 @@
         if (!isLoginMobileViewport()) return;
         if (isLoginKeyboardOpen()) return;
         if (document.activeElement?.closest?.('#loginCard input, #loginCard textarea, #loginCard select')) return;
+        refreshLoginStableViewportAfterKeyboard();
         const ls = document.getElementById('loginScreen');
         if (!ls) return;
         ls.scrollTop = 0;
