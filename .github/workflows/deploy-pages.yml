@@ -45,7 +45,8 @@ jobs:
           cp icons/athar-pwa-192-v${VER}.png icons/athar-pwa-512-v${VER}.png \
             icons/athar-pwa-180-v${VER}.png icons/athar-pwa-maskable-512-v${VER}.png \
             icons/athar-app-icon.svg icons/athar-homescreen-fullbleed.svg \
-            icons/athar-homescreen-maskable.svg site/icons/
+            icons/athar-homescreen-maskable.svg icons/athar-wordmark-email.svg \
+            icons/athar-wordmark-email-v388.png site/icons/
           cp icons/athar-pwa-180-v${VER}.png site/apple-touch-icon.png
           cp icons/athar-pwa-180-v${VER}.png site/apple-touch-icon-precomposed.png
           cp icons/athar-pwa-180-v${VER}.png site/icons/apple-touch-icon.png

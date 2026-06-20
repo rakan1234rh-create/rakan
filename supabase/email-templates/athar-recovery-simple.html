@@ -4,26 +4,23 @@
       <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:480px;background-color:#1c1c21;border-radius:16px;border:1px solid #2a2a30;">
         <tr>
           <td align="center" style="padding:32px 28px 16px;">
-            <div style="font-family:Georgia,Times New Roman,serif;font-size:40px;color:#ffffff;letter-spacing:0.06em;">ATHAR</div>
-            <div style="font-size:13px;color:#a1a1aa;margin-top:8px;">منصة الرصد المتكاملة</div>
+            <img src="https://rakan1234rh-create.github.io/rakan/icons/athar-wordmark-email-v388.png" width="240" height="148" alt="ATHAR" style="display:block;width:240px;max-width:100%;height:auto;border:0;margin:0 auto;">
           </td>
         </tr>
         <tr>
           <td dir="rtl" style="padding:8px 28px 28px;text-align:right;">
             <p style="margin:0 0 16px;font-size:16px;line-height:1.7;color:#fafafa;">مرحباً،</p>
-            <p style="margin:0 0 24px;font-size:15px;line-height:1.75;color:#c8c8d0;">تلقّينا طلباً لإعادة تعيين كلمة المرور للحساب: <span dir="ltr" style="color:#fafafa;">{{ .Email }}</span></p>
-            <p style="margin:0 0 10px;font-size:14px;line-height:1.7;color:#c8c8d0;text-align:center;">رمز التحقق الخاص بك من 8 خانات:</p>
+            <p style="margin:0 0 24px;font-size:15px;line-height:1.75;color:#c8c8d0;">تلقّينا طلباً لإعادة تعيين كلمة المرور لحسابك.</p>
+            <p style="margin:0 0 10px;font-size:14px;line-height:1.7;color:#c8c8d0;text-align:center;">رمز التحقق الخاص بك من 8 خانات</p>
             <p dir="ltr" style="margin:0 0 24px;text-align:center;font-size:34px;letter-spacing:0.25em;font-weight:800;color:#ffffff;background-color:#131316;border:1px solid #2a2a30;border-radius:14px;padding:16px 18px;">
               {{ .Token }}
             </p>
             <p style="margin:0 0 18px;text-align:center;">
-              <button type="button" onclick="navigator.clipboard && navigator.clipboard.writeText('{{ .Token }}')" style="display:inline-block;padding:12px 26px;background-color:#fafafa;color:#131316;border:0;border-radius:999px;font-size:14px;font-weight:700;cursor:pointer;">نسخ الرمز</button>
+              <button type="button" onmousedown="this.style.transform='scale(0.96)';this.style.opacity='0.88';" onmouseup="this.style.transform='scale(1)';this.style.opacity='1';" onmouseleave="this.style.transform='scale(1)';this.style.opacity='1';" ontouchstart="this.style.transform='scale(0.96)';this.style.opacity='0.88';" ontouchend="this.style.transform='scale(1)';this.style.opacity='1';" onclick="var b=this;function done(){b.textContent='تم النسخ \u2713';b.style.backgroundColor='#3f3f46';b.style.color='#fafafa';setTimeout(function(){b.textContent='نسخ الرمز';b.style.backgroundColor='#fafafa';b.style.color='#131316';},2200);}if(navigator.clipboard&amp;&amp;navigator.clipboard.writeText){navigator.clipboard.writeText('{{ .Token }}').then(done).catch(done);}else{done();}" style="display:inline-block;padding:12px 26px;background-color:#fafafa;color:#131316;border:0;border-radius:999px;font-size:14px;font-weight:700;cursor:pointer;transition:transform 0.12s ease,opacity 0.12s ease,background-color 0.2s ease,color 0.2s ease;">نسخ الرمز</button>
             </p>
             <p style="margin:0 0 18px;font-size:13px;line-height:1.7;color:#a1a1aa;text-align:center;">اكتب هذا الرمز في صفحة استعادة كلمة المرور داخل المنصة. إذا لم يعمل زر النسخ داخل تطبيق البريد، حدّد الرقم وانسخه يدوياً.</p>
-            <p style="margin:0 0 24px;text-align:center;">
-              <a href="{{ .ConfirmationURL }}" style="display:inline-block;color:#fafafa;text-decoration:underline;font-size:13px;">فتح رابط احتياطي لإعادة التعيين</a>
-            </p>
-            <p style="margin:0;font-size:13px;line-height:1.65;color:#87879a;">إذا لم تطلب ذلك، تجاهل هذه الرسالة.</p>
+            <p style="margin:0 0 12px;font-size:13px;line-height:1.65;color:#87879a;">إذا لم تطلب ذلك، تجاهل هذه الرسالة.</p>
+            <p style="margin:0;font-size:12px;line-height:1.6;color:#666670;">الرمز صالح لمرة واحدة ولمدة محدودة.</p>
           </td>
         </tr>
       </table>

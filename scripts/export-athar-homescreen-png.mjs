@@ -112,5 +112,26 @@ await exportPng(svgAny, 512, `athar-pwa-512-v${v}.png`);
 await exportPng(svgAny, 192, `athar-pwa-192-v${v}.png`);
 await exportPng(svgAny, 180, `athar-pwa-180-v${v}.png`);
 await exportPng(svgMask, 512, `athar-pwa-maskable-512-v${v}.png`);
+
+const WORDMARK_VER = '388';
+const wordmarkSvg = readFileSync(join(iconsDir, 'athar-wordmark-email.svg'), 'utf8');
+const wordmarkW = 840;
+const wordmarkH = Math.round(wordmarkW * (555 / 903));
+const wordmarkResvg = new Resvg(wordmarkSvg, {
+  fitTo: { mode: 'width', value: wordmarkW },
+  background: 'transparent',
+  font: {
+    fontFiles,
+    loadSystemFonts: false,
+    defaultFontFamily: 'ZCOOL XiaoWei',
+  },
+});
+const wordmarkBuf = await sharp(wordmarkResvg.render().asPng())
+  .resize(wordmarkW, wordmarkH, { kernel: sharp.kernel.lanczos3 })
+  .png({ compressionLevel: 9 })
+  .toBuffer();
+writeFileSync(join(iconsDir, `athar-wordmark-email-v${WORDMARK_VER}.png`), wordmarkBuf);
+console.log('Wrote', `athar-wordmark-email-v${WORDMARK_VER}.png`, `${wordmarkW}x${wordmarkH}`);
+
 writeFileSync(join(iconsDir, 'icon-cache-ver.txt'), ICON_CACHE_VER + '\n');
 console.log('Done v' + ICON_CACHE_VER);
