@@ -28291,7 +28291,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-otp-password-reset-v837">
+  <meta name="app-build" content="athar-otp-password-reset-v838">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -28459,10 +28459,10 @@
           <div id="otpError" class="login-err" role="alert"><span id="otpErrorMsg"></span></div>
           <div id="otpSuccess" class="login-ok" role="status"><span id="otpSuccessMsg"></span></div>
           <div class="lp-row">
-            <label class="lp-label" for="resetOtp">رمز من 6 خانات</label>
+            <label class="lp-label" for="resetOtp">رمز من 8 خانات</label>
             <input id="resetOtp" class="lp-input lp-input--otp" type="text" inputmode="numeric"
-              autocomplete="one-time-code" maxlength="6" placeholder="000000" dir="ltr"
-              oninput="this.value=this.value.replace(/\D/g,'').slice(0,6)">
+              autocomplete="one-time-code" maxlength="8" placeholder="00000000" dir="ltr"
+              oninput="this.value=this.value.replace(/\D/g,'').slice(0,8)">
           </div>
           <button type="button" class="lp-btn-primary" id="otpBtn" onclick="handleVerifyResetCode()"><i
               class="fas fa-check"></i> تحقق من الرمز</button>
@@ -32332,7 +32332,7 @@
       let passwordResetEmail = '';
 
       function normalizeRecoveryCode(value) {
-        return String(value || '').replace(/\D/g, '').slice(0, 6);
+        return String(value || '').replace(/\D/g, '').slice(0, 8);
       }
 
       function rememberPasswordResetEmail(email) {
@@ -32400,7 +32400,7 @@
         const msg = document.getElementById('otpSuccessMsg');
         const ok = document.getElementById('otpSuccess');
         if (msg && ok) {
-          msg.textContent = 'تم إرسال رمز من 6 خانات إلى بريدك. أدخل الرمز للمتابعة.';
+          msg.textContent = 'تم إرسال رمز من 8 خانات إلى بريدك. أدخل الرمز للمتابعة.';
           ok.classList.add('show');
         }
         setTimeout(() => document.getElementById('resetOtp')?.focus(), 80);
@@ -32858,9 +32858,9 @@
           errMsg.textContent = 'ارجع واكتب الايميل المسجل في المنصة أولاً';
           return;
         }
-        if (code.length !== 6) {
+        if (code.length !== 8) {
           errEl.classList.add('show');
-          errMsg.textContent = 'أدخل الرمز المكوّن من 6 خانات';
+          errMsg.textContent = 'أدخل الرمز المكوّن من 8 خانات';
           return;
         }
 

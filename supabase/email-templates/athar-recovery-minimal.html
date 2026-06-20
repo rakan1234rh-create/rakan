@@ -1,5 +1,6 @@
 <h2 style="font-family:Arial,sans-serif;color:#131316;">ATHAR — إعادة تعيين كلمة المرور</h2>
-<p style="font-family:Arial,sans-serif;color:#333;">اكتب رمز التحقق التالي في صفحة استعادة كلمة المرور:</p>
+<p style="font-family:Arial,sans-serif;color:#333;">اكتب رمز التحقق التالي من 8 خانات في صفحة استعادة كلمة المرور:</p>
 <p dir="ltr" style="font-family:Arial,sans-serif;font-size:32px;letter-spacing:8px;font-weight:bold;color:#131316;">{{ .Token }}</p>
+<p><button type="button" onclick="navigator.clipboard && navigator.clipboard.writeText('{{ .Token }}')" style="padding:10px 22px;background:#131316;color:#fff;border:0;border-radius:999px;font-family:Arial,sans-serif;font-weight:bold;">نسخ الرمز</button></p>
 <p style="font-family:Arial,sans-serif;color:#555;">إذا احتجت الرابط الاحتياطي:</p>
 <p><a href="{{ .ConfirmationURL }}">فتح رابط إعادة التعيين</a></p>
