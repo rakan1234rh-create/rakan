@@ -4498,23 +4498,36 @@
     }
 
 #tab-reports .wf-toolbar .rp-date-wrap {
-      flex: 0 1 auto;
-      max-width: 100%;
+      flex: 0 0 auto;
+      width: auto;
+      max-width: none;
       min-width: 0
     }
 
 #tab-reports .wf-toolbar .rp-date-btn {
-      max-width: 100%;
-      min-width: 0;
+      width: 46px;
+      min-width: 46px;
+      max-width: 46px;
+      padding: 0;
+      justify-content: center;
+      gap: 0;
       flex-shrink: 0
     }
 
 #tab-reports .wf-toolbar .rp-date-btn #rp-date-label {
-      overflow: visible;
-      text-overflow: clip;
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
       white-space: nowrap;
-      flex: 1 1 auto;
-      min-width: 0
+      border: 0
+    }
+
+#tab-reports .wf-toolbar .rp-date-btn.active {
+      padding-inline: 0
     }
 
 #tab-reports .wf-toolbar .rp-tool-btn {
@@ -4523,10 +4536,6 @@
       padding: 0 16px;
       font-size: 13px;
       font-weight: 600
-    }
-
-#tab-reports .wf-toolbar .rp-date-btn.active {
-      padding-inline: 18px
     }
 
 
@@ -24398,14 +24407,36 @@
       }
 
       #tab-reports .rp-date-wrap {
-        flex: 1 1 0 !important;
+        flex: 0 0 auto !important;
         max-width: none !important;
         min-width: 0 !important;
         width: auto !important
       }
 
-      #tab-reports .rp-date-wrap .rp-date-btn,
-      #tab-reports .rp-tool-btn:not(.rp-tool-btn-primary) {
+      #tab-reports .rp-date-wrap .rp-date-btn {
+        width: 38px !important;
+        min-width: 38px !important;
+        max-width: 38px !important;
+        height: 38px !important;
+        min-height: 38px !important;
+        padding: 0 !important;
+        font-size: 11px !important;
+        gap: 0 !important;
+        border-radius: 999px !important;
+        background: var(--mr-surface) !important;
+        border: 1px solid var(--mr-border) !important;
+        box-shadow: 0 1px 2px rgba(15, 18, 36, 0.04) !important;
+        justify-content: center !important;
+        box-sizing: border-box;
+        color: var(--mr-text-2) !important
+      }
+
+      #tab-reports .rp-date-wrap .rp-date-btn i {
+        font-size: 12px !important;
+        margin: 0 !important
+      }
+
+      #tab-reports .rp-tool-btn:not(.rp-tool-btn-primary):not(.rp-date-btn) {
         width: 100% !important;
         min-width: 0 !important;
         height: 38px !important;
@@ -24435,14 +24466,16 @@
         color: var(--mr-text) !important
       }
 
-      #tab-reports .rp-date-btn span {
-        flex: 1 1 auto;
-        min-width: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        font-size: 11px !important;
-        text-align: start
+      #tab-reports .rp-date-btn #rp-date-label {
+        position: absolute !important;
+        width: 1px !important;
+        height: 1px !important;
+        padding: 0 !important;
+        margin: -1px !important;
+        overflow: hidden !important;
+        clip: rect(0, 0, 0, 0) !important;
+        white-space: nowrap !important;
+        border: 0 !important
       }
 
       #tab-reports #rp-filter-btn span:not(.rp-tool-badge) {
@@ -28332,7 +28365,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-fp-employee-scope-v846">
+  <meta name="app-build" content="athar-rp-date-icon-only-v847">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -29091,8 +29124,8 @@
                       class="fas fa-sliders"></i><span>فرز بواسطة</span><span id="fp-active-count" class="rp-tool-badge"
                       style="display:none">0</span></button>
                   <div class="rp-date-wrap">
-                    <button type="button" class="rp-tool-btn rp-date-btn" onclick="toggleDatePicker(event)" id="rp-date-btn"><i
-                        class="fas fa-calendar"></i><span id="rp-date-label">اختر الفترة</span></button>
+                    <button type="button" class="rp-tool-btn rp-date-btn" onclick="toggleDatePicker(event)" id="rp-date-btn" aria-label="اختر الفترة" title=""><i
+                        class="fas fa-calendar" aria-hidden="true"></i><span id="rp-date-label" aria-hidden="true"></span></button>
                     <div class="date-picker-popup" id="datePickerPopup">
                       <div class="fig-dp1429428-top-spacer" aria-hidden="true"></div>
                       <div class="dp-popup-body">
@@ -35619,7 +35652,7 @@
         if (fromEl) fromEl.value = fromIso;
         if (toEl) toEl.value = toIso;
         const dateLbl = document.getElementById('rp-date-label');
-        if (dateLbl) dateLbl.textContent = 'هذا الشهر';
+        if (dateLbl) dateLbl.textContent = '';
         const dateBtn = document.getElementById('rp-date-btn');
         if (dateBtn) {
           dateBtn.classList.add('active');
@@ -35646,8 +35679,10 @@
         if (fromEl) fromEl.value = '';
         if (toEl) toEl.value = '';
         const dateLbl = document.getElementById('rp-date-label');
-        if (dateLbl) dateLbl.textContent = 'اختر الفترة';
+        if (dateLbl) dateLbl.textContent = '';
         document.getElementById('rp-date-btn')?.classList.remove('active');
+        const clearRpDateBtn = document.getElementById('rp-date-btn');
+        if (clearRpDateBtn) clearRpDateBtn.title = 'اختر الفترة';
         try {
           if (typeof dpState !== 'undefined') {
             dpState.from = null;
@@ -53471,19 +53506,24 @@
 
       function dpApplyDateButtonLabel(btn, lbl, from, to) {
         if (!lbl || !btn) return;
+        const iconOnly = btn.id === 'rp-date-btn';
         const fullFrom = from ? dpFormatDisplay(from) : '';
         const fullTo = to ? dpFormatDisplay(to) : '';
         if (from && to) {
-          lbl.textContent = dpFormatRangeLabel(from, to);
+          const rangeLabel = dpFormatRangeLabel(from, to);
+          if (!iconOnly) lbl.textContent = rangeLabel;
+          else lbl.textContent = '';
           btn.title = dpSameDay(from, to) ? fullFrom : `${fullFrom} — ${fullTo}`;
           btn.classList.add('active');
         } else if (from) {
-          lbl.textContent = `من ${fullFrom}`;
+          if (!iconOnly) lbl.textContent = `من ${fullFrom}`;
+          else lbl.textContent = '';
           btn.title = `من ${fullFrom}`;
           btn.classList.add('active');
         } else {
-          lbl.textContent = 'اختر الفترة';
-          btn.title = '';
+          if (!iconOnly) lbl.textContent = 'اختر الفترة';
+          else lbl.textContent = '';
+          btn.title = iconOnly ? 'اختر الفترة' : '';
           btn.classList.remove('active');
         }
       }
@@ -53793,11 +53833,11 @@
         dpSyncViewFromApplied(dpState);
         document.getElementById('rp-from').value = '';
         document.getElementById('rp-to').value = '';
-        document.getElementById('rp-date-label').textContent = 'اختر الفترة';
+        document.getElementById('rp-date-label').textContent = '';
         const clearBtn = document.getElementById('rp-date-btn');
         if (clearBtn) {
           clearBtn.classList.remove('active');
-          clearBtn.title = '';
+          clearBtn.title = 'اختر الفترة';
         }
         document.getElementById('dpDays')?.classList.remove('is-dragging');
         popup?.classList.remove('dp-range-dragging');
