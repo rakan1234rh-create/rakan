@@ -20553,26 +20553,24 @@
       }
 
       #tab-workflow .wf-status-filter {
-        flex: 0 0 32% !important;
-        min-width: 104px !important;
-        max-width: 38% !important;
-        width: auto !important;
-        position: relative;
+        flex: 0 0 36% !important;
+        min-width: 118px !important;
+        max-width: 44% !important;
+        width: auto !important
       }
 
       #tab-workflow .wf-status-trigger {
         min-width: 0 !important;
         width: 100% !important;
-        height: 34px !important;
-        font-size: 10px !important;
-        gap: 5px !important;
-        padding: 0 8px !important;
+        height: 38px !important;
+        font-size: 11px !important;
+        gap: 6px !important;
+        padding: 0 10px !important;
         justify-content: flex-start !important;
         border-radius: 999px !important;
         background: var(--mr-surface) !important;
         border: 1px solid var(--mr-border) !important;
-        box-shadow: 0 1px 2px rgba(15, 18, 36, 0.04);
-        pointer-events: auto;
+        box-shadow: 0 1px 2px rgba(15, 18, 36, 0.04)
       }
 
       #tab-workflow .wf-status-trigger__label {
@@ -20581,38 +20579,55 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-        font-size: 10px !important;
+        font-size: 11px !important;
         text-align: start
       }
 
       #tab-workflow .wf-status-trigger__ico {
-        width: 22px !important;
-        height: 22px !important;
-        font-size: 8px !important;
+        width: 24px !important;
+        height: 24px !important;
+        font-size: 9px !important;
         flex-shrink: 0
       }
 
       #tab-workflow .wf-status-trigger__chev {
-        font-size: 8px !important;
+        font-size: 9px !important;
         flex-shrink: 0;
         margin-inline-start: auto;
         color: var(--mr-text-2) !important;
         opacity: 1 !important
       }
 
+      /* الجوال: منتقي النظام الأصلي (نفس قائمة الدور في إضافة مستخدم) */
+      #tab-workflow .wf-status-filter {
+        position: relative;
+      }
+
+      #tab-workflow .wf-status-trigger {
+        pointer-events: none;
+      }
+
       #tab-workflow #wf-status.wf-status-select-native {
         position: absolute;
-        width: 1px;
-        height: 1px;
+        inset: 0;
+        z-index: 3;
+        width: 100%;
+        height: 100%;
+        margin: 0;
         padding: 0;
-        margin: -1px;
-        overflow: hidden;
-        clip: rect(0, 0, 0, 0);
-        white-space: nowrap;
         border: 0;
         opacity: 0;
-        inset: auto;
-        z-index: -1;
+        clip: auto;
+        overflow: visible;
+        white-space: normal;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        font-size: 16px;
+        background: transparent;
+      }
+
+      #tab-workflow #wf-status-menu {
+        display: none !important;
       }
 
       #tab-workflow .wf-count {
@@ -20629,50 +20644,27 @@
       }
 
       #tab-workflow #wf-status-menu {
-        border-radius: 10px;
-        width: 148px !important;
-        min-width: 0 !important;
-        max-width: min(148px, calc(100vw - 16px)) !important;
-        background: #2c2c2e;
-        border-color: #3a3a3c;
-        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28), 0 2px 8px rgba(0, 0, 0, 0.18);
+        border-radius: 12px;
+        max-width: min(220px, 60vw) !important;
+        min-width: 0 !important
       }
 
       #tab-workflow #wf-status-menu .wf-status-menu__scroll {
-        padding: 4px;
-        gap: 1px;
-        min-width: 0 !important;
-        max-height: min(240px, calc(100vh - 120px)) !important;
+        padding: 5px;
+        gap: 2px;
+        min-width: 0 !important
       }
 
       #tab-workflow #wf-status-menu .wf-status-opt {
-        padding: 6px 8px;
-        font-size: 10px !important;
-        border-radius: 8px;
-        gap: 5px;
-        color: #f4f4f5;
-        font-weight: 500;
-      }
-
-      #tab-workflow #wf-status-menu .wf-status-opt:hover:not(.is-active) {
-        background: rgba(255, 255, 255, 0.08);
-      }
-
-      #tab-workflow #wf-status-menu .wf-status-opt.is-active {
-        background: rgba(255, 255, 255, 0.12);
-        color: #fff;
-        font-weight: 600;
+        padding: 7px 10px;
+        font-size: 11px !important;
+        border-radius: 10px;
+        gap: 6px
       }
 
       #tab-workflow #wf-status-menu .wf-status-opt.is-active::before {
-        content: '✓';
-        width: auto;
-        height: auto;
-        border-radius: 0;
-        background: transparent;
-        font-size: 11px;
-        line-height: 1;
-        font-weight: 700;
+        width: 5px;
+        height: 5px
       }
 
       #tab-workflow .wf-table-wrap {
@@ -28331,7 +28323,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-wf-stage-compact-menu-v841">
+  <meta name="app-build" content="athar-wf-stage-native-mob-v840">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -41860,6 +41852,7 @@
 
       function populateWfFilters() {
         wfStatusSyncUi(document.getElementById('wf-status')?.value || '');
+        syncWfStatusMobNativeMode();
       }
 
       const WF_STATUS_LABELS = {
@@ -41935,47 +41928,12 @@
         const menu = document.getElementById('wf-status-menu');
         if (!trigger || !menu) return;
         const r = trigger.getBoundingClientRect();
-        const gap = 4;
+        const banner = document.querySelector('#tab-workflow .wf-panel-banner');
+        const bannerR = banner?.getBoundingClientRect();
+        const gap = 6;
         const pad = 8;
         const vw = window.innerWidth;
         const vh = window.innerHeight;
-        const isMobWf = typeof isMobileViewport === 'function' && isMobileViewport()
-          && document.getElementById('tab-workflow')?.classList.contains('active');
-        const isRtl = (getComputedStyle(document.documentElement).direction || 'rtl') === 'rtl';
-
-        if (isMobWf) {
-          const menuW = Math.min(148, Math.max(120, r.width - 8));
-          menu.style.width = `${menuW}px`;
-          menu.style.minWidth = '0';
-          menu.style.maxWidth = `${menuW}px`;
-
-          const top = r.bottom + gap;
-          menu.style.top = `${top}px`;
-          menu.style.bottom = 'auto';
-
-          if (isRtl) {
-            let right = vw - r.right;
-            if (right + menuW > vw - pad) right = Math.max(pad, vw - menuW - pad);
-            menu.style.right = `${right}px`;
-            menu.style.left = 'auto';
-          } else {
-            let left = r.left;
-            if (left + menuW > vw - pad) left = Math.max(pad, vw - menuW - pad);
-            menu.style.left = `${left}px`;
-            menu.style.right = 'auto';
-          }
-
-          const menuH = menu.offsetHeight || 220;
-          if (top + menuH > vh - pad) {
-            menu.style.maxHeight = `${Math.max(120, vh - top - pad)}px`;
-          } else {
-            menu.style.maxHeight = '';
-          }
-          return;
-        }
-
-        const banner = document.querySelector('#tab-workflow .wf-panel-banner');
-        const bannerR = banner?.getBoundingClientRect();
 
         menu.style.width = 'max-content';
         menu.style.minWidth = `${r.width}px`;
@@ -42013,6 +41971,27 @@
         });
       }
 
+      function syncWfStatusMobNativeMode() {
+        const sel = document.getElementById('wf-status');
+        const trigger = document.getElementById('wf-status-trigger');
+        if (!sel || !trigger) return;
+        const useNative = typeof isMobileViewport === 'function' && isMobileViewport()
+          && document.getElementById('tab-workflow')?.classList.contains('active');
+        if (useNative) {
+          wfStatusClose();
+          sel.removeAttribute('aria-hidden');
+          sel.removeAttribute('tabindex');
+          sel.setAttribute('aria-label', 'فلتر المراحل');
+          trigger.setAttribute('aria-hidden', 'true');
+          trigger.setAttribute('tabindex', '-1');
+        } else {
+          sel.setAttribute('aria-hidden', 'true');
+          sel.setAttribute('tabindex', '-1');
+          trigger.removeAttribute('aria-hidden');
+          trigger.removeAttribute('tabindex');
+        }
+      }
+
       function wfStatusMobNativeChange(el) {
         const val = el?.value ?? '';
         wfStatusSyncUi(val);
@@ -42021,6 +42000,20 @@
       }
 
       function wfStatusToggle(ev) {
+        if (typeof isMobileViewport === 'function' && isMobileViewport()
+          && document.getElementById('tab-workflow')?.classList.contains('active')) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          const sel = document.getElementById('wf-status');
+          if (!sel) return;
+          try {
+            if (typeof sel.showPicker === 'function') sel.showPicker();
+            else sel.focus();
+          } catch (_) {
+            sel.focus();
+          }
+          return;
+        }
         ev.stopPropagation();
         const menu = document.getElementById('wf-status-menu');
         const trigger = document.getElementById('wf-status-trigger');
@@ -42073,6 +42066,7 @@
           menu.style.maxWidth = '';
           menu.style.maxHeight = '';
         }
+        syncWfStatusMobNativeMode();
       }
 
       const USER_ROLE_FILTER_LABELS = {
@@ -53146,6 +53140,7 @@
             setNativeAppShellActive(appVisible && !!state.currentUser);
           }
           if (typeof syncMobileBottomNavLayout === 'function') syncMobileBottomNavLayout();
+          if (typeof syncWfStatusMobNativeMode === 'function') syncWfStatusMobNativeMode();
           if (isDesktopUi()) {
             const nav = document.getElementById('mobileBottomNav');
             if (nav) nav.style.display = 'none';
