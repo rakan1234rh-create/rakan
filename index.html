@@ -992,7 +992,7 @@
         position: fixed;
         top: calc(0px - env(safe-area-inset-top, 0px));
         right: calc(0px - env(safe-area-inset-right, 0px));
-        bottom: calc(0px - env(safe-area-inset-bottom, 0px));
+        bottom: calc(0px - env(safe-area-inset-bottom, 0px) - 34px);
         left: calc(0px - env(safe-area-inset-left, 0px));
         z-index: 0;
         background: var(--login-portal-bg);
@@ -1001,7 +1001,10 @@
 
       body.login-portal-open #loginScreen.lp-screen {
         position: fixed !important;
-        inset: 0 !important;
+        top: 0 !important;
+        right: 0 !important;
+        left: 0 !important;
+        bottom: calc(0px - env(safe-area-inset-bottom, 0px) - 34px) !important;
         width: 100% !important;
         min-height: 100dvh !important;
         min-height: -webkit-fill-available !important;
@@ -1013,7 +1016,8 @@
         overscroll-behavior: contain;
         -webkit-overflow-scrolling: touch;
         background: transparent !important;
-        padding-bottom: 0 !important
+        padding-bottom: 0 !important;
+        padding-top: max(clamp(16px, 4vw, 32px), env(safe-area-inset-top, 0px)) !important
       }
 
       body.login-portal-open #loginScreen .lp-bg-blobs {
@@ -1023,7 +1027,8 @@
       body.login-portal-open #loginScreen .lp-center {
         position: relative;
         z-index: 2;
-        margin-block: auto;
+        margin-top: clamp(28px, 7vh, 64px);
+        margin-bottom: auto;
         padding-block: clamp(12px, 3vh, 40px);
         padding-bottom: max(clamp(16px, 4vw, 32px), env(safe-area-inset-bottom, 0px));
         transform: none;
@@ -28511,7 +28516,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-login-bottom-seam-v877">
+  <meta name="app-build" content="athar-login-page-down-v878">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
