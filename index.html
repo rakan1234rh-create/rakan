@@ -20338,7 +20338,7 @@
       }
 
       #tab-workflow .wf-panel-banner {
-        padding: 10px 8px 6px;
+        padding: 10px 8px 0;
         margin-bottom: 0;
         background: var(--mr-bg) !important;
         flex-shrink: 0;
@@ -20348,15 +20348,6 @@
         position: relative;
         z-index: 100;
         overflow: visible
-      }
-
-      #tab-workflow .wf-panel-banner:has(+ #ticketList > #wfMobTicketsHead:not(:empty)) {
-        padding-bottom: 0;
-        overflow: visible
-      }
-
-      #tab-workflow .wf-panel-banner:has(+ #ticketList > #wfMobTicketsHead:not(:empty)) .wf-count {
-        margin-bottom: 6px !important
       }
 
       #tab-workflow #wfMobTicketsHead:empty {
@@ -21293,6 +21284,11 @@
 
       #tab-reports #reportList.rp-mob-measuring > #rpMobTicketsHead,
       #tab-reports #reportList.rp-mob-measuring > .wf-mob-tickets-body {
+        visibility: hidden !important
+      }
+
+      #tab-workflow #ticketList.wf-mob-measuring > #wfMobTicketsHead,
+      #tab-workflow #ticketList.wf-mob-measuring > .wf-mob-tickets-body {
         visibility: hidden !important
       }
 
@@ -28392,7 +28388,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-rp-date-clear-close-v848">
+  <meta name="app-build" content="athar-wf-mob-head-stable-v849">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -36360,6 +36356,10 @@
           }
         }
 
+        if (tab === 'workflow' && typeof seedWfMobTicketsHeadIfNeeded === 'function') {
+          seedWfMobTicketsHeadIfNeeded();
+        }
+
         if (tab !== 'locations') state._activeRegionId = null;
 
         // تبديل التبويب يُرسم فوراً (أعلاه)، والعمل الثقيل يُؤجَّل إطاراً واحداً
@@ -42391,6 +42391,38 @@
         return parseDbJsonArray(t && t.attachments).length;
       }
 
+      function buildWfMobTicketsHeadHtml(rpMob) {
+        const colgroupHtml = `
+          <col class="wf-col-ticket-c">
+          <col class="wf-col-emp-c">
+          <col class="wf-col-viol-c">
+          <col class="wf-col-datetime-c">
+          <col class="wf-col-status-c">`;
+        const theadHtml = `
+          <tr>
+            <th class="wf-col-ticket">ID</th>
+            <th class="wf-col-emp">الموظف</th>
+            <th class="wf-col-violation">نوع المخالفة</th>
+            <th class="wf-col-datetime">التاريخ</th>
+            <th class="wf-col-status">الحالة</th>
+          </tr>`;
+        return `
+        <div class="wf-table-wrap wf-table-wrap--head">
+          <table class="data-table wf-tickets-table wf-tickets-table--mob wf-tickets-table--mob-head${rpMob ? ' rp-tickets-table--mob' : ''}">
+            <colgroup>${colgroupHtml}</colgroup>
+            <thead>${theadHtml}</thead>
+          </table>
+        </div>`;
+      }
+
+      function seedWfMobTicketsHeadIfNeeded() {
+        if (typeof isDesktopUi === 'function' ? isDesktopUi() : !(typeof isMobileViewport === 'function' && isMobileViewport())) return;
+        const mobHead = document.getElementById('wfMobTicketsHead');
+        if (!mobHead || mobHead.querySelector('.wf-tickets-table--mob-head')) return;
+        mobHead.innerHTML = buildWfMobTicketsHeadHtml(false);
+        mobHead.setAttribute('aria-hidden', 'false');
+      }
+
       function resetTicketListChildren(list, keepMobHead) {
         if (!list) return;
         const mobHeadId = list.id === 'reportList' ? 'rpMobTicketsHead' : 'wfMobTicketsHead';
@@ -42432,8 +42464,12 @@
 
         if (!tickets.length) {
           if (mobHead) {
-            mobHead.innerHTML = '';
-            mobHead.setAttribute('aria-hidden', 'true');
+            if (isAppDataPending() && wfMob) {
+              seedWfMobTicketsHeadIfNeeded();
+            } else {
+              mobHead.innerHTML = '';
+              mobHead.setAttribute('aria-hidden', 'true');
+            }
           }
           const emptyHtml = isAppDataPending()
             ? dataLoadingEmptyHTML(isReportsList ? 'جاري تحميل التقارير…' : 'جاري تحميل التذاكر…')
@@ -42500,13 +42536,7 @@
           }).join('');
           const bodyTableCls = 'data-table wf-tickets-table wf-tickets-table--mob wf-tickets-table--mob-body' + (rpMob ? ' rp-tickets-table--mob' : '');
           if (mobHead) {
-            mobHead.innerHTML = `
-        <div class="wf-table-wrap wf-table-wrap--head">
-          <table class="data-table wf-tickets-table wf-tickets-table--mob wf-tickets-table--mob-head${rpMob ? ' rp-tickets-table--mob' : ''}">
-            <colgroup>${colgroupHtml}</colgroup>
-            <thead>${theadHtml}</thead>
-          </table>
-        </div>`;
+            mobHead.innerHTML = buildWfMobTicketsHeadHtml(rpMob);
             mobHead.setAttribute('aria-hidden', 'false');
           }
           const mobBodyHtml = `
@@ -42517,17 +42547,18 @@
         </table>
       </div>`;
           resetTicketListChildren(list, true);
-          if (rpMob) list.classList.add('rp-mob-measuring');
+          if (mobSplit) list.classList.add(wfMob ? 'wf-mob-measuring' : 'rp-mob-measuring');
           getOrCreateTicketMobBody(list).innerHTML = mobBodyHtml;
           const mobBodyScroll = list.querySelector('.wf-mob-tickets-body');
           if (mobBodyScroll) delete mobBodyScroll.dataset.rpColSig;
           const scrollTab = isReportsList ? 'reports' : 'workflow';
-          if (rpMob) {
-            bindMobTicketsHeadScroll(scrollTab);
+          bindMobTicketsHeadScroll(scrollTab);
+          if (wfMob) {
+            list.classList.remove('wf-mob-measuring');
+            list.classList.add('wf-mob-cols-ready');
+          } else {
             list.classList.remove('rp-mob-measuring');
             list.classList.add('rp-mob-cols-ready');
-          } else {
-            requestAnimationFrame(() => requestAnimationFrame(() => bindMobTicketsHeadScroll(scrollTab)));
           }
           return;
         }
