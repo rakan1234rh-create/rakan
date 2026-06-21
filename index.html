@@ -112,18 +112,35 @@
     /* iOS PWA: امتداد الخلفية تحت شريط Home — قبل تحميل JS */
     html.mr-mobile-ui {
       --login-safe-bottom-fallback: 34px;
-      --login-safe-bleed: max(env(safe-area-inset-bottom, 0px), var(--login-safe-bottom, var(--login-safe-bottom-fallback)))
+      --login-safe-bleed: max(env(safe-area-inset-bottom, 0px), var(--login-safe-bottom, var(--login-safe-bottom-fallback)));
+      background-color: var(--mr-bg-2, #1c1c21)
     }
 
-    html.mr-mobile-ui body.login-portal-open #loginScreenFloor {
+    html.mr-mobile-ui body.login-portal-open,
+    html.mr-mobile-ui:has(#loginScreen:not([hidden])) {
+      background-color: var(--mr-bg-2, #1c1c21) !important
+    }
+
+    html.mr-mobile-ui body.login-portal-open #loginScreenFloor,
+    html.mr-mobile-ui #loginScreen:not([hidden]) #loginScreenFloor {
       display: block !important
     }
   </style>
   <script id="login-safe-bottom-early">(function () {
     var root = document.documentElement;
-    if (!root.classList.contains('mr-mobile-ui')) return;
-    var standalone = !!(window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches || window.matchMedia('(display-mode: fullscreen)').matches);
-    if (standalone) root.style.setProperty('--login-safe-bottom', '34px');
+    function applyLoginBleedEarly() {
+      if (!root.classList.contains('mr-mobile-ui')) return;
+      var standalone = !!(window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches || window.matchMedia('(display-mode: fullscreen)').matches);
+      if (standalone) {
+        root.classList.add('ios-standalone-pwa');
+        root.style.setProperty('--login-safe-bottom', '34px');
+      }
+      var ls = document.getElementById('loginScreen');
+      var floor = document.getElementById('loginScreenFloor');
+      if (floor && ls && !ls.hasAttribute('hidden')) floor.removeAttribute('hidden');
+    }
+    applyLoginBleedEarly();
+    document.addEventListener('DOMContentLoaded', applyLoginBleedEarly, { once: true });
   })();</script>
   
   <style id="mr-ui-shell-early-lock">
@@ -993,8 +1010,8 @@
     /* جوال / PWA: امتداد أسفل الشاشة تحت home indicator (iOS يُرجع safe-area=0 أحياناً) */
     #loginScreenFloor {
       display: none;
-      position: fixed;
-      z-index: 9999;
+      position: absolute;
+      z-index: 0;
       pointer-events: none;
       left: 0;
       right: 0;
@@ -28588,7 +28605,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-syntax-fix-v891">
+  <meta name="app-build" content="athar-login-bleed-v893">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -28676,9 +28693,8 @@
     </div>
   </div>
 
-  <div id="loginScreenFloor" class="login-screen-floor" hidden aria-hidden="true"></div>
-
   <div id="loginScreen" class="lp-screen hidden" hidden aria-hidden="true">
+    <div id="loginScreenFloor" class="login-screen-floor" hidden aria-hidden="true"></div>
     <div id="loginPortalBackdrop" class="login-portal-backdrop" aria-hidden="true"></div>
     <div class="lp-bg-blobs">
       <div class="lp-blob lp-blob-a"></div>
@@ -32482,7 +32498,8 @@
         if (on) {
           if (!_loginPortalThemeColorSaved) _loginPortalThemeColorSaved = meta.getAttribute('content') || '';
           const loginTheme = document.documentElement.getAttribute('data-theme') || 'light';
-          meta.setAttribute('content', loginTheme === 'dark' ? '#1c1c21' : '#f5f5f7');
+          const pwaLogin = isLoginStandalonePwa() && isLoginMobileViewport();
+          meta.setAttribute('content', pwaLogin ? '#1c1c21' : (loginTheme === 'dark' ? '#1c1c21' : '#f5f5f7'));
         } else if (_loginPortalThemeColorSaved) {
           meta.setAttribute('content', _loginPortalThemeColorSaved);
           _loginPortalThemeColorSaved = '';
