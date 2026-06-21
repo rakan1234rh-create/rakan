@@ -16723,6 +16723,11 @@
       animation: cfFade 0.2s ease
     }
 
+    /* فوق بطاقة التذكرة (تنبيهات / امتثال) */
+    #attViewer.att-over-ticket.open {
+      z-index: 3500 !important
+    }
+
     .att-viewer-content img,
     .att-viewer-content video {
       max-width: 100%;
@@ -28636,7 +28641,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-ticket-notif-lower-v900">
+  <meta name="app-build" content="athar-att-over-ticket-v901">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -44790,6 +44795,25 @@
         if (tag === 'VIDEO') guardAttViewerVideoClicks(el);
       }
 
+      function mountAttViewerTop() {
+        const viewer = document.getElementById('attViewer');
+        if (!viewer) return;
+        const ticketOpen = document.getElementById('ticketModal')?.classList.contains('open');
+        const overTicket = ticketOpen
+          || document.body.classList.contains('ticket-over-cmp')
+          || document.body.classList.contains('ticket-over-notif');
+        viewer.classList.toggle('att-over-ticket', overTicket);
+        if (viewer.parentNode !== document.body) document.body.appendChild(viewer);
+      }
+
+      function releaseAttViewerFromBody() {
+        const viewer = document.getElementById('attViewer');
+        const wrap = document.getElementById('appWrap');
+        if (!viewer) return;
+        viewer.classList.remove('att-over-ticket');
+        if (wrap && viewer.parentNode === document.body) wrap.appendChild(viewer);
+      }
+
       function openAttViewerByIndex(idx) {
         const t = state.editingTicket;
         const atts = getVisibleAttachments(t);
@@ -44800,6 +44824,7 @@
         const stage = viewer?.querySelector('.att-viewer-stage');
         if (stage) stage.style.transform = '';
         viewer.classList.remove('att-dragging');
+        mountAttViewerTop();
         viewer.classList.add('open');
         document.body.style.overflow = 'hidden';
         renderAttViewer();
@@ -44820,6 +44845,7 @@
         const stage = viewer?.querySelector('.att-viewer-stage');
         if (stage) stage.style.transform = '';
         viewer.classList.remove('att-dragging');
+        mountAttViewerTop();
         viewer.classList.add('open');
         document.body.style.overflow = 'hidden';
         renderAttViewer();
@@ -45141,6 +45167,7 @@
         resetAttViewerDragVisual(viewer, stage);
         document.getElementById('attViewerContent').innerHTML = '';
         document.body.style.overflow = '';
+        releaseAttViewerFromBody();
         _attViewerDrag.active = false;
         _attViewerDrag.pending = false;
         _attViewerDrag.pointerId = null;
