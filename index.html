@@ -12796,6 +12796,16 @@
       border-bottom: 1px solid var(--mr-border)
     }
 
+    #tab-notifications .notif-list--page .notif-swipe {
+      contain-intrinsic-size: auto 76px
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+      #tab-notifications .notif-list--page .notif-swipe {
+        content-visibility: auto
+      }
+    }
+
     #tab-notifications .notif-list--page {
       flex: 1 1 auto;
       min-height: 0;
@@ -12804,6 +12814,7 @@
       overflow-x: hidden;
       -webkit-overflow-scrolling: touch;
       overscroll-behavior: contain;
+      touch-action: pan-y;
       border-radius: 11px;
       border: 1px solid var(--mr-border);
       background: var(--mr-surface);
@@ -28726,7 +28737,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-notif-open-fast-v909">
+  <meta name="app-build" content="athar-notif-scroll-all-v910">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -37341,13 +37352,14 @@
           }
           if (tab === 'notifications') {
             syncNotifPageShell(true);
-            if (!state._notifFilter) state._notifFilter = 'all';
+            resetNotifFilterToAll();
             if (state._notifCache) {
               try {
                 paintNotifList(state._notifCache, getReadNotifs(), { pageOnly: true });
               } catch (_) { /* noop */ }
             }
-            scheduleIdleWork(() => renderNotifications(false), opts.notifFastOpen ? 1600 : 60);
+            const deferMs = state._notifCache ? 320 : 60;
+            scheduleIdleWork(() => renderNotifications(false), deferMs);
             requestAnimationFrame(() => {
               document.getElementById('notifBellBtn')?.blur();
               blurHiddenChromeFocus();
@@ -51164,6 +51176,7 @@
 
       function warmNotifCache() {
         if (!state.currentUser || !state._dataReady) return;
+        if (state._notifCache && (Date.now() - (state._notifCacheAt || 0)) < 25000) return;
         scheduleIdleWork(() => {
           try { buildUserNotificationsCached(false); } catch (_) { /* noop */ }
         }, 3500);
@@ -52991,6 +53004,16 @@
         document.body.classList.toggle('mr-notif-page-active', !!active);
       }
 
+      function resetNotifFilterToAll() {
+        state._notifFilter = 'all';
+        const wrap = document.getElementById('notifPageFilters');
+        wrap?.querySelectorAll('.notif-filter-btn').forEach(btn => {
+          const active = btn.dataset.filter === 'all';
+          btn.classList.toggle('is-active', active);
+          btn.setAttribute('aria-selected', active ? 'true' : 'false');
+        });
+      }
+
       function syncNotifFilterTabs(notifs) {
         const wrap = document.getElementById('notifPageFilters');
         if (!wrap || !state.currentUser) return;
@@ -53159,7 +53182,7 @@
         if (current !== 'notifications') {
           state._notifReturnTab = current || getRestorableTab() || 'dashboard';
         }
-        if (!state._notifFilter) state._notifFilter = 'all';
+        resetNotifFilterToAll();
 
         syncNotifPageShell(true);
         if (state._notifCache) {
@@ -53172,7 +53195,9 @@
         state._notifFastOpenDone = false;
 
         if (current === 'notifications' || shellDone) {
-          scheduleIdleWork(() => renderNotifications(false), 900);
+          requestAnimationFrame(() => {
+            scheduleIdleWork(() => renderNotifications(false), state._notifCache ? 280 : 80);
+          });
           document.getElementById('notifBellBtn')?.blur();
           blurHiddenChromeFocus();
         } else {
@@ -53733,13 +53758,35 @@
           rafPending = false;
         }
 
-        function resetNotifSwipePointer(opts = {}) {
-          cancelNotifSwipeRaf();
-          detachDocSwipeListeners();
-          const captureEl = activeWrap || activeItem;
+        let swipeCaptureEl = null;
+
+        function acquireNotifSwipeCapture(e) {
+          if (!activeWrap || pointerId == null || swipeCaptureEl) return;
+          const wrap = activeWrap;
+          const item = activeItem;
+          try {
+            wrap.setPointerCapture(e.pointerId);
+            swipeCaptureEl = wrap;
+          } catch (_) {
+            try {
+              item?.setPointerCapture(e.pointerId);
+              swipeCaptureEl = item;
+            } catch (_) { /* noop */ }
+          }
+        }
+
+        function releaseNotifSwipeCapture(opts = {}) {
+          const captureEl = swipeCaptureEl || activeWrap || activeItem;
           if (captureEl && pointerId != null && opts.releaseCapture !== false) {
             try { captureEl.releasePointerCapture(pointerId); } catch (_) {}
           }
+          swipeCaptureEl = null;
+        }
+
+        function resetNotifSwipePointer(opts = {}) {
+          cancelNotifSwipeRaf();
+          detachDocSwipeListeners();
+          releaseNotifSwipeCapture(opts);
           dragging = false;
           lockAxis = null;
           activeWrap = null;
@@ -53816,6 +53863,8 @@
               activeWrap.classList.add('is-dragging');
               activeWrap.classList.remove('is-open', 'is-snap-back');
               if (activeList) activeList.classList.add('notif-list--swiping');
+              state._notifSwipeActive = true;
+              acquireNotifSwipeCapture(e);
               lastMoveX = baseX + dx;
               lastMoveT = performance.now();
             }
@@ -53863,10 +53912,6 @@
           velocityX = 0;
           dragging = true;
           lockAxis = null;
-          state._notifSwipeActive = true;
-          try { wrap.setPointerCapture(e.pointerId); } catch (_) {
-            try { item.setPointerCapture(e.pointerId); } catch (_) {}
-          }
           attachDocSwipeListeners();
         });
 
