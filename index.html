@@ -108,6 +108,16 @@
   <link rel="stylesheet" href="styles/desktop/settings-shell.css" id="platform-settings-shell-link" media="screen and (min-width: 993px), screen and (hover: hover) and (pointer: fine)">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script id="syncDesktopUiClassEarly">(function(){var isIpad=/iPad/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);var isTab=isIpad||(/Android/i.test(navigator.userAgent)&&!/Mobile/i.test(navigator.userAgent));var isWide=window.matchMedia('(min-width:993px)').matches;var isTouch=window.matchMedia('(pointer:coarse)').matches;var isRealDesktop=window.matchMedia('(hover: hover) and (pointer: fine)').matches;var mob=isTab||isTouch||(!isRealDesktop&&!isWide);var meta=document.querySelector('meta[name="viewport"]');var vpDev='width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=overlays-content';function buildVpTab(){var layoutW=992;var landW=Math.max(window.screen&&window.screen.width||0,window.screen&&window.screen.height||0)||window.innerWidth||layoutW;var scale=Math.max(0.85,Math.min(1.35,landW/layoutW));var scaleStr=(Math.round(scale*10000)/10000).toFixed(4);return'width='+layoutW+', initial-scale='+scaleStr+', maximum-scale='+scaleStr+', minimum-scale='+scaleStr+', user-scalable=no, viewport-fit=cover, interactive-widget=overlays-content';}var tabLand=mob&&isTab&&window.matchMedia('(orientation: landscape)').matches;document.documentElement.classList.toggle('mr-desktop-ui',!mob);document.documentElement.classList.toggle('mr-mobile-ui',mob);document.documentElement.classList.toggle('mr-tablet-landscape',tabLand);if(meta){meta.setAttribute('content',tabLand?buildVpTab():vpDev);}var deskIds=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link'];for(var i=0;i<deskIds.length;i++){var el=document.getElementById(deskIds[i]);if(el)el.disabled=mob;}})();</script>
+  <style id="login-mobile-bleed-early">
+    /* iOS PWA: امتداد الخلفية تحت شريط Home — قبل تحميل JS */
+    html.mr-mobile-ui {
+      --login-safe-bottom-fallback: 34px
+    }
+
+    html.mr-mobile-ui body.login-portal-open #loginScreenFloor {
+      display: block
+    }
+  </style>
   
   <style id="mr-ui-shell-early-lock">
     html.mr-mobile-ui #appWrap #sidebar,
@@ -973,21 +983,33 @@
       overscroll-behavior: none
     }
 
-    /* جوال / PWA: ملء كامل للشاشة — inset:0 بدون ارتفاع px (يمنع القص على iOS) */
+    /* جوال / PWA: امتداد أسفل الشاشة تحت home indicator (iOS يُرجع safe-area=0 أحياناً) */
+    #loginScreenFloor {
+      display: none;
+      position: fixed;
+      z-index: 9999;
+      pointer-events: none;
+      left: 0;
+      right: 0;
+      top: 0;
+      bottom: calc(-1 * var(--login-safe-bottom, env(safe-area-inset-bottom, var(--login-safe-bottom-fallback, 34px))));
+      background: var(--login-portal-bg);
+      background-color: var(--mr-bg-2)
+    }
+
     html.mr-mobile-ui.login-portal-open,
     html.mr-mobile-ui body.login-portal-open {
-      background: var(--login-portal-bg) !important;
+      background: var(--mr-bg-2) !important;
+      background-image: var(--login-portal-bg) !important;
       position: fixed !important;
       top: 0 !important;
       right: 0 !important;
-      bottom: 0 !important;
       left: 0 !important;
+      bottom: calc(-1 * var(--login-safe-bottom, env(safe-area-inset-bottom, var(--login-safe-bottom-fallback, 34px)))) !important;
       width: 100% !important;
       height: auto !important;
-      min-height: 100% !important;
-      min-height: 100svh !important;
-      min-height: 100dvh !important;
-      min-height: -webkit-fill-available !important;
+      min-height: calc(100% + var(--login-safe-bottom, env(safe-area-inset-bottom, var(--login-safe-bottom-fallback, 34px)))) !important;
+      min-height: calc(100dvh + var(--login-safe-bottom, env(safe-area-inset-bottom, var(--login-safe-bottom-fallback, 34px)))) !important;
       margin: 0 !important;
       overflow: hidden !important;
       overscroll-behavior: none !important;
@@ -1001,16 +1023,14 @@
         z-index: 0;
         pointer-events: none;
         background: var(--login-portal-bg);
+        background-color: var(--mr-bg-2);
         top: 0;
         left: 0;
         right: 0;
-        bottom: 0;
+        bottom: calc(-1 * var(--login-safe-bottom, env(safe-area-inset-bottom, var(--login-safe-bottom-fallback, 34px))));
         width: 100%;
         height: auto;
-        min-height: 100%;
-        min-height: 100svh;
-        min-height: 100dvh;
-        min-height: -webkit-fill-available
+        min-height: calc(100dvh + var(--login-safe-bottom, env(safe-area-inset-bottom, var(--login-safe-bottom-fallback, 34px))))
       }
 
       html.mr-mobile-ui body.login-portal-open #loginScreen.lp-screen {
@@ -1018,13 +1038,11 @@
         top: 0 !important;
         left: 0 !important;
         right: 0 !important;
-        bottom: 0 !important;
+        bottom: calc(-1 * var(--login-safe-bottom, env(safe-area-inset-bottom, var(--login-safe-bottom-fallback, 34px)))) !important;
         width: 100% !important;
         height: auto !important;
-        min-height: 100% !important;
-        min-height: 100svh !important;
-        min-height: 100dvh !important;
-        min-height: -webkit-fill-available !important;
+        min-height: calc(100% + var(--login-safe-bottom, env(safe-area-inset-bottom, var(--login-safe-bottom-fallback, 34px)))) !important;
+        min-height: calc(100dvh + var(--login-safe-bottom, env(safe-area-inset-bottom, var(--login-safe-bottom-fallback, 34px)))) !important;
         max-height: none !important;
         justify-content: center !important;
         align-items: center !important;
@@ -1033,23 +1051,13 @@
         -webkit-overflow-scrolling: auto;
         touch-action: none;
         background: var(--login-portal-bg) !important;
+        background-color: var(--mr-bg-2) !important;
         padding: 0 !important;
         padding-top: env(safe-area-inset-top, 0px) !important;
         padding-left: env(safe-area-inset-left, 0px) !important;
         padding-right: env(safe-area-inset-right, 0px) !important;
+        padding-bottom: var(--login-safe-bottom, env(safe-area-inset-bottom, var(--login-safe-bottom-fallback, 34px))) !important;
         box-sizing: border-box
-      }
-
-      html.mr-mobile-ui body.login-portal-open #loginScreen.lp-screen::after {
-        content: '';
-        position: absolute;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        height: calc(env(safe-area-inset-bottom, 0px) + 3px);
-        background: var(--mr-bg-2);
-        z-index: 0;
-        pointer-events: none
       }
 
       html.mr-mobile-ui body.login-keyboard-open.login-portal-open #loginScreen.lp-screen {
@@ -1058,17 +1066,15 @@
         height: var(--login-vp-h, 50dvh) !important;
         min-height: 0 !important;
         max-height: var(--login-vp-h, 50dvh) !important;
+        padding-bottom: 0 !important;
         justify-content: flex-start !important;
         padding-top: max(8px, env(safe-area-inset-top, 0px)) !important
       }
 
-      html.mr-mobile-ui body.login-keyboard-open.login-portal-open #loginScreen.lp-screen::after {
-        display: none
-      }
-
       html.mr-mobile-ui body.login-portal-open #loginScreen .lp-bg-blobs {
         z-index: 1;
-        inset: 0
+        inset: 0;
+        bottom: calc(-1 * var(--login-safe-bottom, env(safe-area-inset-bottom, var(--login-safe-bottom-fallback, 34px))))
       }
 
       html.mr-mobile-ui body.login-portal-open #loginScreen .lp-center {
@@ -28575,7 +28581,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-login-bottom-bleed-v888">
+  <meta name="app-build" content="athar-login-ios-bleed-v889">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -28662,6 +28668,8 @@
       <h2 class="lt-title">جاري التحميل...</h2>
     </div>
   </div>
+
+  <div id="loginScreenFloor" class="login-screen-floor" hidden aria-hidden="true"></div>
 
   <div id="loginScreen" class="lp-screen hidden" hidden aria-hidden="true">
     <div id="loginPortalBackdrop" class="login-portal-backdrop" aria-hidden="true"></div>
@@ -32485,6 +32493,37 @@
         }
       }
 
+      /** قياس منطقة home indicator — iOS PWA يُرجع env(safe-area)=0 أحياناً */
+      function probeLoginSafeBottom() {
+        let bottom = 0;
+        try {
+          const probe = document.createElement('div');
+          probe.style.cssText = 'position:fixed;visibility:hidden;pointer-events:none;padding-bottom:constant(safe-area-inset-bottom);padding-bottom:env(safe-area-inset-bottom)';
+          (document.body || document.documentElement).appendChild(probe);
+          bottom = parseFloat(getComputedStyle(probe).paddingBottom) || 0;
+          probe.remove();
+        } catch (_) { /* noop */ }
+        if (bottom < 1 && isLoginMobileViewport()) {
+          const screenH = window.screen?.height || 0;
+          const innerH = window.innerHeight || 0;
+          if (screenH > 0 && innerH > 0) {
+            bottom = Math.max(0, Math.round(screenH - innerH));
+          }
+        }
+        if (bottom < 1 && isLoginStandalonePwa()) bottom = 34;
+        const px = `${Math.max(0, Math.round(bottom))}px`;
+        document.documentElement.style.setProperty('--login-safe-bottom', px);
+        return bottom;
+      }
+
+      function syncLoginScreenFloor() {
+        const floor = document.getElementById('loginScreenFloor');
+        if (!floor) return;
+        const on = document.body.classList.contains('login-portal-open') && isLoginMobileViewport();
+        floor.hidden = !on;
+        floor.setAttribute('aria-hidden', on ? 'true' : 'false');
+      }
+
       function getLoginLayoutHeight() {
         const vv = window.visualViewport;
         const candidates = [
@@ -32577,8 +32616,10 @@
         root.style.removeProperty('--login-vp-h');
         root.style.removeProperty('--login-vp-top');
         root.style.removeProperty('--login-card-shift');
+        root.style.removeProperty('--login-safe-bottom');
         document.body.classList.remove('login-keyboard-open');
         clearLoginScreenPin();
+        syncLoginScreenFloor();
       }
 
       function getLoginKeyboardInset() {
@@ -32596,6 +32637,8 @@
       function syncLoginViewportLayout() {
         if (!document.body.classList.contains('login-portal-open')) return;
         if (!isLoginMobileViewport()) return;
+        probeLoginSafeBottom();
+        syncLoginScreenFloor();
         const root = document.documentElement;
         const vv = window.visualViewport;
         const kbOpen = isLoginKeyboardOpen();
@@ -32783,7 +32826,9 @@
         const app = document.getElementById('appWrap');
         setNativeAppShellActive(false);
         syncLoginStandalonePwaClass();
+        probeLoginSafeBottom();
         setLoginPortalScrollLock(true);
+        syncLoginScreenFloor();
         if (ls) {
           ls.classList.remove('hidden');
           ls.removeAttribute('hidden');
