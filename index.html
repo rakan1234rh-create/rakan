@@ -6,7 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=overlays-content">
   <meta name="format-detection" content="telephone=no">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="theme-color" content="#121212" id="metaThemeColor">
+  <meta name="theme-color" content="#f5f5f7" id="metaThemeColor">
+  <script id="syncThemeMetaEarly">(function(){try{var t=localStorage.getItem('mp_theme')||'light';document.documentElement.setAttribute('data-theme',t);var m=document.getElementById('metaThemeColor');if(m)m.setAttribute('content',t==='dark'?'#1c1c21':'#f5f5f7');}catch(e){}})();</script>
   <meta name="apple-mobile-web-app-title" content="ATHAR">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -28519,7 +28520,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-login-bg-full-v882">
+  <meta name="app-build" content="athar-login-theme-color-v883">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -32211,9 +32212,17 @@
       // ═══════════════════════════════════════════════════════════════════════════
       // 6. THEME
       // ═══════════════════════════════════════════════════════════════════════════
+      function readThemeChromeMetaColor() {
+        const color = getComputedStyle(document.documentElement).getPropertyValue('--mr-bg-2').trim();
+        const theme = document.documentElement.getAttribute('data-theme') || 'light';
+        return color || (theme === 'dark' ? '#1c1c21' : '#f5f5f7');
+      }
+
       function syncThemeMetaColor(theme) {
         const meta = document.getElementById('metaThemeColor');
-        if (meta) meta.setAttribute('content', theme === 'dark' ? '#131826' : '#f7f8fa');
+        if (!meta) return;
+        if (theme) document.documentElement.setAttribute('data-theme', theme);
+        meta.setAttribute('content', readThemeChromeMetaColor());
       }
 
       function syncTopbarUserMenuTheme() {
@@ -32404,16 +32413,15 @@
       function syncLoginPortalChromePaint() {
         const meta = document.getElementById('metaThemeColor');
         if (!meta) return;
-        const theme = document.documentElement.getAttribute('data-theme') || 'light';
-        const on = document.body.classList.contains('login-portal-open') && isLoginMobileViewport();
+        const on = document.body.classList.contains('login-portal-open');
         if (on) {
           if (!_loginPortalThemeColorSaved) _loginPortalThemeColorSaved = meta.getAttribute('content') || '';
-          meta.setAttribute('content', theme === 'dark' ? '#131316' : '#f5f5f7');
+          meta.setAttribute('content', readThemeChromeMetaColor());
         } else if (_loginPortalThemeColorSaved) {
           meta.setAttribute('content', _loginPortalThemeColorSaved);
           _loginPortalThemeColorSaved = '';
         } else {
-          syncThemeMetaColor(theme);
+          syncThemeMetaColor();
         }
       }
 
