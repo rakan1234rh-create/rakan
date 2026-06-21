@@ -28641,7 +28641,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-att-over-ticket-v901">
+  <meta name="app-build" content="athar-notif-autofwd-time-v902">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -38212,7 +38212,8 @@
 
       function formatRelativeAr(iso) {
         if (!iso) return '';
-        const t = new Date(iso).getTime();
+        let t = new Date(iso).getTime();
+        if (Number.isNaN(t)) t = notifParseLogDateMs(iso);
         if (Number.isNaN(t)) return '';
         const nowMs = ksaClockReady() ? ksaNowMs() : NaN;
         if (!Number.isFinite(nowMs)) return '';
@@ -51009,7 +51010,57 @@
         return !!t && t.state === 'aud' && isDbTruthy(t.auto_forwarded_sup);
       }
 
-      /** أسلوب تنبيه الراصد حسب إجراء السجل أو حالة التذكرة */
+      function notifAutoForwardLogPattern(direction) {
+        return direction === 'emp_to_sup'
+          ? /تمرير تلقائي.*(المشرف|بانتظار رد المشرف)/i
+          : /تمرير تلقائي.*(المدقق|بانتظار التدقيق|بانتظار رد المدقق)/i;
+      }
+
+      function notifParseLogDateMs(raw) {
+        if (!raw) return NaN;
+        const s = String(raw).trim();
+        if (!s) return NaN;
+        if (/^\d{4}-\d{2}-\d{2}T/.test(s)) {
+          const t = new Date(s).getTime();
+          return Number.isFinite(t) ? t : NaN;
+        }
+        const m = /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?/.exec(s);
+        if (!m) {
+          const t = new Date(s).getTime();
+          return Number.isFinite(t) ? t : NaN;
+        }
+        const d = new Date(
+          `${m[1]}-${m[2]}-${m[3]}T${m[4] || '00'}:${m[5] || '00'}:${m[6] || '00'}${KSA_TZ_OFFSET}`
+        );
+        return d.getTime();
+      }
+
+      /** وقت تنبيه التمرير التلقائي — من سجل التذكرة وليس updated_at */
+      function notifTimeFromAutoForwardLog(t, direction) {
+        const pattern = notifAutoForwardLogPattern(direction);
+        const logs = parseDbJsonArray(t?.logs);
+        for (let i = logs.length - 1; i >= 0; i--) {
+          const log = logs[i];
+          if (!pattern.test(String(log?.action || ''))) continue;
+          const raw = log?.date;
+          if (!raw) break;
+          const ms = notifParseLogDateMs(raw);
+          if (Number.isFinite(ms)) return new Date(ms).toISOString();
+          return String(raw);
+        }
+        return t?.updated_at || t?.created_at || '';
+      }
+
+      function notifAutoForwardStableId(ticketId, direction) {
+        return `auto_fwd_${ticketId}_${direction}`;
+      }
+
+      function notifAutoForwardDirection(t) {
+        if (!t) return null;
+        if (isSupAutoForwardedToAud(t)) return 'sup_to_aud';
+        if (isEmpAutoForwardedToSup(t)) return 'emp_to_sup';
+        return null;
+      }
       function observerLogNotifStyle(t, log) {
         const a = String(log?.action || '');
         const st = String(t?.status_text || '');
@@ -51074,6 +51125,7 @@
             // إذا التذكرة مررت تلقائياً نضيف علامة
             const isAuto = (t.auto_forwarded_emp && t.state === 'sup') ||
               (t.auto_forwarded_sup && t.state === 'aud');
+            const fwdDir = isAuto ? notifAutoForwardDirection(t) : null;
             notifs.push({
               id: `pending_${t.id}`,
               ticketId: t.id,
@@ -51081,7 +51133,7 @@
               icon: isAuto ? 'fa-robot' : 'fa-bell',
               title: isAuto ? `⚠️ ${title} (تمرير تلقائي)` : title,
               msg,
-              time: t.updated_at || t.created_at,
+              time: fwdDir ? notifTimeFromAutoForwardLog(t, fwdDir) : (t.updated_at || t.created_at),
               isAuto
             });
           }
@@ -51389,7 +51441,7 @@
               icon: 'fa-stopwatch',
               title: 'تم خصم 20 نقاط من مؤشر الاستجابة',
               msg: `لم يتم الرد على المخالفة ${shortTicketNum(v.ticket_number)} خلال المهلة المحددة`,
-              time: v.updated_at || v.created_at,
+              time: notifTimeFromAutoForwardLog(v, 'sup_to_aud') || v.updated_at || v.created_at,
               scope: 'mine'
             });
           });
@@ -51473,14 +51525,17 @@
                   type = 'amber';
                   icon = 'fa-robot';
                 }
+                const fwdDir = autoEmpFwd && t.state === 'sup'
+                  ? 'emp_to_sup'
+                  : (autoSupFwd && t.state === 'aud' ? 'sup_to_aud' : null);
                 notifs.push({
-                  id: `bm_team_status_${t.id}_${t.state}${autoEmpFwd || autoSupFwd ? '_auto' : ''}`,
+                  id: fwdDir ? notifAutoForwardStableId(t.id, fwdDir) : `bm_team_status_${t.id}_${t.state}`,
                   ticketId: t.id,
                   type,
                   icon,
                   title,
                   msg: `${t._empName} — ${t.violation_type} — ${shortTicketNum(t.ticket_number)}`,
-                  time: t.updated_at || t.created_at,
+                  time: fwdDir ? notifTimeFromAutoForwardLog(t, fwdDir) : (t.updated_at || t.created_at),
                   scope: 'team',
                   isAuto: autoEmpFwd || autoSupFwd
                 });
@@ -52701,6 +52756,9 @@
               if (role === 'branch_manager' && t.branch_id === me.branch_id && t.employee_id !== me.id) scope = 'team';
               else if ((role === 'manager' || role === 'admin') && t.state !== 'mgt') scope = 'team';
             }
+          }
+          else if (/^auto_fwd_/.test(id) && n.ticketId) {
+            scope = 'team';
           }
           if (!canTeam) scope = 'mine';
           return Object.assign({}, n, { scope });
