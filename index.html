@@ -973,31 +973,28 @@
       overscroll-behavior: none
     }
 
-    /* جوال / PWA: شاشة دخول ثابتة — ملء كامل + بدون سحب عند الكيبورد */
+    /* جوال / PWA: ملء كامل للشاشة — inset:0 بدون ارتفاع px (يمنع القص على iOS) */
     html.mr-mobile-ui.login-portal-open,
     html.mr-mobile-ui body.login-portal-open {
       background: var(--login-portal-bg) !important;
+      position: fixed !important;
+      top: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      left: 0 !important;
+      width: 100% !important;
+      height: auto !important;
+      min-height: 100% !important;
+      min-height: 100svh !important;
+      min-height: 100dvh !important;
+      min-height: -webkit-fill-available !important;
+      margin: 0 !important;
       overflow: hidden !important;
       overscroll-behavior: none !important;
       touch-action: none
     }
 
     @media (max-width: 992px), (hover: none) and (pointer: coarse) {
-      html.mr-mobile-ui.login-portal-open,
-      html.mr-mobile-ui body.login-portal-open {
-        position: fixed !important;
-        inset: 0 !important;
-        width: 100% !important;
-        height: 100% !important;
-        min-height: 0 !important;
-        max-height: none !important;
-        margin: 0 !important;
-        overflow: hidden !important;
-        overscroll-behavior: none !important;
-        touch-action: none;
-        background: var(--login-portal-bg) !important
-      }
-
       html.mr-mobile-ui body.login-portal-open #loginPortalBackdrop.login-portal-backdrop {
         display: block;
         position: fixed;
@@ -1009,21 +1006,26 @@
         right: 0;
         bottom: 0;
         width: 100%;
-        height: 100%;
+        height: auto;
+        min-height: 100%;
+        min-height: 100svh;
         min-height: 100dvh;
         min-height: -webkit-fill-available
       }
 
       html.mr-mobile-ui body.login-portal-open #loginScreen.lp-screen {
         position: fixed !important;
-        top: var(--login-vp-top, 0) !important;
+        top: 0 !important;
         left: 0 !important;
         right: 0 !important;
-        bottom: auto !important;
+        bottom: 0 !important;
         width: 100% !important;
-        height: var(--login-vp-h, 100dvh) !important;
-        min-height: var(--login-vp-h, 100dvh) !important;
-        max-height: var(--login-vp-h, 100dvh) !important;
+        height: auto !important;
+        min-height: 100% !important;
+        min-height: 100svh !important;
+        min-height: 100dvh !important;
+        min-height: -webkit-fill-available !important;
+        max-height: none !important;
         justify-content: center !important;
         align-items: center !important;
         overflow: hidden !important;
@@ -1033,10 +1035,35 @@
         background: var(--login-portal-bg) !important;
         padding: 0 !important;
         padding-top: env(safe-area-inset-top, 0px) !important;
-        padding-bottom: env(safe-area-inset-bottom, 0px) !important;
         padding-left: env(safe-area-inset-left, 0px) !important;
         padding-right: env(safe-area-inset-right, 0px) !important;
         box-sizing: border-box
+      }
+
+      html.mr-mobile-ui body.login-portal-open #loginScreen.lp-screen::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: calc(env(safe-area-inset-bottom, 0px) + 3px);
+        background: var(--mr-bg-2);
+        z-index: 0;
+        pointer-events: none
+      }
+
+      html.mr-mobile-ui body.login-keyboard-open.login-portal-open #loginScreen.lp-screen {
+        top: var(--login-vp-top, 0) !important;
+        bottom: auto !important;
+        height: var(--login-vp-h, 50dvh) !important;
+        min-height: 0 !important;
+        max-height: var(--login-vp-h, 50dvh) !important;
+        justify-content: flex-start !important;
+        padding-top: max(8px, env(safe-area-inset-top, 0px)) !important
+      }
+
+      html.mr-mobile-ui body.login-keyboard-open.login-portal-open #loginScreen.lp-screen::after {
+        display: none
       }
 
       html.mr-mobile-ui body.login-portal-open #loginScreen .lp-bg-blobs {
@@ -1069,11 +1096,6 @@
       html.mr-mobile-ui body.login-portal-open #loginScreen a,
       html.mr-mobile-ui body.login-portal-open #loginScreen label {
         touch-action: manipulation
-      }
-
-      html.mr-mobile-ui body.login-keyboard-open.login-portal-open #loginScreen.lp-screen {
-        justify-content: flex-start !important;
-        padding-top: max(8px, env(safe-area-inset-top, 0px)) !important
       }
     }
 
@@ -28553,7 +28575,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-login-vp-lock-v887">
+  <meta name="app-build" content="athar-login-bottom-bleed-v888">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -32481,6 +32503,7 @@
         ls.style.removeProperty('top');
         ls.style.removeProperty('left');
         ls.style.removeProperty('right');
+        ls.style.removeProperty('bottom');
         ls.style.removeProperty('width');
         ls.style.removeProperty('height');
         ls.style.removeProperty('min-height');
@@ -32489,7 +32512,7 @@
         ls.style.removeProperty('position');
       }
 
-      /** تثبيت الشاشة: ملء كامل بدون كيبورد — ومتابعة visualViewport عند فتحه */
+      /** عند الكيبورد فقط: تثبيت بـ visualViewport — بدون كيبورد يعتمد CSS على inset:0 */
       function applyLoginScreenPin() {
         if (!document.body.classList.contains('login-portal-open')) return;
         if (!isLoginMobileViewport()) return;
@@ -32497,7 +32520,6 @@
         if (!ls) return;
         const vv = window.visualViewport;
         const kbOpen = isLoginKeyboardOpen();
-        const layoutH = getLoginLayoutHeight();
 
         if (vv && kbOpen) {
           const h = Math.max(1, Math.round(vv.height));
@@ -32506,21 +32528,16 @@
           ls.style.top = `${top}px`;
           ls.style.left = '0';
           ls.style.right = '0';
+          ls.style.bottom = 'auto';
           ls.style.width = '100%';
           ls.style.height = `${h}px`;
           ls.style.minHeight = `${h}px`;
           ls.style.maxHeight = `${h}px`;
+          ls.style.overflow = 'hidden';
         } else {
-          ls.style.position = 'fixed';
-          ls.style.top = '0';
-          ls.style.left = '0';
-          ls.style.right = '0';
-          ls.style.width = '100%';
-          ls.style.height = `${layoutH}px`;
-          ls.style.minHeight = `${layoutH}px`;
-          ls.style.maxHeight = `${layoutH}px`;
+          clearLoginScreenPin();
+          ls.style.overflow = 'hidden';
         }
-        ls.style.overflow = 'hidden';
       }
 
       function applyLoginStableViewport() {
@@ -32575,14 +32592,13 @@
         return getLoginKeyboardInset() > 72;
       }
 
-      /** تثبيت أبعاد شاشة الدخول — ارتفاع كامل بدون كيبورد، visualViewport عند فتحه */
+      /** تثبيت أبعاد شاشة الدخول — CSS inset:0 بدون كيبورد، vv فقط عند الكيبورد */
       function syncLoginViewportLayout() {
         if (!document.body.classList.contains('login-portal-open')) return;
         if (!isLoginMobileViewport()) return;
         const root = document.documentElement;
         const vv = window.visualViewport;
         const kbOpen = isLoginKeyboardOpen();
-        const layoutH = getLoginLayoutHeight();
 
         if (vv && kbOpen) {
           const h = Math.max(1, Math.round(vv.height));
@@ -32590,8 +32606,8 @@
           root.style.setProperty('--login-vp-h', `${h}px`);
           root.style.setProperty('--login-vp-top', `${top}px`);
         } else {
-          root.style.setProperty('--login-vp-h', `${layoutH}px`);
-          root.style.setProperty('--login-vp-top', '0px');
+          root.style.removeProperty('--login-vp-h');
+          root.style.removeProperty('--login-vp-top');
         }
         document.body.classList.toggle('login-keyboard-open', kbOpen);
         applyLoginScreenPin();
