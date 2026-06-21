@@ -23922,6 +23922,38 @@
         ) !important
       }
 
+      /* تذكرة من صفحة التنبيهات — الشريط السفلي مخفي: الورقة تمتد لأسفل الشاشة */
+      html.mr-notif-page-active.mr-mobile-ui #ticketModal.modal,
+      body.ticket-over-notif #ticketModal.modal {
+        padding-bottom: 0 !important;
+        z-index: 3000 !important
+      }
+
+      html.mr-notif-page-active.mr-mobile-ui #ticketModal.modal.open::before,
+      body.ticket-over-notif #ticketModal.modal.open::before {
+        bottom: 0 !important;
+        background: rgba(15, 23, 42, 0.42) !important
+      }
+
+      [data-theme="dark"] html.mr-notif-page-active.mr-mobile-ui #ticketModal.modal.open::before,
+      [data-theme="dark"] body.ticket-over-notif #ticketModal.modal.open::before {
+        background: rgba(0, 0, 0, 0.58) !important
+      }
+
+      html.mr-notif-page-active.mr-mobile-ui #ticketModal .td-mob-sheet,
+      body.ticket-over-notif #ticketModal .td-mob-sheet {
+        bottom: env(safe-area-inset-bottom, 0px) !important;
+        max-height: min(
+          94dvh,
+          calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 10px)
+        ) !important
+      }
+
+      html.mr-notif-page-active.mr-mobile-ui #ticketModal .td-content-area,
+      body.ticket-over-notif #ticketModal .td-content-area {
+        padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px))
+      }
+
       body.ticket-scroll-locked {
         overflow: hidden !important
       }
@@ -28602,7 +28634,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-ksa-clock-net-v898">
+  <meta name="app-build" content="athar-ticket-notif-sheet-v899">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -31300,7 +31332,7 @@
         }
         // إيقاف عدّاد التذكرة عند إغلاق المودال
         if (id === 'ticketModal') {
-          document.body.classList.remove('ticket-over-cmp');
+          document.body.classList.remove('ticket-over-cmp', 'ticket-over-notif');
           if (state._countdownTimer) {
             clearInterval(state._countdownTimer);
             state._countdownTimer = null;
@@ -31330,9 +31362,20 @@
         return Math.max(0, Math.round(window.innerHeight - vv.offsetTop - vv.height));
       }
 
-      function getMobNavHeight() {
+      function isMobBottomNavVisible() {
+        if (!isViolDetailMobSheet()) return false;
+        if (document.documentElement.classList.contains('mr-notif-page-active')) return false;
         const nav = document.getElementById('mobileBottomNav');
-        if (!nav || !isViolDetailMobSheet()) return 56;
+        if (!nav) return false;
+        const cs = getComputedStyle(nav);
+        if (cs.display === 'none' || cs.visibility === 'hidden' || Number(cs.opacity) === 0) return false;
+        const rect = nav.getBoundingClientRect();
+        return rect.height > 8 && rect.width > 8;
+      }
+
+      function getMobNavHeight() {
+        if (!isMobBottomNavVisible()) return 0;
+        const nav = document.getElementById('mobileBottomNav');
         const h = Math.ceil(nav.getBoundingClientRect().height);
         if (h > 0) return h;
         return parseInt(getComputedStyle(document.documentElement).getPropertyValue('--mr-mob-bottom-nav-h'), 10) || 56;
@@ -31506,7 +31549,7 @@
         const shell = document.querySelector('#appWrap > .app-shell');
         const nav = document.getElementById('mobileBottomNav');
         if (!modal || !shell) return;
-        if (document.body.classList.contains('ticket-over-cmp')) {
+        if (document.body.classList.contains('ticket-over-cmp') || document.documentElement.classList.contains('mr-notif-page-active')) {
           if (modal.parentNode !== document.body) document.body.appendChild(modal);
           return;
         }
@@ -31854,7 +31897,7 @@
             clearInterval(state._countdownTimer);
             state._countdownTimer = null;
           }
-          document.body.classList.remove('ticket-over-cmp');
+          document.body.classList.remove('ticket-over-cmp', 'ticket-over-notif');
           if (!document.querySelector('.modal.open')) {
             document.body.classList.remove('modal-open');
           }
@@ -44137,6 +44180,11 @@
         try { await repairViolationAttachmentPaths(t); } catch (_) {}
 
         renderTicketDetailUI(t);
+
+        document.body.classList.toggle(
+          'ticket-over-notif',
+          isViolDetailMobSheet() && typeof getActiveTabKey === 'function' && getActiveTabKey() === 'notifications'
+        );
 
         if (isViolDetailMobSheet()) openTicketSheetAnimated();
         else openModal('ticketModal');
