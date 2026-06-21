@@ -28602,7 +28602,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-ksa-clock-v897">
+  <meta name="app-build" content="athar-ksa-clock-net-v898">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -31952,20 +31952,139 @@
         void attempt;
       }
 
-      /** توقيت المنصة الرسمي — المملكة العربية السعودية (لا يعتمد على منطقة جهاز المستخدم) */
+      /** توقيت المنصة الرسمي — المملكة العربية السعودية */
       const APP_TZ = 'Asia/Riyadh';
       const KSA_TZ_OFFSET = '+03:00';
+      const KSA_CLOCK_RESYNC_MS = 10 * 60 * 1000;
+      const KSA_CLOCK_FETCH_TIMEOUT_MS = 8000;
 
-      /** اللحظة الحالية — العرض دائماً عبر ksaFormatParts / APP_TZ */
+      /** فرق الميلي ثانية بين ساعة الجهاز ووقت الرياض الحقيقي (يُحدَّث من الإنترنت فقط) */
+      function ksaClockReady() {
+        return !!(state._ksaClockSynced && Number.isFinite(state._ksaClockOffsetMs));
+      }
+
+      function ksaNowMs() {
+        if (!ksaClockReady()) return NaN;
+        return Date.now() + state._ksaClockOffsetMs;
+      }
+
+      /** اللحظة الحالية بتوقيت الرياض — لا تُستخدم ساعة الجهاز مباشرة */
       function ksaNow() {
-        return new Date();
+        const ms = ksaNowMs();
+        if (!Number.isFinite(ms)) return null;
+        return new Date(ms);
+      }
+
+      async function fetchKsaClockOffsetWorldTimeApi(signal) {
+        const t0 = Date.now();
+        const res = await fetch('https://worldtimeapi.org/api/timezone/Asia/Riyadh', { signal, cache: 'no-store' });
+        if (!res.ok) throw new Error(`worldtimeapi ${res.status}`);
+        const data = await res.json();
+        const t1 = Date.now();
+        let serverMs = NaN;
+        if (data?.unixtime) serverMs = Number(data.unixtime) * 1000;
+        else if (data?.datetime) serverMs = new Date(data.datetime).getTime();
+        if (!Number.isFinite(serverMs)) throw new Error('worldtimeapi payload');
+        return serverMs + (t1 - t0) / 2 - t1;
+      }
+
+      async function fetchKsaClockOffsetTimeApiIo(signal) {
+        const t0 = Date.now();
+        const res = await fetch('https://timeapi.io/api/Time/current/zone?timeZone=Asia/Riyadh', { signal, cache: 'no-store' });
+        if (!res.ok) throw new Error(`timeapi.io ${res.status}`);
+        const data = await res.json();
+        const t1 = Date.now();
+        const serverMs = new Date(
+          `${data.year}-${ksaPad(data.month)}-${ksaPad(data.day)}T` +
+          `${ksaPad(data.hour)}:${ksaPad(data.minute)}:${ksaPad(data.seconds ?? 0)}${KSA_TZ_OFFSET}`
+        ).getTime();
+        if (!Number.isFinite(serverMs)) throw new Error('timeapi.io parse');
+        return serverMs + (t1 - t0) / 2 - t1;
+      }
+
+      async function fetchKsaClockOffsetHttpDate(url, signal) {
+        const t0 = Date.now();
+        const res = await fetch(url, { method: 'HEAD', signal, cache: 'no-store', mode: 'cors' });
+        const t1 = Date.now();
+        const hdr = res.headers.get('date');
+        if (!hdr) throw new Error('no date header');
+        const serverMs = new Date(hdr).getTime();
+        if (!Number.isFinite(serverMs)) throw new Error('date header parse');
+        return serverMs + (t1 - t0) / 2 - t1;
+      }
+
+      async function syncKsaClockOffset() {
+        const origin = (typeof window !== 'undefined' && window.location?.origin) ? window.location.origin : '';
+        const sources = [
+          fetchKsaClockOffsetWorldTimeApi,
+          fetchKsaClockOffsetTimeApiIo,
+          (signal) => fetchKsaClockOffsetHttpDate('https://api.github.com', signal),
+        ];
+        if (origin && !/^file:/i.test(origin)) {
+          sources.push((signal) => fetchKsaClockOffsetHttpDate(`${origin}/`, signal));
+        }
+        let lastErr = null;
+        for (const source of sources) {
+          const ctrl = new AbortController();
+          const timer = window.setTimeout(() => ctrl.abort(), KSA_CLOCK_FETCH_TIMEOUT_MS);
+          try {
+            const offset = await source(ctrl.signal);
+            window.clearTimeout(timer);
+            if (!Number.isFinite(offset)) continue;
+            state._ksaClockOffsetMs = offset;
+            state._ksaClockSynced = true;
+            state._ksaClockSyncedAt = Date.now();
+            if (isMirsadDebugLog()) console.log('[KsaClock] synced offset ms:', Math.round(offset));
+            return true;
+          } catch (e) {
+            lastErr = e;
+            window.clearTimeout(timer);
+          }
+        }
+        if (isMirsadDebugLog()) console.warn('[KsaClock] sync failed', lastErr);
+        return false;
+      }
+
+      async function ensureKsaClockSynced(maxAttempts = 5) {
+        for (let i = 0; i < maxAttempts; i++) {
+          if (await syncKsaClockOffset()) return true;
+          await new Promise((r) => window.setTimeout(r, 1200 * (i + 1)));
+        }
+        return false;
+      }
+
+      function armKsaClockResync() {
+        if (state._ksaClockResyncTimer) return;
+        state._ksaClockResyncTimer = window.setInterval(() => {
+          if (document.hidden) return;
+          syncKsaClockOffset();
+        }, KSA_CLOCK_RESYNC_MS);
+      }
+
+      function armKsaClockRetryUntilSynced() {
+        if (state._ksaClockRetryTimer || ksaClockReady()) return;
+        state._ksaClockRetryTimer = window.setInterval(async () => {
+          if (await syncKsaClockOffset()) {
+            window.clearInterval(state._ksaClockRetryTimer);
+            state._ksaClockRetryTimer = null;
+          }
+        }, 8000);
+      }
+
+      async function initKsaClockSync() {
+        armKsaClockResync();
+        const ok = await ensureKsaClockSynced(5);
+        if (!ok) armKsaClockRetryUntilSynced();
+        return ok;
       }
 
       function ksaPad(n) {
         return String(n).padStart(2, '0');
       }
 
-      function ksaFormatParts(date = new Date()) {
+      function ksaFormatParts(date = null) {
+        const d = date == null ? ksaNow() : (date instanceof Date ? date : new Date(date));
+        if (!d || isNaN(d.getTime())) return null;
         const map = {};
         new Intl.DateTimeFormat('en-US', {
           timeZone: APP_TZ,
@@ -31976,7 +32095,7 @@
           minute: '2-digit',
           second: '2-digit',
           hour12: false
-        }).formatToParts(date).forEach(p => {
+        }).formatToParts(d).forEach(p => {
           if (p.type !== 'literal') map[p.type] = p.value;
         });
         return {
@@ -32009,6 +32128,18 @@
 
       function ksaCurrentMonthRange() {
         const p = ksaFormatParts();
+        if (!p) {
+          return {
+            fromIso: '',
+            toIso: '',
+            daysInMonth: 0,
+            year: 0,
+            month: 0,
+            nextFromIso: '',
+            monthStart: null,
+            nextMonthStart: null
+          };
+        }
         const cur = ksaMonthRange(p.year, p.month);
         const next = ksaShiftMonth(p.year, p.month, 1);
         const nextR = ksaMonthRange(next.year, next.month);
@@ -32022,6 +32153,7 @@
 
       function ksaMonthSlots(count) {
         const p = ksaFormatParts();
+        if (!p) return [];
         const out = [];
         for (let i = count - 1; i >= 0; i--) {
           const { year, month } = ksaShiftMonth(p.year, p.month, -i);
@@ -32058,6 +32190,7 @@
 
       function ksaTodayIso() {
         const p = ksaFormatParts();
+        if (!p) return '';
         return `${p.year}-${ksaPad(p.month + 1)}-${ksaPad(p.day)}`;
       }
 
@@ -32073,6 +32206,7 @@
 
       function ksaTodayCalendar() {
         const p = ksaFormatParts();
+        if (!p) return null;
         return ksaCalendarDate(p.year, p.month, p.day);
       }
 
@@ -32084,6 +32218,7 @@
       function ksaCalendarToIso(d) {
         if (!(d instanceof Date) || isNaN(d.getTime())) return '';
         const p = ksaFormatParts(d);
+        if (!p) return '';
         return `${p.year}-${ksaPad(p.month + 1)}-${ksaPad(p.day)}`;
       }
 
@@ -32096,6 +32231,7 @@
 
       function ksaInitViewState(st) {
         const p = ksaFormatParts();
+        if (!p) return;
         st.viewYear = p.year;
         st.viewMonth = p.month;
       }
@@ -32122,6 +32258,7 @@
       function ksaShiftCalendarDays(year, month0, day, delta) {
         const anchor = new Date(`${year}-${ksaPad(month0 + 1)}-${ksaPad(day)}T12:00:00${KSA_TZ_OFFSET}`);
         const p = ksaFormatParts(new Date(anchor.getTime() + delta * 86400000));
+        if (!p) return { year, month: month0, day };
         return { year: p.year, month: p.month, day: p.day };
       }
 
@@ -32214,8 +32351,13 @@
       }
 
       /** ساعة الشريط العلوي — وقت وتاريخ حي بتوقيت الرياض */
-      function formatKsaLiveClock(now = ksaNow()) {
-        const p = ksaFormatParts(now);
+      function formatKsaLiveClock(now) {
+        const d = now ?? ksaNow();
+        if (!d || isNaN(d.getTime())) {
+          return { hm: '--:--', ampm: '', dateLine: 'جاري مزامنة وقت الرياض…' };
+        }
+        const p = ksaFormatParts(d);
+        if (!p) return { hm: '--:--', ampm: '', dateLine: 'جاري مزامنة وقت الرياض…' };
         const h12 = p.hour % 12 || 12;
         const ampm = p.hour >= 12 ? 'م' : 'ص';
         const wd = KSA_AR_WEEKDAYS[ksaWeekdayIndex(p.year, p.month, p.day)] || '';
@@ -32237,13 +32379,14 @@
 
       function ksaEndOfIsoDayMs(iso) {
         const p = ksaParseIso(iso);
-        if (!p) return Date.now();
+        if (!p) return ksaClockReady() ? ksaNowMs() : NaN;
         const d = new Date(`${iso}T23:59:59.999+03:00`);
-        return isNaN(d.getTime()) ? Date.now() : d.getTime();
+        return isNaN(d.getTime()) ? (ksaClockReady() ? ksaNowMs() : NaN) : d.getTime();
       }
 
       function getNow() {
-        const p = ksaFormatParts(ksaNow());
+        const p = ksaFormatParts();
+        if (!p) return '';
         return `${p.year}-${ksaPad(p.month + 1)}-${ksaPad(p.day)} ${ksaPad(p.hour)}:${ksaPad(p.minute)}`;
       }
 
@@ -32395,18 +32538,18 @@
         refreshWefaqLogosForTheme();
       }
 
-      // ─── ساعة حية في الـ topbar (توقيت الرياض — 12 ساعة + تاريخ عربي) ───
+      // ─── ساعة حية في الـ topbar (توقيت الرياض من الإنترنت — 12 ساعة + تاريخ عربي) ───
       function startLiveClock() {
         const timeEl = document.getElementById('clockText');
         const ampmEl = document.getElementById('clockAmPm');
         const dateEl = document.getElementById('clockDate');
         if (!timeEl || !ampmEl || !dateEl) return;
         const update = () => {
-          const clock = formatKsaLiveClock(ksaNow());
+          const clock = formatKsaLiveClock();
           timeEl.textContent = clock.hm;
           ampmEl.textContent = clock.ampm;
           dateEl.textContent = clock.dateLine;
-          if (document.getElementById('tab-dashboard')?.classList.contains('active')) {
+          if (ksaClockReady() && document.getElementById('tab-dashboard')?.classList.contains('active')) {
             updateDashDateKicker();
           }
         };
@@ -33312,11 +33455,18 @@
           await loadRolePermissions();
           applyRBACUI({ skipCmpRefresh: true });
           armSessionRestoreGuard();
+          startLiveClock();
+          const clockOk = await initKsaClockSync();
+          if (!clockOk) showToast('تعذّر مزامنة وقت الرياض — إعادة المحاولة…', 'warning');
+          if (ksaClockReady()) {
+            ksaInitViewState(ntDpState);
+            ksaInitViewState(cmpDpState);
+            ksaInitViewState(dpState);
+          }
 
           const finishLoginBoot = () => {
             ensureActiveTabAllowed();
             setLoginLoading(false);
-            startLiveClock();
 
             const startRealtime = () => {
               try {
@@ -38014,7 +38164,9 @@
         if (!iso) return '';
         const t = new Date(iso).getTime();
         if (Number.isNaN(t)) return '';
-        const sec = Math.floor((Date.now() - t) / 1000);
+        const nowMs = ksaClockReady() ? ksaNowMs() : NaN;
+        if (!Number.isFinite(nowMs)) return '';
+        const sec = Math.floor((nowMs - t) / 1000);
         if (sec < 60) return 'الآن';
         if (sec < 3600) {
           const m = Math.floor(sec / 60);
@@ -38743,13 +38895,14 @@
         const nextMonthStart = curMonth.nextMonthStart;
         const monthFromIso = curMonth.fromIso;
         const nextFromIso = curMonth.nextFromIso;
-        const ksaNow = ksaFormatParts();
+        const ksaNowParts = ksaFormatParts();
+        if (!ksaNowParts) return;
 
         const wn = document.getElementById('dash-welcome-name');
         if (wn) wn.textContent = state.currentUser?.name || '—';
         const ws = document.getElementById('dash-welcome-sub');
         if (ws) {
-          const monthLbl = formatDashMonthYear(ksaNow.year, ksaNow.month);
+          const monthLbl = formatDashMonthYear(ksaNowParts.year, ksaNowParts.month);
           ws.textContent = getDashWelcomeSubtitle(state.currentUser?.role, monthLbl);
         }
         updateDashDateKicker();
@@ -40443,8 +40596,8 @@
       ];
 
       const ntDpState = {
-        viewYear: ksaFormatParts().year,
-        viewMonth: ksaFormatParts().month,
+        viewYear: 0,
+        viewMonth: 0,
         pickerView: 'days',
         selected: null
       };
@@ -45967,8 +46120,8 @@
 
       // ─── Date Picker (نفس آلية التقارير) ───
       const cmpDpState = {
-        viewYear: ksaFormatParts().year,
-        viewMonth: ksaFormatParts().month,
+        viewYear: 0,
+        viewMonth: 0,
         pickerView: 'days',
         from: null,
         to: null,
@@ -53890,8 +54043,8 @@
       // DATE RANGE PICKER
       // ═══════════════════════════════════════════════════════════════════════════
       const dpState = {
-        viewYear: ksaFormatParts().year,
-        viewMonth: ksaFormatParts().month,
+        viewYear: 0,
+        viewMonth: 0,
         pickerView: 'days',
         quickPreset: null,
         from: null,   // Date object or null
