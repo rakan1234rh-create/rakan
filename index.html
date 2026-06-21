@@ -12585,6 +12585,12 @@
       outline-offset: 2px
     }
 
+    .notif-page-back:active {
+      transform: scale(0.96);
+      background: var(--mr-bg-2);
+      transition: transform 0.08s ease, background 0.08s ease
+    }
+
     .notif-page-topbar__title {
       flex: 1 1 auto;
       min-width: 0
@@ -37093,8 +37099,19 @@
           dismissPageOverlaysOnTabLeave();
           if (leavingTab === 'notifications') {
             state._bellBadgeLocked = 0;
-            syncNotifPageShell(false);
-            syncNotifBellBadge(true);
+            if (!opts.notifShellAlreadyOff) syncNotifPageShell(false);
+            const refreshBell = () => {
+              try { syncNotifBellBadge(!opts.instantBack); } catch (_) { /* noop */ }
+            };
+            if (opts.instantBack) {
+              if (typeof requestIdleCallback === 'function') {
+                requestIdleCallback(refreshBell, { timeout: 1500 });
+              } else {
+                setTimeout(refreshBell, 16);
+              }
+            } else {
+              refreshBell();
+            }
           }
           if (leavingTab === 'workflow' && typeof resetWorkflowTabFilters === 'function') {
             resetWorkflowTabFilters();
@@ -52840,7 +52857,7 @@
         const returnTab = state._notifReturnTab || getRestorableTab() || getFirstAllowedTab() || 'dashboard';
         state._bellBadgeLocked = 0;
         syncNotifPageShell(false);
-        goTab(returnTab, getNavButtonForTab(returnTab));
+        goTab(returnTab, getNavButtonForTab(returnTab), { instantBack: true, notifShellAlreadyOff: true });
       }
 
       function getMobBottomNavHeight() {
