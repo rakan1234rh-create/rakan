@@ -111,13 +111,20 @@
   <style id="login-mobile-bleed-early">
     /* iOS PWA: امتداد الخلفية تحت شريط Home — قبل تحميل JS */
     html.mr-mobile-ui {
-      --login-safe-bottom-fallback: 34px
+      --login-safe-bottom-fallback: 34px;
+      --login-safe-bleed: max(env(safe-area-inset-bottom, 0px), var(--login-safe-bottom, var(--login-safe-bottom-fallback)))
     }
 
     html.mr-mobile-ui body.login-portal-open #loginScreenFloor {
-      display: block
+      display: block !important
     }
   </style>
+  <script id="login-safe-bottom-early">(function () {
+    var root = document.documentElement;
+    if (!root.classList.contains('mr-mobile-ui')) return;
+    var standalone = !!(window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches || window.matchMedia('(display-mode: fullscreen)').matches);
+    if (standalone) root.style.setProperty('--login-safe-bottom', '34px');
+  })();</script>
   
   <style id="mr-ui-shell-early-lock">
     html.mr-mobile-ui #appWrap #sidebar,
@@ -992,7 +999,7 @@
       left: 0;
       right: 0;
       top: 0;
-      bottom: calc(-1 * var(--login-safe-bottom, env(safe-area-inset-bottom, var(--login-safe-bottom-fallback, 34px))));
+      bottom: calc(-1 * var(--login-safe-bleed));
       background: var(--login-portal-bg);
       background-color: var(--mr-bg-2)
     }
@@ -1005,11 +1012,11 @@
       top: 0 !important;
       right: 0 !important;
       left: 0 !important;
-      bottom: calc(-1 * var(--login-safe-bottom, env(safe-area-inset-bottom, var(--login-safe-bottom-fallback, 34px)))) !important;
+      bottom: calc(-1 * var(--login-safe-bleed)) !important;
       width: 100% !important;
       height: auto !important;
-      min-height: calc(100% + var(--login-safe-bottom, env(safe-area-inset-bottom, var(--login-safe-bottom-fallback, 34px)))) !important;
-      min-height: calc(100dvh + var(--login-safe-bottom, env(safe-area-inset-bottom, var(--login-safe-bottom-fallback, 34px)))) !important;
+      min-height: calc(100% + var(--login-safe-bleed)) !important;
+      min-height: calc(100dvh + var(--login-safe-bleed)) !important;
       margin: 0 !important;
       overflow: hidden !important;
       overscroll-behavior: none !important;
@@ -1027,10 +1034,10 @@
         top: 0;
         left: 0;
         right: 0;
-        bottom: calc(-1 * var(--login-safe-bottom, env(safe-area-inset-bottom, var(--login-safe-bottom-fallback, 34px))));
+        bottom: calc(-1 * var(--login-safe-bleed));
         width: 100%;
         height: auto;
-        min-height: calc(100dvh + var(--login-safe-bottom, env(safe-area-inset-bottom, var(--login-safe-bottom-fallback, 34px))))
+        min-height: calc(100dvh + var(--login-safe-bleed))
       }
 
       html.mr-mobile-ui body.login-portal-open #loginScreen.lp-screen {
@@ -1038,11 +1045,11 @@
         top: 0 !important;
         left: 0 !important;
         right: 0 !important;
-        bottom: calc(-1 * var(--login-safe-bottom, env(safe-area-inset-bottom, var(--login-safe-bottom-fallback, 34px)))) !important;
+        bottom: calc(-1 * var(--login-safe-bleed)) !important;
         width: 100% !important;
         height: auto !important;
-        min-height: calc(100% + var(--login-safe-bottom, env(safe-area-inset-bottom, var(--login-safe-bottom-fallback, 34px)))) !important;
-        min-height: calc(100dvh + var(--login-safe-bottom, env(safe-area-inset-bottom, var(--login-safe-bottom-fallback, 34px)))) !important;
+        min-height: calc(100% + var(--login-safe-bleed)) !important;
+        min-height: calc(100dvh + var(--login-safe-bleed)) !important;
         max-height: none !important;
         justify-content: center !important;
         align-items: center !important;
@@ -1056,7 +1063,7 @@
         padding-top: env(safe-area-inset-top, 0px) !important;
         padding-left: env(safe-area-inset-left, 0px) !important;
         padding-right: env(safe-area-inset-right, 0px) !important;
-        padding-bottom: var(--login-safe-bottom, env(safe-area-inset-bottom, var(--login-safe-bottom-fallback, 34px))) !important;
+        padding-bottom: var(--login-safe-bleed) !important;
         box-sizing: border-box
       }
 
@@ -1074,7 +1081,7 @@
       html.mr-mobile-ui body.login-portal-open #loginScreen .lp-bg-blobs {
         z-index: 1;
         inset: 0;
-        bottom: calc(-1 * var(--login-safe-bottom, env(safe-area-inset-bottom, var(--login-safe-bottom-fallback, 34px))))
+        bottom: calc(-1 * var(--login-safe-bleed))
       }
 
       html.mr-mobile-ui body.login-portal-open #loginScreen .lp-center {
@@ -32512,6 +32519,8 @@
           }
         }
         if (bottom < 1 && isLoginStandalonePwa()) bottom = 34;
+        if (isLoginStandalonePwa()) bottom = Math.max(bottom, 34);
+        else if (isLoginMobileViewport()) bottom = Math.max(bottom, 20);
         const px = `${Math.max(0, Math.round(bottom))}px`;
         document.documentElement.style.setProperty('--login-safe-bottom', px);
         return bottom;
@@ -32521,8 +32530,13 @@
         const floor = document.getElementById('loginScreenFloor');
         if (!floor) return;
         const on = document.body.classList.contains('login-portal-open') && isLoginMobileViewport();
-        floor.hidden = !on;
-        floor.setAttribute('aria-hidden', on ? 'true' : 'false');
+        if (on) {
+          floor.removeAttribute('hidden');
+          floor.setAttribute('aria-hidden', 'true');
+        } else {
+          floor.setAttribute('hidden', '');
+          floor.setAttribute('aria-hidden', 'true');
+        }
       }
 
       function getLoginLayoutHeight() {
