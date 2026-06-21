@@ -12531,9 +12531,21 @@
       box-sizing: border-box
     }
 
-    html.mr-notif-slide-exiting.mr-mobile-ui .tab-content.active {
-      display: block !important;
+    html.mr-notif-slide-exiting.mr-mobile-ui .tab-content.active:not(.notif-tab-overlay) {
+      display: flex !important;
+      flex-direction: column;
+      flex: 1 1 auto;
+      min-height: 0;
+      height: auto;
+      overflow: hidden;
+      background: var(--mr-bg);
       visibility: visible !important
+    }
+
+    html.mr-notif-slide-exiting.mr-notif-page-active.mr-mobile-ui #appWrap .main,
+    html.mr-notif-slide-exiting.mr-notif-page-active.mr-mobile-ui #appWrap .content {
+      min-height: 0 !important;
+      overflow: hidden !important
     }
 
     /* Notifications page — ديسكتوب: صفحة كاملة تحت الشريط العلوي مع سكرول داخلي */
@@ -28801,7 +28813,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-notif-slide-reveal-v915">
+  <meta name="app-build" content="athar-notif-slide-reveal-v916">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -53142,6 +53154,18 @@
           && (tab.classList.contains('active') || tab.classList.contains('notif-tab-overlay'));
       }
 
+      function finishNotifSlideCloseLayout(returnTab) {
+        syncNotifPageShell(false);
+        const titleBar = document.getElementById('pageTitleBar');
+        if (titleBar) {
+          titleBar.classList.toggle('visible', !MR_TABS_WITH_OWN_TITLE.includes(returnTab));
+        }
+        syncViolMobileScrollShell(returnTab);
+        syncUsersMobileScrollShell(returnTab);
+        syncCmpMobileScrollShell(returnTab);
+        syncLocationsMobileScrollShell(returnTab);
+      }
+
       function beginNotifSlideClose(returnTab, navBtn) {
         const notifTab = document.getElementById('tab-notifications');
         const returnTabEl = document.getElementById(`tab-${returnTab}`);
@@ -53167,8 +53191,6 @@
         document.documentElement.classList.add('mr-notif-slide-exiting');
         document.body.classList.add('mr-notif-slide-exiting');
 
-        syncNotifPageShell(false);
-
         const navBtnEl = navBtn || getNavButtonForTab(returnTab);
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
         if (navBtnEl?.classList.contains('nav-item')) navBtnEl.classList.add('active');
@@ -53177,23 +53199,12 @@
           ? navBtnEl
           : document.querySelector(`#mobileBottomNav .mob-nav-item[data-tab="${returnTab}"]:not([data-role-hide])`);
         if (mobBtn) mobBtn.classList.add('active');
-        if (typeof syncMobileBottomNav === 'function') syncMobileBottomNav(returnTab, true);
 
         const meta = TAB_TITLES[returnTab] || { title: returnTab, sub: '' };
         const pt = document.getElementById('pageTitle');
         const ps = document.getElementById('pageSubtitle');
         if (pt) pt.textContent = meta.title;
         if (ps) ps.textContent = meta.sub;
-
-        const titleBar = document.getElementById('pageTitleBar');
-        if (titleBar) {
-          titleBar.classList.toggle('visible', !MR_TABS_WITH_OWN_TITLE.includes(returnTab));
-        }
-
-        syncViolMobileScrollShell(returnTab);
-        syncUsersMobileScrollShell(returnTab);
-        syncCmpMobileScrollShell(returnTab);
-        syncLocationsMobileScrollShell(returnTab);
 
         return new Promise((resolve) => {
           requestAnimationFrame(() => {
@@ -53204,6 +53215,8 @@
                   notifTab.classList.remove('notif-tab-overlay');
                   document.documentElement.classList.remove('mr-notif-slide-exiting');
                   document.body.classList.remove('mr-notif-slide-exiting');
+                  finishNotifSlideCloseLayout(returnTab);
+                  if (typeof syncMobileBottomNav === 'function') syncMobileBottomNav(returnTab, true);
                 })
                 .finally(resolve);
             });
