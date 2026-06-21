@@ -11926,7 +11926,7 @@
       position: relative;
       z-index: 1;
       text-align: right;
-      background: var(--mr-surface);
+      background: var(--mr-bg-2);
       transform: translateX(var(--notif-swipe-x, 0));
       touch-action: pan-y
     }
@@ -12076,7 +12076,7 @@
     }
 
     .notif-item.unread {
-      background: color-mix(in srgb, var(--mr-primary) 5%, var(--mr-surface))
+      background: var(--mr-surface)
     }
 
     .notif-item.unread::before {
@@ -28737,7 +28737,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-notif-scroll-all-v910">
+  <meta name="app-build" content="athar-notif-read-colors-v911">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
