@@ -28726,7 +28726,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-notif-topbar-align-v908">
+  <meta name="app-build" content="athar-notif-open-fast-v909">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -37261,9 +37261,11 @@
         const leavingTab = getActiveTabKey();
         const alreadyOnTab = leavingTab === tab;
         if (leavingTab && leavingTab !== tab) {
-          if (opts.instantBack && leavingTab === 'notifications' && !needsOverlayDismissOnNotifLeave()) {
+          if ((opts.instantBack && leavingTab === 'notifications' && !needsOverlayDismissOnNotifLeave())
+            || (opts.notifFastOpen && tab === 'notifications' && !needsOverlayDismissOnNotifLeave())) {
             /* مسار خفيف — لا إغلاق شامل للطبقات */
-          } else if (opts.instantBack && leavingTab === 'notifications') {
+          } else if ((opts.instantBack && leavingTab === 'notifications')
+            || (opts.notifFastOpen && tab === 'notifications')) {
             dismissOverlaysLight();
           } else {
             dismissPageOverlaysOnTabLeave();
@@ -37340,7 +37342,12 @@
           if (tab === 'notifications') {
             syncNotifPageShell(true);
             if (!state._notifFilter) state._notifFilter = 'all';
-            renderNotifications(false);
+            if (state._notifCache) {
+              try {
+                paintNotifList(state._notifCache, getReadNotifs(), { pageOnly: true });
+              } catch (_) { /* noop */ }
+            }
+            scheduleIdleWork(() => renderNotifications(false), opts.notifFastOpen ? 1600 : 60);
             requestAnimationFrame(() => {
               document.getElementById('notifBellBtn')?.blur();
               blurHiddenChromeFocus();
@@ -51155,6 +51162,13 @@
         }
       }
 
+      function warmNotifCache() {
+        if (!state.currentUser || !state._dataReady) return;
+        scheduleIdleWork(() => {
+          try { buildUserNotificationsCached(false); } catch (_) { /* noop */ }
+        }, 3500);
+      }
+
       function invalidateNotifCache() {
         state._notifCache = null;
         state._notifCacheAt = 0;
@@ -52987,6 +53001,7 @@
 
         const dismissed = getDismissedNotifs();
         const visible = (notifs || []).filter(n => !dismissed.has(n.id));
+        const counts = {};
         wrap.querySelectorAll('.notif-filter-btn').forEach(btn => {
           const f = btn.dataset.filter;
           if (f === 'team' && !showTeam) return;
@@ -52995,8 +53010,15 @@
           if (bcKind) subset = visible.filter(n => n.broadcastKind === bcKind);
           else if (f === 'mine') subset = visible.filter(n => (n.scope || 'mine') === 'mine' && !n.broadcastKind);
           else if (f === 'team') subset = visible.filter(n => n.scope === 'team');
+          counts[f] = subset.length;
+        });
+
+        wrap.querySelectorAll('.notif-filter-btn').forEach(btn => {
+          const f = btn.dataset.filter;
+          if (f === 'team' && !showTeam) return;
           const label = NOTIF_FILTER_LABELS[f] || f;
-          btn.textContent = subset.length ? `${label} · ${subset.length}` : label;
+          const nextText = counts[f] ? `${label} · ${counts[f]}` : label;
+          if (btn.textContent !== nextText) btn.textContent = nextText;
           const active = (state._notifFilter || 'all') === f;
           btn.classList.toggle('is-active', active);
           btn.setAttribute('aria-selected', active ? 'true' : 'false');
@@ -53012,7 +53034,13 @@
           b.setAttribute('aria-selected', active ? 'true' : 'false');
         });
         if (btn) btn.classList.add('is-active');
-        renderNotifications(false);
+        const cached = state._currentNotifs || state._notifCache;
+        if (cached) {
+          paintNotifList(cached, getReadNotifs(), { pageOnly: true });
+          syncNotifFilterTabs(cached);
+        } else {
+          renderNotifications(false);
+        }
       }
 
       function closeNotificationsPage(event) {
@@ -53100,6 +53128,7 @@
           return;
         }
         try { syncNotifBellBadge(true); } catch (_) { /* noop */ }
+        warmNotifCache();
       }
 
       function isNotifSurfaceOpen() {
@@ -53132,23 +53161,37 @@
         }
         if (!state._notifFilter) state._notifFilter = 'all';
 
-        if (current === 'notifications') {
-          syncNotifPageShell(true);
-          renderNotifications(false);
+        syncNotifPageShell(true);
+        if (state._notifCache) {
+          try {
+            paintNotifList(state._notifCache, getReadNotifs(), { pageOnly: true });
+          } catch (_) { /* noop */ }
+        }
+
+        const shellDone = !!state._notifFastOpenDone && getActiveTabKey() === 'notifications';
+        state._notifFastOpenDone = false;
+
+        if (current === 'notifications' || shellDone) {
+          scheduleIdleWork(() => renderNotifications(false), 900);
           document.getElementById('notifBellBtn')?.blur();
           blurHiddenChromeFocus();
         } else {
           document.getElementById('notifBellBtn')?.blur();
-          goTab('notifications', null);
+          goTab('notifications', null, {
+            notifFastOpen: true,
+            shellAlreadySwitched: shellDone
+          });
         }
 
-        refreshBroadcastInbox().then((ok) => {
-          if (!ok || getActiveTabKey() !== 'notifications') return;
-          renderNotifications(true);
-        });
+        scheduleIdleWork(() => {
+          refreshBroadcastInbox().then((ok) => {
+            if (!ok || getActiveTabKey() !== 'notifications') return;
+            renderNotifications(true);
+          });
+        }, 2800);
       }
 
-      function paintNotifList(notifs, read) {
+      function paintNotifList(notifs, read, opts = {}) {
         if (document.querySelector('.notif-swipe.is-dragging')) return;
         document.querySelectorAll('.notif-swipe:not(.is-dragging)').forEach((wrap) => {
           if (wrap.classList.contains('is-dismissing')) return;
@@ -53156,6 +53199,8 @@
           const x = parseFloat(raw);
           if (Number.isFinite(x) && x < -2) closeNotifSwipe(wrap, { animate: false });
         });
+        const pageOnly = !!opts.pageOnly;
+        const panelOpen = document.getElementById('notifPanel')?.classList.contains('open');
         const panelTarget = { listId: 'notifList', countId: 'notifPanelCount' };
         const pageTarget = { listId: 'notifPageList', countId: 'notifPageCount' };
         if (!state.currentUser) return;
@@ -53163,7 +53208,7 @@
         const dismissed = getDismissedNotifs();
         const allVisible = sortNotifsNewestFirst(notifs.filter(n => !dismissed.has(n.id)));
         const pageVisible = filterNotifsByScope(allVisible, state._notifFilter || 'all');
-        syncNotifFilterTabs(notifs);
+        if (!opts.skipFilterTabs) syncNotifFilterTabs(notifs);
 
         function buildCountText(visible, unread) {
           return unread.length
@@ -53212,7 +53257,7 @@
         const panelUnread = allVisible.filter(n => !read.has(n.id));
         const panelList = document.getElementById(panelTarget.listId);
         const panelCount = document.getElementById(panelTarget.countId);
-        if (panelList && panelCount) {
+        if (!pageOnly && panelOpen && panelList && panelCount) {
           panelCount.textContent = buildCountText(allVisible, panelUnread);
           panelList.innerHTML = allVisible.length ? buildItemsHtml(allVisible) : emptyHtml;
         }
@@ -53237,6 +53282,20 @@
         updateNotifBellBadge(countVisibleUnreadNotifs(notifs, read));
         if (document.getElementById('notifPanel')?.classList.contains('open')) {
           notifPanelPosition();
+        }
+      }
+
+      function primeNotifOpenShell() {
+        if (typeof getActiveTabKey !== 'function' || getActiveTabKey() === 'notifications') return;
+        const current = getActiveTabKey();
+        state._notifReturnTab = current || getRestorableTab() || 'dashboard';
+        syncNotifPageShell(true);
+        switchTabShellFast('notifications', null);
+        state._notifFastOpenDone = true;
+        if (state._notifCache) {
+          try {
+            paintNotifList(state._notifCache, getReadNotifs(), { pageOnly: true });
+          } catch (_) { /* noop */ }
         }
       }
 
@@ -53512,6 +53571,7 @@
         const activate = (e) => {
           if (e.type === 'pointerdown') {
             if (e.pointerType === 'mouse' && e.button !== 0) return;
+            try { primeNotifOpenShell(); } catch (_) { /* noop */ }
             openNotificationsPage(e);
             return;
           }
