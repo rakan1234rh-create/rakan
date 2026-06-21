@@ -23942,16 +23942,18 @@
 
       html.mr-notif-page-active.mr-mobile-ui #ticketModal .td-mob-sheet,
       body.ticket-over-notif #ticketModal .td-mob-sheet {
-        bottom: env(safe-area-inset-bottom, 0px) !important;
+        bottom: 0 !important;
         max-height: min(
-          94dvh,
-          calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 10px)
-        ) !important
+          98dvh,
+          calc(100dvh - env(safe-area-inset-top, 0px) - 2px)
+        ) !important;
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+        border-radius: 16px 16px 0 0 !important
       }
 
       html.mr-notif-page-active.mr-mobile-ui #ticketModal .td-content-area,
       body.ticket-over-notif #ticketModal .td-content-area {
-        padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px))
+        padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px))
       }
 
       body.ticket-scroll-locked {
@@ -28634,7 +28636,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-ticket-notif-sheet-v899">
+  <meta name="app-build" content="athar-ticket-notif-lower-v900">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
