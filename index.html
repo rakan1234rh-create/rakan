@@ -12646,18 +12646,24 @@
       min-width: 0
     }
 
-    .notif-page-topbar__title h4 {
+    .notif-page-topbar__heading {
       margin: 0;
       font-size: 16px;
       font-weight: 700;
       line-height: 22px;
-      color: var(--mr-text)
+      color: var(--mr-text);
+      display: block
     }
 
-    .notif-page-topbar__title .notif-count {
+    .notif-page-topbar__heading .notif-count {
+      display: inline;
+      margin-inline-start: 8px;
       font-size: 11px;
+      font-weight: 500;
       color: var(--mr-text-3);
-      margin-top: 2px
+      line-height: 22px;
+      vertical-align: baseline;
+      white-space: nowrap
     }
 
     .notif-page-topbar .notif-mark-all {
@@ -28702,7 +28708,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-notif-back-compact-v905">
+  <meta name="app-build" content="athar-notif-count-inline-v907">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -29049,8 +29055,10 @@
                     <span class="notif-page-back__label">رجوع</span>
                   </div>
                   <div class="notif-page-topbar__title">
-                    <h4>التنبيهات</h4>
-                    <div class="notif-count" id="notifPageCount">0 تنبيه</div>
+                    <h4 class="notif-page-topbar__heading">
+                      التنبيهات
+                      <span class="notif-count" id="notifPageCount">0 تنبيه</span>
+                    </h4>
                   </div>
                 </header>
                 <div class="notif-page-filters" id="notifPageFilters" role="tablist" aria-label="تصنيف التنبيهات">
