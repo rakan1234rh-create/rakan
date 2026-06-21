@@ -12509,7 +12509,10 @@
 
     html.mr-mobile-ui #tab-notifications.notif-tab-overlay {
       position: fixed !important;
-      inset: 0;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: var(--mr-mob-bottom-nav-h, calc(56px + env(safe-area-inset-bottom, 0px)));
       z-index: 1300;
       display: flex !important;
       flex-direction: column;
@@ -12526,8 +12529,7 @@
       min-height: 0;
       background: var(--mr-bg);
       pointer-events: auto;
-      padding: 0 4px calc(env(safe-area-inset-bottom, 0px) + 8px);
-      padding-top: max(4px, env(safe-area-inset-top, 0px));
+      padding: max(4px, env(safe-area-inset-top, 0px)) 4px 8px;
       box-sizing: border-box
     }
 
@@ -28813,7 +28815,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-notif-overlay-slide-v917">
+  <meta name="app-build" content="athar-notif-overlay-above-nav-v918">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
