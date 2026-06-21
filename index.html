@@ -113,12 +113,12 @@
     html.mr-mobile-ui {
       --login-safe-bottom-fallback: 34px;
       --login-safe-bleed: max(env(safe-area-inset-bottom, 0px), var(--login-safe-bottom, var(--login-safe-bottom-fallback)));
-      background-color: var(--mr-bg-2, #1c1c21)
+      background-color: var(--login-bleed-fill, var(--mr-bg-2))
     }
 
     html.mr-mobile-ui body.login-portal-open,
     html.mr-mobile-ui:has(#loginScreen:not([hidden])) {
-      background-color: var(--mr-bg-2, #1c1c21) !important
+      background-color: var(--login-bleed-fill, var(--mr-bg-2)) !important
     }
 
     html.mr-mobile-ui body.login-portal-open #loginScreenFloor,
@@ -588,6 +588,9 @@
       --mr-safe-left: env(safe-area-inset-left, 0px);
       --mr-safe-right: env(safe-area-inset-right, 0px);
       --login-portal-bg: linear-gradient(160deg, var(--mr-bg-2) 0%, var(--mr-bg) 42%, var(--mr-bg-2) 100%);
+      /* لون امتداد أسفل الشاشة — يطابق طرفي التدرج (0% و 100%) */
+      --login-bleed-fill: var(--mr-bg-2);
+      --login-portal-bg-viewport: var(--login-portal-bg);
       /* Mirsad Design System — tokens (black primary, RTL) */
       --mr-primary: #0f1224;
       --mr-primary-hover: #2a2d3f;
@@ -1007,7 +1010,7 @@
       overscroll-behavior: none
     }
 
-    /* جوال / PWA: امتداد أسفل الشاشة تحت home indicator (iOS يُرجع safe-area=0 أحياناً) */
+    /* جوال / PWA: امتداد أسفل الشاشة — لون صلب يطابق طرف التدرج (بدون تمديد التدرج) */
     #loginScreenFloor {
       display: none;
       position: absolute;
@@ -1017,14 +1020,17 @@
       right: 0;
       top: 0;
       bottom: calc(-1 * var(--login-safe-bleed));
-      background: var(--login-portal-bg);
-      background-color: var(--mr-bg-2)
+      background: var(--login-bleed-fill, var(--mr-bg-2));
+      background-image: none
     }
 
     html.mr-mobile-ui.login-portal-open,
     html.mr-mobile-ui body.login-portal-open {
-      background: var(--mr-bg-2) !important;
-      background-image: var(--login-portal-bg) !important;
+      background-color: var(--login-bleed-fill, var(--mr-bg-2)) !important;
+      background-image: var(--login-portal-bg-viewport, var(--login-portal-bg)) !important;
+      background-size: 100% 100dvh !important;
+      background-repeat: no-repeat !important;
+      background-position: top center !important;
       position: fixed !important;
       top: 0 !important;
       right: 0 !important;
@@ -1046,8 +1052,11 @@
         position: fixed;
         z-index: 0;
         pointer-events: none;
-        background: var(--login-portal-bg);
-        background-color: var(--mr-bg-2);
+        background-color: var(--login-bleed-fill, var(--mr-bg-2));
+        background-image: var(--login-portal-bg-viewport, var(--login-portal-bg));
+        background-size: 100% 100dvh;
+        background-repeat: no-repeat;
+        background-position: top center;
         top: 0;
         left: 0;
         right: 0;
@@ -1074,8 +1083,11 @@
         overscroll-behavior: none !important;
         -webkit-overflow-scrolling: auto;
         touch-action: none;
-        background: var(--login-portal-bg) !important;
-        background-color: var(--mr-bg-2) !important;
+        background-color: var(--login-bleed-fill, var(--mr-bg-2)) !important;
+        background-image: var(--login-portal-bg-viewport, var(--login-portal-bg)) !important;
+        background-size: 100% 100dvh !important;
+        background-repeat: no-repeat !important;
+        background-position: top center !important;
         padding: 0 !important;
         padding-top: env(safe-area-inset-top, 0px) !important;
         padding-left: env(safe-area-inset-left, 0px) !important;
@@ -28605,7 +28617,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-login-bleed-v893">
+  <meta name="app-build" content="athar-login-bleed-v894">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -32498,8 +32510,7 @@
         if (on) {
           if (!_loginPortalThemeColorSaved) _loginPortalThemeColorSaved = meta.getAttribute('content') || '';
           const loginTheme = document.documentElement.getAttribute('data-theme') || 'light';
-          const pwaLogin = isLoginStandalonePwa() && isLoginMobileViewport();
-          meta.setAttribute('content', pwaLogin ? '#1c1c21' : (loginTheme === 'dark' ? '#1c1c21' : '#f5f5f7'));
+          meta.setAttribute('content', loginTheme === 'dark' ? '#1c1c21' : '#f5f5f7');
         } else if (_loginPortalThemeColorSaved) {
           meta.setAttribute('content', _loginPortalThemeColorSaved);
           _loginPortalThemeColorSaved = '';
