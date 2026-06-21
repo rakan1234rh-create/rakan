@@ -12556,24 +12556,49 @@
     }
 
     .notif-page-back {
-      width: 40px;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
       height: 40px;
-      border: 1px solid var(--mr-border);
-      border-radius: 11px;
-      background: var(--mr-surface);
+      padding: 0 14px 0 8px;
+      margin-inline-end: 2px;
+      border: none;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--mr-surface) 90%, var(--mr-primary) 10%);
       color: var(--mr-text);
+      cursor: pointer;
+      flex-shrink: 0;
+      font-family: var(--font);
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, .06), inset 0 0 0 1px color-mix(in srgb, var(--mr-border) 88%, transparent);
+      transition: transform .1s ease, box-shadow .12s ease, background .12s ease
+    }
+
+    .notif-page-back__ico {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--mr-primary-softer);
+      color: var(--mr-primary);
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      cursor: pointer;
-      flex-shrink: 0;
-      font-size: 15px;
-      -webkit-tap-highlight-color: transparent;
-      touch-action: manipulation
+      font-size: 12px;
+      flex-shrink: 0
+    }
+
+    .notif-page-back__label {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: -.01em;
+      line-height: 1;
+      color: var(--mr-text)
     }
 
     .notif-page-back:hover {
-      background: var(--mr-bg-2)
+      background: color-mix(in srgb, var(--mr-bg-2) 82%, var(--mr-primary-softer) 18%);
+      box-shadow: 0 2px 6px rgba(15, 23, 42, .08), inset 0 0 0 1px color-mix(in srgb, var(--mr-primary) 18%, var(--mr-border))
     }
 
     .notif-page-back:focus {
@@ -12586,9 +12611,14 @@
     }
 
     .notif-page-back:active {
-      transform: scale(0.96);
-      background: var(--mr-bg-2);
-      transition: transform 0.08s ease, background 0.08s ease
+      transform: scale(0.97);
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--mr-primary) 22%, var(--mr-border));
+      transition: transform .05s ease, box-shadow .05s ease
+    }
+
+    .notif-page-back.is-pressed {
+      transform: scale(0.97);
+      opacity: .92
     }
 
     .notif-page-topbar__title {
@@ -12671,10 +12701,14 @@
     @media (hover: none) {
       .notif-mark-all:hover,
       .notif-mark-all--danger:hover,
-      .notif-page-back:hover,
       .notif-filter-btn:not(.is-active):hover {
         background: transparent;
         border-color: transparent
+      }
+
+      .notif-page-back:hover {
+        background: color-mix(in srgb, var(--mr-surface) 90%, var(--mr-primary) 10%);
+        box-shadow: 0 1px 2px rgba(15, 23, 42, .06), inset 0 0 0 1px color-mix(in srgb, var(--mr-border) 88%, transparent)
       }
 
       .notif-mark-all:not(.notif-mark-all--danger):hover {
@@ -28647,7 +28681,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-notif-autofwd-time-v902">
+  <meta name="app-build" content="athar-notif-back-snappy-v904">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -28988,7 +29022,8 @@
               <div class="notif-page-head">
                 <header class="notif-page-topbar">
                   <button type="button" class="notif-page-back" onclick="closeNotificationsPage(event)" aria-label="رجوع">
-                    <i class="fas fa-arrow-right" aria-hidden="true"></i>
+                    <span class="notif-page-back__ico" aria-hidden="true"><i class="fas fa-chevron-right"></i></span>
+                    <span class="notif-page-back__label">رجوع</span>
                   </button>
                   <div class="notif-page-topbar__title">
                     <h4>التنبيهات</h4>
@@ -36054,7 +36089,7 @@
           requestAnimationFrame(syncMobBottomNavHeight);
         }
       }
-      function syncMobileBottomNav(tab) {
+      function syncMobileBottomNav(tab, instant) {
         const nav = document.getElementById('mobileBottomNav');
         if (!nav || window.innerWidth > 992) return;
         nav.querySelectorAll('.mob-nav-item').forEach(el => {
@@ -36064,7 +36099,11 @@
         if (nav.classList.contains('mobile-bottom-nav--scroll')) {
           const activeBtn = nav.querySelector(`.mob-nav-item[data-tab="${tab}"]`);
           if (activeBtn && !activeBtn.hasAttribute('data-role-hide')) {
-            activeBtn.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'smooth' });
+            activeBtn.scrollIntoView({
+              inline: 'nearest',
+              block: 'nearest',
+              behavior: instant ? 'auto' : 'smooth'
+            });
           }
         }
       }
@@ -37074,6 +37113,83 @@
 
       window.dismissPageOverlaysOnTabLeave = dismissPageOverlaysOnTabLeave;
 
+      function needsOverlayDismissOnNotifLeave() {
+        if (document.getElementById('confirmOverlay')?.classList.contains('open')) return true;
+        if (document.querySelector('.modal.open')) return true;
+        if (document.getElementById('attViewer')?.classList.contains('open')) return true;
+        return false;
+      }
+
+      function dismissOverlaysLight() {
+        [...document.querySelectorAll('.modal.open')].forEach(m => {
+          const id = m.id;
+          if (!id) return;
+          if (id === 'violDetailModal') closeViolDetailSheet();
+          else closeModal(id);
+        });
+        const attViewer = document.getElementById('attViewer');
+        if (attViewer?.classList.contains('open') && typeof closeAttViewer === 'function') {
+          closeAttViewer();
+        }
+        if (!document.querySelector('.modal.open')) {
+          document.body.classList.remove('modal-open', 'ticket-over-cmp', 'cmp-detail-open', 'ticket-over-notif');
+        }
+      }
+
+      const MR_TABS_WITH_OWN_TITLE = ['dashboard', 'newTicket', 'workflow', 'reports', 'locations', 'departments', 'violations', 'compliance', 'settings', 'broadcasts', 'notifications'];
+
+      function switchTabShellFast(tab, btn) {
+        rememberActiveTab(tab);
+
+        document.querySelectorAll('.tab-content').forEach(t => {
+          t.classList.remove('active');
+          if (t.id !== `tab-${tab}`) t.setAttribute('hidden', '');
+        });
+        const tabEl = document.getElementById(`tab-${tab}`);
+        if (tabEl) {
+          tabEl.removeAttribute('hidden');
+          tabEl.classList.add('active');
+        }
+        const noAccess = document.getElementById('tab-noAccess');
+        if (noAccess) {
+          noAccess.classList.remove('active');
+          noAccess.setAttribute('hidden', '');
+        }
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        const navBtn = btn || getNavButtonForTab(tab);
+        if (navBtn?.classList.contains('nav-item')) navBtn.classList.add('active');
+        document.querySelectorAll('#mobileBottomNav .mob-nav-item').forEach(n => n.classList.remove('active'));
+        const mobBtn = (navBtn?.classList?.contains?.('mob-nav-item') && !navBtn.hasAttribute('data-role-hide'))
+          ? navBtn
+          : document.querySelector(`#mobileBottomNav .mob-nav-item[data-tab="${tab}"]:not([data-role-hide])`);
+        if (mobBtn) mobBtn.classList.add('active');
+        if (typeof syncMobileBottomNav === 'function') syncMobileBottomNav(tab, true);
+
+        const meta = TAB_TITLES[tab] || { title: tab, sub: '' };
+        const pt = document.getElementById('pageTitle');
+        const ps = document.getElementById('pageSubtitle');
+        if (pt) pt.textContent = meta.title;
+        if (ps) ps.textContent = meta.sub;
+
+        const titleBar = document.getElementById('pageTitleBar');
+        if (titleBar) {
+          titleBar.classList.toggle('visible', !MR_TABS_WITH_OWN_TITLE.includes(tab));
+        }
+
+        syncViolMobileScrollShell(tab);
+        syncUsersMobileScrollShell(tab);
+        syncCmpMobileScrollShell(tab);
+        syncLocationsMobileScrollShell(tab);
+      }
+
+      function scheduleIdleWork(fn, timeoutMs) {
+        if (typeof requestIdleCallback === 'function') {
+          requestIdleCallback(fn, { timeout: timeoutMs || 1800 });
+        } else {
+          setTimeout(fn, 24);
+        }
+      }
+
       function goTab(tab, btn, opts = {}) {
         if (tab !== 'notifications') {
         const tabPerm = MR_TAB_PERM_MAP[tab];
@@ -37096,22 +37212,21 @@
         const leavingTab = getActiveTabKey();
         const alreadyOnTab = leavingTab === tab;
         if (leavingTab && leavingTab !== tab) {
-          dismissPageOverlaysOnTabLeave();
+          if (opts.instantBack && leavingTab === 'notifications' && !needsOverlayDismissOnNotifLeave()) {
+            /* مسار خفيف — لا إغلاق شامل للطبقات */
+          } else if (opts.instantBack && leavingTab === 'notifications') {
+            dismissOverlaysLight();
+          } else {
+            dismissPageOverlaysOnTabLeave();
+          }
           if (leavingTab === 'notifications') {
             state._bellBadgeLocked = 0;
             if (!opts.notifShellAlreadyOff) syncNotifPageShell(false);
             const refreshBell = () => {
               try { syncNotifBellBadge(!opts.instantBack); } catch (_) { /* noop */ }
             };
-            if (opts.instantBack) {
-              if (typeof requestIdleCallback === 'function') {
-                requestIdleCallback(refreshBell, { timeout: 1500 });
-              } else {
-                setTimeout(refreshBell, 16);
-              }
-            } else {
-              refreshBell();
-            }
+            if (opts.instantBack) scheduleIdleWork(refreshBell, 1500);
+            else refreshBell();
           }
           if (leavingTab === 'workflow' && typeof resetWorkflowTabFilters === 'function') {
             resetWorkflowTabFilters();
@@ -37120,6 +37235,7 @@
 
         rememberActiveTab(tab);
 
+        if (!opts.shellAlreadySwitched) {
         document.querySelectorAll('.tab-content').forEach(t => {
           t.classList.remove('active');
           if (t.id !== `tab-${tab}`) t.setAttribute('hidden', '');
@@ -37141,7 +37257,7 @@
           ? btn
           : document.querySelector(`#mobileBottomNav .mob-nav-item[data-tab="${tab}"]:not([data-role-hide])`);
         if (mobBtn) mobBtn.classList.add('active');
-        if (typeof syncMobileBottomNav === 'function') syncMobileBottomNav(tab);
+        if (typeof syncMobileBottomNav === 'function') syncMobileBottomNav(tab, !!opts.instantBack);
         const meta = TAB_TITLES[tab] || { title: tab, sub: '' };
         document.getElementById('pageTitle').textContent = meta.title;
         document.getElementById('pageSubtitle').textContent = meta.sub;
@@ -37149,12 +37265,12 @@
         // إظهار/إخفاء بنر اسم القسم
         const titleBar = document.getElementById('pageTitleBar');
         if (titleBar) {
-          const tabsWithOwnTitle = ['dashboard', 'newTicket', 'workflow', 'reports', 'locations', 'departments', 'violations', 'compliance', 'settings', 'broadcasts', 'notifications'];
-          if (tabsWithOwnTitle.includes(tab)) {
+          if (MR_TABS_WITH_OWN_TITLE.includes(tab)) {
             titleBar.classList.remove('visible');
           } else {
             titleBar.classList.add('visible');
           }
+        }
         }
 
         if (tab === 'workflow' && typeof seedWfMobTicketsHeadIfNeeded === 'function') {
@@ -37236,6 +37352,7 @@
         syncLocationsMobileScrollShell(tab);
         };
         if (opts.shellOnly) { __runTabWork(); }
+        else if (opts.instantBack) { scheduleIdleWork(__runTabWork, 2000); }
         else { requestAnimationFrame(__runTabWork); }
       }
 
@@ -52854,10 +52971,31 @@
           event.stopPropagation();
           event.preventDefault();
         }
-        const returnTab = state._notifReturnTab || getRestorableTab() || getFirstAllowedTab() || 'dashboard';
+        const returnTab = state._notifFastLeaveTab
+          || state._notifReturnTab
+          || getRestorableTab()
+          || getFirstAllowedTab()
+          || 'dashboard';
+        const navBtn = getNavButtonForTab(returnTab);
+        const shellDone = !!state._notifFastLeaveDone && getActiveTabKey() === returnTab;
+
         state._bellBadgeLocked = 0;
         syncNotifPageShell(false);
-        goTab(returnTab, getNavButtonForTab(returnTab), { instantBack: true, notifShellAlreadyOff: true });
+        document.querySelector('.notif-page-back.is-pressed')?.classList.remove('is-pressed');
+
+        if (!shellDone) {
+          if (needsOverlayDismissOnNotifLeave()) dismissOverlaysLight();
+          switchTabShellFast(returnTab, navBtn);
+        }
+
+        state._notifFastLeaveDone = false;
+        state._notifFastLeaveTab = null;
+
+        goTab(returnTab, navBtn, {
+          instantBack: true,
+          notifShellAlreadyOff: true,
+          shellAlreadySwitched: true
+        });
       }
 
       function getMobBottomNavHeight() {
@@ -53348,6 +53486,38 @@
             openNotificationsPage(e);
           }
         });
+      })();
+
+      (function bindNotifBackInstant() {
+        if (window._notifBackInstantBound) return;
+        window._notifBackInstantBound = true;
+        document.addEventListener('pointerdown', (e) => {
+          const btn = e.target.closest?.('.notif-page-back');
+          if (!btn) return;
+          if (e.pointerType === 'mouse' && e.button !== 0) return;
+          if (typeof getActiveTabKey !== 'function' || getActiveTabKey() !== 'notifications') return;
+
+          const returnTab = state._notifReturnTab
+            || getRestorableTab()
+            || getFirstAllowedTab()
+            || 'dashboard';
+
+          state._bellBadgeLocked = 0;
+          syncNotifPageShell(false);
+          btn.classList.add('is-pressed');
+
+          if (needsOverlayDismissOnNotifLeave()) dismissOverlaysLight();
+          switchTabShellFast(returnTab, getNavButtonForTab(returnTab));
+          state._notifFastLeaveDone = true;
+          state._notifFastLeaveTab = returnTab;
+        }, { passive: true, capture: true });
+
+        document.addEventListener('pointerup', (e) => {
+          e.target.closest?.('.notif-page-back')?.classList.remove('is-pressed');
+        }, { passive: true, capture: true });
+        document.addEventListener('pointercancel', (e) => {
+          e.target.closest?.('.notif-page-back')?.classList.remove('is-pressed');
+        }, { passive: true, capture: true });
       })();
 
       (function bindNotifSwipe() {
