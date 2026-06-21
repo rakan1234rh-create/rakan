@@ -28602,7 +28602,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-notif-desktop-click-v896">
+  <meta name="app-build" content="athar-ksa-clock-v897">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -31954,6 +31954,12 @@
 
       /** توقيت المنصة الرسمي — المملكة العربية السعودية (لا يعتمد على منطقة جهاز المستخدم) */
       const APP_TZ = 'Asia/Riyadh';
+      const KSA_TZ_OFFSET = '+03:00';
+
+      /** اللحظة الحالية — العرض دائماً عبر ksaFormatParts / APP_TZ */
+      function ksaNow() {
+        return new Date();
+      }
 
       function ksaPad(n) {
         return String(n).padStart(2, '0');
@@ -31991,7 +31997,7 @@
       }
 
       function ksaMonthRange(year, month0) {
-        const lastDay = new Date(year, month0 + 1, 0).getDate();
+        const lastDay = ksaDaysInCalendarMonth(year, month0);
         return {
           fromIso: `${year}-${ksaPad(month0 + 1)}-01`,
           toIso: `${year}-${ksaPad(month0 + 1)}-${ksaPad(lastDay)}`,
@@ -32009,8 +32015,8 @@
         return {
           ...cur,
           nextFromIso: nextR.fromIso,
-          monthStart: new Date(p.year, p.month, 1, 12, 0, 0),
-          nextMonthStart: new Date(next.year, next.month, 1, 12, 0, 0)
+          monthStart: ksaCalendarDate(p.year, p.month, 1),
+          nextMonthStart: ksaCalendarDate(next.year, next.month, 1)
         };
       }
 
@@ -32062,7 +32068,7 @@
       }
 
       function ksaCalendarDate(year, month0, day) {
-        return new Date(year, month0, day, 12, 0, 0, 0);
+        return new Date(`${year}-${ksaPad(month0 + 1)}-${ksaPad(day)}T12:00:00${KSA_TZ_OFFSET}`);
       }
 
       function ksaTodayCalendar() {
@@ -32077,7 +32083,8 @@
 
       function ksaCalendarToIso(d) {
         if (!(d instanceof Date) || isNaN(d.getTime())) return '';
-        return `${d.getFullYear()}-${ksaPad(d.getMonth() + 1)}-${ksaPad(d.getDate())}`;
+        const p = ksaFormatParts(d);
+        return `${p.year}-${ksaPad(p.month + 1)}-${ksaPad(p.day)}`;
       }
 
       function ksaSameCalendarDay(a, b) {
@@ -32094,7 +32101,7 @@
       }
 
       function ksaDaysInCalendarMonth(year, month0) {
-        return new Date(year, month0 + 1, 0).getDate();
+        return new Date(Date.UTC(year, month0 + 1, 0)).getUTCDate();
       }
 
       function ksaMonthCalendarBounds(year, month0) {
@@ -32113,9 +32120,9 @@
       }
 
       function ksaShiftCalendarDays(year, month0, day, delta) {
-        const d = ksaCalendarDate(year, month0, day);
-        d.setDate(d.getDate() + delta);
-        return { year: d.getFullYear(), month: d.getMonth(), day: d.getDate() };
+        const anchor = new Date(`${year}-${ksaPad(month0 + 1)}-${ksaPad(day)}T12:00:00${KSA_TZ_OFFSET}`);
+        const p = ksaFormatParts(new Date(anchor.getTime() + delta * 86400000));
+        return { year: p.year, month: p.month, day: p.day };
       }
 
       function ksaThisWeekRange() {
@@ -32175,22 +32182,48 @@
         }
       }
 
-      /** تاريخ لوحة القيادة — الجمعة · 22 مايو 2026 */
+      /** تاريخ لوحة القيادة — الجمعة · 22 مايو 2026 (توقيت الرياض) */
       function formatDashHeroDate(dateInput) {
-        const d = dateInput == null
-          ? ksaTodayCalendar()
-          : (dateInput instanceof Date ? dateInput : ksaDateFromIso(dateInput));
-        if (!d || isNaN(d.getTime())) return '—';
-        const y = d.getFullYear();
-        const m = d.getMonth();
-        const day = d.getDate();
+        let y;
+        let m;
+        let day;
+        if (dateInput == null) {
+          const p = ksaFormatParts(ksaNow());
+          y = p.year;
+          m = p.month;
+          day = p.day;
+        } else if (dateInput instanceof Date) {
+          const p = ksaFormatParts(dateInput);
+          y = p.year;
+          m = p.month;
+          day = p.day;
+        } else {
+          const p = ksaParseIso(dateInput);
+          if (!p) return '—';
+          y = p.year;
+          m = p.month;
+          day = p.day;
+        }
         const wd = KSA_AR_WEEKDAYS[ksaWeekdayIndex(y, m, day)] || '';
         return `${wd} · ${day} ${KSA_AR_MONTHS[m]} ${y}`;
       }
 
       function updateDashDateKicker() {
         const dk = document.getElementById('dash-date-kicker');
-        if (dk) dk.textContent = formatDashHeroDate(new Date());
+        if (dk) dk.textContent = formatDashHeroDate(null);
+      }
+
+      /** ساعة الشريط العلوي — وقت وتاريخ حي بتوقيت الرياض */
+      function formatKsaLiveClock(now = ksaNow()) {
+        const p = ksaFormatParts(now);
+        const h12 = p.hour % 12 || 12;
+        const ampm = p.hour >= 12 ? 'م' : 'ص';
+        const wd = KSA_AR_WEEKDAYS[ksaWeekdayIndex(p.year, p.month, p.day)] || '';
+        return {
+          hm: `${ksaPad(h12)}:${ksaPad(p.minute)}`,
+          ampm,
+          dateLine: `${wd} · ${p.day} ${KSA_AR_MONTHS[p.month]} ${p.year}`
+        };
       }
 
       function ksaCsvDateStamp() {
@@ -32210,7 +32243,7 @@
       }
 
       function getNow() {
-        const p = ksaFormatParts();
+        const p = ksaFormatParts(ksaNow());
         return `${p.year}-${ksaPad(p.month + 1)}-${ksaPad(p.day)} ${ksaPad(p.hour)}:${ksaPad(p.minute)}`;
       }
 
@@ -32362,22 +32395,17 @@
         refreshWefaqLogosForTheme();
       }
 
-      // ─── ساعة حية في الـ topbar (إنجليزي + 12 ساعة) ───
+      // ─── ساعة حية في الـ topbar (توقيت الرياض — 12 ساعة + تاريخ عربي) ───
       function startLiveClock() {
         const timeEl = document.getElementById('clockText');
         const ampmEl = document.getElementById('clockAmPm');
         const dateEl = document.getElementById('clockDate');
         if (!timeEl || !ampmEl || !dateEl) return;
-        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         const update = () => {
-          const now = new Date();
-          const p = ksaFormatParts(now);
-          const h12 = p.hour % 12 || 12;
-          const ampm = p.hour >= 12 ? 'PM' : 'AM';
-          timeEl.textContent = `${ksaPad(h12)}:${ksaPad(p.minute)}`;
-          ampmEl.textContent = ampm;
-          const wd = new Intl.DateTimeFormat('en-US', { timeZone: APP_TZ, weekday: 'short' }).format(now);
-          dateEl.textContent = `${wd}, ${p.day} ${months[p.month]} ${p.year}`;
+          const clock = formatKsaLiveClock(ksaNow());
+          timeEl.textContent = clock.hm;
+          ampmEl.textContent = clock.ampm;
+          dateEl.textContent = clock.dateLine;
           if (document.getElementById('tab-dashboard')?.classList.contains('active')) {
             updateDashDateKicker();
           }
