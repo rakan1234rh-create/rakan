@@ -12549,21 +12549,34 @@
 
     .notif-page-topbar {
       display: flex;
-      align-items: center;
-      gap: 8px;
+      align-items: flex-start;
+      gap: 10px;
       padding: 0 4px 4px;
       flex-shrink: 0
+    }
+
+    .notif-page-back-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+      min-height: 22px;
+      margin-top: 1px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation
     }
 
     .notif-page-back {
       display: inline-flex;
       align-items: center;
-      gap: 7px;
-      height: 40px;
-      padding: 0 14px 0 8px;
-      margin-inline-end: 2px;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      margin: 0;
       border: none;
-      border-radius: 999px;
+      border-radius: 50%;
       background: color-mix(in srgb, var(--mr-surface) 90%, var(--mr-primary) 10%);
       color: var(--mr-text);
       cursor: pointer;
@@ -12576,29 +12589,32 @@
     }
 
     .notif-page-back__ico {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      background: var(--mr-primary-softer);
+      width: auto;
+      height: auto;
+      border-radius: 0;
+      background: none;
       color: var(--mr-primary);
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      font-size: 12px;
+      font-size: 11px;
+      line-height: 1;
       flex-shrink: 0
     }
 
     .notif-page-back__label {
-      font-size: 13px;
+      font-size: 14px;
       font-weight: 700;
       letter-spacing: -.01em;
-      line-height: 1;
-      color: var(--mr-text)
+      line-height: 22px;
+      color: var(--mr-text);
+      display: inline-block;
+      transform: translateY(-.5px)
     }
 
     .notif-page-back:hover {
       background: color-mix(in srgb, var(--mr-bg-2) 82%, var(--mr-primary-softer) 18%);
-      box-shadow: 0 2px 6px rgba(15, 23, 42, .08), inset 0 0 0 1px color-mix(in srgb, var(--mr-primary) 18%, var(--mr-border))
+      box-shadow: 0 2px 5px rgba(15, 23, 42, .07), inset 0 0 0 1px color-mix(in srgb, var(--mr-primary) 18%, var(--mr-border))
     }
 
     .notif-page-back:focus {
@@ -12616,9 +12632,14 @@
       transition: transform .05s ease, box-shadow .05s ease
     }
 
-    .notif-page-back.is-pressed {
+    .notif-page-back.is-pressed,
+    .notif-page-back-group.is-pressed {
       transform: scale(0.97);
       opacity: .92
+    }
+
+    .notif-page-back-group.is-pressed .notif-page-back {
+      transform: scale(0.96)
     }
 
     .notif-page-topbar__title {
@@ -12630,6 +12651,7 @@
       margin: 0;
       font-size: 16px;
       font-weight: 700;
+      line-height: 22px;
       color: var(--mr-text)
     }
 
@@ -28681,7 +28703,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-notif-back-snappy-v904">
+  <meta name="app-build" content="athar-notif-back-compact-v905">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -29021,10 +29043,12 @@
             <div class="notif-page-shell">
               <div class="notif-page-head">
                 <header class="notif-page-topbar">
-                  <button type="button" class="notif-page-back" onclick="closeNotificationsPage(event)" aria-label="رجوع">
-                    <span class="notif-page-back__ico" aria-hidden="true"><i class="fas fa-chevron-right"></i></span>
+                  <div class="notif-page-back-group" role="button" tabindex="0" aria-label="رجوع" onclick="closeNotificationsPage(event)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();closeNotificationsPage(event);}">
+                    <span class="notif-page-back" aria-hidden="true">
+                      <span class="notif-page-back__ico"><i class="fas fa-chevron-right"></i></span>
+                    </span>
                     <span class="notif-page-back__label">رجوع</span>
-                  </button>
+                  </div>
                   <div class="notif-page-topbar__title">
                     <h4>التنبيهات</h4>
                     <div class="notif-count" id="notifPageCount">0 تنبيه</div>
@@ -52981,7 +53005,7 @@
 
         state._bellBadgeLocked = 0;
         syncNotifPageShell(false);
-        document.querySelector('.notif-page-back.is-pressed')?.classList.remove('is-pressed');
+        document.querySelector('.notif-page-back-group.is-pressed, .notif-page-back.is-pressed')?.classList.remove('is-pressed');
 
         if (!shellDone) {
           if (needsOverlayDismissOnNotifLeave()) dismissOverlaysLight();
@@ -53492,8 +53516,8 @@
         if (window._notifBackInstantBound) return;
         window._notifBackInstantBound = true;
         document.addEventListener('pointerdown', (e) => {
-          const btn = e.target.closest?.('.notif-page-back');
-          if (!btn) return;
+          const hit = e.target.closest?.('.notif-page-back-group, .notif-page-back');
+          if (!hit) return;
           if (e.pointerType === 'mouse' && e.button !== 0) return;
           if (typeof getActiveTabKey !== 'function' || getActiveTabKey() !== 'notifications') return;
 
@@ -53504,7 +53528,8 @@
 
           state._bellBadgeLocked = 0;
           syncNotifPageShell(false);
-          btn.classList.add('is-pressed');
+          hit.closest('.notif-page-back-group')?.classList.add('is-pressed');
+          hit.classList.add('is-pressed');
 
           if (needsOverlayDismissOnNotifLeave()) dismissOverlaysLight();
           switchTabShellFast(returnTab, getNavButtonForTab(returnTab));
@@ -53513,9 +53538,11 @@
         }, { passive: true, capture: true });
 
         document.addEventListener('pointerup', (e) => {
+          e.target.closest?.('.notif-page-back-group')?.classList.remove('is-pressed');
           e.target.closest?.('.notif-page-back')?.classList.remove('is-pressed');
         }, { passive: true, capture: true });
         document.addEventListener('pointercancel', (e) => {
+          e.target.closest?.('.notif-page-back-group')?.classList.remove('is-pressed');
           e.target.closest?.('.notif-page-back')?.classList.remove('is-pressed');
         }, { passive: true, capture: true });
       })();
