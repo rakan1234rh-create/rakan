@@ -28581,7 +28581,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-login-ios-bleed-v889">
+  <meta name="app-build" content="athar-forward-jobs-v890">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -31062,14 +31062,15 @@
         'employee_reply', 'supervisor_reply', 'audit_reply', 'management_reply', 'hr_reply',
         'attachments', 'logs',
         'auto_forwarded_emp', 'auto_forwarded_sup',
+        'emp_forward_after', 'sup_forward_after',
       ].join(',');
       const TICKET_DETAIL_EXTRA_SELECT = [
         'attachments', 'logs', 'description',
         'employee_reply', 'supervisor_reply', 'audit_reply', 'management_reply', 'hr_reply',
         'source_role', 'updated_at',
         'auto_forwarded_emp', 'auto_forwarded_sup',
-      ].join(',');
-      const MOB_VIOLATION_SELECT_MIN = 'id,created_at,ticket_number,state,status_text,employee_id,branch_id,observer_id,supervisor_id,violation_type';
+        'emp_forward_after', 'sup_forward_after',
+      ].join(','); = 'id,created_at,ticket_number,state,status_text,employee_id,branch_id,observer_id,supervisor_id,violation_type';
       const MOB_VIOLATION_TYPES_SELECT = 'id,name,category,severity,weight,description';
 
       function enrichViolationLite(t) {
@@ -33276,12 +33277,8 @@
               setTimeout(startRealtime, 0);
             }
 
-            checkAndAutoForwardForAnyone();
             if (state._autoForwardTimer) clearInterval(state._autoForwardTimer);
-            state._autoForwardTimer = setInterval(() => {
-              if (document.hidden) return;
-              checkAndAutoForwardForAnyone();
-            }, 60 * 1000);
+            state._autoForwardTimer = null;
 
             try { initAtharWebPush({ promptIfNeeded: true }); } catch (_) { /* noop */ }
             try { maybeOpenTicketFromPushUrl(); } catch (_) { /* noop */ }
@@ -43991,17 +43988,20 @@
         const isSup = role === 'supervisor';
         const isHigher = ['auditor', 'manager', 'admin'].includes(role);
 
-        const showForEmp = t.state === 'emp' && !t.auto_forwarded_emp && t.created_at && (isEmp || isHigher);
-        const showForSup = t.state === 'sup' && !t.auto_forwarded_sup && t._supStartTime && (isSup || isHigher);
+        const showForEmp = t.state === 'emp' && !t.auto_forwarded_emp && (t.emp_forward_after || t.created_at) && (isEmp || isHigher);
+        const showForSup = t.state === 'sup' && !t.auto_forwarded_sup && (t.sup_forward_after || t._supStartTime) && (isSup || isHigher);
 
         if (showForEmp || showForSup) {
-          const startISO = showForEmp ? t.created_at : t._supStartTime;
           const limitH = showForEmp ? 24 : 48;
+          const deadlineISO = showForEmp
+            ? (t.emp_forward_after || null)
+            : (t.sup_forward_after || null);
+          const startISO = showForEmp ? t.created_at : t._supStartTime;
           const targetWho = showForEmp ? 'الموظف' : 'المشرف';
           const targetIcon = showForEmp ? 'fa-user' : 'fa-user-tie';
 
           countdownBlock = `
-      <div class="countdown-card" data-start="${Sec.escapeHTML(String(startISO))}" data-limit="${limitH}" data-target="${targetWho}">
+      <div class="countdown-card" data-start="${Sec.escapeHTML(String(startISO || ''))}" data-deadline="${Sec.escapeHTML(String(deadlineISO || ''))}" data-limit="${limitH}" data-target="${targetWho}">
         <div class="countdown-head">
           <div class="countdown-meta">
             <div class="countdown-icon-wrap" aria-hidden="true">
@@ -44081,10 +44081,14 @@
         if (!card) return;
 
         const startISO = card.getAttribute('data-start');
+        const deadlineISO = card.getAttribute('data-deadline');
         const limitH = parseFloat(card.getAttribute('data-limit')) || 24;
-        const startMs = new Date(startISO).getTime();
-        if (isNaN(startMs)) return;
-        const deadlineMs = startMs + limitH * 3600 * 1000;
+        const startMs = startISO ? new Date(startISO).getTime() : NaN;
+        const deadlineFromAttr = deadlineISO ? new Date(deadlineISO).getTime() : NaN;
+        const deadlineMs = !isNaN(deadlineFromAttr)
+          ? deadlineFromAttr
+          : (!isNaN(startMs) ? startMs + limitH * 3600 * 1000 : NaN);
+        if (isNaN(deadlineMs)) return;
 
         // عرض موعد الانتهاء (مرة واحدة)
         const deadlineEl = card.querySelector('#cd-deadline span');
@@ -53331,26 +53335,9 @@
         return true;
       }
 
+      /** تمرير تلقائي: طلب واحد عند انتهاء العدّاد أو من السيرفر (jobs) — بدون فحص دوري */
       async function checkAndAutoForwardForAnyone() {
         if (!state.currentUser || state._autoForwardRunning) return;
-        const role = normalizeUserRole(state.currentUser.role);
-
-        if (['admin', 'manager', 'auditor', 'supervisor'].includes(role)) {
-          await checkAndAutoForward();
-          return;
-        }
-
-        const me = state.currentUser;
-        const myOverdue = state.violations.filter(v =>
-          v.state === 'emp' &&
-          !isDbTruthy(v.auto_forwarded_emp) &&
-          hoursSince(v.created_at) >= EMP_TIMEOUT_HOURS &&
-          ((role === 'employee' || role === 'branch_manager') ? v.employee_id === me.id : false)
-        );
-        for (const v of myOverdue) {
-          await tryAutoForwardTicket(v);
-        }
-
         const openT = state.editingTicket;
         const modalOpen = document.getElementById('ticketModal')?.classList.contains('open');
         if (openT && modalOpen) await tryAutoForwardTicket(openT);
@@ -53364,51 +53351,15 @@
         }
         const t = state.editingTicket;
         Promise.resolve()
-          .then(() => (t ? tryAutoForwardTicket(t) : checkAndAutoForwardForAnyone()))
-          .then(() => checkAndAutoForwardForAnyone())
+          .then(() => { if (t) return tryAutoForwardTicket(t); })
           .catch((e) => {
             if (isMirsadDebugLog()) console.warn('[auto-forward countdown]', e);
           });
       }
 
+      /** @deprecated — التمرير يتم عبر jobs السيرفر أو tryAutoForwardTicket عند العدّاد */
       async function checkAndAutoForward() {
-        if (!state.currentUser || state._autoForwardRunning) return;
-        const role = normalizeUserRole(state.currentUser.role);
-        if (!['admin', 'manager', 'auditor', 'supervisor'].includes(role)) return;
-
-        state._autoForwardRunning = true;
-        let didUpdate = false;
-
-        try {
-          const tickets = state.violations.filter(t =>
-            (t.state === 'emp' && !isDbTruthy(t.auto_forwarded_emp)) ||
-            (t.state === 'sup' && !isDbTruthy(t.auto_forwarded_sup) && !isWorkflowStageSkipped('sup'))
-          );
-
-          for (const t of tickets) {
-            if (t.state === 'emp' && !isDbTruthy(t.auto_forwarded_emp)) {
-              const startedAt = t.created_at;
-              if (hoursSince(startedAt) >= EMP_TIMEOUT_HOURS) {
-                const ok = await autoForwardTicket(t, 'emp_to_sup');
-                if (ok) didUpdate = true;
-              }
-            } else if (t.state === 'sup' && !isDbTruthy(t.auto_forwarded_sup)) {
-              const startedAt = getStateStartTime(t);
-              if (hoursSince(startedAt) >= SUP_TIMEOUT_HOURS) {
-                const ok = await autoForwardTicket(t, 'sup_to_aud');
-                if (ok) didUpdate = true;
-              }
-            }
-          }
-
-          if (didUpdate) {
-            await loadAllData();
-            renderAll();
-            renderNotifications();
-          }
-        } finally {
-          state._autoForwardRunning = false;
-        }
+        return;
       }
 
       async function autoForwardTicket(t, direction) {
@@ -53740,7 +53691,6 @@
         }
         refreshPermissionsFromCloud()
           .catch(e => { if (isMirsadDebugLog()) console.warn('[permissions] refresh', e); });
-        checkAndAutoForwardForAnyone();
       });
 
       window.addEventListener('focus', () => {

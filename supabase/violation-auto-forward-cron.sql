@@ -1,10 +1,10 @@
 -- ═══════════════════════════════════════════════════════════════════════════
--- مرصاد — جدولة التمرير التلقائي (كل دقيقة)
+-- مرصاد — معالجة jobs التمرير (كل 10 دقائق — فقط المستحقة)
 -- ═══════════════════════════════════════════════════════════════════════════
 --
--- المتطلبات: شغّل أولاً supabase/mirsad-auto-forward-sql.sql
---
--- لا HTTP — لا 401 — يعمل مباشرة داخل قاعدة البيانات.
+-- المتطلبات:
+--   1) supabase/mirsad-auto-forward-sql.sql
+--   2) supabase/violation-forward-jobs.sql
 
 create extension if not exists pg_cron with schema pg_catalog;
 
@@ -14,7 +14,7 @@ where jobname = 'athar-violation-auto-forward';
 
 select cron.schedule(
   'athar-violation-auto-forward',
-  '* * * * *',
+  '*/10 * * * *',
   $$ select public.mirsad_auto_forward_tick(); $$
 );
 
