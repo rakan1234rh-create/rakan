@@ -28581,7 +28581,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-forward-jobs-v890">
+  <meta name="app-build" content="athar-syntax-fix-v891">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -31070,7 +31070,7 @@
         'source_role', 'updated_at',
         'auto_forwarded_emp', 'auto_forwarded_sup',
         'emp_forward_after', 'sup_forward_after',
-      ].join(','); = 'id,created_at,ticket_number,state,status_text,employee_id,branch_id,observer_id,supervisor_id,violation_type';
+      ].join(',');
       const MOB_VIOLATION_TYPES_SELECT = 'id,name,category,severity,weight,description';
 
       function enrichViolationLite(t) {
