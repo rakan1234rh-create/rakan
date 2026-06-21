@@ -12507,6 +12507,24 @@
       }
     }
 
+    html.mr-notif-slide-exiting.mr-mobile-ui #tab-notifications.notif-tab-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 1300;
+      display: flex !important;
+      flex-direction: column;
+      min-height: 0;
+      overflow: hidden;
+      background: var(--mr-bg);
+      padding-top: env(safe-area-inset-top, 0px);
+      box-sizing: border-box
+    }
+
+    html.mr-notif-slide-exiting.mr-mobile-ui #tab-notifications.notif-tab-overlay .notif-page-shell {
+      height: 100%;
+      min-height: 0
+    }
+
     /* Notifications page — ديسكتوب: صفحة كاملة تحت الشريط العلوي مع سكرول داخلي */
     @media (min-width: 993px), (hover: hover) and (pointer: fine) {
       html.mr-notif-page-active.mr-desktop-ui #appWrap .main:has(#tab-notifications.active) {
@@ -28772,7 +28790,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-notif-slide-left-v913">
+  <meta name="app-build" content="athar-notif-slide-reveal-v914">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -53107,6 +53125,67 @@
         requestAnimationFrame(() => requestAnimationFrame(() => playNotifPageSlideIn()));
       }
 
+      function beginNotifSlideClose(returnTab, navBtn) {
+        const notifTab = document.getElementById('tab-notifications');
+        const returnTabEl = document.getElementById(`tab-${returnTab}`);
+        if (!notifTab || !returnTabEl || !isNotifSlideUi()) {
+          return playNotifPageSlideOut();
+        }
+
+        rememberActiveTab(returnTab);
+
+        document.querySelectorAll('.tab-content').forEach(t => {
+          t.classList.remove('active');
+          if (t.id !== `tab-${returnTab}` && t.id !== 'tab-notifications') {
+            t.setAttribute('hidden', '');
+          }
+        });
+        returnTabEl.removeAttribute('hidden');
+        returnTabEl.classList.add('active');
+
+        notifTab.removeAttribute('hidden');
+        notifTab.classList.remove('active');
+        notifTab.classList.add('notif-tab-overlay');
+
+        document.documentElement.classList.add('mr-notif-slide-exiting');
+        document.body.classList.add('mr-notif-slide-exiting');
+
+        syncNotifPageShell(false);
+
+        const navBtnEl = navBtn || getNavButtonForTab(returnTab);
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        if (navBtnEl?.classList.contains('nav-item')) navBtnEl.classList.add('active');
+        document.querySelectorAll('#mobileBottomNav .mob-nav-item').forEach(n => n.classList.remove('active'));
+        const mobBtn = (navBtnEl?.classList?.contains?.('mob-nav-item') && !navBtnEl.hasAttribute('data-role-hide'))
+          ? navBtnEl
+          : document.querySelector(`#mobileBottomNav .mob-nav-item[data-tab="${returnTab}"]:not([data-role-hide])`);
+        if (mobBtn) mobBtn.classList.add('active');
+        if (typeof syncMobileBottomNav === 'function') syncMobileBottomNav(returnTab, true);
+
+        const meta = TAB_TITLES[returnTab] || { title: returnTab, sub: '' };
+        const pt = document.getElementById('pageTitle');
+        const ps = document.getElementById('pageSubtitle');
+        if (pt) pt.textContent = meta.title;
+        if (ps) ps.textContent = meta.sub;
+
+        const titleBar = document.getElementById('pageTitleBar');
+        if (titleBar) {
+          titleBar.classList.toggle('visible', !MR_TABS_WITH_OWN_TITLE.includes(returnTab));
+        }
+
+        syncViolMobileScrollShell(returnTab);
+        syncUsersMobileScrollShell(returnTab);
+        syncCmpMobileScrollShell(returnTab);
+        syncLocationsMobileScrollShell(returnTab);
+
+        return playNotifPageSlideOut().finally(() => {
+          notifTab.setAttribute('hidden', '');
+          notifTab.classList.remove('notif-tab-overlay');
+          document.documentElement.classList.remove('mr-notif-slide-exiting');
+          document.body.classList.remove('mr-notif-slide-exiting');
+        });
+      }
+
       function resetNotifFilterToAll() {
         state._notifFilter = 'all';
         const wrap = document.getElementById('notifPageFilters');
@@ -53208,9 +53287,22 @@
           state._notifClosing = true;
           state._notifFastLeaveDone = false;
           state._notifFastLeaveTab = null;
-          playNotifPageSlideOut().finally(() => {
+          const returnTab = state._notifReturnTab
+            || getRestorableTab()
+            || getFirstAllowedTab()
+            || 'dashboard';
+          const navBtn = getNavButtonForTab(returnTab);
+          beginNotifSlideClose(returnTab, navBtn).finally(() => {
             state._notifClosing = false;
-            runClose();
+            state._bellBadgeLocked = 0;
+            document.querySelector('.notif-page-back-group.is-pressed, .notif-page-back.is-pressed')?.classList.remove('is-pressed');
+            state._notifFastLeaveDone = false;
+            state._notifFastLeaveTab = null;
+            goTab(returnTab, navBtn, {
+              instantBack: true,
+              notifShellAlreadyOff: true,
+              shellAlreadySwitched: true
+            });
           });
           return;
         }
