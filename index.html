@@ -12507,22 +12507,33 @@
       }
     }
 
-    html.mr-notif-slide-exiting.mr-mobile-ui #tab-notifications.notif-tab-overlay {
-      position: fixed;
+    html.mr-mobile-ui #tab-notifications.notif-tab-overlay {
+      position: fixed !important;
       inset: 0;
       z-index: 1300;
       display: flex !important;
       flex-direction: column;
       min-height: 0;
-      overflow: hidden;
-      background: var(--mr-bg);
-      padding-top: env(safe-area-inset-top, 0px);
+      overflow: visible;
+      background: transparent !important;
+      pointer-events: none;
+      padding: 0;
       box-sizing: border-box
     }
 
-    html.mr-notif-slide-exiting.mr-mobile-ui #tab-notifications.notif-tab-overlay .notif-page-shell {
+    html.mr-mobile-ui #tab-notifications.notif-tab-overlay .notif-page-shell {
       height: 100%;
-      min-height: 0
+      min-height: 0;
+      background: var(--mr-bg);
+      pointer-events: auto;
+      padding: 0 4px calc(env(safe-area-inset-bottom, 0px) + 8px);
+      padding-top: max(4px, env(safe-area-inset-top, 0px));
+      box-sizing: border-box
+    }
+
+    html.mr-notif-slide-exiting.mr-mobile-ui .tab-content.active {
+      display: block !important;
+      visibility: visible !important
     }
 
     /* Notifications page — ديسكتوب: صفحة كاملة تحت الشريط العلوي مع سكرول داخلي */
@@ -28790,7 +28801,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-notif-slide-reveal-v914">
+  <meta name="app-build" content="athar-notif-slide-reveal-v915">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -53125,6 +53136,12 @@
         requestAnimationFrame(() => requestAnimationFrame(() => playNotifPageSlideIn()));
       }
 
+      function isNotifPageOpen() {
+        const tab = document.getElementById('tab-notifications');
+        return !!tab && !tab.hasAttribute('hidden')
+          && (tab.classList.contains('active') || tab.classList.contains('notif-tab-overlay'));
+      }
+
       function beginNotifSlideClose(returnTab, navBtn) {
         const notifTab = document.getElementById('tab-notifications');
         const returnTabEl = document.getElementById(`tab-${returnTab}`);
@@ -53178,11 +53195,19 @@
         syncCmpMobileScrollShell(returnTab);
         syncLocationsMobileScrollShell(returnTab);
 
-        return playNotifPageSlideOut().finally(() => {
-          notifTab.setAttribute('hidden', '');
-          notifTab.classList.remove('notif-tab-overlay');
-          document.documentElement.classList.remove('mr-notif-slide-exiting');
-          document.body.classList.remove('mr-notif-slide-exiting');
+        return new Promise((resolve) => {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              playNotifPageSlideOut()
+                .finally(() => {
+                  notifTab.setAttribute('hidden', '');
+                  notifTab.classList.remove('notif-tab-overlay');
+                  document.documentElement.classList.remove('mr-notif-slide-exiting');
+                  document.body.classList.remove('mr-notif-slide-exiting');
+                })
+                .finally(resolve);
+            });
+          });
         });
       }
 
@@ -53283,7 +53308,7 @@
           });
         };
 
-        if (isNotifSlideUi() && getActiveTabKey() === 'notifications') {
+        if (isNotifSlideUi() && isNotifPageOpen()) {
           state._notifClosing = true;
           state._notifFastLeaveDone = false;
           state._notifFastLeaveTab = null;
@@ -53301,8 +53326,12 @@
             goTab(returnTab, navBtn, {
               instantBack: true,
               notifShellAlreadyOff: true,
-              shellAlreadySwitched: true
+              shellAlreadySwitched: true,
+              shellOnly: true
             });
+            scheduleIdleWork(() => {
+              try { syncNotifBellBadge(false); } catch (_) { /* noop */ }
+            }, 1200);
           });
           return;
         }
