@@ -12548,10 +12548,12 @@
     }
 
     .notif-page-topbar {
+      --notif-topbar-h: 32px;
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       gap: 10px;
-      padding: 0 4px 4px;
+      min-height: var(--notif-topbar-h);
+      padding: 2px 4px 10px;
       flex-shrink: 0
     }
 
@@ -12560,8 +12562,7 @@
       align-items: center;
       gap: 6px;
       flex-shrink: 0;
-      min-height: 22px;
-      margin-top: 1px;
+      height: var(--notif-topbar-h);
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
       touch-action: manipulation
@@ -12606,10 +12607,11 @@
       font-size: 14px;
       font-weight: 700;
       letter-spacing: -.01em;
-      line-height: 22px;
+      line-height: 1;
       color: var(--mr-text);
-      display: inline-block;
-      transform: translateY(-.5px)
+      display: inline-flex;
+      align-items: center;
+      height: var(--notif-topbar-h)
     }
 
     .notif-page-back:hover {
@@ -12643,27 +12645,43 @@
 
     .notif-page-topbar__title {
       flex: 1 1 auto;
-      min-width: 0
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      min-height: var(--notif-topbar-h)
     }
 
     .notif-page-topbar__heading {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
       margin: 0;
+      min-height: var(--notif-topbar-h);
+      flex-wrap: nowrap;
+      min-width: 0
+    }
+
+    .notif-page-topbar__heading-title {
       font-size: 16px;
       font-weight: 700;
-      line-height: 22px;
+      line-height: 1;
       color: var(--mr-text);
-      display: block
+      flex-shrink: 0
     }
 
     .notif-page-topbar__heading .notif-count {
-      display: inline;
-      margin-inline-start: 8px;
       font-size: 11px;
       font-weight: 500;
       color: var(--mr-text-3);
-      line-height: 22px;
-      vertical-align: baseline;
-      white-space: nowrap
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      height: var(--notif-topbar-h);
+      padding-top: 1px;
+      white-space: nowrap;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis
     }
 
     .notif-page-topbar .notif-mark-all {
@@ -28708,7 +28726,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-notif-count-inline-v907">
+  <meta name="app-build" content="athar-notif-topbar-align-v908">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -29056,7 +29074,7 @@
                   </div>
                   <div class="notif-page-topbar__title">
                     <h4 class="notif-page-topbar__heading">
-                      التنبيهات
+                      <span class="notif-page-topbar__heading-title">التنبيهات</span>
                       <span class="notif-count" id="notifPageCount">0 تنبيه</span>
                     </h4>
                   </div>
