@@ -28602,7 +28602,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-login-solid-v895">
+  <meta name="app-build" content="athar-notif-desktop-click-v896">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -52913,15 +52913,18 @@
           }
         }
 
-        if (onNotifPage) syncNotifPageShell(false);
-        else closeNotifPanel();
+        if (!onNotifPage) closeNotifPanel();
 
         if (ticketId) {
-          const wfBtn = document.querySelector('[onclick*="goTab(\'workflow"]');
-          if (wfBtn && !document.getElementById('tab-workflow')?.classList.contains('active')) {
-            goTab('workflow', wfBtn);
+          if (onNotifPage) {
+            openTicket(ticketId);
+          } else {
+            const wfBtn = document.querySelector('[onclick*="goTab(\'workflow"]');
+            if (wfBtn && !document.getElementById('tab-workflow')?.classList.contains('active')) {
+              goTab('workflow', wfBtn);
+            }
+            setTimeout(() => openTicket(ticketId), 100);
           }
-          setTimeout(() => openTicket(ticketId), 100);
         } else if (onNotifPage) {
           closeNotificationsPage();
         }
@@ -53168,7 +53171,8 @@
           } else {
             closeNotifSwipe(wrap, { animate: true });
           }
-          if (wasSwipe) blockNotifItemClickAfterSwipe(item);
+          const swipePx = Math.abs(readNotifSwipeX(wrap));
+          if (wasSwipe && swipePx >= 12) blockNotifItemClickAfterSwipe(item);
           resetNotifSwipePointer({ releaseCapture: false });
         }
 
@@ -53225,7 +53229,8 @@
         }
 
         list.addEventListener('pointerdown', (e) => {
-          if (e.pointerType === 'mouse' && e.button !== 0) return;
+          if (e.pointerType === 'mouse') return;
+          if (e.pointerType === 'pen' && e.button !== 0) return;
           const item = e.target.closest('.notif-item');
           if (!item) return;
           const wrap = item.closest('.notif-swipe');
