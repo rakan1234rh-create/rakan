@@ -6546,139 +6546,94 @@
     }
 
     .cmp-neo-back--combo {
-      align-self: stretch;
+      align-self: center;
       height: auto;
       margin: 0;
-      padding: 0 14px 0 12px;
-      border: 1px solid var(--mr-border);
-      border-radius: 12px 0 0 12px;
-      box-shadow: var(--mr-shadow-soft);
-      background: var(--mr-surface);
+      padding: 0 10px 0 8px;
+      border: none;
+      border-radius: 0;
+      box-shadow: none;
+      background: transparent;
       flex-shrink: 0;
-      transition: all 0.2s ease;
-      gap: 8px;
+      transition: color 0.15s ease, background 0.15s ease;
+      gap: 6px;
     }
 
     .cmp-neo-back--combo:hover {
-      background: var(--mr-primary-softer);
-      border-color: var(--mr-blue);
-      box-shadow: 0 2px 8px rgba(108, 71, 255, 0.2);
-      transform: translateY(-1px);
+      background: transparent;
+      border-color: transparent;
+      box-shadow: none;
+      transform: none;
+      color: var(--mr-text);
     }
 
     .cmp-neo-back--combo:active {
-      transform: translateY(0);
+      transform: none;
     }
 
     .cmp-neo-back--combo:focus-visible {
       outline: none;
-      box-shadow: 0 0 0 3px var(--b-blue-bg);
-      border-color: var(--mr-blue);
+      box-shadow: none;
     }
 
     .cmp-neo-back--combo .cmp-neo-back__ico {
-      width: 28px;
-      height: 28px;
+      width: 26px;
+      height: 26px;
+      min-width: 26px;
       font-size: 11px;
-      background: var(--mr-blue);
-      color: white;
-      border: none;
-      border-radius: 8px;
-      display: flex;
+      border: 1px solid color-mix(in srgb, var(--mr-border) 55%, transparent);
+      border-radius: 50%;
+      background: color-mix(in srgb, var(--mr-surface) 94%, var(--mr-bg));
+      color: var(--mr-text-2);
+      box-shadow: 0 1px 3px rgba(15, 18, 36, 0.05);
+      display: inline-flex;
       align-items: center;
       justify-content: center;
-      transition: all 0.2s ease;
+      transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
     }
 
     .cmp-neo-back--combo:hover .cmp-neo-back__ico {
-      background: var(--b-blue-fg);
-      transform: scale(1.05);
+      background: var(--mr-surface);
+      border-color: var(--mr-border-2);
+      color: var(--mr-text);
+      box-shadow: 0 2px 8px rgba(15, 18, 36, 0.06);
+      transform: none;
     }
 
     .cmp-neo-back--combo .cmp-neo-back__text {
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 600;
-      color: var(--mr-text);
+      color: var(--mr-text-2);
     }
 
-    /* Mobile improvements */
-    html.mr-mobile-ui .cmp-neo-back--combo {
-      padding: 0 12px 0 10px;
-      border-radius: 10px 0 0 10px;
-      gap: 6px;
+    #tab-compliance .cmp-neo-search-combo .cmp-neo-search-combo__field {
+      border: none;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none !important;
     }
 
-    html.mr-mobile-ui .cmp-neo-back--combo .cmp-neo-back__ico {
-      width: 32px;
-      height: 32px;
-      font-size: 12px;
-    }
-
-    html.mr-mobile-ui .cmp-neo-back--combo .cmp-neo-back__text {
-      font-size: 15px;
-    }
-
-    #tab-compliance .cmp-neo-search-combo .figma-search-wrap {
-      background: var(--mr-surface);
-      border: 1px solid var(--mr-border);
-      box-shadow: var(--mr-shadow-soft);
-      border-radius: 12px;
-      transition: all 0.2s ease;
-    }
-
-    #tab-compliance .cmp-neo-search-combo .figma-search-wrap:focus-within {
-      border-color: var(--mr-blue);
-      box-shadow: 0 0 0 3px var(--b-blue-bg);
+    #tab-compliance .cmp-neo-search-combo .cmp-neo-search-combo__field:focus-within {
+      border-color: transparent;
+      box-shadow: none !important;
     }
 
     #tab-compliance .cmp-neo-search-combo .figma-search-input {
-      font-size: 14px;
-      padding: 10px 12px;
+      font-size: 13px;
+      padding: 0;
     }
 
     #tab-compliance .cmp-neo-search-combo .figma-search-input::placeholder {
-      color: var(--mr-text-3);
+      color: var(--mr-text-muted);
       font-size: 13px;
     }
 
     #tab-compliance .cmp-neo-search-combo .figma-search-btn {
-      background: var(--mr-blue);
-      color: white;
-      border-radius: 8px;
-      margin: 4px;
-      width: 36px;
-      height: 36px;
-      transition: all 0.2s ease;
-    }
-
-    #tab-compliance .cmp-neo-search-combo .figma-search-btn:hover {
-      background: var(--b-blue-fg);
-      transform: scale(1.05);
-      box-shadow: 0 2px 8px rgba(108, 71, 255, 0.3);
-    }
-
-    #tab-compliance .cmp-neo-search-combo .figma-search-btn:active {
-      transform: scale(0.95);
-    }
-
-    /* Mobile improvements */
-    html.mr-mobile-ui #tab-compliance .cmp-neo-search-combo .figma-search-wrap {
-      background: var(--mr-surface);
-      border: 1px solid var(--mr-border);
-      border-radius: 10px;
-      padding: 4px;
-    }
-
-    html.mr-mobile-ui #tab-compliance .cmp-neo-search-combo .figma-search-input {
-      font-size: 15px;
-      padding: 12px 14px;
-    }
-
-    html.mr-mobile-ui #tab-compliance .cmp-neo-search-combo .figma-search-btn {
-      width: 40px;
-      height: 40px;
-      margin: 6px;
-      font-size: 14px;
+      width: 32px;
+      height: 32px;
+      min-width: 32px;
+      margin: 0;
+      flex-shrink: 0;
     }
 
     #tab-compliance .cmp-neo-toolbar .wf-status-filter {
@@ -23882,7 +23837,113 @@
         flex: none !important;
         min-width: 0 !important;
         width: 100% !important;
-        max-width: none !important
+        max-width: none !important;
+        min-height: 0 !important;
+        border: none !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        gap: 6px !important;
+        align-items: center !important
+      }
+
+      #tab-compliance .cmp-neo-search-combo:focus-within {
+        border-color: transparent !important;
+        box-shadow: none !important
+      }
+
+      #tab-compliance .cmp-neo-search-combo .cmp-neo-search-combo__field {
+        flex: 1 1 0 !important;
+        min-width: 0 !important;
+        width: auto !important;
+        min-height: 38px !important;
+        height: 38px !important;
+        border: 1px solid var(--mr-border) !important;
+        border-radius: 999px !important;
+        background: var(--mr-bg) !important;
+        padding: 0 8px 0 4px !important;
+        gap: 6px !important;
+        box-shadow: none !important
+      }
+
+      #tab-compliance .cmp-neo-search-combo .cmp-neo-search-combo__field:focus-within {
+        border-color: var(--mr-primary) !important;
+        box-shadow: 0 0 0 4px var(--mr-primary-soft) !important
+      }
+
+      #tab-compliance .cmp-neo-search-combo .figma-search-input {
+        min-height: 38px !important;
+        font-size: 11px !important;
+        min-width: 0 !important
+      }
+
+      #tab-compliance .cmp-neo-search-combo .figma-search-input::placeholder {
+        font-size: 9px !important;
+        opacity: 1 !important;
+        letter-spacing: -0.01em !important
+      }
+
+      #tab-compliance .cmp-neo-search-combo .figma-search-btn {
+        width: 32px !important;
+        min-width: 32px !important;
+        height: 32px !important;
+        flex-shrink: 0 !important
+      }
+
+      #tab-compliance .cmp-neo-back--combo {
+        width: 36px !important;
+        height: 36px !important;
+        min-width: 36px !important;
+        min-height: 36px !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        border: 1px solid color-mix(in srgb, var(--mr-border) 55%, transparent) !important;
+        border-radius: 50% !important;
+        background: color-mix(in srgb, var(--mr-surface) 94%, var(--mr-bg)) !important;
+        box-shadow: 0 1px 3px rgba(15, 18, 36, 0.05) !important;
+        justify-content: center !important;
+        align-items: center !important;
+        flex-shrink: 0 !important;
+        gap: 0 !important
+      }
+
+      #tab-compliance .cmp-neo-back--combo:hover {
+        background: var(--mr-surface) !important;
+        border-color: var(--mr-border-2) !important;
+        color: var(--mr-text) !important;
+        box-shadow: 0 2px 8px rgba(15, 18, 36, 0.06) !important
+      }
+
+      #tab-compliance .cmp-neo-back--combo .cmp-neo-back__text {
+        display: none !important
+      }
+
+      #tab-compliance .cmp-neo-back--combo .cmp-neo-back__ico {
+        width: 100% !important;
+        height: 100% !important;
+        min-width: 0 !important;
+        border: none !important;
+        border-radius: 50% !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        color: var(--mr-text-2) !important;
+        font-size: 14px !important
+      }
+
+      #tab-compliance .cmp-neo-back--combo:hover .cmp-neo-back__ico {
+        background: transparent !important;
+        color: var(--mr-text) !important;
+        box-shadow: none !important
+      }
+
+      [data-theme="dark"] #tab-compliance .cmp-neo-back--combo {
+        background: rgba(255, 255, 255, 0.05) !important;
+        border-color: var(--mr-border-2) !important;
+        box-shadow: none !important
+      }
+
+      [data-theme="dark"] #tab-compliance .cmp-neo-back--combo:hover {
+        background: rgba(255, 255, 255, 0.08) !important;
+        border-color: color-mix(in srgb, var(--mr-primary) 28%, var(--mr-border-2)) !important
       }
 
       #tab-compliance .cmp-neo-toolbar #cmpNeoDateWrap,
@@ -23905,13 +23966,38 @@
       }
 
       #tab-compliance .cmp-neo-toolbar .rp-date-btn {
-        min-height: 46px !important;
-        height: 46px !important;
-        width: 46px !important;
-        min-width: 46px !important;
+        min-height: 36px !important;
+        height: 36px !important;
+        width: 36px !important;
+        min-width: 36px !important;
         padding: 0 !important;
         justify-content: center !important;
-        align-items: center !important
+        align-items: center !important;
+        border-radius: 50% !important;
+        border: 1px solid color-mix(in srgb, var(--mr-border) 55%, transparent) !important;
+        background: color-mix(in srgb, var(--mr-surface) 94%, var(--mr-bg)) !important;
+        color: var(--mr-text-2) !important;
+        box-shadow: 0 1px 3px rgba(15, 18, 36, 0.05) !important
+      }
+
+      #tab-compliance .cmp-neo-toolbar .rp-date-btn:hover {
+        background: var(--mr-surface) !important;
+        border-color: var(--mr-border-2) !important;
+        color: var(--mr-text) !important;
+        box-shadow: 0 2px 8px rgba(15, 18, 36, 0.06) !important
+      }
+
+      [data-theme="dark"] #tab-compliance .cmp-neo-toolbar .rp-date-btn {
+        background: rgba(255, 255, 255, 0.05) !important;
+        border-color: var(--mr-border-2) !important;
+        box-shadow: none !important;
+        color: var(--mr-text-2) !important
+      }
+
+      [data-theme="dark"] #tab-compliance .cmp-neo-toolbar .rp-date-btn:hover {
+        background: rgba(255, 255, 255, 0.08) !important;
+        border-color: color-mix(in srgb, var(--mr-primary) 28%, var(--mr-border-2)) !important;
+        color: var(--mr-text) !important
       }
 
       #tab-compliance .cmp-neo-toolbar .rp-date-btn #cmp-date-label {
@@ -29015,7 +29101,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-login-logo-split-v931">
+  <meta name="app-build" content="athar-cmp-search-toolbar-v932">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
