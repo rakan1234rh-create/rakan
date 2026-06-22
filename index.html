@@ -29239,7 +29239,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-notif-dedupe-v940">
+  <meta name="app-build" content="athar-perf-lite-v941">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -31717,15 +31717,16 @@
       /** أعمدة موجودة فعلاً في جدول users — لا تضف region_id أو supervisor_id (غير موجودين في Supabase) */
       const MOB_USER_SELECT = 'id,name,role,branch_id,employee_number,auth_uid,is_active,email,phone';
       const MOB_LOAD_TIMEOUT_MS = 28000;
-      const MOB_VIOLATION_SELECT = [
+      /** قائمة التذاكر — بدون logs/attachments/description (تُجلب عند فتح التذكرة) */
+      const VIOLATION_LIST_SELECT = [
         'id', 'created_at', 'updated_at', 'ticket_number', 'state', 'status_text',
         'employee_id', 'branch_id', 'observer_id', 'supervisor_id',
-        'violation_type', 'violation_date', 'violation_time', 'description',
+        'violation_type', 'violation_date', 'violation_time',
         'employee_reply', 'supervisor_reply', 'audit_reply', 'management_reply', 'hr_reply',
-        'attachments', 'logs',
         'auto_forwarded_emp', 'auto_forwarded_sup',
         'emp_forward_after', 'sup_forward_after',
       ].join(',');
+      const MOB_VIOLATION_SELECT = VIOLATION_LIST_SELECT;
       const TICKET_DETAIL_EXTRA_SELECT = [
         'attachments', 'logs', 'description',
         'employee_reply', 'supervisor_reply', 'audit_reply', 'management_reply', 'hr_reply',
@@ -34637,7 +34638,7 @@
       }
 
       async function loadAllData(isRetry) {
-        const mobLoad = false;
+        const mobLoad = isMobileViewport();
         await ensureAuthSessionReady(2000);
 
         state._dataLoading = true;
@@ -34649,17 +34650,8 @@
         let loaderGuard;
         setConnStatus('reconnecting');
         try {
-          const VIOLATIONS_LIMIT = mobLoad ? 50 : 1000;
-          const VIOLATION_LIST_SELECT = mobLoad
-            ? MOB_VIOLATION_SELECT
-            : [
-              'id', 'created_at', 'updated_at', 'ticket_number', 'state', 'status_text',
-              'employee_id', 'branch_id', 'observer_id', 'supervisor_id',
-              'violation_type', 'violation_date', 'violation_time',
-              'description', 'source_role', 'attachments', 'logs',
-              'employee_reply', 'supervisor_reply', 'audit_reply', 'management_reply', 'hr_reply',
-              'auto_forwarded_emp', 'auto_forwarded_sup',
-            ].join(',');
+          const VIOLATIONS_LIMIT = mobLoad ? 50 : 200;
+          const VIOLATION_LIST_SELECT_LOCAL = VIOLATION_LIST_SELECT;
 
           const fetchAll = Promise.all([
             mobLoad
@@ -34671,7 +34663,7 @@
             mobLoad
               ? sb.from('users').select(MOB_USER_SELECT)
               : sb.from('users').select('*').order('name'),
-            sb.from('violations').select(VIOLATION_LIST_SELECT).order('created_at', { ascending: false }).limit(VIOLATIONS_LIMIT),
+            sb.from('violations').select(VIOLATION_LIST_SELECT_LOCAL).order('created_at', { ascending: false }).limit(VIOLATIONS_LIMIT),
             mobLoad
               ? sb.from('violation_types').select(MOB_VIOLATION_TYPES_SELECT).order('name')
               : sb.from('violation_types').select('*').order('name'),
@@ -34768,6 +34760,7 @@
           const enrichRow = mobLoad ? enrichViolationLite : enrichViolation;
           state.violations = (violations || []).map(enrichRow);
           state.violationTypes = vTypes || [];
+          invalidateEmpScoreCache();
           state.notifications = notifs || [];
           state.broadcastInbox = mobLoad ? [] : (broadcastInbox || []);
           state._dbDismissedNotifIds = mobLoad
@@ -35146,6 +35139,7 @@
         const vCh = sb.channel('public:violations')
           .on('postgres_changes', { event: '*', schema: 'public', table: 'violations' }, (payload) => {
             applyRealtimeChange(state.violations, payload, enrichViolation);
+            invalidateEmpScoreCache();
             invalidateNotifCache();
             scheduleRenderAll();
             renderNotifBadgeDebounced();
@@ -37000,22 +36994,14 @@
         _wfViolationsReloadPromise = (async () => {
           try {
             const mobLoad = isMobileViewport();
-            const limit = mobLoad ? 50 : 1000;
-            const select = mobLoad
-              ? MOB_VIOLATION_SELECT
-              : [
-                'id', 'created_at', 'updated_at', 'ticket_number', 'state', 'status_text',
-                'employee_id', 'branch_id', 'observer_id', 'supervisor_id',
-                'violation_type', 'violation_date', 'violation_time',
-                'description', 'source_role', 'attachments', 'logs',
-                'employee_reply', 'supervisor_reply', 'audit_reply', 'management_reply', 'hr_reply',
-                'auto_forwarded_emp', 'auto_forwarded_sup',
-              ].join(',');
+            const limit = mobLoad ? 50 : 200;
+            const select = VIOLATION_LIST_SELECT;
             const rows = await wfFetchExpandedViolationRows(limit, select);
             if (Array.isArray(rows)) {
               const enrichRow = mobLoad ? enrichViolationLite : enrichViolation;
               state.violations = rows.map(enrichRow);
               rebuildLookupMaps();
+              invalidateEmpScoreCache();
               invalidateNotifCache();
             }
           } catch (e) {
@@ -47711,7 +47697,22 @@
       /**
        * احسب درجة موظف: خصم فوري لكل المخالفات ما عدا الملغاة/المرفوضة/التنبيه الإداري.
        */
-      function calcEmpScore(empId, violations) {
+      const _empScoreCache = new Map();
+
+      function empScoreListCacheKey(violations) {
+        const ver = state._violScoreVer || 0;
+        if (violations == null || violations === state.violations) return `m:${ver}`;
+        const from = document.getElementById('cmp-from')?.value || '';
+        const to = document.getElementById('cmp-to')?.value || '';
+        return `c:${ver}:${from}:${to}:${violations.length}`;
+      }
+
+      function invalidateEmpScoreCache() {
+        state._violScoreVer = (state._violScoreVer || 0) + 1;
+        _empScoreCache.clear();
+      }
+
+      function calcEmpScoreCore(empId, violations) {
         const list = violations || [];
         const deductList = list.filter(v => v.employee_id === empId && !violationExcludedFromDeduction(v));
 
@@ -47795,6 +47796,16 @@
           recencyIndex,
           actionRequired
         };
+      }
+
+      function calcEmpScore(empId, violations) {
+        const list = violations ?? state.violations ?? [];
+        const ck = `${empScoreListCacheKey(violations)}:${empId}`;
+        if (_empScoreCache.has(ck)) return _empScoreCache.get(ck);
+        const result = calcEmpScoreCore(empId, list);
+        _empScoreCache.set(ck, result);
+        if (_empScoreCache.size > 400) _empScoreCache.clear();
+        return result;
       }
 
       /**
