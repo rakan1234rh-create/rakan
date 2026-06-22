@@ -1,0 +1,16 @@
+[
+  {
+    "AllowedOrigins": [
+      "https://athar.app",
+      "https://athar-app.online",
+      "https://www.athar-app.online",
+      "http://localhost:3000",
+      "http://localhost:5173",
+      "http://127.0.0.1:3000"
+    ],
+    "AllowedMethods": ["GET", "PUT", "HEAD"],
+    "AllowedHeaders": ["*"],
+    "ExposeHeaders": ["ETag", "Content-Length", "Content-Type"],
+    "MaxAgeSeconds": 3600
+  }
+]

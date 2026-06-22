@@ -1,0 +1,9 @@
+ضبط CORS على bucket R2 (للملفات الكبيرة جداً فقط — الرفع العادي يمر عبر Edge Function)
+
+1) Cloudflare Dashboard → R2 → اختر الـ bucket (مثل rakanm-onitorings-ystem)
+2) Settings → CORS Policy → Add CORS policy
+3) الصق محتوى supabase/r2-cors.json
+4) احفظ وانتظر دقيقة ثم جرّب رفع ملف كبير (>50MB) إن لزم
+
+بدون CORS: الرفع المباشر إلى r2.cloudflarestorage.com يُحجب من المتصفح.
+مع التحديث الجديد: الصور والملفات المعتادة تُرفع عبر دالة r2-storage (لا تحتاج CORS).

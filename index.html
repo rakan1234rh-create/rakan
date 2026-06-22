@@ -29249,7 +29249,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-cmp-grid-pad-v947">
+  <meta name="app-build" content="athar-r2-upload-v949">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -31508,6 +31508,75 @@
         return data;
       }
 
+      /** رفع ملف إلى R2 عبر Edge Function (يتجاوز CORS على bucket) */
+      async function uploadR2ViaEdgeProxy(objectKey, body, contentType, allowRetry = true) {
+        let session = await ensureSupabaseSessionFresh();
+        if (!session?.access_token) {
+          const { data: { session: s2 } } = await sb.auth.getSession();
+          session = s2;
+        }
+        if (!session?.access_token) {
+          throw new Error('انتهت الجلسة، يرجى تسجيل الدخول من جديد');
+        }
+
+        const res = await fetch(R2_STORAGE_FN_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': contentType,
+            'apikey': SUPABASE_ANON,
+            'Authorization': `Bearer ${session.access_token}`,
+            'X-R2-Action': 'putObject',
+            'X-R2-Key': objectKey,
+          },
+          body,
+        });
+
+        let data = {};
+        try { data = await res.json(); } catch (_) { }
+
+        if (res.status === 401 && allowRetry) {
+          invalidateR2BackendResolution();
+          const { data: refreshed } = await sb.auth.refreshSession();
+          if (refreshed.session?.access_token) {
+            return uploadR2ViaEdgeProxy(objectKey, body, contentType, false);
+          }
+        }
+
+        if (!res.ok) {
+          const msg = data.error || data.message || `فشل الرفع عبر الخادم (${res.status})`;
+          if (res.status === 401) {
+            throw new Error('انتهت الجلسة — سجّل الخروج ثم الدخول من جديد.');
+          }
+          if (res.status === 413) {
+            throw new Error('R2_EDGE_PAYLOAD_TOO_LARGE');
+          }
+          throw new Error(msg);
+        }
+        return data;
+      }
+
+      async function uploadR2DirectPut(objectKey, body, contentType) {
+        const { url } = await callR2StorageFn('signPut', { key: objectKey, contentType });
+        let putRes;
+        try {
+          putRes = await fetch(url, {
+            method: 'PUT',
+            body,
+            headers: { 'Content-Type': contentType }
+          });
+        } catch (netErr) {
+          const netMsg = String(netErr?.message || netErr);
+          if (/failed to fetch|cors|blocked/i.test(netMsg)) {
+            throw new Error('R2_DIRECT_CORS_BLOCKED');
+          }
+          throw netErr;
+        }
+        if (!putRes.ok) {
+          const t = await putRes.text().catch(() => '');
+          throw new Error('رفض التخزين (' + putRes.status + '): ' + (t || '').slice(0, 200));
+        }
+      }
+
       // ═══════════════════════════════════════════════════════════════════════════
       // 3. APPLICATION STATE
       // ═══════════════════════════════════════════════════════════════════════════
@@ -32696,19 +32765,6 @@
         const ms = ksaNowMs();
         if (!Number.isFinite(ms)) return null;
         return new Date(ms);
-      }
-
-      async function fetchKsaClockOffsetWorldTimeApi(signal) {
-        const t0 = Date.now();
-        const res = await fetch('https://worldtimeapi.org/api/timezone/Asia/Riyadh', { signal, cache: 'no-store' });
-        if (!res.ok) throw new Error(`worldtimeapi ${res.status}`);
-        const data = await res.json();
-        const t1 = Date.now();
-        let serverMs = NaN;
-        if (data?.unixtime) serverMs = Number(data.unixtime) * 1000;
-        else if (data?.datetime) serverMs = new Date(data.datetime).getTime();
-        if (!Number.isFinite(serverMs)) throw new Error('worldtimeapi payload');
-        return serverMs + (t1 - t0) / 2 - t1;
       }
 
       async function fetchKsaClockOffsetTimeApiIo(signal) {
@@ -42412,15 +42468,22 @@
           }
           const contentType = fileObj.type || 'image/jpeg';
 
-          const { url } = await callR2StorageFn('signPut', { key: objectKey, contentType });
-          const putRes = await fetch(url, {
-            method: 'PUT',
-            body,
-            headers: { 'Content-Type': contentType }
-          });
-          if (!putRes.ok) {
-            const t = await putRes.text().catch(() => '');
-            throw new Error('رفض التخزين (' + putRes.status + '): ' + (t || '').slice(0, 200));
+          try {
+            await uploadR2ViaEdgeProxy(objectKey, body, contentType);
+          } catch (proxyErr) {
+            const proxyMsg = String(proxyErr?.message || proxyErr);
+            if (!/R2_EDGE_PAYLOAD_TOO_LARGE|413|كبير جداً/i.test(proxyMsg)) {
+              throw proxyErr;
+            }
+            try {
+              await uploadR2DirectPut(objectKey, body, contentType);
+            } catch (directErr) {
+              const directMsg = String(directErr?.message || directErr);
+              if (/R2_DIRECT_CORS_BLOCKED|CORS|Failed to fetch|blocked/i.test(directMsg)) {
+                throw new Error('فشل الرفع: bucket R2 يحتاج ضبط CORS في Cloudflare (راجع supabase/r2-cors.json).');
+              }
+              throw directErr;
+            }
           }
           return { success: true, fileId: objectKey };
         } catch (error) {

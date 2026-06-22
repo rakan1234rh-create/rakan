@@ -20,7 +20,7 @@ import { getSignedUrl } from 'npm:@aws-sdk/s3-request-presigner@3.733.0'
 const cors: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers':
-    'authorization, x-client-info, apikey, content-type, range',
+    'authorization, x-client-info, apikey, content-type, range, x-r2-action, x-r2-key',
   'Access-Control-Allow-Methods': 'GET, HEAD, POST, OPTIONS',
   'Access-Control-Expose-Headers':
     'Content-Length, Content-Range, Accept-Ranges, Content-Type',
@@ -38,6 +38,31 @@ function assertKey(key: unknown): string {
   if (key.length > 2048) throw new Error('key طويل جداً')
   if (key.includes('..')) throw new Error('مسار غير صالح')
   return key
+}
+
+const R2_PROXY_PUT_MAX_BYTES = 52 * 1024 * 1024
+
+async function authenticateRequest(req: Request) {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+  const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
+  const authHeader = req.headers.get('Authorization')
+  if (!authHeader) {
+    return { error: json({ error: 'لا يوجد رمز مصادقة' }, 401) }
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    global: { headers: { Authorization: authHeader } },
+  })
+
+  const {
+    data: { user },
+    error: authErr,
+  } = await supabase.auth.getUser()
+  if (authErr || !user) {
+    return { error: json({ error: 'جلسة غير صالحة' }, 401) }
+  }
+
+  return { user, supabase }
 }
 
 /** أول قيمة غير فارغة بعد trim (يدعم أسماء بديلة شائعة من Cloudflare / AWS) */
@@ -228,6 +253,37 @@ Deno.serve(async (req) => {
 
   const env = requireR2Env()
 
+  if (req.method === 'POST' && req.headers.get('X-R2-Action') === 'putObject') {
+    if (!env) return json({ error: 'R2 غير مُعدّ (متغيرات البيئة على الدالة)' }, 503)
+    const auth = await authenticateRequest(req)
+    if ('error' in auth && auth.error) return auth.error
+
+    try {
+      const key = assertKey(req.headers.get('X-R2-Key'))
+      const contentType =
+        (req.headers.get('Content-Type') || '').trim() || guessContentTypeFromKey(key)
+      const bytes = new Uint8Array(await req.arrayBuffer())
+      if (!bytes.length) return json({ error: 'جسم فارغ' }, 400)
+      if (bytes.length > R2_PROXY_PUT_MAX_BYTES) {
+        return json({ error: 'حجم الملف كبير جداً للرفع عبر الخادم' }, 413)
+      }
+      const s3 = makeS3(env)
+      await s3.send(
+        new PutObjectCommand({
+          Bucket: env.bucket,
+          Key: key,
+          Body: bytes,
+          ContentType: contentType,
+        }),
+      )
+      return json({ ok: true, key })
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      console.error('[r2-storage] putObject', msg, e)
+      return json({ error: msg }, 500)
+    }
+  }
+
   if (req.method === 'GET' || req.method === 'HEAD') {
     if (!env) return json({ error: 'R2 غير مُعدّ (متغيرات البيئة على الدالة)' }, 503)
     const s3 = makeS3(env)
@@ -240,24 +296,10 @@ Deno.serve(async (req) => {
     return json({ error: 'Method not allowed' }, 405)
   }
 
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-  const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
-  const authHeader = req.headers.get('Authorization')
-  if (!authHeader) {
-    return json({ error: 'لا يوجد رمز مصادقة' }, 401)
-  }
-
-  const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-    global: { headers: { Authorization: authHeader } },
-  })
-
-  const {
-    data: { user },
-    error: authErr,
-  } = await supabase.auth.getUser()
-  if (authErr || !user) {
-    return json({ error: 'جلسة غير صالحة' }, 401)
-  }
+  const auth = await authenticateRequest(req)
+  if ('error' in auth && auth.error) return auth.error
+  const { user, supabase } = auth
+  void user
 
   let body: {
     action?: string
