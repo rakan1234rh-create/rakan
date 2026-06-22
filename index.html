@@ -1363,7 +1363,7 @@
 
     #loginScreen #loginCard .wefaq-app-logo--athar .athar-logo-deco,
     #loginTransition .wefaq-app-logo--athar .athar-logo-deco {
-      transform: translate(4px, 154px) !important;
+      transform: translate(4px, 170px) !important;
       transform-origin: center top
     }
 
@@ -28886,7 +28886,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-login-deco-lower-v928">
+  <meta name="app-build" content="athar-login-deco-lower-v929">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -34701,7 +34701,7 @@
         const apply = () => {
           const w = svg.getBoundingClientRect().width;
           if (!w) return;
-          const dy = Math.max(124, Math.round(w * 0.78 + 16));
+          const dy = Math.max(140, Math.round(w * 0.78 + 32));
           deco.style.setProperty('transform', `translate(4px, ${dy}px)`, 'important');
         };
         apply();
