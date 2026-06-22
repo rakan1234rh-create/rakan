@@ -4648,6 +4648,12 @@
       background-image: none;
     }
 
+    html.mr-mobile-ui #tab-compliance #cmp-filter-scope.wf-status-select-native {
+      -webkit-appearance: none;
+      appearance: none;
+      background-image: none;
+    }
+
 
 .wf-count {
       font-size: 12px;
@@ -24010,6 +24016,40 @@
       }
 
       #tab-compliance .cmp-neo-toolbar #cmp-filter-trigger .wf-status-trigger__chev {
+        display: none !important
+      }
+
+      #tab-compliance #cmp-filter-dd.wf-status-filter {
+        position: relative
+      }
+
+      #tab-compliance #cmp-filter-trigger.wf-status-trigger {
+        pointer-events: none
+      }
+
+      #tab-compliance #cmp-filter-scope.wf-status-select-native {
+        position: absolute;
+        inset: 0;
+        z-index: 3;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        opacity: 0;
+        clip: auto;
+        overflow: visible;
+        white-space: normal;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        -webkit-appearance: none;
+        appearance: none;
+        background: transparent;
+        background-image: none;
+        font-size: 16px
+      }
+
+      #tab-compliance #cmp-filter-menu.wf-status-menu {
         display: none !important
       }
 
@@ -46562,6 +46602,42 @@
         document.querySelectorAll('#cmp-filter-menu [data-cmp-filter="scope"]').forEach(el => {
           el.style.display = isBm && el.dataset.val !== 'employees' ? 'none' : '';
         });
+        const sel = document.getElementById('cmp-filter-scope');
+        if (sel) {
+          sel.value = scope;
+          sel.querySelectorAll('option').forEach(opt => {
+            const hide = isBm && opt.value !== 'employees';
+            opt.hidden = hide;
+            opt.disabled = hide;
+          });
+        }
+        syncCmpFilterMobNativeMode();
+      }
+
+      function syncCmpFilterMobNativeMode() {
+        const sel = document.getElementById('cmp-filter-scope');
+        const trigger = document.getElementById('cmp-filter-trigger');
+        if (!sel || !trigger) return;
+        const useNative = typeof isMobileViewport === 'function' && isMobileViewport()
+          && document.getElementById('tab-compliance')?.classList.contains('active');
+        if (useNative) {
+          cmpFilterClose();
+          sel.removeAttribute('aria-hidden');
+          sel.removeAttribute('tabindex');
+          sel.setAttribute('aria-label', 'نطاق العرض');
+          trigger.setAttribute('aria-hidden', 'true');
+          trigger.setAttribute('tabindex', '-1');
+        } else {
+          sel.setAttribute('aria-hidden', 'true');
+          sel.setAttribute('tabindex', '-1');
+          trigger.removeAttribute('aria-hidden');
+          trigger.removeAttribute('tabindex');
+        }
+      }
+
+      function cmpFilterMobNativeChange(el) {
+        const val = el?.value ?? 'regions';
+        cmpFilterPick(val);
       }
 
       function cmpFilterClose() {
@@ -46595,8 +46671,17 @@
       function cmpFilterToggle(ev) {
         ev?.stopPropagation();
         if (!canPickCmpScope()) return;
-        if (typeof isMobileViewport === 'function' && isMobileViewport()) {
-          openCmpFilterPanel();
+        if (typeof isMobileViewport === 'function' && isMobileViewport()
+          && document.getElementById('tab-compliance')?.classList.contains('active')) {
+          ev.preventDefault();
+          const sel = document.getElementById('cmp-filter-scope');
+          if (!sel) return;
+          try {
+            if (typeof sel.showPicker === 'function') sel.showPicker();
+            else sel.focus();
+          } catch (_) {
+            sel.focus();
+          }
           return;
         }
         const menu = document.getElementById('cmp-filter-menu');
@@ -46627,6 +46712,8 @@
         } else if (val === 'branches') {
           cmpfState.employee = '';
         }
+        const sel = document.getElementById('cmp-filter-scope');
+        if (sel) sel.value = val;
         cmpApplyScopeToDrill(val, cmpfState);
         cmpFilterSyncUi();
         cmpFilterClose();
@@ -49553,6 +49640,12 @@
                   <span class="wf-status-trigger__label" id="cmp-filter-label">كل المناطق</span>
                   <i class="fas fa-chevron-down wf-status-trigger__chev" aria-hidden="true"></i>
                 </button>
+                <select id="cmp-filter-scope" class="wf-status-select-native" tabindex="-1" aria-hidden="true"
+                  aria-label="نطاق العرض" onchange="cmpFilterMobNativeChange(this)">
+                  <option value="regions">كل المناطق</option>
+                  <option value="branches">كل الفروع</option>
+                  <option value="employees">كل الموظفين</option>
+                </select>
               </div>` : ''}
               <div class="rp-date-wrap" id="cmpNeoDateWrap">
                 <button type="button" class="rp-tool-btn rp-date-btn" onclick="toggleCmpDatePicker(event)" id="cmp-date-btn">
@@ -55182,6 +55275,7 @@
           }
           if (typeof syncMobileBottomNavLayout === 'function') syncMobileBottomNavLayout();
           if (typeof syncWfStatusMobNativeMode === 'function') syncWfStatusMobNativeMode();
+          if (typeof syncCmpFilterMobNativeMode === 'function') syncCmpFilterMobNativeMode();
           if (isDesktopUi()) {
             const nav = document.getElementById('mobileBottomNav');
             if (nav) nav.style.display = 'none';
