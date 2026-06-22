@@ -7276,13 +7276,12 @@
     #tab-compliance .cmp-neo-ring,
     #tab-compliance .mk-donut,
     #tab-compliance .mk-cmp-donut-wrap,
-    #tab-compliance .mk-cmp-emp-metric__ring {
+    #tab-compliance .mk-cmp-emp-card__scores {
       overflow: visible
     }
 
     #tab-compliance .cmp-neo-card,
-    #tab-compliance .mk-cmp-emp-card,
-    #tab-compliance .mk-cmp-emp-metric {
+    #tab-compliance .mk-cmp-emp-card {
       overflow: visible
     }
 
@@ -7669,10 +7668,8 @@
       box-shadow: var(--mr-shadow-card);
     }
 
-    [data-theme="dark"] .mk-cmp-emp-metric {
-      background: var(--mr-bg-2);
-      border-color: var(--mr-border);
-      box-shadow: var(--mr-shadow-soft);
+    [data-theme="dark"] .mk-cmp-emp-stat {
+      background: color-mix(in srgb, var(--mr-bg-2) 92%, var(--mr-surface));
     }
 
     [data-theme="dark"] #tab-compliance .mk-cmp-emp-card__avatar {
@@ -7683,13 +7680,17 @@
 
     [data-theme="dark"] #tab-compliance .mk-cmp-emp-card__ft {
       color: var(--mr-text-2);
-      background: color-mix(in srgb, var(--mr-primary) 10%, var(--mr-surface));
+      background: transparent;
       border-top-color: color-mix(in srgb, var(--mr-border) 70%, transparent);
+    }
+
+    [data-theme="dark"] .mk-cmp-emp-card:hover .mk-cmp-emp-card__ft {
+      color: var(--mr-primary);
     }
 
     @media (prefers-reduced-transparency: reduce) {
 .mk-cmp-emp-card,
-      .mk-cmp-emp-metric,
+      .mk-cmp-emp-stat,
       .cmp-neo-card,
       .cmp-neo-extreme,
       .cmp-neo-search-combo,
@@ -24237,20 +24238,13 @@
         min-height: unset !important
       }
 
-      #tab-compliance .mk-cmp-emp-card__metrics {
+      #tab-compliance .mk-cmp-emp-card__stats {
         flex-shrink: 0 !important;
-        align-items: stretch !important
+        margin: 0 10px 10px !important;
       }
 
-      #tab-compliance .mk-cmp-emp-metric {
-        aspect-ratio: unset !important;
-        min-height: 148px !important;
-        height: auto !important;
-        overflow: visible !important
-      }
-
-      #tab-compliance .mk-cmp-emp-metric__ring {
-        margin-top: 4px !important
+      #tab-compliance .mk-cmp-emp-card__scores .mk-cmp-donut-wrap {
+        width: 52px !important;
       }
 
       #tab-compliance .mk-cmp-emp-card__ft {
@@ -27401,30 +27395,24 @@
     }
 
     html.mr-desktop-ui #tab-compliance .mk-cmp-emp-card__chips {
-      flex: 1 1 auto;
-      min-height: 71px;
+      flex: 0 0 auto;
+      min-height: unset;
     }
 
-    html.mr-desktop-ui #tab-compliance .mk-cmp-emp-card__metrics {
+    html.mr-desktop-ui #tab-compliance .mk-cmp-emp-card__stats {
       margin-top: auto;
-      align-items: stretch;
-    }
-
-    html.mr-desktop-ui #tab-compliance .mk-cmp-emp-metric {
-      aspect-ratio: unset;
-      min-height: 154px;
-      height: auto;
     }
 
     .mk-cmp-emp-card {
       position: relative;
+      --cmp-accent: var(--mr-primary);
       background: var(--mr-surface);
       border: 1px solid var(--mr-border);
-      border-radius: 22px;
+      border-radius: 20px;
       padding: 0;
       cursor: pointer;
       overflow: hidden;
-      transition: border-color .25s, box-shadow .25s, transform .2s, background .25s;
+      transition: border-color .25s, box-shadow .25s, transform .2s;
       display: flex;
       flex-direction: column;
       text-align: right;
@@ -27432,9 +27420,25 @@
       min-height: 0;
       box-shadow: var(--mr-shadow-card);
     }
+    .mk-cmp-emp-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      inset-inline: 0;
+      height: 3px;
+      background: var(--cmp-accent);
+      border-radius: 20px 20px 0 0;
+      z-index: 1;
+      pointer-events: none;
+    }
+    .mk-cmp-emp-card--excellent { --cmp-accent: #48A111; }
+    .mk-cmp-emp-card--good { --cmp-accent: #2563eb; }
+    .mk-cmp-emp-card--warn { --cmp-accent: #d97706; }
+    .mk-cmp-emp-card--danger { --cmp-accent: #dc2626; }
+    .mk-cmp-emp-card--healed { --cmp-accent: #48A111; }
     .mk-cmp-emp-card:hover {
-      border-color: color-mix(in srgb, var(--mr-primary) 18%, var(--mr-border));
-      box-shadow: var(--mr-shadow-card);
+      border-color: color-mix(in srgb, var(--cmp-accent) 28%, var(--mr-border));
+      box-shadow: 0 10px 28px color-mix(in srgb, var(--cmp-accent) 10%, transparent);
       transform: translateY(-2px);
     }
 
@@ -27442,35 +27446,80 @@
       transform: none;
     }
     .mk-cmp-emp-card__hd {
-      display:flex;
-      align-items:flex-start;
-      gap:12px;
-      padding:14px 16px 10px;
-      background:transparent;
-      border-bottom:1px solid color-mix(in srgb, var(--mr-border) 42%, transparent);
-      min-height:72px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 15px 16px 10px;
+      background: transparent;
+      min-height: 0;
     }
-    .mk-cmp-emp-card__who { display:flex; gap:11px; align-items:center; flex:1; min-width:0; }
+    .mk-cmp-emp-card__identity-block {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      flex: 1;
+      min-width: 0;
+    }
+    .mk-cmp-emp-card__scores {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+      align-items: flex-start;
+    }
+    .mk-cmp-emp-card__scores .mk-cmp-donut-wrap {
+      margin: 0;
+      gap: 2px;
+      width: 58px;
+    }
+    .mk-cmp-emp-card__scores .mk-donut__lbl {
+      font-size: 9px;
+      font-weight: 700;
+      color: var(--mk-text-3);
+      line-height: 1.2;
+    }
     .mk-cmp-emp-card__avatar {
-      width:42px; height:42px; border-radius:12px; flex-shrink:0;
-      background: var(--mr-primary-softer);
-      color:var(--mr-primary);
-      display:flex; align-items:center; justify-content:center;
-      border:1px solid var(--mr-border);
-      box-shadow: var(--mr-shadow-soft);
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      flex-shrink: 0;
+      background: color-mix(in srgb, var(--cmp-accent) 14%, var(--mr-primary-softer));
+      color: color-mix(in srgb, var(--cmp-accent) 72%, var(--mr-primary));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid color-mix(in srgb, var(--cmp-accent) 22%, var(--mr-border));
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: .02em;
+      line-height: 1;
     }
-    .mk-cmp-emp-card__avatar i { font-size:20px; }
-    .mk-cmp-emp-card__identity { flex:1; min-width:0; display:flex; flex-direction:column; gap:4px; }
+    .mk-cmp-emp-card__identity { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
     .mk-cmp-emp-card__name {
-      margin:0; font-size:15px; font-weight:800; color:var(--mr-text); line-height:1.35;
-      display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+      margin: 0;
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--mr-text);
+      line-height: 1.35;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
     }
     .mk-cmp-emp-card__meta {
-      display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:6px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+      margin-top: 2px;
     }
     .mk-cmp-emp-card__meta .mk-cmp-emp-num {
-      font-family:var(--mono); font-size:10px; font-weight:700; color:var(--mk-text-2);
-      letter-spacing:.03em; unicode-bidi:plaintext;
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--mk-text-2);
+      letter-spacing: .03em;
+      unicode-bidi: plaintext;
     }
     .mk-cmp-lvl {
       display:inline-flex; align-items:center; padding:3px 8px; border-radius:999px;
@@ -27489,17 +27538,28 @@
     .mk-cmp-role--mgr { background:rgba(13,148,136,.14); color:#0f766e; border-color:rgba(13,148,136,.3); }
     .mk-cmp-role--emp { background:var(--blue-light); color:var(--blue-text); border-color:var(--b-blue-bd); }
     .mk-cmp-emp-card__chips {
-      display:flex; flex-wrap:wrap; align-content:flex-start; gap:6px;
-      padding:10px 16px 12px;
-      min-height:0;
-      box-sizing:border-box;
-      flex:1 1 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-content: flex-start;
+      gap: 5px;
+      padding: 0 16px 10px;
+      min-height: 0;
+      box-sizing: border-box;
+      flex: 0 0 auto;
     }
     .mk-cmp-emp-chip {
-      display:inline-flex; align-items:center; gap:4px;
-      padding:4px 9px; border-radius:999px; font-size:10px; font-weight:700; line-height:1.2;
-      background:var(--mk-bg-2); color:var(--mk-text-2); border:1px solid var(--mr-border);
-      white-space:nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      border-radius: 8px;
+      font-size: 9.5px;
+      font-weight: 700;
+      line-height: 1.25;
+      background: var(--mk-bg-2);
+      color: var(--mk-text-2);
+      border: 1px solid var(--mr-border);
+      white-space: nowrap;
     }
     .mk-cmp-emp-chip i { font-size:9px; opacity:.85; flex-shrink:0; }
     .mk-cmp-emp-chip--red { background:var(--red-surface); color:var(--red-text); border-color:var(--b-red-bd); }
@@ -27523,70 +27583,47 @@
 .mk-cmp-emp-chip--pop { animation:none !important; opacity:1 !important; transform:none !important; }
       .mk-cmp-lvl--pop { animation:none !important; opacity:1 !important; transform:none !important; }
 }
-    .mk-cmp-emp-card__metrics {
-      display:grid;
-      grid-template-columns:repeat(2, minmax(0, 1fr));
-      gap:10px;
-      padding:12px 14px 14px;
-      flex-shrink:0;
-      margin-top:auto;
-      align-items:end;
-      border-top:1px solid color-mix(in srgb, var(--mr-border) 42%, transparent);
+    .mk-cmp-emp-card__stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1px;
+      margin: 0 12px 12px;
+      padding: 0;
+      background: color-mix(in srgb, var(--mr-border) 80%, transparent);
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid color-mix(in srgb, var(--mr-border) 70%, transparent);
+      flex-shrink: 0;
     }
-    .mk-cmp-emp-metric {
-      width:100%;
-      aspect-ratio:1;
-      background: var(--mr-bg-2);
-      border:1px solid var(--mr-border);
-      border-radius:18px;
-      padding:10px 10px 8px;
-      display:flex;
-      flex-direction:column;
-      align-items:stretch;
-      box-sizing:border-box;
-      overflow:hidden;
-      box-shadow: var(--mr-shadow-soft);
+    .mk-cmp-emp-stat {
+      background: color-mix(in srgb, var(--mr-bg-2) 88%, var(--mr-surface));
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      min-width: 0;
     }
-    .mk-cmp-emp-metric__hd {
-      display:flex; justify-content:space-between; align-items:center;
-      font-size:11px; font-weight:700; color:var(--mk-text-2);
-      height:22px; line-height:22px;
+    .mk-cmp-emp-stat__lbl {
+      font-size: 9px;
+      font-weight: 600;
+      color: var(--mk-text-3);
+      line-height: 1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-    .mk-cmp-emp-metric__ring {
-      display:flex; align-items:center; justify-content:center;
-      width:100%; min-height:0;
-      margin-top:auto;
-      flex-shrink:0;
+    .mk-cmp-emp-stat__val {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--mr-text);
+      font-variant-numeric: tabular-nums;
+      unicode-bidi: plaintext;
+      line-height: 1.2;
     }
-    .mk-cmp-emp-metric__ring .mk-cmp-donut-wrap {
-      margin:0; gap:0;
-      width:56px; height:56px;
-      flex-shrink:0;
-    }
-    .mk-cmp-emp-metric__rows {
-      width:100%;
-      margin-top:8px;
-      display:flex;
-      flex-direction:column;
-      justify-content:space-between;
-      gap:4px;
-      font-size:10px;
-      color:var(--mk-text-3);
-      font-weight:600;
-      flex-shrink:0;
-    }
-    .mk-cmp-emp-metric__row {
-      display:flex; justify-content:space-between; align-items:center; gap:4px;
-      height:20px; line-height:20px;
-    }
-    .mk-cmp-emp-metric__row span {
-      flex:1; min-width:0;
-      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-    }
-    .mk-cmp-emp-metric__row b {
-      color:var(--mr-text); font-weight:800; font-variant-numeric:tabular-nums;
-      unicode-bidi:plaintext; flex-shrink:0; min-width:24px; text-align:left;
-    }
+    .mk-cmp-emp-stat--neg .mk-cmp-emp-stat__val { color: var(--red-text); }
+    .mk-cmp-emp-stat--pos .mk-cmp-emp-stat__val { color: var(--green-text); }
+    .mk-cmp-emp-stat--healed .mk-cmp-emp-stat__val { color: var(--green-text); }
+    .mk-cmp-emp-stat--muted .mk-cmp-emp-stat__val { color: var(--mk-text-3); }
     .mk-donut--emp { width:56px !important; height:56px !important; flex-shrink:0; position:relative; }
     .mk-donut--emp svg { width:56px !important; height:56px !important; display:block; }
     .mk-donut--emp .mk-donut__val { font-size:15px; font-weight:800; line-height:1; }
@@ -27641,16 +27678,20 @@
       .cmp-neo-ring--alert .cmp-donut-ripple { animation: none; }
 }
     .mk-cmp-emp-card__ft {
-      display:flex; align-items:center; justify-content:space-between;
-      padding:10px 16px 12px;
-      border-top:1px solid color-mix(in srgb, var(--mr-border) 55%, transparent);
-      font-size:11px; font-weight:700; color:var(--mr-primary);
-      flex-shrink:0;
-      background:color-mix(in srgb, var(--mr-primary) 7%, var(--mr-surface));
-      border-bottom-left-radius:21px;
-      border-bottom-right-radius:21px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 16px 11px;
+      border-top: 1px dashed color-mix(in srgb, var(--mr-border) 65%, transparent);
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--mk-text-3);
+      flex-shrink: 0;
+      background: transparent;
+      transition: color .2s;
     }
-    .mk-cmp-emp-card__ft i { font-size:10px; opacity:.7; }
+    .mk-cmp-emp-card:hover .mk-cmp-emp-card__ft { color: var(--mr-primary); }
+    .mk-cmp-emp-card__ft i { font-size: 9px; opacity: .75; }
     .mk-cmp-branch-shell {
       margin-bottom: 20px;
       border: 1px solid var(--b-blue-bd);
@@ -29239,7 +29280,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-cmp-chip-fix-v943">
+  <meta name="app-build" content="athar-cmp-card-ui-v944">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -49070,10 +49111,26 @@
 
       function cmpScoreLevelMeta(score) {
         const s = Math.round(score);
-        if (s >= 90) return { text: 'ممتاز', cls: 'mk-cmp-lvl--excellent' };
-        if (s >= 75) return { text: 'جيد', cls: 'mk-cmp-lvl--good' };
-        if (s >= 50) return { text: 'تحذير', cls: 'mk-cmp-lvl--warn' };
-        return { text: 'متعثر', cls: 'mk-cmp-lvl--danger' };
+        if (s >= 90) return { text: 'ممتاز', cls: 'mk-cmp-lvl--excellent', tone: 'excellent' };
+        if (s >= 75) return { text: 'جيد', cls: 'mk-cmp-lvl--good', tone: 'good' };
+        if (s >= 50) return { text: 'تحذير', cls: 'mk-cmp-lvl--warn', tone: 'warn' };
+        return { text: 'متعثر', cls: 'mk-cmp-lvl--danger', tone: 'danger' };
+      }
+
+      function cmpEmpInitials(name) {
+        const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+        if (!parts.length) return '؟';
+        if (parts.length === 1) return parts[0].slice(0, 2);
+        return parts[0][0] + parts[parts.length - 1][0];
+      }
+
+      function cmpEmpStatTone(val) {
+        const s = String(val);
+        if (s === 'مُعالج' || s === 'متوقف') return 'healed';
+        if (s.startsWith('−') || s.startsWith('-')) return 'neg';
+        if (s.startsWith('+')) return 'pos';
+        if (s === '—' || s === '0') return 'muted';
+        return '';
       }
 
       function cmpEmpCardHTML(card) {
@@ -49103,28 +49160,17 @@
         if (Math.round(card.responseRate) >= 100) {
           chips.push('<span class="mk-cmp-emp-chip mk-cmp-emp-chip--green" title="مؤشر الاستجابة 100"><i class="fas fa-bolt"></i> استجابة ممتازة</span>');
         }
-        const commitRows = [
-          { lbl: 'الخصم الفعلي', val: card.scoreHealed ? 'مُعالج' : (card.deducted > 0 ? `−${Math.round(card.deducted * 10) / 10}` : '0') },
-          { lbl: 'بونص الالتزام', val: card.scoreHealed ? 'متوقف' : (card.streakBonus > 0 ? `+${card.streakBonus}` : '—') }
-        ];
         const respRecovered = Math.round(card.responseRate) >= 100;
-        const respRows = [
-          { lbl: 'خصم تأخير الرد', val: respRecovered ? '0' : (card.respPenalty > 0 ? `−${card.respPenalty}` : '0') },
-          { lbl: 'بونص الرد في الوقت', val: respRecovered ? '0' : (card.respBonus > 0 ? `+${card.respBonus}` : '—') }
-        ];
-        const rowHtml = (rows) => rows.map(r =>
-          '<div class="mk-cmp-emp-metric__row"><span>' + r.lbl + '</span><b>' + r.val + '</b></div>'
-        ).join('');
-        const ring = (val, metric) =>
-          '<div class="mk-cmp-emp-metric__ring">' +
-          cmpMkDonutHTML(val, '', { emp: true, animKey: 'emp-' + card.id + '-' + metric }) +
-          '</div>';
-        const metricBlock = (title, icon, scoreVal, rows, metric) => `
-              <div class="mk-cmp-emp-metric">
-                <div class="mk-cmp-emp-metric__hd"><span>${title}</span><i class="fas ${icon}"></i></div>
-                ${ring(scoreVal, metric)}
-                <div class="mk-cmp-emp-metric__rows">${rowHtml(rows)}</div>
-              </div>`;
+        const statVal = (lbl, raw) => {
+          const tone = cmpEmpStatTone(raw);
+          return `<div class="mk-cmp-emp-stat${tone ? ' mk-cmp-emp-stat--' + tone : ''}"><span class="mk-cmp-emp-stat__lbl">${lbl}</span><b class="mk-cmp-emp-stat__val">${raw}</b></div>`;
+        };
+        const statsHTML = [
+          statVal('الخصم الفعلي', card.scoreHealed ? 'مُعالج' : (card.deducted > 0 ? `−${Math.round(card.deducted * 10) / 10}` : '0')),
+          statVal('بونص الالتزام', card.scoreHealed ? 'متوقف' : (card.streakBonus > 0 ? `+${card.streakBonus}` : '—')),
+          statVal('خصم التأخير', respRecovered ? '0' : (card.respPenalty > 0 ? `−${card.respPenalty}` : '0')),
+          statVal('بونص الرد', respRecovered ? '0' : (card.respBonus > 0 ? `+${card.respBonus}` : '—'))
+        ].join('');
         const roleBadge = card.isBm
           ? '<span class="mk-cmp-role mk-cmp-role--mgr"><i class="fas fa-user-tie"></i> مدير فرع</span>'
           : '<span class="mk-cmp-role mk-cmp-role--emp"><i class="fas fa-user"></i> موظف</span>';
@@ -49135,13 +49181,16 @@
           : (card.rank === 'bottom'
             ? `<span class="cmp-neo-rank cmp-neo-rank--bottom" title="${Sec.escapeHTML(rankTitle)}" aria-label="${Sec.escapeHTML(rankTitle)}"><i class="fas fa-arrow-trend-down" aria-hidden="true"></i></span>`
             : '');
+        const toneCls = ` mk-cmp-emp-card--${lvl.tone}`;
+        const healedCls = card.scoreHealed ? ' mk-cmp-emp-card--healed' : '';
+        const initials = Sec.escapeHTML(cmpEmpInitials(card.name));
         return `
-          <article class="mk-cmp-emp-card${rankCls}" onclick="${click}" role="button" tabindex="0"
+          <article class="mk-cmp-emp-card${toneCls}${healedCls}${rankCls}" onclick="${click}" role="button" tabindex="0"
                    onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openCmpItemDetail('employee','${empId}');}">
             ${rankBadge}
             <header class="mk-cmp-emp-card__hd">
-              <div class="mk-cmp-emp-card__who">
-                <span class="mk-cmp-emp-card__avatar" aria-hidden="true"><i class="fas fa-user"></i></span>
+              <div class="mk-cmp-emp-card__identity-block">
+                <span class="mk-cmp-emp-card__avatar" aria-hidden="true">${initials}</span>
                 <div class="mk-cmp-emp-card__identity">
                   <h3 class="mk-cmp-emp-card__name">${Sec.escapeHTML(card.name)}</h3>
                   <div class="mk-cmp-emp-card__meta">
@@ -49151,14 +49200,15 @@
                   </div>
                 </div>
               </div>
+              <div class="mk-cmp-emp-card__scores">
+                ${cmpMkDonutHTML(card.score, 'الامتثال', { emp: true, animKey: 'emp-' + card.id + '-score' })}
+                ${cmpMkDonutHTML(card.responseRate, 'الاستجابة', { emp: true, animKey: 'emp-' + card.id + '-response' })}
+              </div>
             </header>
-            <div class="mk-cmp-emp-card__chips">${chips.join('')}</div>
-            <div class="mk-cmp-emp-card__metrics">
-              ${metricBlock('الامتثال', 'fa-shield-halved', card.score, commitRows, 'score')}
-              ${metricBlock('الاستجابة', 'fa-bolt', card.responseRate, respRows, 'response')}
-            </div>
+            ${chips.length ? `<div class="mk-cmp-emp-card__chips">${chips.join('')}</div>` : ''}
+            <div class="mk-cmp-emp-card__stats">${statsHTML}</div>
             <footer class="mk-cmp-emp-card__ft">
-              <span>عرض التفاصيل الكاملة</span>
+              <span>عرض التفاصيل</span>
               <i class="fas fa-chevron-left" aria-hidden="true"></i>
             </footer>
           </article>`;
