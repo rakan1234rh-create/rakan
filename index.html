@@ -32739,12 +32739,11 @@
       async function syncKsaClockOffset() {
         const origin = (typeof window !== 'undefined' && window.location?.origin) ? window.location.origin : '';
         const sources = [
-          fetchKsaClockOffsetWorldTimeApi,
           fetchKsaClockOffsetTimeApiIo,
           (signal) => fetchKsaClockOffsetHttpDate('https://api.github.com', signal),
         ];
         if (origin && !/^file:/i.test(origin)) {
-          sources.push((signal) => fetchKsaClockOffsetHttpDate(`${origin}/`, signal));
+          sources.unshift((signal) => fetchKsaClockOffsetHttpDate(`${origin}/`, signal));
         }
         let lastErr = null;
         for (const source of sources) {
