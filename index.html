@@ -12498,7 +12498,56 @@
       to { transform: translate3d(-100%, 0, 0) }
     }
 
+    @keyframes notifPlatformPushOut {
+      from { transform: translate3d(0, 0, 0) }
+      to { transform: translate3d(100%, 0, 0) }
+    }
+
+    @keyframes notifPlatformPushIn {
+      from { transform: translate3d(100%, 0, 0) }
+      to { transform: translate3d(0, 0, 0) }
+    }
+
+    html.mr-notif-push-prep.mr-mobile-ui,
+    html.mr-notif-push-in.mr-mobile-ui,
+    html.mr-notif-push-out.mr-mobile-ui,
+    html.mr-notif-push-settled.mr-mobile-ui {
+      overflow: hidden !important
+    }
+
+    html.mr-notif-push-prep.mr-mobile-ui #appWrap > .app-shell,
+    html.mr-notif-push-in.mr-mobile-ui #appWrap > .app-shell,
+    html.mr-notif-push-out.mr-mobile-ui #appWrap > .app-shell,
+    html.mr-notif-push-settled.mr-mobile-ui #appWrap > .app-shell {
+      will-change: transform;
+      backface-visibility: hidden
+    }
+
+    html.mr-notif-push-in.mr-mobile-ui #appWrap > .app-shell {
+      animation: notifPlatformPushOut 0.34s cubic-bezier(0.22, 1, 0.36, 1) both
+    }
+
+    html.mr-notif-push-out.mr-mobile-ui #appWrap > .app-shell {
+      animation: notifPlatformPushIn 0.28s cubic-bezier(0.4, 0, 0.8, 0.5) both
+    }
+
+    html.mr-notif-push-settled.mr-mobile-ui #appWrap > .app-shell {
+      transform: translate3d(100%, 0, 0);
+      pointer-events: none
+    }
+
     @media (prefers-reduced-motion: reduce) {
+      html.mr-notif-push-in.mr-mobile-ui #appWrap > .app-shell,
+      html.mr-notif-push-out.mr-mobile-ui #appWrap > .app-shell {
+        animation: none !important;
+        transform: none !important
+      }
+
+      html.mr-notif-push-settled.mr-mobile-ui #appWrap > .app-shell {
+        transform: none !important;
+        pointer-events: auto !important
+      }
+
       html.mr-mobile-ui #tab-notifications .notif-page-shell.notif-page-slide-prep,
       html.mr-mobile-ui #tab-notifications .notif-page-shell.notif-page-slide-in,
       html.mr-mobile-ui #tab-notifications .notif-page-shell.notif-page-slide-out {
@@ -28812,7 +28861,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-notif-overlay-cover-nav-v919">
+  <meta name="app-build" content="athar-notif-push-slide-v920">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -37134,7 +37183,9 @@
         }
 
         const notifOvTab = document.getElementById('tab-notifications');
-        if (notifOvTab?.classList.contains('notif-tab-overlay')) {
+        if (notifOvTab?.classList.contains('notif-tab-overlay') && typeof hideNotifPageOverlay === 'function') {
+          hideNotifPageOverlay();
+        } else if (notifOvTab?.classList.contains('notif-tab-overlay')) {
           notifOvTab.setAttribute('hidden', '');
           notifOvTab.classList.remove('notif-tab-overlay');
           notifOvTab.querySelector('.notif-page-shell')?.classList.remove(
@@ -37342,11 +37393,11 @@
         if (document.documentElement.classList.contains('mr-mobile-ui')) {
           const notifOv = document.getElementById('tab-notifications');
           if (notifOv?.classList.contains('notif-tab-overlay')) {
-            notifOv.setAttribute('hidden', '');
-            notifOv.classList.remove('notif-tab-overlay');
-            notifOv.querySelector('.notif-page-shell')?.classList.remove(
-              'notif-page-slide-in', 'notif-page-slide-out', 'notif-page-slide-prep'
-            );
+            if (typeof hideNotifPageOverlay === 'function') hideNotifPageOverlay();
+            else {
+              notifOv.setAttribute('hidden', '');
+              notifOv.classList.remove('notif-tab-overlay');
+            }
             state._bellBadgeLocked = 0;
           }
         }
@@ -53123,9 +53174,26 @@
         return document.querySelector('#tab-notifications .notif-page-shell');
       }
 
+      function clearNotifPushSlideState() {
+        document.documentElement.classList.remove(
+          'mr-notif-push-prep', 'mr-notif-push-in', 'mr-notif-push-out', 'mr-notif-push-settled'
+        );
+      }
+
+      function restoreNotifTabHome() {
+        const notifTab = document.getElementById('tab-notifications');
+        if (!notifTab?._notifHomeParent) return;
+        if (notifTab.parentElement !== notifTab._notifHomeParent) {
+          notifTab._notifHomeParent.insertBefore(notifTab, notifTab._notifHomeNext || null);
+        }
+      }
+
       function prepNotifPageSlideIn() {
         const shell = getNotifPageShell();
         if (!shell || !isNotifSlideUi()) return;
+        if (isNotifMobileOverlayMode()) {
+          document.documentElement.classList.add('mr-notif-push-prep');
+        }
         shell.classList.remove('notif-page-slide-in', 'notif-page-slide-out');
         shell.classList.add('notif-page-slide-prep');
       }
@@ -53138,6 +53206,25 @@
           shell.classList.add('notif-page-slide-prep');
         }
         void shell.offsetWidth;
+
+        if (isNotifMobileOverlayMode()) {
+          const root = document.documentElement;
+          root.classList.remove('mr-notif-push-prep');
+          shell.classList.remove('notif-page-slide-prep');
+          root.classList.add('mr-notif-push-in');
+          shell.classList.add('notif-page-slide-in');
+          const done = () => {
+            root.classList.remove('mr-notif-push-in');
+            root.classList.add('mr-notif-push-settled');
+            shell.classList.remove('notif-page-slide-in');
+          };
+          shell.addEventListener('animationend', (e) => {
+            if (e.animationName === 'notifPageSlideIn') done();
+          }, { once: true });
+          setTimeout(done, NOTIF_SLIDE_IN_MS + 50);
+          return;
+        }
+
         shell.classList.remove('notif-page-slide-prep');
         shell.classList.add('notif-page-slide-in');
         const done = () => shell.classList.remove('notif-page-slide-in');
@@ -53155,6 +53242,24 @@
             return;
           }
           shell.classList.remove('notif-page-slide-in', 'notif-page-slide-prep');
+
+          if (isNotifMobileOverlayMode()) {
+            const root = document.documentElement;
+            root.classList.remove('mr-notif-push-settled');
+            root.classList.add('mr-notif-push-out');
+            shell.classList.add('notif-page-slide-out');
+            const done = () => {
+              root.classList.remove('mr-notif-push-out', 'mr-notif-push-prep');
+              shell.classList.remove('notif-page-slide-out');
+              resolve();
+            };
+            shell.addEventListener('animationend', (e) => {
+              if (e.animationName === 'notifPageSlideOut') done();
+            }, { once: true });
+            setTimeout(done, NOTIF_SLIDE_OUT_MS + 50);
+            return;
+          }
+
           shell.classList.add('notif-page-slide-out');
           const done = () => {
             shell.classList.remove('notif-page-slide-out');
@@ -53183,7 +53288,13 @@
 
       function showNotifPageOverlay() {
         const notifTab = document.getElementById('tab-notifications');
-        if (!notifTab) return;
+        const appWrap = document.getElementById('appWrap');
+        if (!notifTab || !appWrap) return;
+        if (!notifTab._notifHomeParent) {
+          notifTab._notifHomeParent = notifTab.parentElement;
+          notifTab._notifHomeNext = notifTab.nextSibling;
+        }
+        if (notifTab.parentElement !== appWrap) appWrap.appendChild(notifTab);
         notifTab.removeAttribute('hidden');
         notifTab.classList.remove('active');
         notifTab.classList.add('notif-tab-overlay');
@@ -53194,10 +53305,12 @@
         if (!notifTab) return;
         notifTab.setAttribute('hidden', '');
         notifTab.classList.remove('notif-tab-overlay', 'active');
+        clearNotifPushSlideState();
         const shell = getNotifPageShell();
         if (shell) {
           shell.classList.remove('notif-page-slide-in', 'notif-page-slide-out', 'notif-page-slide-prep');
         }
+        restoreNotifTabHome();
       }
 
       function resetNotifFilterToAll() {
