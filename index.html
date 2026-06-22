@@ -6522,6 +6522,23 @@
       box-shadow: var(--mr-shadow-soft);
     }
 
+    #tab-compliance .cmp-neo-search-combo {
+      align-items: center;
+      min-height: 0;
+      border: none;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+      overflow: visible;
+      gap: 8px;
+    }
+
+    #tab-compliance .cmp-neo-search-combo:focus-within {
+      border-color: transparent;
+      background: transparent;
+      box-shadow: none;
+    }
+
     .cmp-neo-search-combo:focus-within {
       border-color: var(--mr-primary);
       background: var(--mr-surface);
@@ -6533,16 +6550,17 @@
       min-width: 0;
       height: auto;
       min-height: 44px;
-      border: none;
-      border-radius: 0;
-      background: transparent;
+      border: 1px solid var(--mr-border);
+      border-radius: 999px;
+      background: var(--mr-bg);
       box-shadow: none !important;
-      padding-inline: 18px 10px;
+      padding: 0 16px 0 8px;
+      gap: 14px;
     }
 
     #tab-compliance .cmp-neo-search-combo .cmp-neo-search-combo__field:focus-within {
-      border-color: transparent;
-      box-shadow: none !important;
+      border-color: var(--mr-primary);
+      box-shadow: 0 0 0 4px var(--mr-primary-soft) !important;
     }
 
     .cmp-neo-back--combo {
@@ -6604,18 +6622,6 @@
       font-size: 13px;
       font-weight: 600;
       color: var(--mr-text-2);
-    }
-
-    #tab-compliance .cmp-neo-search-combo .cmp-neo-search-combo__field {
-      border: none;
-      border-radius: 0;
-      background: transparent;
-      box-shadow: none !important;
-    }
-
-    #tab-compliance .cmp-neo-search-combo .cmp-neo-search-combo__field:focus-within {
-      border-color: transparent;
-      box-shadow: none !important;
     }
 
     #tab-compliance .cmp-neo-search-combo .figma-search-input {
@@ -23821,9 +23827,9 @@
       }
 
       #tab-compliance .cmp-neo-toolbar.toolbar.wf-toolbar {
-        display: grid !important;
-        grid-template-columns: minmax(0, 1fr) auto !important;
-        grid-template-rows: auto auto !important;
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
         align-items: stretch !important;
         gap: 8px !important;
         width: 100% !important;
@@ -23831,10 +23837,16 @@
         padding: 0 !important
       }
 
-      #tab-compliance .cmp-neo-search-combo {
-        grid-column: 1 !important;
-        grid-row: 1 !important;
+      #tab-compliance .cmp-neo-toolbar.toolbar.wf-toolbar > * {
+        width: auto !important;
         flex: none !important;
+        min-width: 0 !important
+      }
+
+      #tab-compliance .cmp-neo-search-combo {
+        flex: 1 1 0 !important;
+        grid-column: unset !important;
+        grid-row: unset !important;
         min-width: 0 !important;
         width: 100% !important;
         max-width: none !important;
@@ -23948,21 +23960,61 @@
 
       #tab-compliance .cmp-neo-toolbar #cmpNeoDateWrap,
       #tab-compliance .cmp-neo-toolbar .rp-date-wrap {
-        grid-column: 2 !important;
-        grid-row: 1 !important;
+        grid-column: unset !important;
+        grid-row: unset !important;
         flex: 0 0 auto !important;
         width: auto !important;
         min-width: 0 !important;
         max-width: none !important
       }
 
-      #tab-compliance .cmp-neo-toolbar .wf-status-filter,
-      #tab-compliance .cmp-neo-toolbar .rp-tool-btn.cmp-neo-btn--pdf-export {
-        grid-column: 1 / -1 !important;
-        grid-row: 2 !important;
-        flex: none !important;
+      #tab-compliance .cmp-neo-toolbar .wf-status-filter {
+        grid-column: unset !important;
+        grid-row: unset !important;
+        flex: 0 0 auto !important;
+        width: auto !important;
+        min-width: 0 !important;
+        max-width: min(28vw, 104px) !important
+      }
+
+      #tab-compliance .cmp-neo-toolbar #cmp-filter-trigger.wf-status-trigger {
         width: 100% !important;
-        min-width: 0 !important
+        min-width: 0 !important;
+        max-width: none !important;
+        height: 38px !important;
+        min-height: 38px !important;
+        gap: 6px !important;
+        padding: 0 8px !important;
+        justify-content: flex-start !important;
+        border-radius: 999px !important;
+        background: var(--mr-surface) !important;
+        border: 1px solid var(--mr-border) !important;
+        box-shadow: 0 1px 2px rgba(15, 18, 36, 0.04) !important
+      }
+
+      #tab-compliance .cmp-neo-toolbar #cmp-filter-trigger .wf-status-trigger__label {
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+        font-size: 10px !important;
+        text-align: start !important
+      }
+
+      #tab-compliance .cmp-neo-toolbar #cmp-filter-trigger .wf-status-trigger__ico {
+        width: 20px !important;
+        height: 20px !important;
+        font-size: 9px !important;
+        flex: 0 0 20px !important
+      }
+
+      #tab-compliance .cmp-neo-toolbar #cmp-filter-trigger .wf-status-trigger__chev {
+        display: none !important
+      }
+
+      #tab-compliance .cmp-neo-toolbar .rp-tool-btn.cmp-neo-btn--pdf-export {
+        display: none !important
       }
 
       #tab-compliance .cmp-neo-toolbar .rp-date-btn {
@@ -29101,7 +29153,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-cmp-search-toolbar-v932">
+  <meta name="app-build" content="athar-cmp-toolbar-desk-mob-v933">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -46543,6 +46595,10 @@
       function cmpFilterToggle(ev) {
         ev?.stopPropagation();
         if (!canPickCmpScope()) return;
+        if (typeof isMobileViewport === 'function' && isMobileViewport()) {
+          openCmpFilterPanel();
+          return;
+        }
         const menu = document.getElementById('cmp-filter-menu');
         const trigger = document.getElementById('cmp-filter-trigger');
         const toolbar = document.querySelector('#tab-compliance .cmp-neo-toolbar');

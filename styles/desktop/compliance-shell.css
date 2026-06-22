@@ -131,13 +131,67 @@ html.mr-desktop-ui #tab-compliance .cmp-neo-toolbar > * {
 }
 
 html.mr-desktop-ui #tab-compliance .cmp-neo-search-combo {
-  flex: 1 1 265px !important;
-  min-width: 195px !important;
-  min-height: 36px !important
+  flex: 1 1 280px !important;
+  min-width: 200px !important;
+  min-height: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  gap: 8px !important;
+  align-items: center !important;
+  overflow: visible !important
+}
+
+html.mr-desktop-ui #tab-compliance .cmp-neo-search-combo:focus-within {
+  border-color: transparent !important;
+  box-shadow: none !important
 }
 
 html.mr-desktop-ui #tab-compliance .cmp-neo-search-combo .cmp-neo-search-combo__field {
-  min-height: 34px !important
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  min-height: 38px !important;
+  height: 38px !important;
+  border: 1px solid var(--mr-border) !important;
+  border-radius: 999px !important;
+  background: var(--mr-surface) !important;
+  padding: 0 10px 0 6px !important;
+  gap: 8px !important;
+  box-shadow: 0 1px 2px rgba(15, 18, 36, 0.04) !important
+}
+
+html.mr-desktop-ui #tab-compliance .cmp-neo-search-combo .cmp-neo-search-combo__field:focus-within {
+  border-color: var(--mr-primary) !important;
+  box-shadow: 0 0 0 4px var(--mr-primary-soft) !important
+}
+
+html.mr-desktop-ui #tab-compliance .cmp-neo-search-combo .figma-search-input,
+html.mr-desktop-ui #tab-compliance .cmp-neo-search-combo .figma-search-input::placeholder {
+  font-size: 13px !important;
+  line-height: 1.2 !important;
+  min-width: 0
+}
+
+html.mr-desktop-ui #tab-compliance .cmp-neo-search-combo .figma-search-btn {
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  font-size: 12px !important;
+  flex-shrink: 0;
+  color: var(--mr-text-2) !important;
+  opacity: 1 !important
+}
+
+html.mr-desktop-ui #tab-compliance .cmp-neo-back--combo {
+  padding: 0 !important;
+  gap: 6px !important
+}
+
+html.mr-desktop-ui #tab-compliance .cmp-neo-back--combo .cmp-neo-back__ico {
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  font-size: 13px !important
 }
 
 html.mr-desktop-ui #tab-compliance .cmp-neo-toolbar .wf-status-filter {
@@ -154,13 +208,93 @@ html.mr-desktop-ui #tab-compliance .cmp-neo-toolbar #cmp-filter-trigger.wf-statu
   max-width: none !important
 }
 
-html.mr-desktop-ui #tab-compliance .cmp-neo-toolbar .wf-status-trigger,
-html.mr-desktop-ui #tab-compliance .cmp-neo-toolbar .rp-tool-btn,
-html.mr-desktop-ui #tab-compliance .cmp-neo-toolbar .rp-date-btn {
-  min-height: 36px !important;
-  height: 36px !important;
+html.mr-desktop-ui #tab-compliance .cmp-neo-toolbar #cmp-filter-trigger.wf-status-trigger {
+  min-height: 38px !important;
+  height: 38px !important;
+  min-width: 0 !important;
+  width: fit-content !important;
+  max-width: none !important;
+  gap: 8px !important;
+  padding: 0 10px !important;
+  border-radius: 999px !important;
+  background: var(--mr-surface) !important;
+  border: 1px solid var(--mr-border) !important;
+  box-shadow: 0 1px 2px rgba(15, 18, 36, 0.04) !important;
+  font-size: 12.5px !important
+}
+
+html.mr-desktop-ui #tab-compliance .cmp-neo-toolbar .rp-tool-btn.cmp-neo-btn--pdf-export {
+  min-height: 38px !important;
+  height: 38px !important;
   font-size: 12.5px !important;
   padding-inline: 13px !important
+}
+
+html.mr-desktop-ui #tab-compliance .cmp-neo-toolbar .rp-date-wrap {
+  flex: 0 0 auto !important;
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: none !important
+}
+
+html.mr-desktop-ui #tab-compliance .cmp-neo-toolbar .rp-date-btn {
+  width: 38px !important;
+  min-width: 38px !important;
+  max-width: 38px !important;
+  min-height: 38px !important;
+  height: 38px !important;
+  padding: 0 !important;
+  justify-content: center !important;
+  gap: 0 !important;
+  border-radius: 50% !important;
+  border: 1px solid color-mix(in srgb, var(--mr-border) 55%, transparent) !important;
+  background: color-mix(in srgb, var(--mr-surface) 94%, var(--mr-bg)) !important;
+  color: var(--mr-text-2) !important;
+  box-shadow: 0 1px 3px rgba(15, 18, 36, 0.05) !important;
+  font-size: 12.5px !important
+}
+
+html.mr-desktop-ui #tab-compliance .cmp-neo-toolbar .rp-date-btn:hover {
+  background: var(--mr-surface) !important;
+  border-color: var(--mr-border-2) !important;
+  color: var(--mr-text) !important;
+  box-shadow: 0 2px 8px rgba(15, 18, 36, 0.06) !important
+}
+
+html.mr-desktop-ui #tab-compliance .cmp-neo-toolbar .rp-date-btn #cmp-date-label {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important
+}
+
+:root:not([data-theme="dark"]) html.mr-desktop-ui #tab-compliance .cmp-neo-toolbar .rp-date-btn:not(.active):hover,
+:root:not([data-theme="dark"]) html.mr-desktop-ui #tab-compliance .cmp-neo-toolbar .rp-date-btn:not(.active):hover i {
+  background: var(--mr-surface) !important;
+  border-color: var(--mr-border-2) !important;
+  color: var(--mr-text) !important;
+  box-shadow: 0 2px 8px rgba(15, 18, 36, 0.06) !important
+}
+
+:root:not([data-theme="dark"]) html.mr-desktop-ui #tab-compliance .cmp-neo-toolbar #cmp-filter-trigger.wf-status-trigger:hover {
+  background: var(--mr-primary-softer) !important;
+  border-color: var(--mr-primary-soft) !important;
+  color: var(--mr-text) !important;
+  box-shadow: var(--mr-shadow-soft) !important
+}
+
+:root:not([data-theme="dark"]) html.mr-desktop-ui #tab-compliance .cmp-neo-toolbar #cmp-filter-trigger.wf-status-trigger:hover .wf-status-trigger__label {
+  color: var(--mr-text) !important
+}
+
+:root:not([data-theme="dark"]) html.mr-desktop-ui #tab-compliance .cmp-neo-toolbar #cmp-filter-trigger.wf-status-trigger:hover .wf-status-trigger__ico {
+  background: color-mix(in srgb, var(--mr-primary) 14%, transparent) !important;
+  color: var(--mr-primary) !important
 }
 
 html.mr-desktop-ui #tab-compliance .cmp-neo-grid,
