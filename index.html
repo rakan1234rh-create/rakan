@@ -29239,7 +29239,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-cmp-card-chips-v942">
+  <meta name="app-build" content="athar-cmp-chip-fix-v943">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -49037,7 +49037,7 @@
       }
 
       function cmpAnimateEmpChips(root) {
-        if (!root || !cmpAnimHadContent || cmpAnimDurationMs() === 0) return;
+        if (!root || cmpAnimHadContent || cmpAnimDurationMs() === 0) return;
         root.querySelectorAll('.mk-cmp-emp-card').forEach((card, cardIdx) => {
           const base = cardIdx * 24;
           const lvl = card.querySelector('.mk-cmp-lvl');
@@ -49088,6 +49088,11 @@
         }
         if (card.scoreHealed) {
           chips.push(`<span class="mk-cmp-emp-chip mk-cmp-emp-chip--green"><i class="fas fa-heart-pulse"></i> معدل 100 — مُعالج</span>`);
+        } else if (card.deducted > 0) {
+          chips.push(`<span class="mk-cmp-emp-chip mk-cmp-emp-chip--red"><i class="fas fa-minus"></i> خصم ${Math.round(card.deducted * 10) / 10}</span>`);
+        }
+        if (card.pendingCount > 0 && !card.scoreHealed) {
+          chips.push(`<span class="mk-cmp-emp-chip mk-cmp-emp-chip--amber"><i class="fas fa-hourglass-half"></i> مراجعة ${card.pendingCount}</span>`);
         }
         if (card.streakBonus > 0 && !card.scoreHealed) {
           chips.push(`<span class="mk-cmp-emp-chip mk-cmp-emp-chip--green"><i class="fas fa-fire"></i> بونص +${card.streakBonus}</span>`);
