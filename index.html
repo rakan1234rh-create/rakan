@@ -6541,46 +6541,136 @@
       align-self: stretch;
       height: auto;
       margin: 0;
-      padding: 0 12px 0 10px;
-      border: none;
-      border-radius: 0;
-      border-inline-end: 1px solid var(--mr-border);
-      box-shadow: none;
-      background: var(--mr-bg-2);
+      padding: 0 14px 0 12px;
+      border: 1px solid var(--mr-border);
+      border-radius: 12px 0 0 12px;
+      box-shadow: var(--mr-shadow-soft);
+      background: var(--mr-surface);
       flex-shrink: 0;
+      transition: all 0.2s ease;
+      gap: 8px;
     }
 
     .cmp-neo-back--combo:hover {
       background: var(--mr-primary-softer);
-      box-shadow: none;
+      border-color: var(--mr-blue);
+      box-shadow: 0 2px 8px rgba(108, 71, 255, 0.2);
+      transform: translateY(-1px);
+    }
+
+    .cmp-neo-back--combo:active {
+      transform: translateY(0);
     }
 
     .cmp-neo-back--combo:focus-visible {
       outline: none;
-      box-shadow: inset 0 0 0 2px var(--mr-primary-soft);
+      box-shadow: 0 0 0 3px var(--b-blue-bg);
+      border-color: var(--mr-blue);
     }
 
     .cmp-neo-back--combo .cmp-neo-back__ico {
-      width: 24px;
-      height: 24px;
-      font-size: 9px;
-      background: var(--mr-primary-soft);
+      width: 28px;
+      height: 28px;
+      font-size: 11px;
+      background: var(--mr-blue);
+      color: white;
       border: none;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .cmp-neo-back--combo:hover .cmp-neo-back__ico {
+      background: var(--b-blue-fg);
+      transform: scale(1.05);
+    }
+
+    .cmp-neo-back--combo .cmp-neo-back__text {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--mr-text);
+    }
+
+    /* Mobile improvements */
+    html.mr-mobile-ui .cmp-neo-back--combo {
+      padding: 0 12px 0 10px;
+      border-radius: 10px 0 0 10px;
+      gap: 6px;
+    }
+
+    html.mr-mobile-ui .cmp-neo-back--combo .cmp-neo-back__ico {
+      width: 32px;
+      height: 32px;
+      font-size: 12px;
+    }
+
+    html.mr-mobile-ui .cmp-neo-back--combo .cmp-neo-back__text {
+      font-size: 15px;
     }
 
     #tab-compliance .cmp-neo-search-combo .figma-search-wrap {
-      background: transparent;
-      border: none;
-      box-shadow: none !important;
+      background: var(--mr-surface);
+      border: 1px solid var(--mr-border);
+      box-shadow: var(--mr-shadow-soft);
+      border-radius: 12px;
+      transition: all 0.2s ease;
+    }
+
+    #tab-compliance .cmp-neo-search-combo .figma-search-wrap:focus-within {
+      border-color: var(--mr-blue);
+      box-shadow: 0 0 0 3px var(--b-blue-bg);
+    }
+
+    #tab-compliance .cmp-neo-search-combo .figma-search-input {
+      font-size: 14px;
+      padding: 10px 12px;
+    }
+
+    #tab-compliance .cmp-neo-search-combo .figma-search-input::placeholder {
+      color: var(--mr-text-3);
+      font-size: 13px;
     }
 
     #tab-compliance .cmp-neo-search-combo .figma-search-btn {
-      background: transparent;
+      background: var(--mr-blue);
+      color: white;
+      border-radius: 8px;
+      margin: 4px;
+      width: 36px;
+      height: 36px;
+      transition: all 0.2s ease;
     }
 
     #tab-compliance .cmp-neo-search-combo .figma-search-btn:hover {
-      background: var(--mr-primary-softer);
-      filter: none;
+      background: var(--b-blue-fg);
+      transform: scale(1.05);
+      box-shadow: 0 2px 8px rgba(108, 71, 255, 0.3);
+    }
+
+    #tab-compliance .cmp-neo-search-combo .figma-search-btn:active {
+      transform: scale(0.95);
+    }
+
+    /* Mobile improvements */
+    html.mr-mobile-ui #tab-compliance .cmp-neo-search-combo .figma-search-wrap {
+      background: var(--mr-surface);
+      border: 1px solid var(--mr-border);
+      border-radius: 10px;
+      padding: 4px;
+    }
+
+    html.mr-mobile-ui #tab-compliance .cmp-neo-search-combo .figma-search-input {
+      font-size: 15px;
+      padding: 12px 14px;
+    }
+
+    html.mr-mobile-ui #tab-compliance .cmp-neo-search-combo .figma-search-btn {
+      width: 40px;
+      height: 40px;
+      margin: 6px;
+      font-size: 14px;
     }
 
     #tab-compliance .cmp-neo-toolbar .wf-status-filter {
