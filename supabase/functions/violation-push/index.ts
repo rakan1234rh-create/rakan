@@ -41,6 +41,43 @@ type PushExtras = {
   tagSuffix?: string;
 };
 
+type NotifUpsert = {
+  userId: string;
+  eventKey: string;
+  title: string;
+  message: string;
+  type?: string;
+  icon?: string;
+  ticketId?: string | null;
+  scope?: string;
+  isAuto?: boolean;
+  broadcastId?: string | null;
+  broadcastKind?: string | null;
+};
+
+async function upsertAppNotification(
+  supabase: ReturnType<typeof createClient>,
+  row: NotifUpsert,
+) {
+  const { error } = await supabase.rpc('athar_upsert_notification', {
+    p_user_id: row.userId,
+    p_event_key: row.eventKey,
+    p_title: row.title,
+    p_message: row.message,
+    p_type: row.type || 'amber',
+    p_icon: row.icon || 'fa-bell',
+    p_ticket_id: row.ticketId || null,
+    p_scope: row.scope || 'mine',
+    p_is_auto: row.isAuto || false,
+    p_broadcast_id: row.broadcastId || null,
+    p_broadcast_kind: row.broadcastKind || null,
+  });
+  if (error && !/does not exist|function/i.test(error.message)) {
+    return { error: error.message };
+  }
+  return { ok: true };
+}
+
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -133,6 +170,33 @@ async function dispatchViolationInsertPush(
         ? 'تم تسجيل مخالفة على موظف ضمن فريقك'
         : 'مخالفة جديدة في فريقك';
     const body = isEmployee ? `تذكرة ${ticket}` : teamBody;
+    const eventKey = isEmployee
+      ? `violation_new_${record.id}`
+      : isBranchMgr
+        ? `bm_team_pending_${record.id}`
+        : `violation_new_${record.id}`;
+    await upsertAppNotification(supabase, {
+      userId: uid,
+      eventKey,
+      title,
+      message: body,
+      type: isEmployee ? 'amber' : isBranchMgr ? 'amber' : 'blue',
+      icon: isBranchMgr ? 'fa-clipboard-list' : 'fa-bell',
+      ticketId: String(record.id),
+      scope: isBranchMgr ? 'team' : 'mine',
+    });
+    if (isEmployee) {
+      await upsertAppNotification(supabase, {
+        userId: uid,
+        eventKey: `pending_${record.id}`,
+        title: 'مخالفة بانتظار ردك',
+        message: `${record.violation_type || ''} — ${ticket}`.trim(),
+        type: 'amber',
+        icon: 'fa-bell',
+        ticketId: String(record.id),
+        scope: 'mine',
+      });
+    }
     const result = await sendPushToUserIds(supabase, new Set([uid]), title, body, { ticketId: String(record.id) });
     totalSent += result.sent || 0;
     if (result.error) allErrors.push(String(result.error));
@@ -309,7 +373,7 @@ async function dispatchViolationStatePush(
     ? `${employeeName} — تذكرة ${ticket}`
     : `تذكرة ${ticket}`;
 
-  const { workflowCopy, bmCopy, autoEmpFwd } = resolveStatePushTitles(
+  const { workflowCopy, bmCopy, autoEmpFwd, autoSupFwd } = resolveStatePushTitles(
     state,
     previousState,
     record,
@@ -321,6 +385,19 @@ async function dispatchViolationStatePush(
   const allErrors: string[] = [];
   const workflowIds = new Set([...recipientIds].filter((id) => !branchMgrIds.has(id)));
   if (workflowCopy && workflowIds.size) {
+    for (const uid of workflowIds) {
+      await upsertAppNotification(supabase, {
+        userId: uid,
+        eventKey: `pending_${record.id}`,
+        title: workflowCopy.title,
+        message: body,
+        type: autoEmpFwd && state === 'sup' ? 'amber' : (state === 'aud' ? 'purple' : state === 'mgt' ? 'red' : state === 'hr' ? 'orange' : 'blue'),
+        icon: autoEmpFwd && state === 'sup' ? 'fa-robot' : 'fa-bell',
+        ticketId: String(record.id),
+        scope: 'mine',
+        isAuto: !!(autoEmpFwd && state === 'sup'),
+      });
+    }
     const result = await sendPushToUserIds(
       supabase,
       workflowIds,
@@ -334,6 +411,24 @@ async function dispatchViolationStatePush(
   }
 
   if (bmCopy && branchMgrIds.size) {
+    const bmEvent = autoEmpFwd && state === 'sup'
+      ? `auto_fwd_${record.id}_emp_to_sup`
+      : (autoSupFwd && state === 'aud'
+        ? `auto_fwd_${record.id}_sup_to_aud`
+        : `bm_team_status_${record.id}_${state}`);
+    for (const uid of branchMgrIds) {
+      await upsertAppNotification(supabase, {
+        userId: uid,
+        eventKey: bmEvent,
+        title: bmCopy.title,
+        message: body,
+        type: state === 'sup' ? 'blue' : state === 'aud' ? 'purple' : state === 'mgt' ? 'red' : state === 'hr' ? 'orange' : 'amber',
+        icon: (autoEmpFwd && state === 'sup') || (autoSupFwd && state === 'aud') ? 'fa-robot' : 'fa-reply',
+        ticketId: String(record.id),
+        scope: 'team',
+        isAuto: !!(autoEmpFwd || autoSupFwd),
+      });
+    }
     const result = await sendPushToUserIds(
       supabase,
       branchMgrIds,
@@ -682,6 +777,22 @@ async function dispatchBroadcastPush(
     return { status: 500, body: { error: String(err) } };
   }
 
+  const bcType = kind === 'motivational' ? 'green' : kind === 'alert' ? 'amber' : 'blue';
+  const bcIcon = kind === 'motivational' ? 'fa-trophy' : kind === 'alert' ? 'fa-triangle-exclamation' : 'fa-bullhorn';
+  for (const uid of recipientIds) {
+    await upsertAppNotification(supabase, {
+      userId: uid,
+      eventKey: `broadcast_${broadcastId}`,
+      title,
+      message: body,
+      type: bcType,
+      icon: bcIcon,
+      broadcastId,
+      broadcastKind: kind,
+      scope: 'mine',
+    });
+  }
+
   const pushResult = await sendPushToUserIds(
     supabase,
     new Set(recipientIds),
@@ -728,7 +839,7 @@ Deno.serve(async (req) => {
     return json({
       ok: true,
       service: 'violation-push',
-      version: '2026-06-auto-forward-cron-v4',
+      version: '2026-06-notifications-db-v1',
       autoForwardCron: AUTO_FORWARD_CRON_VERSION,
       cronSecretConfigured: !!(Deno.env.get('AUTO_FORWARD_CRON_SECRET')),
       vapidConfigured: !!(vapidPublic && vapidPrivate),

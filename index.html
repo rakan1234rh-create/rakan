@@ -29239,7 +29239,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-ticket-resp-row-v938">
+  <meta name="app-build" content="athar-notifications-db-v939">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -34675,9 +34675,14 @@
             mobLoad
               ? sb.from('violation_types').select(MOB_VIOLATION_TYPES_SELECT).order('name')
               : sb.from('violation_types').select('*').order('name'),
-            mobLoad
+            !state.currentUser?.id
               ? Promise.resolve({ data: [], error: null })
-              : sb.from('notifications').select('*').order('created_at', { ascending: false }).limit(50),
+              : sb.from('notifications')
+                .select('id,event_key,title,message,type,icon,ticket_id,scope,broadcast_id,broadcast_kind,is_auto,is_read,created_at,dismissed_at')
+                .eq('user_id', state.currentUser.id)
+                .is('dismissed_at', null)
+                .order('created_at', { ascending: false })
+                .limit(mobLoad ? 40 : 80),
             mobLoad || !state.currentUser?.id
               ? Promise.resolve({ data: [], error: null })
               : sb.from('broadcast_inbox')
@@ -34767,7 +34772,7 @@
           const enrichRow = mobLoad ? enrichViolationLite : enrichViolation;
           state.violations = (violations || []).map(enrichRow);
           state.violationTypes = vTypes || [];
-          state.notifications = mobLoad ? [] : (notifs || []);
+          state.notifications = notifs || [];
           state.broadcastInbox = mobLoad ? [] : (broadcastInbox || []);
           state._dbDismissedNotifIds = mobLoad
             ? new Set()
@@ -37981,7 +37986,7 @@
             resetNotifFilterToAll();
             if (state._notifCache) {
               try {
-                paintNotifList(state._notifCache, getReadNotifs(), { pageOnly: true });
+                paintNotifList(state._notifCache, getEffectiveReadNotifs(), { pageOnly: true });
               } catch (_) { /* noop */ }
             }
             const deferMs = state._notifCache ? 320 : 60;
@@ -51813,6 +51818,17 @@
 
       async function persistNotifDismissToDb(notifId) {
         if (!state.currentUser?.id || !notifId) return;
+        const dbRow = findDbNotificationRowByUiId(notifId);
+        if (dbRow?.id) {
+          const { error } = await sb.from('notifications')
+            .update({ dismissed_at: new Date().toISOString(), is_read: true })
+            .eq('id', dbRow.id)
+            .eq('user_id', state.currentUser.id);
+          if (error) throw error;
+          state.notifications = (state.notifications || []).filter(r => r.id !== dbRow.id);
+          invalidateNotifCache();
+          return;
+        }
         const broadcastId = parseBroadcastNotifId(notifId);
         if (broadcastId) {
           const { error } = await sb.from('broadcast_inbox')
@@ -51869,6 +51885,91 @@
       function invalidateNotifCache() {
         state._notifCache = null;
         state._notifCacheAt = 0;
+      }
+
+      const NOTIFICATIONS_DB_SELECT = 'id,event_key,title,message,type,icon,ticket_id,scope,broadcast_id,broadcast_kind,is_auto,is_read,created_at,dismissed_at';
+
+      function mapDbNotificationRow(row) {
+        const id = String(row?.event_key || row?.id || '');
+        const palette = ['amber', 'blue', 'red', 'green', 'purple', 'orange'];
+        const type = palette.includes(String(row?.type || '')) ? row.type : 'amber';
+        return {
+          id,
+          dbId: row.id,
+          ticketId: row.ticket_id || '',
+          type,
+          icon: row.icon || 'fa-bell',
+          title: row.title || 'تنبيه',
+          msg: row.message || '',
+          time: row.created_at,
+          scope: row.scope || undefined,
+          broadcastId: row.broadcast_id || undefined,
+          broadcastKind: row.broadcast_kind || undefined,
+          isAuto: !!row.is_auto,
+          fromDb: true,
+        };
+      }
+
+      function buildDbUserNotifications() {
+        return (state.notifications || [])
+          .filter(row => row && !row.dismissed_at)
+          .map(mapDbNotificationRow)
+          .filter(n => n.id);
+      }
+
+      function findDbNotificationRowByUiId(notifId) {
+        if (!notifId) return null;
+        const key = String(notifId);
+        return (state.notifications || []).find(row =>
+          !row.dismissed_at && (String(row.event_key || '') === key || String(row.id || '') === key)
+        ) || null;
+      }
+
+      async function refreshNotificationsFromDb() {
+        if (!state.currentUser?.id) return false;
+        try {
+          const limit = document.documentElement.classList.contains('mr-mobile-ui') ? 40 : 80;
+          const { data, error } = await sb.from('notifications')
+            .select(NOTIFICATIONS_DB_SELECT)
+            .eq('user_id', state.currentUser.id)
+            .is('dismissed_at', null)
+            .order('created_at', { ascending: false })
+            .limit(limit);
+          if (error) throw error;
+          state.notifications = data || [];
+          invalidateNotifCache();
+          return true;
+        } catch (e) {
+          if (isMirsadDebugLog()) console.warn('[Notifications DB]', e);
+          return false;
+        }
+      }
+
+      function getEffectiveReadNotifs() {
+        const read = getReadNotifs();
+        (state.notifications || []).forEach(row => {
+          if (row?.is_read) {
+            const id = String(row.event_key || row.id || '');
+            if (id) read.add(id);
+          }
+        });
+        return read;
+      }
+
+      async function persistNotifReadToDb(notifId) {
+        if (!state.currentUser?.id || !notifId) return;
+        const row = findDbNotificationRowByUiId(notifId);
+        if (!row?.id) return;
+        try {
+          const { error } = await sb.from('notifications')
+            .update({ is_read: true })
+            .eq('id', row.id)
+            .eq('user_id', state.currentUser.id);
+          if (error) throw error;
+          row.is_read = true;
+        } catch (e) {
+          if (isMirsadDebugLog()) console.warn('[notif read]', e);
+        }
       }
 
       function buildUserNotificationsCached(force) {
@@ -51967,146 +52068,13 @@
         return { type: 'blue', icon: 'fa-bell', isAuto: false };
       }
 
-      // توليد التنبيهات للمستخدم الحالي بناءً على المخالفات
+      // توليد التنبيهات: قاعدة البيانات + محسوبة (نقاط/بونص)
       function buildUserNotifications() {
         if (!state.currentUser) return [];
         const me = state.currentUser;
         const role = me.role;
         const visible = getVisibleViolations();
         const notifs = [];
-
-        // أ. تذاكر بانتظار المستخدم الحالي للمعالجة
-        visible.forEach(t => {
-          if (t.state === 'closed') return;
-
-          let needsAction = false;
-          let title = '';
-          let msg = '';
-          let type = 'amber';
-
-          if (t.state === 'emp' && (role === 'employee' || role === 'branch_manager') && t.employee_id === me.id) {
-            needsAction = true;
-            title = 'مخالفة بانتظار ردك';
-            msg = `${t.violation_type} — ${shortTicketNum(t.ticket_number)}`;
-            type = 'amber';
-          }
-          else if (t.state === 'sup' && role === 'supervisor' && me.supervisedBranches?.includes(t.branch_id)) {
-            needsAction = true;
-            title = 'مخالفة بانتظار رد المشرف';
-            msg = `${t._empName} — ${t.violation_type}`;
-            type = 'blue';
-          }
-          else if (t.state === 'aud' && role === 'auditor') {
-            needsAction = true;
-            title = 'تذكرة بانتظار التدقيق';
-            msg = `${shortTicketNum(t.ticket_number)} — ${t._empName}`;
-            type = 'purple';
-          }
-          else if (t.state === 'mgt' && role === 'manager') {
-            needsAction = true;
-            title = 'قرار إداري مطلوب';
-            msg = `${shortTicketNum(t.ticket_number)} — ${t._empName}`;
-            type = 'red';
-          }
-          else if (t.state === 'hr' && role === 'hr') {
-            needsAction = true;
-            title = 'قرار الموارد البشرية مطلوب';
-            msg = `${shortTicketNum(t.ticket_number)} — ${t._empName}`;
-            type = 'orange';
-          }
-
-          if (needsAction) {
-            // إذا التذكرة مررت تلقائياً نضيف علامة
-            const isAuto = (t.auto_forwarded_emp && t.state === 'sup') ||
-              (t.auto_forwarded_sup && t.state === 'aud');
-            const fwdDir = isAuto ? notifAutoForwardDirection(t) : null;
-            notifs.push({
-              id: `pending_${t.id}`,
-              ticketId: t.id,
-              type,
-              icon: isAuto ? 'fa-robot' : 'fa-bell',
-              title: isAuto ? `⚠️ ${title} (تمرير تلقائي)` : title,
-              msg,
-              time: fwdDir ? notifTimeFromAutoForwardLog(t, fwdDir) : (t.updated_at || t.created_at),
-              isAuto
-            });
-          }
-        });
-
-        // ب. تنبيه للراصد عند كل تغيّر حالة لتذاكره
-        if (role === 'observer') {
-          visible.forEach(t => {
-            if (t.observer_id !== me.id) return;
-            const logs = parseDbJsonArray(t.logs);
-            const statusChanges = logs.filter((log, idx) => {
-              if (idx === 0 && /إنشاء\s*التذكرة/i.test(String(log?.action || ''))) return false;
-              return !!(log?.action || log?.note);
-            });
-
-            if (statusChanges.length) {
-              statusChanges.forEach((log, idx) => {
-                const style = observerLogNotifStyle(t, log);
-                const logIdx = logs.indexOf(log);
-                notifs.push({
-                  id: `observer_log_${t.id}_${logIdx >= 0 ? logIdx : idx}`,
-                  ticketId: t.id,
-                  type: style.type,
-                  icon: style.icon,
-                  title: log.action || STATE_LABELS[t.state] || 'تحديث على تذكرتك',
-                  msg: `${shortTicketNum(t.ticket_number)} — ${t.violation_type}`,
-                  time: log.date || t.updated_at || t.created_at,
-                  isAuto: style.isAuto
-                });
-              });
-              return;
-            }
-
-            if (!t.state || t.state === 'uploading') return;
-            if (t.state === 'emp' && logs.length === 1 && /إنشاء\s*التذكرة/i.test(String(logs[0]?.action || ''))) return;
-            const style = observerLogNotifStyle(t, { action: t.status_text || STATE_LABELS[t.state] || '' });
-            const stateKey = `${t.state}_${String(t.updated_at || t.created_at || '').slice(0, 19)}`;
-            notifs.push({
-              id: `observer_state_${t.id}_${stateKey}`,
-              ticketId: t.id,
-              type: style.type,
-              icon: style.icon,
-              title: t.status_text || STATE_LABELS[t.state] || 'تحديث على تذكرتك',
-              msg: `${shortTicketNum(t.ticket_number)} — ${t.violation_type}`,
-              time: t.updated_at || t.created_at,
-              isAuto: style.isAuto
-            });
-          });
-        }
-
-        // ج. تنبيه للموظف أو مدير الفرع (نفس الحساب كموظف على تذكرته) عند اعتماد/إلغاء مخالفته
-        if (role === 'employee' || role === 'branch_manager') {
-          visible.forEach(t => {
-            if (t.employee_id !== me.id) return;
-            if (t.state === 'closed') {
-              const st = t.status_text || '';
-              const isWarn = /تنبيه|اكتفاء بالتنبيه/i.test(st);
-              const isPenalty = /معتمد/.test(st) && !isWarn;
-              const isCancelled = /ملغ|مرفوض/i.test(st);
-              let type = 'green';
-              let icon = 'fa-circle-check';
-              let title = 'تم تحديث تذكرة بحقك';
-              if (isPenalty) { type = 'red'; icon = 'fa-triangle-exclamation'; title = 'تم اعتماد مخالفة بحقك'; }
-              else if (isWarn) { type = 'amber'; icon = 'fa-hand'; title = 'تم إصدار تنبيه إداري بحقك'; }
-              else if (isCancelled) { type = 'green'; icon = 'fa-circle-check'; title = 'تم إلغاء مخالفة بحقك'; }
-              notifs.push({
-                id: `decided_${t.id}`,
-                ticketId: t.id,
-                type,
-                icon,
-                title,
-                msg: isPenalty
-                  ? `${t.violation_type} — ${shortTicketNum(t.ticket_number)}`
-                  : `${shortTicketNum(t.ticket_number)} — ${t.violation_type}`,
-                time: t.updated_at || t.created_at
-              });
-            }
-          });
-        }
 
         // ─── د. تنبيهات النقاط للموظف (أو مدير الفرع إن كان نفس حساب الموظف) ───
         if (role === 'employee' || role === 'branch_manager') {
@@ -52380,128 +52348,17 @@
             }
           });
 
-          visible.forEach(t => {
-            if (t.branch_id !== me.branch_id || t.employee_id === me.id) return;
-            if (t.state === 'emp') {
-              notifs.push({
-                id: `bm_team_pending_${t.id}`,
-                ticketId: t.id,
-                type: 'amber',
-                icon: 'fa-clipboard-list',
-                title: 'تم تسجيل مخالفة على موظف ضمن فريقك',
-                msg: `${t._empName} — ${t.violation_type} — ${shortTicketNum(t.ticket_number)}`,
-                time: t.updated_at || t.created_at,
-                scope: 'team'
-              });
-              return;
-            }
-            if (t.state !== 'closed') {
-              const teamStatusMeta = {
-                sup: { title: 'رد موظف ضمن فريقك على المخالفة', type: 'blue', icon: 'fa-reply' },
-                aud: { title: 'مخالفة موظف فريقك بانتظار التدقيق', type: 'purple', icon: 'fa-magnifying-glass' },
-                mgt: { title: 'مخالفة موظف فريقك بانتظار القرار الإداري', type: 'red', icon: 'fa-gavel' },
-                hr: { title: 'مخالفة موظف فريقك بانتظار الموارد البشرية', type: 'orange', icon: 'fa-users-gear' },
-                Warning_Issued: { title: 'تنبيه إداري صادر على موظف ضمن فريقك', type: 'amber', icon: 'fa-hand' }
-              };
-              const meta = teamStatusMeta[t.state];
-              if (meta) {
-                const autoEmpFwd = isEmpAutoForwardedToSup(t);
-                const autoSupFwd = isSupAutoForwardedToAud(t);
-                let title = meta.title;
-                let type = meta.type;
-                let icon = meta.icon;
-                if (autoEmpFwd && t.state === 'sup') {
-                  title = 'تم تمرير مخالفة موظف فريقك للمشرف (تمرير تلقائي)';
-                  type = 'amber';
-                  icon = 'fa-robot';
-                } else if (autoSupFwd && t.state === 'aud') {
-                  title = 'تم تمرير مخالفة موظف فريقك للمدقق (تمرير تلقائي)';
-                  type = 'amber';
-                  icon = 'fa-robot';
-                }
-                const fwdDir = autoEmpFwd && t.state === 'sup'
-                  ? 'emp_to_sup'
-                  : (autoSupFwd && t.state === 'aud' ? 'sup_to_aud' : null);
-                notifs.push({
-                  id: fwdDir ? notifAutoForwardStableId(t.id, fwdDir) : `bm_team_status_${t.id}_${t.state}`,
-                  ticketId: t.id,
-                  type,
-                  icon,
-                  title,
-                  msg: `${t._empName} — ${t.violation_type} — ${shortTicketNum(t.ticket_number)}`,
-                  time: fwdDir ? notifTimeFromAutoForwardLog(t, fwdDir) : (t.updated_at || t.created_at),
-                  scope: 'team',
-                  isAuto: autoEmpFwd || autoSupFwd
-                });
-              }
-              return;
-            }
-            const st = t.status_text || '';
-            const isWarn = /تنبيه|اكتفاء بالتنبيه/i.test(st);
-            const isPenalty = /معتمد/.test(st) && !isWarn;
-            const isCancelled = /ملغ|مرفوض/i.test(st);
-            if (!isPenalty && !isWarn && !isCancelled) return;
-            let type = 'green';
-            let icon = 'fa-circle-check';
-            let title = 'تم تحديث مخالفة موظف ضمن فريقك';
-            if (isPenalty) {
-              type = 'red';
-              icon = 'fa-triangle-exclamation';
-              title = 'تم اعتماد مخالفة على موظف ضمن فريقك';
-            } else if (isWarn) {
-              type = 'amber';
-              icon = 'fa-hand';
-              title = 'تم إصدار تنبيه إداري على موظف ضمن فريقك';
-            } else if (isCancelled) {
-              type = 'green';
-              icon = 'fa-circle-check';
-              title = 'تم إلغاء مخالفة موظف ضمن فريقك';
-            }
-            notifs.push({
-              id: `bm_team_decided_${t.id}`,
-              ticketId: t.id,
-              type,
-              icon,
-              title,
-              msg: `${t._empName} — ${t.violation_type} — ${shortTicketNum(t.ticket_number)}`,
-              time: t.updated_at || t.created_at,
-              scope: 'team'
-            });
-          });
         }
 
-        // نشرات admin الواردة (داخل التطبيق + Push)
-        const BROADCAST_KIND_STYLES = {
-          motivational: { type: 'green', icon: 'fa-trophy' },
-          alert: { type: 'amber', icon: 'fa-triangle-exclamation' },
-          circular: { type: 'blue', icon: 'fa-bullhorn' }
-        };
-        (state.broadcastInbox || []).forEach((row) => {
-          const meta = getBroadcastInboxMeta(row);
-          const kind = meta.kind;
-          const style = BROADCAST_KIND_STYLES[kind] || BROADCAST_KIND_STYLES.circular;
-          notifs.push({
-            id: `broadcast_${meta.id}`,
-            ticketId: '',
-            broadcastId: meta.id,
-            type: style.type,
-            icon: style.icon,
-            title: meta.title,
-            msg: meta.body,
-            time: meta.createdAt,
-            scope: 'mine',
-            broadcastKind: kind
-          });
-        });
-
-        // ترتيب من الأحدث للأقدم
-        notifs.sort((a, b) => {
+        const dbNotifs = buildDbUserNotifications();
+        const merged = [...dbNotifs, ...notifs];
+        merged.sort((a, b) => {
           const ta = a.time ? new Date(a.time).getTime() : 0;
           const tb = b.time ? new Date(b.time).getTime() : 0;
           return tb - ta;
         });
 
-        return tagNotifScopes(dedupeUserNotifications(notifs), me);
+        return tagNotifScopes(dedupeUserNotifications(merged), me);
       }
 
       const NOTIF_FILTER_LABELS = {
@@ -52634,6 +52491,7 @@
           }
           state.broadcastInbox = data || [];
           invalidateNotifCache();
+          await refreshNotificationsFromDb();
           return true;
         } catch (e) {
           if (isMirsadDebugLog()) console.warn('[BroadcastInbox]', e);
@@ -53416,7 +53274,9 @@
         invokeViolationPush({ notify: true, type: 'INSERT', record })
           .then((data) => {
             if (data?.errors?.length && isMirsadDebugLog()) console.warn('[webPush] new violation notify', data);
+            return refreshNotificationsFromDb();
           })
+          .then(() => { try { renderNotifications(false); } catch (_) { /* noop */ } })
           .catch((e) => {
             if (isMirsadDebugLog()) console.warn('[webPush] new violation notify', e);
           });
@@ -53454,7 +53314,9 @@
         })
           .then((data) => {
             if (data?.errors?.length && isMirsadDebugLog()) console.warn('[webPush] state change notify', data);
+            return refreshNotificationsFromDb();
           })
+          .then(() => { try { renderNotifications(false); } catch (_) { /* noop */ } })
           .catch((e) => {
             if (isMirsadDebugLog()) console.warn('[webPush] state change notify', e);
           });
@@ -53898,7 +53760,7 @@
         if (btn) btn.classList.add('is-active');
         const cached = state._currentNotifs || state._notifCache;
         if (cached) {
-          paintNotifList(cached, getReadNotifs(), { pageOnly: true });
+          paintNotifList(cached, getEffectiveReadNotifs(), { pageOnly: true });
           syncNotifFilterTabs(cached);
         } else {
           renderNotifications(false);
@@ -53998,7 +53860,7 @@
         if (!state.currentUser) return;
         const notifs = buildUserNotificationsCached(!!force);
         state._currentNotifs = notifs;
-        const read = getReadNotifs();
+        const read = getEffectiveReadNotifs();
         state._bellBadgeLocked = 0;
         updateNotifBellBadge(countVisibleUnreadNotifs(notifs, read));
       }
@@ -54053,7 +53915,7 @@
 
         if (state._notifCache) {
           try {
-            paintNotifList(state._notifCache, getReadNotifs(), { pageOnly: true });
+            paintNotifList(state._notifCache, getEffectiveReadNotifs(), { pageOnly: true });
           } catch (_) { /* noop */ }
         }
 
@@ -54186,7 +54048,7 @@
         maybeRestoreDismissedNotifsOnce();
         const notifs = buildUserNotificationsCached(!!force);
         state._currentNotifs = notifs;
-        const read = getReadNotifs();
+        const read = getEffectiveReadNotifs();
         paintNotifList(notifs, read);
         state._bellBadgeLocked = 0;
         updateNotifBellBadge(countVisibleUnreadNotifs(notifs, read));
@@ -54205,7 +54067,7 @@
           prepNotifPageSlideIn();
           if (state._notifCache) {
             try {
-              paintNotifList(state._notifCache, getReadNotifs(), { pageOnly: true });
+              paintNotifList(state._notifCache, getEffectiveReadNotifs(), { pageOnly: true });
             } catch (_) { /* noop */ }
           }
           return;
@@ -54218,7 +54080,7 @@
         state._notifFastOpenDone = true;
         if (state._notifCache) {
           try {
-            paintNotifList(state._notifCache, getReadNotifs(), { pageOnly: true });
+            paintNotifList(state._notifCache, getEffectiveReadNotifs(), { pageOnly: true });
           } catch (_) { /* noop */ }
         }
       }
@@ -54227,7 +54089,7 @@
         if (!document.getElementById('notifPanel')?.classList.contains('open')) return;
         const notifs = buildUserNotificationsCached(!!force);
         state._currentNotifs = notifs;
-        paintNotifList(notifs, getReadNotifs());
+        paintNotifList(notifs, getEffectiveReadNotifs());
         notifPanelPosition();
       }
 
@@ -54401,6 +54263,7 @@
         const read = getReadNotifs();
         read.add(notifId);
         saveReadNotifs(read);
+        persistNotifReadToDb(notifId);
         state._bellBadgeLocked = 0;
         refreshNotifBellBadge(false);
 
@@ -54445,6 +54308,19 @@
         const read = getReadNotifs();
         visible.forEach(n => read.add(n.id));
         saveReadNotifs(read);
+        const dbIds = visible.filter(n => n.fromDb && n.dbId).map(n => n.dbId);
+        if (dbIds.length && state.currentUser?.id) {
+          sb.from('notifications')
+            .update({ is_read: true })
+            .in('id', dbIds)
+            .eq('user_id', state.currentUser.id)
+            .then(() => {
+              (state.notifications || []).forEach(row => {
+                if (dbIds.includes(row.id)) row.is_read = true;
+              });
+            })
+            .catch(e => { if (isMirsadDebugLog()) console.warn('[notif read all]', e); });
+        }
         state._bellBadgeLocked = 0;
         renderNotifications();
         syncNotifBellBadge(true);
