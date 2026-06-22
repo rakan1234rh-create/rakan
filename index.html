@@ -24165,7 +24165,7 @@
       html.mr-notif-page-active.mr-mobile-ui #ticketModal.modal,
       body.ticket-over-notif #ticketModal.modal {
         padding-bottom: 0 !important;
-        z-index: 3000 !important
+        z-index: 3100 !important
       }
 
       html.mr-notif-page-active.mr-mobile-ui #ticketModal.modal.open::before,
@@ -28875,7 +28875,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-notif-head-tight-v921">
+  <meta name="app-build" content="athar-notif-ticket-open-v922">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -31611,6 +31611,7 @@
       function isMobBottomNavVisible() {
         if (!isViolDetailMobSheet()) return false;
         if (document.documentElement.classList.contains('mr-notif-page-active')) return false;
+        if (document.getElementById('tab-notifications')?.classList.contains('notif-tab-overlay')) return false;
         const nav = document.getElementById('mobileBottomNav');
         if (!nav) return false;
         const cs = getComputedStyle(nav);
@@ -31795,7 +31796,11 @@
         const shell = document.querySelector('#appWrap > .app-shell');
         const nav = document.getElementById('mobileBottomNav');
         if (!modal || !shell) return;
-        if (document.body.classList.contains('ticket-over-cmp') || document.documentElement.classList.contains('mr-notif-page-active')) {
+        const notifOverlayOpen = document.getElementById('tab-notifications')?.classList.contains('notif-tab-overlay');
+        if (document.body.classList.contains('ticket-over-cmp')
+          || document.body.classList.contains('ticket-over-notif')
+          || document.documentElement.classList.contains('mr-notif-page-active')
+          || notifOverlayOpen) {
           if (modal.parentNode !== document.body) document.body.appendChild(modal);
           return;
         }
