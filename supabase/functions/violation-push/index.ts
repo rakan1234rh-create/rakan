@@ -1,3 +1,4 @@
+// violation-push production bundle (redeploy full source)
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 import webpush from 'npm:web-push@3.6.7';
 import {
@@ -696,6 +697,24 @@ async function resolveBroadcastRecipientIds(
   return Array.from(ids);
 }
 
+function parseBroadcastExpiresAt(raw: unknown): { ok: true; iso: string } | { ok: false; error: string } {
+  if (raw == null || raw === '') {
+    return { ok: false, error: 'موعد انتهاء الرسالة مطلوب (تاريخ وساعة)' };
+  }
+  const ms = new Date(String(raw)).getTime();
+  if (!Number.isFinite(ms)) {
+    return { ok: false, error: 'تاريخ أو وقت الانتهاء غير صالح' };
+  }
+  if (ms <= Date.now() + 60_000) {
+    return { ok: false, error: 'موعد الانتهاء يجب أن يكون بعد دقيقة واحدة على الأقل' };
+  }
+  const maxMs = Date.now() + 366 * 24 * 60 * 60 * 1000;
+  if (ms > maxMs) {
+    return { ok: false, error: 'موعد الانتهاء بعيد جداً (الحد سنة واحدة)' };
+  }
+  return { ok: true, iso: new Date(ms).toISOString() };
+}
+
 async function insertBroadcastInboxRows(
   supabase: ReturnType<typeof createClient>,
   broadcastId: string,
@@ -748,6 +767,11 @@ async function dispatchBroadcastPush(
     return { status: 400, body: { error: 'لا يوجد مستلمون مطابقون للاستهداف' } };
   }
 
+  const expiresParsed = parseBroadcastExpiresAt(payload.expiresAt);
+  if (!expiresParsed.ok) {
+    return { status: 400, body: { error: expiresParsed.error } };
+  }
+
   const targetMode = target.mode || 'all';
   const { data: broadcastRow, error: bcErr } = await supabase
     .from('broadcasts')
@@ -762,6 +786,7 @@ async function dispatchBroadcastPush(
       target_user_ids: target.userIds || [],
       recipient_count: recipientIds.length,
       push_sent_count: 0,
+      expires_at: expiresParsed.iso,
     })
     .select('id')
     .single();
@@ -814,6 +839,7 @@ async function dispatchBroadcastPush(
       recipients: recipientIds.length,
       pushSent: pushResult.sent || 0,
       pushSubscriptions: pushResult.subscriptions || 0,
+      expiresAt: expiresParsed.iso,
       errors: pushResult.errors,
     },
   };
