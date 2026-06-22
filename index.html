@@ -13156,6 +13156,37 @@
       color: #fff
     }
 
+    #ticketModal .ticket-resp-search {
+      align-items: flex-start;
+      min-height: 48px;
+      height: auto;
+      border-radius: 18px;
+      padding: 4px 6px 4px 14px
+    }
+
+    #ticketModal .ticket-resp-input {
+      min-height: 72px;
+      max-height: 160px;
+      resize: vertical;
+      border: 0 !important;
+      background: transparent !important;
+      font-size: 13px;
+      line-height: 1.45;
+      padding: 10px 8px 10px 0 !important;
+      border-radius: 0 !important;
+      box-shadow: none !important
+    }
+
+    #ticketModal .ticket-resp-input:focus {
+      border-color: transparent !important;
+      box-shadow: none !important
+    }
+
+    #ticketModal .ticket-resp-search:focus-within {
+      border-color: var(--mr-primary);
+      box-shadow: 0 0 0 4px var(--mr-primary-soft)
+    }
+
     #ticketModal #responseButtons {
       display: grid;
       gap: 10px;
@@ -29193,7 +29224,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-domain-athar-app-v935">
+  <meta name="app-build" content="athar-ticket-resp-input-fix-v936">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
