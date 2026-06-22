@@ -1356,7 +1356,7 @@
 
     #loginScreen #loginCard .wefaq-app-logo--athar .athar-logo-deco,
     #loginTransition .wefaq-app-logo--athar .athar-logo-deco {
-      transform: translate(4px, 150px);
+      transform: none;
       transform-origin: center top
     }
 
@@ -28879,7 +28879,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-notif-ticket-anchor-v925">
+  <meta name="app-build" content="athar-login-logo-fix-v926">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -34652,7 +34652,7 @@
         return isTouch || (!isRealDesktop && !isWide);
       }
 
-      const ATHAR_LOGO_VER = '396';
+      const ATHAR_LOGO_VER = '397';
       const ATHAR_DECO_SHIFT = { x: -8, y: -210 }; /* الدخول / الانتقال / الشريط (الإزاحة العمودية للشريط عبر CSS) */
       const ATHAR_LOGO_R_DX = { default: -8 };
       const ATHAR_LOGO_R_DY = { default: 2 };
@@ -34686,7 +34686,6 @@
       ];
 
       function syncAtharBranding() {
-        const decoShift = `${ATHAR_DECO_SHIFT.x},${ATHAR_DECO_SHIFT.y}`;
         ATHAR_LOGO_HOSTS.forEach((sel) => {
           const host = document.querySelector(sel);
           if (!host) return;
@@ -34694,9 +34693,16 @@
           const rDy = ATHAR_LOGO_R_DY.default;
           const isLoginLogo = sel.includes('loginCard') || sel.includes('loginTransition');
           const textY = isLoginLogo ? ATHAR_LOGO_TEXT_Y.login : ATHAR_LOGO_TEXT_Y.default;
+          const decoShift = isLoginLogo
+            ? {
+              x: ATHAR_DECO_SHIFT.x,
+              y: ATHAR_DECO_SHIFT.y + (textY - ATHAR_LOGO_TEXT_Y.default)
+            }
+            : ATHAR_DECO_SHIFT;
           const existing = host.querySelector(':scope > .wefaq-app-logo--athar');
+          const decoShiftKey = `${decoShift.x},${decoShift.y}`;
           if (existing?.dataset.atharVer === ATHAR_LOGO_VER &&
-            existing.dataset.decoShift === decoShift &&
+            existing.dataset.decoShift === decoShiftKey &&
             existing.dataset.rDx === String(rDx) &&
             existing.dataset.rDy === String(rDy) &&
             existing.dataset.textY === String(textY)) {
@@ -34705,7 +34711,7 @@
           host.classList.add('wefaq-logo-host');
           host.querySelector(':scope > .brand-mono')?.remove();
           host.querySelectorAll(':scope > .wefaq-app-logo, :scope > img').forEach((el) => el.remove());
-          host.insertAdjacentHTML('beforeend', atharWordmarkLogoHtml(ATHAR_DECO_SHIFT, rDx, rDy, textY));
+          host.insertAdjacentHTML('beforeend', atharWordmarkLogoHtml(decoShift, rDx, rDy, textY));
         });
       }
 
