@@ -17717,35 +17717,8 @@
       grid-column: 1 / -1
     }
 
-    #tab-broadcasts .bc-expiry-grid {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      align-items: center;
-    }
-
-    #tab-broadcasts .bc-expiry-mode-dd {
-      flex: 1 1 180px;
-      min-width: 0;
-    }
-
-    #tab-broadcasts .bc-expiry-custom {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      flex: 1 1 220px;
-      min-width: 0;
-    }
-
-    #tab-broadcasts .bc-expiry-custom[hidden] {
-      display: none !important;
-    }
-
-    #tab-broadcasts .bc-expiry-date,
-    #tab-broadcasts .bc-expiry-time {
-      flex: 1 1 120px;
-      min-height: 38px;
-      font-size: 12px;
+    #tab-broadcasts .bc-form-expiry .mk-dt-pair {
+      max-width: 480px;
     }
 
     #tab-broadcasts .bc-expiry-hint {
@@ -20524,7 +20497,8 @@
     }
 
     @media (max-width: 520px) and (pointer: coarse) {
-      #tab-newTicket .mk-dt-pair {
+      #tab-newTicket .mk-dt-pair,
+      #tab-broadcasts .mk-dt-pair {
         grid-template-columns: 1fr;
         max-width: none;
       }
@@ -28778,25 +28752,29 @@
       border-radius: 0 0 20px 20px;
     }
 
-    #tab-newTicket .mk-field--dt-row {
+    #tab-newTicket .mk-field--dt-row,
+    #tab-broadcasts .mk-field--dt-row {
       grid-column: 1 / -1;
     }
 
-    #tab-newTicket .mk-dt-pair {
+    #tab-newTicket .mk-dt-pair,
+    #tab-broadcasts .mk-dt-pair {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 12px;
       max-width: 480px;
     }
 
-    #tab-newTicket .mk-dt-item {
+    #tab-newTicket .mk-dt-item,
+    #tab-broadcasts .mk-dt-item {
       display: flex;
       flex-direction: column;
       gap: 5px;
       min-width: 0;
     }
 
-    #tab-newTicket .mk-dt-item__lbl {
+    #tab-newTicket .mk-dt-item__lbl,
+    #tab-broadcasts .mk-dt-item__lbl {
       font-size: 11px;
       font-weight: 600;
       color: var(--mr-text-2);
@@ -28805,7 +28783,8 @@
       gap: 4px;
     }
 
-    #tab-newTicket .mk-dt-control {
+    #tab-newTicket .mk-dt-control,
+    #tab-broadcasts .mk-dt-control {
       position: relative;
       display: flex;
       align-items: center;
@@ -28818,12 +28797,14 @@
       transition: border-color 0.2s, box-shadow 0.2s;
     }
 
-    #tab-newTicket .mk-dt-control:focus-within {
+    #tab-newTicket .mk-dt-control:focus-within,
+    #tab-broadcasts .mk-dt-control:focus-within {
       border-color: var(--mr-primary);
       box-shadow: 0 0 0 3px var(--mr-primary-soft);
     }
 
-    #tab-newTicket .mk-dt-control__ico {
+    #tab-newTicket .mk-dt-control__ico,
+    #tab-broadcasts .mk-dt-control__ico {
       flex-shrink: 0;
       width: 16px;
       text-align: center;
@@ -28833,7 +28814,8 @@
       z-index: 1;
     }
 
-    #tab-newTicket .mk-dt-control__text {
+    #tab-newTicket .mk-dt-control__text,
+    #tab-broadcasts .mk-dt-control__text {
       flex: 1;
       min-width: 0;
       font-size: 13px;
@@ -28848,12 +28830,14 @@
       font-variant-numeric: tabular-nums;
     }
 
-    #tab-newTicket .mk-dt-control__text[dir="ltr"] {
+    #tab-newTicket .mk-dt-control__text[dir="ltr"],
+    #tab-broadcasts .mk-dt-control__text[dir="ltr"] {
       text-align: start;
       unicode-bidi: isolate;
     }
 
-    #tab-newTicket #nt-timeDisplay:not(.mk-dt-control__text--empty) {
+    #tab-newTicket #nt-timeDisplay:not(.mk-dt-control__text--empty),
+    #tab-broadcasts #bc-exp-timeDisplay:not(.mk-dt-control__text--empty) {
       display: inline-flex;
       flex-direction: row;
       direction: ltr;
@@ -28862,23 +28846,27 @@
       unicode-bidi: embed;
     }
 
-    #tab-newTicket .mk-dt-time__ampm {
+    #tab-newTicket .mk-dt-time__ampm,
+    #tab-broadcasts .mk-dt-time__ampm {
       font-weight: 700;
       flex-shrink: 0;
       order: 0;
     }
 
-    #tab-newTicket .mk-dt-time__digits {
+    #tab-newTicket .mk-dt-time__digits,
+    #tab-broadcasts .mk-dt-time__digits {
       font-variant-numeric: tabular-nums;
       order: 1;
     }
 
-    #tab-newTicket .mk-dt-control__text--empty {
+    #tab-newTicket .mk-dt-control__text--empty,
+    #tab-broadcasts .mk-dt-control__text--empty {
       color: var(--mr-text-muted);
       font-weight: 500;
     }
 
-    #tab-newTicket .mk-dt-control__native {
+    #tab-newTicket .mk-dt-control__native,
+    #tab-broadcasts .mk-dt-control__native {
       position: absolute;
       inset: 0;
       width: 100%;
@@ -28893,7 +28881,8 @@
       font-size: 16px;
     }
 
-    #tab-newTicket .mk-dt-control__native::-webkit-calendar-picker-indicator {
+    #tab-newTicket .mk-dt-control__native::-webkit-calendar-picker-indicator,
+    #tab-broadcasts .mk-dt-control__native::-webkit-calendar-picker-indicator {
       position: absolute;
       inset: 0;
       width: 100%;
@@ -28903,11 +28892,13 @@
       cursor: pointer;
     }
 
-    #tab-newTicket .mk-dt-wrap {
+    #tab-newTicket .mk-dt-wrap,
+    #tab-broadcasts .mk-dt-wrap {
       position: relative;
     }
 
-    #tab-newTicket button.mk-dt-control {
+    #tab-newTicket button.mk-dt-control,
+    #tab-broadcasts button.mk-dt-control {
       width: 100%;
       font: inherit;
       text-align: start;
@@ -28915,24 +28906,29 @@
       justify-content: flex-start;
     }
 
-    #tab-newTicket button.mk-dt-control .mk-dt-control__text {
+    #tab-newTicket button.mk-dt-control .mk-dt-control__text,
+    #tab-broadcasts button.mk-dt-control .mk-dt-control__text {
       flex: 0 1 auto;
     }
 
-    #tab-newTicket .mk-dt-control:has(.mk-dt-control__native) {
+    #tab-newTicket .mk-dt-control:has(.mk-dt-control__native),
+    #tab-broadcasts .mk-dt-control:has(.mk-dt-control__native) {
       justify-content: flex-start;
     }
 
-    #tab-newTicket .mk-dt-control:has(.mk-dt-control__native) .mk-dt-control__text {
+    #tab-newTicket .mk-dt-control:has(.mk-dt-control__native) .mk-dt-control__text,
+    #tab-broadcasts .mk-dt-control:has(.mk-dt-control__native) .mk-dt-control__text {
       flex: 0 1 auto;
     }
 
-    #tab-newTicket .mk-dt-control.mk-dt-control--open {
+    #tab-newTicket .mk-dt-control.mk-dt-control--open,
+    #tab-broadcasts .mk-dt-control.mk-dt-control--open {
       border-color: var(--mr-primary);
       box-shadow: 0 0 0 3px var(--mr-primary-soft);
     }
 
-    #tab-newTicket .nt-date-picker {
+    #tab-newTicket .nt-date-picker,
+    #tab-broadcasts .nt-date-picker {
       --md2-dp-primary: var(--mr-primary);
       --md2-dp-primary-hover: color-mix(in srgb, var(--mr-primary) 82%, #000);
       --md2-dp-range-bg: var(--mr-primary-soft);
@@ -28944,15 +28940,18 @@
       z-index: 260;
     }
 
-    #tab-newTicket .nt-date-picker .dp-header-fig {
+    #tab-newTicket .nt-date-picker .dp-header-fig,
+    #tab-broadcasts .nt-date-picker .dp-header-fig {
       direction: rtl;
     }
 
-    #tab-newTicket .nt-date-picker .dp-footer {
+    #tab-newTicket .nt-date-picker .dp-footer,
+    #tab-broadcasts .nt-date-picker .dp-footer {
       gap: 8px;
     }
 
-    #tab-newTicket .nt-time-picker {
+    #tab-newTicket .nt-time-picker,
+    #tab-broadcasts .nt-time-picker {
       position: absolute;
       top: calc(100% + 6px);
       right: 0;
@@ -28969,23 +28968,27 @@
       animation: dpFade 0.2s ease;
     }
 
-    #tab-newTicket .nt-time-picker.open {
+    #tab-newTicket .nt-time-picker.open,
+    #tab-broadcasts .nt-time-picker.open {
       display: block;
     }
 
-    #tab-newTicket .ntp-cols {
+    #tab-newTicket .ntp-cols,
+    #tab-broadcasts .ntp-cols {
       display: flex;
       flex-direction: row;
       direction: ltr;
       gap: 8px;
     }
 
-    #tab-newTicket .ntp-col {
+    #tab-newTicket .ntp-col,
+    #tab-broadcasts .ntp-col {
       flex: 1;
       min-width: 0;
     }
 
-    #tab-newTicket .ntp-col-hd {
+    #tab-newTicket .ntp-col-hd,
+    #tab-broadcasts .ntp-col-hd {
       font-size: 10px;
       font-weight: 700;
       color: var(--mr-text-3);
@@ -28994,7 +28997,8 @@
       letter-spacing: 0.02em;
     }
 
-    #tab-newTicket .ntp-scroll {
+    #tab-newTicket .ntp-scroll,
+    #tab-broadcasts .ntp-scroll {
       max-height: 168px;
       overflow-y: auto;
       overflow-x: hidden;
@@ -29004,24 +29008,29 @@
       scrollbar-width: thin;
     }
 
-    #tab-newTicket .ntp-scroll::-webkit-scrollbar {
+    #tab-newTicket .ntp-scroll::-webkit-scrollbar,
+    #tab-broadcasts .ntp-scroll::-webkit-scrollbar {
       width: 5px;
     }
 
-    #tab-newTicket .ntp-scroll::-webkit-scrollbar-thumb {
+    #tab-newTicket .ntp-scroll::-webkit-scrollbar-thumb,
+    #tab-broadcasts .ntp-scroll::-webkit-scrollbar-thumb {
       background: var(--mr-border);
       border-radius: 999px;
     }
 
-    #tab-newTicket #ntTpMinutes.ntp-scroll {
+    #tab-newTicket #ntTpMinutes.ntp-scroll,
+    #tab-broadcasts #bcExpTpMinutes.ntp-scroll {
       direction: rtl;
     }
 
-    #tab-newTicket #ntTpMinutes .ntp-opt {
+    #tab-newTicket #ntTpMinutes .ntp-opt,
+    #tab-broadcasts #bcExpTpMinutes .ntp-opt {
       direction: ltr;
     }
 
-    #tab-newTicket .ntp-opt {
+    #tab-newTicket .ntp-opt,
+    #tab-broadcasts .ntp-opt {
       display: block;
       width: 100%;
       border: 0;
@@ -29037,18 +29046,21 @@
       transition: background 0.12s, color 0.12s;
     }
 
-    #tab-newTicket .ntp-opt:hover {
+    #tab-newTicket .ntp-opt:hover,
+    #tab-broadcasts .ntp-opt:hover {
       background: var(--mr-primary-softer);
       border-radius: 8px;
     }
 
-    #tab-newTicket .ntp-opt.selected {
+    #tab-newTicket .ntp-opt.selected,
+    #tab-broadcasts .ntp-opt.selected {
       background: var(--mr-primary);
       color: #fff;
       border-radius: 10px;
     }
 
-    #tab-newTicket .ntp-footer {
+    #tab-newTicket .ntp-footer,
+    #tab-broadcasts .ntp-footer {
       display: flex;
       gap: 8px;
       margin-top: 10px;
@@ -29056,7 +29068,8 @@
       border-top: 1px solid var(--mr-border);
     }
 
-    #tab-newTicket .ntp-footer button {
+    #tab-newTicket .ntp-footer button,
+    #tab-broadcasts .ntp-footer button {
       flex: 1;
       border: 0;
       background: transparent;
@@ -29070,7 +29083,8 @@
       transition: background 0.15s;
     }
 
-    #tab-newTicket .ntp-footer button:hover {
+    #tab-newTicket .ntp-footer button:hover,
+    #tab-broadcasts .ntp-footer button:hover {
       background: var(--mr-primary-softer);
     }
   </style>
@@ -29301,7 +29315,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-bc-expiry-fast-v951">
+  <meta name="app-build" content="athar-bc-expiry-dt-v952">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -30385,37 +30399,71 @@
                       <textarea id="bc-body" class="form-input bc-field bc-textarea" maxlength="207" rows="2" placeholder="اكتب نص النشرة…"></textarea>
                     </div>
                     <div class="form-group bc-form-full bc-form-expiry">
-                      <label class="form-label" for="bc-expiry-mode">مدة بقاء الرسالة</label>
-                      <div class="bc-expiry-grid">
-                        <div class="wf-status-filter bc-dd bc-expiry-mode-dd" id="bc-expiry-dd">
-                          <button type="button" class="wf-status-trigger" id="bc-expiry-trigger"
-                            onclick="bcDdToggle('expiry', event)" aria-haspopup="listbox" aria-expanded="false">
-                            <span class="wf-status-trigger__label" id="bc-expiry-label">24 ساعة</span>
-                            <i class="fas fa-chevron-down wf-status-trigger__chev" aria-hidden="true"></i>
-                          </button>
-                          <div class="wf-status-menu bc-dd-menu" id="bc-expiry-menu" role="listbox" aria-label="مدة بقاء الرسالة">
-                            <div class="wf-status-menu__scroll">
-                              <button type="button" class="wf-status-opt is-active" data-val="24h" onclick="bcDdPick('expiry','24h')">24 ساعة</button>
-                              <button type="button" class="wf-status-opt" data-val="48h" onclick="bcDdPick('expiry','48h')">48 ساعة</button>
-                              <button type="button" class="wf-status-opt" data-val="72h" onclick="bcDdPick('expiry','72h')">3 أيام</button>
-                              <button type="button" class="wf-status-opt" data-val="168h" onclick="bcDdPick('expiry','168h')">7 أيام</button>
-                              <button type="button" class="wf-status-opt" data-val="custom" onclick="bcDdPick('expiry','custom')">تاريخ وساعة محددة</button>
+                      <div class="mk-dt-pair">
+                        <div class="mk-dt-item">
+                          <label class="mk-dt-item__lbl" for="bc-exp-dateBtn">تاريخ انتهاء الرسالة <span class="mk-req">*</span></label>
+                          <div class="mk-dt-wrap">
+                            <button type="button" id="bc-exp-dateBtn" class="mk-dt-control" onclick="toggleBcExpDatePicker(event)"
+                              aria-haspopup="dialog" aria-expanded="false" aria-controls="bcExpiryDatePickerPopup">
+                              <i class="fas fa-calendar-day mk-dt-control__ico" aria-hidden="true"></i>
+                              <span class="mk-dt-control__text mk-dt-control__text--empty" id="bc-exp-dateDisplay">اختر التاريخ</span>
+                            </button>
+                            <input type="hidden" id="bc-exp-date">
+                            <div class="date-picker-popup nt-date-picker" id="bcExpiryDatePickerPopup" role="dialog" aria-label="اختيار تاريخ انتهاء الرسالة">
+                              <div class="dp-popup-body">
+                                <div class="dp-header-fig">
+                                  <button type="button" class="dp-month-trigger" onclick="bcExpDpToggleMonthYear()" aria-expanded="false" aria-haspopup="listbox">
+                                    <span class="dp-month-label" id="bcExpDpMonthLabel">--</span>
+                                    <span class="dp-month-chevron" aria-hidden="true"><i class="fas fa-chevron-down"></i></span>
+                                  </button>
+                                  <div class="dp-month-arrows">
+                                    <button type="button" class="dp-icon-btn dp-icon-btn--nav" onclick="bcExpDpChangeMonth(1)"
+                                      aria-label="الشهر التالي"><i class="fas fa-chevron-left"></i></button>
+                                    <button type="button" class="dp-icon-btn dp-icon-btn--nav" onclick="bcExpDpChangeMonth(-1)"
+                                      aria-label="الشهر السابق"><i class="fas fa-chevron-right"></i></button>
+                                  </div>
+                                </div>
+                                <div class="dp-weekdays">
+                                  <span>أ</span><span>إ</span><span>ث</span><span>ر</span><span>خ</span><span>ج</span><span>س</span>
+                                </div>
+                                <div class="dp-days" id="bcExpDpDays"></div>
+                                <div class="dp-footer">
+                                  <button type="button" class="dp-btn dp-btn-today" onclick="bcExpDpSelectToday()">اليوم</button>
+                                  <button type="button" class="dp-btn dp-btn-clear" onclick="bcExpDpClear()">مسح</button>
+                                </div>
+                              </div>
                             </div>
                           </div>
-                          <select id="bc-expiry-mode" class="wf-status-select-native" tabindex="-1" aria-hidden="true" onchange="syncBcExpiryUI()">
-                            <option value="24h">24 ساعة</option>
-                            <option value="48h">48 ساعة</option>
-                            <option value="72h">3 أيام</option>
-                            <option value="168h">7 أيام</option>
-                            <option value="custom">تاريخ وساعة محددة</option>
-                          </select>
                         </div>
-                        <div class="bc-expiry-custom" id="bc-expiry-custom" hidden>
-                          <input type="date" id="bc-expiry-date" class="form-input bc-field bc-expiry-date" aria-label="تاريخ انتهاء الرسالة">
-                          <input type="time" id="bc-expiry-time" class="form-input bc-field bc-expiry-time" step="60" aria-label="وقت انتهاء الرسالة">
+                        <div class="mk-dt-item">
+                          <label class="mk-dt-item__lbl" for="bc-exp-timeBtn">وقت انتهاء الرسالة <span class="mk-req">*</span></label>
+                          <div class="mk-dt-wrap">
+                            <button type="button" id="bc-exp-timeBtn" class="mk-dt-control" onclick="toggleBcExpTimePicker(event)"
+                              aria-haspopup="dialog" aria-expanded="false" aria-controls="bcExpiryTimePickerPopup">
+                              <i class="fas fa-clock mk-dt-control__ico" aria-hidden="true"></i>
+                              <span class="mk-dt-control__text mk-dt-control__text--empty" id="bc-exp-timeDisplay">اختر الوقت</span>
+                            </button>
+                            <input type="hidden" id="bc-exp-time">
+                            <div class="nt-time-picker" id="bcExpiryTimePickerPopup" role="dialog" aria-label="اختيار وقت انتهاء الرسالة" onclick="event.stopPropagation()">
+                              <div class="ntp-cols">
+                                <div class="ntp-col">
+                                  <div class="ntp-col-hd">ساعة</div>
+                                  <div class="ntp-scroll" id="bcExpTpHours"></div>
+                                </div>
+                                <div class="ntp-col">
+                                  <div class="ntp-col-hd">دقيقة</div>
+                                  <div class="ntp-scroll" id="bcExpTpMinutes"></div>
+                                </div>
+                              </div>
+                              <div class="ntp-footer">
+                                <button type="button" onclick="bcExpTpSelectNow()">الآن</button>
+                                <button type="button" onclick="bcExpTpClear()">مسح</button>
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </div>
-                      <p class="bc-expiry-hint"><i class="fas fa-clock" aria-hidden="true"></i> تُحذف الرسالة من التطبيق وقاعدة البيانات تلقائياً بعد انتهاء المدة (توقيت الرياض).</p>
+                      <p class="bc-expiry-hint"><i class="fas fa-clock" aria-hidden="true"></i> تُحذف الرسالة من التطبيق وقاعدة البيانات تلقائياً بعد انتهاء الموعد (توقيت الرياض).</p>
                     </div>
                   </div>
                   <div class="bc-form-actions">
@@ -42009,6 +42057,22 @@
           !ntTimeBtn?.contains(e.target)) {
           closeNtTimePicker();
         }
+        const bcExpDatePopup = document.getElementById('bcExpiryDatePickerPopup');
+        const bcExpDateBtn = document.getElementById('bc-exp-dateBtn');
+        if (bcExpDatePopup?.classList.contains('open') &&
+          !bcExpDatePopup.contains(e.target) &&
+          e.target !== bcExpDateBtn &&
+          !bcExpDateBtn?.contains(e.target)) {
+          closeBcExpDatePicker();
+        }
+        const bcExpTimePopup = document.getElementById('bcExpiryTimePickerPopup');
+        const bcExpTimeBtn = document.getElementById('bc-exp-timeBtn');
+        if (bcExpTimePopup?.classList.contains('open') &&
+          !bcExpTimePopup.contains(e.target) &&
+          e.target !== bcExpTimeBtn &&
+          !bcExpTimeBtn?.contains(e.target)) {
+          closeBcExpTimePicker();
+        }
       });
 
       function highlightMatch(text, query) {
@@ -52569,14 +52633,6 @@
         { val: 'branches', label: 'حسب الفرع' },
         { val: 'users', label: 'مستخدمون محددون' }
       ];
-      const BC_EXPIRY_DD_OPTIONS = [
-        { val: '24h', label: '24 ساعة' },
-        { val: '48h', label: '48 ساعة' },
-        { val: '72h', label: '3 أيام' },
-        { val: '168h', label: '7 أيام' },
-        { val: 'custom', label: 'تاريخ وساعة محددة' }
-      ];
-      const BC_EXPIRY_HOURS = { '24h': 24, '48h': 48, '72h': 72, '168h': 168 };
       const BC_TARGET_EMPTY_HINTS = {
         roles: 'لم يُختر دور بعد — ابحث ثم اختر دوراً أو أكثر',
         branches: 'لم يُختر فرع بعد — ابحث ثم اختر فرعاً أو أكثر',
@@ -52701,7 +52757,7 @@
       }
 
       function bcDdRepositionOpen() {
-        ['kind', 'target', 'expiry'].forEach(field => {
+        ['kind', 'target'].forEach(field => {
           const menu = document.getElementById(`bc-${field}-menu`);
           const trigger = document.getElementById(`bc-${field}-trigger`);
           if (menu?.classList.contains('open')) bcDdPositionMenu(trigger, menu);
@@ -52733,23 +52789,12 @@
       function bcDdCloseAll() {
         bcDdClose('kind');
         bcDdClose('target');
-        bcDdClose('expiry');
         bcPickCloseAllResults();
+        closeBcExpDatePicker();
+        closeBcExpTimePicker();
       }
 
       function bcDdSync(field) {
-        if (field === 'expiry') {
-          const sel = document.getElementById('bc-expiry-mode');
-          const label = document.getElementById('bc-expiry-label');
-          const menu = document.getElementById('bc-expiry-menu');
-          const val = sel?.value || '24h';
-          if (label) label.textContent = BC_EXPIRY_DD_OPTIONS.find(o => o.val === val)?.label || val;
-          menu?.querySelectorAll('.wf-status-opt').forEach(btn => {
-            btn.classList.toggle('is-active', btn.dataset.val === val);
-          });
-          syncBcExpiryUI();
-          return;
-        }
         const isKind = field === 'kind';
         const sel = document.getElementById(isKind ? 'bc-kind' : 'bc-target-mode');
         const label = document.getElementById(isKind ? 'bc-kind-label' : 'bc-target-label');
@@ -52767,7 +52812,7 @@
         const menu = document.getElementById(`bc-${field}-menu`);
         const trigger = document.getElementById(`bc-${field}-trigger`);
         if (!menu || !trigger) return;
-        ['kind', 'target', 'expiry'].filter(f => f !== field).forEach(bcDdClose);
+        ['kind', 'target'].filter(f => f !== field).forEach(bcDdClose);
         bcPickCloseAllResults();
         const open = !menu.classList.contains('open');
         const home = document.getElementById(`bc-${field}-dd`);
@@ -52783,13 +52828,6 @@
       }
 
       function bcDdPick(field, val) {
-        if (field === 'expiry') {
-          const sel = document.getElementById('bc-expiry-mode');
-          if (sel) sel.value = val;
-          bcDdSync('expiry');
-          bcDdClose('expiry');
-          return;
-        }
         const isKind = field === 'kind';
         const sel = document.getElementById(isKind ? 'bc-kind' : 'bc-target-mode');
         if (sel) sel.value = val;
@@ -53149,34 +53187,318 @@
         };
       }
 
-      function defaultBcExpiryMs(hours = 24) {
-        return (ksaClockReady() ? ksaNowMs() : Date.now()) + hours * 3600000;
+      const bcExpDpState = {
+        viewYear: 0,
+        viewMonth: 0,
+        pickerView: 'days',
+        selected: null
+      };
+      const bcExpTpState = { hour: 0, minute: 0 };
+
+      function closeBcExpDatePicker() {
+        const popup = document.getElementById('bcExpiryDatePickerPopup');
+        const btn = document.getElementById('bc-exp-dateBtn');
+        popup?.classList.remove('open');
+        btn?.classList.remove('mk-dt-control--open');
+        btn?.setAttribute('aria-expanded', 'false');
+      }
+
+      function renderBcExpDatePicker() {
+        const label = document.getElementById('bcExpDpMonthLabel');
+        const grid = document.getElementById('bcExpDpDays');
+        const popup = document.getElementById('bcExpiryDatePickerPopup');
+        if (!label || !grid) return;
+
+        if (bcExpDpState.pickerView === 'months') {
+          label.textContent = String(bcExpDpState.viewYear);
+          grid.innerHTML = dpBuildMonthGridHtml(NT_DP_MONTHS, bcExpDpState.viewMonth, 'bcExpDpPickMonth');
+          grid.classList.add('dp-mode-pick');
+          return;
+        }
+
+        grid.classList.remove('dp-mode-pick');
+        label.textContent = `${NT_DP_MONTHS[bcExpDpState.viewMonth]} ${bcExpDpState.viewYear}`;
+
+        const today = ksaTodayCalendar();
+        const firstDay = ksaCalendarDate(bcExpDpState.viewYear, bcExpDpState.viewMonth, 1);
+        const totalDays = ksaDaysInCalendarMonth(bcExpDpState.viewYear, bcExpDpState.viewMonth);
+        const startDayOfWeek = firstDay.getDay();
+        const prevLastDay = ksaDaysInCalendarMonth(
+          bcExpDpState.viewMonth === 0 ? bcExpDpState.viewYear - 1 : bcExpDpState.viewYear,
+          bcExpDpState.viewMonth === 0 ? 11 : bcExpDpState.viewMonth - 1
+        );
+
+        let html = '';
+        for (let i = startDayOfWeek; i > 0; i--) {
+          html += `<button type="button" class="dp-day other-month" disabled>${prevLastDay - i + 1}</button>`;
+        }
+        for (let day = 1; day <= totalDays; day++) {
+          const date = ksaCalendarDate(bcExpDpState.viewYear, bcExpDpState.viewMonth, day);
+          const classes = ['dp-day'];
+          if (ksaSameCalendarDay(date, today)) classes.push('today');
+          if (ksaSameCalendarDay(date, bcExpDpState.selected)) {
+            classes.push('start', 'end');
+          }
+          const iso = ksaCalendarToIso(date);
+          html += `<button type="button" class="${classes.join(' ')}" data-iso="${iso}" onclick="bcExpDpPickDay('${iso}')">${day}</button>`;
+        }
+        const totalCells = startDayOfWeek + totalDays;
+        const remaining = (7 - (totalCells % 7)) % 7;
+        for (let i = 1; i <= remaining; i++) {
+          html += `<button type="button" class="dp-day other-month" disabled>${i}</button>`;
+        }
+        grid.innerHTML = html;
+      }
+
+      function toggleBcExpDatePicker(e) {
+        if (e) e.stopPropagation();
+        const popup = document.getElementById('bcExpiryDatePickerPopup');
+        const btn = document.getElementById('bc-exp-dateBtn');
+        if (!popup || !btn) return;
+
+        if (popup.classList.contains('open')) {
+          closeBcExpDatePicker();
+          return;
+        }
+
+        closeBcExpTimePicker();
+        bcDdCloseAll();
+
+        const inp = document.getElementById('bc-exp-date');
+        if (inp?.value) {
+          bcExpDpState.selected = ksaDateFromIso(inp.value);
+          if (bcExpDpState.selected) {
+            bcExpDpState.viewYear = bcExpDpState.selected.getFullYear();
+            bcExpDpState.viewMonth = bcExpDpState.selected.getMonth();
+          }
+        } else {
+          ksaInitViewState(bcExpDpState);
+          bcExpDpState.selected = null;
+        }
+
+        bcExpDpState.pickerView = 'days';
+        dpPickerSyncChrome(popup, 'days');
+        renderBcExpDatePicker();
+        popup.classList.add('open');
+        btn.classList.add('mk-dt-control--open');
+        btn.setAttribute('aria-expanded', 'true');
+      }
+
+      function bcExpDpToggleMonthYear() {
+        const popup = document.getElementById('bcExpiryDatePickerPopup');
+        bcExpDpState.pickerView = bcExpDpState.pickerView === 'months' ? 'days' : 'months';
+        dpPickerSyncChrome(popup, bcExpDpState.pickerView);
+        renderBcExpDatePicker();
+      }
+
+      function bcExpDpPickMonth(monthIndex) {
+        bcExpDpState.viewMonth = monthIndex;
+        bcExpDpState.pickerView = 'days';
+        const popup = document.getElementById('bcExpiryDatePickerPopup');
+        dpPickerSyncChrome(popup, 'days');
+        renderBcExpDatePicker();
+      }
+
+      function bcExpDpChangeMonth(dir) {
+        if (bcExpDpState.pickerView === 'months') {
+          bcExpDpState.viewYear += dir;
+        } else {
+          bcExpDpState.viewMonth += dir;
+          if (bcExpDpState.viewMonth > 11) {
+            bcExpDpState.viewMonth = 0;
+            bcExpDpState.viewYear++;
+          } else if (bcExpDpState.viewMonth < 0) {
+            bcExpDpState.viewMonth = 11;
+            bcExpDpState.viewYear--;
+          }
+        }
+        renderBcExpDatePicker();
+      }
+
+      function bcExpDpPickDay(iso) {
+        bcExpDpState.selected = ksaDateFromIso(iso);
+        const inp = document.getElementById('bc-exp-date');
+        if (inp && bcExpDpState.selected) inp.value = iso;
+        syncBcExpDateDisplay();
+        closeBcExpDatePicker();
+      }
+
+      function bcExpDpSelectToday() {
+        const today = ksaTodayCalendar();
+        bcExpDpState.selected = today;
+        ksaInitViewState(bcExpDpState);
+        const inp = document.getElementById('bc-exp-date');
+        if (inp) inp.value = ksaCalendarToIso(today);
+        syncBcExpDateDisplay();
+        renderBcExpDatePicker();
+        closeBcExpDatePicker();
+      }
+
+      function bcExpDpClear() {
+        bcExpDpState.selected = null;
+        const inp = document.getElementById('bc-exp-date');
+        if (inp) inp.value = '';
+        syncBcExpDateDisplay();
+        closeBcExpDatePicker();
+      }
+
+      function syncBcExpDateDisplay() {
+        const inp = document.getElementById('bc-exp-date');
+        const el = document.getElementById('bc-exp-dateDisplay');
+        if (!inp || !el) return;
+        const has = !!inp.value;
+        el.textContent = has ? formatNtDateDisplay(inp.value) : 'اختر التاريخ';
+        el.setAttribute('dir', has ? 'ltr' : 'rtl');
+        el.classList.toggle('mk-dt-control__text--empty', !has);
+      }
+
+      function closeBcExpTimePicker() {
+        const popup = document.getElementById('bcExpiryTimePickerPopup');
+        const btn = document.getElementById('bc-exp-timeBtn');
+        popup?.classList.remove('open');
+        btn?.classList.remove('mk-dt-control--open');
+        btn?.setAttribute('aria-expanded', 'false');
+      }
+
+      function renderBcExpTimePicker() {
+        const hoursEl = document.getElementById('bcExpTpHours');
+        const minsEl = document.getElementById('bcExpTpMinutes');
+        if (!hoursEl || !minsEl) return;
+
+        let hoursHtml = '';
+        for (let h = 0; h < 24; h++) {
+          const sel = h === bcExpTpState.hour ? ' selected' : '';
+          const label = String(h).padStart(2, '0');
+          hoursHtml += `<button type="button" class="ntp-opt${sel}" data-hour="${h}" onclick="bcExpTpSelectHour(${h}, event)">${label}</button>`;
+        }
+        hoursEl.innerHTML = hoursHtml;
+
+        let minsHtml = '';
+        for (let m = 0; m < 60; m++) {
+          const sel = m === bcExpTpState.minute ? ' selected' : '';
+          const label = String(m).padStart(2, '0');
+          minsHtml += `<button type="button" class="ntp-opt${sel}" data-minute="${m}" onclick="bcExpTpSelectMinute(${m}, event)">${label}</button>`;
+        }
+        minsEl.innerHTML = minsHtml;
+
+        requestAnimationFrame(() => {
+          hoursEl.querySelector('.ntp-opt.selected')?.scrollIntoView({ block: 'center' });
+          minsEl.querySelector('.ntp-opt.selected')?.scrollIntoView({ block: 'center' });
+        });
+      }
+
+      function bcExpTpApply(shouldClose = true) {
+        const inp = document.getElementById('bc-exp-time');
+        if (inp) inp.value = ntTpFormatValue(bcExpTpState.hour, bcExpTpState.minute);
+        syncBcExpTimeDisplay();
+        if (shouldClose) closeBcExpTimePicker();
+      }
+
+      function toggleBcExpTimePicker(e) {
+        if (e) e.stopPropagation();
+        const popup = document.getElementById('bcExpiryTimePickerPopup');
+        const btn = document.getElementById('bc-exp-timeBtn');
+        if (!popup || !btn) return;
+
+        if (popup.classList.contains('open')) {
+          closeBcExpTimePicker();
+          return;
+        }
+
+        closeBcExpDatePicker();
+        bcDdCloseAll();
+
+        const inp = document.getElementById('bc-exp-time');
+        if (inp?.value) {
+          const parsed = ntTpParseValue(inp.value);
+          if (parsed) {
+            bcExpTpState.hour = parsed.hour;
+            bcExpTpState.minute = parsed.minute;
+          }
+        } else {
+          const p = ksaFormatParts();
+          bcExpTpState.hour = p.hour;
+          bcExpTpState.minute = p.minute;
+        }
+
+        renderBcExpTimePicker();
+        popup.classList.add('open');
+        btn.classList.add('mk-dt-control--open');
+        btn.setAttribute('aria-expanded', 'true');
+      }
+
+      function bcExpTpSelectHour(h, ev) {
+        if (ev) ev.stopPropagation();
+        bcExpTpState.hour = h;
+        const inp = document.getElementById('bc-exp-time');
+        if (inp) inp.value = ntTpFormatValue(bcExpTpState.hour, bcExpTpState.minute);
+        syncBcExpTimeDisplay();
+        renderBcExpTimePicker();
+      }
+
+      function bcExpTpSelectMinute(m, ev) {
+        if (ev) ev.stopPropagation();
+        bcExpTpState.minute = m;
+        renderBcExpTimePicker();
+        bcExpTpApply(true);
+      }
+
+      function bcExpTpSelectNow() {
+        const p = ksaFormatParts();
+        bcExpTpState.hour = p.hour;
+        bcExpTpState.minute = p.minute;
+        bcExpTpApply();
+      }
+
+      function bcExpTpClear() {
+        const inp = document.getElementById('bc-exp-time');
+        if (inp) inp.value = '';
+        syncBcExpTimeDisplay();
+        closeBcExpTimePicker();
+      }
+
+      function syncBcExpTimeDisplay() {
+        const inp = document.getElementById('bc-exp-time');
+        const el = document.getElementById('bc-exp-timeDisplay');
+        if (!inp || !el) return;
+        const has = !!inp.value;
+        if (!has) {
+          el.textContent = 'اختر الوقت';
+          el.classList.add('mk-dt-control__text--empty');
+          return;
+        }
+        try {
+          const parts = String(inp.value).split(':');
+          const h = parseInt(parts[0], 10);
+          const m = (parts[1] || '0').padStart(2, '0');
+          if (isNaN(h)) {
+            el.textContent = inp.value;
+          } else {
+            const ampm = h >= 12 ? 'م' : 'ص';
+            const h12 = h % 12 || 12;
+            el.innerHTML =
+              `<span class="mk-dt-time__ampm">${Sec.escapeHTML(ampm)}</span>` +
+              `<span class="mk-dt-time__digits" dir="ltr">${Sec.escapeHTML(`${h12}:${m}`)}</span>`;
+          }
+        } catch {
+          el.textContent = inp.value;
+        }
+        el.setAttribute('dir', 'ltr');
+        el.classList.remove('mk-dt-control__text--empty');
       }
 
       function initBcExpiryFields() {
-        const modeSel = document.getElementById('bc-expiry-mode');
-        if (!modeSel) return;
-        modeSel.value = '24h';
-        const parts = ksaInputPartsFromMs(defaultBcExpiryMs(24));
-        const dateEl = document.getElementById('bc-expiry-date');
-        const timeEl = document.getElementById('bc-expiry-time');
-        if (dateEl) dateEl.value = parts.date;
-        if (timeEl) timeEl.value = parts.time;
-        bcDdSync('expiry');
-      }
-
-      function syncBcExpiryUI() {
-        const mode = document.getElementById('bc-expiry-mode')?.value || '24h';
-        const custom = document.getElementById('bc-expiry-custom');
-        if (custom) custom.hidden = mode !== 'custom';
-        if (mode !== 'custom') {
-          const hours = BC_EXPIRY_HOURS[mode] || 24;
-          const parts = ksaInputPartsFromMs(defaultBcExpiryMs(hours));
-          const dateEl = document.getElementById('bc-expiry-date');
-          const timeEl = document.getElementById('bc-expiry-time');
-          if (dateEl) dateEl.value = parts.date;
-          if (timeEl) timeEl.value = parts.time;
-        }
+        const dateInp = document.getElementById('bc-exp-date');
+        const timeInp = document.getElementById('bc-exp-time');
+        if (dateInp) dateInp.value = '';
+        if (timeInp) timeInp.value = '';
+        bcExpDpState.selected = null;
+        bcExpDpState.pickerView = 'days';
+        ksaInitViewState(bcExpDpState);
+        syncBcExpDateDisplay();
+        syncBcExpTimeDisplay();
+        closeBcExpDatePicker();
+        closeBcExpTimePicker();
       }
 
       function parseKsaDateTimeToIso(dateStr, timeStr) {
@@ -53186,15 +53508,10 @@
       }
 
       function getBroadcastExpiresAtFromUI() {
-        const mode = document.getElementById('bc-expiry-mode')?.value || '24h';
-        if (mode === 'custom') {
-          const d = document.getElementById('bc-expiry-date')?.value;
-          const t = document.getElementById('bc-expiry-time')?.value;
-          if (!d || !t) return null;
-          return parseKsaDateTimeToIso(d, t);
-        }
-        const hours = BC_EXPIRY_HOURS[mode] || 24;
-        return new Date(defaultBcExpiryMs(hours)).toISOString();
+        const d = document.getElementById('bc-exp-date')?.value;
+        const t = document.getElementById('bc-exp-time')?.value;
+        if (!d || !t) return null;
+        return parseKsaDateTimeToIso(d, t);
       }
 
       function formatBcExpiryLabel(iso) {
@@ -53356,8 +53673,12 @@
         }
         const count = estimateBroadcastRecipients(target);
         if (!count) { showToast('لا يوجد مستلمون مطابقون', 'warning'); return; }
+        const dateVal = document.getElementById('bc-exp-date')?.value;
+        const timeVal = document.getElementById('bc-exp-time')?.value;
+        if (!dateVal) { showToast('اختر تاريخ انتهاء الرسالة', 'warning'); return; }
+        if (!timeVal) { showToast('اختر وقت انتهاء الرسالة', 'warning'); return; }
         const expiresAt = getBroadcastExpiresAtFromUI();
-        if (!expiresAt) { showToast('حدّد تاريخ ووقت انتهاء الرسالة', 'warning'); return; }
+        if (!expiresAt) { showToast('حدّد تاريخ ووقت انتهاء صحيحين', 'warning'); return; }
         const expMs = new Date(expiresAt).getTime();
         const minMs = (ksaClockReady() ? ksaNowMs() : Date.now()) + 15 * 60 * 1000;
         if (!Number.isFinite(expMs) || expMs < minMs) {
@@ -56935,6 +57256,18 @@
       window.ntDpPickDay = ntDpPickDay;
       window.ntDpSelectToday = ntDpSelectToday;
       window.ntDpClear = ntDpClear;
+      window.toggleBcExpDatePicker = toggleBcExpDatePicker;
+      window.bcExpDpToggleMonthYear = bcExpDpToggleMonthYear;
+      window.bcExpDpPickMonth = bcExpDpPickMonth;
+      window.bcExpDpChangeMonth = bcExpDpChangeMonth;
+      window.bcExpDpPickDay = bcExpDpPickDay;
+      window.bcExpDpSelectToday = bcExpDpSelectToday;
+      window.bcExpDpClear = bcExpDpClear;
+      window.toggleBcExpTimePicker = toggleBcExpTimePicker;
+      window.bcExpTpSelectHour = bcExpTpSelectHour;
+      window.bcExpTpSelectMinute = bcExpTpSelectMinute;
+      window.bcExpTpSelectNow = bcExpTpSelectNow;
+      window.bcExpTpClear = bcExpTpClear;
       window.submitNewTicket = submitNewTicket;
       window.handleFiles = handleFiles;
       window.removeFile = removeFile;
