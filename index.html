@@ -28956,7 +28956,7 @@
       top: calc(100% + 6px);
       right: 0;
       left: auto;
-      width: min(220px, calc(100vw - 32px));
+      width: min(280px, calc(100vw - 32px));
       background: var(--mr-surface);
       border: 1px solid var(--mr-border);
       border-radius: 14px;
@@ -28985,6 +28985,16 @@
     #tab-broadcasts .ntp-col {
       flex: 1;
       min-width: 0;
+    }
+
+    #tab-newTicket .ntp-col--ampm,
+    #tab-broadcasts .ntp-col--ampm {
+      flex: 0 0 42px;
+    }
+
+    #tab-newTicket .ntp-scroll--ampm,
+    #tab-broadcasts .ntp-scroll--ampm {
+      max-height: 88px;
     }
 
     #tab-newTicket .ntp-col-hd,
@@ -29315,7 +29325,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-bc-expiry-dt-v952">
+  <meta name="app-build" content="athar-tp-12h-v953">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -29867,6 +29877,10 @@
                               <div class="ntp-col">
                                 <div class="ntp-col-hd">ساعة</div>
                                 <div class="ntp-scroll" id="ntTpHours"></div>
+                              </div>
+                              <div class="ntp-col ntp-col--ampm">
+                                <div class="ntp-col-hd">فترة</div>
+                                <div class="ntp-scroll ntp-scroll--ampm" id="ntTpAmPm"></div>
                               </div>
                               <div class="ntp-col">
                                 <div class="ntp-col-hd">دقيقة</div>
@@ -30449,6 +30463,10 @@
                                 <div class="ntp-col">
                                   <div class="ntp-col-hd">ساعة</div>
                                   <div class="ntp-scroll" id="bcExpTpHours"></div>
+                                </div>
+                                <div class="ntp-col ntp-col--ampm">
+                                  <div class="ntp-col-hd">فترة</div>
+                                  <div class="ntp-scroll ntp-scroll--ampm" id="bcExpTpAmPm"></div>
                                 </div>
                                 <div class="ntp-col">
                                   <div class="ntp-col-hd">دقيقة</div>
@@ -41867,6 +41885,55 @@
         };
       }
 
+      function mkTpHour12From24(h24) {
+        return h24 % 12 || 12;
+      }
+
+      function mkTpIsPmFrom24(h24) {
+        return h24 >= 12;
+      }
+
+      function mkTpTo24Hour(h12, isPm) {
+        if (h12 === 12) return isPm ? 12 : 0;
+        return isPm ? h12 + 12 : h12;
+      }
+
+      function renderMkTp12Picker(hoursEl, ampmEl, minsEl, state, pickHourFn, pickAmPmFn, pickMinuteFn) {
+        if (!hoursEl || !ampmEl || !minsEl) return;
+
+        const h12 = mkTpHour12From24(state.hour);
+        const isPm = mkTpIsPmFrom24(state.hour);
+
+        let hoursHtml = '';
+        for (let h = 1; h <= 12; h++) {
+          const sel = h === h12 ? ' selected' : '';
+          hoursHtml += `<button type="button" class="ntp-opt${sel}" onclick="${pickHourFn}(${h}, event)">${h}</button>`;
+        }
+        hoursEl.innerHTML = hoursHtml;
+
+        ampmEl.innerHTML = [
+          { pm: false, label: 'ص' },
+          { pm: true, label: 'م' }
+        ].map(({ pm, label }) => {
+          const sel = pm === isPm ? ' selected' : '';
+          return `<button type="button" class="ntp-opt${sel}" onclick="${pickAmPmFn}(${pm ? 'true' : 'false'}, event)">${label}</button>`;
+        }).join('');
+
+        let minsHtml = '';
+        for (let m = 0; m < 60; m++) {
+          const sel = m === state.minute ? ' selected' : '';
+          const label = String(m).padStart(2, '0');
+          minsHtml += `<button type="button" class="ntp-opt${sel}" data-minute="${m}" onclick="${pickMinuteFn}(${m}, event)">${label}</button>`;
+        }
+        minsEl.innerHTML = minsHtml;
+
+        requestAnimationFrame(() => {
+          hoursEl.querySelector('.ntp-opt.selected')?.scrollIntoView({ block: 'center' });
+          ampmEl.querySelector('.ntp-opt.selected')?.scrollIntoView({ block: 'center' });
+          minsEl.querySelector('.ntp-opt.selected')?.scrollIntoView({ block: 'center' });
+        });
+      }
+
       function closeNtTimePicker() {
         const popup = document.getElementById('ntTimePickerPopup');
         const btn = document.getElementById('nt-timeBtn');
@@ -41876,30 +41943,15 @@
       }
 
       function renderNtTimePicker() {
-        const hoursEl = document.getElementById('ntTpHours');
-        const minsEl = document.getElementById('ntTpMinutes');
-        if (!hoursEl || !minsEl) return;
-
-        let hoursHtml = '';
-        for (let h = 0; h < 24; h++) {
-          const sel = h === ntTpState.hour ? ' selected' : '';
-          const label = String(h).padStart(2, '0');
-          hoursHtml += `<button type="button" class="ntp-opt${sel}" data-hour="${h}" onclick="ntTpSelectHour(${h}, event)">${label}</button>`;
-        }
-        hoursEl.innerHTML = hoursHtml;
-
-        let minsHtml = '';
-        for (let m = 0; m < 60; m++) {
-          const sel = m === ntTpState.minute ? ' selected' : '';
-          const label = String(m).padStart(2, '0');
-          minsHtml += `<button type="button" class="ntp-opt${sel}" data-minute="${m}" onclick="ntTpSelectMinute(${m}, event)">${label}</button>`;
-        }
-        minsEl.innerHTML = minsHtml;
-
-        requestAnimationFrame(() => {
-          hoursEl.querySelector('.ntp-opt.selected')?.scrollIntoView({ block: 'center' });
-          minsEl.querySelector('.ntp-opt.selected')?.scrollIntoView({ block: 'center' });
-        });
+        renderMkTp12Picker(
+          document.getElementById('ntTpHours'),
+          document.getElementById('ntTpAmPm'),
+          document.getElementById('ntTpMinutes'),
+          ntTpState,
+          'ntTpSelectHour12',
+          'ntTpSelectAmPm',
+          'ntTpSelectMinute'
+        );
       }
 
       function ntTpApply(shouldClose = true) {
@@ -41941,9 +41993,18 @@
         btn.setAttribute('aria-expanded', 'true');
       }
 
-      function ntTpSelectHour(h, ev) {
+      function ntTpSelectHour12(h12, ev) {
         if (ev) ev.stopPropagation();
-        ntTpState.hour = h;
+        ntTpState.hour = mkTpTo24Hour(h12, mkTpIsPmFrom24(ntTpState.hour));
+        const inp = document.getElementById('nt-time');
+        if (inp) inp.value = ntTpFormatValue(ntTpState.hour, ntTpState.minute);
+        syncNtTimeDisplay();
+        renderNtTimePicker();
+      }
+
+      function ntTpSelectAmPm(isPm, ev) {
+        if (ev) ev.stopPropagation();
+        ntTpState.hour = mkTpTo24Hour(mkTpHour12From24(ntTpState.hour), !!isPm);
         const inp = document.getElementById('nt-time');
         if (inp) inp.value = ntTpFormatValue(ntTpState.hour, ntTpState.minute);
         syncNtTimeDisplay();
@@ -53363,30 +53424,15 @@
       }
 
       function renderBcExpTimePicker() {
-        const hoursEl = document.getElementById('bcExpTpHours');
-        const minsEl = document.getElementById('bcExpTpMinutes');
-        if (!hoursEl || !minsEl) return;
-
-        let hoursHtml = '';
-        for (let h = 0; h < 24; h++) {
-          const sel = h === bcExpTpState.hour ? ' selected' : '';
-          const label = String(h).padStart(2, '0');
-          hoursHtml += `<button type="button" class="ntp-opt${sel}" data-hour="${h}" onclick="bcExpTpSelectHour(${h}, event)">${label}</button>`;
-        }
-        hoursEl.innerHTML = hoursHtml;
-
-        let minsHtml = '';
-        for (let m = 0; m < 60; m++) {
-          const sel = m === bcExpTpState.minute ? ' selected' : '';
-          const label = String(m).padStart(2, '0');
-          minsHtml += `<button type="button" class="ntp-opt${sel}" data-minute="${m}" onclick="bcExpTpSelectMinute(${m}, event)">${label}</button>`;
-        }
-        minsEl.innerHTML = minsHtml;
-
-        requestAnimationFrame(() => {
-          hoursEl.querySelector('.ntp-opt.selected')?.scrollIntoView({ block: 'center' });
-          minsEl.querySelector('.ntp-opt.selected')?.scrollIntoView({ block: 'center' });
-        });
+        renderMkTp12Picker(
+          document.getElementById('bcExpTpHours'),
+          document.getElementById('bcExpTpAmPm'),
+          document.getElementById('bcExpTpMinutes'),
+          bcExpTpState,
+          'bcExpTpSelectHour12',
+          'bcExpTpSelectAmPm',
+          'bcExpTpSelectMinute'
+        );
       }
 
       function bcExpTpApply(shouldClose = true) {
@@ -53429,9 +53475,18 @@
         btn.setAttribute('aria-expanded', 'true');
       }
 
-      function bcExpTpSelectHour(h, ev) {
+      function bcExpTpSelectHour12(h12, ev) {
         if (ev) ev.stopPropagation();
-        bcExpTpState.hour = h;
+        bcExpTpState.hour = mkTpTo24Hour(h12, mkTpIsPmFrom24(bcExpTpState.hour));
+        const inp = document.getElementById('bc-exp-time');
+        if (inp) inp.value = ntTpFormatValue(bcExpTpState.hour, bcExpTpState.minute);
+        syncBcExpTimeDisplay();
+        renderBcExpTimePicker();
+      }
+
+      function bcExpTpSelectAmPm(isPm, ev) {
+        if (ev) ev.stopPropagation();
+        bcExpTpState.hour = mkTpTo24Hour(mkTpHour12From24(bcExpTpState.hour), !!isPm);
         const inp = document.getElementById('bc-exp-time');
         if (inp) inp.value = ntTpFormatValue(bcExpTpState.hour, bcExpTpState.minute);
         syncBcExpTimeDisplay();
@@ -57247,7 +57302,8 @@
       window.syncNtDateDisplay = syncNtDateDisplay;
       window.syncNtTimeDisplay = syncNtTimeDisplay;
       window.toggleNtTimePicker = toggleNtTimePicker;
-      window.ntTpSelectHour = ntTpSelectHour;
+      window.ntTpSelectHour12 = ntTpSelectHour12;
+      window.ntTpSelectAmPm = ntTpSelectAmPm;
       window.ntTpSelectMinute = ntTpSelectMinute;
       window.ntTpSelectNow = ntTpSelectNow;
       window.ntTpClear = ntTpClear;
@@ -57266,7 +57322,8 @@
       window.bcExpDpSelectToday = bcExpDpSelectToday;
       window.bcExpDpClear = bcExpDpClear;
       window.toggleBcExpTimePicker = toggleBcExpTimePicker;
-      window.bcExpTpSelectHour = bcExpTpSelectHour;
+      window.bcExpTpSelectHour12 = bcExpTpSelectHour12;
+      window.bcExpTpSelectAmPm = bcExpTpSelectAmPm;
       window.bcExpTpSelectMinute = bcExpTpSelectMinute;
       window.bcExpTpSelectNow = bcExpTpSelectNow;
       window.bcExpTpClear = bcExpTpClear;
