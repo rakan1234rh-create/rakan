@@ -29239,7 +29239,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-notifications-db-v939">
+  <meta name="app-build" content="athar-notif-dedupe-v940">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -34685,11 +34685,7 @@
                 .limit(mobLoad ? 40 : 80),
             mobLoad || !state.currentUser?.id
               ? Promise.resolve({ data: [], error: null })
-              : sb.from('broadcast_inbox')
-                .select('id,broadcast_id,title,body,kind,created_at,broadcasts(id,title,body,kind,created_at)')
-                .eq('user_id', state.currentUser.id)
-                .order('created_at', { ascending: false })
-                .limit(40),
+              : Promise.resolve({ data: [], error: null }),
             mobLoad || !state.currentUser?.id
               ? Promise.resolve({ data: [], error: null })
               : sb.from('user_notif_dismissals')
@@ -51990,11 +51986,35 @@
           const key = n.ticketId
             ? `t:${n.ticketId}|${String(n.title || '').trim()}|${n.scope || 'mine'}`
             : `id:${n.id}`;
-          if (seen.has(key)) continue;
+          if (seen.has(key)) {
+            const idx = out.findIndex(x => {
+              const xk = x.ticketId
+                ? `t:${x.ticketId}|${String(x.title || '').trim()}|${x.scope || 'mine'}`
+                : `id:${x.id}`;
+              return xk === key;
+            });
+            if (idx >= 0 && n.fromDb && !out[idx].fromDb) out[idx] = n;
+            continue;
+          }
           seen.add(key);
           out.push(n);
         }
         return out;
+      }
+
+      /** يحذف التنبيهات المحسوبة المكررة إذا وُجد تنبيه DB لنفس التذكرة */
+      function filterComputedAgainstDb(dbNotifs, computedNotifs) {
+        const dbTicketIds = new Set(
+          dbNotifs.filter(n => n.ticketId).map(n => String(n.ticketId))
+        );
+        if (!dbTicketIds.size) return computedNotifs;
+        return computedNotifs.filter(n => {
+          if (n.fromDb || !n.ticketId) return true;
+          const tid = String(n.ticketId);
+          if (!dbTicketIds.has(tid)) return true;
+          if (/^score_deduct_/.test(String(n.id || ''))) return false;
+          return true;
+        });
       }
 
       function isEmpAutoForwardedToSup(t) {
@@ -52068,52 +52088,20 @@
         return { type: 'blue', icon: 'fa-bell', isAuto: false };
       }
 
-      // توليد التنبيهات: قاعدة البيانات + محسوبة (نقاط/بونص)
+      // توليد التنبيهات: قاعدة البيانات + محسوبة (نقاط/بونص فقط — بدون تكرار التذاكر)
       function buildUserNotifications() {
         if (!state.currentUser) return [];
         const me = state.currentUser;
         const role = me.role;
-        const visible = getVisibleViolations();
         const notifs = [];
 
-        // ─── د. تنبيهات النقاط للموظف (أو مدير الفرع إن كان نفس حساب الموظف) ───
+        // ─── د. تنبيهات النقاط للموظف (عتبات + بونص — التذاكر من DB) ───
         if (role === 'employee' || role === 'branch_manager') {
-          // مخالفات معتمدة → تنبيه خصم
           const myRecentDeduct = state.violations.filter(v =>
             v.employee_id === me.id &&
             !violationExcludedFromDeduction(v) &&
             violationAgeDays(v) <= 30
           );
-
-          myRecentDeduct.forEach(v => {
-            const typeRow = state.violationTypes.find(t => t.name === v.violation_type);
-            const weight = typeRow?.weight || 5;
-            const currentScore = Math.round(calcEmployeeCommitment(me.id));
-            const decideDate = (v.updated_at || v.created_at || '').slice(0, 10);
-            const ticketRef = shortTicketNum(v.ticket_number);
-            const finalPenalty = isFinalPenaltyApproved(v);
-            let notifType = 'amber';
-            let notifIcon = 'fa-clipboard-list';
-            let title = 'تم تسجيل مخالفة بحقك';
-            let msg = `${ticketRef} — ${v.violation_type}`;
-            if (finalPenalty) {
-              notifType = 'red';
-              notifIcon = 'fa-triangle-exclamation';
-              title = 'تم اعتماد مخالفة بحقك';
-              msg = `${v.violation_type} — خصم ${weight} نقطة — درجتك: ${currentScore}`;
-            } else if (v.state !== 'closed') {
-              msg = `${v.violation_type} — ${ticketRef} — قيد المراجعة`;
-            }
-            notifs.push({
-              id: `score_deduct_${v.id}_${decideDate}`,
-              ticketId: v.id,
-              type: notifType,
-              icon: notifIcon,
-              title,
-              msg,
-              time: v.updated_at || v.created_at
-            });
-          });
 
           // ─── تنبيه عتبات الدرجة (تحذير عند الانخفاض) ───
           const currentScore = Math.round(calcEmployeeCommitment(me.id));
@@ -52351,7 +52339,8 @@
         }
 
         const dbNotifs = buildDbUserNotifications();
-        const merged = [...dbNotifs, ...notifs];
+        const computedOnly = filterComputedAgainstDb(dbNotifs, notifs);
+        const merged = [...dbNotifs, ...computedOnly];
         merged.sort((a, b) => {
           const ta = a.time ? new Date(a.time).getTime() : 0;
           const tb = b.time ? new Date(b.time).getTime() : 0;
@@ -52478,25 +52467,7 @@
       }
 
       async function refreshBroadcastInbox() {
-        if (!state.currentUser?.id) return false;
-        try {
-          const { data, error } = await sb.from('broadcast_inbox')
-            .select(BROADCAST_INBOX_SELECT)
-            .eq('user_id', state.currentUser.id)
-            .order('created_at', { ascending: false })
-            .limit(40);
-          if (error) {
-            if (isMirsadDebugLog()) console.warn('[BroadcastInbox]', error.message, error);
-            return false;
-          }
-          state.broadcastInbox = data || [];
-          invalidateNotifCache();
-          await refreshNotificationsFromDb();
-          return true;
-        } catch (e) {
-          if (isMirsadDebugLog()) console.warn('[BroadcastInbox]', e);
-          return false;
-        }
+        return refreshNotificationsFromDb();
       }
 
       function getBroadcastTargetFromUI() {
@@ -53081,12 +53052,7 @@
           updateBroadcastPreview();
           await renderBroadcastHistory();
           try {
-            const { data: inbox } = await sb.from('broadcast_inbox')
-              .select(BROADCAST_INBOX_SELECT)
-              .eq('user_id', state.currentUser.id)
-              .order('created_at', { ascending: false })
-              .limit(40);
-            state.broadcastInbox = inbox || [];
+            await refreshNotificationsFromDb();
             invalidateNotifCache();
             renderNotifications(true);
           } catch (_) { /* noop */ }
