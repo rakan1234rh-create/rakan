@@ -17717,6 +17717,58 @@
       grid-column: 1 / -1
     }
 
+    #tab-broadcasts .bc-expiry-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    #tab-broadcasts .bc-expiry-mode-dd {
+      flex: 1 1 180px;
+      min-width: 0;
+    }
+
+    #tab-broadcasts .bc-expiry-custom {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      flex: 1 1 220px;
+      min-width: 0;
+    }
+
+    #tab-broadcasts .bc-expiry-custom[hidden] {
+      display: none !important;
+    }
+
+    #tab-broadcasts .bc-expiry-date,
+    #tab-broadcasts .bc-expiry-time {
+      flex: 1 1 120px;
+      min-height: 38px;
+      font-size: 12px;
+    }
+
+    #tab-broadcasts .bc-expiry-hint {
+      margin: 8px 0 0;
+      font-size: 11px;
+      line-height: 1.45;
+      color: var(--mr-text-3);
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+    }
+
+    #tab-broadcasts .bc-expiry-hint i {
+      margin-top: 2px;
+      opacity: 0.75;
+      flex-shrink: 0;
+    }
+
+    #tab-broadcasts .bc-history-expiry {
+      color: var(--amber-text);
+      font-weight: 700;
+    }
+
     #tab-broadcasts .form-group {
       margin-bottom: 0;
       position: relative
@@ -29249,7 +29301,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-r2-upload-v949">
+  <meta name="app-build" content="athar-bc-expiry-v950">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -30331,6 +30383,39 @@
                     <div class="form-group bc-form-full">
                       <label class="form-label" for="bc-body">نص الرسالة <span class="required-mark">*</span></label>
                       <textarea id="bc-body" class="form-input bc-field bc-textarea" maxlength="207" rows="2" placeholder="اكتب نص النشرة…"></textarea>
+                    </div>
+                    <div class="form-group bc-form-full bc-form-expiry">
+                      <label class="form-label" for="bc-expiry-mode">مدة بقاء الرسالة</label>
+                      <div class="bc-expiry-grid">
+                        <div class="wf-status-filter bc-dd bc-expiry-mode-dd" id="bc-expiry-dd">
+                          <button type="button" class="wf-status-trigger" id="bc-expiry-trigger"
+                            onclick="bcDdToggle('expiry', event)" aria-haspopup="listbox" aria-expanded="false">
+                            <span class="wf-status-trigger__label" id="bc-expiry-label">24 ساعة</span>
+                            <i class="fas fa-chevron-down wf-status-trigger__chev" aria-hidden="true"></i>
+                          </button>
+                          <div class="wf-status-menu bc-dd-menu" id="bc-expiry-menu" role="listbox" aria-label="مدة بقاء الرسالة">
+                            <div class="wf-status-menu__scroll">
+                              <button type="button" class="wf-status-opt is-active" data-val="24h" onclick="bcDdPick('expiry','24h')">24 ساعة</button>
+                              <button type="button" class="wf-status-opt" data-val="48h" onclick="bcDdPick('expiry','48h')">48 ساعة</button>
+                              <button type="button" class="wf-status-opt" data-val="72h" onclick="bcDdPick('expiry','72h')">3 أيام</button>
+                              <button type="button" class="wf-status-opt" data-val="168h" onclick="bcDdPick('expiry','168h')">7 أيام</button>
+                              <button type="button" class="wf-status-opt" data-val="custom" onclick="bcDdPick('expiry','custom')">تاريخ وساعة محددة</button>
+                            </div>
+                          </div>
+                          <select id="bc-expiry-mode" class="wf-status-select-native" tabindex="-1" aria-hidden="true" onchange="syncBcExpiryUI()">
+                            <option value="24h">24 ساعة</option>
+                            <option value="48h">48 ساعة</option>
+                            <option value="72h">3 أيام</option>
+                            <option value="168h">7 أيام</option>
+                            <option value="custom">تاريخ وساعة محددة</option>
+                          </select>
+                        </div>
+                        <div class="bc-expiry-custom" id="bc-expiry-custom" hidden>
+                          <input type="date" id="bc-expiry-date" class="form-input bc-field bc-expiry-date" aria-label="تاريخ انتهاء الرسالة">
+                          <input type="time" id="bc-expiry-time" class="form-input bc-field bc-expiry-time" step="60" aria-label="وقت انتهاء الرسالة">
+                        </div>
+                      </div>
+                      <p class="bc-expiry-hint"><i class="fas fa-clock" aria-hidden="true"></i> تُحذف الرسالة من التطبيق وقاعدة البيانات تلقائياً بعد انتهاء المدة (توقيت الرياض).</p>
                     </div>
                   </div>
                   <div class="bc-form-actions">
@@ -52482,6 +52567,14 @@
         { val: 'branches', label: 'حسب الفرع' },
         { val: 'users', label: 'مستخدمون محددون' }
       ];
+      const BC_EXPIRY_DD_OPTIONS = [
+        { val: '24h', label: '24 ساعة' },
+        { val: '48h', label: '48 ساعة' },
+        { val: '72h', label: '3 أيام' },
+        { val: '168h', label: '7 أيام' },
+        { val: 'custom', label: 'تاريخ وساعة محددة' }
+      ];
+      const BC_EXPIRY_HOURS = { '24h': 24, '48h': 48, '72h': 72, '168h': 168 };
       const BC_TARGET_EMPTY_HINTS = {
         roles: 'لم يُختر دور بعد — ابحث ثم اختر دوراً أو أكثر',
         branches: 'لم يُختر فرع بعد — ابحث ثم اختر فرعاً أو أكثر',
@@ -52606,7 +52699,7 @@
       }
 
       function bcDdRepositionOpen() {
-        ['kind', 'target'].forEach(field => {
+        ['kind', 'target', 'expiry'].forEach(field => {
           const menu = document.getElementById(`bc-${field}-menu`);
           const trigger = document.getElementById(`bc-${field}-trigger`);
           if (menu?.classList.contains('open')) bcDdPositionMenu(trigger, menu);
@@ -52638,10 +52731,23 @@
       function bcDdCloseAll() {
         bcDdClose('kind');
         bcDdClose('target');
+        bcDdClose('expiry');
         bcPickCloseAllResults();
       }
 
       function bcDdSync(field) {
+        if (field === 'expiry') {
+          const sel = document.getElementById('bc-expiry-mode');
+          const label = document.getElementById('bc-expiry-label');
+          const menu = document.getElementById('bc-expiry-menu');
+          const val = sel?.value || '24h';
+          if (label) label.textContent = BC_EXPIRY_DD_OPTIONS.find(o => o.val === val)?.label || val;
+          menu?.querySelectorAll('.wf-status-opt').forEach(btn => {
+            btn.classList.toggle('is-active', btn.dataset.val === val);
+          });
+          syncBcExpiryUI();
+          return;
+        }
         const isKind = field === 'kind';
         const sel = document.getElementById(isKind ? 'bc-kind' : 'bc-target-mode');
         const label = document.getElementById(isKind ? 'bc-kind-label' : 'bc-target-label');
@@ -52659,8 +52765,7 @@
         const menu = document.getElementById(`bc-${field}-menu`);
         const trigger = document.getElementById(`bc-${field}-trigger`);
         if (!menu || !trigger) return;
-        const other = field === 'kind' ? 'target' : 'kind';
-        bcDdClose(other);
+        ['kind', 'target', 'expiry'].filter(f => f !== field).forEach(bcDdClose);
         bcPickCloseAllResults();
         const open = !menu.classList.contains('open');
         const home = document.getElementById(`bc-${field}-dd`);
@@ -52676,6 +52781,13 @@
       }
 
       function bcDdPick(field, val) {
+        if (field === 'expiry') {
+          const sel = document.getElementById('bc-expiry-mode');
+          if (sel) sel.value = val;
+          bcDdSync('expiry');
+          bcDdClose('expiry');
+          return;
+        }
         const isKind = field === 'kind';
         const sel = document.getElementById(isKind ? 'bc-kind' : 'bc-target-mode');
         if (sel) sel.value = val;
@@ -53016,6 +53128,86 @@
         paintBroadcastHistoryList();
       }
 
+      function ksaInputPartsFromMs(ms) {
+        const map = {};
+        new Intl.DateTimeFormat('en-CA', {
+          timeZone: APP_TZ,
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        }).formatToParts(new Date(ms)).forEach(p => {
+          if (p.type !== 'literal') map[p.type] = p.value;
+        });
+        return {
+          date: `${map.year}-${map.month}-${map.day}`,
+          time: `${map.hour}:${map.minute}`
+        };
+      }
+
+      function defaultBcExpiryMs(hours = 24) {
+        return (ksaClockReady() ? ksaNowMs() : Date.now()) + hours * 3600000;
+      }
+
+      function initBcExpiryFields() {
+        const modeSel = document.getElementById('bc-expiry-mode');
+        if (!modeSel) return;
+        modeSel.value = '24h';
+        const parts = ksaInputPartsFromMs(defaultBcExpiryMs(24));
+        const dateEl = document.getElementById('bc-expiry-date');
+        const timeEl = document.getElementById('bc-expiry-time');
+        if (dateEl) dateEl.value = parts.date;
+        if (timeEl) timeEl.value = parts.time;
+        bcDdSync('expiry');
+      }
+
+      function syncBcExpiryUI() {
+        const mode = document.getElementById('bc-expiry-mode')?.value || '24h';
+        const custom = document.getElementById('bc-expiry-custom');
+        if (custom) custom.hidden = mode !== 'custom';
+        if (mode !== 'custom') {
+          const hours = BC_EXPIRY_HOURS[mode] || 24;
+          const parts = ksaInputPartsFromMs(defaultBcExpiryMs(hours));
+          const dateEl = document.getElementById('bc-expiry-date');
+          const timeEl = document.getElementById('bc-expiry-time');
+          if (dateEl) dateEl.value = parts.date;
+          if (timeEl) timeEl.value = parts.time;
+        }
+      }
+
+      function parseKsaDateTimeToIso(dateStr, timeStr) {
+        const iso = `${String(dateStr).trim()}T${String(timeStr).trim()}:00+03:00`;
+        const ms = new Date(iso).getTime();
+        return Number.isFinite(ms) ? new Date(ms).toISOString() : null;
+      }
+
+      function getBroadcastExpiresAtFromUI() {
+        const mode = document.getElementById('bc-expiry-mode')?.value || '24h';
+        if (mode === 'custom') {
+          const d = document.getElementById('bc-expiry-date')?.value;
+          const t = document.getElementById('bc-expiry-time')?.value;
+          if (!d || !t) return null;
+          return parseKsaDateTimeToIso(d, t);
+        }
+        const hours = BC_EXPIRY_HOURS[mode] || 24;
+        return new Date(defaultBcExpiryMs(hours)).toISOString();
+      }
+
+      function formatBcExpiryLabel(iso) {
+        if (!iso) return '—';
+        try {
+          return new Intl.DateTimeFormat('ar-SA', {
+            timeZone: APP_TZ,
+            dateStyle: 'medium',
+            timeStyle: 'short'
+          }).format(new Date(iso));
+        } catch (_) {
+          return String(iso);
+        }
+      }
+
       function paintBroadcastHistoryList() {
         const host = document.getElementById('bc-history-list');
         if (!host) return;
@@ -53043,6 +53235,7 @@
               <span>مستلمون: ${row.recipient_count || 0}</span>
               <span>Push: ${row.push_sent_count || 0}</span>
               <span>${Sec.escapeHTML(formatRelativeAr(row.created_at))}</span>
+              ${row.expires_at ? `<span class="bc-history-expiry">ينتهي: ${Sec.escapeHTML(formatBcExpiryLabel(row.expires_at))}</span>` : ''}
             </div>
           </article>`;
         }).join('');
@@ -53061,7 +53254,7 @@
         host.innerHTML = '<div class="empty"><i class="fas fa-spinner fa-spin"></i><p>جاري التحميل…</p></div>';
         const [listRes, statsRes] = await Promise.all([
           sb.from('broadcasts')
-            .select('id,title,body,kind,target_mode,recipient_count,push_sent_count,created_at')
+            .select('id,title,body,kind,target_mode,recipient_count,push_sent_count,created_at,expires_at')
             .order('created_at', { ascending: false })
             .limit(100),
           sb.from('broadcasts').select('kind')
@@ -53082,6 +53275,7 @@
       function renderBroadcastsPage() {
         if (normalizeUserRole(state.currentUser?.role) !== 'admin') return;
         state._bcHistoryFilter = 'all';
+        initBcExpiryFields();
         initBroadcastTargetPickers();
         syncBroadcastTargetPanels();
         renderBroadcastHistory();
@@ -53108,8 +53302,17 @@
         }
         const count = estimateBroadcastRecipients(target);
         if (!count) { showToast('لا يوجد مستلمون مطابقون', 'warning'); return; }
+        const expiresAt = getBroadcastExpiresAtFromUI();
+        if (!expiresAt) { showToast('حدّد تاريخ ووقت انتهاء الرسالة', 'warning'); return; }
+        const expMs = new Date(expiresAt).getTime();
+        const minMs = (ksaClockReady() ? ksaNowMs() : Date.now()) + 15 * 60 * 1000;
+        if (!Number.isFinite(expMs) || expMs < minMs) {
+          showToast('موعد الانتهاء يجب أن يكون بعد 15 دقيقة على الأقل', 'warning');
+          return;
+        }
+        const expiryLabel = formatBcExpiryLabel(expiresAt);
         const ok = await confirmDialog(
-          `إرسال النشرة إلى ${count} مستخدم؟\n\nالعنوان: ${title}\n\nسيصل إشعار خارج التطبيق لمن فعّل تنبيهات الجوال.`,
+          `إرسال النشرة إلى ${count} مستخدم؟\n\nالعنوان: ${title}\n\nتُحذف تلقائياً بعد: ${expiryLabel}\n\nسيصل إشعار خارج التطبيق لمن فعّل تنبيهات الجوال.`,
           { type: 'warn', title: 'تأكيد الإرسال', okText: 'إرسال', cancelText: 'إلغاء' }
         );
         if (!ok) return;
@@ -53120,10 +53323,10 @@
           btn.innerHTML = '<i class="fas fa-spinner fa-spin" aria-hidden="true"></i> جاري الإرسال...';
         }
         try {
-          const data = await invokeViolationPush({ broadcast: true, title, body, kind, target });
+          const data = await invokeViolationPush({ broadcast: true, title, body, kind, target, expiresAt });
           if (data?.error) throw new Error(data.error);
           const pushSent = data?.pushSent || 0;
-          showToast(`تم الإرسال ✓ — ${data?.recipients || count} مستلم، ${pushSent} إشعار Push`, 'success');
+          showToast(`تم الإرسال ✓ — ${data?.recipients || count} مستلم، ${pushSent} إشعار Push — تنتهي ${expiryLabel}`, 'success');
           document.getElementById('bc-title').value = '';
           document.getElementById('bc-body').value = '';
           if (state._bcSelectedUserIds) state._bcSelectedUserIds.clear();
@@ -53138,7 +53341,7 @@
           bcUserPickRenderChips();
           bcPickRenderChips('roles');
           bcPickRenderChips('branches');
-          updateBroadcastPreview();
+          initBcExpiryFields();
           updateBroadcastPreview();
           await renderBroadcastHistory();
           try {
