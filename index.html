@@ -13188,82 +13188,82 @@
     }
 
     #ticketModal #responseButtons {
-      display: grid;
-      gap: 10px;
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: stretch;
+      gap: 8px;
       margin-top: 12px
     }
 
-    #ticketModal #responseButtons .td-resp-action {
+    #ticketModal #responseButtons .td-resp-blocked-wrap {
+      flex: 1 1 100%;
       width: 100%;
+      min-width: 0
+    }
+
+    #ticketModal #responseButtons .td-resp-action {
+      flex: 1 1 0;
+      min-width: 0;
+      width: auto;
       justify-content: center;
       text-align: center;
-      border-radius: 12px;
-      min-height: 46px;
-      padding: 12px 16px;
-      font-size: 14px;
-      font-weight: 700;
+      border-radius: 10px;
+      min-height: 34px;
+      padding: 6px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      gap: 5px;
+      background: transparent;
+      color: var(--mr-text-2);
+      border: 1px solid var(--mr-border);
       box-shadow: none;
       transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.12s ease
+    }
+
+    #ticketModal #responseButtons .td-resp-action span {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap
+    }
+
+    #ticketModal #responseButtons .td-resp-action i {
+      font-size: 11px;
+      flex-shrink: 0;
+      line-height: 1
     }
 
     #ticketModal #responseButtons .td-resp-action:active:not(:disabled) {
       transform: scale(0.985)
     }
 
-    #ticketModal #responseButtons .td-resp-action.btn-primary {
-      background: var(--mr-primary);
-      color: #fff;
-      border-color: var(--mr-primary);
-      box-shadow: 0 4px 14px rgba(15, 18, 36, 0.22)
-    }
-
     #ticketModal #responseButtons .td-resp-action.btn-primary:hover {
-      background: var(--mr-primary-hover);
-      border-color: var(--mr-primary-hover);
-      color: #fff
-    }
-
-    #ticketModal #responseButtons .td-resp-action.btn-success {
-      background: color-mix(in srgb, var(--mr-success) 16%, transparent);
-      color: color-mix(in srgb, var(--mr-success) 72%, #fff);
-      border: 1px solid color-mix(in srgb, var(--mr-success) 38%, transparent)
+      background: var(--mr-primary);
+      border-color: var(--mr-primary);
+      color: #fff;
+      box-shadow: 0 2px 10px rgba(15, 18, 36, 0.16)
     }
 
     #ticketModal #responseButtons .td-resp-action.btn-success:hover {
-      background: color-mix(in srgb, var(--mr-success) 24%, transparent);
-      color: color-mix(in srgb, var(--mr-success) 82%, #fff)
-    }
-
-    #ticketModal #responseButtons .td-resp-action.btn-danger {
-      background: var(--mr-danger);
+      background: var(--mr-success);
+      border-color: var(--mr-success);
       color: #fff;
-      border: 1px solid var(--mr-danger);
-      box-shadow: 0 4px 14px rgba(180, 35, 24, 0.22)
+      box-shadow: 0 2px 10px rgba(15, 18, 36, 0.12)
     }
 
     #ticketModal #responseButtons .td-resp-action.btn-danger:hover {
-      background: color-mix(in srgb, var(--mr-danger) 88%, #000);
-      border-color: color-mix(in srgb, var(--mr-danger) 88%, #000);
-      color: #fff
-    }
-
-    #ticketModal #responseButtons .td-resp-action.btn-warning {
-      background: var(--mr-warning);
-      color: #2a2200;
-      border: 1px solid color-mix(in srgb, var(--mr-warning) 82%, #000);
-      box-shadow: 0 4px 14px rgba(180, 130, 0, 0.18)
+      background: var(--mr-danger);
+      border-color: var(--mr-danger);
+      color: #fff;
+      box-shadow: 0 2px 10px rgba(180, 35, 24, 0.18)
     }
 
     #ticketModal #responseButtons .td-resp-action.btn-warning:hover {
-      background: color-mix(in srgb, var(--mr-warning) 92%, #000);
-      border-color: color-mix(in srgb, var(--mr-warning) 78%, #000);
-      color: #1f1800
-    }
-
-    #ticketModal #responseButtons .td-resp-action.btn:not(.btn-primary):not(.btn-success):not(.btn-danger):not(.btn-warning) {
-      background: var(--mr-surface);
-      color: var(--mr-text);
-      border: 1px solid var(--mr-border)
+      background: var(--mr-warning);
+      border-color: var(--mr-warning);
+      color: #2a2200;
+      box-shadow: 0 2px 10px rgba(180, 130, 0, 0.16)
     }
 
     #ticketModal #responseButtons .td-resp-action.btn:not(.btn-primary):not(.btn-success):not(.btn-danger):not(.btn-warning):hover {
@@ -29239,7 +29239,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-ticket-resp-btns-v937">
+  <meta name="app-build" content="athar-ticket-resp-row-v938">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -46323,13 +46323,13 @@
         }
         else if (wfState === 'aud' && !isWorkflowStageSkipped('aud')
           && (actAsAdmin || (hasPermission('act_as_auditor') && role === 'auditor'))) {
-          buttons.push({ act: 'aud_delete', label: 'إلغاء التذكرة', cls: 'btn-danger', icon: 'fa-times' });
           buttons.push({
             act: 'aud_approve',
             label: RESP_SEND_LABEL,
             cls: 'btn-success',
             icon: 'fa-paper-plane',
           });
+          buttons.push({ act: 'aud_delete', label: 'إلغاء التذكرة', cls: 'btn-danger', icon: 'fa-times' });
           respTextarea.placeholder = 'اكتب ملاحظات التدقيق... (مطلوب)';
         }
         else if (wfState === 'mgt' && !isWorkflowStageSkipped('mgt')
@@ -46348,11 +46348,11 @@
             buttons.push({ act: 'mgt_approve', label: RESP_SEND_LABEL, cls: 'btn-success', icon: 'fa-paper-plane' });
           }
           if (!blockWarn) {
-            buttons.push({ act: 'mgt_warning', label: 'اكتفاء بالتنبيه (تنبيه المرة الأولى)', cls: 'btn-warning', icon: 'fa-triangle-exclamation' });
+            buttons.push({ act: 'mgt_warning', label: 'تنبيه', cls: 'btn-warning', icon: 'fa-bell', title: 'اكتفاء بالتنبيه (تنبيه المرة الأولى)' });
           } else {
-            blockedWarnStrip = '<div style="width:100%;margin-top:10px"><button type="button" class="btn" disabled style="opacity:.7;cursor:not-allowed;width:100%;border-style:dashed">مخالفة مكررة هذا الشهر — يستوجب الخصم</button></div>';
+            blockedWarnStrip = '<div class="td-resp-blocked-wrap"><button type="button" class="btn" disabled style="opacity:.7;cursor:not-allowed;width:100%;border-style:dashed;min-height:34px;font-size:11px">مخالفة مكررة هذا الشهر — يستوجب الخصم</button></div>';
           }
-          buttons.push({ act: 'mgt_delete', label: 'إلغاء (قرار إداري)', cls: 'btn-danger', icon: 'fa-times' });
+          buttons.push({ act: 'mgt_delete', label: 'إلغاء', cls: 'btn-danger', icon: 'fa-times', title: 'إلغاء (قرار إداري)' });
           respTextarea.placeholder = 'اكتب ملاحظات الإدارة أو قرار التنبيه... (مطلوب)';
         }
         else if (wfState === 'hr' && !isWorkflowStageSkipped('hr')
@@ -46368,7 +46368,7 @@
         }
 
         btnsWrap.innerHTML = buttons.map(b =>
-          `<button type="button" class="btn td-resp-action ${b.cls}" onclick="submitResp('${b.act}')"><span>${Sec.escapeHTML(b.label)}</span><i class="fas ${b.icon}" aria-hidden="true"></i></button>`
+          `<button type="button" class="btn td-resp-action ${b.cls}" onclick="submitResp('${b.act}')"${b.title ? ` title="${Sec.escapeHTML(b.title)}" aria-label="${Sec.escapeHTML(b.title)}"` : ''}><span>${Sec.escapeHTML(b.label)}</span><i class="fas ${b.icon}" aria-hidden="true"></i></button>`
         ).join('') + blockedWarnStrip;
       }
 
