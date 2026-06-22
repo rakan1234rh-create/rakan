@@ -13235,23 +13235,38 @@
     }
 
     #ticketModal #responseButtons .td-resp-action.btn-danger {
-      background: color-mix(in srgb, var(--mr-danger) 14%, transparent);
-      color: color-mix(in srgb, var(--mr-danger) 78%, #fff);
-      border: 1px solid color-mix(in srgb, var(--mr-danger) 34%, transparent)
+      background: var(--mr-danger);
+      color: #fff;
+      border: 1px solid var(--mr-danger);
+      box-shadow: 0 4px 14px rgba(180, 35, 24, 0.22)
     }
 
     #ticketModal #responseButtons .td-resp-action.btn-danger:hover {
-      background: color-mix(in srgb, var(--mr-danger) 22%, transparent);
-      color: color-mix(in srgb, var(--mr-danger) 88%, #fff)
+      background: color-mix(in srgb, var(--mr-danger) 88%, #000);
+      border-color: color-mix(in srgb, var(--mr-danger) 88%, #000);
+      color: #fff
     }
 
-    #ticketModal #responseButtons .td-resp-action.btn:not(.btn-primary):not(.btn-success):not(.btn-danger) {
+    #ticketModal #responseButtons .td-resp-action.btn-warning {
+      background: var(--mr-warning);
+      color: #2a2200;
+      border: 1px solid color-mix(in srgb, var(--mr-warning) 82%, #000);
+      box-shadow: 0 4px 14px rgba(180, 130, 0, 0.18)
+    }
+
+    #ticketModal #responseButtons .td-resp-action.btn-warning:hover {
+      background: color-mix(in srgb, var(--mr-warning) 92%, #000);
+      border-color: color-mix(in srgb, var(--mr-warning) 78%, #000);
+      color: #1f1800
+    }
+
+    #ticketModal #responseButtons .td-resp-action.btn:not(.btn-primary):not(.btn-success):not(.btn-danger):not(.btn-warning) {
       background: var(--mr-surface);
       color: var(--mr-text);
       border: 1px solid var(--mr-border)
     }
 
-    #ticketModal #responseButtons .td-resp-action.btn:not(.btn-primary):not(.btn-success):not(.btn-danger):hover {
+    #ticketModal #responseButtons .td-resp-action.btn:not(.btn-primary):not(.btn-success):not(.btn-danger):not(.btn-warning):hover {
       background: var(--mr-primary-softer);
       border-color: color-mix(in srgb, var(--mr-primary) 28%, var(--mr-border));
       color: var(--mr-primary)
@@ -29224,7 +29239,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-ticket-resp-input-fix-v936">
+  <meta name="app-build" content="athar-ticket-resp-btns-v937">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -46292,17 +46307,18 @@
         const actAsAdmin = role === 'admin' || hasPermission('act_all_tickets');
         const wfState = getEffectiveWorkflowState(t.state);
         const buttons = [];
+        const RESP_SEND_LABEL = 'إرسال الرد';
 
         // Path A: من الراصد
         // Path B: من المشرف (يبدأ مباشرة من aud)
 
         if (wfState === 'emp' && (actAsAdmin || (hasPermission('respond_own_ticket') && (role === 'employee' || role === 'branch_manager') && t.employee_id === meId))) {
-          buttons.push({ act: 'respond', label: workflowRespondButtonLabel(), cls: 'btn-primary', icon: 'fa-paper-plane' });
+          buttons.push({ act: 'respond', label: RESP_SEND_LABEL, cls: 'btn-primary', icon: 'fa-paper-plane' });
           respTextarea.placeholder = 'اكتب ردك على المخالفة... (مطلوب)';
         }
         else if (wfState === 'sup' && !isWorkflowStageSkipped('sup')
           && (actAsAdmin || (hasPermission('act_as_supervisor') && role === 'supervisor'))) {
-          buttons.push({ act: 'sup_process', label: workflowForwardButtonLabel('sup'), cls: 'btn-primary', icon: 'fa-arrow-left' });
+          buttons.push({ act: 'sup_process', label: RESP_SEND_LABEL, cls: 'btn-primary', icon: 'fa-paper-plane' });
           respTextarea.placeholder = 'أضف ملاحظاتك أو رأيك في التذكرة... (مطلوب)';
         }
         else if (wfState === 'aud' && !isWorkflowStageSkipped('aud')
@@ -46310,9 +46326,9 @@
           buttons.push({ act: 'aud_delete', label: 'إلغاء التذكرة', cls: 'btn-danger', icon: 'fa-times' });
           buttons.push({
             act: 'aud_approve',
-            label: workflowForwardButtonLabel('aud'),
+            label: RESP_SEND_LABEL,
             cls: 'btn-success',
-            icon: getNextWorkflowState('aud') ? 'fa-arrow-left' : 'fa-check',
+            icon: 'fa-paper-plane',
           });
           respTextarea.placeholder = 'اكتب ملاحظات التدقيق... (مطلوب)';
         }
@@ -46325,14 +46341,14 @@
             t.employee_id, vTypeId, t.violation_type, refDt, t.id, state.violations || []
           );
           if (!isWorkflowStageSkipped('hr')) {
-            buttons.push({ act: 'mgt_forward', label: workflowForwardButtonLabel('mgt'), cls: 'btn-primary', icon: 'fa-arrow-left' });
+            buttons.push({ act: 'mgt_forward', label: RESP_SEND_LABEL, cls: 'btn-primary', icon: 'fa-paper-plane' });
           } else if (getNextWorkflowState('mgt')) {
-            buttons.push({ act: 'mgt_forward', label: workflowForwardButtonLabel('mgt'), cls: 'btn-primary', icon: 'fa-arrow-left' });
+            buttons.push({ act: 'mgt_forward', label: RESP_SEND_LABEL, cls: 'btn-primary', icon: 'fa-paper-plane' });
           } else {
-            buttons.push({ act: 'mgt_approve', label: 'اعتماد نهائي', cls: 'btn-success', icon: 'fa-check' });
+            buttons.push({ act: 'mgt_approve', label: RESP_SEND_LABEL, cls: 'btn-success', icon: 'fa-paper-plane' });
           }
           if (!blockWarn) {
-            buttons.push({ act: 'mgt_warning', label: 'اكتفاء بالتنبيه (تنبيه المرة الأولى)', cls: 'btn', icon: 'fa-triangle-exclamation' });
+            buttons.push({ act: 'mgt_warning', label: 'اكتفاء بالتنبيه (تنبيه المرة الأولى)', cls: 'btn-warning', icon: 'fa-triangle-exclamation' });
           } else {
             blockedWarnStrip = '<div style="width:100%;margin-top:10px"><button type="button" class="btn" disabled style="opacity:.7;cursor:not-allowed;width:100%;border-style:dashed">مخالفة مكررة هذا الشهر — يستوجب الخصم</button></div>';
           }
@@ -46341,7 +46357,7 @@
         }
         else if (wfState === 'hr' && !isWorkflowStageSkipped('hr')
           && (actAsAdmin || (hasPermission('act_as_hr') && role === 'hr'))) {
-          buttons.push({ act: 'hr_approve', label: 'اعتماد نهائي', cls: 'btn-success', icon: 'fa-check' });
+          buttons.push({ act: 'hr_approve', label: RESP_SEND_LABEL, cls: 'btn-success', icon: 'fa-paper-plane' });
           buttons.push({ act: 'hr_delete', label: 'إلغاء (قرار الموارد البشرية)', cls: 'btn-danger', icon: 'fa-times' });
           respTextarea.placeholder = 'اكتب قرار الموارد البشرية... (مطلوب)';
         }
