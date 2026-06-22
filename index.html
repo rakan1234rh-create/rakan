@@ -29301,7 +29301,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-bc-expiry-v950">
+  <meta name="app-build" content="athar-bc-expiry-fast-v951">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -34820,7 +34820,7 @@
             !state.currentUser?.id
               ? Promise.resolve({ data: [], error: null })
               : sb.from('notifications')
-                .select('id,event_key,title,message,type,icon,ticket_id,scope,broadcast_id,broadcast_kind,is_auto,is_read,created_at,dismissed_at')
+                .select('id,event_key,title,message,type,icon,ticket_id,scope,broadcast_id,broadcast_kind,is_auto,is_read,created_at,dismissed_at,broadcasts(expires_at)')
                 .eq('user_id', state.currentUser.id)
                 .is('dismissed_at', null)
                 .order('created_at', { ascending: false })
@@ -34918,6 +34918,7 @@
             : new Set((notifDismissals || []).map(r => r.notif_id).filter(Boolean));
           state._dismissedNotifsSet = null;
           invalidateNotifCache();
+          scheduleBcExpiryUiRefresh();
 
           const nR = state.regions.length;
           const nB = state.branches.length;
@@ -52058,7 +52059,7 @@
         state._notifCacheAt = 0;
       }
 
-      const NOTIFICATIONS_DB_SELECT = 'id,event_key,title,message,type,icon,ticket_id,scope,broadcast_id,broadcast_kind,is_auto,is_read,created_at,dismissed_at';
+      const NOTIFICATIONS_DB_SELECT = 'id,event_key,title,message,type,icon,ticket_id,scope,broadcast_id,broadcast_kind,is_auto,is_read,created_at,dismissed_at,broadcasts(expires_at)';
 
       function mapDbNotificationRow(row) {
         const id = String(row?.event_key || row?.id || '');
@@ -52084,6 +52085,7 @@
       function buildDbUserNotifications() {
         return (state.notifications || [])
           .filter(row => row && !row.dismissed_at)
+          .filter(row => !isBroadcastExpired(row?.broadcasts?.expires_at))
           .map(mapDbNotificationRow)
           .filter(n => n.id);
       }
@@ -53208,13 +53210,62 @@
         }
       }
 
+      function isBroadcastExpired(iso) {
+        if (!iso) return false;
+        const ms = new Date(iso).getTime();
+        return Number.isFinite(ms) && ms <= Date.now();
+      }
+
+      function filterActiveBroadcastRows(rows) {
+        return (rows || []).filter(r => !isBroadcastExpired(r?.expires_at));
+      }
+
+      function broadcastExpiryMs(iso) {
+        if (!iso) return null;
+        const ms = new Date(iso).getTime();
+        return Number.isFinite(ms) ? ms : null;
+      }
+
+      function scheduleBcExpiryUiRefresh() {
+        if (state._bcExpiryTimer) {
+          clearTimeout(state._bcExpiryTimer);
+          state._bcExpiryTimer = null;
+        }
+        const rows = [
+          ...(state._bcHistoryRows || []),
+          ...(state.notifications || []).map(n => ({ expires_at: n?.broadcasts?.expires_at })),
+        ];
+        let nextMs = null;
+        for (const row of rows) {
+          const exp = broadcastExpiryMs(row?.expires_at);
+          if (exp == null || exp <= Date.now()) continue;
+          if (nextMs == null || exp < nextMs) nextMs = exp;
+        }
+        if (nextMs == null) return;
+        const delay = Math.max(500, nextMs - Date.now() + 800);
+        state._bcExpiryTimer = window.setTimeout(() => {
+          state._bcExpiryTimer = null;
+          state._bcHistoryRows = filterActiveBroadcastRows(state._bcHistoryRows);
+          state.notifications = (state.notifications || []).filter(n => !isBroadcastExpired(n?.broadcasts?.expires_at));
+          invalidateNotifCache();
+          if (document.getElementById('tab-broadcasts')?.classList.contains('active')) {
+            try { paintBroadcastHistoryList(); } catch (_) { /* noop */ }
+          }
+          if (isNotifPageOpen() || document.getElementById('notifPanel')?.classList.contains('open')) {
+            try { renderNotifications(false); } catch (_) { /* noop */ }
+          }
+          scheduleBcExpiryUiRefresh();
+        }, Math.min(delay, 2147483647));
+      }
+
       function paintBroadcastHistoryList() {
         const host = document.getElementById('bc-history-list');
         if (!host) return;
         const rows = state._bcHistoryRows || [];
         const f = state._bcHistoryFilter || 'all';
-        const visible = f === 'all' ? rows : rows.filter(r => String(r.kind || 'circular') === f);
-        if (!rows.length) {
+        const active = filterActiveBroadcastRows(rows);
+        const visible = f === 'all' ? active : active.filter(r => String(r.kind || 'circular') === f);
+        if (!active.length) {
           host.innerHTML = '<div class="empty"><p>لا توجد نشرات بعد</p></div>';
           return;
         }
@@ -53252,16 +53303,18 @@
           return;
         }
         host.innerHTML = '<div class="empty"><i class="fas fa-spinner fa-spin"></i><p>جاري التحميل…</p></div>';
+        const nowIso = new Date().toISOString();
         const [listRes, statsRes] = await Promise.all([
           sb.from('broadcasts')
             .select('id,title,body,kind,target_mode,recipient_count,push_sent_count,created_at,expires_at')
+            .or(`expires_at.is.null,expires_at.gt.${nowIso}`)
             .order('created_at', { ascending: false })
             .limit(100),
-          sb.from('broadcasts').select('kind')
+          sb.from('broadcasts').select('kind').or(`expires_at.is.null,expires_at.gt.${nowIso}`)
         ]);
         const { data, error } = listRes;
         state._bcHistoryStats = computeBroadcastKindStats(statsRes.data);
-        state._bcHistoryRows = data || [];
+        state._bcHistoryRows = filterActiveBroadcastRows(data || []);
         if (!state._bcHistoryFilter) state._bcHistoryFilter = 'all';
         paintBroadcastHistoryStats(state._bcHistoryStats);
         if (error) {
@@ -53270,6 +53323,7 @@
           return;
         }
         paintBroadcastHistoryList();
+        scheduleBcExpiryUiRefresh();
       }
 
       function renderBroadcastsPage() {

@@ -44,7 +44,7 @@ $$;
 revoke all on function public.athar_cleanup_expired_broadcasts() from public;
 grant execute on function public.athar_cleanup_expired_broadcasts() to service_role;
 
--- كل ساعة — تنظيف النشرات المنتهية
+-- كل دقيقة — حذف النشرات بعد انتهاء الموعد مباشرة (تأخير ≤ 60 ثانية)
 create extension if not exists pg_cron with schema pg_catalog;
 
 select cron.unschedule(j.jobid)
@@ -53,7 +53,7 @@ where j.jobname = 'athar-broadcast-expiry-cleanup';
 
 select cron.schedule(
   'athar-broadcast-expiry-cleanup',
-  '5 * * * *',
+  '* * * * *',
   $$ select public.athar_cleanup_expired_broadcasts(); $$
 );
 
