@@ -7275,8 +7275,7 @@
 
     #tab-compliance .cmp-neo-ring,
     #tab-compliance .mk-donut,
-    #tab-compliance .mk-cmp-donut-wrap,
-    #tab-compliance .mk-cmp-emp-card__scores {
+    #tab-compliance .mk-cmp-donut-wrap {
       overflow: visible
     }
 
@@ -24243,10 +24242,6 @@
         margin: 0 10px 10px !important;
       }
 
-      #tab-compliance .mk-cmp-emp-card__scores .mk-cmp-donut-wrap {
-        width: 52px !important;
-      }
-
       #tab-compliance .mk-cmp-emp-card__ft {
         flex-shrink: 0 !important;
         border-bottom-left-radius: 21px !important;
@@ -27420,25 +27415,14 @@
       min-height: 0;
       box-shadow: var(--mr-shadow-card);
     }
-    .mk-cmp-emp-card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      inset-inline: 0;
-      height: 3px;
-      background: var(--cmp-accent);
-      border-radius: 20px 20px 0 0;
-      z-index: 1;
-      pointer-events: none;
-    }
     .mk-cmp-emp-card--excellent { --cmp-accent: #48A111; }
     .mk-cmp-emp-card--good { --cmp-accent: #2563eb; }
     .mk-cmp-emp-card--warn { --cmp-accent: #d97706; }
     .mk-cmp-emp-card--danger { --cmp-accent: #dc2626; }
     .mk-cmp-emp-card--healed { --cmp-accent: #48A111; }
     .mk-cmp-emp-card:hover {
-      border-color: color-mix(in srgb, var(--cmp-accent) 28%, var(--mr-border));
-      box-shadow: 0 10px 28px color-mix(in srgb, var(--cmp-accent) 10%, transparent);
+      border-color: color-mix(in srgb, var(--mr-primary) 18%, var(--mr-border));
+      box-shadow: var(--mr-shadow-card);
       transform: translateY(-2px);
     }
 
@@ -27448,7 +27432,6 @@
     .mk-cmp-emp-card__hd {
       display: flex;
       align-items: flex-start;
-      justify-content: space-between;
       gap: 12px;
       padding: 15px 16px 10px;
       background: transparent;
@@ -27460,23 +27443,6 @@
       align-items: flex-start;
       flex: 1;
       min-width: 0;
-    }
-    .mk-cmp-emp-card__scores {
-      display: flex;
-      gap: 6px;
-      flex-shrink: 0;
-      align-items: flex-start;
-    }
-    .mk-cmp-emp-card__scores .mk-cmp-donut-wrap {
-      margin: 0;
-      gap: 2px;
-      width: 58px;
-    }
-    .mk-cmp-emp-card__scores .mk-donut__lbl {
-      font-size: 9px;
-      font-weight: 700;
-      color: var(--mk-text-3);
-      line-height: 1.2;
     }
     .mk-cmp-emp-card__avatar {
       width: 40px;
@@ -29280,7 +29246,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-cmp-card-ui-v944">
+  <meta name="app-build" content="athar-cmp-card-ui-v945">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -49120,8 +49086,7 @@
       function cmpEmpInitials(name) {
         const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
         if (!parts.length) return '؟';
-        if (parts.length === 1) return parts[0].slice(0, 2);
-        return parts[0][0] + parts[parts.length - 1][0];
+        return parts[0][0];
       }
 
       function cmpEmpStatTone(val) {
@@ -49161,15 +49126,16 @@
           chips.push('<span class="mk-cmp-emp-chip mk-cmp-emp-chip--green" title="مؤشر الاستجابة 100"><i class="fas fa-bolt"></i> استجابة ممتازة</span>');
         }
         const respRecovered = Math.round(card.responseRate) >= 100;
+        const scoreFmt = (n) => String(Math.round(Number(n) * 10) / 10);
         const statVal = (lbl, raw) => {
           const tone = cmpEmpStatTone(raw);
           return `<div class="mk-cmp-emp-stat${tone ? ' mk-cmp-emp-stat--' + tone : ''}"><span class="mk-cmp-emp-stat__lbl">${lbl}</span><b class="mk-cmp-emp-stat__val">${raw}</b></div>`;
         };
         const statsHTML = [
-          statVal('الخصم الفعلي', card.scoreHealed ? 'مُعالج' : (card.deducted > 0 ? `−${Math.round(card.deducted * 10) / 10}` : '0')),
-          statVal('بونص الالتزام', card.scoreHealed ? 'متوقف' : (card.streakBonus > 0 ? `+${card.streakBonus}` : '—')),
-          statVal('خصم التأخير', respRecovered ? '0' : (card.respPenalty > 0 ? `−${card.respPenalty}` : '0')),
-          statVal('بونص الرد', respRecovered ? '0' : (card.respBonus > 0 ? `+${card.respBonus}` : '—'))
+          statVal('نقاط الالتزام', scoreFmt(card.score)),
+          statVal('بونص نقاط الالتزام', card.scoreHealed ? 'متوقف' : (card.streakBonus > 0 ? `+${card.streakBonus}` : '—')),
+          statVal('نقاط استجابة الرد', scoreFmt(card.responseRate)),
+          statVal('بونص نقاط الرد', respRecovered ? '0' : (card.respBonus > 0 ? `+${card.respBonus}` : '—'))
         ].join('');
         const roleBadge = card.isBm
           ? '<span class="mk-cmp-role mk-cmp-role--mgr"><i class="fas fa-user-tie"></i> مدير فرع</span>'
@@ -49199,10 +49165,6 @@
                     <span class="mk-cmp-lvl ${lvl.cls}">${lvl.text}</span>
                   </div>
                 </div>
-              </div>
-              <div class="mk-cmp-emp-card__scores">
-                ${cmpMkDonutHTML(card.score, 'الامتثال', { emp: true, animKey: 'emp-' + card.id + '-score' })}
-                ${cmpMkDonutHTML(card.responseRate, 'الاستجابة', { emp: true, animKey: 'emp-' + card.id + '-response' })}
               </div>
             </header>
             ${chips.length ? `<div class="mk-cmp-emp-card__chips">${chips.join('')}</div>` : ''}
