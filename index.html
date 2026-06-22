@@ -3,6 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data: blob: https:; font-src 'self' https://cdn.jsdelivr.net; connect-src 'self' https://*.supabase.co https://timeapi.io; worker-src 'self'; manifest-src 'self'">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=overlays-content">
   <meta name="format-detection" content="telephone=no">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -30990,7 +30991,7 @@
       const ATHAR_SW_URL = './sw.js?v=9';
 
       /** رابط النشر — روابط استعادة كلمة المرور من file:// أو localhost */
-      const ATHAR_PUBLIC_ORIGIN = 'https://athar.app';
+      const ATHAR_PUBLIC_ORIGIN = 'https://athar-app.online';
 
       // 📁 Cloudflare Worker اختياري (مسار عارض/تحميل قديم)
       const CLOUDFLARE_WORKER_URL = '/upload';
@@ -31013,7 +31014,7 @@
       /** GitHub Pages أو أي نشر عام — لا يدعم وضع الضيف للبيانات */
       function isPublicDeployHost() {
         const h = (location.hostname || '').toLowerCase();
-        return h === 'github.io' || h.endsWith('.github.io') || h === 'athar.app' || h.endsWith('.athar.app');
+        return h === 'github.io' || h.endsWith('.github.io') || h === 'athar-app.online' || h.endsWith('.athar-app.online');
       }
 
       /** فتح الملف مباشرة من القرص (بدون http) — لا يوجد /config ولا R2 */
@@ -31262,22 +31263,24 @@
       function cleanOldSessions() {
         const now = Date.now();
         const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 أيام بالميلي ثانية
+        const keysToDelete = [];
 
         for (let i = 0; i < localStorage.length; i++) {
           const key = localStorage.key(i);
           if (!key) continue;
           if (key.startsWith(`${PWA_AUTH_SCOPE}_`)) continue;
           if (key && key.startsWith('tab_')) {
-            // استخراج timestamp من اسم المفتاح
             const match = key.match(/^tab_(\d+)_/);
             if (match) {
               const timestamp = parseInt(match[1]);
               if (now - timestamp > maxAge) {
-                localStorage.removeItem(key);
+                keysToDelete.push(key);
               }
             }
           }
         }
+
+        keysToDelete.forEach(k => localStorage.removeItem(k));
       }
 
       // تنظيف Sessions القديمة (أكثر من 7 أيام) — يُجدول في الخلفية حتى لا يعيق تحميل الصفحة
@@ -31760,6 +31763,8 @@
         }
       }
 
+      // ملاحظة أداء: عند انتهاء المهلة، الطلب الأصلي لا يُلغى فعلياً (يستمر في الخلفية).
+      // لتحسين هذا، يمكن تمرير AbortController واستدعاء ctrl.abort() عند انتهاء المهلة.
       function withLoadTimeout(promise, ms, message) {
         return Promise.race([
           promise,
@@ -33099,25 +33104,19 @@
 
       /** تاريخ لوحة القيادة — الجمعة · 22 مايو 2026 (توقيت الرياض) */
       function formatDashHeroDate(dateInput) {
-        let y;
-        let m;
-        let day;
+        let y, m, day;
         if (dateInput == null) {
           const p = ksaFormatParts(ksaNow());
-          y = p.year;
-          m = p.month;
-          day = p.day;
+          if (!p) return '—';
+          y = p.year; m = p.month; day = p.day;
         } else if (dateInput instanceof Date) {
           const p = ksaFormatParts(dateInput);
-          y = p.year;
-          m = p.month;
-          day = p.day;
+          if (!p) return '—';
+          y = p.year; m = p.month; day = p.day;
         } else {
           const p = ksaParseIso(dateInput);
           if (!p) return '—';
-          y = p.year;
-          m = p.month;
-          day = p.day;
+          y = p.year; m = p.month; day = p.day;
         }
         const wd = KSA_AR_WEEKDAYS[ksaWeekdayIndex(y, m, day)] || '';
         return `${wd} · ${day} ${KSA_AR_MONTHS[m]} ${y}`;
@@ -37149,15 +37148,16 @@
         if (t.state === 'closed' || t.state === 'Warning_Issued') return false;
 
         const { id, role } = state.currentUser;
+        const normRole = normalizeUserRole(role);
         const wfState = getEffectiveWorkflowState(t.state);
 
-        if (role === 'admin' || hasPermission('act_all_tickets')) return true;
+        if (normRole === 'admin' || hasPermission('act_all_tickets')) return true;
 
-        if (wfState === 'emp' && hasPermission('respond_own_ticket') && (role === 'employee' || role === 'branch_manager') && t.employee_id === id) return true;
-        if (wfState === 'sup' && hasPermission('act_as_supervisor') && role === 'supervisor' && (state.currentUser.supervisedBranches || []).includes(t.branch_id)) return true;
-        if (wfState === 'aud' && hasPermission('act_as_auditor') && role === 'auditor') return true;
-        if (wfState === 'mgt' && hasPermission('act_as_manager') && role === 'manager') return true;
-        if (wfState === 'hr' && hasPermission('act_as_hr') && role === 'hr') return true;
+        if (wfState === 'emp' && hasPermission('respond_own_ticket') && (normRole === 'employee' || normRole === 'branch_manager') && t.employee_id === id) return true;
+        if (wfState === 'sup' && hasPermission('act_as_supervisor') && normRole === 'supervisor' && (state.currentUser.supervisedBranches || []).includes(t.branch_id)) return true;
+        if (wfState === 'aud' && hasPermission('act_as_auditor') && normRole === 'auditor') return true;
+        if (wfState === 'mgt' && hasPermission('act_as_manager') && normRole === 'manager') return true;
+        if (wfState === 'hr' && hasPermission('act_as_hr') && normRole === 'hr') return true;
 
         return false;
       }
@@ -38183,12 +38183,13 @@
       function updatePendingBadge() {
         const visible = getVisibleViolations();
         let pending = 0;
-        if (state.currentUser?.role === 'auditor') pending = visible.filter(v => v.state === 'aud').length;
-        else if (state.currentUser?.role === 'manager') pending = visible.filter(v => v.state === 'mgt').length;
-        else if (state.currentUser?.role === 'hr') pending = visible.filter(v => v.state === 'hr').length;
-        else if (state.currentUser?.role === 'employee' || state.currentUser?.role === 'branch_manager')
+        const normRole = state.currentUser ? normalizeUserRole(state.currentUser.role) : '';
+        if (normRole === 'auditor') pending = visible.filter(v => v.state === 'aud').length;
+        else if (normRole === 'manager') pending = visible.filter(v => v.state === 'mgt').length;
+        else if (normRole === 'hr') pending = visible.filter(v => v.state === 'hr').length;
+        else if (normRole === 'employee' || normRole === 'branch_manager')
           pending = visible.filter(v => v.state === 'emp').length;
-        else if (state.currentUser?.role === 'supervisor') pending = visible.filter(v => v.state === 'sup').length;
+        else if (normRole === 'supervisor') pending = visible.filter(v => v.state === 'sup').length;
         else pending = visible.filter(v => isTicketWorkflowOpen(v)).length;
 
         const badge = document.getElementById('pendBadge');
@@ -38378,7 +38379,7 @@
         if (sub) sub.textContent = m.sub;
         if (iconWrap) {
           iconWrap.className = 'score-help-sheet__icon' + (m.iconClass ? ' ' + m.iconClass : '');
-          iconWrap.innerHTML = `<i class="fas ${m.icon}" aria-hidden="true"></i>`;
+          iconWrap.innerHTML = `<i class="fas ${Sec.escapeHTML(m.icon)}" aria-hidden="true"></i>`;
         }
         if (typeof portalFilterPanelsForMob === 'function') portalFilterPanelsForMob();
         overlay.classList.add('open');
@@ -46429,7 +46430,7 @@
         }
 
         btnsWrap.innerHTML = buttons.map(b =>
-          `<button type="button" class="btn td-resp-action ${b.cls}" onclick="submitResp('${b.act}')"${b.title ? ` title="${Sec.escapeHTML(b.title)}" aria-label="${Sec.escapeHTML(b.title)}"` : ''}><span>${Sec.escapeHTML(b.label)}</span><i class="fas ${b.icon}" aria-hidden="true"></i></button>`
+          `<button type="button" class="btn td-resp-action ${Sec.escapeHTML(b.cls)}" onclick="submitResp('${Sec.escapeHTML(b.act)}')"${b.title ? ` title="${Sec.escapeHTML(b.title)}" aria-label="${Sec.escapeHTML(b.title)}"` : ''}><span>${Sec.escapeHTML(b.label)}</span><i class="fas ${Sec.escapeHTML(b.icon)}" aria-hidden="true"></i></button>`
         ).join('') + blockedWarnStrip;
       }
 
@@ -46532,10 +46533,6 @@
         if (typeof tr === 'function') tr = tr();
         if (!tr) return showToast('إجراء غير صالح', 'error');
 
-        // جلب التذكرة الحالية للحصول على الـlogs والمرفقات
-        const { data: current, error: fErr } = await sb.from('violations').select('logs, attachments').eq('id', t.id).single();
-        if (fErr) return showToast('فشل الجلب: ' + fErr.message, 'error');
-
         const newLog = {
           date: getNow(),
           user: me.name,
@@ -46544,10 +46541,8 @@
           note: text
         };
 
-        const newLogs = [...parseDbJsonArray(current.logs), newLog];
-
         // إنشاء مرفقات مؤقتة (Placeholders) لتظهر فوراً في التذكرة
-        let newAttachments = parseDbJsonArray(current.attachments);
+        let newAttachments = parseDbJsonArray(t.attachments);
         if (respFiles.length > 0) {
           if (!state._localBlobUrls) state._localBlobUrls = {};
 
@@ -46567,19 +46562,25 @@
           newAttachments = newAttachments.concat(tempAtts);
         }
 
-        const updatePayload = {
-          state: tr.newState,
-          [tr.fieldKey]: text,
-          logs: newLogs,
-          attachments: JSON.stringify(newAttachments)
-        };
-        if (action === 'respond') updatePayload.auto_forwarded_emp = false;
-        if (action === 'sup_process') updatePayload.auto_forwarded_sup = false;
-        if (tr.statusText) updatePayload.status_text = tr.statusText;
-
         try {
-          const { error } = await sb.from('violations').update(updatePayload).eq('id', t.id);
-          if (error) throw error;
+          // استخدام RPC ذري (append_violation_log_with_guard) بدلاً من read-then-write
+          // يمنع Race Condition: إلحاق السجل + فحص الحالة في عملية واحدة ذرية
+          const { data: rpcData, error: rpcErr } = await sb.rpc('append_violation_log_with_guard', {
+            p_violation_id: t.id,
+            p_expected_state: t.state,
+            p_log_entry: newLog,
+            p_new_state: tr.newState,
+            p_status_text: tr.statusText || null,
+            p_reply_field: tr.fieldKey,
+            p_reply_text: text,
+            p_attachments: JSON.stringify(newAttachments),
+            p_reset_auto_forwarded_emp: action === 'respond' ? true : false,
+            p_reset_auto_forwarded_sup: action === 'sup_process' ? true : false,
+          });
+          if (rpcErr) throw rpcErr;
+          if (!rpcData?.ok) {
+            return showToast(rpcData?.error || 'فشل إرسال الرد — حالة التذكرة تغيّرت', 'error');
+          }
 
           notifyViolationPushAfterStateChange(
             { ...t, state: tr.newState, ticket_number: t.ticket_number },
@@ -49165,7 +49166,7 @@
 
       function cmpEmpCardHTML(card) {
         const lvl = cmpScoreLevelMeta(card.score);
-        const empId = String(card.id || '').replace(/'/g, "\\'");
+        const empId = String(card.id || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
         const click = card.onClick || `openCmpItemDetail('employee','${empId}')`;
         const chips = [];
         if (card.violationsCount > 0) {
@@ -49384,7 +49385,7 @@
           const subCls = subMeta?.missing ? ' cmp-neo-extreme__sub--no-sup' : '';
           return `
             <button type="button" class="cmp-neo-extreme cmp-neo-extreme--${kind}" onclick="${onClick(item.id)}">
-              <span class="cmp-neo-extreme__icon" aria-hidden="true"><i class="fas ${icons[kind]}"></i></span>
+              <span class="cmp-neo-extreme__icon" aria-hidden="true"><i class="fas ${Sec.escapeHTML(icons[kind])}"></i></span>
               <span class="cmp-neo-extreme__body">
                 <span class="cmp-neo-extreme__lbl">${labels[kind]}</span>
                 <span class="cmp-neo-extreme__name" title="${Sec.escapeHTML(item.name)}">${Sec.escapeHTML(item.name)}</span>
@@ -49405,7 +49406,8 @@
         const ring = cmpNeoRingSVG(rawScore, { animKey });
         const rateTone = cmpScoreRateColor(rawScore);
         const cardLow = isNeg || rawScore < 75;
-        const clickAttr = card.onClick ? `onclick="${card.onClick}"` : 'data-static="true"';
+        const cardId = String(card.id || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        const clickAttr = card.onClick ? `onclick="${Sec.escapeHTML(card.onClick)}"` : 'data-static="true"';
         const statA = view === 'regions' ? 'الفروع' : (view === 'branches' ? 'منضبطون' : 'المخالفات');
         const statB = view === 'employees' ? 'النقاط' : 'الموظفون';
         const rankCls = card.rank === 'top' ? ' cmp-neo-card--top' : (card.rank === 'bottom' ? ' cmp-neo-card--bottom' : '');
@@ -49441,7 +49443,7 @@
         const trendCls = card.trend.cls === 'up' ? 'mk-badge--green' : (card.trend.cls === 'down' ? 'mk-badge--red' : 'mk-badge--gray');
         const clickAttr = opts.expandable
           ? 'data-expandable="true"'
-          : (card.onClick ? `onclick="${card.onClick}"` : 'data-static="true"');
+          : (card.onClick ? `onclick="${Sec.escapeHTML(card.onClick)}"` : 'data-static="true"');
         const radius = 26;
         const circ = (2 * Math.PI * radius).toFixed(2);
         const offset = (circ * (1 - pct / 100)).toFixed(2);
@@ -49449,7 +49451,7 @@
         const statBLabel = view === 'employees' ? 'النقاط' : 'الموظفون';
         const respPct = view === 'employees' && card.responseRate != null ? Math.round(card.responseRate) : null;
         const isEmpDualRings = view === 'employees' && card.responseRate != null;
-        const entityIcon = opts.icon || card.icon || (view === 'regions' ? 'fa-map-marker-alt' : (view === 'branches' ? 'fa-store' : 'fa-user'));
+        const entityIcon = Sec.escapeHTML(opts.icon || card.icon || (view === 'regions' ? 'fa-map-marker-alt' : (view === 'branches' ? 'fa-store' : 'fa-user')));
         const featured = opts.featured ? ' mk-cmp-card--featured' : '';
         const animKey = `${view}-${card.id}-score`;
         const ringsBlock = isEmpDualRings

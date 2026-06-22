@@ -23,16 +23,31 @@ type WebhookPayload = {
   };
 };
 
+const AUTH_CORS = {
+  'Access-Control-Allow-Origin': Deno.env.get('ALLOWED_ORIGIN') || 'https://athar-app.online',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
+
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { 'Content-Type': 'application/json' },
+    headers: { ...AUTH_CORS, 'Content-Type': 'application/json' },
   });
 }
 
 Deno.serve(async (req) => {
+  const reqOrigin = req.headers.get('Origin') || '';
+  const allowedOrigin = Deno.env.get('ALLOWED_ORIGIN') || 'https://athar-app.online';
+  const corsResp = {
+    ...AUTH_CORS,
+    'Access-Control-Allow-Origin': reqOrigin === allowedOrigin ? allowedOrigin : '',
+  };
+
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsResp });
+
   if (req.method !== 'POST') {
-    return new Response('not allowed', { status: 400 });
+    return new Response('not allowed', { status: 400, headers: corsResp });
   }
 
   if (!RESEND_API_KEY || !HOOK_SECRET || !SENDER_EMAIL) {
