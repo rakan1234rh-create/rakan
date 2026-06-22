@@ -52820,6 +52820,8 @@
         menu.classList.toggle('open', open);
         trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
         if (open) {
+          closeBcExpDatePicker();
+          closeBcExpTimePicker();
           bcDdPositionMenu(trigger, menu);
           requestAnimationFrame(() => bcDdPositionMenu(trigger, menu));
         } else {
