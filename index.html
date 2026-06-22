@@ -24181,13 +24181,17 @@
 
       html.mr-notif-page-active.mr-mobile-ui #ticketModal .td-mob-sheet,
       body.ticket-over-notif #ticketModal .td-mob-sheet {
+        top: var(--notif-ticket-sheet-top, calc(env(safe-area-inset-top, 0px) + 112px)) !important;
         bottom: 0 !important;
-        max-height: min(
-          78dvh,
-          calc(100dvh - env(safe-area-inset-top, 0px) - 72px)
-        ) !important;
+        max-height: none !important;
+        height: auto !important;
         padding-bottom: env(safe-area-inset-bottom, 0px);
         border-radius: 16px 16px 0 0 !important
+      }
+
+      body.ticket-over-notif.ticket-keyboard-open #ticketModal .td-mob-sheet {
+        top: auto !important;
+        max-height: var(--ticket-kb-max-h, 82dvh) !important
       }
 
       html.mr-notif-page-active.mr-mobile-ui #ticketModal .td-content-area,
@@ -28875,7 +28879,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-notif-ticket-cap-v924">
+  <meta name="app-build" content="athar-notif-ticket-anchor-v925">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -31594,15 +31598,48 @@
         return typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches;
       }
 
-      const NOTIF_TICKET_SHEET_MAX = 'min(78dvh, calc(100dvh - env(safe-area-inset-top, 0px) - 72px))';
-
       function applyNotifTicketSheetCap(sheet) {
         const el = sheet || document.querySelector('#ticketModal .td-mob-sheet');
         if (!el) return;
-        if (document.body.classList.contains('ticket-over-notif')
-          && document.getElementById('ticketModal')?.classList.contains('open')) {
-          el.style.setProperty('max-height', NOTIF_TICKET_SHEET_MAX, 'important');
+        if (!document.body.classList.contains('ticket-over-notif')
+          || !document.getElementById('ticketModal')?.classList.contains('open')) return;
+
+        if (document.body.classList.contains('ticket-keyboard-open')) {
+          el.style.removeProperty('top');
+          document.documentElement.style.removeProperty('--notif-ticket-sheet-top');
+          return;
         }
+
+        const anchor = document.getElementById('notifPageFilters')
+          || document.querySelector('#tab-notifications .notif-page-head');
+        const gap = 6;
+        let topPx = null;
+        if (anchor) {
+          const r = anchor.getBoundingClientRect();
+          if (r.height > 0) topPx = Math.ceil(r.bottom) + gap;
+        }
+
+        if (topPx != null && topPx > 48) {
+          document.documentElement.style.setProperty('--notif-ticket-sheet-top', `${topPx}px`);
+          el.style.setProperty('top', `${topPx}px`, 'important');
+        } else {
+          document.documentElement.style.setProperty(
+            '--notif-ticket-sheet-top',
+            'calc(env(safe-area-inset-top, 0px) + 112px)'
+          );
+          el.style.setProperty('top', 'var(--notif-ticket-sheet-top)', 'important');
+        }
+        el.style.setProperty('bottom', '0', 'important');
+        el.style.removeProperty('max-height');
+        el.style.removeProperty('height');
+      }
+
+      function clearNotifTicketSheetCap(sheet) {
+        document.documentElement.style.removeProperty('--notif-ticket-sheet-top');
+        const el = sheet || document.querySelector('#ticketModal .td-mob-sheet');
+        el?.style.removeProperty('top');
+        el?.style.removeProperty('max-height');
+        el?.style.removeProperty('height');
       }
 
       function isViolDetailMobSheet() {
@@ -31710,10 +31747,11 @@
         document.querySelector('#ticketModal .td-mob-sheet')?.style.removeProperty('bottom');
         const ticketSheet = document.querySelector('#ticketModal .td-mob-sheet');
         if (ticketSheet) {
+          ticketSheet.style.removeProperty('bottom');
           if (document.body.classList.contains('ticket-over-notif') && ticketOpen) {
             applyNotifTicketSheetCap(ticketSheet);
           } else {
-            ticketSheet.style.removeProperty('max-height');
+            clearNotifTicketSheetCap(ticketSheet);
           }
         }
         document.querySelector('#violDetailModal .viol-paper-sheet')?.style.removeProperty('bottom');
@@ -32157,7 +32195,7 @@
           if (sheet) {
             sheet.style.transform = '';
             sheet.style.removeProperty('bottom');
-            sheet.style.removeProperty('max-height');
+            clearNotifTicketSheetCap(sheet);
           }
           releaseTicketModalFromShell();
           unlockMobileAppScrollForTicket();
