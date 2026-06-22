@@ -24182,13 +24182,14 @@
       }
 
       #tab-compliance .cmp-neo-extreme__name {
-        font-size: 11px !important;
-        line-height: 1.25 !important;
-        white-space: normal !important;
+        font-size: 10px !important;
+        line-height: 1.2 !important;
+        white-space: nowrap !important;
         overflow: hidden !important;
-        display: -webkit-box !important;
-        -webkit-line-clamp: 2 !important;
-        -webkit-box-orient: vertical !important
+        text-overflow: ellipsis !important;
+        display: block !important;
+        -webkit-line-clamp: unset !important;
+        -webkit-box-orient: unset !important
       }
 
       #tab-compliance .cmp-neo-extreme__sub {
@@ -29246,7 +29247,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-cmp-card-ui-v945">
+  <meta name="app-build" content="athar-cmp-extreme-mob-v946">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -49322,7 +49323,7 @@
               <span class="cmp-neo-extreme__icon" aria-hidden="true"><i class="fas ${icons[kind]}"></i></span>
               <span class="cmp-neo-extreme__body">
                 <span class="cmp-neo-extreme__lbl">${labels[kind]}</span>
-                <span class="cmp-neo-extreme__name">${Sec.escapeHTML(item.name)}</span>
+                <span class="cmp-neo-extreme__name" title="${Sec.escapeHTML(item.name)}">${Sec.escapeHTML(item.name)}</span>
                 <span class="cmp-neo-extreme__sub${subCls}">${Sec.escapeHTML(subText)}</span>
               </span>
               <span class="cmp-neo-extreme__score" style="color:${tone}">${scoreStr}</span>
