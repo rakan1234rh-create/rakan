@@ -22434,11 +22434,15 @@
         padding: 8px 0 !important
       }
 
-      #ticketModal #tdInlineAttachments {
-        margin-top: 0 !important
-      }
+    #ticketModal #tdInlineAttachments {
+      margin-top: 0 !important
+    }
 
-      #ticketModal .td-att-section-head {
+    #ticketModal .td-response-form {
+      margin-top: 14px !important
+    }
+
+    #ticketModal .td-att-section-head {
         margin-top: 0 !important;
         padding: 8px 0 !important;
         border-bottom: 1px dashed var(--border) !important
@@ -29275,7 +29279,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-emp-resp-tab-v959">
+  <meta name="app-build" content="athar-emp-resp-info-v960">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -30795,10 +30799,7 @@
           <div class="td-pane active" id="tdp-info">
             <div id="tdInfo"></div>
             <div id="tdInlineAttachments"></div>
-          </div>
-          <div class="td-pane" id="tdp-workflow">
-            <div id="wfStepsContainer"></div>
-            <div id="responseForm" style="margin-top:18px;display:none">
+            <div id="responseForm" class="td-response-form" style="margin-top:18px;display:none">
               <div class="panel" style="margin:0">
                 <h4 style="margin-bottom:10px;font-size:14px">إضافة رد</h4>
                 <div class="figma-search-wrap ticket-resp-search">
@@ -30816,6 +30817,9 @@
                 <div id="responseButtons"></div>
               </div>
             </div>
+          </div>
+          <div class="td-pane" id="tdp-workflow">
+            <div id="wfStepsContainer"></div>
           </div>
           <div class="td-pane" id="tdp-logs">
             <div id="logsWrap"></div>
@@ -31088,7 +31092,7 @@
       /** Web Push — المفتاح العام VAPID (الخاص في Supabase Secrets فقط) */
       const ATHAR_VAPID_PUBLIC_KEY = 'BAAE2sxYeIGbYADV7uimLzIFB_en9SBWQ3a4-LBULuOIVm40YI7YfjXL2Fddttr1L1tHFkoaiPzmZankfUk_2jc';
       const ATHAR_VAPID_STORAGE_KEY = 'athar_vapid_public_key';
-      const ATHAR_SW_URL = './sw.js?v=9';
+      const ATHAR_SW_URL = './sw.js?v=10';
 
       /** رابط النشر — روابط استعادة كلمة المرور من file:// أو localhost */
       const ATHAR_PUBLIC_ORIGIN = 'https://athar-app.online';
@@ -31222,6 +31226,11 @@
         if (r === 'branch_mgr' || r === 'branchmanager') return 'branch_manager';
         if (r === 'human_resources' || r === 'humanresources' || r === 'موارد_بشرية' || r === 'الموارد_البشرية') return 'hr';
         return r;
+      }
+
+      function userIdsMatch(a, b) {
+        if (a == null || b == null) return false;
+        return String(a).trim().toLowerCase() === String(b).trim().toLowerCase();
       }
 
       const STATE_LABELS = {
@@ -37295,7 +37304,7 @@
 
         if (normRole === 'admin' || hasPermission('act_all_tickets')) return true;
 
-        if (wfState === 'emp' && hasPermission('respond_own_ticket') && (normRole === 'employee' || normRole === 'branch_manager') && t.employee_id === id) return true;
+        if (wfState === 'emp' && hasPermission('respond_own_ticket') && (normRole === 'employee' || normRole === 'branch_manager') && userIdsMatch(t.employee_id, id)) return true;
         if (wfState === 'sup' && hasPermission('act_as_supervisor') && normRole === 'supervisor' && (state.currentUser.supervisedBranches || []).includes(t.branch_id)) return true;
         if (wfState === 'aud' && hasPermission('act_as_auditor') && normRole === 'auditor') return true;
         if (wfState === 'mgt' && hasPermission('act_as_manager') && normRole === 'manager') return true;
@@ -45204,6 +45213,14 @@
         return !!(t && (t._detailFetched || t._detailExtrasLoaded || t.attachments !== undefined));
       }
 
+      function scrollResponseFormIntoView() {
+        const form = document.getElementById('responseForm');
+        if (!form || form.style.display === 'none') return;
+        requestAnimationFrame(() => {
+          try { form.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (_) {}
+        });
+      }
+
       function refreshTicketDetailAfterExtras(id) {
         const t = state.violations.find(v => v.id === id);
         if (!t || state.editingTicket?.id !== id) return;
@@ -45211,12 +45228,7 @@
         buildLogs(t);
         buildWfSteps(t);
         setupResponseForm(t);
-        const respForm = document.getElementById('responseForm');
-        const showRespForm = !!(respForm && respForm.style.display !== 'none');
-        const wfTab = document.getElementById('tdt-workflow');
-        if (wfTab) wfTab.classList.toggle('td-tab--needs-action', showRespForm);
-        const activeTab = document.querySelector('.td-tab.active')?.id;
-        if (showRespForm && activeTab === 'tdt-info') switchDetailTab('workflow');
+        scrollResponseFormIntoView();
       }
 
       function fetchTicketFullDetail(id) {
@@ -45262,11 +45274,8 @@
         buildWfSteps(t);
         buildLogs(t);
         setupResponseForm(t);
-        const respForm = document.getElementById('responseForm');
-        const showRespForm = !!(respForm && respForm.style.display !== 'none');
-        switchDetailTab(showRespForm ? 'workflow' : 'info');
-        const wfTab = document.getElementById('tdt-workflow');
-        if (wfTab) wfTab.classList.toggle('td-tab--needs-action', showRespForm);
+        switchDetailTab('info');
+        scrollResponseFormIntoView();
       }
 
       // ───────────────────────────────────────────────────────────────────────────
@@ -46589,7 +46598,7 @@
         // Path A: من الراصد
         // Path B: من المشرف (يبدأ مباشرة من aud)
 
-        if (wfState === 'emp' && (actAsAdmin || (hasPermission('respond_own_ticket') && (normRole === 'employee' || normRole === 'branch_manager') && t.employee_id === meId))) {
+        if (wfState === 'emp' && (actAsAdmin || (hasPermission('respond_own_ticket') && (normRole === 'employee' || normRole === 'branch_manager') && userIdsMatch(t.employee_id, meId)))) {
           buttons.push({ act: 'respond', label: RESP_SEND_LABEL, cls: 'btn-primary', icon: 'fa-paper-plane' });
           respTextarea.placeholder = 'اكتب ردك على المخالفة... (مطلوب)';
         }
