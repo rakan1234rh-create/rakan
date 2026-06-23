@@ -450,7 +450,7 @@ begin
     return jsonb_build_object('forwarded', false, 'skipped', true, 'reason', 'race');
   end if;
 
-  perform public.mirsad_cancel_forward_jobs(r.id, null);
+  perform public.mirsad_cancel_forward_jobs(r.id, p_direction);
 
   select value into v_service_key from public.mirsad_secrets where key = 'service_role_key';
   select value into v_base_url from public.mirsad_secrets where key = 'supabase_url';
