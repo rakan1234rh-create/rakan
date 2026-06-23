@@ -1,34 +1,18 @@
 -- ═══════════════════════════════════════════════════════════════════════════
--- ATHAR — احتياط يومي للتمرير (ليس فحصاً كل 10 دقائق)
+-- ATHAR — إلغاء كرون التمرير القديم (polling / احتياط يومي)
+-- التمرير الفعلي: pg_cron عند due_at لكل job + استدعاء violation-push
+-- شغّل: supabase/on-demand-scheduling.sql
 -- ═══════════════════════════════════════════════════════════════════════════
---
--- المتطلبات:
---   1) supabase/mirsad-auto-forward-sql.sql
---   2) supabase/violation-forward-jobs.sql
---   3) supabase/violation-forward-schedule-at-due.sql  (للترقية من نسخة قديمة)
---
--- التمرير الفعلي يحدث عبر pg_cron مُجدول عند due_at لكل job.
--- هذا الملف يضيف احتياطاً يومياً فقط للـ jobs العالقة.
 
 create extension if not exists pg_cron with schema pg_catalog;
 
--- إلغاء الجدولة القديمة (كل 10 دقائق أو كل دقيقة)
 select cron.unschedule(j.jobid)
 from cron.job j
-where j.jobname = 'athar-violation-auto-forward';
-
-select cron.unschedule(j.jobid)
-from cron.job j
-where j.jobname = 'athar-violation-forward-fallback';
-
--- 04:00 Asia/Riyadh ≈ 01:00 UTC — مرة واحدة يومياً
-select cron.schedule(
+where j.jobname in (
+  'athar-violation-auto-forward',
   'athar-violation-forward-fallback',
-  '0 1 * * *',
-  $$ select public.mirsad_auto_forward_tick(); $$
+  'auto-forward-violations'
 );
 
 -- تحقق:
--- select jobid, jobname, schedule, left(command, 80) from cron.job
--- where jobname in ('athar-violation-forward-fallback') or jobname like 'athar-fwd-%'
--- order by jobname limit 30;
+-- select jobname, schedule from cron.job where jobname like 'athar-fwd-%' or jobname like 'athar-bc-exp-%';

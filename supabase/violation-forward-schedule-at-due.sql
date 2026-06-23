@@ -292,20 +292,13 @@ grant execute on function public.mirsad_unschedule_forward_cron(text) to postgre
 grant execute on function public.mirsad_execute_forward_job(uuid) to postgres;
 grant execute on function public.mirsad_schedule_forward_job_at(uuid) to postgres;
 
--- ─── إلغاء cron كل 10 دقائق / كل دقيقة القديم ───
+-- ─── إلغاء cron polling / احتياط يومي (التمرير عند due_at فقط) ───
 select cron.unschedule(j.jobid)
 from cron.job j
-where j.jobname = 'athar-violation-auto-forward';
-
--- ─── احتياط يومي فقط (04:00 Asia/Riyadh ≈ 01:00 UTC) ───
-select cron.unschedule(j.jobid)
-from cron.job j
-where j.jobname = 'athar-violation-forward-fallback';
-
-select cron.schedule(
+where j.jobname in (
+  'athar-violation-auto-forward',
   'athar-violation-forward-fallback',
-  '0 1 * * *',
-  $$ select public.mirsad_auto_forward_tick(); $$
+  'auto-forward-violations'
 );
 
 -- ─── جدولة jobs معلّقة حالياً ───
