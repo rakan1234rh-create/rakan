@@ -96,7 +96,7 @@ begin
     return jsonb_build_object('ok', false, 'reason', 'rescheduled_early', 'due_at', j.due_at);
   end if;
 
-  select public.mirsad_auto_forward_single(j.violation_id, j.direction) into v_res;
+  select public.mirsad_auto_forward_single(j.violation_id, j.direction, j.due_at) into v_res;
 
   if coalesce((v_res->>'forwarded')::boolean, false) then
     update public.violation_forward_jobs set status = 'done', processed_at = now() where id = p_job_id;
@@ -305,7 +305,7 @@ begin
   loop
     v_total := v_total + 1;
 
-    select public.mirsad_auto_forward_single(j.violation_id, j.direction) into v_res;
+    select public.mirsad_auto_forward_single(j.violation_id, j.direction, j.due_at) into v_res;
 
     if coalesce((v_res->>'forwarded')::boolean, false) then
       update public.violation_forward_jobs
@@ -334,7 +334,8 @@ $$;
 -- ─── تمرير مخالفة واحدة (يُستدعى من job أو الواجهة) ───
 create or replace function public.mirsad_auto_forward_single(
   p_violation_id uuid,
-  p_direction text
+  p_direction text,
+  p_due_at timestamptz default null
 )
 returns jsonb
 language plpgsql
@@ -350,9 +351,9 @@ declare
   v_logs jsonb;
   v_label text;
   v_started timestamptz;
+  v_due timestamptz;
   v_service_key text;
   v_base_url text;
-  v_flag_col text;
   v_expected_state text;
 begin
   select * into r from public.violations where id = p_violation_id for update;
@@ -361,13 +362,13 @@ begin
   end if;
 
   if p_direction = 'emp_to_sup' then
-    v_flag_col := 'auto_forwarded_emp';
     v_expected_state := 'emp';
     if r.state <> 'emp' or coalesce(r.auto_forwarded_emp, false) then
       return jsonb_build_object('forwarded', false, 'skipped', true, 'reason', 'state_mismatch');
     end if;
-    if r.created_at > now() - interval '24 hours' then
-      return jsonb_build_object('forwarded', false, 'skipped', true, 'reason', 'not_due');
+    v_due := coalesce(p_due_at, r.emp_forward_after, r.created_at + interval '24 hours');
+    if v_due > now() then
+      return jsonb_build_object('forwarded', false, 'skipped', true, 'reason', 'not_due', 'due_at', v_due);
     end if;
     if exists (
       select 1 from jsonb_array_elements(coalesce(r.logs, '[]'::jsonb)) e
@@ -381,14 +382,20 @@ begin
     if public.mirsad_workflow_stage_skipped('sup') then
       return jsonb_build_object('forwarded', false, 'skipped', true, 'reason', 'stage_skipped');
     end if;
-    v_flag_col := 'auto_forwarded_sup';
     v_expected_state := 'sup';
     if r.state <> 'sup' or coalesce(r.auto_forwarded_sup, false) then
       return jsonb_build_object('forwarded', false, 'skipped', true, 'reason', 'state_mismatch');
     end if;
-    v_started := public.mirsad_sup_stage_start_time(r.logs, r.auto_forwarded_emp, r.updated_at, r.created_at);
-    if v_started is null or v_started > now() - interval '48 hours' then
-      return jsonb_build_object('forwarded', false, 'skipped', true, 'reason', 'not_due');
+    v_due := coalesce(p_due_at, r.sup_forward_after);
+    if v_due is not null then
+      if v_due > now() then
+        return jsonb_build_object('forwarded', false, 'skipped', true, 'reason', 'not_due', 'due_at', v_due);
+      end if;
+    else
+      v_started := public.mirsad_sup_stage_start_time(r.logs, r.auto_forwarded_emp, r.updated_at, r.created_at);
+      if v_started is null or v_started > now() - interval '48 hours' then
+        return jsonb_build_object('forwarded', false, 'skipped', true, 'reason', 'not_due');
+      end if;
     end if;
     if exists (
       select 1 from jsonb_array_elements(coalesce(r.logs, '[]'::jsonb)) e
@@ -453,7 +460,8 @@ begin
       url := v_base_url || '/functions/v1/violation-push',
       headers := jsonb_build_object(
         'Content-Type', 'application/json',
-        'Authorization', 'Bearer ' || v_service_key
+        'Authorization', 'Bearer ' || v_service_key,
+        'apikey', v_service_key
       ),
       body := jsonb_build_object(
         'notifyState', true,
@@ -525,7 +533,7 @@ end;
 $$;
 
 grant execute on function public.mirsad_process_forward_jobs(int) to postgres;
-grant execute on function public.mirsad_auto_forward_single(uuid, text) to postgres;
+grant execute on function public.mirsad_auto_forward_single(uuid, text, timestamptz) to postgres;
 grant execute on function public.mirsad_forward_cron_job_name(uuid) to postgres;
 grant execute on function public.mirsad_unschedule_forward_cron(text) to postgres;
 grant execute on function public.mirsad_execute_forward_job(uuid) to postgres;

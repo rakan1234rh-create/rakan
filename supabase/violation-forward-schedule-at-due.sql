@@ -82,7 +82,7 @@ begin
     return jsonb_build_object('ok', false, 'reason', 'rescheduled_early', 'due_at', j.due_at);
   end if;
 
-  select public.mirsad_auto_forward_single(j.violation_id, j.direction) into v_res;
+  select public.mirsad_auto_forward_single(j.violation_id, j.direction, j.due_at) into v_res;
 
   if coalesce((v_res->>'forwarded')::boolean, false) then
     update public.violation_forward_jobs

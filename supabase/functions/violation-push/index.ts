@@ -396,17 +396,21 @@ async function dispatchViolationStatePush(
   const workflowIds = new Set([...recipientIds].filter((id) => !branchMgrIds.has(id)));
   if (workflowCopy && workflowIds.size) {
     for (const uid of workflowIds) {
-      await upsertAppNotification(supabase, {
-        userId: uid,
-        eventKey: `pending_${record.id}`,
-        title: workflowCopy.title,
-        message: body,
-        type: autoEmpFwd && state === 'sup' ? 'amber' : (state === 'aud' ? 'purple' : state === 'mgt' ? 'red' : state === 'hr' ? 'orange' : 'blue'),
-        icon: autoEmpFwd && state === 'sup' ? 'fa-robot' : 'fa-bell',
-        ticketId: String(record.id),
-        scope: 'mine',
-        isAuto: !!(autoEmpFwd && state === 'sup'),
-      });
+      try {
+        await upsertAppNotification(supabase, {
+          userId: uid,
+          eventKey: `pending_${record.id}`,
+          title: workflowCopy.title,
+          message: body,
+          type: autoEmpFwd && state === 'sup' ? 'amber' : (state === 'aud' ? 'purple' : state === 'mgt' ? 'red' : state === 'hr' ? 'orange' : 'blue'),
+          icon: autoEmpFwd && state === 'sup' ? 'fa-robot' : 'fa-bell',
+          ticketId: String(record.id),
+          scope: 'mine',
+          isAuto: !!(autoEmpFwd && state === 'sup'),
+        });
+      } catch (err) {
+        allErrors.push(`notif:${String(err).slice(0, 80)}`);
+      }
     }
     const result = await sendPushToUserIds(
       supabase,
@@ -427,17 +431,21 @@ async function dispatchViolationStatePush(
         ? `auto_fwd_${record.id}_sup_to_aud`
         : `bm_team_status_${record.id}_${state}`);
     for (const uid of branchMgrIds) {
-      await upsertAppNotification(supabase, {
-        userId: uid,
-        eventKey: bmEvent,
-        title: bmCopy.title,
-        message: body,
-        type: state === 'sup' ? 'blue' : state === 'aud' ? 'purple' : state === 'mgt' ? 'red' : state === 'hr' ? 'orange' : 'amber',
-        icon: (autoEmpFwd && state === 'sup') || (autoSupFwd && state === 'aud') ? 'fa-robot' : 'fa-reply',
-        ticketId: String(record.id),
-        scope: 'team',
-        isAuto: !!(autoEmpFwd || autoSupFwd),
-      });
+      try {
+        await upsertAppNotification(supabase, {
+          userId: uid,
+          eventKey: bmEvent,
+          title: bmCopy.title,
+          message: body,
+          type: state === 'sup' ? 'blue' : state === 'aud' ? 'purple' : state === 'mgt' ? 'red' : state === 'hr' ? 'orange' : 'amber',
+          icon: (autoEmpFwd && state === 'sup') || (autoSupFwd && state === 'aud') ? 'fa-robot' : 'fa-reply',
+          ticketId: String(record.id),
+          scope: 'team',
+          isAuto: !!(autoEmpFwd || autoSupFwd),
+        });
+      } catch (err) {
+        allErrors.push(`notif:${String(err).slice(0, 80)}`);
+      }
     }
     const result = await sendPushToUserIds(
       supabase,
@@ -567,11 +575,13 @@ async function safeEqual(a: string, b: string): Promise<boolean> {
 }
 
 async function isServiceRoleAuth(req: Request): Promise<boolean> {
-  const auth = (req.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '').trim();
-  if (!auth) return false;
   const serviceKey = (Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '').trim();
   if (!serviceKey) return false;
-  return await safeEqual(auth, serviceKey);
+  const auth = (req.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '').trim();
+  if (auth && await safeEqual(auth, serviceKey)) return true;
+  const apikey = (req.headers.get('apikey') || '').trim();
+  if (apikey && await safeEqual(apikey, serviceKey)) return true;
+  return false;
 }
 
 async function resolveUserIdFromJwt(req: Request) {
@@ -940,33 +950,36 @@ Deno.serve(async (req) => {
 
   // ─── إشعار عند تغيّر مرحلة التذكرة (مثلاً وصولها للمدير) ───
   if (payload.notifyState === true) {
-    const userId = await resolveUserIdFromJwt(req);
-    const serviceInternal = await isServiceRoleAuth(req);
-    if (!userId && !serviceInternal) return json({ error: 'يجب تسجيل الدخول لإرسال التنبيه' }, 401);
-    const record = extractRecord(payload);
-    if (!record?.id) return json({ error: 'missing violation record in payload' }, 400);
-    // [أمان] منع إساءة الاستخدام: المستخدم العادي يرسل تنبيهاً فقط لتذكرة يراها
-    if (userId && !serviceInternal) {
-      const canSee = await userCanSeeViolation(req, String(record.id));
-      if (canSee !== true) return json({ error: 'غير مصرح بإرسال تنبيه لهذه التذكرة' }, 403);
+    try {
+      const userId = await resolveUserIdFromJwt(req);
+      const serviceInternal = await isServiceRoleAuth(req);
+      if (!userId && !serviceInternal) return json({ error: 'يجب تسجيل الدخول لإرسال التنبيه' }, 401);
+      const record = extractRecord(payload);
+      if (!record?.id) return json({ error: 'missing violation record in payload' }, 400);
+      if (userId && !serviceInternal) {
+        const canSee = await userCanSeeViolation(req, String(record.id));
+        if (canSee !== true) return json({ error: 'غير مصرح بإرسال تنبيه لهذه التذكرة' }, 403);
+      }
+      const { data: row, error: rowErr } = await supabase
+        .from('violations')
+        .select('id, ticket_number, violation_type, employee_id, branch_id, state, auto_forwarded_emp, auto_forwarded_sup')
+        .eq('id', record.id)
+        .maybeSingle();
+      if (rowErr) return json({ error: rowErr.message }, 500);
+      if (!row) return json({ error: 'violation not found' }, 404);
+      const merged: ViolationRow = { ...row, ...record, id: row.id };
+      const previousState = payload.previousState != null ? String(payload.previousState) : null;
+      const result = await dispatchViolationStatePush(supabase, merged, previousState, {
+        isAutoForward: payload.isAutoForward === true,
+        dedupeKey: payload.dedupeKey != null ? String(payload.dedupeKey) : undefined,
+      });
+      if (result.error && !result.sent) {
+        return json({ ok: false, ...result }, 500);
+      }
+      return json({ ok: true, ...result });
+    } catch (err) {
+      return json({ ok: false, error: String(err) }, 500);
     }
-    const { data: row, error: rowErr } = await supabase
-      .from('violations')
-      .select('id, ticket_number, violation_type, employee_id, branch_id, state, auto_forwarded_emp, auto_forwarded_sup')
-      .eq('id', record.id)
-      .maybeSingle();
-    if (rowErr) return json({ error: rowErr.message }, 500);
-    if (!row) return json({ error: 'violation not found' }, 404);
-    const merged: ViolationRow = { ...row, ...record, id: row.id };
-    const previousState = payload.previousState != null ? String(payload.previousState) : null;
-    const result = await dispatchViolationStatePush(supabase, merged, previousState, {
-      isAutoForward: payload.isAutoForward === true,
-      dedupeKey: payload.dedupeKey != null ? String(payload.dedupeKey) : undefined,
-    });
-    if (result.error && !result.sent) {
-      return json({ ok: false, ...result }, 500);
-    }
-    return json({ ok: true, ...result });
   }
 
   // ─── إشعار من التطبيق بعد إنشاء مخالفة (JWT) ───
