@@ -29261,7 +29261,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-hr-warning-v956">
+  <meta name="app-build" content="athar-local-patch-v957">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -35281,6 +35281,43 @@
         }
       }
 
+      /** تحديث تذكرة واحدة في الذاكرة بعد RPC/إجراء — بدون loadAllData */
+      function patchViolationLocally(violationId, patch) {
+        if (!violationId || !patch || typeof patch !== 'object') return null;
+        const idx = state.violations.findIndex(v => v.id === violationId);
+        if (idx < 0) return null;
+        const merged = {
+          ...state.violations[idx],
+          ...patch,
+          updated_at: patch.updated_at || new Date().toISOString(),
+        };
+        const enrichFn = isMobileViewport() ? enrichViolationLite : enrichViolation;
+        state.violations[idx] = enrichFn(merged);
+        invalidateEmpScoreCache();
+        invalidateNotifCache();
+        return state.violations[idx];
+      }
+
+      /** إعادة رسم الواجهة بعد تحديث محلي لتذكرة */
+      function refreshViolationsUI(ticketId) {
+        scheduleRenderAll();
+        renderNotifications();
+        if (!ticketId) return;
+        const t = state.violations.find(v => v.id === ticketId);
+        if (!t) return;
+        if (state.editingTicket?.id === ticketId) {
+          state.editingTicket = t;
+          if (document.getElementById('ticketModal')?.classList.contains('open')) {
+            renderTicketDetailUI(t);
+          }
+          const viewer = document.getElementById('attViewer');
+          if (viewer?.classList.contains('open')) {
+            state._attList = parseDbJsonArray(t.attachments);
+            renderAttViewer();
+          }
+        }
+      }
+
       const renderNotifBadgeDebounced = debounce(() => renderNotifBadge(), 400);
 
       function setupRealtime() {
@@ -39164,7 +39201,10 @@
           if (error) throw error;
           
           showToast(`تم حذف ${ids.length} تذكرة عالقة بنجاح`, 'success');
-          await loadAllData();
+          const idSet = new Set(ids);
+          state.violations = state.violations.filter(v => !idSet.has(v.id));
+          invalidateEmpScoreCache();
+          invalidateNotifCache();
           renderAll();
         } catch (err) {
           if (isMirsadDebugLog()) console.error('Cleanup failed:', err);
@@ -42513,12 +42553,12 @@
 
           state.tempTicketId = null;
           resetNewTicket();
-          await loadAllData();
-          
-          // تحديث محلي فوري
+
+          // تحديث محلي فوري — بدون إعادة تحميل كل المنصة
           const enriched = enrichViolation(ticketData);
           state.violations = [enriched, ...state.violations.filter(v => v.id !== enriched.id)];
           invalidateEmpScoreCache();
+          invalidateNotifCache();
 
           renderAll();
           renderNotifications();
@@ -46631,25 +46671,9 @@
 
               const combinedAtts = currentAtts.concat(uploadedAttachments);
               await sb.from('violations').update({ attachments: JSON.stringify(combinedAtts) }).eq('id', ticketId);
-              // تمت إزالة الـ toast الخاص باكتمال الرفع حسب طلب المستخدم للعمل بصمت تام
 
-              // تحديث البيانات محلياً وعرضها للمستخدم
-              if (typeof loadAllData === 'function') {
-                await loadAllData();
-                if (typeof renderAll === 'function') renderAll();
-                if (typeof renderNotifications === 'function') renderNotifications();
-
-                // تحديث نافذة العرض إذا كانت التذكرة مفتوحة
-                const newT = state.violations.find(v => v.id === ticketId);
-                if (newT && state.editingTicket && state.editingTicket.id === ticketId) {
-                  state.editingTicket = newT;
-                  const viewer = document.getElementById('attViewer');
-                  if (viewer && viewer.classList.contains('open')) {
-                    state._attList = newT.attachments;
-                    renderAttViewer();
-                  }
-                }
-              }
+              patchViolationLocally(ticketId, { attachments: combinedAtts });
+              refreshViolationsUI(ticketId);
             }
           } catch (err) {
             showToast(`فشل رفع المرفقات للتذكرة ${ticketNumber}: ${err.message}`, 'error');
@@ -46754,9 +46778,19 @@
           closeModal('ticketModal');
           state.editingTicket = null;
           state.uploadedFiles.resp = [];
-          await loadAllData();
-          renderAll();
-          renderNotifications();
+
+          const localPatch = {
+            state: tr.newState,
+            logs: rpcData.logs,
+            [tr.fieldKey]: text,
+            attachments: newAttachments,
+          };
+          if (tr.statusText) localPatch.status_text = tr.statusText;
+          if (action === 'respond') localPatch.auto_forwarded_emp = false;
+          if (action === 'sup_process') localPatch.auto_forwarded_sup = false;
+          patchViolationLocally(t.id, localPatch);
+          refreshViolationsUI();
+
           showToast('تم حفظ الرد وتحديث التذكرة بنجاح ✓', 'success');
         } catch (err) {
           showToast('فشل التنفيذ: ' + err.message, 'error');
@@ -55416,18 +55450,11 @@
         }
         if (!direction) return false;
 
-        const ok = await autoForwardTicket(t, direction);
-        if (!ok) return false;
+        const result = await autoForwardTicket(t, direction);
+        if (!result?.ok) return false;
 
-        await loadAllData();
-        renderAll();
-        renderNotifications();
-        const refreshed = state.violations.find(v => v.id === t.id);
-        if (refreshed && state.editingTicket?.id === t.id) {
-          enrichViolationLite(refreshed);
-          state.editingTicket = refreshed;
-          renderTicketDetailUI(refreshed);
-        }
+        patchViolationLocally(t.id, result.patch);
+        refreshViolationsUI(t.id);
         return true;
       }
 
@@ -55528,10 +55555,18 @@
             t.state,
             { autoForward: true }
           );
-          return true;
+          return {
+            ok: true,
+            patch: {
+              state: newState,
+              logs: newLogs,
+              [flagCol]: true,
+              ...(direction === 'emp_to_sup' ? { emp_forward_after: null } : { sup_forward_after: null }),
+            },
+          };
         } catch (err) {
           if (isMirsadDebugLog()) console.error('Auto-forward failed:', err);
-          return false;
+          return { ok: false };
         } finally {
           state._autoForwardLocks.delete(lockKey);
         }
