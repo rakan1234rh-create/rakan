@@ -29554,7 +29554,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-logs-timeline-v967">
+  <meta name="app-build" content="athar-logs-timeline-v968">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -36527,6 +36527,7 @@
         schedulePermissionsCloudSave();
         if (state.editingTicket) {
           try {
+            buildLogs(state.editingTicket);
             setupResponseForm(state.editingTicket);
             buildWfSteps(state.editingTicket);
           } catch (_) {}
@@ -46842,6 +46843,7 @@
 
       function buildWfSteps(t) {
         const c = document.getElementById('wfStepsContainer');
+        if (!c || !t) return;
         const visibleSteps = getTicketTimelineSteps(t).map(s => {
           const wfLabels = {
             obs: { label: 'رصد المخالفة', sub: 'تم تسجيلها من قبل مراقب الجودة' },
@@ -46907,6 +46909,7 @@
       function buildLogs(t) {
         const c = document.getElementById('logsWrap');
         if (!c || !t) return;
+        stashResponseFormInLogsPane();
         const logs = dedupeTicketLogs(parseDbJsonArray(t.logs));
         const logsPending = !logs.length && !t._detailFetched && state.editingTicket?.id === t.id;
         if (logsPending) {
@@ -46978,6 +46981,7 @@
         const form = document.getElementById('responseForm');
         const btnsWrap = document.getElementById('responseButtons');
         const respTextarea = document.getElementById('respText');
+        if (!form || !btnsWrap || !respTextarea) return;
 
         if (!canActOnTicket(t)) {
           form.style.display = 'none';
