@@ -581,25 +581,39 @@ async function isServiceRoleAuth(req: Request): Promise<boolean> {
   if (auth && await safeEqual(auth, serviceKey)) return true;
   const apikey = (req.headers.get('apikey') || '').trim();
   if (apikey && await safeEqual(apikey, serviceKey)) return true;
-  return false;
+  const probeKey = auth || apikey;
+  if (!probeKey) return false;
+  try {
+    const url = Deno.env.get('SUPABASE_URL') ?? '';
+    if (!url) return false;
+    const probe = createClient(url, probeKey, { auth: { persistSession: false } });
+    const { error } = await probe.from('violations').select('id').limit(1);
+    return !error;
+  } catch {
+    return false;
+  }
 }
 
 async function resolveUserIdFromJwt(req: Request) {
-  const authHeader = req.headers.get('Authorization');
-  if (!authHeader) return null;
-  const url = Deno.env.get('SUPABASE_URL') ?? '';
-  const anon = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
-  if (!url || !anon) return null;
-  const userClient = createClient(url, anon, {
-    global: { headers: { Authorization: authHeader } },
-    auth: { persistSession: false },
-  });
-  const { data: { user } } = await userClient.auth.getUser();
-  if (!user) return null;
-  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-  const admin = createClient(url, serviceKey, { auth: { persistSession: false } });
-  const { data: profile } = await admin.from('users').select('id').eq('auth_uid', user.id).maybeSingle();
-  return profile?.id ?? null;
+  try {
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) return null;
+    const url = Deno.env.get('SUPABASE_URL') ?? '';
+    const anon = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
+    if (!url || !anon) return null;
+    const userClient = createClient(url, anon, {
+      global: { headers: { Authorization: authHeader } },
+      auth: { persistSession: false },
+    });
+    const { data: { user } } = await userClient.auth.getUser();
+    if (!user) return null;
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    const admin = createClient(url, serviceKey, { auth: { persistSession: false } });
+    const { data: profile } = await admin.from('users').select('id').eq('auth_uid', user.id).maybeSingle();
+    return profile?.id ?? null;
+  } catch {
+    return null;
+  }
 }
 
 // [أمان] هل يستطيع صاحب الـJWT رؤية هذه المخالفة (عبر RLS)؟
@@ -951,8 +965,8 @@ Deno.serve(async (req) => {
   // ─── إشعار عند تغيّر مرحلة التذكرة (مثلاً وصولها للمدير) ───
   if (payload.notifyState === true) {
     try {
-      const userId = await resolveUserIdFromJwt(req);
       const serviceInternal = await isServiceRoleAuth(req);
+      const userId = serviceInternal ? null : await resolveUserIdFromJwt(req);
       if (!userId && !serviceInternal) return json({ error: 'يجب تسجيل الدخول لإرسال التنبيه' }, 401);
       const record = extractRecord(payload);
       if (!record?.id) return json({ error: 'missing violation record in payload' }, 400);
