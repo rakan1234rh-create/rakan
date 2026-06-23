@@ -1,5 +1,6 @@
 -- اختبار تمرير تلقائي: V-2026-0317 — متبقي ~3 دقائق من مرحلة الموظف (emp → sup)
 -- يُجدول pg_cron عند due_at عبر mirsad_enqueue_forward_job
+-- scheduled_at: 2026-06-23 (إعادة جدولة بعد إصلاح workflow)
 
 do $$
 declare
