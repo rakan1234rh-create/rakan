@@ -5805,7 +5805,7 @@
     }
 
     .log-item--compose {
-      padding: 10px 12px;
+      padding: 8px 12px;
       border: 1px solid var(--border2);
       margin-bottom: 8px;
       background: var(--surface2);
@@ -5816,19 +5816,19 @@
       font-weight: 600;
       font-size: 13px;
       color: var(--text);
-      margin-bottom: 6px
+      margin-bottom: 4px
     }
 
     .log-item--compose .ticket-resp-input {
       width: 100%;
-      min-height: 40px;
-      max-height: 88px;
+      min-height: 28px;
+      max-height: 64px;
       resize: vertical;
       border: 0;
       background: transparent;
       font-family: var(--font);
       font-size: 13px;
-      line-height: 1.45;
+      line-height: 1.35;
       color: var(--text);
       padding: 0;
       box-shadow: none;
@@ -5843,12 +5843,10 @@
       display: flex;
       align-items: flex-start;
       gap: 8px;
-      margin-top: 8px
+      margin-top: 6px
     }
 
     .log-compose-attach {
-      width: 32px;
-      height: 32px;
       flex-shrink: 0;
       border: 1px dashed var(--border2);
       border-radius: 8px;
@@ -5857,9 +5855,29 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      gap: 6px;
       cursor: pointer;
       touch-action: manipulation;
       transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease
+    }
+
+    .log-compose-attach--icon-only {
+      width: 32px;
+      height: 32px;
+      padding: 0
+    }
+
+    .log-compose-attach--labeled {
+      height: 32px;
+      padding: 0 10px 0 8px;
+      font-family: var(--font);
+      font-size: 12px;
+      font-weight: 500
+    }
+
+    .log-compose-attach-label {
+      color: var(--text2);
+      line-height: 1
     }
 
     .log-compose-attach:hover,
@@ -5884,7 +5902,7 @@
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
-      margin-top: 10px
+      margin-top: 8px
     }
 
     .log-item--compose #responseButtons .td-resp-action {
@@ -13259,6 +13277,13 @@
       height: auto;
       border-radius: 18px;
       padding: 4px 6px 4px 14px
+    }
+
+    #ticketModal .log-item--compose .ticket-resp-input {
+      min-height: 28px !important;
+      max-height: 64px !important;
+      padding: 0 !important;
+      line-height: 1.35 !important
     }
 
     #ticketModal .ticket-resp-input {
@@ -22584,7 +22609,11 @@
       }
 
       #ticketModal .log-item--compose .ticket-resp-input {
-        font-size: 16px !important
+        min-height: 32px !important;
+        max-height: 56px !important;
+        font-size: 16px !important;
+        padding: 0 !important;
+        line-height: 1.35 !important
       }
 
       #ticketModal .info-row {
@@ -24745,17 +24774,13 @@
         padding: 4px 6px 4px 14px
       }
 
-      #ticketModal .ticket-resp-input {
-        min-height: 72px;
-        max-height: 120px;
-        resize: none;
-        border: 0 !important;
-        background: transparent !important;
+      #ticketModal .log-item--compose .ticket-resp-input {
+        min-height: 32px !important;
+        max-height: 56px !important;
         font-size: 16px !important;
-        line-height: 1.45;
-        padding: 10px 8px 10px 0 !important;
-        border-radius: 0 !important;
-        box-shadow: none !important
+        padding: 0 !important;
+        line-height: 1.35 !important;
+        resize: vertical
       }
 
       #ticketModal .ticket-resp-input:focus {
@@ -29448,7 +29473,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-resp-logs-top-v969">
+  <meta name="app-build" content="athar-resp-compose-compact-v970">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
