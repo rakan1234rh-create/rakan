@@ -44554,13 +44554,6 @@
       function syncDeskColsDuringSidebarTransition() {
         scheduleDeskColSyncForActiveTab(true);
         if (typeof bcDdRepositionOpen === 'function') bcDdRepositionOpen();
-        const start = performance.now();
-        const step = () => {
-          scheduleDeskColSyncForActiveTab(true);
-          if (typeof bcDdRepositionOpen === 'function') bcDdRepositionOpen();
-          if (performance.now() - start < 220) requestAnimationFrame(step);
-        };
-        requestAnimationFrame(step);
       }
 
       const _deskColPxProps = ['width', 'min-width', 'max-width'];
