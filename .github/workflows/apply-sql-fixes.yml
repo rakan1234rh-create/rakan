@@ -31,7 +31,7 @@ jobs:
             echo "files=${{ github.event.inputs.sql_file }}" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          mapfile -t CHANGED < <(git diff --name-only HEAD~1 HEAD | grep '^supabase/.*\.sql$' | sed 's|^supabase/||' || true)
+          mapfile -t CHANGED < <(git diff --diff-filter=AM --name-only HEAD~1 HEAD | grep '^supabase/.*\.sql$' | sed 's|^supabase/||' || true)
           if [ "${#CHANGED[@]}" -eq 0 ]; then
             echo "No SQL files changed in this push"
             echo "files=" >> "$GITHUB_OUTPUT"
