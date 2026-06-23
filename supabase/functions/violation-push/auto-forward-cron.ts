@@ -149,7 +149,13 @@ async function safeEqual(a: string, b: string): Promise<boolean> {
   const ba = enc.encode(a);
   const bb = enc.encode(b);
   if (ba.length !== bb.length) return false;
-  return crypto.subtle.timingSafeEqual(ba, bb);
+  const subtle = globalThis.crypto?.subtle;
+  if (subtle && typeof subtle.timingSafeEqual === 'function') {
+    return subtle.timingSafeEqual(ba, bb);
+  }
+  let diff = 0;
+  for (let i = 0; i < ba.length; i++) diff |= ba[i] ^ bb[i];
+  return diff === 0;
 }
 
 /** يقبل السر من x-cron-secret أو cronSecret داخل JSON body (أفضل لـ pg_net Cron) */
