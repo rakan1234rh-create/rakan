@@ -5762,6 +5762,105 @@
       /* Removed in favor of pseudo-line */
     }
 
+    /* Workflow — تخطيط ثعبان (سير متعرج) */
+    .wf-steps--snake {
+      display: grid;
+      grid-template-columns: repeat(var(--wf-snake-cols, 3), minmax(0, 1fr));
+      grid-auto-rows: auto;
+      gap: 14px 8px;
+      padding: 18px 14px;
+      direction: ltr;
+    }
+
+    .wf-steps--snake::before,
+    .wf-steps--snake::after {
+      display: none
+    }
+
+    .wf-snake-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+      overflow: visible
+    }
+
+    .wf-snake-path {
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round
+    }
+
+    .wf-snake-path--track {
+      stroke: var(--border)
+    }
+
+    .wf-snake-path--prog {
+      stroke: var(--green);
+      transition: d 0.25s ease
+    }
+
+    .wf-step--snake {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 6px;
+      direction: rtl;
+      text-align: center;
+      padding: 10px 6px;
+      border-radius: 12px;
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      position: relative;
+      z-index: 1;
+      min-width: 0
+    }
+
+    .wf-step--snake .wf-step-rail {
+      width: auto;
+      align-self: center
+    }
+
+    .wf-step--snake .wf-step-circle {
+      margin-top: 0
+    }
+
+    .wf-step--snake .wf-step-content {
+      padding: 0;
+      align-items: center;
+      text-align: center;
+      width: 100%
+    }
+
+    .wf-step--snake .wf-step-label {
+      font-size: 12px;
+      line-height: 1.3
+    }
+
+    .wf-step--snake .wf-step-sub {
+      font-size: 10px;
+      line-height: 1.35;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden
+    }
+
+    .wf-step--snake.active {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--blue) 18%, transparent);
+      background: color-mix(in srgb, var(--blue) 6%, var(--surface))
+    }
+
+    .wf-step--snake.done {
+      border-color: color-mix(in srgb, var(--green) 45%, var(--border2));
+      background: color-mix(in srgb, var(--green) 5%, var(--surface))
+    }
+
     /* Logs */
     .log-item {
       padding: 10px 12px;
@@ -22690,6 +22789,20 @@
         --wf-step-pad-y: 10px;
         --wf-steps-pad-x: 10px;
         --wf-steps-pad-y: 12px
+      }
+
+      #ticketModal .wf-steps--snake {
+        --wf-snake-cols: 2;
+        gap: 10px 6px;
+        padding: 12px 8px
+      }
+
+      #ticketModal .wf-step--snake .wf-step-label {
+        font-size: 11px
+      }
+
+      #ticketModal .wf-step--snake .wf-step-sub {
+        font-size: 9px
       }
 
       #ticketModal .wf-step-circle {
@@ -46601,12 +46714,86 @@
       window.closeAttViewer = closeAttViewer;
       window.navAttViewer = navAttViewer;
 
-      /** ضبط المسار العمودي: يسار الدوائر + امتداد كامل بين المراكز */
+      /** ضبط المسار: عمودي تقليدي أو ثعبان */
+      function getWfSnakeCols(stepCount) {
+        if (stepCount <= 2) return stepCount;
+        if (typeof isViolDetailMobSheet === 'function' && isViolDetailMobSheet()) return 2;
+        return 3;
+      }
+
+      function getWfSnakeGridPos(index, cols) {
+        const row = Math.floor(index / cols);
+        const posInRow = index % cols;
+        const col = row % 2 === 0 ? posInRow : (cols - 1 - posInRow);
+        return { row: row + 1, col: col + 1 };
+      }
+
+      function buildWfSnakePathD(points) {
+        if (!points || points.length < 2) return '';
+        let d = '';
+        for (let i = 0; i < points.length - 1; i++) {
+          const a = points[i];
+          const b = points[i + 1];
+          if (Math.abs(a.y - b.y) < 6) {
+            d += `M ${a.x} ${a.y} L ${b.x} ${b.y} `;
+          } else {
+            const midY = Math.round((a.y + b.y) / 2);
+            d += `M ${a.x} ${a.y} L ${a.x} ${midY} L ${b.x} ${midY} L ${b.x} ${b.y} `;
+          }
+        }
+        return d.trim();
+      }
+
+      function syncWfSnakeRail(root) {
+        const wfSteps = (root && root.querySelector)
+          ? root.querySelector('.wf-steps--snake')
+          : document.querySelector('#wfStepsContainer .wf-steps--snake');
+        if (!wfSteps) return;
+
+        const svg = wfSteps.querySelector('.wf-snake-svg');
+        const track = svg?.querySelector('.wf-snake-path--track');
+        const prog = svg?.querySelector('.wf-snake-path--prog');
+        const stepEls = [...wfSteps.querySelectorAll('.wf-step--snake')];
+        if (!svg || !track || !prog || !stepEls.length) return;
+
+        const box = wfSteps.getBoundingClientRect();
+        const centerOf = (el) => {
+          const c = el.querySelector('.wf-step-circle') || el;
+          const r = c.getBoundingClientRect();
+          return {
+            x: Math.round(r.left + r.width / 2 - box.left),
+            y: Math.round(r.top + r.height / 2 - box.top)
+          };
+        };
+
+        const points = stepEls.map((el) => ({
+          ...centerOf(el),
+          done: el.classList.contains('done'),
+          active: el.classList.contains('active')
+        }));
+
+        svg.setAttribute('width', String(Math.max(1, Math.round(box.width))));
+        svg.setAttribute('height', String(Math.max(1, Math.round(box.height))));
+        svg.setAttribute('viewBox', `0 0 ${Math.max(1, Math.round(box.width))} ${Math.max(1, Math.round(box.height))}`);
+
+        track.setAttribute('d', buildWfSnakePathD(points));
+
+        let progEnd = 0;
+        for (let i = 0; i < stepEls.length; i++) {
+          if (stepEls[i].classList.contains('done') || stepEls[i].classList.contains('active')) progEnd = i;
+        }
+        prog.setAttribute('d', buildWfSnakePathD(points.slice(0, progEnd + 1)));
+      }
+
       function syncWfStepsRail(root) {
         const wfSteps = (root && root.querySelector)
           ? root.querySelector('.wf-steps')
           : document.querySelector('#wfStepsContainer .wf-steps');
         if (!wfSteps) return;
+        if (wfSteps.classList.contains('wf-steps--snake')) {
+          syncWfSnakeRail(root);
+          return;
+        }
 
         const stepEls = [...wfSteps.querySelectorAll('.wf-step')];
         if (!stepEls.length) return;
@@ -46685,15 +46872,11 @@
         const orderMap = { obs: 0, emp: 1, sup: 2, aud: 3, mgt: 4, hr: 5, closed: 6, Warning_Issued: 6 };
         const wfState = (t.state === 'closed' || t.state === 'Warning_Issued') ? t.state : getEffectiveWorkflowState(t.state);
         const currentOrder = (wfState === 'closed' || wfState === 'Warning_Issued') ? 99 : (orderMap[wfState] || 1);
+        const snakeCols = getWfSnakeCols(visibleSteps.length);
 
-        c.innerHTML = `
-          <div style="padding-bottom: 15px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 8px; font-size: 16px;">
-            <i class="fas fa-clock" style="color: var(--blue)"></i> سير العمل المعياري
-          </div>
-          <div class="wf-steps">
-            ${visibleSteps.map((s, i) => {
+        const renderSnakeStep = (s) => {
           const stepOrder = orderMap[s.code];
-          let cls = 'wf-step';
+          let cls = 'wf-step wf-step--snake';
           let icon = `<i class="fas ${s.icon}"></i>`;
 
           if (t.state === 'closed' || t.state === 'Warning_Issued') {
@@ -46716,8 +46899,21 @@
                     <div class="wf-step-label">${s.label}</div>
                     <div class="wf-step-sub">${s.sub}</div>
                   </div>
-                </div>
-              `;
+                </div>`;
+        };
+
+        c.innerHTML = `
+          <div style="padding-bottom: 15px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 8px; font-size: 16px;">
+            <i class="fas fa-clock" style="color: var(--blue)"></i> سير العمل المعياري
+          </div>
+          <div class="wf-steps wf-steps--snake" style="--wf-snake-cols:${snakeCols}">
+            <svg class="wf-snake-svg" aria-hidden="true">
+              <path class="wf-snake-path wf-snake-path--track"></path>
+              <path class="wf-snake-path wf-snake-path--prog"></path>
+            </svg>
+            ${visibleSteps.map((s, i) => {
+          const pos = getWfSnakeGridPos(i, snakeCols);
+          return `<div class="wf-snake-cell" style="grid-row:${pos.row};grid-column:${pos.col}">${renderSnakeStep(s)}</div>`;
         }).join('')}
           </div>
         `;
