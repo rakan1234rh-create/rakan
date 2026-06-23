@@ -5821,9 +5821,12 @@
 
     .log-item--compose .ticket-resp-input {
       width: 100%;
-      min-height: 28px;
-      max-height: 64px;
-      resize: vertical;
+      height: 32px;
+      min-height: 32px;
+      max-height: 72px;
+      resize: none;
+      overflow-y: auto;
+      box-sizing: border-box;
       border: 0;
       background: transparent;
       font-family: var(--font);
@@ -5839,11 +5842,43 @@
       color: var(--text3)
     }
 
-    .log-compose-toolbar {
+    .log-compose-files {
+      margin-top: 6px !important
+    }
+
+    .log-compose-files .file-item {
+      margin-bottom: 4px;
+      font-size: 12px
+    }
+
+    .log-compose-actions {
       display: flex;
-      align-items: flex-start;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
       gap: 8px;
-      margin-top: 6px
+      margin-top: 8px;
+      direction: rtl
+    }
+
+    .log-compose-actions #responseButtons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-start;
+      flex: 1 1 auto;
+      min-width: 0;
+      margin-top: 0 !important
+    }
+
+    .log-compose-actions .log-compose-attach {
+      flex: 0 0 auto
+    }
+
+    .log-item--compose #responseButtons .td-resp-action {
+      flex: 1 1 auto;
+      min-height: 34px;
+      font-size: 12px
     }
 
     .log-compose-attach {
@@ -5868,8 +5903,8 @@
     }
 
     .log-compose-attach--labeled {
-      height: 32px;
-      min-width: 32px;
+      height: 34px;
+      min-width: 34px;
       padding: 0 10px 0 8px;
       font-family: var(--font);
       font-size: 12px;
@@ -5888,30 +5923,6 @@
       border-color: var(--blue);
       color: var(--blue);
       background: var(--blue-light)
-    }
-
-    .log-compose-files {
-      flex: 1 1 auto;
-      min-width: 0;
-      margin-top: 0 !important
-    }
-
-    .log-compose-files .file-item {
-      margin-bottom: 4px;
-      font-size: 12px
-    }
-
-    .log-item--compose #responseButtons {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 8px
-    }
-
-    .log-item--compose #responseButtons .td-resp-action {
-      flex: 1 1 auto;
-      min-height: 34px;
-      font-size: 12px
     }
 
     /* Detail Tabs */
@@ -13293,8 +13304,8 @@
       box-sizing: border-box !important
     }
 
-    #ticketModal .log-item--compose #responseButtons {
-      margin-top: 8px !important
+    #ticketModal .log-item--compose .log-compose-actions #responseButtons {
+      margin-top: 0 !important
     }
 
     #ticketModal .ticket-resp-input:focus {
@@ -13307,13 +13318,14 @@
       box-shadow: 0 0 0 4px var(--mr-primary-soft)
     }
 
-    #ticketModal #responseButtons {
+    #ticketModal .log-compose-actions #responseButtons {
       display: flex;
       flex-direction: row;
       flex-wrap: wrap;
       align-items: stretch;
       gap: 8px;
-      margin-top: 12px
+      margin-top: 0 !important;
+      justify-content: flex-start
     }
 
     #ticketModal #responseButtons .td-resp-blocked-wrap {
@@ -29484,7 +29496,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-resp-compose-compact-v971">
+  <meta name="app-build" content="athar-resp-actions-row-v972">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -31013,18 +31025,18 @@
               <div class="log-compose-title">إضافة رد</div>
               <textarea id="respText" class="ticket-resp-input" rows="1"
                 placeholder="اكتب ردك أو ملاحظاتك..."></textarea>
-              <div class="log-compose-toolbar">
+              <div id="respFileArea" class="file-list log-compose-files"></div>
+              <input type="file" id="resp-files" multiple accept="image/*,video/*,application/pdf"
+                style="display:none" onchange="handleFiles(event,'resp')">
+              <div class="log-compose-actions">
+                <div id="responseButtons"></div>
                 <button type="button" class="log-compose-attach log-compose-attach--labeled"
                   onclick="document.getElementById('resp-files').click()"
                   title="إرفاق مرفقات" aria-label="إرفاق مرفقات">
                   <i class="fas fa-plus" aria-hidden="true"></i>
                   <span class="log-compose-attach-label">إرفاق مرفقات</span>
                 </button>
-                <div id="respFileArea" class="file-list log-compose-files"></div>
               </div>
-              <input type="file" id="resp-files" multiple accept="image/*,video/*,application/pdf"
-                style="display:none" onchange="handleFiles(event,'resp')">
-              <div id="responseButtons"></div>
             </div>
             <div id="logsWrap"></div>
           </div>
