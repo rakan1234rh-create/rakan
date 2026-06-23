@@ -5887,6 +5887,102 @@
       margin-top: 10px
     }
 
+    .log-timeline {
+      display: flex;
+      flex-direction: column;
+      gap: 8px
+    }
+
+    .log-stage {
+      padding: 10px 12px;
+      border: 1px solid var(--border2);
+      background: var(--surface2);
+      border-radius: 8px;
+      transition: border-color 0.2s ease
+    }
+
+    .log-stage--active {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--blue) 25%, transparent)
+    }
+
+    .log-stage--pending {
+      opacity: 0.72
+    }
+
+    .log-stage-head {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--text);
+      margin-bottom: 6px
+    }
+
+    .log-stage-head i {
+      color: var(--blue);
+      width: 16px;
+      text-align: center;
+      flex-shrink: 0
+    }
+
+    .log-stage-body {
+      display: flex;
+      flex-direction: column;
+      gap: 6px
+    }
+
+    .log-stage-reply {
+      font-size: 13px;
+      line-height: 1.45;
+      color: var(--text);
+      white-space: pre-wrap;
+      word-break: break-word
+    }
+
+    .log-stage-reply--auto {
+      color: var(--text2);
+      font-style: italic
+    }
+
+    .log-stage-wait {
+      font-size: 12px;
+      color: var(--text3);
+      display: flex;
+      align-items: center;
+      gap: 6px
+    }
+
+    .log-stage-wait--muted {
+      opacity: 0.85
+    }
+
+    .log-stage-slot {
+      margin-top: 2px
+    }
+
+    .log-stage-slot .log-item--compose {
+      margin-bottom: 0;
+      border: 0;
+      padding: 0;
+      background: transparent
+    }
+
+    .log-stage-slot .log-compose-title {
+      display: none
+    }
+
+    .log-stage .log-item {
+      margin-bottom: 0;
+      padding: 8px 10px;
+      background: var(--surface)
+    }
+
+    .log-stage .log-item:hover {
+      transform: none
+    }
+
     .log-item--compose #responseButtons .td-resp-action {
       flex: 1 1 auto;
       min-height: 34px;
@@ -29448,7 +29544,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-resp-in-logs-v966">
+  <meta name="app-build" content="athar-logs-timeline-v967">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -30973,10 +31069,13 @@
             <div id="wfStepsContainer"></div>
           </div>
           <div class="td-pane" id="tdp-logs">
+            <div id="logsWrap"></div>
             <div id="responseForm" class="log-item log-item--compose" style="display:none">
               <div class="log-compose-title">إضافة رد</div>
-              <textarea id="respText" class="ticket-resp-input form-textarea" rows="2"
-                placeholder="اكتب ردك أو ملاحظاتك..."></textarea>
+              <div class="figma-search-wrap ticket-resp-search log-compose-search">
+                <textarea id="respText" class="figma-search-input ticket-resp-input" rows="2"
+                  placeholder="اكتب ردك أو ملاحظاتك..."></textarea>
+              </div>
               <div class="log-compose-toolbar">
                 <button type="button" class="log-compose-attach" onclick="document.getElementById('resp-files').click()"
                   title="إرفاق ملفات" aria-label="إرفاق ملفات"><i class="fas fa-plus" aria-hidden="true"></i></button>
@@ -30986,7 +31085,6 @@
                 style="display:none" onchange="handleFiles(event,'resp')">
               <div id="responseButtons"></div>
             </div>
-            <div id="logsWrap"></div>
           </div>
         </div>
       </div>
@@ -32590,19 +32688,7 @@
           if (!document.getElementById('ticketModal')?.classList.contains('open')) return;
           if (_ticketKbBlurTimer) { clearTimeout(_ticketKbBlurTimer); _ticketKbBlurTimer = 0; }
           setTicketRespEditing(true);
-          lockMobileAppScrollForTicket();
-          requestAnimationFrame(() => {
-            const ta = document.getElementById('respText');
-            const scroll = document.querySelector('#ticketModal .td-content-area');
-            if (ta && scroll) {
-              const taRect = ta.getBoundingClientRect();
-              const scrollRect = scroll.getBoundingClientRect();
-              if (taRect.bottom > scrollRect.bottom - 16) {
-                scroll.scrollTop += taRect.bottom - scrollRect.bottom + 20;
-              }
-            }
-            scheduleTicketKeyboardSync();
-          });
+          scheduleTicketKeyboardSync();
         }, true);
 
         document.addEventListener('focusout', (e) => {
@@ -45474,14 +45560,6 @@
         if (tab === 'workflow') {
           requestAnimationFrame(() => syncWfStepsRail(document.getElementById('wfStepsContainer')));
         }
-        if (tab === 'logs') {
-          const form = document.getElementById('responseForm');
-          if (form && form.style.display !== 'none') {
-            requestAnimationFrame(() => {
-              try { form.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (_) {}
-            });
-          }
-        }
         if (isViolDetailMobSheet()) {
           requestAnimationFrame(() => applyTicketSheetGeometry());
         }
@@ -46628,27 +46706,143 @@
       // ───────────────────────────────────────────────────────────────────────────
       // بناء واجهة المسار (Workflow Steps)
       // ───────────────────────────────────────────────────────────────────────────
-      function buildWfSteps(t) {
-        const c = document.getElementById('wfStepsContainer');
+      const LOG_TIMELINE_STAGES = [
+        { code: 'obs', label: 'رصد المخالفة', icon: 'fa-camera', replyField: null },
+        { code: 'emp', label: 'رد الموظف', icon: 'fa-user', replyField: 'employee_reply' },
+        { code: 'sup', label: 'رد المشرف', icon: 'fa-user-tie', replyField: 'supervisor_reply' },
+        { code: 'aud', label: 'التدقيق الإداري', icon: 'fa-magnifying-glass', replyField: 'audit_reply' },
+        { code: 'mgt', label: 'القرار الإداري', icon: 'fa-gavel', replyField: 'management_reply' },
+        { code: 'hr', label: 'الموارد البشرية', icon: 'fa-users-gear', replyField: 'hr_reply' }
+      ];
+
+      function getTicketTimelineSteps(t) {
         const fromSupervisor = t.source_role === 'supervisor';
-
-        // تعريف الخطوات مع الأوصاف
-        const allSteps = [
-          { code: 'obs', label: 'رصد المخالفة', sub: 'تم تسجيلها من قبل مراقب الجودة', icon: 'fa-camera' },
-          { code: 'emp', label: 'إشعار الموظف', sub: '24 ساعة لتقديم الرد', icon: 'fa-user' },
-          { code: 'sup', label: 'مراجعة المشرف', sub: 'انتظار مراجعة واعتماد المشرف', icon: 'fa-user-tie' },
-          { code: 'aud', label: 'التدقيق الإداري', sub: 'إدارة الالتزام والجودة', icon: 'fa-magnifying-glass' },
-          { code: 'mgt', label: 'القرار الإداري', sub: 'تنبيه أو تمرير للموارد البشرية', icon: 'fa-gavel' },
-          { code: 'hr', label: 'الموارد البشرية', sub: 'القرار النهائي والاعتماد', icon: 'fa-users-gear' }
-        ];
-
-        let visibleSteps = allSteps.filter(s => {
+        let visible = LOG_TIMELINE_STAGES.filter(s => {
           if (s.code === 'obs' || s.code === 'emp') return true;
           return !isWorkflowStageSkipped(s.code);
         });
         if (fromSupervisor) {
-          visibleSteps = visibleSteps.filter(s => s.code === 'obs' || (s.code !== 'emp' && s.code !== 'sup'));
+          visible = visible.filter(s => s.code === 'obs' || (s.code !== 'emp' && s.code !== 'sup'));
         }
+        return visible;
+      }
+
+      function getTimelineStageStatus(code, t) {
+        const orderMap = { obs: 0, emp: 1, sup: 2, aud: 3, mgt: 4, hr: 5 };
+        if (t.state === 'closed' || t.state === 'Warning_Issued') return 'done';
+        const wfState = getEffectiveWorkflowState(t.state);
+        const currentOrder = orderMap[wfState] ?? 1;
+        const stepOrder = orderMap[code] ?? 0;
+        if (stepOrder < currentOrder) return 'done';
+        if (stepOrder === currentOrder) return 'active';
+        return 'pending';
+      }
+
+      function classifyTimelineLogStage(log, ticket) {
+        if (!log) return null;
+        if (isObserverLogEntry(log, ticket)) return 'obs';
+        const action = String(log.action || '');
+        const note = String(log.note || '');
+        const hay = `${action} ${note}`;
+        if (/رد الموظف|إشعار الموظف|بانتظار رد الموظف/i.test(hay)) return 'emp';
+        if (/رد المشرف|بانتظار رد المشرف|مراجعة المشرف/i.test(hay)) return 'sup';
+        if (/التدقيق|تدقيق|ملغاة بقرار التدقيق/i.test(hay)) return 'aud';
+        if (/موارد بشرية|ملغاة بقرار الموارد/i.test(hay)) return 'hr';
+        if (/قرار إداري|الإدارة|تنبيه إداري|ملغاة بقرار إداري|اعتماد نهائي/i.test(hay)) return 'mgt';
+        if (/تمرير تلقائي/i.test(hay)) {
+          if (/موظف/i.test(hay)) return 'emp';
+          if (/مشرف/i.test(hay)) return 'sup';
+        }
+        if (/إنشاء التذكرة|تم رصد/i.test(hay)) return 'obs';
+        return null;
+      }
+
+      function renderTimelineLogItemHtml(l, t, hideObs) {
+        const metaLine = formatLogMetaLine(l, t, hideObs);
+        const isAuto = (l.user === 'النظام' || l.role === 'النظام' || /تلقائي/.test(l.action || ''));
+        return `
+      <div class="log-item${isAuto ? ' log-item--auto' : ''}">
+        <div class="log-meta">${Sec.escapeHTML(metaLine)}</div>
+        <div class="log-action">${isAuto ? '<i class="fas fa-robot" style="color:var(--red);margin-left:4px"></i>' : ''}${Sec.escapeHTML(l.action || '-')}</div>
+        ${l.note ? `<div class="log-note">${Sec.escapeHTML(l.note)}</div>` : ''}
+      </div>`;
+      }
+
+      function buildObsStageContent(t, hideObs) {
+        const parts = [];
+        if (t.description) {
+          parts.push(`<div class="log-stage-reply">${Sec.escapeHTML(t.description)}</div>`);
+        }
+        const meta = [];
+        if (t.violation_date) meta.push(`تاريخ المخالفة: ${Sec.escapeHTML(t.violation_date)}`);
+        if (t.violation_time) meta.push(`الوقت: ${Sec.escapeHTML(formatTime12(t.violation_time))}`);
+        if (t.source_role === 'supervisor') {
+          meta.push('رُصدت من المشرف مباشرة');
+        } else if (!hideObs && t._obsName) {
+          meta.push(`الراصد: ${Sec.escapeHTML(t._obsName)}`);
+        }
+        if (t.created_at) meta.push(`تاريخ الإنشاء: ${Sec.escapeHTML(formatDateTime(t.created_at))}`);
+        if (meta.length) parts.push(`<div class="log-meta">${meta.join(' · ')}</div>`);
+        return parts.join('') || '<div class="log-stage-wait log-stage-wait--muted">—</div>';
+      }
+
+      function buildStageReplyContent(t, step, status) {
+        const reply = step.replyField ? String(t[step.replyField] || '').trim() : '';
+        if (reply) {
+          const isAuto = isAutoPlaceholderReply(reply);
+          return `<div class="log-stage-reply${isAuto ? ' log-stage-reply--auto' : ''}">${Sec.escapeHTML(reply)}</div>`;
+        }
+        if (status === 'pending') {
+          return '<div class="log-stage-wait log-stage-wait--muted"><i class="fas fa-ellipsis" aria-hidden="true"></i> لم تصل المرحلة بعد</div>';
+        }
+        if (status === 'active') return '';
+        return '<div class="log-stage-wait log-stage-wait--muted"><i class="fas fa-minus" aria-hidden="true"></i> لا يوجد رد</div>';
+      }
+
+      function stashResponseFormInLogsPane() {
+        const form = document.getElementById('responseForm');
+        const pane = document.getElementById('tdp-logs');
+        if (form && pane && form.parentNode !== pane) pane.appendChild(form);
+      }
+
+      function showActiveStageWait(t) {
+        const wfState = getEffectiveWorkflowState(t.state);
+        document.querySelectorAll('[id^="logStageWait-"]').forEach(el => { el.style.display = 'none'; });
+        const wait = document.getElementById(`logStageWait-${wfState}`);
+        if (wait) wait.style.display = '';
+        stashResponseFormInLogsPane();
+      }
+
+      function mountResponseFormToTimeline(t, formVisible) {
+        const form = document.getElementById('responseForm');
+        if (!form) return;
+        const wfState = getEffectiveWorkflowState(t.state);
+        document.querySelectorAll('[id^="logStageWait-"]').forEach(el => { el.style.display = 'none'; });
+        if (formVisible) {
+          const slot = document.getElementById(`logStageSlot-${wfState}`);
+          if (slot) slot.appendChild(form);
+          return;
+        }
+        if (t.state !== 'closed' && t.state !== 'Warning_Issued') {
+          showActiveStageWait(t);
+        } else {
+          stashResponseFormInLogsPane();
+        }
+      }
+
+      function buildWfSteps(t) {
+        const c = document.getElementById('wfStepsContainer');
+        const visibleSteps = getTicketTimelineSteps(t).map(s => {
+          const wfLabels = {
+            obs: { label: 'رصد المخالفة', sub: 'تم تسجيلها من قبل مراقب الجودة' },
+            emp: { label: 'إشعار الموظف', sub: '24 ساعة لتقديم الرد' },
+            sup: { label: 'مراجعة المشرف', sub: 'انتظار مراجعة واعتماد المشرف' },
+            aud: { label: 'التدقيق الإداري', sub: 'إدارة الالتزام والجودة' },
+            mgt: { label: 'القرار الإداري', sub: 'تنبيه أو تمرير للموارد البشرية' },
+            hr: { label: 'الموارد البشرية', sub: 'القرار النهائي والاعتماد' }
+          };
+          return { ...s, ...wfLabels[s.code] };
+        });
 
         const orderMap = { obs: 0, emp: 1, sup: 2, aud: 3, mgt: 4, hr: 5, closed: 6, Warning_Issued: 6 };
         const wfState = (t.state === 'closed' || t.state === 'Warning_Issued') ? t.state : getEffectiveWorkflowState(t.state);
@@ -46698,7 +46892,7 @@
       }
 
       // ───────────────────────────────────────────────────────────────────────────
-      // بناء واجهة السجل (Logs)
+      // بناء واجهة السجل (Logs) — سجل مرحلي
       // ───────────────────────────────────────────────────────────────────────────
       function buildLogs(t) {
         const c = document.getElementById('logsWrap');
@@ -46709,23 +46903,61 @@
           c.innerHTML = '<div class="empty"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i><p>جاري تحميل السجل…</p></div>';
           return;
         }
-        if (!logs.length) {
+
+        const hideObs = shouldHideObserverName();
+        const steps = getTicketTimelineSteps(t);
+        const logsByStage = {};
+        steps.forEach(s => { logsByStage[s.code] = []; });
+        const generalLogs = [];
+
+        logs.forEach(l => {
+          const stage = classifyTimelineLogStage(l, t);
+          if (stage && logsByStage[stage]) logsByStage[stage].push(l);
+          else generalLogs.push(l);
+        });
+
+        const wfState = getEffectiveWorkflowState(t.state);
+        const timelineHtml = steps.map(step => {
+          const status = getTimelineStageStatus(step.code, t);
+          let body = step.code === 'obs'
+            ? buildObsStageContent(t, hideObs)
+            : buildStageReplyContent(t, step, status);
+          const stageLogs = (logsByStage[step.code] || []).map(l => renderTimelineLogItemHtml(l, t, hideObs)).join('');
+          const activeWait = status === 'active'
+            ? `<div id="logStageWait-${step.code}" class="log-stage-wait" style="display:none"><i class="fas fa-hourglass-half" aria-hidden="true"></i> ${Sec.escapeHTML(STATE_LABELS[wfState] || 'بانتظار الإجراء')}</div>`
+            : '';
+          const slotHtml = status === 'active'
+            ? `<div id="logStageSlot-${step.code}" class="log-stage-slot"></div>`
+            : '';
+
+          return `
+      <div class="log-stage log-stage--${status}" data-stage="${step.code}">
+        <div class="log-stage-head">
+          <i class="fas ${step.icon}" aria-hidden="true"></i>
+          <span>${Sec.escapeHTML(step.label)}</span>
+        </div>
+        <div class="log-stage-body">
+          ${body}
+          ${stageLogs}
+          ${activeWait}
+          ${slotHtml}
+        </div>
+      </div>`;
+        }).join('');
+
+        const generalHtml = generalLogs.length
+          ? `<div class="log-stage log-stage--misc">
+        <div class="log-stage-head"><i class="fas fa-list" aria-hidden="true"></i><span>سجل إضافي</span></div>
+        <div class="log-stage-body">${generalLogs.map(l => renderTimelineLogItemHtml(l, t, hideObs)).join('')}</div>
+      </div>`
+          : '';
+
+        if (!steps.length && !generalLogs.length) {
           c.innerHTML = '<div class="empty"><i class="fas fa-clock-rotate-left"></i><p>لا يوجد سجل</p></div>';
           return;
         }
-        // إخفاء اسم الراصد عن من ليس بمدير نظام/مدير/مدقق (في السجل أيضاً)
-        const hideObs = shouldHideObserverName();
-        c.innerHTML = logs.map(l => {
-          const metaLine = formatLogMetaLine(l, t, hideObs);
-          // تحديد إذا الإجراء تلقائي
-          const isAuto = (l.user === 'النظام' || l.role === 'النظام' || /تلقائي/.test(l.action || ''));
-          return `
-      <div class="log-item${isAuto ? ' log-item--auto' : ''}">
-        <div class="log-meta">${Sec.escapeHTML(metaLine)}</div>
-        <div class="log-action">${isAuto ? '<i class="fas fa-robot" style="color:var(--red);margin-left:4px"></i>' : ''}${Sec.escapeHTML(l.action || '-')}</div>
-        ${l.note ? `<div class="log-note">${Sec.escapeHTML(l.note)}</div>` : ''}
-      </div>`;
-        }).join('');
+
+        c.innerHTML = `<div class="log-timeline">${timelineHtml}${generalHtml}</div>`;
       }
 
       // ───────────────────────────────────────────────────────────────────────────
@@ -46740,6 +46972,7 @@
         if (!canActOnTicket(t)) {
           form.style.display = 'none';
           document.getElementById('tdt-logs')?.classList.remove('td-tab--needs-action');
+          mountResponseFormToTimeline(t, false);
           return;
         }
         form.style.display = '';
@@ -46822,12 +47055,14 @@
         if (!buttons.length) {
           form.style.display = 'none';
           document.getElementById('tdt-logs')?.classList.remove('td-tab--needs-action');
+          mountResponseFormToTimeline(t, false);
           return;
         }
 
         btnsWrap.innerHTML = buttons.map(b =>
           `<button type="button" class="btn td-resp-action ${Sec.escapeHTML(b.cls)}" onclick="submitResp('${Sec.escapeHTML(b.act)}')"${b.title ? ` title="${Sec.escapeHTML(b.title)}" aria-label="${Sec.escapeHTML(b.title)}"` : ''}><span>${Sec.escapeHTML(b.label)}</span><i class="fas ${Sec.escapeHTML(b.icon)}" aria-hidden="true"></i></button>`
         ).join('') + blockedWarnStrip;
+        mountResponseFormToTimeline(t, true);
       }
 
       // ───────────────────────────────────────────────────────────────────────────
