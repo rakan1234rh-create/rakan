@@ -18,11 +18,14 @@ import {
 import { getSignedUrl } from 'npm:@aws-sdk/s3-request-presigner@3.733.0'
 
 function buildCors(req: Request): Record<string, string> {
-  const allowedOrigin = Deno.env.get('ALLOWED_ORIGIN') || 'https://athar-app.online';
+  const raw = Deno.env.get('ALLOWED_ORIGIN') || 'https://athar-app.online';
+  const allowed = new Set(
+    raw.split(',').map((s) => s.trim()).filter(Boolean).concat(['https://athar-app.online', 'https://athar.app']),
+  );
   const requestOrigin = req.headers.get('Origin') || '';
-  const isAllowed = requestOrigin === allowedOrigin;
+  const isAllowed = allowed.has(requestOrigin);
   return {
-    'Access-Control-Allow-Origin': isAllowed ? allowedOrigin : '',
+    'Access-Control-Allow-Origin': isAllowed ? requestOrigin : '',
     'Access-Control-Allow-Headers':
       'authorization, x-client-info, apikey, content-type, range, x-r2-action, x-r2-key',
     'Access-Control-Allow-Methods': 'GET, HEAD, POST, OPTIONS',
@@ -274,6 +277,9 @@ Deno.serve(async (req) => {
 
     try {
       const key = assertKey(req.headers.get('X-R2-Key'))
+      if (!key.startsWith(`temp_${auth.user.id}`)) {
+        return json({ error: 'غير مصرح بالرفع في هذا المسار' }, 403)
+      }
       const contentType =
         (req.headers.get('Content-Type') || '').trim() || guessContentTypeFromKey(key)
       const bytes = new Uint8Array(await req.arrayBuffer())

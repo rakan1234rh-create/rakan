@@ -29261,7 +29261,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-csp-wss-v954">
+  <meta name="app-build" content="athar-r2-temp-uid-v955">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -42466,7 +42466,7 @@
 
         try {
           // الخطوة 1: الرفع إلى مجلد مؤقت أولاً (لمنع ضياع أرقام التذاكر في حال فشل الرفع)
-          const tempFolder = 'temp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+          const tempFolder = await buildTempUploadFolder();
           let tempAttachments = [];
           let fileIndex = 1;
 
@@ -42545,6 +42545,14 @@
       // ═══════════════════════════════════════════════════════════════════════════
       // 19. FILE UPLOADS
       // ═══════════════════════════════════════════════════════════════════════════
+
+      /** مجلد مؤقت للرفع — يجب أن يبدأ بـ temp_{auth_uid} ليتوافق مع r2-storage */
+      async function buildTempUploadFolder() {
+        const { data: { user } } = await sb.auth.getUser();
+        const authUid = user?.id || state.currentUser?.auth_uid;
+        if (!authUid) throw new Error('انتهت الجلسة — سجّل الدخول من جديد');
+        return `temp_${authUid}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+      }
 
       /** مفتاح R2 آمن (ASCII فقط) — يمنع 404 بسبب ترميز الأسماء العربية في المسار */
       function buildR2ObjectKey(folderName, fileName) {
