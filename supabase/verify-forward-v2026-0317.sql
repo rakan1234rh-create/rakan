@@ -1,4 +1,4 @@
--- تحقق سريع بعد جدولة V-2026-0317
+-- تحقق سريع بعد جدولة V-2026-0317 (post-cron)
 select
   v.ticket_number,
   v.state,
