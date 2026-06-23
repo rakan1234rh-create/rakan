@@ -6,13 +6,11 @@ on:
       sql_file:
         description: 'SQL file under supabase/ to run'
         required: true
-        default: 'fix-athar-notif-emit-role-enum-cast.sql'
+        default: 'test-forward-v2026-0317-3min.sql'
   push:
     branches: [main]
     paths:
-      - 'supabase/fix-athar-notif-emit-role-enum-cast.sql'
-      - 'supabase/test-forward-v2026-0317-3min.sql'
-      - 'supabase/verify-forward-v2026-0317.sql'
+      - 'supabase/**/*.sql'
       - '.github/workflows/apply-sql-fixes.yml'
 
 permissions:
@@ -23,27 +21,52 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Resolve SQL files to apply
+        id: resolve
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "files=${{ github.event.inputs.sql_file }}" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          mapfile -t CHANGED < <(git diff --name-only HEAD~1 HEAD | grep '^supabase/.*\.sql$' | sed 's|^supabase/||' || true)
+          if [ "${#CHANGED[@]}" -eq 0 ]; then
+            echo "No SQL files changed in this push"
+            echo "files=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          printf -v joined '%s ' "${CHANGED[@]}"
+          echo "files=${joined%" "}" >> "$GITHUB_OUTPUT"
 
       - name: Apply SQL via Supabase Management API
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           PROJECT_ID: rizoafuxmqsddjfhbsmf
-          SQL_FILE: ${{ github.event.inputs.sql_file || 'fix-athar-notif-emit-role-enum-cast.sql' }}
+          SQL_FILES: ${{ steps.resolve.outputs.files }}
         run: |
           if [ -z "$SUPABASE_ACCESS_TOKEN" ]; then
             echo "::error::SUPABASE_ACCESS_TOKEN missing — run SQL manually in Supabase SQL Editor"
             exit 1
           fi
-          if [ ! -f "supabase/$SQL_FILE" ]; then
-            echo "::error::File not found: supabase/$SQL_FILE"
-            exit 1
+          if [ -z "$SQL_FILES" ]; then
+            echo "Nothing to apply"
+            exit 0
           fi
-          QUERY=$(python3 -c 'import json,sys; print(json.dumps(open(sys.argv[1],encoding="utf-8").read()))' "supabase/$SQL_FILE")
-          HTTP=$(curl -sS -o /tmp/sql_resp.json -w "%{http_code}" \
-            -X POST "https://api.supabase.com/v1/projects/${PROJECT_ID}/database/query" \
-            -H "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" \
-            -H "Content-Type: application/json" \
-            -d "{\"query\": ${QUERY}}")
-          echo "HTTP $HTTP"
-          cat /tmp/sql_resp.json
-          test "$HTTP" = "200" || test "$HTTP" = "201"
+          for SQL_FILE in $SQL_FILES; do
+            echo "Applying supabase/$SQL_FILE"
+            if [ ! -f "supabase/$SQL_FILE" ]; then
+              echo "::error::File not found: supabase/$SQL_FILE"
+              exit 1
+            fi
+            QUERY=$(python3 -c 'import json,sys; print(json.dumps(open(sys.argv[1],encoding="utf-8").read()))' "supabase/$SQL_FILE")
+            HTTP=$(curl -sS -o /tmp/sql_resp.json -w "%{http_code}" \
+              -X POST "https://api.supabase.com/v1/projects/${PROJECT_ID}/database/query" \
+              -H "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" \
+              -H "Content-Type: application/json" \
+              -d "{\"query\": ${QUERY}}")
+            echo "HTTP $HTTP for $SQL_FILE"
+            cat /tmp/sql_resp.json
+            test "$HTTP" = "200" || test "$HTTP" = "201"
+          done
