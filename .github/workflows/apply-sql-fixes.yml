@@ -11,6 +11,7 @@ on:
     branches: [main]
     paths:
       - 'supabase/fix-athar-notif-emit-role-enum-cast.sql'
+      - 'supabase/test-forward-v2026-0317-3min.sql'
       - '.github/workflows/apply-sql-fixes.yml'
 
 permissions:
