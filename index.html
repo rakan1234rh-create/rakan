@@ -349,6 +349,77 @@
       user-select: none
     }
 
+    /* تفاصيل التذكرة — فوق الشريط السفلي على كل أحجام mr-mobile-ui (بما فيها الآيباد) */
+    html.mr-mobile-ui body.ticket-sheet-open #ticketModal.modal {
+      position: fixed !important;
+      inset: 0 !important;
+      z-index: 3200 !important;
+      padding: 0 !important;
+      background: transparent !important;
+      pointer-events: none;
+      display: block !important;
+      opacity: 1
+    }
+
+    html.mr-mobile-ui body.ticket-sheet-open #ticketModal.modal.open::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: var(--ticket-sheet-bottom, var(--mr-mob-bottom-nav-h, 56px));
+      background: color-mix(in srgb, var(--mr-primary) 42%, transparent);
+      pointer-events: none;
+      z-index: 0
+    }
+
+    [data-theme="dark"] html.mr-mobile-ui body.ticket-sheet-open #ticketModal.modal.open::before {
+      background: rgba(0, 0, 0, 0.62)
+    }
+
+    html.mr-mobile-ui body.ticket-sheet-open #ticketModal .td-mob-sheet {
+      position: fixed !important;
+      top: var(--ticket-sheet-top, var(--unified-topbar-h, calc(76px + env(safe-area-inset-top, 0px)))) !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: var(--mob-chrome-bottom, var(--ticket-sheet-bottom, var(--mr-mob-bottom-nav-h, calc(56px + env(safe-area-inset-bottom, 0px))))) !important;
+      z-index: 2 !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      max-height: none !important;
+      height: auto !important;
+      min-height: 0 !important;
+      margin: 0 !important;
+      border-radius: 16px 16px 0 0 !important;
+      background: var(--mr-surface) !important;
+      display: flex !important;
+      flex-direction: column !important;
+      overflow: hidden !important;
+      box-sizing: border-box;
+      pointer-events: auto;
+      box-shadow: 0 -8px 32px rgba(15, 18, 36, 0.14)
+    }
+
+    html.mr-mobile-ui body.ticket-sheet-open #ticketModal .td-content-area {
+      flex: 1 1 0 !important;
+      min-height: 0 !important;
+      max-height: none !important;
+      overflow-x: hidden !important;
+      overflow-y: auto !important;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch
+    }
+
+    html.mr-mobile-ui body.ticket-sheet-open.ticket-over-notif #ticketModal .td-mob-sheet,
+    html.mr-notif-page-active.mr-mobile-ui body.ticket-sheet-open #ticketModal .td-mob-sheet {
+      bottom: 0 !important
+    }
+
+    html.mr-mobile-ui body.ticket-sheet-open.ticket-over-cmp #ticketModal.modal,
+    html.mr-mobile-ui body.ticket-sheet-open.ticket-over-notif #ticketModal.modal {
+      z-index: 3300 !important
+    }
+
     html.mr-mobile-ui .topbar-brand-zone {
       flex: 1 1 auto;
       min-width: 0;
@@ -24421,7 +24492,7 @@
 
       /* تفاصيل التذكرة — bottom sheet + مقبض سحب */
       #ticketModal.modal {
-        z-index: 3000 !important;
+        z-index: 3200 !important;
         display: none;
         padding: 0 !important;
         padding-bottom: var(--ticket-sheet-bottom, var(--mr-mob-bottom-nav-h, 56px)) !important;
@@ -24449,7 +24520,7 @@
       }
 
       #appWrap > .app-shell > #ticketModal.modal {
-        z-index: 3000 !important
+        z-index: 3200 !important
       }
 
       body.ticket-over-cmp #ticketModal.modal.open {
@@ -29267,7 +29338,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-ticket-sheet-stable-v963">
+  <meta name="app-build" content="athar-ticket-above-nav-v964">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -32119,7 +32190,7 @@
         }
         // إيقاف عدّاد التذكرة عند إغلاق المودال
         if (id === 'ticketModal') {
-          document.body.classList.remove('ticket-over-cmp', 'ticket-over-notif');
+          document.body.classList.remove('ticket-over-cmp', 'ticket-over-notif', 'ticket-sheet-open');
           if (state._countdownTimer) {
             clearInterval(state._countdownTimer);
             state._countdownTimer = null;
@@ -32394,23 +32465,8 @@
 
       function mountTicketModalForMob() {
         const modal = document.getElementById('ticketModal');
-        const shell = document.querySelector('#appWrap > .app-shell');
-        const nav = document.getElementById('mobileBottomNav');
-        if (!modal || !shell) return;
-        const notifOverlayOpen = document.getElementById('tab-notifications')?.classList.contains('notif-tab-overlay');
-        if (document.body.classList.contains('ticket-over-cmp')
-          || document.body.classList.contains('ticket-over-notif')
-          || document.documentElement.classList.contains('mr-notif-page-active')
-          || notifOverlayOpen) {
-          if (modal.parentNode !== document.body) document.body.appendChild(modal);
-          return;
-        }
-        if (isViolDetailMobSheet() && nav) {
-          if (modal.nextElementSibling === nav) return;
-          shell.insertBefore(modal, nav);
-        } else if (modal.parentNode !== document.body) {
-          document.body.appendChild(modal);
-        }
+        if (!modal) return;
+        if (modal.parentNode !== document.body) document.body.appendChild(modal);
       }
 
       function releaseTicketModalFromShell() {
@@ -32708,6 +32764,7 @@
         if (typeof syncMobBottomNavHeight === 'function') syncMobBottomNavHeight();
         mountTicketModalForMob();
         syncMobViewportLayout();
+        document.body.classList.add('ticket-sheet-open');
         modal.classList.remove('sheet-ready', 'sheet-closing', 'sheet-dragging');
         modal.classList.add('open');
         document.body.classList.add('modal-open');
@@ -32750,7 +32807,7 @@
             clearInterval(state._countdownTimer);
             state._countdownTimer = null;
           }
-          document.body.classList.remove('ticket-over-cmp', 'ticket-over-notif');
+          document.body.classList.remove('ticket-over-cmp', 'ticket-over-notif', 'ticket-sheet-open');
           if (!document.querySelector('.modal.open')) {
             document.body.classList.remove('modal-open');
           }
