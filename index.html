@@ -29619,7 +29619,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-r2-direct-video-v976">
+  <meta name="app-build" content="athar-r2-multipart-v977">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -32025,6 +32025,85 @@
             }
           }
         });
+      }
+
+      const R2_MULTIPART_PART_BYTES = 6 * 1024 * 1024;
+
+      /** رفع ملف كبير على أجزاء عبر Edge (كل جزء ≤6MB لتجنّب timeout) */
+      async function uploadR2MultipartViaEdge(objectKey, body, contentType, onPartProgress) {
+        const blob = body instanceof Blob ? body : new Blob([body], { type: contentType || 'application/octet-stream' });
+        const totalSize = blob.size;
+        if (!totalSize) throw new Error('ملف فارغ');
+
+        const { uploadId } = await callR2StorageFn('createMultipart', { key: objectKey, contentType });
+        if (!uploadId) throw new Error('تعذّر بدء الرفع المتعدد الأجزاء');
+
+        const completedParts = [];
+        const totalParts = Math.ceil(totalSize / R2_MULTIPART_PART_BYTES);
+        let partNumber = 1;
+        let offset = 0;
+
+        try {
+          while (offset < totalSize) {
+            const chunk = blob.slice(offset, Math.min(offset + R2_MULTIPART_PART_BYTES, totalSize));
+            let uploaded = false;
+
+            for (let attempt = 0; attempt < 2 && !uploaded; attempt++) {
+              let session = await ensureSupabaseSessionFresh();
+              if (!session?.access_token) {
+                const { data: { session: s2 } } = await sb.auth.getSession();
+                session = s2;
+              }
+              if (!session?.access_token) throw new Error('انتهت الجلسة، يرجى تسجيل الدخول من جديد');
+
+              const res = await fetch(R2_STORAGE_FN_URL, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/octet-stream',
+                  'apikey': SUPABASE_ANON,
+                  'Authorization': `Bearer ${session.access_token}`,
+                  'X-R2-Action': 'uploadPart',
+                  'X-R2-Key': objectKey,
+                  'X-R2-Upload-Id': uploadId,
+                  'X-R2-Part-Number': String(partNumber),
+                },
+                body: chunk,
+              });
+
+              let data = {};
+              try { data = await res.json(); } catch (_) { }
+
+              if (res.status === 401 && attempt === 0) {
+                invalidateR2BackendResolution();
+                const { data: refreshed } = await sb.auth.refreshSession();
+                if (refreshed.session?.access_token) continue;
+                throw new Error('انتهت الجلسة — سجّل الخروج ثم الدخول من جديد.');
+              }
+
+              if (!res.ok) {
+                throw new Error(data.error || data.message || `فشل رفع الجزء ${partNumber}/${totalParts} (${res.status})`);
+              }
+
+              completedParts.push({ partNumber, etag: data.etag });
+              uploaded = true;
+            }
+
+            if (typeof onPartProgress === 'function') onPartProgress(partNumber, totalParts);
+            partNumber++;
+            offset += R2_MULTIPART_PART_BYTES;
+          }
+
+          await callR2StorageFn('completeMultipart', {
+            key: objectKey,
+            uploadId,
+            parts: completedParts,
+          });
+        } catch (err) {
+          try {
+            await callR2StorageFn('abortMultipart', { key: objectKey, uploadId });
+          } catch (_) { /* */ }
+          throw err;
+        }
       }
 
       // ═══════════════════════════════════════════════════════════════════════════
@@ -43033,6 +43112,9 @@
           const uploadViaProxy = async () => {
             await uploadR2ViaEdgeProxy(objectKey, body, contentType);
           };
+          const uploadViaMultipart = async (onPartProgress) => {
+            await uploadR2MultipartViaEdge(objectKey, body, contentType, onPartProgress);
+          };
 
           if (preferDirect) {
             try {
@@ -43040,10 +43122,11 @@
             } catch (directErr) {
               const directMsg = String(directErr?.message || directErr);
               if (/R2_DIRECT_CORS_BLOCKED|CORS|Failed to fetch|Load failed|blocked/i.test(directMsg)) {
-                if (fileSize > (52 * 1024 * 1024)) {
-                  throw new Error('الملف كبير جداً للرفع عبر الخادم — صغّر الفيديو أو استخدم شبكة أقوى');
+                if (fileSize > R2_MULTIPART_PART_BYTES) {
+                  await uploadViaMultipart(onProgress);
+                } else {
+                  await uploadViaProxy();
                 }
-                await uploadViaProxy();
               } else {
                 throw directErr;
               }
@@ -43056,7 +43139,11 @@
               if (!/R2_EDGE_PAYLOAD_TOO_LARGE|413|كبير جداً|403|غير مصرح|502|504|timeout|Load failed/i.test(proxyMsg)) {
                 throw proxyErr;
               }
-              await uploadViaDirect();
+              if (fileSize > R2_MULTIPART_PART_BYTES) {
+                await uploadViaMultipart(onProgress);
+              } else {
+                await uploadViaDirect();
+              }
             }
           }
           return { success: true, fileId: objectKey };
@@ -47183,7 +47270,11 @@
               if (activeBtn) {
                 activeBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> جاري رفع المرفقات (${uploadedAtts.length + 1}/${respFiles.length})...`;
               }
-              const result = await uploadToCloudflare(file, tempFolder, me.name, null);
+              const result = await uploadToCloudflare(file, tempFolder, me.name, (part, total) => {
+                if (activeBtn) {
+                  activeBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> جاري رفع المرفقات (${uploadedAtts.length + 1}/${respFiles.length}) — جزء ${part}/${total}...`;
+                }
+              });
               if (!result || !result.success || !result.fileId) {
                 throw new Error('فشل رفع أحد المرفقات — تأكد من الاتصال وحاول مرة أخرى');
               }

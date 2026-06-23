@@ -8,11 +8,15 @@
  */
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8'
 import {
+  AbortMultipartUploadCommand,
+  CompleteMultipartUploadCommand,
   CopyObjectCommand,
+  CreateMultipartUploadCommand,
   DeleteObjectCommand,
   GetObjectCommand,
   HeadObjectCommand,
   PutObjectCommand,
+  UploadPartCommand,
   S3Client,
 } from 'npm:@aws-sdk/client-s3@3.733.0'
 import { getSignedUrl } from 'npm:@aws-sdk/s3-request-presigner@3.733.0'
@@ -27,7 +31,7 @@ function buildCors(req: Request): Record<string, string> {
   return {
     'Access-Control-Allow-Origin': isAllowed ? requestOrigin : '',
     'Access-Control-Allow-Headers':
-      'authorization, x-client-info, apikey, content-type, range, x-r2-action, x-r2-key',
+      'authorization, x-client-info, apikey, content-type, range, x-r2-action, x-r2-key, x-r2-upload-id, x-r2-part-number',
     'Access-Control-Allow-Methods': 'GET, HEAD, POST, OPTIONS',
     'Access-Control-Expose-Headers':
       'Content-Length, Content-Range, Accept-Ranges, Content-Type',
@@ -56,6 +60,15 @@ function assertKey(key: unknown): string {
 }
 
 const R2_PROXY_PUT_MAX_BYTES = 52 * 1024 * 1024
+const R2_PROXY_PART_MAX_BYTES = 6 * 1024 * 1024
+
+function assertTempUploadKey(key: string, userId: string): string {
+  const k = assertKey(key)
+  if (!k.startsWith(`temp_${userId}`)) {
+    throw new Error('غير مصرح بالرفع في هذا المسار')
+  }
+  return k
+}
 
 async function authenticateRequest(req: Request) {
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!
@@ -270,16 +283,49 @@ Deno.serve(async (req) => {
 
   const env = requireR2Env()
 
+  if (req.method === 'POST' && req.headers.get('X-R2-Action') === 'uploadPart') {
+    if (!env) return json({ error: 'R2 غير مُعدّ (متغيرات البيئة على الدالة)' }, 503)
+    const auth = await authenticateRequest(req)
+    if ('error' in auth && auth.error) return auth.error
+
+    try {
+      const key = assertTempUploadKey(req.headers.get('X-R2-Key') || '', auth.user.id)
+      const uploadId = String(req.headers.get('X-R2-Upload-Id') || '').trim()
+      const partNumber = parseInt(String(req.headers.get('X-R2-Part-Number') || '0'), 10)
+      if (!uploadId || !Number.isFinite(partNumber) || partNumber < 1 || partNumber > 10_000) {
+        return json({ error: 'معرّف الرفع أو رقم الجزء غير صالح' }, 400)
+      }
+      const bytes = new Uint8Array(await req.arrayBuffer())
+      if (!bytes.length) return json({ error: 'جسم فارغ' }, 400)
+      if (bytes.length > R2_PROXY_PART_MAX_BYTES) {
+        return json({ error: 'حجم الجزء كبير جداً للرفع عبر الخادم' }, 413)
+      }
+      const s3 = makeS3(env)
+      const out = await s3.send(
+        new UploadPartCommand({
+          Bucket: env.bucket,
+          Key: key,
+          UploadId: uploadId,
+          PartNumber: partNumber,
+          Body: bytes,
+        }),
+      )
+      return json({ ok: true, etag: out.ETag, partNumber })
+    } catch (e) {
+      console.error('[r2-storage] uploadPart', e)
+      const msg = e instanceof Error ? e.message : 'حدث خطأ أثناء رفع الجزء'
+      const status = msg.includes('غير مصرح') ? 403 : 500
+      return json({ error: msg }, status)
+    }
+  }
+
   if (req.method === 'POST' && req.headers.get('X-R2-Action') === 'putObject') {
     if (!env) return json({ error: 'R2 غير مُعدّ (متغيرات البيئة على الدالة)' }, 503)
     const auth = await authenticateRequest(req)
     if ('error' in auth && auth.error) return auth.error
 
     try {
-      const key = assertKey(req.headers.get('X-R2-Key'))
-      if (!key.startsWith(`temp_${auth.user.id}`)) {
-        return json({ error: 'غير مصرح بالرفع في هذا المسار' }, 403)
-      }
+      const key = assertTempUploadKey(req.headers.get('X-R2-Key') || '', auth.user.id)
       const contentType =
         (req.headers.get('Content-Type') || '').trim() || guessContentTypeFromKey(key)
       const bytes = new Uint8Array(await req.arrayBuffer())
@@ -326,6 +372,8 @@ Deno.serve(async (req) => {
     contentType?: string
     fromKey?: string
     toKey?: string
+    uploadId?: string
+    parts?: Array<{ partNumber?: number; etag?: string }>
   }
   try {
     body = await req.json()
@@ -347,11 +395,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'signPut') {
-      const key = assertKey(body.key)
-      // [أمان] يُسمح بالرفع فقط في مجلد temp_ التابع للمستخدم الحالي
-      if (!key.startsWith(`temp_${user.id}`)) {
-        return json({ error: 'غير مصرح بالرفع في هذا المسار' }, 403)
-      }
+      const key = assertTempUploadKey(body.key || '', user.id)
       const contentType =
         typeof body.contentType === 'string' && body.contentType.length
           ? body.contentType
@@ -364,6 +408,62 @@ Deno.serve(async (req) => {
       })
       const url = await getSignedUrl(s3, cmd, { expiresIn: 3600 })
       return json({ url, key })
+    }
+
+    if (action === 'createMultipart') {
+      const key = assertTempUploadKey(body.key || '', user.id)
+      const contentType =
+        typeof body.contentType === 'string' && body.contentType.length
+          ? body.contentType
+          : guessContentTypeFromKey(key)
+      const out = await s3.send(
+        new CreateMultipartUploadCommand({
+          Bucket: bucket,
+          Key: key,
+          ContentType: contentType,
+        }),
+      )
+      if (!out.UploadId) throw new Error('تعذّر بدء الرفع المتعدد الأجزاء')
+      return json({ uploadId: out.UploadId, key })
+    }
+
+    if (action === 'completeMultipart') {
+      const key = assertTempUploadKey(body.key || '', user.id)
+      const uploadId = String(body.uploadId || '').trim()
+      const parts = Array.isArray(body.parts) ? body.parts : []
+      if (!uploadId) return json({ error: 'uploadId مطلوب' }, 400)
+      if (!parts.length) return json({ error: 'لا توجد أجزاء مكتملة' }, 400)
+      const normalized = parts
+        .map((p) => ({
+          PartNumber: Number(p.partNumber),
+          ETag: String(p.etag || ''),
+        }))
+        .filter((p) => Number.isFinite(p.PartNumber) && p.PartNumber > 0 && p.ETag)
+        .sort((a, b) => a.PartNumber - b.PartNumber)
+      if (!normalized.length) return json({ error: 'أجزاء غير صالحة' }, 400)
+      await s3.send(
+        new CompleteMultipartUploadCommand({
+          Bucket: bucket,
+          Key: key,
+          UploadId: uploadId,
+          MultipartUpload: { Parts: normalized },
+        }),
+      )
+      return json({ ok: true, key })
+    }
+
+    if (action === 'abortMultipart') {
+      const key = assertTempUploadKey(body.key || '', user.id)
+      const uploadId = String(body.uploadId || '').trim()
+      if (!uploadId) return json({ error: 'uploadId مطلوب' }, 400)
+      await s3.send(
+        new AbortMultipartUploadCommand({
+          Bucket: bucket,
+          Key: key,
+          UploadId: uploadId,
+        }),
+      )
+      return json({ ok: true, key })
     }
 
     if (action === 'signGet') {
