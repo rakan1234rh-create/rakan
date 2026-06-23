@@ -5765,6 +5765,20 @@
       font-weight: 600
     }
 
+    .td-tab.td-tab--needs-action:not(.active) {
+      color: var(--orange, #e67e22);
+      font-weight: 600
+    }
+
+    .td-tab.td-tab--needs-action::after {
+      content: '';
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--orange, #e67e22);
+      flex-shrink: 0
+    }
+
     .td-pane {
       display: none;
       padding: 16px
@@ -29261,7 +29275,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-csp-r2-media-v958">
+  <meta name="app-build" content="athar-emp-resp-tab-v959">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -45197,6 +45211,12 @@
         buildLogs(t);
         buildWfSteps(t);
         setupResponseForm(t);
+        const respForm = document.getElementById('responseForm');
+        const showRespForm = !!(respForm && respForm.style.display !== 'none');
+        const wfTab = document.getElementById('tdt-workflow');
+        if (wfTab) wfTab.classList.toggle('td-tab--needs-action', showRespForm);
+        const activeTab = document.querySelector('.td-tab.active')?.id;
+        if (showRespForm && activeTab === 'tdt-info') switchDetailTab('workflow');
       }
 
       function fetchTicketFullDetail(id) {
@@ -45238,11 +45258,15 @@
         const badge = document.getElementById('td-badge');
         badge.className = `badge ${getTicketBadgeClass(t)}`;
         badge.textContent = t.status_text || STATE_LABELS[t.state];
-        switchDetailTab('info');
         buildTicketInfo(t);
         buildWfSteps(t);
         buildLogs(t);
         setupResponseForm(t);
+        const respForm = document.getElementById('responseForm');
+        const showRespForm = !!(respForm && respForm.style.display !== 'none');
+        switchDetailTab(showRespForm ? 'workflow' : 'info');
+        const wfTab = document.getElementById('tdt-workflow');
+        if (wfTab) wfTab.classList.toggle('td-tab--needs-action', showRespForm);
       }
 
       // ───────────────────────────────────────────────────────────────────────────
@@ -46555,9 +46579,9 @@
         if (typeof initTicketRespKeyboardGuard === 'function') initTicketRespKeyboardGuard();
         if (typeof initViolRespKeyboardGuard === 'function') initViolRespKeyboardGuard();
 
-        const role = state.currentUser.role;
+        const normRole = normalizeUserRole(state.currentUser.role);
         const meId = state.currentUser.id;
-        const actAsAdmin = role === 'admin' || hasPermission('act_all_tickets');
+        const actAsAdmin = normRole === 'admin' || hasPermission('act_all_tickets');
         const wfState = getEffectiveWorkflowState(t.state);
         const buttons = [];
         const RESP_SEND_LABEL = 'إرسال الرد';
@@ -46565,17 +46589,17 @@
         // Path A: من الراصد
         // Path B: من المشرف (يبدأ مباشرة من aud)
 
-        if (wfState === 'emp' && (actAsAdmin || (hasPermission('respond_own_ticket') && (role === 'employee' || role === 'branch_manager') && t.employee_id === meId))) {
+        if (wfState === 'emp' && (actAsAdmin || (hasPermission('respond_own_ticket') && (normRole === 'employee' || normRole === 'branch_manager') && t.employee_id === meId))) {
           buttons.push({ act: 'respond', label: RESP_SEND_LABEL, cls: 'btn-primary', icon: 'fa-paper-plane' });
           respTextarea.placeholder = 'اكتب ردك على المخالفة... (مطلوب)';
         }
         else if (wfState === 'sup' && !isWorkflowStageSkipped('sup')
-          && (actAsAdmin || (hasPermission('act_as_supervisor') && role === 'supervisor'))) {
+          && (actAsAdmin || (hasPermission('act_as_supervisor') && normRole === 'supervisor'))) {
           buttons.push({ act: 'sup_process', label: RESP_SEND_LABEL, cls: 'btn-primary', icon: 'fa-paper-plane' });
           respTextarea.placeholder = 'أضف ملاحظاتك أو رأيك في التذكرة... (مطلوب)';
         }
         else if (wfState === 'aud' && !isWorkflowStageSkipped('aud')
-          && (actAsAdmin || (hasPermission('act_as_auditor') && role === 'auditor'))) {
+          && (actAsAdmin || (hasPermission('act_as_auditor') && normRole === 'auditor'))) {
           buttons.push({
             act: 'aud_approve',
             label: RESP_SEND_LABEL,
@@ -46586,7 +46610,7 @@
           respTextarea.placeholder = 'اكتب ملاحظات التدقيق... (مطلوب)';
         }
         else if (wfState === 'mgt' && !isWorkflowStageSkipped('mgt')
-          && (actAsAdmin || (hasPermission('act_as_manager') && role === 'manager'))) {
+          && (actAsAdmin || (hasPermission('act_as_manager') && normRole === 'manager'))) {
           const typeRec = state.violationTypes.find(x => x.name === t.violation_type);
           const vTypeId = t.violation_type_id || typeRec?.id || null;
           const refDt = t.created_at || t.violation_date;
@@ -46609,7 +46633,7 @@
           respTextarea.placeholder = 'اكتب ملاحظات الإدارة أو قرار التنبيه... (مطلوب)';
         }
         else if (wfState === 'hr' && !isWorkflowStageSkipped('hr')
-          && (actAsAdmin || (hasPermission('act_as_hr') && role === 'hr'))) {
+          && (actAsAdmin || (hasPermission('act_as_hr') && normRole === 'hr'))) {
           const typeRecHr = state.violationTypes.find(x => x.name === t.violation_type);
           const vTypeIdHr = t.violation_type_id || typeRecHr?.id || null;
           const refDtHr = t.created_at || t.violation_date;
