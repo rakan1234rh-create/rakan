@@ -1,4 +1,4 @@
-// violation-push production bundle (redeploy full source)
+// violation-push — إشعارات المخالفات (الخطة الرسمية 2026)
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 import webpush from 'npm:web-push@3.6.7';
 import {
@@ -7,6 +7,13 @@ import {
   normSecret,
   runAutoForwardCron,
 } from './auto-forward-cron.ts';
+import {
+  buildNewViolationTemplates,
+  buildStateChangeTemplates,
+  type RecipientRole,
+  type ViolationNotifContext,
+  type ViolationNotifTemplate,
+} from './violation-notification-copy.ts';
 
 function buildCorsHeaders(req: Request): Record<string, string> {
   const allowedOrigin = Deno.env.get('ALLOWED_ORIGIN') || 'https://athar-app.online';
@@ -21,16 +28,7 @@ function buildCorsHeaders(req: Request): Record<string, string> {
 
 const corsHeaders = buildCorsHeaders(new Request('https://placeholder.test'));
 
-type ViolationRow = {
-  id: string;
-  ticket_number?: string | number | null;
-  violation_type?: string | null;
-  employee_id?: string | null;
-  branch_id?: string | null;
-  state?: string | null;
-  auto_forwarded_emp?: boolean | null;
-  auto_forwarded_sup?: boolean | null;
-};
+type ViolationRow = ViolationNotifContext;
 
 type TargetMode = 'all' | 'roles' | 'branches' | 'users';
 type BroadcastKind = 'motivational' | 'alert' | 'circular';
@@ -95,13 +93,6 @@ function json(body: unknown, status = 200) {
   });
 }
 
-/** نفس منطق index.html: V-2026-0282 → 0282 */
-function shortTicketNum(n: unknown) {
-  if (n == null || n === '') return '—';
-  const parts = String(n).trim().split('-');
-  return parts.length >= 3 ? parts[parts.length - 1] : String(n).trim();
-}
-
 function extractRecord(payload: Record<string, unknown>): ViolationRow | null {
   if (payload?.record && typeof payload.record === 'object') {
     return payload.record as ViolationRow;
@@ -133,93 +124,6 @@ async function getBranchManagerIds(
   return ids;
 }
 
-async function dispatchViolationInsertPush(
-  supabase: ReturnType<typeof createClient>,
-  record: ViolationRow,
-) {
-  const recipientIds = new Set<string>();
-  const branchMgrIds = new Set<string>();
-  if (record.employee_id) recipientIds.add(String(record.employee_id));
-
-  if (record.branch_id) {
-    const branchId = String(record.branch_id);
-    for (const id of await getBranchManagerIds(supabase, branchId, record.employee_id)) {
-      branchMgrIds.add(id);
-      recipientIds.add(id);
-    }
-
-    const supId = await getRegionSupervisorId(supabase, branchId);
-    if (supId) recipientIds.add(supId);
-  }
-
-  if (!recipientIds.size) return { sent: 0, reason: 'no recipients' };
-
-  const ticket = shortTicketNum(record.ticket_number);
-  let employeeName = '';
-  if (record.employee_id) {
-    const { data: emp } = await supabase
-      .from('users')
-      .select('name')
-      .eq('id', record.employee_id)
-      .maybeSingle();
-    employeeName = String(emp?.name || '').trim();
-  }
-  const teamBody = employeeName
-    ? `${employeeName} — تذكرة ${ticket}`
-    : `تذكرة ${ticket}`;
-
-  let totalSent = 0;
-  const allErrors: string[] = [];
-
-  for (const uid of recipientIds) {
-    const isEmployee = uid === record.employee_id;
-    const isBranchMgr = branchMgrIds.has(uid);
-    const title = isEmployee
-      ? 'تم تسجيل مخالفة بحقك'
-      : isBranchMgr
-        ? 'تم تسجيل مخالفة على موظف ضمن فريقك'
-        : 'مخالفة جديدة في فريقك';
-    const body = isEmployee ? `تذكرة ${ticket}` : teamBody;
-    const eventKey = isEmployee
-      ? `violation_new_${record.id}`
-      : isBranchMgr
-        ? `bm_team_pending_${record.id}`
-        : `violation_new_${record.id}`;
-    await upsertAppNotification(supabase, {
-      userId: uid,
-      eventKey,
-      title,
-      message: body,
-      type: isEmployee ? 'amber' : isBranchMgr ? 'amber' : 'blue',
-      icon: isBranchMgr ? 'fa-clipboard-list' : 'fa-bell',
-      ticketId: String(record.id),
-      scope: isBranchMgr ? 'team' : 'mine',
-    });
-    if (isEmployee) {
-      await upsertAppNotification(supabase, {
-        userId: uid,
-        eventKey: `pending_${record.id}`,
-        title: 'مخالفة بانتظار ردك',
-        message: `${record.violation_type || ''} — ${ticket}`.trim(),
-        type: 'amber',
-        icon: 'fa-bell',
-        ticketId: String(record.id),
-        scope: 'mine',
-      });
-    }
-    const result = await sendPushToUserIds(supabase, new Set([uid]), title, body, { ticketId: String(record.id) });
-    totalSent += result.sent || 0;
-    if (result.error) allErrors.push(String(result.error));
-  }
-
-  return {
-    sent: totalSent,
-    recipients: recipientIds.size,
-    branchManagers: branchMgrIds.size,
-    errors: allErrors.length ? allErrors.slice(0, 5) : undefined,
-  };
-}
-
 async function getRegionSupervisorId(
   supabase: ReturnType<typeof createClient>,
   branchId: string,
@@ -238,70 +142,139 @@ async function getRegionSupervisorId(
   return region?.supervisor_id ? String(region.supervisor_id) : null;
 }
 
-async function resolveStateChangeRecipientIds(
+async function getActiveRoleUserIds(
+  supabase: ReturnType<typeof createClient>,
+  roles: string[],
+) {
+  const ids = new Set<string>();
+  const { data, error } = await supabase
+    .from('users')
+    .select('id, is_active')
+    .in('role', roles);
+  if (error) throw new Error(error.message);
+  for (const u of data ?? []) {
+    if (!u?.id || u.is_active === false) continue;
+    ids.add(String(u.id));
+  }
+  return ids;
+}
+
+async function resolveRecipientIds(
+  supabase: ReturnType<typeof createClient>,
+  record: ViolationRow,
+  role: RecipientRole,
+): Promise<Set<string>> {
+  const ids = new Set<string>();
+  if (role === 'employee' && record.employee_id) {
+    ids.add(String(record.employee_id));
+    return ids;
+  }
+  if (role === 'supervisor' && record.branch_id) {
+    const supId = await getRegionSupervisorId(supabase, String(record.branch_id));
+    if (supId) ids.add(supId);
+    return ids;
+  }
+  if (role === 'branch_manager' && record.branch_id) {
+    for (const id of await getBranchManagerIds(supabase, String(record.branch_id), record.employee_id)) {
+      ids.add(id);
+    }
+    return ids;
+  }
+  if (role === 'auditor') {
+    for (const id of await getActiveRoleUserIds(supabase, ['auditor', 'admin'])) ids.add(id);
+    return ids;
+  }
+  if (role === 'manager') {
+    for (const id of await getActiveRoleUserIds(supabase, ['manager', 'admin'])) ids.add(id);
+    return ids;
+  }
+  if (role === 'hr') {
+    for (const id of await getActiveRoleUserIds(supabase, ['hr', 'admin'])) ids.add(id);
+    return ids;
+  }
+  return ids;
+}
+
+async function getEmployeeName(
+  supabase: ReturnType<typeof createClient>,
+  employeeId: string | null | undefined,
+) {
+  if (!employeeId) return '';
+  const { data: emp } = await supabase
+    .from('users')
+    .select('name')
+    .eq('id', employeeId)
+    .maybeSingle();
+  return String(emp?.name || '').trim();
+}
+
+async function dispatchNotificationTemplates(
+  supabase: ReturnType<typeof createClient>,
+  record: ViolationRow,
+  templates: ViolationNotifTemplate[],
+  employeeName: string,
+  opts: { tagPrefix?: string } = {},
+) {
+  if (!templates.length) return { sent: 0, reason: 'no templates' };
+
+  let totalSent = 0;
+  const allErrors: string[] = [];
+  const recipientCount = new Set<string>();
+  const tagPrefix = opts.tagPrefix || 'vnotif';
+
+  for (const tpl of templates) {
+    const userIds = await resolveRecipientIds(supabase, record, tpl.recipientRole);
+    if (!userIds.size) continue;
+
+    const eventKey = `${tpl.eventKeySuffix}_${record.id}`;
+    for (const uid of userIds) {
+      recipientCount.add(uid);
+      await upsertAppNotification(supabase, {
+        userId: uid,
+        eventKey,
+        title: tpl.title,
+        message: tpl.message,
+        type: tpl.type,
+        icon: tpl.icon,
+        ticketId: String(record.id),
+        scope: tpl.scope,
+        isAuto: !!tpl.isAuto,
+      });
+    }
+
+    const pushResult = await sendPushToUserIds(
+      supabase,
+      userIds,
+      tpl.title,
+      tpl.message,
+      {
+        ticketId: String(record.id),
+        tagSuffix: `${tagPrefix}_${tpl.eventKeySuffix}`,
+      },
+    );
+    totalSent += pushResult.sent || 0;
+    if (pushResult.error) allErrors.push(String(pushResult.error));
+    if (pushResult.errors?.length) allErrors.push(...pushResult.errors);
+  }
+
+  return {
+    sent: totalSent,
+    recipients: recipientCount.size,
+    errors: allErrors.length ? allErrors.slice(0, 5) : undefined,
+  };
+}
+
+async function dispatchViolationInsertPush(
   supabase: ReturnType<typeof createClient>,
   record: ViolationRow,
 ) {
-  const state = String(record.state || '').trim();
-  const ids = new Set<string>();
-  const branchMgrIds = new Set<string>();
-  const addRoleUsers = async (roles: string[]) => {
-    const { data, error } = await supabase
-      .from('users')
-      .select('id, is_active')
-      .in('role', roles);
-    if (error) throw new Error(error.message);
-    for (const u of data ?? []) {
-      if (!u?.id || u.is_active === false) continue;
-      ids.add(u.id);
-    }
-  };
-
-  if (state === 'sup' && record.branch_id) {
-    const supId = await getRegionSupervisorId(supabase, String(record.branch_id));
-    if (supId) ids.add(supId);
-  } else if (state === 'aud') {
-    await addRoleUsers(['auditor', 'admin']);
-  } else if (state === 'mgt') {
-    await addRoleUsers(['manager', 'admin']);
-  } else if (state === 'hr') {
-    await addRoleUsers(['hr', 'admin']);
-  }
-
-  const branchTeamStates = new Set(['sup', 'aud', 'mgt', 'hr', 'closed', 'Warning_Issued']);
-  if (record.branch_id && branchTeamStates.has(state)) {
-    for (const id of await getBranchManagerIds(supabase, String(record.branch_id), record.employee_id)) {
-      branchMgrIds.add(id);
-      ids.add(id);
-    }
-  }
-
-  if (record.employee_id) ids.delete(String(record.employee_id));
-  return { ids, branchMgrIds };
+  const employeeName = await getEmployeeName(supabase, record.employee_id);
+  const templates = buildNewViolationTemplates(record, employeeName);
+  return dispatchNotificationTemplates(supabase, record, templates, employeeName, { tagPrefix: 'vnew' });
 }
-
-const STATE_PUSH_COPY: Record<string, { title: string }> = {
-  sup: { title: 'مخالفة بانتظار رد المشرف' },
-  aud: { title: 'تذكرة بانتظار التدقيق' },
-  mgt: { title: 'قرار إداري مطلوب' },
-  hr: { title: 'قرار الموارد البشرية مطلوب' },
-};
-
-const BRANCH_MGR_STATE_PUSH_COPY: Record<string, { title: string }> = {
-  sup: { title: 'رد موظف ضمن فريقك على المخالفة' },
-  aud: { title: 'مخالفة موظف فريقك بانتظار التدقيق' },
-  mgt: { title: 'مخالفة موظف فريقك بانتظار القرار الإداري' },
-  hr: { title: 'مخالفة موظف فريقك بانتظار الموارد البشرية' },
-  closed: { title: 'تم تحديث مخالفة موظف ضمن فريقك' },
-  Warning_Issued: { title: 'تنبيه إداري صادر على موظف ضمن فريقك' },
-};
 
 const recentStatePush = new Map<string, number>();
 const STATE_PUSH_DEDUP_MS = 120_000;
-
-function isDbTruthy(val: unknown) {
-  return val === true || val === 1 || val === 'true' || val === 't';
-}
 
 function shouldSkipStatePush(dedupeKey: string) {
   const key = String(dedupeKey || '').trim();
@@ -313,32 +286,6 @@ function shouldSkipStatePush(dedupeKey: string) {
   return false;
 }
 
-function resolveStatePushTitles(
-  state: string,
-  previousState: string | null | undefined,
-  record: ViolationRow,
-  isAutoForward?: boolean,
-) {
-  const prev = previousState != null ? String(previousState) : '';
-  const autoEmpFwd = (isAutoForward && prev === 'emp' && state === 'sup')
-    || (state === 'sup' && isDbTruthy(record.auto_forwarded_emp) && (!prev || prev === 'emp'));
-  const autoSupFwd = (isAutoForward && prev === 'sup' && state === 'aud')
-    || (state === 'aud' && isDbTruthy(record.auto_forwarded_sup) && (!prev || prev === 'sup'));
-
-  let workflowCopy = STATE_PUSH_COPY[state] ? { ...STATE_PUSH_COPY[state] } : null;
-  let bmCopy = BRANCH_MGR_STATE_PUSH_COPY[state] ? { ...BRANCH_MGR_STATE_PUSH_COPY[state] } : null;
-
-  if (autoEmpFwd && state === 'sup') {
-    workflowCopy = { title: 'مخالفة بانتظار رد المشرف (تمرير تلقائي)' };
-    bmCopy = { title: 'تم تمرير مخالفة موظف فريقك للمشرف (تمرير تلقائي)' };
-  } else if (autoSupFwd && state === 'aud') {
-    workflowCopy = { title: 'تذكرة بانتظار التدقيق (تمرير تلقائي)' };
-    bmCopy = { title: 'تم تمرير مخالفة موظف فريقك للمدقق (تمرير تلقائي)' };
-  }
-
-  return { workflowCopy, bmCopy, autoEmpFwd, autoSupFwd };
-}
-
 async function dispatchViolationStatePush(
   supabase: ReturnType<typeof createClient>,
   record: ViolationRow,
@@ -346,7 +293,7 @@ async function dispatchViolationStatePush(
   opts: { isAutoForward?: boolean; dedupeKey?: string } = {},
 ) {
   const state = String(record.state || '').trim();
-  if (!state || state === 'uploading' || state === 'emp') {
+  if (!state || state === 'uploading') {
     return { sent: 0, reason: 'state does not need push' };
   }
   if (previousState && String(previousState) === state) {
@@ -358,115 +305,21 @@ async function dispatchViolationStatePush(
     return { sent: 0, reason: 'duplicate transition suppressed', dedupeKey };
   }
 
-  let recipientIds: Set<string>;
-  let branchMgrIds: Set<string>;
-  try {
-    const resolved = await resolveStateChangeRecipientIds(supabase, record);
-    recipientIds = resolved.ids;
-    branchMgrIds = resolved.branchMgrIds;
-  } catch (err) {
-    return { error: String(err), sent: 0 };
+  const employeeName = await getEmployeeName(supabase, record.employee_id);
+  const templates = buildStateChangeTemplates(record, previousState, employeeName);
+  if (!templates.length) {
+    return { sent: 0, reason: 'no notification scenario matched', state };
   }
-  if (!recipientIds.size) return { sent: 0, reason: 'no recipients for state' };
 
-  const ticket = shortTicketNum(record.ticket_number);
-  let employeeName = '';
-  if (record.employee_id) {
-    const { data: emp } = await supabase
-      .from('users')
-      .select('name')
-      .eq('id', record.employee_id)
-      .maybeSingle();
-    employeeName = String(emp?.name || '').trim();
-  }
-  const body = employeeName
-    ? `${employeeName} — تذكرة ${ticket}`
-    : `تذكرة ${ticket}`;
-
-  const { workflowCopy, bmCopy, autoEmpFwd, autoSupFwd } = resolveStatePushTitles(
-    state,
-    previousState,
+  const result = await dispatchNotificationTemplates(
+    supabase,
     record,
-    opts.isAutoForward,
+    templates,
+    employeeName,
+    { tagPrefix: 'vstate' },
   );
-  const stateTag = autoEmpFwd && state === 'sup' ? `state_${state}_auto` : `state_${state}`;
 
-  let totalSent = 0;
-  const allErrors: string[] = [];
-  const workflowIds = new Set([...recipientIds].filter((id) => !branchMgrIds.has(id)));
-  if (workflowCopy && workflowIds.size) {
-    for (const uid of workflowIds) {
-      try {
-        await upsertAppNotification(supabase, {
-          userId: uid,
-          eventKey: `pending_${record.id}`,
-          title: workflowCopy.title,
-          message: body,
-          type: autoEmpFwd && state === 'sup' ? 'amber' : (state === 'aud' ? 'purple' : state === 'mgt' ? 'red' : state === 'hr' ? 'orange' : 'blue'),
-          icon: autoEmpFwd && state === 'sup' ? 'fa-robot' : 'fa-bell',
-          ticketId: String(record.id),
-          scope: 'mine',
-          isAuto: !!(autoEmpFwd && state === 'sup'),
-        });
-      } catch (err) {
-        allErrors.push(`notif:${String(err).slice(0, 80)}`);
-      }
-    }
-    const result = await sendPushToUserIds(
-      supabase,
-      workflowIds,
-      workflowCopy.title,
-      body,
-      { ticketId: String(record.id), tagSuffix: stateTag },
-    );
-    totalSent += result.sent || 0;
-    if (result.error) allErrors.push(String(result.error));
-    if (result.errors?.length) allErrors.push(...result.errors);
-  }
-
-  if (bmCopy && branchMgrIds.size) {
-    const bmEvent = autoEmpFwd && state === 'sup'
-      ? `auto_fwd_${record.id}_emp_to_sup`
-      : (autoSupFwd && state === 'aud'
-        ? `auto_fwd_${record.id}_sup_to_aud`
-        : `bm_team_status_${record.id}_${state}`);
-    for (const uid of branchMgrIds) {
-      try {
-        await upsertAppNotification(supabase, {
-          userId: uid,
-          eventKey: bmEvent,
-          title: bmCopy.title,
-          message: body,
-          type: state === 'sup' ? 'blue' : state === 'aud' ? 'purple' : state === 'mgt' ? 'red' : state === 'hr' ? 'orange' : 'amber',
-          icon: (autoEmpFwd && state === 'sup') || (autoSupFwd && state === 'aud') ? 'fa-robot' : 'fa-reply',
-          ticketId: String(record.id),
-          scope: 'team',
-          isAuto: !!(autoEmpFwd || autoSupFwd),
-        });
-      } catch (err) {
-        allErrors.push(`notif:${String(err).slice(0, 80)}`);
-      }
-    }
-    const result = await sendPushToUserIds(
-      supabase,
-      branchMgrIds,
-      bmCopy.title,
-      body,
-      { ticketId: String(record.id), tagSuffix: `bm_${stateTag}` },
-    );
-    totalSent += result.sent || 0;
-    if (result.error) allErrors.push(String(result.error));
-    if (result.errors?.length) allErrors.push(...result.errors);
-  }
-
-  return {
-    sent: totalSent,
-    recipients: recipientIds.size,
-    branchManagers: branchMgrIds.size,
-    state,
-    dedupeKey,
-    errors: allErrors.length ? allErrors.slice(0, 5) : undefined,
-  };
+  return { ...result, state, dedupeKey };
 }
 
 async function sendPushToUserIds(
@@ -565,7 +418,6 @@ async function sendPushToUserIds(
   };
 }
 
-/** مقارنة زمنية ثابتة لمنع هجمات التوقيت */
 async function safeEqual(a: string, b: string): Promise<boolean> {
   const enc = new TextEncoder();
   const ba = enc.encode(a);
@@ -622,8 +474,6 @@ async function resolveUserIdFromJwt(req: Request) {
   }
 }
 
-// [أمان] هل يستطيع صاحب الـJWT رؤية هذه المخالفة (عبر RLS)؟
-// يُعيد true عند التحقق، و false عند عدم التأكد — fail-closed لمنع التجاوز.
 async function userCanSeeViolation(req: Request, violationId: string): Promise<boolean> {
   try {
     const authHeader = req.headers.get('Authorization');
@@ -903,7 +753,7 @@ Deno.serve(async (req) => {
     return json({
       ok: true,
       service: 'violation-push',
-      version: '2026-06-notifications-db-v1',
+      version: '2026-06-violation-notif-v2',
       autoForwardCron: AUTO_FORWARD_CRON_VERSION,
       vapidConfigured: !!(vapidPublic && vapidPrivate),
       vapidValid,
@@ -925,7 +775,6 @@ Deno.serve(async (req) => {
     { auth: { persistSession: false } },
   );
 
-  // ─── Cron: تمرير تلقائي للتذاكر المتأخرة (بدون متصفح) ───
   if (payload.autoForwardCron === true) {
     if (!await isAuthorizedCron(req, payload)) {
       const gotBody = !!normSecret(payload?.cronSecret);
@@ -954,7 +803,6 @@ Deno.serve(async (req) => {
     }
   }
 
-  // ─── اختبار من التطبيق (المستخدم الحالي) ───
   if (payload.test === true) {
     const userId = await resolveUserIdFromJwt(req);
     if (!userId) return json({ error: 'يجب تسجيل الدخول لاختبار التنبيه' }, 401);
@@ -968,7 +816,6 @@ Deno.serve(async (req) => {
     return json({ ok: true, ...result });
   }
 
-  // ─── إشعار عند تغيّر مرحلة التذكرة (مثلاً وصولها للمدير) ───
   if (payload.notifyState === true) {
     try {
       const serviceInternal = await isServiceRoleAuth(req);
@@ -982,7 +829,7 @@ Deno.serve(async (req) => {
       }
       const { data: row, error: rowErr } = await supabase
         .from('violations')
-        .select('id, ticket_number, violation_type, employee_id, branch_id, state, auto_forwarded_emp, auto_forwarded_sup')
+        .select('id, ticket_number, violation_type, employee_id, branch_id, state, status_text, auto_forwarded_emp, auto_forwarded_sup')
         .eq('id', record.id)
         .maybeSingle();
       if (rowErr) return json({ error: rowErr.message }, 500);
@@ -1002,13 +849,11 @@ Deno.serve(async (req) => {
     }
   }
 
-  // ─── إشعار من التطبيق بعد إنشاء مخالفة (JWT) ───
   if (payload.notify === true) {
     const userId = await resolveUserIdFromJwt(req);
     if (!userId) return json({ error: 'يجب تسجيل الدخول لإرسال التنبيه' }, 401);
     const record = extractRecord(payload);
     if (!record?.id) return json({ error: 'missing violation record in payload' }, 400);
-    // [أمان] منع إساءة الاستخدام: المستخدم يرسل تنبيهاً فقط لتذكرة يراها
     {
       const canSee = await userCanSeeViolation(req, String(record.id));
       if (canSee === false) return json({ error: 'غير مصرح بإرسال تنبيه لهذه التذكرة' }, 403);
@@ -1028,7 +873,6 @@ Deno.serve(async (req) => {
     return json({ ok: true, ...result });
   }
 
-  // ─── نشرة admin (تحفيز / تنبيه / تعميم) ───
   if (payload.broadcast === true) {
     const admin = await resolveAdminFromJwt(req);
     if (!admin) return json({ error: 'مدير النظام فقط يمكنه إرسال النشرات' }, 403);
