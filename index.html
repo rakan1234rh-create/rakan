@@ -5861,6 +5861,16 @@
       background: color-mix(in srgb, var(--green) 5%, var(--surface))
     }
 
+    .wf-snake-cell {
+      display: flex;
+      min-width: 0
+    }
+
+    .wf-snake-cell > .wf-step--snake {
+      flex: 1 1 auto;
+      width: 100%
+    }
+
     /* Logs */
     .log-item {
       padding: 10px 12px;
@@ -29609,7 +29619,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-resp-actions-swap-v973">
+  <meta name="app-build" content="athar-reply-video-upload-v975">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -42993,7 +43003,17 @@
           } else {
             body = fileObj;
           }
-          const contentType = fileObj.type || 'image/jpeg';
+          let contentType = String(fileObj.type || (fileObj.rawFile && fileObj.rawFile.type) || '').trim();
+          if (!contentType) {
+            const ext = String(fileObj.name || '').split('.').pop().toLowerCase();
+            if (['mp4', 'm4v'].includes(ext)) contentType = 'video/mp4';
+            else if (ext === 'mov') contentType = 'video/quicktime';
+            else if (ext === 'webm') contentType = 'video/webm';
+            else if (['jpg', 'jpeg'].includes(ext)) contentType = 'image/jpeg';
+            else if (ext === 'png') contentType = 'image/png';
+            else if (ext === 'pdf') contentType = 'application/pdf';
+            else contentType = 'application/octet-stream';
+          }
 
           try {
             await uploadR2ViaEdgeProxy(objectKey, body, contentType);
@@ -47071,52 +47091,6 @@
       // ───────────────────────────────────────────────────────────────────────────
       // إرسال الرد / الإجراء
       // ───────────────────────────────────────────────────────────────────────────
-      function uploadReplyFilesInBackground(ticketId, ticketNumber, filesToUpload, actionLabel, me) {
-        (async () => {
-          try {
-            let uploadedAttachments = [];
-            for (const file of filesToUpload) {
-              try {
-                const result = await uploadToCloudflare(file, ticketNumber, me.name, null);
-
-                uploadedAttachments.push({
-                  n: file.name, 
-                  p: result.fileId, 
-                  s: actionLabel,
-                  b: me.name,
-                  r: ROLE_LABELS[me.role] || me.role,
-                  t: getNow()
-                });
-              } catch (e) {
-                if (isMirsadDebugLog()) console.error('File upload error (Reply):', e);
-                throw e;
-              }
-            }
-
-            // جلب التذكرة الحالية لدمج المرفقات الجديدة مع المرفقات السابقة
-            const { data: currentTicket, error: fetchErr } = await sb.from('violations').select('attachments').eq('id', ticketId).single();
-            if (!fetchErr && currentTicket) {
-              let currentAtts = parseDbJsonArray(currentTicket.attachments);
-
-              // إزالة المرفقات المؤقتة (placeholders) لهذه الجلسة بالتحديد لتجنب التكرار
-              currentAtts = currentAtts.filter(a => {
-                if (!a || !a.isUploading) return true;
-                const attName = a.n || a.name || '';
-                return !filesToUpload.some(f => f && f.name === attName);
-              });
-
-              const combinedAtts = currentAtts.concat(uploadedAttachments);
-              await sb.from('violations').update({ attachments: JSON.stringify(combinedAtts) }).eq('id', ticketId);
-
-              patchViolationLocally(ticketId, { attachments: combinedAtts });
-              refreshViolationsUI(ticketId);
-            }
-          } catch (err) {
-            showToast(`فشل رفع المرفقات للتذكرة ${ticketNumber}: ${err.message}`, 'error');
-          }
-        })();
-      }
-
       async function submitResp(action) {
         const t = state.editingTicket;
         if (!t) return;
@@ -47160,30 +47134,42 @@
           note: text
         };
 
-        // إنشاء مرفقات مؤقتة (Placeholders) لتظهر فوراً في التذكرة
-        let newAttachments = parseDbJsonArray(t.attachments);
-        if (respFiles.length > 0) {
-          if (!state._localBlobUrls) state._localBlobUrls = {};
+        const respBtns = Array.from(document.querySelectorAll('.td-resp-action'));
+        const btnSnapshots = respBtns.map(btn => ({ el: btn, html: btn.innerHTML, disabled: btn.disabled }));
+        respBtns.forEach(btn => { btn.disabled = true; });
+        const activeBtn = respBtns.find(btn => (btn.getAttribute('onclick') || '').includes(`submitResp('${action}')`));
+        if (activeBtn) activeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الرفع...';
 
-          const tempAtts = respFiles.map(f => {
-            if (f.blobUrl) state._localBlobUrls[f.name] = f.blobUrl;
-            return {
-              n: f.name,
-              u: 'uploading_' + Math.random().toString(36).substr(2, 9),
-              p: '',
-              s: tr.actionLabel,
-              b: me.name,
-              r: ROLE_LABELS[me.role] || me.role,
-              t: getNow(),
-              isUploading: true
-            };
-          });
-          newAttachments = newAttachments.concat(tempAtts);
-        }
+        let newAttachments = parseDbJsonArray(t.attachments);
+        const r2Folder = pickPreferredR2Folder(t.ticket_number, t.created_at, newAttachments);
 
         try {
-          // استخدام RPC ذري (append_violation_log_with_guard) بدلاً من read-then-write
-          // يمنع Race Condition: إلحاق السجل + فحص الحالة في عملية واحدة ذرية
+          if (respFiles.length > 0) {
+            window.isUploading = true;
+            const uploadedAtts = [];
+            for (const file of respFiles) {
+              if (activeBtn) {
+                activeBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> جاري رفع المرفقات (${uploadedAtts.length + 1}/${respFiles.length})...`;
+              }
+              const result = await uploadToCloudflare(file, r2Folder, me.name, null);
+              if (!result || !result.success || !result.fileId) {
+                throw new Error('فشل رفع أحد المرفقات — تأكد من الاتصال وحاول مرة أخرى');
+              }
+              uploadedAtts.push({
+                n: file.name,
+                p: result.fileId,
+                s: tr.actionLabel,
+                b: me.name,
+                r: ROLE_LABELS[me.role] || me.role,
+                t: getNow(),
+                ...(result.devDataUrl ? { u: result.devDataUrl } : {})
+              });
+            }
+            newAttachments = newAttachments.concat(uploadedAtts);
+          }
+
+          if (activeBtn) activeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...';
+
           const { data: rpcData, error: rpcErr } = await sb.rpc('append_violation_log_with_guard', {
             p_violation_id: t.id,
             p_expected_state: t.state,
@@ -47206,14 +47192,10 @@
             t.state
           );
 
-          // بدء عملية الرفع بالخلفية إذا كان هناك مرفقات للرد
-          if (respFiles.length > 0) {
-            uploadReplyFilesInBackground(t.id, t.ticket_number, [...respFiles], tr.actionLabel, me);
-          }
-
           closeModal('ticketModal');
           state.editingTicket = null;
           state.uploadedFiles.resp = [];
+          document.getElementById('respFileArea').innerHTML = '';
 
           const localPatch = {
             state: tr.newState,
@@ -47230,6 +47212,12 @@
           showToast('تم حفظ الرد وتحديث التذكرة بنجاح ✓', 'success');
         } catch (err) {
           showToast('فشل التنفيذ: ' + err.message, 'error');
+        } finally {
+          window.isUploading = false;
+          btnSnapshots.forEach(s => {
+            s.el.disabled = s.disabled;
+            s.el.innerHTML = s.html;
+          });
         }
       }
       // ═══════════════════════════════════════════════════════════════════════════
