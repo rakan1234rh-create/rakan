@@ -6,7 +6,7 @@ on:
       sql_file:
         description: 'SQL file under supabase/ to run'
         required: true
-        default: 'test-forward-v2026-0317-3min.sql'
+        default: 'restore-violation-forward-schedules.sql'
   push:
     branches: [main]
     paths:
