@@ -1,10 +1,15 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-cron-secret',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-};
+function buildCorsHeaders(req: Request): Record<string, string> {
+  const allowedOrigin = Deno.env.get('ALLOWED_ORIGIN') || 'https://athar-app.online';
+  const requestOrigin = req.headers.get('Origin') || '';
+  const isAllowed = requestOrigin === allowedOrigin;
+  return {
+    'Access-Control-Allow-Origin': isAllowed ? allowedOrigin : '',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-cron-secret',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  };
+}
 
 const VERSION = '2026-06-v1';
 const EMP_TIMEOUT_HOURS = 24;
@@ -42,10 +47,14 @@ type ViolationRow = {
 
 type WorkflowSkips = Record<string, boolean>;
 
+const corsHeaders = buildCorsHeaders(new Request('https://placeholder.test'));
+
+let _activeCors: Record<string, string> = corsHeaders;
+
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    headers: { ..._activeCors, 'Content-Type': 'application/json' },
   });
 }
 
@@ -146,14 +155,26 @@ async function loadWorkflowSkips(supabase: ReturnType<typeof createClient>) {
   return {};
 }
 
-function isAuthorizedCron(req: Request) {
-  const cronSecret = Deno.env.get('AUTO_FORWARD_CRON_SECRET') ?? '';
-  const headerSecret = req.headers.get('x-cron-secret') ?? '';
-  if (cronSecret && headerSecret && headerSecret === cronSecret) return true;
+async function safeEqual(a: string, b: string): Promise<boolean> {
+  const enc = new TextEncoder();
+  const ba = enc.encode(a);
+  const bb = enc.encode(b);
+  if (ba.length !== bb.length) return false;
+  return crypto.subtle.timingSafeEqual(ba, bb);
+}
+
+async function isAuthorizedCron(req: Request): Promise<boolean> {
+  const cronSecret = (Deno.env.get('AUTO_FORWARD_CRON_SECRET') ?? '').trim();
+  const headerSecret = (req.headers.get('x-cron-secret') ?? '').trim();
+  if (cronSecret && headerSecret) {
+    if (await safeEqual(headerSecret, cronSecret)) return true;
+  }
 
   const auth = (req.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '').trim();
-  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-  if (serviceKey && auth && auth === serviceKey) return true;
+  const serviceKey = (Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '').trim();
+  if (serviceKey && auth) {
+    if (await safeEqual(auth, serviceKey)) return true;
+  }
 
   return false;
 }
@@ -295,6 +316,7 @@ async function runAutoForward(supabase: ReturnType<typeof createClient>, supabas
     .select('id, ticket_number, violation_type, employee_id, branch_id, supervisor_id, state, created_at, updated_at, logs, auto_forwarded_emp, auto_forwarded_sup')
     .eq('state', 'sup')
     .or('auto_forwarded_sup.is.null,auto_forwarded_sup.eq.false')
+    .lt('updated_at', new Date(Date.now() - SUP_TIMEOUT_HOURS * 60 * 60 * 1000).toISOString())
     .limit(200);
 
   if (supErr) throw new Error(supErr.message);
@@ -320,7 +342,8 @@ async function runAutoForward(supabase: ReturnType<typeof createClient>, supabas
 }
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+  _activeCors = buildCorsHeaders(req);
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: _activeCors });
 
   if (req.method === 'GET') {
     return json({
@@ -329,13 +352,12 @@ Deno.serve(async (req) => {
       version: VERSION,
       empTimeoutHours: EMP_TIMEOUT_HOURS,
       supTimeoutHours: SUP_TIMEOUT_HOURS,
-      cronSecretConfigured: !!(Deno.env.get('AUTO_FORWARD_CRON_SECRET')),
     });
   }
 
   if (req.method !== 'POST') return json({ error: 'method not allowed' }, 405);
 
-  if (!isAuthorizedCron(req)) {
+  if (!await isAuthorizedCron(req)) {
     return json({ error: 'unauthorized — use x-cron-secret or service role bearer' }, 401);
   }
 

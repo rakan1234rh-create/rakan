@@ -8,11 +8,18 @@ import {
   runAutoForwardCron,
 } from './auto-forward-cron.ts';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-cron-secret',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-};
+function buildCorsHeaders(req: Request): Record<string, string> {
+  const allowedOrigin = Deno.env.get('ALLOWED_ORIGIN') || 'https://athar-app.online';
+  const requestOrigin = req.headers.get('Origin') || '';
+  const isAllowed = requestOrigin === allowedOrigin;
+  return {
+    'Access-Control-Allow-Origin': isAllowed ? allowedOrigin : '',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-cron-secret',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  };
+}
+
+const corsHeaders = buildCorsHeaders(new Request('https://placeholder.test'));
 
 type ViolationRow = {
   id: string;
@@ -79,10 +86,12 @@ async function upsertAppNotification(
   return { ok: true };
 }
 
+let _activeCors: Record<string, string> = corsHeaders;
+
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    headers: { ..._activeCors, 'Content-Type': 'application/json' },
   });
 }
 
@@ -548,31 +557,21 @@ async function sendPushToUserIds(
   };
 }
 
-function jwtRoleClaim(token: string): string | null {
-  try {
-    const parts = token.split('.');
-    if (parts.length < 2) return null;
-    let b64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
-    while (b64.length % 4) b64 += '=';
-    const payload = JSON.parse(atob(b64));
-    return typeof payload?.role === 'string' ? payload.role : null;
-  } catch {
-    return null;
-  }
+/** مقارنة زمنية ثابتة لمنع هجمات التوقيت */
+async function safeEqual(a: string, b: string): Promise<boolean> {
+  const enc = new TextEncoder();
+  const ba = enc.encode(a);
+  const bb = enc.encode(b);
+  if (ba.length !== bb.length) return false;
+  return crypto.subtle.timingSafeEqual(ba, bb);
 }
 
-function isServiceRoleAuth(req: Request) {
+async function isServiceRoleAuth(req: Request): Promise<boolean> {
   const auth = (req.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '').trim();
   if (!auth) return false;
-
   const serviceKey = (Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '').trim();
-  if (serviceKey && auth === serviceKey) return true;
-
-  // أكثر تسامحاً: أي مفتاح service_role صالح للمشروع (دوره service_role)
-  const role = jwtRoleClaim(auth);
-  if (role === 'service_role' || role === 'supabase_admin') return true;
-
-  return false;
+  if (!serviceKey) return false;
+  return await safeEqual(auth, serviceKey);
 }
 
 async function resolveUserIdFromJwt(req: Request) {
@@ -594,15 +593,14 @@ async function resolveUserIdFromJwt(req: Request) {
 }
 
 // [أمان] هل يستطيع صاحب الـJWT رؤية هذه المخالفة (عبر RLS)؟
-// يُعيد true/false عند التحقق، و null عند تعذّر التحقق (نتعامل معها fail-open
-// حتى لا نكسر التنبيهات بسبب خطأ مؤقت).
-async function userCanSeeViolation(req: Request, violationId: string): Promise<boolean | null> {
+// يُعيد true عند التحقق، و false عند عدم التأكد — fail-closed لمنع التجاوز.
+async function userCanSeeViolation(req: Request, violationId: string): Promise<boolean> {
   try {
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader) return null;
+    if (!authHeader) return false;
     const url = Deno.env.get('SUPABASE_URL') ?? '';
     const anon = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
-    if (!url || !anon) return null;
+    if (!url || !anon) return false;
     const uc = createClient(url, anon, {
       global: { headers: { Authorization: authHeader } },
       auth: { persistSession: false },
@@ -612,10 +610,10 @@ async function userCanSeeViolation(req: Request, violationId: string): Promise<b
       .select('id')
       .eq('id', violationId)
       .maybeSingle();
-    if (error) return null; // fail-open
+    if (error) return false;
     return !!data;
   } catch {
-    return null; // fail-open
+    return false;
   }
 }
 
@@ -691,7 +689,15 @@ async function resolveBroadcastRecipientIds(
       }
     }
   } else if (mode === 'users') {
-    for (const id of (target.userIds || []).map(String).filter(Boolean)) ids.add(id);
+    const userIds = (target.userIds || []).map(String).filter(Boolean);
+    if (!userIds.length) return [];
+    const { data: activeUsers, error: uErr } = await supabase
+      .from('users')
+      .select('id')
+      .eq('is_active', true)
+      .in('id', userIds);
+    if (uErr) throw new Error(uErr.message);
+    for (const u of activeUsers ?? []) ids.add(u.id);
   }
 
   return Array.from(ids);
@@ -846,7 +852,9 @@ async function dispatchBroadcastPush(
 }
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+  _activeCors = buildCorsHeaders(req);
+
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: _activeCors });
 
   if (req.method === 'GET') {
     const vapidPublic = Deno.env.get('VAPID_PUBLIC_KEY') ?? '';
@@ -867,7 +875,6 @@ Deno.serve(async (req) => {
       service: 'violation-push',
       version: '2026-06-notifications-db-v1',
       autoForwardCron: AUTO_FORWARD_CRON_VERSION,
-      cronSecretConfigured: !!(Deno.env.get('AUTO_FORWARD_CRON_SECRET')),
       vapidConfigured: !!(vapidPublic && vapidPrivate),
       vapidValid,
       vapidPublicKey: vapidPublic || null,
@@ -890,7 +897,7 @@ Deno.serve(async (req) => {
 
   // ─── Cron: تمرير تلقائي للتذاكر المتأخرة (بدون متصفح) ───
   if (payload.autoForwardCron === true) {
-    if (!isAuthorizedCron(req, payload)) {
+    if (!await isAuthorizedCron(req, payload)) {
       const gotBody = !!normSecret(payload?.cronSecret);
       const gotHeader = !!normSecret(req.headers.get('x-cron-secret'));
       return json({
@@ -900,7 +907,6 @@ Deno.serve(async (req) => {
           : gotHeader
             ? 'x-cron-secret وصل لكنه لا يطابق Secrets'
             : 'لم يصل أي سر — حدّث Cron ليرسل cronSecret داخل body',
-        cronSecretConfigured: !!(Deno.env.get('AUTO_FORWARD_CRON_SECRET')),
       }, 401);
     }
     try {
@@ -935,14 +941,14 @@ Deno.serve(async (req) => {
   // ─── إشعار عند تغيّر مرحلة التذكرة (مثلاً وصولها للمدير) ───
   if (payload.notifyState === true) {
     const userId = await resolveUserIdFromJwt(req);
-    const serviceInternal = isServiceRoleAuth(req);
+    const serviceInternal = await isServiceRoleAuth(req);
     if (!userId && !serviceInternal) return json({ error: 'يجب تسجيل الدخول لإرسال التنبيه' }, 401);
     const record = extractRecord(payload);
     if (!record?.id) return json({ error: 'missing violation record in payload' }, 400);
     // [أمان] منع إساءة الاستخدام: المستخدم العادي يرسل تنبيهاً فقط لتذكرة يراها
     if (userId && !serviceInternal) {
       const canSee = await userCanSeeViolation(req, String(record.id));
-      if (canSee === false) return json({ error: 'غير مصرح بإرسال تنبيه لهذه التذكرة' }, 403);
+      if (canSee !== true) return json({ error: 'غير مصرح بإرسال تنبيه لهذه التذكرة' }, 403);
     }
     const { data: row, error: rowErr } = await supabase
       .from('violations')

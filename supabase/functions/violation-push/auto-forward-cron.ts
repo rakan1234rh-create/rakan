@@ -144,18 +144,32 @@ function normSecret(val: unknown) {
 
 export { normSecret };
 
+async function safeEqual(a: string, b: string): Promise<boolean> {
+  const enc = new TextEncoder();
+  const ba = enc.encode(a);
+  const bb = enc.encode(b);
+  if (ba.length !== bb.length) return false;
+  return crypto.subtle.timingSafeEqual(ba, bb);
+}
+
 /** يقبل السر من x-cron-secret أو cronSecret داخل JSON body (أفضل لـ pg_net Cron) */
-export function isAuthorizedCron(req: Request, payload?: Record<string, unknown>) {
+export async function isAuthorizedCron(req: Request, payload?: Record<string, unknown>) {
   const cronSecret = normSecret(Deno.env.get('AUTO_FORWARD_CRON_SECRET'));
   const headerSecret = normSecret(req.headers.get('x-cron-secret'));
   const bodySecret = normSecret(payload?.cronSecret);
   const provided = headerSecret || bodySecret;
 
-  if (cronSecret && provided && provided === cronSecret) return true;
+  if (cronSecret && provided) {
+    const eq = await safeEqual(provided, cronSecret);
+    if (eq) return true;
+  }
 
   const auth = normSecret((req.headers.get('Authorization') || '').replace(/^Bearer\s+/i, ''));
   const serviceKey = normSecret(Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'));
-  if (serviceKey && auth && auth === serviceKey) return true;
+  if (serviceKey && auth) {
+    const eq = await safeEqual(auth, serviceKey);
+    if (eq) return true;
+  }
 
   return false;
 }
@@ -263,6 +277,7 @@ export async function runAutoForwardCron(
     .select('id, ticket_number, violation_type, employee_id, branch_id, supervisor_id, state, created_at, updated_at, logs, auto_forwarded_emp, auto_forwarded_sup')
     .eq('state', 'sup')
     .or('auto_forwarded_sup.is.null,auto_forwarded_sup.eq.false')
+    .lt('updated_at', new Date(Date.now() - SUP_TIMEOUT_HOURS * 60 * 60 * 1000).toISOString())
     .limit(200);
 
   if (supErr) throw new Error(supErr.message);

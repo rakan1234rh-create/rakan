@@ -17,26 +17,38 @@ import {
 } from 'npm:@aws-sdk/client-s3@3.733.0'
 import { getSignedUrl } from 'npm:@aws-sdk/s3-request-presigner@3.733.0'
 
-const cors: Record<string, string> = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers':
-    'authorization, x-client-info, apikey, content-type, range, x-r2-action, x-r2-key',
-  'Access-Control-Allow-Methods': 'GET, HEAD, POST, OPTIONS',
-  'Access-Control-Expose-Headers':
-    'Content-Length, Content-Range, Accept-Ranges, Content-Type',
+function buildCors(req: Request): Record<string, string> {
+  const allowedOrigin = Deno.env.get('ALLOWED_ORIGIN') || 'https://athar-app.online';
+  const requestOrigin = req.headers.get('Origin') || '';
+  const isAllowed = requestOrigin === allowedOrigin;
+  return {
+    'Access-Control-Allow-Origin': isAllowed ? allowedOrigin : '',
+    'Access-Control-Allow-Headers':
+      'authorization, x-client-info, apikey, content-type, range, x-r2-action, x-r2-key',
+    'Access-Control-Allow-Methods': 'GET, HEAD, POST, OPTIONS',
+    'Access-Control-Expose-Headers':
+      'Content-Length, Content-Range, Accept-Ranges, Content-Type',
+  };
 }
+
+const _defaultCors = buildCors(new Request('https://placeholder.test'));
+
+let _cors: Record<string, string> = _defaultCors;
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...cors, 'Content-Type': 'application/json' },
+    headers: { ..._cors, 'Content-Type': 'application/json' },
   })
 }
 
 function assertKey(key: unknown): string {
   if (typeof key !== 'string' || !key.length) throw new Error('key مطلوب')
   if (key.length > 2048) throw new Error('key طويل جداً')
-  if (key.includes('..')) throw new Error('مسار غير صالح')
+  if (key.includes('..') || key.startsWith('/') || key.includes('\0') || key.includes('\\')) {
+    throw new Error('مسار غير صالح')
+  }
+  if (!/^[a-zA-Z0-9_\-./]+$/.test(key)) throw new Error('أحرف غير مسموحة في المفتاح')
   return key
 }
 
@@ -132,8 +144,8 @@ function b64urlDecode(s: string): Uint8Array {
 }
 
 function streamSecret(env: NonNullable<ReturnType<typeof requireR2Env>>) {
-  // نفس السرّ عند التوقيع والتحقق — مرتبط بأسرار R2 الثابتة
-  return `${env.secretAccessKey}:${env.accessKeyId}:${env.bucket}`
+  // سرّ مستقل لتفادي بطلان الروابط عند تغيير مفاتيح R2
+  return Deno.env.get('R2_STREAM_HMAC_SECRET') || `${env.secretAccessKey}:${env.accessKeyId}:${env.bucket}`
 }
 
 async function hmacSign(message: string, secret: string): Promise<string> {
@@ -200,7 +212,7 @@ async function handleStreamRequest(
   try {
     if (req.method === 'HEAD') {
       const head = await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: key }))
-      const headers: Record<string, string> = { ...cors }
+      const headers: Record<string, string> = { ..._cors }
       headers['Content-Type'] = head.ContentType || guessContentTypeFromKey(key)
       headers['Accept-Ranges'] = 'bytes'
       if (head.ContentLength != null) {
@@ -217,7 +229,7 @@ async function handleStreamRequest(
       }),
     )
 
-    const headers: Record<string, string> = { ...cors }
+    const headers: Record<string, string> = { ..._cors }
     headers['Content-Type'] = out.ContentType || guessContentTypeFromKey(key)
     headers['Accept-Ranges'] = 'bytes'
     headers['Cache-Control'] = 'private, max-age=3600'
@@ -247,8 +259,10 @@ async function handleStreamRequest(
 }
 
 Deno.serve(async (req) => {
+  _cors = buildCors(req);
+
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: cors })
+    return new Response('ok', { headers: _cors })
   }
 
   const env = requireR2Env()
@@ -278,9 +292,8 @@ Deno.serve(async (req) => {
       )
       return json({ ok: true, key })
     } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e)
-      console.error('[r2-storage] putObject', msg, e)
-      return json({ error: msg }, 500)
+      console.error('[r2-storage] putObject', e)
+      return json({ error: 'حدث خطأ أثناء رفع الملف' }, 500)
     }
   }
 
@@ -329,6 +342,10 @@ Deno.serve(async (req) => {
 
     if (action === 'signPut') {
       const key = assertKey(body.key)
+      // [أمان] يُسمح بالرفع فقط في مجلد temp_ التابع للمستخدم الحالي
+      if (!key.startsWith(`temp_${user.id}`)) {
+        return json({ error: 'غير مصرح بالرفع في هذا المسار' }, 403)
+      }
       const contentType =
         typeof body.contentType === 'string' && body.contentType.length
           ? body.contentType
@@ -375,6 +392,18 @@ Deno.serve(async (req) => {
 
     if (action === 'headObject') {
       const key = assertKey(body.key)
+      // [أمان] فحص صلاحية نفسه مثل signGet
+      const { data: canSee, error: permErr } = await supabase.rpc(
+        'mirsad_user_can_see_attachment',
+        { p_key: key },
+      )
+      if (permErr) {
+        console.error('[r2-storage] headObject perm check failed', permErr.message)
+        return json({ error: 'تعذّر التحقق من صلاحية الملف' }, 500)
+      }
+      if (!canSee) {
+        return json({ error: 'غير مصرح بالوصول لهذا الملف' }, 403)
+      }
       try {
         await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: key }))
         return json({ ok: true, key })
@@ -393,6 +422,10 @@ Deno.serve(async (req) => {
     if (action === 'moveObject') {
       const fromKey = assertKey(body.fromKey)
       const toKey = assertKey(body.toKey)
+      // [أمان] التأكد أن الملف المؤقت يخص المستخدم الحالي
+      if (!fromKey.startsWith(`temp_${user.id}`)) {
+        return json({ error: 'غير مصرح بنقل هذا الملف' }, 403)
+      }
       if (!fromKey.startsWith('temp_')) {
         return json({ error: 'نقل الملفات مسموح من المجلد المؤقت فقط' }, 400)
       }
@@ -415,8 +448,7 @@ Deno.serve(async (req) => {
 
     return json({ error: 'عملية غير معروفة' }, 400)
   } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e)
-    console.error('[r2-storage]', msg, e)
-    return json({ error: msg }, 500)
+    console.error('[r2-storage]', e)
+    return json({ error: 'حدث خطأ أثناء المعالجة' }, 500)
   }
 })

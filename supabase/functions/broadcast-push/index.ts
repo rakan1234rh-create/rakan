@@ -1,10 +1,19 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 import webpush from 'npm:web-push@3.6.7';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+function buildCorsHeaders(req: Request): Record<string, string> {
+  const allowedOrigin = Deno.env.get('ALLOWED_ORIGIN') || 'https://athar-app.online';
+  const requestOrigin = req.headers.get('Origin') || '';
+  const isAllowed = requestOrigin === allowedOrigin;
+  return {
+    'Access-Control-Allow-Origin': isAllowed ? allowedOrigin : '',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  };
+}
+
+const _defaultCors = buildCorsHeaders(new Request('https://placeholder.test'));
+
+let _activeCors: Record<string, string> = _defaultCors;
 
 type TargetMode = 'all' | 'roles' | 'branches' | 'users';
 type BroadcastKind = 'motivational' | 'alert' | 'circular';
@@ -19,7 +28,7 @@ type TargetPayload = {
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    headers: { ..._activeCors, 'Content-Type': 'application/json' },
   });
 }
 
@@ -102,7 +111,15 @@ async function resolveRecipientIds(
       }
     }
   } else if (mode === 'users') {
-    for (const id of (target.userIds || []).map(String).filter(Boolean)) ids.add(id);
+    const userIds = (target.userIds || []).map(String).filter(Boolean);
+    if (!userIds.length) return [];
+    const { data: activeUsers, error: uErr } = await supabase
+      .from('users')
+      .select('id')
+      .eq('is_active', true)
+      .in('id', userIds);
+    if (uErr) throw new Error(uErr.message);
+    for (const u of activeUsers ?? []) ids.add(u.id);
   }
 
   return Array.from(ids);
@@ -215,7 +232,8 @@ async function insertInboxRows(
 }
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+  _activeCors = buildCorsHeaders(req);
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: _activeCors });
 
   if (req.method === 'GET') {
     return json({ ok: true, service: 'broadcast-push' });
