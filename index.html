@@ -5765,20 +5765,6 @@
       font-weight: 600
     }
 
-    .td-tab.td-tab--needs-action:not(.active) {
-      color: var(--orange, #e67e22);
-      font-weight: 600
-    }
-
-    .td-tab.td-tab--needs-action::after {
-      content: '';
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: var(--orange, #e67e22);
-      flex-shrink: 0
-    }
-
     .td-pane {
       display: none;
       padding: 16px
@@ -22434,15 +22420,11 @@
         padding: 8px 0 !important
       }
 
-    #ticketModal #tdInlineAttachments {
-      margin-top: 0 !important
-    }
+      #ticketModal #tdInlineAttachments {
+        margin-top: 0 !important
+      }
 
-    #ticketModal .td-response-form {
-      margin-top: 14px !important
-    }
-
-    #ticketModal .td-att-section-head {
+      #ticketModal .td-att-section-head {
         margin-top: 0 !important;
         padding: 8px 0 !important;
         border-bottom: 1px dashed var(--border) !important
@@ -29279,7 +29261,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-bm-respond-v961">
+  <meta name="app-build" content="athar-revert-resp-ui-v962">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -30799,7 +30781,10 @@
           <div class="td-pane active" id="tdp-info">
             <div id="tdInfo"></div>
             <div id="tdInlineAttachments"></div>
-            <div id="responseForm" class="td-response-form" style="margin-top:18px;display:none">
+          </div>
+          <div class="td-pane" id="tdp-workflow">
+            <div id="wfStepsContainer"></div>
+            <div id="responseForm" style="margin-top:18px;display:none">
               <div class="panel" style="margin:0">
                 <h4 style="margin-bottom:10px;font-size:14px">إضافة رد</h4>
                 <div class="figma-search-wrap ticket-resp-search">
@@ -30817,9 +30802,6 @@
                 <div id="responseButtons"></div>
               </div>
             </div>
-          </div>
-          <div class="td-pane" id="tdp-workflow">
-            <div id="wfStepsContainer"></div>
           </div>
           <div class="td-pane" id="tdp-logs">
             <div id="logsWrap"></div>
@@ -31092,7 +31074,7 @@
       /** Web Push — المفتاح العام VAPID (الخاص في Supabase Secrets فقط) */
       const ATHAR_VAPID_PUBLIC_KEY = 'BAAE2sxYeIGbYADV7uimLzIFB_en9SBWQ3a4-LBULuOIVm40YI7YfjXL2Fddttr1L1tHFkoaiPzmZankfUk_2jc';
       const ATHAR_VAPID_STORAGE_KEY = 'athar_vapid_public_key';
-      const ATHAR_SW_URL = './sw.js?v=10';
+      const ATHAR_SW_URL = './sw.js?v=9';
 
       /** رابط النشر — روابط استعادة كلمة المرور من file:// أو localhost */
       const ATHAR_PUBLIC_ORIGIN = 'https://athar-app.online';
@@ -31226,19 +31208,6 @@
         if (r === 'branch_mgr' || r === 'branchmanager') return 'branch_manager';
         if (r === 'human_resources' || r === 'humanresources' || r === 'موارد_بشرية' || r === 'الموارد_البشرية') return 'hr';
         return r;
-      }
-
-      function userIdsMatch(a, b) {
-        if (a == null || b == null) return false;
-        return String(a).trim().toLowerCase() === String(b).trim().toLowerCase();
-      }
-
-      /** الموظف أو مدير الفرع المُسجَّل عليه المخالفة شخصياً */
-      function isAssignedViolationEmployee(t) {
-        if (!state.currentUser || !t) return false;
-        const normRole = normalizeUserRole(state.currentUser.role);
-        return (normRole === 'employee' || normRole === 'branch_manager')
-          && userIdsMatch(t.employee_id, state.currentUser.id);
       }
 
       const STATE_LABELS = {
@@ -37312,7 +37281,7 @@
 
         if (normRole === 'admin' || hasPermission('act_all_tickets')) return true;
 
-        if (wfState === 'emp' && isAssignedViolationEmployee(t)) return true;
+        if (wfState === 'emp' && hasPermission('respond_own_ticket') && (normRole === 'employee' || normRole === 'branch_manager') && t.employee_id === id) return true;
         if (wfState === 'sup' && hasPermission('act_as_supervisor') && normRole === 'supervisor' && (state.currentUser.supervisedBranches || []).includes(t.branch_id)) return true;
         if (wfState === 'aud' && hasPermission('act_as_auditor') && normRole === 'auditor') return true;
         if (wfState === 'mgt' && hasPermission('act_as_manager') && normRole === 'manager') return true;
@@ -45221,14 +45190,6 @@
         return !!(t && (t._detailFetched || t._detailExtrasLoaded || t.attachments !== undefined));
       }
 
-      function scrollResponseFormIntoView() {
-        const form = document.getElementById('responseForm');
-        if (!form || form.style.display === 'none') return;
-        requestAnimationFrame(() => {
-          try { form.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (_) {}
-        });
-      }
-
       function refreshTicketDetailAfterExtras(id) {
         const t = state.violations.find(v => v.id === id);
         if (!t || state.editingTicket?.id !== id) return;
@@ -45236,7 +45197,6 @@
         buildLogs(t);
         buildWfSteps(t);
         setupResponseForm(t);
-        scrollResponseFormIntoView();
       }
 
       function fetchTicketFullDetail(id) {
@@ -45278,12 +45238,11 @@
         const badge = document.getElementById('td-badge');
         badge.className = `badge ${getTicketBadgeClass(t)}`;
         badge.textContent = t.status_text || STATE_LABELS[t.state];
+        switchDetailTab('info');
         buildTicketInfo(t);
         buildWfSteps(t);
         buildLogs(t);
         setupResponseForm(t);
-        switchDetailTab('info');
-        scrollResponseFormIntoView();
       }
 
       // ───────────────────────────────────────────────────────────────────────────
@@ -46596,9 +46555,9 @@
         if (typeof initTicketRespKeyboardGuard === 'function') initTicketRespKeyboardGuard();
         if (typeof initViolRespKeyboardGuard === 'function') initViolRespKeyboardGuard();
 
-        const normRole = normalizeUserRole(state.currentUser.role);
+        const role = state.currentUser.role;
         const meId = state.currentUser.id;
-        const actAsAdmin = normRole === 'admin' || hasPermission('act_all_tickets');
+        const actAsAdmin = role === 'admin' || hasPermission('act_all_tickets');
         const wfState = getEffectiveWorkflowState(t.state);
         const buttons = [];
         const RESP_SEND_LABEL = 'إرسال الرد';
@@ -46606,17 +46565,17 @@
         // Path A: من الراصد
         // Path B: من المشرف (يبدأ مباشرة من aud)
 
-        if (wfState === 'emp' && (actAsAdmin || isAssignedViolationEmployee(t))) {
+        if (wfState === 'emp' && (actAsAdmin || (hasPermission('respond_own_ticket') && (role === 'employee' || role === 'branch_manager') && t.employee_id === meId))) {
           buttons.push({ act: 'respond', label: RESP_SEND_LABEL, cls: 'btn-primary', icon: 'fa-paper-plane' });
           respTextarea.placeholder = 'اكتب ردك على المخالفة... (مطلوب)';
         }
         else if (wfState === 'sup' && !isWorkflowStageSkipped('sup')
-          && (actAsAdmin || (hasPermission('act_as_supervisor') && normRole === 'supervisor'))) {
+          && (actAsAdmin || (hasPermission('act_as_supervisor') && role === 'supervisor'))) {
           buttons.push({ act: 'sup_process', label: RESP_SEND_LABEL, cls: 'btn-primary', icon: 'fa-paper-plane' });
           respTextarea.placeholder = 'أضف ملاحظاتك أو رأيك في التذكرة... (مطلوب)';
         }
         else if (wfState === 'aud' && !isWorkflowStageSkipped('aud')
-          && (actAsAdmin || (hasPermission('act_as_auditor') && normRole === 'auditor'))) {
+          && (actAsAdmin || (hasPermission('act_as_auditor') && role === 'auditor'))) {
           buttons.push({
             act: 'aud_approve',
             label: RESP_SEND_LABEL,
@@ -46627,7 +46586,7 @@
           respTextarea.placeholder = 'اكتب ملاحظات التدقيق... (مطلوب)';
         }
         else if (wfState === 'mgt' && !isWorkflowStageSkipped('mgt')
-          && (actAsAdmin || (hasPermission('act_as_manager') && normRole === 'manager'))) {
+          && (actAsAdmin || (hasPermission('act_as_manager') && role === 'manager'))) {
           const typeRec = state.violationTypes.find(x => x.name === t.violation_type);
           const vTypeId = t.violation_type_id || typeRec?.id || null;
           const refDt = t.created_at || t.violation_date;
@@ -46650,7 +46609,7 @@
           respTextarea.placeholder = 'اكتب ملاحظات الإدارة أو قرار التنبيه... (مطلوب)';
         }
         else if (wfState === 'hr' && !isWorkflowStageSkipped('hr')
-          && (actAsAdmin || (hasPermission('act_as_hr') && normRole === 'hr'))) {
+          && (actAsAdmin || (hasPermission('act_as_hr') && role === 'hr'))) {
           const typeRecHr = state.violationTypes.find(x => x.name === t.violation_type);
           const vTypeIdHr = t.violation_type_id || typeRecHr?.id || null;
           const refDtHr = t.created_at || t.violation_date;
