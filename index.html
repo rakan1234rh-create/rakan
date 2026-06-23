@@ -29279,7 +29279,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-emp-resp-info-v960">
+  <meta name="app-build" content="athar-bm-respond-v961">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -31231,6 +31231,14 @@
       function userIdsMatch(a, b) {
         if (a == null || b == null) return false;
         return String(a).trim().toLowerCase() === String(b).trim().toLowerCase();
+      }
+
+      /** الموظف أو مدير الفرع المُسجَّل عليه المخالفة شخصياً */
+      function isAssignedViolationEmployee(t) {
+        if (!state.currentUser || !t) return false;
+        const normRole = normalizeUserRole(state.currentUser.role);
+        return (normRole === 'employee' || normRole === 'branch_manager')
+          && userIdsMatch(t.employee_id, state.currentUser.id);
       }
 
       const STATE_LABELS = {
@@ -37304,7 +37312,7 @@
 
         if (normRole === 'admin' || hasPermission('act_all_tickets')) return true;
 
-        if (wfState === 'emp' && hasPermission('respond_own_ticket') && (normRole === 'employee' || normRole === 'branch_manager') && userIdsMatch(t.employee_id, id)) return true;
+        if (wfState === 'emp' && isAssignedViolationEmployee(t)) return true;
         if (wfState === 'sup' && hasPermission('act_as_supervisor') && normRole === 'supervisor' && (state.currentUser.supervisedBranches || []).includes(t.branch_id)) return true;
         if (wfState === 'aud' && hasPermission('act_as_auditor') && normRole === 'auditor') return true;
         if (wfState === 'mgt' && hasPermission('act_as_manager') && normRole === 'manager') return true;
@@ -46598,7 +46606,7 @@
         // Path A: من الراصد
         // Path B: من المشرف (يبدأ مباشرة من aud)
 
-        if (wfState === 'emp' && (actAsAdmin || (hasPermission('respond_own_ticket') && (normRole === 'employee' || normRole === 'branch_manager') && userIdsMatch(t.employee_id, meId)))) {
+        if (wfState === 'emp' && (actAsAdmin || isAssignedViolationEmployee(t))) {
           buttons.push({ act: 'respond', label: RESP_SEND_LABEL, cls: 'btn-primary', icon: 'fa-paper-plane' });
           respTextarea.placeholder = 'اكتب ردك على المخالفة... (مطلوب)';
         }
