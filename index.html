@@ -29619,7 +29619,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-reply-video-upload-v975">
+  <meta name="app-build" content="athar-r2-direct-video-v976">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -32003,24 +32003,28 @@
 
       async function uploadR2DirectPut(objectKey, body, contentType) {
         const { url } = await callR2StorageFn('signPut', { key: objectKey, contentType });
-        let putRes;
-        try {
-          putRes = await fetch(url, {
-            method: 'PUT',
-            body,
-            headers: { 'Content-Type': contentType }
-          });
-        } catch (netErr) {
-          const netMsg = String(netErr?.message || netErr);
-          if (/failed to fetch|cors|blocked/i.test(netMsg)) {
-            throw new Error('R2_DIRECT_CORS_BLOCKED');
+        await new Promise((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open('PUT', url, true);
+          xhr.setRequestHeader('Content-Type', contentType);
+          xhr.timeout = 10 * 60 * 1000;
+          xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) resolve();
+            else reject(new Error('رفض التخزين (' + xhr.status + '): ' + String(xhr.responseText || '').slice(0, 200)));
+          };
+          xhr.onerror = () => reject(new Error('R2_DIRECT_CORS_BLOCKED'));
+          xhr.ontimeout = () => reject(new Error('انتهت مهلة الرفع — جرّب شبكة أقوى أو ملفاً أصغر'));
+          try {
+            xhr.send(body);
+          } catch (sendErr) {
+            const sendMsg = String(sendErr?.message || sendErr);
+            if (/Load failed|Failed to fetch|network/i.test(sendMsg)) {
+              reject(new Error('R2_DIRECT_CORS_BLOCKED'));
+            } else {
+              reject(sendErr);
+            }
           }
-          throw netErr;
-        }
-        if (!putRes.ok) {
-          const t = await putRes.text().catch(() => '');
-          throw new Error('رفض التخزين (' + putRes.status + '): ' + (t || '').slice(0, 200));
-        }
+        });
       }
 
       // ═══════════════════════════════════════════════════════════════════════════
@@ -43015,27 +43019,54 @@
             else contentType = 'application/octet-stream';
           }
 
-          try {
+          const fileSize = (fileObj.rawFile && fileObj.rawFile.size)
+            || (body instanceof Blob && body.size)
+            || (body && body.byteLength)
+            || 0;
+          const isVideo = /^video\//i.test(contentType)
+            || /\.(mp4|mov|webm|m4v|avi|mkv)$/i.test(String(fileObj.name || ''));
+          const preferDirect = isVideo || fileSize > (4 * 1024 * 1024);
+
+          const uploadViaDirect = async () => {
+            await uploadR2DirectPut(objectKey, body, contentType);
+          };
+          const uploadViaProxy = async () => {
             await uploadR2ViaEdgeProxy(objectKey, body, contentType);
-          } catch (proxyErr) {
-            const proxyMsg = String(proxyErr?.message || proxyErr);
-            if (!/R2_EDGE_PAYLOAD_TOO_LARGE|413|كبير جداً/i.test(proxyMsg)) {
-              throw proxyErr;
-            }
+          };
+
+          if (preferDirect) {
             try {
-              await uploadR2DirectPut(objectKey, body, contentType);
+              await uploadViaDirect();
             } catch (directErr) {
               const directMsg = String(directErr?.message || directErr);
-              if (/R2_DIRECT_CORS_BLOCKED|CORS|Failed to fetch|blocked/i.test(directMsg)) {
-                throw new Error('فشل الرفع: bucket R2 يحتاج ضبط CORS في Cloudflare (راجع supabase/r2-cors.json).');
+              if (/R2_DIRECT_CORS_BLOCKED|CORS|Failed to fetch|Load failed|blocked/i.test(directMsg)) {
+                if (fileSize > (52 * 1024 * 1024)) {
+                  throw new Error('الملف كبير جداً للرفع عبر الخادم — صغّر الفيديو أو استخدم شبكة أقوى');
+                }
+                await uploadViaProxy();
+              } else {
+                throw directErr;
               }
-              throw directErr;
+            }
+          } else {
+            try {
+              await uploadViaProxy();
+            } catch (proxyErr) {
+              const proxyMsg = String(proxyErr?.message || proxyErr);
+              if (!/R2_EDGE_PAYLOAD_TOO_LARGE|413|كبير جداً|403|غير مصرح|502|504|timeout|Load failed/i.test(proxyMsg)) {
+                throw proxyErr;
+              }
+              await uploadViaDirect();
             }
           }
           return { success: true, fileId: objectKey };
         } catch (error) {
           if (isMirsadDebugLog()) console.error('R2 Upload Error:', error);
-          throw new Error('فشل الرفع إلى R2: ' + error.message);
+          let msg = String(error?.message || error);
+          if (/Load failed|Failed to fetch/i.test(msg)) {
+            msg = 'انقطع الاتصال أثناء الرفع — جرّب واي فاي أو ملفاً أصغر';
+          }
+          throw new Error('فشل الرفع إلى R2: ' + msg);
         }
       }
 
@@ -47146,12 +47177,13 @@
         try {
           if (respFiles.length > 0) {
             window.isUploading = true;
+            const tempFolder = await buildTempUploadFolder();
             const uploadedAtts = [];
             for (const file of respFiles) {
               if (activeBtn) {
                 activeBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> جاري رفع المرفقات (${uploadedAtts.length + 1}/${respFiles.length})...`;
               }
-              const result = await uploadToCloudflare(file, r2Folder, me.name, null);
+              const result = await uploadToCloudflare(file, tempFolder, me.name, null);
               if (!result || !result.success || !result.fileId) {
                 throw new Error('فشل رفع أحد المرفقات — تأكد من الاتصال وحاول مرة أخرى');
               }
@@ -47164,6 +47196,13 @@
                 t: getNow(),
                 ...(result.devDataUrl ? { u: result.devDataUrl } : {})
               });
+            }
+            for (let i = 0; i < uploadedAtts.length; i++) {
+              const oldKey = uploadedAtts[i].p;
+              if (!oldKey || !oldKey.startsWith('temp_')) continue;
+              const newKey = `${r2Folder}/${oldKey.split('/').pop()}`;
+              await callR2StorageFn('moveObject', { fromKey: oldKey, toKey: newKey });
+              uploadedAtts[i].p = newKey;
             }
             newAttachments = newAttachments.concat(uploadedAtts);
           }
