@@ -22359,8 +22359,9 @@
       }
 
       #ticketModal .td-content-area {
-        flex: 1 1 auto !important;
+        flex: 1 1 0 !important;
         min-height: 0 !important;
+        max-height: none !important;
         overflow-x: hidden !important;
         overflow-y: auto !important;
         overscroll-behavior: contain;
@@ -22389,6 +22390,12 @@
 
       #ticketModal .td-tabs {
         flex-shrink: 0
+      }
+
+      #ticketModal .td-pane.active {
+        display: block;
+        width: 100%;
+        box-sizing: border-box
       }
 
       #violDetailModal .viol-paper-sheet-body {
@@ -24414,7 +24421,7 @@
 
       /* تفاصيل التذكرة — bottom sheet + مقبض سحب */
       #ticketModal.modal {
-        z-index: 2400 !important;
+        z-index: 3000 !important;
         display: none;
         padding: 0 !important;
         padding-bottom: var(--ticket-sheet-bottom, var(--mr-mob-bottom-nav-h, 56px)) !important;
@@ -24442,7 +24449,7 @@
       }
 
       #appWrap > .app-shell > #ticketModal.modal {
-        z-index: 2400 !important
+        z-index: 3000 !important
       }
 
       body.ticket-over-cmp #ticketModal.modal.open {
@@ -24467,12 +24474,11 @@
       }
 
       body.ticket-over-cmp #ticketModal .td-mob-sheet {
+        top: var(--ticket-sheet-top, var(--unified-topbar-h, calc(76px + env(safe-area-inset-top, 0px)))) !important;
         bottom: var(--mob-chrome-bottom, var(--mr-mob-bottom-nav-h, calc(56px + env(safe-area-inset-bottom, 0px)))) !important;
         padding-bottom: 0;
-        max-height: min(
-          86dvh,
-          calc(100dvh - var(--unified-topbar-h, 76px) - var(--mob-chrome-bottom, var(--mr-mob-bottom-nav-h, 56px)) - 8px)
-        ) !important
+        max-height: none !important;
+        height: auto !important
       }
 
       /* تذكرة من صفحة التنبيهات — الشريط السفلي مخفي: الورقة تمتد لأسفل الشاشة */
@@ -24534,10 +24540,13 @@
       }
 
       body.ticket-keyboard-open #ticketModal .td-mob-sheet {
+        top: var(--ticket-sheet-top, var(--unified-topbar-h, calc(76px + env(safe-area-inset-top, 0px)))) !important;
+        bottom: var(--mob-chrome-bottom, 0px) !important;
         max-height: var(--ticket-kb-max-h, min(
           82dvh,
           calc(100dvh - var(--unified-topbar-h, 76px) - var(--mob-chrome-bottom, var(--mr-mob-bottom-nav-h, 56px)) - 8px)
-        )) !important
+        )) !important;
+        height: auto !important
       }
 
       body.viol-keyboard-open #violDetailModal .viol-paper-sheet {
@@ -24610,6 +24619,7 @@
 
       #ticketModal .td-mob-sheet {
         position: fixed !important;
+        top: var(--ticket-sheet-top, var(--unified-topbar-h, calc(76px + env(safe-area-inset-top, 0px)))) !important;
         left: 0 !important;
         right: 0 !important;
         bottom: var(--mob-chrome-bottom, var(--ticket-sheet-bottom, var(--mr-mob-bottom-nav-h, calc(56px + env(safe-area-inset-bottom, 0px))))) !important;
@@ -24617,13 +24627,9 @@
         z-index: 1;
         width: 100% !important;
         max-width: 100% !important;
-        max-height: min(
-          82dvh,
-          calc(
-            100dvh - var(--unified-topbar-h, 76px) - var(--mob-chrome-bottom, var(--ticket-sheet-bottom, var(--mr-mob-bottom-nav-h, 56px))) - 8px
-          )
-        ) !important;
+        max-height: none !important;
         height: auto !important;
+        min-height: 0 !important;
         margin: 0 !important;
         border-radius: 16px 16px 0 0 !important;
         border-bottom: none !important;
@@ -24635,7 +24641,7 @@
         transform: translateY(100%);
         transition: transform 0.36s cubic-bezier(0.32, 0.72, 0, 1);
         will-change: transform;
-        box-shadow: none
+        box-shadow: 0 -8px 32px rgba(15, 18, 36, 0.12)
       }
 
       #ticketModal.modal.sheet-ready .td-mob-sheet {
@@ -29261,7 +29267,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-revert-resp-ui-v962">
+  <meta name="app-build" content="athar-ticket-sheet-stable-v963">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -32173,6 +32179,21 @@
         el?.style.removeProperty('height');
       }
 
+      function applyTicketSheetGeometry(sheet) {
+        const el = sheet || document.querySelector('#ticketModal .td-mob-sheet');
+        if (!el || !document.getElementById('ticketModal')?.classList.contains('open')) return;
+
+        const topBar = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--unified-topbar-h'), 10) || 76;
+        document.documentElement.style.setProperty('--ticket-sheet-top', `${topBar}px`);
+
+        if (document.body.classList.contains('ticket-over-notif')) {
+          applyNotifTicketSheetCap(el);
+          return;
+        }
+
+        clearNotifTicketSheetCap(el);
+      }
+
       function isViolDetailMobSheet() {
         return typeof isMobileViewport === 'function' && isMobileViewport();
       }
@@ -32275,17 +32296,10 @@
           document.documentElement.style.removeProperty('--viol-kb-max-h');
         }
 
-        document.querySelector('#ticketModal .td-mob-sheet')?.style.removeProperty('bottom');
-        const ticketSheet = document.querySelector('#ticketModal .td-mob-sheet');
-        if (ticketSheet) {
-          ticketSheet.style.removeProperty('bottom');
-          if (document.body.classList.contains('ticket-over-notif') && ticketOpen) {
-            applyNotifTicketSheetCap(ticketSheet);
-          } else {
-            clearNotifTicketSheetCap(ticketSheet);
-          }
-        }
         document.querySelector('#violDetailModal .viol-paper-sheet')?.style.removeProperty('bottom');
+
+        const ticketSheet = document.querySelector('#ticketModal .td-mob-sheet');
+        if (ticketOpen) applyTicketSheetGeometry(ticketSheet);
       }
 
       let _ticketKbSyncRaf = 0;
@@ -32700,7 +32714,7 @@
         ensureMobViewportWatch();
         if (reduced) {
           syncMobViewportLayout();
-          applyNotifTicketSheetCap(sheet);
+          applyTicketSheetGeometry(sheet);
           modal.classList.add('sheet-ready');
           sheet.style.transform = '';
           return;
@@ -32708,9 +32722,8 @@
         sheet.style.transform = 'translateY(100%)';
         requestAnimationFrame(() => {
           syncMobViewportLayout();
+          applyTicketSheetGeometry(sheet);
           requestAnimationFrame(() => {
-            syncMobViewportLayout();
-            applyNotifTicketSheetCap(sheet);
             modal.classList.add('sheet-ready');
             sheet.style.removeProperty('transform');
           });
@@ -45197,6 +45210,7 @@
         buildLogs(t);
         buildWfSteps(t);
         setupResponseForm(t);
+        if (isViolDetailMobSheet()) requestAnimationFrame(() => applyTicketSheetGeometry());
       }
 
       function fetchTicketFullDetail(id) {
@@ -45291,8 +45305,13 @@
         document.getElementById(`tdt-${tab}`)?.classList.add('active');
         document.querySelectorAll('.td-pane').forEach(p => p.classList.remove('active'));
         document.getElementById(`tdp-${tab}`)?.classList.add('active');
+        const scroll = document.querySelector('#ticketModal .td-content-area');
+        if (scroll) scroll.scrollTop = 0;
         if (tab === 'workflow') {
           requestAnimationFrame(() => syncWfStepsRail(document.getElementById('wfStepsContainer')));
+        }
+        if (isViolDetailMobSheet()) {
+          requestAnimationFrame(() => applyTicketSheetGeometry());
         }
       }
 
