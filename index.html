@@ -5804,6 +5804,95 @@
       margin-top: 4px
     }
 
+    .log-item--compose {
+      padding: 10px 12px;
+      border: 1px solid var(--border2);
+      margin-bottom: 8px;
+      background: var(--surface2);
+      border-radius: 8px
+    }
+
+    .log-item--compose .log-compose-title {
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--text);
+      margin-bottom: 6px
+    }
+
+    .log-item--compose .ticket-resp-input {
+      width: 100%;
+      min-height: 52px;
+      max-height: 120px;
+      resize: vertical;
+      border: 0;
+      background: transparent;
+      font-family: var(--font);
+      font-size: 13px;
+      line-height: 1.45;
+      color: var(--text);
+      padding: 0;
+      box-shadow: none;
+      outline: none
+    }
+
+    .log-item--compose .ticket-resp-input::placeholder {
+      color: var(--text3)
+    }
+
+    .log-compose-toolbar {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-top: 8px
+    }
+
+    .log-compose-attach {
+      width: 32px;
+      height: 32px;
+      flex-shrink: 0;
+      border: 1px dashed var(--border2);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--text2);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      touch-action: manipulation;
+      transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease
+    }
+
+    .log-compose-attach:hover,
+    .log-compose-attach:focus-visible {
+      border-color: var(--blue);
+      color: var(--blue);
+      background: var(--blue-light)
+    }
+
+    .log-compose-files {
+      flex: 1 1 auto;
+      min-width: 0;
+      margin-top: 0 !important
+    }
+
+    .log-compose-files .file-item {
+      margin-bottom: 4px;
+      font-size: 12px
+    }
+
+    .log-item--compose #responseButtons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px
+    }
+
+    .log-item--compose #responseButtons .td-resp-action {
+      flex: 1 1 auto;
+      min-height: 34px;
+      font-size: 12px
+    }
+
     /* Detail Tabs */
     .td-tabs {
       display: flex;
@@ -5829,6 +5918,11 @@
     .td-tab.active {
       color: var(--blue);
       border-bottom-color: var(--blue);
+      font-weight: 600
+    }
+
+    .td-tab.td-tab--needs-action:not(.active) {
+      color: var(--orange, #e67e22);
       font-weight: 600
     }
 
@@ -22485,6 +22579,14 @@
         padding: 10px 0
       }
 
+      #ticketModal .log-item--compose {
+        margin-inline: 0
+      }
+
+      #ticketModal .log-item--compose .ticket-resp-input {
+        font-size: 16px !important
+      }
+
       #ticketModal .info-row {
         display: flex !important;
         flex-direction: row !important;
@@ -29346,7 +29448,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-ticket-fullbleed-v965">
+  <meta name="app-build" content="athar-resp-in-logs-v966">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -30869,26 +30971,21 @@
           </div>
           <div class="td-pane" id="tdp-workflow">
             <div id="wfStepsContainer"></div>
-            <div id="responseForm" style="margin-top:18px;display:none">
-              <div class="panel" style="margin:0">
-                <h4 style="margin-bottom:10px;font-size:14px">إضافة رد</h4>
-                <div class="figma-search-wrap ticket-resp-search">
-                  <textarea id="respText" class="figma-search-input ticket-resp-input form-textarea" rows="3"
-                    placeholder="اكتب ردك أو ملاحظاتك..."></textarea>
-                </div>
-                <div class="form-group" style="margin-top:10px"><label class="form-label">إرفاق ملفات (اختياري)</label>
-                  <div class="file-area" onclick="document.getElementById('resp-files').click()"><i
-                      class="fas fa-cloud-arrow-up"></i>
-                    <p>اضغط لإرفاق الملفات</p>
-                  </div><input type="file" id="resp-files" multiple accept="image/*,video/*,application/pdf"
-                    style="display:none" onchange="handleFiles(event,'resp')">
-                  <div id="respFileArea" class="file-list"></div>
-                </div>
-                <div id="responseButtons"></div>
-              </div>
-            </div>
           </div>
           <div class="td-pane" id="tdp-logs">
+            <div id="responseForm" class="log-item log-item--compose" style="display:none">
+              <div class="log-compose-title">إضافة رد</div>
+              <textarea id="respText" class="ticket-resp-input form-textarea" rows="2"
+                placeholder="اكتب ردك أو ملاحظاتك..."></textarea>
+              <div class="log-compose-toolbar">
+                <button type="button" class="log-compose-attach" onclick="document.getElementById('resp-files').click()"
+                  title="إرفاق ملفات" aria-label="إرفاق ملفات"><i class="fas fa-plus" aria-hidden="true"></i></button>
+                <div id="respFileArea" class="file-list log-compose-files"></div>
+              </div>
+              <input type="file" id="resp-files" multiple accept="image/*,video/*,application/pdf"
+                style="display:none" onchange="handleFiles(event,'resp')">
+              <div id="responseButtons"></div>
+            </div>
             <div id="logsWrap"></div>
           </div>
         </div>
@@ -45322,6 +45419,8 @@
         buildWfSteps(t);
         buildLogs(t);
         setupResponseForm(t);
+        const respForm = document.getElementById('responseForm');
+        if (respForm && respForm.style.display !== 'none') switchDetailTab('logs');
       }
 
       // ───────────────────────────────────────────────────────────────────────────
@@ -45374,6 +45473,14 @@
         if (scroll) scroll.scrollTop = 0;
         if (tab === 'workflow') {
           requestAnimationFrame(() => syncWfStepsRail(document.getElementById('wfStepsContainer')));
+        }
+        if (tab === 'logs') {
+          const form = document.getElementById('responseForm');
+          if (form && form.style.display !== 'none') {
+            requestAnimationFrame(() => {
+              try { form.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (_) {}
+            });
+          }
         }
         if (isViolDetailMobSheet()) {
           requestAnimationFrame(() => applyTicketSheetGeometry());
@@ -46632,9 +46739,11 @@
 
         if (!canActOnTicket(t)) {
           form.style.display = 'none';
+          document.getElementById('tdt-logs')?.classList.remove('td-tab--needs-action');
           return;
         }
         form.style.display = '';
+        document.getElementById('tdt-logs')?.classList.add('td-tab--needs-action');
         btnsWrap.innerHTML = '';
         if (typeof initTicketRespKeyboardGuard === 'function') initTicketRespKeyboardGuard();
         if (typeof initViolRespKeyboardGuard === 'function') initViolRespKeyboardGuard();
@@ -46712,6 +46821,7 @@
 
         if (!buttons.length) {
           form.style.display = 'none';
+          document.getElementById('tdt-logs')?.classList.remove('td-tab--needs-action');
           return;
         }
 
