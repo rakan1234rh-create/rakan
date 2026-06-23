@@ -82,7 +82,7 @@ BEGIN
     logs                    = COALESCE(v_logs, '[]'::jsonb) || p_log_entry,
     state                   = COALESCE(p_new_state::public.violation_state, state),
     status_text             = COALESCE(p_status_text, status_text),
-    attachments             = COALESCE(p_attachments, attachments),
+    attachments             = COALESCE(p_attachments::jsonb, attachments),
     auto_forwarded_emp      = CASE WHEN p_reset_auto_forwarded_emp THEN FALSE ELSE auto_forwarded_emp END,
     auto_forwarded_sup      = CASE WHEN p_reset_auto_forwarded_sup THEN FALSE ELSE auto_forwarded_sup END,
     updated_at              = now()
