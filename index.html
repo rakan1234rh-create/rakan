@@ -349,7 +349,7 @@
       user-select: none
     }
 
-    /* تفاصيل التذكرة — فوق الشريط السفلي على كل أحجام mr-mobile-ui (بما فيها الآيباد) */
+    /* تفاصيل التذكرة — ملء الشاشة من الشريط العلوي لأسفل (تغطي الشريط السفلي) */
     html.mr-mobile-ui body.ticket-sheet-open #ticketModal.modal {
       position: fixed !important;
       inset: 0 !important;
@@ -367,7 +367,7 @@
       top: 0;
       left: 0;
       right: 0;
-      bottom: var(--ticket-sheet-bottom, var(--mr-mob-bottom-nav-h, 56px));
+      bottom: 0;
       background: color-mix(in srgb, var(--mr-primary) 42%, transparent);
       pointer-events: none;
       z-index: 0
@@ -382,7 +382,7 @@
       top: var(--ticket-sheet-top, var(--unified-topbar-h, calc(76px + env(safe-area-inset-top, 0px)))) !important;
       left: 0 !important;
       right: 0 !important;
-      bottom: var(--mob-chrome-bottom, var(--ticket-sheet-bottom, var(--mr-mob-bottom-nav-h, calc(56px + env(safe-area-inset-bottom, 0px))))) !important;
+      bottom: 0 !important;
       z-index: 2 !important;
       width: 100% !important;
       max-width: 100% !important;
@@ -407,12 +407,8 @@
       overflow-x: hidden !important;
       overflow-y: auto !important;
       overscroll-behavior: contain;
-      -webkit-overflow-scrolling: touch
-    }
-
-    html.mr-mobile-ui body.ticket-sheet-open.ticket-over-notif #ticketModal .td-mob-sheet,
-    html.mr-notif-page-active.mr-mobile-ui body.ticket-sheet-open #ticketModal .td-mob-sheet {
-      bottom: 0 !important
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)) !important
     }
 
     html.mr-mobile-ui body.ticket-sheet-open.ticket-over-cmp #ticketModal.modal,
@@ -24490,12 +24486,24 @@
         align-items: center !important
       }
 
-      /* تفاصيل التذكرة — bottom sheet + مقبض سحب */
+      /* تفاصيل التذكرة — bottom sheet ملء الشاشة (تغطي الشريط السفلي) */
+      body.ticket-sheet-open #ticketModal.modal {
+        padding-bottom: 0 !important
+      }
+
+      body.ticket-sheet-open #ticketModal.modal.open::before {
+        bottom: 0 !important
+      }
+
+      body.ticket-sheet-open #ticketModal .td-mob-sheet {
+        bottom: 0 !important
+      }
+
       #ticketModal.modal {
         z-index: 3200 !important;
         display: none;
         padding: 0 !important;
-        padding-bottom: var(--ticket-sheet-bottom, var(--mr-mob-bottom-nav-h, 56px)) !important;
+        padding-bottom: 0 !important;
         box-sizing: border-box;
         background: transparent !important;
         pointer-events: none;
@@ -24509,7 +24517,7 @@
         top: 0;
         left: 0;
         right: 0;
-        bottom: var(--ticket-sheet-bottom, var(--mr-mob-bottom-nav-h, 56px));
+        bottom: 0;
         background: color-mix(in srgb, var(--mr-primary) 42%, transparent);
         pointer-events: none;
         z-index: 0
@@ -24546,7 +24554,7 @@
 
       body.ticket-over-cmp #ticketModal .td-mob-sheet {
         top: var(--ticket-sheet-top, var(--unified-topbar-h, calc(76px + env(safe-area-inset-top, 0px)))) !important;
-        bottom: var(--mob-chrome-bottom, var(--mr-mob-bottom-nav-h, calc(56px + env(safe-area-inset-bottom, 0px)))) !important;
+        bottom: 0 !important;
         padding-bottom: 0;
         max-height: none !important;
         height: auto !important
@@ -24612,10 +24620,10 @@
 
       body.ticket-keyboard-open #ticketModal .td-mob-sheet {
         top: var(--ticket-sheet-top, var(--unified-topbar-h, calc(76px + env(safe-area-inset-top, 0px)))) !important;
-        bottom: var(--mob-chrome-bottom, 0px) !important;
+        bottom: 0 !important;
         max-height: var(--ticket-kb-max-h, min(
           82dvh,
-          calc(100dvh - var(--unified-topbar-h, 76px) - var(--mob-chrome-bottom, var(--mr-mob-bottom-nav-h, 56px)) - 8px)
+          calc(100dvh - var(--unified-topbar-h, 76px) - 8px)
         )) !important;
         height: auto !important
       }
@@ -24693,7 +24701,7 @@
         top: var(--ticket-sheet-top, var(--unified-topbar-h, calc(76px + env(safe-area-inset-top, 0px)))) !important;
         left: 0 !important;
         right: 0 !important;
-        bottom: var(--mob-chrome-bottom, var(--ticket-sheet-bottom, var(--mr-mob-bottom-nav-h, calc(56px + env(safe-area-inset-bottom, 0px))))) !important;
+        bottom: 0 !important;
         pointer-events: auto;
         z-index: 1;
         width: 100% !important;
@@ -29338,7 +29346,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-ticket-above-nav-v964">
+  <meta name="app-build" content="athar-ticket-fullbleed-v965">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
