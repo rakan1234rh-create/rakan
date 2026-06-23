@@ -60,7 +60,7 @@ function assertKey(key: unknown): string {
 }
 
 const R2_PROXY_PUT_MAX_BYTES = 52 * 1024 * 1024
-const R2_PROXY_PART_MAX_BYTES = 6 * 1024 * 1024
+const R2_PROXY_PART_MAX_BYTES = 10 * 1024 * 1024
 
 function assertTempUploadKey(key: string, userId: string): string {
   const k = assertKey(key)
