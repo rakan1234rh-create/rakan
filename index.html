@@ -29619,7 +29619,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-r2-multipart-fast-v978">
+  <meta name="app-build" content="athar-r2-upload-speed-v979">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -31810,6 +31810,35 @@
       let _r2LastResolveNote = '';
       /** بعد أول فشل CORS للرفع المباشر — نتخطاه لبقية الجلسة */
       let _r2DirectPutBlocked = false;
+      try {
+        if (sessionStorage.getItem('athar_r2_direct_blocked') === '1') _r2DirectPutBlocked = true;
+      } catch (_) { /* */ }
+
+      function markR2DirectPutBlocked() {
+        _r2DirectPutBlocked = true;
+        try { sessionStorage.setItem('athar_r2_direct_blocked', '1'); } catch (_) { /* */ }
+      }
+
+      function getR2MultipartConcurrency() {
+        const mobile = window.matchMedia('(pointer: coarse)').matches;
+        return mobile ? 4 : 6;
+      }
+
+      let _uploadWakeLock = null;
+      async function acquireUploadWakeLock() {
+        try {
+          if (_uploadWakeLock || !navigator.wakeLock) return;
+          _uploadWakeLock = await navigator.wakeLock.request('screen');
+        } catch (_) { /* */ }
+      }
+      async function releaseUploadWakeLock() {
+        try {
+          if (_uploadWakeLock) {
+            await _uploadWakeLock.release();
+            _uploadWakeLock = null;
+          }
+        } catch (_) { /* */ }
+      }
 
       function invalidateR2BackendResolution() {
         _r2ResolvedMode = undefined;
@@ -32029,24 +32058,27 @@
         });
       }
 
-      const R2_MULTIPART_PART_BYTES = 8 * 1024 * 1024;
-      const R2_MULTIPART_CONCURRENCY = 3;
+      const R2_MULTIPART_PART_BYTES = 10 * 1024 * 1024;
 
-      async function uploadR2MultipartPartOnce(objectKey, uploadId, partNumber, chunk) {
+      async function uploadR2MultipartPartViaEdge(objectKey, uploadId, partNumber, chunk, authToken) {
         for (let attempt = 0; attempt < 2; attempt++) {
-          let session = await ensureSupabaseSessionFresh();
-          if (!session?.access_token) {
-            const { data: { session: s2 } } = await sb.auth.getSession();
-            session = s2;
+          let token = authToken;
+          if (!token || attempt > 0) {
+            let session = await ensureSupabaseSessionFresh();
+            if (!session?.access_token) {
+              const { data: { session: s2 } } = await sb.auth.getSession();
+              session = s2;
+            }
+            if (!session?.access_token) throw new Error('انتهت الجلسة، يرجى تسجيل الدخول من جديد');
+            token = session.access_token;
           }
-          if (!session?.access_token) throw new Error('انتهت الجلسة، يرجى تسجيل الدخول من جديد');
 
           const res = await fetch(R2_STORAGE_FN_URL, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/octet-stream',
               'apikey': SUPABASE_ANON,
-              'Authorization': `Bearer ${session.access_token}`,
+              'Authorization': `Bearer ${token}`,
               'X-R2-Action': 'uploadPart',
               'X-R2-Key': objectKey,
               'X-R2-Upload-Id': uploadId,
@@ -32061,7 +32093,10 @@
           if (res.status === 401 && attempt === 0) {
             invalidateR2BackendResolution();
             const { data: refreshed } = await sb.auth.refreshSession();
-            if (refreshed.session?.access_token) continue;
+            if (refreshed.session?.access_token) {
+              authToken = refreshed.session.access_token;
+              continue;
+            }
             throw new Error('انتهت الجلسة — سجّل الخروج ثم الدخول من جديد.');
           }
 
@@ -32069,9 +32104,46 @@
             throw new Error(data.error || data.message || `فشل رفع الجزء ${partNumber} (${res.status})`);
           }
 
-          return { partNumber, etag: data.etag };
+          return { partNumber, etag: data.etag, authToken: token };
         }
         throw new Error(`فشل رفع الجزء ${partNumber}`);
+      }
+
+      async function uploadR2MultipartPartDirect(objectKey, uploadId, partNumber, chunk) {
+        const { url } = await callR2StorageFn('signUploadPart', { key: objectKey, uploadId, partNumber });
+        const etag = await new Promise((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open('PUT', url, true);
+          xhr.timeout = 5 * 60 * 1000;
+          xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              const raw = xhr.getResponseHeader('ETag') || xhr.getResponseHeader('etag') || '';
+              resolve(raw.replace(/^\"|\"$/g, '') || `part-${partNumber}`);
+            } else {
+              reject(new Error('رفض التخزين (' + xhr.status + ')'));
+            }
+          };
+          xhr.onerror = () => reject(new Error('R2_DIRECT_CORS_BLOCKED'));
+          xhr.ontimeout = () => reject(new Error('انتهت مهلة رفع الجزء'));
+          xhr.send(chunk);
+        });
+        return { partNumber, etag };
+      }
+
+      async function uploadR2MultipartPartOnce(objectKey, uploadId, partNumber, chunk, authToken) {
+        if (!_r2DirectPutBlocked) {
+          try {
+            return await uploadR2MultipartPartDirect(objectKey, uploadId, partNumber, chunk);
+          } catch (directErr) {
+            const directMsg = String(directErr?.message || directErr);
+            if (/R2_DIRECT_CORS_BLOCKED|CORS|Failed to fetch|Load failed|blocked/i.test(directMsg)) {
+              markR2DirectPutBlocked();
+            } else {
+              throw directErr;
+            }
+          }
+        }
+        return uploadR2MultipartPartViaEdge(objectKey, uploadId, partNumber, chunk, authToken);
       }
 
       /** رفع ملف كبير على أجزاء متوازية عبر Edge */
@@ -32082,6 +32154,12 @@
 
         const { uploadId } = await callR2StorageFn('createMultipart', { key: objectKey, contentType });
         if (!uploadId) throw new Error('تعذّر بدء الرفع المتعدد الأجزاء');
+
+        let authToken = null;
+        try {
+          const session = await ensureSupabaseSessionFresh();
+          authToken = session?.access_token || null;
+        } catch (_) { /* */ }
 
         const partJobs = [];
         let partNumber = 1;
@@ -32101,20 +32179,22 @@
         };
 
         try {
+          await acquireUploadWakeLock();
           let nextJob = 0;
           const worker = async () => {
             while (true) {
               const jobIndex = nextJob++;
               if (jobIndex >= totalParts) break;
               const job = partJobs[jobIndex];
-              const result = await uploadR2MultipartPartOnce(objectKey, uploadId, job.partNumber, job.chunk);
+              const result = await uploadR2MultipartPartOnce(objectKey, uploadId, job.partNumber, job.chunk, authToken);
+              if (result.authToken) authToken = result.authToken;
               completedParts[jobIndex] = result;
               doneCount++;
               reportProgress();
             }
           };
 
-          const workers = Math.min(R2_MULTIPART_CONCURRENCY, totalParts);
+          const workers = Math.min(getR2MultipartConcurrency(), totalParts);
           await Promise.all(Array.from({ length: workers }, () => worker()));
 
           await callR2StorageFn('completeMultipart', {
@@ -32127,6 +32207,8 @@
             await callR2StorageFn('abortMultipart', { key: objectKey, uploadId });
           } catch (_) { /* */ }
           throw err;
+        } finally {
+          await releaseUploadWakeLock();
         }
       }
 
@@ -43130,7 +43212,7 @@
             || /\.(mp4|mov|webm|m4v|avi|mkv)$/i.test(String(fileObj.name || ''));
           const needsMultipart = fileSize > R2_MULTIPART_PART_BYTES;
           const preferDirect = !needsMultipart && !isVideo && fileSize <= (4 * 1024 * 1024);
-          const useMultipartFirst = needsMultipart && (isVideo || _r2DirectPutBlocked);
+          const useMultipartFirst = isVideo || (needsMultipart && _r2DirectPutBlocked);
 
           const uploadViaDirect = async () => {
             await uploadR2DirectPut(objectKey, body, contentType);
@@ -43160,7 +43242,7 @@
             } catch (directErr) {
               const directMsg = String(directErr?.message || directErr);
               if (/R2_DIRECT_CORS_BLOCKED|CORS|Failed to fetch|Load failed|blocked/i.test(directMsg)) {
-                _r2DirectPutBlocked = true;
+                markR2DirectPutBlocked();
                 if (needsMultipart) {
                   await uploadViaMultipart(onProgress);
                 } else {

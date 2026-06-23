@@ -373,6 +373,7 @@ Deno.serve(async (req) => {
     fromKey?: string
     toKey?: string
     uploadId?: string
+    partNumber?: number
     parts?: Array<{ partNumber?: number; etag?: string }>
   }
   try {
@@ -425,6 +426,24 @@ Deno.serve(async (req) => {
       )
       if (!out.UploadId) throw new Error('تعذّر بدء الرفع المتعدد الأجزاء')
       return json({ uploadId: out.UploadId, key })
+    }
+
+    if (action === 'signUploadPart') {
+      const key = assertTempUploadKey(body.key || '', user.id)
+      const uploadId = String(body.uploadId || '').trim()
+      const partNumber = Number(body.partNumber)
+      if (!uploadId) return json({ error: 'uploadId مطلوب' }, 400)
+      if (!Number.isFinite(partNumber) || partNumber < 1 || partNumber > 10_000) {
+        return json({ error: 'رقم الجزء غير صالح' }, 400)
+      }
+      const cmd = new UploadPartCommand({
+        Bucket: bucket,
+        Key: key,
+        UploadId: uploadId,
+        PartNumber: partNumber,
+      })
+      const url = await getSignedUrl(s3, cmd, { expiresIn: 3600 })
+      return json({ url, key, uploadId, partNumber })
     }
 
     if (action === 'completeMultipart') {
