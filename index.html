@@ -29650,7 +29650,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-reset-resend-timer-v989">
+  <meta name="app-build" content="athar-sidebar-sync-fix-v990">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -38432,7 +38432,7 @@
       function syncDesktopSidebarRailSize(sb) {
         if (!sb) return;
         applyDesktopSidebarRailSize(sb, isDesktopSidebarRailExpanded(sb));
-        scheduleDeskColSyncForActiveTab(true);
+        syncDeskColsDuringSidebarTransition();
       }
 
       function syncSidebarRailAttrs(sb) {
@@ -38472,7 +38472,6 @@
             sb.style.setProperty('min-width', '236px', 'important');
             sb.style.setProperty('flex', '0 0 236px', 'important');
           } else {
-            syncDeskColsDuringSidebarTransition();
             leaveTimer = setTimeout(() => {
               if (!sb.matches(':hover')) {
                 if (!sb.classList.contains('sidebar-rail-open')) {
@@ -38483,12 +38482,10 @@
                 }
               }
               syncSidebarRailAttrs(sb);
-              syncDeskColsDuringSidebarTransition();
               leaveTimer = null;
             }, 48);
           }
           syncSidebarRailAttrs(sb);
-          syncDeskColsDuringSidebarTransition();
         };
         sb.addEventListener('pointerenter', () => syncHover(true), { passive: true });
         sb.addEventListener('pointerleave', () => syncHover(false), { passive: true });
@@ -38517,7 +38514,6 @@
           overlay?.classList.remove('open');
           document.body.style.overflow = '';
           syncSidebarToggleBtn();
-          syncDeskColsDuringSidebarTransition();
           return;
         }
         applyDesktopSidebarRailSize(sb, false);
@@ -38536,7 +38532,6 @@
           sb.classList.remove('sidebar-rail-open');
           if (!sb.matches(':hover')) sb.classList.remove('sidebar-rail-hover');
           syncSidebarToggleBtn();
-          syncDeskColsDuringSidebarTransition();
           return;
         }
         sb?.classList.remove('open', 'sidebar-rail-open', 'sidebar-rail-hover');
@@ -45530,6 +45525,7 @@
 
       function scheduleDeskColSyncForActiveTab(immediate) {
         if (!isDesktopUi()) return;
+        if (immediate && isDeskSidebarTransitionActive()) return;
         if (document.getElementById('tab-reports')?.classList.contains('active')) {
           if (immediate) syncDesktopWfTableColWidthsNow('reports', { fast: true });
           else syncDesktopWfTableColWidths('reports');
@@ -45541,30 +45537,46 @@
 
       let _deskSidebarColSyncBound = false;
       let _deskSidebarColSyncRaf = 0;
+      let _deskSidebarColSyncDebounce = 0;
+      let _deskSidebarTransitionActive = false;
+
+      function isDeskSidebarTransitionActive() {
+        return !!_deskSidebarTransitionActive;
+      }
+
       function bindDeskSidebarColSync() {
         if (_deskSidebarColSyncBound || typeof ResizeObserver === 'undefined') return;
         const sb = document.getElementById('sidebar');
         if (!sb) return;
         _deskSidebarColSyncBound = true;
         const onSidebarResize = () => {
+          if (isDeskSidebarTransitionActive()) return;
           cancelAnimationFrame(_deskSidebarColSyncRaf);
           _deskSidebarColSyncRaf = requestAnimationFrame(() => scheduleDeskColSyncForActiveTab(true));
         };
         const ro = new ResizeObserver(onSidebarResize);
-        ro.observe(sb);
         const mainEl = document.querySelector('.main');
         if (mainEl) ro.observe(mainEl);
         sb.addEventListener('transitionend', (ev) => {
           if (ev.target !== sb) return;
           if (ev.propertyName === 'width' || ev.propertyName === 'flex' || ev.propertyName === 'min-width') {
-            scheduleDeskColSyncForActiveTab(true);
+            finishDeskSidebarTransition(true);
           }
         });
       }
 
-      function syncDeskColsDuringSidebarTransition() {
-        scheduleDeskColSyncForActiveTab(true);
+      function finishDeskSidebarTransition(forceSync) {
+        clearTimeout(_deskSidebarColSyncDebounce);
+        _deskSidebarTransitionActive = false;
+        if (forceSync) scheduleDeskColSyncForActiveTab(true);
         if (typeof bcDdRepositionOpen === 'function') bcDdRepositionOpen();
+      }
+
+      function syncDeskColsDuringSidebarTransition() {
+        if (!isDesktopUi()) return;
+        _deskSidebarTransitionActive = true;
+        clearTimeout(_deskSidebarColSyncDebounce);
+        _deskSidebarColSyncDebounce = setTimeout(() => finishDeskSidebarTransition(true), 240);
       }
 
       const _deskColPxProps = ['width', 'min-width', 'max-width'];
@@ -45605,8 +45617,12 @@
         list.dataset[root.bindKey] = '1';
         let _roTimer;
         const ro = new ResizeObserver(() => {
+          if (isDeskSidebarTransitionActive()) return;
           clearTimeout(_roTimer);
-          _roTimer = setTimeout(() => syncDesktopWfTableColWidthsNow(viewTab, { fast: true }), 0);
+          _roTimer = setTimeout(() => {
+            if (isDeskSidebarTransitionActive()) return;
+            syncDesktopWfTableColWidthsNow(viewTab, { fast: true });
+          }, 0);
         });
         ro.observe(list);
         // راقب .main أيضاً لضمان الاستجابة حتى لو list نفسه لا يتضيق
