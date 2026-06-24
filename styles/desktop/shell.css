@@ -619,16 +619,14 @@ html.mr-desktop-ui #mobileBottomNav.mobile-bottom-nav,
       flex: 1 1 auto !important
     }
 
-    /* معالجة التذاكر — سطح مكتب: رأس ثابت + تمرير داخلي للمخالفات */
+    /* معالجة التذاكر والتقارير — سطح مكتب: تمرير الصفحة كاملة (بدون سكرول داخلي للجدول) */
     html.mr-desktop-ui .main:has(#tab-workflow.active),
     html.mr-desktop-ui #appWrap .main:has(#tab-workflow.active),
     html.mr-desktop-ui .main:has(#tab-reports.active),
     html.mr-desktop-ui #appWrap .main:has(#tab-reports.active) {
-      overflow: hidden !important;
       overflow-x: clip !important;
-      overflow-y: hidden !important;
-      display: flex !important;
-      flex-direction: column !important;
+      overflow-y: auto !important;
+      display: block !important;
       flex: 1 1 auto !important;
       min-height: 0 !important
     }
@@ -637,59 +635,46 @@ html.mr-desktop-ui #mobileBottomNav.mobile-bottom-nav,
     html.mr-desktop-ui .content:has(#tab-workflow.active),
     html.mr-desktop-ui .main:has(#tab-reports.active) .content,
     html.mr-desktop-ui .content:has(#tab-reports.active) {
-      display: flex !important;
-      flex-direction: column !important;
-      flex: 1 1 0% !important;
-      min-height: 0 !important;
-      overflow: hidden !important
+      display: block !important;
+      flex: none !important;
+      min-height: auto !important;
+      overflow: visible !important
     }
 
     html.mr-desktop-ui #tab-workflow.tab-content.active,
     html.mr-desktop-ui #tab-reports.tab-content.active {
-      display: flex !important;
-      flex-direction: column !important;
-      flex: 1 1 0% !important;
-      min-height: 0 !important;
-      overflow: hidden !important
+      display: block !important;
+      flex: none !important;
+      min-height: auto !important;
+      overflow: visible !important
     }
 
-    html.mr-desktop-ui #tab-workflow .wf-panel, html.mr-desktop-ui #tab-reports .wf-panel {
-      display: flex !important;
-      flex-direction: column !important;
-      flex: 1 1 0% !important;
-      min-height: 0 !important;
+    html.mr-desktop-ui #tab-workflow .wf-panel,
+    html.mr-desktop-ui #tab-reports .wf-panel {
+      display: block !important;
+      flex: none !important;
+      min-height: auto !important;
       min-width: 0 !important;
-      overflow: hidden !important
+      overflow: visible !important
     }
 
     html.mr-desktop-ui #tab-workflow .wf-panel-banner {
       flex-shrink: 0 !important
     }
 
+    html.mr-desktop-ui #tab-reports .wf-desk-tickets-host,
     html.mr-desktop-ui #tab-workflow .wf-desk-tickets-host {
-      flex: 1 1 0% !important;
-      min-height: 0 !important;
-      overflow: hidden !important;
-      display: flex !important;
-      flex-direction: column !important;
-      margin-top: 0 !important;
-      width: 100% !important;
-      box-sizing: border-box !important
-    }
-
-    html.mr-desktop-ui #tab-reports .wf-desk-tickets-host , html.mr-desktop-ui #tab-workflow .wf-desk-tickets-host {
-      flex: 1 1 0% !important;
-      min-height: 0 !important;
-      overflow: hidden !important;
-      display: flex !important;
-      flex-direction: column !important;
+      display: block !important;
+      flex: none !important;
+      min-height: auto !important;
+      overflow: visible !important;
       margin-top: 0 !important;
       width: 100% !important;
       box-sizing: border-box !important
     }
 
     html.mr-desktop-ui #tab-workflow .wf-desk-tickets-host > .empty {
-      flex: 1 1 auto !important;
+      flex: none !important;
       min-height: 120px !important;
       margin: 0 !important;
       border: none !important;
@@ -697,8 +682,9 @@ html.mr-desktop-ui #mobileBottomNav.mobile-bottom-nav,
       background: transparent !important
     }
 
-    html.mr-desktop-ui #tab-reports .wf-desk-tickets-host > .empty , html.mr-desktop-ui #tab-workflow .wf-desk-tickets-host > .empty {
-      flex: 1 1 auto !important;
+    html.mr-desktop-ui #tab-reports .wf-desk-tickets-host > .empty,
+    html.mr-desktop-ui #tab-workflow .wf-desk-tickets-host > .empty {
+      flex: none !important;
       min-height: 120px !important;
       margin: 0 !important;
       border: none !important;
@@ -707,12 +693,11 @@ html.mr-desktop-ui #mobileBottomNav.mobile-bottom-nav,
     }
 
     html.mr-desktop-ui #tab-workflow .wf-desk-tickets-host .wf-table-wrap {
-      flex: 1 1 0% !important;
-      min-height: 0 !important;
-      max-height: 100% !important;
-      overflow: hidden !important;
-      display: flex !important;
-      flex-direction: column !important;
+      display: block !important;
+      flex: none !important;
+      min-height: auto !important;
+      max-height: none !important;
+      overflow: visible !important;
       border: 1px solid var(--mr-border) !important;
       border-start-start-radius: 12px !important;
       border-start-end-radius: 0 !important;
@@ -723,13 +708,13 @@ html.mr-desktop-ui #mobileBottomNav.mobile-bottom-nav,
       box-sizing: border-box !important
     }
 
-    html.mr-desktop-ui #tab-reports .wf-desk-tickets-host .wf-table-wrap , html.mr-desktop-ui #tab-workflow .wf-desk-tickets-host .wf-table-wrap {
-      flex: 1 1 0% !important;
-      min-height: 0 !important;
-      max-height: 100% !important;
-      overflow: hidden !important;
-      display: flex !important;
-      flex-direction: column !important;
+    html.mr-desktop-ui #tab-reports .wf-desk-tickets-host .wf-table-wrap,
+    html.mr-desktop-ui #tab-workflow .wf-desk-tickets-host .wf-table-wrap {
+      display: block !important;
+      flex: none !important;
+      min-height: auto !important;
+      max-height: none !important;
+      overflow: visible !important;
       border: 1px solid var(--mr-border) !important;
       border-start-start-radius: 12px !important;
       border-start-end-radius: 0 !important;
@@ -746,7 +731,8 @@ html.mr-desktop-ui #mobileBottomNav.mobile-bottom-nav,
       padding-bottom: 0 !important
     }
 
-    html.mr-desktop-ui #tab-workflow .wf-panel .data-table.wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body), html.mr-desktop-ui #tab-reports .wf-panel .data-table.wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) thead th {
+    html.mr-desktop-ui #tab-workflow .wf-panel .data-table.wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body),
+    html.mr-desktop-ui #tab-reports .wf-panel .data-table.wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) thead th {
       position: static !important;
       top: auto !important;
       z-index: auto !important;
@@ -755,24 +741,25 @@ html.mr-desktop-ui #mobileBottomNav.mobile-bottom-nav,
       border-bottom: 1px solid var(--mr-border) !important
     }
 
-    /* معالجة التذاكر والتقارير — سكرول داخل tbody تحت شريط العناوين */
     html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) {
-      display: flex !important;
-      flex-direction: column !important;
-      flex: 1 1 0% !important;
-      min-height: 0 !important;
-      height: 100% !important;
+      display: table !important;
       width: 100% !important;
-      border-spacing: 0 !important;
+      height: auto !important;
+      min-height: auto !important;
+      flex: none !important;
+      border-collapse: separate !important;
+      border-spacing: 0 6px !important;
       margin: 0 !important
     }
 
     html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) thead {
-      display: table !important;
+      display: table-header-group !important;
       width: 100% !important;
       table-layout: fixed !important;
-      flex-shrink: 0 !important;
-      overflow: hidden !important;
+      position: sticky !important;
+      top: 0 !important;
+      z-index: 4 !important;
+      overflow: visible !important;
       background: var(--mr-primary-soft) !important
     }
 
@@ -781,33 +768,27 @@ html.mr-desktop-ui #mobileBottomNav.mobile-bottom-nav,
     }
 
     html.mr-desktop-ui #tab-workflow .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) thead th:last-child,
-    html.mr-desktop-ui #tab-reports .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) thead th:last-child , html.mr-desktop-ui #tab-workflow .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) thead th:last-child {
+    html.mr-desktop-ui #tab-reports .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) thead th:last-child,
+    html.mr-desktop-ui #tab-workflow .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) thead th:last-child {
       border-start-end-radius: 0 !important
     }
 
     html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) tbody {
-      display: block !important;
-      flex: 1 1 0% !important;
-      min-height: 0 !important;
+      display: table-row-group !important;
       width: 100% !important;
+      min-height: auto !important;
+      flex: none !important;
       background: var(--mr-surface, #fff) !important;
-      overflow-x: hidden !important;
-      overflow-y: auto !important;
-      scrollbar-gutter: stable !important;
-      scrollbar-width: thin !important;
-      scrollbar-color: color-mix(in srgb, var(--mr-text-3) 42%, transparent) color-mix(in srgb, var(--mr-border) 72%, transparent) !important;
-      -webkit-overflow-scrolling: touch;
-      overscroll-behavior-x: none !important;
-      overscroll-behavior-y: contain
+      overflow: visible !important
     }
 
 
     html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) tbody tr.wf-ticket-row {
-      display: table !important;
-      width: 100% !important;
-      min-width: 100% !important;
+      display: table-row !important;
+      width: auto !important;
+      min-width: 0 !important;
       table-layout: fixed !important;
-      margin-bottom: 6px !important
+      margin-bottom: 0 !important
     }
 
     html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) tbody tr.wf-ticket-row td {
@@ -1393,7 +1374,7 @@ html.mr-desktop-ui #mobileBottomNav.mobile-bottom-nav,
     html.mr-desktop-ui #appWrap #tab-workflow .panel.wf-panel,
     html.mr-desktop-ui #appWrap #tab-workflow .panel,
     html.mr-desktop-ui #tab-workflow .panel.wf-panel {
-      padding-block: clamp(10px, 1.4vw, 14px) 0 !important;
+      padding-block: clamp(10px, 1.4vw, 14px) clamp(16px, 2vw, 24px) !important;
       padding-left: 0 !important;
       padding-right: clamp(12px, 1.6vw, 18px) !important;
       margin: 0 !important;
