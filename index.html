@@ -29619,7 +29619,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-recovery-email-v984">
+  <meta name="app-build" content="athar-forgot-rate-msg-v985">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -31484,7 +31484,7 @@
         const errMsg = String(err?.message || err || '');
         const status = err?.status ?? err?.statusCode;
         if (status === 429 || /too many|rate limit|429/i.test(errMsg)) {
-          return 'تم تجاوز حد إرسال البريد. انتظر دقيقة واحدة ثم حاول مرة واحدة فقط. إن استمر الخطأ: Supabase → Authentication → Rate Limits وارفع «Emails per hour»، وتأكد أن SMTP المخصص محفوظ.';
+          return 'تم تجاوز حد إرسال البريد. انتظر دقيقة واحدة ثم حاول مرة واحدة فقط';
         }
         if (errMsg.includes('check_platform_email_for_reset')) {
           return 'التحقق من البريد غير متاح — شغّل supabase/check-email-for-password-reset.sql في SQL Editor';
