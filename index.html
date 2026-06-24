@@ -29650,7 +29650,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-fullpage-scroll-wf-rp-v991">
+  <meta name="app-build" content="athar-sidebar-col-smooth-v992">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -38411,16 +38411,11 @@
           sb?.classList.remove('sidebar-rail-expanded');
           return;
         }
-        if (expanded) {
-          sb.style.setProperty('width', '236px', 'important');
-          sb.style.setProperty('min-width', '236px', 'important');
-          sb.style.setProperty('flex', '0 0 236px', 'important');
-        } else {
-          sb.style.setProperty('width', '68px', 'important');
-          sb.style.setProperty('min-width', '68px', 'important');
-          sb.style.setProperty('flex', '0 0 68px', 'important');
-        }
         sb.classList.toggle('sidebar-rail-expanded', !!expanded);
+        sb.style.removeProperty('width');
+        sb.style.removeProperty('min-width');
+        sb.style.removeProperty('flex');
+        sb.style.removeProperty('max-width');
       }
 
       function isDesktopSidebarRailExpanded(sb) {
@@ -38468,17 +38463,11 @@
           if (on) {
             if (leaveTimer) { clearTimeout(leaveTimer); leaveTimer = null; }
             sb.classList.add('sidebar-rail-hover');
-            sb.style.setProperty('width', '236px', 'important');
-            sb.style.setProperty('min-width', '236px', 'important');
-            sb.style.setProperty('flex', '0 0 236px', 'important');
           } else {
             leaveTimer = setTimeout(() => {
               if (!sb.matches(':hover')) {
                 if (!sb.classList.contains('sidebar-rail-open')) {
                   sb.classList.remove('sidebar-rail-hover');
-                  sb.style.setProperty('width', '68px', 'important');
-                  sb.style.setProperty('min-width', '68px', 'important');
-                  sb.style.setProperty('flex', '0 0 68px', 'important');
                 }
               }
               syncSidebarRailAttrs(sb);
@@ -45523,14 +45512,16 @@
         syncDesktopWfTableColWidthsNow(isReportsList ? 'reports' : 'workflow', { fast: false });
       }
 
-      function scheduleDeskColSyncForActiveTab(immediate) {
+      function scheduleDeskColSyncForActiveTab(immediate, opts) {
         if (!isDesktopUi()) return;
-        if (immediate && isDeskSidebarTransitionActive()) return;
+        const allowDuringSidebar = !!(opts && opts.allowDuringSidebar);
+        if (immediate && isDeskSidebarTransitionActive() && !allowDuringSidebar) return;
+        const syncOpts = { fast: true, duringSidebar: allowDuringSidebar || isDeskSidebarTransitionActive() };
         if (document.getElementById('tab-reports')?.classList.contains('active')) {
-          if (immediate) syncDesktopWfTableColWidthsNow('reports', { fast: true });
+          if (immediate) syncDesktopWfTableColWidthsNow('reports', syncOpts);
           else syncDesktopWfTableColWidths('reports');
         } else if (document.getElementById('tab-workflow')?.classList.contains('active')) {
-          if (immediate) syncDesktopWfTableColWidthsNow('workflow', { fast: true });
+          if (immediate) syncDesktopWfTableColWidthsNow('workflow', syncOpts);
           else syncDesktopWfTableColWidths('workflow');
         }
       }
@@ -45538,10 +45529,16 @@
       let _deskSidebarColSyncBound = false;
       let _deskSidebarColSyncRaf = 0;
       let _deskSidebarColSyncDebounce = 0;
+      let _deskSidebarResizeRaf = 0;
       let _deskSidebarTransitionActive = false;
+      const DESK_SIDEBAR_RESIZE_MS = 280;
 
       function isDeskSidebarTransitionActive() {
         return !!_deskSidebarTransitionActive;
+      }
+
+      function setDeskSidebarResizing(on) {
+        document.documentElement.classList.toggle('desk-sidebar-resizing', !!on);
       }
 
       function bindDeskSidebarColSync() {
@@ -45549,17 +45546,18 @@
         const sb = document.getElementById('sidebar');
         if (!sb) return;
         _deskSidebarColSyncBound = true;
-        const onSidebarResize = () => {
-          if (isDeskSidebarTransitionActive()) return;
+        const onMainResize = () => {
           cancelAnimationFrame(_deskSidebarColSyncRaf);
-          _deskSidebarColSyncRaf = requestAnimationFrame(() => scheduleDeskColSyncForActiveTab(true));
+          _deskSidebarColSyncRaf = requestAnimationFrame(() => {
+            scheduleDeskColSyncForActiveTab(true, { allowDuringSidebar: isDeskSidebarTransitionActive() });
+          });
         };
-        const ro = new ResizeObserver(onSidebarResize);
+        const ro = new ResizeObserver(onMainResize);
         const mainEl = document.querySelector('.main');
         if (mainEl) ro.observe(mainEl);
         sb.addEventListener('transitionend', (ev) => {
           if (ev.target !== sb) return;
-          if (ev.propertyName === 'width' || ev.propertyName === 'flex' || ev.propertyName === 'min-width') {
+          if (ev.propertyName === 'width' || ev.propertyName === 'flex' || ev.propertyName === 'flex-basis' || ev.propertyName === 'min-width') {
             finishDeskSidebarTransition(true);
           }
         });
@@ -45567,16 +45565,30 @@
 
       function finishDeskSidebarTransition(forceSync) {
         clearTimeout(_deskSidebarColSyncDebounce);
+        cancelAnimationFrame(_deskSidebarResizeRaf);
         _deskSidebarTransitionActive = false;
-        if (forceSync) scheduleDeskColSyncForActiveTab(true);
+        setDeskSidebarResizing(false);
+        if (forceSync) scheduleDeskColSyncForActiveTab(true, { allowDuringSidebar: true });
         if (typeof bcDdRepositionOpen === 'function') bcDdRepositionOpen();
       }
 
       function syncDeskColsDuringSidebarTransition() {
         if (!isDesktopUi()) return;
         _deskSidebarTransitionActive = true;
+        setDeskSidebarResizing(true);
         clearTimeout(_deskSidebarColSyncDebounce);
-        _deskSidebarColSyncDebounce = setTimeout(() => finishDeskSidebarTransition(true), 240);
+        cancelAnimationFrame(_deskSidebarResizeRaf);
+        scheduleDeskColSyncForActiveTab(true, { allowDuringSidebar: true });
+        let frames = 0;
+        const maxFrames = Math.ceil((DESK_SIDEBAR_RESIZE_MS / 1000) * 60) + 2;
+        const tick = () => {
+          if (!_deskSidebarTransitionActive) return;
+          scheduleDeskColSyncForActiveTab(true, { allowDuringSidebar: true });
+          frames += 1;
+          if (frames < maxFrames) _deskSidebarResizeRaf = requestAnimationFrame(tick);
+        };
+        _deskSidebarResizeRaf = requestAnimationFrame(tick);
+        _deskSidebarColSyncDebounce = setTimeout(() => finishDeskSidebarTransition(true), DESK_SIDEBAR_RESIZE_MS);
       }
 
       const _deskColPxProps = ['width', 'min-width', 'max-width'];
@@ -45617,11 +45629,12 @@
         list.dataset[root.bindKey] = '1';
         let _roTimer;
         const ro = new ResizeObserver(() => {
-          if (isDeskSidebarTransitionActive()) return;
           clearTimeout(_roTimer);
           _roTimer = setTimeout(() => {
-            if (isDeskSidebarTransitionActive()) return;
-            syncDesktopWfTableColWidthsNow(viewTab, { fast: true });
+            syncDesktopWfTableColWidthsNow(viewTab, {
+              fast: true,
+              duringSidebar: isDeskSidebarTransitionActive()
+            });
           }, 0);
         });
         ro.observe(list);
@@ -45672,6 +45685,7 @@
 
       function syncDesktopWfTableColWidthsNow(tab, opts) {
         const fast = !!(opts && opts.fast);
+        const duringSidebar = !!(opts && opts.duringSidebar);
         const viewTab = tab === 'reports' ? 'reports' : 'workflow';
         const root = viewTab === 'reports'
           ? { tabSel: '#tab-reports', listId: 'reportList', bindKey: 'rpDeskColSyncBound' }
@@ -45716,7 +45730,7 @@
 
         const wrap = table.closest('.wf-table-wrap') || table.closest('#reportList, #ticketList');
         const containerW = wrap ? wrap.clientWidth : tbody.clientWidth;
-        if (fast && table.dataset.deskColsSynced === '1') {
+        if (fast && table.dataset.deskColsSynced === '1' && !duringSidebar) {
           const lastW = +(table.dataset.deskLastW || 0);
           if (containerW > 0 && Math.abs(containerW - lastW) < 1) return true;
         }
