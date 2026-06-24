@@ -32113,31 +32113,6 @@
         throw new Error(`فشل رفع الجزء ${partNumber}`);
       }
 
-      async function uploadR2MultipartPartDirect(objectKey, uploadId, partNumber, chunk) {
-        const { url } = await callR2StorageFn('signUploadPart', { key: objectKey, uploadId, partNumber });
-        const etag = await new Promise((resolve, reject) => {
-          const xhr = new XMLHttpRequest();
-          xhr.open('PUT', url, true);
-          xhr.timeout = 5 * 60 * 1000;
-          xhr.onload = () => {
-            if (xhr.status >= 200 && xhr.status < 300) {
-              const raw = xhr.getResponseHeader('ETag') || xhr.getResponseHeader('etag') || '';
-              resolve(raw.replace(/^\"|\"$/g, '') || `part-${partNumber}`);
-            } else {
-              reject(new Error('رفض التخزين (' + xhr.status + ')'));
-            }
-          };
-          xhr.onerror = () => reject(new Error('R2_DIRECT_CORS_BLOCKED'));
-          xhr.ontimeout = () => reject(new Error('انتهت مهلة رفع الجزء'));
-          xhr.send(chunk);
-        });
-        return { partNumber, etag };
-      }
-
-      async function uploadR2MultipartPartOnce(objectKey, uploadId, partNumber, chunk, authToken) {
-        return uploadR2MultipartPartViaEdge(objectKey, uploadId, partNumber, chunk, authToken);
-      }
-
       /** رفع ملف كبير على أجزاء متوازية عبر Edge */
       async function uploadR2MultipartViaEdge(objectKey, body, contentType, onPartProgress) {
         const blob = body instanceof Blob ? body : new Blob([body], { type: contentType || 'application/octet-stream' });
@@ -32178,7 +32153,7 @@
               const jobIndex = nextJob++;
               if (jobIndex >= totalParts) break;
               const job = partJobs[jobIndex];
-              const result = await uploadR2MultipartPartOnce(objectKey, uploadId, job.partNumber, job.chunk, authToken);
+              const result = await uploadR2MultipartPartViaEdge(objectKey, uploadId, job.partNumber, job.chunk, authToken);
               if (result.authToken) authToken = result.authToken;
               completedParts[jobIndex] = result;
               doneCount++;
