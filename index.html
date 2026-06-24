@@ -29619,7 +29619,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-r2-upload-speed-v979">
+  <meta name="app-build" content="athar-r2-upload-slim-v980">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -31821,7 +31821,11 @@
 
       function getR2MultipartConcurrency() {
         const mobile = window.matchMedia('(pointer: coarse)').matches;
-        return mobile ? 4 : 6;
+        return mobile ? 2 : 3;
+      }
+
+      function getR2MultipartThreshold() {
+        return _r2DirectPutBlocked ? (12 * 1024 * 1024) : (20 * 1024 * 1024);
       }
 
       let _uploadWakeLock = null;
@@ -32058,7 +32062,7 @@
         });
       }
 
-      const R2_MULTIPART_PART_BYTES = 10 * 1024 * 1024;
+      const R2_MULTIPART_PART_BYTES = 8 * 1024 * 1024;
 
       async function uploadR2MultipartPartViaEdge(objectKey, uploadId, partNumber, chunk, authToken) {
         for (let attempt = 0; attempt < 2; attempt++) {
@@ -32131,18 +32135,6 @@
       }
 
       async function uploadR2MultipartPartOnce(objectKey, uploadId, partNumber, chunk, authToken) {
-        if (!_r2DirectPutBlocked) {
-          try {
-            return await uploadR2MultipartPartDirect(objectKey, uploadId, partNumber, chunk);
-          } catch (directErr) {
-            const directMsg = String(directErr?.message || directErr);
-            if (/R2_DIRECT_CORS_BLOCKED|CORS|Failed to fetch|Load failed|blocked/i.test(directMsg)) {
-              markR2DirectPutBlocked();
-            } else {
-              throw directErr;
-            }
-          }
-        }
         return uploadR2MultipartPartViaEdge(objectKey, uploadId, partNumber, chunk, authToken);
       }
 
@@ -43210,9 +43202,7 @@
             || 0;
           const isVideo = /^video\//i.test(contentType)
             || /\.(mp4|mov|webm|m4v|avi|mkv)$/i.test(String(fileObj.name || ''));
-          const needsMultipart = fileSize > R2_MULTIPART_PART_BYTES;
-          const preferDirect = !needsMultipart && !isVideo && fileSize <= (4 * 1024 * 1024);
-          const useMultipartFirst = isVideo || (needsMultipart && _r2DirectPutBlocked);
+          const needsMultipart = fileSize > getR2MultipartThreshold();
 
           const uploadViaDirect = async () => {
             await uploadR2DirectPut(objectKey, body, contentType);
@@ -43224,17 +43214,20 @@
             await uploadR2MultipartViaEdge(objectKey, body, contentType, onPartProgress);
           };
 
-          if (useMultipartFirst) {
-            await uploadViaMultipart(onProgress);
-          } else if (preferDirect) {
+          if (_r2DirectPutBlocked) {
+            if (needsMultipart) await uploadViaMultipart(onProgress);
+            else await uploadViaProxy();
+          } else if (needsMultipart) {
             try {
-              await uploadViaProxy();
-            } catch (proxyErr) {
-              const proxyMsg = String(proxyErr?.message || proxyErr);
-              if (!/R2_EDGE_PAYLOAD_TOO_LARGE|413|كبير جداً|403|غير مصرح|502|504|timeout|Load failed/i.test(proxyMsg)) {
-                throw proxyErr;
-              }
               await uploadViaDirect();
+            } catch (directErr) {
+              const directMsg = String(directErr?.message || directErr);
+              if (/R2_DIRECT_CORS_BLOCKED|CORS|Failed to fetch|Load failed|blocked/i.test(directMsg)) {
+                markR2DirectPutBlocked();
+                await uploadViaMultipart(onProgress);
+              } else {
+                throw directErr;
+              }
             }
           } else if (isVideo || fileSize > (4 * 1024 * 1024)) {
             try {
@@ -43243,11 +43236,7 @@
               const directMsg = String(directErr?.message || directErr);
               if (/R2_DIRECT_CORS_BLOCKED|CORS|Failed to fetch|Load failed|blocked/i.test(directMsg)) {
                 markR2DirectPutBlocked();
-                if (needsMultipart) {
-                  await uploadViaMultipart(onProgress);
-                } else {
-                  await uploadViaProxy();
-                }
+                await uploadViaProxy();
               } else {
                 throw directErr;
               }
@@ -43260,11 +43249,7 @@
               if (!/R2_EDGE_PAYLOAD_TOO_LARGE|413|كبير جداً|403|غير مصرح|502|504|timeout|Load failed/i.test(proxyMsg)) {
                 throw proxyErr;
               }
-              if (needsMultipart) {
-                await uploadViaMultipart(onProgress);
-              } else {
-                await uploadViaDirect();
-              }
+              await uploadViaDirect();
             }
           }
           return { success: true, fileId: objectKey };
