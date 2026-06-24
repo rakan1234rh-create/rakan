@@ -29619,7 +29619,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-rest-optimize-v983">
+  <meta name="app-build" content="athar-recovery-email-v984">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -31489,8 +31489,8 @@
         if (errMsg.includes('check_platform_email_for_reset')) {
           return 'التحقق من البريد غير متاح — شغّل supabase/check-email-for-password-reset.sql في SQL Editor';
         }
-        if (status === 500 || /error sending recovery|recovery email|smtp/i.test(errMsg)) {
-          return 'تعذّر إرسال رمز التحقق من الخادم. (1) جرّب البريد نفسه اللي سجّلت فيه Resend — onboarding@resend.dev لا يرسل إلا له. (2) Supabase → Auth Logs لمعرفة السبب. (3) SMTP: Port 465، Username resend، مفتاح جديد بدون مسافات. (4) تأكد أن قالب Reset password يحتوي {{ .Token }}.';
+        if (status === 500 || /error sending recovery|recovery email|hook|smtp/i.test(errMsg)) {
+          return 'تعذّر إرسال رمز التحقق من الخادم. السبب غالباً من Resend وليس من الواجهة: (1) في Resend المجاني، المرسل onboarding@resend.dev يرسل فقط لبريد حسابك المسجّل في Resend. (2) تأكد أن SENDER_EMAIL في Supabase Secrets يطابق دوميناً مُتحققاً أو onboarding@resend.dev. (3) راجع Supabase → Authentication → Auth Logs و Edge Functions → send-auth-emails.';
         }
         return 'فشل الإرسال: ' + (errMsg || 'حاول مجدداً');
       }
