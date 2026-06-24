@@ -21,17 +21,22 @@ function b64utf8(b64: string): string {
   return new TextDecoder().decode(bytes);
 }
 
-/** موضوع فريد لكل رسالة — يمنع Gmail من تجميعها في محادثة واحدة */
+/** لاحقة غير مرئية — تكسر تجميع Gmail دون إظهار وقت/رقم في العنوان */
+function invisibleUniqueSuffix(): string {
+  const hex = crypto.randomUUID().replace(/-/g, '');
+  const marks = [
+    String.fromCharCode(0x200B),
+    String.fromCharCode(0x200C),
+    String.fromCharCode(0x200D),
+    String.fromCharCode(0x2060),
+  ];
+  return hex.slice(0, 16).split('').map((ch) => marks[parseInt(ch, 16) % marks.length]).join('');
+}
+
+/** موضوع نظيف للمستخدم + لاحقة مخفية لكل رسالة */
 function buildRecoverySubject(): string {
   const base = b64utf8(SUBJECT_B64);
-  const stamp = new Date().toLocaleString('ar-SA', {
-    timeZone: 'Asia/Riyadh',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true,
-  });
-  const ref = crypto.randomUUID().slice(0, 6);
-  return `${base} · ${stamp} · ${ref}`;
+  return base + invisibleUniqueSuffix();
 }
 
 type EmailActionType = 'signup' | 'recovery' | 'invite' | 'magiclink' | 'email_change' | 'email';
