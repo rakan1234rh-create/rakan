@@ -3,7 +3,7 @@
 -- Attempt 2: 1 minute after previous
 -- Attempt 3: 5 minutes
 -- Attempt 4: 10 minutes
--- Attempt 5: 10 minutes (unspecified in product spec; same as attempt 4)
+-- Attempt 5: 30 minutes
 -- Attempt 6: 24 hours after previous
 -- Attempt 7+: blocked — contact platform admin
 
@@ -28,7 +28,7 @@ as $$
     when 1 then 60
     when 2 then 300
     when 3 then 600
-    when 4 then 600
+    when 4 then 1800
     when 5 then 86400
     else null
   end;
