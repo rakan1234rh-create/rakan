@@ -21,6 +21,19 @@ function b64utf8(b64: string): string {
   return new TextDecoder().decode(bytes);
 }
 
+/** موضوع فريد لكل رسالة — يمنع Gmail من تجميعها في محادثة واحدة */
+function buildRecoverySubject(): string {
+  const base = b64utf8(SUBJECT_B64);
+  const stamp = new Date().toLocaleString('ar-SA', {
+    timeZone: 'Asia/Riyadh',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  });
+  const ref = crypto.randomUUID().slice(0, 6);
+  return `${base} · ${stamp} · ${ref}`;
+}
+
 type EmailActionType = 'signup' | 'recovery' | 'invite' | 'magiclink' | 'email_change' | 'email';
 
 type WebhookPayload = {
@@ -87,7 +100,8 @@ Deno.serve(async (req) => {
 
     const html = b64utf8(HTML_B64).replaceAll('{{TOKEN}}', token);
     const text = b64utf8(TEXT_B64).replaceAll('{{TOKEN}}', token);
-    const subject = b64utf8(SUBJECT_B64);
+    const subject = buildRecoverySubject();
+    const threadId = crypto.randomUUID();
 
     const { error } = await resend.emails.send({
       from: SENDER_EMAIL,
@@ -95,6 +109,9 @@ Deno.serve(async (req) => {
       subject,
       html,
       text,
+      headers: {
+        'X-Entity-Ref-ID': threadId,
+      },
     });
 
     if (error) {
