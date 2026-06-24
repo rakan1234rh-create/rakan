@@ -1,9 +1,98 @@
-ضبط CORS على bucket R2 (للملفات الكبيرة جداً فقط — الرفع العادي يمر عبر Edge Function)
+═══════════════════════════════════════════════════════════════
+  ضبط CORS على Cloudflare R2 — رفع مباشر أسرع من الجوال
+═══════════════════════════════════════════════════════════════
 
-1) Cloudflare Dashboard → R2 → اختر الـ bucket (مثل rakanm-onitorings-ystem)
-2) Settings → CORS Policy → Add CORS policy
-3) الصق محتوى supabase/r2-cors.json
-4) احفظ وانتظر دقيقة ثم جرّب رفع ملف كبير (>50MB) إن لزم
+لماذا؟
+──────
+بدون CORS: المتصفح يحجب الرفع المباشر إلى r2.cloudflarestorage.com
+           → التطبيق يلجأ لرفع الأجزاء عبر Supabase Edge (أبطأ)
 
-بدون CORS: الرفع المباشر إلى r2.cloudflarestorage.com يُحجب من المتصفح.
-مع التحديث الجديد: الصور والملفات المعتادة تُرفع عبر دالة r2-storage (لا تحتاج CORS).
+مع CORS:  الجوال يرفع مباشرة إلى R2 (مسار واحد) → أسرع بكثير
+
+
+الخطوات (لوحة Cloudflare)
+──────────────────────────
+
+1) ادخل: https://dash.cloudflare.com
+
+2) من القائمة الجانبية: R2 Object Storage
+
+3) اختر الـ bucket الخاص بالتطبيق
+   (نفس الاسم في Supabase Secret: R2_BUCKET_NAME)
+
+4) تبويب Settings
+
+5) قسم CORS Policy → Edit / Add policy
+
+6) الصق محتوى الملف التالي كاملاً:
+   supabase/r2-cors.json
+
+7) Save
+
+8) انتظر 1–2 دقيقة ثم جرّب الرفع من الجوال
+
+
+محتوى CORS (للنسخ)
+───────────────────
+
+[
+  {
+    "AllowedOrigins": [
+      "https://athar.app",
+      "https://athar-app.online",
+      "https://www.athar-app.online",
+      "http://localhost:3000",
+      "http://localhost:5173",
+      "http://127.0.0.1:3000"
+    ],
+    "AllowedMethods": ["GET", "PUT", "HEAD"],
+    "AllowedHeaders": ["*"],
+    "ExposeHeaders": ["ETag", "Content-Length", "Content-Type"],
+    "MaxAgeSeconds": 3600
+  }
+]
+
+
+بديل: Wrangler CLI
+──────────────────
+
+من مجلد المشروع (بعد تثبيت wrangler وتسجيل الدخول):
+
+  npx wrangler r2 bucket cors set <BUCKET_NAME> --file supabase/r2-cors.json
+
+استبدل <BUCKET_NAME> باسم الـ bucket الفعلي.
+
+
+بعد الضبط — في التطبيق
+───────────────────────
+
+1) حدّث الصفحة بقوة (مسح الكاش):
+   https://athar-app.online/?v=athar-r2-upload-slim-v980
+
+2) إذا سبق وفشل الرفع المباشر، امسح علامة الحظر من الجلسة:
+   - Safari: إعدادات → مسح بيانات الموقع لـ athar-app.online
+   - أو من وحدة التحكم في المتصفح:
+     sessionStorage.removeItem('athar_r2_direct_blocked')
+
+3) ارفع فيديو مع الرد — المفروض يكون أسرع (رفع مباشر بدون أجزاء Edge)
+
+
+التحقق من نجاح CORS
+────────────────────
+
+• إذا نجح: الرفع يكتمل أسرع وبدون «جزء 1/8» (multipart)
+• إذا فشل CORS: يظهر خطأ أو يعود لرفع الأجزاء عبر الخادم
+
+تأكد أيضاً من أسرار Supabase على دالة r2-storage:
+  R2_ACCESS_KEY_ID
+  R2_SECRET_ACCESS_KEY
+  R2_ACCOUNT_ID
+  R2_BUCKET_NAME
+
+
+ملاحظات
+───────
+
+• لا تضف * في AllowedOrigins — غير مدعوم على R2
+• إذا أضفت نطاقاً جديداً للتطبيق، أضفه في r2-cors.json ثم أعد الحفظ
+• الرفع المباشر لا يحتاج تغيير كود إضافي — التطبيق يجرّبه تلقائياً
