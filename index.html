@@ -1687,6 +1687,37 @@
       opacity: 1
     }
 
+    #loginScreen .lp-resend-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      vertical-align: middle
+    }
+
+    #loginScreen .lp-link--resend.lp-link--disabled {
+      opacity: 0.42;
+      pointer-events: none;
+      cursor: not-allowed;
+      text-decoration: none
+    }
+
+    #loginScreen .lp-resend-countdown {
+      font-size: 0.82rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: var(--mr-text-2);
+      direction: ltr;
+      unicode-bidi: isolate
+    }
+
+    #loginScreen .lp-resend-countdown--blocked {
+      direction: rtl;
+      unicode-bidi: normal;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--mr-text-3)
+    }
+
     #loginScreen .lp-f5 {
       position: relative;
       z-index: 3
@@ -29619,7 +29650,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-reset-rate-live-v988">
+  <meta name="app-build" content="athar-reset-resend-timer-v989">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -29799,7 +29830,10 @@
           <div class="lp-divider">
             <span>أرسلنا الرمز إلى </span><span id="otpEmailHint" class="lp-reset-email-hint"></span>
             <br>
-            <a href="#" class="lp-link" onclick="event.preventDefault(); handleResendPasswordCode();">إعادة إرسال الرمز</a>
+            <span class="lp-resend-wrap">
+              <a href="#" id="otpResendBtn" class="lp-link lp-link--resend" onclick="event.preventDefault(); handleResendPasswordCode();">إعادة إرسال الرمز</a>
+              <span id="otpResendCountdown" class="lp-resend-countdown" hidden></span>
+            </span>
             <span> · </span>
             <a href="#" class="lp-link" onclick="event.preventDefault(); showForgotPassword();">تغيير البريد</a>
           </div>
@@ -31521,6 +31555,8 @@
         if (!rate?.allowed) {
           const err = new Error(formatPasswordResetRateLimitMessage(rate));
           err.isPasswordResetRateLimit = true;
+          err.waitSeconds = Number(rate.wait_seconds) || 0;
+          err.blocked = !!rate.blocked;
           throw err;
         }
 
@@ -31553,6 +31589,168 @@
           return 'تعذّر إرسال رمز التحقق من الخادم. السبب غالباً من Resend وليس من الواجهة: (1) في Resend المجاني، المرسل onboarding@resend.dev يرسل فقط لبريد حسابك المسجّل في Resend. (2) تأكد أن SENDER_EMAIL في Supabase Secrets يطابق دوميناً مُتحققاً أو onboarding@resend.dev. (3) راجع Supabase → Authentication → Auth Logs و Edge Functions → send-auth-emails.';
         }
         return 'فشل الإرسال: ' + (errMsg || 'حاول مجدداً');
+      }
+
+      let passwordResetResendTimerId = null;
+
+      function passwordResetResendStorageKey(email) {
+        return 'athar_password_reset_resend_until:' + Sec.normalizeEmail(email || '');
+      }
+
+      function rememberPasswordResetResendUntil(email, untilMs) {
+        const normalized = Sec.normalizeEmail(email || '');
+        if (!normalized || !untilMs) return;
+        try { sessionStorage.setItem(passwordResetResendStorageKey(normalized), String(untilMs)); } catch (_) { /* noop */ }
+      }
+
+      function getPasswordResetResendRemainingSeconds(email) {
+        const normalized = Sec.normalizeEmail(email || '');
+        if (!normalized) return 0;
+        try {
+          const until = Number(sessionStorage.getItem(passwordResetResendStorageKey(normalized)));
+          if (!until || until <= Date.now()) return 0;
+          return Math.ceil((until - Date.now()) / 1000);
+        } catch (_) {
+          return 0;
+        }
+      }
+
+      function clearPasswordResetResendStorage(email) {
+        const normalized = Sec.normalizeEmail(email || '');
+        if (!normalized) return;
+        try { sessionStorage.removeItem(passwordResetResendStorageKey(normalized)); } catch (_) { /* noop */ }
+      }
+
+      function stopPasswordResetResendCountdown() {
+        if (passwordResetResendTimerId) {
+          clearInterval(passwordResetResendTimerId);
+          passwordResetResendTimerId = null;
+        }
+      }
+
+      function formatPasswordResetCountdownClock(totalSeconds) {
+        const s = Math.max(0, Math.ceil(Number(totalSeconds) || 0));
+        const h = Math.floor(s / 3600);
+        const m = Math.floor((s % 3600) / 60);
+        const sec = s % 60;
+        const pad = (n) => String(n).padStart(2, '0');
+        if (h > 0) return pad(h) + ':' + pad(m) + ':' + pad(sec);
+        return m + ':' + pad(sec);
+      }
+
+      function updatePasswordResetResendButton(opts) {
+        const btn = document.getElementById('otpResendBtn');
+        const cd = document.getElementById('otpResendCountdown');
+        if (!btn) return;
+        const enabled = !!opts?.enabled;
+        const blocked = !!opts?.blocked;
+        const seconds = Math.max(0, Number(opts?.seconds) || 0);
+
+        if (blocked) {
+          btn.classList.add('lp-link--disabled');
+          btn.setAttribute('aria-disabled', 'true');
+          btn.tabIndex = -1;
+          if (cd) {
+            cd.hidden = false;
+            cd.className = 'lp-resend-countdown lp-resend-countdown--blocked';
+            cd.textContent = 'تواصل مع إدارة المنصة';
+          }
+          return;
+        }
+
+        if (!enabled && seconds > 0) {
+          btn.classList.add('lp-link--disabled');
+          btn.setAttribute('aria-disabled', 'true');
+          btn.tabIndex = -1;
+          if (cd) {
+            cd.hidden = false;
+            cd.className = 'lp-resend-countdown';
+            cd.textContent = formatPasswordResetCountdownClock(seconds);
+          }
+          return;
+        }
+
+        btn.classList.remove('lp-link--disabled');
+        btn.removeAttribute('aria-disabled');
+        btn.tabIndex = 0;
+        if (cd) {
+          cd.hidden = true;
+          cd.textContent = '';
+          cd.className = 'lp-resend-countdown';
+        }
+      }
+
+      function startPasswordResetResendCountdown(email, initialSeconds) {
+        stopPasswordResetResendCountdown();
+        const normalized = Sec.normalizeEmail(email || '');
+        const seconds = Math.max(0, Math.ceil(Number(initialSeconds) || 0));
+        if (!normalized || seconds <= 0) {
+          clearPasswordResetResendStorage(normalized);
+          updatePasswordResetResendButton({ enabled: true });
+          return;
+        }
+
+        rememberPasswordResetResendUntil(normalized, Date.now() + seconds * 1000);
+        const tick = () => {
+          const remaining = getPasswordResetResendRemainingSeconds(normalized);
+          if (remaining <= 0) {
+            stopPasswordResetResendCountdown();
+            clearPasswordResetResendStorage(normalized);
+            syncPasswordResetResendUi(normalized);
+            return;
+          }
+          updatePasswordResetResendButton({ enabled: false, seconds: remaining });
+        };
+        tick();
+        passwordResetResendTimerId = setInterval(tick, 1000);
+      }
+
+      function parsePasswordResetErrorWaitSeconds(err) {
+        const errMsg = String(err?.message || err || '');
+        const secMatch = errMsg.match(/after\s+(\d+)\s+seconds?/i);
+        if (secMatch) return Math.max(1, Number(secMatch[1]) || 0);
+        if (/دقيقة|دقائق|ساعة|ساعات|يوم|أيام|ثانية|ثوانٍ/.test(errMsg)) {
+          const nMatch = errMsg.match(/(\d+)/);
+          if (nMatch) {
+            const n = Number(nMatch[1]) || 0;
+            if (/يوم|أيام/.test(errMsg)) return n * 86400;
+            if (/ساعة|ساعات/.test(errMsg)) return n * 3600;
+            if (/دقيقة|دقائق/.test(errMsg)) return n * 60;
+            return n;
+          }
+        }
+        return 0;
+      }
+
+      async function syncPasswordResetResendUi(email) {
+        const normalized = Sec.normalizeEmail(email || getPasswordResetEmail());
+        if (!normalized || !document.getElementById('otpResendBtn')) return;
+
+        const stored = getPasswordResetResendRemainingSeconds(normalized);
+        if (stored > 0) {
+          startPasswordResetResendCountdown(normalized, stored);
+          return;
+        }
+
+        try {
+          const rate = await ensurePasswordResetRateLimitAllowed(normalized);
+          if (rate?.blocked) {
+            stopPasswordResetResendCountdown();
+            clearPasswordResetResendStorage(normalized);
+            updatePasswordResetResendButton({ enabled: false, blocked: true });
+            return;
+          }
+          if (!rate?.allowed && Number(rate?.wait_seconds) > 0) {
+            startPasswordResetResendCountdown(normalized, Number(rate.wait_seconds));
+            return;
+          }
+          stopPasswordResetResendCountdown();
+          clearPasswordResetResendStorage(normalized);
+          updatePasswordResetResendButton({ enabled: true });
+        } catch (_) {
+          if (stored > 0) startPasswordResetResendCountdown(normalized, stored);
+          else updatePasswordResetResendButton({ enabled: true });
+        }
       }
 
       /** تخطي R2 واستخدام مرفقات محلية (data URL) عند عدم توفر /config */
@@ -34649,7 +34847,11 @@
       }
 
       function clearPasswordResetEmail() {
+        const email = getPasswordResetEmail();
         rememberPasswordResetEmail('');
+        clearPasswordResetResendStorage(email);
+        stopPasswordResetResendCountdown();
+        updatePasswordResetResendButton({ enabled: true });
       }
 
       function showLoginForm() {
@@ -34663,6 +34865,7 @@
         if (oc) oc.style.display = 'none';
         if (rc) rc.style.display = 'none';
         hideLoginError();
+        stopPasswordResetResendCountdown();
       }
 
       function showForgotPassword() {
@@ -34700,6 +34903,7 @@
           ok.classList.add('show');
         }
         setTimeout(() => document.getElementById('resetOtp')?.focus(), 80);
+        syncPasswordResetResendUi(resetEmail);
       }
 
       function showResetForm() {
@@ -35103,6 +35307,8 @@
 
       async function handleResendPasswordCode() {
         hideLoginError();
+        const resendBtn = document.getElementById('otpResendBtn');
+        if (resendBtn?.getAttribute('aria-disabled') === 'true') return;
         const email = getPasswordResetEmail();
         const errEl = document.getElementById('otpError');
         const errMsg = document.getElementById('otpErrorMsg');
@@ -35125,11 +35331,24 @@
           }
           document.getElementById('resetOtp').value = '';
           document.getElementById('resetOtp')?.focus();
+          await syncPasswordResetResendUi(email);
         } catch (err) {
           if (isMirsadDebugLog()) console.error('[ResendPasswordCode]', err);
           if (errEl && errMsg) {
             errEl.classList.add('show');
             errMsg.textContent = formatForgotPasswordError(err);
+          }
+          const waitSeconds = err?.blocked
+            ? 0
+            : (Number(err.waitSeconds) || parsePasswordResetErrorWaitSeconds(err) || ((err?.status === 429 || /rate limit|429/i.test(String(err?.message || ''))) ? 60 : 0));
+          if (err?.blocked) {
+            stopPasswordResetResendCountdown();
+            clearPasswordResetResendStorage(email);
+            updatePasswordResetResendButton({ enabled: false, blocked: true });
+          } else if (waitSeconds > 0) {
+            startPasswordResetResendCountdown(email, waitSeconds);
+          } else {
+            await syncPasswordResetResendUi(email);
           }
         } finally {
           setLoginLoading(false, 'otpBtn', '<i class="fas fa-check"></i><span>تحقق من الرمز</span>');
