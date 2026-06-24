@@ -1674,13 +1674,22 @@ html.mr-desktop-ui #mobileBottomNav.mobile-bottom-nav,
       border: 0 !important
     }
 
-  /* انتقال سلس لأعمدة الجدول أثناء توسيع/طي القائمة الجانبية */
+  /* انتقال سلس لأعمدة الجدول — تحديث واحد للعرض ثم CSS يتولى الحركة */
+    html.mr-desktop-ui.desk-sidebar-resizing .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table[data-desk-cols-synced]:not(.wf-tickets-table--mob) {
+      --desk-sidebar-col-ease: 200ms ease
+    }
+
     html.mr-desktop-ui.desk-sidebar-resizing .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table[data-desk-cols-synced]:not(.wf-tickets-table--mob) thead,
     html.mr-desktop-ui.desk-sidebar-resizing .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table[data-desk-cols-synced]:not(.wf-tickets-table--mob) tbody tr.wf-ticket-row,
     html.mr-desktop-ui.desk-sidebar-resizing .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table[data-desk-cols-synced]:not(.wf-tickets-table--mob) col,
     html.mr-desktop-ui.desk-sidebar-resizing .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table[data-desk-cols-synced]:not(.wf-tickets-table--mob) thead th,
     html.mr-desktop-ui.desk-sidebar-resizing .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table[data-desk-cols-synced]:not(.wf-tickets-table--mob) tbody tr.wf-ticket-row td {
-      transition: width 200ms ease, min-width 200ms ease, max-width 200ms ease !important
+      transition: width var(--desk-sidebar-col-ease, 200ms ease), min-width var(--desk-sidebar-col-ease, 200ms ease), max-width var(--desk-sidebar-col-ease, 200ms ease) !important
+    }
+
+    html.mr-desktop-ui.desk-sidebar-resizing .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table[data-desk-cols-synced]:not(.wf-tickets-table--mob) thead th {
+      overflow: hidden !important;
+      text-overflow: ellipsis !important
     }
 
     /* أعمدة الجدول — متغيرات CSS لضغط فوري عند تغيّر عرض الحاوية */

@@ -29650,7 +29650,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-sidebar-hover-fix-v993">
+  <meta name="app-build" content="athar-sidebar-col-stable-v994">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -45558,10 +45558,9 @@
         if (!sb) return;
         _deskSidebarColSyncBound = true;
         const onMainResize = () => {
+          if (isDeskSidebarTransitionActive()) return;
           cancelAnimationFrame(_deskSidebarColSyncRaf);
-          _deskSidebarColSyncRaf = requestAnimationFrame(() => {
-            scheduleDeskColSyncForActiveTab(true, { allowDuringSidebar: isDeskSidebarTransitionActive() });
-          });
+          _deskSidebarColSyncRaf = requestAnimationFrame(() => scheduleDeskColSyncForActiveTab(true));
         };
         const ro = new ResizeObserver(onMainResize);
         const mainEl = document.querySelector('.main');
@@ -45577,9 +45576,10 @@
       function finishDeskSidebarTransition(forceSync) {
         clearTimeout(_deskSidebarColSyncDebounce);
         cancelAnimationFrame(_deskSidebarResizeRaf);
+        const wasActive = _deskSidebarTransitionActive;
         _deskSidebarTransitionActive = false;
         setDeskSidebarResizing(false);
-        if (forceSync) scheduleDeskColSyncForActiveTab(true, { allowDuringSidebar: true });
+        if (forceSync && wasActive) scheduleDeskColSyncForActiveTab(true);
         if (typeof bcDdRepositionOpen === 'function') bcDdRepositionOpen();
       }
 
@@ -45590,15 +45590,12 @@
         clearTimeout(_deskSidebarColSyncDebounce);
         cancelAnimationFrame(_deskSidebarResizeRaf);
         scheduleDeskColSyncForActiveTab(true, { allowDuringSidebar: true });
-        let frames = 0;
-        const maxFrames = Math.ceil((DESK_SIDEBAR_RESIZE_MS / 1000) * 60) + 2;
-        const tick = () => {
-          if (!_deskSidebarTransitionActive) return;
-          scheduleDeskColSyncForActiveTab(true, { allowDuringSidebar: true });
-          frames += 1;
-          if (frames < maxFrames) _deskSidebarResizeRaf = requestAnimationFrame(tick);
-        };
-        _deskSidebarResizeRaf = requestAnimationFrame(tick);
+        _deskSidebarResizeRaf = requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            if (!_deskSidebarTransitionActive) return;
+            scheduleDeskColSyncForActiveTab(true, { allowDuringSidebar: true });
+          });
+        });
         _deskSidebarColSyncDebounce = setTimeout(() => finishDeskSidebarTransition(true), DESK_SIDEBAR_RESIZE_MS);
       }
 
@@ -45640,12 +45637,11 @@
         list.dataset[root.bindKey] = '1';
         let _roTimer;
         const ro = new ResizeObserver(() => {
+          if (isDeskSidebarTransitionActive()) return;
           clearTimeout(_roTimer);
           _roTimer = setTimeout(() => {
-            syncDesktopWfTableColWidthsNow(viewTab, {
-              fast: true,
-              duringSidebar: isDeskSidebarTransitionActive()
-            });
+            if (isDeskSidebarTransitionActive()) return;
+            syncDesktopWfTableColWidthsNow(viewTab, { fast: true });
           }, 0);
         });
         ro.observe(list);
