@@ -29650,7 +29650,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-sidebar-col-smooth-v992">
+  <meta name="app-build" content="athar-sidebar-hover-fix-v993">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -38411,12 +38411,19 @@
           sb?.classList.remove('sidebar-rail-expanded');
           return;
         }
+        if (expanded) {
+          sb.style.setProperty('width', '236px', 'important');
+          sb.style.setProperty('min-width', '236px', 'important');
+          sb.style.setProperty('flex', '0 0 236px', 'important');
+        } else {
+          sb.style.setProperty('width', '68px', 'important');
+          sb.style.setProperty('min-width', '68px', 'important');
+          sb.style.setProperty('flex', '0 0 68px', 'important');
+        }
         sb.classList.toggle('sidebar-rail-expanded', !!expanded);
-        sb.style.removeProperty('width');
-        sb.style.removeProperty('min-width');
-        sb.style.removeProperty('flex');
-        sb.style.removeProperty('max-width');
       }
+
+      let _deskSidebarLastExpanded = null;
 
       function isDesktopSidebarRailExpanded(sb) {
         if (!sb) return false;
@@ -38426,8 +38433,12 @@
 
       function syncDesktopSidebarRailSize(sb) {
         if (!sb) return;
-        applyDesktopSidebarRailSize(sb, isDesktopSidebarRailExpanded(sb));
-        syncDeskColsDuringSidebarTransition();
+        const expanded = isDesktopSidebarRailExpanded(sb);
+        applyDesktopSidebarRailSize(sb, expanded);
+        if (_deskSidebarLastExpanded !== expanded) {
+          _deskSidebarLastExpanded = expanded;
+          syncDeskColsDuringSidebarTransition();
+        }
       }
 
       function syncSidebarRailAttrs(sb) {
