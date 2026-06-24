@@ -29619,7 +29619,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-r2-upload-slim-v980">
+  <meta name="app-build" content="athar-r2-cors-ready-v981">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -31819,6 +31819,11 @@
         try { sessionStorage.setItem('athar_r2_direct_blocked', '1'); } catch (_) { /* */ }
       }
 
+      function markR2DirectPutUnblocked() {
+        _r2DirectPutBlocked = false;
+        try { sessionStorage.removeItem('athar_r2_direct_blocked'); } catch (_) { /* */ }
+      }
+
       function getR2MultipartConcurrency() {
         const mobile = window.matchMedia('(pointer: coarse)').matches;
         return mobile ? 2 : 3;
@@ -32044,8 +32049,10 @@
           xhr.setRequestHeader('Content-Type', contentType);
           xhr.timeout = 10 * 60 * 1000;
           xhr.onload = () => {
-            if (xhr.status >= 200 && xhr.status < 300) resolve();
-            else reject(new Error('رفض التخزين (' + xhr.status + '): ' + String(xhr.responseText || '').slice(0, 200)));
+            if (xhr.status >= 200 && xhr.status < 300) {
+              markR2DirectPutUnblocked();
+              resolve();
+            } else reject(new Error('رفض التخزين (' + xhr.status + '): ' + String(xhr.responseText || '').slice(0, 200)));
           };
           xhr.onerror = () => reject(new Error('R2_DIRECT_CORS_BLOCKED'));
           xhr.ontimeout = () => reject(new Error('انتهت مهلة الرفع — جرّب شبكة أقوى أو ملفاً أصغر'));
