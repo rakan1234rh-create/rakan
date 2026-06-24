@@ -29619,7 +29619,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-supervisor-branch-v982">
+  <meta name="app-build" content="athar-rest-optimize-v983">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -32425,6 +32425,26 @@
         'emp_forward_after', 'sup_forward_after',
       ].join(',');
       const MOB_VIOLATION_TYPES_SELECT = 'id,name,category,severity,weight,description';
+      /** أعمدة مختصرة للديسكتوب — نفس نمط الجوال لتقليل egress */
+      const DESKTOP_REGION_SELECT = 'id,name,supervisor_id';
+      const DESKTOP_BRANCH_SELECT = 'id,name,region_id,city';
+      const DESKTOP_USER_SELECT = MOB_USER_SELECT;
+      const DESKTOP_VIOLATION_TYPES_SELECT = MOB_VIOLATION_TYPES_SELECT;
+      const REGION_ROW_SELECT = DESKTOP_REGION_SELECT;
+      const BRANCH_ROW_SELECT = DESKTOP_BRANCH_SELECT;
+      const USER_ROW_SELECT = MOB_USER_SELECT;
+      const VIOL_TYPE_ROW_SELECT = DESKTOP_VIOLATION_TYPES_SELECT;
+
+      function getViolationsFetchLimit() {
+        if (isMobileViewport()) return 50;
+        if (!state.currentUser) return 200;
+        if (canViewAllTickets()) return 200;
+        const role = normalizeUserRole(state.currentUser.role);
+        if (role === 'employee' || role === 'observer') return 80;
+        if (role === 'supervisor' || role === 'branch_manager') return 120;
+        if (role === 'manager' || role === 'auditor' || role === 'hr') return 150;
+        return 200;
+      }
 
       function enrichViolationLite(t) {
         if (!t) return t;
@@ -34901,7 +34921,8 @@
           }
           state._seeAllCompliancePrev = canSeeAllCompliance();
           state._viewAllTicketsPrev = canViewAllTickets();
-          await Promise.all([cmpReloadGeoDataIfNeeded(), wfReloadViolationsIfNeeded()]);
+          await Promise.all([cmpReloadGeoDataIfNeeded()]);
+          state._wfViolationsScope = canViewAllTickets();
           cmpRefreshAfterPermissionChange();
           wfRefreshAfterPermissionChange();
           runInitialRender();
@@ -35305,23 +35326,15 @@
         let loaderGuard;
         setConnStatus('reconnecting');
         try {
-          const VIOLATIONS_LIMIT = mobLoad ? 50 : 200;
+          const VIOLATIONS_LIMIT = getViolationsFetchLimit();
           const VIOLATION_LIST_SELECT_LOCAL = VIOLATION_LIST_SELECT;
 
           const fetchAll = Promise.all([
-            mobLoad
-              ? sb.from('regions').select('id,name,supervisor_id').order('name')
-              : sb.from('regions').select('*').order('name'),
-            mobLoad
-              ? sb.from('branches').select('id,name,region_id').order('name')
-              : sb.from('branches').select('*').order('name'),
-            mobLoad
-              ? sb.from('users').select(MOB_USER_SELECT)
-              : sb.from('users').select('*').order('name'),
+            sb.from('regions').select(DESKTOP_REGION_SELECT).order('name'),
+            sb.from('branches').select(mobLoad ? 'id,name,region_id' : DESKTOP_BRANCH_SELECT).order('name'),
+            sb.from('users').select(mobLoad ? MOB_USER_SELECT : DESKTOP_USER_SELECT).order('name'),
             sb.from('violations').select(VIOLATION_LIST_SELECT_LOCAL).order('created_at', { ascending: false }).limit(VIOLATIONS_LIMIT),
-            mobLoad
-              ? sb.from('violation_types').select(MOB_VIOLATION_TYPES_SELECT).order('name')
-              : sb.from('violation_types').select('*').order('name'),
+            sb.from('violation_types').select(mobLoad ? MOB_VIOLATION_TYPES_SELECT : DESKTOP_VIOLATION_TYPES_SELECT).order('name'),
             !state.currentUser?.id
               ? Promise.resolve({ data: [], error: null })
               : sb.from('notifications')
@@ -35452,12 +35465,9 @@
 
           state._dataLoading = false;
           state._dataReady = true;
+          state._wfViolationsScope = canViewAllTickets();
           setConnStatus('connected');
           if (mobLoad) showGlobalLoader(false);
-          if (state.currentUser && canViewAllTickets()
-            && normalizeUserRole(state.currentUser.role) !== 'admin') {
-            try { await wfReloadViolationsIfNeeded(); } catch (_) {}
-          }
           return true;
         } catch (err) {
           state._dataLoading = false;
@@ -35490,6 +35500,86 @@
         state._userById = um;
         state._branchById = bm;
         state._regionById = rm;
+      }
+
+      function sortRegionsLocal() {
+        state.regions.sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'ar'));
+      }
+
+      function sortBranchesLocal() {
+        state.branches.sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'ar'));
+      }
+
+      function sortUsersLocal() {
+        state.users.sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'ar'));
+      }
+
+      function sortViolTypesLocal() {
+        state.violationTypes.sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'ar'));
+      }
+
+      function upsertLocalRegion(row) {
+        if (!row?.id) return;
+        const idx = state.regions.findIndex(r => r.id === row.id);
+        if (idx >= 0) state.regions[idx] = { ...state.regions[idx], ...row };
+        else state.regions.push(row);
+        sortRegionsLocal();
+        rebuildLookupMaps();
+      }
+
+      function removeLocalRegion(id) {
+        state.regions = state.regions.filter(r => r.id !== id);
+        rebuildLookupMaps();
+      }
+
+      function upsertLocalBranch(row) {
+        if (!row?.id) return;
+        const idx = state.branches.findIndex(b => b.id === row.id);
+        if (idx >= 0) state.branches[idx] = { ...state.branches[idx], ...row };
+        else state.branches.push(row);
+        sortBranchesLocal();
+        rebuildLookupMaps();
+      }
+
+      function removeLocalBranch(id) {
+        state.branches = state.branches.filter(b => b.id !== id);
+        rebuildLookupMaps();
+      }
+
+      function upsertLocalUser(row) {
+        if (!row?.id) return;
+        const idx = state.users.findIndex(u => u.id === row.id);
+        if (idx >= 0) state.users[idx] = { ...state.users[idx], ...row };
+        else state.users.push(row);
+        sortUsersLocal();
+        rebuildLookupMaps();
+      }
+
+      function patchViolationsBranchForEmployee(employeeId, branchId) {
+        if (!employeeId) return;
+        let touched = false;
+        for (const v of state.violations) {
+          if (v.employee_id === employeeId && v.branch_id !== branchId) {
+            v.branch_id = branchId;
+            touched = true;
+          }
+        }
+        if (touched) {
+          invalidateEmpScoreCache();
+          invalidateNotifCache();
+        }
+      }
+
+      function upsertLocalViolType(row) {
+        if (!row?.id) return;
+        const idx = state.violationTypes.findIndex(v => v.id === row.id);
+        if (idx >= 0) state.violationTypes[idx] = { ...state.violationTypes[idx], ...row };
+        else state.violationTypes.push(row);
+        sortViolTypesLocal();
+      }
+
+      function removeLocalViolType(id) {
+        state.violationTypes = state.violationTypes.filter(v => v.id !== id);
       }
 
       function isSupStageEntryLog(log) {
@@ -36329,7 +36419,7 @@
         cmpSyncGeoScopeForPermissions();
         wfSyncScopeForPermissions();
         applyRBACUI({ skipCmpRefresh: true });
-        await Promise.all([cmpReloadGeoDataIfNeeded(), wfReloadViolationsIfNeeded()]);
+        await Promise.all([cmpReloadGeoDataIfNeeded(), wfReloadViolationsIfNeeded({ force: true })]);
         cmpRefreshAfterPermissionChange();
         wfRefreshAfterPermissionChange();
         flushPermissionsMobileShell({ skipRbac: true, skipRender: true });
@@ -36753,7 +36843,7 @@
         applyRBACUI();
         cmpRefreshAfterPermissionChange();
         wfRefreshAfterPermissionChange();
-        wfReloadViolationsIfNeeded().then(() => wfRefreshAfterPermissionChange()).catch(() => {});
+        wfReloadViolationsIfNeeded({ force: true }).then(() => wfRefreshAfterPermissionChange()).catch(() => {});
         schedulePermissionsCloudSave();
         if (state.editingTicket) {
           try {
@@ -36776,7 +36866,7 @@
         applyRBACUI();
         cmpRefreshAfterPermissionChange();
         wfRefreshAfterPermissionChange();
-        wfReloadViolationsIfNeeded().then(() => wfRefreshAfterPermissionChange()).catch(() => {});
+        wfReloadViolationsIfNeeded({ force: true }).then(() => wfRefreshAfterPermissionChange()).catch(() => {});
         schedulePermissionsCloudSave();
         state._userPermMatrixDirty = false;
         if (state._settingsPermUserId) renderUserPermissionsMatrix();
@@ -36896,7 +36986,7 @@
         applyRBACUI();
         cmpRefreshAfterPermissionChange();
         wfRefreshAfterPermissionChange();
-        wfReloadViolationsIfNeeded().then(() => wfRefreshAfterPermissionChange()).catch(() => {});
+        wfReloadViolationsIfNeeded({ force: true }).then(() => wfRefreshAfterPermissionChange()).catch(() => {});
         schedulePermissionsCloudSave();
         renderUserPermissionsMatrix();
         settingsUserDdSyncLabel();
@@ -37680,24 +37770,34 @@
       }
 
       let _wfViolationsReloadPromise = null;
-      async function wfReloadViolationsIfNeeded() {
-        if (!canViewAllTickets()) return;
-        if (typeof sb === 'undefined' || !sb) return;
-        const role = normalizeUserRole(state.currentUser?.role);
-        if (role === 'admin') return;
+      async function reloadViolationsForCurrentRole(opts = {}) {
+        if (typeof sb === 'undefined' || !sb || !state.currentUser) return;
         if (_wfViolationsReloadPromise) return _wfViolationsReloadPromise;
         _wfViolationsReloadPromise = (async () => {
           try {
             const mobLoad = isMobileViewport();
-            const limit = mobLoad ? 50 : 200;
+            const limit = getViolationsFetchLimit();
             const select = VIOLATION_LIST_SELECT;
-            const rows = await wfFetchExpandedViolationRows(limit, select);
+            const viewAll = canViewAllTickets();
+            const role = normalizeUserRole(state.currentUser.role);
+            let rows;
+            if (viewAll && role !== 'admin') {
+              rows = await wfFetchExpandedViolationRows(limit, select);
+            } else {
+              const { data, error } = await sb.from('violations')
+                .select(select)
+                .order('created_at', { ascending: false })
+                .limit(limit);
+              if (error) throw error;
+              rows = data;
+            }
             if (Array.isArray(rows)) {
               const enrichRow = mobLoad ? enrichViolationLite : enrichViolation;
               state.violations = rows.map(enrichRow);
               rebuildLookupMaps();
               invalidateEmpScoreCache();
               invalidateNotifCache();
+              state._wfViolationsScope = viewAll;
             }
           } catch (e) {
             if (isMirsadDebugLog()) console.warn('[workflow] violations reload failed', e);
@@ -37706,6 +37806,21 @@
           }
         })();
         return _wfViolationsReloadPromise;
+      }
+
+      async function wfReloadViolationsIfNeeded(opts = {}) {
+        if (!state.currentUser || typeof sb === 'undefined' || !sb) return;
+        const viewAll = canViewAllTickets();
+        if (!opts.force && state._wfViolationsScope === viewAll && state._dataReady) return;
+        const role = normalizeUserRole(state.currentUser.role);
+        if (!viewAll) {
+          if (opts.force || state._wfViolationsScope === true) {
+            await reloadViolationsForCurrentRole(opts);
+          }
+          return;
+        }
+        if (role === 'admin') return;
+        await reloadViolationsForCurrentRole(opts);
       }
 
       function wfRefreshAfterPermissionChange() {
@@ -37732,7 +37847,7 @@
 
       async function syncWorkflowAccessAndRender() {
         wfSyncScopeForPermissions();
-        await wfReloadViolationsIfNeeded();
+        await wfReloadViolationsIfNeeded({ force: true });
         wfRefreshAfterPermissionChange();
       }
 
@@ -40982,15 +41097,18 @@
         const payload = { name, supervisor_id: supId };
 
         try {
+          let row;
           if (editId) {
-            const { error } = await sb.from('regions').update(payload).eq('id', editId);
+            const { data, error } = await sb.from('regions').update(payload).eq('id', editId).select(REGION_ROW_SELECT).single();
             if (error) throw error;
+            row = data;
           } else {
-            const { error } = await sb.from('regions').insert(payload);
+            const { data, error } = await sb.from('regions').insert(payload).select(REGION_ROW_SELECT).single();
             if (error) throw error;
+            row = data;
           }
+          upsertLocalRegion(row);
           closeModal('regionModal');
-          await loadAllData();
           renderRegions();
           showToast(editId ? 'تم تحديث المنطقة' : 'تم إضافة المنطقة', 'success');
         } catch (err) {
@@ -41010,7 +41128,7 @@
           const { error } = await sb.from('regions').delete().eq('id', id);
           if (error) throw error;
           if (state._activeRegionId === id) state._activeRegionId = null;
-          await loadAllData();
+          removeLocalRegion(id);
           renderRegions();
           showToast('تم حذف المنطقة', 'info');
         } catch (err) {
@@ -41062,15 +41180,18 @@
         const payload = { name, city: city || null, region_id: regionId };
 
         try {
+          let row;
           if (editId) {
-            const { error } = await sb.from('branches').update(payload).eq('id', editId);
+            const { data, error } = await sb.from('branches').update(payload).eq('id', editId).select(BRANCH_ROW_SELECT).single();
             if (error) throw error;
+            row = data;
           } else {
-            const { error } = await sb.from('branches').insert(payload);
+            const { data, error } = await sb.from('branches').insert(payload).select(BRANCH_ROW_SELECT).single();
             if (error) throw error;
+            row = data;
           }
+          upsertLocalBranch(row);
           closeModal('branchModal');
-          await loadAllData();
           renderRegions();
           showToast(editId ? 'تم تحديث الفرع' : 'تم إضافة الفرع', 'success');
         } catch (err) {
@@ -41089,7 +41210,7 @@
         try {
           const { error } = await sb.from('branches').delete().eq('id', id);
           if (error) throw error;
-          await loadAllData();
+          removeLocalBranch(id);
           renderRegions();
           showToast('تم حذف الفرع', 'info');
         } catch (err) {
@@ -41370,18 +41491,18 @@
               role,
               branch_id: needsBranch ? branchId : null
             };
-            const { error } = await sb.from('users').insert(insertPayload);
+            const { data: newUser, error } = await sb.from('users').insert(insertPayload).select(USER_ROW_SELECT).single();
             if (error) {
               try { await adminDeleteAuthUser(authUid); } catch (_) { }
               throw error;
             }
+            if (newUser) upsertLocalUser(newUser);
             created++;
           } catch (err) {
             failed++;
             errors.push(`سطر ${lineNo}: ${formatPostgrestError(err) || err.message || 'فشل'}`);
           }
         }
-        await loadAllData();
         renderUsers();
         const summary = `تم: ${created} جديد، ${skipped} متخطى، ${failed} فشل`;
         if (errors.length && isMirsadDebugLog()) console.warn('[users import]', errors);
@@ -41675,7 +41796,7 @@
               }
             }
 
-            const { error } = await sb.from('users').update(updatePayload).eq('id', editId);
+            const { data: updatedUser, error } = await sb.from('users').update(updatePayload).eq('id', editId).select(USER_ROW_SELECT).single();
             if (error) throw error;
 
             const branchChanged = needsBranch && oldUser && oldUser.branch_id !== branchId;
@@ -41685,11 +41806,13 @@
                   .update({ branch_id: branchId })
                   .eq('employee_id', editId);
                 if (violErr && isMirsadDebugLog()) console.warn('[saveUser] branch sync violations', violErr);
+                else patchViolationsBranchForEmployee(editId, branchId);
               } catch (syncErr) {
                 if (isMirsadDebugLog()) console.warn('[saveUser] branch sync violations', syncErr);
               }
             }
 
+            upsertLocalUser(updatedUser);
             showToast('تم تحديث المستخدم ✓', 'success');
           } else {
             // ── إضافة جديدة ──
@@ -41704,16 +41827,16 @@
               role,
               branch_id: needsBranch ? branchId : null
             };
-            const { error } = await sb.from('users').insert(insertPayload);
+            const { data: newUser, error } = await sb.from('users').insert(insertPayload).select(USER_ROW_SELECT).single();
             if (error) {
               try { await adminDeleteAuthUser(authUid); } catch (_) { }
               throw error;
             }
+            upsertLocalUser(newUser);
             showToast('تم إنشاء المستخدم وإرسال رسالة التأكيد ✓', 'success');
           }
 
           closeModal('userModal');
-          await loadAllData();
           renderUsers();
         } catch (err) {
           if (isMirsadDebugLog()) console.error('[saveUser]', err);
@@ -42066,15 +42189,18 @@
         if (weight < 1 || weight > 100) return showToast('الوزن يجب أن يكون بين 1 و 100', 'error');
 
         try {
+          let row;
           if (editId) {
-            const { error } = await sb.from('violation_types').update({ name, category, severity, weight, description }).eq('id', editId);
+            const { data, error } = await sb.from('violation_types').update({ name, category, severity, weight, description }).eq('id', editId).select(VIOL_TYPE_ROW_SELECT).single();
             if (error) throw error;
+            row = data;
           } else {
-            const { error } = await sb.from('violation_types').insert({ name, category, severity, weight, description });
+            const { data, error } = await sb.from('violation_types').insert({ name, category, severity, weight, description }).select(VIOL_TYPE_ROW_SELECT).single();
             if (error) throw error;
+            row = data;
           }
+          upsertLocalViolType(row);
           closeModal('violModal');
-          await loadAllData();
           renderViolTypes();
           showToast('تم الحفظ', 'success');
         } catch (err) {
@@ -42145,7 +42271,7 @@
         try {
           const { error } = await sb.from('violation_types').delete().eq('id', id);
           if (error) throw error;
-          await loadAllData();
+          removeLocalViolType(id);
           renderViolTypes();
           showToast('تم الحذف', 'info');
         } catch (err) {
