@@ -1674,20 +1674,73 @@ html.mr-desktop-ui #mobileBottomNav.mobile-bottom-nav,
       border: 0 !important
     }
 
-  /* انتقال سلس لأعمدة الجدول — تحديث واحد للعرض ثم CSS يتولى الحركة */
+  /* متغيرات قابلة للتحريك — انتقال سلس لعرض الأعمدة */
+    @property --desk-table-w {
+      syntax: "<length>";
+      inherits: false;
+      initial-value: 0px
+    }
+
+    @property --desk-w-ticket {
+      syntax: "<length>";
+      inherits: false;
+      initial-value: 68px
+    }
+
+    @property --desk-w-emp {
+      syntax: "<length>";
+      inherits: false;
+      initial-value: 150px
+    }
+
+    @property --desk-w-violation {
+      syntax: "<length>";
+      inherits: false;
+      initial-value: 160px
+    }
+
+    @property --desk-w-branch {
+      syntax: "<length>";
+      inherits: false;
+      initial-value: 140px
+    }
+
+    @property --desk-w-datetime {
+      syntax: "<length>";
+      inherits: false;
+      initial-value: 120px
+    }
+
+    @property --desk-w-status {
+      syntax: "<length>";
+      inherits: false;
+      initial-value: 160px
+    }
+
+    @property --desk-w-action {
+      syntax: "<length>";
+      inherits: false;
+      initial-value: 112px
+    }
+
     html.mr-desktop-ui.desk-sidebar-resizing .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table[data-desk-cols-synced]:not(.wf-tickets-table--mob) {
-      --desk-sidebar-col-ease: 200ms ease
+      --desk-sidebar-col-ease: 220ms cubic-bezier(0.4, 0, 0.2, 1);
+      transition:
+        --desk-table-w var(--desk-sidebar-col-ease),
+        --desk-w-ticket var(--desk-sidebar-col-ease),
+        --desk-w-emp var(--desk-sidebar-col-ease),
+        --desk-w-violation var(--desk-sidebar-col-ease),
+        --desk-w-branch var(--desk-sidebar-col-ease),
+        --desk-w-datetime var(--desk-sidebar-col-ease),
+        --desk-w-status var(--desk-sidebar-col-ease),
+        --desk-w-action var(--desk-sidebar-col-ease) !important
     }
 
-    html.mr-desktop-ui.desk-sidebar-resizing .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table[data-desk-cols-synced]:not(.wf-tickets-table--mob) thead,
-    html.mr-desktop-ui.desk-sidebar-resizing .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table[data-desk-cols-synced]:not(.wf-tickets-table--mob) tbody tr.wf-ticket-row,
-    html.mr-desktop-ui.desk-sidebar-resizing .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table[data-desk-cols-synced]:not(.wf-tickets-table--mob) col,
     html.mr-desktop-ui.desk-sidebar-resizing .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table[data-desk-cols-synced]:not(.wf-tickets-table--mob) thead th,
-    html.mr-desktop-ui.desk-sidebar-resizing .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table[data-desk-cols-synced]:not(.wf-tickets-table--mob) tbody tr.wf-ticket-row td {
-      transition: width var(--desk-sidebar-col-ease, 200ms ease), min-width var(--desk-sidebar-col-ease, 200ms ease), max-width var(--desk-sidebar-col-ease, 200ms ease) !important
-    }
-
-    html.mr-desktop-ui.desk-sidebar-resizing .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table[data-desk-cols-synced]:not(.wf-tickets-table--mob) thead th {
+    html.mr-desktop-ui.desk-sidebar-resizing .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table[data-desk-cols-synced]:not(.wf-tickets-table--mob) td.wf-col-emp,
+    html.mr-desktop-ui.desk-sidebar-resizing .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table[data-desk-cols-synced]:not(.wf-tickets-table--mob) td.wf-col-violation,
+    html.mr-desktop-ui.desk-sidebar-resizing .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table[data-desk-cols-synced]:not(.wf-tickets-table--mob) td.wf-col-branch {
+      white-space: nowrap !important;
       overflow: hidden !important;
       text-overflow: ellipsis !important
     }

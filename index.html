@@ -29650,7 +29650,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-sidebar-col-stable-v994">
+  <meta name="app-build" content="athar-sidebar-col-wrap-v995">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -38434,8 +38434,13 @@
       function syncDesktopSidebarRailSize(sb) {
         if (!sb) return;
         const expanded = isDesktopSidebarRailExpanded(sb);
+        const expandedChanged = _deskSidebarLastExpanded !== expanded;
+        if (expandedChanged && isDesktopUi()) {
+          _deskSidebarTransitionActive = true;
+          setDeskSidebarResizing(true);
+        }
         applyDesktopSidebarRailSize(sb, expanded);
-        if (_deskSidebarLastExpanded !== expanded) {
+        if (expandedChanged) {
           _deskSidebarLastExpanded = expanded;
           syncDeskColsDuringSidebarTransition();
         }
@@ -45542,7 +45547,7 @@
       let _deskSidebarColSyncDebounce = 0;
       let _deskSidebarResizeRaf = 0;
       let _deskSidebarTransitionActive = false;
-      const DESK_SIDEBAR_RESIZE_MS = 280;
+      const DESK_SIDEBAR_RESIZE_MS = 240;
 
       function isDeskSidebarTransitionActive() {
         return !!_deskSidebarTransitionActive;
@@ -45579,17 +45584,16 @@
         const wasActive = _deskSidebarTransitionActive;
         _deskSidebarTransitionActive = false;
         setDeskSidebarResizing(false);
-        if (forceSync && wasActive) scheduleDeskColSyncForActiveTab(true);
+        if (forceSync && wasActive) {
+          requestAnimationFrame(() => scheduleDeskColSyncForActiveTab(true));
+        }
         if (typeof bcDdRepositionOpen === 'function') bcDdRepositionOpen();
       }
 
       function syncDeskColsDuringSidebarTransition() {
         if (!isDesktopUi()) return;
-        _deskSidebarTransitionActive = true;
-        setDeskSidebarResizing(true);
         clearTimeout(_deskSidebarColSyncDebounce);
         cancelAnimationFrame(_deskSidebarResizeRaf);
-        scheduleDeskColSyncForActiveTab(true, { allowDuringSidebar: true });
         _deskSidebarResizeRaf = requestAnimationFrame(() => {
           requestAnimationFrame(() => {
             if (!_deskSidebarTransitionActive) return;
@@ -45609,6 +45613,59 @@
         thead?.style.removeProperty('width');
         tbody && (tbody.scrollLeft = 0);
         table.querySelectorAll('tbody tr.wf-ticket-row').forEach(tr => tr.style.removeProperty('table-layout'));
+      }
+
+      function readDeskColVarPx(table, key) {
+        const inline = table.style.getPropertyValue(`--desk-w-${key}`).trim();
+        if (inline) return parseFloat(inline) || 0;
+        return parseFloat(getComputedStyle(table).getPropertyValue(`--desk-w-${key}`)) || 0;
+      }
+
+      function applyDeskColCssVarsProportional(table, tableW, colIdx, fixedCols, flexIdx, colCount) {
+        const lastW = +(table.dataset.deskLastW || 0);
+        if (!(lastW > 0) || !(tableW > 0) || Math.abs(tableW - lastW) < 1) return false;
+        const keyByCol = {
+          [colIdx.ticket]: 'ticket',
+          [colIdx.emp]: 'emp',
+          [colIdx.viol]: 'violation',
+          [colIdx.branch]: 'branch',
+          [colIdx.datetime]: 'datetime',
+          [colIdx.status]: 'status',
+          [colIdx.action]: 'action'
+        };
+        let oldFixedW = 0;
+        let newFixedW = 0;
+        fixedCols.forEach(([idx, w]) => {
+          const key = keyByCol[idx];
+          if (key) oldFixedW += readDeskColVarPx(table, key) || w;
+          newFixedW += w;
+        });
+        const oldFlexBudget = Math.max(1, lastW - oldFixedW);
+        const newFlexBudget = Math.max(0, tableW - newFixedW);
+        const scale = newFlexBudget / oldFlexBudget;
+        const tdWidths = Array(colCount).fill(0);
+        fixedCols.forEach(([idx, w]) => { tdWidths[idx] = w; });
+        let usedFlex = 0;
+        flexIdx.forEach((idx, pos) => {
+          const key = keyByCol[idx];
+          const oldW = key ? readDeskColVarPx(table, key) : 0;
+          const scaled = Math.max(60, Math.round((oldW || 60) * scale));
+          const w = pos === flexIdx.length - 1
+            ? Math.max(60, newFlexBudget - usedFlex)
+            : scaled;
+          tdWidths[idx] = w;
+          usedFlex += w;
+        });
+        const widthSum = tdWidths.reduce((sum, w) => sum + (w || 0), 0);
+        const drift = tableW - widthSum;
+        if (drift && flexIdx.length) {
+          const violIdx = colIdx.viol;
+          const driftCol = violIdx >= 0 && flexIdx.includes(violIdx) ? violIdx : flexIdx[flexIdx.length - 1];
+          tdWidths[driftCol] = Math.max(1, (tdWidths[driftCol] || 0) + drift);
+        }
+        applyDeskColCssVars(table, tdWidths, tableW, colIdx);
+        table.dataset.deskLastW = String(tableW);
+        return true;
       }
 
       function applyDeskColCssVars(table, tdWidths, tableW, colIdx) {
@@ -45770,6 +45827,12 @@
         const fixedW = fixedCols.reduce((sum, [, w]) => sum + w, 0);
         const flexIdx = Array.from({ length: colCount }, (_, i) => i)
           .filter(i => !fixedCols.some(([idx]) => idx === i));
+        if (duringSidebar && fast && table.dataset.deskColsSynced === '1' && flexIdx.length) {
+          if (applyDeskColCssVarsProportional(table, tableW, colIdx, fixedCols, flexIdx, colCount)) {
+            bindDeskColSyncObserver(root, viewTab);
+            return true;
+          }
+        }
         const budgetBase = isFlatDesk ? tableW : innerW;
         const budget = Math.max(0, budgetBase - fixedW);
         const flexW = flexIdx.length > 0 && budget > 0
