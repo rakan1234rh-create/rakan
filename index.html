@@ -47304,6 +47304,7 @@
 
         enrichViolationLite(t);
         state.editingTicket = t;
+        void cleanupUploadSession('resp');
         state.uploadedFiles.resp = [];
         document.getElementById('respFileArea').innerHTML = '';
         document.getElementById('respText').value = '';
