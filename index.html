@@ -30140,7 +30140,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-profile-nav-zero-flash-v1022">
+  <meta name="app-build" content="athar-profile-manager-field-v1023">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -30517,6 +30517,10 @@
                     <span class="profile-info-row__lbl">المنطقة</span>
                     <strong class="profile-info-row__val" id="profilePageRegion">—</strong>
                   </div>
+                  <div class="profile-info-row" id="profilePageManagerRow" hidden>
+                    <span class="profile-info-row__lbl">المدير المباشر</span>
+                    <strong class="profile-info-row__val" id="profilePageManager">—</strong>
+                  </div>
                   <div class="profile-info-row">
                     <span class="profile-info-row__lbl">البريد الإلكتروني</span>
                     <strong class="profile-info-row__val" id="profilePageEmail" dir="ltr">—</strong>
@@ -30537,10 +30541,6 @@
                       </span>
                     </button>
                   </div>
-                  <button type="button" class="profile-action-btn" id="topbarPushToggle" onclick="toggleWebPushFromMenu(event)" hidden>
-                    <span class="profile-action-row__lbl"><i class="fas fa-mobile-screen-button" aria-hidden="true"></i> <span id="topbarPushToggleLabel">تفعيل تنبيهات الجوال</span></span>
-                    <i class="fas fa-chevron-left" aria-hidden="true"></i>
-                  </button>
                   <button type="button" class="profile-action-btn" id="profilePageSettingsBtn" onclick="openSettingsFromUserMenu(event)" data-perm="tab_settings" hidden>
                     <span class="profile-action-row__lbl"><i class="fas fa-shield-halved" aria-hidden="true"></i> صلاحيات المنصة</span>
                     <i class="fas fa-chevron-left" aria-hidden="true"></i>
@@ -39905,12 +39905,19 @@
         setText('profilePageRegion', region?.name);
         setText('profilePageEmail', u.email);
         setText('profilePagePhone', u.phone);
+        const managerRow = document.getElementById('profilePageManagerRow');
+        if (roleKey === 'branch_manager') {
+          const manager = typeof getUserDirectManager === 'function' ? getUserDirectManager(u) : null;
+          setText('profilePageManager', manager?.name);
+          if (managerRow) managerRow.hidden = false;
+        } else if (managerRow) {
+          managerRow.hidden = true;
+        }
         const settingsBtn = document.getElementById('profilePageSettingsBtn');
         const bcBtn = document.getElementById('profilePageBroadcastsBtn');
         if (settingsBtn) settingsBtn.hidden = !hasPermission('tab_settings');
         if (bcBtn) bcBtn.hidden = !hasPermission('tab_broadcasts');
         syncThemeToggleUi();
-        syncWebPushMenuLabel();
         applyRBACUI({ skipCmpRefresh: true });
       }
 
