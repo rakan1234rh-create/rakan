@@ -29650,7 +29650,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-hevc-transcode-fix-v1010">
+  <meta name="app-build" content="athar-hevc-prep-upload-v1011">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -32388,7 +32388,7 @@
         }
       }
 
-      async function uploadR2DirectPut(objectKey, body, contentType) {
+      async function uploadR2DirectPut(objectKey, body, contentType, cancelHandle) {
         const { url } = await callR2StorageFn('signPut', { key: objectKey, contentType });
         await new Promise((resolve, reject) => {
           const xhr = new XMLHttpRequest();
@@ -32402,7 +32402,11 @@
             } else reject(new Error('رفض التخزين (' + xhr.status + '): ' + String(xhr.responseText || '').slice(0, 200)));
           };
           xhr.onerror = () => reject(new Error('R2_DIRECT_CORS_BLOCKED'));
+          xhr.onabort = () => reject(new Error('UPLOAD_CANCELLED'));
           xhr.ontimeout = () => reject(new Error('انتهت مهلة الرفع — جرّب شبكة أقوى أو ملفاً أصغر'));
+          if (cancelHandle) {
+            cancelHandle.abort = () => { try { xhr.abort(); } catch (_) { /* */ } };
+          }
           try {
             xhr.send(body);
           } catch (sendErr) {
@@ -32468,13 +32472,25 @@
       }
 
       /** رفع ملف كبير على أجزاء متوازية عبر Edge */
-      async function uploadR2MultipartViaEdge(objectKey, body, contentType, onPartProgress) {
+      async function uploadR2MultipartViaEdge(objectKey, body, contentType, onPartProgress, cancelHandle) {
         const blob = body instanceof Blob ? body : new Blob([body], { type: contentType || 'application/octet-stream' });
         const totalSize = blob.size;
         if (!totalSize) throw new Error('ملف فارغ');
 
         const { uploadId } = await callR2StorageFn('createMultipart', { key: objectKey, contentType });
         if (!uploadId) throw new Error('تعذّر بدء الرفع المتعدد الأجزاء');
+        if (cancelHandle) {
+          cancelHandle._multipart = { objectKey, uploadId };
+          const prevAbort = cancelHandle.abort;
+          cancelHandle.abort = async () => {
+            if (typeof prevAbort === 'function') {
+              try { await prevAbort(); } catch (_) { /* */ }
+            }
+            try {
+              await callR2StorageFn('abortMultipart', { key: objectKey, uploadId });
+            } catch (_) { /* */ }
+          };
+        }
 
         let authToken = null;
         try {
@@ -32504,10 +32520,12 @@
           let nextJob = 0;
           const worker = async () => {
             while (true) {
+              if (cancelHandle?.cancelled) throw new Error('UPLOAD_CANCELLED');
               const jobIndex = nextJob++;
               if (jobIndex >= totalParts) break;
               const job = partJobs[jobIndex];
               const result = await uploadR2MultipartPartViaEdge(objectKey, uploadId, job.partNumber, job.chunk, authToken);
+              if (cancelHandle?.cancelled) throw new Error('UPLOAD_CANCELLED');
               if (result.authToken) authToken = result.authToken;
               completedParts[jobIndex] = result;
               doneCount++;
@@ -32546,6 +32564,7 @@
         notifications: [],      // الإشعارات
         broadcastInbox: [],     // نشرات admin الواردة للمستخدم
         uploadedFiles: { nt: [], resp: [] },  // الملفات المرفوعة
+        uploadTempFolders: { nt: null, resp: null },
         ntPickedEmployee: null,  // الموظف المختار في نموذج رصد المخالفة
         ntPickedViolationType: null,  // نوع المخالفة المختار في نموذج رصد المخالفة
         editingTicket: null,    // التذكرة قيد التحرير
@@ -43406,6 +43425,7 @@
       }
 
       function resetNewTicket() {
+        void cleanupUploadSession('nt');
         ['nt-empId', 'nt-empSearch', 'nt-type', 'nt-typeSearch', 'nt-desc'].forEach(k => { if (document.getElementById(k)) document.getElementById(k).value = ''; });
         document.getElementById('nt-type').value = '';
         document.getElementById('nt-empFound').style.display = 'none';
@@ -43504,30 +43524,49 @@
         // showGlobalLoader(true, 'جاري حجز رقم المخالفة والمزامنة مع كلاود فلير...');
 
         try {
-          // الخطوة 1: الرفع إلى مجلد مؤقت أولاً (لمنع ضياع أرقام التذاكر في حال فشل الرفع)
-          const tempFolder = await buildTempUploadFolder();
+          // انتظار اكتمال التحويل/الرفع المسبق (إن جارٍ)
+          let readyIndex = 0;
+          for (const file of filesToUpload) {
+            readyIndex++;
+            if (submitBtn) {
+              submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> انتظار المرفقات (${readyIndex}/${filesToUpload.length})…`;
+            }
+            await waitForAttachmentPrep(file);
+            if (file.prepStatus !== 'ready') {
+              throw new Error(file.prepError || 'المرفق غير جاهز للإرسال');
+            }
+          }
+
+          const tempFolder = state.uploadTempFolders?.nt || await ensureUploadTempFolder('nt');
           let tempAttachments = [];
           let fileIndex = 1;
 
           for (const file of filesToUpload) {
             if (submitBtn) {
-              submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> جاري رفع المخالفة...`;
+              submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> جاري إصدار التذكرة…`;
             }
 
-            const result = await uploadToCloudflare(file, tempFolder, state.currentUser.name);
-            if (!result || !result.success) throw new Error(result?.error || 'فشل الرفع');
+            let fileId = file.tempKey;
+            if (!fileId && file.devSkipR2) {
+              const result = await uploadToCloudflare(file, tempFolder, state.currentUser.name);
+              if (!result || !result.success) throw new Error(result?.error || 'فشل الرفع');
+              fileId = result.fileId;
+            }
+            if (!fileId) throw new Error('المرفق غير مرفوع بعد — انتظر اكتمال الرفع');
 
             tempAttachments.push({
               n: file.name,
-              p: result.fileId, // المسار المؤقت حالياً
+              p: fileId,
               s: 'الرصد الأولي',
               b: state.currentUser.name,
               r: ROLE_LABELS[myRole] || myRole,
               t: getNow(),
-              ...(result.devDataUrl ? { u: result.devDataUrl } : {})
+              ...(file.devDataUrl ? { u: file.devDataUrl } : {})
             });
             fileIndex++;
           }
+
+          if (state.uploadTempFolders) state.uploadTempFolders.nt = null;
 
           // الخطوة 2: إنشاء السجل في قاعدة البيانات (الآن سنأخذ الرقم التالي مباشرة بدون فجوات)
           if (submitBtn) {
@@ -43775,22 +43814,26 @@
             throw new Error('لم يُجرَ إعداد تخزين المرفقات لنقل الملفات (انشر Edge Function r2-storage).');
           }
 
-          for (let i = 0; i < updatedAtts.length; i++) {
-            const oldKey = updatedAtts[i].p;
-            if (oldKey && oldKey.startsWith('temp_')) {
-              const newKey = `${r2Folder}/${oldKey.split('/').pop()}`;
-
-              try {
-                await callR2StorageFn('moveObject', { fromKey: oldKey, toKey: newKey });
-
-                updatedAtts[i].p = newKey;
-                movedAny = true;
-                if (isMirsadDebugLog()) console.log(`[R2-Move] Moved: ${oldKey} -> ${newKey}`);
-              } catch (e) {
-                failed.push(oldKey);
-                if (isMirsadDebugLog()) console.error(`[R2-Move] Failed to move ${oldKey}:`, e);
-              }
+          const moveOne = async (att, i) => {
+            const oldKey = att.p;
+            if (!oldKey || !oldKey.startsWith('temp_')) return null;
+            const newKey = `${r2Folder}/${oldKey.split('/').pop()}`;
+            try {
+              await callR2StorageFn('moveObject', { fromKey: oldKey, toKey: newKey });
+              if (isMirsadDebugLog()) console.log(`[R2-Move] Moved: ${oldKey} -> ${newKey}`);
+              return { i, newKey };
+            } catch (e) {
+              failed.push(oldKey);
+              if (isMirsadDebugLog()) console.error(`[R2-Move] Failed to move ${oldKey}:`, e);
+              return null;
             }
+          };
+
+          const moveResults = await Promise.all(updatedAtts.map((att, i) => moveOne(att, i)));
+          for (const r of moveResults) {
+            if (!r) continue;
+            updatedAtts[r.i].p = r.newKey;
+            movedAny = true;
           }
 
           if (movedAny) {
@@ -43810,6 +43853,252 @@
           if (isMirsadDebugLog()) console.error('[R2-Move] Critical Error:', err);
           throw err;
         }
+      }
+
+      function makeAttachmentCancelHandle() {
+        return { cancelled: false, abort: null };
+      }
+
+      function cancelAttachmentPrep(fileEntry) {
+        if (!fileEntry) return;
+        fileEntry._cancelled = true;
+        if (fileEntry._cancelHandle) fileEntry._cancelHandle.cancelled = true;
+        try { fileEntry._cancelHandle?.abort?.(); } catch (_) { /* */ }
+        if (fileEntry.prepStatus !== 'ready' && fileEntry.prepStatus !== 'error') {
+          fileEntry.prepStatus = 'cancelled';
+        }
+      }
+
+      async function deleteR2TempObject(objectKey) {
+        const key = String(objectKey || '').trim();
+        if (!key || !key.startsWith('temp_')) return;
+        const backend = await resolveR2Backend();
+        if (backend === 'none') return;
+        try {
+          await callR2StorageFn('deleteObject', { key });
+        } catch (_) { /* */ }
+      }
+
+      async function deleteAttachmentTempKey(fileEntry) {
+        if (!fileEntry?.tempKey) return;
+        const key = fileEntry.tempKey;
+        fileEntry.tempKey = null;
+        await deleteR2TempObject(key);
+      }
+
+      async function ensureUploadTempFolder(scope) {
+        if (!state.uploadTempFolders) state.uploadTempFolders = { nt: null, resp: null };
+        if (state.uploadTempFolders[scope]) return state.uploadTempFolders[scope];
+        const folder = await buildTempUploadFolder();
+        state.uploadTempFolders[scope] = folder;
+        return folder;
+      }
+
+      async function cleanupUploadSession(scope) {
+        const files = [...(state.uploadedFiles[scope] || [])];
+        for (const f of files) cancelAttachmentPrep(f);
+        await Promise.all(files.map((f) => deleteAttachmentTempKey(f)));
+        if (state.uploadTempFolders) state.uploadTempFolders[scope] = null;
+      }
+
+      function attachmentPrepStatusLabel(fileEntry) {
+        if (!fileEntry) return '';
+        if (fileEntry.prepStatus === 'transcoding') return fileEntry.prepStatusMsg || 'جاري التحويل…';
+        if (fileEntry.prepStatus === 'uploading') {
+          if (fileEntry.prepUploadTotal > 0) {
+            const pct = Math.min(99, Math.round((fileEntry.prepUploadDone / fileEntry.prepUploadTotal) * 100));
+            return `جاري الرفع… ${pct}%`;
+          }
+          return fileEntry.prepStatusMsg || 'جاري الرفع…';
+        }
+        if (fileEntry.prepStatus === 'ready') return fileEntry.transcoded ? 'جاهز (H.264)' : 'جاهز للإرسال';
+        if (fileEntry.prepStatus === 'error') return 'فشل: ' + (fileEntry.prepError || 'خطأ');
+        if (fileEntry.prepStatus === 'cancelled') return 'ملغى';
+        return 'جاري التحضير…';
+      }
+
+      function updateAttachmentPrepUi(scope, fileId) {
+        const file = (state.uploadedFiles[scope] || []).find((f) => f._fileId === fileId);
+        if (!file) return;
+        const row = document.querySelector(`[data-att-file-id="${fileId}"]`);
+        if (!row) return;
+        const statusEl = row.querySelector('.file-item-status');
+        if (statusEl) statusEl.textContent = attachmentPrepStatusLabel(file);
+      }
+
+      async function uploadPreparedBlobToR2(objectKey, body, contentType, fileName, onProgress, cancelHandle) {
+        const fileSize = (body instanceof Blob && body.size) || (body && body.byteLength) || 0;
+        const isVideo = /^video\//i.test(contentType)
+          || /\.(mp4|mov|webm|m4v|avi|mkv)$/i.test(String(fileName || ''));
+        const needsMultipart = fileSize > getR2MultipartThreshold();
+        const onPartProgress = (done, total) => {
+          if (typeof onProgress === 'function') onProgress(done, total);
+        };
+
+        const uploadViaDirect = async () => {
+          await uploadR2DirectPut(objectKey, body, contentType, cancelHandle);
+        };
+        const uploadViaProxy = async () => {
+          await uploadR2ViaEdgeProxy(objectKey, body, contentType);
+        };
+        const uploadViaMultipart = async () => {
+          await uploadR2MultipartViaEdge(objectKey, body, contentType, onPartProgress, cancelHandle);
+        };
+
+        if (_r2DirectPutBlocked) {
+          if (needsMultipart) await uploadViaMultipart();
+          else await uploadViaProxy();
+        } else if (needsMultipart) {
+          try {
+            await uploadViaDirect();
+          } catch (directErr) {
+            const directMsg = String(directErr?.message || directErr);
+            if (/R2_DIRECT_CORS_BLOCKED|CORS|Failed to fetch|Load failed|blocked/i.test(directMsg)) {
+              markR2DirectPutBlocked();
+              await uploadViaMultipart();
+            } else {
+              throw directErr;
+            }
+          }
+        } else if (isVideo || fileSize > (4 * 1024 * 1024)) {
+          try {
+            await uploadViaDirect();
+          } catch (directErr) {
+            const directMsg = String(directErr?.message || directErr);
+            if (/R2_DIRECT_CORS_BLOCKED|CORS|Failed to fetch|Load failed|blocked/i.test(directMsg)) {
+              markR2DirectPutBlocked();
+              await uploadViaProxy();
+            } else {
+              throw directErr;
+            }
+          }
+        } else {
+          try {
+            await uploadViaProxy();
+          } catch (proxyErr) {
+            const proxyMsg = String(proxyErr?.message || proxyErr);
+            if (!/R2_EDGE_PAYLOAD_TOO_LARGE|413|كبير جداً|403|غير مصرح|502|504|timeout|Load failed/i.test(proxyMsg)) {
+              throw proxyErr;
+            }
+            await uploadViaDirect();
+          }
+        }
+      }
+
+      async function waitForAttachmentPrep(fileEntry, timeoutMs) {
+        if (!fileEntry) throw new Error('ملف غير موجود');
+        if (fileEntry.prepStatus === 'ready') return fileEntry;
+        if (fileEntry.prepStatus === 'error') {
+          throw new Error(fileEntry.prepError || 'فشل تجهيز المرفق');
+        }
+        if (fileEntry._prepPromise) {
+          const limit = timeoutMs || 900000;
+          const timeout = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('انتهت مهلة تجهيز المرفق — تحقق من الاتصال')), limit);
+          });
+          await Promise.race([fileEntry._prepPromise, timeout]);
+        }
+        if (fileEntry.prepStatus === 'ready') return fileEntry;
+        if (fileEntry.prepStatus === 'error') {
+          throw new Error(fileEntry.prepError || 'فشل تجهيز المرفق');
+        }
+        throw new Error('المرفق غير جاهز بعد');
+      }
+
+      async function runAttachmentBackgroundPrep(scope, fileEntry) {
+        if (!fileEntry || fileEntry._prepStarted) return;
+        fileEntry._prepStarted = true;
+        fileEntry.prepStatus = 'preparing';
+        fileEntry._cancelHandle = makeAttachmentCancelHandle();
+        updateAttachmentPrepUi(scope, fileEntry._fileId);
+
+        const job = (async () => {
+          const backend = await resolveR2Backend();
+          if (backend === 'none') {
+            if (allowAttachmentDevSkip()) {
+              fileEntry.prepStatus = 'ready';
+              fileEntry.devSkipR2 = true;
+              return;
+            }
+            throw new Error('لم يُجرَ إعداد تخزين المرفقات');
+          }
+
+          const folder = await ensureUploadTempFolder(scope);
+          let body = fileEntry.rawFile;
+          let contentType = String(fileEntry.type || '').trim() || 'application/octet-stream';
+          let uploadName = fileEntry.name || 'file';
+
+          if (!body && fileEntry.base64) {
+            const byteCharacters = atob(fileEntry.base64);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) byteNumbers[i] = byteCharacters.charCodeAt(i);
+            body = new Uint8Array(byteNumbers);
+            if (!contentType || contentType === 'application/octet-stream') contentType = 'image/jpeg';
+          }
+
+          const isVideo = fileEntry.rawFile instanceof Blob
+            || /^video\//i.test(contentType)
+            || /\.(mp4|mov|webm|m4v|avi|mkv)$/i.test(uploadName);
+
+          if (isVideo && body instanceof Blob) {
+            const vCodec = await sniffMp4VideoCodec(body);
+            if (isHevcCodec(vCodec) && isAtharDesktopViewer()) {
+              if (fileEntry._cancelled) return;
+              fileEntry.prepStatus = 'transcoding';
+              updateAttachmentPrepUi(scope, fileEntry._fileId);
+              const { blob } = await transcodeHevcBlobToPlayableBlob(body, contentType, (msg) => {
+                fileEntry.prepStatusMsg = msg;
+                updateAttachmentPrepUi(scope, fileEntry._fileId);
+              });
+              if (fileEntry._cancelled) return;
+              body = blob;
+              contentType = 'video/mp4';
+              fileEntry.transcoded = true;
+            }
+          }
+
+          if (fileEntry._cancelled) return;
+
+          const objectKey = buildR2ObjectKey(folder, uploadName);
+          fileEntry.prepStatus = 'uploading';
+          fileEntry.prepUploadDone = 0;
+          fileEntry.prepUploadTotal = 0;
+          updateAttachmentPrepUi(scope, fileEntry._fileId);
+
+          await uploadPreparedBlobToR2(
+            objectKey,
+            body,
+            contentType,
+            uploadName,
+            (done, total) => {
+              fileEntry.prepUploadDone = done;
+              fileEntry.prepUploadTotal = total;
+              updateAttachmentPrepUi(scope, fileEntry._fileId);
+            },
+            fileEntry._cancelHandle,
+          );
+
+          if (fileEntry._cancelled) {
+            await deleteR2TempObject(objectKey);
+            return;
+          }
+
+          fileEntry.tempKey = objectKey;
+          fileEntry.prepStatus = 'ready';
+          updateAttachmentPrepUi(scope, fileEntry._fileId);
+        })().catch(async (err) => {
+          if (fileEntry._cancelled || String(err?.message || err) === 'UPLOAD_CANCELLED') {
+            fileEntry.prepStatus = 'cancelled';
+            return;
+          }
+          fileEntry.prepStatus = 'error';
+          fileEntry.prepError = String(err?.message || err);
+          updateAttachmentPrepUi(scope, fileEntry._fileId);
+          if (isMirsadDebugLog()) console.warn('[Prep] فشل تجهيز مرفق', err);
+        });
+
+        fileEntry._prepPromise = job;
+        await job;
       }
 
       function fileToBase64(file) {
@@ -44716,6 +45005,34 @@
         return args;
       }
 
+      async function transcodeHevcBlobToPlayableBlob(blob, mimeType, onStatus) {
+        if (!(blob instanceof Blob) || !blob.size) throw new Error('ملف فيديو غير صالح');
+        if (blob.size > HEVC_TRANSCODE_MAX_BYTES) {
+          throw new Error('حجم الفيديو ' + Math.round(blob.size / 1048576) + 'MB — كبير للتحويل داخل المتصفح');
+        }
+        const ffmpeg = await ensureFfmpegTranscoder(onStatus);
+        const hasAudio = await mp4BlobHasAudioTrack(blob);
+        onStatus?.('تحويل H.265 → H.264 (720p · preset fast' + (hasAudio ? ' · صوت' : '') + ')…');
+        const inName = 'hevc_in.mp4';
+        const outName = 'h264_out.mp4';
+        await ffmpeg.writeFile(inName, new Uint8Array(await blob.arrayBuffer()));
+        const execHb = setInterval(() => {
+          onStatus?.('جاري التحويل… لا تغلق الصفحة');
+        }, 8000);
+        try {
+          await ffmpeg.exec(buildHevcToH264FfmpegArgs(inName, outName, hasAudio));
+        } finally {
+          clearInterval(execHb);
+        }
+        const data = await ffmpeg.readFile(outName);
+        try {
+          await ffmpeg.deleteFile(inName);
+          await ffmpeg.deleteFile(outName);
+        } catch (_) { /* */ }
+        const outBlob = new Blob([data], { type: 'video/mp4' });
+        return { blob: outBlob };
+      }
+
       async function transcodeHevcStreamToPlayableBlob(streamUrl, mimeType, onStatus) {
         const len = await probeR2StreamContentLength(streamUrl);
         if (len > HEVC_TRANSCODE_MAX_BYTES) {
@@ -45350,27 +45667,43 @@
               finalType = 'image/jpeg';
             } else if (isVid) {
               const vCodec = await sniffMp4VideoCodec(file);
-              if (isHevcCodec(vCodec)) {
-                showToast('تحذير: قد لا يُشغّل هذا الفيديو داخل المنصة — جرّب H.264 من إعدادات التسجيل.', 'info');
+              if (isHevcCodec(vCodec) && isAtharDesktopViewer()) {
+                showToast('سيتم تحويل الفيديو إلى H.264 تلقائياً أثناء التحضير.', 'info');
+              } else if (isHevcCodec(vCodec)) {
+                showToast('تحذير: قد لا يُشغّل هذا الفيديو على الكمبيوتر — جرّب H.264 من إعدادات التسجيل.', 'info');
               }
             }
 
+            const fileId = (typeof crypto !== 'undefined' && crypto.randomUUID)
+              ? crypto.randomUUID()
+              : ('f_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9));
+
             state.uploadedFiles[scope].push({
+              _fileId: fileId,
               name: uploadFile.name,
               type: finalType,
               base64: base64Data,
               rawFile: isImg ? null : uploadFile,
-              blobUrl: URL.createObjectURL(uploadFile)
+              blobUrl: URL.createObjectURL(uploadFile),
+              prepStatus: 'preparing',
+              prepStatusMsg: '',
+              prepError: null,
+              tempKey: null,
+              transcoded: false,
             });
             const idx = state.uploadedFiles[scope].length - 1;
+            const entry = state.uploadedFiles[scope][idx];
 
+            item.dataset.attFileId = fileId;
             item.innerHTML = `
             <div class="file-item-content">
               <i class="fas fa-file-alt" style="color:var(--blue)"></i>
               <span style="flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${Sec.escapeHTML(uploadFile.name)}">${Sec.escapeHTML(uploadFile.name)}</span>
-              <span style="font-size:11px; color:var(--text3);">جاهز للرفع</span>
-              <button onclick="removeFile('${scope}', ${idx}, this)">حذف المرفق <i class="fas fa-times"></i></button>
+              <span class="file-item-status" style="font-size:11px; color:var(--text3);">${Sec.escapeHTML(attachmentPrepStatusLabel(entry))}</span>
+              <button onclick="removeFileById('${scope}', '${fileId}', this)">حذف المرفق <i class="fas fa-times"></i></button>
             </div>`;
+
+            void runAttachmentBackgroundPrep(scope, entry);
           } catch (err) {
             item.innerHTML = `<i class="fas fa-times" style="color:var(--red)"></i><span>${Sec.escapeHTML(file.name)} - فشل التحضير</span>`;
             showToast('فشل معالجة الملف: ' + err.message, 'error');
@@ -45379,7 +45712,21 @@
         event.target.value = '';
       }
 
+      function removeFileById(scope, fileId, btn) {
+        const list = state.uploadedFiles[scope] || [];
+        const idx = list.findIndex((f) => f._fileId === fileId);
+        if (idx === -1) return;
+        const file = list[idx];
+        cancelAttachmentPrep(file);
+        void deleteAttachmentTempKey(file).finally(() => {
+          list.splice(idx, 1);
+          if (btn) btn.closest('.file-item')?.remove();
+        });
+      }
+
       function removeFile(scope, idx, btn) {
+        const file = state.uploadedFiles[scope]?.[idx];
+        if (file?._fileId) return removeFileById(scope, file._fileId, btn);
         state.uploadedFiles[scope].splice(idx, 1);
         btn.closest('.file-item').remove();
       }
@@ -48495,38 +48842,46 @@
         try {
           if (respFiles.length > 0) {
             window.isUploading = true;
-            const tempFolder = await buildTempUploadFolder();
             const uploadedAtts = [];
-            for (const file of respFiles) {
+            for (let i = 0; i < respFiles.length; i++) {
+              const file = respFiles[i];
               if (activeBtn) {
-                activeBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> جاري رفع المرفقات (${uploadedAtts.length + 1}/${respFiles.length})...`;
+                activeBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> انتظار المرفقات (${i + 1}/${respFiles.length})…`;
               }
-              const result = await uploadToCloudflare(file, tempFolder, me.name, (done, total) => {
-                if (activeBtn) {
-                  const pct = total ? Math.round((done / total) * 100) : 0;
-                  activeBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> رفع ${uploadedAtts.length + 1}/${respFiles.length} — ${pct}%`;
+              await waitForAttachmentPrep(file);
+              let fileId = file.tempKey;
+              if (!fileId && file.devSkipR2) {
+                const tempFolder = await ensureUploadTempFolder('resp');
+                const result = await uploadToCloudflare(file, tempFolder, me.name, (done, total) => {
+                  if (activeBtn) {
+                    const pct = total ? Math.round((done / total) * 100) : 0;
+                    activeBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> رفع ${i + 1}/${respFiles.length} — ${pct}%`;
+                  }
+                });
+                if (!result || !result.success || !result.fileId) {
+                  throw new Error('فشل رفع أحد المرفقات — تأكد من الاتصال وحاول مرة أخرى');
                 }
-              });
-              if (!result || !result.success || !result.fileId) {
-                throw new Error('فشل رفع أحد المرفقات — تأكد من الاتصال وحاول مرة أخرى');
+                fileId = result.fileId;
               }
+              if (!fileId) throw new Error('المرفق غير مرفوع بعد — انتظر اكتمال الرفع');
               uploadedAtts.push({
                 n: file.name,
-                p: result.fileId,
+                p: fileId,
                 s: tr.actionLabel,
                 b: me.name,
                 r: ROLE_LABELS[me.role] || me.role,
                 t: getNow(),
-                ...(result.devDataUrl ? { u: result.devDataUrl } : {})
+                ...(file.devDataUrl ? { u: file.devDataUrl } : {})
               });
             }
-            for (let i = 0; i < uploadedAtts.length; i++) {
-              const oldKey = uploadedAtts[i].p;
-              if (!oldKey || !oldKey.startsWith('temp_')) continue;
+            await Promise.all(uploadedAtts.map(async (att, i) => {
+              const oldKey = att.p;
+              if (!oldKey || !oldKey.startsWith('temp_')) return;
               const newKey = `${r2Folder}/${oldKey.split('/').pop()}`;
               await callR2StorageFn('moveObject', { fromKey: oldKey, toKey: newKey });
               uploadedAtts[i].p = newKey;
-            }
+            }));
+            if (state.uploadTempFolders) state.uploadTempFolders.resp = null;
             newAttachments = newAttachments.concat(uploadedAtts);
           }
 
@@ -59101,6 +59456,7 @@
       window.submitNewTicket = submitNewTicket;
       window.handleFiles = handleFiles;
       window.removeFile = removeFile;
+      window.removeFileById = removeFileById;
       window.filterTickets = filterTickets;
       window.wfStatusToggle = wfStatusToggle;
       window.wfStatusPick = wfStatusPick;

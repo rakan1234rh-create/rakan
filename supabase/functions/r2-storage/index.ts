@@ -529,6 +529,23 @@ Deno.serve(async (req) => {
       return json({ ok: true, key })
     }
 
+    if (action === 'deleteObject') {
+      const key = assertTempUploadKey(body.key || '', user.id)
+      try {
+        await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }))
+        return json({ ok: true, key })
+      } catch (e: unknown) {
+        const name =
+          e && typeof e === 'object' && 'name' in e
+            ? String((e as { name: string }).name)
+            : ''
+        if (name === 'NotFound' || name === 'NoSuchKey' || name === '404') {
+          return json({ ok: true, key, missing: true })
+        }
+        throw e
+      }
+    }
+
     if (action === 'signReplacePut') {
       const key = assertKey(body.key)
       if (!/\.(mp4|mov|m4v|webm|avi|mkv)$/i.test(key)) {
