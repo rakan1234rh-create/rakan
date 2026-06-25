@@ -13434,19 +13434,33 @@
       overflow: visible;
       box-shadow: none;
       background: transparent;
+      width: 112px;
+      height: 112px;
     }
 
     .profile-avatar-founding-ring {
+      position: relative;
       display: block;
       width: 100%;
       height: 100%;
       border-radius: 50%;
-      padding: 4px;
-      background: linear-gradient(145deg, #0f4d32 0%, #d4af37 38%, #1a6b45 72%, #0a3d28 100%);
+      padding: 6px;
+      background: conic-gradient(from 210deg, #083d28 0%, #c9a227 16%, #f7e7b0 28%, #d4af37 42%, #1a6b45 58%, #c9a227 72%, #f7e7b0 84%, #083d28 100%);
       box-shadow:
-        0 0 0 2px #111,
-        0 8px 22px rgba(0, 0, 0, .18),
-        inset 0 0 0 1px rgba(255, 255, 255, .22);
+        0 0 0 2px #0a0a0a,
+        0 0 0 4px #d4af37,
+        0 10px 28px rgba(0, 0, 0, .24),
+        inset 0 0 12px rgba(0, 0, 0, .18);
+    }
+
+    .profile-avatar-founding-ring::after {
+      content: '';
+      position: absolute;
+      inset: 3px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, .35);
+      pointer-events: none;
+      z-index: 2;
     }
 
     .profile-avatar-founding-ring__inner {
@@ -13455,14 +13469,17 @@
       height: 100%;
       border-radius: 50%;
       overflow: hidden;
-      background: #d9c4a0;
-      padding: 7%;
+      background: #c9a66b;
+      padding: 0;
       box-sizing: border-box;
+      box-shadow: inset 0 0 0 2px rgba(0, 0, 0, .35);
     }
 
     .profile-avatar-photo--founding {
-      object-fit: contain !important;
-      background: #d9c4a0;
+      object-fit: cover !important;
+      object-position: center 18%;
+      background: #c9a66b;
+      border-radius: 50%;
     }
 
     .avatar-picker-opt__art .profile-avatar-founding-ring {
@@ -13471,8 +13488,9 @@
       aspect-ratio: 1;
     }
 
-    .avatar-picker-opt__art.profile-avatar-founding-ring .profile-avatar-founding-ring__inner {
-      padding: 8%;
+    .mr-topbar-user-icon.has-user-avatar .profile-avatar-founding-ring {
+      width: 100%;
+      height: 100%;
     }
 
     .profile-avatar-photo {
@@ -30318,7 +30336,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-founding-avatar-v1038">
+  <meta name="app-build" content="athar-founding-frame-v1039">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
