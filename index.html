@@ -30140,7 +30140,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-profile-job-title-v1025">
+  <meta name="app-build" content="athar-profile-staff-clean-v1026">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -30502,7 +30502,7 @@
                 <div class="profile-hero">
                   <div class="profile-hero__av" id="profilePageAv" aria-hidden="true">—</div>
                   <h2 class="profile-hero__name" id="profilePageName">—</h2>
-                  <span class="profile-hero__role" id="profilePageRole">—</span>
+                  <span class="profile-hero__role" id="profilePageRole" hidden>—</span>
                 </div>
                 <div class="profile-info-card" aria-label="بيانات الحساب">
                   <div class="profile-info-row">
@@ -39899,7 +39899,7 @@
           if (el) el.textContent = (val && String(val).trim()) ? String(val).trim() : '—';
         };
         setText('profilePageName', u.name);
-        setText('profilePageRole', ROLE_LABELS[roleKey] || u.role);
+        const roleEl = document.getElementById('profilePageRole');
         setText('profilePageEmpNum', u.employee_number ? padEmpNum(u.employee_number) : '—');
         const branch = state._branchById?.get(u.branch_id) || (state.branches || []).find(b => b.id === u.branch_id);
         setText('profilePageBranch', branch?.name);
@@ -39909,6 +39909,10 @@
         const isStaffRole = roleKey === 'employee' || roleKey === 'branch_manager';
         const regionRow = document.getElementById('profilePageRegionRow');
         const jobTitleRow = document.getElementById('profilePageJobTitleRow');
+        if (roleEl) {
+          roleEl.hidden = isStaffRole;
+          if (!isStaffRole) setText('profilePageRole', ROLE_LABELS[roleKey] || u.role);
+        }
         if (regionRow) regionRow.hidden = isStaffRole;
         if (jobTitleRow) jobTitleRow.hidden = !isStaffRole;
         if (isStaffRole) {
