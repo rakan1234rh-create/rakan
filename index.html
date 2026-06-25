@@ -29650,7 +29650,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-hevc-worker-fix-v1001">
+  <meta name="app-build" content="athar-hevc-replace-v1002">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -32299,6 +32299,93 @@
           throw new Error(msg);
         }
         return data;
+      }
+
+      async function uploadR2ReplaceViaEdgeProxy(objectKey, body, contentType, allowRetry = true) {
+        let session = await ensureSupabaseSessionFresh();
+        if (!session?.access_token) {
+          const { data: { session: s2 } } = await sb.auth.getSession();
+          session = s2;
+        }
+        if (!session?.access_token) {
+          throw new Error('انتهت الجلسة، يرجى تسجيل الدخول من جديد');
+        }
+
+        const res = await fetch(R2_STORAGE_FN_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': contentType,
+            'apikey': SUPABASE_ANON,
+            'Authorization': `Bearer ${session.access_token}`,
+            'X-R2-Action': 'replaceObject',
+            'X-R2-Key': objectKey,
+          },
+          body,
+        });
+
+        let data = {};
+        try { data = await res.json(); } catch (_) { }
+
+        if (res.status === 401 && allowRetry) {
+          invalidateR2BackendResolution();
+          const { data: refreshed } = await sb.auth.refreshSession();
+          if (refreshed.session?.access_token) {
+            return uploadR2ReplaceViaEdgeProxy(objectKey, body, contentType, false);
+          }
+        }
+
+        if (!res.ok) {
+          const msg = data.error || data.message || `فشل استبدال الملف (${res.status})`;
+          if (res.status === 401) {
+            throw new Error('انتهت الجلسة — سجّل الخروج ثم الدخول من جديد.');
+          }
+          if (res.status === 413) {
+            throw new Error('R2_EDGE_PAYLOAD_TOO_LARGE');
+          }
+          throw new Error(msg);
+        }
+        return data;
+      }
+
+      async function uploadR2DirectReplacePut(objectKey, body, contentType) {
+        const { url } = await callR2StorageFn('signReplacePut', { key: objectKey, contentType });
+        await new Promise((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open('PUT', url, true);
+          xhr.setRequestHeader('Content-Type', contentType);
+          xhr.timeout = 10 * 60 * 1000;
+          xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              markR2DirectPutUnblocked();
+              resolve();
+            } else reject(new Error('رفض استبدال الملف (' + xhr.status + '): ' + String(xhr.responseText || '').slice(0, 200)));
+          };
+          xhr.onerror = () => reject(new Error('R2_DIRECT_CORS_BLOCKED'));
+          xhr.ontimeout = () => reject(new Error('انتهت مهلة الرفع — جرّب شبكة أقوى أو ملفاً أصغر'));
+          try {
+            xhr.send(body);
+          } catch (sendErr) {
+            reject(sendErr);
+          }
+        });
+      }
+
+      async function replaceR2AttachmentObject(objectKey, body, contentType) {
+        const key = String(objectKey || '').trim();
+        if (!key || key.includes('..')) throw new Error('مسار الملف غير صالح');
+        const ct = contentType || 'video/mp4';
+        try {
+          await uploadR2DirectReplacePut(key, body, ct);
+        } catch (e) {
+          const msg = String(e?.message || e);
+          if (/CORS|R2_DIRECT_CORS_BLOCKED/i.test(msg)) {
+            await uploadR2ReplaceViaEdgeProxy(key, body, ct);
+          } else if (/R2_EDGE_PAYLOAD_TOO_LARGE/i.test(msg)) {
+            throw new Error('حجم الفيديو كبير لاستبداله عبر الخادم — جرّب شبكة أقوى أو ملفاً أصغر');
+          } else {
+            throw e;
+          }
+        }
       }
 
       async function uploadR2DirectPut(objectKey, body, contentType) {
@@ -44213,6 +44300,19 @@
       const VIDEO_BLOB_MAX_BYTES = 6 * 1024 * 1024;
       const HEVC_TRANSCODE_MAX_BYTES = 20 * 1024 * 1024;
       let _ffmpegTranscodeInstance = null;
+      const _hevcReplaceInflight = {};
+
+      function isAtharDesktopViewer() {
+        return document.documentElement.classList.contains('mr-desktop-ui')
+          || window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+      }
+
+      function clearAttachmentVideoCaches(cacheKey) {
+        if (!cacheKey) return;
+        delete _cloudflareCache[cacheKey];
+        delete _videoStreamFallback[cacheKey];
+        delete _videoDirectR2Url[cacheKey];
+      }
 
       async function fetchAuthedStreamResponse(playUrl, init) {
         const res = await fetch(playUrl, {
@@ -44354,17 +44454,17 @@
           : '';
         const retry = `<button type="button" class="btn btn-sm btn-secondary" style="margin:4px" onclick="window.retryHevcVideoPlayback&&window.retryHevcVideoPlayback()"><i class="fas fa-redo"></i> إعادة المحاولة</button>`;
         const transcode = showTranscode
-          ? `<button type="button" class="btn btn-sm btn-primary" style="margin:4px" onclick="window.transcodeHevcVideoPlayback&&window.transcodeHevcVideoPlayback()"><i class="fas fa-film"></i> تحويل وتشغيل</button>`
+          ? `<button type="button" class="btn btn-sm btn-primary" style="margin:4px" onclick="window.transcodeHevcVideoPlayback&&window.transcodeHevcVideoPlayback()"><i class="fas fa-film"></i> تحويل وحفظ H.264</button>`
           : '';
         return `
           <div style="padding:20px;background:rgba(0,0,0,0.55);border-radius:10px;text-align:center;max-width:460px;line-height:1.7">
             <i class="fas fa-video-slash" style="color:var(--amber);font-size:28px;margin-bottom:10px"></i>
             <p style="margin:0 0 8px;font-weight:700">ترميز H.265 — Chrome لا يشغّله مباشرة</p>
-            <p style="font-size:12px;color:#cbd5e1;margin:0 0 10px">الملف سليم على R2. اختر <b>تحويل وتشغيل</b> داخل المنصة، أو حمّله / افتحه في تبويب.</p>
-            <p style="font-size:11px;color:#fbbf24;margin:0">للتسجيلات الجديدة: اضبط الكاميرا على <b>H.264</b> بدل H.265.</p>
+            <p style="font-size:12px;color:#cbd5e1;margin:0 0 10px">الملف سليم على R2. اضغط <b>تحويل وحفظ H.264</b> — يُستبدل الملف الأصلي (بدون مضاعفة المساحة) ثم يُشغَّل.</p>
+            <p style="font-size:11px;color:#fbbf24;margin:0">للتسجيلات الجديدة من الكاميرات: اضبط iVMS على <b>H.264</b>.</p>
             <p style="font-size:11px;color:#94a3b8;margin:10px 0 0">ويندوز: بعد تثبيت <a href="https://apps.microsoft.com/detail/9nmzlz57r3t7" target="_blank" rel="noopener" style="color:#93c5fd">HEVC Video Extensions</a> اضغط <b>إعادة المحاولة</b>.</p>
             <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:14px">${transcode}${retry}${tab}${dl}</div>
-            <p style="font-size:10px;color:#64748b;margin:12px 0 0">التحويل داخل المتصفح قد يستغرق دقائق للملفات الكبيرة.</p>
+            <p style="font-size:10px;color:#64748b;margin:12px 0 0">التحويل مرة واحدة — المرات التالية تشغيل فوري.</p>
           </div>`;
       }
 
@@ -44455,7 +44555,38 @@
           await ffmpeg.deleteFile(outName);
         } catch (_) { /* */ }
         const outBlob = new Blob([data], { type: 'video/mp4' });
-        return URL.createObjectURL(outBlob);
+        return { blobUrl: URL.createObjectURL(outBlob), blob: outBlob };
+      }
+
+      async function convertHevcAttachmentInPlace(r2Key, streamUrl, mimeType, onStatus, vid, cacheKey) {
+        const key = String(r2Key || '').trim();
+        if (!key || !isR2StreamPlayUrl(streamUrl)) {
+          throw new Error('لا يتوفر رابط بث صالح للتحويل');
+        }
+        if (_hevcReplaceInflight[key]) {
+          await _hevcReplaceInflight[key];
+          return null;
+        }
+        const job = (async () => {
+          const { blobUrl, blob } = await transcodeHevcStreamToPlayableBlob(streamUrl, mimeType, onStatus);
+          onStatus?.('حفظ H.264 مكان الملف الأصلي…');
+          await replaceR2AttachmentObject(key, blob, 'video/mp4');
+          clearAttachmentVideoCaches(cacheKey || cfCacheKey(key));
+          if (vid) {
+            resetAttViewerVideo(vid);
+            await attachVideoSourceAndWait(vid, blobUrl, 'video/mp4', 60000, false);
+            if (!(await waitVideoElementPlayable(vid, 20000))) {
+              throw new Error('تعذّر تشغيل الفيديو بعد الحفظ');
+            }
+          }
+          return blobUrl;
+        })();
+        _hevcReplaceInflight[key] = job;
+        try {
+          return await job;
+        } finally {
+          delete _hevcReplaceInflight[key];
+        }
       }
 
       window.retryHevcVideoPlayback = async function retryHevcVideoPlayback() {
@@ -44484,25 +44615,19 @@
         if (!ctx?.vid) return;
         const vid = ctx.vid;
         const streamUrl = ctx.streamUrl || readVideoStreamFallback(ctx.cacheKey);
-        if (!streamUrl || !isR2StreamPlayUrl(streamUrl)) {
-          showAttViewerLoader('<p style="color:#fbbf24">لا يتوفر رابط بث للتحويل — جرّب التحميل.</p>');
+        const r2Key = String(ctx.r2Key || ctx.fileId || '').trim();
+        if (!streamUrl || !r2Key) {
+          showAttViewerLoader('<p style="color:#fbbf24">لا يتوفر رابط للتحويل — جرّب التحميل.</p>');
           return;
         }
         const setStatus = (msg) => {
           const el = document.getElementById('hevc-tc-status');
           if (el) el.textContent = msg;
         };
-        showAttViewerLoader('<i class="fas fa-spinner fa-spin fa-2x"></i><p id="hevc-tc-status" style="font-size:14px;margin-top:10px">بدء التحويل…</p>');
+        showAttViewerLoader('<i class="fas fa-spinner fa-spin fa-2x"></i><p id="hevc-tc-status" style="font-size:14px;margin-top:10px">بدء التحويل والحفظ…</p>');
         try {
-          resetAttViewerVideo(vid);
-          const blobUrl = await transcodeHevcStreamToPlayableBlob(streamUrl, ctx.mime || 'video/mp4', setStatus);
-          setStatus('تشغيل الفيديو…');
-          await attachVideoSourceAndWait(vid, blobUrl, 'video/mp4', 60000, false);
-          if (await waitVideoElementPlayable(vid, 20000)) {
-            revealAttViewerMedia(vid);
-            return;
-          }
-          throw new Error('تعذّر تشغيل الفيديو بعد التحويل');
+          await convertHevcAttachmentInPlace(r2Key, streamUrl, ctx.mime || 'video/mp4', setStatus, vid, ctx.cacheKey);
+          revealAttViewerMedia(vid);
         } catch (e) {
           if (isMirsadDebugLog()) console.warn('[Viewer] فشل تحويل HEVC', e);
           const opts = buildHevcViewerHelpOpts(ctx.playUrl, ctx.cacheKey, 'h265', ctx);
@@ -44515,6 +44640,45 @@
           );
         }
       };
+
+      async function handleHevcCameraVideoPlayback(vid, fileId, name, ticketCtx, mime, ck, viewerLoadGen, streamFb, playUrl, codec) {
+        const streamUrl = streamFb || (isR2StreamPlayUrl(playUrl) ? playUrl : '');
+        const r2Key = String(fileId || '').trim();
+        const hevcCtx = {
+          vid,
+          streamUrl,
+          r2Key,
+          fileId: r2Key,
+          mime: mime || 'video/mp4',
+          viewerLoadGen,
+          cacheKey: ck,
+          playUrl,
+          codec: codec || 'h265',
+          fileBytes: streamUrl ? await probeR2StreamContentLength(streamUrl) : 0,
+        };
+        window._attHevcRetryCtx = hevcCtx;
+
+        if (isAtharDesktopViewer() && streamUrl && r2Key.includes('/') && hevcCtx.fileBytes <= HEVC_TRANSCODE_MAX_BYTES) {
+          const setStatus = (msg) => {
+            const el = document.getElementById('hevc-tc-status');
+            if (el) el.textContent = msg;
+            else showAttViewerLoader(`<i class="fas fa-spinner fa-spin fa-2x"></i><p id="hevc-tc-status" style="font-size:14px;margin-top:10px">${Sec.escapeHTML(msg)}</p>`);
+          };
+          showAttViewerLoader('<i class="fas fa-spinner fa-spin fa-2x"></i><p id="hevc-tc-status" style="font-size:14px;margin-top:10px">تسجيل H.265 — جاري التحويل والحفظ…</p>');
+          try {
+            if (viewerLoadGen !== state._attViewerLoadGen) return null;
+            await convertHevcAttachmentInPlace(r2Key, streamUrl, mime, setStatus, vid, ck);
+            if (viewerLoadGen !== state._attViewerLoadGen) return null;
+            revealAttViewerMedia(vid);
+            return r2Key;
+          } catch (autoErr) {
+            if (isMirsadDebugLog()) console.warn('[Viewer] تحويل HEVC تلقائي فشل', autoErr);
+          }
+        }
+
+        showHevcPlaybackHelp(playUrl, ck, codec, hevcCtx);
+        return null;
+      }
 
       async function fetchR2VideoBlob(url, mimeType) {
         const res = await fetch(url, { method: 'GET', mode: 'cors', credentials: 'omit' });
@@ -44711,6 +44875,8 @@
         const hevcCtx = {
           vid,
           streamUrl: streamFb || (isR2StreamPlayUrl(playUrl) ? playUrl : ''),
+          r2Key: String(fileId || '').trim(),
+          fileId: String(fileId || '').trim(),
           mime: mime || 'video/mp4',
           viewerLoadGen,
           fileBytes: streamFb ? await probeR2StreamContentLength(streamFb) : 0,
@@ -44723,8 +44889,7 @@
           if (isVideoElementPlayable(vid)) return playUrl;
         } catch (playErr) {
           if (playErr?.code === 'HEVC') {
-            showHevcPlaybackHelp(playUrl, ck, playErr.codec || 'h265', hevcCtx);
-            return null;
+            return await handleHevcCameraVideoPlayback(vid, fileId, name, ticketCtx, mime, ck, viewerLoadGen, streamFb, playUrl, playErr.codec || 'h265');
           }
           playErrMediaCode = playErr?.mediaCode || (playErr?.message === 'CODEC_NOT_SUPPORTED' ? 4 : 0);
           if (isMirsadDebugLog()) console.warn('[Viewer] فشل تشغيل الفيديو', playErr);
@@ -44733,6 +44898,9 @@
 
         let codec = await sniffCodecFromStreamUrl(streamFb || playUrl);
         if (codec === 'unknown' && playErrMediaCode === 4) codec = 'h265';
+        if (codec === 'h265') {
+          return await handleHevcCameraVideoPlayback(vid, fileId, name, ticketCtx, mime, ck, viewerLoadGen, streamFb, playUrl, codec);
+        }
         showHevcPlaybackHelp(playUrl, ck, codec, hevcCtx);
       }
 

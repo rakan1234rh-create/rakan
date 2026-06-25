@@ -319,6 +319,50 @@ Deno.serve(async (req) => {
     }
   }
 
+  if (req.method === 'POST' && req.headers.get('X-R2-Action') === 'replaceObject') {
+    if (!env) return json({ error: 'R2 غير مُعدّ (متغيرات البيئة على الدالة)' }, 503)
+    const auth = await authenticateRequest(req)
+    if ('error' in auth && auth.error) return auth.error
+
+    try {
+      const key = assertKey(req.headers.get('X-R2-Key') || '')
+      if (!/\.(mp4|mov|m4v|webm|avi|mkv)$/i.test(key)) {
+        return json({ error: 'استبدال الملف مسموح لفيديوهات المرفقات فقط' }, 400)
+      }
+      const { data: canSee, error: permErr } = await auth.supabase.rpc(
+        'mirsad_user_can_see_attachment',
+        { p_key: key },
+      )
+      if (permErr) {
+        console.error('[r2-storage] replaceObject perm check failed', permErr.message)
+        return json({ error: 'تعذّر التحقق من صلاحية الملف' }, 500)
+      }
+      if (!canSee) {
+        return json({ error: 'غير مصرح بالوصول لهذا الملف' }, 403)
+      }
+      const contentType =
+        (req.headers.get('Content-Type') || '').trim() || guessContentTypeFromKey(key)
+      const bytes = new Uint8Array(await req.arrayBuffer())
+      if (!bytes.length) return json({ error: 'جسم فارغ' }, 400)
+      if (bytes.length > R2_PROXY_PUT_MAX_BYTES) {
+        return json({ error: 'حجم الملف كبير جداً للرفع عبر الخادم' }, 413)
+      }
+      const s3 = makeS3(env)
+      await s3.send(
+        new PutObjectCommand({
+          Bucket: env.bucket,
+          Key: key,
+          Body: bytes,
+          ContentType: contentType,
+        }),
+      )
+      return json({ ok: true, key, replaced: true })
+    } catch (e) {
+      console.error('[r2-storage] replaceObject', e)
+      return json({ error: 'حدث خطأ أثناء استبدال الملف' }, 500)
+    }
+  }
+
   if (req.method === 'POST' && req.headers.get('X-R2-Action') === 'putObject') {
     if (!env) return json({ error: 'R2 غير مُعدّ (متغيرات البيئة على الدالة)' }, 503)
     const auth = await authenticateRequest(req)
@@ -483,6 +527,35 @@ Deno.serve(async (req) => {
         }),
       )
       return json({ ok: true, key })
+    }
+
+    if (action === 'signReplacePut') {
+      const key = assertKey(body.key)
+      if (!/\.(mp4|mov|m4v|webm|avi|mkv)$/i.test(key)) {
+        return json({ error: 'استبدال الملف مسموح لفيديوهات المرفقات فقط' }, 400)
+      }
+      const { data: canSee, error: permErr } = await supabase.rpc(
+        'mirsad_user_can_see_attachment',
+        { p_key: key },
+      )
+      if (permErr) {
+        console.error('[r2-storage] signReplacePut perm check failed', permErr.message)
+        return json({ error: 'تعذّر التحقق من صلاحية الملف' }, 500)
+      }
+      if (!canSee) {
+        return json({ error: 'غير مصرح بالوصول لهذا الملف' }, 403)
+      }
+      const ct =
+        typeof body.contentType === 'string' && body.contentType.trim()
+          ? body.contentType.trim()
+          : guessContentTypeFromKey(key)
+      const cmd = new PutObjectCommand({
+        Bucket: bucket,
+        Key: key,
+        ContentType: ct,
+      })
+      const url = await getSignedUrl(s3, cmd, { expiresIn: 3600 })
+      return json({ url, key, contentType: ct })
     }
 
     if (action === 'signGet') {
