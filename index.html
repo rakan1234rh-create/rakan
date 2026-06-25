@@ -13268,6 +13268,279 @@
       }
     }
 
+    /* ── Profile page (full screen from topbar user icon) ── */
+    #tab-profile .profile-page-shell {
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      height: 100%;
+      overflow: hidden;
+      padding: 0 4px calc(env(safe-area-inset-bottom, 0px) + 8px);
+      box-sizing: border-box
+    }
+
+    html.mr-profile-page-active.mr-mobile-ui #appWrap .app-body {
+      overflow: hidden;
+      min-height: 0
+    }
+
+    html.mr-profile-page-active.mr-mobile-ui #appWrap .main {
+      margin-inline-start: 0 !important;
+      width: 100% !important;
+      max-width: none !important;
+      padding: 0 !important;
+      min-height: 0 !important;
+      height: 100dvh !important;
+      overflow: hidden !important;
+      display: flex !important;
+      flex-direction: column !important
+    }
+
+    html.mr-profile-page-active.mr-mobile-ui #appWrap .content {
+      padding: 0 !important;
+      min-height: 0 !important;
+      flex: 1 1 auto;
+      overflow: hidden !important;
+      display: flex !important;
+      flex-direction: column !important;
+      max-width: none !important
+    }
+
+    html.mr-profile-page-active.mr-mobile-ui #appWrap .topbar,
+    html.mr-profile-page-active.mr-mobile-ui #appWrap .sidebar,
+    html.mr-profile-page-active.mr-mobile-ui #appWrap .page-title-bar,
+    html.mr-profile-page-active.mr-mobile-ui #mobileBottomNav {
+      display: none !important;
+      visibility: hidden !important;
+      pointer-events: none !important
+    }
+
+    html.mr-profile-page-active.mr-mobile-ui #appWrap > .app-shell {
+      padding-top: 0 !important
+    }
+
+    html.mr-profile-page-active.mr-mobile-ui #tab-profile.active {
+      display: flex !important;
+      flex-direction: column;
+      flex: 1 1 auto;
+      min-height: 0;
+      height: auto;
+      overflow: hidden;
+      background: var(--mr-bg)
+    }
+
+    @media (min-width: 901px) {
+      html.mr-profile-page-active.mr-desktop-ui #appWrap .main:has(#tab-profile.active) {
+        margin-inline-start: 0 !important;
+        width: 100% !important;
+        max-width: none !important
+      }
+
+      html.mr-profile-page-active.mr-desktop-ui #appWrap .content:has(#tab-profile.active) {
+        padding: 0 !important;
+        max-width: none !important
+      }
+
+      html.mr-profile-page-active.mr-desktop-ui #tab-profile.active {
+        display: flex !important;
+        flex-direction: column;
+        min-height: calc(100dvh - var(--unified-topbar-h, 56px));
+        overflow: hidden
+      }
+
+      html.mr-profile-page-active.mr-desktop-ui #tab-profile .profile-page-shell {
+        max-width: 560px;
+        margin: 0 auto;
+        width: 100%;
+        padding-top: 8px
+      }
+    }
+
+    .profile-page-topbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 40px;
+      padding: max(4px, env(safe-area-inset-top, 0px)) 4px 12px;
+      flex-shrink: 0
+    }
+
+    .profile-page-topbar__title {
+      flex: 1;
+      min-width: 0;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--mr-text);
+      margin: 0
+    }
+
+    .profile-page-body {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 0 12px 24px
+    }
+
+    .profile-hero {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 20px 16px 24px;
+      margin-bottom: 16px
+    }
+
+    .profile-hero__av {
+      width: 88px;
+      height: 88px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 34px;
+      font-weight: 700;
+      background: var(--mr-primary);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, .12);
+      margin-bottom: 14px
+    }
+
+    .profile-hero__name {
+      margin: 0 0 6px;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--mr-text)
+    }
+
+    .profile-hero__role {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      background: var(--mr-primary-softer);
+      color: var(--mr-text-2)
+    }
+
+    .profile-info-card {
+      background: var(--mr-surface, var(--mr-bg2, #fff));
+      border: 1px solid var(--mr-border);
+      border-radius: 16px;
+      overflow: hidden;
+      margin-bottom: 16px
+    }
+
+    .profile-info-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--mr-border)
+    }
+
+    .profile-info-row:last-child {
+      border-bottom: none
+    }
+
+    .profile-info-row__lbl {
+      font-size: 13px;
+      color: var(--mr-text-3);
+      flex-shrink: 0
+    }
+
+    .profile-info-row__val {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--mr-text);
+      text-align: end;
+      word-break: break-word
+    }
+
+    .profile-actions-card {
+      background: var(--mr-surface, var(--mr-bg2, #fff));
+      border: 1px solid var(--mr-border);
+      border-radius: 16px;
+      overflow: hidden;
+      margin-bottom: 16px
+    }
+
+    .profile-action-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--mr-border)
+    }
+
+    .profile-action-row:last-child {
+      border-bottom: none
+    }
+
+    .profile-action-row__lbl {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--mr-text);
+      display: flex;
+      align-items: center;
+      gap: 10px
+    }
+
+    .profile-action-row__lbl i {
+      width: 18px;
+      text-align: center;
+      color: var(--mr-text-3);
+      font-size: 14px
+    }
+
+    .profile-action-btn {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      width: 100%;
+      padding: 14px 16px;
+      border: none;
+      border-bottom: 1px solid var(--mr-border);
+      background: transparent;
+      color: var(--mr-text);
+      font: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: start
+    }
+
+    .profile-action-btn:last-child {
+      border-bottom: none
+    }
+
+    .profile-action-btn:hover {
+      background: var(--mr-primary-softer)
+    }
+
+    .profile-action-btn i.fa-chevron-left {
+      color: var(--mr-text-3);
+      font-size: 11px
+    }
+
+    .profile-action-btn--logout {
+      color: var(--red-text, #dc2626)
+    }
+
+    .profile-action-btn--logout i:first-child {
+      color: var(--red-text, #dc2626)
+    }
+
+    [data-theme="dark"] .profile-info-card,
+    [data-theme="dark"] .profile-actions-card {
+      background: var(--mr-bg2)
+    }
+
     .notif-page-head {
       flex-shrink: 0;
       z-index: 30;
@@ -29860,7 +30133,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-login-chip-logout-v1018">
+  <meta name="app-build" content="athar-profile-page-v1019">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -30102,48 +30375,11 @@
                 style="display:none">0</span></button>
             <div class="mr-topbar-user" id="topbarUserChip" dir="rtl">
               <button type="button" class="mr-topbar-user-trigger mr-topbar-user-trigger--icon" id="topbarUserMenuBtn"
-                onclick="toggleTopbarUserMenu(event)" aria-label="الملف الشخصي" aria-haspopup="menu"
-                aria-expanded="false" aria-controls="topbarUserMenu">
+                onclick="openProfilePage(event)" aria-label="الملف الشخصي">
                 <span class="mr-topbar-user-icon" aria-hidden="true">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M6 20v-1a6 6 0 0 1 12 0v1"/></svg>
                 </span>
               </button>
-              <div class="mr-topbar-user-menu mr-topbar-user-menu--profile" id="topbarUserMenu" role="menu" aria-label="الملف الشخصي">
-                <div class="mr-topbar-user-menu__profile" role="presentation">
-                  <span class="mr-topbar-user-menu__profile-av" id="tbTopbarAv" aria-hidden="true">—</span>
-                  <div class="mr-topbar-user-menu__profile-info">
-                    <strong class="mr-topbar-name" id="tbName">—</strong>
-                    <span class="mr-topbar-role" id="tbRole">—</span>
-                  </div>
-                </div>
-                <div class="mr-topbar-user-menu__theme" role="presentation">
-                  <button type="button" class="theme-toggle theme-toggle--light" id="topbarThemeToggle" dir="ltr"
-                    aria-label="تبديل الوضع الداكن والفاتح" aria-pressed="false" onclick="toggleTheme(event)">
-                    <span class="theme-toggle__inner">
-                      <span class="theme-toggle__knob" id="themeToggleKnob" aria-hidden="true"></span>
-                      <span class="theme-toggle__ghost" id="themeToggleGhost" aria-hidden="true"></span>
-                    </span>
-                  </button>
-                </div>
-                <button type="button" role="menuitem" id="topbarPushToggle" onclick="toggleWebPushFromMenu(event)" hidden>
-                  <i class="fas fa-mobile-screen-button" aria-hidden="true"></i>
-                  <span id="topbarPushToggleLabel">تفعيل تنبيهات الجوال</span>
-                </button>
-                <button type="button" role="menuitem" onclick="openSettingsFromUserMenu(event)" data-perm="tab_settings">
-                  <i class="fas fa-shield-halved" aria-hidden="true"></i>
-                  <span>صلاحيات المنصة</span>
-                </button>
-                <button type="button" role="menuitem" onclick="openBroadcastsFromUserMenu(event)" data-perm="tab_broadcasts">
-                  <i class="fas fa-bullhorn" aria-hidden="true"></i>
-                  <span>نشرات الجوال</span>
-                </button>
-                <div class="mr-topbar-user-menu__divider" role="separator"></div>
-                <button type="button" role="menuitem" class="mr-topbar-user-menu__logout"
-                  onclick="handleLogoutFromUserMenu(event)">
-                  <i class="fas fa-arrow-right-from-bracket" aria-hidden="true"></i>
-                  <span>تسجيل الخروج</span>
-                </button>
-              </div>
             </div>
 
         </div>
@@ -30237,6 +30473,78 @@
               <div class="notif-list notif-list--page" id="notifPageList">
                 <div class="notif-empty"><i class="fas fa-bell-slash"></i>
                   <p>لا توجد تنبيهات</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- PROFILE -->
+          <div class="tab-content" id="tab-profile" hidden>
+            <div class="profile-page-shell">
+              <header class="profile-page-topbar">
+                <div class="notif-page-back-group" role="button" tabindex="0" aria-label="رجوع"
+                  onclick="closeProfilePage(event)"
+                  onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();closeProfilePage(event);}">
+                  <span class="notif-page-back" aria-hidden="true">
+                    <span class="notif-page-back__ico"><i class="fas fa-chevron-right"></i></span>
+                  </span>
+                  <span class="notif-page-back__label">رجوع</span>
+                </div>
+                <h4 class="profile-page-topbar__title">الملف الشخصي</h4>
+              </header>
+              <div class="profile-page-body">
+                <div class="profile-hero">
+                  <div class="profile-hero__av" id="profilePageAv" aria-hidden="true">—</div>
+                  <h2 class="profile-hero__name" id="profilePageName">—</h2>
+                  <span class="profile-hero__role" id="profilePageRole">—</span>
+                </div>
+                <div class="profile-info-card" aria-label="بيانات الحساب">
+                  <div class="profile-info-row">
+                    <span class="profile-info-row__lbl">الرقم الوظيفي</span>
+                    <strong class="profile-info-row__val" id="profilePageEmpNum" dir="ltr">—</strong>
+                  </div>
+                  <div class="profile-info-row">
+                    <span class="profile-info-row__lbl">الفرع</span>
+                    <strong class="profile-info-row__val" id="profilePageBranch">—</strong>
+                  </div>
+                  <div class="profile-info-row">
+                    <span class="profile-info-row__lbl">المنطقة</span>
+                    <strong class="profile-info-row__val" id="profilePageRegion">—</strong>
+                  </div>
+                  <div class="profile-info-row">
+                    <span class="profile-info-row__lbl">البريد الإلكتروني</span>
+                    <strong class="profile-info-row__val" id="profilePageEmail" dir="ltr">—</strong>
+                  </div>
+                  <div class="profile-info-row">
+                    <span class="profile-info-row__lbl">رقم الجوال</span>
+                    <strong class="profile-info-row__val" id="profilePagePhone" dir="ltr">—</strong>
+                  </div>
+                </div>
+                <div class="profile-actions-card" aria-label="إعدادات الحساب">
+                  <div class="profile-action-row">
+                    <span class="profile-action-row__lbl"><i class="fas fa-moon" aria-hidden="true"></i> الوضع الداكن / الفاتح</span>
+                    <button type="button" class="theme-toggle theme-toggle--light" id="topbarThemeToggle" dir="ltr"
+                      aria-label="تبديل الوضع الداكن والفاتح" aria-pressed="false" onclick="toggleTheme(event)">
+                      <span class="theme-toggle__inner">
+                        <span class="theme-toggle__knob" id="themeToggleKnob" aria-hidden="true"></span>
+                        <span class="theme-toggle__ghost" id="themeToggleGhost" aria-hidden="true"></span>
+                      </span>
+                    </button>
+                  </div>
+                  <button type="button" class="profile-action-btn" id="topbarPushToggle" onclick="toggleWebPushFromMenu(event)" hidden>
+                    <span class="profile-action-row__lbl"><i class="fas fa-mobile-screen-button" aria-hidden="true"></i> <span id="topbarPushToggleLabel">تفعيل تنبيهات الجوال</span></span>
+                    <i class="fas fa-chevron-left" aria-hidden="true"></i>
+                  </button>
+                  <button type="button" class="profile-action-btn" id="profilePageSettingsBtn" onclick="openSettingsFromUserMenu(event)" data-perm="tab_settings" hidden>
+                    <span class="profile-action-row__lbl"><i class="fas fa-shield-halved" aria-hidden="true"></i> صلاحيات المنصة</span>
+                    <i class="fas fa-chevron-left" aria-hidden="true"></i>
+                  </button>
+                  <button type="button" class="profile-action-btn" id="profilePageBroadcastsBtn" onclick="openBroadcastsFromUserMenu(event)" data-perm="tab_broadcasts" hidden>
+                    <span class="profile-action-row__lbl"><i class="fas fa-bullhorn" aria-hidden="true"></i> نشرات الجوال</span>
+                    <i class="fas fa-chevron-left" aria-hidden="true"></i>
+                  </button>
+                  <button type="button" class="profile-action-btn profile-action-btn--logout" onclick="handleLogoutFromUserMenu(event)">
+                    <span class="profile-action-row__lbl"><i class="fas fa-arrow-right-from-bracket" aria-hidden="true"></i> تسجيل الخروج</span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -34482,21 +34790,10 @@
         syncThemeToggleUi();
       }
 
-      function closeTopbarUserMenu() {
-        const menu = document.getElementById('topbarUserMenu');
-        const btn = document.getElementById('topbarUserMenuBtn');
-        if (menu) menu.classList.remove('open');
-        if (btn) btn.setAttribute('aria-expanded', 'false');
-      }
+      function closeTopbarUserMenu() { /* legacy — القائمة أُزيلت لصالح صفحة البروفايل */ }
 
       function toggleTopbarUserMenu(event) {
-        if (event) event.stopPropagation();
-        const menu = document.getElementById('topbarUserMenu');
-        const btn = document.getElementById('topbarUserMenuBtn');
-        if (!menu) return;
-        const open = menu.classList.toggle('open');
-        if (btn) btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-        if (open) syncTopbarUserMenuTheme();
+        openProfilePage(event);
       }
 
       function toggleThemeFromUserMenu(event) {
@@ -34506,7 +34803,7 @@
 
       async function handleLogoutFromUserMenu(event) {
         if (event) event.stopPropagation();
-        closeTopbarUserMenu();
+        syncProfilePageShell(false);
         await handleLogout();
       }
 
@@ -35572,7 +35869,7 @@
       }
 
       async function handleLogout() {
-        closeTopbarUserMenu();
+        syncProfilePageShell(false);
         if (!await confirmDialog('هل تريد تسجيل الخروج؟', { type: 'info', title: 'تسجيل الخروج', okText: 'خروج' })) return;
 
         // إلغاء كل قنوات الـ realtime
@@ -38728,7 +39025,8 @@
         violations: { title: 'أنواع المخالفات', sub: 'violation types' },
         settings: { title: 'صلاحيات المنصة', sub: 'platform permissions' },
         broadcasts: { title: 'نشرات الجوال', sub: 'mobile broadcasts' },
-        notifications: { title: 'التنبيهات', sub: 'notifications' }
+        notifications: { title: 'التنبيهات', sub: 'notifications' },
+        profile: { title: 'الملف الشخصي', sub: 'my profile' }
       };
 
       // ═══════════════════════════════════════════════════════════════════════════
@@ -39239,7 +39537,7 @@
         }
       }
 
-      const MR_TABS_WITH_OWN_TITLE = ['dashboard', 'newTicket', 'workflow', 'reports', 'locations', 'departments', 'violations', 'compliance', 'settings', 'broadcasts', 'notifications'];
+      const MR_TABS_WITH_OWN_TITLE = ['dashboard', 'newTicket', 'workflow', 'reports', 'locations', 'departments', 'violations', 'compliance', 'settings', 'broadcasts', 'notifications', 'profile'];
 
       function switchTabShellFast(tab, btn) {
         rememberActiveTab(tab);
@@ -39309,7 +39607,7 @@
             state._bellBadgeLocked = 0;
           }
         }
-        if (tab !== 'notifications') {
+        if (tab !== 'notifications' && tab !== 'profile') {
         const tabPerm = MR_TAB_PERM_MAP[tab];
         if (tabPerm && !hasPermission(tabPerm)) {
           const fallback = getFirstAllowedTab();
@@ -39426,8 +39724,14 @@
               document.getElementById('notifBellBtn')?.blur();
               blurHiddenChromeFocus();
             });
+            syncProfilePageShell(false);
+          } else if (tab === 'profile') {
+            syncNotifPageShell(false);
+            syncProfilePageShell(true);
+            renderProfilePage();
           } else {
             syncNotifPageShell(false);
+            syncProfilePageShell(false);
           }
           if (tab === 'workflow') {
             syncWorkflowAccessAndRender().finally(() => {
@@ -39503,33 +39807,92 @@
         const u = state.currentUser;
 
         const tbAv = document.getElementById('tbAv');
-        const tbName = document.getElementById('tbName');
         const initials = userDisplayInitials(u.name);
         if (tbAv) {
           tbAv.textContent = initials;
           tbAv.style.background = u.color;
         }
-        if (tbName) tbName.textContent = (u.name || '—').trim();
-        const tbRole = document.getElementById('tbRole');
-        const roleKey = normalizeUserRole(u.role);
-        if (tbRole) {
-          tbRole.textContent = (ROLE_LABELS[roleKey] || u.role || '—').trim();
-        }
-
-        const tbTopbarAv = document.getElementById('tbTopbarAv');
-        if (tbTopbarAv) {
-          tbTopbarAv.textContent = initials;
-          tbTopbarAv.style.background = u.color
-            ? `linear-gradient(145deg, ${u.color} 0%, color-mix(in srgb, ${u.color} 72%, #0f1224) 100%)`
-            : '';
-          tbTopbarAv.style.color = '#fff';
-        }
 
         const chip = document.getElementById('topbarUserChip');
+        const roleKey = normalizeUserRole(u.role);
         if (chip) {
           chip.style.display = u.auth_uid ? '' : 'none';
           if (roleKey) chip.dataset.role = roleKey;
         }
+
+        if (isProfilePageOpen()) renderProfilePage();
+      }
+
+      function isProfilePageOpen() {
+        return getActiveTabKey() === 'profile';
+      }
+
+      function syncProfilePageShell(active) {
+        document.documentElement.classList.toggle('mr-profile-page-active', !!active);
+        document.body.classList.toggle('mr-profile-page-active', !!active);
+      }
+
+      function renderProfilePage() {
+        const u = state.currentUser;
+        if (!u) return;
+        const roleKey = normalizeUserRole(u.role);
+        const initials = userDisplayInitials(u.name);
+        const av = document.getElementById('profilePageAv');
+        if (av) {
+          av.textContent = initials;
+          av.style.background = u.color
+            ? `linear-gradient(145deg, ${u.color} 0%, color-mix(in srgb, ${u.color} 72%, #0f1224) 100%)`
+            : '';
+        }
+        const setText = (id, val) => {
+          const el = document.getElementById(id);
+          if (el) el.textContent = (val && String(val).trim()) ? String(val).trim() : '—';
+        };
+        setText('profilePageName', u.name);
+        setText('profilePageRole', ROLE_LABELS[roleKey] || u.role);
+        setText('profilePageEmpNum', u.employee_number ? padEmpNum(u.employee_number) : '—');
+        const branch = state._branchById?.get(u.branch_id) || (state.branches || []).find(b => b.id === u.branch_id);
+        setText('profilePageBranch', branch?.name);
+        const region = branch
+          ? (state._regionById?.get(branch.region_id) || (state.regions || []).find(r => r.id === branch.region_id))
+          : null;
+        setText('profilePageRegion', region?.name);
+        setText('profilePageEmail', u.email);
+        setText('profilePagePhone', u.phone);
+        const settingsBtn = document.getElementById('profilePageSettingsBtn');
+        const bcBtn = document.getElementById('profilePageBroadcastsBtn');
+        if (settingsBtn) settingsBtn.hidden = !hasPermission('tab_settings');
+        if (bcBtn) bcBtn.hidden = !hasPermission('tab_broadcasts');
+        syncThemeToggleUi();
+        syncWebPushMenuLabel();
+        applyRBACUI({ skipCmpRefresh: true });
+      }
+
+      function openProfilePage(event) {
+        if (event) {
+          event.stopPropagation();
+          event.preventDefault();
+        }
+        if (!state.currentUser) return;
+        closeNotifPanel();
+        if (!isProfilePageOpen()) {
+          state._profileReturnTab = getActiveTabKey() || getRestorableTab() || 'dashboard';
+        }
+        document.getElementById('topbarUserMenuBtn')?.blur();
+        goTab('profile', null);
+      }
+
+      function closeProfilePage(event) {
+        if (event) {
+          event.stopPropagation();
+          event.preventDefault();
+        }
+        const returnTab = state._profileReturnTab
+          || getRestorableTab()
+          || getFirstAllowedTab()
+          || 'dashboard';
+        syncProfilePageShell(false);
+        goTab(returnTab, getNavButtonForTab(returnTab), { instantBack: true });
       }
 
       
@@ -56604,11 +56967,11 @@
           event.stopPropagation();
           event.preventDefault();
         }
-        closeTopbarUserMenu();
         if (!hasPermission('tab_settings')) {
           showToast('صلاحيات المنصة غير متاحة لحسابك', 'warning');
           return;
         }
+        syncProfilePageShell(false);
         goTab('settings', null);
       }
 
@@ -56617,11 +56980,11 @@
           event.stopPropagation();
           event.preventDefault();
         }
-        closeTopbarUserMenu();
         if (!hasPermission('tab_broadcasts')) {
           showToast('نشرات الجوال متاحة لمدير النظام فقط', 'warning');
           return;
         }
+        syncProfilePageShell(false);
         goTab('broadcasts', null);
       }
 
@@ -56630,7 +56993,6 @@
           event.stopPropagation();
           event.preventDefault();
         }
-        closeTopbarUserMenu();
         if (!isWebPushSupported()) {
           showToast('المتصفح لا يدعم تنبيهات الجوال على هذا الجهاز', 'warning');
           return;
@@ -57872,15 +58234,6 @@
           !panel.contains(e.target) &&
           !bell.contains(e.target)) {
           closeNotifPanel();
-        }
-      });
-
-      document.addEventListener('click', (e) => {
-        const menu = document.getElementById('topbarUserMenu');
-        const chip = document.getElementById('topbarUserChip');
-        if (!menu || !chip) return;
-        if (menu.classList.contains('open') && !chip.contains(e.target)) {
-          closeTopbarUserMenu();
         }
       });
 
@@ -59730,6 +60083,8 @@
       window.enterGuestBrowse = enterGuestBrowse;
       window.toggleTheme = toggleTheme;
       window.toggleTopbarUserMenu = toggleTopbarUserMenu;
+      window.openProfilePage = openProfilePage;
+      window.closeProfilePage = closeProfilePage;
       window.toggleThemeFromUserMenu = toggleThemeFromUserMenu;
       window.handleLogoutFromUserMenu = handleLogoutFromUserMenu;
       window.goTab = goTab;
