@@ -30140,7 +30140,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-profile-staff-remove-v1027">
+  <meta name="app-build" content="athar-profile-job-titles-v1028">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -32340,6 +32340,18 @@
         observer: 'الراصد',
         hr: 'الموارد البشرية'
       };
+
+      const STAFF_JOB_TITLE_LABELS = {
+        employee: 'أخصائي مبيعات',
+        branch_manager: 'مدير فرع'
+      };
+
+      function getStaffJobTitle(u) {
+        const roleKey = normalizeUserRole(u?.role);
+        const custom = String(u?.job_title || '').trim();
+        if (custom) return custom;
+        return STAFF_JOB_TITLE_LABELS[roleKey] || '—';
+      }
 
       const ROLE_COLORS = {
         admin: '#7C00FE',
@@ -39949,10 +39961,7 @@
           document.getElementById('profilePageRole')?.remove();
           document.getElementById('profilePageRegionRow')?.remove();
           const jobTitleRow = ensureProfileJobTitleRow();
-          if (jobTitleRow) {
-            const jobTitle = String(u.job_title || '').trim() || ROLE_LABELS[roleKey] || u.role || '—';
-            setText('profilePageJobTitle', jobTitle);
-          }
+          if (jobTitleRow) setText('profilePageJobTitle', getStaffJobTitle(u));
         } else {
           document.getElementById('profilePageJobTitleRow')?.remove();
           const roleEl = ensureProfileHeroRoleEl();
