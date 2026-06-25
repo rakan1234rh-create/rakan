@@ -2706,7 +2706,7 @@
       display: flex;
     }
 
-    .mr-topbar-user-menu button {
+    .mr-topbar-user-menu button:not(.theme-toggle) {
       width: auto;
       min-width: 100%;
       display: inline-flex;
@@ -2726,11 +2726,11 @@
       transition: background 0.15s ease, color 0.15s ease;
     }
 
-    .mr-topbar-user-menu button:hover {
+    .mr-topbar-user-menu button:not(.theme-toggle):hover {
       background: var(--mr-primary-softer);
     }
 
-    .mr-topbar-user-menu button i {
+    .mr-topbar-user-menu button:not(.theme-toggle) i {
       width: 18px;
       text-align: center;
       color: var(--mr-text-3);
@@ -2743,25 +2743,10 @@
       background: var(--mr-border);
     }
 
-    .mr-topbar-user-menu__theme-row {
+    .mr-topbar-user-menu__theme {
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
+      justify-content: center;
       padding: 8px 10px;
-      border-radius: 8px;
-    }
-
-    .mr-topbar-user-menu__theme-label {
-      font-family: var(--font);
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--mr-text);
-      white-space: nowrap;
-    }
-
-    .mr-topbar-user-menu .theme-toggle {
-      flex-shrink: 0;
     }
 
     .mr-topbar-user-menu__logout {
@@ -29764,7 +29749,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-theme-toggle-menu-v1014">
+  <meta name="app-build" content="athar-theme-toggle-menu-v1015">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -30016,8 +30001,7 @@
                 <i class="fas fa-chevron-down mr-topbar-user-chevron" aria-hidden="true"></i>
               </button>
               <div class="mr-topbar-user-menu" id="topbarUserMenu" role="menu" aria-label="قائمة المستخدم">
-                <div class="mr-topbar-user-menu__theme-row" role="presentation">
-                  <span class="mr-topbar-user-menu__theme-label" id="topbarUserMenuThemeLabel">الوضع الداكن</span>
+                <div class="mr-topbar-user-menu__theme" role="presentation">
                   <button type="button" class="theme-toggle theme-toggle--light" id="topbarThemeToggle" dir="ltr"
                     aria-label="تبديل الوضع الداكن والفاتح" aria-pressed="false" onclick="toggleTheme(event)">
                     <span class="theme-toggle__inner">
@@ -34363,13 +34347,11 @@
         const el = document.getElementById('topbarThemeToggle');
         const knob = document.getElementById('themeToggleKnob');
         const ghost = document.getElementById('themeToggleGhost');
-        const label = document.getElementById('topbarUserMenuThemeLabel');
         if (el) {
           el.classList.toggle('theme-toggle--dark', isDark);
           el.classList.toggle('theme-toggle--light', !isDark);
           el.setAttribute('aria-pressed', isDark ? 'true' : 'false');
         }
-        if (label) label.textContent = isDark ? 'الوضع الفاتح' : 'الوضع الداكن';
         if (knob && ghost) {
           if (isDark) {
             knob.innerHTML = themeToggleMoonSvg('', 'theme-toggle__icon--on-dark');
