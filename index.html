@@ -2598,8 +2598,70 @@
       position: relative;
       display: inline-flex;
       flex-shrink: 0;
-      max-width: min(100%, 240px);
       box-sizing: border-box
+    }
+
+    .mr-topbar-user-trigger--icon {
+      width: 36px;
+      height: 36px;
+      min-height: 36px;
+      padding: 0;
+      border: 0;
+      border-radius: 50%;
+      background: transparent;
+      box-shadow: none;
+      gap: 0;
+    }
+
+    .mr-topbar-user-trigger--icon:hover {
+      background: transparent;
+      box-shadow: none;
+    }
+
+    .mr-topbar-user-trigger--icon:hover .mr-topbar-user-icon {
+      background: #dcdce1;
+    }
+
+    .mr-topbar-user-trigger--icon[aria-expanded="true"] {
+      border: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+
+    .mr-topbar-user-trigger--icon[aria-expanded="true"] .mr-topbar-user-icon {
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--mr-primary) 18%, transparent);
+    }
+
+    .mr-topbar-user-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #e8e8ed;
+      color: #1c1c1e;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .mr-topbar-user-icon svg {
+      width: 18px;
+      height: 18px;
+      display: block;
+    }
+
+    [data-theme="dark"] .mr-topbar-user-trigger--icon:hover {
+      background: transparent;
+    }
+
+    [data-theme="dark"] .mr-topbar-user-icon {
+      background: #3a3a3c;
+      color: #f2f2f7;
+    }
+
+    [data-theme="dark"] .mr-topbar-user-trigger--icon:hover .mr-topbar-user-icon {
+      background: #48484a;
     }
 
     .mr-topbar-user-trigger {
@@ -2700,6 +2762,63 @@
       flex-direction: column;
       gap: 2px;
       box-sizing: border-box
+    }
+
+    .mr-topbar-user-menu--profile {
+      min-width: 248px;
+      padding: 6px;
+    }
+
+    .mr-topbar-user-menu__profile {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 10px 12px;
+    }
+
+    .mr-topbar-user-menu__profile-av {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(145deg, var(--mr-primary) 0%, color-mix(in srgb, var(--mr-primary) 76%, #0f1224) 100%);
+      color: #fff;
+      font-family: var(--font);
+      font-size: 16px;
+      font-weight: 700;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      user-select: none;
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.24),
+        0 1px 3px rgba(15, 18, 36, 0.12);
+    }
+
+    .mr-topbar-user-menu__profile-info {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 3px;
+      min-width: 0;
+      line-height: 1.25;
+    }
+
+    .mr-topbar-user-menu__profile-info .mr-topbar-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--mr-text);
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .mr-topbar-user-menu__profile-info .mr-topbar-role {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--mr-text-3);
     }
 
     .mr-topbar-user-menu.open {
@@ -29749,7 +29868,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-theme-toggle-menu-v1015">
+  <meta name="app-build" content="athar-profile-avatar-v1016">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -29990,17 +30109,21 @@
                 class="fas fa-bell"></i><span class="notif-bell-count" id="notifBellCount"
                 style="display:none">0</span></button>
             <div class="mr-topbar-user" id="topbarUserChip" dir="rtl">
-              <button type="button" class="mr-topbar-user-trigger" id="topbarUserMenuBtn"
-                onclick="toggleTopbarUserMenu(event)" aria-label="قائمة المستخدم" aria-haspopup="menu"
+              <button type="button" class="mr-topbar-user-trigger mr-topbar-user-trigger--icon" id="topbarUserMenuBtn"
+                onclick="toggleTopbarUserMenu(event)" aria-label="الملف الشخصي" aria-haspopup="menu"
                 aria-expanded="false" aria-controls="topbarUserMenu">
-                <span class="mr-topbar-user-avatar" id="tbTopbarAv" aria-hidden="true">—</span>
-                <span class="mr-topbar-user-info">
-                  <strong class="mr-topbar-name" id="tbName">—</strong>
-                  <span class="mr-topbar-role" id="tbRole">—</span>
+                <span class="mr-topbar-user-icon" aria-hidden="true">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M6 20v-1a6 6 0 0 1 12 0v1"/></svg>
                 </span>
-                <i class="fas fa-chevron-down mr-topbar-user-chevron" aria-hidden="true"></i>
               </button>
-              <div class="mr-topbar-user-menu" id="topbarUserMenu" role="menu" aria-label="قائمة المستخدم">
+              <div class="mr-topbar-user-menu mr-topbar-user-menu--profile" id="topbarUserMenu" role="menu" aria-label="الملف الشخصي">
+                <div class="mr-topbar-user-menu__profile" role="presentation">
+                  <span class="mr-topbar-user-menu__profile-av" id="tbTopbarAv" aria-hidden="true">—</span>
+                  <div class="mr-topbar-user-menu__profile-info">
+                    <strong class="mr-topbar-name" id="tbName">—</strong>
+                    <span class="mr-topbar-role" id="tbRole">—</span>
+                  </div>
+                </div>
                 <div class="mr-topbar-user-menu__theme" role="presentation">
                   <button type="button" class="theme-toggle theme-toggle--light" id="topbarThemeToggle" dir="ltr"
                     aria-label="تبديل الوضع الداكن والفاتح" aria-pressed="false" onclick="toggleTheme(event)">
@@ -39402,8 +39525,6 @@
             : '';
           tbTopbarAv.style.color = '#fff';
         }
-
-        const chip = document.getElementById('topbarUserChip');
         if (chip) {
           chip.style.display = u.auth_uid ? '' : 'none';
           if (roleKey) chip.dataset.role = roleKey;
