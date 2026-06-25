@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com https://cdnjs.cloudflare.com; img-src 'self' data: blob: https:; media-src 'self' blob: https://*.r2.cloudflarestorage.com https://*.supabase.co; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.r2.cloudflarestorage.com https://cdn.jsdelivr.net https://timeapi.io https://fonts.googleapis.com https://fonts.gstatic.com; worker-src 'self' blob: https://cdn.jsdelivr.net; manifest-src 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net blob:; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com https://cdnjs.cloudflare.com; img-src 'self' data: blob: https:; media-src 'self' blob: https://*.r2.cloudflarestorage.com https://*.supabase.co; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; connect-src 'self' blob: https://*.supabase.co wss://*.supabase.co https://*.r2.cloudflarestorage.com https://cdn.jsdelivr.net https://timeapi.io https://fonts.googleapis.com https://fonts.gstatic.com; worker-src 'self' blob: https://cdn.jsdelivr.net; manifest-src 'self'">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=overlays-content">
   <meta name="format-detection" content="telephone=no">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -44552,13 +44552,31 @@
           onStatus?.((label || 'ملف') + ' — من الذاكرة المحلية');
           return URL.createObjectURL(new Blob([cached], { type: mimeType }));
         }
-        const blobUrl = await fetchToBlobUrlWithProgress(url, mimeType, onStatus, label);
-        try {
-          const res = await fetch(blobUrl);
-          const buf = await res.arrayBuffer();
-          if (buf.byteLength) void idbPutFfmpegBlob(idbKey, buf);
-        } catch (_) { /* */ }
-        return blobUrl;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('تعذّر تحميل ' + (label || url) + ' (' + res.status + ')');
+        const total = parseInt(res.headers.get('Content-Length') || '0', 10);
+        let buf;
+        if (!res.body || !total) {
+          onStatus?.('تحميل ' + (label || 'ملف') + '…');
+          buf = await res.arrayBuffer();
+        } else {
+          const reader = res.body.getReader();
+          const chunks = [];
+          let received = 0;
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            chunks.push(value);
+            received += value.length;
+            onStatus?.('تحميل ' + (label || 'ملف') + '… ' + Math.min(99, Math.round((received / total) * 100)) + '%');
+          }
+          const merged = new Uint8Array(received);
+          let pos = 0;
+          for (const c of chunks) { merged.set(c, pos); pos += c.length; }
+          buf = merged.buffer;
+        }
+        void idbPutFfmpegBlob(idbKey, buf);
+        return URL.createObjectURL(new Blob([buf], { type: mimeType }));
       }
 
       function warmupFfmpegTranscoder() {
