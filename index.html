@@ -30140,7 +30140,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-profile-job-titles-v1028">
+  <meta name="app-build" content="athar-db-job-titles-v1029">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -32348,9 +32348,14 @@
 
       function getStaffJobTitle(u) {
         const roleKey = normalizeUserRole(u?.role);
-        const custom = String(u?.job_title || '').trim();
-        if (custom) return custom;
+        const fromDb = String(u?.job_title || '').trim();
+        if (fromDb) return fromDb;
         return STAFF_JOB_TITLE_LABELS[roleKey] || '—';
+      }
+
+      function staffJobTitleForRole(role) {
+        const roleKey = normalizeUserRole(role);
+        return STAFF_JOB_TITLE_LABELS[roleKey] || null;
       }
 
       const ROLE_COLORS = {
@@ -42391,9 +42396,16 @@
         return !!u && isActiveUser(u) && (u.role === 'employee' || u.role === 'branch_manager');
       }
 
-      function userTableRoleLabel(role) {
-        const key = normalizeUserRole(role);
-        return ROLE_LABELS[key] || role;
+      function userTableRoleLabel(roleOrUser) {
+        if (roleOrUser && typeof roleOrUser === 'object') {
+          const u = roleOrUser;
+          const roleKey = normalizeUserRole(u.role);
+          const jobTitle = String(u.job_title || '').trim();
+          if ((roleKey === 'employee' || roleKey === 'branch_manager') && jobTitle) return jobTitle;
+          return ROLE_LABELS[roleKey] || u.role;
+        }
+        const key = normalizeUserRole(roleOrUser);
+        return ROLE_LABELS[key] || roleOrUser;
       }
 
       function getFilteredUsersList() {
@@ -42526,7 +42538,7 @@
             u.email || '',
             u.phone ? '\t' + Sec.normalizePhone(u.phone) : '',
             u.role || '',
-            userTableRoleLabel(u.role),
+            userTableRoleLabel(u),
             branch?.name || '',
             u.branch_id || '',
             u.is_active === false ? 'false' : 'true'
@@ -42610,7 +42622,8 @@
               email,
               phone: phone || null,
               role,
-              branch_id: needsBranch ? branchId : null
+              branch_id: needsBranch ? branchId : null,
+              job_title: staffJobTitleForRole(role)
             };
             const { data: newUser, error } = await sb.from('users').insert(insertPayload).select(USER_ROW_SELECT).single();
             if (error) {
@@ -42656,7 +42669,7 @@
       function renderUserCard(u, canManage) {
         const branch = state._branchById ? state._branchById.get(u.branch_id) : state.branches.find(b => b.id === u.branch_id);
         const roleKey = normalizeUserRole(u.role);
-        const roleLabel = userTableRoleLabel(u.role);
+        const roleLabel = userTableRoleLabel(u);
         const roleColor = ROLE_COLORS[roleKey] || ROLE_COLORS[u.role] || 'var(--mr-text-2)';
         const roleAfterName = roleLabel
           ? `<span class="mr-user-card__role mr-user-card__role--${roleKey}" style="--rc:${roleColor}">${Sec.escapeHTML(roleLabel)}</span>`
@@ -42707,7 +42720,7 @@
       function renderUserMobItem(u, canManage) {
         const branch = state._branchById ? state._branchById.get(u.branch_id) : state.branches.find(b => b.id === u.branch_id);
         const roleKey = normalizeUserRole(u.role);
-        const roleLabel = userTableRoleLabel(u.role);
+        const roleLabel = userTableRoleLabel(u);
         const roleColor = ROLE_COLORS[roleKey] || ROLE_COLORS[u.role] || 'var(--mr-primary)';
         const empNum = padEmpNum(u.employee_number);
         const rows = [];
@@ -42891,11 +42904,12 @@
             const empNumChanged = oldUser && oldUser.employee_number !== empNum;
 
             const updatePayload = {
-              employee_number: empNum,  // ✅ تعديل مباشر - صفر مشاكل!
+              employee_number: empNum,
               name,
               phone: phone || null,
               role,
-              branch_id: needsBranch ? branchId : null
+              branch_id: needsBranch ? branchId : null,
+              job_title: staffJobTitleForRole(role)
             };
 
             // تحديث في Auth إذا تغيّر أي شي
@@ -42940,13 +42954,14 @@
             const authUid = await adminCreateAuthUser(email, password, { name, employee_number: empNum, role, phone });
 
             const insertPayload = {
-              employee_number: empNum,  // ✅ UUID يُنشأ تلقائياً
+              employee_number: empNum,
               auth_uid: authUid,
               name,
               email,
               phone: phone || null,
               role,
-              branch_id: needsBranch ? branchId : null
+              branch_id: needsBranch ? branchId : null,
+              job_title: staffJobTitleForRole(role)
             };
             const { data: newUser, error } = await sb.from('users').insert(insertPayload).select(USER_ROW_SELECT).single();
             if (error) {
