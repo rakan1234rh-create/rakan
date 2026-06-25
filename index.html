@@ -13430,6 +13430,51 @@
       background: transparent;
     }
 
+    .profile-hero__av.has-founding-frame {
+      overflow: visible;
+      box-shadow: none;
+      background: transparent;
+    }
+
+    .profile-avatar-founding-ring {
+      display: block;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      padding: 4px;
+      background: linear-gradient(145deg, #0f4d32 0%, #d4af37 38%, #1a6b45 72%, #0a3d28 100%);
+      box-shadow:
+        0 0 0 2px #111,
+        0 8px 22px rgba(0, 0, 0, .18),
+        inset 0 0 0 1px rgba(255, 255, 255, .22);
+    }
+
+    .profile-avatar-founding-ring__inner {
+      display: block;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      overflow: hidden;
+      background: #d9c4a0;
+      padding: 7%;
+      box-sizing: border-box;
+    }
+
+    .profile-avatar-photo--founding {
+      object-fit: contain !important;
+      background: #d9c4a0;
+    }
+
+    .avatar-picker-opt__art .profile-avatar-founding-ring {
+      width: 100%;
+      height: 100%;
+      aspect-ratio: 1;
+    }
+
+    .avatar-picker-opt__art.profile-avatar-founding-ring .profile-avatar-founding-ring__inner {
+      padding: 8%;
+    }
+
     .profile-avatar-photo {
       width: 100%;
       height: 100%;
@@ -30273,7 +30318,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-portrait-photos-v1037">
+  <meta name="app-build" content="athar-founding-avatar-v1038">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -40055,7 +40100,8 @@
         ghutra: 'portrait-ghutra.webp',
         tie_m: 'portrait-tie-m.webp',
         hijab_f: 'portrait-hijab-f.webp',
-        formal_f: 'portrait-formal-f.webp'
+        formal_f: 'portrait-formal-f.webp',
+        founding_sword: 'founding-day-sword.webp'
       };
 
       function profileAvatarImgUrl(file) {
@@ -40063,10 +40109,13 @@
         return `./icons/avatars/${file}?v=${encodeURIComponent(build)}`;
       }
 
-      function profileAvatarImgHtml(file, alt) {
+      function profileAvatarImgHtml(file, alt, opts) {
         const src = profileAvatarImgUrl(file);
         const safeAlt = Sec.escapeHTML(alt || 'صورة الملف الشخصي');
-        return `<img class="profile-avatar-photo" src="${src}" alt="${safeAlt}" width="256" height="256" loading="lazy" decoding="async">`;
+        const founding = !!(opts && opts.founding);
+        const img = `<img class="profile-avatar-photo${founding ? ' profile-avatar-photo--founding' : ''}" src="${src}" alt="${safeAlt}" width="256" height="256" loading="lazy" decoding="async">`;
+        if (!founding) return img;
+        return `<span class="profile-avatar-founding-ring" aria-hidden="true"><span class="profile-avatar-founding-ring__inner">${img}</span></span>`;
       }
 
       const PROFILE_AVATARS = [
@@ -40074,14 +40123,17 @@
         { id: 'emp_tie', label: 'ربطة عنق', img: PROFILE_PORTRAIT_FILES.tie_m, roles: ['employee'] },
         { id: 'emp_hijab', label: 'محجبة', img: PROFILE_PORTRAIT_FILES.hijab_f, roles: ['employee'] },
         { id: 'emp_formal_f', label: 'رسمية', img: PROFILE_PORTRAIT_FILES.formal_f, roles: ['employee'] },
+        { id: 'emp_founding', label: 'يوم التأسيس', img: PROFILE_PORTRAIT_FILES.founding_sword, roles: ['employee'], founding: true },
         { id: 'mgr_ghutra', label: 'شماغ أحمر', img: PROFILE_PORTRAIT_FILES.ghutra, roles: ['branch_manager'] },
         { id: 'mgr_tie', label: 'ربطة عنق', img: PROFILE_PORTRAIT_FILES.tie_m, roles: ['branch_manager'] },
         { id: 'mgr_hijab', label: 'محجبة', img: PROFILE_PORTRAIT_FILES.hijab_f, roles: ['branch_manager'] },
         { id: 'mgr_formal_f', label: 'رسمية', img: PROFILE_PORTRAIT_FILES.formal_f, roles: ['branch_manager'] },
+        { id: 'mgr_founding', label: 'يوم التأسيس', img: PROFILE_PORTRAIT_FILES.founding_sword, roles: ['branch_manager'], founding: true },
         { id: 'sup_ghutra', label: 'شماغ أحمر', img: PROFILE_PORTRAIT_FILES.ghutra, roles: ['supervisor'] },
         { id: 'sup_tie', label: 'ربطة عنق', img: PROFILE_PORTRAIT_FILES.tie_m, roles: ['supervisor'] },
         { id: 'sup_hijab', label: 'محجبة', img: PROFILE_PORTRAIT_FILES.hijab_f, roles: ['supervisor'] },
-        { id: 'sup_formal_f', label: 'رسمية', img: PROFILE_PORTRAIT_FILES.formal_f, roles: ['supervisor'] }
+        { id: 'sup_formal_f', label: 'رسمية', img: PROFILE_PORTRAIT_FILES.formal_f, roles: ['supervisor'] },
+        { id: 'sup_founding', label: 'يوم التأسيس', img: PROFILE_PORTRAIT_FILES.founding_sword, roles: ['supervisor'], founding: true }
       ];
 
       function getProfileAvatarsForUser(u) {
@@ -40117,11 +40169,13 @@
         if (!el || !u) return;
         const preset = getValidProfileAvatarPreset(u);
         el.classList.toggle('has-avatar-photo', !!preset);
+        el.classList.toggle('has-founding-frame', !!(preset && preset.founding));
         if (preset) {
           el.style.background = 'transparent';
           el.textContent = '';
-          el.innerHTML = profileAvatarImgHtml(preset.img, preset.label);
+          el.innerHTML = profileAvatarImgHtml(preset.img, preset.label, { founding: preset.founding });
         } else {
+          el.classList.remove('has-founding-frame');
           const roleKey = normalizeUserRole(u.role);
           const color = u.color || ROLE_COLORS[roleKey] || 'var(--mr-primary)';
           el.textContent = userDisplayInitials(u.name);
@@ -40136,7 +40190,7 @@
         if (preset) {
           icon.classList.add('has-user-avatar');
           icon.style.background = 'transparent';
-          icon.innerHTML = profileAvatarImgHtml(preset.img, preset.label);
+          icon.innerHTML = profileAvatarImgHtml(preset.img, preset.label, { founding: preset.founding });
         } else {
           icon.classList.remove('has-user-avatar');
           icon.style.background = '';
@@ -40156,7 +40210,7 @@
           <button type="button" class="avatar-picker-opt${current === a.id ? ' is-selected' : ''}"
             onclick="saveProfileAvatar('${a.id}')" aria-label="${Sec.escapeHTML(a.label)}"
             ${current === a.id ? 'aria-pressed="true"' : ''}>
-            <span class="avatar-picker-opt__art">${profileAvatarImgHtml(a.img, a.label)}</span>
+            <span class="avatar-picker-opt__art">${profileAvatarImgHtml(a.img, a.label, { founding: a.founding })}</span>
           </button>
         `).join('');
       }
