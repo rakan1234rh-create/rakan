@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com https://cdnjs.cloudflare.com; img-src 'self' data: blob: https:; media-src 'self' blob: https://*.r2.cloudflarestorage.com; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.r2.cloudflarestorage.com https://cdn.jsdelivr.net https://timeapi.io https://fonts.googleapis.com https://fonts.gstatic.com; worker-src 'self'; manifest-src 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com https://cdnjs.cloudflare.com; img-src 'self' data: blob: https:; media-src 'self' blob: https://*.r2.cloudflarestorage.com https://*.supabase.co; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.r2.cloudflarestorage.com https://cdn.jsdelivr.net https://timeapi.io https://fonts.googleapis.com https://fonts.gstatic.com; worker-src 'self'; manifest-src 'self'">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=overlays-content">
   <meta name="format-detection" content="telephone=no">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -29650,7 +29650,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-sidebar-col-wrap-v995">
+  <meta name="app-build" content="athar-video-r2-playback-v996">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -44065,8 +44065,9 @@
           if (/^V-\d{4}-/i.test(folder)) setRank(p, n++);
         }
         for (const p of ticketFolder) setRank(p, n++);
-        if (id.startsWith('temp_')) setRank(id, n++);
-        if (base !== id) setRank(base, n++);
+        if (id.startsWith('temp_')) setRank(id, 998);
+        else setRank(id, n++);
+        if (base !== id) setRank(base, id.startsWith('temp_') ? 997 : n++);
         return [...all].sort((a, b) => {
           const ra = rank.has(a) ? rank.get(a) : 999;
           const rb = rank.has(b) ? rank.get(b) : 999;
@@ -44130,7 +44131,23 @@
           let newKey = null;
           if (String(oldKey).startsWith('temp_')) {
             const folder = await resolveR2FolderForAttachment(ticket, baseName, atts);
-            newKey = `${folder}/${baseName}`;
+            const candidateKey = `${folder}/${baseName}`;
+            const atFinal = await r2ObjectExists(candidateKey);
+            if (atFinal === true) {
+              newKey = candidateKey;
+            } else {
+              const atTemp = await r2ObjectExists(oldKey);
+              if (atTemp === true) {
+                try {
+                  await callR2StorageFn('moveObject', { fromKey: oldKey, toKey: candidateKey });
+                  newKey = candidateKey;
+                } catch (moveErr) {
+                  if (isMirsadDebugLog()) console.warn('[R2-Repair] move failed', moveErr);
+                }
+              } else if (atFinal !== false) {
+                newKey = candidateKey;
+              }
+            }
           } else if (isBareTicketStorageKey(oldKey)) {
             const folder = pickPreferredR2Folder(ticket.ticket_number, ticket.created_at, atts);
             const currentFolder = String(oldKey).substring(0, String(oldKey).lastIndexOf('/'));
@@ -44138,7 +44155,8 @@
           }
           if (newKey && newKey !== oldKey) {
             changed = true;
-            delete _cloudflareCache[oldKey];
+            delete _cloudflareCache[cfCacheKey(oldKey, ticket)];
+            delete _videoStreamFallback[cfCacheKey(oldKey, ticket)];
             const copy = { ...a, p: newKey };
             if ('path' in a) copy.path = newKey;
             updated.push(copy);
@@ -44449,12 +44467,15 @@
           }
           if (fb && fb !== url && isR2StreamPlayUrl(fb)) {
             try {
-              if (isMirsadDebugLog()) console.warn('[Viewer] بث عبر Edge Function', e1);
+              if (isMirsadDebugLog()) console.warn('[Viewer] بث عبر Edge Function (blob)', e1);
               vid.src = '';
               vid.innerHTML = '';
-              await attachVideoSourceAndWait(vid, fb, mime, 22000, true);
-              if (await waitVideoElementPlayable(vid, 5000)) return fb;
-            } catch (_) { /* أدناه */ }
+              const blobUrl = await fetchAuthedStreamBlobUrl(fb, mime);
+              await attachVideoSourceAndWait(vid, blobUrl, mime, 22000, false);
+              if (await waitVideoElementPlayable(vid, 5000)) return blobUrl;
+            } catch (streamErr) {
+              if (isMirsadDebugLog()) console.warn('[Viewer] بث Edge Function فشل', streamErr);
+            }
           }
           if (lastCodec === 'h265') {
             const err = new Error('HEVC_NOT_SUPPORTED_IN_BROWSER');
@@ -44581,14 +44602,14 @@
             let lastSignErr = null;
             for (const key of candidates) {
               try {
+                const isTempKey = String(key).startsWith('temp_');
                 const exists = await r2ObjectExists(key);
                 if (exists === false) continue;
                 const signed = await callR2StorageFn('signGet', { key, ...(ct ? { contentType: ct } : {}) });
                 if (!signed?.url) continue;
+                const streamPlay = signed?.streamToken ? buildR2StreamPlayUrl(signed.streamToken) : '';
+                if (streamPlay) _videoStreamFallback[cacheKey] = streamPlay;
                 if (useStream) {
-                  const streamPlay = signed?.streamToken ? buildR2StreamPlayUrl(signed.streamToken) : '';
-                  if (streamPlay) _videoStreamFallback[cacheKey] = streamPlay;
-                  // R2 مباشرة — Range أسرع من بروكسي Supabase (8MB+)
                   writeCfCache(cacheKey, signed.url);
                   return signed.url;
                 }
@@ -46963,7 +46984,7 @@
         if (wrap && viewer.parentNode === document.body) wrap.appendChild(viewer);
       }
 
-      function openAttViewerByIndex(idx) {
+      async function openAttViewerByIndex(idx) {
         const t = state.editingTicket;
         const atts = getVisibleAttachments(t);
         state._attList = atts;
@@ -46976,6 +46997,10 @@
         mountAttViewerTop();
         viewer.classList.add('open');
         document.body.style.overflow = 'hidden';
+        if (t) {
+          try { await repairViolationAttachmentPaths(t); } catch (_) {}
+          state._attList = getVisibleAttachments(t);
+        }
         renderAttViewer();
       }
 
