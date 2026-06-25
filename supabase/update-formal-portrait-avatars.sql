@@ -1,6 +1,4 @@
--- صور رمزية رسمية بزي خليجي لكل دور
-alter table public.users add column if not exists avatar_key text;
-
+-- صور رسمية بزي خليجي لكل دور
 update public.users set avatar_key = null where avatar_key is not null;
 
 alter table public.users drop constraint if exists users_avatar_key_check;

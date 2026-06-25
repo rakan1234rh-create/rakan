@@ -30265,7 +30265,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-role-icons-v1032">
+  <meta name="app-build" content="athar-formal-portraits-v1033">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -40043,55 +40043,111 @@
 
       const TOPBAR_USER_DEFAULT_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M6 20v-1a6 6 0 0 1 12 0v1"/></svg>';
 
-      function roleIconSvg(bg, fg, paths) {
-        return `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="32" cy="32" r="32" fill="${bg}"/><g fill="${fg}" stroke="none">${paths}</g></svg>`;
+      function formalPortraitSvg(bg, body) {
+        return `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="32" cy="32" r="32" fill="${bg}"/>${body}</svg>`;
       }
 
-      function profileAvatarArtSvg(id) {
-        const white = '#ffffff';
-        switch (id) {
-          case 'emp_sales':
-            return roleIconSvg('#f59e0b', white, '<path d="M22 24h20l-2.5 18H24.5L22 24zm4-6h12l1.5 6H24.5L26 18zm8 28a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5zm-10 0a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/>');
-          case 'emp_target':
-            return `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="32" cy="32" r="32" fill="#eab308"/><circle cx="32" cy="32" r="14" fill="none" stroke="${white}" stroke-width="3"/><circle cx="32" cy="32" r="8" fill="none" stroke="${white}" stroke-width="3"/><circle cx="32" cy="32" r="3" fill="${white}"/></svg>`;
-          case 'emp_chat':
-            return roleIconSvg('#f97316', white, '<path d="M18 20c0-4 4-7 14-7s14 3 14 7-4 7-14 7c-1.6 0-3.1-.2-4.4-.5L18 38l1.5-6.2C18.6 29.8 18 27.9 18 26V20z"/>');
-          case 'emp_star':
-            return roleIconSvg('#fbbf24', white, '<path d="M32 17l3.4 7.8 8.4 1-6.1 5.3 1.8 8.3L32 36.2l-7.5 3.2 1.8-8.3-6.1-5.3 8.4-1z"/>');
-          case 'mgr_store':
-            return roleIconSvg('#0d9488', white, '<path d="M16 24l4-8h24l4 8v4H16v-4zm2 8h28v14H18V32zm8 4v10h4V36h-4zm8 0v10h4V36h-4z"/>');
-          case 'mgr_team':
-            return roleIconSvg('#14b8a6', white, '<circle cx="24" cy="26" r="5"/><circle cx="40" cy="26" r="5"/><circle cx="32" cy="20" r="5"/><path d="M14 42c0-6 4.5-9 10-9s10 3 10 9H14zm20 0c0-5 3.5-8 8-8s8 3 8 8H34z"/>');
-          case 'mgr_chart':
-            return roleIconSvg('#0f766e', white, '<rect x="18" y="30" width="6" height="16" rx="1.5"/><rect x="29" y="24" width="6" height="22" rx="1.5"/><rect x="40" y="18" width="6" height="28" rx="1.5"/>');
-          case 'mgr_key':
-            return roleIconSvg('#115e59', white, '<circle cx="26" cy="28" r="7"/><path d="M31 33l12 12-4 4-12-12"/><path d="M40 44l4 4"/>');
-          case 'sup_map':
-            return roleIconSvg('#2f2fe4', white, '<path d="M22 18l8-4 8 4 8-4v30l-8 4-8-4-8 4-8-4V18zm8 2v24l8 4V24l-8-4z"/>');
-          case 'sup_regions':
-            return roleIconSvg('#4f46e5', white, '<rect x="18" y="18" width="14" height="14" rx="3"/><rect x="32" y="24" width="14" height="14" rx="3"/><rect x="24" y="32" width="14" height="14" rx="3"/>');
-          case 'sup_eye':
-            return roleIconSvg('#4338ca', white, '<path d="M10 32s8-14 22-14 22 14 22 14-8 14-22 14S10 32 10 32zm22-8a8 8 0 1 0 0 16 8 8 0 0 0 0-16z"/><circle cx="32" cy="32" r="4"/>');
-          case 'sup_flag':
-            return roleIconSvg('#3730a3', white, '<path d="M22 16v34"/><path d="M22 16h22l-4 8 4 8H22"/>');
+      function formalPortraitParts(variant) {
+        const skin = '#e8b89a';
+        const thobe = '#ffffff';
+        const abaya = '#2f3542';
+        const hair = '#1f1f28';
+        const beard = '#1a1a1a';
+        const agal = '#111111';
+        const tie = '#b91c1c';
+        const hijab = '#6d4f67';
+        const hijabLight = '#8f6f84';
+        const lip = '#c4886a';
+        const commonShoulders = (cloth, cloth2) => `
+          <path d="M8 64V49c0-2 10-8 24-8s24 6 24 8v15H8z" fill="${cloth}"/>
+          <path d="M18 49c4-3 10-5 14-5s10 2 14 5" fill="none" stroke="${cloth2 || 'rgba(0,0,0,.06)'}" stroke-width="1"/>`;
+        switch (variant) {
+          case 'man_ghutra':
+            return `
+              ${commonShoulders(thobe, '#e8e8e8')}
+              <ellipse cx="32" cy="31" rx="12" ry="13" fill="${skin}"/>
+              <path d="M22 31c1 8 6 12 10 12s9-4 10-12c-2 6-6 9-10 9s-8-3-10-9z" fill="${beard}"/>
+              <path d="M17 24c2-9 9-14 15-14s13 5 15 14c-3-7-8-10-15-10s-12 3-15 10z" fill="${thobe}"/>
+              <path d="M18 22c3-6 8-9 14-9s11 3 14 9c-2-5-7-8-14-8s-12 3-14 8z" fill="#f5f5f5"/>
+              <path d="M20 23h24" stroke="#c53b3b" stroke-width="1.1" opacity=".55"/>
+              <path d="M19 25h26" stroke="#c53b3b" stroke-width="1.1" opacity=".45"/>
+              <path d="M20 27h24" stroke="#c53b3b" stroke-width="1.1" opacity=".55"/>
+              <ellipse cx="32" cy="19.5" rx="15" ry="3.2" fill="none" stroke="${agal}" stroke-width="2.2"/>
+              <ellipse cx="32" cy="22.8" rx="15" ry="3.2" fill="none" stroke="${agal}" stroke-width="2.2"/>
+              <ellipse cx="27.5" cy="30" rx="1.5" ry="1.8" fill="${hair}"/>
+              <ellipse cx="36.5" cy="30" rx="1.5" ry="1.8" fill="${hair}"/>
+              <path d="M28.5 35q3.5 2.5 7 0" stroke="${lip}" stroke-width="1.3" fill="none" stroke-linecap="round"/>`;
+          case 'man_tie':
+            return `
+              ${commonShoulders(thobe, '#e8e8e8')}
+              <ellipse cx="32" cy="30" rx="11.5" ry="12.5" fill="${skin}"/>
+              <path d="M21 18c2-6 8-9 11-9s9 3 11 9c-2-5-6-8-11-8s-9 3-11 8z" fill="${hair}"/>
+              <path d="M24 31c1 5 4 8 8 8s7-3 8-8c-1 4-4 6-8 6s-7-2-8-6z" fill="#2d2d35" opacity=".85"/>
+              <path d="M30 41h4v11h-4z" fill="${tie}"/>
+              <path d="M28 41l4-5 4 5" fill="${tie}"/>
+              <path d="M27 41h10l-5 4z" fill="#fff"/>
+              <ellipse cx="27.5" cy="29.5" rx="1.4" ry="1.7" fill="${hair}"/>
+              <ellipse cx="36.5" cy="29.5" rx="1.4" ry="1.7" fill="${hair}"/>
+              <path d="M29 34.5q3 2 6 0" stroke="${lip}" stroke-width="1.2" fill="none" stroke-linecap="round"/>`;
+          case 'woman_hijab':
+            return `
+              <path d="M8 64V50c0-2 10-7 24-7s24 5 24 7v14H8z" fill="${abaya}"/>
+              <ellipse cx="32" cy="31" rx="10.5" ry="11.5" fill="${skin}"/>
+              <path d="M16 24c3-12 11-18 16-18s13 6 16 18c-3-9-9-14-16-14s-13 5-16 14z" fill="${hijab}"/>
+              <path d="M14 26c2 12 8 20 18 20s16-8 18-20c-3 10-10 16-18 16s-15-6-18-16z" fill="${hijabLight}"/>
+              <ellipse cx="27.5" cy="30.5" rx="1.3" ry="1.6" fill="${hair}"/>
+              <ellipse cx="36.5" cy="30.5" rx="1.3" ry="1.6" fill="${hair}"/>
+              <path d="M29 35q3 2 6 0" stroke="${lip}" stroke-width="1.1" fill="none" stroke-linecap="round"/>`;
+          case 'woman_formal':
+            return `
+              <path d="M8 64V50c0-2 10-7 24-7s24 5 24 7v14H8z" fill="#3d4f63"/>
+              <path d="M22 49h20l-2 15H24l-2-15z" fill="#f4f6f8"/>
+              <ellipse cx="32" cy="30" rx="10.5" ry="11.5" fill="${skin}"/>
+              <path d="M16 24c3-12 11-18 16-18s13 6 16 18c-3-9-9-14-16-14s-13 5-16 14z" fill="#5a3f55"/>
+              <path d="M14 26c2 12 8 20 18 20s16-8 18-20c-3 10-10 16-18 16s-15-6-18-16z" fill="#74586b"/>
+              <path d="M30 41h4v9h-4z" fill="#8b3f5f"/>
+              <path d="M28.5 41l3.5-4 3.5 4" fill="#8b3f5f"/>
+              <ellipse cx="27.5" cy="30.5" rx="1.3" ry="1.6" fill="${hair}"/>
+              <ellipse cx="36.5" cy="30.5" rx="1.3" ry="1.6" fill="${hair}"/>
+              <path d="M29 35q3 2 6 0" stroke="${lip}" stroke-width="1.1" fill="none" stroke-linecap="round"/>`;
           default:
             return '';
         }
       }
 
+      function profileAvatarArtSvg(id) {
+        const map = {
+          emp_ghutra: ['#d4a066', 'man_ghutra'],
+          emp_tie: ['#c9956a', 'man_tie'],
+          emp_hijab: ['#dbb878', 'woman_hijab'],
+          emp_formal_f: ['#e0b070', 'woman_formal'],
+          mgr_ghutra: ['#0d9488', 'man_ghutra'],
+          mgr_tie: ['#14b8a6', 'man_tie'],
+          mgr_hijab: ['#0f766e', 'woman_hijab'],
+          mgr_formal_f: ['#115e59', 'woman_formal'],
+          sup_ghutra: ['#4f46e5', 'man_ghutra'],
+          sup_tie: ['#4338ca', 'man_tie'],
+          sup_hijab: ['#3730a3', 'woman_hijab'],
+          sup_formal_f: ['#2f2fe4', 'woman_formal']
+        };
+        const entry = map[id];
+        if (!entry) return '';
+        return formalPortraitSvg(entry[0], formalPortraitParts(entry[1]));
+      }
+
       const PROFILE_AVATARS = [
-        { id: 'emp_sales', label: 'مبيعات', bg: '#f59e0b', roles: ['employee'] },
-        { id: 'emp_target', label: 'هدف', bg: '#eab308', roles: ['employee'] },
-        { id: 'emp_chat', label: 'تواصل', bg: '#f97316', roles: ['employee'] },
-        { id: 'emp_star', label: 'تميز', bg: '#fbbf24', roles: ['employee'] },
-        { id: 'mgr_store', label: 'فرع', bg: '#0d9488', roles: ['branch_manager'] },
-        { id: 'mgr_team', label: 'فريق', bg: '#14b8a6', roles: ['branch_manager'] },
-        { id: 'mgr_chart', label: 'أداء', bg: '#0f766e', roles: ['branch_manager'] },
-        { id: 'mgr_key', label: 'إدارة', bg: '#115e59', roles: ['branch_manager'] },
-        { id: 'sup_map', label: 'خريطة', bg: '#2f2fe4', roles: ['supervisor'] },
-        { id: 'sup_regions', label: 'مناطق', bg: '#4f46e5', roles: ['supervisor'] },
-        { id: 'sup_eye', label: 'متابعة', bg: '#4338ca', roles: ['supervisor'] },
-        { id: 'sup_flag', label: 'قيادة', bg: '#3730a3', roles: ['supervisor'] }
+        { id: 'emp_ghutra', label: 'شماغ أحمر', bg: '#d4a066', roles: ['employee'] },
+        { id: 'emp_tie', label: 'ربطة عنق', bg: '#c9956a', roles: ['employee'] },
+        { id: 'emp_hijab', label: 'محجبة', bg: '#dbb878', roles: ['employee'] },
+        { id: 'emp_formal_f', label: 'رسمية', bg: '#e0b070', roles: ['employee'] },
+        { id: 'mgr_ghutra', label: 'شماغ أحمر', bg: '#0d9488', roles: ['branch_manager'] },
+        { id: 'mgr_tie', label: 'ربطة عنق', bg: '#14b8a6', roles: ['branch_manager'] },
+        { id: 'mgr_hijab', label: 'محجبة', bg: '#0f766e', roles: ['branch_manager'] },
+        { id: 'mgr_formal_f', label: 'رسمية', bg: '#115e59', roles: ['branch_manager'] },
+        { id: 'sup_ghutra', label: 'شماغ أحمر', bg: '#4f46e5', roles: ['supervisor'] },
+        { id: 'sup_tie', label: 'ربطة عنق', bg: '#4338ca', roles: ['supervisor'] },
+        { id: 'sup_hijab', label: 'محجبة', bg: '#3730a3', roles: ['supervisor'] },
+        { id: 'sup_formal_f', label: 'رسمية', bg: '#2f2fe4', roles: ['supervisor'] }
       ].map((item) => ({ ...item, svg: profileAvatarArtSvg(item.id) }));
 
       function getProfileAvatarsForUser(u) {
@@ -40105,9 +40161,9 @@
 
       function profileAvatarPickerTitle(u) {
         const roleKey = normalizeUserRole(u?.role);
-        if (roleKey === 'employee') return 'اختر أيقونة الموظف';
-        if (roleKey === 'branch_manager') return 'اختر أيقونة مدير الفرع';
-        if (roleKey === 'supervisor') return 'اختر أيقونة المشرف';
+        if (roleKey === 'employee') return 'اختر صورتك — موظف';
+        if (roleKey === 'branch_manager') return 'اختر صورتك — مدير فرع';
+        if (roleKey === 'supervisor') return 'اختر صورتك — مشرف';
         return 'اختر أيقونتك';
       }
 
