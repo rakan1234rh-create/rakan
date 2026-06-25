@@ -13504,6 +13504,31 @@
       font-size: 14px
     }
 
+    .profile-action-row .theme-toggle {
+      width: 5rem;
+      height: 2.5rem;
+      padding: 0.25rem;
+    }
+
+    .profile-action-row .theme-toggle__knob,
+    .profile-action-row .theme-toggle__ghost {
+      width: 2rem;
+      height: 2rem;
+    }
+
+    .profile-action-row .theme-toggle--light .theme-toggle__knob {
+      transform: translateX(2.5rem);
+    }
+
+    .profile-action-row .theme-toggle--light .theme-toggle__ghost {
+      transform: translateX(-2.5rem);
+    }
+
+    .profile-action-row .theme-toggle__icon {
+      width: 1.25rem;
+      height: 1.25rem;
+    }
+
     .profile-action-btn {
       display: flex;
       align-items: center;
@@ -30140,7 +30165,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-db-job-titles-v1029">
+  <meta name="app-build" content="athar-profile-theme-toggle-v1030">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
