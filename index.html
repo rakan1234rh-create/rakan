@@ -19284,17 +19284,9 @@
         display: none !important;
       }
 
-      .mr-topbar-user-trigger {
+      .mr-topbar-user-trigger--icon {
         min-height: 0;
-        padding-block: 3px;
-        padding-inline-start: 3px;
-        padding-inline-end: 5px;
-        gap: 4px
-      }
-
-      .mr-topbar-user-chevron {
-        margin-inline-start: 0;
-        font-size: 10px
+        padding: 0;
       }
 
       html.mr-mobile-ui .topbar-clock,
@@ -29868,7 +29860,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-profile-avatar-v1016">
+  <meta name="app-build" content="athar-logout-local-v1017">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -35179,7 +35171,7 @@
 
       async function abandonPasswordRecovery() {
         clearPasswordRecoveryPending();
-        try { await sb.auth.signOut(); } catch (_) { /* noop */ }
+        try { await atharSignOut(); } catch (_) { /* noop */ }
       }
 
       async function showLoginFormFromPasswordRecovery() {
@@ -35402,14 +35394,14 @@
           if (pErr) throw pErr;
           if (!profile) {
             showLoginError('لم يتم العثور على ملف شخصي - تواصل مع الإدارة');
-            await sb.auth.signOut();
+            await atharSignOut();
             setLoginLoading(false);
             return;
           }
 
           if (!profile.is_active) {
             showLoginError('حسابك معطّل - تواصل مع الإدارة');
-            await sb.auth.signOut();
+            await atharSignOut();
             setLoginLoading(false);
             return;
           }
@@ -35557,7 +35549,7 @@
           if (isMirsadDebugLog()) console.error('onUserAuthenticated', err);
           showGlobalLoader(false);
           cancelSessionRestoreBoot();
-          try { await sb.auth.signOut(); } catch (_) { /* noop */ }
+          try { await atharSignOut(); } catch (_) { /* noop */ }
           state.currentUser = null;
           document.getElementById('appWrap')?.classList.remove('rbac-ready');
           try {
@@ -35572,6 +35564,13 @@
       // ───────────────────────────────────────────────────────────────────────────
       // LOGOUT
       // ───────────────────────────────────────────────────────────────────────────
+      /** خروج محلي فقط — لا يستدعي /auth/v1/logout (يتجنّب 403 عند جلسة منتهية أو ممسوحة مسبقاً) */
+      async function atharSignOut() {
+        try {
+          await sb.auth.signOut({ scope: 'local' });
+        } catch (_) { /* noop */ }
+      }
+
       async function handleLogout() {
         closeTopbarUserMenu();
         if (!await confirmDialog('هل تريد تسجيل الخروج؟', { type: 'info', title: 'تسجيل الخروج', okText: 'خروج' })) return;
@@ -35618,7 +35617,7 @@
 
         invalidateR2BackendResolution();
 
-        try { await sb.auth.signOut(); } catch (_) { }
+        try { await atharSignOut(); } catch (_) { }
 
         openLoginPortal();
         showLoginForm();
@@ -35796,7 +35795,7 @@
           }
 
           clearPasswordRecoveryPending();
-          try { await sb.auth.signOut(); } catch (_) { /* noop */ }
+          try { await atharSignOut(); } catch (_) { /* noop */ }
           showToast('تم تحديث كلمة المرور بنجاح ✓', 'success');
           clearPasswordResetEmail();
           history.replaceState(null, '', window.location.pathname);
@@ -35837,7 +35836,7 @@
             showToast('وضع التطوير: تسجيل دخول تلقائي', 'info');
             return true;
           }
-          await sb.auth.signOut();
+          await atharSignOut();
           if (isMirsadDebugLog()) console.warn('[DEV] Auto login: لا يوجد مستخدم نشط مرتبط بهذا الحساب');
           return false;
         } catch (e) {
@@ -35909,7 +35908,7 @@
             await onUserAuthenticated(profile);
             return;
           }
-          await sb.auth.signOut();
+          await atharSignOut();
         }
 
         if (await tryDevAutoLogin()) return;
@@ -39525,6 +39524,8 @@
             : '';
           tbTopbarAv.style.color = '#fff';
         }
+
+        const chip = document.getElementById('topbarUserChip');
         if (chip) {
           chip.style.display = u.auth_uid ? '' : 'none';
           if (roleKey) chip.dataset.role = roleKey;
