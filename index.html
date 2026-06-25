@@ -29650,7 +29650,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-hevc-prefetch-v1007">
+  <meta name="app-build" content="athar-hevc-transcode-fix-v1010">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -44505,7 +44505,13 @@
       }
 
       const FFMPEG_CORE_CACHE_VER = 'core-0.12.6';
-      let _ffmpegWarmupPromise = null;
+      let _ffmpegLoadPromise = null;
+      let _ffmpegLoadStatusFn = null;
+
+      function pushFfmpegLoadStatus(msg) {
+        if (!msg) return;
+        try { _ffmpegLoadStatusFn?.(msg); } catch (_) { /* */ }
+      }
 
       function openFfmpegIdb() {
         return new Promise((resolve, reject) => {
@@ -44579,13 +44585,6 @@
         return URL.createObjectURL(new Blob([buf], { type: mimeType }));
       }
 
-      function warmupFfmpegTranscoder() {
-        if (!isAtharDesktopViewer() || _ffmpegTranscodeInstance || _ffmpegWarmupPromise) return;
-        _ffmpegWarmupPromise = ensureFfmpegTranscoder(() => {}).catch(() => {
-          _ffmpegWarmupPromise = null;
-        });
-      }
-
       function atharVendorAssetUrl(relPath) {
         return new URL(String(relPath || '').replace(/^\//, ''), window.location.href).href;
       }
@@ -44624,45 +44623,53 @@
       }
 
       async function ensureFfmpegTranscoder(onStatus) {
-        if (_ffmpegTranscodeInstance) return _ffmpegTranscodeInstance;
-        if (_ffmpegWarmupPromise) {
-          try {
-            await _ffmpegWarmupPromise;
-            if (_ffmpegTranscodeInstance) return _ffmpegTranscodeInstance;
-          } catch (_) { /* */ }
+        if (typeof onStatus === 'function') _ffmpegLoadStatusFn = onStatus;
+        if (_ffmpegTranscodeInstance) {
+          pushFfmpegLoadStatus('أداة التحويل جاهزة');
+          return _ffmpegTranscodeInstance;
         }
-        onStatus?.('تحميل أداة التحويل…');
-        const loadJob = (async () => {
-          onStatus?.('تحميل مكتبة ffmpeg…');
-          const { FFmpeg } = await import('https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/+esm');
-          void (await import('https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/+esm'));
-          const ffmpeg = new FFmpeg();
-          ffmpeg.on('log', ({ message }) => {
-            if (isMirsadDebugLog()) console.info('[ffmpeg]', message);
+        if (!_ffmpegLoadPromise) {
+          _ffmpegLoadPromise = (async () => {
+            pushFfmpegLoadStatus('تحميل أداة التحويل…');
+            const { FFmpeg } = await import('https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/+esm');
+            void (await import('https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/+esm'));
+            const ffmpeg = new FFmpeg();
+            ffmpeg.on('log', ({ message }) => {
+              if (isMirsadDebugLog()) console.info('[ffmpeg]', message);
+            });
+            ffmpeg.on('progress', ({ progress }) => {
+              if (progress > 0) {
+                pushFfmpegLoadStatus('تحويل الفيديو… ' + Math.min(99, Math.round(progress * 100)) + '%');
+              }
+            });
+            const coreBase = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm';
+            const classWorkerURL = atharVendorAssetUrl('vendor/ffmpeg/worker.js');
+            if (!(await probeAtharVendorWorker())) {
+              throw new Error('ملفات التحويل غير متاحة على الموقع — حدّث الصفحة (Ctrl+Shift+R)');
+            }
+            pushFfmpegLoadStatus('تحميل محرك التحويل (~30MB)…');
+            const coreURL = await fetchCoreAssetBlobUrl(
+              coreBase + '/ffmpeg-core.js', 'text/javascript', 'core-js', pushFfmpegLoadStatus, 'محرك JS',
+            );
+            const wasmURL = await fetchCoreAssetBlobUrl(
+              coreBase + '/ffmpeg-core.wasm', 'application/wasm', 'core-wasm', pushFfmpegLoadStatus, 'محرك WASM',
+            );
+            pushFfmpegLoadStatus('تشغيل أداة التحويل…');
+            await ffmpeg.load({ classWorkerURL, coreURL, wasmURL });
+            _ffmpegTranscodeInstance = ffmpeg;
+            return ffmpeg;
+          })().catch((err) => {
+            _ffmpegTranscodeInstance = null;
+            throw err;
+          }).finally(() => {
+            _ffmpegLoadPromise = null;
           });
-          ffmpeg.on('progress', ({ progress }) => {
-            if (progress > 0) onStatus?.('تحويل الفيديو… ' + Math.min(99, Math.round(progress * 100)) + '%');
-          });
-          const coreBase = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm';
-          let classWorkerURL = atharVendorAssetUrl('vendor/ffmpeg/worker.js');
-          if (!(await probeAtharVendorWorker())) {
-            throw new Error('ملفات التحويل غير متاحة على الموقع — حدّث الصفحة (Ctrl+Shift+R) أو انتظر دقيقة حتى يكتمل النشر');
-          }
-          onStatus?.('تحميل محرك التحويل (~30MB) — قد يستغرق دقيقة…');
-          const coreURL = await fetchCoreAssetBlobUrl(
-            coreBase + '/ffmpeg-core.js', 'text/javascript', 'core-js', onStatus, 'محرك JS',
-          );
-          const wasmURL = await fetchCoreAssetBlobUrl(
-            coreBase + '/ffmpeg-core.wasm', 'application/wasm', 'core-wasm', onStatus, 'محرك WASM',
-          );
-          onStatus?.('تشغيل أداة التحويل…');
-          await ffmpeg.load({ classWorkerURL, coreURL, wasmURL });
-          return ffmpeg;
-        })();
+        }
         const timeout = new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('انتهت مهلة تحميل أداة التحويل — حدّث الصفحة (Ctrl+Shift+R) أو جرّب شبكة أقوى')), 180000);
+          setTimeout(() => reject(new Error('انتهت مهلة تحميل أداة التحويل — حدّث الصفحة (Ctrl+Shift+R)')), 180000);
         });
-        _ffmpegTranscodeInstance = await Promise.race([loadJob, timeout]);
+        await Promise.race([_ffmpegLoadPromise, timeout]);
+        if (!_ffmpegTranscodeInstance) throw new Error('تعذّر تحميل أداة التحويل');
         return _ffmpegTranscodeInstance;
       }
 
@@ -44724,7 +44731,14 @@
         const inName = 'hevc_in.mp4';
         const outName = 'h264_out.mp4';
         await ffmpeg.writeFile(inName, new Uint8Array(await blob.arrayBuffer()));
-        await ffmpeg.exec(buildHevcToH264FfmpegArgs(inName, outName, hasAudio));
+        const execHb = setInterval(() => {
+          onStatus?.('جاري التحويل… لا تغلق الصفحة (قد يستغرق عدة دقائق)');
+        }, 8000);
+        try {
+          await ffmpeg.exec(buildHevcToH264FfmpegArgs(inName, outName, hasAudio));
+        } finally {
+          clearInterval(execHb);
+        }
         const data = await ffmpeg.readFile(outName);
         try {
           await ffmpeg.deleteFile(inName);
@@ -44740,7 +44754,11 @@
           throw new Error('لا يتوفر رابط بث صالح للتحويل');
         }
         if (_hevcReplaceInflight[key]) {
-          await _hevcReplaceInflight[key];
+          onStatus?.('انتظار اكتمال تحويل جارٍ لنفس الملف…');
+          const inflightWait = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('انتهت مهلة انتظار التحويل — حدّث الصفحة')), 900000);
+          });
+          await Promise.race([_hevcReplaceInflight[key], inflightWait]);
           return null;
         }
         const job = (async () => {
@@ -44843,12 +44861,23 @@
           showAttViewerLoader('<i class="fas fa-spinner fa-spin fa-2x"></i><p id="hevc-tc-status" style="font-size:14px;margin-top:10px">تسجيل H.265 — جاري التحويل والحفظ…</p>');
           try {
             if (viewerLoadGen !== state._attViewerLoadGen) return null;
+            setStatus('تحميل الفيديو وأداة التحويل…');
             await convertHevcAttachmentInPlace(r2Key, streamUrl, mime, setStatus, vid, ck);
             if (viewerLoadGen !== state._attViewerLoadGen) return null;
             revealAttViewerMedia(vid);
             return r2Key;
           } catch (autoErr) {
             if (isMirsadDebugLog()) console.warn('[Viewer] تحويل HEVC تلقائي فشل', autoErr);
+            const errMsg = Sec.escapeHTML(autoErr?.message || String(autoErr));
+            setStatus('فشل التحويل: ' + (autoErr?.message || String(autoErr)));
+            const opts = buildHevcViewerHelpOpts(playUrl, ck, codec, hevcCtx);
+            showAttViewerLoader(
+              hevcPlaybackHelpHtml(opts).replace(
+                '</div>',
+                `<p style="font-size:11px;color:#f87171;margin:10px 0 0">${errMsg}</p></div>`,
+              ),
+            );
+            return null;
           }
         }
 
@@ -45044,7 +45073,6 @@
       }
 
       async function resolveAttachmentVideoPlayback(vid, fileId, name, ticketCtx, mime, ck, viewerLoadGen) {
-        if (isAtharDesktopViewer() && isLikelyVideoAttachmentKey(fileId)) warmupFfmpegTranscoder();
         const streamFb = readVideoStreamFallback(ck);
         let playUrl = await loadAttachmentPlayUrl(fileId, name, ticketCtx);
         if (viewerLoadGen !== state._attViewerLoadGen) return null;
