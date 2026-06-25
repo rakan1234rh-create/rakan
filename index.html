@@ -13437,6 +13437,11 @@
       display: block;
     }
 
+    .profile-hero__av.has-avatar-art svg,
+    .avatar-picker-opt__art svg {
+      padding: 0;
+    }
+
     .profile-hero__av-edit {
       width: 34px;
       height: 34px;
@@ -30260,7 +30265,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-profile-avatars-v1031">
+  <meta name="app-build" content="athar-role-icons-v1032">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -30622,7 +30627,7 @@
                 <div class="profile-hero">
                 <div class="profile-hero__av-stack">
                   <div class="profile-hero__av" id="profilePageAv" aria-hidden="true">—</div>
-                  <button type="button" class="profile-hero__av-edit" onclick="openProfileAvatarPicker(event)" aria-label="تغيير الصورة الرمزية">
+                  <button type="button" class="profile-hero__av-edit" onclick="openProfileAvatarPicker(event)" aria-label="تغيير الأيقونة">
                     <i class="fas fa-pencil" aria-hidden="true"></i>
                   </button>
                 </div>
@@ -31662,7 +31667,7 @@
     <div class="modal" id="avatarPickerModal" role="dialog" aria-modal="true" aria-labelledby="avatarPickerModalTitle">
       <div class="modal-card avatar-picker-card">
         <div class="modal-header">
-          <h3 id="avatarPickerModalTitle">اختر صورتك الرمزية</h3>
+          <h3 id="avatarPickerModalTitle">اختر أيقونتك</h3>
           <button type="button" class="btn btn-ghost" onclick="closeModal('avatarPickerModal')" aria-label="إغلاق"><i class="fas fa-times"></i></button>
         </div>
         <div class="modal-body">
@@ -40038,52 +40043,89 @@
 
       const TOPBAR_USER_DEFAULT_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M6 20v-1a6 6 0 0 1 12 0v1"/></svg>';
 
+      function roleIconSvg(bg, fg, paths) {
+        return `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="32" cy="32" r="32" fill="${bg}"/><g fill="${fg}" stroke="none">${paths}</g></svg>`;
+      }
+
       function profileAvatarArtSvg(id) {
-        const skin = '#f0c6a2';
-        const hair = '#2f2f3a';
-        const eye = '#2f2f3a';
-        const common = (bg, body) => `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="64" height="64" fill="${bg}"/>${body}</svg>`;
+        const white = '#ffffff';
         switch (id) {
-          case 'male_blue':
-            return common('#c8d4f5', `<ellipse cx="32" cy="40" rx="17" ry="12" fill="#7eb8e8"/><path d="M18 40v24h28V40" fill="#7eb8e8"/><path d="M22 40l10 6 10-6" fill="#fff"/><circle cx="32" cy="24" r="12.5" fill="${skin}"/><path d="M20 17c2-6 8-9 12-9s10 3 12 9c-3-4-8-6-12-6s-9 2-12 6z" fill="${hair}"/><circle cx="27" cy="24" r="1.6" fill="${eye}"/><circle cx="37" cy="24" r="1.6" fill="${eye}"/><path d="M29 30q3 2 6 0" stroke="#c4886a" stroke-width="1.2" fill="none" stroke-linecap="round"/>`);
-          case 'glasses_purple':
-            return common('#a89bc4', `<ellipse cx="32" cy="42" rx="16" ry="11" fill="#b07f96"/><path d="M18 42v22h28V42" fill="#b07f96"/><circle cx="32" cy="24" r="12" fill="${skin}"/><path d="M20 16c3-7 9-10 12-10s9 3 12 10c-3-5-8-7-12-7s-9 2-12 7z" fill="#4a3f57"/><rect x="22" y="22" width="8" height="5" rx="2" fill="none" stroke="#2f2f3a" stroke-width="1.4"/><rect x="34" y="22" width="8" height="5" rx="2" fill="none" stroke="#2f2f3a" stroke-width="1.4"/><path d="M30 24.5h4" stroke="#2f2f3a" stroke-width="1.2"/><circle cx="26" cy="24" r="1.4" fill="${eye}"/><circle cx="38" cy="24" r="1.4" fill="${eye}"/><path d="M29 30q3 2 6 0" stroke="#c4886a" stroke-width="1.1" fill="none" stroke-linecap="round"/>`);
-          case 'headphones_green':
-            return common('#f2e8d9', `<ellipse cx="32" cy="41" rx="17" ry="12" fill="#3f7d63"/><path d="M18 41v23h28V41" fill="#3f7d63"/><rect x="24" y="41" width="16" height="8" rx="2" fill="#f4f4f4"/><circle cx="32" cy="24" r="12" fill="${skin}"/><path d="M20 17c2-6 8-9 12-9s10 3 12 9c-3-4-8-6-12-6s-9 2-12 6z" fill="${hair}"/><path d="M14 24c0-6 4-10 8-10" stroke="#d64040" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M50 24c0-6-4-10-8-10" stroke="#d64040" stroke-width="3" fill="none" stroke-linecap="round"/><rect x="12" y="22" width="5" height="8" rx="2.5" fill="#d64040"/><rect x="47" y="22" width="5" height="8" rx="2.5" fill="#d64040"/><circle cx="27" cy="24" r="1.5" fill="${eye}"/><circle cx="37" cy="24" r="1.5" fill="${eye}"/><path d="M29 30q3 2 6 0" stroke="#c4886a" stroke-width="1.1" fill="none" stroke-linecap="round"/>`);
-          case 'male_tie':
-            return common('#dce8f5', `<ellipse cx="32" cy="40" rx="17" ry="12" fill="#f4f4f6"/><path d="M18 40v24h28V40" fill="#f4f4f6"/><path d="M28 40l4 14 4-14" fill="#c53b3b"/><path d="M30 40h4v5h-4z" fill="#c53b3b"/><path d="M22 40h20l-10 7z" fill="#fff"/><circle cx="32" cy="23" r="12" fill="${skin}"/><path d="M20 16c2-6 8-9 12-9s10 3 12 9c-3-4-8-6-12-6s-9 2-12 6z" fill="${hair}"/><circle cx="27" cy="23" r="1.5" fill="${eye}"/><circle cx="37" cy="23" r="1.5" fill="${eye}"/><path d="M29 29q3 2 6 0" stroke="#c4886a" stroke-width="1.1" fill="none" stroke-linecap="round"/>`);
-          case 'female_hijab':
-            return common('#f8d4e0', `<ellipse cx="32" cy="40" rx="16" ry="11" fill="#8f5f78"/><path d="M18 40v22h28V40" fill="#8f5f78"/><circle cx="32" cy="25" r="11" fill="${skin}"/><path d="M17 24c2-12 10-18 15-18s13 6 15 18c-4-8-10-12-15-12s-11 4-15 12z" fill="#6d4f67"/><path d="M17 24c0 10 6 16 15 16s15-6 15-16" fill="#8f5f78"/><circle cx="27" cy="25" r="1.4" fill="${eye}"/><circle cx="37" cy="25" r="1.4" fill="${eye}"/><path d="M29 30q3 2 6 0" stroke="#c4886a" stroke-width="1.1" fill="none" stroke-linecap="round"/>`);
-          case 'female_hair':
-            return common('#d8f0eb', `<ellipse cx="32" cy="41" rx="16" ry="11" fill="#d97aa5"/><path d="M18 41v21h28V41" fill="#d97aa5"/><circle cx="32" cy="24" r="12" fill="${skin}"/><path d="M18 20c4-10 10-14 14-14s10 4 14 14c-2-8-7-12-14-12s-12 4-14 12z" fill="#6d3f4f"/><path d="M18 28c0 12 5 18 14 18s14-6 14-18c-3 8-8 12-14 12s-11-4-14-12z" fill="#6d3f4f"/><circle cx="27" cy="24" r="1.5" fill="${eye}"/><circle cx="37" cy="24" r="1.5" fill="${eye}"/><path d="M29 30q3 2 6 0" stroke="#c4886a" stroke-width="1.1" fill="none" stroke-linecap="round"/>`);
-          case 'female_glasses':
-            return common('#e8dff8', `<ellipse cx="32" cy="41" rx="16" ry="11" fill="#5f7fae"/><path d="M18 41v21h28V41" fill="#5f7fae"/><circle cx="32" cy="24" r="12" fill="${skin}"/><path d="M20 16c3-7 9-10 12-10s9 3 12 10c-3-5-8-7-12-7s-9 2-12 7z" fill="#4a3040"/><rect x="22" y="22" width="8" height="5" rx="2" fill="none" stroke="#2f2f3a" stroke-width="1.3"/><rect x="34" y="22" width="8" height="5" rx="2" fill="none" stroke="#2f2f3a" stroke-width="1.3"/><path d="M30 24.5h4" stroke="#2f2f3a" stroke-width="1.1"/><circle cx="26" cy="24" r="1.3" fill="${eye}"/><circle cx="38" cy="24" r="1.3" fill="${eye}"/><path d="M29 30q3 2 6 0" stroke="#c4886a" stroke-width="1.1" fill="none" stroke-linecap="round"/>`);
-          case 'female_tie':
-            return common('#e6eef8', `<ellipse cx="32" cy="40" rx="16" ry="11" fill="#f3f5f8"/><path d="M18 40v24h28V40" fill="#f3f5f8"/><path d="M29 40l3 12 3-12" fill="#8b3f5f"/><path d="M31 40h2v4h-2z" fill="#8b3f5f"/><path d="M23 40h18l-9 6z" fill="#fff"/><circle cx="32" cy="23" r="12" fill="${skin}"/><path d="M19 16c4-8 10-11 13-11s9 3 13 11c-3-5-8-8-13-8s-10 3-13 8z" fill="#5a3345"/><circle cx="27" cy="23" r="1.4" fill="${eye}"/><circle cx="37" cy="23" r="1.4" fill="${eye}"/><path d="M29 29q3 2 6 0" stroke="#c4886a" stroke-width="1.1" fill="none" stroke-linecap="round"/>`);
+          case 'emp_sales':
+            return roleIconSvg('#f59e0b', white, '<path d="M22 24h20l-2.5 18H24.5L22 24zm4-6h12l1.5 6H24.5L26 18zm8 28a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5zm-10 0a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/>');
+          case 'emp_target':
+            return `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="32" cy="32" r="32" fill="#eab308"/><circle cx="32" cy="32" r="14" fill="none" stroke="${white}" stroke-width="3"/><circle cx="32" cy="32" r="8" fill="none" stroke="${white}" stroke-width="3"/><circle cx="32" cy="32" r="3" fill="${white}"/></svg>`;
+          case 'emp_chat':
+            return roleIconSvg('#f97316', white, '<path d="M18 20c0-4 4-7 14-7s14 3 14 7-4 7-14 7c-1.6 0-3.1-.2-4.4-.5L18 38l1.5-6.2C18.6 29.8 18 27.9 18 26V20z"/>');
+          case 'emp_star':
+            return roleIconSvg('#fbbf24', white, '<path d="M32 17l3.4 7.8 8.4 1-6.1 5.3 1.8 8.3L32 36.2l-7.5 3.2 1.8-8.3-6.1-5.3 8.4-1z"/>');
+          case 'mgr_store':
+            return roleIconSvg('#0d9488', white, '<path d="M16 24l4-8h24l4 8v4H16v-4zm2 8h28v14H18V32zm8 4v10h4V36h-4zm8 0v10h4V36h-4z"/>');
+          case 'mgr_team':
+            return roleIconSvg('#14b8a6', white, '<circle cx="24" cy="26" r="5"/><circle cx="40" cy="26" r="5"/><circle cx="32" cy="20" r="5"/><path d="M14 42c0-6 4.5-9 10-9s10 3 10 9H14zm20 0c0-5 3.5-8 8-8s8 3 8 8H34z"/>');
+          case 'mgr_chart':
+            return roleIconSvg('#0f766e', white, '<rect x="18" y="30" width="6" height="16" rx="1.5"/><rect x="29" y="24" width="6" height="22" rx="1.5"/><rect x="40" y="18" width="6" height="28" rx="1.5"/>');
+          case 'mgr_key':
+            return roleIconSvg('#115e59', white, '<circle cx="26" cy="28" r="7"/><path d="M31 33l12 12-4 4-12-12"/><path d="M40 44l4 4"/>');
+          case 'sup_map':
+            return roleIconSvg('#2f2fe4', white, '<path d="M22 18l8-4 8 4 8-4v30l-8 4-8-4-8 4-8-4V18zm8 2v24l8 4V24l-8-4z"/>');
+          case 'sup_regions':
+            return roleIconSvg('#4f46e5', white, '<rect x="18" y="18" width="14" height="14" rx="3"/><rect x="32" y="24" width="14" height="14" rx="3"/><rect x="24" y="32" width="14" height="14" rx="3"/>');
+          case 'sup_eye':
+            return roleIconSvg('#4338ca', white, '<path d="M10 32s8-14 22-14 22 14 22 14-8 14-22 14S10 32 10 32zm22-8a8 8 0 1 0 0 16 8 8 0 0 0 0-16z"/><circle cx="32" cy="32" r="4"/>');
+          case 'sup_flag':
+            return roleIconSvg('#3730a3', white, '<path d="M22 16v34"/><path d="M22 16h22l-4 8 4 8H22"/>');
           default:
             return '';
         }
       }
 
       const PROFILE_AVATARS = [
-        { id: 'male_blue', label: 'رجل — قميص أزرق', bg: '#c8d4f5' },
-        { id: 'glasses_purple', label: 'نظارات — بنفسجي', bg: '#a89bc4' },
-        { id: 'headphones_green', label: 'رجل — سماعات', bg: '#f2e8d9' },
-        { id: 'male_tie', label: 'رجل — ربطة عنق', bg: '#dce8f5' },
-        { id: 'female_hijab', label: 'امرأة — محجبة', bg: '#f8d4e0' },
-        { id: 'female_hair', label: 'امرأة — شعر طويل', bg: '#d8f0eb' },
-        { id: 'female_glasses', label: 'امرأة — نظارات', bg: '#e8dff8' },
-        { id: 'female_tie', label: 'امرأة — رسمية', bg: '#e6eef8' }
+        { id: 'emp_sales', label: 'مبيعات', bg: '#f59e0b', roles: ['employee'] },
+        { id: 'emp_target', label: 'هدف', bg: '#eab308', roles: ['employee'] },
+        { id: 'emp_chat', label: 'تواصل', bg: '#f97316', roles: ['employee'] },
+        { id: 'emp_star', label: 'تميز', bg: '#fbbf24', roles: ['employee'] },
+        { id: 'mgr_store', label: 'فرع', bg: '#0d9488', roles: ['branch_manager'] },
+        { id: 'mgr_team', label: 'فريق', bg: '#14b8a6', roles: ['branch_manager'] },
+        { id: 'mgr_chart', label: 'أداء', bg: '#0f766e', roles: ['branch_manager'] },
+        { id: 'mgr_key', label: 'إدارة', bg: '#115e59', roles: ['branch_manager'] },
+        { id: 'sup_map', label: 'خريطة', bg: '#2f2fe4', roles: ['supervisor'] },
+        { id: 'sup_regions', label: 'مناطق', bg: '#4f46e5', roles: ['supervisor'] },
+        { id: 'sup_eye', label: 'متابعة', bg: '#4338ca', roles: ['supervisor'] },
+        { id: 'sup_flag', label: 'قيادة', bg: '#3730a3', roles: ['supervisor'] }
       ].map((item) => ({ ...item, svg: profileAvatarArtSvg(item.id) }));
+
+      function getProfileAvatarsForUser(u) {
+        const roleKey = normalizeUserRole(u?.role);
+        return PROFILE_AVATARS.filter((a) => a.roles.includes(roleKey));
+      }
+
+      function canPickProfileAvatar(u) {
+        return getProfileAvatarsForUser(u).length > 0;
+      }
+
+      function profileAvatarPickerTitle(u) {
+        const roleKey = normalizeUserRole(u?.role);
+        if (roleKey === 'employee') return 'اختر أيقونة الموظف';
+        if (roleKey === 'branch_manager') return 'اختر أيقونة مدير الفرع';
+        if (roleKey === 'supervisor') return 'اختر أيقونة المشرف';
+        return 'اختر أيقونتك';
+      }
 
       function getProfileAvatarPreset(key) {
         if (!key) return null;
         return PROFILE_AVATARS.find((a) => a.id === key) || null;
       }
 
+      function getValidProfileAvatarPreset(u) {
+        const preset = getProfileAvatarPreset(u?.avatar_key);
+        if (!preset) return null;
+        const roleKey = normalizeUserRole(u?.role);
+        return preset.roles.includes(roleKey) ? preset : null;
+      }
+
       function applyUserAvatarEl(el, u) {
         if (!el || !u) return;
-        const preset = getProfileAvatarPreset(u.avatar_key);
+        const preset = getValidProfileAvatarPreset(u);
         el.classList.toggle('has-avatar-art', !!preset);
         if (preset) {
           el.style.background = preset.bg;
@@ -40100,7 +40142,7 @@
       function syncTopbarUserAvatar(u) {
         const icon = document.getElementById('topbarUserAv');
         if (!icon) return;
-        const preset = getProfileAvatarPreset(u?.avatar_key);
+        const preset = getValidProfileAvatarPreset(u);
         if (preset) {
           icon.classList.add('has-user-avatar');
           icon.style.background = preset.bg;
@@ -40114,9 +40156,13 @@
 
       function renderProfileAvatarPickerGrid() {
         const grid = document.getElementById('avatarPickerGrid');
-        if (!grid) return;
-        const current = state.currentUser?.avatar_key || '';
-        grid.innerHTML = PROFILE_AVATARS.map((a) => `
+        const title = document.getElementById('avatarPickerModalTitle');
+        const u = state.currentUser;
+        if (!grid || !u) return;
+        if (title) title.textContent = profileAvatarPickerTitle(u);
+        const options = getProfileAvatarsForUser(u);
+        const current = u.avatar_key || '';
+        grid.innerHTML = options.map((a) => `
           <button type="button" class="avatar-picker-opt${current === a.id ? ' is-selected' : ''}"
             onclick="saveProfileAvatar('${a.id}')" aria-label="${Sec.escapeHTML(a.label)}"
             ${current === a.id ? 'aria-pressed="true"' : ''}>
@@ -40130,7 +40176,7 @@
           event.preventDefault();
           event.stopPropagation();
         }
-        if (!state.currentUser) return;
+        if (!state.currentUser || !canPickProfileAvatar(state.currentUser)) return;
         renderProfileAvatarPickerGrid();
         openModal('avatarPickerModal');
       }
@@ -40138,7 +40184,7 @@
       async function saveProfileAvatar(key) {
         const u = state.currentUser;
         if (!u?.id) return;
-        if (!PROFILE_AVATARS.some((a) => a.id === key)) return;
+        if (!PROFILE_AVATARS.some((a) => a.id === key && a.roles.includes(normalizeUserRole(u.role)))) return;
         try {
           const { data, error } = await sb.from('users')
             .update({ avatar_key: key })
@@ -40202,6 +40248,8 @@
         const roleKey = normalizeUserRole(u.role);
         const av = document.getElementById('profilePageAv');
         if (av) applyUserAvatarEl(av, u);
+        const avEditBtn = document.querySelector('.profile-hero__av-edit');
+        if (avEditBtn) avEditBtn.hidden = !canPickProfileAvatar(u);
         const setText = (id, val) => {
           const el = document.getElementById(id);
           if (el) el.textContent = (val && String(val).trim()) ? String(val).trim() : '—';
