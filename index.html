@@ -13310,10 +13310,17 @@
     html.mr-profile-page-active.mr-mobile-ui #appWrap .topbar,
     html.mr-profile-page-active.mr-mobile-ui #appWrap .sidebar,
     html.mr-profile-page-active.mr-mobile-ui #appWrap .page-title-bar,
-    html.mr-profile-page-active.mr-mobile-ui #mobileBottomNav {
+    html.mr-mobile-ui:has(#tab-profile.active) #mobileBottomNav,
+    html.mr-mobile-ui:has(#tab-profile.active) #appWrap > .app-shell > #mobileBottomNav.mobile-bottom-nav,
+    html.mr-mobile-ui:has(#tab-profile.active) #mobileBottomNav.mobile-bottom-nav,
+    html.mr-profile-page-active.mr-mobile-ui #mobileBottomNav,
+    html.mr-profile-page-active.mr-mobile-ui #appWrap > .app-shell > #mobileBottomNav.mobile-bottom-nav,
+    html.mr-profile-page-active.mr-mobile-ui #mobileBottomNav.mobile-bottom-nav {
       display: none !important;
       visibility: hidden !important;
-      pointer-events: none !important
+      pointer-events: none !important;
+      opacity: 0 !important;
+      transition: none !important
     }
 
     html.mr-profile-page-active.mr-mobile-ui #appWrap > .app-shell {
@@ -30133,7 +30140,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-profile-nav-instant-v1021">
+  <meta name="app-build" content="athar-profile-nav-zero-flash-v1022">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -38452,9 +38459,16 @@
         }
         if (document.documentElement.classList.contains('mr-profile-page-active')
           || getActiveTabKey() === 'profile') {
-          nav.style.display = 'none';
+          nav.style.setProperty('display', 'none', 'important');
+          nav.style.setProperty('visibility', 'hidden', 'important');
+          nav.style.setProperty('pointer-events', 'none', 'important');
+          nav.style.setProperty('opacity', '0', 'important');
           return;
         }
+        nav.style.removeProperty('display');
+        nav.style.removeProperty('visibility');
+        nav.style.removeProperty('pointer-events');
+        nav.style.removeProperty('opacity');
         const n = Number(nav.dataset.mobNavCount || 0);
         nav.style.display = n > 0 ? 'flex' : 'none';
         if (n > 0) {
@@ -39663,7 +39677,10 @@
 
         if (!opts.shellAlreadySwitched) {
         if (tab === 'notifications') prepNotifPageSlideIn();
-        if (tab === 'profile') syncProfilePageShell(true);
+        if (tab === 'profile') {
+          syncProfilePageShell(true);
+          syncProfileBottomNavHidden(true);
+        }
         document.querySelectorAll('.tab-content').forEach(t => {
           t.classList.remove('active');
           if (t.id !== `tab-${tab}`) t.setAttribute('hidden', '');
@@ -39836,9 +39853,29 @@
         return getActiveTabKey() === 'profile';
       }
 
+      function syncProfileBottomNavHidden(hidden) {
+        const nav = document.getElementById('mobileBottomNav');
+        if (!nav) return;
+        if (hidden) {
+          nav.style.setProperty('display', 'none', 'important');
+          nav.style.setProperty('visibility', 'hidden', 'important');
+          nav.style.setProperty('pointer-events', 'none', 'important');
+          nav.style.setProperty('opacity', '0', 'important');
+        } else {
+          nav.style.removeProperty('display');
+          nav.style.removeProperty('visibility');
+          nav.style.removeProperty('pointer-events');
+          nav.style.removeProperty('opacity');
+        }
+      }
+
       function syncProfilePageShell(active) {
         document.documentElement.classList.toggle('mr-profile-page-active', !!active);
         document.body.classList.toggle('mr-profile-page-active', !!active);
+        syncProfileBottomNavHidden(!!active);
+        if (!active && typeof syncMobileBottomNavLayout === 'function') {
+          syncMobileBottomNavLayout();
+        }
       }
 
       function renderProfilePage() {
@@ -39883,12 +39920,12 @@
           event.preventDefault();
         }
         if (!state.currentUser) return;
+        syncProfilePageShell(true);
         closeNotifPanel();
         if (!isProfilePageOpen()) {
           state._profileReturnTab = getActiveTabKey() || getRestorableTab() || 'dashboard';
         }
         document.getElementById('topbarUserMenuBtn')?.blur();
-        syncProfilePageShell(true);
         goTab('profile', null);
       }
 
