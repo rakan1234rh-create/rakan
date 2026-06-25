@@ -29650,7 +29650,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-hevc-prep-upload-v1011">
+  <meta name="app-build" content="athar-hevc-prep-upload-v1012">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -43436,6 +43436,7 @@
         state.ntPickedViolationType = null;
         state.uploadedFiles.nt = [];
         prepareNewTicket();
+        syncAttachmentSubmitButtons('nt');
       }
 
       async function submitNewTicket() {
@@ -43467,6 +43468,15 @@
         if (descError) return showToast('الوصف: ' + descError, 'error');
 
         if (!files.length) return showToast('أرفق ملف واحد على الأقل', 'error');
+
+        for (const f of filesToUpload) {
+          if (f.prepStatus !== 'ready') {
+            showToast('انتظر اكتمال تحضير المرفقات (تحويل/رفع) قبل الإرسال', 'warning');
+            state.uploadedFiles.nt = filesToUpload;
+            syncAttachmentSubmitButtons('nt');
+            return;
+          }
+        }
 
         const emp = state.users.find(u => u.employee_number === empNum && isViolationSubjectUser(u));
         if (!emp) return showToast('الرقم الوظيفي غير موجود أو لا يمكن رصد مخالفة على هذا الدور', 'error');
@@ -43512,6 +43522,7 @@
         const cancelBtn = document.querySelector('button[onclick="resetNewTicket()"]');
         const originalBtnText = submitBtn ? submitBtn.innerHTML : '';
         if (submitBtn) {
+          submitBtn.dataset.submitting = '1';
           submitBtn.disabled = true;
           submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري رفع المخالفة...';
         }
@@ -43612,7 +43623,9 @@
           showGlobalLoader(false);
           if (submitBtn) {
             submitBtn.disabled = false;
+            delete submitBtn.dataset.submitting;
             submitBtn.innerHTML = originalBtnText;
+            syncAttachmentSubmitButtons('nt');
           }
           if (cancelBtn) {
             cancelBtn.disabled = false;
@@ -43924,6 +43937,7 @@
         if (!row) return;
         const statusEl = row.querySelector('.file-item-status');
         if (statusEl) statusEl.textContent = attachmentPrepStatusLabel(file);
+        syncAttachmentSubmitButtons(scope);
       }
 
       async function uploadPreparedBlobToR2(objectKey, body, contentType, fileName, onProgress, cancelHandle) {
@@ -44041,10 +44055,12 @@
             || /\.(mp4|mov|webm|m4v|avi|mkv)$/i.test(uploadName);
 
           if (isVideo && body instanceof Blob) {
-            const vCodec = await sniffMp4VideoCodec(body);
-            if (isHevcCodec(vCodec) && isAtharDesktopViewer()) {
+            const vCodec = fileEntry.codecHint || await sniffMp4VideoCodec(body);
+            fileEntry.codecHint = vCodec;
+            if (shouldPrepTranscodeVideo(body, uploadName, vCodec)) {
               if (fileEntry._cancelled) return;
               fileEntry.prepStatus = 'transcoding';
+              fileEntry.prepStatusMsg = 'جاري التحويل…';
               updateAttachmentPrepUi(scope, fileEntry._fileId);
               const { blob } = await transcodeHevcBlobToPlayableBlob(body, contentType, (msg) => {
                 fileEntry.prepStatusMsg = msg;
@@ -44095,10 +44111,13 @@
           fileEntry.prepError = String(err?.message || err);
           updateAttachmentPrepUi(scope, fileEntry._fileId);
           if (isMirsadDebugLog()) console.warn('[Prep] فشل تجهيز مرفق', err);
+        }).finally(() => {
+          syncAttachmentSubmitButtons(scope);
         });
 
         fileEntry._prepPromise = job;
-        await job;
+        syncAttachmentSubmitButtons(scope);
+        void job;
       }
 
       function fileToBase64(file) {
@@ -44678,9 +44697,11 @@
           const c0 = buf[i], c1 = buf[i + 1], c2 = buf[i + 2], c3 = buf[i + 3];
           if (c0 === 0x61 && c1 === 0x76 && c2 === 0x63 && (c3 === 0x31 || c3 === 0x33)) sawH264 = true;
           if (c0 === 0x68 && c1 === 0x76 && (c2 === 0x63 || c2 === 0x65) && c3 === 0x31) sawH265 = true;
+          if (c0 === 0x68 && c1 === 0x76 && c2 === 0x63 && c3 === 0x43) sawH265 = true;
+          if (c0 === 0x68 && c1 === 0x76 && c2 === 0x65 && c3 === 0x43) sawH265 = true;
         }
-        if (sawH264) return 'h264';
         if (sawH265) return 'h265';
+        if (sawH264) return 'h264';
         return null;
       }
 
@@ -44728,6 +44749,59 @@
 
       function isHevcCodec(codec) {
         return codec === 'h265';
+      }
+
+      function shouldPrepTranscodeVideo(blob, fileName, codec) {
+        if (!isAtharDesktopViewer()) return false;
+        if (!(blob instanceof Blob) || !blob.size) return false;
+        if (blob.size > HEVC_TRANSCODE_MAX_BYTES) return false;
+        if (codec === 'h264') return false;
+        if (isHevcCodec(codec)) return true;
+        const ext = String(fileName || '').toLowerCase();
+        if (codec === 'unknown' && /\.(mp4|mov|m4v)$/i.test(ext)) return true;
+        return false;
+      }
+
+      function areAttachmentsReady(scope) {
+        const files = state.uploadedFiles[scope] || [];
+        if (!files.length) return false;
+        return files.every((f) => f.prepStatus === 'ready');
+      }
+
+      function isAttachmentPrepInProgress(scope) {
+        return (state.uploadedFiles[scope] || []).some((f) =>
+          f.prepStatus === 'preparing' || f.prepStatus === 'transcoding' || f.prepStatus === 'uploading',
+        );
+      }
+
+      function syncAttachmentSubmitButtons(scope) {
+        const files = state.uploadedFiles[scope] || [];
+        const inProgress = isAttachmentPrepInProgress(scope);
+        const hasError = files.some((f) => f.prepStatus === 'error');
+        const allReady = areAttachmentsReady(scope);
+
+        if (scope === 'nt') {
+          const btn = document.getElementById('submitTicketBtn');
+          if (!btn || btn.dataset.submitting === '1') return;
+          const block = inProgress || hasError || (files.length > 0 && !allReady);
+          btn.disabled = !!block;
+          btn.style.opacity = block ? '0.55' : '';
+          btn.style.cursor = block ? 'not-allowed' : '';
+          if (inProgress) btn.title = 'انتظر اكتمال تحضير المرفقات (تحويل/رفع)…';
+          else if (hasError) btn.title = 'أزل المرفق الفاشل أو أعد اختياره';
+          else btn.title = '';
+        }
+
+        if (scope === 'resp') {
+          const respBtns = document.querySelectorAll('.td-resp-action');
+          respBtns.forEach((btn) => {
+            if (btn.dataset.submitting === '1') return;
+            const block = files.length > 0 && (inProgress || hasError || !allReady);
+            btn.disabled = !!block;
+            btn.style.opacity = block ? '0.55' : '';
+            btn.style.cursor = block ? 'not-allowed' : '';
+          });
+        }
       }
 
       function hevcPlaybackHelpHtml(opts) {
@@ -45661,15 +45735,16 @@
             area.appendChild(item);
             const statusEl = item.querySelector('.file-item-status');
 
+            let vCodecHint = null;
             if (isImg) {
               const compressResult = await compressImageFile(file);
               base64Data = compressResult.base64;
               finalType = 'image/jpeg';
             } else if (isVid) {
-              const vCodec = await sniffMp4VideoCodec(file);
-              if (isHevcCodec(vCodec) && isAtharDesktopViewer()) {
+              vCodecHint = await sniffMp4VideoCodec(file);
+              if (shouldPrepTranscodeVideo(file, file.name, vCodecHint)) {
                 showToast('سيتم تحويل الفيديو إلى H.264 تلقائياً أثناء التحضير.', 'info');
-              } else if (isHevcCodec(vCodec)) {
+              } else if (isHevcCodec(vCodecHint)) {
                 showToast('تحذير: قد لا يُشغّل هذا الفيديو على الكمبيوتر — جرّب H.264 من إعدادات التسجيل.', 'info');
               }
             }
@@ -45690,6 +45765,7 @@
               prepError: null,
               tempKey: null,
               transcoded: false,
+              codecHint: vCodecHint,
             });
             const idx = state.uploadedFiles[scope].length - 1;
             const entry = state.uploadedFiles[scope][idx];
@@ -45704,6 +45780,7 @@
             </div>`;
 
             void runAttachmentBackgroundPrep(scope, entry);
+            syncAttachmentSubmitButtons(scope);
           } catch (err) {
             item.innerHTML = `<i class="fas fa-times" style="color:var(--red)"></i><span>${Sec.escapeHTML(file.name)} - فشل التحضير</span>`;
             showToast('فشل معالجة الملف: ' + err.message, 'error');
@@ -45721,6 +45798,7 @@
         void deleteAttachmentTempKey(file).finally(() => {
           list.splice(idx, 1);
           if (btn) btn.closest('.file-item')?.remove();
+          syncAttachmentSubmitButtons(scope);
         });
       }
 
@@ -48804,6 +48882,14 @@
 
         const respFiles = state.uploadedFiles.resp || [];
         const me = state.currentUser;
+
+        if (respFiles.length) {
+          for (const f of respFiles) {
+            if (f.prepStatus !== 'ready') {
+              return showToast('انتظر اكتمال تحضير المرفقات قبل الإرسال', 'warning');
+            }
+          }
+        }
 
         const transitions = {
           respond: () => resolveForwardTransition('emp', 'employee_reply'),
