@@ -70,6 +70,22 @@ function assertTempUploadKey(key: string, userId: string): string {
   return k
 }
 
+function assertAvatarPresetKey(key: string): string {
+  const k = assertKey(key)
+  if (!/^avatars\/presets\/[a-zA-Z0-9_-]+\.(webp|png|jpe?g)$/i.test(k)) {
+    throw new Error('مسار صورة البروفايل غير صالح')
+  }
+  return k
+}
+
+async function requireMirsadAdmin(
+  supabase: ReturnType<typeof createClient>,
+): Promise<boolean> {
+  const { data, error } = await supabase.rpc('current_user_role')
+  if (error) return false
+  return data === 'admin'
+}
+
 async function authenticateRequest(req: Request) {
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!
   const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
@@ -363,6 +379,41 @@ Deno.serve(async (req) => {
     }
   }
 
+  if (req.method === 'POST' && req.headers.get('X-R2-Action') === 'putAvatarPreset') {
+    if (!env) return json({ error: 'R2 غير مُعدّ (متغيرات البيئة على الدالة)' }, 503)
+    const auth = await authenticateRequest(req)
+    if ('error' in auth && auth.error) return auth.error
+
+    try {
+      const isAdmin = await requireMirsadAdmin(auth.supabase)
+      if (!isAdmin) return json({ error: 'غير مصرح — مدير النظام فقط' }, 403)
+      const key = assertAvatarPresetKey(req.headers.get('X-R2-Key') || '')
+      const contentType =
+        (req.headers.get('Content-Type') || '').trim() || guessContentTypeFromKey(key)
+      const bytes = new Uint8Array(await req.arrayBuffer())
+      if (!bytes.length) return json({ error: 'جسم فارغ' }, 400)
+      if (bytes.length > 2 * 1024 * 1024) {
+        return json({ error: 'حجم صورة البروفايل كبير جداً (الحد 2 ميغابايت)' }, 413)
+      }
+      const s3 = makeS3(env)
+      await s3.send(
+        new PutObjectCommand({
+          Bucket: env.bucket,
+          Key: key,
+          Body: bytes,
+          ContentType: contentType,
+          CacheControl: 'public, max-age=31536000, immutable',
+        }),
+      )
+      return json({ ok: true, key })
+    } catch (e) {
+      console.error('[r2-storage] putAvatarPreset', e)
+      const msg = e instanceof Error ? e.message : 'حدث خطأ أثناء رفع صورة البروفايل'
+      const status = msg.includes('غير مصرح') || msg.includes('غير صالح') ? 403 : 500
+      return json({ error: msg }, status)
+    }
+  }
+
   if (req.method === 'POST' && req.headers.get('X-R2-Action') === 'putObject') {
     if (!env) return json({ error: 'R2 غير مُعدّ (متغيرات البيئة على الدالة)' }, 503)
     const auth = await authenticateRequest(req)
@@ -573,6 +624,42 @@ Deno.serve(async (req) => {
       })
       const url = await getSignedUrl(s3, cmd, { expiresIn: 3600 })
       return json({ url, key, contentType: ct })
+    }
+
+    if (action === 'signAvatarPresetGet') {
+      const key = assertAvatarPresetKey(body.key || '')
+      const ct =
+        typeof body.contentType === 'string' && body.contentType.trim()
+          ? body.contentType.trim()
+          : guessContentTypeFromKey(key)
+      const cmd = new GetObjectCommand({
+        Bucket: bucket,
+        Key: key,
+        ResponseContentType: ct,
+        ResponseContentDisposition: 'inline',
+      })
+      const url = await getSignedUrl(s3, cmd, { expiresIn: 3600 })
+      const streamToken = await makeStreamToken(key, env)
+      return json({ url, key, streamToken, contentType: ct })
+    }
+
+    if (action === 'deleteAvatarPreset') {
+      const isAdmin = await requireMirsadAdmin(supabase)
+      if (!isAdmin) return json({ error: 'غير مصرح — مدير النظام فقط' }, 403)
+      const key = assertAvatarPresetKey(body.key || '')
+      try {
+        await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }))
+        return json({ ok: true, key })
+      } catch (e: unknown) {
+        const name =
+          e && typeof e === 'object' && 'name' in e
+            ? String((e as { name: string }).name)
+            : ''
+        if (name === 'NotFound' || name === 'NoSuchKey' || name === '404') {
+          return json({ ok: true, key, missing: true })
+        }
+        throw e
+      }
     }
 
     if (action === 'signGet') {

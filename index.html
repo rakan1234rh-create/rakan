@@ -13579,6 +13579,121 @@
       box-shadow: 0 0 0 3px var(--mr-primary);
     }
 
+    .mr-avatar-admin-panel {
+      margin-top: 18px;
+    }
+
+    .mr-avatar-admin-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin: 12px 0;
+    }
+
+    .mr-avatar-admin-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+      gap: 12px;
+    }
+
+    .mr-avatar-admin-card {
+      border: 1px solid var(--mr-border, #e5e7eb);
+      border-radius: 14px;
+      padding: 10px;
+      background: var(--mr-surface, #fff);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: center;
+      text-align: center;
+    }
+
+    .mr-avatar-admin-card__art {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--mr-bg2, #f3f4f6);
+    }
+
+    .mr-avatar-admin-card__art img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .mr-avatar-admin-card__label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--mr-text, #111827);
+      line-height: 1.35;
+    }
+
+    .mr-avatar-admin-card__meta {
+      font-size: 10px;
+      color: var(--text3, #6b7280);
+      line-height: 1.4;
+    }
+
+    .mr-avatar-admin-card__actions {
+      display: flex;
+      gap: 6px;
+      width: 100%;
+      justify-content: center;
+    }
+
+    .mr-avatar-admin-card__actions .btn {
+      min-height: 30px;
+      padding: 4px 10px;
+      font-size: 11px;
+    }
+
+    .mr-avatar-admin-form {
+      display: grid;
+      gap: 12px;
+    }
+
+    .mr-avatar-admin-roles {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 14px;
+    }
+
+    .mr-avatar-admin-roles label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .mr-avatar-admin-preview {
+      width: 96px;
+      height: 96px;
+      border-radius: 50%;
+      overflow: hidden;
+      margin: 0 auto;
+      background: var(--mr-bg2, #f3f4f6);
+      display: none;
+    }
+
+    .mr-avatar-admin-preview.is-visible {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .mr-avatar-admin-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
     .mr-topbar-user-icon.has-user-avatar {
       overflow: hidden;
       padding: 0;
@@ -30336,7 +30451,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-founding-frame-v1039">
+  <meta name="app-build" content="athar-avatar-admin-v1040">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -31631,6 +31746,20 @@
                 <button type="button" class="btn" onclick="resetRolePermissionsToDefaults()"><i class="fas fa-rotate-left"></i> استعادة الصلاحيات الافتراضية</button>
               </div>
             </div>
+            <div class="panel wf-panel mr-avatar-admin-panel" id="settingsProfileAvatarsPanel" data-roles="admin">
+              <div class="wf-panel-banner">
+                <div class="wf-panel-intro">
+                  <h2 class="wf-panel-title">صور الملف الشخصي</h2>
+                  <p class="wf-panel-sub">profile avatars</p>
+                </div>
+                <p class="mr-settings-note"><i class="fas fa-images"></i> أضف أو احذف صور البروفايل المتاحة للموظفين ومديري الفروع والمشرفين. التغييرات تظهر فوراً لجميع المستخدمين.</p>
+                <div class="mr-avatar-admin-toolbar">
+                  <button type="button" class="btn btn-primary" onclick="openProfileAvatarAdminModal()"><i class="fas fa-plus"></i> إضافة صورة</button>
+                  <button type="button" class="btn" onclick="restoreProfileAvatarsDefaults()"><i class="fas fa-rotate-left"></i> استعادة الافتراضي</button>
+                </div>
+              </div>
+              <div id="settingsProfileAvatarsHost" class="mr-avatar-admin-grid"></div>
+            </div>
           </div>
           <script>
             (function () {
@@ -31743,6 +31872,45 @@
         </div>
         <div class="modal-body">
           <div class="avatar-picker-grid" id="avatarPickerGrid" role="listbox" aria-label="صور شخصية"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal" id="profileAvatarAdminModal" role="dialog" aria-modal="true" aria-labelledby="profileAvatarAdminModalTitle">
+      <div class="modal-card avatar-picker-card" style="max-width:420px">
+        <div class="modal-header">
+          <h3 id="profileAvatarAdminModalTitle">إضافة صورة بروفايل</h3>
+          <button type="button" class="btn btn-ghost" onclick="closeModal('profileAvatarAdminModal')" aria-label="إغلاق"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+          <form class="mr-avatar-admin-form" id="profileAvatarAdminForm" onsubmit="submitProfileAvatarAdminForm(event)">
+            <div class="form-group">
+              <label class="form-label" for="paa-label">اسم الصورة <span class="required-mark">*</span></label>
+              <input type="text" id="paa-label" class="form-input" placeholder="مثال: شماغ أبيض" required maxlength="40">
+            </div>
+            <div class="form-group">
+              <span class="form-label">الأدوار المسموحة <span class="required-mark">*</span></span>
+              <div class="mr-avatar-admin-roles">
+                <label><input type="checkbox" id="paa-role-employee" value="employee" checked> موظف</label>
+                <label><input type="checkbox" id="paa-role-branch_manager" value="branch_manager" checked> مدير فرع</label>
+                <label><input type="checkbox" id="paa-role-supervisor" value="supervisor" checked> مشرف</label>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="mr-perm-toggle" style="justify-content:flex-start;gap:8px">
+                <input type="checkbox" id="paa-founding">
+                <span>إطار يوم التأسيس</span>
+              </label>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="paa-file">صورة (WebP / PNG / JPG) <span class="required-mark">*</span></label>
+              <input type="file" id="paa-file" class="form-input" accept="image/webp,image/png,image/jpeg" required onchange="previewProfileAvatarAdminFile(event)">
+            </div>
+            <div class="mr-avatar-admin-preview" id="paa-preview" aria-hidden="true"></div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn" onclick="closeModal('profileAvatarAdminModal')">إلغاء</button>
+          <button type="button" class="btn btn-primary" onclick="submitProfileAvatarAdminForm(event)"><i class="fas fa-cloud-upload-alt"></i> رفع وحفظ</button>
         </div>
       </div>
     </div>
@@ -33343,6 +33511,8 @@
         _settingsPermUserId: null,
         _userPermMatrixDirty: false,
         _userPermDenyKeys: null,
+        profileAvatars: null,
+        _profileAvatarsFromCloud: false,
         _dataLoading: false,
         _dataReady: false
       };
@@ -35995,6 +36165,8 @@
 
           loadTheme();
           await loadRolePermissions();
+          await loadProfileAvatars();
+          warmAvatarPresetUrlCache().catch(() => {});
           applyRBACUI({ skipCmpRefresh: true });
           armSessionRestoreGuard();
           startLiveClock();
@@ -37127,12 +37299,26 @@
           state.realtimeChannels.push(bCh);
         }
 
-        const permKeys = [MR_PERMS_BUNDLE_DB_KEY, MR_PERMS_DB_KEY, MR_USER_PERMS_DB_KEY];
+        const permKeys = [MR_PERMS_BUNDLE_DB_KEY, MR_PERMS_DB_KEY, MR_USER_PERMS_DB_KEY, MR_PROFILE_AVATARS_DB_KEY];
         state._permsRealtimeSubscribed = false;
         const pCh = sb.channel('public:platform_settings')
           .on('postgres_changes', { event: '*', schema: 'public', table: 'platform_settings' }, (payload) => {
             const key = payload?.new?.key || payload?.old?.key;
-            if (!key || !permKeys.includes(key)) return;
+            if (!key) return;
+            if (key === MR_PROFILE_AVATARS_DB_KEY) {
+              loadProfileAvatars({ forceCloud: true })
+                .then(() => {
+                  warmAvatarPresetUrlCache().catch(() => {});
+                  renderProfileAvatarsAdmin();
+                  if (state.currentUser) {
+                    updateSidebarUser();
+                    if (isProfilePageOpen()) renderProfilePage();
+                  }
+                })
+                .catch(e => { if (isMirsadDebugLog()) console.warn('[profile_avatars] realtime refresh', e); });
+              return;
+            }
+            if (!permKeys.includes(key)) return;
             state._seeAllCompliancePrev = undefined;
             state._viewAllTicketsPrev = undefined;
             refreshPermissionsFromCloud({ forceCloud: true })
@@ -37173,6 +37359,7 @@
       const MR_PERMS_DB_KEY = 'role_permissions';
       const MR_USER_PERMS_DB_KEY = 'user_permissions';
       const MR_PERMS_BUNDLE_DB_KEY = 'permissions_bundle_v1';
+      const MR_PROFILE_AVATARS_DB_KEY = 'profile_avatars_v1';
       const MR_MANAGEABLE_ROLES = ['manager', 'auditor', 'supervisor', 'employee', 'branch_manager', 'observer', 'hr'];
 
       const MR_PERMISSION_DEFS = [
@@ -38425,6 +38612,7 @@
         populateSettingsPermUserSelect();
         if (state._settingsPermMode === 'user') renderUserPermissionsMatrix();
         else renderRolePermissionsMatrix();
+        renderProfileAvatarsAdmin();
       }
 
       function applyRBACUI(opts = {}) {
@@ -40122,45 +40310,162 @@
         founding_sword: 'founding-day-sword.webp'
       };
 
-      function profileAvatarImgUrl(file) {
+      const PROFILE_AVATAR_ROLE_PREFIX = {
+        employee: 'emp',
+        branch_manager: 'mgr',
+        supervisor: 'sup'
+      };
+
+      const PROFILE_AVATAR_ROLE_LABELS = {
+        employee: 'موظف',
+        branch_manager: 'مدير فرع',
+        supervisor: 'مشرف'
+      };
+
+      const PROFILE_AVATARS_DEFAULT = [
+        { id: 'emp_ghutra', label: 'شماغ أحمر', img: PROFILE_PORTRAIT_FILES.ghutra, imgSource: 'builtin', roles: ['employee'], founding: false },
+        { id: 'emp_tie', label: 'ربطة عنق', img: PROFILE_PORTRAIT_FILES.tie_m, imgSource: 'builtin', roles: ['employee'], founding: false },
+        { id: 'emp_hijab', label: 'محجبة', img: PROFILE_PORTRAIT_FILES.hijab_f, imgSource: 'builtin', roles: ['employee'], founding: false },
+        { id: 'emp_formal_f', label: 'رسمية', img: PROFILE_PORTRAIT_FILES.formal_f, imgSource: 'builtin', roles: ['employee'], founding: false },
+        { id: 'emp_founding', label: 'يوم التأسيس', img: PROFILE_PORTRAIT_FILES.founding_sword, imgSource: 'builtin', roles: ['employee'], founding: true },
+        { id: 'mgr_ghutra', label: 'شماغ أحمر', img: PROFILE_PORTRAIT_FILES.ghutra, imgSource: 'builtin', roles: ['branch_manager'], founding: false },
+        { id: 'mgr_tie', label: 'ربطة عنق', img: PROFILE_PORTRAIT_FILES.tie_m, imgSource: 'builtin', roles: ['branch_manager'], founding: false },
+        { id: 'mgr_hijab', label: 'محجبة', img: PROFILE_PORTRAIT_FILES.hijab_f, imgSource: 'builtin', roles: ['branch_manager'], founding: false },
+        { id: 'mgr_formal_f', label: 'رسمية', img: PROFILE_PORTRAIT_FILES.formal_f, imgSource: 'builtin', roles: ['branch_manager'], founding: false },
+        { id: 'mgr_founding', label: 'يوم التأسيس', img: PROFILE_PORTRAIT_FILES.founding_sword, imgSource: 'builtin', roles: ['branch_manager'], founding: true },
+        { id: 'sup_ghutra', label: 'شماغ أحمر', img: PROFILE_PORTRAIT_FILES.ghutra, imgSource: 'builtin', roles: ['supervisor'], founding: false },
+        { id: 'sup_tie', label: 'ربطة عنق', img: PROFILE_PORTRAIT_FILES.tie_m, imgSource: 'builtin', roles: ['supervisor'], founding: false },
+        { id: 'sup_hijab', label: 'محجبة', img: PROFILE_PORTRAIT_FILES.hijab_f, imgSource: 'builtin', roles: ['supervisor'], founding: false },
+        { id: 'sup_formal_f', label: 'رسمية', img: PROFILE_PORTRAIT_FILES.formal_f, imgSource: 'builtin', roles: ['supervisor'], founding: false },
+        { id: 'sup_founding', label: 'يوم التأسيس', img: PROFILE_PORTRAIT_FILES.founding_sword, imgSource: 'builtin', roles: ['supervisor'], founding: true }
+      ];
+
+      function sanitizeProfileAvatarItem(raw) {
+        if (!raw || typeof raw !== 'object') return null;
+        const id = String(raw.id || '').trim();
+        const label = String(raw.label || '').trim();
+        const img = String(raw.img || '').trim();
+        if (!id || !label || !img) return null;
+        if (!/^[a-z][a-z0-9_]{1,63}$/.test(id)) return null;
+        const roles = Array.isArray(raw.roles)
+          ? raw.roles.map((r) => normalizeUserRole(r)).filter((r) => PROFILE_AVATAR_ROLE_PREFIX[r])
+          : [];
+        if (!roles.length) return null;
+        const imgSource = raw.imgSource === 'r2' ? 'r2' : 'builtin';
+        return { id, label, img, imgSource, roles, founding: !!raw.founding };
+      }
+
+      function sanitizeProfileAvatars(items) {
+        const out = [];
+        const seen = new Set();
+        for (const raw of items || []) {
+          const item = sanitizeProfileAvatarItem(raw);
+          if (!item || seen.has(item.id)) continue;
+          seen.add(item.id);
+          out.push(item);
+        }
+        return out.length ? out : PROFILE_AVATARS_DEFAULT.slice();
+      }
+
+      function getProfileAvatarsCatalog() {
+        if (Array.isArray(state.profileAvatars) && state.profileAvatars.length) return state.profileAvatars;
+        return PROFILE_AVATARS_DEFAULT;
+      }
+
+      async function loadProfileAvatars(opts = {}) {
+        if (!opts.forceCloud && Array.isArray(state.profileAvatars) && state.profileAvatars.length) {
+          return state.profileAvatars;
+        }
+        const data = await loadPlatformSetting(MR_PROFILE_AVATARS_DB_KEY);
+        if (data && Array.isArray(data.items) && data.items.length) {
+          state.profileAvatars = sanitizeProfileAvatars(data.items);
+          state._profileAvatarsFromCloud = true;
+        } else if (!state.profileAvatars) {
+          state.profileAvatars = PROFILE_AVATARS_DEFAULT.slice();
+          state._profileAvatarsFromCloud = false;
+        }
+        return state.profileAvatars;
+      }
+
+      function avatarPresetCacheKey(preset) {
+        if (!preset) return '';
+        return preset.imgSource === 'r2' ? `avatar::${preset.img}` : `builtin::${preset.img}`;
+      }
+
+      function profileBuiltinImgUrl(file) {
         const build = document.querySelector('meta[name="app-build"]')?.content || '1';
         return `./icons/avatars/${file}?v=${encodeURIComponent(build)}`;
       }
 
-      function profileAvatarImgHtml(file, alt, opts) {
-        const src = profileAvatarImgUrl(file);
-        const safeAlt = Sec.escapeHTML(alt || 'صورة الملف الشخصي');
-        const founding = !!(opts && opts.founding);
-        const img = `<img class="profile-avatar-photo${founding ? ' profile-avatar-photo--founding' : ''}" src="${src}" alt="${safeAlt}" width="256" height="256" loading="lazy" decoding="async">`;
+      function resolveAvatarPresetImgSrcSync(preset) {
+        if (!preset?.img) return '';
+        if (preset.imgSource === 'r2') return readCfCache(avatarPresetCacheKey(preset)) || '';
+        return profileBuiltinImgUrl(preset.img);
+      }
+
+      async function ensureAvatarPresetImgUrl(preset) {
+        if (!preset?.img) return '';
+        if (preset.imgSource !== 'r2') return profileBuiltinImgUrl(preset.img);
+        const cacheKey = avatarPresetCacheKey(preset);
+        const cached = readCfCache(cacheKey);
+        if (cached) return cached;
+        try {
+          const signed = await callR2StorageFn('signAvatarPresetGet', { key: preset.img });
+          const url = signed?.streamToken ? buildR2StreamPlayUrl(signed.streamToken) : signed?.url;
+          if (url) writeCfCache(cacheKey, url);
+          return url || '';
+        } catch (e) {
+          if (isMirsadDebugLog()) console.warn('[profile_avatars] sign get failed', preset.id, e);
+          return '';
+        }
+      }
+
+      async function warmAvatarPresetUrlCache() {
+        const items = getProfileAvatarsCatalog().filter((a) => a.imgSource === 'r2');
+        await Promise.all(items.map((a) => ensureAvatarPresetImgUrl(a)));
+      }
+
+      function profileAvatarImgUrl(fileOrPreset) {
+        if (typeof fileOrPreset === 'string') return profileBuiltinImgUrl(fileOrPreset);
+        return resolveAvatarPresetImgSrcSync(fileOrPreset);
+      }
+
+      function profileAvatarImgHtml(presetOrFile, alt, opts) {
+        const preset = typeof presetOrFile === 'object' && presetOrFile
+          ? presetOrFile
+          : { img: presetOrFile, imgSource: 'builtin', founding: !!(opts && opts.founding) };
+        const src = resolveAvatarPresetImgSrcSync(preset);
+        const safeAlt = Sec.escapeHTML(alt || preset.label || 'صورة الملف الشخصي');
+        const founding = !!(opts && opts.founding) || !!preset.founding;
+        const fallback = profileBuiltinImgUrl(PROFILE_PORTRAIT_FILES.ghutra);
+        const img = `<img class="profile-avatar-photo${founding ? ' profile-avatar-photo--founding' : ''}" src="${Sec.escapeHTML(src || fallback)}" alt="${safeAlt}" width="256" height="256" loading="lazy" decoding="async"${preset.id ? ` data-avatar-id="${Sec.escapeHTML(preset.id)}"` : ''}>`;
         if (!founding) return img;
         return `<span class="profile-avatar-founding-ring" aria-hidden="true"><span class="profile-avatar-founding-ring__inner">${img}</span></span>`;
       }
 
-      const PROFILE_AVATARS = [
-        { id: 'emp_ghutra', label: 'شماغ أحمر', img: PROFILE_PORTRAIT_FILES.ghutra, roles: ['employee'] },
-        { id: 'emp_tie', label: 'ربطة عنق', img: PROFILE_PORTRAIT_FILES.tie_m, roles: ['employee'] },
-        { id: 'emp_hijab', label: 'محجبة', img: PROFILE_PORTRAIT_FILES.hijab_f, roles: ['employee'] },
-        { id: 'emp_formal_f', label: 'رسمية', img: PROFILE_PORTRAIT_FILES.formal_f, roles: ['employee'] },
-        { id: 'emp_founding', label: 'يوم التأسيس', img: PROFILE_PORTRAIT_FILES.founding_sword, roles: ['employee'], founding: true },
-        { id: 'mgr_ghutra', label: 'شماغ أحمر', img: PROFILE_PORTRAIT_FILES.ghutra, roles: ['branch_manager'] },
-        { id: 'mgr_tie', label: 'ربطة عنق', img: PROFILE_PORTRAIT_FILES.tie_m, roles: ['branch_manager'] },
-        { id: 'mgr_hijab', label: 'محجبة', img: PROFILE_PORTRAIT_FILES.hijab_f, roles: ['branch_manager'] },
-        { id: 'mgr_formal_f', label: 'رسمية', img: PROFILE_PORTRAIT_FILES.formal_f, roles: ['branch_manager'] },
-        { id: 'mgr_founding', label: 'يوم التأسيس', img: PROFILE_PORTRAIT_FILES.founding_sword, roles: ['branch_manager'], founding: true },
-        { id: 'sup_ghutra', label: 'شماغ أحمر', img: PROFILE_PORTRAIT_FILES.ghutra, roles: ['supervisor'] },
-        { id: 'sup_tie', label: 'ربطة عنق', img: PROFILE_PORTRAIT_FILES.tie_m, roles: ['supervisor'] },
-        { id: 'sup_hijab', label: 'محجبة', img: PROFILE_PORTRAIT_FILES.hijab_f, roles: ['supervisor'] },
-        { id: 'sup_formal_f', label: 'رسمية', img: PROFILE_PORTRAIT_FILES.formal_f, roles: ['supervisor'] },
-        { id: 'sup_founding', label: 'يوم التأسيس', img: PROFILE_PORTRAIT_FILES.founding_sword, roles: ['supervisor'], founding: true }
-      ];
+      async function hydrateProfileAvatarImages(root) {
+        const scope = root && root.querySelectorAll ? root : document;
+        const imgs = scope.querySelectorAll('img[data-avatar-id]');
+        await Promise.all(Array.from(imgs).map(async (img) => {
+          const id = img.getAttribute('data-avatar-id');
+          const preset = getProfileAvatarPreset(id);
+          if (!preset || preset.imgSource !== 'r2') return;
+          const url = await ensureAvatarPresetImgUrl(preset);
+          if (url) img.src = url;
+        }));
+      }
 
       function getProfileAvatarsForUser(u) {
         const roleKey = normalizeUserRole(u?.role);
-        return PROFILE_AVATARS.filter((a) => a.roles.includes(roleKey));
+        return getProfileAvatarsCatalog().filter((a) => a.roles.includes(roleKey));
       }
 
       function canPickProfileAvatar(u) {
         return getProfileAvatarsForUser(u).length > 0;
+      }
+
+      function canManageProfileAvatars() {
+        return normalizeUserRole(state.currentUser?.role) === 'admin';
       }
 
       function profileAvatarPickerTitle(u) {
@@ -40173,7 +40478,7 @@
 
       function getProfileAvatarPreset(key) {
         if (!key) return null;
-        return PROFILE_AVATARS.find((a) => a.id === key) || null;
+        return getProfileAvatarsCatalog().find((a) => a.id === key) || null;
       }
 
       function getValidProfileAvatarPreset(u) {
@@ -40181,6 +40486,235 @@
         if (!preset) return null;
         const roleKey = normalizeUserRole(u?.role);
         return preset.roles.includes(roleKey) ? preset : null;
+      }
+
+      function avatarCatalogUsesImg(img, imgSource) {
+        return getProfileAvatarsCatalog().some((a) => a.img === img && a.imgSource === imgSource);
+      }
+
+      function makeAvatarCatalogSlug(label) {
+        const ascii = String(label || '').trim().toLowerCase()
+          .replace(/\s+/g, '_')
+          .replace(/[^a-z0-9_]/g, '');
+        return ascii || `custom_${Date.now().toString(36)}`;
+      }
+
+      function makeUniqueAvatarId(role, slug) {
+        const prefix = PROFILE_AVATAR_ROLE_PREFIX[role] || 'usr';
+        let id = `${prefix}_${slug}`;
+        let n = 2;
+        const catalog = getProfileAvatarsCatalog();
+        while (catalog.some((a) => a.id === id)) {
+          id = `${prefix}_${slug}_${n}`;
+          n += 1;
+        }
+        return id;
+      }
+
+      async function persistProfileAvatarsCatalog(items) {
+        const sanitized = sanitizeProfileAvatars(items);
+        const payload = { version: 1, items: sanitized };
+        const res = await savePlatformSetting(MR_PROFILE_AVATARS_DB_KEY, payload);
+        if (!res.ok) throw new Error(res.reason || 'تعذّر حفظ كتالوج الصور');
+        state.profileAvatars = sanitized;
+        state._profileAvatarsFromCloud = true;
+        await warmAvatarPresetUrlCache();
+        return sanitized;
+      }
+
+      async function uploadProfileAvatarPresetFile(file) {
+        if (!file) throw new Error('لم يتم اختيار ملف');
+        if (file.size > 2 * 1024 * 1024) throw new Error('حجم الصورة كبير (الحد 2 ميغابايت)');
+        const ext = (file.name.split('.').pop() || 'webp').toLowerCase().replace(/[^a-z0-9]/g, '') || 'webp';
+        const safeExt = ['webp', 'png', 'jpg', 'jpeg'].includes(ext) ? ext : 'webp';
+        const objectKey = `avatars/presets/${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}.${safeExt}`;
+        const contentType = file.type || (safeExt === 'png' ? 'image/png' : safeExt === 'jpg' || safeExt === 'jpeg' ? 'image/jpeg' : 'image/webp');
+        let session = await ensureSupabaseSessionFresh();
+        if (!session?.access_token) throw new Error('انتهت الجلسة — سجّل الدخول من جديد');
+        const res = await fetch(R2_STORAGE_FN_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': contentType,
+            'apikey': SUPABASE_ANON,
+            'Authorization': `Bearer ${session.access_token}`,
+            'X-R2-Action': 'putAvatarPreset',
+            'X-R2-Key': objectKey,
+          },
+          body: await file.arrayBuffer(),
+        });
+        let data = {};
+        try { data = await res.json(); } catch (_) { }
+        if (!res.ok) {
+          const msg = data.error || data.message || `فشل رفع الصورة (${res.status})`;
+          if (res.status === 404 || /عملية غير معروفة|unknown/i.test(msg)) {
+            throw new Error('رفع الصور يتطلب تحديث دالة r2-storage على Supabase — أعد نشرها ثم حاول مجدداً');
+          }
+          throw new Error(msg);
+        }
+        return objectKey;
+      }
+
+      function renderProfileAvatarsAdmin() {
+        const host = document.getElementById('settingsProfileAvatarsHost');
+        if (!host) return;
+        if (!canManageProfileAvatars()) {
+          host.innerHTML = '<p class="mr-settings-note">هذا القسم متاح لمدير النظام فقط.</p>';
+          return;
+        }
+        const items = getProfileAvatarsCatalog();
+        if (!items.length) {
+          host.innerHTML = '<p class="mr-settings-note">لا توجد صور — أضف صورة جديدة.</p>';
+          return;
+        }
+        host.innerHTML = items.map((a) => {
+          const roleTxt = a.roles.map((r) => PROFILE_AVATAR_ROLE_LABELS[r] || r).join(' · ');
+          const foundingTag = a.founding ? ' · إطار التأسيس' : '';
+          const sourceTag = a.imgSource === 'r2' ? 'مرفوعة' : 'مدمجة';
+          return `<div class="mr-avatar-admin-card">
+            <div class="mr-avatar-admin-card__art">${profileAvatarImgHtml(a, a.label)}</div>
+            <div class="mr-avatar-admin-card__label">${Sec.escapeHTML(a.label)}</div>
+            <div class="mr-avatar-admin-card__meta">${Sec.escapeHTML(roleTxt)}${foundingTag}<br><code style="font-size:9px">${Sec.escapeHTML(a.id)}</code> · ${sourceTag}</div>
+            <div class="mr-avatar-admin-card__actions">
+              <button type="button" class="btn btn-danger" onclick="deleteProfileAvatarPreset('${Sec.escapeHTML(a.id)}')"><i class="fas fa-trash"></i> حذف</button>
+            </div>
+          </div>`;
+        }).join('');
+        hydrateProfileAvatarImages(host).catch(() => {});
+      }
+
+      function openProfileAvatarAdminModal() {
+        if (!canManageProfileAvatars()) {
+          showToast('هذا الإجراء لمدير النظام فقط.', 'error');
+          return;
+        }
+        const form = document.getElementById('profileAvatarAdminForm');
+        form?.reset();
+        const preview = document.getElementById('paa-preview');
+        if (preview) {
+          preview.innerHTML = '';
+          preview.classList.remove('is-visible');
+        }
+        ['paa-role-employee', 'paa-role-branch_manager', 'paa-role-supervisor'].forEach((id) => {
+          const el = document.getElementById(id);
+          if (el) el.checked = true;
+        });
+        openModal('profileAvatarAdminModal');
+      }
+
+      function previewProfileAvatarAdminFile(event) {
+        const file = event?.target?.files?.[0];
+        const preview = document.getElementById('paa-preview');
+        if (!preview) return;
+        if (!file) {
+          preview.innerHTML = '';
+          preview.classList.remove('is-visible');
+          return;
+        }
+        const url = URL.createObjectURL(file);
+        preview.innerHTML = `<img src="${url}" alt="">`;
+        preview.classList.add('is-visible');
+      }
+
+      async function submitProfileAvatarAdminForm(event) {
+        if (event) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        if (!canManageProfileAvatars()) {
+          showToast('هذا الإجراء لمدير النظام فقط.', 'error');
+          return;
+        }
+        const label = String(document.getElementById('paa-label')?.value || '').trim();
+        const founding = !!document.getElementById('paa-founding')?.checked;
+        const file = document.getElementById('paa-file')?.files?.[0];
+        const roles = ['employee', 'branch_manager', 'supervisor'].filter((r) => document.getElementById(`paa-role-${r}`)?.checked);
+        if (!label) {
+          showToast('أدخل اسم الصورة.', 'warning');
+          return;
+        }
+        if (!roles.length) {
+          showToast('اختر دوراً واحداً على الأقل.', 'warning');
+          return;
+        }
+        if (!file) {
+          showToast('اختر ملف الصورة.', 'warning');
+          return;
+        }
+        try {
+          showToast('جاري رفع الصورة…', 'info');
+          const objectKey = await uploadProfileAvatarPresetFile(file);
+          const slug = makeAvatarCatalogSlug(label);
+          const catalog = getProfileAvatarsCatalog().slice();
+          for (const role of roles) {
+            catalog.push({
+              id: makeUniqueAvatarId(role, slug),
+              label,
+              img: objectKey,
+              imgSource: 'r2',
+              roles: [role],
+              founding
+            });
+          }
+          await persistProfileAvatarsCatalog(catalog);
+          closeModal('profileAvatarAdminModal');
+          renderProfileAvatarsAdmin();
+          showToast('تمت إضافة الصورة ✓', 'success');
+        } catch (err) {
+          showToast(formatPostgrestError(err) || err?.message || 'تعذّر إضافة الصورة', 'error');
+        }
+      }
+
+      async function deleteProfileAvatarPreset(id) {
+        if (!canManageProfileAvatars()) {
+          showToast('هذا الإجراء لمدير النظام فقط.', 'error');
+          return;
+        }
+        const preset = getProfileAvatarPreset(id);
+        if (!preset) return;
+        const ok = confirm(`حذف صورة «${preset.label}» من القائمة؟\nسيتم إزالتها من اختيارات المستخدمين أيضاً.`);
+        if (!ok) return;
+        try {
+          const catalog = getProfileAvatarsCatalog().filter((a) => a.id !== id);
+          await persistProfileAvatarsCatalog(catalog);
+          await sb.from('users').update({ avatar_key: null }).eq('avatar_key', id);
+          if (preset.imgSource === 'r2' && !avatarCatalogUsesImg(preset.img, 'r2')) {
+            try {
+              await callR2StorageFn('deleteAvatarPreset', { key: preset.img });
+              delete _cloudflareCache[avatarPresetCacheKey(preset)];
+            } catch (e) {
+              if (isMirsadDebugLog()) console.warn('[profile_avatars] r2 delete', e);
+            }
+          }
+          renderProfileAvatarsAdmin();
+          if (state.currentUser) {
+            updateSidebarUser();
+            if (isProfilePageOpen()) renderProfilePage();
+          }
+          showToast('تم حذف الصورة ✓', 'success');
+        } catch (err) {
+          showToast(formatPostgrestError(err) || err?.message || 'تعذّر حذف الصورة', 'error');
+        }
+      }
+
+      async function restoreProfileAvatarsDefaults() {
+        if (!canManageProfileAvatars()) {
+          showToast('هذا الإجراء لمدير النظام فقط.', 'error');
+          return;
+        }
+        const ok = confirm('استعادة صور البروفايل الافتراضية؟\nسيتم إعادة تعيين اختيارات المستخدمين.');
+        if (!ok) return;
+        try {
+          await persistProfileAvatarsCatalog(PROFILE_AVATARS_DEFAULT.slice());
+          await sb.from('users').update({ avatar_key: null }).not('avatar_key', 'is', null);
+          renderProfileAvatarsAdmin();
+          if (state.currentUser) {
+            updateSidebarUser();
+            if (isProfilePageOpen()) renderProfilePage();
+          }
+          showToast('تمت استعادة الصور الافتراضية ✓', 'success');
+        } catch (err) {
+          showToast(formatPostgrestError(err) || err?.message || 'تعذّر الاستعادة', 'error');
+        }
       }
 
       function applyUserAvatarEl(el, u) {
@@ -40191,7 +40725,8 @@
         if (preset) {
           el.style.background = 'transparent';
           el.textContent = '';
-          el.innerHTML = profileAvatarImgHtml(preset.img, preset.label, { founding: preset.founding });
+          el.innerHTML = profileAvatarImgHtml(preset, preset.label, { founding: preset.founding });
+          hydrateProfileAvatarImages(el).catch(() => {});
         } else {
           el.classList.remove('has-founding-frame');
           const roleKey = normalizeUserRole(u.role);
@@ -40208,7 +40743,8 @@
         if (preset) {
           icon.classList.add('has-user-avatar');
           icon.style.background = 'transparent';
-          icon.innerHTML = profileAvatarImgHtml(preset.img, preset.label, { founding: preset.founding });
+          icon.innerHTML = profileAvatarImgHtml(preset, preset.label, { founding: preset.founding });
+          hydrateProfileAvatarImages(icon).catch(() => {});
         } else {
           icon.classList.remove('has-user-avatar');
           icon.style.background = '';
@@ -40228,9 +40764,10 @@
           <button type="button" class="avatar-picker-opt${current === a.id ? ' is-selected' : ''}"
             onclick="saveProfileAvatar('${a.id}')" aria-label="${Sec.escapeHTML(a.label)}"
             ${current === a.id ? 'aria-pressed="true"' : ''}>
-            <span class="avatar-picker-opt__art">${profileAvatarImgHtml(a.img, a.label, { founding: a.founding })}</span>
+            <span class="avatar-picker-opt__art">${profileAvatarImgHtml(a, a.label, { founding: a.founding })}</span>
           </button>
         `).join('');
+        hydrateProfileAvatarImages(grid).catch(() => {});
       }
 
       function openProfileAvatarPicker(event) {
@@ -40246,7 +40783,7 @@
       async function saveProfileAvatar(key) {
         const u = state.currentUser;
         if (!u?.id) return;
-        if (!PROFILE_AVATARS.some((a) => a.id === key && a.roles.includes(normalizeUserRole(u.role)))) return;
+        if (!getProfileAvatarsCatalog().some((a) => a.id === key && a.roles.includes(normalizeUserRole(u.role)))) return;
         try {
           const { data, error } = await sb.from('users')
             .update({ avatar_key: key })
@@ -60583,6 +61120,11 @@
       window.openProfilePage = openProfilePage;
       window.openProfileAvatarPicker = openProfileAvatarPicker;
       window.saveProfileAvatar = saveProfileAvatar;
+      window.openProfileAvatarAdminModal = openProfileAvatarAdminModal;
+      window.submitProfileAvatarAdminForm = submitProfileAvatarAdminForm;
+      window.previewProfileAvatarAdminFile = previewProfileAvatarAdminFile;
+      window.deleteProfileAvatarPreset = deleteProfileAvatarPreset;
+      window.restoreProfileAvatarsDefaults = restoreProfileAvatarsDefaults;
       window.closeProfilePage = closeProfilePage;
       window.toggleThemeFromUserMenu = toggleThemeFromUserMenu;
       window.handleLogoutFromUserMenu = handleLogoutFromUserMenu;
