@@ -29650,7 +29650,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-hevc-transcode-fast-v1006">
+  <meta name="app-build" content="athar-hevc-preset-fast-v1005">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -44602,24 +44602,14 @@
         }
       }
 
-      const HEVC_X264_PRESET = 'veryfast';
-      let _ffmpegWarmupStarted = false;
-
-      function warmupFfmpegTranscoder() {
-        if (!isAtharDesktopViewer() || _ffmpegTranscodeInstance || _ffmpegWarmupStarted) return;
-        _ffmpegWarmupStarted = true;
-        ensureFfmpegTranscoder(() => {}).catch(() => { _ffmpegWarmupStarted = false; });
-      }
-
       function buildHevcToH264FfmpegArgs(inName, outName, hasAudio) {
         const args = [
           '-i', inName,
           '-map', '0:v:0',
           '-c:v', 'libx264',
-          '-preset', HEVC_X264_PRESET,
-          '-tune', 'fastdecode',
+          '-preset', 'fast',
           '-crf', '30',
-          '-vf', "scale='min(1280,iw)':'min(720,ih)':force_original_aspect_ratio=decrease:flags=fast_bilinear",
+          '-vf', "scale='min(1280,iw)':'min(720,ih)':force_original_aspect_ratio=decrease",
           '-movflags', '+faststart',
         ];
         if (hasAudio) {
@@ -44636,12 +44626,11 @@
         if (len > HEVC_TRANSCODE_MAX_BYTES) {
           throw new Error('حجم الفيديو ' + Math.round(len / 1048576) + 'MB — كبير للتحويل داخل المتصفح. حمّله أو ثبّت HEVC Extensions.');
         }
-        onStatus?.('تحميل الفيديو وأداة التحويل معاً…');
-        const fetchJob = fetchAuthedStreamBlobUrl(streamUrl, mimeType || 'video/mp4');
-        const ffmpegJob = ensureFfmpegTranscoder(onStatus);
-        const [{ blob }, ffmpeg] = await Promise.all([fetchJob, ffmpegJob]);
+        onStatus?.('تحميل الفيديو…');
+        const { blob } = await fetchAuthedStreamBlobUrl(streamUrl, mimeType || 'video/mp4');
         const hasAudio = await mp4BlobHasAudioTrack(blob);
-        onStatus?.('تحويل H.265 → H.264 (720p · ' + HEVC_X264_PRESET + (hasAudio ? ' · صوت' : '') + ')…');
+        onStatus?.('تحويل H.265 → H.264 (720p · preset fast' + (hasAudio ? ' · صوت' : '') + ')…');
+        const ffmpeg = await ensureFfmpegTranscoder(onStatus);
         const inName = 'hevc_in.mp4';
         const outName = 'h264_out.mp4';
         await ffmpeg.writeFile(inName, new Uint8Array(await blob.arrayBuffer()));
