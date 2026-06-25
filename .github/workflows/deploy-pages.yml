@@ -39,6 +39,7 @@ jobs:
           printf '%s\n' "{\"build\":\"${SHORT_SHA}\",\"builtAt\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}" > site/app-version.json
           cp -r styles site/
           if [ -d js ]; then cp -r js site/; fi
+          if [ -d vendor ]; then cp -r vendor site/; fi
           cp manifest.webmanifest site/manifest.webmanifest
           if [ -f sw.js ]; then cp sw.js site/sw.js; fi
           if [ -f CNAME ]; then cp CNAME site/CNAME; fi

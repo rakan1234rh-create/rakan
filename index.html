@@ -29650,7 +29650,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-hevc-replace-v1002">
+  <meta name="app-build" content="athar-ffmpeg-vendor-deploy-v1003">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -44508,26 +44508,78 @@
         return new URL(String(relPath || '').replace(/^\//, ''), window.location.href).href;
       }
 
+      async function fetchToBlobUrlWithProgress(url, mimeType, onStatus, label) {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('تعذّر تحميل ' + (label || url) + ' (' + res.status + ')');
+        const total = parseInt(res.headers.get('Content-Length') || '0', 10);
+        if (!res.body || !total) {
+          onStatus?.('تحميل ' + (label || 'ملف') + '…');
+          return URL.createObjectURL(new Blob([await res.arrayBuffer()], { type: mimeType }));
+        }
+        const reader = res.body.getReader();
+        const chunks = [];
+        let received = 0;
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          chunks.push(value);
+          received += value.length;
+          const pct = Math.min(99, Math.round((received / total) * 100));
+          onStatus?.('تحميل ' + (label || 'ملف') + '… ' + pct + '%');
+        }
+        const blob = new Blob(chunks, { type: mimeType });
+        return URL.createObjectURL(blob);
+      }
+
+      async function probeAtharVendorWorker() {
+        try {
+          const url = atharVendorAssetUrl('vendor/ffmpeg/worker.js');
+          const res = await fetch(url, { method: 'HEAD', cache: 'no-store' });
+          return res.ok;
+        } catch (_) {
+          return false;
+        }
+      }
+
       async function ensureFfmpegTranscoder(onStatus) {
         if (_ffmpegTranscodeInstance) return _ffmpegTranscodeInstance;
         onStatus?.('تحميل أداة التحويل…');
-        const { FFmpeg } = await import('https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/+esm');
-        const { toBlobURL } = await import('https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/+esm');
-        const ffmpeg = new FFmpeg();
-        ffmpeg.on('log', ({ message }) => {
-          if (isMirsadDebugLog()) console.info('[ffmpeg]', message);
+        const loadJob = (async () => {
+          onStatus?.('تحميل مكتبة ffmpeg…');
+          const { FFmpeg } = await import('https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/+esm');
+          const { toBlobURL } = await import('https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/+esm');
+          const ffmpeg = new FFmpeg();
+          ffmpeg.on('log', ({ message }) => {
+            if (isMirsadDebugLog()) console.info('[ffmpeg]', message);
+          });
+          ffmpeg.on('progress', ({ progress }) => {
+            if (progress > 0) onStatus?.('تحويل الفيديو… ' + Math.min(99, Math.round(progress * 100)) + '%');
+          });
+          const coreBase = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm';
+          let classWorkerURL = atharVendorAssetUrl('vendor/ffmpeg/worker.js');
+          if (!(await probeAtharVendorWorker())) {
+            if (isMirsadDebugLog()) console.warn('[ffmpeg] vendor worker غير متاح — fallback CDN blob');
+            classWorkerURL = await toBlobURL(
+              'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/worker.js',
+              'text/javascript',
+            );
+          }
+          onStatus?.('تحميل محرك التحويل (~30MB) — قد يستغرق دقيقة…');
+          const coreURL = await fetchToBlobUrlWithProgress(
+            coreBase + '/ffmpeg-core.js', 'text/javascript', onStatus, 'محرك JS',
+          );
+          const wasmURL = await fetchToBlobUrlWithProgress(
+            coreBase + '/ffmpeg-core.wasm', 'application/wasm', onStatus, 'محرك WASM',
+          );
+          onStatus?.('تشغيل أداة التحويل…');
+          await ffmpeg.load({ classWorkerURL, coreURL, wasmURL });
+          return ffmpeg;
+        })();
+        const timeout = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('انتهت مهلة تحميل أداة التحويل — حدّث الصفحة (Ctrl+Shift+R) أو جرّب شبكة أقوى')), 180000);
         });
-        ffmpeg.on('progress', ({ progress }) => {
-          if (progress > 0) onStatus?.('تحويل الفيديو… ' + Math.min(99, Math.round(progress * 100)) + '%');
-        });
-        const coreBase = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm';
-        await ffmpeg.load({
-          classWorkerURL: atharVendorAssetUrl('vendor/ffmpeg/worker.js'),
-          coreURL: await toBlobURL(coreBase + '/ffmpeg-core.js', 'text/javascript'),
-          wasmURL: await toBlobURL(coreBase + '/ffmpeg-core.wasm', 'application/wasm'),
-        });
-        _ffmpegTranscodeInstance = ffmpeg;
-        return ffmpeg;
+        _ffmpegTranscodeInstance = await Promise.race([loadJob, timeout]);
+        return _ffmpegTranscodeInstance;
       }
 
       async function transcodeHevcStreamToPlayableBlob(streamUrl, mimeType, onStatus) {
