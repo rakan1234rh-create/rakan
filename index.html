@@ -30140,7 +30140,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-profile-theme-label-v1024">
+  <meta name="app-build" content="athar-profile-job-title-v1025">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -30513,9 +30513,13 @@
                     <span class="profile-info-row__lbl">الفرع</span>
                     <strong class="profile-info-row__val" id="profilePageBranch">—</strong>
                   </div>
-                  <div class="profile-info-row">
+                  <div class="profile-info-row" id="profilePageRegionRow">
                     <span class="profile-info-row__lbl">المنطقة</span>
                     <strong class="profile-info-row__val" id="profilePageRegion">—</strong>
+                  </div>
+                  <div class="profile-info-row" id="profilePageJobTitleRow" hidden>
+                    <span class="profile-info-row__lbl">المسمى الوظيفي</span>
+                    <strong class="profile-info-row__val" id="profilePageJobTitle">—</strong>
                   </div>
                   <div class="profile-info-row" id="profilePageManagerRow" hidden>
                     <span class="profile-info-row__lbl">المدير المباشر</span>
@@ -33305,7 +33309,7 @@
       }
 
       /** أعمدة موجودة فعلاً في جدول users — لا تضف region_id أو supervisor_id (غير موجودين في Supabase) */
-      const MOB_USER_SELECT = 'id,name,role,branch_id,employee_number,auth_uid,is_active,email,phone';
+      const MOB_USER_SELECT = 'id,name,role,branch_id,employee_number,auth_uid,is_active,email,phone,job_title';
       const MOB_LOAD_TIMEOUT_MS = 28000;
       /** قائمة التذاكر — بدون logs/attachments/description (تُجلب عند فتح التذكرة) */
       const VIOLATION_LIST_SELECT = [
@@ -39902,7 +39906,17 @@
         const region = branch
           ? (state._regionById?.get(branch.region_id) || (state.regions || []).find(r => r.id === branch.region_id))
           : null;
-        setText('profilePageRegion', region?.name);
+        const isStaffRole = roleKey === 'employee' || roleKey === 'branch_manager';
+        const regionRow = document.getElementById('profilePageRegionRow');
+        const jobTitleRow = document.getElementById('profilePageJobTitleRow');
+        if (regionRow) regionRow.hidden = isStaffRole;
+        if (jobTitleRow) jobTitleRow.hidden = !isStaffRole;
+        if (isStaffRole) {
+          const jobTitle = String(u.job_title || '').trim() || ROLE_LABELS[roleKey] || u.role || '—';
+          setText('profilePageJobTitle', jobTitle);
+        } else {
+          setText('profilePageRegion', region?.name);
+        }
         setText('profilePageEmail', u.email);
         setText('profilePagePhone', u.phone);
         const managerRow = document.getElementById('profilePageManagerRow');
