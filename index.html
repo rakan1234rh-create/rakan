@@ -29650,7 +29650,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-hevc-transcode-v1000">
+  <meta name="app-build" content="athar-hevc-worker-fix-v1001">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -44404,6 +44404,10 @@
         throw err;
       }
 
+      function atharVendorAssetUrl(relPath) {
+        return new URL(String(relPath || '').replace(/^\//, ''), window.location.href).href;
+      }
+
       async function ensureFfmpegTranscoder(onStatus) {
         if (_ffmpegTranscodeInstance) return _ffmpegTranscodeInstance;
         onStatus?.('تحميل أداة التحويل…');
@@ -44416,10 +44420,11 @@
         ffmpeg.on('progress', ({ progress }) => {
           if (progress > 0) onStatus?.('تحويل الفيديو… ' + Math.min(99, Math.round(progress * 100)) + '%');
         });
-        const base = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm';
+        const coreBase = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm';
         await ffmpeg.load({
-          coreURL: await toBlobURL(base + '/ffmpeg-core.js', 'text/javascript'),
-          wasmURL: await toBlobURL(base + '/ffmpeg-core.wasm', 'application/wasm'),
+          classWorkerURL: atharVendorAssetUrl('vendor/ffmpeg/worker.js'),
+          coreURL: await toBlobURL(coreBase + '/ffmpeg-core.js', 'text/javascript'),
+          wasmURL: await toBlobURL(coreBase + '/ffmpeg-core.wasm', 'application/wasm'),
         });
         _ffmpegTranscodeInstance = ffmpeg;
         return ffmpeg;
