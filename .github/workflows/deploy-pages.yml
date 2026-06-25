@@ -48,6 +48,8 @@ jobs:
             icons/athar-app-icon.svg icons/athar-homescreen-fullbleed.svg \
             icons/athar-homescreen-maskable.svg icons/athar-wordmark-email.svg \
             icons/athar-wordmark-email-v388.png site/icons/
+          if [ -d icons/avatars ]; then mkdir -p site/icons/avatars && cp -r icons/avatars/. site/icons/avatars/; fi
+          touch site/.nojekyll
           cp icons/athar-pwa-180-v${VER}.png site/apple-touch-icon.png
           cp icons/athar-pwa-180-v${VER}.png site/apple-touch-icon-precomposed.png
           cp icons/athar-pwa-180-v${VER}.png site/icons/apple-touch-icon.png
