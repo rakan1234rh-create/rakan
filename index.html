@@ -29650,7 +29650,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-hevc-preset-fast-v1005">
+  <meta name="app-build" content="athar-hevc-prefetch-v1007">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -44504,6 +44504,70 @@
         throw err;
       }
 
+      const FFMPEG_CORE_CACHE_VER = 'core-0.12.6';
+      let _ffmpegWarmupPromise = null;
+
+      function openFfmpegIdb() {
+        return new Promise((resolve, reject) => {
+          if (!('indexedDB' in window)) return reject(new Error('no-idb'));
+          const req = indexedDB.open('athar-ffmpeg-cache', 1);
+          req.onupgradeneeded = () => {
+            if (!req.result.objectStoreNames.contains('blobs')) req.result.createObjectStore('blobs');
+          };
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = () => reject(req.error);
+        });
+      }
+
+      async function idbGetFfmpegBlob(key) {
+        try {
+          const db = await openFfmpegIdb();
+          return await new Promise((resolve, reject) => {
+            const tx = db.transaction('blobs', 'readonly');
+            const r = tx.objectStore('blobs').get(key);
+            r.onsuccess = () => resolve(r.result || null);
+            r.onerror = () => reject(r.error);
+          });
+        } catch (_) {
+          return null;
+        }
+      }
+
+      async function idbPutFfmpegBlob(key, buffer) {
+        try {
+          const db = await openFfmpegIdb();
+          await new Promise((resolve, reject) => {
+            const tx = db.transaction('blobs', 'readwrite');
+            tx.objectStore('blobs').put(buffer, key);
+            tx.oncomplete = () => resolve();
+            tx.onerror = () => reject(tx.error);
+          });
+        } catch (_) { /* */ }
+      }
+
+      async function fetchCoreAssetBlobUrl(url, mimeType, cacheKey, onStatus, label) {
+        const idbKey = FFMPEG_CORE_CACHE_VER + ':' + cacheKey;
+        const cached = await idbGetFfmpegBlob(idbKey);
+        if (cached && cached.byteLength) {
+          onStatus?.((label || 'ملف') + ' — من الذاكرة المحلية');
+          return URL.createObjectURL(new Blob([cached], { type: mimeType }));
+        }
+        const blobUrl = await fetchToBlobUrlWithProgress(url, mimeType, onStatus, label);
+        try {
+          const res = await fetch(blobUrl);
+          const buf = await res.arrayBuffer();
+          if (buf.byteLength) void idbPutFfmpegBlob(idbKey, buf);
+        } catch (_) { /* */ }
+        return blobUrl;
+      }
+
+      function warmupFfmpegTranscoder() {
+        if (!isAtharDesktopViewer() || _ffmpegTranscodeInstance || _ffmpegWarmupPromise) return;
+        _ffmpegWarmupPromise = ensureFfmpegTranscoder(() => {}).catch(() => {
+          _ffmpegWarmupPromise = null;
+        });
+      }
+
       function atharVendorAssetUrl(relPath) {
         return new URL(String(relPath || '').replace(/^\//, ''), window.location.href).href;
       }
@@ -44543,6 +44607,12 @@
 
       async function ensureFfmpegTranscoder(onStatus) {
         if (_ffmpegTranscodeInstance) return _ffmpegTranscodeInstance;
+        if (_ffmpegWarmupPromise) {
+          try {
+            await _ffmpegWarmupPromise;
+            if (_ffmpegTranscodeInstance) return _ffmpegTranscodeInstance;
+          } catch (_) { /* */ }
+        }
         onStatus?.('تحميل أداة التحويل…');
         const loadJob = (async () => {
           onStatus?.('تحميل مكتبة ffmpeg…');
@@ -44561,11 +44631,11 @@
             throw new Error('ملفات التحويل غير متاحة على الموقع — حدّث الصفحة (Ctrl+Shift+R) أو انتظر دقيقة حتى يكتمل النشر');
           }
           onStatus?.('تحميل محرك التحويل (~30MB) — قد يستغرق دقيقة…');
-          const coreURL = await fetchToBlobUrlWithProgress(
-            coreBase + '/ffmpeg-core.js', 'text/javascript', onStatus, 'محرك JS',
+          const coreURL = await fetchCoreAssetBlobUrl(
+            coreBase + '/ffmpeg-core.js', 'text/javascript', 'core-js', onStatus, 'محرك JS',
           );
-          const wasmURL = await fetchToBlobUrlWithProgress(
-            coreBase + '/ffmpeg-core.wasm', 'application/wasm', onStatus, 'محرك WASM',
+          const wasmURL = await fetchCoreAssetBlobUrl(
+            coreBase + '/ffmpeg-core.wasm', 'application/wasm', 'core-wasm', onStatus, 'محرك WASM',
           );
           onStatus?.('تشغيل أداة التحويل…');
           await ffmpeg.load({ classWorkerURL, coreURL, wasmURL });
@@ -44626,11 +44696,13 @@
         if (len > HEVC_TRANSCODE_MAX_BYTES) {
           throw new Error('حجم الفيديو ' + Math.round(len / 1048576) + 'MB — كبير للتحويل داخل المتصفح. حمّله أو ثبّت HEVC Extensions.');
         }
-        onStatus?.('تحميل الفيديو…');
-        const { blob } = await fetchAuthedStreamBlobUrl(streamUrl, mimeType || 'video/mp4');
+        onStatus?.('تحميل الفيديو وأداة التحويل معاً…');
+        const [{ blob }, ffmpeg] = await Promise.all([
+          fetchAuthedStreamBlobUrl(streamUrl, mimeType || 'video/mp4'),
+          ensureFfmpegTranscoder(onStatus),
+        ]);
         const hasAudio = await mp4BlobHasAudioTrack(blob);
         onStatus?.('تحويل H.265 → H.264 (720p · preset fast' + (hasAudio ? ' · صوت' : '') + ')…');
-        const ffmpeg = await ensureFfmpegTranscoder(onStatus);
         const inName = 'hevc_in.mp4';
         const outName = 'h264_out.mp4';
         await ffmpeg.writeFile(inName, new Uint8Array(await blob.arrayBuffer()));
@@ -44954,6 +45026,7 @@
       }
 
       async function resolveAttachmentVideoPlayback(vid, fileId, name, ticketCtx, mime, ck, viewerLoadGen) {
+        if (isAtharDesktopViewer() && isLikelyVideoAttachmentKey(fileId)) warmupFfmpegTranscoder();
         const streamFb = readVideoStreamFallback(ck);
         let playUrl = await loadAttachmentPlayUrl(fileId, name, ticketCtx);
         if (viewerLoadGen !== state._attViewerLoadGen) return null;
