@@ -29650,7 +29650,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-streamplay-syntax-v997">
+  <meta name="app-build" content="athar-video-stream-cors-v998">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -32029,6 +32029,8 @@
       const _cloudflareCache = {};
       /** رابط بث احتياطي عند فشل R2 المباشر (moov أو Content-Type) */
       const _videoStreamFallback = {};
+      /** رابط R2 الموقّع للتحميل المباشر (التشغيل عبر Edge Function لتجاوز CORS) */
+      const _videoDirectR2Url = {};
       let _r2HeadObjectOk = false;
       /** روابط التوقيع تنتهي (~ساعة)؛ لا نخزّنها دائماً */
       const _cfSignedTtlMs = 50 * 60 * 1000;
@@ -44157,6 +44159,7 @@
             changed = true;
             delete _cloudflareCache[cfCacheKey(oldKey, ticket)];
             delete _videoStreamFallback[cfCacheKey(oldKey, ticket)];
+            delete _videoDirectR2Url[cfCacheKey(oldKey, ticket)];
             const copy = { ...a, p: newKey };
             if ('path' in a) copy.path = newKey;
             updated.push(copy);
@@ -44221,8 +44224,7 @@
           throw new Error('رمز البث غير صالح — أعد نشر r2-storage على Supabase.');
         }
         if (res.status === 404) throw new Error('الملف غير موجود في التخزين (404).');
-        if (res.status === 206) throw new Error('تعذّر تحميل نسخة كاملة — استخدم البث المباشر.');
-        if (!res.ok) {
+        if (!res.ok && res.status !== 206) {
           let detail = '';
           try {
             const j = await res.json();
@@ -44253,6 +44255,10 @@
 
       function readVideoStreamFallback(cacheKey) {
         return String(_videoStreamFallback[cacheKey] || '').trim();
+      }
+
+      function readVideoDirectR2Url(cacheKey) {
+        return String(_videoDirectR2Url[cacheKey] || '').trim();
       }
 
       function scanBytesForMp4Codec(buf) {
@@ -44344,9 +44350,12 @@
       }
 
       function showHevcPlaybackHelp(playUrl, cacheKey, codec) {
-        const href = /^https?:\/\//i.test(String(playUrl || ''))
-          ? String(playUrl).trim()
-          : (readCfCache(cacheKey) || '');
+        const direct = readVideoDirectR2Url(cacheKey);
+        const href = direct && /^https?:\/\//i.test(direct)
+          ? direct
+          : (/^https?:\/\//i.test(String(playUrl || ''))
+            ? String(playUrl).trim()
+            : (readCfCache(cacheKey) || ''));
         showAttViewerLoader(videoPlaybackFailedHtml(href, codec || 'unknown'));
         const err = new Error('VIDEO_PLAYBACK_FAILED');
         err.code = 'VIDEO';
@@ -44434,53 +44443,36 @@
       }
 
       async function playVideoInViewer(vid, playUrl, mimeType, streamFallback) {
-        const url = resolveMediaPlayUrl(playUrl);
-        const fb = String(streamFallback || '').trim();
         const mime = mimeType || 'video/mp4';
+        let url = resolveMediaPlayUrl(playUrl);
+        const fb = String(streamFallback || '').trim();
+        if (isDirectR2SignedUrl(url) && fb && isR2StreamPlayUrl(fb)) url = fb;
 
         if (!isFastVideoStreamUrl(url)) {
           await setVideoElementSource(vid, url, mime);
           return url;
         }
 
-        const r2Direct = isDirectR2SignedUrl(url);
-        const waitMs = r2Direct ? 28000 : 18000;
-        let lastCodec = 'unknown';
+        const isStream = isR2StreamPlayUrl(url);
+        const waitMs = isStream ? 24000 : 28000;
 
         try {
-          await attachVideoSourceAndWait(vid, url, mime, waitMs, isR2StreamPlayUrl(url));
+          await attachVideoSourceAndWait(vid, url, mime, waitMs, true);
           if (await waitVideoElementPlayable(vid, 5000)) return url;
           throw new Error('تعذّر قراءة بيانات الفيديو');
         } catch (e1) {
-          if (r2Direct) {
-            try {
-              if (isMirsadDebugLog()) console.warn('[Viewer] جرّب تحميل blob محلي من R2', e1);
-              const { blob, blobUrl } = await fetchR2VideoBlob(url, mime);
-              lastCodec = await sniffMp4VideoCodec(blob);
-              vid.src = '';
-              vid.innerHTML = '';
-              await attachVideoSourceAndWait(vid, blobUrl, mime, 20000, false);
-              if (await waitVideoElementPlayable(vid, 6000)) return blobUrl;
-            } catch (eBlob) {
-              if (isMirsadDebugLog()) console.warn('[Viewer] blob محلي فشل', eBlob);
-            }
-          }
-          if (fb && fb !== url && isR2StreamPlayUrl(fb)) {
+          const streamUrl = isStream ? url : ((fb && isR2StreamPlayUrl(fb)) ? fb : '');
+          if (streamUrl) {
             try {
               if (isMirsadDebugLog()) console.warn('[Viewer] بث عبر Edge Function (blob)', e1);
               vid.src = '';
               vid.innerHTML = '';
-              const blobUrl = await fetchAuthedStreamBlobUrl(fb, mime);
-              await attachVideoSourceAndWait(vid, blobUrl, mime, 22000, false);
-              if (await waitVideoElementPlayable(vid, 5000)) return blobUrl;
+              const blobUrl = await fetchAuthedStreamBlobUrl(streamUrl, mime);
+              await attachVideoSourceAndWait(vid, blobUrl, mime, 24000, false);
+              if (await waitVideoElementPlayable(vid, 6000)) return blobUrl;
             } catch (streamErr) {
               if (isMirsadDebugLog()) console.warn('[Viewer] بث Edge Function فشل', streamErr);
             }
-          }
-          if (lastCodec === 'h265') {
-            const err = new Error('HEVC_NOT_SUPPORTED_IN_BROWSER');
-            err.code = 'HEVC';
-            throw err;
           }
           throw e1;
         }
@@ -44575,7 +44567,11 @@
       async function loadCloudflareFile(fileId, ticketCtx) {
         if (!fileId) throw new Error('معرف الملف مفقود');
         const cacheKey = cfCacheKey(fileId, ticketCtx);
-        const cached = readCfCache(cacheKey);
+        let cached = readCfCache(cacheKey);
+        if (cached && isLikelyVideoAttachmentKey(fileId)) {
+          const streamFb = readVideoStreamFallback(cacheKey);
+          if (streamFb && isDirectR2SignedUrl(cached)) cached = streamFb;
+        }
         if (cached) return cached;
 
         const inline = getInlineDataUrlForAttachmentPath(fileId);
@@ -44609,9 +44605,11 @@
                 if (!signed?.url) continue;
                 const streamPlay = signed?.streamToken ? buildR2StreamPlayUrl(signed.streamToken) : '';
                 if (streamPlay) _videoStreamFallback[cacheKey] = streamPlay;
+                if (signed.url) _videoDirectR2Url[cacheKey] = signed.url;
                 if (useStream) {
-                  writeCfCache(cacheKey, signed.url);
-                  return signed.url;
+                  const playUrl = streamPlay || signed.url;
+                  writeCfCache(cacheKey, playUrl);
+                  return playUrl;
                 }
                 if (streamPlay) {
                   const ok = await probeR2StreamPlayUrl(streamPlay);
@@ -47182,10 +47180,11 @@
                 if (e?.code === 'HEVC' || e?.code === 'VIDEO' || /HEVC_NOT_SUPPORTED|VIDEO_PLAYBACK_FAILED/i.test(String(e?.message || e))) return;
                 delete _cloudflareCache[ck];
                 delete _videoStreamFallback[ck];
+                delete _videoDirectR2Url[ck];
                 resetAttViewerVideo(vid);
-                const openHref = (playUrl && /^https?:\/\//i.test(String(playUrl).trim()))
-                  ? String(playUrl).trim()
-                  : (cfUrl && /^https?:\/\//i.test(String(cfUrl).trim()) ? String(cfUrl).trim() : '');
+                const openHref = readVideoDirectR2Url(ck)
+                  || (playUrl && /^https?:\/\//i.test(String(playUrl).trim()) ? String(playUrl).trim() : '')
+                  || (cfUrl && /^https?:\/\//i.test(String(cfUrl).trim()) ? String(cfUrl).trim() : '');
                 const extLink = openHref
                   ? `<a href="${Sec.escapeHTML(openHref)}" target="_blank" rel="noopener noreferrer" download class="btn btn-sm btn-primary" style="text-decoration:none;margin-top:12px"><i class="fas fa-download"></i> تحميل</a>`
                   : '';
