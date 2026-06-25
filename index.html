@@ -30140,7 +30140,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-profile-staff-clean-v1026">
+  <meta name="app-build" content="athar-profile-staff-remove-v1027">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -30502,7 +30502,7 @@
                 <div class="profile-hero">
                   <div class="profile-hero__av" id="profilePageAv" aria-hidden="true">—</div>
                   <h2 class="profile-hero__name" id="profilePageName">—</h2>
-                  <span class="profile-hero__role" id="profilePageRole" hidden>—</span>
+                  <span class="profile-hero__role" id="profilePageRole">—</span>
                 </div>
                 <div class="profile-info-card" aria-label="بيانات الحساب">
                   <div class="profile-info-row">
@@ -30517,7 +30517,7 @@
                     <span class="profile-info-row__lbl">المنطقة</span>
                     <strong class="profile-info-row__val" id="profilePageRegion">—</strong>
                   </div>
-                  <div class="profile-info-row" id="profilePageJobTitleRow" hidden>
+                  <div class="profile-info-row" id="profilePageJobTitleRow">
                     <span class="profile-info-row__lbl">المسمى الوظيفي</span>
                     <strong class="profile-info-row__val" id="profilePageJobTitle">—</strong>
                   </div>
@@ -39882,6 +39882,45 @@
         }
       }
 
+      function ensureProfileHeroRoleEl() {
+        let el = document.getElementById('profilePageRole');
+        const nameEl = document.getElementById('profilePageName');
+        if (!el && nameEl) {
+          el = document.createElement('span');
+          el.className = 'profile-hero__role';
+          el.id = 'profilePageRole';
+          nameEl.insertAdjacentElement('afterend', el);
+        }
+        return el;
+      }
+
+      function ensureProfileRegionRow() {
+        let row = document.getElementById('profilePageRegionRow');
+        const branchRow = document.getElementById('profilePageBranch')?.closest('.profile-info-row');
+        if (!row && branchRow) {
+          row = document.createElement('div');
+          row.className = 'profile-info-row';
+          row.id = 'profilePageRegionRow';
+          row.innerHTML = '<span class="profile-info-row__lbl">المنطقة</span><strong class="profile-info-row__val" id="profilePageRegion">—</strong>';
+          branchRow.insertAdjacentElement('afterend', row);
+        }
+        return row;
+      }
+
+      function ensureProfileJobTitleRow() {
+        let row = document.getElementById('profilePageJobTitleRow');
+        const anchor = document.getElementById('profilePageRegionRow')
+          || document.getElementById('profilePageBranch')?.closest('.profile-info-row');
+        if (!row && anchor) {
+          row = document.createElement('div');
+          row.className = 'profile-info-row';
+          row.id = 'profilePageJobTitleRow';
+          row.innerHTML = '<span class="profile-info-row__lbl">المسمى الوظيفي</span><strong class="profile-info-row__val" id="profilePageJobTitle">—</strong>';
+          anchor.insertAdjacentElement('afterend', row);
+        }
+        return row;
+      }
+
       function renderProfilePage() {
         const u = state.currentUser;
         if (!u) return;
@@ -39899,7 +39938,6 @@
           if (el) el.textContent = (val && String(val).trim()) ? String(val).trim() : '—';
         };
         setText('profilePageName', u.name);
-        const roleEl = document.getElementById('profilePageRole');
         setText('profilePageEmpNum', u.employee_number ? padEmpNum(u.employee_number) : '—');
         const branch = state._branchById?.get(u.branch_id) || (state.branches || []).find(b => b.id === u.branch_id);
         setText('profilePageBranch', branch?.name);
@@ -39907,19 +39945,20 @@
           ? (state._regionById?.get(branch.region_id) || (state.regions || []).find(r => r.id === branch.region_id))
           : null;
         const isStaffRole = roleKey === 'employee' || roleKey === 'branch_manager';
-        const regionRow = document.getElementById('profilePageRegionRow');
-        const jobTitleRow = document.getElementById('profilePageJobTitleRow');
-        if (roleEl) {
-          roleEl.hidden = isStaffRole;
-          if (!isStaffRole) setText('profilePageRole', ROLE_LABELS[roleKey] || u.role);
-        }
-        if (regionRow) regionRow.hidden = isStaffRole;
-        if (jobTitleRow) jobTitleRow.hidden = !isStaffRole;
         if (isStaffRole) {
-          const jobTitle = String(u.job_title || '').trim() || ROLE_LABELS[roleKey] || u.role || '—';
-          setText('profilePageJobTitle', jobTitle);
+          document.getElementById('profilePageRole')?.remove();
+          document.getElementById('profilePageRegionRow')?.remove();
+          const jobTitleRow = ensureProfileJobTitleRow();
+          if (jobTitleRow) {
+            const jobTitle = String(u.job_title || '').trim() || ROLE_LABELS[roleKey] || u.role || '—';
+            setText('profilePageJobTitle', jobTitle);
+          }
         } else {
-          setText('profilePageRegion', region?.name);
+          document.getElementById('profilePageJobTitleRow')?.remove();
+          const roleEl = ensureProfileHeroRoleEl();
+          if (roleEl) setText('profilePageRole', ROLE_LABELS[roleKey] || u.role);
+          const regionRow = ensureProfileRegionRow();
+          if (regionRow) setText('profilePageRegion', region?.name);
         }
         setText('profilePageEmail', u.email);
         setText('profilePagePhone', u.phone);
