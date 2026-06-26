@@ -41177,19 +41177,16 @@
         const ok = confirm(`حذف صورة «${preset.label}» من القائمة؟\nسيتم إزالتها من اختيارات المستخدمين أيضاً.`);
         if (!ok) return;
         try {
+          const sharedByOther = getProfileAvatarsCatalog().some((a) => a.id !== id && a.img === preset.img && a.imgSource === preset.imgSource);
+          if (preset.imgSource === 'r2' && !sharedByOther) {
+            await callR2StorageFn('deleteAvatarPreset', { key: preset.img });
+            delete _cloudflareCache[avatarPresetCacheKey(preset)];
+          }
           const catalog = getProfileAvatarsCatalog().filter((a) => a.id !== id);
           await persistProfileAvatarsCatalog(catalog);
           const keysToClear = [id, ...Object.keys(PROFILE_AVATAR_KEY_ALIASES).filter((k) => PROFILE_AVATAR_KEY_ALIASES[k] === id)];
           for (const key of keysToClear) {
             await sb.from('users').update({ avatar_key: null }).eq('avatar_key', key);
-          }
-          if (preset.imgSource === 'r2' && !avatarCatalogUsesImg(preset.img, 'r2')) {
-            try {
-              await callR2StorageFn('deleteAvatarPreset', { key: preset.img });
-              delete _cloudflareCache[avatarPresetCacheKey(preset)];
-            } catch (e) {
-              if (isMirsadDebugLog()) console.warn('[profile_avatars] r2 delete', e);
-            }
           }
           renderProfileAvatarsAdmin();
           if (state.currentUser) {
