@@ -13539,14 +13539,23 @@
     }
 
     .avatar-picker-card {
-      max-width: 360px;
+      max-width: min(400px, calc(100vw - 28px));
+    }
+
+    #avatarPickerModal .modal-body {
+      max-height: min(58vh, 420px);
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      padding-top: 2px;
+      padding-bottom: 4px;
     }
 
     .avatar-picker-grid {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 14px;
-      padding: 4px 0;
+      grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+      gap: 8px;
+      padding: 2px 0;
     }
 
     .avatar-picker-opt {
@@ -13556,12 +13565,17 @@
       cursor: pointer;
       border-radius: 50%;
       position: relative;
+      max-width: 76px;
+      margin: 0 auto;
+      width: 100%;
       -webkit-tap-highlight-color: transparent;
     }
 
     .avatar-picker-opt__art {
       display: block;
       width: 100%;
+      max-width: 72px;
+      margin: 0 auto;
       aspect-ratio: 1;
       border-radius: 50%;
       overflow: hidden;
@@ -13571,34 +13585,30 @@
 
     .avatar-picker-opt:hover .avatar-picker-opt__art,
     .avatar-picker-opt:focus-visible .avatar-picker-opt__art {
-      transform: scale(1.04);
+      transform: scale(1.05);
       box-shadow: 0 0 0 2px color-mix(in srgb, var(--mr-primary) 45%, transparent);
     }
 
     .avatar-picker-opt.is-selected .avatar-picker-opt__art {
-      box-shadow: 0 0 0 3px var(--mr-primary);
-    }
-
-    .avatar-picker-opt {
-      position: relative;
+      box-shadow: 0 0 0 2px var(--mr-primary);
     }
 
     .avatar-picker-opt__new {
       position: absolute;
-      top: 2px;
-      inset-inline-end: 2px;
+      top: 0;
+      inset-inline-end: 0;
       z-index: 2;
-      min-width: 22px;
-      height: 22px;
-      padding: 0 6px;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 4px;
       border-radius: 999px;
       background: linear-gradient(145deg, #ef4444, #dc2626);
       color: #fff;
-      font-size: 9px;
+      font-size: 8px;
       font-weight: 800;
-      line-height: 22px;
+      line-height: 18px;
       text-align: center;
-      box-shadow: 0 2px 8px rgba(220, 38, 38, .35);
+      box-shadow: 0 1px 5px rgba(220, 38, 38, .35);
       pointer-events: none;
     }
 
@@ -30585,7 +30595,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-avatar-visibility-v1043">
+  <meta name="app-build" content="athar-avatar-picker-compact-v1044">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
