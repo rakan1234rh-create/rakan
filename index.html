@@ -13666,9 +13666,17 @@
       pointer-events: none;
     }
 
-    .profile-hero__av-edit-wrap {
+    .profile-hero__av-frame {
       position: relative;
       display: inline-flex;
+    }
+
+    .profile-hero__av-edit-wrap {
+      position: absolute;
+      top: 4px;
+      inset-inline-start: 4px;
+      display: inline-flex;
+      z-index: 3;
     }
 
     .profile-hero__av-new-dot {
@@ -30649,7 +30657,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-avatar-url-cache-v1049">
+  <meta name="app-build" content="athar-avatar-new-badge-edit-v1050">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -31010,13 +31018,15 @@
               <div class="profile-page-body">
                 <div class="profile-hero">
                 <div class="profile-hero__av-stack">
-                  <div class="profile-hero__av" id="profilePageAv" aria-hidden="true">—</div>
-                  <span class="profile-hero__av-edit-wrap">
-                    <button type="button" class="profile-hero__av-edit" onclick="openProfileAvatarPicker(event)" aria-label="تغيير الأيقونة">
-                      <i class="fas fa-pencil" aria-hidden="true"></i>
-                    </button>
-                    <span class="profile-hero__av-new-dot" id="profileAvatarNewDot" hidden aria-hidden="true"></span>
-                  </span>
+                  <div class="profile-hero__av-frame">
+                    <div class="profile-hero__av" id="profilePageAv" aria-hidden="true">—</div>
+                    <span class="profile-hero__av-edit-wrap">
+                      <button type="button" class="profile-hero__av-edit" onclick="openProfileAvatarPicker(event)" aria-label="تغيير الأيقونة">
+                        <i class="fas fa-pencil" aria-hidden="true"></i>
+                      </button>
+                      <span class="profile-hero__av-new-dot" id="profileAvatarNewDot" hidden aria-hidden="true"></span>
+                    </span>
+                  </div>
                 </div>
                   <h2 class="profile-hero__name" id="profilePageName">—</h2>
                   <span class="profile-hero__role" id="profilePageRole">—</span>
@@ -40702,6 +40712,7 @@
 
       function isProfileAvatarNew(preset) {
         if (!isProfileAvatarVisible(preset) || !preset?.newUntil) return false;
+        if (isProfileAvatarSeenByUser(preset.id)) return false;
         const until = Date.parse(preset.newUntil);
         return Number.isFinite(until) && until > Date.now();
       }
@@ -40775,6 +40786,39 @@
           if (cacheKey in store) {
             delete store[cacheKey];
             localStorage.setItem(AVATAR_URL_LS_KEY, JSON.stringify(store));
+          }
+        } catch (_) { /* */ }
+      }
+
+      /** صور البروفايل الجديدة التي اختارها المستخدم — تختفي عنها شارة «جديد» بعد أول اختيار */
+      const SEEN_NEW_AVATARS_LS_KEY = 'athar_seen_new_avatars';
+      function currentUserAvatarScope() {
+        const id = state?.currentUser?.id;
+        return id == null ? '' : String(id);
+      }
+      function getSeenNewAvatarIds() {
+        const scope = currentUserAvatarScope();
+        if (!scope) return [];
+        try {
+          const store = JSON.parse(localStorage.getItem(SEEN_NEW_AVATARS_LS_KEY) || '{}');
+          const list = store[scope];
+          return Array.isArray(list) ? list : [];
+        } catch (_) { return []; }
+      }
+      function isProfileAvatarSeenByUser(id) {
+        if (!id) return false;
+        return getSeenNewAvatarIds().includes(id);
+      }
+      function markProfileAvatarSeen(id) {
+        const scope = currentUserAvatarScope();
+        if (!scope || !id) return;
+        try {
+          const store = JSON.parse(localStorage.getItem(SEEN_NEW_AVATARS_LS_KEY) || '{}');
+          const list = Array.isArray(store[scope]) ? store[scope] : [];
+          if (!list.includes(id)) {
+            list.push(id);
+            store[scope] = list;
+            localStorage.setItem(SEEN_NEW_AVATARS_LS_KEY, JSON.stringify(store));
           }
         } catch (_) { /* */ }
       }
@@ -41360,6 +41404,7 @@
             .select(MOB_USER_SELECT)
             .single();
           if (error) throw error;
+          markProfileAvatarSeen(preset.id);
           upsertLocalUser(data);
           state.currentUser = { ...state.currentUser, ...data };
           updateSidebarUser();
