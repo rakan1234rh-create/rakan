@@ -58406,8 +58406,8 @@
       }
 
       async function showPushWelcomeNotification() {
-        const title = 'تم تفعيل تنبيهات الجوال';
-        const body = 'تنبيه تجريبي — سيصلك إشعار عند رصد مخالفة حتى والتطبيق مغلق ✓';
+        const title = 'مرحباً بك في أثر ✨';
+        const body = 'تم تفعيل إشعاراتك بنجاح سنبقيك على اطلاع فوري بكافة التحديثات والمستجدات لضمان سير العمل بكل كفاءة وسهولة';
         const icon = './icons/athar-pwa-192-v393.png';
         const opts = {
           body,
@@ -58557,7 +58557,7 @@
           if (opts.welcomeNotify) {
             const shown = await showPushWelcomeNotification();
             if (!shown) showToast('تم التفعيل — تحقق من إعدادات الإشعارات في الجوال', 'warning');
-            else showToast('تم تفعيل تنبيهات الجوال ✓', 'success');
+            else showToast('تم تفعيل التنبيهات ✓', 'success');
           }
           return true;
         } catch (e) {
