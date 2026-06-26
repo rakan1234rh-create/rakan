@@ -30649,7 +30649,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-avatar-picker-half-v1046">
+  <meta name="app-build" content="athar-avatar-no-builtin-v1047">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -31963,7 +31963,6 @@
                 <p class="mr-settings-note"><i class="fas fa-images"></i> أضف أو احذف صور البروفايل المتاحة للموظفين ومديري الفروع والمشرفين. كل صورة تظهر مرة واحدة وتُربط بالأدوار التي تختارها.</p>
                 <div class="mr-avatar-admin-toolbar">
                   <button type="button" class="btn btn-primary" onclick="openProfileAvatarAdminModal()"><i class="fas fa-plus"></i> إضافة صورة</button>
-                  <button type="button" class="btn" onclick="restoreProfileAvatarsDefaults()"><i class="fas fa-rotate-left"></i> استعادة الافتراضي</button>
                 </div>
               </div>
               <div id="settingsProfileAvatarsHost" class="mr-avatar-admin-grid"></div>
@@ -40537,12 +40536,17 @@
 
       const TOPBAR_USER_DEFAULT_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M6 20v-1a6 6 0 0 1 12 0v1"/></svg>';
 
-      const PROFILE_PORTRAIT_FILES = {
-        ghutra: 'portrait-ghutra.webp',
-        hijab_f: 'portrait-hijab-f.webp'
-      };
+      const PROFILE_AVATAR_IMG_PLACEHOLDER = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"><rect width="1" height="1" fill="%23e5e7eb"/></svg>');
 
       const PROFILE_AVATAR_REMOVED_IDS = new Set([
+        'avatar_ghutra',
+        'avatar_hijab',
+        'emp_ghutra',
+        'mgr_ghutra',
+        'sup_ghutra',
+        'emp_hijab',
+        'mgr_hijab',
+        'sup_hijab',
         'avatar_tie',
         'avatar_formal_f',
         'avatar_founding',
@@ -40569,24 +40573,9 @@
         supervisor: 'مشرف'
       };
 
-      const PROFILE_AVATAR_KEY_ALIASES = {
-        emp_ghutra: 'avatar_ghutra',
-        mgr_ghutra: 'avatar_ghutra',
-        sup_ghutra: 'avatar_ghutra',
-        emp_hijab: 'avatar_hijab',
-        mgr_hijab: 'avatar_hijab',
-        sup_hijab: 'avatar_hijab'
-      };
+      const PROFILE_AVATAR_KEY_ALIASES = {};
 
-      const PROFILE_AVATAR_BUILTIN_ID_BY_IMG = {
-        [PROFILE_PORTRAIT_FILES.ghutra]: 'avatar_ghutra',
-        [PROFILE_PORTRAIT_FILES.hijab_f]: 'avatar_hijab'
-      };
-
-      const PROFILE_AVATARS_DEFAULT = [
-        { id: 'avatar_ghutra', label: 'شماغ أحمر', img: PROFILE_PORTRAIT_FILES.ghutra, imgSource: 'builtin', roles: ['employee', 'branch_manager', 'supervisor'], founding: false, posX: 50, posY: 42, visible: true, newUntil: null },
-        { id: 'avatar_hijab', label: 'محجبة', img: PROFILE_PORTRAIT_FILES.hijab_f, imgSource: 'builtin', roles: ['employee', 'branch_manager', 'supervisor'], founding: false, posX: 50, posY: 38, visible: true, newUntil: null }
-      ];
+      const PROFILE_AVATAR_BUILTIN_ID_BY_IMG = {};
 
       const PROFILE_AVATAR_NEW_BADGE_MS = 14 * 24 * 60 * 60 * 1000;
 
@@ -40610,9 +40599,11 @@
       }
 
       function collapseLegacyProfileAvatars(items) {
-        const raw = Array.isArray(items) ? items : [];
+        const raw = (Array.isArray(items) ? items : []).filter((a) => !PROFILE_AVATAR_REMOVED_IDS.has(String(a?.id || '')));
         const hasUnified = raw.some((a) => String(a?.id || '').startsWith('avatar_'));
-        if (hasUnified) return raw;
+        if (hasUnified) {
+          return raw.filter((a) => !/^(emp|mgr|sup)_/.test(String(a?.id || '')));
+        }
         const buckets = new Map();
         for (const entry of raw) {
           const item = sanitizeProfileAvatarItem(entry, { skipDefaultRolesCheck: true });
@@ -40650,6 +40641,7 @@
           : [];
         if (!roles.length) return null;
         const imgSource = raw.imgSource === 'r2' ? 'r2' : 'builtin';
+        if (imgSource === 'builtin') return null;
         const visible = raw.visible !== false;
         let newUntil = null;
         if (raw.newUntil != null && String(raw.newUntil).trim()) {
@@ -40665,7 +40657,7 @@
           founding: !!raw.founding,
           posX: clampAvatarPos(raw.posX ?? 50),
           posY: clampAvatarPos(raw.posY ?? 50),
-          visible: imgSource === 'builtin' ? true : visible,
+          visible,
           newUntil
         };
       }
@@ -40673,19 +40665,23 @@
       function sanitizeProfileAvatars(items) {
         const collapsed = collapseLegacyProfileAvatars(items);
         const out = [];
-        const seen = new Set();
+        const seenId = new Set();
+        const seenImg = new Set();
         for (const raw of collapsed || []) {
           const item = sanitizeProfileAvatarItem(raw);
-          if (!item || seen.has(item.id)) continue;
-          seen.add(item.id);
+          if (!item) continue;
+          const imgKey = `${item.imgSource}|${item.img}`;
+          if (seenId.has(item.id) || seenImg.has(imgKey)) continue;
+          seenId.add(item.id);
+          seenImg.add(imgKey);
           out.push(item);
         }
-        return out.length ? out : PROFILE_AVATARS_DEFAULT.slice();
+        return out;
       }
 
       function getProfileAvatarsCatalog() {
-        if (Array.isArray(state.profileAvatars) && state.profileAvatars.length) return state.profileAvatars;
-        return PROFILE_AVATARS_DEFAULT;
+        if (Array.isArray(state.profileAvatars)) return state.profileAvatars;
+        return [];
       }
 
       function isProfileAvatarBuiltin(preset) {
@@ -40730,7 +40726,7 @@
           state.profileAvatars = sanitizeProfileAvatars(data.items);
           state._profileAvatarsFromCloud = true;
         } else if (!state.profileAvatars) {
-          state.profileAvatars = PROFILE_AVATARS_DEFAULT.slice();
+          state.profileAvatars = [];
           state._profileAvatarsFromCloud = false;
         }
         return state.profileAvatars;
@@ -40786,7 +40782,7 @@
         const src = resolveAvatarPresetImgSrcSync(preset);
         const safeAlt = Sec.escapeHTML(alt || preset.label || 'صورة الملف الشخصي');
         const founding = !!(opts && opts.founding) || !!preset.founding;
-        const fallback = profileBuiltinImgUrl(PROFILE_PORTRAIT_FILES.ghutra);
+        const fallback = preset.imgSource === 'r2' ? PROFILE_AVATAR_IMG_PLACEHOLDER : '';
         const posStyle = avatarObjectPositionStyle(preset);
         const img = `<img class="profile-avatar-photo${founding ? ' profile-avatar-photo--founding' : ''}" src="${Sec.escapeHTML(src || fallback)}" alt="${safeAlt}" width="256" height="256" loading="lazy" decoding="async" style="${posStyle}"${preset.id ? ` data-avatar-id="${Sec.escapeHTML(preset.id)}"` : ''}>`;
         if (!founding) return img;
@@ -41072,11 +41068,14 @@
         syncProfileAvatarPosPreviewFrame();
       }
 
+      let _profileAvatarAdminSubmitting = false;
+
       async function submitProfileAvatarAdminForm(event) {
         if (event) {
           event.preventDefault();
           event.stopPropagation();
         }
+        if (_profileAvatarAdminSubmitting) return;
         if (!canManageProfileAvatars()) {
           showToast('هذا الإجراء لمدير النظام فقط.', 'error');
           return;
@@ -41097,12 +41096,19 @@
           showToast('اختر ملف الصورة.', 'warning');
           return;
         }
+        const saveBtn = document.querySelector('#profileAvatarAdminModal .modal-footer .btn-primary');
+        _profileAvatarAdminSubmitting = true;
+        if (saveBtn) saveBtn.disabled = true;
         try {
           showToast('جاري رفع الصورة…', 'info');
           const objectKey = await uploadProfileAvatarPresetFile(file);
+          const catalog = getProfileAvatarsCatalog().slice();
+          if (catalog.some((a) => a.imgSource === 'r2' && a.img === objectKey)) {
+            showToast('هذه الصورة مضافة مسبقاً.', 'warning');
+            return;
+          }
           const slug = makeAvatarCatalogSlug(label);
           const { posX, posY } = getProfileAvatarPosFromUI();
-          const catalog = getProfileAvatarsCatalog().slice();
           catalog.push({
             id: makeUniqueAvatarId(slug),
             label,
@@ -41121,6 +41127,9 @@
           showToast('تمت إضافة الصورة — اضغط «عرض» لتظهر للمستخدمين ✓', 'success');
         } catch (err) {
           showToast(formatPostgrestError(err) || err?.message || 'تعذّر إضافة الصورة', 'error');
+        } finally {
+          _profileAvatarAdminSubmitting = false;
+          if (saveBtn) saveBtn.disabled = false;
         }
       }
 
@@ -41160,10 +41169,6 @@
         }
         const preset = getProfileAvatarPreset(id);
         if (!preset) return;
-        if (isProfileAvatarBuiltin(preset)) {
-          showToast('لا يمكن حذف الصور الأساسية.', 'info');
-          return;
-        }
         const ok = confirm(`حذف صورة «${preset.label}» من القائمة؟\nسيتم إزالتها من اختيارات المستخدمين أيضاً.`);
         if (!ok) return;
         try {
@@ -41189,27 +41194,6 @@
           showToast('تم حذف الصورة ✓', 'success');
         } catch (err) {
           showToast(formatPostgrestError(err) || err?.message || 'تعذّر حذف الصورة', 'error');
-        }
-      }
-
-      async function restoreProfileAvatarsDefaults() {
-        if (!canManageProfileAvatars()) {
-          showToast('هذا الإجراء لمدير النظام فقط.', 'error');
-          return;
-        }
-        const ok = confirm('استعادة صور البروفايل الافتراضية؟\nسيتم إعادة تعيين اختيارات المستخدمين.');
-        if (!ok) return;
-        try {
-          await persistProfileAvatarsCatalog(PROFILE_AVATARS_DEFAULT.slice());
-          await sb.from('users').update({ avatar_key: null }).not('avatar_key', 'is', null);
-          renderProfileAvatarsAdmin();
-          if (state.currentUser) {
-            updateSidebarUser();
-            if (isProfilePageOpen()) renderProfilePage();
-          }
-          showToast('تمت استعادة الصور الافتراضية ✓', 'success');
-        } catch (err) {
-          showToast(formatPostgrestError(err) || err?.message || 'تعذّر الاستعادة', 'error');
         }
       }
 
@@ -61677,7 +61661,6 @@
       window.previewProfileAvatarAdminFile = previewProfileAvatarAdminFile;
       window.deleteProfileAvatarPreset = deleteProfileAvatarPreset;
       window.toggleProfileAvatarVisibility = toggleProfileAvatarVisibility;
-      window.restoreProfileAvatarsDefaults = restoreProfileAvatarsDefaults;
       window.setProfileAvatarPosFromSliders = setProfileAvatarPosFromSliders;
       window.startProfileAvatarPosDrag = startProfileAvatarPosDrag;
       window.syncProfileAvatarPosPreviewFrame = syncProfileAvatarPosPreviewFrame;
