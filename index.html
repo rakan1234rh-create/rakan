@@ -30649,7 +30649,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-avatar-max-8mb-v1048">
+  <meta name="app-build" content="athar-avatar-url-cache-v1049">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -40745,9 +40745,46 @@
         return `./icons/avatars/${file}?v=${encodeURIComponent(build)}`;
       }
 
+      /** كاش روابط صور البروفايل الموقّعة في localStorage — يبقى بين مرات الدخول فتظهر الصورة فوراً */
+      const AVATAR_URL_LS_KEY = 'athar_avatar_urls';
+      function readAvatarUrlPersistent(cacheKey) {
+        if (!cacheKey) return '';
+        try {
+          const store = JSON.parse(localStorage.getItem(AVATAR_URL_LS_KEY) || '{}');
+          const v = store[cacheKey];
+          if (v && typeof v.u === 'string' && (!v.exp || Date.now() < v.exp)) return v.u;
+        } catch (_) { /* */ }
+        return '';
+      }
+      function writeAvatarUrlPersistent(cacheKey, url) {
+        if (!cacheKey || !url || !/^https?:\/\//.test(url)) return;
+        try {
+          const now = Date.now();
+          const store = JSON.parse(localStorage.getItem(AVATAR_URL_LS_KEY) || '{}');
+          for (const k of Object.keys(store)) {
+            if (store[k] && store[k].exp && now > store[k].exp) delete store[k];
+          }
+          store[cacheKey] = { u: url, exp: now + _cfSignedTtlMs };
+          localStorage.setItem(AVATAR_URL_LS_KEY, JSON.stringify(store));
+        } catch (_) { /* */ }
+      }
+      function clearAvatarUrlPersistent(cacheKey) {
+        if (!cacheKey) return;
+        try {
+          const store = JSON.parse(localStorage.getItem(AVATAR_URL_LS_KEY) || '{}');
+          if (cacheKey in store) {
+            delete store[cacheKey];
+            localStorage.setItem(AVATAR_URL_LS_KEY, JSON.stringify(store));
+          }
+        } catch (_) { /* */ }
+      }
+
       function resolveAvatarPresetImgSrcSync(preset) {
         if (!preset?.img) return '';
-        if (preset.imgSource === 'r2') return readCfCache(avatarPresetCacheKey(preset)) || '';
+        if (preset.imgSource === 'r2') {
+          const cacheKey = avatarPresetCacheKey(preset);
+          return readCfCache(cacheKey) || readAvatarUrlPersistent(cacheKey) || '';
+        }
         return profileBuiltinImgUrl(preset.img);
       }
 
@@ -40755,12 +40792,18 @@
         if (!preset?.img) return '';
         if (preset.imgSource !== 'r2') return profileBuiltinImgUrl(preset.img);
         const cacheKey = avatarPresetCacheKey(preset);
-        const cached = readCfCache(cacheKey);
-        if (cached) return cached;
+        const cached = readCfCache(cacheKey) || readAvatarUrlPersistent(cacheKey);
+        if (cached) {
+          writeCfCache(cacheKey, cached);
+          return cached;
+        }
         try {
           const signed = await callR2StorageFn('signAvatarPresetGet', { key: preset.img });
           const url = signed?.streamToken ? buildR2StreamPlayUrl(signed.streamToken) : signed?.url;
-          if (url) writeCfCache(cacheKey, url);
+          if (url) {
+            writeCfCache(cacheKey, url);
+            writeAvatarUrlPersistent(cacheKey, url);
+          }
           return url || '';
         } catch (e) {
           if (isMirsadDebugLog()) console.warn('[profile_avatars] sign get failed', preset.id, e);
@@ -41181,6 +41224,7 @@
           if (preset.imgSource === 'r2' && !sharedByOther) {
             await callR2StorageFn('deleteAvatarPreset', { key: preset.img });
             delete _cloudflareCache[avatarPresetCacheKey(preset)];
+            clearAvatarUrlPersistent(avatarPresetCacheKey(preset));
           }
           const catalog = getProfileAvatarsCatalog().filter((a) => a.id !== id);
           await persistProfileAvatarsCatalog(catalog);
@@ -41199,6 +41243,12 @@
         }
       }
 
+      function userAvatarBgGradient(u) {
+        const roleKey = normalizeUserRole(u?.role);
+        const color = u?.color || ROLE_COLORS[roleKey] || 'var(--mr-primary)';
+        return `linear-gradient(145deg, ${color} 0%, color-mix(in srgb, ${color} 72%, #0f1224) 100%)`;
+      }
+
       function applyUserAvatarEl(el, u) {
         if (!el || !u) return;
         const preset = getValidProfileAvatarPreset(u);
@@ -41206,7 +41256,7 @@
         el.classList.toggle('has-founding-frame', !!(preset && preset.founding));
         el.classList.toggle('has-default-icon', !preset && canPickProfileAvatar(u));
         if (preset) {
-          el.style.background = 'transparent';
+          el.style.background = preset.imgSource === 'r2' ? userAvatarBgGradient(u) : 'transparent';
           el.textContent = '';
           el.innerHTML = profileAvatarImgHtml(preset, preset.label, { founding: preset.founding });
           hydrateProfileAvatarImages(el).catch(() => {});
@@ -41217,10 +41267,8 @@
           el.innerHTML = `<span class="profile-hero__default-svg" aria-hidden="true">${TOPBAR_USER_DEFAULT_SVG}</span>`;
         } else {
           el.classList.remove('has-founding-frame');
-          const roleKey = normalizeUserRole(u.role);
-          const color = u.color || ROLE_COLORS[roleKey] || 'var(--mr-primary)';
           el.textContent = userDisplayInitials(u.name);
-          el.style.background = `linear-gradient(145deg, ${color} 0%, color-mix(in srgb, ${color} 72%, #0f1224) 100%)`;
+          el.style.background = userAvatarBgGradient(u);
         }
       }
 
@@ -41230,7 +41278,7 @@
         const preset = getValidProfileAvatarPreset(u);
         if (preset) {
           icon.classList.add('has-user-avatar');
-          icon.style.background = 'transparent';
+          icon.style.background = preset.imgSource === 'r2' ? userAvatarBgGradient(u) : 'transparent';
           icon.innerHTML = profileAvatarImgHtml(preset, preset.label, { founding: preset.founding });
           hydrateProfileAvatarImages(icon).catch(() => {});
         } else {
