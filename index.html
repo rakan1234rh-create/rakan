@@ -30526,7 +30526,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-avatar-pos-v1041">
+  <meta name="app-build" content="athar-avatar-trim-v1042">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -40413,11 +40413,23 @@
 
       const PROFILE_PORTRAIT_FILES = {
         ghutra: 'portrait-ghutra.webp',
-        tie_m: 'portrait-tie-m.webp',
-        hijab_f: 'portrait-hijab-f.webp',
-        formal_f: 'portrait-formal-f.webp',
-        founding_sword: 'founding-day-sword.webp'
+        hijab_f: 'portrait-hijab-f.webp'
       };
+
+      const PROFILE_AVATAR_REMOVED_IDS = new Set([
+        'avatar_tie',
+        'avatar_formal_f',
+        'avatar_founding',
+        'emp_tie',
+        'mgr_tie',
+        'sup_tie',
+        'emp_formal_f',
+        'mgr_formal_f',
+        'sup_formal_f',
+        'emp_founding',
+        'mgr_founding',
+        'sup_founding'
+      ]);
 
       const PROFILE_AVATAR_ROLE_PREFIX = {
         employee: 'emp',
@@ -40435,34 +40447,19 @@
         emp_ghutra: 'avatar_ghutra',
         mgr_ghutra: 'avatar_ghutra',
         sup_ghutra: 'avatar_ghutra',
-        emp_tie: 'avatar_tie',
-        mgr_tie: 'avatar_tie',
-        sup_tie: 'avatar_tie',
         emp_hijab: 'avatar_hijab',
         mgr_hijab: 'avatar_hijab',
-        sup_hijab: 'avatar_hijab',
-        emp_formal_f: 'avatar_formal_f',
-        mgr_formal_f: 'avatar_formal_f',
-        sup_formal_f: 'avatar_formal_f',
-        emp_founding: 'avatar_founding',
-        mgr_founding: 'avatar_founding',
-        sup_founding: 'avatar_founding'
+        sup_hijab: 'avatar_hijab'
       };
 
       const PROFILE_AVATAR_BUILTIN_ID_BY_IMG = {
         [PROFILE_PORTRAIT_FILES.ghutra]: 'avatar_ghutra',
-        [PROFILE_PORTRAIT_FILES.tie_m]: 'avatar_tie',
-        [PROFILE_PORTRAIT_FILES.hijab_f]: 'avatar_hijab',
-        [PROFILE_PORTRAIT_FILES.formal_f]: 'avatar_formal_f',
-        [PROFILE_PORTRAIT_FILES.founding_sword]: 'avatar_founding'
+        [PROFILE_PORTRAIT_FILES.hijab_f]: 'avatar_hijab'
       };
 
       const PROFILE_AVATARS_DEFAULT = [
         { id: 'avatar_ghutra', label: 'شماغ أحمر', img: PROFILE_PORTRAIT_FILES.ghutra, imgSource: 'builtin', roles: ['employee', 'branch_manager', 'supervisor'], founding: false, posX: 50, posY: 42 },
-        { id: 'avatar_tie', label: 'ربطة عنق', img: PROFILE_PORTRAIT_FILES.tie_m, imgSource: 'builtin', roles: ['employee', 'branch_manager', 'supervisor'], founding: false, posX: 50, posY: 40 },
-        { id: 'avatar_hijab', label: 'محجبة', img: PROFILE_PORTRAIT_FILES.hijab_f, imgSource: 'builtin', roles: ['employee', 'branch_manager', 'supervisor'], founding: false, posX: 50, posY: 38 },
-        { id: 'avatar_formal_f', label: 'رسمية', img: PROFILE_PORTRAIT_FILES.formal_f, imgSource: 'builtin', roles: ['employee', 'branch_manager', 'supervisor'], founding: false, posX: 50, posY: 40 },
-        { id: 'avatar_founding', label: 'يوم التأسيس', img: PROFILE_PORTRAIT_FILES.founding_sword, imgSource: 'builtin', roles: ['employee', 'branch_manager', 'supervisor'], founding: true, posX: 50, posY: 48 }
+        { id: 'avatar_hijab', label: 'محجبة', img: PROFILE_PORTRAIT_FILES.hijab_f, imgSource: 'builtin', roles: ['employee', 'branch_manager', 'supervisor'], founding: false, posX: 50, posY: 38 }
       ];
 
       function clampAvatarPos(v) {
@@ -40473,7 +40470,9 @@
 
       function resolveProfileAvatarKey(key) {
         if (!key) return '';
-        return PROFILE_AVATAR_KEY_ALIASES[key] || key;
+        if (PROFILE_AVATAR_REMOVED_IDS.has(key)) return '';
+        const resolved = PROFILE_AVATAR_KEY_ALIASES[key] || key;
+        return PROFILE_AVATAR_REMOVED_IDS.has(resolved) ? '' : resolved;
       }
 
       function avatarObjectPositionStyle(preset) {
@@ -40516,6 +40515,7 @@
         const label = String(raw.label || '').trim();
         const img = String(raw.img || '').trim();
         if (!id || !label || !img) return null;
+        if (PROFILE_AVATAR_REMOVED_IDS.has(id)) return null;
         if (!/^[a-z][a-z0-9_]{1,63}$/.test(id)) return null;
         const roles = Array.isArray(raw.roles)
           ? raw.roles.map((r) => normalizeUserRole(r)).filter((r) => PROFILE_AVATAR_ROLE_PREFIX[r])
