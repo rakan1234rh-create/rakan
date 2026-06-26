@@ -13438,6 +13438,27 @@
       height: 112px;
     }
 
+    .profile-hero__av.has-default-icon {
+      color: var(--mr-text-2, #4b5563);
+      font-size: 0;
+      background: var(--mr-bg2, #f3f4f6);
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mr-border, #d1d5db) 80%, transparent), 0 8px 24px rgba(0, 0, 0, .08);
+    }
+
+    .profile-hero__default-svg {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 52%;
+      height: 52%;
+    }
+
+    .profile-hero__default-svg svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
     .profile-avatar-founding-ring {
       position: relative;
       display: block;
@@ -13542,8 +13563,18 @@
       max-width: min(400px, calc(100vw - 28px));
     }
 
+    #avatarPickerModal .avatar-picker-card {
+      min-height: 50vh;
+      max-height: 50vh;
+      display: flex;
+      flex-direction: column;
+    }
+
     #avatarPickerModal .modal-body {
-      max-height: min(58vh, 420px);
+      flex: 1 1 auto;
+      min-height: 0;
+      max-height: none;
+      height: auto;
       overflow-y: auto;
       overflow-x: hidden;
       -webkit-overflow-scrolling: touch;
@@ -13591,6 +13622,29 @@
 
     .avatar-picker-opt.is-selected .avatar-picker-opt__art {
       box-shadow: 0 0 0 2px var(--mr-primary);
+    }
+
+    .avatar-picker-opt__art--default {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--mr-bg2, #f3f4f6);
+      color: var(--mr-text-2, #4b5563);
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mr-border, #d1d5db) 80%, transparent);
+    }
+
+    .avatar-picker-opt__default-svg {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 58%;
+      height: 58%;
+    }
+
+    .avatar-picker-opt__default-svg svg {
+      width: 100%;
+      height: 100%;
+      display: block;
     }
 
     .avatar-picker-opt__new {
@@ -30595,7 +30649,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-avatar-picker-compact-v1044">
+  <meta name="app-build" content="athar-avatar-picker-half-v1046">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -40611,7 +40665,7 @@
           founding: !!raw.founding,
           posX: clampAvatarPos(raw.posX ?? 50),
           posY: clampAvatarPos(raw.posY ?? 50),
-          visible,
+          visible: imgSource === 'builtin' ? true : visible,
           newUntil
         };
       }
@@ -40634,8 +40688,17 @@
         return PROFILE_AVATARS_DEFAULT;
       }
 
+      function isProfileAvatarBuiltin(preset) {
+        return preset?.imgSource === 'builtin';
+      }
+
       function isProfileAvatarVisible(preset) {
+        if (isProfileAvatarBuiltin(preset)) return true;
         return preset?.visible !== false;
+      }
+
+      function isProfileAvatarAdminHidden(preset) {
+        return preset?.visible === false;
       }
 
       function isProfileAvatarNew(preset) {
@@ -40742,13 +40805,13 @@
         }));
       }
 
-      function getProfileAvatarsForUser(u) {
+      function canPickProfileAvatar(u) {
         const roleKey = normalizeUserRole(u?.role);
-        return getProfileAvatarsCatalog().filter((a) => a.roles.includes(roleKey));
+        return !!PROFILE_AVATAR_ROLE_PREFIX[roleKey];
       }
 
-      function canPickProfileAvatar(u) {
-        return getProfileAvatarsForUser(u).length > 0;
+      function profileDefaultAvatarPickerHtml(u) {
+        return `<span class="avatar-picker-opt__art avatar-picker-opt__art--default" aria-hidden="true"><span class="avatar-picker-opt__default-svg">${TOPBAR_USER_DEFAULT_SVG}</span></span>`;
       }
 
       function canManageProfileAvatars() {
@@ -40773,7 +40836,8 @@
         const preset = getProfileAvatarPreset(u?.avatar_key);
         if (!preset) return null;
         const roleKey = normalizeUserRole(u?.role);
-        return preset.roles.includes(roleKey) ? preset : null;
+        if (!preset.roles.includes(roleKey) || !isProfileAvatarVisible(preset)) return null;
+        return preset;
       }
 
       function avatarCatalogUsesImg(img, imgSource) {
@@ -40941,19 +41005,26 @@
           const roleTxt = a.roles.map((r) => PROFILE_AVATAR_ROLE_LABELS[r] || r).join(' · ');
           const foundingTag = a.founding ? ' · إطار التأسيس' : '';
           const sourceTag = a.imgSource === 'r2' ? 'مرفوعة' : 'مدمجة';
-          const isLive = isProfileAvatarVisible(a);
-          const statusCls = isLive ? 'is-live' : 'is-hidden';
-          const statusTxt = isLive ? (isProfileAvatarNew(a) ? 'معروضة · جديد' : 'معروضة للمستخدمين') : 'مخفية';
-          const toggleLabel = isLive ? 'إخفاء' : 'عرض';
-          const toggleIcon = isLive ? 'fa-eye-slash' : 'fa-eye';
-          const toggleClass = isLive ? 'btn' : 'btn btn-primary';
-          return `<div class="mr-avatar-admin-card${isLive ? '' : ' is-avatar-hidden'}">
+          const isBuiltin = isProfileAvatarBuiltin(a);
+          const isLiveAdmin = !isProfileAvatarAdminHidden(a);
+          const isLiveForUsers = isProfileAvatarVisible(a);
+          const statusCls = isLiveForUsers ? 'is-live' : 'is-hidden';
+          let statusTxt = 'مخفية عن المستخدمين';
+          if (isBuiltin) statusTxt = 'أساسية · معروضة دائماً';
+          else if (isLiveAdmin) statusTxt = isProfileAvatarNew(a) ? 'معروضة · جديد' : 'معروضة للمستخدمين';
+          const toggleLabel = isLiveAdmin ? 'إخفاء' : 'عرض';
+          const toggleIcon = isLiveAdmin ? 'fa-eye-slash' : 'fa-eye';
+          const toggleClass = isLiveAdmin ? 'btn' : 'btn btn-primary';
+          const toggleBtn = isBuiltin
+            ? ''
+            : `<button type="button" class="${toggleClass}" onclick="toggleProfileAvatarVisibility('${Sec.escapeHTML(a.id)}')"><i class="fas ${toggleIcon}"></i> ${toggleLabel}</button>`;
+          return `<div class="mr-avatar-admin-card${isLiveAdmin && !isBuiltin ? '' : isBuiltin ? '' : ' is-avatar-hidden'}">
             <div class="mr-avatar-admin-card__art">${profileAvatarImgHtml(a, a.label)}</div>
             <div class="mr-avatar-admin-card__label">${Sec.escapeHTML(a.label)}</div>
             <div class="mr-avatar-admin-card__status ${statusCls}">${Sec.escapeHTML(statusTxt)}</div>
             <div class="mr-avatar-admin-card__meta">${Sec.escapeHTML(roleTxt)}${foundingTag}<br><code style="font-size:9px">${Sec.escapeHTML(a.id)}</code> · ${sourceTag}</div>
             <div class="mr-avatar-admin-card__actions">
-              <button type="button" class="${toggleClass}" onclick="toggleProfileAvatarVisibility('${Sec.escapeHTML(a.id)}')"><i class="fas ${toggleIcon}"></i> ${toggleLabel}</button>
+              ${toggleBtn}
               <button type="button" class="btn btn-danger" onclick="deleteProfileAvatarPreset('${Sec.escapeHTML(a.id)}')"><i class="fas fa-trash"></i> حذف</button>
             </div>
           </div>`;
@@ -41062,7 +41133,11 @@
         const idx = catalog.findIndex((a) => a.id === id);
         if (idx < 0) return;
         const item = catalog[idx];
-        const nextVisible = !isProfileAvatarVisible(item);
+        if (isProfileAvatarBuiltin(item)) {
+          showToast('الصور الأساسية تبقى ظاهرة للمستخدمين دائماً.', 'info');
+          return;
+        }
+        const nextVisible = isProfileAvatarAdminHidden(item);
         catalog[idx] = {
           ...item,
           visible: nextVisible,
@@ -41085,6 +41160,10 @@
         }
         const preset = getProfileAvatarPreset(id);
         if (!preset) return;
+        if (isProfileAvatarBuiltin(preset)) {
+          showToast('لا يمكن حذف الصور الأساسية.', 'info');
+          return;
+        }
         const ok = confirm(`حذف صورة «${preset.label}» من القائمة؟\nسيتم إزالتها من اختيارات المستخدمين أيضاً.`);
         if (!ok) return;
         try {
@@ -41139,11 +41218,17 @@
         const preset = getValidProfileAvatarPreset(u);
         el.classList.toggle('has-avatar-photo', !!preset);
         el.classList.toggle('has-founding-frame', !!(preset && preset.founding));
+        el.classList.toggle('has-default-icon', !preset && canPickProfileAvatar(u));
         if (preset) {
           el.style.background = 'transparent';
           el.textContent = '';
           el.innerHTML = profileAvatarImgHtml(preset, preset.label, { founding: preset.founding });
           hydrateProfileAvatarImages(el).catch(() => {});
+        } else if (canPickProfileAvatar(u)) {
+          el.classList.remove('has-founding-frame');
+          el.textContent = '';
+          el.style.background = '';
+          el.innerHTML = `<span class="profile-hero__default-svg" aria-hidden="true">${TOPBAR_USER_DEFAULT_SVG}</span>`;
         } else {
           el.classList.remove('has-founding-frame');
           const roleKey = normalizeUserRole(u.role);
@@ -41177,7 +41262,14 @@
         if (title) title.textContent = profileAvatarPickerTitle(u);
         const options = getProfileAvatarsForUser(u);
         const current = resolveProfileAvatarKey(u.avatar_key || '');
-        grid.innerHTML = options.map((a) => {
+        const defaultSelected = !current;
+        const defaultBtn = `
+          <button type="button" class="avatar-picker-opt${defaultSelected ? ' is-selected' : ''}"
+            onclick="saveProfileAvatar('__default__')" aria-label="أيقونة أساسية"
+            ${defaultSelected ? 'aria-pressed="true"' : ''}>
+            ${profileDefaultAvatarPickerHtml(u)}
+          </button>`;
+        grid.innerHTML = defaultBtn + options.map((a) => {
           const newBadge = isProfileAvatarNew(a)
             ? '<span class="avatar-picker-opt__new" aria-label="صورة جديدة">جديد</span>'
             : '';
@@ -41205,6 +41297,25 @@
       async function saveProfileAvatar(key) {
         const u = state.currentUser;
         if (!u?.id) return;
+        if (!key || key === '__default__') {
+          try {
+            const { data, error } = await sb.from('users')
+              .update({ avatar_key: null })
+              .eq('id', u.id)
+              .select(MOB_USER_SELECT)
+              .single();
+            if (error) throw error;
+            upsertLocalUser(data);
+            state.currentUser = { ...state.currentUser, ...data };
+            updateSidebarUser();
+            if (isProfilePageOpen()) renderProfilePage();
+            closeModal('avatarPickerModal');
+            showToast('تم اختيار الأيقونة الأساسية ✓', 'success');
+          } catch (err) {
+            showToast(formatPostgrestError(err) || 'تعذّر حفظ الاختيار', 'error');
+          }
+          return;
+        }
         const preset = getProfileAvatarPreset(key);
         if (!preset || !preset.roles.includes(normalizeUserRole(u.role)) || !isProfileAvatarVisible(preset)) return;
         const keyToSave = preset.id;
