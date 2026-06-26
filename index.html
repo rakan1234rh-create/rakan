@@ -58592,8 +58592,10 @@
         // طلب الإشعارات عند كل تسجيل دخول وعلى الكمبيوتر أيضاً
         if (!opts.promptIfNeeded) return;
         
-        // طلب الإشعارات إذا كانت غير مفعلة (default أو denied)
-        if (Notification.permission !== 'default' && Notification.permission !== 'denied') return;
+        // طلب الإشعارات دائماً عند تسجيل الدخول (بغض النظر عن حالة الإذن الحالية)
+        // إذا كانت granted، سيتم إعادة الاشتراك فقط
+        // إذا كانت default، سيطلب الإذن
+        // إذا كانت denied، لن يطلبها المتصفح
         
         const isTeamLead = webPushTeamLeadRole();
         const isMob = document.documentElement.classList.contains('mr-mobile-ui');
