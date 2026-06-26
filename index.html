@@ -36354,6 +36354,8 @@
           await showLoginPageTransition();
           await onUserAuthenticated(profile);
           showToast(`مرحباً ${profile.name} 👋`, 'success');
+          // طلب الإشعارات عند تسجيل دخول جديد
+          try { initAtharWebPush({ promptIfNeeded: true }); } catch (_) { /* noop */ }
         } catch (err) {
           if (isMirsadDebugLog()) console.error('Login error:', formatPostgrestError(err), err);
           showLoginError('خطأ في الاتصال بالخادم. حاول مجدداً.');
@@ -36437,7 +36439,7 @@
             if (state._autoForwardTimer) clearInterval(state._autoForwardTimer);
             state._autoForwardTimer = null;
 
-            try { initAtharWebPush({ promptIfNeeded: true }); } catch (_) { /* noop */ }
+            // طلب الإشعارات يتم الآن فقط عند تسجيل دخول جديد (في دالة handleLogin)
             try { maybeOpenTicketFromPushUrl(); } catch (_) { /* noop */ }
             try { maybeOpenBroadcastFromPushUrl(); } catch (_) { /* noop */ }
 
