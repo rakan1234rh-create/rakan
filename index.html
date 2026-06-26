@@ -58588,17 +58588,17 @@
       async function initAtharWebPush(opts = {}) {
         syncWebPushMenuLabel();
         if (!isWebPushSupported() || !state.currentUser) return;
-        if (Notification.permission === 'granted') {
-          try { await ensureAtharWebPushSubscribed({ welcomeNotify: false }); } catch (e) {
-            if (!opts.silent) showToast('تنبيهات الجوال: ' + formatPushError(e), 'error');
-            else if (isMirsadDebugLog()) console.warn('[webPush] resync', e);
-          }
-          return;
-        }
-        if (!opts.promptIfNeeded || Notification.permission !== 'default') return;
+        
+        // طلب الإشعارات عند كل تسجيل دخول وعلى الكمبيوتر أيضاً
+        if (!opts.promptIfNeeded) return;
+        
+        // طلب الإشعارات إذا كانت غير مفعلة (default أو denied)
+        if (Notification.permission !== 'default' && Notification.permission !== 'denied') return;
+        
         const isTeamLead = webPushTeamLeadRole();
         const isMob = document.documentElement.classList.contains('mr-mobile-ui');
-        if (!isMob && !isTeamLead) return;
+        
+        // طلب الإشعارات على الجوال والكمبيوتر (إزالة شرط !isMob && !isTeamLead)
         const ok = await confirmDialog(
           isTeamLead
             ? 'فعّل تنبيهات الجوال لتصلك إشعارات فريقك عند رصد مخالفة على موظفيك أو تحديث حالة تذاكرهم — حتى والتطبيق مغلق.\n\nعلى iPhone: أضف ATHAR إلى الشاشة الرئيسية أولاً.'
