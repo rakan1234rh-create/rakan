@@ -30649,7 +30649,7 @@
     }
   </style>
   <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
-  <meta name="app-build" content="athar-avatar-no-builtin-v1047">
+  <meta name="app-build" content="athar-avatar-max-8mb-v1048">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
     (function () {
@@ -32111,6 +32111,7 @@
             <div class="form-group">
               <label class="form-label" for="paa-file">صورة (WebP / PNG / JPG) <span class="required-mark">*</span></label>
               <input type="file" id="paa-file" class="form-input" accept="image/webp,image/png,image/jpeg" required onchange="previewProfileAvatarAdminFile(event)">
+              <p class="mr-settings-note" style="margin:6px 0 0">الحد الأقصى: 8 ميغابايت لكل صورة.</p>
             </div>
             <div class="mr-avatar-pos-wrap" id="paa-pos-wrap" hidden>
               <span class="form-label">موضع الصورة داخل الإطار</span>
@@ -40577,6 +40578,8 @@
 
       const PROFILE_AVATAR_BUILTIN_ID_BY_IMG = {};
 
+      const PROFILE_AVATAR_MAX_BYTES = 8 * 1024 * 1024;
+
       const PROFILE_AVATAR_NEW_BADGE_MS = 14 * 24 * 60 * 60 * 1000;
 
       function clampAvatarPos(v) {
@@ -40955,7 +40958,9 @@
 
       async function uploadProfileAvatarPresetFile(file) {
         if (!file) throw new Error('لم يتم اختيار ملف');
-        if (file.size > 2 * 1024 * 1024) throw new Error('حجم الصورة كبير (الحد 2 ميغابايت)');
+        if (file.size > PROFILE_AVATAR_MAX_BYTES) {
+          throw new Error(`حجم الصورة كبير (الحد ${Math.round(PROFILE_AVATAR_MAX_BYTES / (1024 * 1024))} ميغابايت)`);
+        }
         const ext = (file.name.split('.').pop() || 'webp').toLowerCase().replace(/[^a-z0-9]/g, '') || 'webp';
         const safeExt = ['webp', 'png', 'jpg', 'jpeg'].includes(ext) ? ext : 'webp';
         const objectKey = `avatars/presets/${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}.${safeExt}`;

@@ -61,6 +61,7 @@ function assertKey(key: unknown): string {
 
 const R2_PROXY_PUT_MAX_BYTES = 52 * 1024 * 1024
 const R2_PROXY_PART_MAX_BYTES = 10 * 1024 * 1024
+const AVATAR_PRESET_MAX_BYTES = 8 * 1024 * 1024
 
 function assertTempUploadKey(key: string, userId: string): string {
   const k = assertKey(key)
@@ -392,8 +393,8 @@ Deno.serve(async (req) => {
         (req.headers.get('Content-Type') || '').trim() || guessContentTypeFromKey(key)
       const bytes = new Uint8Array(await req.arrayBuffer())
       if (!bytes.length) return json({ error: 'جسم فارغ' }, 400)
-      if (bytes.length > 2 * 1024 * 1024) {
-        return json({ error: 'حجم صورة البروفايل كبير جداً (الحد 2 ميغابايت)' }, 413)
+      if (bytes.length > AVATAR_PRESET_MAX_BYTES) {
+        return json({ error: 'حجم صورة البروفايل كبير جداً (الحد 8 ميغابايت)' }, 413)
       }
       const s3 = makeS3(env)
       await s3.send(
