@@ -49263,6 +49263,8 @@
         const bodyCs = getComputedStyle(bodyScroll);
         const bodyPadX = (parseFloat(bodyCs.paddingLeft) || 0) + (parseFloat(bodyCs.paddingRight) || 0);
         let tableW = Math.max(0, innerW - bodyPadX);
+        const maxTableW = window.innerWidth - bodyPadX;
+        tableW = Math.min(tableW, maxTableW);
         if (root.listId === 'reportList' && tableW < 48) return;
         const useMeasuredHead = root.listId === 'ticketList' || root.listId === 'reportList';
         if (root.listId === 'ticketList') {
