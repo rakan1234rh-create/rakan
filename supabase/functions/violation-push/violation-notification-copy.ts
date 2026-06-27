@@ -66,9 +66,9 @@ export function buildNewViolationTemplates(
   return [
     {
       recipientRole: 'employee',
-      title: 'تم تسجيل مخالفة بحقك',
+      title: 'تسجيل مخالفة',
       message:
-        `نفيدكم بتسجيل مخالفة بحقكم برقم مرجعي (${ticket}). نوع المخالفة: ${vType}. يُرجى تقديم الإفادة عبر النظام خلال 24 ساعة؛ تجنباً للتمرير التلقائي.`,
+        `تم تسجيل مخالفة برقم مرجعي (${ticket}) نوع المخالفة: ${vType} نأمل تقديم إفادتكم عبر التطبيق خلال 24 ساعة علماً بأنه سيتم تمرير المخالفة تلقائياً في حال عدم الرد`,
       eventKeySuffix: 'vnew_emp',
       scope: 'mine',
       type: 'amber',
@@ -78,7 +78,7 @@ export function buildNewViolationTemplates(
       recipientRole: 'supervisor',
       title: 'رصد مخالفة ضمن منطقتكم',
       message:
-        `نفيدكم برصد مخالفة برقم (${ticket}) على الموظف: ${emp}، ضمن نطاق إشرافكم. نوع المخالفة: ${vType}. للإحاطة ومتابعة استكمال الإجراءات.`,
+        `نفيدكم برصد مخالفة برقم (${ticket}) على الموظف: ${emp}، ضمن نطاق إشرافكم. نوع المخالفة: ${vType}. للإحاطة ومتابعة اسيرها.`,
       eventKeySuffix: 'vnew_sup',
       scope: 'team',
       type: 'blue',
@@ -86,9 +86,9 @@ export function buildNewViolationTemplates(
     },
     {
       recipientRole: 'branch_manager',
-      title: 'رصد مخالفة تحت إدارتكم',
+      title: 'تسجيل مخالفة على أحد منسوبي الفرع',
       message:
-        `نفيدكم بقيد مخالفة برقم (${ticket}) على الموظف: ${emp}، التابع لإدارتكم. نوع المخالفة: ${vType}. للاطلاع ومتابعة سير الإجراء.`,
+        `تم تسجيل مخالفة برقم (${ticket}) على الموظف: ${emp} نوع المخالفة: ${vType} يُرجى الاطلاع ومتابعة الإجراءات عبر التطبيق`,
       eventKeySuffix: 'vnew_bm',
       scope: 'team',
       type: 'amber',
@@ -119,7 +119,7 @@ export function buildStateChangeTemplates(
         recipientRole: 'supervisor',
         title: 'تم تقديم الإفادة على مخالفة ضمن منطقتكم',
         message:
-          `نفيدكم بأن الموظف: ${emp} قام بتقديم الإفادة على المخالفة رقم (${ticket}) من نوع: ${vType}. يُرجى الاطلاع ومتابعة استكمال الإجراءات.`,
+          `نفيدكم بأن الموظف: ${emp} قام بتقديم الإفادة على المخالفة رقم (${ticket}) من نوع: ${vType}. يُرجى الاطلاع ومتابعة اسيرها.`,
         eventKeySuffix: 'emp_resp_sup',
         scope: 'team',
         type: 'blue',
@@ -127,9 +127,9 @@ export function buildStateChangeTemplates(
       },
       {
         recipientRole: 'branch_manager',
-        title: 'تم الرد على مخالفة تحت إدارتكم',
+        title: 'استلام إفادة مخالفة',
         message:
-          `نفيدكم بأن الموظف: ${emp} التابع لإدارتكم، قد قام بتقديم الإفادة على المخالفة رقم (${ticket}) من نوع: ${vType}. يُرجى الاطلاع ومراجعة الرد.`,
+          `للاطلاع: تم استلام إفادة الموظف ${emp} بشأن المخالفة رقم (${ticket}) - ${vType}`,
         eventKeySuffix: 'emp_resp_bm',
         scope: 'team',
         type: 'blue',
@@ -146,7 +146,7 @@ export function buildStateChangeTemplates(
         recipientRole: 'supervisor',
         title: 'تم تمرير مخالفة تلقائياً ضمن منطقتكم',
         message:
-          `نفيدكم بتمرير المخالفة رقم (${ticket}) تلقائياً لعدم الرد خلال المهلة المحددة، على الموظف: ${emp} ضمن نطاق إشرافكم. نوع المخالفة: ${vType}. للإحاطة ومتابعة الإجراء.`,
+          `نفيدكم بتمرير المخالفة رقم (${ticket}) تلقائياً لعدم الرد خلال المهلة المحددة، على الموظف: ${emp} ضمن نطاق إشرافكم.`,
         eventKeySuffix: 'auto_emp_sup',
         scope: 'team',
         type: 'amber',
@@ -155,9 +155,9 @@ export function buildStateChangeTemplates(
       },
       {
         recipientRole: 'branch_manager',
-        title: 'تم تمرير مخالفة تلقائياً تحت إدارتكم',
+        title: 'تمرير تلقائي لمخالفة',
         message:
-          `نفيدكم بتمرير المخالفة رقم (${ticket}) تلقائياً لعدم الرد خلال المهلة المحددة، على الموظف: ${emp} التابع لإدارتكم. نوع المخالفة: ${vType}. للاطلاع ومتابعة سير الإجراء.`,
+          `للاطلاع: تم تمرير المخالفة رقم (${ticket}) الخاصة بالموظف: ${emp} تلقائياً لعدم تقديم الإفادة خلال المهلة المحددة`,
         eventKeySuffix: 'auto_emp_bm',
         scope: 'team',
         type: 'amber',
@@ -174,7 +174,7 @@ export function buildStateChangeTemplates(
       recipientRole: 'auditor',
       title: 'إحالة مخالفة للتدقيق',
       message:
-        `نفيدكم بإحالة المخالفة رقم (${ticket}) لتدقيقكم بعد استكمال إجراءات المشرف، للموظف: ${emp}. نوع المخالفة: ${vType}. يُرجى الاطلاع ومراجعة الإجراء.`,
+        `نفيدكم بإحالة المخالفة رقم (${ticket}) لتدقيقكم بعد استكمال إجراءات المشرف، للموظف: ${emp}. نوع المخالفة: ${vType}.`,
       eventKeySuffix: 'sup_ref_aud',
       scope: 'mine',
       type: 'purple',
@@ -189,7 +189,7 @@ export function buildStateChangeTemplates(
       recipientRole: 'auditor',
       title: 'تم تمرير مخالفة تلقائياً لتدقيقكم',
       message:
-        `نفيدكم بتمرير المخالفة رقم (${ticket}) تلقائياً لتدقيقكم لعدم اتخاذ إجراء من قِبل المشرف خلال المهلة، للموظف: ${emp}. نوع المخالفة: ${vType}. يُرجى الاطلاع والاعتماد.`,
+        `نفيدكم بتمرير المخالفة رقم (${ticket}) تلقائياً لتدقيقكم لعدم اتخاذ إجراء من قِبل المشرف خلال المهلة، للموظف: ${emp}.`,
       eventKeySuffix: 'auto_sup_aud',
       scope: 'mine',
       type: 'purple',
@@ -205,7 +205,7 @@ export function buildStateChangeTemplates(
       recipientRole: 'manager',
       title: 'إحالة مخالفة لاعتمادكم',
       message:
-        `نفيدكم بإحالة المخالفة رقم (${ticket}) لاعتمادكم النهائي بعد استكمال إجراءات التدقيق، للموظف: ${emp}. نوع المخالفة: ${vType}. يُرجى الاطلاع واتخاذ القرار المناسب.`,
+        `نفيدكم بإحالة المخالفة رقم (${ticket}) لاعتمادكم النهائي بعد استكمال إجراءات التدقيق، للموظف: ${emp}. نوع المخالفة: ${vType}.`,
       eventKeySuffix: 'aud_ref_mgt',
       scope: 'mine',
       type: 'red',
@@ -220,7 +220,7 @@ export function buildStateChangeTemplates(
       recipientRole: 'hr',
       title: 'استكمال إجراءات مخالفة معتمدة',
       message:
-        `نفيدكم باعتماد المدير للمخالفة رقم (${ticket}) الصادرة بحق الموظف: ${emp}. نوع المخالفة: ${vType}. يُرجى الاطلاع وقيد الإجراء في السجل الوظيفي للموظف واستكمال الإجراءات.`,
+        `نفيدكم باعتماد المدير للمخالفة رقم (${ticket}) الصادرة بحق الموظف: ${emp}. نوع المخالفة: ${vType}. يُرجى الاطلاع وقيد الإجراء.`,
       eventKeySuffix: 'mgt_ref_hr',
       scope: 'mine',
       type: 'orange',
@@ -272,9 +272,9 @@ function managerWarningTemplates(ticket: string, emp: string, vType: string): Vi
   return [
     {
       recipientRole: 'employee',
-      title: 'اعتماد إجراء - تنبيه بمخالفة',
+      title: 'قرار إداري – تنبيه بمخالفة',
       message:
-        `نفيدكم باعتماد الإدارة إجراء (تنبيه فقط) بشأن المخالفة رقم (${ticket}) من نوع: ${vType}. يُرجى الالتزام بالأنظمة لتفادي تكرار المخالفة.`,
+        `تم إصدار تنبيه أول بشأن المخالفة رقم (${ticket}) - ${vType} نأمل منكم الالتزام بالأنظمة والتعليمات المعتمدة تفادياً لتصعيد الإجراء`,
       eventKeySuffix: 'mgt_warn_emp',
       scope: 'mine',
       type: 'amber',
@@ -292,9 +292,9 @@ function managerWarningTemplates(ticket: string, emp: string, vType: string): Vi
     },
     {
       recipientRole: 'branch_manager',
-      title: 'اعتماد إجراء مخالفة تحت إدارتكم',
+      title: 'قرار إداري – تنبيه على مخالفة',
       message:
-        `نفيدكم باعتماد الإدارة إجراء (تنبيه فقط) للمخالفة رقم (${ticket}) للموظف: ${emp} التابع لإدارتكم. نوع المخالفة: ${vType}.`,
+        `أصدرت إدارة المبيعات تنبيه أول بشأن المخالفة رقم (${ticket}) للموظف: ${emp} - ${vType}`,
       eventKeySuffix: 'mgt_warn_bm',
       scope: 'team',
       type: 'amber',
@@ -307,9 +307,9 @@ function managerCancelTemplates(ticket: string, emp: string, vType: string): Vio
   return [
     {
       recipientRole: 'employee',
-      title: 'إلغاء مخالفة مسجلة بحقكم',
+      title: 'قرار إداري – إلغاء مخالفة',
       message:
-        `نفيدكم بصدور قرار الإدارة بإلغاء المخالفة رقم (${ticket}) من نوع: ${vType}، وتم حفظها بالنظام دون تقييد أي إجراء بحقكم.`,
+        `تم إصدار قرار بإلغاء المخالفة رقم (${ticket}) - ${vType} وحفظها في التطبيق دون اتخاذ أي إجراء`,
       eventKeySuffix: 'mgt_cancel_emp',
       scope: 'mine',
       type: 'green',
@@ -327,9 +327,9 @@ function managerCancelTemplates(ticket: string, emp: string, vType: string): Vio
     },
     {
       recipientRole: 'branch_manager',
-      title: 'إلغاء مخالفة تحت إدارتكم',
+      title: 'قرار إداري – إلغاء مخالفة',
       message:
-        `نفيدكم بصدور قرار الإدارة بإلغاء المخالفة رقم (${ticket}) للموظف: ${emp} التابع لإدارتكم. نوع المخالفة: ${vType}.`,
+        `أصدرت إدارة المبيعات قراراً بإلغاء المخالفة رقم (${ticket}) للموظف: ${emp} - ${vType} وتم حفظها في النظام`,
       eventKeySuffix: 'mgt_cancel_bm',
       scope: 'team',
       type: 'green',
@@ -342,9 +342,9 @@ function managerApproveTemplates(ticket: string, emp: string, vType: string): Vi
   return [
     {
       recipientRole: 'employee',
-      title: 'الإدارة - الاعتماد النهائي للمخالفة',
+      title: 'قرار إداري – اعتماد نهائي لمخالفة',
       message:
-        `نفيدكم بالاعتماد النهائي للمخالفة رقم (${ticket}) من قِبل الإدارة، ونوعها: ${vType}، وتم قيد الإجراء الرسمي بحقكم.`,
+        `تم الاعتماد النهائي للمخالفة رقم (${ticket}) - ${vType} من قِبل الإدارة وتم قيد الإجراء في سجلكم`,
       eventKeySuffix: 'mgt_appr_emp',
       scope: 'mine',
       type: 'red',
@@ -354,7 +354,7 @@ function managerApproveTemplates(ticket: string, emp: string, vType: string): Vi
       recipientRole: 'supervisor',
       title: 'الإدارة - الاعتماد النهائي لمخالفة ضمن منطقتكم',
       message:
-        `نفيدكم بالاعتماد النهائي من قِبل الإدارة للمخالفة رقم (${ticket}) الصادرة بحق الموظف: ${emp} ضمن نطاق إشرافكم.`,
+        `نفيدكم بالاعتماد النهائي من قِبل الإدارة للمخالفة رقم (${ticket}) الصادرة بحق الموظف: ${emp} ضمن نطاق إشرافكم. نوع المخالفة: ${vType}.`,
       eventKeySuffix: 'mgt_appr_sup',
       scope: 'team',
       type: 'red',
@@ -362,9 +362,9 @@ function managerApproveTemplates(ticket: string, emp: string, vType: string): Vi
     },
     {
       recipientRole: 'branch_manager',
-      title: 'الإدارة - الاعتماد النهائي لمخالفة تحت إدارتكم',
+      title: 'قرار إداري – اعتماد نهائي لمخالفة',
       message:
-        `نفيدكم بالاعتماد النهائي من قِبل الإدارة للمخالفة رقم (${ticket}) الصادرة بحق الموظف: ${emp} التابع لإدارتكم.`,
+        `أصدرت إدارة المبيعات قراراً بالاعتماد النهائي للمخالفة رقم (${ticket}) بحق الموظف: ${emp}`,
       eventKeySuffix: 'mgt_appr_bm',
       scope: 'team',
       type: 'red',
@@ -377,9 +377,9 @@ function hrWarningTemplates(ticket: string, emp: string, vType: string): Violati
   return [
     {
       recipientRole: 'employee',
-      title: 'الموارد البشرية - صدور تنبيه بمخالفة',
+      title: 'قرار الموارد البشرية – تنبيه مخالفات',
       message:
-        `نفيدكم بصدور قرار إدارة الموارد البشرية بـ (تنبيه رسمي) بشأن المخالفة رقم (${ticket}) من نوع: ${vType}. يُرجى الالتزام بالأنظمة لتفادي تكرار المخالفة.`,
+        `تم إصدار تنبيه أول من إدارة الموارد البشرية بشأن المخالفة رقم (${ticket}) - ${vType} نأمل الالتزام بالأنظمة المعتمدة`,
       eventKeySuffix: 'hr_warn_emp',
       scope: 'mine',
       type: 'amber',
@@ -397,9 +397,9 @@ function hrWarningTemplates(ticket: string, emp: string, vType: string): Violati
     },
     {
       recipientRole: 'branch_manager',
-      title: 'الموارد البشرية - إجراء تنبيه لمخالفة تحت إدارتكم',
+      title: 'قرار الموارد البشرية – تنبيه مخالفة',
       message:
-        `نفيدكم بصدور قرار إدارة الموارد البشرية بـ (تنبيه رسمي) للمخالفة رقم (${ticket}) الصادرة بحق الموظف: ${emp} التابع لإدارتكم.`,
+        `أصدرت إدارة الموارد البشرية تنبيه أول بشأن المخالفة رقم (${ticket}) للموظف: ${emp}`,
       eventKeySuffix: 'hr_warn_bm',
       scope: 'team',
       type: 'amber',
@@ -412,9 +412,9 @@ function hrApproveTemplates(ticket: string, emp: string, vType: string): Violati
   return [
     {
       recipientRole: 'employee',
-      title: 'الموارد البشرية - الاعتماد النهائي للمخالفة',
+      title: 'قرار الموارد البشرية – اعتماد نهائي لمخالفة',
       message:
-        `نفيدكم بالاعتماد النهائي للمخالفة رقم (${ticket}) من قِبل إدارة الموارد البشرية، ونوعها: ${vType}، وتم قيد الإجراء الرسمي بحقكم في السجل الوظيفي.`,
+        `تم الاعتماد النهائي للمخالفة رقم (${ticket}) - ${vType} من قِبل إدارة الموارد البشرية وتم قيد الإجراء`,
       eventKeySuffix: 'hr_appr_emp',
       scope: 'mine',
       type: 'red',
@@ -422,7 +422,7 @@ function hrApproveTemplates(ticket: string, emp: string, vType: string): Violati
     },
     {
       recipientRole: 'supervisor',
-      title: 'الموارد البشرية - الاعتماد النهائي لمخالفة ضمن منطقتكم',
+      title: 'الموارد البشرية - الاعتماد النهائي لمخالفة ضمن منط��تكم',
       message:
         `نفيدكم بالاعتماد النهائي من قِبل إدارة الموارد البشرية للمخالفة رقم (${ticket}) الصادرة بحق الموظف: ${emp} ضمن نطاق إشرافكم.`,
       eventKeySuffix: 'hr_appr_sup',
@@ -432,9 +432,9 @@ function hrApproveTemplates(ticket: string, emp: string, vType: string): Violati
     },
     {
       recipientRole: 'branch_manager',
-      title: 'الموارد البشرية - الاعتماد النهائي لمخالفة تحت إدارتكم',
+      title: 'قرار الموارد البشرية – اعتماد نهائي',
       message:
-        `نفيدكم بالاعتماد النهائي من قِبل إدارة الموارد البشرية للمخالفة رقم (${ticket}) الصادرة بحق الموظف: ${emp} التابع لإدارتكم.`,
+        `تم الاعتماد النهائي للمخالفة رقم (${ticket}) من قِبل إدارة الموارد البشرية بحق الموظف: ${emp}`,
       eventKeySuffix: 'hr_appr_bm',
       scope: 'team',
       type: 'red',
@@ -447,9 +447,9 @@ function hrCancelTemplates(ticket: string, emp: string, vType: string): Violatio
   return [
     {
       recipientRole: 'employee',
-      title: 'الموارد البشرية - إلغاء مخالفة بحقكم',
+      title: 'قرار الموارد البشرية – إلغاء مخالفة',
       message:
-        `نفيدكم بصدور قرار إدارة الموارد البشرية بـ (إلغاء) المخالفة المرجعية رقم (${ticket}) من نوع: ${vType}، وتم حفظها بالنظام دون تقييد أي إجراء بحقكم.`,
+        `تم إصدار قرار من إدارة الموارد البشرية بإلغاء المخالفة رقم (${ticket}) - ${vType} وحفظها في النظام`,
       eventKeySuffix: 'hr_cancel_emp',
       scope: 'mine',
       type: 'green',
@@ -459,7 +459,7 @@ function hrCancelTemplates(ticket: string, emp: string, vType: string): Violatio
       recipientRole: 'supervisor',
       title: 'الموارد البشرية - إلغاء مخالفة ضمن منطقتكم',
       message:
-        `نفيدكم بصدور قرار إدارة الموارد البشرية بـ (إلغاء) المخالفة رقم (${ticket}) الصادرة بحق الموظف: ${emp} ضمن نطاق إشرافكم، وحفظها بالنظام.`,
+        `نفيدكم بصدور قرار إدارة الموارد البشرية بـ (إلغاء) المخالفة رقم (${ticket}) الصادرة بحق الموظف: ${emp} ضمن نطاق إشرافكم.`,
       eventKeySuffix: 'hr_cancel_sup',
       scope: 'team',
       type: 'green',
@@ -467,9 +467,9 @@ function hrCancelTemplates(ticket: string, emp: string, vType: string): Violatio
     },
     {
       recipientRole: 'branch_manager',
-      title: 'الموارد البشرية - إلغاء مخالفة تحت إدارتكم',
+      title: 'قرار الموارد البشرية – إلغاء مخالفة',
       message:
-        `نفيدكم بصدور قرار إدارة الموارد البشرية بـ (إلغاء) المخالفة رقم (${ticket}) الصادرة بحق الموظف: ${emp} التابع لإدارتكم، وحفظها بالنظام.`,
+        `أصدرت إدارة الموارد البشرية قراراً بإلغاء المخالفة رقم (${ticket}) للموظف: ${emp} وتم حفظها في النظام`,
       eventKeySuffix: 'hr_cancel_bm',
       scope: 'team',
       type: 'green',
