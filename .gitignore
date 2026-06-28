@@ -23,3 +23,9 @@ index.user-mobile-source.html
 سجل-*.md
 سجل-*.txt
 platform-urls.txt
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+!.env.example
