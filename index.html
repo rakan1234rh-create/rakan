@@ -22642,9 +22642,10 @@
       }
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob tbody tr.wf-ticket-row > td.wf-ticket-cell {
-        white-space: nowrap !important;
-        word-break: normal !important;
-        overflow-wrap: normal !important
+        white-space: normal !important;
+        word-break: break-word !important;
+        overflow-wrap: anywhere !important;
+        overflow: hidden !important
       }
 
       #tab-workflow .wf-panel .data-table.wf-tickets-table--mob tbody tr.wf-ticket-row > td.wf-col-datetime {
@@ -22809,10 +22810,13 @@
 
       #tab-workflow .wf-panel .data-table td.wf-ticket-cell {
         width: auto !important;
-        min-width: max-content !important;
-        max-width: none !important;
-        white-space: nowrap !important;
-        overflow: visible !important;
+        min-width: 0 !important;
+        max-width: 30% !important;
+        white-space: normal !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        word-break: break-word !important;
+        overflow-wrap: anywhere !important;
         text-align: start !important;
         vertical-align: middle !important;
         padding: 3px 4px !important;
@@ -49345,19 +49349,27 @@
         let widths;
         if (root.listId === 'reportList') {
           const findIdx = (cls) => Array.from(tds).findIndex(td => td.classList.contains(cls));
+          /* ── قياس العرض بـ canvas بدل DOM probe لتجنب layout reflow لكل خلية ── */
+          const _rpMeasureCanvas = document.createElement('canvas');
+          const _rpMeasureCtx = _rpMeasureCanvas.getContext('2d');
+          const _rpStyleCache = new Map();
+          const getElStyle = (refEl) => {
+            if (!refEl) return { fontSize: '10px', fontWeight: '600', fontFamily: 'sans-serif' };
+            if (_rpStyleCache.has(refEl)) return _rpStyleCache.get(refEl);
+            const cs = getComputedStyle(refEl);
+            const s = {
+              fontSize: cs.fontSize || (refEl.classList.contains('wf-ticket-id') ? '9px' : '10px'),
+              fontWeight: cs.fontWeight || (refEl.classList.contains('wf-ticket-id') ? '800' : '600'),
+              fontFamily: cs.fontFamily || 'sans-serif'
+            };
+            _rpStyleCache.set(refEl, s);
+            return s;
+          };
           const measureRpMobText = (text, refEl) => {
-            const probe = document.createElement('span');
-            const cs = getComputedStyle(refEl || document.body);
-            probe.style.cssText = 'position:fixed;left:-9999px;top:0;white-space:nowrap;visibility:hidden;pointer-events:none;';
-            probe.style.fontSize = cs.fontSize || (refEl && refEl.classList.contains('wf-ticket-id') ? '9px' : '10px');
-            probe.style.fontWeight = cs.fontWeight || (refEl && refEl.classList.contains('wf-ticket-id') ? '800' : '600');
-            probe.style.fontFamily = cs.fontFamily;
-            probe.style.fontVariantNumeric = cs.fontVariantNumeric || 'lining-nums tabular-nums';
-            probe.textContent = text;
-            document.body.appendChild(probe);
-            const w = probe.offsetWidth;
-            probe.remove();
-            return w;
+            if (!text) return 0;
+            const s = getElStyle(refEl);
+            _rpMeasureCtx.font = `${s.fontWeight} ${s.fontSize} ${s.fontFamily}`;
+            return Math.ceil(_rpMeasureCtx.measureText(text).width);
           };
 
           const ticketIdx = findIdx('wf-ticket-cell');
@@ -49554,18 +49566,25 @@
               delete bodyScroll.dataset.rpColSig;
               syncMobTicketsColWidths('reports');
             };
-            window.addEventListener('resize', () => {
+            /* debounce 300ms لتخفيف الضغط - بدل الاستدعاء الفوري */
+            const debouncedResync = () => {
               clearTimeout(resizeTimer);
-              resizeTimer = setTimeout(resync, 100);
-            }, { passive: true });
-            const ro = new ResizeObserver(() => resync());
+              resizeTimer = setTimeout(resync, 300);
+            };
+            window.addEventListener('resize', debouncedResync, { passive: true });
+            const ro = new ResizeObserver(debouncedResync);
             ro.observe(bodyScroll);
             const bodyTable = bodyScroll.querySelector('.wf-tickets-table--mob-body');
             if (bodyTable) ro.observe(bodyTable);
             const headHost = document.getElementById(root.headId);
             if (headHost) ro.observe(headHost);
           } else {
-            const ro = new ResizeObserver(() => syncMobTicketsColWidths(tab));
+            let _wfRoTimer = 0;
+            const _wfDebouncedSync = () => {
+              clearTimeout(_wfRoTimer);
+              _wfRoTimer = setTimeout(() => syncMobTicketsColWidths(tab), 300);
+            };
+            const ro = new ResizeObserver(_wfDebouncedSync);
             ro.observe(bodyScroll);
             const bodyTable = bodyScroll.querySelector('.wf-tickets-table--mob-body');
             if (bodyTable) ro.observe(bodyTable);
@@ -61892,67 +61911,157 @@
       window.dashFunnelNavigate = dashFunnelNavigate;
       window.showOverdueTickets = showOverdueTickets;
     </script>
-    <style>
+        <style>
       @media (max-width: 992px) {
-        html.mr-mobile-ui #appWrap .main:has(#tab-workflow.active) {
-          overflow-x: hidden !important;
-          overflow-y: auto !important;
-        }
-
+        /* ── workflow: منع التمدد الأفقي ── */
+        html.mr-mobile-ui #appWrap .main:has(#tab-workflow.active),
         html.mr-mobile-ui #appWrap .content:has(#tab-workflow.active) {
           overflow-x: hidden !important;
-          overflow-y: auto !important;
         }
-
         html.mr-mobile-ui #tab-workflow .wf-desk-tickets-host {
           max-width: 100vw !important;
-          width: 100vw !important;
-          overflow-x: auto !important;
-          overflow-y: visible !important;
+          width: 100% !important;
+          overflow-x: hidden !important;
           box-sizing: border-box !important;
         }
-
-        html.mr-mobile-ui #tab-workflow .wf-table-wrap {
-          max-width: 100vw !important;
-          overflow-x: auto !important;
-          -webkit-overflow-scrolling: touch !important;
+        html.mr-mobile-ui #tab-workflow #ticketList > .wf-mob-tickets-body {
+          max-width: 100% !important;
+          overflow-x: hidden !important;
         }
-
-        html.mr-mobile-ui #tab-workflow .wf-panel .data-table {
+        html.mr-mobile-ui #tab-workflow .wf-table-wrap {
+          max-width: 100% !important;
+          overflow-x: hidden !important;
+          box-sizing: border-box !important;
+        }
+        html.mr-mobile-ui #tab-workflow .wf-panel .data-table,
+        html.mr-mobile-ui #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-body,
+        html.mr-mobile-ui #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-head {
           min-width: 0 !important;
           width: 100% !important;
-          max-width: 100vw !important;
+          max-width: 100% !important;
+          table-layout: fixed !important;
+          box-sizing: border-box !important;
         }
-
-        html.mr-mobile-ui #tab-workflow .wf-panel .data-table td.wf-ticket-cell {
+        html.mr-mobile-ui #tab-workflow .wf-panel .data-table td.wf-ticket-cell,
+        html.mr-mobile-ui #tab-workflow .wf-panel .data-table.wf-tickets-table--mob td.wf-ticket-cell,
+        html.mr-mobile-ui #tab-workflow .wf-panel .data-table.wf-tickets-table--mob-body td.wf-ticket-cell {
           min-width: 0 !important;
-          max-width: none !important;
+          max-width: 30% !important;
           white-space: normal !important;
+          overflow: hidden !important;
+          text-overflow: ellipsis !important;
+          word-break: break-word !important;
+          overflow-wrap: anywhere !important;
         }
-
         html.mr-mobile-ui #tab-workflow .wf-panel-banner {
           max-width: 100vw !important;
+          width: 100% !important;
           overflow-x: hidden !important;
+          box-sizing: border-box !important;
         }
-
         html.mr-mobile-ui #tab-workflow .wf-toolbar {
           max-width: 100vw !important;
+          width: 100% !important;
           overflow-x: hidden !important;
+          box-sizing: border-box !important;
         }
-
         html.mr-mobile-ui #tab-workflow .wf-status-filter {
           flex-shrink: 0 !important;
           min-width: 0 !important;
+          max-width: 100% !important;
         }
-
         html.mr-mobile-ui #tab-workflow .wf-count {
           max-width: 100vw !important;
           overflow: hidden !important;
           text-overflow: ellipsis !important;
           white-space: nowrap !important;
         }
+        html.mr-mobile-ui #tab-workflow #wfMobTicketsHead,
+        html.mr-mobile-ui #tab-workflow #ticketList > #wfMobTicketsHead .wf-table-wrap--head {
+          max-width: 100vw !important;
+          width: 100% !important;
+          overflow: hidden !important;
+          box-sizing: border-box !important;
+        }
+
+        /* ── التقارير: منع التمدد الأفقي ── */
+        html.mr-mobile-ui #appWrap .main:has(#tab-reports.active),
+        html.mr-mobile-ui #appWrap .content:has(#tab-reports.active) {
+          overflow-x: hidden !important;
+        }
+        html.mr-mobile-ui #tab-reports .wf-desk-tickets-host,
+        html.mr-mobile-ui #tab-reports #reportList {
+          max-width: 100vw !important;
+          width: 100% !important;
+          overflow-x: hidden !important;
+          box-sizing: border-box !important;
+        }
+        html.mr-mobile-ui #tab-reports #reportList > .wf-mob-tickets-body {
+          max-width: 100% !important;
+          overflow-x: hidden !important;
+          box-sizing: border-box !important;
+        }
+        html.mr-mobile-ui #tab-reports #reportList .wf-table-wrap,
+        html.mr-mobile-ui #tab-reports #reportList > .wf-mob-tickets-body .wf-table-wrap--body {
+          max-width: 100% !important;
+          overflow-x: hidden !important;
+          box-sizing: border-box !important;
+        }
+        html.mr-mobile-ui #tab-reports #reportList .rp-tickets-table--mob {
+          min-width: 0 !important;
+          width: 100% !important;
+          max-width: 100% !important;
+          table-layout: fixed !important;
+          box-sizing: border-box !important;
+        }
+        html.mr-mobile-ui #tab-reports #reportList .rp-tickets-table--mob td.wf-ticket-cell {
+          min-width: 0 !important;
+          max-width: 30% !important;
+          overflow: hidden !important;
+          text-overflow: ellipsis !important;
+          word-break: break-word !important;
+          overflow-wrap: anywhere !important;
+        }
+        html.mr-mobile-ui #tab-reports .wf-panel-banner {
+          max-width: 100vw !important;
+          width: 100% !important;
+          overflow-x: hidden !important;
+          box-sizing: border-box !important;
+        }
+        html.mr-mobile-ui #tab-reports #rpMobTicketsHead,
+        html.mr-mobile-ui #tab-reports #reportList > #rpMobTicketsHead .wf-table-wrap--head {
+          max-width: 100vw !important;
+          width: 100% !important;
+          overflow: hidden !important;
+          box-sizing: border-box !important;
+        }
       }
     </style>
+    <script>
+      /* إصلاح inline styles التي يضخّها JS بعد القياس */
+      (function () {
+        if (!document.documentElement.classList.contains('mr-mobile-ui')) return;
+        var _orig = window.syncMobTicketsColWidths;
+        if (typeof _orig !== 'function') return;
+        window.syncMobTicketsColWidths = function (tab) {
+          var isReports = (tab === 'reports');
+          var listId = isReports ? 'reportList' : 'ticketList';
+          var tabSel = isReports ? '#tab-reports' : '#tab-workflow';
+          var bodyScroll = document.querySelector(tabSel + ' #' + listId + ' .wf-mob-tickets-body');
+          if (bodyScroll) {
+            bodyScroll.style.setProperty('max-width', '100%', 'important');
+            bodyScroll.style.setProperty('overflow-x', 'hidden', 'important');
+          }
+          var bodyTable = bodyScroll && bodyScroll.querySelector('.wf-tickets-table--mob-body');
+          if (bodyTable) {
+            bodyTable.style.setProperty('max-width', '100%', 'important');
+            bodyTable.style.setProperty('width', '100%', 'important');
+            bodyTable.style.setProperty('table-layout', 'fixed', 'important');
+          }
+          return _orig.apply(this, arguments);
+        };
+      })();
+    </script>
 </body>
 
 </html>
