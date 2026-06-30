@@ -37440,8 +37440,18 @@
           host.classList.add('wefaq-logo-host');
           host.querySelector(':scope > .brand-mono')?.remove();
           host.querySelectorAll(':scope > .wefaq-app-logo, :scope > img').forEach((el) => el.remove());
-          const html = atharWordmarkLogoHtml(decoShift, rDx, rDy, textY, viewBox);
-          host.insertAdjacentHTML('beforeend', atharWordmarkLogoHtml(decoShift, rDx, rDy, textY, viewBox));
+          if (sel === '#brandArea .brand-icon.wefaq-logo-slot') {
+            const logoImg = document.createElement('img');
+            logoImg.src = 'icons/athar-logo-new.png';
+            logoImg.className = 'wefaq-app-logo wefaq-app-logo--athar-img';
+            logoImg.style.height = '42px';
+            logoImg.style.width = 'auto';
+            logoImg.style.display = 'block';
+            logoImg.dataset.atharVer = ATHAR_LOGO_VER;
+            host.appendChild(logoImg);
+          } else {
+            host.insertAdjacentHTML('beforeend', atharWordmarkLogoHtml(decoShift, rDx, rDy, textY, viewBox));
+          }
           const freshLogo = host.querySelector(':scope > .wefaq-app-logo--athar');
           if (freshLogo) freshLogo.dataset.loginCtx = loginCtx;
           if (loginDesk) tuneLoginAtharLogo(host);
