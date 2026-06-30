@@ -2602,20 +2602,21 @@
     }
 
     .mr-topbar-user-trigger--icon {
-      width: 36px;
-      height: 36px;
-      min-height: 36px;
-      padding: 0;
-      border: 0;
-      border-radius: 50%;
-      background: transparent;
-      box-shadow: none;
+      width: 36px !important;
+      height: 36px !important;
+      min-height: 36px !important;
+      max-width: 36px !important;
+      padding: 0 !important;
+      border: 0 !important;
+      border-radius: 50% !important;
+      background: transparent !important;
+      box-shadow: none !important;
       gap: 0;
     }
 
     .mr-topbar-user-trigger--icon:hover {
-      background: transparent;
-      box-shadow: none;
+      background: transparent !important;
+      box-shadow: none !important;
     }
 
     .mr-topbar-user-trigger--icon:hover .mr-topbar-user-icon {
@@ -2623,9 +2624,9 @@
     }
 
     .mr-topbar-user-trigger--icon[aria-expanded="true"] {
-      border: 0;
-      background: transparent;
-      box-shadow: none;
+      border: 0 !important;
+      background: transparent !important;
+      box-shadow: none !important;
     }
 
     .mr-topbar-user-trigger--icon[aria-expanded="true"] .mr-topbar-user-icon {
@@ -2636,6 +2637,7 @@
       width: 36px;
       height: 36px;
       border-radius: 50%;
+      box-sizing: border-box;
       background: #e8e8ed;
       color: #1c1c1e;
       display: inline-flex;
@@ -2652,7 +2654,7 @@
     }
 
     [data-theme="dark"] .mr-topbar-user-trigger--icon:hover {
-      background: transparent;
+      background: transparent !important;
     }
 
     [data-theme="dark"] .mr-topbar-user-icon {
