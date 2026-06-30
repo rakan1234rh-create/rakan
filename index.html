@@ -30640,7 +30640,20 @@
   <link rel="stylesheet" href="styles/desktop/compliance-shell.css" id="platform-compliance-shell-link" media="screen and (min-width: 993px), screen and (hover: hover) and (pointer: fine)">
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px), screen and (hover: hover) and (pointer: fine)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px), screen and (hover: hover) and (pointer: fine)">
+    <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px), screen and (hover: hover) and (pointer: fine)">
+  <style id="mr-topbar-dark-fix" media="screen and (min-width: 993px), screen and (hover: hover) and (pointer: fine)">
+    html[data-theme="dark"].mr-desktop-ui #appWrap .topbar.unified-banner,
+    html[data-theme="dark"].mr-desktop-ui .topbar.unified-banner {
+      background: var(--mr-surface) !important;
+      border-bottom: 1px solid var(--mr-border) !important;
+      box-shadow: none !important;
+    }
+  </style>
   <style id="mr-perf-touch">
+    /* تحسين السلاسة على أجهزة اللمس: إلغاء backdrop-filter الثقيل على العناصر الدائمة
+       (يُعيد المتصفح رسمها مع كل تمرير = تقطيع). الخلفيات شبه معتمة أصلاً فلا يتأثر الوضوح. */
+    @media (pointer: coarse) {
+
     /* تحسين السلاسة على أجهزة اللمس: إلغاء backdrop-filter الثقيل على العناصر الدائمة
        (يُعيد المتصفح رسمها مع كل تمرير = تقطيع). الخلفيات شبه معتمة أصلاً فلا يتأثر الوضوح. */
     @media (pointer: coarse) {
