@@ -1,0 +1,292 @@
+/* المناطق والفروع — سطح المكتب مثل المستخدمين */
+html.mr-desktop-ui .main:has(#tab-locations.active),
+html.mr-desktop-ui #appWrap .main:has(#tab-locations.active) {
+  padding: 0 !important;
+  background: var(--mr-bg) !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important
+}
+
+html.mr-desktop-ui .main:has(#tab-locations.active) .content,
+html.mr-desktop-ui .content:has(#tab-locations.active) {
+  padding: 0 !important;
+  max-width: 100% !important;
+  background: var(--mr-bg) !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 0% !important;
+  min-height: 0 !important
+}
+
+html.mr-desktop-ui #tab-locations.tab-content.active {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  font-size: inherit !important;
+  margin-inline: 0 !important;
+  max-width: 100% !important;
+  width: 100% !important;
+  background: var(--mr-bg) !important
+}
+
+html.mr-desktop-ui #tab-locations .wf-panel {
+  padding-block: clamp(10px, 1.4vw, 14px) 0 !important;
+  padding-left: 0 !important;
+  padding-right: clamp(12px, 1.6vw, 18px) !important;
+  margin: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: var(--mr-bg) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  width: 100% !important;
+  max-width: 100% !important
+}
+
+html.mr-desktop-ui #tab-locations .wf-panel-banner {
+  padding-block: 0 6px !important;
+  padding-left: clamp(12px, 1.6vw, 18px) !important;
+  padding-right: 0 !important;
+  margin: 0 !important;
+  background: var(--mr-bg) !important;
+  border: none !important;
+  flex-shrink: 0 !important;
+  position: relative !important;
+  overflow: visible !important
+}
+
+html.mr-desktop-ui #tab-locations .wf-panel-intro {
+  margin-bottom: 10px !important
+}
+
+html.mr-desktop-ui #tab-locations .wf-panel-title {
+  font-size: 22px !important;
+  font-weight: 800 !important;
+  line-height: 1.25 !important
+}
+
+html.mr-desktop-ui #tab-locations .wf-panel-sub {
+  display: block !important
+}
+
+html.mr-desktop-ui #tab-locations .rb-drill-summary {
+  margin-top: 8px !important
+}
+
+html.mr-desktop-ui #tab-locations .rb-drill-chip {
+  font-size: 12px !important;
+  padding: 5px 11px !important
+}
+
+html.mr-desktop-ui #tab-locations .toolbar.wf-toolbar.rb-toolbar {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap !important;
+  align-items: stretch !important;
+  gap: 8px !important;
+  width: 100% !important;
+  margin: 0 0 8px !important;
+  padding: 0 !important;
+  border-bottom: none !important
+}
+
+html.mr-desktop-ui #tab-locations .wf-toolbar > * {
+  width: auto !important;
+  flex: none !important;
+  min-width: 0 !important
+}
+
+html.mr-desktop-ui #tab-locations .rb-search-combo.cmp-neo-search-combo {
+  flex: 1 1 280px !important;
+  min-width: 200px !important;
+  min-height: 38px !important;
+  height: auto !important
+}
+
+html.mr-desktop-ui #tab-locations .rb-search-combo .cmp-neo-search-combo__field {
+  min-height: 36px !important;
+  height: auto !important;
+  padding: 0 10px 0 6px !important;
+  gap: 8px !important;
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important
+}
+
+html.mr-desktop-ui #tab-locations .wf-search .figma-search-input,
+html.mr-desktop-ui #tab-locations .wf-search .figma-search-input::placeholder {
+  font-size: 13px !important;
+  line-height: 1.2 !important;
+  min-width: 0
+}
+
+html.mr-desktop-ui #tab-locations .figma-search-btn {
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  font-size: 12px !important;
+  flex-shrink: 0;
+  color: var(--mr-text-2) !important;
+  opacity: 1 !important
+}
+
+html.mr-desktop-ui #tab-locations .wf-toolbar .rp-tool-btn {
+  min-height: 38px !important;
+  height: 38px !important;
+  border-radius: 999px !important;
+  padding: 0 14px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  flex: 0 0 auto !important
+}
+
+html.mr-desktop-ui #tab-locations .wf-toolbar .rp-tool-btn span {
+  white-space: nowrap
+}
+
+html.mr-desktop-ui #tab-locations .wf-count {
+  margin: 0 0 8px !important;
+  padding: 0 !important;
+  font-size: 12px !important;
+  color: var(--mr-text-2) !important;
+  flex-shrink: 0 !important
+}
+
+html.mr-desktop-ui #tab-locations #regionsDeskHost.wf-desk-tickets-host {
+  flex: 1 1 0% !important;
+  background: transparent !important;
+  min-height: 0 !important;
+  border: none !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  margin-top: 0 !important;
+  width: 100% !important;
+  box-sizing: border-box !important
+}
+
+html.mr-desktop-ui #tab-locations .mr-users-list-wrap.wf-table-wrap {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  padding: 0 !important;
+  border: 1px solid var(--mr-border) !important;
+  border-start-start-radius: 12px !important;
+  border-start-end-radius: 0 !important;
+  border-end-start-radius: 12px !important;
+  border-end-end-radius: 0 !important;
+  background: var(--mr-bg) !important;
+  box-shadow: none !important;
+  box-sizing: border-box !important
+}
+
+html.mr-desktop-ui #tab-locations .rb-regions-scroll {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  width: 100% !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  scrollbar-width: thin !important;
+  scrollbar-color: color-mix(in srgb, var(--mr-text-3) 42%, transparent) color-mix(in srgb, var(--mr-border) 72%, transparent) !important;
+  padding: clamp(12px, 1.6vw, 18px) !important;
+  box-sizing: border-box !important
+}
+
+html.mr-desktop-ui:not([data-theme="dark"]) #tab-locations .mr-users-list-wrap.wf-table-wrap {
+  border-color: var(--mr-border-2) !important
+}
+
+html.mr-desktop-ui #tab-locations .rb-regions-scroll .rb-view,
+html.mr-desktop-ui #tab-locations .rb-regions-scroll .viol-grid.rb-view {
+  width: 100% !important;
+  max-width: none !important;
+  margin-inline: 0 !important
+}
+
+html.mr-desktop-ui #tab-locations .rb-regions-scroll .viol-grid {
+  grid-template-columns: repeat(auto-fill, minmax(280px, 340px)) !important;
+  justify-content: start !important;
+  gap: 14px !important
+}
+
+html.mr-desktop-ui #tab-locations .rb-regions-scroll .rb-view--regions .viol-grid {
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)) !important;
+  max-width: none !important
+}
+
+html.mr-desktop-ui #tab-locations .rb-region-card {
+  height: 100% !important;
+  padding: 16px 18px !important;
+  border-radius: 16px !important;
+  display: flex !important;
+  flex-direction: column !important
+}
+
+html.mr-desktop-ui #tab-locations .rb-region-card__foot {
+  margin-top: auto !important;
+  padding-top: 11px !important
+}
+
+
+html.mr-desktop-ui #tab-locations .rb-regions-scroll .rb-view--branches .viol-grid {
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)) !important;
+  max-width: none !important
+}
+
+html.mr-desktop-ui #tab-locations .rb-branch-card {
+  height: 100% !important;
+  padding: 16px 18px !important;
+  border-radius: 16px !important;
+  display: flex !important;
+  flex-direction: column !important
+}
+
+html.mr-desktop-ui #tab-locations .rb-branch-card__name,
+html.mr-desktop-ui #tab-locations .rb-region-card__name {
+  font-size: 14px !important
+}
+
+html.mr-desktop-ui #tab-locations .rb-branch-card__icon,
+html.mr-desktop-ui #tab-locations .rb-region-card__icon {
+  width: 42px !important;
+  height: 42px !important;
+  font-size: 16px !important
+}
+
+html.mr-desktop-ui #tab-locations .rb-branch-card__act {
+  height: 28px !important;
+  padding: 0 10px !important;
+  font-size: 11px !important
+}
+
+html.mr-desktop-ui #tab-locations .rb-branch-card__foot {
+  margin-top: auto !important;
+  padding-top: 12px !important;
+  flex-shrink: 0 !important
+}
+
+html.mr-desktop-ui #tab-locations .rb-branch-card__staff {
+  flex: 1 1 auto !important;
+  min-height: 72px !important
+}
+
+html.mr-desktop-ui #tab-locations .rb-regions-scroll > .empty {
+  min-height: 180px
+}
+

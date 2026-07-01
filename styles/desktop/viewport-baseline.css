@@ -1,0 +1,13 @@
+/* مرجع التصميم — 100% على سطح المكتب (بدون تكبير/تصغير من التطبيق) */
+html.mr-desktop-ui {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+html.mr-desktop-ui body,
+html.mr-desktop-ui #appWrap,
+html.mr-desktop-ui #appWrap .app-shell,
+html.mr-desktop-ui #appWrap .app-body {
+  zoom: 1;
+}

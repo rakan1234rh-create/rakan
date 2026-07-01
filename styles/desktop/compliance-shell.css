@@ -1,0 +1,512 @@
+/* مؤشرات الامتثال — سطح المكتب عند 100% (نفس هيكل التقارير والمستخدمين) */
+html.mr-desktop-ui .main:has(#tab-compliance.active),
+html.mr-desktop-ui #appWrap .main:has(#tab-compliance.active),
+html.mr-desktop-ui #appWrap .app-body > .main:has(#tab-compliance.active) {
+  padding: 0 !important;
+  background: var(--mr-bg) !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important
+}
+
+html.mr-desktop-ui .main:has(#tab-compliance.active) .content,
+html.mr-desktop-ui .content:has(#tab-compliance.active) {
+  padding: 0 !important;
+  max-width: 100% !important;
+  background: var(--mr-bg) !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 0% !important;
+  min-height: 0 !important
+}
+
+html.mr-desktop-ui #tab-compliance.tab-content.active {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  font-size: inherit !important;
+  margin-inline: 0 !important;
+  max-width: 100% !important;
+  width: 100% !important;
+  background: var(--mr-bg) !important
+}
+
+html.mr-desktop-ui #tab-compliance #cmpBoard {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  padding-block: clamp(9px, 1.3vw, 13px) 0 !important;
+  padding-inline: clamp(12px, 1.6vw, 18px) !important
+}
+
+html.mr-desktop-ui #tab-compliance .cmp-neo-board {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  box-sizing: border-box !important
+}
+
+html.mr-desktop-ui #tab-compliance .cmp-neo-board-head,
+html.mr-desktop-ui #tab-compliance .cmp-neo-toolbar,
+html.mr-desktop-ui #tab-compliance .cmp-neo-search-meta,
+html.mr-desktop-ui #tab-compliance .cmp-neo-extremes,
+html.mr-desktop-ui #tab-compliance .active-filters-bar {
+  flex-shrink: 0 !important
+}
+
+html.mr-desktop-ui #tab-compliance .cmp-neo-board-head {
+  margin-bottom: 7px !important
+}
+
+html.mr-desktop-ui #tab-compliance .cmp-neo-title-wrap h3 {
+  font-size: 17px !important;
+  line-height: 1.28 !important
+}
+
+html.mr-desktop-ui #tab-compliance .cmp-neo-head-context,
+html.mr-desktop-ui #tab-compliance .cmp-neo-title-wrap .cmp-neo-head-desc {
+  font-size: 12.5px !important;
+  margin-top: 4px !important
+}
+
+html.mr-desktop-ui #tab-compliance .cmp-neo-search-meta {
+  margin: 0 0 7px !important;
+  font-size: 12.5px !important
+}
+
+html.mr-desktop-ui #tab-compliance .cmp-neo-extremes {
+  margin-bottom: 14px !important;
+  gap: 11px !important
+}
+
+html.mr-desktop-ui #tab-compliance .cmp-neo-extreme {
+  padding: 11px 13px !important;
+  border-radius: 15px !important;
+  gap: 11px !important
+}
+
+html.mr-desktop-ui #tab-compliance .cmp-neo-extreme__icon {
+  width: 35px !important;
+  height: 35px !important;
+  font-size: 13px !important
+}
+
+html.mr-desktop-ui #tab-compliance .cmp-neo-extreme__name {
+  font-size: 13.5px !important
+}
+
+html.mr-desktop-ui #tab-compliance .cmp-neo-extreme__score {
+  font-size: 14.5px !important
+}
+
+/* شريط الأدوات — متوازن مثل المستخدمين والتقارير */
+html.mr-desktop-ui #tab-compliance .cmp-neo-toolbar.toolbar.wf-toolbar {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap !important;
+  align-items: stretch !important;
+  gap: 8px !important;
+  width: 100% !important;
+  margin: 0 0 7px !important;
+  padding: 0 !important;
+  border-bottom: none !important
+}
+
+html.mr-desktop-ui #tab-compliance .cmp-neo-toolbar > * {
+  width: auto !important;
+  flex: none !important;
+  min-width: 0 !important
+}
+
+html.mr-desktop-ui #tab-compliance .cmp-neo-search-combo {
+  flex: 1 1 280px !important;
+  min-width: 200px !important;
+  min-height: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  gap: 8px !important;
+  align-items: center !important;
+  overflow: visible !important
+}
+
+html.mr-desktop-ui #tab-compliance .cmp-neo-search-combo:focus-within {
+  border-color: transparent !important;
+  box-shadow: none !important
+}
+
+html.mr-desktop-ui #tab-compliance .cmp-neo-search-combo .cmp-neo-search-combo__field {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  min-height: 38px !important;
+  height: 38px !important;
+  border: 1px solid var(--mr-border) !important;
+  border-radius: 999px !important;
+  background: var(--mr-surface) !important;
+  padding: 0 10px 0 6px !important;
+  gap: 8px !important;
+  box-shadow: 0 1px 2px rgba(15, 18, 36, 0.04) !important
+}
+
+html.mr-desktop-ui #tab-compliance .cmp-neo-search-combo .cmp-neo-search-combo__field:focus-within {
+  border-color: var(--mr-primary) !important;
+  box-shadow: 0 0 0 4px var(--mr-primary-soft) !important
+}
+
+html.mr-desktop-ui #tab-compliance .cmp-neo-search-combo .figma-search-input,
+html.mr-desktop-ui #tab-compliance .cmp-neo-search-combo .figma-search-input::placeholder {
+  font-size: 13px !important;
+  line-height: 1.2 !important;
+  min-width: 0
+}
+
+html.mr-desktop-ui #tab-compliance .cmp-neo-search-combo .figma-search-btn {
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  font-size: 12px !important;
+  flex-shrink: 0;
+  color: var(--mr-text-2) !important;
+  opacity: 1 !important
+}
+
+html.mr-desktop-ui #tab-compliance .cmp-neo-back--combo {
+  padding: 0 !important;
+  gap: 6px !important
+}
+
+html.mr-desktop-ui #tab-compliance .cmp-neo-back--combo .cmp-neo-back__ico {
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  font-size: 13px !important
+}
+
+html.mr-desktop-ui #tab-compliance .cmp-neo-toolbar .wf-status-filter {
+  flex: 0 0 auto !important;
+  display: inline-flex !important;
+  width: fit-content !important;
+  min-width: 0 !important;
+  max-width: none !important
+}
+
+html.mr-desktop-ui #tab-compliance .cmp-neo-toolbar #cmp-filter-trigger.wf-status-trigger {
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: none !important
+}
+
+html.mr-desktop-ui #tab-compliance .cmp-neo-toolbar #cmp-filter-trigger.wf-status-trigger {
+  min-height: 38px !important;
+  height: 38px !important;
+  min-width: 0 !important;
+  width: fit-content !important;
+  max-width: none !important;
+  gap: 8px !important;
+  padding: 0 10px !important;
+  border-radius: 999px !important;
+  background: var(--mr-surface) !important;
+  border: 1px solid var(--mr-border) !important;
+  box-shadow: 0 1px 2px rgba(15, 18, 36, 0.04) !important;
+  font-size: 12.5px !important
+}
+
+html.mr-desktop-ui #tab-compliance .cmp-neo-toolbar .rp-tool-btn.cmp-neo-btn--pdf-export {
+  min-height: 38px !important;
+  height: 38px !important;
+  font-size: 12.5px !important;
+  padding-inline: 13px !important
+}
+
+html.mr-desktop-ui #tab-compliance .cmp-neo-toolbar .rp-date-wrap {
+  flex: 0 0 auto !important;
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: none !important
+}
+
+html.mr-desktop-ui #tab-compliance .cmp-neo-toolbar .rp-date-btn {
+  width: 38px !important;
+  min-width: 38px !important;
+  max-width: 38px !important;
+  min-height: 38px !important;
+  height: 38px !important;
+  padding: 0 !important;
+  justify-content: center !important;
+  gap: 0 !important;
+  border-radius: 50% !important;
+  border: 1px solid color-mix(in srgb, var(--mr-border) 55%, transparent) !important;
+  background: color-mix(in srgb, var(--mr-surface) 94%, var(--mr-bg)) !important;
+  color: var(--mr-text-2) !important;
+  box-shadow: 0 1px 3px rgba(15, 18, 36, 0.05) !important;
+  font-size: 12.5px !important
+}
+
+html.mr-desktop-ui #tab-compliance .cmp-neo-toolbar .rp-date-btn:hover {
+  background: var(--mr-surface) !important;
+  border-color: var(--mr-border-2) !important;
+  color: var(--mr-text) !important;
+  box-shadow: 0 2px 8px rgba(15, 18, 36, 0.06) !important
+}
+
+html.mr-desktop-ui #tab-compliance .cmp-neo-toolbar .rp-date-btn #cmp-date-label {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important
+}
+
+:root:not([data-theme="dark"]) html.mr-desktop-ui #tab-compliance .cmp-neo-toolbar .rp-date-btn:not(.active):hover,
+:root:not([data-theme="dark"]) html.mr-desktop-ui #tab-compliance .cmp-neo-toolbar .rp-date-btn:not(.active):hover i {
+  background: var(--mr-surface) !important;
+  border-color: var(--mr-border-2) !important;
+  color: var(--mr-text) !important;
+  box-shadow: 0 2px 8px rgba(15, 18, 36, 0.06) !important
+}
+
+:root:not([data-theme="dark"]) html.mr-desktop-ui #tab-compliance .cmp-neo-toolbar #cmp-filter-trigger.wf-status-trigger:hover {
+  background: var(--mr-primary-softer) !important;
+  border-color: var(--mr-primary-soft) !important;
+  color: var(--mr-text) !important;
+  box-shadow: var(--mr-shadow-soft) !important
+}
+
+:root:not([data-theme="dark"]) html.mr-desktop-ui #tab-compliance .cmp-neo-toolbar #cmp-filter-trigger.wf-status-trigger:hover .wf-status-trigger__label {
+  color: var(--mr-text) !important
+}
+
+:root:not([data-theme="dark"]) html.mr-desktop-ui #tab-compliance .cmp-neo-toolbar #cmp-filter-trigger.wf-status-trigger:hover .wf-status-trigger__ico {
+  background: color-mix(in srgb, var(--mr-primary) 14%, transparent) !important;
+  color: var(--mr-primary) !important
+}
+
+html.mr-desktop-ui #tab-compliance .cmp-neo-grid,
+html.mr-desktop-ui #tab-compliance .mk-cmp-grid,
+html.mr-desktop-ui #tab-compliance .cmp-neo-pending-wrap {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  padding-inline: 0 !important;
+  padding-bottom: clamp(12px, 1.6vw, 18px) !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  scrollbar-width: thin !important;
+  scrollbar-color: color-mix(in srgb, var(--mr-text-3) 42%, transparent) color-mix(in srgb, var(--mr-border) 72%, transparent) !important
+}
+
+/* شبكة بطاقات المناطق/الفروع */
+html.mr-desktop-ui #tab-compliance .cmp-neo-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)) !important;
+  grid-auto-rows: auto !important;
+  align-content: start !important;
+  align-items: stretch !important;
+  justify-content: stretch !important;
+  gap: 13px !important;
+  row-gap: 18px !important;
+  padding-top: 7px !important
+}
+
+html.mr-desktop-ui #tab-compliance .cmp-neo-grid > .cmp-neo-card {
+  width: 100% !important;
+  max-width: none !important;
+  height: auto !important;
+  align-self: stretch !important;
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 198px !important;
+  padding: 15px 17px 13px !important;
+  border-radius: 19px !important
+}
+
+html.mr-desktop-ui #tab-compliance .cmp-neo-head {
+  min-height: 48px !important;
+  padding-inline-end: 88px !important
+}
+
+html.mr-desktop-ui #tab-compliance .cmp-neo-head h4 {
+  font-size: 12.5px !important
+}
+
+html.mr-desktop-ui #tab-compliance .cmp-neo-head span {
+  font-size: 11.5px !important
+}
+
+html.mr-desktop-ui #tab-compliance .cmp-neo-head__no-sup,
+html.mr-desktop-ui #tab-compliance .cmp-neo-extreme__sub--no-sup {
+  color: var(--red) !important;
+  font-weight: 600 !important
+}
+
+/* بطاقات الموظفين — عرض ثابت 340px؛ تبدأ من inline-start (يمين في RTL) مثل بقية الصفحات */
+html.mr-desktop-ui #tab-compliance .mk-cmp-grid.mk-cmp-grid--emp,
+html.mr-desktop-ui #tab-compliance .mk-cmp-grid--nested {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, 340px) !important;
+  grid-auto-flow: row !important;
+  grid-auto-rows: max-content !important;
+  justify-content: start !important;
+  justify-items: stretch !important;
+  align-items: stretch !important;
+  align-content: start !important;
+  column-gap: 14px !important;
+  row-gap: 22px !important;
+  padding-top: 7px !important;
+  max-width: 100% !important
+}
+
+html.mr-desktop-ui #tab-compliance .mk-cmp-grid--nested {
+  padding-top: 16px !important
+}
+
+html.mr-desktop-ui #tab-compliance .mk-cmp-grid.mk-cmp-grid--emp > .mk-cmp-emp-card,
+html.mr-desktop-ui #tab-compliance .mk-cmp-grid--nested > .mk-cmp-emp-card {
+  width: 100% !important;
+  max-width: none !important;
+  justify-self: stretch !important;
+  min-width: 0 !important;
+  min-height: unset !important;
+  height: auto !important;
+  align-self: stretch !important;
+  display: flex !important;
+  flex-direction: column !important;
+  border-radius: 19px !important;
+  isolation: isolate !important;
+  contain: none !important
+}
+
+html.mr-desktop-ui #tab-compliance .mk-cmp-emp-card {
+  height: auto !important;
+  min-height: unset !important;
+  overflow: hidden !important
+}
+
+html.mr-desktop-ui #tab-compliance .mk-cmp-emp-card.cmp-neo-card--top,
+html.mr-desktop-ui #tab-compliance .mk-cmp-emp-card.cmp-neo-card--bottom {
+  box-shadow: var(--mr-shadow-card) !important
+}
+
+html.mr-desktop-ui #tab-compliance .mk-cmp-emp-card__hd {
+  flex-shrink: 0 !important;
+  padding: 13px 15px 9px !important;
+  min-height: 69px !important
+}
+
+html.mr-desktop-ui #tab-compliance .mk-cmp-emp-card__avatar {
+  width: 41px !important;
+  height: 41px !important
+}
+
+html.mr-desktop-ui #tab-compliance .mk-cmp-emp-card__avatar i {
+  font-size: 19px !important
+}
+
+html.mr-desktop-ui #tab-compliance .mk-cmp-emp-card__name {
+  font-size: 14.5px !important
+}
+
+html.mr-desktop-ui #tab-compliance .mk-cmp-emp-card__chips {
+  flex: 1 1 auto !important;
+  min-height: 71px !important;
+  padding: 9px 15px 11px !important;
+  gap: 6px !important;
+  align-content: flex-start !important
+}
+
+html.mr-desktop-ui #tab-compliance .mk-cmp-emp-chip {
+  font-size: 9.5px !important;
+  padding: 3px 8px !important
+}
+
+html.mr-desktop-ui #tab-compliance .mk-cmp-emp-card__metrics {
+  margin-top: auto !important;
+  flex: 0 0 auto !important;
+  flex-shrink: 0 !important;
+  align-items: stretch !important;
+  width: 100% !important;
+  padding: 11px 13px 13px !important;
+  gap: 9px !important
+}
+
+html.mr-desktop-ui #tab-compliance .mk-cmp-emp-metric {
+  aspect-ratio: unset !important;
+  min-height: 154px !important;
+  height: auto !important;
+  padding: 9px 9px 7px !important;
+  border-radius: 15px !important;
+  display: flex !important;
+  flex-direction: column !important
+}
+
+html.mr-desktop-ui #tab-compliance .mk-cmp-emp-metric__hd {
+  font-size: 10.5px !important;
+  height: 21px !important;
+  line-height: 21px !important
+}
+
+html.mr-desktop-ui #tab-compliance .mk-cmp-emp-metric__rows {
+  font-size: 9.5px !important;
+  margin-top: 7px !important;
+  gap: 4px !important
+}
+
+html.mr-desktop-ui #tab-compliance .mk-donut--emp,
+html.mr-desktop-ui #tab-compliance .mk-cmp-emp-metric__ring .mk-cmp-donut-wrap {
+  width: 52px !important;
+  height: 52px !important
+}
+
+html.mr-desktop-ui #tab-compliance .mk-donut--emp svg {
+  width: 52px !important;
+  height: 52px !important
+}
+
+html.mr-desktop-ui #tab-compliance .mk-donut--emp .mk-donut__val {
+  font-size: 14px !important
+}
+
+html.mr-desktop-ui #tab-compliance .mk-cmp-emp-card__ft {
+  flex-shrink: 0 !important;
+  margin-top: 0 !important;
+  padding: 9px 15px 11px !important;
+  font-size: 10.5px !important
+}
+
+html.mr-desktop-ui #tab-compliance .cmp-neo-rank {
+  width: 26px !important;
+  height: 26px !important;
+  top: 13px !important;
+  inset-inline-end: 13px !important
+}
+
+html.mr-desktop-ui #tab-compliance .mk-cmp-emp-card:hover,
+html.mr-desktop-ui #tab-compliance .cmp-neo-card:hover {
+  transform: none !important
+}
+
+html.mr-desktop-ui #tab-compliance .cmp-neo-pending-wrap {
+  align-items: flex-start !important;
+  justify-content: center !important;
+  padding-top: 40px !important;
+  min-height: 0 !important
+}

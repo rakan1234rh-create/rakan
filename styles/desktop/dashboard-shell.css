@@ -1,0 +1,119 @@
+/* الصفحة الرئيسية — سطح المكتب عند 100% (متناسقة مع التقارير والامتثال) */
+html.mr-desktop-ui .main:has(#tab-dashboard.active),
+html.mr-desktop-ui #appWrap .main:has(#tab-dashboard.active),
+html.mr-desktop-ui #appWrap .app-body > .main:has(#tab-dashboard.active) {
+  padding: 0 !important;
+  background: var(--mr-bg) !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important
+}
+
+html.mr-desktop-ui .main:has(#tab-dashboard.active) .content,
+html.mr-desktop-ui .content:has(#tab-dashboard.active) {
+  padding: 0 !important;
+  max-width: 100% !important;
+  background: var(--mr-bg) !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 0% !important;
+  min-height: 0 !important
+}
+
+html.mr-desktop-ui #tab-dashboard.tab-content.active {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  font-size: inherit !important;
+  margin-inline: 0 !important;
+  max-width: 100% !important;
+  width: 100% !important;
+  background: var(--mr-bg) !important
+}
+
+html.mr-desktop-ui #tab-dashboard .mk-dash {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  gap: 14px !important;
+  padding-block: clamp(10px, 1.4vw, 14px) clamp(12px, 1.6vw, 18px) !important;
+  padding-inline: clamp(12px, 1.6vw, 18px) !important;
+  box-sizing: border-box !important
+}
+
+html.mr-desktop-ui #tab-dashboard .mk-dash__hero {
+  flex-shrink: 0 !important;
+  padding: 0 !important
+}
+
+html.mr-desktop-ui #tab-dashboard .mk-dash__title {
+  font-size: 1.5rem !important;
+  margin-bottom: 6px !important
+}
+
+html.mr-desktop-ui #tab-dashboard .mk-dash__date,
+html.mr-desktop-ui #tab-dashboard .mk-dash__sub {
+  font-size: 13px !important
+}
+
+html.mr-desktop-ui #tab-dashboard .mk-kpi-grid,
+html.mr-desktop-ui #tab-dashboard #personalIndicators,
+html.mr-desktop-ui #tab-dashboard .mk-dash__split {
+  flex-shrink: 0 !important
+}
+
+html.mr-desktop-ui #tab-dashboard .mk-kpi-grid {
+  gap: 10px !important
+}
+
+html.mr-desktop-ui #tab-dashboard .mk-kpi {
+  min-height: 132px !important;
+  padding: 14px !important;
+  gap: 10px !important
+}
+
+html.mr-desktop-ui #tab-dashboard .mk-kpi__value {
+  font-size: 30px !important
+}
+
+html.mr-desktop-ui #tab-dashboard .mk-kpi__spark {
+  height: 24px !important
+}
+
+html.mr-desktop-ui #tab-dashboard .mk-dash__split {
+  gap: 12px !important
+}
+
+html.mr-desktop-ui #tab-dashboard .mk-funnel,
+html.mr-desktop-ui #tab-dashboard .mk-attn {
+  padding: 16px !important;
+  gap: 12px !important;
+  height: 100% !important;
+  box-sizing: border-box !important
+}
+
+html.mr-desktop-ui #tab-dashboard .mk-dash__split {
+  align-items: stretch !important
+}
+
+html.mr-desktop-ui #tab-dashboard .mk-funnel__head .mk-link,
+html.mr-desktop-ui #tab-dashboard .mk-attn__head .mk-link {
+  font-size: 12px !important;
+  padding: 2px 8px !important;
+  line-height: 1.25 !important
+}
+
+html.mr-desktop-ui #tab-dashboard .mk-funnel__title,
+html.mr-desktop-ui #tab-dashboard .mk-attn__title {
+  font-size: 15px !important;
+  line-height: 1.25 !important
+}

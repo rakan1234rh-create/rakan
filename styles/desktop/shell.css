@@ -1,0 +1,1842 @@
+/* واجهة سطح المكتب — mr-desktop-ui — مُستخرج من index.html */
+html.mr-desktop-ui #mobileBottomNav.mobile-bottom-nav,
+    html.mr-desktop-ui #appWrap > .app-shell > #mobileBottomNav.mobile-bottom-nav {
+      display: none !important
+    }
+
+    html.mr-desktop-ui .sidebar-drawer-toggle.sidebar-toggle-btn,
+    html.mr-desktop-ui #sidebarToggleBtn {
+      display: none !important
+    }
+
+    html.mr-desktop-ui .sidebar:not(:hover):not(.sidebar-rail-hover):not(.sidebar-rail-open):not(.sidebar-rail-expanded):not([data-rail-hover="1"]):not([data-rail-expanded="1"]) .nav-item-label {
+      opacity: 0 !important;
+      max-width: 0 !important;
+      visibility: hidden !important;
+      transition: none !important
+    }
+
+    html.mr-desktop-ui .sidebar:hover .nav-section-label,
+    html.mr-desktop-ui .sidebar:hover .nav-item-label,
+    html.mr-desktop-ui .sidebar.sidebar-rail-hover .nav-section-label,
+    html.mr-desktop-ui .sidebar.sidebar-rail-hover .nav-item-label,
+    html.mr-desktop-ui .sidebar.sidebar-rail-open .nav-section-label,
+    html.mr-desktop-ui .sidebar.sidebar-rail-open .nav-item-label,
+    html.mr-desktop-ui .sidebar.sidebar-rail-expanded .nav-section-label,
+    html.mr-desktop-ui .sidebar.sidebar-rail-expanded .nav-item-label,
+    html.mr-desktop-ui .sidebar[data-rail-hover="1"] .nav-section-label,
+    html.mr-desktop-ui .sidebar[data-rail-hover="1"] .nav-item-label,
+    html.mr-desktop-ui .sidebar[data-rail-expanded="1"] .nav-section-label,
+    html.mr-desktop-ui .sidebar[data-rail-expanded="1"] .nav-item-label {
+      opacity: 1 !important;
+      visibility: visible !important
+    }
+
+    html.mr-desktop-ui .sidebar:hover .nav-item-label,
+    html.mr-desktop-ui .sidebar.sidebar-rail-hover .nav-item-label,
+    html.mr-desktop-ui .sidebar.sidebar-rail-open .nav-item-label,
+    html.mr-desktop-ui .sidebar.sidebar-rail-expanded .nav-item-label,
+    html.mr-desktop-ui .sidebar[data-rail-hover="1"] .nav-item-label,
+    html.mr-desktop-ui .sidebar[data-rail-expanded="1"] .nav-item-label {
+      max-width: 148px !important
+    }
+
+    html.mr-desktop-ui .sidebar:not(:hover):not(.sidebar-rail-hover):not(.sidebar-rail-open):not(.sidebar-rail-expanded) .nav-item {
+      justify-content: flex-start !important;
+      padding: 8px 6px !important
+    }
+
+    /* الشريط الجانبي — يدفع المحتوى؛ أيقونات ثابتة عمودياً */
+    html.mr-desktop-ui #appWrap .app-body .sidebar,
+    html.mr-desktop-ui #appWrap #sidebar,
+    html.mr-desktop-ui #sidebar {
+      position: relative !important;
+      inset: auto !important;
+      right: auto !important;
+      left: auto !important;
+      top: auto !important;
+      width: var(--fig-sidebar-collapsed-w) !important;
+      flex: 0 0 var(--fig-sidebar-collapsed-w) !important;
+      max-width: var(--fig-sidebar-w) !important;
+      min-width: var(--fig-sidebar-collapsed-w) !important;
+      height: 100% !important;
+      max-height: none !important;
+      min-height: 0 !important;
+      transform: none !important;
+      visibility: visible !important;
+      display: flex !important;
+      flex-direction: column !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+      padding: 16px 6px 14px !important;
+      background: var(--mr-surface) !important;
+      border: 0 !important;
+      border-inline-start: 1px solid var(--mr-border) !important;
+      overflow: visible !important;
+      z-index: 820 !important;
+      pointer-events: auto !important;
+      transition: width 200ms ease, flex 200ms ease, min-width 200ms ease !important;
+      box-sizing: border-box !important;
+      contain: style !important;
+      flex-shrink: 0 !important;
+      isolation: isolate !important
+    }
+
+    html.mr-desktop-ui #sidebar .nav-item {
+      display: grid !important;
+      grid-template-columns: 36px minmax(0, 1fr) !important;
+      column-gap: 8px !important;
+      row-gap: 0 !important;
+      width: 100% !important;
+      min-width: 0 !important;
+      justify-content: flex-start !important;
+      justify-items: stretch !important;
+      padding: 8px 6px !important;
+      overflow: hidden !important;
+      align-items: center !important;
+      gap: 0 8px !important;
+      min-height: 54px !important;
+      margin-bottom: 6px !important;
+      transform: none !important;
+      box-sizing: border-box !important
+    }
+
+    html.mr-desktop-ui #sidebar:hover,
+    html.mr-desktop-ui #sidebar.sidebar-rail-hover,
+    html.mr-desktop-ui #sidebar.sidebar-rail-open,
+    html.mr-desktop-ui #sidebar.sidebar-rail-expanded,
+    html.mr-desktop-ui #sidebar[data-rail-hover="1"],
+    html.mr-desktop-ui #sidebar[data-rail-expanded="1"] {
+      width: var(--fig-sidebar-w) !important;
+      flex: 0 0 var(--fig-sidebar-w) !important;
+      max-width: var(--fig-sidebar-w) !important;
+      min-width: var(--fig-sidebar-w) !important;
+      box-shadow: -8px 0 24px rgba(15, 18, 36, 0.06) !important;
+      overflow: hidden !important;
+      z-index: 900 !important
+    }
+
+    html.mr-desktop-ui #sidebar .sidebar-nav,
+    html.mr-desktop-ui #sidebar .sidebar-nav * {
+      pointer-events: auto !important
+    }
+
+    html.mr-desktop-ui #sidebar .sidebar-nav {
+      position: static !important;
+      inset: auto !important;
+      flex: 1 1 auto !important;
+      width: 100% !important;
+      min-width: 0 !important;
+      max-width: none !important;
+      min-height: 0 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      background: transparent !important;
+      border: 0 !important;
+      box-shadow: none !important;
+      overflow-x: hidden !important;
+      overflow-y: auto !important;
+      overscroll-behavior: contain !important;
+      scrollbar-width: none !important;
+      -ms-overflow-style: none !important;
+      transition: none !important;
+      z-index: auto !important
+    }
+
+    html.mr-desktop-ui #sidebar .sidebar-nav::-webkit-scrollbar {
+      display: none !important;
+      width: 0 !important;
+      height: 0 !important;
+      background: transparent !important
+    }
+
+    html.mr-desktop-ui #sidebar .nav-section-label {
+      box-sizing: border-box !important;
+      display: block !important;
+      width: max-content !important;
+      min-width: 36px !important;
+      max-width: 52px !important;
+      height: 37px !important;
+      min-height: 37px !important;
+      max-height: 37px !important;
+      padding: 5px 0 0 !important;
+      margin: 0 !important;
+      margin-inline-start: 6px !important;
+      margin-inline-end: auto !important;
+      flex-shrink: 0 !important;
+      font-size: 10px !important;
+      font-weight: 700 !important;
+      color: var(--mr-text-3) !important;
+      letter-spacing: 0 !important;
+      text-transform: none !important;
+      text-align: center !important;
+      line-height: 32px !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+      pointer-events: auto !important;
+      transition: none !important
+    }
+
+    html.mr-desktop-ui #sidebar:not(:hover):not(.sidebar-rail-hover):not(.sidebar-rail-open):not(.sidebar-rail-expanded):not([data-rail-hover="1"]):not([data-rail-expanded="1"]) .nav-item-label,
+    html.mr-desktop-ui #sidebar:not(:hover):not(.sidebar-rail-hover):not(.sidebar-rail-open):not(.sidebar-rail-expanded):not([data-rail-hover="1"]):not([data-rail-expanded="1"]) .logout-btn span {
+      visibility: hidden !important;
+      opacity: 0 !important;
+      max-width: 0 !important;
+      width: auto !important;
+      overflow: hidden !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      transition: none !important
+    }
+
+    html.mr-desktop-ui #sidebar .logout-btn {
+      justify-content: flex-start !important;
+      align-items: center !important;
+      gap: 14px !important;
+      padding: 9px 11px !important;
+      min-height: 54px !important;
+      margin-bottom: 6px !important;
+      transform: none !important;
+      box-sizing: border-box !important
+    }
+
+    html.mr-desktop-ui #sidebar .nav-icon-wrap {
+      grid-column: 1 !important;
+      grid-row: 1 !important;
+      width: 36px !important;
+      height: 36px !important;
+      flex: 0 0 36px !important;
+      margin: 0 !important;
+      justify-self: center !important;
+      align-self: center !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      border-radius: 12px !important;
+      background: color-mix(in srgb, var(--mr-text) 6%, var(--mr-surface)) !important;
+      color: var(--mr-text-2) !important;
+      transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease !important
+    }
+
+    html.mr-desktop-ui #sidebar .nav-item i {
+      width: auto !important;
+      height: auto !important;
+      flex: 0 0 auto !important;
+      margin: 0 !important;
+      background: transparent !important;
+      grid-column: unset !important;
+      grid-row: unset !important;
+      font-size: 15px !important
+    }
+
+    html.mr-desktop-ui #sidebar .nav-item-label {
+      grid-column: 2 !important;
+      grid-row: 1 !important;
+      flex: 1 1 auto !important;
+      min-width: 0 !important;
+      text-align: start !important;
+      align-self: center !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+      max-width: 0 !important;
+      width: 0 !important;
+      overflow: hidden !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      white-space: nowrap !important
+    }
+
+    html.mr-desktop-ui #sidebar .nav-item:hover,
+    html.mr-desktop-ui #sidebar .nav-item:hover i,
+    html.mr-desktop-ui #sidebar .nav-item:hover .nav-icon-wrap {
+      transform: none !important
+    }
+
+    html.mr-desktop-ui #sidebar .nav-item:hover:not(.active) {
+      background: color-mix(in srgb, var(--mr-text) 5%, var(--mr-surface)) !important;
+      color: var(--mr-text) !important
+    }
+
+    html.mr-desktop-ui #sidebar .nav-item:hover:not(.active) .nav-icon-wrap {
+      background: color-mix(in srgb, var(--mr-text) 13%, var(--mr-surface)) !important;
+      color: var(--mr-text) !important;
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--mr-border) 85%, transparent) !important
+    }
+
+    html[data-theme="dark"].mr-desktop-ui #sidebar .nav-icon-wrap {
+      background: rgba(255, 255, 255, 0.07) !important;
+      color: rgba(255, 255, 255, 0.52) !important
+    }
+
+    html[data-theme="dark"].mr-desktop-ui #sidebar .nav-item:hover:not(.active) {
+      background: rgba(255, 255, 255, 0.06) !important;
+      color: rgba(255, 255, 255, 0.82) !important
+    }
+
+    html[data-theme="dark"].mr-desktop-ui #sidebar .nav-item:hover:not(.active) .nav-icon-wrap {
+      background: rgba(255, 255, 255, 0.13) !important;
+      color: rgba(255, 255, 255, 0.82) !important;
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1) !important
+    }
+
+    html[data-theme="dark"].mr-desktop-ui #sidebar:not(:hover):not(.sidebar-rail-hover):not(.sidebar-rail-open):not(.sidebar-rail-expanded):not([data-rail-hover="1"]):not([data-rail-expanded="1"]) .nav-item:hover:not(.active) .nav-icon-wrap {
+      background: rgba(255, 255, 255, 0.16) !important;
+      color: rgba(255, 255, 255, 0.82) !important;
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12), 0 2px 8px rgba(0, 0, 0, 0.25) !important
+    }
+
+    html[data-theme="dark"].mr-desktop-ui #sidebar .nav-item.active .nav-icon-wrap,
+    html[data-theme="dark"].mr-desktop-ui #sidebar:not(:hover):not(.sidebar-rail-hover):not(.sidebar-rail-open):not(.sidebar-rail-expanded):not([data-rail-hover="1"]):not([data-rail-expanded="1"]) .nav-item.active .nav-icon-wrap,
+    html[data-theme="dark"].mr-desktop-ui #sidebar:hover .nav-item.active .nav-icon-wrap,
+    html[data-theme="dark"].mr-desktop-ui #sidebar.sidebar-rail-hover .nav-item.active .nav-icon-wrap,
+    html[data-theme="dark"].mr-desktop-ui #sidebar.sidebar-rail-open .nav-item.active .nav-icon-wrap,
+    html[data-theme="dark"].mr-desktop-ui #sidebar.sidebar-rail-expanded .nav-item.active .nav-icon-wrap,
+    html[data-theme="dark"].mr-desktop-ui #sidebar[data-rail-hover="1"] .nav-item.active .nav-icon-wrap,
+    html[data-theme="dark"].mr-desktop-ui #sidebar[data-rail-expanded="1"] .nav-item.active .nav-icon-wrap {
+      background: rgba(255, 255, 255, 0.24) !important;
+      color: #ffffff !important;
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.22) !important
+    }
+
+    html[data-theme="dark"].mr-desktop-ui #sidebar .nav-item.active .nav-icon-wrap i,
+    html[data-theme="dark"].mr-desktop-ui #sidebar .nav-item.active .nav-icon-wrap i::before {
+      color: #ffffff !important
+    }
+
+    html.mr-desktop-ui #sidebar:not(:hover):not(.sidebar-rail-hover):not(.sidebar-rail-open):not(.sidebar-rail-expanded):not([data-rail-hover="1"]):not([data-rail-expanded="1"]) .nav-item {
+      position: relative !important
+    }
+
+    html.mr-desktop-ui #sidebar:not(:hover):not(.sidebar-rail-hover):not(.sidebar-rail-open):not(.sidebar-rail-expanded):not([data-rail-hover="1"]):not([data-rail-expanded="1"]) .nav-item:hover:not(.active) .nav-icon-wrap {
+      background: color-mix(in srgb, var(--mr-text) 16%, var(--mr-surface)) !important;
+      color: var(--mr-text) !important;
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--mr-primary) 22%, var(--mr-border)), 0 2px 8px rgba(15, 18, 36, 0.08) !important
+    }
+
+    html.mr-desktop-ui #sidebar:not(:hover):not(.sidebar-rail-hover):not(.sidebar-rail-open):not(.sidebar-rail-expanded):not([data-rail-hover="1"]):not([data-rail-expanded="1"]) .nav-item:hover .nav-item-label {
+      position: absolute !important;
+      inset-inline-start: calc(100% + 10px) !important;
+      top: 50% !important;
+      transform: translateY(-50%) !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      width: auto !important;
+      max-width: 200px !important;
+      padding: 7px 12px !important;
+      margin: 0 !important;
+      background: var(--mr-text) !important;
+      color: #fff !important;
+      border-radius: 10px !important;
+      font-size: 12px !important;
+      font-weight: 700 !important;
+      line-height: 1.2 !important;
+      white-space: nowrap !important;
+      overflow: visible !important;
+      z-index: 1300 !important;
+      pointer-events: none !important;
+      box-shadow: 0 6px 18px rgba(15, 18, 36, 0.16) !important
+    }
+
+    html[data-theme="dark"].mr-desktop-ui #sidebar:not(:hover):not(.sidebar-rail-hover):not(.sidebar-rail-open):not(.sidebar-rail-expanded):not([data-rail-hover="1"]):not([data-rail-expanded="1"]) .nav-item:hover .nav-item-label {
+      background: rgba(255, 255, 255, 0.96) !important;
+      color: #131316 !important;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35) !important
+    }
+
+    html.mr-desktop-ui #sidebar:hover .nav-section-label,
+    html.mr-desktop-ui #sidebar.sidebar-rail-hover .nav-section-label,
+    html.mr-desktop-ui #sidebar.sidebar-rail-open .nav-section-label,
+    html.mr-desktop-ui #sidebar.sidebar-rail-expanded .nav-section-label,
+    html.mr-desktop-ui #sidebar[data-rail-hover="1"] .nav-section-label,
+    html.mr-desktop-ui #sidebar[data-rail-expanded="1"] .nav-section-label {
+      opacity: 1 !important;
+      visibility: visible !important
+    }
+
+    html.mr-desktop-ui #sidebar:hover .nav-item-label,
+    html.mr-desktop-ui #sidebar.sidebar-rail-hover .nav-item-label,
+    html.mr-desktop-ui #sidebar.sidebar-rail-open .nav-item-label,
+    html.mr-desktop-ui #sidebar.sidebar-rail-expanded .nav-item-label,
+    html.mr-desktop-ui #sidebar[data-rail-hover="1"] .nav-item-label,
+    html.mr-desktop-ui #sidebar[data-rail-expanded="1"] .nav-item-label {
+      visibility: visible !important;
+      opacity: 1 !important;
+      max-width: 148px !important;
+      width: auto !important;
+      overflow: visible !important;
+      white-space: nowrap !important;
+      padding-inline-start: 0 !important;
+      margin-inline-start: 0 !important
+    }
+
+    html.mr-desktop-ui #sidebar:hover .logout-btn span,
+    html.mr-desktop-ui #sidebar.sidebar-rail-hover .logout-btn span,
+    html.mr-desktop-ui #sidebar.sidebar-rail-open .logout-btn span,
+    html.mr-desktop-ui #sidebar.sidebar-rail-expanded .logout-btn span,
+    html.mr-desktop-ui #sidebar[data-rail-hover="1"] .logout-btn span,
+    html.mr-desktop-ui #sidebar[data-rail-expanded="1"] .logout-btn span {
+      visibility: visible !important;
+      opacity: 1 !important;
+      max-width: 148px !important;
+      width: auto !important;
+      overflow: visible !important;
+      white-space: nowrap !important
+    }
+
+    html.mr-desktop-ui #sidebar.open {
+      right: auto !important
+    }
+
+    html.mr-desktop-ui #sidebar .nav-item:focus {
+      outline: none !important;
+      border-color: transparent !important
+    }
+
+    html.mr-desktop-ui #sidebar .nav-item:focus-visible {
+      outline: 2px solid var(--mr-primary) !important;
+      outline-offset: 1px !important;
+      border-color: transparent !important
+    }
+
+    html.mr-desktop-ui #sidebar .nav-item:focus:not(:focus-visible) {
+      outline: none !important;
+      border-color: transparent !important;
+      box-shadow: none !important
+    }
+
+    html.mr-desktop-ui #sidebar:not(:hover):not(.sidebar-rail-hover):not(.sidebar-rail-open):not(.sidebar-rail-expanded):not([data-rail-hover="1"]):not([data-rail-expanded="1"]) .nav-item.active,
+    html.mr-desktop-ui #sidebar:not(:hover):not(.sidebar-rail-hover):not(.sidebar-rail-open):not(.sidebar-rail-expanded):not([data-rail-hover="1"]):not([data-rail-expanded="1"]) #appWrap .nav-item.active {
+      background: transparent !important;
+      border-color: transparent !important;
+      box-shadow: none !important;
+      color: var(--mr-text) !important
+    }
+
+    html.mr-desktop-ui #sidebar:hover .nav-item.active,
+    html.mr-desktop-ui #sidebar.sidebar-rail-hover .nav-item.active,
+    html.mr-desktop-ui #sidebar.sidebar-rail-open .nav-item.active,
+    html.mr-desktop-ui #sidebar.sidebar-rail-expanded .nav-item.active {
+      background: var(--mr-primary-soft) !important;
+      color: var(--mr-primary) !important;
+      border-color: transparent !important;
+      box-shadow: none !important
+    }
+
+    html[data-theme="dark"].mr-desktop-ui #sidebar:hover .nav-item.active,
+    html[data-theme="dark"].mr-desktop-ui #sidebar.sidebar-rail-hover .nav-item.active,
+    html[data-theme="dark"].mr-desktop-ui #sidebar.sidebar-rail-open .nav-item.active,
+    html[data-theme="dark"].mr-desktop-ui #sidebar.sidebar-rail-expanded .nav-item.active {
+      color: #ffffff !important;
+      -webkit-text-fill-color: #ffffff
+    }
+
+    html[data-theme="dark"].mr-desktop-ui #sidebar:hover .nav-item.active .nav-item-label,
+    html[data-theme="dark"].mr-desktop-ui #sidebar.sidebar-rail-hover .nav-item.active .nav-item-label,
+    html[data-theme="dark"].mr-desktop-ui #sidebar.sidebar-rail-open .nav-item.active .nav-item-label,
+    html[data-theme="dark"].mr-desktop-ui #sidebar.sidebar-rail-expanded .nav-item.active .nav-item-label {
+      color: #ffffff !important;
+      -webkit-text-fill-color: #ffffff
+    }
+
+    html.mr-desktop-ui #sidebar .nav-badge {
+      position: absolute !important;
+      top: 4px !important;
+      inset-inline-start: 4px !important;
+      margin: 0 !important
+    }
+
+    html.mr-desktop-ui {
+      direction: ltr !important;
+      overflow-x: auto !important;
+      overflow-y: hidden !important;
+      --mr-desktop-scroll-min: 993px
+    }
+
+    html.mr-desktop-ui body,
+    html.mr-desktop-ui #appWrap {
+      direction: rtl !important
+    }
+
+    html.mr-desktop-ui body {
+      overflow-x: visible !important;
+      overflow-y: hidden !important
+    }
+
+    /* إخفاء جداول الجوال — سطح مكتب فقط */
+    html.mr-desktop-ui #tab-workflow .wf-mob-tickets-body,
+    html.mr-desktop-ui #tab-workflow .wf-tickets-table--mob-head,
+    html.mr-desktop-ui #tab-workflow .wf-tickets-table--mob-body,
+    html.mr-desktop-ui #tab-workflow .wf-panel .data-table.wf-tickets-table--mob,
+    html.mr-desktop-ui #tab-reports .wf-mob-tickets-body,
+    html.mr-desktop-ui #tab-reports .wf-tickets-table--mob-head,
+    html.mr-desktop-ui #tab-reports .wf-tickets-table--mob-body,
+    html.mr-desktop-ui #tab-reports .wf-panel .data-table.wf-tickets-table--mob {
+      display: none !important
+    }
+
+    html.mr-desktop-ui #appWrap .app-body > .main {
+      position: relative !important;
+      z-index: 1 !important;
+      flex: 1 1 auto !important;
+      min-height: 0 !important;
+      overflow-x: clip !important;
+      overflow-y: auto !important
+    }
+
+    html.mr-desktop-ui #appWrap > .app-shell {
+      min-width: var(--mr-desktop-scroll-min, 993px) !important;
+      width: 100% !important;
+      padding-top: 0 !important;
+      overflow: hidden !important;
+      min-height: 0 !important;
+      flex: 1 1 auto !important
+    }
+
+    html.mr-desktop-ui #appWrap.app {
+      min-width: var(--mr-desktop-scroll-min, 993px) !important;
+      width: max(100%, var(--mr-desktop-scroll-min, 993px)) !important;
+      max-width: none !important;
+      display: flex !important;
+      flex-direction: column !important;
+      height: 100vh !important;
+      max-height: none !important;
+      overflow: hidden !important
+    }
+
+    html.mr-desktop-ui #appWrap .app-body {
+      flex-direction: row !important;
+      align-items: stretch !important;
+      flex: 1 1 auto !important;
+      min-height: 0 !important;
+      overflow-x: visible !important;
+      overflow-y: hidden !important;
+      pointer-events: auto !important
+    }
+
+    html.mr-desktop-ui #appWrap .topbar.unified-banner,
+    html.mr-desktop-ui .topbar.unified-banner {
+      position: sticky !important;
+      top: 0 !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
+      height: 76px !important;
+      min-height: calc(76px + var(--mr-safe-top, env(safe-area-inset-top, 0px))) !important;
+      max-height: none !important;
+      flex-wrap: nowrap !important;
+      touch-action: auto !important;
+      user-select: auto !important;
+      -webkit-user-select: auto !important;
+      padding-block: 10px !important;
+      padding-block-start: calc(10px + var(--mr-safe-top, env(safe-area-inset-top, 0px))) !important
+    }
+
+    html.mr-desktop-ui .topbar-brand-zone .brand-area {
+      margin-block-start: 2px !important
+    }
+
+    html.mr-desktop-ui .main {
+      padding: clamp(12px, 1.8vw, 20px) !important;
+      max-width: 100% !important
+    }
+
+    html.mr-desktop-ui #appWrap .main:has(#tab-dashboard.active) {
+      padding-top: clamp(8px, 1.4vw, 14px) !important
+    }
+
+    html.mr-desktop-ui .content {
+      max-width: 100% !important
+    }
+
+    html.mr-desktop-ui #appWrap .content:has(#tab-dashboard.active) {
+      padding-top: clamp(8px, 1.4vw, 16px) !important
+    }
+
+    /* إخفاء أشرطة التمرير — التمرير باللمس/العجلة فقط */
+    html.mr-desktop-ui,
+    html.mr-desktop-ui body,
+    html.mr-desktop-ui #appWrap,
+    html.mr-desktop-ui #appWrap *:not(#sidebar):not(#sidebar *):not(.filter-panel-body):not(.fp-checklist) {
+      scrollbar-width: none !important;
+      -ms-overflow-style: none !important
+    }
+
+    html.mr-desktop-ui::-webkit-scrollbar,
+    html.mr-desktop-ui body::-webkit-scrollbar,
+    html.mr-desktop-ui #appWrap::-webkit-scrollbar,
+    html.mr-desktop-ui #appWrap *:not(#sidebar):not(#sidebar *):not(.filter-panel-body):not(.fp-checklist)::-webkit-scrollbar {
+      display: none !important;
+      width: 0 !important;
+      height: 0 !important;
+      background: transparent !important
+    }
+
+    html.mr-desktop-ui .filter-panel-body,
+    html.mr-desktop-ui .fp-dropdown.open .fp-checklist {
+      scrollbar-width: thin !important;
+      -ms-overflow-style: auto !important
+    }
+
+    html.mr-desktop-ui .filter-panel-body::-webkit-scrollbar,
+    html.mr-desktop-ui .fp-dropdown.open .fp-checklist::-webkit-scrollbar {
+      display: block !important;
+      width: 4px !important;
+      height: 4px !important
+    }
+
+    html.mr-desktop-ui #sidebar,
+    html.mr-desktop-ui #sidebar * {
+      scrollbar-width: none !important;
+      -ms-overflow-style: none !important
+    }
+
+    html.mr-desktop-ui #sidebar::-webkit-scrollbar,
+    html.mr-desktop-ui #sidebar *::-webkit-scrollbar {
+      display: none !important;
+      width: 0 !important;
+      height: 0 !important;
+      background: transparent !important
+    }
+
+
+    html.mr-desktop-ui #sidebar.sidebar-rail-hover,
+    html.mr-desktop-ui #sidebar.sidebar-rail-expanded,
+    html.mr-desktop-ui #sidebar.sidebar-rail-open,
+    html.mr-desktop-ui #sidebar[data-rail-hover="1"],
+    html.mr-desktop-ui #sidebar[data-rail-expanded="1"] {
+      width: 236px !important;
+      min-width: 236px !important;
+      flex: 0 0 236px !important
+    }
+
+    html.mr-desktop-ui #appWrap .app-body,
+    html.mr-desktop-ui .app-body {
+      overflow-x: visible !important;
+      overflow-y: hidden !important;
+      min-height: 0 !important;
+      flex: 1 1 auto !important
+    }
+
+    /* معالجة التذاكر والتقارير — سطح مكتب: تمرير الصفحة كاملة (بدون سكرول داخلي للجدول) */
+    html.mr-desktop-ui .main:has(#tab-workflow.active),
+    html.mr-desktop-ui #appWrap .main:has(#tab-workflow.active),
+    html.mr-desktop-ui .main:has(#tab-reports.active),
+    html.mr-desktop-ui #appWrap .main:has(#tab-reports.active) {
+      overflow-x: clip !important;
+      overflow-y: auto !important;
+      display: block !important;
+      flex: 1 1 auto !important;
+      min-height: 0 !important
+    }
+
+    html.mr-desktop-ui .main:has(#tab-workflow.active) .content,
+    html.mr-desktop-ui .content:has(#tab-workflow.active),
+    html.mr-desktop-ui .main:has(#tab-reports.active) .content,
+    html.mr-desktop-ui .content:has(#tab-reports.active) {
+      display: block !important;
+      flex: none !important;
+      min-height: auto !important;
+      overflow: visible !important
+    }
+
+    html.mr-desktop-ui #tab-workflow.tab-content.active,
+    html.mr-desktop-ui #tab-reports.tab-content.active {
+      display: block !important;
+      flex: none !important;
+      min-height: auto !important;
+      overflow: visible !important
+    }
+
+    html.mr-desktop-ui #tab-workflow .wf-panel,
+    html.mr-desktop-ui #tab-reports .wf-panel {
+      display: block !important;
+      flex: none !important;
+      min-height: auto !important;
+      min-width: 0 !important;
+      overflow: visible !important
+    }
+
+    html.mr-desktop-ui #tab-workflow .wf-panel-banner {
+      flex-shrink: 0 !important
+    }
+
+    html.mr-desktop-ui #tab-reports .wf-desk-tickets-host,
+    html.mr-desktop-ui #tab-workflow .wf-desk-tickets-host {
+      display: block !important;
+      flex: none !important;
+      min-height: auto !important;
+      overflow: visible !important;
+      margin-top: 0 !important;
+      width: 100% !important;
+      box-sizing: border-box !important
+    }
+
+    html.mr-desktop-ui #tab-workflow .wf-desk-tickets-host > .empty {
+      flex: none !important;
+      min-height: 120px !important;
+      margin: 0 !important;
+      border: none !important;
+      border-radius: 0 !important;
+      background: transparent !important
+    }
+
+    html.mr-desktop-ui #tab-reports .wf-desk-tickets-host > .empty,
+    html.mr-desktop-ui #tab-workflow .wf-desk-tickets-host > .empty {
+      flex: none !important;
+      min-height: 120px !important;
+      margin: 0 !important;
+      border: none !important;
+      border-radius: 0 !important;
+      background: transparent !important
+    }
+
+    html.mr-desktop-ui #tab-workflow .wf-desk-tickets-host .wf-table-wrap {
+      display: block !important;
+      flex: none !important;
+      min-height: auto !important;
+      max-height: none !important;
+      overflow: visible !important;
+      border: 1px solid var(--mr-border) !important;
+      border-start-start-radius: 12px !important;
+      border-start-end-radius: 0 !important;
+      border-end-start-radius: 12px !important;
+      border-end-end-radius: 0 !important;
+      background: var(--mr-surface, #fff) !important;
+      box-shadow: none !important;
+      box-sizing: border-box !important
+    }
+
+    html.mr-desktop-ui #tab-reports .wf-desk-tickets-host .wf-table-wrap,
+    html.mr-desktop-ui #tab-workflow .wf-desk-tickets-host .wf-table-wrap {
+      display: block !important;
+      flex: none !important;
+      min-height: auto !important;
+      max-height: none !important;
+      overflow: visible !important;
+      border: 1px solid var(--mr-border) !important;
+      border-start-start-radius: 12px !important;
+      border-start-end-radius: 0 !important;
+      border-end-start-radius: 12px !important;
+      border-end-end-radius: 0 !important;
+      background: var(--mr-surface, #fff) !important;
+      box-shadow: none !important;
+      box-sizing: border-box !important
+    }
+
+    html.mr-desktop-ui #tab-workflow .wf-table-wrap,
+    html.mr-desktop-ui #tab-reports .wf-table-wrap {
+      margin-top: 0 !important;
+      padding-bottom: 0 !important
+    }
+
+    html.mr-desktop-ui #tab-workflow .wf-panel .data-table.wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body),
+    html.mr-desktop-ui #tab-reports .wf-panel .data-table.wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) thead th {
+      position: static !important;
+      top: auto !important;
+      z-index: auto !important;
+      background: var(--mr-primary-soft) !important;
+      box-shadow: none !important;
+      border-bottom: 1px solid var(--mr-border) !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) {
+      display: table !important;
+      width: 100% !important;
+      height: auto !important;
+      min-height: auto !important;
+      flex: none !important;
+      border-collapse: separate !important;
+      border-spacing: 0 6px !important;
+      margin: 0 !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) thead {
+      display: table-header-group !important;
+      width: 100% !important;
+      table-layout: fixed !important;
+      position: sticky !important;
+      top: 0 !important;
+      z-index: 4 !important;
+      overflow: visible !important;
+      background: var(--mr-primary-soft) !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) thead th:first-child {
+      border-start-start-radius: 12px !important
+    }
+
+    html.mr-desktop-ui #tab-workflow .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) thead th:last-child,
+    html.mr-desktop-ui #tab-reports .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) thead th:last-child,
+    html.mr-desktop-ui #tab-workflow .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) thead th:last-child {
+      border-start-end-radius: 0 !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) tbody {
+      display: table-row-group !important;
+      width: 100% !important;
+      min-height: auto !important;
+      flex: none !important;
+      background: var(--mr-surface, #fff) !important;
+      overflow: visible !important
+    }
+
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) tbody tr.wf-ticket-row {
+      display: table-row !important;
+      width: auto !important;
+      min-width: 0 !important;
+      table-layout: fixed !important;
+      margin-bottom: 0 !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) tbody tr.wf-ticket-row td {
+      border-top: 1px solid var(--mr-border) !important;
+      border-bottom: 1px solid var(--mr-border) !important;
+      background: var(--mr-surface) !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) tbody tr.wf-ticket-row td + td {
+      border-inline-start: none !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) tbody tr.wf-ticket-row td:first-child {
+      border-inline-end: none !important;
+      border-radius: 0 12px 12px 0 !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) tbody tr.wf-ticket-row td:last-child {
+      border-inline-start: none !important;
+      border-radius: 12px 0 0 12px !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) tbody tr.wf-ticket-row:hover td {
+      background: var(--mr-primary-soft) !important;
+      border-top-color: var(--mr-border) !important;
+      border-bottom-color: var(--mr-border) !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) tbody tr.wf-ticket-row:last-child {
+      margin-bottom: 0 !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) col.wf-col-ticket-c {
+      width: 68px !important;
+      min-width: 68px !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) th.wf-col-ticket,
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) td.wf-ticket-cell {
+      width: 68px !important;
+      min-width: 68px !important;
+      max-width: 68px !important;
+      padding-inline: 3px !important;
+      overflow: visible !important;
+      white-space: normal !important;
+      text-align: center !important;
+      vertical-align: middle !important;
+      box-sizing: border-box !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) td.wf-ticket-cell {
+      text-align: center !important;
+      padding-inline: 3px !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) td.wf-ticket-cell > .ticket-id-cell {
+      box-sizing: border-box !important;
+      margin-inline: auto !important;
+      text-align: center !important;
+      direction: ltr !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) td.wf-ticket-cell > .ticket-id-cell:not(.ticket-id-cell--desk-auto) {
+      display: inline-flex !important;
+      width: max-content !important;
+      max-width: 100% !important;
+      justify-content: center !important;
+      align-items: center !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) .ticket-id-cell--desk-auto {
+      display: inline-grid !important;
+      grid-template-rows: auto auto !important;
+      place-content: center !important;
+      place-items: center !important;
+      gap: 5px !important;
+      width: max-content !important;
+      max-width: 100% !important;
+      min-width: 0 !important;
+      margin-inline: auto !important;
+      padding: 0 !important;
+      overflow: visible !important;
+      white-space: normal !important;
+      text-align: center !important;
+      direction: ltr !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) .ticket-id-cell--desk-auto .wf-ticket-id-line {
+      grid-row: 1 !important;
+      width: auto !important;
+      max-width: 100% !important;
+      min-width: 0 !important;
+      justify-self: center !important;
+      text-align: center !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) .ticket-id-cell--desk-auto .wf-ticket-id-line .wf-ticket-id {
+      font-family: var(--mono) !important;
+      font-size: 15px !important;
+      font-weight: 800 !important;
+      line-height: 1.15 !important;
+      text-align: center !important;
+      display: block !important;
+      width: auto !important;
+      max-width: 100% !important;
+      margin-inline: auto !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) .ticket-id-cell--desk-auto .wf-ticket-auto-line {
+      grid-row: 2 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      justify-self: center !important;
+      width: auto !important;
+      max-width: 100% !important;
+      overflow: visible !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) .ticket-id-cell--desk-auto .wf-auto-flag {
+      font-size: 9px !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) .ticket-id-cell--desk-auto .wf-auto-flag i,
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) .ticket-id-cell--desk-auto .overdue-flag__txt {
+      font-size: 9px !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) th.wf-col-datetime,
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) td.wf-col-datetime {
+      width: 128px !important;
+      min-width: 128px !important;
+      max-width: 128px !important;
+      overflow: hidden !important;
+      text-align: center !important;
+      vertical-align: middle !important;
+      white-space: normal !important;
+      word-break: normal !important;
+      overflow-wrap: normal !important;
+      hyphens: manual !important;
+      box-sizing: border-box !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) td.wf-col-datetime {
+      padding: 8px 10px !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) col.wf-col-datetime-c {
+      width: 128px !important;
+      min-width: 128px !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) th.wf-col-status,
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) td.wf-col-status {
+      width: 128px !important;
+      min-width: 128px !important;
+      max-width: 128px !important;
+      overflow: hidden !important;
+      text-align: center !important;
+      white-space: nowrap !important;
+      word-break: normal !important;
+      overflow-wrap: normal !important;
+      hyphens: manual !important;
+      box-sizing: border-box !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) td.wf-col-status {
+      padding: 8px 6px !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) col.wf-col-status-c {
+      width: 128px !important;
+      min-width: 128px !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) th.wf-col-action,
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) td.wf-col-action {
+      width: 112px !important;
+      min-width: 112px !important;
+      max-width: 112px !important;
+      overflow: hidden !important;
+      text-align: center !important;
+      box-sizing: border-box !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) td.wf-col-action {
+      padding-inline: 6px !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) col.wf-col-action-c {
+      width: 112px !important;
+      min-width: 112px !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) tbody::-webkit-scrollbar {
+      display: block !important;
+      width: 5px !important;
+      height: 0 !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) tbody::-webkit-scrollbar-track {
+      background: color-mix(in srgb, var(--mr-border) 70%, transparent) !important;
+      border-radius: 999px !important;
+      margin-block: 8px !important;
+      margin-inline: 3px !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) tbody::-webkit-scrollbar-thumb {
+      background: color-mix(in srgb, var(--mr-text-3) 38%, transparent) !important;
+      border-radius: 999px !important;
+      border: 1px solid transparent !important;
+      background-clip: padding-box !important;
+      min-height: 36px !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) tbody::-webkit-scrollbar-thumb:hover {
+      background: color-mix(in srgb, var(--mr-text-2) 52%, transparent) !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) tbody::-webkit-scrollbar-corner {
+      background: var(--mr-surface, #fff) !important
+    }
+
+    html[data-theme="dark"].mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) tbody {
+      scrollbar-color: color-mix(in srgb, #fff 28%, transparent) color-mix(in srgb, #fff 8%, transparent) !important
+    }
+
+    html[data-theme="dark"].mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) tbody::-webkit-scrollbar-track {
+      background: color-mix(in srgb, #fff 10%, transparent) !important
+    }
+
+    html[data-theme="dark"].mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) tbody::-webkit-scrollbar-thumb {
+      background: color-mix(in srgb, #fff 24%, transparent) !important
+    }
+
+    html[data-theme="dark"].mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) tbody::-webkit-scrollbar-thumb:hover {
+      background: color-mix(in srgb, #fff 36%, transparent) !important
+    }
+
+    html.mr-desktop-ui #sidebar .nav-item,
+    html.mr-desktop-ui #sidebar:hover .nav-item,
+    html.mr-desktop-ui #sidebar.sidebar-rail-hover .nav-item,
+    html.mr-desktop-ui #sidebar.sidebar-rail-open .nav-item,
+    html.mr-desktop-ui #sidebar.sidebar-rail-expanded .nav-item,
+    html.mr-desktop-ui #sidebar[data-rail-hover="1"] .nav-item,
+    html.mr-desktop-ui #sidebar[data-rail-expanded="1"] .nav-item {
+      display: grid !important;
+      grid-template-columns: 36px minmax(0, 1fr) !important;
+      column-gap: 8px !important;
+      row-gap: 0 !important;
+      gap: 0 8px !important;
+      padding: 8px 6px !important;
+      justify-content: flex-start !important;
+      transform: none !important
+    }
+
+    html.mr-desktop-ui #sidebar:not(:hover):not(.sidebar-rail-hover):not(.sidebar-rail-open):not(.sidebar-rail-expanded):not([data-rail-hover="1"]):not([data-rail-expanded="1"]) .nav-item.active .nav-icon-wrap {
+      background: var(--sidebar-active) !important;
+      color: var(--sidebar-active-text) !important;
+      box-shadow: none !important
+    }
+
+    html.mr-desktop-ui #sidebar:hover .nav-item.active .nav-icon-wrap,
+    html.mr-desktop-ui #sidebar.sidebar-rail-hover .nav-item.active .nav-icon-wrap,
+    html.mr-desktop-ui #sidebar.sidebar-rail-open .nav-item.active .nav-icon-wrap,
+    html.mr-desktop-ui #sidebar.sidebar-rail-expanded .nav-item.active .nav-icon-wrap,
+    html.mr-desktop-ui #sidebar[data-rail-hover="1"] .nav-item.active .nav-icon-wrap,
+    html.mr-desktop-ui #sidebar[data-rail-expanded="1"] .nav-item.active .nav-icon-wrap {
+      background: var(--mr-primary) !important;
+      color: #fff !important;
+      box-shadow: none !important
+    }
+
+    html.mr-desktop-ui #sidebar .nav-item i,
+    html.mr-desktop-ui #sidebar:hover .nav-item i,
+    html.mr-desktop-ui #sidebar.sidebar-rail-hover .nav-item i,
+    html.mr-desktop-ui #sidebar.sidebar-rail-open .nav-item i,
+    html.mr-desktop-ui #sidebar.sidebar-rail-expanded .nav-item i,
+    html.mr-desktop-ui #sidebar .nav-icon-wrap,
+    html.mr-desktop-ui #sidebar:hover .nav-icon-wrap,
+    html.mr-desktop-ui #sidebar.sidebar-rail-hover .nav-icon-wrap,
+    html.mr-desktop-ui #sidebar.sidebar-rail-open .nav-icon-wrap,
+    html.mr-desktop-ui #sidebar.sidebar-rail-expanded .nav-icon-wrap {
+      transform: none !important;
+      margin: 0 !important
+    }
+
+    html.mr-desktop-ui #sidebar .nav-icon-wrap,
+    html.mr-desktop-ui #sidebar:hover .nav-icon-wrap,
+    html.mr-desktop-ui #sidebar.sidebar-rail-hover .nav-icon-wrap,
+    html.mr-desktop-ui #sidebar.sidebar-rail-open .nav-icon-wrap,
+    html.mr-desktop-ui #sidebar.sidebar-rail-expanded .nav-icon-wrap {
+      grid-column: 1 !important;
+      justify-self: center !important
+    }
+
+    html.mr-desktop-ui #sidebar:hover .nav-section-label,
+    html.mr-desktop-ui #sidebar.sidebar-rail-hover .nav-section-label,
+    html.mr-desktop-ui #sidebar.sidebar-rail-open .nav-section-label,
+    html.mr-desktop-ui #sidebar.sidebar-rail-expanded .nav-section-label,
+    html.mr-desktop-ui #sidebar[data-rail-hover="1"] .nav-section-label,
+    html.mr-desktop-ui #sidebar[data-rail-expanded="1"] .nav-section-label {
+      opacity: 1 !important;
+      visibility: visible !important;
+      display: block !important;
+      width: max-content !important;
+      min-width: 36px !important;
+      max-width: 52px !important;
+      height: 37px !important;
+      min-height: 37px !important;
+      max-height: 37px !important;
+      padding: 5px 0 0 !important;
+      margin-inline-start: 6px !important;
+      margin-inline-end: auto !important;
+      line-height: 32px !important;
+      text-align: center !important;
+      overflow: hidden !important
+    }
+
+    /* عناوين الأقسام — ظاهرة دائماً على سطح المكتب */
+    html.mr-desktop-ui #sidebar .nav-section-label {
+      opacity: 1 !important;
+      visibility: visible !important;
+      pointer-events: auto !important;
+      max-width: 52px !important;
+      width: max-content !important;
+      min-width: 36px !important;
+      display: block !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) td.wf-col-datetime {
+      white-space: normal !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) td.wf-col-datetime .wf-desk-datetime {
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 2px !important;
+      width: max-content !important;
+      max-width: 100% !important;
+      min-width: 0 !important;
+      margin-inline: auto !important;
+      padding: 0 !important;
+      direction: ltr !important;
+      unicode-bidi: isolate !important;
+      white-space: normal !important;
+      text-align: center !important;
+      line-height: 1.15 !important;
+      box-sizing: border-box !important;
+      transform: none !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) td.wf-col-datetime .wf-desk-datetime__time {
+      display: inline-flex !important;
+      flex-direction: row !important;
+      direction: ltr !important;
+      align-items: baseline !important;
+      justify-content: center !important;
+      gap: 3px !important;
+      width: auto !important;
+      max-width: 100% !important;
+      min-width: 0 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      unicode-bidi: isolate !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      text-align: center !important;
+      font: inherit !important;
+      color: inherit !important;
+      box-sizing: border-box !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) td.wf-col-datetime .wf-desk-datetime__date {
+      display: block !important;
+      width: auto !important;
+      max-width: 100% !important;
+      min-width: 0 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      direction: ltr !important;
+      unicode-bidi: isolate !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      text-align: center !important;
+      font: inherit !important;
+      color: inherit !important;
+      box-sizing: border-box !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) col.wf-col-emp-c {
+      width: auto !important;
+      min-width: 150px !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) th.wf-col-emp,
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) td.wf-col-emp {
+      width: auto !important;
+      min-width: 150px !important;
+      max-width: none !important;
+      text-align: start !important;
+      vertical-align: middle !important;
+      overflow: hidden !important;
+      box-sizing: border-box !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) td.wf-col-emp {
+      padding: 8px 10px !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) col.wf-col-viol-c {
+      width: auto !important;
+      min-width: 160px !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) th.wf-col-violation,
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) td.wf-col-violation {
+      width: auto !important;
+      min-width: 160px !important;
+      max-width: none !important;
+      text-align: center !important;
+      vertical-align: middle !important;
+      overflow: hidden !important;
+      box-sizing: border-box !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) td.wf-col-violation {
+      padding: 8px 10px !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) col.wf-col-branch-c {
+      width: auto !important;
+      min-width: 140px !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) th.wf-col-branch,
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) td.wf-col-branch {
+      width: auto !important;
+      min-width: 140px !important;
+      max-width: none !important;
+      text-align: center !important;
+      vertical-align: middle !important;
+      overflow: hidden !important;
+      box-sizing: border-box !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) td.wf-col-branch {
+      padding: 8px 10px !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) thead {
+      box-sizing: border-box !important;
+      table-layout: fixed !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) thead th {
+      box-sizing: border-box !important;
+      font-size: 14px !important;
+      font-weight: 600 !important;
+      line-height: 1.35 !important;
+      color: var(--mr-text) !important;
+      opacity: 1 !important;
+      -webkit-text-fill-color: var(--mr-text) !important;
+      padding: 8px 10px !important;
+      white-space: nowrap !important;
+      vertical-align: middle !important;
+      text-align: center !important;
+      transform: none !important;
+      background: var(--mr-primary-soft) !important;
+      border-bottom: 1px solid var(--mr-border) !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) thead th + th {
+      border-inline-start: none !important
+    }
+
+    html.mr-desktop-ui #tab-workflow .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) thead th:first-child,
+    html.mr-desktop-ui #tab-workflow .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) thead th:last-child {
+      border-inline-start: none !important;
+      border-inline-end: none !important
+    }
+
+    html.mr-desktop-ui #tab-reports .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) thead th:first-child , html.mr-desktop-ui #tab-workflow .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) thead th:first-child {
+      border-inline-start: none !important;
+      border-inline-end: none !important
+    }
+
+    html.mr-desktop-ui #tab-reports .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) thead th:last-child , html.mr-desktop-ui #tab-workflow .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) thead th:last-child {
+      border-inline-end: none !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) thead th.wf-col-status,
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) tbody tr.wf-ticket-row td.wf-col-status {
+      border-inline-start: none !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) thead th.wf-col-ticket {
+      padding-inline: 3px !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) thead th.wf-col-emp {
+      text-align: start !important;
+      padding-inline: 10px !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) thead th.wf-col-violation,
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) thead th.wf-col-branch,
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) thead th.wf-col-status,
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) thead th.wf-col-action {
+      padding-inline: 10px !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) thead th.wf-col-status,
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) thead th.wf-col-action {
+      padding: 8px 6px !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) thead th.wf-col-datetime {
+      width: 128px !important;
+      min-width: 128px !important;
+      max-width: 128px !important;
+      padding: 8px 10px !important;
+      text-align: center !important;
+      text-align-last: center !important;
+      vertical-align: middle !important;
+      direction: rtl !important;
+      unicode-bidi: isolate !important;
+      white-space: nowrap !important;
+      transform: none !important;
+      box-sizing: border-box !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) thead th.wf-col-datetime .wf-desk-head-label {
+      display: block !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      text-align: center !important;
+      text-align-last: center !important;
+      direction: rtl !important;
+      unicode-bidi: isolate !important;
+      box-sizing: border-box !important
+    }
+
+    html[data-theme="dark"].mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) thead th {
+      color: #f1f5f9 !important;
+      -webkit-text-fill-color: #f1f5f9 !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) td.wf-col-datetime .wf-desk-datetime__time .wf-time-hm,
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) td.wf-col-datetime .wf-desk-datetime__time .wf-time-ampm {
+      font: inherit !important;
+      color: inherit !important;
+      letter-spacing: normal !important
+    }
+
+    /* التقارير ومعالجة التذاكر — سطح المكتب: عرض كامل بدون بطاقة */
+    html.mr-desktop-ui #appWrap .main:has(#tab-reports.active),
+    html.mr-desktop-ui .main:has(#tab-reports.active),
+    html.mr-desktop-ui #appWrap .main:has(#tab-workflow.active),
+    html.mr-desktop-ui .main:has(#tab-workflow.active) {
+      padding: 0 !important
+    }
+
+    html.mr-desktop-ui #appWrap .main:has(#tab-reports.active) .content,
+    html.mr-desktop-ui .main:has(#tab-reports.active) .content,
+    html.mr-desktop-ui .content:has(#tab-reports.active),
+    html.mr-desktop-ui #appWrap .main:has(#tab-workflow.active) .content,
+    html.mr-desktop-ui .main:has(#tab-workflow.active) .content,
+    html.mr-desktop-ui .content:has(#tab-workflow.active) {
+      padding: 0 !important;
+      background: var(--mr-bg) !important
+    }
+
+    html.mr-desktop-ui #appWrap #tab-reports .panel.wf-panel,
+    html.mr-desktop-ui #appWrap #tab-reports .panel,
+    html.mr-desktop-ui #tab-reports .panel.wf-panel,
+    html.mr-desktop-ui #appWrap #tab-workflow .panel.wf-panel,
+    html.mr-desktop-ui #appWrap #tab-workflow .panel,
+    html.mr-desktop-ui #tab-workflow .panel.wf-panel {
+      padding-block: clamp(10px, 1.4vw, 14px) clamp(16px, 2vw, 24px) !important;
+      padding-left: 0 !important;
+      padding-right: clamp(12px, 1.6vw, 18px) !important;
+      margin: 0 !important;
+      margin-bottom: 0 !important;
+      border: none !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+      background: var(--mr-bg) !important;
+      width: 100% !important;
+      max-width: 100% !important
+    }
+
+    html.mr-desktop-ui #appWrap #tab-reports .panel:hover,
+    html.mr-desktop-ui #appWrap #tab-reports .panel.wf-panel:hover,
+    html.mr-desktop-ui #appWrap #tab-workflow .panel:hover,
+    html.mr-desktop-ui #appWrap #tab-workflow .panel.wf-panel:hover {
+      border-color: transparent !important;
+      box-shadow: none !important
+    }
+
+    html.mr-desktop-ui #tab-reports.tab-content,
+    html.mr-desktop-ui #tab-reports.tab-content.active,
+    html.mr-desktop-ui #tab-workflow.tab-content,
+    html.mr-desktop-ui #tab-workflow.tab-content.active {
+      background: var(--mr-bg) !important;
+      border: none !important;
+      box-shadow: none !important
+    }
+
+    html.mr-desktop-ui #tab-reports .rp-stats {
+      gap: 12px !important;
+      margin-bottom: 14px !important
+    }
+
+    html.mr-desktop-ui #tab-reports .rp-stat-card {
+      padding: 16px 16px 12px !important;
+      gap: 10px !important;
+      border-radius: 16px !important
+    }
+
+    html.mr-desktop-ui #tab-reports .rp-stat-card .rp-stat-chart {
+      height: 36px !important
+    }
+
+    html.mr-desktop-ui #tab-reports .rp-stat-dot {
+      width: 8px !important;
+      height: 8px !important
+    }
+
+    html.mr-desktop-ui #tab-reports .rp-stat-value {
+      font-size: 32px !important;
+      font-weight: 600 !important
+    }
+
+    html.mr-desktop-ui #tab-reports .rp-stat-label {
+      font-size: 12px !important
+    }
+
+    /* البنر — مسافة خفيفة من اليسار؛ الجدول يبقى ملاصقاً */
+    html.mr-desktop-ui #tab-reports .wf-panel-banner,
+    html.mr-desktop-ui #tab-workflow .wf-panel-banner {
+      padding-block: 0 6px !important;
+      padding-inline: 0 !important;
+      margin: 0 !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      min-width: 0 !important;
+      box-sizing: border-box !important
+    }
+
+    html.mr-desktop-ui #tab-reports .wf-panel-banner .wf-toolbar,
+    html.mr-desktop-ui #tab-workflow .wf-panel-banner .wf-toolbar {
+      display: flex !important;
+      flex-wrap: nowrap !important;
+      align-items: center !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      min-width: 0 !important;
+      box-sizing: border-box !important
+    }
+
+    html.mr-desktop-ui #tab-reports .wf-panel-banner .wf-search,
+    html.mr-desktop-ui #tab-workflow .wf-panel-banner .wf-search {
+      flex: 1 1 0% !important;
+      min-width: 0 !important;
+      max-width: 100% !important
+    }
+
+    html.mr-desktop-ui #tab-reports .wf-panel-banner .wf-status-filter,
+    html.mr-desktop-ui #tab-workflow .wf-panel-banner .wf-status-filter {
+      flex: 0 1 auto !important;
+      min-width: 0 !important
+    }
+
+    html.mr-desktop-ui #tab-reports .wf-desk-tickets-host , html.mr-desktop-ui #tab-workflow .wf-desk-tickets-host {
+      margin-top: 0 !important;
+      margin-left: 0 !important;
+      padding-left: 0 !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      background: transparent !important
+    }
+
+    html.mr-desktop-ui #tab-reports .wf-desk-tickets-host .wf-table-wrap , html.mr-desktop-ui #tab-workflow .wf-desk-tickets-host .wf-table-wrap {
+      margin-left: 0 !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      border: 1px solid var(--mr-border) !important;
+      border-start-start-radius: 12px !important;
+      border-start-end-radius: 0 !important;
+      border-end-start-radius: 12px !important;
+      border-end-end-radius: 0 !important;
+      border-top-left-radius: 0 !important;
+      border-bottom-left-radius: 0 !important;
+      overflow: hidden !important;
+      background: var(--mr-surface, #fff) !important;
+      box-shadow: none !important
+    }
+
+    /* سكرول يمين — يزيل الفراغ يسار الشريط */
+    html.mr-desktop-ui #tab-reports .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) tbody , html.mr-desktop-ui #tab-workflow .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) tbody {
+      direction: ltr !important
+    }
+
+    html.mr-desktop-ui #tab-reports .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) tbody tr.wf-ticket-row , html.mr-desktop-ui #tab-workflow .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) tbody tr.wf-ticket-row {
+      direction: rtl !important
+    }
+
+    html.mr-desktop-ui #tab-reports .wf-desk-tickets-host > .empty , html.mr-desktop-ui #tab-workflow .wf-desk-tickets-host > .empty {
+      border: none !important;
+      border-radius: 0 !important;
+      background: transparent !important
+    }
+
+    /* التقارير — إطار موحّد: الحدود والزوايا على الحاوية، الصفوف داخلية فقط */
+    html.mr-desktop-ui #tab-reports .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) , html.mr-desktop-ui #tab-workflow .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) {
+      border-spacing: 0 !important
+    }
+
+    html.mr-desktop-ui #tab-reports .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) thead th , html.mr-desktop-ui #tab-workflow .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) thead th {
+      border-top: none !important
+    }
+
+    html.mr-desktop-ui #tab-reports .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) thead , html.mr-desktop-ui #tab-workflow .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) thead {
+      width: 100% !important;
+      border-top-left-radius: 0 !important;
+      border-top-right-radius: 0 !important
+    }
+
+    html.mr-desktop-ui #tab-reports .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) thead th:first-child , html.mr-desktop-ui #tab-workflow .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) thead th:first-child {
+      border-start-start-radius: 12px !important;
+      border-start-end-radius: 0 !important
+    }
+
+    html.mr-desktop-ui #tab-reports .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) thead th:last-child,
+    html.mr-desktop-ui #tab-reports .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) thead th.wf-col-status,
+    html.mr-desktop-ui #tab-workflow .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) thead th:last-child,
+    html.mr-desktop-ui #tab-workflow .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) thead th.wf-col-status {
+      border-radius: 0 !important;
+      border-top-left-radius: 0 !important;
+      border-bottom-left-radius: 0 !important;
+      border-start-end-radius: 0 !important;
+      border-end-end-radius: 0 !important
+    }
+
+    html.mr-desktop-ui #tab-reports .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) tbody tr.wf-ticket-row , html.mr-desktop-ui #tab-workflow .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) tbody tr.wf-ticket-row {
+      margin-bottom: 0 !important
+    }
+
+    html.mr-desktop-ui #tab-reports .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) tbody tr.wf-ticket-row td , html.mr-desktop-ui #tab-workflow .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) tbody tr.wf-ticket-row td {
+      border-top: none !important;
+      border-bottom: 1px solid var(--mr-border) !important
+    }
+
+    html.mr-desktop-ui #tab-reports .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) tbody tr.wf-ticket-row:last-child td , html.mr-desktop-ui #tab-workflow .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) tbody tr.wf-ticket-row:last-child td {
+      border-bottom: 1px solid var(--mr-border) !important
+    }
+
+    html.mr-desktop-ui #tab-reports .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) tbody tr.wf-ticket-row {
+      width: 100% !important;
+      min-width: 100% !important;
+      margin-bottom: 0 !important
+    }
+
+    html.mr-desktop-ui #tab-reports .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) col.wf-col-ticket-c,
+    html.mr-desktop-ui #tab-reports .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) th.wf-col-ticket,
+    html.mr-desktop-ui #tab-reports .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) td.wf-ticket-cell {
+      max-width: none !important
+    }
+
+    html.mr-desktop-ui #tab-reports .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) tbody tr.wf-ticket-row td:first-child,
+    html.mr-desktop-ui #tab-reports .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) tbody tr.wf-ticket-row td:last-child,
+    html.mr-desktop-ui #tab-reports .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) tbody tr.wf-ticket-row:hover td:first-child,
+    html.mr-desktop-ui #tab-reports .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) tbody tr.wf-ticket-row:hover td:last-child {
+      border-radius: 0 !important
+    }
+
+    html.mr-desktop-ui #tab-reports .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) col.wf-col-viol-c,
+    html.mr-desktop-ui #tab-reports .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) th.wf-col-violation,
+    html.mr-desktop-ui #tab-reports .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) td.wf-col-violation {
+      min-width: 0 !important
+    }
+
+    html.mr-desktop-ui #tab-reports .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) td.wf-col-violation .wf-viol-cell {
+      margin-inline: 0 !important;
+      width: 100% !important;
+      max-width: 100% !important
+    }
+
+    html.mr-desktop-ui #tab-reports .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) tbody tr.wf-ticket-row:hover td {
+      background: var(--mr-primary-soft) !important
+    }
+
+    html.mr-desktop-ui #tab-reports .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) tbody tr.wf-ticket-row:hover td.wf-col-violation {
+      border-radius: 0 !important;
+      box-sizing: border-box !important
+    }
+
+    html.mr-desktop-ui #tab-reports .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) tbody tr.wf-ticket-row td:first-child , html.mr-desktop-ui #tab-workflow .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) tbody tr.wf-ticket-row td:first-child {
+      border-radius: 0 !important;
+      border-inline-start: none !important;
+      border-inline-end: none !important
+    }
+
+    html.mr-desktop-ui #tab-reports .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) tbody tr.wf-ticket-row td:last-child , html.mr-desktop-ui #tab-workflow .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) tbody tr.wf-ticket-row td:last-child {
+      border-radius: 0 !important;
+      border-inline-end: none !important
+    }
+
+    html.mr-desktop-ui:not([data-theme="dark"]) #tab-reports .wf-desk-tickets-host .wf-table-wrap,
+    html.mr-desktop-ui:not([data-theme="dark"]) #tab-workflow .wf-desk-tickets-host .wf-table-wrap {
+      border-color: var(--mr-border-2) !important
+    }
+
+    html.mr-desktop-ui:not([data-theme="dark"]) #tab-reports .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) thead th,
+    html.mr-desktop-ui:not([data-theme="dark"]) #tab-workflow .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) thead th {
+      border-bottom-color: var(--mr-border-2) !important
+    }
+
+    html.mr-desktop-ui:not([data-theme="dark"]) #tab-reports .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) tbody tr.wf-ticket-row td,
+    html.mr-desktop-ui:not([data-theme="dark"]) #tab-workflow .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob):not(.wf-tickets-table--mob-head):not(.wf-tickets-table--mob-body) tbody tr.wf-ticket-row td {
+      border-bottom-color: color-mix(in srgb, var(--mr-border-2) 55%, var(--mr-border)) !important
+    }
+
+    html[data-theme="dark"].mr-desktop-ui #tab-reports .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) thead,
+    html[data-theme="dark"].mr-desktop-ui #tab-workflow .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) thead {
+      width: 100% !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      box-sizing: border-box !important;
+      table-layout: fixed !important
+    }
+
+    html[data-theme="dark"].mr-desktop-ui #tab-reports .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) thead tr,
+    html[data-theme="dark"].mr-desktop-ui #tab-workflow .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) thead tr {
+      width: 100% !important
+    }
+
+    html[data-theme="dark"].mr-desktop-ui #tab-reports .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) thead th.wf-col-status,
+    html[data-theme="dark"].mr-desktop-ui #tab-reports .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) thead th:last-child,
+    html[data-theme="dark"].mr-desktop-ui #tab-workflow .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) thead th.wf-col-status,
+    html[data-theme="dark"].mr-desktop-ui #tab-workflow .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) thead th:last-child {
+      padding-left: 10px !important;
+      padding-right: 10px !important
+    }
+
+    html[data-theme="dark"].mr-desktop-ui #tab-reports .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) tbody::-webkit-scrollbar-track,
+    html[data-theme="dark"].mr-desktop-ui #tab-workflow .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table:not(.wf-tickets-table--mob) tbody::-webkit-scrollbar-track {
+      margin-inline-start: 0 !important;
+      margin-inline-end: 3px !important
+    }
+
+    /* RBAC: shell nav rules use display:grid/block !important — must beat them when tab is denied */
+    html.mr-desktop-ui #sidebar .nav-item[data-role-hide],
+    html.mr-desktop-ui #sidebar:hover .nav-item[data-role-hide],
+    html.mr-desktop-ui #sidebar.sidebar-rail-hover .nav-item[data-role-hide],
+    html.mr-desktop-ui #sidebar.sidebar-rail-open .nav-item[data-role-hide],
+    html.mr-desktop-ui #sidebar.sidebar-rail-expanded .nav-item[data-role-hide],
+    html.mr-desktop-ui #sidebar[data-rail-hover="1"] .nav-item[data-role-hide],
+    html.mr-desktop-ui #sidebar[data-rail-expanded="1"] .nav-item[data-role-hide],
+    html.mr-desktop-ui #sidebar .nav-section-label[data-role-hide],
+    html.mr-desktop-ui #sidebar:hover .nav-section-label[data-role-hide],
+    html.mr-desktop-ui #sidebar.sidebar-rail-hover .nav-section-label[data-role-hide],
+    html.mr-desktop-ui #sidebar.sidebar-rail-open .nav-section-label[data-role-hide],
+    html.mr-desktop-ui #sidebar.sidebar-rail-expanded .nav-section-label[data-role-hide],
+    html.mr-desktop-ui #sidebar[data-rail-hover="1"] .nav-section-label[data-role-hide],
+    html.mr-desktop-ui #sidebar[data-rail-expanded="1"] .nav-section-label[data-role-hide] {
+      display: none !important;
+      visibility: hidden !important;
+      height: 0 !important;
+      min-height: 0 !important;
+      max-height: 0 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      overflow: hidden !important;
+      pointer-events: none !important;
+      border: 0 !important
+    }
+
+  /* متغيرات قابلة للتحريك — انتقال سلس لعرض الأعمدة */
+    @property --desk-table-w {
+      syntax: "<length>";
+      inherits: false;
+      initial-value: 0px
+    }
+
+    @property --desk-w-ticket {
+      syntax: "<length>";
+      inherits: false;
+      initial-value: 68px
+    }
+
+    @property --desk-w-emp {
+      syntax: "<length>";
+      inherits: false;
+      initial-value: 150px
+    }
+
+    @property --desk-w-violation {
+      syntax: "<length>";
+      inherits: false;
+      initial-value: 160px
+    }
+
+    @property --desk-w-branch {
+      syntax: "<length>";
+      inherits: false;
+      initial-value: 140px
+    }
+
+    @property --desk-w-datetime {
+      syntax: "<length>";
+      inherits: false;
+      initial-value: 120px
+    }
+
+    @property --desk-w-status {
+      syntax: "<length>";
+      inherits: false;
+      initial-value: 160px
+    }
+
+    @property --desk-w-action {
+      syntax: "<length>";
+      inherits: false;
+      initial-value: 112px
+    }
+
+    html.mr-desktop-ui.desk-sidebar-resizing .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table[data-desk-cols-synced]:not(.wf-tickets-table--mob) {
+      --desk-sidebar-col-ease: 220ms cubic-bezier(0.4, 0, 0.2, 1);
+      transition:
+        --desk-table-w var(--desk-sidebar-col-ease),
+        --desk-w-ticket var(--desk-sidebar-col-ease),
+        --desk-w-emp var(--desk-sidebar-col-ease),
+        --desk-w-violation var(--desk-sidebar-col-ease),
+        --desk-w-branch var(--desk-sidebar-col-ease),
+        --desk-w-datetime var(--desk-sidebar-col-ease),
+        --desk-w-status var(--desk-sidebar-col-ease),
+        --desk-w-action var(--desk-sidebar-col-ease) !important
+    }
+
+    html.mr-desktop-ui.desk-sidebar-resizing .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table[data-desk-cols-synced]:not(.wf-tickets-table--mob) thead th,
+    html.mr-desktop-ui.desk-sidebar-resizing .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table[data-desk-cols-synced]:not(.wf-tickets-table--mob) td.wf-col-emp,
+    html.mr-desktop-ui.desk-sidebar-resizing .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table[data-desk-cols-synced]:not(.wf-tickets-table--mob) td.wf-col-violation,
+    html.mr-desktop-ui.desk-sidebar-resizing .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table[data-desk-cols-synced]:not(.wf-tickets-table--mob) td.wf-col-branch {
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important
+    }
+
+    /* أعمدة الجدول — متغيرات CSS لضغط فوري عند تغيّر عرض الحاوية */
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table[data-desk-cols-synced]:not(.wf-tickets-table--mob) thead {
+      width: var(--desk-table-w) !important;
+      table-layout: fixed !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table[data-desk-cols-synced]:not(.wf-tickets-table--mob) tbody tr.wf-ticket-row {
+      width: var(--desk-table-w) !important;
+      min-width: var(--desk-table-w) !important;
+      table-layout: fixed !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table[data-desk-cols-synced]:not(.wf-tickets-table--mob) col.wf-col-ticket-c {
+      width: var(--desk-w-ticket) !important;
+      min-width: var(--desk-w-ticket) !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table[data-desk-cols-synced]:not(.wf-tickets-table--mob) col.wf-col-emp-c {
+      width: var(--desk-w-emp) !important;
+      min-width: var(--desk-w-emp) !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table[data-desk-cols-synced]:not(.wf-tickets-table--mob) col.wf-col-viol-c {
+      width: var(--desk-w-violation) !important;
+      min-width: var(--desk-w-violation) !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table[data-desk-cols-synced]:not(.wf-tickets-table--mob) col.wf-col-branch-c {
+      width: var(--desk-w-branch) !important;
+      min-width: var(--desk-w-branch) !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table[data-desk-cols-synced]:not(.wf-tickets-table--mob) col.wf-col-datetime-c {
+      width: var(--desk-w-datetime) !important;
+      min-width: var(--desk-w-datetime) !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table[data-desk-cols-synced]:not(.wf-tickets-table--mob) col.wf-col-status-c {
+      width: var(--desk-w-status) !important;
+      min-width: var(--desk-w-status) !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table[data-desk-cols-synced]:not(.wf-tickets-table--mob) col.wf-col-action-c {
+      width: var(--desk-w-action) !important;
+      min-width: var(--desk-w-action) !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table[data-desk-cols-synced]:not(.wf-tickets-table--mob) th.wf-col-ticket,
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table[data-desk-cols-synced]:not(.wf-tickets-table--mob) td.wf-ticket-cell {
+      width: var(--desk-w-ticket) !important;
+      min-width: var(--desk-w-ticket) !important;
+      max-width: var(--desk-w-ticket) !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table[data-desk-cols-synced]:not(.wf-tickets-table--mob) th.wf-col-emp,
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table[data-desk-cols-synced]:not(.wf-tickets-table--mob) td.wf-col-emp {
+      width: var(--desk-w-emp) !important;
+      min-width: var(--desk-w-emp) !important;
+      max-width: var(--desk-w-emp) !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table[data-desk-cols-synced]:not(.wf-tickets-table--mob) th.wf-col-violation,
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table[data-desk-cols-synced]:not(.wf-tickets-table--mob) td.wf-col-violation {
+      width: var(--desk-w-violation) !important;
+      min-width: var(--desk-w-violation) !important;
+      max-width: var(--desk-w-violation) !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table[data-desk-cols-synced]:not(.wf-tickets-table--mob) th.wf-col-branch,
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table[data-desk-cols-synced]:not(.wf-tickets-table--mob) td.wf-col-branch {
+      width: var(--desk-w-branch) !important;
+      min-width: var(--desk-w-branch) !important;
+      max-width: var(--desk-w-branch) !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table[data-desk-cols-synced]:not(.wf-tickets-table--mob) th.wf-col-datetime,
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table[data-desk-cols-synced]:not(.wf-tickets-table--mob) td.wf-col-datetime {
+      width: var(--desk-w-datetime) !important;
+      min-width: var(--desk-w-datetime) !important;
+      max-width: var(--desk-w-datetime) !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table[data-desk-cols-synced]:not(.wf-tickets-table--mob) th.wf-col-status,
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table[data-desk-cols-synced]:not(.wf-tickets-table--mob) td.wf-col-status {
+      width: var(--desk-w-status) !important;
+      min-width: var(--desk-w-status) !important;
+      max-width: var(--desk-w-status) !important
+    }
+
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table[data-desk-cols-synced]:not(.wf-tickets-table--mob) th.wf-col-action,
+    html.mr-desktop-ui .wf-desk-tickets-host .wf-table-wrap > .wf-tickets-table[data-desk-cols-synced]:not(.wf-tickets-table--mob) td.wf-col-action {
+      width: var(--desk-w-action) !important;
+      min-width: var(--desk-w-action) !important;
+      max-width: var(--desk-w-action) !important
+    }
