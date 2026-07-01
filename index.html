@@ -25277,15 +25277,18 @@
         line-height: 1.3 !important
       }
 
-      #tab-compliance .cmp-neo-toolbar.toolbar.wf-toolbar {
+      #tab-compliance .cmp-neo-toolbar.toolbar.wf-toolbar,
+      html.mr-mobile-ui #tab-compliance .cmp-neo-toolbar.toolbar.wf-toolbar {
         display: flex !important;
         flex-direction: row !important;
         flex-wrap: nowrap !important;
         align-items: center !important;
-        gap: 6px !important;
+        justify-content: space-between !important;
+        gap: 8px !important;
         width: 100% !important;
-        margin: 0 0 8px !important;
-        padding: 0 !important
+        margin: 0 0 12px !important;
+        padding: 0 !important;
+        box-sizing: border-box !important
       }
 
       #tab-compliance .cmp-neo-toolbar.toolbar.wf-toolbar > * {
@@ -25314,18 +25317,19 @@
         box-shadow: none !important
       }
 
-      #tab-compliance .cmp-neo-search-combo .cmp-neo-search-combo__field {
-        flex: 1 1 0 !important;
+      #tab-compliance .cmp-neo-search-combo .cmp-neo-search-combo__field,
+      html.mr-mobile-ui #tab-compliance .cmp-neo-search-combo .cmp-neo-search-combo__field {
+        flex: 1 1 auto !important;
         min-width: 0 !important;
-        width: auto !important;
-        min-height: 38px !important;
-        height: 38px !important;
+        width: 100% !important;
+        min-height: 42px !important;
+        height: 42px !important;
         border: 1px solid var(--mr-border) !important;
-        border-radius: 12px !important;
+        border-radius: 14px !important;
         background: var(--mr-bg) !important;
-        padding: 0 12px !important;
-        gap: 8px !important;
-        box-shadow: none !important
+        padding: 0 14px !important;
+        gap: 10px !important;
+        box-shadow: 0 1px 2px rgba(15, 18, 36, 0.04) !important
       }
 
       #tab-compliance .cmp-neo-search-combo .cmp-neo-search-combo__field:focus-within {
@@ -25333,10 +25337,12 @@
         box-shadow: 0 0 0 4px var(--mr-primary-soft) !important
       }
 
-      #tab-compliance .cmp-neo-search-combo .figma-search-input {
-        min-height: 38px !important;
-        font-size: 13px !important;
-        min-width: 0 !important
+      #tab-compliance .cmp-neo-search-combo .figma-search-input,
+      html.mr-mobile-ui #tab-compliance .cmp-neo-search-combo .figma-search-input {
+        min-height: 42px !important;
+        font-size: 14px !important;
+        min-width: 0 !important;
+        flex: 1 1 auto !important
       }
 
       #tab-compliance .cmp-neo-search-combo .figma-search-input::placeholder {
@@ -25352,15 +25358,16 @@
         flex-shrink: 0 !important
       }
 
-      #tab-compliance .cmp-neo-back--combo {
-        width: 38px !important;
-        height: 38px !important;
-        min-width: 38px !important;
-        min-height: 38px !important;
+      #tab-compliance .cmp-neo-back--combo,
+      html.mr-mobile-ui #tab-compliance .cmp-neo-back--combo {
+        width: 42px !important;
+        height: 42px !important;
+        min-width: 42px !important;
+        min-height: 42px !important;
         padding: 0 !important;
         margin: 0 !important;
         border: 1px solid var(--mr-border) !important;
-        border-radius: 50% !important;
+        border-radius: 12px !important;
         background: var(--mr-surface) !important;
         box-shadow: 0 1px 3px rgba(15, 18, 36, 0.05) !important;
         justify-content: center !important;
@@ -25419,25 +25426,27 @@
         max-width: none !important
       }
 
-      #tab-compliance .cmp-neo-toolbar .wf-status-filter {
+      #tab-compliance .cmp-neo-toolbar .wf-status-filter,
+      html.mr-mobile-ui #tab-compliance .cmp-neo-toolbar .wf-status-filter {
         grid-column: unset !important;
         grid-row: unset !important;
         flex: 0 0 auto !important;
         width: auto !important;
         min-width: 0 !important;
-        max-width: min(28vw, 104px) !important
+        max-width: min(32vw, 120px) !important
       }
 
-      #tab-compliance .cmp-neo-toolbar #cmp-filter-trigger.wf-status-trigger {
+      #tab-compliance .cmp-neo-toolbar #cmp-filter-trigger.wf-status-trigger,
+      html.mr-mobile-ui #tab-compliance .cmp-neo-toolbar #cmp-filter-trigger.wf-status-trigger {
         width: 100% !important;
         min-width: 0 !important;
         max-width: none !important;
-        height: 38px !important;
-        min-height: 38px !important;
-        gap: 6px !important;
-        padding: 0 8px !important;
+        height: 42px !important;
+        min-height: 42px !important;
+        gap: 8px !important;
+        padding: 0 10px !important;
         justify-content: flex-start !important;
-        border-radius: 999px !important;
+        border-radius: 12px !important;
         background: var(--mr-surface) !important;
         border: 1px solid var(--mr-border) !important;
         box-shadow: 0 1px 2px rgba(15, 18, 36, 0.04) !important
@@ -25502,15 +25511,16 @@
         display: none !important
       }
 
-      #tab-compliance .cmp-neo-toolbar .rp-date-btn {
-        min-height: 38px !important;
-        height: 38px !important;
-        width: 38px !important;
-        min-width: 38px !important;
+      #tab-compliance .cmp-neo-toolbar .rp-date-btn,
+      html.mr-mobile-ui #tab-compliance .cmp-neo-toolbar .rp-date-btn {
+        min-height: 42px !important;
+        height: 42px !important;
+        width: 42px !important;
+        min-width: 42px !important;
         padding: 0 !important;
         justify-content: center !important;
         align-items: center !important;
-        border-radius: 50% !important;
+        border-radius: 12px !important;
         border: 1px solid var(--mr-border) !important;
         background: var(--mr-surface) !important;
         color: var(--mr-text-2) !important;
