@@ -54170,10 +54170,12 @@
         const text = Sec.escapeHTML(label);
         const hint = Sec.escapeHTML(ariaLabel || ('العودة إلى ' + label));
         const comboCls = opts.combo ? ' cmp-neo-back--combo' : '';
+        const isMob = document.documentElement.classList.contains('mr-mobile-ui');
+        const style = (opts.combo && isMob) ? 'style="width:42px !important;height:42px !important;min-width:42px !important;min-height:42px !important;border-radius:12px !important;padding:0 !important;display:flex !important;align-items:center !important;justify-content:center !important;flex-shrink:0 !important"' : '';
         return `
-            <button type="button" class="cmp-neo-back${comboCls}" onclick="${onClick}" aria-label="${hint}">
-              <span class="cmp-neo-back__ico" aria-hidden="true"><i class="fas fa-arrow-right"></i></span>
-              <span class="cmp-neo-back__text">${text}</span>
+            <button type="button" class="cmp-neo-back${comboCls}" onclick="${onClick}" aria-label="${hint}" ${style}>
+              <span class="cmp-neo-back__ico" aria-hidden="true" ${isMob && opts.combo ? 'style="margin:0 !important;font-size:16px !important"' : ''}><i class="fas fa-arrow-right"></i></span>
+              <span class="cmp-neo-back__text" ${isMob && opts.combo ? 'style="display:none !important"' : ''}>${text}</span>
             </button>`;
       }
 
@@ -54598,27 +54600,29 @@
                 </div>
               </div>
             </header>
-            <div class="cmp-neo-toolbar toolbar wf-toolbar">
-              <div class="cmp-neo-search-combo${backNav ? ' has-back' : ''}">
+            <div class="cmp-neo-toolbar toolbar wf-toolbar" style="display:flex !important;flex-direction:row !important;align-items:center !important;gap:8px !important;width:100% !important;box-sizing:border-box !important">
+              <div class="cmp-neo-search-combo${backNav ? ' has-back' : ''}" style="flex:1 1 auto !important;min-width:0 !important;display:flex !important;align-items:center !important;gap:8px !important">
                 ${backNav || ''}
-                <div class="figma-search-wrap wf-search cmp-neo-search cmp-neo-search-combo__field">
+                <div class="figma-search-wrap wf-search cmp-neo-search cmp-neo-search-combo__field" style="flex:1 1 auto !important;min-width:0 !important;width:100% !important;height:42px !important;min-height:42px !important;border-radius:12px !important;padding:0 12px !important;display:flex !important;align-items:center !important;gap:8px !important;box-sizing:border-box !important">
                   <input type="text" class="figma-search-input" id="cmp-search"
                     value="${Sec.escapeHTML(cmpSearchVal)}"
                     placeholder="${Sec.escapeHTML(cmpSearchPh)}"
                     oninput="filterCmpSearch()"
                     autocomplete="off"
-                    enterkeyhint="search">
-                  <button type="button" class="figma-search-btn" onclick="filterCmpSearch()" aria-label="بحث">
+                    enterkeyhint="search"
+                    style="flex:1 1 auto !important;min-width:0 !important;height:42px !important;font-size:14px !important;background:transparent !important;border:none !important;padding:0 !important">
+                  <button type="button" class="figma-search-btn" onclick="filterCmpSearch()" aria-label="بحث" style="width:32px !important;height:32px !important;flex-shrink:0 !important;display:flex !important;align-items:center !important;justify-content:center !important">
                     <i class="fas fa-magnifying-glass"></i>
                   </button>
                 </div>
               </div>
-              ${canPickCmpScope() ? `<div class="wf-status-filter" id="cmp-filter-dd">
+              ${canPickCmpScope() ? `<div class="wf-status-filter" id="cmp-filter-dd" style="flex:0 0 auto !important;max-width:32vw !important">
                 <button type="button" class="wf-status-trigger" id="cmp-filter-trigger"
-                  onclick="cmpFilterToggle(event)" aria-haspopup="listbox" aria-expanded="false">
-                  <span class="wf-status-trigger__ico" aria-hidden="true"><i class="fas fa-filter"></i></span>
-                  <span class="wf-status-trigger__label" id="cmp-filter-label">كل المناطق</span>
-                  <i class="fas fa-chevron-down wf-status-trigger__chev" aria-hidden="true"></i>
+                  onclick="cmpFilterToggle(event)" aria-haspopup="listbox" aria-expanded="false"
+                  style="height:42px !important;min-height:42px !important;border-radius:12px !important;padding:0 10px !important;display:flex !important;align-items:center !important;gap:6px !important">
+                  <span class="wf-status-trigger__ico" aria-hidden="true" style="flex-shrink:0 !important"><i class="fas fa-filter"></i></span>
+                  <span class="wf-status-trigger__label" id="cmp-filter-label" style="font-size:10px !important;white-space:nowrap !important;overflow:hidden !important;text-overflow:ellipsis !important">كل المناطق</span>
+                  <i class="fas fa-chevron-down wf-status-trigger__chev" aria-hidden="true" style="display:none !important"></i>
                 </button>
                 <select id="cmp-filter-scope" class="wf-status-select-native" tabindex="-1" aria-hidden="true"
                   aria-label="نطاق العرض" onchange="cmpFilterMobNativeChange(this)">
@@ -54627,9 +54631,10 @@
                   <option value="employees">كل الموظفين</option>
                 </select>
               </div>` : ''}
-              <div class="rp-date-wrap" id="cmpNeoDateWrap">
-                <button type="button" class="rp-tool-btn rp-date-btn" onclick="toggleCmpDatePicker(event)" id="cmp-date-btn">
-                  <i class="fas fa-calendar"></i><span id="cmp-date-label">${Sec.escapeHTML(dateLabel)}</span>
+              <div class="rp-date-wrap" id="cmpNeoDateWrap" style="flex:0 0 auto !important">
+                <button type="button" class="rp-tool-btn rp-date-btn" onclick="toggleCmpDatePicker(event)" id="cmp-date-btn"
+                  style="width:42px !important;height:42px !important;min-width:42px !important;min-height:42px !important;border-radius:12px !important;padding:0 !important;display:flex !important;align-items:center !important;justify-content:center !important;flex-shrink:0 !important">
+                  <i class="fas fa-calendar" style="margin:0 !important;font-size:16px !important"></i><span id="cmp-date-label" style="display:none !important">${Sec.escapeHTML(dateLabel)}</span>
                 </button>
               </div>
               ${hasPermission('export_compliance') ? `<button type="button" class="rp-tool-btn cmp-neo-btn--pdf-export" onclick="exportCompliancePDF()">
