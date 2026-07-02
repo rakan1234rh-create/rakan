@@ -1,13 +1,21 @@
 import { Webhook } from 'https://esm.sh/standardwebhooks@1.0.0';
+import nodemailer from 'npm:nodemailer@6.9.16';
 import { Resend } from 'npm:resend@4.0.0';
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? '';
 const HOOK_SECRET = Deno.env.get('SEND_EMAIL_HOOK_SECRET') ?? '';
 const SENDER_EMAIL = Deno.env.get('SENDER_EMAIL') ?? '';
 
+// Optional SMTP fallback for Apple/iCloud when Resend shared IPs bounce HM08.
+const SMTP_HOST = Deno.env.get('SMTP_HOST') ?? '';
+const SMTP_PORT = Number(Deno.env.get('SMTP_PORT') ?? '587');
+const SMTP_USER = Deno.env.get('SMTP_USER') ?? '';
+const SMTP_PASS = Deno.env.get('SMTP_PASSWORD') ?? Deno.env.get('SMTP_PASS') ?? '';
+const SMTP_FROM = Deno.env.get('SMTP_FROM') ?? SENDER_EMAIL;
+
 const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null;
 
-// Apple HM08: send ASCII text only (no HTML part at all).
+const APPLE_DOMAINS = new Set(['icloud.com', 'me.com', 'mac.com']);
 const SUBJECT = 'ATHAR account verification code';
 const TEXT_TEMPLATE = [
   'Hello,',
@@ -32,6 +40,15 @@ function senderDomain(raw: string): string | null {
   return match?.[1]?.toLowerCase() ?? null;
 }
 
+function isAppleMailbox(email: string): boolean {
+  const domain = email.split('@').pop()?.toLowerCase() ?? '';
+  return APPLE_DOMAINS.has(domain);
+}
+
+function smtpConfigured(): boolean {
+  return Boolean(SMTP_HOST && SMTP_USER && SMTP_PASS && SMTP_FROM);
+}
+
 type EmailActionType = 'signup' | 'recovery' | 'invite' | 'magiclink' | 'email_change' | 'email';
 
 type WebhookPayload = {
@@ -54,24 +71,65 @@ function json(body: unknown, status = 200) {
   });
 }
 
+async function sendViaSmtp(to: string, subject: string, text: string): Promise<void> {
+  const transport = nodemailer.createTransport({
+    host: SMTP_HOST,
+    port: SMTP_PORT,
+    secure: SMTP_PORT === 465,
+    auth: { user: SMTP_USER, pass: SMTP_PASS },
+  });
+
+  const info = await transport.sendMail({
+    from: formatSender(SMTP_FROM),
+    to,
+    subject,
+    text,
+  });
+
+  console.log('send-auth-emails: smtp sent id=' + String(info.messageId ?? '') + ' to ' + to);
+}
+
+async function sendViaResend(to: string, subject: string, text: string): Promise<void> {
+  if (!resend) {
+    throw new Error('Resend is not configured');
+  }
+
+  const { error } = await resend.emails.send({
+    from: formatSender(SENDER_EMAIL),
+    to: [to],
+    subject,
+    text,
+  });
+
+  if (error) {
+    throw new Error((error as { message?: string }).message || 'Resend send failed');
+  }
+
+  console.log('send-auth-emails: resend sent to ' + to);
+}
+
 Deno.serve(async (req) => {
   const url = new URL(req.url);
 
   if (req.method === 'GET' && url.searchParams.get('health') === '1') {
     const domain = senderDomain(SENDER_EMAIL);
+    const smtpReady = smtpConfigured();
     return json({
       ok: true,
       configured: {
         RESEND_API_KEY: Boolean(RESEND_API_KEY),
         SEND_EMAIL_HOOK_SECRET: Boolean(HOOK_SECRET),
         SENDER_EMAIL: Boolean(SENDER_EMAIL),
+        SMTP_FALLBACK: smtpReady,
       },
       deliverability: {
         sender_domain: domain,
         uses_resend_shared_domain: domain === 'resend.dev',
         template: 'text-only-ascii',
-        warning: domain === 'resend.dev'
-          ? 'SENDER_EMAIL uses resend.dev. Verify athar-app.online in Resend and set SENDER_EMAIL to no-reply@athar-app.online for Apple/iCloud delivery.'
+        apple_mail_route: smtpReady ? 'smtp' : 'resend',
+        apple_hm08_risk_without_smtp: !smtpReady,
+        warning: !smtpReady
+          ? 'Apple/iCloud (icloud.com, me.com, mac.com) may bounce HM08 on Resend shared IPs. Add SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM in Supabase Secrets.'
           : null,
       },
     });
@@ -81,8 +139,8 @@ Deno.serve(async (req) => {
     return new Response('not allowed', { status: 400 });
   }
 
-  if (!resend || !RESEND_API_KEY || !HOOK_SECRET || !SENDER_EMAIL) {
-    console.error('send-auth-emails: missing RESEND_API_KEY, SEND_EMAIL_HOOK_SECRET, or SENDER_EMAIL');
+  if (!HOOK_SECRET || !SENDER_EMAIL || (!resend && !smtpConfigured())) {
+    console.error('send-auth-emails: missing email provider configuration');
     return json({ error: { message: 'Email hook is not configured' } }, 500);
   }
 
@@ -105,22 +163,22 @@ Deno.serve(async (req) => {
     }
 
     const text = TEXT_TEMPLATE.replaceAll('{{TOKEN}}', token);
+    const apple = isAppleMailbox(user.email);
+    const useSmtp = apple && smtpConfigured();
 
-    const { error } = await resend.emails.send({
-      from: formatSender(SENDER_EMAIL),
-      to: [user.email],
-      subject: SUBJECT,
-      text,
-      html: '',
-      tags: [{ name: 'category', value: 'password-reset' }],
-    });
-
-    if (error) {
-      throw new Error((error as { message?: string }).message || 'Resend send failed');
+    if (apple && !smtpConfigured()) {
+      console.warn(
+        'send-auth-emails: Apple mailbox without SMTP fallback — Resend may bounce HM08 for ' + user.email,
+      );
     }
 
-    console.log('send-auth-emails: recovery sent to ' + user.email);
-    return json({ success: true });
+    if (useSmtp) {
+      await sendViaSmtp(user.email, SUBJECT, text);
+    } else {
+      await sendViaResend(user.email, SUBJECT, text);
+    }
+
+    return json({ success: true, provider: useSmtp ? 'smtp' : 'resend' });
   } catch (error) {
     console.error('send-auth-emails:', error);
     return json({

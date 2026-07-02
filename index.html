@@ -33142,6 +33142,17 @@
         if (recordErr && isMirsadDebugLog()) console.warn('[PasswordResetRateLimit] record failed', recordErr);
       }
 
+      function isAppleMailboxEmail(email) {
+        const domain = String(email || '').split('@').pop()?.toLowerCase() || '';
+        return domain === 'icloud.com' || domain === 'me.com' || domain === 'mac.com';
+      }
+
+      function passwordResetDeliveryNote(email) {
+        const base = 'تم إرسال رمز من 8 خانات إلى بريدك. إن لم يظهر خلال دقيقة، تحقق من البريد الغير الهام أو الرسائل الترويجية.';
+        if (!isAppleMailboxEmail(email)) return base;
+        return base + ' بريد iCloud قد يتأخر قليلاً إلى ساعة أو أكثر إن لم يكن SMTP احتياطياً مضبوطاً.';
+      }
+
       function formatForgotPasswordError(err) {
         if (err?.isPasswordResetRateLimit) {
           return String(err.message || 'تعذّر إرسال الرمز حالياً. حاول لاحقاً');
@@ -33159,6 +33170,10 @@
           return 'التحقق من البريد غير متاح — شغّل supabase/password-reset-rate-limit.sql في SQL Editor';
         }
         if (status === 500 || /error sending recovery|recovery email|hook|smtp/i.test(errMsg)) {
+          const resetEmail = getPasswordResetEmail() || Sec.normalizeEmail(document.getElementById('forgotEmail')?.value || '');
+          if (isAppleMailboxEmail(resetEmail)) {
+            return 'تعذّر إرسال الرمز إلى بريد iCloud/mac.com/me.com. Apple ترفض الإرسال عبر Resend (خطأ HM08). يحتاج مسؤول المنصة إضافة SMTP احتياطي في Supabase Secrets (SMTP_HOST وSMTP_USER وSMTP_PASSWORD وSMTP_FROM) أو التواصل مع دعم Resend/Apple.';
+          }
           return 'تعذّر إرسال رمز التحقق من الخادم. السبب غالباً من Resend وليس من الواجهة: (1) في Resend المجاني، المرسل onboarding@resend.dev يرسل فقط لبريد حسابك المسجّل في Resend. (2) تأكد أن SENDER_EMAIL في Supabase Secrets يطابق دوميناً مُتحققاً أو onboarding@resend.dev. (3) راجع Supabase → Authentication → Auth Logs و Edge Functions → send-auth-emails.';
         }
         return 'فشل الإرسال: ' + (errMsg || 'حاول مجدداً');
@@ -36614,7 +36629,7 @@
         const msg = document.getElementById('otpSuccessMsg');
         const ok = document.getElementById('otpSuccess');
         if (msg && ok) {
-          msg.textContent = 'تم إرسال رمز من 8 خانات إلى بريدك. إن لم يظهر خلال دقيقة، تحقق من البريد غير الهام أو الرسائل الترويجية.';
+          msg.textContent = passwordResetDeliveryNote(resetEmail);
           ok.classList.add('show');
         }
         setTimeout(() => document.getElementById('resetOtp')?.focus(), 80);
@@ -37054,7 +37069,7 @@
           const okMsg = document.getElementById('otpSuccessMsg');
           if (ok && okMsg) {
             ok.classList.add('show');
-            okMsg.textContent = 'تم إرسال رمز جديد إلى بريدك الإلكتروني. تأكد أيضاً من البريد غير الهام أو الرسائل الترويجية.';
+            okMsg.textContent = passwordResetDeliveryNote(email);
           }
           document.getElementById('resetOtp').value = '';
           document.getElementById('resetOtp')?.focus();
