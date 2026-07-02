@@ -47,7 +47,7 @@ jobs:
             icons/athar-pwa-180-v${VER}.png icons/athar-pwa-maskable-512-v${VER}.png \
             icons/athar-app-icon.svg icons/athar-homescreen-fullbleed.svg \
             icons/athar-homescreen-maskable.svg icons/athar-wordmark-email.svg \
-            icons/athar-wordmark-email-v388.png site/icons/
+            icons/athar-wordmark-email-v388.png icons/athar-logo-v401.png site/icons/
           if [ -d icons/avatars ]; then mkdir -p site/icons/avatars && cp -r icons/avatars/. site/icons/avatars/; fi
           touch site/.nojekyll
           cp icons/athar-pwa-180-v${VER}.png site/apple-touch-icon.png
