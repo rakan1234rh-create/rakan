@@ -1,16 +1,4 @@
-/**
- * يبني قوالب بريد الاستعادة الخفيفة المتوافقة مع مزودي البريد.
- * تشغيل: node scripts/build-email-recovery-template.mjs
- */
-import { mkdirSync, writeFileSync } from 'fs';
-import { dirname, join } from 'path';
-import { fileURLToPath } from 'url';
-
-const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const outDir = join(root, 'supabase/email-templates');
-
-function buildSimple() {
-  return `<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl" xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8">
@@ -83,42 +71,3 @@ function buildSimple() {
 </table>
 </body>
 </html>
-`;
-}
-
-mkdirSync(outDir, { recursive: true });
-
-const simple = buildSimple();
-writeFileSync(join(outDir, 'athar-recovery-simple.html'), simple);
-
-const full = simple
-  .replace('من 8 خانات</p>', 'من 8 خانات:</p>')
-  .replace(
-    '<p class="athar-muted" style="margin:0 0 12px;font-size:13px;line-height:1.65;color:#71717a;">إذا لم تطلب ذلك، تجاهل هذه الرسالة.</p>',
-    `<p style="margin:0 0 24px;text-align:center;">
-              <a class="athar-link" href="{{ .ConfirmationURL }}" style="display:inline-block;color:#18181b;text-decoration:underline;font-size:13px;">فتح رابط احتياطي لإعادة التعيين</a>
-            </p>
-            <p class="athar-muted" style="margin:0 0 12px;font-size:13px;line-height:1.65;color:#71717a;">إذا لم تطلب ذلك، تجاهل هذه الرسالة.</p>`
-  )
-  .replace(
-    `        </tr>
-      </table>
-    </td>
-  </tr>
-</table>
-</body>`,
-    `        </tr>
-        <tr>
-          <td class="athar-card" bgcolor="#ffffff" style="padding:16px 28px 24px;border-top:1px solid #e4e4e7;text-align:center;background-color:#ffffff;background-image:linear-gradient(#ffffff,#ffffff);">
-            <p class="athar-muted" style="margin:0;font-size:11px;color:#71717a;">ATHAR — منصة الرصد المتكاملة</p>
-          </td>
-        </tr>
-      </table>
-    </td>
-  </tr>
-</table>
-</body>`
-  );
-
-writeFileSync(join(outDir, 'athar-recovery.html'), full);
-console.log('Built lightweight password recovery email templates');
