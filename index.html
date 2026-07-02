@@ -1653,6 +1653,14 @@
       font-weight: 700
     }
 
+    #loginScreen .lp-otp-delivery-note {
+      margin: -0.35rem 0 1rem;
+      color: var(--mr-text-3);
+      font-size: 0.8rem;
+      line-height: 1.7;
+      text-align: center
+    }
+
     #loginScreen .lp-input-wrap {
       position: relative
     }
@@ -30985,6 +30993,7 @@
               autocomplete="one-time-code" maxlength="8" placeholder="00000000" dir="ltr"
               oninput="this.value=this.value.replace(/\D/g,'').slice(0,8)">
           </div>
+          <p class="lp-otp-delivery-note">إذا لم يصلك الرمز خلال دقيقة، تحقق من البريد غير الهام أو الرسائل الترويجية ثم استخدم إعادة الإرسال.</p>
           <button type="button" class="lp-btn-primary" id="otpBtn" onclick="handleVerifyResetCode()"><i
               class="fas fa-check"></i> تحقق من الرمز</button>
           <div class="lp-divider">
@@ -36350,7 +36359,7 @@
         const msg = document.getElementById('otpSuccessMsg');
         const ok = document.getElementById('otpSuccess');
         if (msg && ok) {
-          msg.textContent = 'تم إرسال رمز من 8 خانات إلى بريدك. أدخل الرمز للمتابعة.';
+          msg.textContent = 'تم إرسال رمز من 8 خانات إلى بريدك. إن لم يظهر خلال دقيقة، تحقق من البريد غير الهام أو الرسائل الترويجية.';
           ok.classList.add('show');
         }
         setTimeout(() => document.getElementById('resetOtp')?.focus(), 80);
@@ -36790,7 +36799,7 @@
           const okMsg = document.getElementById('otpSuccessMsg');
           if (ok && okMsg) {
             ok.classList.add('show');
-            okMsg.textContent = 'تم إرسال رمز جديد إلى بريدك الإلكتروني.';
+            okMsg.textContent = 'تم إرسال رمز جديد إلى بريدك الإلكتروني. تأكد أيضاً من البريد غير الهام أو الرسائل الترويجية.';
           }
           document.getElementById('resetOtp').value = '';
           document.getElementById('resetOtp')?.focus();
