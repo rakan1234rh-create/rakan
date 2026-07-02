@@ -22117,6 +22117,217 @@
       }
     }
 
+    @media (max-width: 375px) and (pointer: coarse) {
+      html.mr-mobile-ui {
+        --mr-mob-bottom-nav-h: calc(52px + env(safe-area-inset-bottom, 0px));
+        --unified-topbar-h: calc(52px + var(--mr-safe-top, env(safe-area-inset-top, 0px)))
+      }
+
+      html.mr-mobile-ui .topbar.unified-banner,
+      html.mr-mobile-ui #appWrap .topbar.unified-banner {
+        height: calc(52px + var(--mr-safe-top, env(safe-area-inset-top, 0px))) !important;
+        min-height: calc(52px + var(--mr-safe-top, env(safe-area-inset-top, 0px))) !important;
+        max-height: calc(52px + var(--mr-safe-top, env(safe-area-inset-top, 0px))) !important;
+        padding-block-start: calc(7px + var(--mr-safe-top, env(safe-area-inset-top, 0px))) !important;
+        padding-block-end: 7px !important;
+        padding-inline-start: max(8px, var(--mr-safe-left, env(safe-area-inset-left, 0px))) !important;
+        padding-inline-end: max(2px, var(--mr-safe-right, env(safe-area-inset-right, 0px))) !important;
+        gap: 4px !important
+      }
+
+      html.mr-mobile-ui .topbar-brand-zone {
+        flex: 1 1 0 !important;
+        min-width: 0 !important;
+        max-width: calc(100% - 74px) !important;
+        gap: 4px !important
+      }
+
+      html.mr-mobile-ui .topbar-actions-zone {
+        gap: 3px !important
+      }
+
+      html.mr-mobile-ui .brand-area .brand-icon.wefaq-logo-slot {
+        width: 38px !important;
+        height: 38px !important;
+        min-width: 38px !important;
+        min-height: 38px !important
+      }
+
+      html.mr-mobile-ui .brand-area .brand-icon.wefaq-logo-slot .wefaq-app-logo--athar {
+        width: 7.4rem !important;
+        max-width: 7.4rem !important
+      }
+
+      html.mr-mobile-ui .topbar-btn--notif,
+      html.mr-mobile-ui .mr-topbar-user-trigger--icon {
+        width: 32px !important;
+        max-width: 32px !important;
+        height: 38px !important;
+        min-height: 38px !important
+      }
+
+      html.mr-mobile-ui .mr-topbar-user-icon {
+        width: 32px !important;
+        height: 32px !important
+      }
+
+      html.mr-mobile-ui #mobileBottomNav.mobile-bottom-nav,
+      html.mr-mobile-ui #appWrap > .app-shell > #mobileBottomNav.mobile-bottom-nav {
+        min-height: 52px !important;
+        padding-inline: 4px !important;
+        gap: 2px !important
+      }
+
+      html.mr-mobile-ui .mob-nav-item {
+        padding-inline: 2px !important;
+        gap: 1px !important;
+        font-size: 9px !important
+      }
+
+      html.mr-mobile-ui .mob-nav-item > i {
+        width: 26px !important;
+        height: 26px !important;
+        font-size: 13px !important
+      }
+
+      html.mr-mobile-ui .mob-nav-item span {
+        max-width: 52px !important;
+        font-size: 9px !important
+      }
+
+      html.mr-mobile-ui .modal-card {
+        max-width: calc(100vw - 16px) !important;
+        border-radius: 14px !important
+      }
+
+      html.mr-mobile-ui .form-grid {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important
+      }
+
+      html.mr-mobile-ui .modal-footer {
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+        padding: 10px 12px !important
+      }
+
+      html.mr-mobile-ui .modal-footer .btn {
+        flex: 1 1 140px !important;
+        min-width: 0 !important;
+        justify-content: center !important
+      }
+
+      html.mr-profile-page-active.mr-mobile-ui #tab-profile .profile-page-shell {
+        padding-inline: 2px !important;
+        padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 4px) !important
+      }
+
+      html.mr-profile-page-active.mr-mobile-ui .profile-page-topbar {
+        min-height: 34px !important;
+        padding: max(3px, env(safe-area-inset-top, 0px)) 4px 8px !important
+      }
+
+      html.mr-profile-page-active.mr-mobile-ui .profile-page-body {
+        padding: 0 8px calc(env(safe-area-inset-bottom, 0px) + 30px) !important
+      }
+
+      html.mr-profile-page-active.mr-mobile-ui .profile-hero {
+        padding: 10px 8px 12px !important;
+        margin-bottom: 8px !important
+      }
+
+      html.mr-profile-page-active.mr-mobile-ui .profile-hero__av {
+        width: 76px !important;
+        height: 76px !important;
+        font-size: 28px !important
+      }
+
+      html.mr-profile-page-active.mr-mobile-ui .profile-hero__av-stack {
+        gap: 6px !important;
+        margin-bottom: 8px !important
+      }
+
+      html.mr-profile-page-active.mr-mobile-ui .profile-hero__name {
+        font-size: 17px !important;
+        margin-bottom: 4px !important
+      }
+
+      html.mr-profile-page-active.mr-mobile-ui .profile-hero__role {
+        font-size: 11px !important;
+        padding: 3px 10px !important
+      }
+
+      html.mr-profile-page-active.mr-mobile-ui .profile-info-card,
+      html.mr-profile-page-active.mr-mobile-ui .profile-actions-card {
+        border-radius: 12px !important;
+        margin-bottom: 10px !important
+      }
+
+      html.mr-profile-page-active.mr-mobile-ui .profile-info-row,
+      html.mr-profile-page-active.mr-mobile-ui .profile-action-row,
+      html.mr-profile-page-active.mr-mobile-ui .profile-action-btn {
+        min-height: 42px !important;
+        padding: 10px 12px !important;
+        gap: 8px !important
+      }
+
+      html.mr-profile-page-active.mr-mobile-ui .profile-info-row__lbl,
+      html.mr-profile-page-active.mr-mobile-ui .profile-info-row__val,
+      html.mr-profile-page-active.mr-mobile-ui .profile-action-row__lbl,
+      html.mr-profile-page-active.mr-mobile-ui .profile-action-btn {
+        font-size: 12px !important
+      }
+
+      html.mr-profile-page-active.mr-mobile-ui .profile-action-row__lbl {
+        min-width: 0;
+        gap: 8px !important
+      }
+
+      html.mr-profile-page-active.mr-mobile-ui .profile-action-row__lbl i {
+        width: 16px !important;
+        font-size: 13px !important
+      }
+
+      html.mr-profile-page-active.mr-mobile-ui .profile-action-row .theme-toggle {
+        width: 4.4rem !important;
+        height: 2.2rem !important;
+        padding: 0.2rem !important
+      }
+
+      html.mr-profile-page-active.mr-mobile-ui .profile-action-row .theme-toggle__knob,
+      html.mr-profile-page-active.mr-mobile-ui .profile-action-row .theme-toggle__ghost {
+        width: 1.8rem !important;
+        height: 1.8rem !important
+      }
+
+      html.mr-profile-page-active.mr-mobile-ui .profile-action-row .theme-toggle--light .theme-toggle__knob {
+        transform: translateX(2.2rem) !important
+      }
+
+      html.mr-profile-page-active.mr-mobile-ui .profile-action-row .theme-toggle--light .theme-toggle__ghost {
+        transform: translateX(-2.2rem) !important
+      }
+    }
+
+    @media (max-height: 670px) and (max-width: 430px) and (pointer: coarse) {
+      html.mr-profile-page-active.mr-mobile-ui .profile-hero {
+        padding-block: 8px 10px !important
+      }
+
+      html.mr-profile-page-active.mr-mobile-ui .profile-hero__av {
+        width: 68px !important;
+        height: 68px !important;
+        font-size: 25px !important
+      }
+
+      html.mr-profile-page-active.mr-mobile-ui .profile-info-row,
+      html.mr-profile-page-active.mr-mobile-ui .profile-action-row,
+      html.mr-profile-page-active.mr-mobile-ui .profile-action-btn {
+        min-height: 40px !important;
+        padding-block: 9px !important
+      }
+    }
+
     @media (max-width: 992px) and (pointer: coarse) {
       /* معالجة التذاكر — تنسيق الجوال */
       html.mr-mobile-ui #appWrap .main:has(#tab-workflow.active) {
