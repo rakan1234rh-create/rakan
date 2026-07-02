@@ -5,22 +5,31 @@ const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? '';
 const HOOK_SECRET = Deno.env.get('SEND_EMAIL_HOOK_SECRET') ?? '';
 const SENDER_EMAIL = Deno.env.get('SENDER_EMAIL') ?? '';
 
-// Lazy init: constructing Resend with an empty key throws at module load,
-// which would crash the whole function (WORKER_ERROR) on every request.
 const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null;
 
-// Plain-text-first recovery email (Apple 554 5.7.1 HM08):
-// - No images, links, tables, or embedded CSS.
-// - No special Unicode punctuation in the subject (use ASCII hyphen only).
-// - No per-message obfuscation headers.
-const HTML_B64 = 'PCFET0NUWVBFIGh0bWw+CjxodG1sIGxhbmc9ImFyIiBkaXI9InJ0bCI+CjxoZWFkPgogIDxtZXRhIGNoYXJzZXQ9InV0Zi04Ij4KPC9oZWFkPgo8Ym9keSBzdHlsZT0iZm9udC1mYW1pbHk6QXJpYWwsVGFob21hLHNhbnMtc2VyaWY7Zm9udC1zaXplOjE2cHg7Y29sb3I6IzIyMjIyMjtsaW5lLWhlaWdodDoxLjY7bWFyZ2luOjIwcHg7Ij4KICA8cD7Zhdix2K3YqNin2YvYjDwvcD4KICA8cD7Yt9mE2Kgg2KfYs9iq2LnYp9iv2Kkg2YPZhNmF2Kkg2KfZhNmF2LHZiNixINmE2K3Ys9in2KjZgyDZgdmKIEFUSEFSLjwvcD4KICA8cD7YsdmF2LIg2KfZhNiq2K3ZgtmCOiA8c3Ryb25nIGRpcj0ibHRyIj57e1RPS0VOfX08L3N0cm9uZz48L3A+CiAgPHA+2KPYr9iu2YQg2KfZhNix2YXYsiDZgdmKINi12YHYrdipINin2LPYqti52KfYr9ipINmD2YTZhdipINin2YTZhdix2YjYsSDYr9in2K7ZhCDYp9mE2YXZhti12KkuPC9wPgogIDxwPtil2LDYpyDZhNmFINiq2LfZhNioINiw2YTZg9iMINiq2KzYp9mH2YQg2YfYsNmHINin2YTYsdiz2KfZhNipLjwvcD4KPC9ib2R5Pgo8L2h0bWw+Cg==';
-const SUBJECT_B64 = '2LHZhdiyINin2YTYqtit2YLZgiAtIEFUSEFS';
-const TEXT_B64 = '2YXYsdit2KjYp9mL2IwKCti32YTYqCDYp9iz2KrYudin2K/YqSDZg9mE2YXYqSDYp9mE2YXYsdmI2LEg2YTYrdiz2KfYqNmDINmB2YogQVRIQVIuCgrYsdmF2LIg2KfZhNiq2K3ZgtmCOiB7e1RPS0VOfX0KCtij2K/YrtmEINin2YTYsdmF2LIg2YHZiiDYtdmB2K3YqSDYp9iz2KrYudin2K/YqSDZg9mE2YXYqSDYp9mE2YXYsdmI2LEg2K/Yp9iu2YQg2KfZhNmF2YbYtdipLgoK2KXYsNinINmE2YUg2KrYt9mE2Kgg2LDZhNmD2Iwg2KrYrNin2YfZhCDZh9iw2Ycg2KfZhNix2LPYp9mE2Kku';
+// Apple HM08: send ASCII text only (no HTML part at all).
+const SUBJECT = 'ATHAR account verification code';
+const TEXT_TEMPLATE = [
+  'Hello,',
+  '',
+  'Your ATHAR password reset code is: {{TOKEN}}',
+  '',
+  'Enter this code on the password reset page in the app.',
+  '',
+  'If you did not request this email, you can ignore it.',
+].join('\n');
 
-function b64utf8(b64: string): string {
-  const bin = atob(b64);
-  const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
-  return new TextDecoder().decode(bytes);
+function formatSender(raw: string): string {
+  const trimmed = raw.trim();
+  if (!trimmed) return trimmed;
+  if (trimmed.includes('<')) return trimmed;
+  const address = trimmed.match(/[^\s<>]+@[^\s<>]+/)?.[0] ?? trimmed;
+  return `ATHAR <${address}>`;
+}
+
+function senderDomain(raw: string): string | null {
+  const match = raw.match(/@([^>\s]+)/);
+  return match?.[1]?.toLowerCase() ?? null;
 }
 
 type EmailActionType = 'signup' | 'recovery' | 'invite' | 'magiclink' | 'email_change' | 'email';
@@ -48,14 +57,22 @@ function json(body: unknown, status = 200) {
 Deno.serve(async (req) => {
   const url = new URL(req.url);
 
-  // Health probe: reports which secrets are present (booleans only, no values).
   if (req.method === 'GET' && url.searchParams.get('health') === '1') {
+    const domain = senderDomain(SENDER_EMAIL);
     return json({
       ok: true,
       configured: {
         RESEND_API_KEY: Boolean(RESEND_API_KEY),
         SEND_EMAIL_HOOK_SECRET: Boolean(HOOK_SECRET),
         SENDER_EMAIL: Boolean(SENDER_EMAIL),
+      },
+      deliverability: {
+        sender_domain: domain,
+        uses_resend_shared_domain: domain === 'resend.dev',
+        template: 'text-only-ascii',
+        warning: domain === 'resend.dev'
+          ? 'SENDER_EMAIL uses resend.dev. Verify athar-app.online in Resend and set SENDER_EMAIL to no-reply@athar-app.online for Apple/iCloud delivery.'
+          : null,
       },
     });
   }
@@ -87,16 +104,15 @@ Deno.serve(async (req) => {
       throw new Error('Recovery email missing token');
     }
 
-    const html = b64utf8(HTML_B64).replaceAll('{{TOKEN}}', token);
-    const text = b64utf8(TEXT_B64).replaceAll('{{TOKEN}}', token);
-    const subject = b64utf8(SUBJECT_B64);
+    const text = TEXT_TEMPLATE.replaceAll('{{TOKEN}}', token);
 
     const { error } = await resend.emails.send({
-      from: SENDER_EMAIL,
+      from: formatSender(SENDER_EMAIL),
       to: [user.email],
-      subject,
+      subject: SUBJECT,
       text,
-      html,
+      html: '',
+      tags: [{ name: 'category', value: 'password-reset' }],
     });
 
     if (error) {
