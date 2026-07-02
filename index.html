@@ -32783,7 +32783,8 @@
       /** Web Push — المفتاح العام VAPID (الخاص في Supabase Secrets فقط) */
       const ATHAR_VAPID_PUBLIC_KEY = 'BAAE2sxYeIGbYADV7uimLzIFB_en9SBWQ3a4-LBULuOIVm40YI7YfjXL2Fddttr1L1tHFkoaiPzmZankfUk_2jc';
       const ATHAR_VAPID_STORAGE_KEY = 'athar_vapid_public_key';
-      const ATHAR_SW_URL = './sw.js?v=9';
+      const ATHAR_WEB_PUSH_SYNC_KEY = 'athar_web_push_last_sync';
+      const ATHAR_SW_URL = './sw.js?v=10';
 
       /** رابط النشر — روابط استعادة كلمة المرور من file:// أو localhost */
       const ATHAR_PUBLIC_ORIGIN = 'https://athar-app.online';
@@ -58514,6 +58515,7 @@
       async function getAtharSwRegistration() {
         if (!('serviceWorker' in navigator)) return null;
         const reg = await navigator.serviceWorker.register(ATHAR_SW_URL, { scope: './' });
+        try { await reg.update(); } catch (_) { /* noop */ }
         await navigator.serviceWorker.ready;
         return reg;
       }
@@ -58678,10 +58680,11 @@
           btn.hidden = true;
           return;
         }
-        const on = Notification.permission === 'granted';
+        const perm = Notification.permission;
+        const on = perm === 'granted';
         btn.hidden = on;
         if (on) return;
-        label.textContent = 'تفعيل تنبيهات الجوال';
+        label.textContent = perm === 'denied' ? 'الإشعارات موقوفة من إعدادات الجهاز' : 'تفعيل تنبيهات الجوال';
         btn.setAttribute('aria-pressed', 'false');
       }
 
@@ -58689,8 +58692,7 @@
         let stored = '';
         try { stored = localStorage.getItem(ATHAR_VAPID_STORAGE_KEY) || ''; } catch (_) {}
         const mustRefresh = !!(
-          opts.welcomeNotify
-          || opts.forceResubscribe
+          opts.forceResubscribe
           || (stored && stored !== ATHAR_VAPID_PUBLIC_KEY)
         );
         if (mustRefresh) {
@@ -58714,12 +58716,16 @@
       async function ensureAtharWebPushSubscribed(opts = {}) {
         if (!isWebPushSupported() || !state.currentUser) return false;
         try {
-          const perm = await Notification.requestPermission();
+          let perm = Notification.permission;
+          if (perm === 'default' && opts.requestPermission) {
+            perm = await Notification.requestPermission();
+          }
           if (perm !== 'granted') return false;
           const reg = await getAtharSwRegistration();
           if (!reg?.pushManager) throw new Error('PushManager غير متاح');
           const sub = await refreshPushSubscription(reg, opts);
           await savePushSubscriptionToDb(sub);
+          try { localStorage.setItem(ATHAR_WEB_PUSH_SYNC_KEY, String(Date.now())); } catch (_) {}
           syncWebPushMenuLabel();
           if (opts.welcomeNotify) {
             const shown = await showPushWelcomeNotification();
@@ -58731,6 +58737,17 @@
           if (isMirsadDebugLog()) console.error('[webPush] subscribe', e);
           throw e;
         }
+      }
+
+      async function syncAtharWebPushSubscription(opts = {}) {
+        if (!isWebPushSupported() || !state.currentUser || Notification.permission !== 'granted') return false;
+        const minIntervalMs = Number(opts.minIntervalMs) || 0;
+        if (minIntervalMs > 0) {
+          let last = 0;
+          try { last = Number(localStorage.getItem(ATHAR_WEB_PUSH_SYNC_KEY) || 0); } catch (_) {}
+          if (last && Date.now() - last < minIntervalMs) return true;
+        }
+        return ensureAtharWebPushSubscribed({ silent: true });
       }
 
       async function disableAtharWebPush(opts = {}) {
@@ -58757,30 +58774,47 @@
       async function initAtharWebPush(opts = {}) {
         syncWebPushMenuLabel();
         if (!isWebPushSupported() || !state.currentUser) return;
-        
-        // طلب الإشعارات عند كل تسجيل دخول وعلى الكمبيوتر أيضاً
+
+        const perm = Notification.permission;
+        if (perm === 'granted') {
+          try { await syncAtharWebPushSubscription({ minIntervalMs: 6 * 60 * 60 * 1000 }); }
+          catch (e) { if (isMirsadDebugLog()) console.warn('[webPush] background sync', e); }
+          return;
+        }
         if (!opts.promptIfNeeded) return;
-        
-        // طلب الإشعارات دائماً عند تسجيل الدخول (بغض النظر عن حالة الإذن الحالية)
-        // إذا كانت granted، سيتم إعادة الاشتراك فقط
-        // إذا كانت default، سيطلب الإذن
-        // إذا كانت denied، لن يطلبها المتصفح
-        
-        const isTeamLead = webPushTeamLeadRole();
-        const isMob = document.documentElement.classList.contains('mr-mobile-ui');
-        
-        // طلب الإشعارات على الجوال والكمبيوتر (إزالة شرط !isMob && !isTeamLead)
+        if (perm === 'denied') {
+          showToast('الإشعارات موقوفة من إعدادات الجهاز أو المتصفح. فعّلها من الإعدادات ثم افتح التطبيق من جديد.', 'warning');
+          return;
+        }
+
         const ok = await confirmDialog(
           'نرجو التكرم بتفعيل الإشعارات لضمان بقائكم على اطلاع دائم بكافة التنبيهات الموجهة لكم من خلال النظام',
-          { type: 'info', title: 'إعدادات التنبيهات', okText: 'تفعيل', hideCancel: true }
+          { type: 'info', title: 'إعدادات التنبيهات', okText: 'تفعيل', hideCancel: false }
         );
         if (!ok) return;
         try {
-          const enabled = await ensureAtharWebPushSubscribed({ welcomeNotify: true });
+          const enabled = await ensureAtharWebPushSubscribed({ requestPermission: true, welcomeNotify: true });
           if (!enabled) showToast('يُحتاج إذن الإشعارات من إعدادات الجوال — فعّلها ثم أعد فتح التطبيق', 'warning');
         } catch (e) {
           showToast('فشل التفعيل: ' + formatPushError(e), 'error');
         }
+      }
+
+      function scheduleAtharWebPushResync(reason) {
+        if (!isWebPushSupported() || !state.currentUser || Notification.permission !== 'granted') return;
+        setTimeout(() => {
+          syncAtharWebPushSubscription({ minIntervalMs: 6 * 60 * 60 * 1000 })
+            .catch(e => { if (isMirsadDebugLog()) console.warn('[webPush] resync ' + reason, e); });
+        }, 800);
+      }
+
+      if (typeof document !== 'undefined') {
+        document.addEventListener('visibilitychange', () => {
+          if (!document.hidden) scheduleAtharWebPushResync('visible');
+        });
+      }
+      if (typeof window !== 'undefined') {
+        window.addEventListener('online', () => scheduleAtharWebPushResync('online'));
       }
 
       function openSettingsFromUserMenu(event) {
@@ -58831,9 +58865,16 @@
           showToast('المتصفح لا يدعم تنبيهات الجوال على هذا الجهاز', 'warning');
           return;
         }
-        if (Notification.permission === 'granted') return;
+        if (Notification.permission === 'granted') {
+          try {
+            await ensureAtharWebPushSubscribed({ forceResubscribe: true, welcomeNotify: true });
+          } catch (e) {
+            showToast('فشل إعادة تفعيل التنبيهات: ' + formatPushError(e), 'error');
+          }
+          return;
+        }
         try {
-          const enabled = await ensureAtharWebPushSubscribed({ welcomeNotify: true });
+          const enabled = await ensureAtharWebPushSubscribed({ requestPermission: true, welcomeNotify: true });
           if (!enabled) showToast('يُحتاج إذن الإشعارات من إعدادات الجوال/المتصفح', 'warning');
         } catch (e) {
           showToast('فشل التفعيل: ' + formatPushError(e), 'error');
