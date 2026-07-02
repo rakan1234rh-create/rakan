@@ -32391,7 +32391,7 @@
                 </select></div>
               <div class="form-group" id="um-pwGroup"><label class="form-label">كلمة المرور <span
                     class="required-mark">*</span></label><input type="password" id="um-password" class="form-input"
-                  placeholder="6 أحرف على الأقل">
+                  minlength="8" placeholder="8 أحرف على الأقل">
                 <div style="font-size:11px;color:var(--text3);margin-top:4px"><i class="fas fa-info-circle"></i> سيُرسَل
                   للمستخدم رابط تأكيد البريد.</div>
               </div>
@@ -44239,7 +44239,7 @@
         }
         const dataRows = parsed.slice(1);
         const ok = await confirmDialog(
-          `سيتم استيراد ${dataRows.length} صفاً. الصفوف المكررة (رقم وظيفي أو بريد موجود) تُتخطى. كلمة المرور مطلوبة في العمود password (6 أحرف+). متابعة؟`,
+          `سيتم استيراد ${dataRows.length} صفاً. الصفوف المكررة (رقم وظيفي أو بريد موجود) تُتخطى. كلمة المرور مطلوبة في العمود password (8 أحرف+). متابعة؟`,
           { title: 'استيراد المستخدمين', okText: 'استيراد' }
         );
         if (!ok) return;
@@ -44263,7 +44263,7 @@
           if (!role || !ROLE_LABELS[role]) { failed++; errors.push(`سطر ${lineNo}: دور غير معروف (${get('role')})`); continue; }
           const needsBranch = role === 'employee' || role === 'branch_manager';
           if (needsBranch && !branchId) { failed++; errors.push(`سطر ${lineNo}: فرع غير موجود (${get('branch_name') || 'فارغ'})`); continue; }
-          if (!password || password.length < 6) { failed++; errors.push(`سطر ${lineNo}: كلمة مرور 6+ مطلوبة`); continue; }
+          if (!password || password.length < 8) { failed++; errors.push(`سطر ${lineNo}: كلمة مرور 8+ مطلوبة`); continue; }
           if (state.users.some(u => u.employee_number === empNum && isActiveUser(u))) {
             skipped++; continue;
           }
@@ -44536,7 +44536,7 @@
         if (phone && !Sec.isPhone(phone)) return showToast('رقم جوال غير صحيح (مثل 05XXXXXXXX أو 5XXXXXXXX)', 'error');
         const needsBranch = role === 'employee' || role === 'branch_manager';
         if (needsBranch && !branchId) return showToast('اختر الفرع لهذا الدور', 'error');
-        if (!editId && (!password || password.length < 6)) return showToast('كلمة المرور 6 أحرف على الأقل', 'error');
+        if (!editId && (!password || password.length < 8)) return showToast('كلمة المرور 8 أحرف على الأقل', 'error');
 
         // التحقق من عدم تكرار الرقم الوظيفي/الإيميل
         if (!editId) {
@@ -44709,10 +44709,17 @@
 
         if (!res.ok) {
           const msg = data.error || data.message || `فشل العملية (${res.status})`;
+          const lowerMsg = String(msg || '').toLowerCase();
           if (res.status === 401) throw new Error('انتهت الجلسة، يرجى تسجيل الدخول من جديد');
           if (res.status === 403) throw new Error('ليس لديك صلاحية لهذه العملية');
-          if (msg.toLowerCase && msg.toLowerCase().includes('already')) {
+          if (lowerMsg.includes('already') || lowerMsg.includes('already registered')) {
             throw new Error('هذا البريد الإلكتروني مسجل مسبقاً في نظام المصادقة');
+          }
+          if (res.status === 400 && /password|weak_password|length|characters?/i.test(String(msg || ''))) {
+            throw new Error('كلمة المرور لا تطابق سياسة Supabase — استخدم 8 أحرف على الأقل.');
+          }
+          if (res.status === 400 && /email|invalid.*user/i.test(String(msg || ''))) {
+            throw new Error('تعذّر إنشاء المستخدم: تحقق من صحة البريد الإلكتروني وأنه غير مستخدم سابقاً.');
           }
           throw new Error(msg);
         }
