@@ -21780,16 +21780,59 @@
         font-size: 16px !important
       }
 
+      .confirm-overlay {
+        align-items: flex-start !important;
+        padding: max(10px, env(safe-area-inset-top, 0px)) 12px max(10px, env(safe-area-inset-bottom, 0px)) !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch
+      }
+
       .confirm-box {
-        padding: 22px 18px 16px
+        width: min(100%, 380px) !important;
+        max-height: calc(100dvh - max(20px, env(safe-area-inset-top, 0px)) - max(20px, env(safe-area-inset-bottom, 0px))) !important;
+        overflow-y: auto !important;
+        padding: 18px 16px 12px !important;
+        margin: auto 0 !important;
+        display: flex !important;
+        flex-direction: column !important
+      }
+
+      .confirm-icon {
+        width: 44px !important;
+        height: 44px !important;
+        margin-bottom: 10px !important;
+        font-size: 22px !important;
+        flex: 0 0 auto !important
+      }
+
+      .confirm-title {
+        font-size: 16px !important;
+        margin-bottom: 6px !important;
+        flex: 0 0 auto !important
+      }
+
+      .confirm-msg {
+        font-size: 13px !important;
+        line-height: 1.45 !important;
+        margin-bottom: 12px !important;
+        flex: 1 1 auto !important;
+        min-height: 0 !important
       }
 
       .confirm-actions {
-        flex-direction: column-reverse
+        flex: 0 0 auto !important;
+        flex-direction: column !important;
+        gap: 8px !important;
+        position: sticky !important;
+        bottom: 0 !important;
+        padding-top: 8px !important;
+        background: var(--surface) !important
       }
 
       .confirm-btn {
-        width: 100%
+        width: 100% !important;
+        min-height: 40px !important;
+        padding: 9px 14px !important
       }
 
       .toast-container {
@@ -58705,13 +58748,36 @@
         return payload;
       }
 
+      function getWebPushUnsupportedReason() {
+        if (typeof window === 'undefined') return 'المتصفح لا يدعم إشعارات الويب على هذا الجهاز.';
+        if (!window.isSecureContext) return 'الإشعارات تحتاج فتح المنصة عبر رابط آمن https.';
+        if (!('Notification' in window)) return 'هذا المتصفح لا يدعم إشعارات الويب.';
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+          const ua = navigator.userAgent || '';
+          if (/iPhone|iPad|iPod/i.test(ua)) {
+            return 'هذا الإصدار من iOS لا يدعم إشعارات الويب. iPhone 6 غالباً لا يدعمها؛ استخدم جهازاً أحدث أو افتح التطبيق من جهاز يدعم iOS 16.4+ بعد تثبيته على الشاشة الرئيسية.';
+          }
+          return 'هذا المتصفح لا يدعم تنبيهات خارج التطبيق.';
+        }
+        if (!ATHAR_VAPID_PUBLIC_KEY) return 'مفتاح إشعارات Web Push غير مضبوط.';
+        return '';
+      }
+
       function isWebPushSupported() {
-        return !!(typeof window !== 'undefined'
-          && window.isSecureContext
-          && 'serviceWorker' in navigator
-          && 'PushManager' in window
-          && 'Notification' in window
-          && ATHAR_VAPID_PUBLIC_KEY);
+        return !getWebPushUnsupportedReason();
+      }
+
+      function maybeShowWebPushUnsupportedNotice() {
+        const reason = getWebPushUnsupportedReason();
+        if (!reason) return false;
+        try {
+          const key = 'athar_web_push_unsupported_notice';
+          const last = Number(sessionStorage.getItem(key) || 0);
+          if (last && Date.now() - last < 6 * 60 * 60 * 1000) return true;
+          sessionStorage.setItem(key, String(Date.now()));
+        } catch (_) { /* noop */ }
+        showToast(reason, 'warning');
+        return true;
       }
 
       function urlBase64ToUint8Array(base64String) {
@@ -58984,7 +59050,11 @@
 
       async function initAtharWebPush(opts = {}) {
         syncWebPushMenuLabel();
-        if (!isWebPushSupported() || !state.currentUser) return;
+        if (!state.currentUser) return;
+        if (!isWebPushSupported()) {
+          if (opts.promptIfNeeded) maybeShowWebPushUnsupportedNotice();
+          return;
+        }
 
         const perm = Notification.permission;
         if (perm === 'granted') {
@@ -59073,7 +59143,7 @@
           event.preventDefault();
         }
         if (!isWebPushSupported()) {
-          showToast('المتصفح لا يدعم تنبيهات الجوال على هذا الجهاز', 'warning');
+          showToast(getWebPushUnsupportedReason() || 'المتصفح لا يدعم تنبيهات الجوال على هذا الجهاز', 'warning');
           return;
         }
         if (Notification.permission === 'granted') {
