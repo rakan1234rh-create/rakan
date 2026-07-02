@@ -9,6 +9,23 @@ import { fileURLToPath } from 'url';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const outDir = join(root, 'supabase/email-templates');
 
+function buildPlain() {
+  return `<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+</head>
+<body style="font-family:Arial,Tahoma,sans-serif;font-size:16px;color:#222222;line-height:1.6;margin:20px;">
+  <p>مرحباً،</p>
+  <p>طلب استعادة كلمة المرور لحسابك في ATHAR.</p>
+  <p>رمز التحقق: <strong dir="ltr">{{TOKEN}}</strong></p>
+  <p>أدخل الرمز في صفحة استعادة كلمة المرور داخل المنصة.</p>
+  <p>إذا لم تطلب ذلك، تجاهل هذه الرسالة.</p>
+</body>
+</html>
+`;
+}
+
 function buildSimple() {
   return `<!DOCTYPE html>
 <html lang="ar" dir="rtl" xmlns="http://www.w3.org/1999/xhtml">
@@ -87,6 +104,9 @@ function buildSimple() {
 }
 
 mkdirSync(outDir, { recursive: true });
+
+const plain = buildPlain();
+writeFileSync(join(outDir, 'athar-recovery-plain.html'), plain);
 
 const simple = buildSimple();
 writeFileSync(join(outDir, 'athar-recovery-simple.html'), simple);
