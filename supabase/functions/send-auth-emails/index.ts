@@ -93,20 +93,58 @@ async function sendViaBrevo(to: string, subject: string, text: string): Promise<
     }),
   });
 
-  const body = await response.json().catch(() => ({})) as { message?: string; code?: string };
+  const raw = await response.text();
+  let body: { message?: string; code?: string } = {};
+  try {
+    body = JSON.parse(raw) as { message?: string; code?: string };
+  } catch {
+    body = { message: raw.slice(0, 500) };
+  }
 
   if (!response.ok) {
-    const detail = body.message || body.code || response.statusText;
-    if (/sender|not valid|not verified|domain/i.test(detail)) {
+    const detail = body.message || body.code || raw.slice(0, 300) || response.statusText;
+    console.error('send-auth-emails: brevo error status=' + response.status + ' body=' + raw.slice(0, 500));
+    if (/sender|not valid|not verified|domain|from/i.test(detail)) {
       throw new Error(
         'Brevo rejected sender ' + sender.email +
-        '. Verify athar-app.online and no-reply@athar-app.online in Brevo. Details: ' + detail,
+        '. In Brevo add no-reply@athar-app.online under Senders (verified). Details: ' + detail,
       );
     }
-    throw new Error('Brevo API send failed: ' + detail);
+    if (/unauthorized|api.?key|authentication|401|403/i.test(detail + response.status)) {
+      throw new Error('Brevo API key invalid or missing permissions. Use xkeysib- key with Send emails permission. Details: ' + detail);
+    }
+    throw new Error('Brevo API send failed (' + response.status + '): ' + detail);
   }
 
   console.log('send-auth-emails: brevo sent to ' + to);
+}
+
+async function pingBrevo(): Promise<{ ok: boolean; detail: unknown }> {
+  const response = await fetch('https://api.brevo.com/v3/account', {
+    headers: { accept: 'application/json', 'api-key': BREVO_API_KEY },
+  });
+  const raw = await response.text();
+  let body: unknown = raw;
+  try {
+    body = JSON.parse(raw);
+  } catch {
+    // keep raw text
+  }
+  return { ok: response.ok, detail: { status: response.status, body } };
+}
+
+async function brevoGet(path: string): Promise<{ ok: boolean; status: number; body: unknown }> {
+  const response = await fetch('https://api.brevo.com/v3' + path, {
+    headers: { accept: 'application/json', 'api-key': BREVO_API_KEY },
+  });
+  const raw = await response.text();
+  let body: unknown = raw;
+  try {
+    body = JSON.parse(raw);
+  } catch {
+    // keep raw text
+  }
+  return { ok: response.ok, status: response.status, body };
 }
 
 async function sendViaResend(to: string, subject: string, text: string): Promise<void> {
@@ -134,6 +172,29 @@ Deno.serve(async (req) => {
   if (req.method === 'GET' && url.searchParams.get('health') === '1') {
     const domain = senderDomain(SENDER_EMAIL);
     const brevoReady = brevoConfigured();
+    const brevoPing = brevoReady && url.searchParams.get('brevo_ping') === '1'
+      ? await pingBrevo()
+      : null;
+    const brevoDiag = brevoReady && url.searchParams.get('brevo_diag') === '1'
+      ? {
+        senders: await brevoGet('/senders'),
+        domains: await brevoGet('/senders/domains'),
+        test_send: url.searchParams.get('test_to')
+          ? await (async () => {
+            try {
+              await sendViaBrevo(
+                url.searchParams.get('test_to')!,
+                'ATHAR Brevo test',
+                'If you receive this, Brevo delivery works.',
+              );
+              return { ok: true };
+            } catch (error) {
+              return { ok: false, error: error instanceof Error ? error.message : String(error) };
+            }
+          })()
+          : null,
+      }
+      : null;
     return json({
       ok: true,
       configured: {
@@ -141,7 +202,7 @@ Deno.serve(async (req) => {
         SEND_EMAIL_HOOK_SECRET: Boolean(HOOK_SECRET),
         SENDER_EMAIL: Boolean(SENDER_EMAIL),
         BREVO_API_KEY: Boolean(BREVO_API_KEY),
-        BREVO_FROM: Boolean(BREVO_FROM),
+        BREVO_FROM: BREVO_FROM,
         BREVO_FALLBACK: brevoReady,
       },
       deliverability: {
@@ -153,8 +214,12 @@ Deno.serve(async (req) => {
         note: 'Supabase Edge Functions cannot use SMTP ports 25/465/587. Use BREVO_API_KEY (HTTP API), not SMTP.',
         warning: !brevoReady
           ? 'Apple/iCloud may bounce on Resend (HM08). Add BREVO_API_KEY and BREVO_FROM in Supabase Secrets.'
+          : !RESEND_API_KEY
+          ? 'RESEND_API_KEY missing — Gmail/non-Apple emails will fail. Re-add RESEND_API_KEY secret.'
           : null,
       },
+      brevo_ping: brevoPing,
+      brevo_diag: brevoDiag,
     });
   }
 
