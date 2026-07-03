@@ -33169,12 +33169,15 @@
         if (errMsg.includes('check_platform_email_for_reset') || errMsg.includes('check_password_reset_rate_limit')) {
           return 'التحقق من البريد غير متاح — شغّل supabase/password-reset-rate-limit.sql في SQL Editor';
         }
-        if (status === 500 || /error sending recovery|recovery email|hook|smtp/i.test(errMsg)) {
+        if (status === 500 || /error sending recovery|recovery email|hook|smtp|brevo|sender address/i.test(errMsg)) {
           const resetEmail = getPasswordResetEmail() || Sec.normalizeEmail(document.getElementById('forgotEmail')?.value || '');
           if (isAppleMailboxEmail(resetEmail)) {
-            return 'تعذّر إرسال الرمز إلى بريد iCloud/mac.com/me.com. Apple ترفض الإرسال عبر Resend (خطأ HM08). يحتاج مسؤول المنصة إضافة SMTP احتياطي في Supabase Secrets (SMTP_HOST وSMTP_USER وSMTP_PASSWORD وSMTP_FROM) أو التواصل مع دعم Resend/Apple.';
+            if (/brevo|sender address|not verified|not valid/i.test(errMsg)) {
+              return 'تعذّر إرسال الرمز عبر Brevo SMTP. السبب الأرجح: المرسل no-reply@athar-app.online غير موثّق في Brevo. ادخل Brevo → Senders, Domains & Dedicated IPs → Domains → أضف athar-app.online وانسخ سجلات DNS (SPF/DKIM) ثم اضغط Verify. بعدها أعد المحاولة.';
+            }
+            return 'تعذّر إرسال الرمز إلى بريد iCloud/mac.com/me.com. تحقق من Brevo → Transactional → Logs وSupabase → Edge Functions → send-auth-emails. إن لم يكن SMTP مضبوطاً، أضف SMTP_HOST وSMTP_USER وSMTP_PASSWORD وSMTP_FROM في Supabase Secrets.';
           }
-          return 'تعذّر إرسال رمز التحقق من الخادم. السبب غالباً من Resend وليس من الواجهة: (1) في Resend المجاني، المرسل onboarding@resend.dev يرسل فقط لبريد حسابك المسجّل في Resend. (2) تأكد أن SENDER_EMAIL في Supabase Secrets يطابق دوميناً مُتحققاً أو onboarding@resend.dev. (3) راجع Supabase → Authentication → Auth Logs و Edge Functions → send-auth-emails.';
+          return 'تعذّر إرسال رمز التحقق من الخادم. تحقق من SENDER_EMAIL في Supabase Secrets (دومين مُتحقق في Resend) وEdge Functions → send-auth-emails.';
         }
         return 'فشل الإرسال: ' + (errMsg || 'حاول مجدداً');
       }

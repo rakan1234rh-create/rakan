@@ -71,22 +71,45 @@ function json(body: unknown, status = 200) {
   });
 }
 
+function smtpErrorMessage(error: unknown): string {
+  const err = error as { message?: string; response?: string; responseCode?: number };
+  const parts = [err.message, err.response].filter(Boolean).map(String);
+  const combined = parts.join(' — ').trim();
+  if (!combined) return 'SMTP send failed';
+
+  if (/sender|from|not valid|not verified|authentication domain|domain not/i.test(combined)) {
+    return (
+      'Brevo rejected the sender address (' +
+      SMTP_FROM +
+      '). In Brevo → Senders, Domains & Dedicated IPs, verify no-reply@athar-app.online or authenticate athar-app.online with DNS. Details: ' +
+      combined
+    );
+  }
+
+  return 'SMTP send failed: ' + combined;
+}
+
 async function sendViaSmtp(to: string, subject: string, text: string): Promise<void> {
   const transport = nodemailer.createTransport({
     host: SMTP_HOST,
     port: SMTP_PORT,
     secure: SMTP_PORT === 465,
+    requireTLS: SMTP_PORT === 587,
     auth: { user: SMTP_USER, pass: SMTP_PASS },
   });
 
-  const info = await transport.sendMail({
-    from: formatSender(SMTP_FROM),
-    to,
-    subject,
-    text,
-  });
+  try {
+    const info = await transport.sendMail({
+      from: formatSender(SMTP_FROM),
+      to,
+      subject,
+      text,
+    });
 
-  console.log('send-auth-emails: smtp sent id=' + String(info.messageId ?? '') + ' to ' + to);
+    console.log('send-auth-emails: smtp sent id=' + String(info.messageId ?? '') + ' to ' + to);
+  } catch (error) {
+    throw new Error(smtpErrorMessage(error));
+  }
 }
 
 async function sendViaResend(to: string, subject: string, text: string): Promise<void> {
