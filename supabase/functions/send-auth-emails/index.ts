@@ -11,17 +11,26 @@ const BREVO_FROM = Deno.env.get('BREVO_FROM') ?? Deno.env.get('SMTP_FROM') ?? SE
 
 const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null;
 
+// Arabic recovery template (base64 UTF-8) — see supabase/email-templates/athar-recovery-simple.html
+const HTML_B64 = 'PCFET0NUWVBFIGh0bWw+CjxodG1sIGxhbmc9ImFyIiBkaXI9InJ0bCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGh0bWwiPgo8aGVhZD4KICA8bWV0YSBjaGFyc2V0PSJ1dGYtOCI+CiAgPG1ldGEgbmFtZT0idmlld3BvcnQiIGNvbnRlbnQ9IndpZHRoPWRldmljZS13aWR0aCwgaW5pdGlhbC1zY2FsZT0xLjAiPgogIDxtZXRhIG5hbWU9ImNvbG9yLXNjaGVtZSIgY29udGVudD0ibGlnaHQgb25seSI+CiAgPG1ldGEgbmFtZT0ic3VwcG9ydGVkLWNvbG9yLXNjaGVtZXMiIGNvbnRlbnQ9ImxpZ2h0Ij4KICA8c3R5bGU+CiAgICA6cm9vdCB7IGNvbG9yLXNjaGVtZTogbGlnaHQgb25seTsgc3VwcG9ydGVkLWNvbG9yLXNjaGVtZXM6IGxpZ2h0OyB9CiAgICBib2R5LCB0YWJsZSwgdGQsIHAsIGRpdiwgc3BhbiwgYSB7IGNvbG9yLXNjaGVtZTogbGlnaHQgb25seTsgfQogICAgLmF0aGFyLW91dGVyIHsgYmFja2dyb3VuZC1jb2xvcjogI2Y1ZjVmNSAhaW1wb3J0YW50OyBiYWNrZ3JvdW5kLWltYWdlOiBsaW5lYXItZ3JhZGllbnQoI2Y1ZjVmNSwgI2Y1ZjVmNSkgIWltcG9ydGFudDsgfQogICAgLmF0aGFyLWNhcmQgeyBiYWNrZ3JvdW5kLWNvbG9yOiAjZmZmZmZmICFpbXBvcnRhbnQ7IGJhY2tncm91bmQtaW1hZ2U6IGxpbmVhci1ncmFkaWVudCgjZmZmZmZmLCAjZmZmZmZmKSAhaW1wb3J0YW50OyB9CiAgICAuYXRoYXItYnJhbmQsIC5hdGhhci10aXRsZSwgLmF0aGFyLWxpbmsgeyBjb2xvcjogIzE4MTgxYiAhaW1wb3J0YW50OyB9CiAgICAuYXRoYXItYm9keSB7IGNvbG9yOiAjM2YzZjQ2ICFpbXBvcnRhbnQ7IH0KICAgIC5hdGhhci1tdXRlZCB7IGNvbG9yOiAjNzE3MTdhICFpbXBvcnRhbnQ7IH0KICAgIC5hdGhhci10b2tlbiB7IGJhY2tncm91bmQtY29sb3I6ICNmYWZhZmEgIWltcG9ydGFudDsgYmFja2dyb3VuZC1pbWFnZTogbGluZWFyLWdyYWRpZW50KCNmYWZhZmEsICNmYWZhZmEpICFpbXBvcnRhbnQ7IGNvbG9yOiAjMTgxODFiICFpbXBvcnRhbnQ7IH0KICAgIEBtZWRpYSAocHJlZmVycy1jb2xvci1zY2hlbWU6IGRhcmspIHsKICAgICAgLmF0aGFyLW91dGVyIHsgYmFja2dyb3VuZC1jb2xvcjogI2Y1ZjVmNSAhaW1wb3J0YW50OyBiYWNrZ3JvdW5kLWltYWdlOiBsaW5lYXItZ3JhZGllbnQoI2Y1ZjVmNSwgI2Y1ZjVmNSkgIWltcG9ydGFudDsgfQogICAgICAuYXRoYXItY2FyZCB7IGJhY2tncm91bmQtY29sb3I6ICNmZmZmZmYgIWltcG9ydGFudDsgYmFja2dyb3VuZC1pbWFnZTogbGluZWFyLWdyYWRpZW50KCNmZmZmZmYsICNmZmZmZmYpICFpbXBvcnRhbnQ7IH0KICAgICAgLmF0aGFyLWJyYW5kLCAuYXRoYXItdGl0bGUsIC5hdGhhci1saW5rIHsgY29sb3I6ICMxODE4MWIgIWltcG9ydGFudDsgfQogICAgICAuYXRoYXItYm9keSB7IGNvbG9yOiAjM2YzZjQ2ICFpbXBvcnRhbnQ7IH0KICAgICAgLmF0aGFyLW11dGVkIHsgY29sb3I6ICM3MTcxN2EgIWltcG9ydGFudDsgfQogICAgICAuYXRoYXItdG9rZW4geyBiYWNrZ3JvdW5kLWNvbG9yOiAjZmFmYWZhICFpbXBvcnRhbnQ7IGNvbG9yOiAjMTgxODFiICFpbXBvcnRhbnQ7IH0KICAgIH0KICAgIHUgKyAuYm9keSAuYXRoYXItb3V0ZXIgeyBiYWNrZ3JvdW5kLWNvbG9yOiAjZjVmNWY1ICFwb3J0YW50OyBiYWNrZ3JvdW5kLWltYWdlOiBsaW5lYXItZ3JhZGllbnQoI2Y1ZjVmNSwgI2Y1ZjVmNSkgIWltcG9ydGFudDsgfQogICAgdSArIC5ib2R5IC5hdGhhci1jYXJkIHsgYmFja2dyb3VuZC1jb2xvcjogI2ZmZmZmZiAhaW1wb3J0YW50OyBiYWNrZ3JvdW5kLWltYWdlOiBsaW5lYXItZ3JhZGllbnQoI2ZmZmZmZiwjZmZmZmZmKSAhaW1wb3J0YW50OyB9CiAgICB1ICsgLmJvZHkgLmF0aGFyLWJyYW5kLCB1ICsgLmJvZHkgLmF0aGFyLXRpdGxlLCB1ICsgLmJvZHkgLmF0aGFyLWxpbmsgeyBjb2xvcjogIzE4MTgxYiAhaW1wb3J0YW50OyB9CiAgICB1ICsgLmJvZHkgLmF0aGFyLWJvZHkgeyBjb2xvcjogIzNmM2Y0NiAhaW1wb3J0YW50OyB9CiAgICB1ICsgLmJvZHkgLmF0aGFyLW11dGVkIHsgY29sb3I6ICM3MTcxN2EgIWltcG9ydGFudDsgfQogICAgdSArIC5ib2R5IC5hdGhhci10b2tlbiB7IGJhY2tncm91bmQtY29sb3I6ICNmYWZhZmEgIWltcG9ydGFudDsgY29sb3I6ICMxODE4MWIgIWltcG9ydGFudDsgfQogICAgW2RhdGEtb2dzY10gLmF0aGFyLW91dGVyIHsgYmFja2dyb3VuZC1jb2xvcjogI2Y1ZjVmNSAhaW1wb3J0YW50OyB9CiAgICBbZGF0YS1vZ3NjXSAuYXRoYXItY2FyZCB7IGJhY2tncm91bmQtY29sb3I6ICNmZmZmZmYgIWltcG9ydGFudDsgfQogICAgW2RhdGEtb2dzY10gLmF0aGFyLWJyYW5kLCBbZGF0YS1vZ3NjXSAuYXRoYXItdGl0bGUsIFtkYXRhLW9nc2NdIC5hdGhhci1saW5rIHsgY29sb3I6ICMxODE4MWIgIWltcG9ydGFudDsgfQogICAgW2RhdGEtb2dzY10gLmF0aGFyLWJvZHkgeyBjb2xvcjogIzNmM2Y0NiAhaW1wb3J0YW50OyB9CiAgICBbZGF0YS1vZ3NjXSAuYXRoYXItbXV0ZWQgeyBjb2xvcjogIzcxNzE3YSAhaW1wb3J0YW50OyB9CiAgICBbZGF0YS1vZ3NjXSAuYXRoYXItdG9rZW4geyBiYWNrZ3JvdW5kLWNvbG9yOiAjZmFmYWZhICFpbXBvcnRhbnQ7IGNvbG9yOiAjMTgxODFiICFpbXBvcnRhbnQ7IH0KICA8L3N0eWxlPgo8L2hlYWQ+Cjxib2R5IGNsYXNzPSJib2R5IiBzdHlsZT0ibWFyZ2luOjA7cGFkZGluZzowO2JhY2tncm91bmQtY29sb3I6I2Y1ZjVmNTsiPgo8dGFibGUgcm9sZT0icHJlc2VudGF0aW9uIiBjbGFzcz0iYXRoYXItb3V0ZXIiIHdpZHRoPSIxMDAlIiBjZWxsc3BhY2luZz0iMCIgY2VsbHBhZGRpbmc9IjAiIGJvcmRlcj0iMCIgYmdjb2xvcj0iI2Y1ZjVmNSIgc3R5bGU9ImJhY2tncm91bmQtY29sb3I6I2Y1ZjVmNTtiYWNrZ3JvdW5kLWltYWdlOmxpbmVhci1ncmFkaWVudCgjZjVmNWY1LCNmNWY1ZjUpO2ZvbnQtZmFtaWx5OlNlZ29lIFVJLFRhaG9tYSxBcmlhbCxzYW5zLXNlcmlmOyI+CiAgPHRyPgogICAgPHRkIGFsaWduPSJjZW50ZXIiIGNsYXNzPSJhdGhhci1vdXRlciIgYmdjb2xvcj0iI2Y1ZjVmNSIgc3R5bGU9InBhZGRpbmc6NDBweCAyMHB4O2JhY2tncm91bmQtY29sb3I6I2Y1ZjVmNTtiYWNrZ3JvdW5kLWltYWdlOmxpbmVhci1ncmFkaWVudCgjZjVmNWY1LCNmNWY1ZjUpOyI+CiAgICAgIDx0YWJsZSByb2xlPSJwcmVzZW50YXRpb24iIGNsYXNzPSJhdGhhci1jYXJkIiB3aWR0aD0iMTAwJSIgY2VsbHNwYWNpbmc9IjAiIGNlbGxwYWRkaW5nPSIwIiBib3JkZXI9IjAiIGJnY29sb3I9IiNmZmZmZmYiIHN0eWxlPSJtYXgtd2lkdGg6NDgwcHg7YmFja2dyb3VuZC1jb2xvcjojZmZmZmZmO2JhY2tncm91bmQtaW1hZ2U6bGluZWFyLWdyYWRpZW50KCNmZmZmZmYsI2ZmZmZmZik7Ym9yZGVyLXJhZGl1czoxNnB4O2JvcmRlcjoxcHggc29saWQgI2U0ZTRlNzsiPgogICAgICAgIDx0cj4KICAgICAgICAgIDx0ZCBhbGlnbj0iY2VudGVyIiBjbGFzcz0iYXRoYXItY2FyZCIgYmdjb2xvcj0iI2ZmZmZmZiIgc3R5bGU9InBhZGRpbmc6MzJweCAyOHB4IDEycHg7YmFja2dyb3VuZC1jb2xvcjojZmZmZmZmO2JhY2tncm91bmQtaW1hZ2U6bGluZWFyLWdyYWRpZW50KCNmZmZmZmYsI2ZmZmZmZik7Ij4KICAgICAgICAgICAgPGRpdiBjbGFzcz0iYXRoYXItYnJhbmQiIHN0eWxlPSJmb250LXNpemU6MjhweDtsaW5lLWhlaWdodDoxO2ZvbnQtd2VpZ2h0OjgwMDtsZXR0ZXItc3BhY2luZzowLjA4ZW07Y29sb3I6IzE4MTgxYjsiPkFUSEFSPC9kaXY+CiAgICAgICAgICAgIDxkaXYgY2xhc3M9ImF0aGFyLW11dGVkIiBzdHlsZT0iZm9udC1zaXplOjEzcHg7bGluZS1oZWlnaHQ6MS42O2NvbG9yOiM3MTcxN2E7bWFyZ2luLXRvcDo4cHg7Ij7ZhdmG2LXYqSDYp9mE2LHYtdivINin2YTZhdiq2YPYp9mF2YTYqTwvZGl2PgogICAgICAgICAgPC90ZD4KICAgICAgICA8L3RyPgogICAgICAgIDx0cj4KICAgICAgICAgIDx0ZCBkaXI9InJ0bCIgY2xhc3M9ImF0aGFyLWNhcmQiIGJnY29sb3I9IiNmZmZmZmYiIHN0eWxlPSJwYWRkaW5nOjhweCAyOHB4IDI4cHg7dGV4dC1hbGlnbjpyaWdodDtiYWNrZ3JvdW5kLWNvbG9yOiNmZmZmZmY7YmFja2dyb3VuZC1pbWFnZTpsaW5lYXItZ3JhZGllbnQoI2ZmZmZmZiwjZmZmZmZmKTsiPgogICAgICAgICAgICA8cCBjbGFzcz0iYXRoYXItdGl0bGUiIHN0eWxlPSJtYXJnaW46MCAwIDE2cHg7Zm9udC1zaWplOjE2cHg7bGluZS1oZWlnaHQ6MS43O2NvbG9yOiMxODE4MWI7Ij7Zhdix2K3YqNin2YvYjDwvcD4KICAgICAgICAgICAgPHAgY2xhc3M9ImF0aGFyLWJvZHkiIHN0eWxlPSJtYXJnaW46MCAwIDI0cHg7Zm9udC1zaXplOjE1cHg7bGluZS1oZWlnaHQ6MS43NTtjb2xvcjojM2YzZjQ2OyI+2KrZhNmC2ZHZitmG2Kcg2LfZhNio2KfZiyDZhNil2LnYp9iv2Kkg2KrYudmK2YrZhiDZg9mE2YXYqSDYp9mE2YXYsdmI2LEg2YTYrdiz2KfYqNmDLjwvcD4KICAgICAgICAgICAgPHAgY2xhc3M9ImF0aGFyLWJvZHkiIHN0eWxlPSJtYXJnaW46MCAwIDEwcHg7Zm9udC1zaXplOjE0cHg7bGluZS1oZWlnaHQ6MS43O2NvbG9yOiMzZjNmNDY7dGV4dC1hbGlnbjpjZW50ZXI7Ij7YsdmF2LIg2KfZhNiq2K3ZgtmCINin2YTYrtin2LUg2KjZgyDZhdmGIDgg2K7Yp9mG2KfYqjwvcD4KICAgICAgICAgICAgPHRhYmxlIHJvbGU9InByZXNlbnRhdGlvbiIgY2VsbHNwYWNpbmc9IjAiIGNlbGxwYWRkaW5nPSIwIiBib3JkZXI9IjAiIGFsaWduPSJjZW50ZXIiIHN0eWxlPSJtYXJnaW46MCBhdXRvIDI0cHg7Ij4KICAgICAgICAgICAgICA8dHI+CiAgICAgICAgICAgICAgICA8dGQgZGlyPSJsdHIiIGNsYXNzPSJhdGhhci10b2tlbiIgYmdjb2xvcj0iI2ZhZmFmYSIgc3R5bGU9ImZvbnQtc2l6ZTozNHB4O2xldHRlci1zcGFjaW5nOjAuMjVlbTtmb250LXdlaWdodDo4MDA7Y29sb3I6IzE4MTgxYjtiYWNrZ3JvdW5kLWNvbG9yOiNmYWZhZmE7YmFja2dyb3VuZC1pbWFnZTpsaW5lYXItZ3JhZGllbnQoI2ZhZmFmYSwjZmFmYWZhKTtib3JkZXI6MXB4IHNvbGlkICNlNGU0ZTc7Ym9yZGVyLXJhZGl1czoxNHB4O3BhZGRpbmc6MTZweCAxOHB4O3RleHQtYWxpZ246Y2VudGVyO3doaXRlLXNwYWNlOm5vd3JhcDsiPgogICAgICAgICAgICAgICAgICB7e1RPS0VOfX0KICAgICAgICAgICAgICAgIDwvdGQ+CiAgICAgICAgICAgICAgPC90cj4KICAgICAgICAgICAgPC90YWJsZT4KICAgICAgICAgICAgPHAgY2xhc3M9ImF0aGFyLW11dGVkIiBzdHlsZT0ibWFyZ2luOjAgMCAxNnB4O2ZvbnQtc2l6ZToxM3B4O2xpbmUtaZWlnaHQ6MS43O2NvbG9yOiM3MTcxN2E7dGV4dC1hbGlnbjpjZW50ZXI7Ij7Yp9mD2KrYqNmH2LHYp9mE2LHZhdiy2YHZiig2K3Zgdit2Kkg2YHZiiDYtdmB2K3YqSDYp9iz2KrYudin2K/YqSDZg9mE2YXYqSDYp9mE2YXYsdmI2LEg2K/Yp9iu2YQg2KfZhNmF2YbYtdipLjwvcD4KICAgICAgICAgICAgPHAgY2xhc3M9ImF0aGFyLW11dGVkIiBzdHlsZT0ibWFyZ2luOjAgMCAyMHB4O2ZvbnQtc2l6ZToxMnB4O2xpbmUtaZWlnaHQ6MS43O2NvbG9yOiM3MTcxN2E7dGV4dC1hbGlnbjpjZW50ZXI7Ij7Ypdiw2Kcg2YTZhSDYqti42YfYsSDYp9mE2LHYs9in2YTYqSDYgdin2K/ZiNmCINin2YTZiNin2LHYr9iMINiq2K3ZgtmCINmF2YYg2KfZhNio2LHZitivINi62YrYsSDYp9mE2YfYp9mFINij2Ygg2KfZhNix2LPYp9im2YQg2KfZhNiq2LHZiNmK2KzZitipLjwvcD4KICAgICAgICAgICAgPHAgY2xhc3M9ImF0aGFyLW11dGVkIiBzdHlsZT0ibWFyZ2luOjAgMCAxMnB4O2ZvbnQtc2l6ZToxM3B4O2xpbmUtaZWlnaHQ6MS42NTtjb2xvcjojNzE3MTdhOyI+2KXYsNin2YTZgSDYqtin2YTYqSDYsNmE2YPYgyDYqtis2KfZh9mEINmH2LDZh9in2YTYsdiz2KfYqNmDLjwvcD4KICAgICAgICAgICAgPHAgY2xhc3M9ImF0aGFyLW11dGVkIiBzdHlsZT0ibWFyZ2luOjA7Zm9udC1zaXplOjEycHg7bGluZS1oZWlnaHQ6MS42O2NvbG9yOiM3MTcxN2E7Ij7Yp9mE2LHZhdiyINi12KfZhNitINmE2YXYsdipINmI2KfYrdiv2Kkg2YjZhNmF2K/YqSDZhdit2K/ZiNiv2KkuPC9wPgogICAgICAgICAgPC90ZD4KICAgICAgICA8L3RyPgogICAgICA8L3RhYmxlPgogICAgPC90ZD4KICA8L3RyPgo8L3RhYmxlPgo8L2JvZHk+CjwvaHRtbD4K';
+const SUBJECT_B64 = '2KXYudin2K/YqSDYqti52YrZitmGINmD2YTZhdipINin2YTZhdix2YjYsSDigJQgQVRIQVI=';
+const TEXT_B64 = '2LHZhdiyINil2LnYp9iv2Kkg2KrYudmK2YrZhiDZg9mE2YXYqSDYp9mE2YXYsdmI2LEg2KfZhNiu2KfYtSDYqNmDOiB7e1RPS0VOfX0g4oCUINin2YPYqtio2Ycg2YHZiiDYtdmB2K3YqSDYp9iz2KrYudin2K/YqSDZg9mE2YXYqSDYp9mE2YXYsdmI2LEg2K/Yp9iu2YQg2KfZhNmF2YbYtdipLiDYtdin2YTYrSDZhNmF2LHYqSDZiNin2K3Yr9ipINmI2YTZhdiv2Kkg2YXYrdiv2YjYr9ipLg==';
+
 const APPLE_DOMAINS = new Set(['icloud.com', 'me.com', 'mac.com']);
-const SUBJECT = 'ATHAR account verification code';
-const TEXT_TEMPLATE = [
-  'Hello,',
-  '',
-  'Your ATHAR password reset code is: {{TOKEN}}',
-  '',
-  'Enter this code on the password reset page in the app.',
-  '',
-  'If you did not request this email, you can ignore it.',
-].join('\n');
+
+function b64utf8(b64: string): string {
+  const bin = atob(b64);
+  const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+}
+
+function buildRecoveryEmail(token: string): { subject: string; html: string; text: string } {
+  return {
+    subject: b64utf8(SUBJECT_B64),
+    html: b64utf8(HTML_B64).replaceAll('{{TOKEN}}', token),
+    text: b64utf8(TEXT_B64).replaceAll('{{TOKEN}}', token),
+  };
+}
 
 function parseSender(raw: string): { name: string; email: string } {
   const trimmed = raw.trim();
@@ -75,7 +84,7 @@ function json(body: unknown, status = 200) {
   });
 }
 
-async function sendViaBrevo(to: string, subject: string, text: string): Promise<void> {
+async function sendViaBrevo(to: string, subject: string, html: string, text: string): Promise<void> {
   const sender = parseSender(BREVO_FROM);
 
   const response = await fetch('https://api.brevo.com/v3/smtp/email', {
@@ -89,6 +98,7 @@ async function sendViaBrevo(to: string, subject: string, text: string): Promise<
       sender,
       to: [{ email: to }],
       subject,
+      htmlContent: html,
       textContent: text,
     }),
   });
@@ -147,7 +157,7 @@ async function brevoGet(path: string): Promise<{ ok: boolean; status: number; bo
   return { ok: response.ok, status: response.status, body };
 }
 
-async function sendViaResend(to: string, subject: string, text: string): Promise<void> {
+async function sendViaResend(to: string, subject: string, html: string, text: string): Promise<void> {
   if (!resend) {
     throw new Error('Resend is not configured');
   }
@@ -156,6 +166,7 @@ async function sendViaResend(to: string, subject: string, text: string): Promise
     from: formatSender(SENDER_EMAIL),
     to: [to],
     subject,
+    html,
     text,
   });
 
@@ -185,6 +196,7 @@ Deno.serve(async (req) => {
               await sendViaBrevo(
                 url.searchParams.get('test_to')!,
                 'ATHAR Brevo test',
+                '<p>ATHAR Brevo test</p>',
                 'If you receive this, Brevo delivery works.',
               );
               return { ok: true };
@@ -208,7 +220,7 @@ Deno.serve(async (req) => {
       deliverability: {
         sender_domain: domain,
         uses_resend_shared_domain: domain === 'resend.dev',
-        template: 'text-only-ascii',
+        template: 'arabic-html',
         apple_mail_route: brevoReady ? 'brevo-api' : 'resend',
         apple_hm08_risk_without_brevo: !brevoReady,
         note: 'Supabase Edge Functions cannot use SMTP ports 25/465/587. Use BREVO_API_KEY (HTTP API), not SMTP.',
@@ -250,7 +262,7 @@ Deno.serve(async (req) => {
       throw new Error('Recovery email missing token');
     }
 
-    const text = TEXT_TEMPLATE.replaceAll('{{TOKEN}}', token);
+    const mail = buildRecoveryEmail(token);
     const apple = isAppleMailbox(user.email);
     const useBrevo = apple && brevoConfigured();
 
@@ -261,9 +273,9 @@ Deno.serve(async (req) => {
     }
 
     if (useBrevo) {
-      await sendViaBrevo(user.email, SUBJECT, text);
+      await sendViaBrevo(user.email, mail.subject, mail.html, mail.text);
     } else {
-      await sendViaResend(user.email, SUBJECT, text);
+      await sendViaResend(user.email, mail.subject, mail.html, mail.text);
     }
 
     return json({ success: true, provider: useBrevo ? 'brevo' : 'resend' });
