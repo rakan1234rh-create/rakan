@@ -33172,10 +33172,10 @@
         if (status === 500 || /error sending recovery|recovery email|hook|smtp|brevo|sender address/i.test(errMsg)) {
           const resetEmail = getPasswordResetEmail() || Sec.normalizeEmail(document.getElementById('forgotEmail')?.value || '');
           if (isAppleMailboxEmail(resetEmail)) {
-            if (/brevo|sender address|not verified|not valid/i.test(errMsg)) {
-              return 'تعذّر إرسال الرمز عبر Brevo SMTP. السبب الأرجح: المرسل no-reply@athar-app.online غير موثّق في Brevo. ادخل Brevo → Senders, Domains & Dedicated IPs → Domains → أضف athar-app.online وانسخ سجلات DNS (SPF/DKIM) ثم اضغط Verify. بعدها أعد المحاولة.';
+            if (/brevo|sender address|not verified|not valid|BREVO_API_KEY/i.test(errMsg)) {
+              return 'تعذّر إرسال الرمز عبر Brevo. أضف BREVO_API_KEY (مفتاح API يبدأ xkeysib-) وBREVO_FROM=no-reply@athar-app.online في Supabase Secrets. Supabase لا يدعم SMTP — استخدم Brevo HTTP API فقط.';
             }
-            return 'تعذّر إرسال الرمز إلى بريد iCloud/mac.com/me.com. تحقق من Brevo → Transactional → Logs وSupabase → Edge Functions → send-auth-emails. إن لم يكن SMTP مضبوطاً، أضف SMTP_HOST وSMTP_USER وSMTP_PASSWORD وSMTP_FROM في Supabase Secrets.';
+            return 'تعذّر إرسال الرمز إلى بريد iCloud. تحقق من Brevo → Transactional → Logs وSupabase → Edge Functions → send-auth-emails.';
           }
           return 'تعذّر إرسال رمز التحقق من الخادم. تحقق من SENDER_EMAIL في Supabase Secrets (دومين مُتحقق في Resend) وEdge Functions → send-auth-emails.';
         }
