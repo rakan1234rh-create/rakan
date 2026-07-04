@@ -34470,18 +34470,18 @@
       /** أعمدة موجودة فعلاً في جدول users — لا تضف region_id أو supervisor_id (غير موجودين في Supabase) */
       const MOB_USER_SELECT = 'id,name,role,branch_id,employee_number,auth_uid,is_active,email,phone,job_title,avatar_key';
       const MOB_LOAD_TIMEOUT_MS = 28000;
-      /** قائمة التذاكر — بدون logs/attachments/description (تُجلب عند فتح التذكرة) */
+      /** قائمة التذاكر — بدون logs/attachments (تُجلب عند فتح التذكرة) */
       const VIOLATION_LIST_SELECT = [
         'id', 'created_at', 'updated_at', 'ticket_number', 'state', 'status_text',
         'employee_id', 'branch_id', 'observer_id', 'supervisor_id',
-        'violation_type', 'violation_date', 'violation_time',
+        'violation_type', 'violation_date', 'violation_time', 'description',
         'employee_reply', 'supervisor_reply', 'audit_reply', 'management_reply', 'hr_reply',
         'auto_forwarded_emp', 'auto_forwarded_sup',
         'emp_forward_after', 'sup_forward_after',
       ].join(',');
       const MOB_VIOLATION_SELECT = VIOLATION_LIST_SELECT;
       const TICKET_DETAIL_EXTRA_SELECT = [
-        'attachments', 'logs', 'description',
+        'attachments', 'logs',
         'employee_reply', 'supervisor_reply', 'audit_reply', 'management_reply', 'hr_reply',
         'source_role', 'updated_at',
         'auto_forwarded_emp', 'auto_forwarded_sup',
@@ -50152,6 +50152,7 @@
       function refreshTicketDetailAfterExtras(id) {
         const t = state.violations.find(v => v.id === id);
         if (!t || state.editingTicket?.id !== id) return;
+        buildTicketInfo(t);
         buildInlineAttachments(t);
         buildLogs(t);
         buildWfSteps(t);
