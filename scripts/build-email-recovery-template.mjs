@@ -1,13 +1,35 @@
 /**
  * يبني قوالب بريد الاستعادة الخفيفة المتوافقة مع مزودي البريد.
  * تشغيل: node scripts/build-email-recovery-template.mjs
+ *
+ * القالب المعتمد للإرسال (send-auth-emails) هو athar-recovery-simple.html
+ * ويحتوي شعار ATHAR المضمّن (PNG base64). لتوليد HTML_B64 للـ Edge Function:
+ *   node -e "console.log(Buffer.from(require('fs').readFileSync('supabase/email-templates/athar-recovery-simple.html')).toString('base64'))"
  */
-import { mkdirSync, writeFileSync } from 'fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const outDir = join(root, 'supabase/email-templates');
+const simplePath = join(outDir, 'athar-recovery-simple.html');
+
+function buildPlain() {
+  return `<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+</head>
+<body style="font-family:Arial,Tahoma,sans-serif;font-size:16px;color:#222222;line-height:1.6;margin:20px;">
+  <p>مرحباً،</p>
+  <p>طلب استعادة كلمة المرور لحسابك في ATHAR.</p>
+  <p>رمز التحقق: <strong dir="ltr">{{TOKEN}}</strong></p>
+  <p>أدخل الرمز في صفحة استعادة كلمة المرور داخل المنصة.</p>
+  <p>إذا لم تطلب ذلك، تجاهل هذه الرسالة.</p>
+</body>
+</html>
+`;
+}
 
 function buildSimple() {
   return `<!DOCTYPE html>
@@ -88,11 +110,15 @@ function buildSimple() {
 
 mkdirSync(outDir, { recursive: true });
 
-const simple = buildSimple();
-writeFileSync(join(outDir, 'athar-recovery-simple.html'), simple);
+const plain = buildPlain();
+writeFileSync(join(outDir, 'athar-recovery-plain.html'), plain);
+
+// athar-recovery-simple.html is hand-maintained (wordmark PNG). Do not overwrite.
+const simple = readFileSync(simplePath, 'utf8');
 
 const full = simple
-  .replace('من 8 خانات</p>', 'من 8 خانات:</p>')
+  .replace('{{TOKEN}}', '{{ .Token }}')
+  .replace('رمز التحقق الخاص بك</p>', 'رمز التحقق الخاص بك:</p>')
   .replace(
     '<p class="athar-muted" style="margin:0 0 12px;font-size:13px;line-height:1.65;color:#71717a;">إذا لم تطلب ذلك، تجاهل هذه الرسالة.</p>',
     `<p style="margin:0 0 24px;text-align:center;">

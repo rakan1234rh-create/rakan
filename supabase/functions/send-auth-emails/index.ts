@@ -1,0 +1,288 @@
+import { Webhook } from 'https://esm.sh/standardwebhooks@1.0.0';
+import { Resend } from 'npm:resend@4.0.0';
+
+const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? '';
+const HOOK_SECRET = Deno.env.get('SEND_EMAIL_HOOK_SECRET') ?? '';
+const SENDER_EMAIL = Deno.env.get('SENDER_EMAIL') ?? '';
+
+// Brevo HTTP API for Apple/iCloud — Supabase Edge Functions block SMTP ports 25/465/587.
+const BREVO_API_KEY = Deno.env.get('BREVO_API_KEY') ?? '';
+const BREVO_FROM = Deno.env.get('BREVO_FROM') ?? Deno.env.get('SMTP_FROM') ?? SENDER_EMAIL;
+
+const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null;
+
+// Arabic recovery template (base64 UTF-8) — see supabase/email-templates/athar-recovery-simple.html
+const HTML_B64 = 'PCFET0NUWVBFIGh0bWw+CjxodG1sIGxhbmc9ImFyIiBkaXI9InJ0bCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGh0bWwiIHhtbG5zOnY9InVybjpzY2hlbWFzLW1pY3Jvc29mdC1jb206dm1sIiB4bWxuczpvPSJ1cm46c2NoZW1hcy1taWNyb3NvZnQtY29tOm9mZmljZTpvZmZpY2UiPgo8aGVhZD4KICA8bWV0YSBjaGFyc2V0PSJ1dGYtOCI+CiAgPG1ldGEgbmFtZT0idmlld3BvcnQiIGNvbnRlbnQ9IndpZHRoPWRldmljZS13aWR0aCwgaW5pdGlhbC1zY2FsZT0xLjAiPgogIDxtZXRhIG5hbWU9ImNvbG9yLXNjaGVtZSIgY29udGVudD0ibGlnaHQgb25seSI+CiAgPG1ldGEgbmFtZT0ic3VwcG9ydGVkLWNvbG9yLXNjaGVtZXMiIGNvbnRlbnQ9ImxpZ2h0Ij4KICA8IS0tW2lmIG1zb10+PHhtbD48bzpPZmZpY2VEb2N1bWVudFNldHRpbmdzPjxvOlBpeGVsc1BlckluY2g+OTY8L286UGl4ZWxzUGVySW5jaD48L286T2ZmaWNlRG9jdW1lbnRTZXR0aW5ncz48L3htbD48IVtlbmRpZl0tLT4KICA8c3R5bGU+CiAgICA6cm9vdCB7IGNvbG9yLXNjaGVtZTogbGlnaHQgb25seTsgc3VwcG9ydGVkLWNvbG9yLXNjaGVtZXM6IGxpZ2h0OyB9CiAgICBib2R5LCB0YWJsZSwgdGQsIHAsIGRpdiwgc3BhbiB7IGNvbG9yLXNjaGVtZTogbGlnaHQgb25seTsgfQogICAgLmF0aGFyLW91dGVyIHsgYmFja2dyb3VuZC1jb2xvcjogI2Y1ZjVmNSAhaW1wb3J0YW50OyBiYWNrZ3JvdW5kLWltYWdlOiBsaW5lYXItZ3JhZGllbnQoI2Y1ZjVmNSwgI2Y1ZjVmNSkgIWltcG9ydGFudDsgfQogICAgLmF0aGFyLWNhcmQgeyBiYWNrZ3JvdW5kLWNvbG9yOiAjZmZmZmZmICFpbXBvcnRhbnQ7IGJhY2tncm91bmQtaW1hZ2U6IGxpbmVhci1ncmFkaWVudCgjZmZmZmZmLCAjZmZmZmZmKSAhaW1wb3J0YW50OyB9CiAgICAuYXRoYXItdG9rZW4geyBiYWNrZ3JvdW5kLWNvbG9yOiAjZmFmYWZhICFpbXBvcnRhbnQ7IGJhY2tncm91bmQtaW1hZ2U6IGxpbmVhci1ncmFkaWVudCgjZmFmYWZhLCAjZmFmYWZhKSAhaW1wb3J0YW50OyBjb2xvcjogIzE4MTgxYiAhaW1wb3J0YW50OyB9CiAgICAuYXRoYXItdGl0bGUgeyBjb2xvcjogIzE4MTgxYiAhaW1wb3J0YW50OyB9CiAgICAuYXRoYXItYm9keSB7IGNvbG9yOiAjM2YzZjQ2ICFpbXBvcnRhbnQ7IH0KICAgIC5hdGhhci1tdXRlZCB7IGNvbG9yOiAjNzE3MTdhICFpbXBvcnRhbnQ7IH0KICAgIEBtZWRpYSAocHJlZmVycy1jb2xvci1zY2hlbWU6IGRhcmspIHsKICAgICAgLmF0aGFyLW91dGVyIHsgYmFja2dyb3VuZC1jb2xvcjogI2Y1ZjVmNSAhaW1wb3J0YW50OyBiYWNrZ3JvdW5kLWltYWdlOiBsaW5lYXItZ3JhZGllbnQoI2Y1ZjVmNSwgI2Y1ZjVmNSkgIWltcG9ydGFudDsgfQogICAgICAuYXRoYXItY2FyZCB7IGJhY2tncm91bmQtY29sb3I6ICNmZmZmZmYgIWltcG9ydGFudDsgYmFja2dyb3VuZC1pbWFnZTogbGluZWFyLWdyYWRpZW50KCNmZmZmZmYsICNmZmZmZmYpICFpbXBvcnRhbnQ7IH0KICAgICAgLmF0aGFyLXRva2VuIHsgYmFja2dyb3VuZC1jb2xvcjogI2ZhZmFmYSAhaW1wb3J0YW50OyBiYWNrZ3JvdW5kLWltYWdlOiBsaW5lYXItZ3JhZGllbnQoI2ZhZmFmYSwgI2ZhZmFmYSkgIWltcG9ydGFudDsgY29sb3I6ICMxODE4MWIgIWltcG9ydGFudDsgfQogICAgICAuYXRoYXItdGl0bGUgeyBjb2xvcjogIzE4MTgxYiAhaW1wb3J0YW50OyB9CiAgICAgIC5hdGhhci1ib2R5IHsgY29sb3I6ICMzZjNmNDYgIWltcG9ydGFudDsgfQogICAgICAuYXRoYXItbXV0ZWQgeyBjb2xvcjogIzcxNzE3YSAhaW1wb3J0YW50OyB9CiAgICB9CiAgICB1ICsgLmJvZHkgLmF0aGFyLW91dGVyIHsgYmFja2dyb3VuZC1jb2xvcjogI2Y1ZjVmNSAhaW1wb3J0YW50OyBiYWNrZ3JvdW5kLWltYWdlOiBsaW5lYXItZ3JhZGllbnQoI2Y1ZjVmNSwgI2Y1ZjVmNSkgIWltcG9ydGFudDsgfQogICAgdSArIC5ib2R5IC5hdGhhci1jYXJkIHsgYmFja2dyb3VuZC1jb2xvcjogI2ZmZmZmZiAhaW1wb3J0YW50OyBiYWNrZ3JvdW5kLWltYWdlOiBsaW5lYXItZ3JhZGllbnQoI2ZmZmZmZiwgI2ZmZmZmZikgIWltcG9ydGFudDsgfQogICAgdSArIC5ib2R5IC5hdGhhci10b2tlbiB7IGJhY2tncm91bmQtY29sb3I6ICNmYWZhZmEgIWltcG9ydGFudDsgYmFja2dyb3VuZC1pbWFnZTogbGluZWFyLWdyYWRpZW50KCNmYWZhZmEsICNmYWZhZmEpICFpbXBvcnRhbnQ7IGNvbG9yOiAjMTgxODFiICFpbXBvcnRhbnQ7IH0KICAgIHUgKyAuYm9keSAuYXRoYXItdGl0bGUgeyBjb2xvcjogIzE4MTgxYiAhaW1wb3J0YW50OyB9CiAgICB1ICsgLmJvZHkgLmF0aGFyLWJvZHkgeyBjb2xvcjogIzNmM2Y0NiAhaW1wb3J0YW50OyB9CiAgICB1ICsgLmJvZHkgLmF0aGFyLW11dGVkIHsgY29sb3I6ICM3MTcxN2EgIWltcG9ydGFudDsgfQogICAgW2RhdGEtb2dzY10gLmF0aGFyLW91dGVyIHsgYmFja2dyb3VuZC1jb2xvcjogI2Y1ZjVmNSAhaW1wb3J0YW50OyB9CiAgICBbZGF0YS1vZ3NjXSAuYXRoYXItY2FyZCB7IGJhY2tncm91bmQtY29sb3I6ICNmZmZmZmYgIWltcG9ydGFudDsgfQogICAgW2RhdGEtb2dzY10gLmF0aGFyLXRpdGxlIHsgY29sb3I6ICMxODE4MWIgIWltcG9ydGFudDsgfQogICAgW2RhdGEtb2dzY10gLmF0aGFyLWJvZHkgeyBjb2xvcjogIzNmM2Y0NiAhaW1wb3J0YW50OyB9CiAgICBbZGF0YS1vZ3NjXSAuYXRoYXItbXV0ZWQgeyBjb2xvcjogIzcxNzE3YSAhaW1wb3J0YW50OyB9CiAgICBbZGF0YS1vZ3NjXSAuYXRoYXItdG9rZW4geyBiYWNrZ3JvdW5kLWNvbG9yOiAjZmFmYWZhICFpbXBvcnRhbnQ7IGNvbG9yOiAjMTgxODFiICFpbXBvcnRhbnQ7IH0KICA8L3N0eWxlPgo8L2hlYWQ+Cjxib2R5IGNsYXNzPSJib2R5IiBzdHlsZT0ibWFyZ2luOjA7cGFkZGluZzowO2JhY2tncm91bmQtY29sb3I6I2Y1ZjVmNTsiPgo8dGFibGUgcm9sZT0icHJlc2VudGF0aW9uIiBjbGFzcz0iYXRoYXItb3V0ZXIiIHdpZHRoPSIxMDAlIiBjZWxsc3BhY2luZz0iMCIgY2VsbHBhZGRpbmc9IjAiIGJvcmRlcj0iMCIgYmdjb2xvcj0iI2Y1ZjVmNSIgc3R5bGU9ImJhY2tncm91bmQtY29sb3I6I2Y1ZjVmNTtiYWNrZ3JvdW5kLWltYWdlOmxpbmVhci1ncmFkaWVudCgjZjVmNWY1LCNmNWY1ZjUpO2ZvbnQtZmFtaWx5OlNlZ29lIFVJLFRhaG9tYSxBcmlhbCxzYW5zLXNlcmlmOyI+CiAgPHRyPgogICAgPHRkIGFsaWduPSJjZW50ZXIiIGNsYXNzPSJhdGhhci1vdXRlciIgYmdjb2xvcj0iI2Y1ZjVmNSIgc3R5bGU9InBhZGRpbmc6NDBweCAyMHB4O2JhY2tncm91bmQtY29sb3I6I2Y1ZjVmNTtiYWNrZ3JvdW5kLWltYWdlOmxpbmVhci1ncmFkaWVudCgjZjVmNWY1LCNmNWY1ZjUpOyI+CiAgICAgIDx0YWJsZSByb2xlPSJwcmVzZW50YXRpb24iIGNsYXNzPSJhdGhhci1jYXJkIiB3aWR0aD0iMTAwJSIgY2VsbHNwYWNpbmc9IjAiIGNlbGxwYWRkaW5nPSIwIiBib3JkZXI9IjAiIGJnY29sb3I9IiNmZmZmZmYiIHN0eWxlPSJtYXgtd2lkdGg6NDgwcHg7YmFja2dyb3VuZC1jb2xvcjojZmZmZmZmO2JhY2tncm91bmQtaW1hZ2U6bGluZWFyLWdyYWRpZW50KCNmZmZmZmYsI2ZmZmZmZik7Ym9yZGVyLXJhZGl1czoxNnB4O2JvcmRlcjoxcHggc29saWQgI2U0ZTRlNzsiPgogICAgICAgIDx0cj4KICAgICAgICAgIDx0ZCBhbGlnbj0iY2VudGVyIiBjbGFzcz0iYXRoYXItY2FyZCIgYmdjb2xvcj0iI2ZmZmZmZiIgc3R5bGU9InBhZGRpbmc6MzJweCAyOHB4IDE2cHg7YmFja2dyb3VuZC1jb2xvcjojZmZmZmZmO2JhY2tncm91bmQtaW1hZ2U6bGluZWFyLWdyYWRpZW50KCNmZmZmZmYsI2ZmZmZmZik7Ij4KICAgICAgICAgICAgPGltZyBzcmM9ImRhdGE6aW1hZ2UvcG5nO2Jhc2U2NCxpVkJPUncwS0dnb0FBQUFOU1VoRVVnQUFBMGdBQUFJRUNBWUFBQUFqQ2c1NEFBQUFDWEJJV1hNQUFBc1NBQUFMRWdIUzNYNzhBQUFnQUVsRVFWUjQydTNkUFhJanlYWTI0TE1FN2tCWUFuWXcyTUZnQjFPRy9JWlcwUEJsTkJRaG4zQmtOM1pBN0lCWWdDSUlSellSOGhTaGlCWTVnNzZEYVEyYkJiQ3lLbitlSnlLTlQ5KzlkemlGUkZXK3FKTW5Jd0FBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBZ09lWDhlMXZ4cU5MOHhlemwvSHJ5L2p5TWg0dXh1TWIxOCtZWnF6ZitQeldBLzl6SG4rWUIxOWZ4dWVYOGVsbC9PTHJjcFg5Q0o4L0g3UDl5VFdmdVR3QTFLUjdaN0d4RUlwK0QwUlBnb2VBZE1ONERVMi91YzBJU0lXN2UrZWFiMXdpQUdyeThNNkRiOXR3TVBvcWJBaElBNDNYdDdSTHR4c0JxVkNySHZNYkFLb3c3N25ndUl2MjNxbzlDeG9DVW9KeDc3WWpJQldvenh2MHptWDYwTFA0b2FIeCtXSjhMMG0rTXcyQUtLQ20vSEtzR3JvbTl3Skd0UUZwY2Y3L2UydThMdEtQUXBLQXhGOHNvLytlUEc2N3ZuNlErM044MzgvNXlkNDJJREtzS2I4Y1Q2R014Q2cvSU1VVjVaV3ZjK0dROEc5Y3VRVUpTRkZIR2ZibG1MdGNWeitIaGFQMzF4LzM1d1pKM2pJQnlhMnZ2RW5Wdm45aTZVRWtJTDBSbWsrUlprL1N6RzFJUUlyODkySmVjKzIzTGxta3FPSXcvdm9HWGhBSFlzcWE4c3V4Y3oyTUJnTlNuSCsxVFBFMnlXSlNRS3B0QWYvc1YzN1BuUml2RkUrSFVDREdiTzNkMmxrWDNVZzM5T041SVpoaW5BcjVPOGNZWGFUWlJIMUs4QmJKWWxKQWlzckt2enFYYnZBeWQrUG5KWGdMMHdtSWtXdktXMWg0RFBrcjN1bTgyRnVmeS9idUxEQ3JzVWp3Y0xlWU5IK2pzajJaVHk3ZFpQZVRsc2RYWmN0QWpGaFRYdnRaRjdNWUpoU3RKNzQ1VzJDV2Q1MlYyWm0vdGY1d3RIRDVCS1NKeG1kVEM0Z0pOb1Yyb2J6dSs5aG5kRDBzTUtQSVpoNStiVGQvYTF5OEMvN1JxOFJ1ZVhIRWdIQXo3UDRrNWN2QXFDMUZId1RHMy9mb0xDd3dtM1VjK0dFK2Mwbk4zOHpzQnZnY0xGQnZDNmJyOC9VL1pSZzhEbS9zKzl5ZS8rYkwvMXNPZTVOMHV3Tml6SE4rWmcwdnpIYVpQdmd0TU10dHpidHdTYzNmcUt2czJPY1FneldIV1ozdk9jY1lyNUhRK3Z6UFhReDBmMXBNK0thc000MkFHS2tad2JiQmEzTEsvRVpyZ1JuRmRqMTBhS3o1bTVOTktCL05PYnd1QjJ3b3REbmZ6eFlUdkNsYmpSVDZoQ1FneHRvN1VWTjc0bG9PeXJYQUxPOFhkdGZiL0kwS3k3QmJPbUE4OStmV2UzdG9jL25CNlNBa0FWRllhKy9hYnphMS9NSnZnUm5GN2tQYXU1em1iNlZ2UjNjdXFZQVUvZDhxcFM3Qlc1ZzZRQ1Q4eGZ0MVBEYnlvTmxhWUpMNGVndEk1bTlVZUNhY0ppUUNVa3k0Vi9xdDZoZnpFWWloYThwci9EWG12UTJyRnBoRTRrWU5BcEw1R3hXZnk3TnhhUVdrdUw0NVJhcXl1MGZUQjRnRU5lVzFOV3VvcFl6UUFuTmM2NEcvU3dLUytWdGJkOGFhRHhnWGtNWlp1NlNhays0UndPQTE1YldkZFZIRDJ5TUx6UEsvVndLUytSdVZsV0hiSUM4ZzVSemNuWkVFb2FZODVZTnZWZW1EcHJQQUpNWXJSeEtRek4rbzZJMW83UWVNQzBoUjNNSEY1aVNRdkthOHByTXVhbmg3WklFcElBbEk1dTlIUEkvd3JQQ0x2WUFVSHlpM085aEhEZVQ4cTB0dFoxM1VzcmZLQWxOQUVwRE0zOGl3REx2R0E4WUZwR2xDMGltOFJRSWk3NXJ5V3M2NnFLVmUzZ0pUUUJLUXpOOWJQSTcwbktqcGdIRUJxWjZxbU01MGd0RGFPK0dZVmZTZ21WbGdJaUNaditheHhhaUFWUFc5d2xza0NEWGxxY2U2a2dmTjBVUERBbE5BTW45RGEyOTdWZ1drVmtMOXpKU0NVRlB1d2ZmVEI4M1dBdE1DVTBBeWYwTVo5amNIakF0SWpieEZXcGxTRUdyS1EvbkV6eDQwYXc4TUMwd0J5ZndOcmIwMWF4Q1FXcm4vUHBwU1lPSG1yQXNCeVFKVFFESi9lWnJ3V2FGWmc0RDBVY2RRWmdmRXNEWGx4MFJuQ3BSNGt4R1FMREFGSlBNM2xHSC83ZGpZc3lvZ05iSi9ibWxhUVRSZlU5NGwzS2UwS2Z4QnM3REF0SGdSa016ZnlqMzBYRURmMmJNcUlEV3kxOXA5QTZMdG12TFRSWG5ES1p4MUlTQjVVQWhJNW05TDVuSGRMK3BiQjR3TFNKSG53YkZEenNlOWFRWFJkR3Z2eXpjOEc4MGFmbC9vWG80N0Mwd0xUQUhKL0ExbDJLbjN0ZTU4RkFMU0J4MEcvbkVYaUhacnltZVJ2czJyampBV21BS1NnR1QrUnJHL3VuY0pGNkkyeGd0SVE5bTREd014UUd2djdkLzg5M2FKSG54ekg0a0Zwb0Rrd1d6K1JzbGwySkg0YkwyTmowUkF5cWhWUFJCdDFwUXYvdWEvdTNUV2hRV21CYWFBWlA2RzF0NXZoNWE3aEh0V0VaQnV0ZlJHRTRnUDFwUWZZcnp6Qkp4MVlZRXBJQWxJNW0rWmk4blpTT1ZNSlI4d0xpRFZlUjllbUZvUXpkZVV4d2ducXE5OFBCYVlBcEtBWlA1R0thMjlkd01jSTlIQ0FlTUNrb0FFUkIwMTVXTzJ5M1RXaFFXbWdDUWdtYjlSM0JsNWl4RS9KM3RXQmFTeDVyV0FCS0dtL05ZRnd6YlJnODhOeHdKVFFCS1F6TjhvcXJWM2pIUTRwejJyQWxJTzE4SWVKQWl0dmNkYThEbnJ3Z0pUUUJLUXpOL0lvZ3o3ZWNDOVFNZHd3TGlBVkdkQUFxS2Rtdkp0VEhQb21sOWxMREFGSkE5bTgzZDZxN2l0dFhlTXZHZTE4MUVKU0FJU0VCTzI5bzZSeXljc1dDd3dCU1FQWnZNM2ltcnRIU00zYTdCblZVQ0tSRTJxM0ljaDFKVDNiZTBkSTU1MTRjRm5nU2tnZVRDYnYxRmNhMjk3VmdXa1Z1N0RlOU1LMUpUL2pMTXVMREF0TUFVazg3Y091MGl6VDNTaFdZT0FWTmw5MkgwRG9wMmE4c2lnYmFhekxpd3dCU1FCeWZ5TllsdDdod1BHQmFRbzk1aVR2bU5wV2tGbzdUM1JXUmN6SDUwRnBvQWtJSm0vbzlna0tNT09LMytvOC9rSlNESHhWZ1BCSEVKTitWQmY5aTdSZzIvajQ3UEFGSkFFSlBNM1NpN0R0bWRWUUtydHZuRTBwU0MwOWc1blhWaGdXbUFLU09adk5INUczaW55K2dWZnVaT0FORlVIdTYwcEJkRkVUZms4OHFydDFhekJBbE5BRXBETTM2aW1ERHV1UEc3Q0FlTUMwaFEvQW53YmNjMEVSTjcxdHZ1Unc5aTE0OUhIYUlFcElBbEk1dS9rYzNPVzRXZG56NnFBTlBiYnk2UHBCS0dtUEpQeUNiL1dXR0FLU0FLUytSdVR0ZmJlUnA2LzVQc2NCYVFoMTBQbUdZU2E4aFMvaERqcndnSVRBY244RGEyOTMzRkt0R2NWQVNsMUtKK1pUaEJxeXNOWkZ4YVlGcGdDa3ZsYnEzV2tiZTBkRGhnWGtBcFpEOW5yQmhaalNVTkhxck11Vmo1V0Mwd0JTVUF5ZndmMVBGSG9tRGxnWEVBcThONDdNNVVnMUpTSHN5NHNNQzB3QlNUek43VDJudXc1WlJFcklIM1VvMUovSUVadTdSMGpOMnRZK0hndE1BVWtBY244SFczaHVNN2dFSE1MV1FFcE1qaCtSUENHd20weXVORTU2OElDRXdISi9OWGFPeHd3TGlERmREOFc2MXdIeEZTdHZaMTFZWUhwNFNFZ21iOVIzWmt3MnhIK2pwVm1EUUpTNUYxYWR4UzRJYlQyZHRhRkJhYlBSRUF5ZjBNWjlqam56OTA1WUZ4QVN1QStuTU1JWkZSVEhpT2NkYUZaZ3dXbWdJVDVHMG4zWmV3emU1dGx6NnFBRkJPOGxmUnNnMFlXWUtlUlh4VTc2OElDRXdISi9BMnR2V1A4UGF0Ylg1UG1BbEkzNFB6Wm16WVFhc3BqMmxJT1oxMVlZQXBJQXBMNTIxWVo5cVdEQThZRnBNaW5yTzVrN2tBMFZWTStpenpQWk5Lc3dRSlRRTHIrUjRLV3g3UDVlNU9IVEs5SDU0QnhBU2x1MzhmMmRlQndaTjhSaEpyeTFGS2RkYkh4c1F0SURRY2t3L3lOUktWc1UveHk3b0J4QWVuVysrcVRjQVRFQjJyS2x4UCtmVWRuWFFoSUFwSXdJaUNGTXV3WWZjL3EwdTJudW9EMCt1ei9NdkE4RVk0ZzFKUkh3VjFsTkdzUWtBUWtRMEJLMDA1N1hrQ3B1QVBHMncxSXIzUGtjd3hiWWlzY1FiVGIybnRWeU1QWldSY0Nrb0JrQ0VqUlZCbTJBOGJMQ0VpUEUxWnQvQnJETm1HNEhBZmhDTFQyanN6TE94emlKaUFKU0lhQU5MeW5RdDdJTDMzRzJRYWt5L0wyaDNPSjI2ZVg4Y3ZBeitHNzgvL21wNEdiTDd6MWRsR3BQb1NhOGhvWGlGdlRRRUFTa0F6ek4wb3V3NDRSOXF3S1NPT01wNHR1azEvT0pYRS9HMThTZGFmMDNJSkczUlZZV25EUXJFRkFFcEFNQVNtMDlvNFBsUVBhczVwdlFNcDlIRFh1Z0ZCVFh2RXAxODY2RUpCYURrajd4c2ZKL0kyaEdoL2tkaWltQThZRnBHOEpqd2Z4Z3lxRW12SmxobSs5bkhVaElBbElIeC9tci9rYmxaVmhqN0ZuZFNZZ05UbjI5aXREYU8wZCtkV1V4d2huWFN4TUN3dE1BY244TlgvLzhvUFVjNkdod1o1VkFXbW9jam9WSnRDUWg0THJyV2NlZkJhWUFwS0FaUDVHRHVmUDdUUCsrNDloejZxQWRIdnI3czV0RXRveWovSnF5cDExWVlFcElBbEk1bThvdzQ3cDk2eDJBbEsxWTZlYUJFSnI3L2o1UnNSbzhNRm5vVzZCS1NDWnYrWnZ2L09FanBGL2llREpBZU1DVXZSN00yaVBFWVRXM2pXOFNUbUdaZzBXbUFLU2dHVCt4a1JsMkt0S2ZoQzBaM1djZ0hROHY2RTVoWGI5UUpSWFU3NkxldHFVM3pLY2IyQ0JLU0NadnkzUDMxbVVYNFlkVjVTVTI3TTZUa0RhL3pESEZ1ZnZ6aVpCNjMxbDlrQU1YVk8rcU9naDdxd0xDMHdCU1VBeWYyUHdUcUhiUmovcnkzRW5JTjBja09LZFNwZkZlWFRuNzFlZnNUai93T3Y1RDBSck5lWGhyQXNMVEFGSlFESi9RMnZ2Y01CNHBRRnA2dnRrNS9ZSW9iVjM0VGVHUmNMVHNySEFGSkRNMzlibWIxZDRhKyszT0dDOGpZQTB4SGU3MVZidTBLUloxRk5USGlPZGRZRUZwb0JrL3JZMmY1OHEzYWU1dG1lMW1ZQzA4Q01wRUEyMTlvNFBOSjd3bXQwQ1UwQVNrTXpmajgreFk5VDdJK0d0NStZSVNIa0ZwS0crMzlwK1E5VGYydnU1NG4wM3pycXd3QlNRQkNUejkrTjJsZSs3MmRtejJreEE2cXdCZ0dpb3RYZU0zS3pCTDBnV21BS1MrZHZDL0oxRnZXWFljVVdqSXZldk9nSlNERlIrMzFJakRnaXR2ZXM3OU01WkZ4YVlBcEtBWlA1RzB0YmVOZXpMc0dlMW5ZRFVEZlRaenR3dW9jMUYxY0dDUnpjYkMwd0J5Znh0ZXY0K04xSktaczlxT3dGcHFFRHNiQ1NvMEs2aEczc1h6cnF3d0JTUUJDVHpOOFc5YzFmUm5sd0hqTGNUa0RyckFDQnVyQ212aWJNdUxEQUZKQUhKL0wzT1k5UmZoaDBPR0c4eUlBM1Z4RW1wSFZSazArRENkSjNvd2Jjd25Td3dCU1R6dDhMNVczTnI3eGg1eitwR1FNcnlnT0dWenJiQXRhMjlEYzBhTERBRkpQTzMzZm03ZFgrM1o3WHlnQlFETnVmd3JJS3dIOGRvNzZ3TEMwd0J5Znh0Wi83TzNOYzFhMmdrSUhXTy93Q2laMnR2d3lMZUFsTkFNbi9ibmI5cjkzVUhqRGNTa0liOHppdTFBd3NwSXpScnNNQVVrTXpmT3Vldk1td0hqTGNVa0JhKzg5QzJyUWRVc3JFMHZTd3dCU1R6dDRMNTI3bWYyN1BhV0VBYStudXYxQTVDVGJuaHdEZ0xUQUhKL0sxbi9qNjZueWNkZHdKU2xnRnBObkJWaVlQa0lkU1VHNW8xV0dBS1NPWnYrZk4zN2o2ZWZLd0VwQ3dEVWd4Y1piTnhLNFZRVTI2NElWcGdDa2ptYi9IelZ4bTJQYXN0QjZTN2dRK1ZYN2lkUWxSUlU3NXViS1E0NndJQlNVQXlmMHVjdjNjOS81MTJqVDBuRGc0WWJ5WWd4Y0JyQTZWMkVPWFhsTzhhdkM0N1oxMVlZQXBJQXBMNTIzdGhlR3B3d2RjbGVFN3NCS1JzQTlMUWI1SHUzVktoN01YVG9zRnJzM1RXaFFXbWdDUWdtYi9SOTR5OGJhTno0bVRQYWpNQktVVW83dHhXSVlxc0tUODJmSDJPenJxd3dCU1FCS1RHNTIrbkVjM29lN1BXQWxLMkFXbm90Y0d6ZFFGRWtUWGxxNGF2MGNaWkZ4YVlBcEtBMVBqOGZTaDBFUnNGZC9kN0VwQ3lubHVMQk5VbDlpTkJxQ21QaHMrSGVtNzhtZ3BJQXBMNVc4NzhuU3NUNnVWZ3oycFRBU2tTN0ZPMkh3bENUWG1yQ3lKdjVRUWtBY244TFduK2JrTVpkaDhyQjR3M0Y1Qm1MK08vaFdLSUpqdnZ6RnlxSkYyS25zSUNVMEFTa016ZnlMNE0rOW4zY05DUzlkYWFOZFFja0Y3OWV3eGZZV0kvRW9TYThsSWVmQ2RuWFZoZ0NrZ0NVbVB6dCs5YkVYc25JbG16aG8yQWxQMWE1SC9DZmlTSWxqYVVkaTVWMGdmZjFnSlRRQktRek45UWhoMk9ocWgyejJvTEFlbGZFbnp1WDMyZFFFMTVxMTJLV3YzbFZVQVNrTXpmL09mdjBwdnd5T1ZvaUU1QXl0NS9hdlVPMFVTZHRDL21PQSsrdFFXbTZ5Y2dtYjlSWmhuMndYU0lXN3JEdG5UQWVDc0I2WjlpK0ZLNzEvRnZ5dTBncjV1M0wyU00wcVhveVFKVFFCS1F6TjhvODNpRHpuUVk1V2lJa2c4WWJ5VWd2ZnJuUkovOWE2ZThMNXBtUWFncGo3YTZGQzB0TUFVa0FjbjhqYkxLc0UrbXdxaEhRMndGcENMOFI2SjF3bVhyOTRXdkdJU2E4Z2FhTlR5RXhZT0FKQ0NadjJXMTl0NllDakhtMFJDbFZuYTBGcEJlUDZQL1NoeVN2cGRkL3VhckJxR212TkxGWm92blRRbElBcEw1bSsvOGRVWmUyTE1xSUdXNVRuaXJUSC9oNndhaHBqd0RoMUErWVlFcElBbElkYzdmUG1YWU85TWdwbWpXVUdMTDd4WURVcXJQLzJmajN0NXhDRFhsVVdmNXhNd0NVMEFTa0pxYXY1dEM1OHJDTklpcDlxeDJBbEswL0dQcWV3RzY4OVVETmVWVE9pVzR1VzBzTUFVa0FhbXArWnZid204WHpzaUx6UGVzUGdsSVVWTGx6bW5ra09SdEVzVHc3YWxuTGxVb254Q1FCQ1FCYWF4Rjc3N0FNdXlWS1JCVEh6RGVDVWhSVzNPc0ZFMGM1cjZDRUdyS0t6bnJZaTBndVY0Q1VqTS9qdVMwOE50RXZ6SnN2MHhQMy9MN1NVQnEvazFpM3g5ZGhTVFEycnVLbTE0TGI1RUVKQUZKUVByelY5NG9xQXg3NitPUFhQYXNkZ0pTMkk5a1h4S0VtdkpvcG54aUt5QUpTQUpTTStXMVdudUh6cWRSNzFza0FlblBIeUZPRTRVa0hZb2gxSlJIaG1VcE90b0pTQUpTTkxlbnM2VERQeDhiV2FUV2RpN09Xa0F5RDRRa1VGT2U2NjlDeC9BV1NVQVNrRnpQMjhhaWtIOGZpNnRRa2kwZ1pmY0RpNUFFYXNxanRTNDFpeENRQkNRQnFmYnIyUld3Y0QvNjJMTXRzZG9JU01MeWxVUGpCc0xHVURYbHBYY3F1bk90QkNRQnFlb0RRTGNGbEdIN25rWFdidzhXQWxMVXVEOWNkenVJYVZwNzcxMm03TnQrYndRa0N6Y0JxY3BGMytWaUpUSnZPS0VNTzdKdjJIQW5JQlgzUTh0aHdwRDA2SHVOQlpGYTFQRHJvSURrZmlBZ1pmekdlS3BmYzVWaHh5VGRUMXNxdFJPUXh0L0QzSGQ4OVhVa3RQWldVeDVsYjhTZFcxd0tTQUpTMU5xOWNwTnhHZmJDeHgybDdGdnRNdnYzL0dYQVorRDl5L2g4L3QrOEU1Z0hHN29ZRTBxOUxDeExyaTJ1NlhXNGdDUWdXZUJPMzQyc1QydnZnNCs2dUFOa3Avd3g3ZldmL2VsbFBJeXdzSDg2dndHcElUUk5IWkxzUnlJY1lxaW1QQXF1TGE0bEpBbElBcEpHRGRQTzVia3k3S2oxSEwweEt3NitCNkt2UGNzMXh3NU5NeUdwOTlvQ3FxZW12UDZRTkJlUUJDUUJxYnA5U0dNdWJMZlI3NHc4eWkzTDdoSytQYjN2MlFncWgvRmNVTE9qS1VPU1p5bmhsYjJhOGhpeDNQR1E2SWIveWNMU1RWMUFxcTVFYW94U3U3dUdPMmhHUTIrU3ZwMkR6SkR6NldzaG9hamtKZy96Q2J2YnpYd1ZxWldhOGlpNjdQR1djb0xmQkNRRXBNa2NFMzJ2bHhuY2p5eVdZdlI5YmFkRW9mdnpBRUZwWFdnNEtyRUwzbFF0d0I5OERkSGFteWsrbjFQQ29QU2xvTkk3QVVsQWNtMzd0ZUNkVDNSRzNzNUhPOW5DZUIvcFNzMWUzeWo5R3VuSzkzTWRHM09oMldORlFFMjVHOTQvd3RMM2RxaS9aaHFhQkNRQktaUkgzYlN3L1NVK3R2bThzMGlLVXFvT1RpTzhMZmg4cmtMNEphWnBTejdXV0twQXVXb05BZEZhYTI4MTVma3NXSGZSN2k5Q0FwS0FaS1A5TkdWRUQ4N0lLK29IdGZXSW0vYlhsWmJYSFN2by9yb1l1WGxENSt0SGEzdGNaaTVWZHNGMkt5QUpTQUpTRlZZVG4yV3lINmkxdDRNajJ3eEt0UWFrZVVYcmhaMjNTQkJxeWhzTFN1dEVHNzRGSkFTa2NiL0xtNG1DMG42Z01teG41T1VibExxRWkrVDFpQzN0eDNwek5LKzBtY2N4dkVXQ1VGUGVsdmw1Z1hVVWtBUWtBYW40Njc0K0wyZ1BFd2VrdnEyOXR6NjJZb0w0YXVCNXRYN251YlFvYk5RYzlNZDRxK2d0RWxYY0tQdmNMQ2p6czEyZWI0VDdLMitHKzNQUTZqSjhVQXo1c0oyWkpyMGVwa011UE1obi9sK08rUUJ6d051ajhzUDQ4WXJueE9IODMxbTdseFo3Yi8vWGwvRy9vYU1kd0Q4ZWlOY3NrQUFReGdYaENJZFc5eHUyWmdBQUFLR1RwdVplQUFCQWxGMXVkeGk1ZVFjQUFFRGtYRktwV1FNQUFNRFp4bGxTQUFBQThZOVN1K1BBQVduanNnSUFBT0hzTzJWMkFBQkErZmJLN0FBQUFDTEpXNlNWU3dvQUFJUzNTQTZOQlFBQXdsdWtId1lBQUVEUmpnTUdwSVhMQ1FBQWxHeGxIeElBQU1BZjVnTUdwSzNMQ1FBQWxPNDBVRUI2ZENrQkFJRFM3VFJxQUFBQStNTmFvd1lBQUlBL0xBVWtBQUNBR1B3OEpKM3NBQUNBb3QwTkdKRFdMaWNBQUZDNm9RTFN6cVVFQUFBRXBEL0czcVVFQUFCS2R4Q1FBQUFBL3JBWGtBQUFBSVlOU0U4dUpRQUFJQ0Q5T1FBQUFBU2tsM0Z5S1FHQTZIbk95UDNMZUhnWlg4Ny9id0I3a0FDQTVzeGV4dU1QaTRoSElRa1FrQUNBSVN6T0FhT0VOekh6bC9IOHhrSkNTQUlFSkFEZ1F6Nzk4REIrRFIvTEFzUFJaVWlhK1ZpQmNGQXNBSENsKzU4OGxEOFhHSTR1UTk3Y3h3dFVFSkMyTGlVQVRCK092by83QXNPUmtBUkVCazFraGdwSWE1Y1RBTkkvdUIrdmVEaFB2YS9ubG5Ba0pBRXg4YjVPQVFrQUtneEhVNGVrYm9ERmhaQUVqRzA1WUVCYXVKd0FrRmM0bWlva2RWZlU1d3RKUUU3V0F3YWttY3NKQVBtRm83RkRVdDl3MUYzeG54ZVNnQ2lzeGZjM2x4SUEwdmphNHlGOE9JK3BnOGI4eW5BVVFoS1FtYWZRNGhzQW91UnVkWWZ6bTZHN2lVTlMzNFlNWGR6KzVrbElBbEthRGZqMmFPTnlBc0IwNFNndXl2RU9FNVRiZlRRY0NVbEFEcm9CQTlMUzVRU0FjY1BSNlkyUU0zWklHaW9jQ1VuQTFIWURCcVE3bHhNQXhnMUg4M2NhTzR3UmtvWU9SMElTTUtYbmdjTFJ3YVVFZ0h6QzBXVkkyaVlNU2FuQ2taQUVST0huSDYxZFRnRElLeHhkU2hHU1VvY2pJUW1JZ3N2clppNG5BS1FQUngvWjlEdGtTQm9ySEFsSlFJeDQzdHczNVhVQVVGWTQrbWpnNkJ1U2NncEgzMjJFSkNDaDlZQUJhZVZ5QWtEKzRlaWFrSFNmV1RpNjVtOFhrb0M0NGUzUnMvSTZBR2d2SEYwVE5HYVpoU01oQ1lnQzNoNXRYVTRBS0NzYzlRa2FYYWJoU0VnQ3d0c2pBS2pQSnFZTlJ6OExHdXZNdzFIS3pueEFlNzU2ZXdRQTArb3lDVWZ4TjIxdHQ0V0VJeUVKR01KcXdIRDBPaFl1S1FDVUhZN2lIQjRPQlpUVkNVbkFrT1lEbDladFhWSUFLRDhjUmFiZDZvUWtJQkwvTVBRNFlEZzZ1YjhBZ0hEVVpYYU5oU1JnaW5EazNDTUFTQkNPVHNLUmtBUVVHWTRPTGlzQURCK09jbWhIWFhvNEVwS0FuNWtsQ0VjbmJiMEJvTzF3dEM3azJndEp3S1hsd0EwWnZvK2xTd3NBN1lhamJXR2ZnWkFFdkg2L3Z5UUlSdC9PNTlrQkFNTFIvNnZsZjhnNFpBaEowSzdmWHNaVG9uQzBkWGtCUURqNjJYLzNPWk4vSnlFSlNCbU1OR1VBQU9FbytuYUJlczY0SGw5SWdxaiswTmN2aVlQUjkzRGtQZ0VBd3RGZmZJMHl1OXdkZW9Za0lJcm9TUGZyU0tGSU9BS0Fpc1BSWGMvRnhQWW5pNUpUb2EzQTczcUdwSHRUR3JMNHZ2NXlNVjdMNWo3SEgzc2VuMGNLUlBZY0FVQUQ0ZWh4Z0lYQW91ZUNRa2lDeUxZYzdaY2U0OU01bEx3M3ZweURTOS94TkVIQTBhME9BSVNqSk9Ib21uOTNJWWxRQnZadUNQbTFad2lwTVhqa1BrN09PUUlBNFdqb2F5QWtNV1ZaMXEyQjVGNFlhWDdzN0RjQ2dPR0R3YkxpY0hUdHRWaGt1cGpldlJOd085TTloaWpaR2lxVVBGdTRHNUgrcmRIS1Z4b0ErcnN2NksxSjZuQjBUVWdxN1p5a3d4dC83eXl1MzUrUisvajZUaWg1dEdnMkdobHJiNDBBNExxd0lSeDlQQ1ROQ2doSjI0dEYwcS9uejExSU1JeDZ4emJqZXhNQVJLN2xRNCtGN2JmNUd1TzNyZTBLUDR4MUhYK1dSUzdDSGhQRHFMMlVUakFDZ0xpKys5VDlGZnNldW93VytsT2Q2ZEVWM3ZqZzd0eXkyQUxTTU9vY3gvTjlTaWtkemZsc0dFYVQ0eVBuZWx6dXViamxvZHRsOUxacjZyKzFLNlNCeGQ5ZE8yK05ES08rY1RqL2NKVHJQa2dZaFp1QllSaGpsbWtzTXJyL1BXUVM1TG9lKzVHaXdNNkVobUdVOFpab2QrNUdON01zQmdISk1JeHhIOEx6Z3U1L1kzYVM2M29FeTF3b3FUT01zdDhPN1MvMkVDcWRBd0hKTUl5SnhqN1RCL0UrZzVEVTUyM01LcFA5UmcveHNiZUgrNHV4T3kvU2JobmJILzYzREtQMThkYjNhWEVlZ2hBSVNJWmhoRU1FbzJkemlkT0VJYW1ic0VGRWlqYm8zOThVYnM2ZnU0VVpBQUtTWVJoR1lXZGx6Q2NLU1YzUGNwaXBBMGJmY0pSN0dBWUFBY2t3ak5ITDZMWnZ0SVQ5TGY1b1Y1MXJWNlN1NThHdDh4SC9lYWNNd3RHOFo5djJnNDVYQU5Sa1BkTFlHNU9NN1lpZnNWSGUyTjlZMjc2NnFHMmZ4WFZ2SDdyR1ExTGZjRFIxNE9nYmp2Yks2QUFBb0ovSHpNOUJHanNrMVJhT3RxWTRBQUQwczNsbmNmMnBzWkRVOSt5Z2hYQUVBQUQxMmZaWVpOOUh2cVhIUTRha3Z1R29peklhTW14TWJ3QUF1SDZ4ZlNnNEpHMEhDa20xaGFQTzFBWUFnRFpEMGtmTDdSYkNFUUFBMEZKSWVxc2RkOSs5UE1JUkFBQTBHSktPRllha3R6ck9sUktPNG56TmhTTUFBSWp4dTZPZEtndEpYUVBoYUd2cUFnQ0FrUFJlU0JLT0FBQ0E1a1BTc29Kd3RCS09BQUJBU0pyNmNOV3VrTTU4d2hFQUFBaEp3cEZ3QkFBQVFsSUw0V2paNCsvY201SUFBQ0FrM1dKV1VEanFFK1FPYjV6bkJBQUFDRWxSeStHcXdoRUFBQWhKd3BGd0JBQUFaVnYwQ0I2dlkxTllPSnFkZzkzbkVjTkluM0IwRW80QUFDQnZYYytRMUJVU2pwWS9CSlhIYzNqSklSek5UVGNBQUJDU1VvV2pWZlJyNVBDY01Kd0lSd0FBSUNSTkhvNjJmL1BmM2Z6a1AvOThMaWtVamdBQWdDSkMwa2ZDVVp6UEZScnJieS9wVENZQUFLQ3drUFRSY1BROXRJenh0OCtFSXdBQUVKSlNCWUFod3RFMWYvdEg5aVNWMUhZY0FBQW9MQ1FOR1k2K1d5VUtTY0lSQUFBSVNja0NRWXB3OU4xMjRKQ1U4bThGQUFBYUQwbGpCSTRoUTlLOWNBUUFBS1RZMXpQbTI1aStJV2ttSEFFQUFHT0hwTEZMMVY3L2VZY2UvN3pIODM5V09BSUFBRVlKU1ZQdDQ3azFKQWxIQUFCQWtwQTBkUUg4bTFNQUFBSEdTVVJCVkpPRGEwTFM2OS8rdGNkLzl2REdXeWNBQUVCSWVqTWs5UTFIKzhSL2Q5K1E5RTA0QWdBQVVvU2taYzl3TkZiZ0dDSWtDVWNBQU1ETkxjQnpDeHdmQ1VuQ0VRQUFrQ3drVFJVNGJnbEpXK0VJQUFCSUZaS21maHR6ZDk3MzlFMjNPZ0FBWU1xUWxGT3AybFk0QWdBQWh2YmFrT0VVWlphcWJkNzRXenNmS3dBQWNLdjVPeUZwSFhtL0Jmdit0eDlmeHNMSENRQUFEQkdTamo4RW8xSUN4OHhiSXdBQUlCSTFRRGllM3hycC9nWUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUEvT2ovQUdoWlBvOURYcVE4QUFBQUFFbEZUa1N1UW1DQyIgd2lkdGg9IjI0MCIgaGVpZ2h0PSIxNDgiIGFsdD0iQVRIQVIiIHN0eWxlPSJkaXNwbGF5OmJsb2NrO3dpZHRoOjI0MHB4O21heC13aWR0aDoxMDAlO2hlaWdodDphdXRvO2JvcmRlcjowO21hcmdpbjowIGF1dG87Ij4KICAgICAgICAgIDwvdGQ+CiAgICAgICAgPC90cj4KICAgICAgICA8dHI+CiAgICAgICAgICA8dGQgZGlyPSJydGwiIGNsYXNzPSJhdGhhci1jYXJkIiBiZ2NvbG9yPSIjZmZmZmZmIiBzdHlsZT0icGFkZGluZzo4cHggMjhweCAyOHB4O3RleHQtYWxpZ246cmlnaHQ7YmFja2dyb3VuZC1jb2xvcjojZmZmZmZmO2JhY2tncm91bmQtaW1hZ2U6bGluZWFyLWdyYWRpZW50KCNmZmZmZmYsI2ZmZmZmZik7Ij4KICAgICAgICAgICAgPHAgY2xhc3M9ImF0aGFyLXRpdGxlIiBzdHlsZT0ibWFyZ2luOjAgMCAxNnB4O2ZvbnQtc2l6ZToxNnB4O2xpbmUtaGVpZ2h0OjEuNztjb2xvcjojMTgxODFiOyI+2YXYsdit2KjYp9mL2Iw8L3A+CiAgICAgICAgICAgIDxwIGNsYXNzPSJhdGhhci1ib2R5IiBzdHlsZT0ibWFyZ2luOjAgMCAyNHB4O2ZvbnQtc2l6ZToxNXB4O2xpbmUtaGVpZ2h0OjEuNzU7Y29sb3I6IzNmM2Y0NjsiPtiq2YTZgtmR2YrZhtinINi32YTYqNin2Ysg2YTYpdi52KfYr9ipINiq2LnZitmK2YYg2YPZhNmF2Kkg2KfZhNmF2LHZiNixINmE2K3Ys9in2KjZgy48L3A+CiAgICAgICAgICAgIDxwIGNsYXNzPSJhdGhhci1ib2R5IiBzdHlsZT0ibWFyZ2luOjAgMCAxMHB4O2ZvbnQtc2l6ZToxNHB4O2xpbmUtaGVpZ2h0OjEuNztjb2xvcjojM2YzZjQ2O3RleHQtYWxpZ246Y2VudGVyOyI+2LHZhdiyINin2YTYqtit2YLZgiDYp9mE2K7Yp9i1INio2YM8L3A+CiAgICAgICAgICAgIDx0YWJsZSByb2xlPSJwcmVzZW50YXRpb24iIGNlbGxzcGFjaW5nPSIwIiBjZWxscGFkZGluZz0iMCIgYm9yZGVyPSIwIiBhbGlnbj0iY2VudGVyIiBzdHlsZT0ibWFyZ2luOjAgYXV0byAyNHB4OyI+CiAgICAgICAgICAgICAgPHRyPgogICAgICAgICAgICAgICAgPHRkIGRpcj0ibHRyIiBjbGFzcz0iYXRoYXItdG9rZW4iIGJnY29sb3I9IiNmYWZhZmEiIHN0eWxlPSJmb250LXNpemU6MzRweDtsZXR0ZXItc3BhY2luZzowLjI1ZW07Zm9udC13ZWlnaHQ6ODAwO2NvbG9yOiMxODE4MWI7YmFja2dyb3VuZC1jb2xvcjojZmFmYWZhO2JhY2tncm91bmQtaW1hZ2U6bGluZWFyLWdyYWRpZW50KCNmYWZhZmEsI2ZhZmFmYSk7Ym9yZGVyOjFweCBzb2xpZCAjZTRlNGU3O2JvcmRlci1yYWRpdXM6MTRweDtwYWRkaW5nOjE2cHggMThweDt0ZXh0LWFsaWduOmNlbnRlcjt3aGl0ZS1zcGFjZTpub3dyYXA7Ij4KICAgICAgICAgICAgICAgICAge3tUT0tFTn19CiAgICAgICAgICAgICAgICA8L3RkPgogICAgICAgICAgICAgIDwvdHI+CiAgICAgICAgICAgIDwvdGFibGU+CiAgICAgICAgICAgIDxwIGNsYXNzPSJhdGhhci1tdXRlZCIgc3R5bGU9Im1hcmdpbjowIDAgMThweDtmb250LXNpemU6MTNweDtsaW5lLWhlaWdodDoxLjc7Y29sb3I6IzcxNzE3YTt0ZXh0LWFsaWduOmNlbnRlcjsiPtin2YPYqtioINmH2LDYpyDYp9mE2LHZhdiyINmB2Yog2LXZgdit2Kkg2KfYs9iq2LnYp9iv2Kkg2YPZhNmF2Kkg2KfZhNmF2LHZiNixINiv2KfYrtmEINin2YTZhdmG2LXYqS48L3A+CiAgICAgICAgICAgIDxwIGNsYXNzPSJhdGhhci1tdXRlZCIgc3R5bGU9Im1hcmdpbjowIDAgMTJweDtmb250LXNpemU6MTNweDtsaW5lLWhlaWdodDoxLjY1O2NvbG9yOiM3MTcxN2E7Ij7Ypdiw2Kcg2YTZhSDYqti32YTYqCDYsNmE2YPYjCDYqtis2KfZh9mEINmH2LDZhyDYp9mE2LHYs9in2YTYqS48L3A+CiAgICAgICAgICAgIDxwIGNsYXNzPSJhdGhhci1tdXRlZCIgc3R5bGU9Im1hcmdpbjowO2ZvbnQtc2l6ZToxMnB4O2xpbmUtaGVpZ2h0OjEuNjtjb2xvcjojNzE3MTdhOyI+2KfZhNix2YXYsiDYtdin2YTYrSDZhNmF2LHYqSDZiNin2K3Yr9ipINmI2YTZhdiv2Kkg2YXYrdiv2YjYr9ipLjwvcD4KICAgICAgICAgIDwvdGQ+CiAgICAgICAgPC90cj4KICAgICAgPC90YWJsZT4KICAgIDwvdGQ+CiAgPC90cj4KPC90YWJsZT4KPC9ib2R5Pgo8L2h0bWw+Cg==';
+const SUBJECT_B64 = '2KXYudin2K/YqSDYqti52YrZitmGINmD2YTZhdipINin2YTZhdix2YjYsSDigJQgQVRIQVI=';
+const TEXT_B64 = '2LHZhdiyINil2LnYp9iv2Kkg2KrYudmK2YrZhiDZg9mE2YXYqSDYp9mE2YXYsdmI2LEg2KfZhNiu2KfYtSDYqNmDOiB7e1RPS0VOfX0g4oCUINin2YPYqtio2Ycg2YHZiiDYtdmB2K3YqSDYp9iz2KrYudin2K/YqSDZg9mE2YXYqSDYp9mE2YXYsdmI2LEg2K/Yp9iu2YQg2KfZhNmF2YbYtdipLiDYtdin2YTYrSDZhNmF2LHYqSDZiNin2K3Yr9ipINmI2YTZhdiv2Kkg2YXYrdiv2YjYr9ipLg==';
+
+const APPLE_DOMAINS = new Set(['icloud.com', 'me.com', 'mac.com']);
+
+function b64utf8(b64: string): string {
+  const bin = atob(b64);
+  const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+}
+
+function buildRecoveryEmail(token: string): { subject: string; html: string; text: string } {
+  return {
+    subject: b64utf8(SUBJECT_B64),
+    html: b64utf8(HTML_B64).replaceAll('{{TOKEN}}', token),
+    text: b64utf8(TEXT_B64).replaceAll('{{TOKEN}}', token),
+  };
+}
+
+function parseSender(raw: string): { name: string; email: string } {
+  const trimmed = raw.trim();
+  const bracket = trimmed.match(/^(.+?)\s*<([^>]+)>$/);
+  if (bracket) {
+    return { name: bracket[1].trim(), email: bracket[2].trim() };
+  }
+  const email = trimmed.match(/[^\s<>]+@[^\s<>]+/)?.[0] ?? trimmed;
+  return { name: 'ATHAR', email };
+}
+
+function formatSender(raw: string): string {
+  const { name, email } = parseSender(raw);
+  return `${name} <${email}>`;
+}
+
+function senderDomain(raw: string): string | null {
+  const { email } = parseSender(raw);
+  const match = email.match(/@([^>\s]+)/);
+  return match?.[1]?.toLowerCase() ?? null;
+}
+
+function isAppleMailbox(email: string): boolean {
+  const domain = email.split('@').pop()?.toLowerCase() ?? '';
+  return APPLE_DOMAINS.has(domain);
+}
+
+function brevoConfigured(): boolean {
+  return Boolean(BREVO_API_KEY && BREVO_FROM);
+}
+
+type EmailActionType = 'signup' | 'recovery' | 'invite' | 'magiclink' | 'email_change' | 'email';
+
+type WebhookPayload = {
+  user: { id: string; email: string };
+  email_data: {
+    token: string;
+    token_hash: string;
+    redirect_to: string;
+    email_action_type: EmailActionType;
+    site_url: string;
+    token_new?: string;
+    token_hash_new?: string;
+  };
+};
+
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+async function sendViaBrevo(to: string, subject: string, html: string, text: string): Promise<void> {
+  const sender = parseSender(BREVO_FROM);
+
+  const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: {
+      accept: 'application/json',
+      'api-key': BREVO_API_KEY,
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      sender,
+      to: [{ email: to }],
+      subject,
+      htmlContent: html,
+      textContent: text,
+    }),
+  });
+
+  const raw = await response.text();
+  let body: { message?: string; code?: string } = {};
+  try {
+    body = JSON.parse(raw) as { message?: string; code?: string };
+  } catch {
+    body = { message: raw.slice(0, 500) };
+  }
+
+  if (!response.ok) {
+    const detail = body.message || body.code || raw.slice(0, 300) || response.statusText;
+    console.error('send-auth-emails: brevo error status=' + response.status + ' body=' + raw.slice(0, 500));
+    if (/sender|not valid|not verified|domain|from/i.test(detail)) {
+      throw new Error(
+        'Brevo rejected sender ' + sender.email +
+        '. In Brevo add no-reply@athar-app.online under Senders (verified). Details: ' + detail,
+      );
+    }
+    if (/unauthorized|api.?key|authentication|401|403/i.test(detail + response.status)) {
+      throw new Error('Brevo API key invalid or missing permissions. Use xkeysib- key with Send emails permission. Details: ' + detail);
+    }
+    throw new Error('Brevo API send failed (' + response.status + '): ' + detail);
+  }
+
+  console.log('send-auth-emails: brevo sent to ' + to);
+}
+
+async function pingBrevo(): Promise<{ ok: boolean; detail: unknown }> {
+  const response = await fetch('https://api.brevo.com/v3/account', {
+    headers: { accept: 'application/json', 'api-key': BREVO_API_KEY },
+  });
+  const raw = await response.text();
+  let body: unknown = raw;
+  try {
+    body = JSON.parse(raw);
+  } catch {
+    // keep raw text
+  }
+  return { ok: response.ok, detail: { status: response.status, body } };
+}
+
+async function brevoGet(path: string): Promise<{ ok: boolean; status: number; body: unknown }> {
+  const response = await fetch('https://api.brevo.com/v3' + path, {
+    headers: { accept: 'application/json', 'api-key': BREVO_API_KEY },
+  });
+  const raw = await response.text();
+  let body: unknown = raw;
+  try {
+    body = JSON.parse(raw);
+  } catch {
+    // keep raw text
+  }
+  return { ok: response.ok, status: response.status, body };
+}
+
+async function sendViaResend(to: string, subject: string, html: string, text: string): Promise<void> {
+  if (!resend) {
+    throw new Error('Resend is not configured');
+  }
+
+  const { error } = await resend.emails.send({
+    from: formatSender(SENDER_EMAIL),
+    to: [to],
+    subject,
+    html,
+    text,
+  });
+
+  if (error) {
+    throw new Error((error as { message?: string }).message || 'Resend send failed');
+  }
+
+  console.log('send-auth-emails: resend sent to ' + to);
+}
+
+Deno.serve(async (req) => {
+  const url = new URL(req.url);
+
+  if (req.method === 'GET' && url.searchParams.get('health') === '1') {
+    const domain = senderDomain(SENDER_EMAIL);
+    const brevoReady = brevoConfigured();
+    const brevoPing = brevoReady && url.searchParams.get('brevo_ping') === '1'
+      ? await pingBrevo()
+      : null;
+    const brevoDiag = brevoReady && url.searchParams.get('brevo_diag') === '1'
+      ? {
+        senders: await brevoGet('/senders'),
+        domains: await brevoGet('/senders/domains'),
+        test_send: url.searchParams.get('test_to')
+          ? await (async () => {
+            try {
+              await sendViaBrevo(
+                url.searchParams.get('test_to')!,
+                'ATHAR Brevo test',
+                '<p>ATHAR Brevo test</p>',
+                'If you receive this, Brevo delivery works.',
+              );
+              return { ok: true };
+            } catch (error) {
+              return { ok: false, error: error instanceof Error ? error.message : String(error) };
+            }
+          })()
+          : null,
+      }
+      : null;
+    return json({
+      ok: true,
+      configured: {
+        RESEND_API_KEY: Boolean(RESEND_API_KEY),
+        SEND_EMAIL_HOOK_SECRET: Boolean(HOOK_SECRET),
+        SENDER_EMAIL: Boolean(SENDER_EMAIL),
+        BREVO_API_KEY: Boolean(BREVO_API_KEY),
+        BREVO_FROM: BREVO_FROM,
+        BREVO_FALLBACK: brevoReady,
+      },
+      deliverability: {
+        sender_domain: domain,
+        uses_resend_shared_domain: domain === 'resend.dev',
+        template: 'arabic-html-wordmark',
+        apple_mail_route: brevoReady ? 'brevo-api' : 'resend',
+        apple_hm08_risk_without_brevo: !brevoReady,
+        note: 'Supabase Edge Functions cannot use SMTP ports 25/465/587. Use BREVO_API_KEY (HTTP API), not SMTP.',
+        warning: !brevoReady
+          ? 'Apple/iCloud may bounce on Resend (HM08). Add BREVO_API_KEY and BREVO_FROM in Supabase Secrets.'
+          : !RESEND_API_KEY
+          ? 'RESEND_API_KEY missing — Gmail/non-Apple emails will fail. Re-add RESEND_API_KEY secret.'
+          : null,
+      },
+      brevo_ping: brevoPing,
+      brevo_diag: brevoDiag,
+    });
+  }
+
+  if (req.method !== 'POST') {
+    return new Response('not allowed', { status: 400 });
+  }
+
+  if (!HOOK_SECRET || !SENDER_EMAIL || (!resend && !brevoConfigured())) {
+    console.error('send-auth-emails: missing email provider configuration');
+    return json({ error: { message: 'Email hook is not configured' } }, 500);
+  }
+
+  const payload = await req.text();
+  const headers = Object.fromEntries(req.headers);
+  const wh = new Webhook(HOOK_SECRET.replace('v1,whsec_', ''));
+
+  try {
+    const { user, email_data } = wh.verify(payload, headers) as WebhookPayload;
+    const action = email_data.email_action_type;
+
+    if (action !== 'recovery') {
+      console.warn('send-auth-emails: unsupported action ' + action);
+      return json({ success: true, skipped: action });
+    }
+
+    const token = String(email_data.token ?? '').trim();
+    if (!token) {
+      throw new Error('Recovery email missing token');
+    }
+
+    const mail = buildRecoveryEmail(token);
+    const apple = isAppleMailbox(user.email);
+    const useBrevo = apple && brevoConfigured();
+
+    if (apple && !brevoConfigured()) {
+      console.warn(
+        'send-auth-emails: Apple mailbox without Brevo fallback — Resend may bounce HM08 for ' + user.email,
+      );
+    }
+
+    if (useBrevo) {
+      await sendViaBrevo(user.email, mail.subject, mail.html, mail.text);
+    } else {
+      await sendViaResend(user.email, mail.subject, mail.html, mail.text);
+    }
+
+    return json({ success: true, provider: useBrevo ? 'brevo' : 'resend' });
+  } catch (error) {
+    console.error('send-auth-emails:', error);
+    return json({
+      error: { message: error instanceof Error ? error.message : 'Unknown error' },
+    }, 500);
+  }
+});

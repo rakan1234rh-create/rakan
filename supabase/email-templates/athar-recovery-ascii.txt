@@ -1,0 +1,7 @@
+Hello,
+
+Your ATHAR password reset code is: {{TOKEN}}
+
+Enter this code on the password reset page in the app.
+
+If you did not request this email, you can ignore it.
