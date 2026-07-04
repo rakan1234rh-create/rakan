@@ -24,11 +24,31 @@ function b64utf8(b64: string): string {
   return new TextDecoder().decode(bytes);
 }
 
-function buildRecoveryEmail(token: string): { subject: string; html: string; text: string } {
+function buildRecoveryEmail(token: string): { subject: string; html: string; text: string; deliveryRef: string } {
+  const deliveryRef = crypto.randomUUID();
+  const htmlCore = b64utf8(HTML_B64).replaceAll('{{TOKEN}}', token);
+  // Unique invisible marker per send — prevents Gmail/iCloud stacking without changing visible layout.
+  const html = htmlCore +
+    `<!-- athar-delivery:${deliveryRef} -->` +
+    `<div style="display:none!important;max-height:0;overflow:hidden;font-size:0;line-height:0;color:transparent;mso-hide:all" aria-hidden="true">&#8203;${deliveryRef}</div>`;
   return {
-    subject: b64utf8(SUBJECT_B64),
-    html: b64utf8(HTML_B64).replaceAll('{{TOKEN}}', token),
+    subject: b64utf8(SUBJECT_B64) + invisibleSubjectSuffix(deliveryRef),
+    html,
     text: b64utf8(TEXT_B64).replaceAll('{{TOKEN}}', token),
+    deliveryRef,
+  };
+}
+
+/** Zero-width chars — invisible in inbox subject, breaks client-side conversation threading. */
+function invisibleSubjectSuffix(ref: string): string {
+  const n = (ref.charCodeAt(0) + ref.charCodeAt(ref.length - 1)) % 8 + 1;
+  return '\u200C'.repeat(n);
+}
+
+function antiThreadHeaders(deliveryRef: string): Record<string, string> {
+  return {
+    'X-Entity-Ref-ID': deliveryRef,
+    'X-ATHAR-Delivery': deliveryRef,
   };
 }
 
@@ -84,7 +104,13 @@ function json(body: unknown, status = 200) {
   });
 }
 
-async function sendViaBrevo(to: string, subject: string, html: string, text: string): Promise<void> {
+async function sendViaBrevo(
+  to: string,
+  subject: string,
+  html: string,
+  text: string,
+  deliveryRef: string,
+): Promise<void> {
   const sender = parseSender(BREVO_FROM);
 
   const response = await fetch('https://api.brevo.com/v3/smtp/email', {
@@ -100,6 +126,7 @@ async function sendViaBrevo(to: string, subject: string, html: string, text: str
       subject,
       htmlContent: html,
       textContent: text,
+      headers: antiThreadHeaders(deliveryRef),
     }),
   });
 
@@ -160,7 +187,13 @@ async function brevoGet(path: string): Promise<{ ok: boolean; status: number; bo
   return { ok: response.ok, status: response.status, body };
 }
 
-async function sendViaResend(to: string, subject: string, html: string, text: string): Promise<void> {
+async function sendViaResend(
+  to: string,
+  subject: string,
+  html: string,
+  text: string,
+  deliveryRef: string,
+): Promise<void> {
   if (!resend) {
     throw new Error('Resend is not configured');
   }
@@ -172,6 +205,7 @@ async function sendViaResend(to: string, subject: string, html: string, text: st
     subject,
     html,
     text,
+    headers: antiThreadHeaders(deliveryRef),
   });
 
   if (error) {
@@ -211,6 +245,7 @@ Deno.serve(async (req) => {
                 'ATHAR Brevo test',
                 '<p>ATHAR Brevo test</p>',
                 'If you receive this, Brevo delivery works.',
+                crypto.randomUUID(),
               );
               return { ok: true };
             } catch (error) {
@@ -227,7 +262,7 @@ Deno.serve(async (req) => {
           ? await (async () => {
             try {
               const mail = buildRecoveryEmail('12345678');
-              await sendViaResend(testTo, mail.subject, mail.html, mail.text);
+              await sendViaResend(testTo, mail.subject, mail.html, mail.text, mail.deliveryRef);
               return { ok: true };
             } catch (error) {
               return { ok: false, error: error instanceof Error ? error.message : String(error) };
@@ -303,9 +338,9 @@ Deno.serve(async (req) => {
     }
 
     if (useBrevo) {
-      await sendViaBrevo(user.email, mail.subject, mail.html, mail.text);
+      await sendViaBrevo(user.email, mail.subject, mail.html, mail.text, mail.deliveryRef);
     } else {
-      await sendViaResend(user.email, mail.subject, mail.html, mail.text);
+      await sendViaResend(user.email, mail.subject, mail.html, mail.text, mail.deliveryRef);
     }
 
     return json({ success: true, provider: useBrevo ? 'brevo' : 'resend' });

@@ -32386,7 +32386,7 @@
                   <h2 class="wf-panel-title">صور الملف الشخصي</h2>
                   <p class="wf-panel-sub">profile avatars</p>
                 </div>
-                <p class="mr-settings-note"><i class="fas fa-images"></i> أضف أو احذف صور البروفايل المتاحة للموظفين ومديري الفروع والمشرفين. كل صورة تظهر مرة واحدة وتُربط بالأدوار التي تختارها.</p>
+                <p class="mr-settings-note"><i class="fas fa-images"></i> أضف أو احذف صور البروفايل المتاحة لجميع الأدوار. كل صورة تظهر مرة واحدة ويمكن ربطها بأدوار محددة أو بكل الأدوار.</p>
                 <div class="mr-avatar-admin-toolbar">
                   <button type="button" class="btn btn-primary" onclick="openProfileAvatarAdminModal()"><i class="fas fa-plus"></i> إضافة صورة</button>
                 </div>
@@ -32523,9 +32523,14 @@
             <div class="form-group">
               <span class="form-label">الأدوار المسموحة <span class="required-mark">*</span></span>
               <div class="mr-avatar-admin-roles">
+                <label><input type="checkbox" id="paa-role-admin" value="admin" checked> مدير النظام</label>
+                <label><input type="checkbox" id="paa-role-manager" value="manager" checked> المدير</label>
+                <label><input type="checkbox" id="paa-role-auditor" value="auditor" checked> المدقق</label>
+                <label><input type="checkbox" id="paa-role-supervisor" value="supervisor" checked> المشرف</label>
                 <label><input type="checkbox" id="paa-role-employee" value="employee" checked> موظف</label>
                 <label><input type="checkbox" id="paa-role-branch_manager" value="branch_manager" checked> مدير فرع</label>
-                <label><input type="checkbox" id="paa-role-supervisor" value="supervisor" checked> مشرف</label>
+                <label><input type="checkbox" id="paa-role-observer" value="observer" checked> الراصد</label>
+                <label><input type="checkbox" id="paa-role-hr" value="hr" checked> الموارد البشرية</label>
               </div>
             </div>
             <div class="form-group">
@@ -40992,16 +40997,28 @@
       ]);
 
       const PROFILE_AVATAR_ROLE_PREFIX = {
+        admin: 'adm',
+        manager: 'man',
+        auditor: 'aud',
+        supervisor: 'sup',
         employee: 'emp',
         branch_manager: 'mgr',
-        supervisor: 'sup'
+        observer: 'obs',
+        hr: 'hr'
       };
 
       const PROFILE_AVATAR_ROLE_LABELS = {
+        admin: 'مدير النظام',
+        manager: 'المدير',
+        auditor: 'المدقق',
+        supervisor: 'المشرف',
         employee: 'موظف',
         branch_manager: 'مدير فرع',
-        supervisor: 'مشرف'
+        observer: 'الراصد',
+        hr: 'الموارد البشرية'
       };
+
+      const PROFILE_AVATAR_ALL_ROLES = Object.keys(PROFILE_AVATAR_ROLE_PREFIX);
 
       const PROFILE_AVATAR_KEY_ALIASES = {};
 
@@ -41137,14 +41154,13 @@
       }
 
       function hasNewProfileAvatarsForUser(u) {
-        const roleKey = normalizeUserRole(u?.role);
-        return getProfileAvatarsCatalog().some((a) => a.roles.includes(roleKey) && isProfileAvatarVisible(a) && isProfileAvatarNew(a));
+        if (!canPickProfileAvatar(u)) return false;
+        return getProfileAvatarsForUser(u).some((a) => isProfileAvatarNew(a));
       }
 
       function getProfileAvatarsForUser(u, opts = {}) {
-        const roleKey = normalizeUserRole(u?.role);
+        if (!canPickProfileAvatar(u)) return [];
         return getProfileAvatarsCatalog().filter((a) => {
-          if (!a.roles.includes(roleKey)) return false;
           if (!opts.includeHidden && !isProfileAvatarVisible(a)) return false;
           return true;
         });
@@ -41311,8 +41327,7 @@
       }
 
       function canPickProfileAvatar(u) {
-        const roleKey = normalizeUserRole(u?.role);
-        return !!PROFILE_AVATAR_ROLE_PREFIX[roleKey];
+        return !!(u?.id && normalizeUserRole(u?.role));
       }
 
       function profileDefaultAvatarPickerHtml(u) {
@@ -41325,10 +41340,8 @@
 
       function profileAvatarPickerTitle(u) {
         const roleKey = normalizeUserRole(u?.role);
-        if (roleKey === 'employee') return 'اختر صورتك — موظف';
-        if (roleKey === 'branch_manager') return 'اختر صورتك — مدير فرع';
-        if (roleKey === 'supervisor') return 'اختر صورتك — مشرف';
-        return 'اختر أيقونتك';
+        const lbl = ROLE_LABELS[roleKey] || PROFILE_AVATAR_ROLE_LABELS[roleKey] || 'مستخدم';
+        return `اختر صورتك — ${lbl}`;
       }
 
       function getProfileAvatarPreset(key) {
@@ -41339,9 +41352,7 @@
 
       function getValidProfileAvatarPreset(u) {
         const preset = getProfileAvatarPreset(u?.avatar_key);
-        if (!preset) return null;
-        const roleKey = normalizeUserRole(u?.role);
-        if (!preset.roles.includes(roleKey) || !isProfileAvatarVisible(preset)) return null;
+        if (!preset || !isProfileAvatarVisible(preset)) return null;
         return preset;
       }
 
@@ -41594,7 +41605,7 @@
         const label = String(document.getElementById('paa-label')?.value || '').trim();
         const founding = !!document.getElementById('paa-founding')?.checked;
         const file = document.getElementById('paa-file')?.files?.[0];
-        const roles = ['employee', 'branch_manager', 'supervisor'].filter((r) => document.getElementById(`paa-role-${r}`)?.checked);
+        const roles = PROFILE_AVATAR_ALL_ROLES.filter((r) => document.getElementById(`paa-role-${r}`)?.checked);
         if (!label) {
           showToast('أدخل اسم الصورة.', 'warning');
           return;
@@ -41814,7 +41825,7 @@
           return;
         }
         const preset = getProfileAvatarPreset(key);
-        if (!preset || !preset.roles.includes(normalizeUserRole(u.role)) || !isProfileAvatarVisible(preset)) return;
+        if (!preset || !isProfileAvatarVisible(preset)) return;
         const keyToSave = preset.id;
         try {
           const { data, error } = await sb.from('users')
@@ -44602,6 +44613,31 @@
         }
       }
 
+      function buildUserListAvatarMarkup(u) {
+        const preset = getValidProfileAvatarPreset(u);
+        if (preset) {
+          const foundingCls = preset.founding ? ' has-founding-frame' : '';
+          const bg = preset.imgSource === 'r2' ? userAvatarBgGradient(u) : 'transparent';
+          return {
+            className: `mr-user-card__avatar has-avatar-photo${foundingCls}`,
+            style: `background:${bg}`,
+            html: profileAvatarImgHtml(preset, u.name || preset.label, { founding: preset.founding })
+          };
+        }
+        if (canPickProfileAvatar(u)) {
+          return {
+            className: 'mr-user-card__avatar has-default-icon',
+            style: '',
+            html: `<span class="profile-hero__default-svg" aria-hidden="true">${TOPBAR_USER_DEFAULT_SVG}</span>`
+          };
+        }
+        return {
+          className: 'mr-user-card__avatar',
+          style: `background:${userAvatarBgGradient(u)}`,
+          html: `<span class="mr-user-card__initials" aria-hidden="true">${Sec.escapeHTML(userDisplayInitials(u.name))}</span>`
+        };
+      }
+
       function renderUserCard(u, canManage) {
         const branch = state._branchById ? state._branchById.get(u.branch_id) : state.branches.find(b => b.id === u.branch_id);
         const roleKey = normalizeUserRole(u.role);
@@ -44624,10 +44660,11 @@
             <button type="button" class="mr-user-card__btn mr-user-card__btn--primary" onclick="editUser('${u.id}')">تعديل</button>
             <button type="button" class="mr-user-card__btn mr-user-card__btn--icon mr-user-card__btn--danger" onclick="deleteUser('${u.id}')" aria-label="تعطيل" title="تعطيل"><i class="fas fa-trash" aria-hidden="true"></i></button>
           </div>` : '';
+        const avatar = buildUserListAvatarMarkup(u);
         return `
       <article class="mr-user-card" role="listitem">
         <div class="mr-user-card__identity">
-          <span class="mr-user-card__avatar" aria-hidden="true"><i class="fas fa-user"></i></span>
+          <span class="${avatar.className}" aria-hidden="true"${avatar.style ? ` style="${avatar.style}"` : ''}>${avatar.html}</span>
           <div class="mr-user-card__body">
             <div class="mr-user-card__title">
               <h3 class="mr-user-card__name">${Sec.escapeHTML(u.name)}</h3>
@@ -44679,10 +44716,12 @@
           <button type="button" class="mr-viol-act" onclick="deleteUser('${u.id}')" aria-label="تعطيل"><i class="fas fa-trash"></i></button>
         </div>`
           : '';
+        const avatar = buildUserListAvatarMarkup(u);
         return `
     <article class="user-mob-card" role="listitem">
       ${roleLabel ? `<span class="user-mob-card__role user-mob-card__role--${roleKey}" style="--rc:${roleColor}">${Sec.escapeHTML(roleLabel)}</span>` : ''}
       <div class="user-mob-card__head">
+        <span class="${avatar.className} user-mob-card__avatar"${avatar.style ? ` style="${avatar.style}"` : ''} aria-hidden="true">${avatar.html}</span>
         <div class="user-mob-card__main">
           <h3 class="user-mob-card__name">${Sec.escapeHTML(u.name)}</h3>
           ${rowsHtml}
@@ -44726,6 +44765,7 @@
         list.innerHTML = usersMob
           ? filtered.map(u => renderUserMobItem(u, canManage)).join('')
           : filtered.map(u => renderUserCard(u, canManage)).join('');
+        hydrateProfileAvatarImages(list).catch(() => {});
         syncUsersMobileScrollShell('departments');
         requestAnimationFrame(() => syncUsersMobileScrollShell('departments'));
       }
