@@ -162,8 +162,9 @@ async function sendViaResend(to: string, subject: string, html: string, text: st
     throw new Error('Resend is not configured');
   }
 
-  const { error } = await resend.emails.send({
-    from: formatSender(SENDER_EMAIL),
+  const from = formatSender(SENDER_EMAIL);
+  const { data, error } = await resend.emails.send({
+    from,
     to: [to],
     subject,
     html,
@@ -171,10 +172,18 @@ async function sendViaResend(to: string, subject: string, html: string, text: st
   });
 
   if (error) {
-    throw new Error((error as { message?: string }).message || 'Resend send failed');
+    const msg = (error as { message?: string; name?: string }).message || 'Resend send failed';
+    console.error('send-auth-emails: resend error from=' + from + ' to=' + to + ' msg=' + msg);
+    if (/domain|verify|not verified|invalid.*from|sender/i.test(msg)) {
+      throw new Error(
+        'Resend rejected sender ' + parseSender(SENDER_EMAIL).email +
+        '. Verify athar-app.online in Resend Domains and set SENDER_EMAIL to no-reply@athar-app.online. Details: ' + msg,
+      );
+    }
+    throw new Error(msg);
   }
 
-  console.log('send-auth-emails: resend sent to ' + to);
+  console.log('send-auth-emails: resend sent to ' + to + ' id=' + (data as { id?: string })?.id);
 }
 
 Deno.serve(async (req) => {
@@ -186,19 +195,36 @@ Deno.serve(async (req) => {
     const brevoPing = brevoReady && url.searchParams.get('brevo_ping') === '1'
       ? await pingBrevo()
       : null;
+    const testTo = url.searchParams.get('test_to');
     const brevoDiag = brevoReady && url.searchParams.get('brevo_diag') === '1'
       ? {
         senders: await brevoGet('/senders'),
         domains: await brevoGet('/senders/domains'),
-        test_send: url.searchParams.get('test_to')
+        test_send: testTo
           ? await (async () => {
             try {
               await sendViaBrevo(
-                url.searchParams.get('test_to')!,
+                testTo,
                 'ATHAR Brevo test',
                 '<p>ATHAR Brevo test</p>',
                 'If you receive this, Brevo delivery works.',
               );
+              return { ok: true };
+            } catch (error) {
+              return { ok: false, error: error instanceof Error ? error.message : String(error) };
+            }
+          })()
+          : null,
+      }
+      : null;
+    const resendDiag = resend && url.searchParams.get('resend_diag') === '1'
+      ? {
+        sender: formatSender(SENDER_EMAIL),
+        test_send: testTo
+          ? await (async () => {
+            try {
+              const mail = buildRecoveryEmail('12345678');
+              await sendViaResend(testTo, mail.subject, mail.html, mail.text);
               return { ok: true };
             } catch (error) {
               return { ok: false, error: error instanceof Error ? error.message : String(error) };
@@ -232,6 +258,7 @@ Deno.serve(async (req) => {
       },
       brevo_ping: brevoPing,
       brevo_diag: brevoDiag,
+      resend_diag: resendDiag,
     });
   }
 
