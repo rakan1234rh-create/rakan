@@ -47046,25 +47046,40 @@
         return '';
       }
 
+      const ATT_IMG_EXTS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'heic', 'heif', 'tif', 'tiff'];
+      const ATT_VID_EXTS = ['mp4', 'mov', 'webm', 'avi', 'mkv', 'm4v', '3gp'];
+
+      function attachmentExtFromAtt(att) {
+        if (!att) return '';
+        return extractAttachmentExt(att.p || att.path || att.id || '', att.n || att.name || '');
+      }
+
+      function isAttachmentImageExt(ext) {
+        return ATT_IMG_EXTS.includes(String(ext || '').toLowerCase());
+      }
+
+      function isAttachmentVideoExt(ext) {
+        return ATT_VID_EXTS.includes(String(ext || '').toLowerCase());
+      }
+
       function mimeTypeFromAttachmentExt(ext) {
         const map = {
           jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif',
           webp: 'image/webp', svg: 'image/svg+xml', bmp: 'image/bmp',
+          heic: 'image/heic', heif: 'image/heif', tif: 'image/tiff', tiff: 'image/tiff',
           mp4: 'video/mp4', mov: 'video/quicktime', webm: 'video/webm',
-          avi: 'video/x-msvideo', mkv: 'video/x-matroska',
+          avi: 'video/x-msvideo', mkv: 'video/x-matroska', m4v: 'video/mp4', '3gp': 'video/3gpp',
           pdf: 'application/pdf'
         };
         return map[(ext || '').toLowerCase()] || '';
       }
 
       function isLikelyImageAttachmentKey(fileId) {
-        const ext = extractAttachmentExt(fileId, '');
-        return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'].includes(ext);
+        return isAttachmentImageExt(extractAttachmentExt(fileId, ''));
       }
 
       function isLikelyVideoAttachmentKey(fileId) {
-        const ext = extractAttachmentExt(fileId, '');
-        return ['mp4', 'mov', 'webm', 'avi', 'mkv'].includes(ext);
+        return isAttachmentVideoExt(extractAttachmentExt(fileId, ''));
       }
 
       function getInlineDataUrlForAttachmentPath(fileId) {
@@ -50530,9 +50545,9 @@
         };
 
         const items = normalizedAtts.map((a, idx) => {
-          const ext = (a.name || '').split('.').pop().toLowerCase();
-          const isImg = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext);
-          const isVid = ['mp4', 'mov', 'webm', 'avi'].includes(ext);
+          const ext = attachmentExtFromAtt(a);
+          const isImg = isAttachmentImageExt(ext);
+          const isVid = isAttachmentVideoExt(ext);
           const rc = roleColors[a.role] || { bg: 'var(--bg2)', color: 'var(--text2)' };
           
           const placeholderSvg = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><rect fill="%23e5e7eb" width="80" height="80" rx="8"/><text x="40" y="44" text-anchor="middle" fill="%239ca3af" font-size="10">جاري...</text></svg>')}`;
@@ -50640,19 +50655,15 @@
       }
 
       function getVisibleAttachments(t) {
-        let atts = [];
+        let atts = parseDbJsonArray(t && t.attachments);
         try {
-          const raw = t && t.attachments;
-          if (Array.isArray(raw)) atts = raw;
-          else if (typeof raw === 'string' && raw.trim() !== '') {
-            if (raw.includes('[object Object]')) {
-              if (isMirsadDebugLog()) console.warn('[Viewer] Detected corrupted attachment data (object-string conversion issue)');
-            } else {
-              atts = JSON.parse(raw);
-            }
+          if (typeof (t && t.attachments) === 'string' && (t.attachments.includes('[object Object]'))) {
+            if (isMirsadDebugLog()) console.warn('[Viewer] Detected corrupted attachment data (object-string conversion issue)');
+            atts = [];
           }
         } catch (e) {
           if (isMirsadDebugLog()) console.error('[Viewer] Failed to parse attachments:', e, t && t.attachments);
+          atts = [];
         }
         if (!Array.isArray(atts)) return [];
         atts = atts.filter(a => a && typeof a === 'object' && (a.p || a.path || a.url || a.u));
@@ -50933,9 +50944,9 @@
         const prevBtn = document.getElementById('attViewerPrev');
         const nextBtn = document.getElementById('attViewerNext');
 
-        const ext = name.split('.').pop().toLowerCase();
-        const isImg = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext);
-        const isVid = ['mp4', 'mov', 'webm', 'avi', 'mkv'].includes(ext);
+        const ext = extractAttachmentExt(fileId, name);
+        const isImg = isAttachmentImageExt(ext);
+        const isVid = isAttachmentVideoExt(ext);
         const isPdf = ext === 'pdf';
 
         const fileId = att.id || '';
@@ -51154,10 +51165,35 @@
           <div class="att-fallback">
             <i class="fas fa-file"></i>
             <p>هذا النوع من الملفات لا يمكن عرضه مباشرة</p>
-            <a href="${Sec.escapeHTML(String(cfUrl||''))}" target="_blank" rel="noopener noreferrer" download="${Sec.escapeHTML(name)}">
-              <i class="fas fa-download"></i> تحميل الملف / فتح في Cloudflare
+            <a id="att-fallback-link" href="#" target="_blank" rel="noopener noreferrer" download="${Sec.escapeHTML(name)}">
+              <i class="fas fa-spinner fa-spin"></i> جاري تجهيز رابط التحميل…
             </a>
           </div>`;
+          setTimeout(async () => {
+            if (viewerLoadGen !== state._attViewerLoadGen) return;
+            const link = document.getElementById('att-fallback-link');
+            if (!link) return;
+            let href = '';
+            try {
+              if (fileId) {
+                const resolved = await loadCloudflareFile(fileId, ticketCtx);
+                if (viewerLoadGen !== state._attViewerLoadGen) return;
+                if (resolved && /^https?:\/\//i.test(String(resolved).trim())) href = String(resolved).trim();
+                else if (resolved && (String(resolved).startsWith('data:') || String(resolved).startsWith('blob:'))) href = String(resolved);
+              }
+            } catch (e) {
+              if (isMirsadDebugLog()) console.warn('[Viewer] fallback download resolve failed:', e);
+            }
+            if (!href && cfUrl && /^https?:\/\//i.test(String(cfUrl).trim())) href = String(cfUrl).trim();
+            if (href) {
+              link.href = href;
+              link.innerHTML = '<i class="fas fa-download"></i> تحميل الملف';
+            } else {
+              link.removeAttribute('href');
+              link.style.pointerEvents = 'none';
+              link.innerHTML = '<i class="fas fa-exclamation-triangle"></i> تعذّر تجهيز رابط التحميل';
+            }
+          }, 50);
         }
 
         content.innerHTML = html;
