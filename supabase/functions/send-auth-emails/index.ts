@@ -123,6 +123,9 @@ async function sendViaBrevo(to: string, subject: string, html: string, text: str
     if (/unauthorized|api.?key|authentication|401|403/i.test(detail + response.status)) {
       throw new Error('Brevo API key invalid or missing permissions. Use xkeysib- key with Send emails permission. Details: ' + detail);
     }
+    if (/not yet activated|contact@brevo/i.test(detail)) {
+      throw new Error('Brevo account not activated. Email contact@brevo.com to enable transactional sending. Details: ' + detail);
+    }
     throw new Error('Brevo API send failed (' + response.status + '): ' + detail);
   }
 
