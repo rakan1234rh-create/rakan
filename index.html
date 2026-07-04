@@ -46399,6 +46399,7 @@
               b: state.currentUser.name,
               r: ROLE_LABELS[myRole] || myRole,
               t: getNow(),
+              ...(file.transcoded ? { v: 'h264' } : {}),
               ...(file.devDataUrl ? { u: file.devDataUrl } : {})
             });
             fileIndex++;
@@ -46896,7 +46897,13 @@
               if (fileEntry._cancelled) return;
               body = blob;
               contentType = 'video/mp4';
+              uploadName = mp4NameAfterTranscode(uploadName);
+              fileEntry.name = uploadName;
               fileEntry.transcoded = true;
+              if (fileEntry.blobUrl) {
+                try { URL.revokeObjectURL(fileEntry.blobUrl); } catch (_) { /* */ }
+              }
+              fileEntry.blobUrl = URL.createObjectURL(blob);
             }
           }
 
@@ -47594,6 +47601,19 @@
         return codec === 'h265';
       }
 
+      function isAttachmentH264Ready(att) {
+        if (!att) return false;
+        if (att.v === 'h264' || att.h264 === true || att.h264 === 1) return true;
+        const name = String(att.n || att.name || att.p || att.path || '');
+        return /\.h264\.mp4$/i.test(name) || /\b_h264\.mp4$/i.test(name);
+      }
+
+      function mp4NameAfterTranscode(fileName) {
+        const base = String(fileName || 'video').trim() || 'video';
+        const stem = base.replace(/\.[^.]+$/, '') || 'video';
+        return stem + '.mp4';
+      }
+
       function shouldPrepTranscodeVideo(blob, fileName, codec) {
         if (!isAtharDesktopViewer()) return false;
         if (!(blob instanceof Blob) || !blob.size) return false;
@@ -48266,6 +48286,7 @@
 
         if (!isFastVideoStreamUrl(url)) {
           await setVideoElementSource(vid, url, mime);
+          revealAttViewerMedia(vid);
           return url;
         }
 
@@ -48289,7 +48310,10 @@
         if (streamUrl) {
           if (isMirsadDebugLog()) console.info('[Viewer] بث مباشر عبر Edge Function');
           const direct = await tryAttach(streamUrl, 'بث مباشر', 45000);
-          if (direct) return direct;
+          if (direct) {
+            revealAttViewerMedia(vid);
+            return direct;
+          }
 
           const streamLen = await probeR2StreamContentLength(streamUrl);
           if (!streamLen || streamLen <= VIDEO_BLOB_MAX_BYTES) {
@@ -48304,7 +48328,10 @@
                 throw hevcErr;
               }
               const blobPlay = await tryAttach(blobUrl, 'blob', 45000);
-              if (blobPlay) return blobPlay;
+              if (blobPlay) {
+                revealAttViewerMedia(vid);
+                return blobPlay;
+              }
             } catch (blobErr) {
               if (blobErr?.code === 'HEVC') throw blobErr;
               if (isMirsadDebugLog()) console.warn('[Viewer] blob stream فشل', blobErr);
@@ -48316,7 +48343,10 @@
 
         if (url && url !== streamUrl) {
           const alt = await tryAttach(url, 'رابط بديل', 30000);
-          if (alt) return alt;
+          if (alt) {
+            revealAttViewerMedia(vid);
+            return alt;
+          }
         }
 
         const fail = new Error(lastMediaCode === 4 ? 'CODEC_NOT_SUPPORTED' : 'تعذّر قراءة بيانات الفيديو');
@@ -48324,11 +48354,12 @@
         throw fail;
       }
 
-      async function resolveAttachmentVideoPlayback(vid, fileId, name, ticketCtx, mime, ck, viewerLoadGen) {
+      async function resolveAttachmentVideoPlayback(vid, fileId, name, ticketCtx, mime, ck, viewerLoadGen, attMeta) {
         const streamFb = readVideoStreamFallback(ck);
         let playUrl = await loadAttachmentPlayUrl(fileId, name, ticketCtx);
         if (viewerLoadGen !== state._attViewerLoadGen) return null;
 
+        const markedH264 = isAttachmentH264Ready(attMeta);
         const hevcCtx = {
           vid,
           streamUrl: streamFb || (isR2StreamPlayUrl(playUrl) ? playUrl : ''),
@@ -48337,20 +48368,43 @@
           mime: mime || 'video/mp4',
           viewerLoadGen,
           fileBytes: streamFb ? await probeR2StreamContentLength(streamFb) : 0,
+          markedH264,
         };
 
         let playErrMediaCode = 0;
         try {
           playUrl = await playVideoInViewer(vid, playUrl, mime, streamFb);
-          if (await waitVideoElementPlayable(vid, 10000)) return playUrl;
-          if (isVideoElementPlayable(vid)) return playUrl;
-        } catch (playErr) {
-          if (playErr?.code === 'HEVC') {
-            return await handleHevcCameraVideoPlayback(vid, fileId, name, ticketCtx, mime, ck, viewerLoadGen, streamFb, playUrl, playErr.codec || 'h265');
+          if (await waitVideoElementPlayable(vid, 10000)) {
+            revealAttViewerMedia(vid);
+            return playUrl;
           }
-          playErrMediaCode = playErr?.mediaCode || (playErr?.message === 'CODEC_NOT_SUPPORTED' ? 4 : 0);
-          if (isMirsadDebugLog()) console.warn('[Viewer] فشل تشغيل الفيديو', playErr);
-          if (isVideoElementPlayable(vid)) return playUrl;
+          if (isVideoElementPlayable(vid)) {
+            revealAttViewerMedia(vid);
+            return playUrl;
+          }
+        } catch (playErr) {
+          if (markedH264) {
+            playErrMediaCode = playErr?.mediaCode || (playErr?.message === 'CODEC_NOT_SUPPORTED' ? 4 : 0);
+            if (isMirsadDebugLog()) console.warn('[Viewer] H.264 marked — skip HEVC fallback', playErr);
+          } else if (playErr?.code === 'HEVC') {
+            return await handleHevcCameraVideoPlayback(vid, fileId, name, ticketCtx, mime, ck, viewerLoadGen, streamFb, playUrl, playErr.codec || 'h265');
+          } else {
+            playErrMediaCode = playErr?.mediaCode || (playErr?.message === 'CODEC_NOT_SUPPORTED' ? 4 : 0);
+            if (isMirsadDebugLog()) console.warn('[Viewer] فشل تشغيل الفيديو', playErr);
+            if (isVideoElementPlayable(vid)) {
+              revealAttViewerMedia(vid);
+              return playUrl;
+            }
+          }
+        }
+
+        if (markedH264) {
+          const openHref = readVideoDirectR2Url(ck)
+            || (playUrl && /^https?:\/\//i.test(String(playUrl).trim()) ? String(playUrl).trim() : '');
+          const err = new Error('تعذّر تشغيل الفيديو — جرّب التحميل أو أعد فتح المرفق');
+          err.mediaCode = playErrMediaCode;
+          if (openHref) err.downloadHref = openHref;
+          throw err;
         }
 
         let codec = await sniffCodecFromStreamUrl(streamFb || playUrl);
@@ -50956,6 +51010,7 @@
         const url = att.url || (att.id ? `${CLOUDFLARE_WORKER_URL}/file?id=${encodeURIComponent(att.id)}` : '');
         const cfUrl = att.cfUrl || url;
         const name = att.name || '';
+        const fileId = att.id || '';
         const total = state._attList.length;
 
         const content = document.getElementById('attViewerContent');
@@ -50970,7 +51025,6 @@
         const isVid = isAttachmentVideoExt(ext);
         const isPdf = ext === 'pdf';
 
-        const fileId = att.id || '';
         const ticketCtx = state.editingTicket;
         const viewerLoadGen = state._attViewerLoadGen || 0;
         let html = '';
@@ -51090,9 +51144,9 @@
               const ck = cfCacheKey(fileId, ticketCtx);
               let playUrl = '';
               try {
-                playUrl = await resolveAttachmentVideoPlayback(vid, fileId, name, ticketCtx, mime, ck, viewerLoadGen);
+                playUrl = await resolveAttachmentVideoPlayback(vid, fileId, name, ticketCtx, mime, ck, viewerLoadGen, rawAtt);
                 if (viewerLoadGen !== state._attViewerLoadGen) return;
-                revealAttViewerMedia(vid);
+                if (vid && isVideoElementPlayable(vid)) revealAttViewerMedia(vid);
               } catch (e) {
                 if (isMirsadDebugLog()) console.error('Lightbox Video Load Error:', e);
                 if (e?.code === 'HEVC' || e?.code === 'VIDEO' || /HEVC_NOT_SUPPORTED|VIDEO_PLAYBACK_FAILED/i.test(String(e?.message || e))) return;
