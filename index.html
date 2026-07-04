@@ -46889,20 +46889,14 @@
               fileEntry.prepStatus = 'transcoding';
               fileEntry.prepStatusMsg = 'جاري التحويل…';
               updateAttachmentPrepUi(scope, fileEntry._fileId);
-              try {
-                const { blob } = await transcodeHevcBlobToPlayableBlob(body, contentType, (msg) => {
-                  fileEntry.prepStatusMsg = msg;
-                  updateAttachmentPrepUi(scope, fileEntry._fileId);
-                });
-                if (fileEntry._cancelled) return;
-                body = blob;
-                contentType = 'video/mp4';
-                fileEntry.transcoded = true;
-              } catch (transcodeErr) {
-                if (fileEntry._cancelled) return;
-                if (isMirsadDebugLog()) console.warn('[Prep] transcode skipped:', transcodeErr);
-                showToast('تعذّر تحويل الفيديو — سيتم رفعه كما هو', 'info');
-              }
+              const { blob } = await transcodeHevcBlobToPlayableBlob(body, contentType, (msg) => {
+                fileEntry.prepStatusMsg = msg;
+                updateAttachmentPrepUi(scope, fileEntry._fileId);
+              });
+              if (fileEntry._cancelled) return;
+              body = blob;
+              contentType = 'video/mp4';
+              fileEntry.transcoded = true;
             }
           }
 
@@ -47455,6 +47449,7 @@
 
       const VIDEO_BLOB_MAX_BYTES = 6 * 1024 * 1024;
       const HEVC_TRANSCODE_MAX_BYTES = 20 * 1024 * 1024;
+      const FFMPEG_CLASS_WORKER_CDN = 'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/worker.js';
       let _ffmpegTranscodeInstance = null;
       const _hevcReplaceInflight = {};
 
@@ -47604,7 +47599,10 @@
         if (!(blob instanceof Blob) || !blob.size) return false;
         if (blob.size > HEVC_TRANSCODE_MAX_BYTES) return false;
         if (codec === 'h264') return false;
-        return isHevcCodec(codec);
+        if (isHevcCodec(codec)) return true;
+        const ext = String(fileName || '').toLowerCase();
+        if (codec === 'unknown' && /\.(mp4|mov|m4v)$/i.test(ext)) return true;
+        return false;
       }
 
       function areAttachmentsReady(scope) {
@@ -47822,23 +47820,33 @@
 
       async function probeAssetUrl(url) {
         try {
-          const res = await fetch(url, { method: 'HEAD', cache: 'no-store' });
-          return res.ok;
-        } catch (_) {
+          let res = await fetch(url, { method: 'HEAD', cache: 'no-store', mode: 'cors' });
+          if (res.ok) return true;
+          if (res.status === 405) {
+            res = await fetch(url, { method: 'GET', cache: 'no-store', mode: 'cors', headers: { Range: 'bytes=0-0' } });
+            return res.ok;
+          }
           return false;
+        } catch (_) {
+          try {
+            const res = await fetch(url, { method: 'GET', cache: 'no-store', mode: 'cors', headers: { Range: 'bytes=0-0' } });
+            return res.ok;
+          } catch (__) {
+            return false;
+          }
         }
       }
 
       async function resolveFfmpegClassWorkerUrl() {
         const local = atharVendorAssetUrl('vendor/ffmpeg/worker.js');
         if (await probeAssetUrl(local)) return local;
-        const cdn = 'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/worker.js';
-        if (await probeAssetUrl(cdn)) return cdn;
-        return null;
+        return FFMPEG_CLASS_WORKER_CDN;
       }
 
       async function probeAtharVendorWorker() {
-        return !!(await resolveFfmpegClassWorkerUrl());
+        if (await probeAssetUrl(FFMPEG_CLASS_WORKER_CDN)) return true;
+        const local = atharVendorAssetUrl('vendor/ffmpeg/worker.js');
+        return probeAssetUrl(local);
       }
 
       async function ensureFfmpegTranscoder(onStatus) {
@@ -47863,9 +47871,6 @@
             });
             const coreBase = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm';
             const classWorkerURL = await resolveFfmpegClassWorkerUrl();
-            if (!classWorkerURL) {
-              throw new Error('ملفات التحويل غير متاحة — حدّث الصفحة (Ctrl+Shift+R) أو تحقق من نشر vendor/ffmpeg');
-            }
             pushFfmpegLoadStatus('تحميل محرك التحويل (~30MB)…');
             const coreURL = await fetchCoreAssetBlobUrl(
               coreBase + '/ffmpeg-core.js', 'text/javascript', 'core-js', pushFfmpegLoadStatus, 'محرك JS',
