@@ -13421,6 +13421,49 @@
         width: 100%;
         padding-top: 8px
       }
+
+      html.mr-profile-page-active.mr-desktop-ui .profile-hero {
+        padding: 14px 16px 18px;
+        margin-bottom: 12px
+      }
+
+      html.mr-profile-page-active.mr-desktop-ui .profile-hero__av-stack {
+        gap: 8px
+      }
+
+      html.mr-profile-page-active.mr-desktop-ui .profile-hero__av {
+        width: 80px;
+        height: 80px;
+        font-size: 30px
+      }
+
+      html.mr-profile-page-active.mr-desktop-ui .profile-hero__av.has-founding-frame {
+        width: 88px;
+        height: 88px
+      }
+
+      html.mr-profile-page-active.mr-desktop-ui .profile-hero__av-frame:has(.profile-hero__av.has-founding-frame) {
+        width: 88px;
+        height: 88px
+      }
+
+      html.mr-profile-page-active.mr-desktop-ui .profile-hero__av .profile-avatar-founding-ring {
+        padding: 5px;
+        box-shadow:
+          0 0 0 2px #0a0a0a,
+          0 0 0 3px #d4af37,
+          0 8px 20px rgba(0, 0, 0, .22),
+          inset 0 0 10px rgba(0, 0, 0, .16)
+      }
+
+      html.mr-profile-page-active.mr-desktop-ui .profile-hero__av-edit {
+        width: 30px;
+        height: 30px
+      }
+
+      html.mr-profile-page-active.mr-desktop-ui .profile-hero__av-edit i {
+        font-size: 12px
+      }
     }
 
     .profile-page-topbar {
@@ -13459,14 +13502,14 @@
     }
 
     .profile-hero__av {
-      width: 104px;
-      height: 104px;
+      width: 80px;
+      height: 80px;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
       color: #fff;
-      font-size: 38px;
+      font-size: 30px;
       font-weight: 700;
       background: var(--mr-primary);
       box-shadow: 0 8px 24px rgba(0, 0, 0, .12);
@@ -13479,7 +13522,7 @@
       flex-direction: column;
       align-items: center;
       gap: 10px;
-      margin-bottom: 14px;
+      width: 100%;
     }
 
     .profile-hero__av.has-avatar-photo {
@@ -13493,8 +13536,8 @@
       overflow: visible;
       box-shadow: none;
       background: transparent;
-      width: 112px;
-      height: 112px;
+      width: 88px;
+      height: 88px;
     }
 
     .profile-hero__av.has-default-icon {
@@ -13728,6 +13771,15 @@
     .profile-hero__av-frame {
       position: relative;
       display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      line-height: 0;
+    }
+
+    .profile-hero__av-frame:has(.profile-hero__av.has-founding-frame) {
+      width: 88px;
+      height: 88px;
     }
 
     .profile-hero__av-edit-wrap {
@@ -13966,7 +14018,7 @@
     }
 
     .profile-hero__name {
-      margin: 0 0 6px;
+      margin: 0;
       font-size: 20px;
       font-weight: 700;
       color: var(--mr-text)
@@ -22290,14 +22342,23 @@
         font-size: 28px !important
       }
 
+      html.mr-profile-page-active.mr-mobile-ui .profile-hero__av.has-founding-frame {
+        width: 84px !important;
+        height: 84px !important
+      }
+
+      html.mr-profile-page-active.mr-mobile-ui .profile-hero__av-frame:has(.profile-hero__av.has-founding-frame) {
+        width: 84px !important;
+        height: 84px !important
+      }
+
       html.mr-profile-page-active.mr-mobile-ui .profile-hero__av-stack {
-        gap: 6px !important;
-        margin-bottom: 8px !important
+        gap: 6px !important
       }
 
       html.mr-profile-page-active.mr-mobile-ui .profile-hero__name {
         font-size: 17px !important;
-        margin-bottom: 4px !important
+        margin-bottom: 0 !important
       }
 
       html.mr-profile-page-active.mr-mobile-ui .profile-hero__role {
@@ -22366,6 +22427,16 @@
         width: 68px !important;
         height: 68px !important;
         font-size: 25px !important
+      }
+
+      html.mr-profile-page-active.mr-mobile-ui .profile-hero__av.has-founding-frame {
+        width: 76px !important;
+        height: 76px !important
+      }
+
+      html.mr-profile-page-active.mr-mobile-ui .profile-hero__av-frame:has(.profile-hero__av.has-founding-frame) {
+        width: 76px !important;
+        height: 76px !important
       }
 
       html.mr-profile-page-active.mr-mobile-ui .profile-info-row,
@@ -31433,19 +31504,19 @@
               </header>
               <div class="profile-page-body">
                 <div class="profile-hero">
-                <div class="profile-hero__av-stack">
-                  <div class="profile-hero__av-frame">
-                    <div class="profile-hero__av" id="profilePageAv" aria-hidden="true">—</div>
-                    <span class="profile-hero__av-edit-wrap">
-                      <button type="button" class="profile-hero__av-edit" onclick="openProfileAvatarPicker(event)" aria-label="تغيير الأيقونة">
-                        <i class="fas fa-pencil" aria-hidden="true"></i>
-                      </button>
-                      <span class="profile-hero__av-new-dot" id="profileAvatarNewDot" hidden aria-hidden="true"></span>
-                    </span>
+                  <div class="profile-hero__av-stack">
+                    <div class="profile-hero__av-frame">
+                      <div class="profile-hero__av" id="profilePageAv" aria-hidden="true">—</div>
+                      <span class="profile-hero__av-edit-wrap">
+                        <button type="button" class="profile-hero__av-edit" onclick="openProfileAvatarPicker(event)" aria-label="تغيير الأيقونة">
+                          <i class="fas fa-pencil" aria-hidden="true"></i>
+                        </button>
+                        <span class="profile-hero__av-new-dot" id="profileAvatarNewDot" hidden aria-hidden="true"></span>
+                      </span>
+                    </div>
+                    <h2 class="profile-hero__name" id="profilePageName">—</h2>
+                    <span class="profile-hero__role" id="profilePageRole">—</span>
                   </div>
-                </div>
-                  <h2 class="profile-hero__name" id="profilePageName">—</h2>
-                  <span class="profile-hero__role" id="profilePageRole">—</span>
                 </div>
                 <div class="profile-info-card" aria-label="بيانات الحساب">
                   <div class="profile-info-row">
@@ -41309,7 +41380,9 @@
         const founding = !!(opts && opts.founding) || !!preset.founding;
         const fallback = preset.imgSource === 'r2' ? PROFILE_AVATAR_IMG_PLACEHOLDER : '';
         const posStyle = avatarObjectPositionStyle(preset);
-        const img = `<img class="profile-avatar-photo${founding ? ' profile-avatar-photo--founding' : ''}" src="${Sec.escapeHTML(src || fallback)}" alt="${safeAlt}" width="256" height="256" loading="lazy" decoding="async" style="${posStyle}"${preset.id ? ` data-avatar-id="${Sec.escapeHTML(preset.id)}"` : ''}>`;
+        const loading = (opts && opts.loading) || 'lazy';
+        const fetchPriority = (opts && opts.fetchpriority) ? ` fetchpriority="${Sec.escapeHTML(opts.fetchpriority)}"` : '';
+        const img = `<img class="profile-avatar-photo${founding ? ' profile-avatar-photo--founding' : ''}" src="${Sec.escapeHTML(src || fallback)}" alt="${safeAlt}" width="256" height="256" loading="${loading}" decoding="async"${fetchPriority} style="${posStyle}"${preset.id ? ` data-avatar-id="${Sec.escapeHTML(preset.id)}"` : ''}>`;
         if (!founding) return img;
         return `<span class="profile-avatar-founding-ring" aria-hidden="true"><span class="profile-avatar-founding-ring__inner">${img}</span></span>`;
       }
@@ -41732,7 +41805,12 @@
         if (preset) {
           el.style.background = preset.imgSource === 'r2' ? userAvatarBgGradient(u) : 'transparent';
           el.textContent = '';
-          el.innerHTML = profileAvatarImgHtml(preset, preset.label, { founding: preset.founding });
+          const isProfileHero = el.id === 'profilePageAv';
+          el.innerHTML = profileAvatarImgHtml(preset, preset.label, {
+            founding: preset.founding,
+            loading: isProfileHero ? 'eager' : 'lazy',
+            fetchpriority: isProfileHero ? 'high' : undefined
+          });
           hydrateProfileAvatarImages(el).catch(() => {});
         } else if (canPickProfileAvatar(u)) {
           el.classList.remove('has-founding-frame');
