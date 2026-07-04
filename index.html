@@ -45429,6 +45429,8 @@
           reader.onload = (event) => {
             const originalBase64 = event.target.result.split(',')[1];
             const img = new Image();
+            img.loading = 'eager';
+            img.decoding = 'sync';
             img.src = event.target.result;
             img.onerror = () => {
                resolve({ base64: originalBase64, isCompressed: false });
@@ -46887,14 +46889,20 @@
               fileEntry.prepStatus = 'transcoding';
               fileEntry.prepStatusMsg = 'جاري التحويل…';
               updateAttachmentPrepUi(scope, fileEntry._fileId);
-              const { blob } = await transcodeHevcBlobToPlayableBlob(body, contentType, (msg) => {
-                fileEntry.prepStatusMsg = msg;
-                updateAttachmentPrepUi(scope, fileEntry._fileId);
-              });
-              if (fileEntry._cancelled) return;
-              body = blob;
-              contentType = 'video/mp4';
-              fileEntry.transcoded = true;
+              try {
+                const { blob } = await transcodeHevcBlobToPlayableBlob(body, contentType, (msg) => {
+                  fileEntry.prepStatusMsg = msg;
+                  updateAttachmentPrepUi(scope, fileEntry._fileId);
+                });
+                if (fileEntry._cancelled) return;
+                body = blob;
+                contentType = 'video/mp4';
+                fileEntry.transcoded = true;
+              } catch (transcodeErr) {
+                if (fileEntry._cancelled) return;
+                if (isMirsadDebugLog()) console.warn('[Prep] transcode skipped:', transcodeErr);
+                showToast('تعذّر تحويل الفيديو — سيتم رفعه كما هو', 'info');
+              }
             }
           }
 
@@ -47596,10 +47604,7 @@
         if (!(blob instanceof Blob) || !blob.size) return false;
         if (blob.size > HEVC_TRANSCODE_MAX_BYTES) return false;
         if (codec === 'h264') return false;
-        if (isHevcCodec(codec)) return true;
-        const ext = String(fileName || '').toLowerCase();
-        if (codec === 'unknown' && /\.(mp4|mov|m4v)$/i.test(ext)) return true;
-        return false;
+        return isHevcCodec(codec);
       }
 
       function areAttachmentsReady(scope) {
@@ -47815,14 +47820,25 @@
         return URL.createObjectURL(blob);
       }
 
-      async function probeAtharVendorWorker() {
+      async function probeAssetUrl(url) {
         try {
-          const url = atharVendorAssetUrl('vendor/ffmpeg/worker.js');
           const res = await fetch(url, { method: 'HEAD', cache: 'no-store' });
           return res.ok;
         } catch (_) {
           return false;
         }
+      }
+
+      async function resolveFfmpegClassWorkerUrl() {
+        const local = atharVendorAssetUrl('vendor/ffmpeg/worker.js');
+        if (await probeAssetUrl(local)) return local;
+        const cdn = 'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/worker.js';
+        if (await probeAssetUrl(cdn)) return cdn;
+        return null;
+      }
+
+      async function probeAtharVendorWorker() {
+        return !!(await resolveFfmpegClassWorkerUrl());
       }
 
       async function ensureFfmpegTranscoder(onStatus) {
@@ -47846,9 +47862,9 @@
               }
             });
             const coreBase = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm';
-            const classWorkerURL = atharVendorAssetUrl('vendor/ffmpeg/worker.js');
-            if (!(await probeAtharVendorWorker())) {
-              throw new Error('ملفات التحويل غير متاحة على الموقع — حدّث الصفحة (Ctrl+Shift+R)');
+            const classWorkerURL = await resolveFfmpegClassWorkerUrl();
+            if (!classWorkerURL) {
+              throw new Error('ملفات التحويل غير متاحة — حدّث الصفحة (Ctrl+Shift+R) أو تحقق من نشر vendor/ffmpeg');
             }
             pushFfmpegLoadStatus('تحميل محرك التحويل (~30MB)…');
             const coreURL = await fetchCoreAssetBlobUrl(
