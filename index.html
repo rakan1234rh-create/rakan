@@ -31559,6 +31559,10 @@
                       </span>
                     </button>
                   </div>
+                  <button type="button" class="profile-action-btn" id="profilePagePushBtn" onclick="toggleWebPushFromMenu(event)" hidden>
+                    <span class="profile-action-row__lbl"><i class="fas fa-bell" aria-hidden="true"></i> <span id="profilePagePushLabel">تفعيل تنبيهات خارج التطبيق</span></span>
+                    <i class="fas fa-chevron-left" aria-hidden="true"></i>
+                  </button>
                   <button type="button" class="profile-action-btn" id="profilePageSettingsBtn" onclick="openSettingsFromUserMenu(event)" data-perm="tab_settings" hidden>
                     <span class="profile-action-row__lbl"><i class="fas fa-shield-halved" aria-hidden="true"></i> صلاحيات المنصة</span>
                     <i class="fas fa-chevron-left" aria-hidden="true"></i>
@@ -33114,6 +33118,7 @@
       const ATHAR_VAPID_PUBLIC_KEY = 'BAAE2sxYeIGbYADV7uimLzIFB_en9SBWQ3a4-LBULuOIVm40YI7YfjXL2Fddttr1L1tHFkoaiPzmZankfUk_2jc';
       const ATHAR_VAPID_STORAGE_KEY = 'athar_vapid_public_key';
       const ATHAR_WEB_PUSH_SYNC_KEY = 'athar_web_push_last_sync';
+      const ATHAR_WEB_PUSH_OPEN_SYNC_MS = 15 * 60 * 1000;
       const ATHAR_SW_URL = './sw.js?v=10';
 
       /** رابط النشر — روابط استعادة كلمة المرور من file:// أو localhost */
@@ -33129,7 +33134,7 @@
       /** توقيع روابط R2 (رفع/تحميل/نقل) عبر Edge Function — المفاتيح لا تصل للمتصفح */
       const R2_STORAGE_FN_URL = `${SUPABASE_URL}/functions/v1/r2-storage`;
       const VIOLATION_PUSH_FN_URL = `${SUPABASE_URL}/functions/v1/violation-push`;
-      const VIOLATION_PUSH_FN_VERSION = '2026-06-auto-forward-notif-fix';
+      const VIOLATION_PUSH_FN_VERSION = '2026-07-parallel-push-v1';
 
       /** يعمل فقط على المضيف المحلي — لا يُفعّل على نطاق الإنتاج */
       function isLocalDevHost() {
@@ -36956,7 +36961,13 @@
             if (state._autoForwardTimer) clearInterval(state._autoForwardTimer);
             state._autoForwardTimer = null;
 
-            // طلب الإشعارات يتم الآن فقط عند تسجيل دخول جديد (في دالة handleLogin)
+            // مزامنة إشعارات Web Push عند كل فتح للتطبيق (بعد تحميل البيانات)
+            setTimeout(() => {
+              bootAtharWebPushOnAppOpen().catch((e) => {
+                if (isMirsadDebugLog()) console.warn('[webPush] app open boot', e);
+              });
+            }, 1200);
+
             try { maybeOpenTicketFromPushUrl(); } catch (_) { /* noop */ }
             try { maybeOpenBroadcastFromPushUrl(); } catch (_) { /* noop */ }
 
@@ -42013,6 +42024,7 @@
         if (settingsBtn) settingsBtn.hidden = !hasPermission('tab_settings');
         if (avatarsBtn) avatarsBtn.hidden = !canManageProfileAvatars();
         if (bcBtn) bcBtn.hidden = !hasPermission('tab_broadcasts');
+        syncWebPushUiLabels();
         syncThemeToggleUi();
         applyRBACUI({ skipCmpRefresh: true });
       }
@@ -59091,20 +59103,48 @@
         await sb.from('push_subscriptions').delete().eq('endpoint', endpoint);
       }
 
-      function syncWebPushMenuLabel() {
-        const btn = document.getElementById('topbarPushToggle');
-        const label = document.getElementById('topbarPushToggleLabel');
-        if (!btn || !label) return;
-        if (!isWebPushSupported()) {
-          btn.hidden = true;
-          return;
+      function syncWebPushUiLabels() {
+        const supported = isWebPushSupported();
+        const perm = typeof Notification !== 'undefined' ? Notification.permission : 'default';
+
+        const topbarBtn = document.getElementById('topbarPushToggle');
+        const topbarLabel = document.getElementById('topbarPushToggleLabel');
+        if (topbarBtn && topbarLabel) {
+          if (!supported) {
+            topbarBtn.hidden = true;
+          } else {
+            const on = perm === 'granted';
+            topbarBtn.hidden = on;
+            if (!on) {
+              topbarLabel.textContent = perm === 'denied'
+                ? 'الإشعارات موقوفة من إعدادات الجهاز'
+                : 'تفعيل تنبيهات الجوال';
+              topbarBtn.setAttribute('aria-pressed', 'false');
+            }
+          }
         }
-        const perm = Notification.permission;
-        const on = perm === 'granted';
-        btn.hidden = on;
-        if (on) return;
-        label.textContent = perm === 'denied' ? 'الإشعارات موقوفة من إعدادات الجهاز' : 'تفعيل تنبيهات الجوال';
-        btn.setAttribute('aria-pressed', 'false');
+
+        const profileBtn = document.getElementById('profilePagePushBtn');
+        const profileLabel = document.getElementById('profilePagePushLabel');
+        if (profileBtn && profileLabel) {
+          if (!supported) {
+            profileBtn.hidden = true;
+          } else {
+            profileBtn.hidden = false;
+            if (perm === 'granted') {
+              profileLabel.textContent = 'تنبيهات خارج التطبيق — مفعّلة';
+            } else if (perm === 'denied') {
+              profileLabel.textContent = 'الإشعارات موقوفة — فعّلها من إعدادات الجوال';
+            } else {
+              profileLabel.textContent = 'تفعيل تنبيهات خارج التطبيق';
+            }
+          }
+        }
+      }
+
+      /** @deprecated use syncWebPushUiLabels */
+      function syncWebPushMenuLabel() {
+        syncWebPushUiLabels();
       }
 
       async function refreshPushSubscription(reg, opts = {}) {
@@ -59145,7 +59185,7 @@
           const sub = await refreshPushSubscription(reg, opts);
           await savePushSubscriptionToDb(sub);
           try { localStorage.setItem(ATHAR_WEB_PUSH_SYNC_KEY, String(Date.now())); } catch (_) {}
-          syncWebPushMenuLabel();
+          syncWebPushUiLabels();
           if (opts.welcomeNotify) {
             const shown = await showPushWelcomeNotification();
             if (!shown) showToast('تم التفعيل — تحقق من إعدادات الإشعارات في الجوال', 'warning');
@@ -59182,7 +59222,28 @@
         } catch (e) {
           if (!opts.silent && isMirsadDebugLog()) console.warn('[webPush] disable', e);
         }
-        syncWebPushMenuLabel();
+        syncWebPushUiLabels();
+      }
+
+      /** مزامنة Push عند فتح التطبيق — يحدّث اشتراك الجهاز في قاعدة البيانات */
+      async function bootAtharWebPushOnAppOpen() {
+        syncWebPushUiLabels();
+        if (!state.currentUser || !isWebPushSupported()) return;
+
+        const perm = Notification.permission;
+        if (perm === 'granted') {
+          await syncAtharWebPushSubscription({ minIntervalMs: ATHAR_WEB_PUSH_OPEN_SYNC_MS });
+          return;
+        }
+        if (perm === 'denied') return;
+
+        let lastPrompt = 0;
+        try { lastPrompt = Number(localStorage.getItem('athar_web_push_prompt_last') || 0); } catch (_) {}
+        const dayMs = 24 * 60 * 60 * 1000;
+        if (lastPrompt && Date.now() - lastPrompt < dayMs) return;
+
+        try { localStorage.setItem('athar_web_push_prompt_last', String(Date.now())); } catch (_) {}
+        await initAtharWebPush({ promptIfNeeded: true });
       }
 
       function webPushTeamLeadRole() {
@@ -59191,7 +59252,7 @@
       }
 
       async function initAtharWebPush(opts = {}) {
-        syncWebPushMenuLabel();
+        syncWebPushUiLabels();
         if (!state.currentUser) return;
         if (!isWebPushSupported()) {
           if (opts.promptIfNeeded) maybeShowWebPushUnsupportedNotice();
@@ -59200,7 +59261,7 @@
 
         const perm = Notification.permission;
         if (perm === 'granted') {
-          try { await syncAtharWebPushSubscription({ minIntervalMs: 6 * 60 * 60 * 1000 }); }
+          try { await syncAtharWebPushSubscription({ minIntervalMs: ATHAR_WEB_PUSH_OPEN_SYNC_MS }); }
           catch (e) { if (isMirsadDebugLog()) console.warn('[webPush] background sync', e); }
           return;
         }
@@ -59226,7 +59287,7 @@
       function scheduleAtharWebPushResync(reason) {
         if (!isWebPushSupported() || !state.currentUser || Notification.permission !== 'granted') return;
         setTimeout(() => {
-          syncAtharWebPushSubscription({ minIntervalMs: 6 * 60 * 60 * 1000 })
+          syncAtharWebPushSubscription({ minIntervalMs: ATHAR_WEB_PUSH_OPEN_SYNC_MS })
             .catch(e => { if (isMirsadDebugLog()) console.warn('[webPush] resync ' + reason, e); });
         }, 800);
       }
@@ -59291,6 +59352,7 @@
         if (Notification.permission === 'granted') {
           try {
             await ensureAtharWebPushSubscribed({ forceResubscribe: true, welcomeNotify: true });
+            syncWebPushUiLabels();
           } catch (e) {
             showToast('فشل إعادة تفعيل التنبيهات: ' + formatPushError(e), 'error');
           }
@@ -59299,6 +59361,7 @@
         try {
           const enabled = await ensureAtharWebPushSubscribed({ requestPermission: true, welcomeNotify: true });
           if (!enabled) showToast('يُحتاج إذن الإشعارات من إعدادات الجوال/المتصفح', 'warning');
+          else syncWebPushUiLabels();
         } catch (e) {
           showToast('فشل التفعيل: ' + formatPushError(e), 'error');
         }
