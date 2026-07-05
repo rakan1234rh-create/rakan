@@ -13,7 +13,7 @@ export type AtharWelcomeSplashProps = {
 
 /**
  * شاشة ترحيب — نفس شعار الشريط العلوي (athar-logo-v401.png)
- * مع كشف تدريجي من اليمين لليسار.
+ * مع كشف تدريجي من النص (أعلى) إلى الشريط السفلي.
  */
 export function AtharWelcomeSplash({ onComplete }: AtharWelcomeSplashProps) {
   const [revealed, setRevealed] = useState(false);
