@@ -13,12 +13,15 @@ const ease = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) /
 const lettersClip = (rightHidePct: number) =>
   `inset(0 ${rightHidePct}% ${(1 - LETTERS_SPLIT) * 100}% 0)`;
 
-const combinedClip = (bottomLeftPct: number) => {
+const lettersLockedClip = () => {
   const y = (LETTERS_SPLIT * 100).toFixed(2);
-  const x = Math.max(0, Math.min(100, bottomLeftPct));
-  if (x <= 0) return 'inset(0 0 0 0)';
-  if (x >= 99.999) return `polygon(0% 0%, 100% 0%, 100% ${y}%, 0% ${y}%)`;
-  return `polygon(0% 0%, 100% 0%, 100% ${y}%, ${x}% ${y}%, ${x}% 100%, 100% 100%)`;
+  return `polygon(0% 0%, 100% 0%, 100% ${y}%, 0% ${y}%)`;
+};
+
+const lineClip = (leftHidePct: number) => {
+  const top = (LETTERS_SPLIT * 100).toFixed(2);
+  const left = Math.max(0, Math.min(100, leftHidePct));
+  return `inset(${top}% 0 0 ${left}%)`;
 };
 
 export type AtharWelcomeSplashProps = {
@@ -26,32 +29,45 @@ export type AtharWelcomeSplashProps = {
 };
 
 export function AtharWelcomeSplash({ onComplete }: AtharWelcomeSplashProps) {
-  const [clipPath, setClipPath] = useState(lettersClip(100));
+  const [lettersClipPath, setLettersClipPath] = useState(lettersClip(100));
+  const [lineClipPath, setLineClipPath] = useState(lineClip(100));
+  const [lineVisible, setLineVisible] = useState(false);
   const [exiting, setExiting] = useState(false);
   const [removed, setRemoved] = useState(false);
   const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
-    const totalMs = (LETTERS_DURATION + LINE_DURATION) * 1000;
-    const lettersPortion = LETTERS_DURATION / (LETTERS_DURATION + LINE_DURATION);
+    const lettersMs = LETTERS_DURATION * 1000;
+    const lineMs = LINE_DURATION * 1000;
     const start = performance.now();
+    let phase: 'letters' | 'line' | 'done' = 'letters';
 
     const tick = (now: number) => {
-      const raw = Math.min(1, (now - start) / totalMs);
-      if (raw <= lettersPortion) {
-        const t = ease(raw / lettersPortion);
-        setClipPath(lettersClip(100 * (1 - t)));
-      } else {
-        const t = ease((raw - lettersPortion) / (1 - lettersPortion));
-        setClipPath(combinedClip(100 * (1 - t)));
+      const elapsed = now - start;
+
+      if (phase === 'letters') {
+        const raw = Math.min(1, elapsed / lettersMs);
+        const t = ease(raw);
+        setLettersClipPath(lettersClip(100 * (1 - t)));
+        if (raw >= 1) {
+          setLettersClipPath(lettersLockedClip());
+          setLineVisible(true);
+          phase = 'line';
+        }
+      } else if (phase === 'line') {
+        const lineElapsed = elapsed - lettersMs;
+        const raw = Math.min(1, lineElapsed / lineMs);
+        const t = ease(raw);
+        setLineClipPath(lineClip(100 * (1 - t)));
+        if (raw >= 1) {
+          setLineClipPath('inset(0 0 0 0)');
+          phase = 'done';
+          window.setTimeout(() => setExiting(true), HOLD_AFTER_COMPLETE * 1000);
+          return;
+        }
       }
 
-      if (raw < 1) {
-        rafRef.current = requestAnimationFrame(tick);
-      } else {
-        setClipPath('inset(0 0 0 0)');
-        window.setTimeout(() => setExiting(true), HOLD_AFTER_COMPLETE * 1000);
-      }
+      rafRef.current = requestAnimationFrame(tick);
     };
 
     rafRef.current = requestAnimationFrame(tick);
@@ -68,6 +84,9 @@ export function AtharWelcomeSplash({ onComplete }: AtharWelcomeSplashProps) {
 
   if (removed) return null;
 
+  const logoClass =
+    'block h-auto w-full max-w-full origin-center scale-[1.85] object-contain brightness-0 invert drop-shadow-[0_0_28px_rgba(255,255,255,0.14)] md:scale-125';
+
   return (
     <motion.div
       className="fixed inset-0 z-[10002] flex items-center justify-center bg-black px-1.5"
@@ -78,16 +97,31 @@ export function AtharWelcomeSplash({ onComplete }: AtharWelcomeSplashProps) {
       aria-label="ATHAR"
       role="img"
     >
-      <div className="flex w-[calc(100vw-12px)] max-w-[calc(100vw-12px)] items-center justify-center">
-        <motion.img
+      <div className="relative flex w-[calc(100vw-12px)] max-w-[calc(100vw-12px)] items-center justify-center">
+        <img
           src={ATHAR_LOGO_SRC}
           alt="ATHAR"
           width={903}
           height={555}
           decoding="async"
           draggable={false}
-          style={{ clipPath, WebkitClipPath: clipPath }}
-          className="block h-auto w-full max-w-full origin-center scale-[1.85] object-contain brightness-0 invert drop-shadow-[0_0_28px_rgba(255,255,255,0.14)] md:scale-125"
+          style={{ clipPath: lettersClipPath, WebkitClipPath: lettersClipPath }}
+          className={`relative z-[1] ${logoClass}`}
+        />
+        <img
+          src={ATHAR_LOGO_SRC}
+          alt=""
+          aria-hidden
+          width={903}
+          height={555}
+          decoding="async"
+          draggable={false}
+          style={{
+            clipPath: lineClipPath,
+            WebkitClipPath: lineClipPath,
+            opacity: lineVisible ? 1 : 0,
+          }}
+          className={`absolute inset-0 z-[2] ${logoClass}`}
         />
       </div>
     </motion.div>
