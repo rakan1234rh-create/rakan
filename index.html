@@ -2030,86 +2030,18 @@
     #atharWelcomeSplash .aws-brand-logo {
       display: block;
       width: 100%;
-      height: auto;
+      height: 100%;
       max-width: 100%;
       object-fit: contain;
+      clip-path: inset(0 0 100% 0);
+      -webkit-clip-path: inset(0 0 100% 0);
       filter: brightness(0) invert(1)
     }
 
-    #atharWelcomeSplash .aws-letters-mask {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 52.6%;
-      overflow: hidden;
-      z-index: 1
-    }
-
-    #atharWelcomeSplash .aws-letters-scale {
-      width: 100%;
-      height: 100%;
-      transform: scaleX(0);
-      transform-origin: left center;
-      will-change: transform
-    }
-
-    #atharWelcomeSplash .aws-letters-scale .aws-brand-logo {
-      width: 100%;
-      height: calc(100% / 0.526);
-      max-width: none;
-      object-fit: cover;
-      object-position: top center
-    }
-
-    #atharWelcomeSplash .aws-line-mask {
-      position: absolute;
-      top: 57.6%;
-      left: 0;
-      width: 100%;
-      height: 10%;
-      overflow: hidden;
-      z-index: 2
-    }
-
-    #atharWelcomeSplash .aws-line-scale {
-      width: 100%;
-      height: 100%;
-      transform: scaleX(0);
-      transform-origin: right center;
-      will-change: transform
-    }
-
-    #atharWelcomeSplash .aws-line-scale .aws-brand-logo {
-      position: absolute;
-      top: -576%;
-      left: 0;
-      width: 100%;
-      height: 1000%;
-      max-width: none;
-      object-fit: cover;
-      object-position: top center
-    }
-
-    #atharWelcomeSplash.aws-merged .aws-letters-mask {
-      position: relative;
-      top: auto;
-      left: auto;
-      width: 100%;
-      height: auto;
-      overflow: visible
-    }
-
-    #atharWelcomeSplash.aws-merged .aws-letters-scale {
-      transform: none;
-      will-change: auto
-    }
-
-    #atharWelcomeSplash.aws-merged .aws-letters-scale .aws-brand-logo {
-      position: relative;
-      top: auto;
-      height: auto;
-      object-fit: contain
+    #atharWelcomeSplash.aws-revealed .aws-brand-logo {
+      clip-path: inset(0 0 0 0);
+      -webkit-clip-path: inset(0 0 0 0);
+      transition: clip-path 5.2s cubic-bezier(0.45, 0, 0.55, 1), -webkit-clip-path 5.2s cubic-bezier(0.45, 0, 0.55, 1)
     }
 
     @media (min-width: 993px) {
@@ -31478,16 +31410,7 @@
   <div id="atharWelcomeSplash" aria-hidden="true" hidden>
     <div class="aws-logo-wrap">
       <div class="aws-logo-crop">
-        <div class="aws-letters-mask">
-          <div class="aws-letters-scale">
-            <img src="icons/athar-logo-v401.png" alt="ATHAR" class="aws-brand-logo aws-brand-logo--letters wefaq-app-logo wefaq-app-logo--athar wefaq-app-logo--athar-img" width="1920" height="1920" decoding="async" draggable="false">
-          </div>
-        </div>
-        <div class="aws-line-mask">
-          <div class="aws-line-scale">
-            <img src="icons/athar-logo-v401.png" alt="" class="aws-brand-logo aws-brand-logo--line" width="1920" height="1920" decoding="async" draggable="false" aria-hidden="true">
-          </div>
-        </div>
+        <img src="icons/athar-logo-v401.png" alt="ATHAR" class="aws-brand-logo wefaq-app-logo wefaq-app-logo--athar wefaq-app-logo--athar-img" width="1920" height="1920" decoding="async" draggable="false">
       </div>
     </div>
   </div>
@@ -36828,66 +36751,9 @@
       }
 
       const ATHAR_WELCOME_SEEN_KEY = 'athar_welcome_seen';
-      const ATHAR_WELCOME_TOTAL_MS = 4800;
-      const ATHAR_LINE_START_AT = 0.2;
-      const ATHAR_LETTERS_DONE_AT = 0.36;
-      const ATHAR_LINE_DONE_AT = 0.68;
+      const ATHAR_WELCOME_REVEAL_MS = 5200;
       const ATHAR_WELCOME_HOLD_MS = 1000;
       const ATHAR_WELCOME_EXIT_MS = 700;
-
-      function awsSplashEaseOut(t) {
-        return 1 - Math.pow(1 - t, 2.2);
-      }
-
-      function setAwsSplashScale(el, scale) {
-        el.style.transform = `scaleX(${scale})`;
-      }
-
-      function consolidateAtharSplashLogo(splash) {
-        const lineMask = splash.querySelector('.aws-line-mask');
-        const lettersScale = splash.querySelector('.aws-letters-scale');
-        if (lineMask) lineMask.remove();
-        if (lettersScale) {
-          lettersScale.style.transform = 'none';
-          lettersScale.style.willChange = 'auto';
-        }
-        splash.classList.add('aws-merged');
-      }
-
-      async function animateAtharSplashDraw(splash) {
-        const lettersScale = splash.querySelector('.aws-letters-scale');
-        const lineScale = splash.querySelector('.aws-line-scale');
-        if (!lettersScale || !lineScale) return;
-
-        setAwsSplashScale(lettersScale, 0);
-        setAwsSplashScale(lineScale, 0);
-
-        return new Promise((resolve) => {
-          const start = performance.now();
-          function frame(now) {
-            const p = Math.min(1, (now - start) / ATHAR_WELCOME_TOTAL_MS);
-
-            const letterP = Math.min(1, p / ATHAR_LETTERS_DONE_AT);
-            setAwsSplashScale(lettersScale, p < ATHAR_LETTERS_DONE_AT ? awsSplashEaseOut(letterP) : 1);
-
-            if (p >= ATHAR_LINE_START_AT) {
-              const lineSpan = ATHAR_LINE_DONE_AT - ATHAR_LINE_START_AT;
-              const lineP = Math.min(1, (p - ATHAR_LINE_START_AT) / lineSpan);
-              setAwsSplashScale(lineScale, lineP);
-            } else {
-              setAwsSplashScale(lineScale, 0);
-            }
-
-            if (p < 1) requestAnimationFrame(frame);
-            else {
-              setAwsSplashScale(lineScale, 1);
-              consolidateAtharSplashLogo(splash);
-              resolve();
-            }
-          }
-          requestAnimationFrame(frame);
-        });
-      }
 
       function shouldSkipAtharWelcomeSplash() {
         try {
@@ -36912,9 +36778,8 @@
           return;
         }
 
-        const lettersScale = splash.querySelector('.aws-letters-scale');
-        const lineScale = splash.querySelector('.aws-line-scale');
-        if (!lettersScale || !lineScale) {
+        const logo = splash.querySelector('.aws-brand-logo');
+        if (!logo) {
           finishAtharWelcomeSplash(splash);
           return;
         }
@@ -36927,10 +36792,12 @@
 
         const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         if (reduceMotion) {
-          consolidateAtharSplashLogo(splash);
+          logo.style.clipPath = 'inset(0 0 0 0)';
+          logo.style.webkitClipPath = 'inset(0 0 0 0)';
           await new Promise((r) => setTimeout(r, 350));
         } else {
-          await animateAtharSplashDraw(splash);
+          splash.classList.add('aws-revealed');
+          await new Promise((r) => setTimeout(r, ATHAR_WELCOME_REVEAL_MS));
         }
 
         await new Promise((r) => setTimeout(r, reduceMotion ? 350 : ATHAR_WELCOME_HOLD_MS));
