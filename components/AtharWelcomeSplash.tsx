@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 
 const ATHAR_LOGO_SRC = 'icons/athar-logo-v401.png';
-const LETTERS_SPLIT = 0.58;
-const LETTERS_DURATION = 2.3;
-const LINE_DURATION = 2.9;
+const LETTERS_SPLIT = 0.54;
+const LETTERS_DURATION = 2.4;
+const LINE_DURATION = 3.2;
 const HOLD_AFTER_COMPLETE = 1;
 const EXIT_DURATION = 0.7;
 
@@ -22,29 +22,39 @@ export type AtharWelcomeSplashProps = {
   onComplete?: () => void;
 };
 
-/** شاشة ترحيب — رسم من حرف A ثم الشريط السفلي */
 export function AtharWelcomeSplash({ onComplete }: AtharWelcomeSplashProps) {
-  const [phase, setPhase] = useState<'letters' | 'line' | 'done'>('letters');
+  const [clipPath, setClipPath] = useState(lettersClip(100));
   const [exiting, setExiting] = useState(false);
   const [removed, setRemoved] = useState(false);
+  const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (phase !== 'letters') return;
-    const t = window.setTimeout(() => setPhase('line'), LETTERS_DURATION * 1000);
-    return () => window.clearTimeout(t);
-  }, [phase]);
+    const ease = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
+    const start = performance.now();
+    const totalMs = (LETTERS_DURATION + LINE_DURATION) * 1000;
 
-  useEffect(() => {
-    if (phase !== 'line') return;
-    const t = window.setTimeout(() => setPhase('done'), LINE_DURATION * 1000);
-    return () => window.clearTimeout(t);
-  }, [phase]);
+    const tick = (now: number) => {
+      const elapsed = now - start;
+      if (elapsed <= LETTERS_DURATION * 1000) {
+        const t = ease(elapsed / (LETTERS_DURATION * 1000));
+        setClipPath(lettersClip(100 * (1 - t)));
+      } else if (elapsed <= totalMs) {
+        const lineElapsed = elapsed - LETTERS_DURATION * 1000;
+        const t = ease(lineElapsed / (LINE_DURATION * 1000));
+        setClipPath(bottomRtlClip(100 * (1 - t)));
+      } else {
+        setClipPath('inset(0 0 0 0)');
+        window.setTimeout(() => setExiting(true), HOLD_AFTER_COMPLETE * 1000);
+        return;
+      }
+      rafRef.current = requestAnimationFrame(tick);
+    };
 
-  useEffect(() => {
-    if (phase !== 'done') return;
-    const t = window.setTimeout(() => setExiting(true), HOLD_AFTER_COMPLETE * 1000);
-    return () => window.clearTimeout(t);
-  }, [phase]);
+    rafRef.current = requestAnimationFrame(tick);
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, []);
 
   const handleShellAnimationComplete = useCallback(() => {
     if (!exiting) return;
@@ -54,16 +64,9 @@ export function AtharWelcomeSplash({ onComplete }: AtharWelcomeSplashProps) {
 
   if (removed) return null;
 
-  const clipPath =
-    phase === 'letters'
-      ? lettersClip(0)
-      : phase === 'line'
-        ? 'inset(0 0 0 0)'
-        : 'inset(0 0 0 0)';
-
   return (
     <motion.div
-      className="fixed inset-0 z-[10002] flex items-center justify-center bg-black px-3.5"
+      className="fixed inset-0 z-[10002] flex items-center justify-center bg-black px-1.5"
       initial={{ opacity: 1, scale: 1 }}
       animate={{ opacity: exiting ? 0 : 1, scale: exiting ? 1.04 : 1 }}
       transition={{ duration: EXIT_DURATION, ease: [0.4, 0, 0.2, 1] }}
@@ -71,28 +74,18 @@ export function AtharWelcomeSplash({ onComplete }: AtharWelcomeSplashProps) {
       aria-label="ATHAR"
       role="img"
     >
-      <motion.img
-        src={ATHAR_LOGO_SRC}
-        alt="ATHAR"
-        width={903}
-        height={555}
-        decoding="async"
-        draggable={false}
-        className="block h-auto w-full max-w-full object-contain brightness-0 invert drop-shadow-[0_0_28px_rgba(255,255,255,0.14)]"
-        initial={{ clipPath: lettersClip(100) }}
-        animate={{
-          clipPath:
-            phase === 'letters'
-              ? [lettersClip(100), lettersClip(0)]
-              : phase === 'line'
-                ? [bottomRtlClip(96), 'inset(0 0 0 0)']
-                : 'inset(0 0 0 0)',
-        }}
-        transition={{
-          duration: phase === 'letters' ? LETTERS_DURATION : LINE_DURATION,
-          ease: [0.45, 0, 0.55, 1],
-        }}
-      />
+      <div className="flex w-[calc(100vw-12px)] max-w-[calc(100vw-12px)] items-center justify-center">
+        <motion.img
+          src={ATHAR_LOGO_SRC}
+          alt="ATHAR"
+          width={903}
+          height={555}
+          decoding="async"
+          draggable={false}
+          style={{ clipPath, WebkitClipPath: clipPath }}
+          className="block h-auto w-full max-w-full origin-center scale-[1.85] object-contain brightness-0 invert drop-shadow-[0_0_28px_rgba(255,255,255,0.14)] md:scale-125"
+        />
+      </div>
     </motion.div>
   );
 }
