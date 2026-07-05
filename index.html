@@ -1980,7 +1980,7 @@
       color: var(--mr-text-3)
     }
 
-    /* شاشة ترحيب عند الدخول للمنصة */
+    /* شاشة ترحيب عند الدخول للمنصة — رسم SVG */
     #atharWelcomeSplash {
       position: fixed;
       inset: 0;
@@ -1994,7 +1994,6 @@
       box-sizing: border-box;
       background: #000;
       color: #fff;
-      direction: rtl;
       opacity: 1;
       transform: scale(1);
       transition: opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1), transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
@@ -2003,74 +2002,32 @@
 
     #atharWelcomeSplash.aws-exiting {
       opacity: 0;
-      transform: scale(1.05);
+      transform: scale(1.04);
       pointer-events: none
     }
 
-    #atharWelcomeSplash .aws-inner {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      width: 100%;
-      max-width: min(92vw, 22rem)
-    }
-
-    #atharWelcomeSplash .wefaq-logo-slot {
-      width: 10.5rem;
+    #atharWelcomeSplash .aws-svg {
+      display: block;
+      width: min(92vw, 28rem);
       height: auto;
-      max-width: min(78vw, 10.5rem);
-      margin: 0 0 1.35rem;
+      overflow: visible
+    }
+
+    #atharWelcomeSplash #awsAtharText {
       opacity: 0;
-      transform: scale(0.86);
-      filter: drop-shadow(0 8px 28px rgba(255, 255, 255, 0.08))
+      transition: opacity 0.8s ease
     }
 
-    #atharWelcomeSplash.aws-active .wefaq-logo-slot {
-      animation: awsLogoIn 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards
-    }
-
-    #atharWelcomeSplash .aws-type-line {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 1.5em;
-      margin: 0;
-      font-family: var(--font);
-      font-size: clamp(1.35rem, 5.2vw, 1.85rem);
-      font-weight: 700;
-      letter-spacing: 0.2em;
-      direction: ltr;
-      color: #fff
-    }
-
-    #atharWelcomeSplash .aws-type-cursor {
-      display: inline-block;
-      margin-inline-start: 3px;
-      font-weight: 400;
-      animation: awsCursorBlink 0.8s step-end infinite;
+    #atharWelcomeSplash.aws-text-visible #awsAtharText {
       opacity: 1
     }
 
-    #atharWelcomeSplash.aws-tag-visible .aws-type-cursor,
-    #atharWelcomeSplash.aws-exiting .aws-type-cursor {
-      animation: none;
-      opacity: 0
-    }
-
-    #atharWelcomeSplash .aws-tagline {
-      margin: 0.9rem 0 0;
-      font-size: clamp(0.88rem, 3.4vw, 1rem);
-      font-weight: 500;
-      color: rgba(255, 255, 255, 0.72);
-      opacity: 0;
-      transform: translateY(10px);
-      transition: opacity 0.55s ease, transform 0.55s ease
-    }
-
-    #atharWelcomeSplash.aws-tag-visible .aws-tagline {
-      opacity: 1;
-      transform: translateY(0)
+    #atharWelcomeSplash #awsAtharLinePath {
+      fill: none;
+      stroke: #fff;
+      stroke-width: 3;
+      stroke-linejoin: round;
+      stroke-linecap: round
     }
 
     html.aws-booting #loginScreen,
@@ -31439,13 +31396,15 @@
   </div>
 
   <div id="atharWelcomeSplash" aria-hidden="true" hidden>
-    <div class="aws-inner">
-      <div class="aws-logo wefaq-logo-slot" aria-hidden="true"></div>
-      <p class="aws-type-line" aria-live="polite">
-        <span class="aws-type-text" id="awsTypeText"></span><span class="aws-type-cursor" aria-hidden="true">|</span>
-      </p>
-      <p class="aws-tagline" id="awsTagline">منصة الرصد المتكاملة</p>
-    </div>
+    <svg class="aws-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 200" role="img" aria-label="ATHAR">
+      <g id="awsAtharText" fill="#fff">
+        <text x="250" y="100" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="64" letter-spacing="8">ATHAR</text>
+      </g>
+      <g id="athar-line">
+        <path id="awsAtharLinePath"
+          d="M 380 100 C 420 100, 420 150, 380 150 L 280 150 L 260 130 L 240 150 L 260 170 L 280 150 M 240 150 L 220 130 L 200 150 L 220 170 L 240 150 L 50 150" />
+      </g>
+    </svg>
   </div>
 
   <div id="loginTransition" aria-hidden="true">
@@ -36784,7 +36743,10 @@
       }
 
       const ATHAR_WELCOME_SEEN_KEY = 'athar_welcome_seen';
-      const ATHAR_WELCOME_TYPE_TEXT = 'ATHAR';
+      const ATHAR_WELCOME_LINE_MS = 2200;
+      const ATHAR_WELCOME_TEXT_MS = 800;
+      const ATHAR_WELCOME_HOLD_MS = 1000;
+      const ATHAR_WELCOME_EXIT_MS = 700;
 
       function shouldSkipAtharWelcomeSplash() {
         try {
@@ -36802,6 +36764,31 @@
         if (splash) splash.remove();
       }
 
+      function animateAtharWelcomeLine(path, durationMs) {
+        const len = path.getTotalLength();
+        path.style.strokeDasharray = String(len);
+        path.style.strokeDashoffset = String(len);
+        if (typeof path.animate === 'function') {
+          return path.animate(
+            [{ strokeDashoffset: len }, { strokeDashoffset: 0 }],
+            { duration: durationMs, easing: 'cubic-bezier(0.45, 0, 0.55, 1)', fill: 'forwards' }
+          ).finished.then(() => {
+            path.style.strokeDashoffset = '0';
+          });
+        }
+        return new Promise((resolve) => {
+          const start = performance.now();
+          function frame(now) {
+            const t = Math.min(1, (now - start) / durationMs);
+            const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+            path.style.strokeDashoffset = String(len * (1 - eased));
+            if (t < 1) requestAnimationFrame(frame);
+            else resolve();
+          }
+          requestAnimationFrame(frame);
+        });
+      }
+
       async function playAtharWelcomeSplash() {
         const splash = document.getElementById('atharWelcomeSplash');
         if (!splash || shouldSkipAtharWelcomeSplash()) {
@@ -36809,30 +36796,33 @@
           return;
         }
 
+        const path = splash.querySelector('#awsAtharLinePath');
+        if (!path) {
+          finishAtharWelcomeSplash(splash);
+          return;
+        }
+
         splash.removeAttribute('hidden');
         splash.setAttribute('aria-hidden', 'false');
         document.documentElement.classList.add('aws-booting');
-        if (typeof syncWefaqBranding === 'function') syncWefaqBranding();
 
         await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
-        splash.classList.add('aws-active');
 
-        const typeEl = document.getElementById('awsTypeText');
         const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        if (typeEl && !reduceMotion) {
-          for (let i = 0; i <= ATHAR_WELCOME_TYPE_TEXT.length; i++) {
-            typeEl.textContent = ATHAR_WELCOME_TYPE_TEXT.slice(0, i);
-            await new Promise((r) => setTimeout(r, i === 0 ? 280 : 115));
-          }
-        } else if (typeEl) {
-          typeEl.textContent = ATHAR_WELCOME_TYPE_TEXT;
+        if (reduceMotion) {
+          path.style.strokeDasharray = 'none';
+          path.style.strokeDashoffset = '0';
+          splash.classList.add('aws-text-visible');
+          await new Promise((r) => setTimeout(r, 350));
+        } else {
+          await animateAtharWelcomeLine(path, ATHAR_WELCOME_LINE_MS);
+          splash.classList.add('aws-text-visible');
+          await new Promise((r) => setTimeout(r, ATHAR_WELCOME_TEXT_MS));
         }
 
-        await new Promise((r) => setTimeout(r, 420));
-        splash.classList.add('aws-tag-visible');
-        await new Promise((r) => setTimeout(r, reduceMotion ? 350 : 950));
+        await new Promise((r) => setTimeout(r, reduceMotion ? 350 : ATHAR_WELCOME_HOLD_MS));
         splash.classList.add('aws-exiting');
-        await new Promise((r) => setTimeout(r, reduceMotion ? 200 : 720));
+        await new Promise((r) => setTimeout(r, reduceMotion ? 200 : ATHAR_WELCOME_EXIT_MS));
         finishAtharWelcomeSplash(splash);
       }
 
@@ -38169,7 +38159,6 @@
       const ATHAR_LOGO_HOSTS = [
         '#loginScreen #loginCard .wefaq-logo-slot',
         '#loginTransition .wefaq-logo-slot',
-        '#atharWelcomeSplash .wefaq-logo-slot',
         '#brandArea .brand-icon.wefaq-logo-slot'
       ];
 
