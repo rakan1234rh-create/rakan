@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 
 const ATHAR_LOGO_SRC = 'icons/athar-logo-v401.png';
-const REVEAL_DURATION = 2.2;
+const REVEAL_DURATION = 3.4;
 const HOLD_AFTER_COMPLETE = 1;
 const EXIT_DURATION = 0.7;
 

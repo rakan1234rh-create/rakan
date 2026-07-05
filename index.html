@@ -2008,19 +2008,19 @@
 
     #atharWelcomeSplash .aws-brand-logo {
       display: block;
-      width: min(86vw, 20rem);
+      width: min(92vw, 32rem);
       height: auto;
-      max-width: 20rem;
+      max-width: 32rem;
       object-fit: contain;
       clip-path: inset(0 0 0 100%);
       -webkit-clip-path: inset(0 0 0 100%);
-      filter: drop-shadow(0 8px 28px rgba(255, 255, 255, 0.06))
+      filter: brightness(0) invert(1) drop-shadow(0 0 28px rgba(255, 255, 255, 0.14))
     }
 
     #atharWelcomeSplash.aws-revealed .aws-brand-logo {
       clip-path: inset(0 0 0 0);
       -webkit-clip-path: inset(0 0 0 0);
-      transition: clip-path 2.2s cubic-bezier(0.45, 0, 0.55, 1), -webkit-clip-path 2.2s cubic-bezier(0.45, 0, 0.55, 1)
+      transition: clip-path 3.4s cubic-bezier(0.45, 0, 0.55, 1), -webkit-clip-path 3.4s cubic-bezier(0.45, 0, 0.55, 1)
     }
 
     html.aws-booting #loginScreen,
@@ -36715,7 +36715,7 @@
       }
 
       const ATHAR_WELCOME_SEEN_KEY = 'athar_welcome_seen';
-      const ATHAR_WELCOME_REVEAL_MS = 2200;
+      const ATHAR_WELCOME_REVEAL_MS = 3400;
       const ATHAR_WELCOME_HOLD_MS = 1000;
       const ATHAR_WELCOME_EXIT_MS = 700;
 
