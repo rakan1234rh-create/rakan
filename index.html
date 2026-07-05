@@ -330,16 +330,19 @@
 
     html.mr-mobile-ui #mrMobilePtr {
       position: fixed;
-      top: calc(var(--unified-topbar-h, 76px) + (var(--mr-ptr-pull, 0px) * 0.5) - 19px);
-      left: 50%;
+      top: var(--unified-topbar-h, 76px);
+      left: 0;
+      right: 0;
+      height: var(--mr-ptr-pull, 0px);
       z-index: 2995;
       display: flex;
       align-items: center;
       justify-content: center;
       pointer-events: none;
+      overflow: hidden;
       opacity: 0;
-      transform: translateX(-50%);
-      will-change: top, opacity
+      background: var(--mr-bg, #f4f4f6);
+      will-change: height, opacity
     }
 
     html.mr-mobile-ui #mrMobilePtr.mr-ptr-visible {
@@ -347,7 +350,7 @@
     }
 
     html.mr-mobile-ui #mrMobilePtr.mr-ptr-snap {
-      transition: top 0.28s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.22s ease
+      transition: height 0.28s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.22s ease
     }
 
     html.mr-mobile-ui #appWrap.mr-ptr-drag .app-body,
@@ -380,22 +383,19 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 38px;
-      height: 38px;
+      width: 34px;
+      height: 34px;
       border-radius: 999px;
-      background: color-mix(in srgb, var(--mr-surface, #fff) 88%, transparent);
-      border: 1px solid color-mix(in srgb, var(--mr-border, #d8d8de) 80%, transparent);
+      background: var(--mr-surface, #fff);
+      border: 1px solid color-mix(in srgb, var(--mr-border, #d8d8de) 72%, transparent);
       color: var(--mr-primary, #1c1c21);
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease
+      flex-shrink: 0;
+      transition: background 0.15s ease, transform 0.15s ease
     }
 
     html.mr-mobile-ui #mrMobilePtr.mr-ptr-ready .mr-ptr-chip {
-      background: color-mix(in srgb, var(--mr-primary, #1c1c21) 12%, var(--mr-surface, #fff));
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
-      transform: scale(1.06)
+      background: color-mix(in srgb, var(--mr-primary, #1c1c21) 10%, var(--mr-surface, #fff));
+      transform: scale(1.05)
     }
 
     html.mr-mobile-ui #mrMobilePtr .mr-ptr-spinner {
@@ -409,7 +409,7 @@
     }
 
     html.mr-mobile-ui body.login-portal-open #mrMobilePtr {
-      top: calc(max(12px + var(--mr-safe-top, env(safe-area-inset-top, 0px)), (var(--mr-ptr-pull, 0px) * 0.5) - 19px))
+      top: calc(12px + var(--mr-safe-top, env(safe-area-inset-top, 0px)))
     }
 
     html.mr-mobile-ui #appWrap .topbar.unified-banner,
@@ -38257,11 +38257,14 @@
 
         const PTR_THRESHOLD = 72;
         const PTR_MAX = 88;
+        const PTR_ACTIVATE = 10;
         let startY = 0;
         let pulling = false;
+        let ptrPending = false;
         let refreshing = false;
         let scrollRoot = null;
         let pullPx = 0;
+        let translateContent = true;
 
         const ptr = document.createElement('div');
         ptr.id = 'mrMobilePtr';
@@ -38277,6 +38280,7 @@
         }
 
         function setPtrDrag(on) {
+          if (!translateContent) return;
           const { appWrap, login } = getPtrHosts();
           appWrap?.classList.toggle('mr-ptr-drag', on);
           login?.classList.toggle('mr-ptr-drag', on);
@@ -38291,8 +38295,10 @@
           const { appWrap, login } = getPtrHosts();
           appWrap?.classList.remove('mr-ptr-drag');
           login?.classList.remove('mr-ptr-drag');
-          appWrap?.classList.add('mr-ptr-snap');
-          login?.classList.add('mr-ptr-snap');
+          if (translateContent) {
+            appWrap?.classList.add('mr-ptr-snap');
+            login?.classList.add('mr-ptr-snap');
+          }
           ptr.classList.add('mr-ptr-snap');
           setPull(0);
           window.setTimeout(() => {
@@ -38320,8 +38326,17 @@
           if (!el || el === document.body || el === document.documentElement) return false;
           const style = getComputedStyle(el);
           const oy = style.overflowY;
-          if (oy !== 'auto' && oy !== 'scroll' && oy !== 'overlay') return false;
-          return el.scrollHeight > el.clientHeight + 1;
+          return oy === 'auto' || oy === 'scroll' || oy === 'overlay';
+        }
+
+        function isDocumentScrollRoot(root) {
+          return !root || root === document.scrollingElement || root === document.documentElement || root === document.body;
+        }
+
+        function shouldTranslateForRoot(root) {
+          if (isDocumentScrollRoot(root)) return true;
+          const main = document.querySelector('#appWrap .main');
+          return !!(main && root === main);
         }
 
         function findScrollRoot(target) {
@@ -38330,6 +38345,8 @@
             if (isScrollable(node)) return node;
             node = node.parentElement;
           }
+          const usersList = document.querySelector('#tab-departments.active #usersList.users-grid--mob-list');
+          if (usersList && isScrollable(usersList)) return usersList;
           const main = document.querySelector('#appWrap .main');
           if (main && isScrollable(main)) return main;
           const login = document.getElementById('loginScreen');
@@ -38339,18 +38356,29 @@
 
         function getScrollTop(root) {
           if (!root) return 0;
-          if (root === document.scrollingElement || root === document.documentElement || root === document.body) {
+          if (isDocumentScrollRoot(root)) {
             return window.scrollY || document.documentElement.scrollTop || 0;
           }
           return root.scrollTop || 0;
         }
 
-        function resetPull() {
+        function cancelPtrGesture() {
           window._mrPtrPulling = false;
           pulling = false;
+          ptrPending = false;
           scrollRoot = null;
+          translateContent = true;
+          setPtrDrag(false);
+          ptr.classList.remove('mr-ptr-visible', 'mr-ptr-ready', 'mr-ptr-snap');
+          setPull(0);
+          const { appWrap, login } = getPtrHosts();
+          appWrap?.classList.remove('mr-ptr-snap', 'mr-ptr-drag');
+          login?.classList.remove('mr-ptr-snap', 'mr-ptr-drag');
+        }
+
+        function resetPull() {
+          cancelPtrGesture();
           snapPtrBack();
-          ptr.classList.remove('mr-ptr-visible', 'mr-ptr-ready');
         }
 
         function setPull(px) {
@@ -38358,19 +38386,11 @@
           document.documentElement.style.setProperty('--mr-ptr-pull', pullPx + 'px');
           ptr.classList.toggle('mr-ptr-visible', pullPx > 4);
           ptr.classList.toggle('mr-ptr-ready', pullPx >= PTR_THRESHOLD);
+          if (pullPx > 0 && translateContent) setPtrDrag(true);
         }
 
         function resetPullImmediate() {
-          window._mrPtrPulling = false;
-          pulling = false;
-          scrollRoot = null;
-          pullPx = 0;
-          setPtrDrag(false);
-          setPull(0);
-          ptr.classList.remove('mr-ptr-visible', 'mr-ptr-ready', 'mr-ptr-snap');
-          const { appWrap, login } = getPtrHosts();
-          appWrap?.classList.remove('mr-ptr-snap', 'mr-ptr-drag');
-          login?.classList.remove('mr-ptr-snap', 'mr-ptr-drag');
+          cancelPtrGesture();
         }
 
         async function performMobilePullRefresh() {
@@ -38407,7 +38427,10 @@
         function triggerRefresh() {
           if (refreshing) return;
           refreshing = true;
-          setPtrDrag(true);
+          pulling = false;
+          ptrPending = false;
+          window._mrPtrPulling = false;
+          if (translateContent) setPtrDrag(true);
           ptr.classList.add('mr-ptr-refreshing', 'mr-ptr-visible');
           setPull(PTR_THRESHOLD);
           performMobilePullRefresh()
@@ -38418,26 +38441,42 @@
         document.addEventListener('touchstart', (e) => {
           if (!ptrEnabled() || isPtrBlocked() || refreshing) return;
           if (e.touches.length !== 1) return;
-          if (e.target?.closest?.('.modal, .confirm-overlay, [data-no-ptr], input, textarea, select, .dp-popup, .att-viewer, .td-mob-sheet')) return;
+          if (e.target?.closest?.('.modal, .confirm-overlay, [data-no-ptr], input, textarea, select, .dp-popup, .att-viewer, .td-mob-sheet, .users-io-menu, .wf-status-menu')) return;
           scrollRoot = findScrollRoot(e.target);
+          translateContent = shouldTranslateForRoot(scrollRoot);
           if (getScrollTop(scrollRoot) > 2) return;
           startY = e.touches[0].clientY;
-          pulling = true;
+          pulling = false;
+          ptrPending = true;
           window._mrPtrPulling = false;
           pullPx = 0;
-          setPtrDrag(true);
           setPull(0);
         }, { passive: true, capture: true });
 
         document.addEventListener('touchmove', (e) => {
-          if (!pulling || refreshing || !ptrEnabled()) return;
+          if (!ptrPending && !pulling) return;
+          if (refreshing || !ptrEnabled()) return;
           const dy = e.touches[0].clientY - startY;
+          if (ptrPending && !pulling) {
+            if (dy < -6) {
+              cancelPtrGesture();
+              return;
+            }
+            if (dy < PTR_ACTIVATE) return;
+            if (getScrollTop(scrollRoot) > 2) {
+              cancelPtrGesture();
+              return;
+            }
+            pulling = true;
+            ptrPending = false;
+          }
+          if (!pulling) return;
           if (dy <= 0) {
-            if (pullPx > 0) resetPull();
+            cancelPtrGesture();
             return;
           }
           if (getScrollTop(scrollRoot) > 2) {
-            resetPull();
+            cancelPtrGesture();
             return;
           }
           window._mrPtrPulling = true;
@@ -38446,9 +38485,11 @@
         }, { passive: false, capture: true });
 
         document.addEventListener('touchend', () => {
-          if (!pulling || refreshing) return;
-          const shouldRefresh = pullPx >= PTR_THRESHOLD;
+          if (!ptrPending && !pulling) return;
+          if (refreshing) return;
+          const shouldRefresh = pulling && pullPx >= PTR_THRESHOLD;
           pulling = false;
+          ptrPending = false;
           window._mrPtrPulling = false;
           if (shouldRefresh) triggerRefresh();
           else resetPull();
