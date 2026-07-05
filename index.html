@@ -2014,8 +2014,7 @@
       clip-path: inset(34.17% 0 31.09% 0);
       -webkit-clip-path: inset(34.17% 0 31.09% 0);
       transform: none;
-      transform-origin: center center;
-      filter: drop-shadow(0 0 36px rgba(255, 255, 255, 0.2))
+      transform-origin: center center
     }
 
     #atharWelcomeSplash .aws-logo-shine-wrap {
@@ -2023,10 +2022,10 @@
       display: block;
       width: 100%;
       aspect-ratio: 1 / 1;
-      isolation: isolate
+      filter: drop-shadow(0 0 36px rgba(255, 255, 255, 0.2))
     }
 
-    #atharWelcomeSplash .aws-brand-logo {
+    #atharWelcomeSplash .aws-brand-logo:not(.aws-brand-logo--gleam) {
       display: block;
       width: 100%;
       height: 100%;
@@ -2037,54 +2036,50 @@
       transform: scale(0.94)
     }
 
-    #atharWelcomeSplash.aws-active .aws-brand-logo {
+    #atharWelcomeSplash.aws-active .aws-brand-logo:not(.aws-brand-logo--gleam) {
       opacity: 1;
       transform: scale(1);
       transition: opacity 0.6s ease-out, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1)
     }
 
-    #atharWelcomeSplash .aws-logo-shine-layer {
+    #atharWelcomeSplash .aws-brand-logo--gleam {
       position: absolute;
       inset: 0;
-      overflow: hidden;
+      display: block;
+      width: 100%;
+      height: 100%;
+      max-width: 100%;
+      object-fit: contain;
       pointer-events: none;
-      mix-blend-mode: screen;
-      -webkit-mask-image: url('icons/athar-logo-v401.png');
-      mask-image: url('icons/athar-logo-v401.png');
-      -webkit-mask-size: contain;
-      mask-size: contain;
+      opacity: 0;
+      transform: none;
+      filter: brightness(0) invert(1) brightness(2.4) drop-shadow(0 0 18px rgba(255, 255, 255, 0.95));
+      -webkit-mask-image: linear-gradient(105deg, transparent 36%, rgba(255, 255, 255, 0.15) 44%, #fff 50%, rgba(255, 255, 255, 0.15) 56%, transparent 64%);
+      mask-image: linear-gradient(105deg, transparent 36%, rgba(255, 255, 255, 0.15) 44%, #fff 50%, rgba(255, 255, 255, 0.15) 56%, transparent 64%);
+      -webkit-mask-size: 280% 100%;
+      mask-size: 280% 100%;
       -webkit-mask-repeat: no-repeat;
       mask-repeat: no-repeat;
-      -webkit-mask-position: center;
-      mask-position: center;
-      -webkit-mask-mode: alpha;
-      mask-mode: alpha
+      -webkit-mask-position: 150% center;
+      mask-position: 150% center;
+      will-change: -webkit-mask-position, mask-position
     }
 
-    #atharWelcomeSplash .aws-logo-shine-layer::after {
-      content: '';
-      position: absolute;
-      top: -40%;
-      left: -130%;
-      width: 58%;
-      height: 180%;
-      background: linear-gradient(100deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.35) 42%, rgba(255, 255, 255, 1) 50%, rgba(255, 255, 255, 0.35) 58%, rgba(255, 255, 255, 0) 100%);
-      transform: skewX(-20deg);
-      opacity: 0
-    }
-
-    #atharWelcomeSplash.aws-active .aws-logo-shine-layer::after {
+    #atharWelcomeSplash.aws-active .aws-brand-logo--gleam {
       opacity: 1;
-      animation: awsLogoShine 2.2s cubic-bezier(0.45, 0, 0.25, 1) 0.4s 2
+      transition: opacity 0.35s ease-out;
+      animation: awsLogoGleam 2.3s cubic-bezier(0.45, 0, 0.25, 1) 0.45s 2
     }
 
-    @keyframes awsLogoShine {
+    @keyframes awsLogoGleam {
       0% {
-        left: -130%
+        -webkit-mask-position: 150% center;
+        mask-position: 150% center
       }
 
       100% {
-        left: 150%
+        -webkit-mask-position: -50% center;
+        mask-position: -50% center
       }
     }
 
@@ -2096,12 +2091,12 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
-      #atharWelcomeSplash .aws-brand-logo {
+      #atharWelcomeSplash .aws-brand-logo:not(.aws-brand-logo--gleam) {
         opacity: 1;
         transform: none
       }
 
-      #atharWelcomeSplash .aws-logo-shine-layer {
+      #atharWelcomeSplash .aws-brand-logo--gleam {
         display: none
       }
     }
@@ -31462,7 +31457,7 @@
     <div class="aws-logo-frame">
       <div class="aws-logo-shine-wrap">
         <img src="icons/athar-logo-v401.png" alt="ATHAR" class="aws-brand-logo wefaq-app-logo wefaq-app-logo--athar wefaq-app-logo--athar-img" width="1920" height="1920" decoding="async" draggable="false">
-        <div class="aws-logo-shine-layer" aria-hidden="true"></div>
+        <img src="icons/athar-logo-v401.png" alt="" class="aws-brand-logo aws-brand-logo--gleam" width="1920" height="1920" decoding="async" draggable="false" aria-hidden="true">
       </div>
     </div>
   </div>
