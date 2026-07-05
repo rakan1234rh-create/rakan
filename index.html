@@ -323,8 +323,76 @@
     html.mr-mobile-ui {
       --mr-mob-bottom-nav-h: calc(56px + env(safe-area-inset-bottom, 0px));
       --unified-topbar-h: calc(76px + var(--mr-safe-top, env(safe-area-inset-top, 0px)));
+      --mr-ptr-pull: 0px;
       touch-action: manipulation;
       -webkit-text-size-adjust: 100%
+    }
+
+    html.mr-mobile-ui #mrMobilePtr {
+      position: fixed;
+      top: calc(var(--unified-topbar-h, 76px) + 6px);
+      left: 50%;
+      z-index: 2995;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      opacity: 0;
+      transform: translate(-50%, calc(-16px - min(var(--mr-ptr-pull, 0px), 72px)));
+      transition: opacity 0.18s ease, transform 0.12s ease-out;
+      will-change: transform, opacity
+    }
+
+    html.mr-mobile-ui #mrMobilePtr.mr-ptr-visible {
+      opacity: 1
+    }
+
+    html.mr-mobile-ui #mrMobilePtr .mr-ptr-chip {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 38px;
+      height: 38px;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--mr-surface, #fff) 88%, transparent);
+      border: 1px solid color-mix(in srgb, var(--mr-border, #d8d8de) 80%, transparent);
+      color: var(--mr-primary, #1c1c21);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      transform: rotate(min(calc(var(--mr-ptr-pull, 0px) * 2.4deg), 180deg));
+      transition: background 0.15s ease, transform 0.1s ease
+    }
+
+    html.mr-mobile-ui #mrMobilePtr.mr-ptr-ready .mr-ptr-chip {
+      background: color-mix(in srgb, var(--mr-primary, #1c1c21) 12%, var(--mr-surface, #fff));
+      color: var(--mr-primary, #1c1c21)
+    }
+
+    html.mr-mobile-ui #mrMobilePtr.mr-ptr-ready .mr-ptr-arrow {
+      transform: rotate(180deg)
+    }
+
+    html.mr-mobile-ui #mrMobilePtr .mr-ptr-arrow,
+    html.mr-mobile-ui #mrMobilePtr .mr-ptr-spinner {
+      font-size: 15px;
+      line-height: 1
+    }
+
+    html.mr-mobile-ui #mrMobilePtr .mr-ptr-spinner {
+      display: none
+    }
+
+    html.mr-mobile-ui #mrMobilePtr.mr-ptr-refreshing .mr-ptr-arrow {
+      display: none
+    }
+
+    html.mr-mobile-ui #mrMobilePtr.mr-ptr-refreshing .mr-ptr-spinner {
+      display: block
+    }
+
+    html.mr-mobile-ui body.login-portal-open #mrMobilePtr {
+      top: calc(12px + var(--mr-safe-top, env(safe-area-inset-top, 0px)))
     }
 
     html.mr-mobile-ui #appWrap .topbar.unified-banner,
@@ -36664,6 +36732,7 @@
         document.addEventListener(
           'touchmove',
           (e) => {
+            if (window._mrPtrPulling) return;
             if (!document.body.classList.contains('login-portal-open')) return;
             if (!isLoginMobileViewport()) return;
             if (e.target?.closest?.('#loginCard input, #loginCard textarea, #loginCard select')) return;
@@ -38163,6 +38232,157 @@
         // كمبيوتر/لابتوب حقيقي (فأرة + hover) يبقى واجهة كمبيوتر مهما ضاق العرض
         const isRealDesktop = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
         return isTouch || (!isRealDesktop && !isWide);
+      }
+
+      function initMobilePullToRefresh() {
+        if (window._mrMobilePtrBound) return;
+        window._mrMobilePtrBound = true;
+
+        const PTR_THRESHOLD = 68;
+        const PTR_MAX = 96;
+        let startY = 0;
+        let pulling = false;
+        let refreshing = false;
+        let scrollRoot = null;
+        let pullPx = 0;
+
+        const ptr = document.createElement('div');
+        ptr.id = 'mrMobilePtr';
+        ptr.setAttribute('aria-hidden', 'true');
+        ptr.innerHTML = '<div class="mr-ptr-chip"><i class="fas fa-arrow-down mr-ptr-arrow" aria-hidden="true"></i><i class="fas fa-spinner fa-spin mr-ptr-spinner" aria-hidden="true"></i></div>';
+        document.body.appendChild(ptr);
+
+        function ptrEnabled() {
+          return document.documentElement.classList.contains('mr-mobile-ui') || (typeof isMobileViewport === 'function' && isMobileViewport());
+        }
+
+        function isPtrBlocked() {
+          if (refreshing) return true;
+          if (document.querySelector('.modal.open, .confirm-overlay.open, #confirmOverlay[style*="flex"]')) return true;
+          if (document.body.classList.contains('ticket-sheet-open')) return true;
+          if (document.body.classList.contains('aws-booting')) return true;
+          const splash = document.getElementById('atharWelcomeSplash');
+          if (splash && !splash.hasAttribute('hidden')) return true;
+          return false;
+        }
+
+        function isScrollable(el) {
+          if (!el || el === document.body || el === document.documentElement) return false;
+          const style = getComputedStyle(el);
+          const oy = style.overflowY;
+          if (oy !== 'auto' && oy !== 'scroll' && oy !== 'overlay') return false;
+          return el.scrollHeight > el.clientHeight + 1;
+        }
+
+        function findScrollRoot(target) {
+          let node = target instanceof Element ? target : null;
+          while (node && node !== document.body) {
+            if (isScrollable(node)) return node;
+            node = node.parentElement;
+          }
+          const main = document.querySelector('#appWrap .main');
+          if (main && isScrollable(main)) return main;
+          const login = document.getElementById('loginScreen');
+          if (login && !login.hidden && isScrollable(login)) return login;
+          return document.scrollingElement || document.documentElement;
+        }
+
+        function getScrollTop(root) {
+          if (!root) return 0;
+          if (root === document.scrollingElement || root === document.documentElement || root === document.body) {
+            return window.scrollY || document.documentElement.scrollTop || 0;
+          }
+          return root.scrollTop || 0;
+        }
+
+        function setPull(px) {
+          pullPx = Math.max(0, Math.min(PTR_MAX, px));
+          document.documentElement.style.setProperty('--mr-ptr-pull', pullPx + 'px');
+          ptr.classList.toggle('mr-ptr-visible', pullPx > 6);
+          ptr.classList.toggle('mr-ptr-ready', pullPx >= PTR_THRESHOLD);
+        }
+
+        function resetPull() {
+          window._mrPtrPulling = false;
+          pulling = false;
+          scrollRoot = null;
+          pullPx = 0;
+          setPull(0);
+          ptr.classList.remove('mr-ptr-visible', 'mr-ptr-ready');
+        }
+
+        async function performMobilePullRefresh() {
+          const loginOpen = document.body.classList.contains('login-portal-open');
+          const appWrap = document.getElementById('appWrap');
+          const appShown = appWrap && appWrap.style.display !== 'none';
+          if (loginOpen || !appShown) {
+            location.reload();
+            return;
+          }
+          const tab = typeof getActiveTabKey === 'function' ? getActiveTabKey() : null;
+          if (tab && typeof goTab === 'function') {
+            const btn = typeof getNavButtonForTab === 'function' ? getNavButtonForTab(tab) : null;
+            goTab(tab, btn, { force: true });
+          }
+          const jobs = [];
+          if (typeof refreshNotificationsFromDb === 'function') jobs.push(refreshNotificationsFromDb());
+          await Promise.allSettled(jobs);
+        }
+
+        function finishRefresh() {
+          refreshing = false;
+          ptr.classList.remove('mr-ptr-refreshing');
+          resetPull();
+        }
+
+        function triggerRefresh() {
+          if (refreshing) return;
+          refreshing = true;
+          ptr.classList.add('mr-ptr-refreshing', 'mr-ptr-visible');
+          setPull(PTR_THRESHOLD);
+          performMobilePullRefresh()
+            .catch(() => { try { location.reload(); } catch (_) {} })
+            .finally(() => setTimeout(finishRefresh, 650));
+        }
+
+        document.addEventListener('touchstart', (e) => {
+          if (!ptrEnabled() || isPtrBlocked() || refreshing) return;
+          if (e.touches.length !== 1) return;
+          if (e.target?.closest?.('.modal, .confirm-overlay, [data-no-ptr], input, textarea, select, .dp-popup, .att-viewer, .td-mob-sheet')) return;
+          scrollRoot = findScrollRoot(e.target);
+          if (getScrollTop(scrollRoot) > 2) return;
+          startY = e.touches[0].clientY;
+          pulling = true;
+          window._mrPtrPulling = false;
+          pullPx = 0;
+        }, { passive: true, capture: true });
+
+        document.addEventListener('touchmove', (e) => {
+          if (!pulling || refreshing || !ptrEnabled()) return;
+          const dy = e.touches[0].clientY - startY;
+          if (dy <= 0) {
+            if (pullPx > 0) resetPull();
+            return;
+          }
+          if (getScrollTop(scrollRoot) > 2) {
+            resetPull();
+            return;
+          }
+          window._mrPtrPulling = true;
+          e.preventDefault();
+          setPull(dy * 0.52);
+        }, { passive: false, capture: true });
+
+        document.addEventListener('touchend', () => {
+          if (!pulling || refreshing) return;
+          const shouldRefresh = pullPx >= PTR_THRESHOLD;
+          pulling = false;
+          window._mrPtrPulling = false;
+          if (shouldRefresh) triggerRefresh();
+          else resetPull();
+        }, { passive: true, capture: true });
+
+        document.addEventListener('touchcancel', resetPull, { passive: true, capture: true });
       }
 
       const ATHAR_LOGO_VER = 'new-logo-401';
@@ -61534,6 +61754,7 @@
           if (typeof portalFilterPanelsForMob === 'function') portalFilterPanelsForMob();
           if (typeof syncMobileBottomNavLayout === 'function') syncMobileBottomNavLayout();
           if (typeof initMobileViewportSync === 'function') initMobileViewportSync();
+          if (typeof initMobilePullToRefresh === 'function') initMobilePullToRefresh();
           if (typeof syncWefaqBranding === 'function') syncWefaqBranding();
           if (typeof syncLoginStandalonePwaClass === 'function') syncLoginStandalonePwaClass();
           if (typeof initLoginScreenViewportLock === 'function') initLoginScreenViewportLock();
