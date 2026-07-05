@@ -32,6 +32,7 @@ export function AtharWelcomeSplash({ onComplete }: AtharWelcomeSplashProps) {
   const [lettersClipPath, setLettersClipPath] = useState(lettersClip(100));
   const [lineClipPath, setLineClipPath] = useState(lineClip(100));
   const [lineVisible, setLineVisible] = useState(false);
+  const [merged, setMerged] = useState(false);
   const [exiting, setExiting] = useState(false);
   const [removed, setRemoved] = useState(false);
   const rafRef = useRef<number | null>(null);
@@ -60,7 +61,8 @@ export function AtharWelcomeSplash({ onComplete }: AtharWelcomeSplashProps) {
         const t = ease(raw);
         setLineClipPath(lineClip(100 * (1 - t)));
         if (raw >= 1) {
-          setLineClipPath('inset(0 0 0 0)');
+          setMerged(true);
+          setLineVisible(false);
           phase = 'done';
           window.setTimeout(() => setExiting(true), HOLD_AFTER_COMPLETE * 1000);
           return;
@@ -85,7 +87,7 @@ export function AtharWelcomeSplash({ onComplete }: AtharWelcomeSplashProps) {
   if (removed) return null;
 
   const logoClass =
-    'block h-auto w-full max-w-full origin-center scale-[1.85] object-contain brightness-0 invert drop-shadow-[0_0_28px_rgba(255,255,255,0.14)] md:scale-125';
+    'block h-auto w-full max-w-full origin-center scale-[1.85] object-contain brightness-0 invert md:scale-125';
 
   return (
     <motion.div
@@ -97,7 +99,7 @@ export function AtharWelcomeSplash({ onComplete }: AtharWelcomeSplashProps) {
       aria-label="ATHAR"
       role="img"
     >
-      <div className="relative flex w-[calc(100vw-12px)] max-w-[calc(100vw-12px)] items-center justify-center">
+      <div className="relative flex w-[calc(100vw-12px)] max-w-[calc(100vw-12px)] items-center justify-center drop-shadow-[0_0_28px_rgba(255,255,255,0.14)]">
         <img
           src={ATHAR_LOGO_SRC}
           alt="ATHAR"
@@ -105,24 +107,26 @@ export function AtharWelcomeSplash({ onComplete }: AtharWelcomeSplashProps) {
           height={555}
           decoding="async"
           draggable={false}
-          style={{ clipPath: lettersClipPath, WebkitClipPath: lettersClipPath }}
+          style={
+            merged
+              ? undefined
+              : { clipPath: lettersClipPath, WebkitClipPath: lettersClipPath }
+          }
           className={`relative z-[1] ${logoClass}`}
         />
-        <img
-          src={ATHAR_LOGO_SRC}
-          alt=""
-          aria-hidden
-          width={903}
-          height={555}
-          decoding="async"
-          draggable={false}
-          style={{
-            clipPath: lineClipPath,
-            WebkitClipPath: lineClipPath,
-            opacity: lineVisible ? 1 : 0,
-          }}
-          className={`absolute inset-0 z-[2] ${logoClass}`}
-        />
+        {!merged && lineVisible && (
+          <img
+            src={ATHAR_LOGO_SRC}
+            alt=""
+            aria-hidden
+            width={903}
+            height={555}
+            decoding="async"
+            draggable={false}
+            style={{ clipPath: lineClipPath, WebkitClipPath: lineClipPath }}
+            className={`absolute inset-0 z-[2] ${logoClass}`}
+          />
+        )}
       </div>
     </motion.div>
   );

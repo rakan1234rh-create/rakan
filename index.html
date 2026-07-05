@@ -2013,7 +2013,8 @@
       justify-content: center;
       width: calc(100vw - 12px);
       max-width: calc(100vw - 12px);
-      line-height: 0
+      line-height: 0;
+      filter: drop-shadow(0 0 28px rgba(255, 255, 255, 0.14))
     }
 
     #atharWelcomeSplash .aws-brand-logo {
@@ -2024,7 +2025,7 @@
       object-fit: contain;
       transform: scale(1.85);
       transform-origin: center center;
-      filter: brightness(0) invert(1) drop-shadow(0 0 28px rgba(255, 255, 255, 0.14))
+      filter: brightness(0) invert(1)
     }
 
     #atharWelcomeSplash .aws-brand-logo--letters {
@@ -2038,6 +2039,7 @@
       position: absolute;
       top: 0;
       left: 0;
+      width: 100%;
       z-index: 2;
       opacity: 0;
       clip-path: inset(54% 0 0 100%);
@@ -2047,6 +2049,11 @@
 
     #atharWelcomeSplash .aws-brand-logo--line.is-drawing {
       opacity: 1
+    }
+
+    #atharWelcomeSplash.aws-merged .aws-brand-logo--letters {
+      clip-path: none;
+      -webkit-clip-path: none
     }
 
     @media (min-width: 993px) {
@@ -36781,6 +36788,17 @@
         return `inset(${top}% 0 0 ${left}%)`;
       }
 
+      function consolidateAtharSplashLogo(splash) {
+        const letters = splash.querySelector('.aws-brand-logo--letters');
+        const line = splash.querySelector('.aws-brand-logo--line');
+        if (line) line.remove();
+        if (letters) {
+          letters.style.clipPath = 'none';
+          letters.style.webkitClipPath = 'none';
+        }
+        splash.classList.add('aws-merged');
+      }
+
       function setAwsSplashClip(el, clip) {
         el.style.clipPath = clip;
         el.style.webkitClipPath = clip;
@@ -36823,7 +36841,8 @@
           (t) => awsSplashLineClip(100 * (1 - t)),
           ATHAR_WELCOME_LINE_MS
         );
-        setAwsSplashClip(line, 'inset(0 0 0 0)');
+        setAwsSplashClip(line, awsSplashLineClip(0));
+        consolidateAtharSplashLogo(splash);
       }
 
       function shouldSkipAtharWelcomeSplash() {
@@ -36864,9 +36883,7 @@
 
         const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         if (reduceMotion) {
-          setAwsSplashClip(letters, awsSplashLettersLockedClip());
-          setAwsSplashClip(line, 'inset(0 0 0 0)');
-          line.style.opacity = '1';
+          consolidateAtharSplashLogo(splash);
           await new Promise((r) => setTimeout(r, 350));
         } else {
           await animateAtharSplashDraw(splash);
