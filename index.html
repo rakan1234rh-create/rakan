@@ -32474,7 +32474,7 @@
                         </button>
                         <div class="users-io-menu" id="usersIoMenu" role="menu" aria-label="استيراد وتصدير المستخدمين" hidden>
                           <button type="button" role="menuitem" class="users-io-menu-item" onclick="usersIoMenuClose(); downloadUsersImportTemplate()" data-perm-any="import_users,manage_users">
-                            <i class="fas fa-file-download"></i><span>قالب CSV</span>
+                            <i class="fas fa-file-download"></i><span>قالب Excel</span>
                           </button>
                           <button type="button" role="menuitem" class="users-io-menu-item" onclick="usersIoMenuClose(); exportUsersCSV(false)" data-perm-any="export_users,manage_users">
                             <i class="fas fa-file-export"></i><span>تصدير المفلتر</span>
@@ -32483,13 +32483,13 @@
                             <i class="fas fa-file-export"></i><span>تصدير الكل</span>
                           </button>
                           <button type="button" role="menuitem" class="users-io-menu-item" onclick="usersIoMenuClose(); triggerUsersImport()" data-perm-any="import_users,manage_users">
-                            <i class="fas fa-file-import"></i><span>استيراد CSV</span>
+                            <i class="fas fa-file-import"></i><span>استيراد Excel</span>
                           </button>
                         </div>
                       </div>
                       <div class="users-io-group users-io-group--desk">
-                        <button type="button" class="rp-tool-btn users-io-btn" onclick="downloadUsersImportTemplate()" title="قالب فارغ للاستيراد" data-perm-any="import_users,manage_users">
-                          <i class="fas fa-file-download"></i><span>قالب CSV</span>
+                        <button type="button" class="rp-tool-btn users-io-btn" onclick="downloadUsersImportTemplate()" title="قالب Excel مبسّط للاستيراد" data-perm-any="import_users,manage_users">
+                          <i class="fas fa-file-download"></i><span>قالب Excel</span>
                         </button>
                         <button type="button" class="rp-tool-btn users-io-btn" onclick="exportUsersCSV(false)" data-perm-any="export_users,manage_users">
                           <i class="fas fa-file-export"></i><span>تصدير المفلتر</span>
@@ -32498,9 +32498,9 @@
                           <i class="fas fa-file-export"></i><span>تصدير الكل</span>
                         </button>
                         <button type="button" class="rp-tool-btn users-io-btn" onclick="triggerUsersImport()" data-perm-any="import_users,manage_users">
-                          <i class="fas fa-file-import"></i><span>استيراد CSV</span>
+                          <i class="fas fa-file-import"></i><span>استيراد Excel</span>
                         </button>
-                        <input type="file" id="users-import-file" accept=".csv,text/csv" style="display:none" onchange="handleUsersImportFile(event)">
+                        <input type="file" id="users-import-file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" style="display:none" onchange="handleUsersImportFile(event)">
                         <button type="button" class="rp-tool-btn rp-tool-btn-primary users-io-btn" onclick="openUserModal()" data-perm="manage_users">
                           <i class="fas fa-user-plus"></i><span>إضافة مستخدم</span>
                         </button>
@@ -45236,14 +45236,63 @@
         return rows;
       }
 
+      function inferRoleFromJobTitle(jobTitle) {
+        const t = String(jobTitle || '').trim().toLowerCase().replace(/\s+/g, ' ');
+        if (!t) return 'employee';
+        if (/مدير\s*(\(|\s)*فرع|مدير\s*الفرع|branch\s*manager|مدير\s*فرع/.test(t)) return 'branch_manager';
+        if (/مشرف|supervisor/.test(t)) return 'supervisor';
+        if (/راصد|observer/.test(t)) return 'observer';
+        if (/مدقق|auditor/.test(t)) return 'auditor';
+        if (/موارد\s*بشرية|\bhr\b|human\s*resources/.test(t)) return 'hr';
+        if (/مدير\s*نظام|system\s*admin|\badmin\b|مدير\s*النظام/.test(t)) return 'admin';
+        if ((/مدير|manager/.test(t)) && !/فرع|branch|مساعد|assistant|مباشر/.test(t)) return 'manager';
+        return 'employee';
+      }
+
+      function generateImportTempPassword(empNum) {
+        const digits = String(empNum || '').replace(/\D/g, '');
+        const tail = (digits.slice(-4) || '0001').padStart(4, '0');
+        return `Athar@${tail}1`;
+      }
+
+      function normalizeImportPhone(raw) {
+        let s = String(raw ?? '').trim().replace(/\t/g, '');
+        if (/^\d{9}$/.test(s) && s.startsWith('5')) s = '0' + s;
+        if (/^\d{10,}$/.test(s) && !s.startsWith('0') && s.startsWith('5')) s = '0' + s.slice(-9);
+        return Sec.normalizePhone(s);
+      }
+
+      function resolveImportJobTitle(role, jobTitleRaw) {
+        const title = Sec.sanitize(String(jobTitleRaw || '').trim());
+        const roleKey = normalizeUserRole(role);
+        if ((roleKey === 'employee' || roleKey === 'branch_manager') && title) return title;
+        return staffJobTitleForRole(roleKey);
+      }
+
+      async function parseUsersImportFile(file) {
+        const name = String(file.name || '').toLowerCase();
+        if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
+          const XLSX = await ensureXlsxLib();
+          const buf = await file.arrayBuffer();
+          const wb = XLSX.read(buf, { type: 'array' });
+          const sheet = wb.Sheets[wb.SheetNames[0]];
+          const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', raw: false });
+          return rows.filter(r => Array.isArray(r) && r.some(c => String(c ?? '').trim() !== ''));
+        }
+        const text = await file.text();
+        return parseCsvText(text);
+      }
+
       function mapCsvHeaders(headerRow) {
         const aliases = {
-          employee_number: ['employee_number', 'emp_number', 'empnum', 'رقم وظيفي', 'الرقم الوظيفي', 'رقم_وظيفي'],
+          employee_number: ['employee_number', 'emp_number', 'empnum', 'رقم وظيفي', 'الرقم الوظيفي', 'رقم_وظيفي', 'رقم_الوظيفي'],
           name: ['name', 'full_name', 'fullname', 'الاسم', 'الاسم الكامل', 'اسم'],
-          email: ['email', 'e-mail', 'البريد', 'البريد الإلكتروني', 'بريد'],
-          phone: ['phone', 'mobile', 'جوال', 'الجوال', 'رقم الجوال', 'هاتف'],
+          email: ['email', 'e-mail', 'البريد', 'البريد الإلكتروني', 'البريد_الإلكتروني', 'بريد', 'الايميل', 'إيميل', 'ايميل'],
+          phone: ['phone', 'mobile', 'جوال', 'الجوال', 'رقم الجوال', 'رقم_الجوال', 'هاتف', 'الهاتف'],
           role: ['role', 'الدور'],
-          branch_name: ['branch_name', 'branch', 'الفرع', 'فرع', 'اسم الفرع'],
+          job_title: ['job_title', 'jobtitle', 'title', 'position', 'المسمى الوظيفي', 'المسمى_الوظيفي', 'مسمى وظيفي', 'مسمى_وظيفي', 'المسمى', 'مسمى', 'الوظيفة', 'وظيفة'],
+          direct_manager: ['direct_manager', 'manager_name', 'reports_to', 'المدير المباشر', 'مدير مباشر', 'المدير', 'مدير'],
+          branch_name: ['branch_name', 'branch', 'الفرع', 'فرع', 'اسم الفرع', 'اسم_الفرع'],
           password: ['password', 'pw', 'كلمة المرور', 'كلمة_المرور']
         };
         const idx = {};
@@ -45282,12 +45331,24 @@
         showToast(`تم تصدير ${list.length} مستخدم ✓`, 'success');
       }
 
-      function downloadUsersImportTemplate() {
+      async function downloadUsersImportTemplate() {
         if (!canImportUsers()) return showToast('لا تملك صلاحية استيراد المستخدمين.', 'warning');
-        const headers = ['employee_number', 'name', 'email', 'phone', 'role', 'branch_name', 'password'];
-        const example = ['1001', 'أحمد محمد', 'ahmad@example.com', '\t0501234567', 'employee', 'فرع الرياض', 'ChangeMe123!'];
-        downloadCsvFile('mirsad-users-import-template.csv', headers, [example]);
-        showToast('تم تنزيل قالب الاستيراد ✓', 'success');
+        const headers = ['الرقم الوظيفي', 'الاسم', 'رقم الجوال', 'البريد الإلكتروني', 'المدير المباشر', 'المسمى الوظيفي', 'الفرع'];
+        const example = ['10001', 'أحمد محمد', '0501234567', 'ahmad@example.com', 'سارة العتيبي', 'أخصائي مبيعات', 'فرع الرياض'];
+        try {
+          const XLSX = await ensureXlsxLib();
+          const ws = XLSX.utils.aoa_to_sheet([headers, example]);
+          ws['!cols'] = headers.map(h => ({ wch: Math.max(14, h.length + 4) }));
+          if (ws.C3) ws.C3.t = 's';
+          if (ws.A2) ws.A2.t = 's';
+          const wb = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(wb, ws, 'المستخدمون');
+          XLSX.writeFile(wb, 'athar-users-import-template.xlsx', { cellStyles: true });
+          showToast('تم تنزيل قالب Excel ✓', 'success');
+        } catch (e) {
+          downloadCsvFile('athar-users-import-template.csv', headers, [example]);
+          showToast('تم تنزيل القالب (CSV) ✓', 'success');
+        }
       }
 
       function triggerUsersImport() {
@@ -45301,21 +45362,23 @@
         ev.target.value = '';
         if (!file) return;
         if (!canImportUsers()) return showToast('لا تملك صلاحية استيراد المستخدمين.', 'warning');
-        let text;
+        let parsed;
         try {
-          text = await file.text();
+          parsed = await parseUsersImportFile(file);
         } catch (e) {
-          return showToast('تعذّر قراءة الملف', 'error');
+          return showToast('تعذّر قراءة الملف. استخدم قالب Excel أو CSV.', 'error');
         }
-        const parsed = parseCsvText(text);
         if (parsed.length < 2) return showToast('الملف فارغ أو بدون صفوف بيانات', 'error');
         const colMap = mapCsvHeaders(parsed[0]);
-        if (colMap.employee_number == null || colMap.name == null || colMap.email == null || colMap.role == null) {
-          return showToast('الأعمدة المطلوبة: employee_number, name, email, role (+ password للجديد، branch_name للموظف/مدير فرع)', 'error');
+        if (colMap.employee_number == null || colMap.name == null || colMap.email == null) {
+          return showToast('الأعمدة المطلوبة: الرقم الوظيفي، الاسم، البريد الإلكتروني', 'error');
         }
         const dataRows = parsed.slice(1);
         const ok = await confirmDialog(
-          `سيتم استيراد ${dataRows.length} صفاً. الصفوف المكررة (رقم وظيفي أو بريد موجود) تُتخطى. كلمة المرور مطلوبة في العمود password (8 أحرف+). متابعة؟`,
+          `سيتم استيراد ${dataRows.length} مستخدماً.\n` +
+          'المنصة تتعرّف على الأعمدة العربية وتستنتج الدور من المسمى الوظيفي.\n' +
+          'كلمة المرور تُولَّد تلقائياً إن لم تُذكر (Athar@XXXX1).\n' +
+          'الصفوف المكررة (رقم وظيفي أو بريد موجود) تُتخطى. متابعة؟',
           { title: 'استيراد المستخدمين', okText: 'استيراد' }
         );
         if (!ok) return;
@@ -45328,18 +45391,21 @@
           const empNum = Sec.sanitize(get('employee_number'));
           const name = Sec.sanitize(get('name'));
           const email = Sec.normalizeEmail(get('email'));
-          const phone = Sec.normalizePhone(get('phone'));
-          const role = normalizeImportRole(get('role'));
-          const password = get('password');
+          const phoneRaw = get('phone');
+          const phone = phoneRaw ? normalizeImportPhone(phoneRaw) : '';
+          const jobTitleRaw = get('job_title');
+          let role = normalizeImportRole(get('role'));
+          if (!role || !ROLE_LABELS[role]) role = inferRoleFromJobTitle(jobTitleRaw);
+          const password = get('password') || generateImportTempPassword(empNum);
           const branchId = resolveBranchIdForImport(get('branch_name'));
           if (!empNum || !Sec.isEmpId(empNum)) { failed++; errors.push(`سطر ${lineNo}: رقم وظيفي غير صالح`); continue; }
           if (!name) { failed++; errors.push(`سطر ${lineNo}: الاسم فارغ`); continue; }
           if (!email || !Sec.isEmail(email)) { failed++; errors.push(`سطر ${lineNo}: بريد غير صالح`); continue; }
           if (phone && !Sec.isPhone(phone)) { failed++; errors.push(`سطر ${lineNo}: جوال غير صالح`); continue; }
-          if (!role || !ROLE_LABELS[role]) { failed++; errors.push(`سطر ${lineNo}: دور غير معروف (${get('role')})`); continue; }
+          if (!role || !ROLE_LABELS[role]) { failed++; errors.push(`سطر ${lineNo}: دور غير معروف (${jobTitleRaw || get('role') || 'فارغ'})`); continue; }
           const needsBranch = role === 'employee' || role === 'branch_manager';
           if (needsBranch && !branchId) { failed++; errors.push(`سطر ${lineNo}: فرع غير موجود (${get('branch_name') || 'فارغ'})`); continue; }
-          if (!password || password.length < 8) { failed++; errors.push(`سطر ${lineNo}: كلمة مرور 8+ مطلوبة`); continue; }
+          if (password.length < 8) { failed++; errors.push(`سطر ${lineNo}: كلمة مرور 8+ مطلوبة`); continue; }
           if (state.users.some(u => u.employee_number === empNum && isActiveUser(u))) {
             skipped++; continue;
           }
@@ -45356,7 +45422,7 @@
               phone: phone || null,
               role,
               branch_id: needsBranch ? branchId : null,
-              job_title: staffJobTitleForRole(role)
+              job_title: resolveImportJobTitle(role, jobTitleRaw)
             };
             const { data: newUser, error } = await sb.from('users').insert(insertPayload).select(USER_ROW_SELECT).single();
             if (error) {
