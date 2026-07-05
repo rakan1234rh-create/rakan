@@ -1980,6 +1980,111 @@
       color: var(--mr-text-3)
     }
 
+    /* شاشة ترحيب عند الدخول للمنصة */
+    #atharWelcomeSplash {
+      position: fixed;
+      inset: 0;
+      z-index: 10002;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100dvh;
+      min-height: 100vh;
+      padding: max(16px, env(safe-area-inset-top, 0px)) max(20px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(20px, env(safe-area-inset-left, 0px));
+      box-sizing: border-box;
+      background: #000;
+      color: #fff;
+      direction: rtl;
+      opacity: 1;
+      transform: scale(1);
+      transition: opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1), transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+      pointer-events: auto
+    }
+
+    #atharWelcomeSplash.aws-exiting {
+      opacity: 0;
+      transform: scale(1.05);
+      pointer-events: none
+    }
+
+    #atharWelcomeSplash .aws-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      width: 100%;
+      max-width: min(92vw, 22rem)
+    }
+
+    #atharWelcomeSplash .wefaq-logo-slot {
+      width: 10.5rem;
+      height: auto;
+      max-width: min(78vw, 10.5rem);
+      margin: 0 0 1.35rem;
+      opacity: 0;
+      transform: scale(0.86);
+      filter: drop-shadow(0 8px 28px rgba(255, 255, 255, 0.08))
+    }
+
+    #atharWelcomeSplash.aws-active .wefaq-logo-slot {
+      animation: awsLogoIn 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards
+    }
+
+    #atharWelcomeSplash .aws-type-line {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 1.5em;
+      margin: 0;
+      font-family: var(--font);
+      font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      direction: ltr;
+      color: #fff
+    }
+
+    #atharWelcomeSplash .aws-type-cursor {
+      display: inline-block;
+      margin-inline-start: 3px;
+      font-weight: 400;
+      animation: awsCursorBlink 0.8s step-end infinite;
+      opacity: 1
+    }
+
+    #atharWelcomeSplash.aws-tag-visible .aws-type-cursor,
+    #atharWelcomeSplash.aws-exiting .aws-type-cursor {
+      animation: none;
+      opacity: 0
+    }
+
+    #atharWelcomeSplash .aws-tagline {
+      margin: 0.9rem 0 0;
+      font-size: clamp(0.88rem, 3.4vw, 1rem);
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.72);
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.55s ease, transform 0.55s ease
+    }
+
+    #atharWelcomeSplash.aws-tag-visible .aws-tagline {
+      opacity: 1;
+      transform: translateY(0)
+    }
+
+    html.aws-booting #loginScreen,
+    html.aws-booting #appWrap,
+    html.aws-booting #loginTransition {
+      visibility: hidden !important;
+      pointer-events: none !important
+    }
+
+    html.aws-booting,
+    html.aws-booting body {
+      background: #000 !important
+    }
+
     [data-theme="dark"] #loginScreen .lp-brand-ico:not(.wefaq-logo-slot) {
       background: var(--mr-primary-softer);
       color: var(--mr-text)
@@ -3489,6 +3594,19 @@
 
       50% {
         opacity: 1
+      }
+    }
+
+    @keyframes awsLogoIn {
+      to {
+        opacity: 1;
+        transform: scale(1)
+      }
+    }
+
+    @keyframes awsCursorBlink {
+      50% {
+        opacity: 0
       }
     }
 
@@ -31170,6 +31288,16 @@
       } catch (_) {}
     })();
   </script>
+  <script>
+    (function () {
+      try {
+        var skip = sessionStorage.getItem('athar_welcome_seen') === '1';
+        if (!skip && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          document.documentElement.classList.add('aws-booting');
+        }
+      } catch (_) {}
+    })();
+  </script>
   <style id="mr-tab-restore-css">
     html.mr-session-restore:not(.mr-boot-ready) #appWrap {
       display: none !important;
@@ -31307,6 +31435,16 @@
         <button type="button" class="confirm-btn confirm-cancel" id="confirmCancelBtn">إلغاء</button>
         <button type="button" class="confirm-btn confirm-ok" id="confirmOkBtn">تأكيد</button>
       </div>
+    </div>
+  </div>
+
+  <div id="atharWelcomeSplash" aria-hidden="true" hidden>
+    <div class="aws-inner">
+      <div class="aws-logo wefaq-logo-slot" aria-hidden="true"></div>
+      <p class="aws-type-line" aria-live="polite">
+        <span class="aws-type-text" id="awsTypeText"></span><span class="aws-type-cursor" aria-hidden="true">|</span>
+      </p>
+      <p class="aws-tagline" id="awsTagline">منصة الرصد المتكاملة</p>
     </div>
   </div>
 
@@ -36645,6 +36783,59 @@
         el.classList.remove('is-visible');
       }
 
+      const ATHAR_WELCOME_SEEN_KEY = 'athar_welcome_seen';
+      const ATHAR_WELCOME_TYPE_TEXT = 'ATHAR';
+
+      function shouldSkipAtharWelcomeSplash() {
+        try {
+          if (sessionStorage.getItem(ATHAR_WELCOME_SEEN_KEY) === '1') return true;
+          if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return true;
+          const hash = window.location.hash || '';
+          if (hash.includes('type=recovery') || hash.includes('reset-password') || hash.includes('access_token')) return true;
+        } catch (_) {}
+        return false;
+      }
+
+      function finishAtharWelcomeSplash(splash) {
+        try { sessionStorage.setItem(ATHAR_WELCOME_SEEN_KEY, '1'); } catch (_) {}
+        document.documentElement.classList.remove('aws-booting');
+        if (splash) splash.remove();
+      }
+
+      async function playAtharWelcomeSplash() {
+        const splash = document.getElementById('atharWelcomeSplash');
+        if (!splash || shouldSkipAtharWelcomeSplash()) {
+          finishAtharWelcomeSplash(splash);
+          return;
+        }
+
+        splash.removeAttribute('hidden');
+        splash.setAttribute('aria-hidden', 'false');
+        document.documentElement.classList.add('aws-booting');
+        if (typeof syncWefaqBranding === 'function') syncWefaqBranding();
+
+        await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+        splash.classList.add('aws-active');
+
+        const typeEl = document.getElementById('awsTypeText');
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (typeEl && !reduceMotion) {
+          for (let i = 0; i <= ATHAR_WELCOME_TYPE_TEXT.length; i++) {
+            typeEl.textContent = ATHAR_WELCOME_TYPE_TEXT.slice(0, i);
+            await new Promise((r) => setTimeout(r, i === 0 ? 280 : 115));
+          }
+        } else if (typeEl) {
+          typeEl.textContent = ATHAR_WELCOME_TYPE_TEXT;
+        }
+
+        await new Promise((r) => setTimeout(r, 420));
+        splash.classList.add('aws-tag-visible');
+        await new Promise((r) => setTimeout(r, reduceMotion ? 350 : 950));
+        splash.classList.add('aws-exiting');
+        await new Promise((r) => setTimeout(r, reduceMotion ? 200 : 720));
+        finishAtharWelcomeSplash(splash);
+      }
+
       let _mrSessionRestoreGuard = null;
 
       function finishSessionRestoreBoot() {
@@ -37978,6 +38169,7 @@
       const ATHAR_LOGO_HOSTS = [
         '#loginScreen #loginCard .wefaq-logo-slot',
         '#loginTransition .wefaq-logo-slot',
+        '#atharWelcomeSplash .wefaq-logo-slot',
         '#brandArea .brand-icon.wefaq-logo-slot'
       ];
 
@@ -61346,6 +61538,9 @@
             }
           });
 
+          if (typeof playAtharWelcomeSplash === 'function') {
+            await playAtharWelcomeSplash();
+          }
           await checkExistingSession();
         } catch (e) {
           if (isMirsadDebugLog()) console.error('[Init]', e);
