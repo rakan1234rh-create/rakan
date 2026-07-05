@@ -2049,8 +2049,8 @@
       width: 100%;
       z-index: 2;
       opacity: 1;
-      clip-path: inset(52.6% 0 0 100%);
-      -webkit-clip-path: inset(52.6% 0 0 100%);
+      clip-path: inset(57.6% 100% 0 0);
+      -webkit-clip-path: inset(57.6% 100% 0 0);
       pointer-events: none;
       will-change: clip-path
     }
@@ -36777,10 +36777,11 @@
 
       const ATHAR_WELCOME_SEEN_KEY = 'athar_welcome_seen';
       const ATHAR_SPLASH_LETTERS_SPLIT = 0.526;
-      const ATHAR_SPLASH_LINE_TOP = 0.526;
+      const ATHAR_SPLASH_LINE_TOP = 0.576;
       const ATHAR_WELCOME_TOTAL_MS = 5200;
-      const ATHAR_LINE_START_AT = 0.36;
-      const ATHAR_LETTERS_DONE_AT = 0.46;
+      const ATHAR_LINE_START_AT = 0.28;
+      const ATHAR_LETTERS_DONE_AT = 0.42;
+      const ATHAR_LINE_DONE_AT = 0.74;
       const ATHAR_WELCOME_HOLD_MS = 1000;
       const ATHAR_WELCOME_EXIT_MS = 700;
 
@@ -36798,16 +36799,12 @@
         return `polygon(0% 0%, 100% 0%, 100% ${y}%, 0% ${y}%)`;
       }
 
-      /** كشف الشريط من اليمين لليسار — تسلسلي خطي */
+      /** كشف الشريط من اليمين لليسار — inset فقط (بدون polygon يكشف الحروف فجأة) */
       function awsSplashLineReveal(progress) {
         const top = (ATHAR_SPLASH_LINE_TOP * 100).toFixed(2);
         const p = Math.max(0, Math.min(1, progress));
-        if (p <= 0) {
-          return `polygon(0% 0%, 100% 0%, 100% ${top}%, 100% ${top}%)`;
-        }
-        if (p >= 1) return 'inset(0 0 0 0)';
-        const left = (100 - p * 100).toFixed(2);
-        return `polygon(0% 0%, 100% 0%, 100% ${top}%, 0% ${top}%, ${left}% ${top}%, ${left}% 100%, 100% 100%)`;
+        const right = ((1 - p) * 100).toFixed(2);
+        return `inset(${top}% ${right}% 0 0)`;
       }
 
       function consolidateAtharSplashLogo(splash) {
@@ -36849,7 +36846,8 @@
             }
 
             if (p >= ATHAR_LINE_START_AT) {
-              const lineP = Math.min(1, (p - ATHAR_LINE_START_AT) / (1 - ATHAR_LINE_START_AT));
+              const lineSpan = ATHAR_LINE_DONE_AT - ATHAR_LINE_START_AT;
+              const lineP = Math.min(1, (p - ATHAR_LINE_START_AT) / lineSpan);
               setAwsSplashClip(line, awsSplashLineReveal(lineP));
             } else {
               setAwsSplashClip(line, awsSplashLineReveal(0));
