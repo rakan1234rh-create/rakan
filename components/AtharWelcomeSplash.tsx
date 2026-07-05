@@ -13,7 +13,7 @@ export type AtharWelcomeSplashProps = {
 
 /**
  * شاشة ترحيب — نفس شعار الشريط العلوي (athar-logo-v401.png)
- * مع كشف تدريجي من اليمين لليسار.
+ * مع كشف تدريجي من النص (أعلى) إلى الشريط السفلي.
  */
 export function AtharWelcomeSplash({ onComplete }: AtharWelcomeSplashProps) {
   const [revealed, setRevealed] = useState(false);
@@ -59,9 +59,9 @@ export function AtharWelcomeSplash({ onComplete }: AtharWelcomeSplashProps) {
         height={555}
         decoding="async"
         draggable={false}
-        className="block h-auto w-full max-w-3xl object-contain brightness-0 invert drop-shadow-[0_0_28px_rgba(255,255,255,0.14)]"
-        initial={{ clipPath: 'inset(0 0 0 100%)' }}
-        animate={{ clipPath: revealed ? 'inset(0 0 0 0)' : 'inset(0 0 0 100%)' }}
+        className="block h-auto w-[70vw] max-w-[70vw] object-contain brightness-0 invert drop-shadow-[0_0_28px_rgba(255,255,255,0.14)]"
+        initial={{ clipPath: 'inset(0 0 100% 0)' }}
+        animate={{ clipPath: revealed ? 'inset(0 0 0 0)' : 'inset(0 0 100% 0)' }}
         transition={{ duration: REVEAL_DURATION, ease: [0.45, 0, 0.55, 1] }}
       />
     </motion.div>
