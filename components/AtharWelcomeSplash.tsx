@@ -2,7 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 
 const ATHAR_LOGO_SRC = 'icons/athar-logo-v401.png';
-const LETTERS_SPLIT = 0.54;
+const LETTERS_SPLIT = 0.526;
+const LINE_TOP = 0.586;
 const LETTERS_DURATION = 2.4;
 const LINE_DURATION = 3.2;
 const HOLD_AFTER_COMPLETE = 1;
@@ -19,7 +20,7 @@ const lettersLockedClip = () => {
 };
 
 const lineClip = (leftHidePct: number) => {
-  const top = (LETTERS_SPLIT * 100).toFixed(2);
+  const top = (LINE_TOP * 100).toFixed(2);
   const left = Math.max(0, Math.min(100, leftHidePct));
   return `inset(${top}% 0 0 ${left}%)`;
 };
@@ -86,8 +87,7 @@ export function AtharWelcomeSplash({ onComplete }: AtharWelcomeSplashProps) {
 
   if (removed) return null;
 
-  const logoClass =
-    'block h-auto w-full max-w-full origin-center scale-[1.85] object-contain brightness-0 invert md:scale-125';
+  const logoClass = 'block h-auto w-full max-w-full object-contain brightness-0 invert';
 
   return (
     <motion.div
@@ -100,33 +100,38 @@ export function AtharWelcomeSplash({ onComplete }: AtharWelcomeSplashProps) {
       role="img"
     >
       <div className="relative flex w-[calc(100vw-12px)] max-w-[calc(100vw-12px)] items-center justify-center drop-shadow-[0_0_28px_rgba(255,255,255,0.14)]">
-        <img
-          src={ATHAR_LOGO_SRC}
-          alt="ATHAR"
-          width={903}
-          height={555}
-          decoding="async"
-          draggable={false}
-          style={
-            merged
-              ? undefined
-              : { clipPath: lettersClipPath, WebkitClipPath: lettersClipPath }
-          }
-          className={`relative z-[1] ${logoClass}`}
-        />
-        {!merged && lineVisible && (
+        <div
+          className="relative w-full origin-center scale-[1.85] md:scale-125"
+          style={{ clipPath: 'inset(34.17% 0 31.09% 0)', WebkitClipPath: 'inset(34.17% 0 31.09% 0)' }}
+        >
           <img
             src={ATHAR_LOGO_SRC}
-            alt=""
-            aria-hidden
-            width={903}
-            height={555}
+            alt="ATHAR"
+            width={1920}
+            height={1920}
             decoding="async"
             draggable={false}
-            style={{ clipPath: lineClipPath, WebkitClipPath: lineClipPath }}
-            className={`absolute inset-0 z-[2] ${logoClass}`}
+            style={
+              merged
+                ? undefined
+                : { clipPath: lettersClipPath, WebkitClipPath: lettersClipPath }
+            }
+            className={`relative z-[1] ${logoClass}`}
           />
-        )}
+          {!merged && lineVisible && (
+            <img
+              src={ATHAR_LOGO_SRC}
+              alt=""
+              aria-hidden
+              width={1920}
+              height={1920}
+              decoding="async"
+              draggable={false}
+              style={{ clipPath: lineClipPath, WebkitClipPath: lineClipPath }}
+              className={`absolute inset-0 z-[2] ${logoClass}`}
+            />
+          )}
+        </div>
       </div>
     </motion.div>
   );

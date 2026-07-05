@@ -2017,22 +2017,29 @@
       filter: drop-shadow(0 0 28px rgba(255, 255, 255, 0.14))
     }
 
+    #atharWelcomeSplash .aws-logo-crop {
+      position: relative;
+      width: 100%;
+      clip-path: inset(34.17% 0 31.09% 0);
+      -webkit-clip-path: inset(34.17% 0 31.09% 0);
+      transform: scale(1.85);
+      transform-origin: center center
+    }
+
     #atharWelcomeSplash .aws-brand-logo {
       display: block;
       width: 100%;
       height: auto;
       max-width: 100%;
       object-fit: contain;
-      transform: scale(1.85);
-      transform-origin: center center;
       filter: brightness(0) invert(1)
     }
 
     #atharWelcomeSplash .aws-brand-logo--letters {
       position: relative;
       z-index: 1;
-      clip-path: inset(0 100% 46% 0);
-      -webkit-clip-path: inset(0 100% 46% 0)
+      clip-path: inset(0 100% 47.4% 0);
+      -webkit-clip-path: inset(0 100% 47.4% 0)
     }
 
     #atharWelcomeSplash .aws-brand-logo--line {
@@ -2042,8 +2049,8 @@
       width: 100%;
       z-index: 2;
       opacity: 0;
-      clip-path: inset(54% 0 0 100%);
-      -webkit-clip-path: inset(54% 0 0 100%);
+      clip-path: inset(58.6% 0 0 100%);
+      -webkit-clip-path: inset(58.6% 0 0 100%);
       pointer-events: none
     }
 
@@ -2062,7 +2069,7 @@
         max-width: min(94vw, 52rem)
       }
 
-      #atharWelcomeSplash .aws-brand-logo {
+      #atharWelcomeSplash .aws-logo-crop {
         transform: scale(1.25)
       }
     }
@@ -31421,8 +31428,10 @@
 
   <div id="atharWelcomeSplash" aria-hidden="true" hidden>
     <div class="aws-logo-wrap">
-      <img src="icons/athar-logo-v401.png" alt="ATHAR" class="aws-brand-logo aws-brand-logo--letters wefaq-app-logo wefaq-app-logo--athar wefaq-app-logo--athar-img" width="903" height="555" decoding="async" draggable="false">
-      <img src="icons/athar-logo-v401.png" alt="" class="aws-brand-logo aws-brand-logo--line" width="903" height="555" decoding="async" draggable="false" aria-hidden="true">
+      <div class="aws-logo-crop">
+        <img src="icons/athar-logo-v401.png" alt="ATHAR" class="aws-brand-logo aws-brand-logo--letters wefaq-app-logo wefaq-app-logo--athar wefaq-app-logo--athar-img" width="1920" height="1920" decoding="async" draggable="false">
+        <img src="icons/athar-logo-v401.png" alt="" class="aws-brand-logo aws-brand-logo--line" width="1920" height="1920" decoding="async" draggable="false" aria-hidden="true">
+      </div>
     </div>
   </div>
 
@@ -36762,7 +36771,8 @@
       }
 
       const ATHAR_WELCOME_SEEN_KEY = 'athar_welcome_seen';
-      const ATHAR_SPLASH_LETTERS_SPLIT = 0.54;
+      const ATHAR_SPLASH_LETTERS_SPLIT = 0.526;
+      const ATHAR_SPLASH_LINE_TOP = 0.586;
       const ATHAR_WELCOME_LETTERS_MS = 2400;
       const ATHAR_WELCOME_LINE_MS = 3200;
       const ATHAR_WELCOME_HOLD_MS = 1000;
@@ -36783,7 +36793,7 @@
       }
 
       function awsSplashLineClip(leftHidePct) {
-        const top = (ATHAR_SPLASH_LETTERS_SPLIT * 100).toFixed(2);
+        const top = (ATHAR_SPLASH_LINE_TOP * 100).toFixed(2);
         const left = Math.max(0, Math.min(100, leftHidePct));
         return `inset(${top}% 0 0 ${left}%)`;
       }
