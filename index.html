@@ -2006,27 +2006,87 @@
       pointer-events: none
     }
 
-    #atharWelcomeSplash .aws-brand-logo {
-      display: block;
-      width: calc(100vw - 12px);
-      max-width: calc(100vw - 12px);
-      height: auto;
-      object-fit: contain;
-      clip-path: inset(0 0 100% 0);
-      -webkit-clip-path: inset(0 0 100% 0);
-      filter: brightness(0) invert(1) drop-shadow(0 0 28px rgba(255, 255, 255, 0.14))
+    #atharWelcomeSplash .aws-logo-frame {
+      position: relative;
+      width: calc(100vw - 8px);
+      max-width: calc(100vw - 8px);
+      line-height: 0;
+      clip-path: inset(34.17% 0 31.09% 0);
+      -webkit-clip-path: inset(34.17% 0 31.09% 0);
+      transform: scale(2.15);
+      transform-origin: center center;
+      filter: drop-shadow(0 0 36px rgba(255, 255, 255, 0.2))
     }
 
-    #atharWelcomeSplash.aws-revealed .aws-brand-logo {
-      clip-path: inset(0 0 0 0);
-      -webkit-clip-path: inset(0 0 0 0);
-      transition: clip-path 5.2s cubic-bezier(0.45, 0, 0.55, 1), -webkit-clip-path 5.2s cubic-bezier(0.45, 0, 0.55, 1)
+    #atharWelcomeSplash .aws-logo-shine-wrap {
+      position: relative;
+      display: block;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      overflow: hidden
+    }
+
+    #atharWelcomeSplash .aws-brand-logo {
+      display: block;
+      width: 100%;
+      height: 100%;
+      max-width: 100%;
+      object-fit: contain;
+      filter: brightness(0) invert(1);
+      opacity: 0;
+      transform: scale(0.94)
+    }
+
+    #atharWelcomeSplash.aws-active .aws-brand-logo {
+      opacity: 1;
+      transform: scale(1);
+      transition: opacity 0.6s ease-out, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1)
+    }
+
+    #atharWelcomeSplash .aws-logo-shine {
+      position: absolute;
+      top: -35%;
+      left: -70%;
+      width: 52%;
+      height: 170%;
+      background: linear-gradient(100deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.05) 38%, rgba(255, 255, 255, 0.55) 50%, rgba(255, 255, 255, 0.05) 62%, rgba(255, 255, 255, 0) 100%);
+      transform: skewX(-22deg) translateX(-200%);
+      opacity: 0;
+      pointer-events: none;
+      mix-blend-mode: screen
+    }
+
+    #atharWelcomeSplash.aws-active .aws-logo-shine {
+      opacity: 1;
+      animation: awsLogoShine 2.1s cubic-bezier(0.45, 0, 0.25, 1) 0.45s 2
+    }
+
+    @keyframes awsLogoShine {
+      0% {
+        transform: skewX(-22deg) translateX(-200%)
+      }
+
+      100% {
+        transform: skewX(-22deg) translateX(460%)
+      }
     }
 
     @media (min-width: 993px) {
+      #atharWelcomeSplash .aws-logo-frame {
+        width: min(96vw, 56rem);
+        max-width: min(96vw, 56rem);
+        transform: scale(1.45)
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
       #atharWelcomeSplash .aws-brand-logo {
-        width: min(94vw, 52rem);
-        max-width: min(94vw, 52rem)
+        opacity: 1;
+        transform: none
+      }
+
+      #atharWelcomeSplash .aws-logo-shine {
+        display: none
       }
     }
 
@@ -31383,7 +31443,12 @@
   </div>
 
   <div id="atharWelcomeSplash" aria-hidden="true" hidden>
-    <img src="icons/athar-logo-v401.png" alt="ATHAR" class="aws-brand-logo wefaq-app-logo wefaq-app-logo--athar wefaq-app-logo--athar-img" width="1920" height="1920" decoding="async" draggable="false">
+    <div class="aws-logo-frame">
+      <div class="aws-logo-shine-wrap">
+        <img src="icons/athar-logo-v401.png" alt="ATHAR" class="aws-brand-logo wefaq-app-logo wefaq-app-logo--athar wefaq-app-logo--athar-img" width="1920" height="1920" decoding="async" draggable="false">
+        <span class="aws-logo-shine" aria-hidden="true"></span>
+      </div>
+    </div>
   </div>
 
   <div id="loginTransition" aria-hidden="true">
@@ -36722,8 +36787,8 @@
       }
 
       const ATHAR_WELCOME_SEEN_KEY = 'athar_welcome_seen';
-      const ATHAR_WELCOME_REVEAL_MS = 5200;
-      const ATHAR_WELCOME_HOLD_MS = 1000;
+      const ATHAR_WELCOME_SHINE_MS = 4800;
+      const ATHAR_WELCOME_HOLD_MS = 900;
       const ATHAR_WELCOME_EXIT_MS = 700;
 
       function shouldSkipAtharWelcomeSplash() {
@@ -36763,12 +36828,11 @@
 
         const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         if (reduceMotion) {
-          logo.style.clipPath = 'inset(0 0 0 0)';
-          logo.style.webkitClipPath = 'inset(0 0 0 0)';
+          splash.classList.add('aws-active');
           await new Promise((r) => setTimeout(r, 350));
         } else {
-          splash.classList.add('aws-revealed');
-          await new Promise((r) => setTimeout(r, ATHAR_WELCOME_REVEAL_MS));
+          splash.classList.add('aws-active');
+          await new Promise((r) => setTimeout(r, ATHAR_WELCOME_SHINE_MS));
         }
 
         await new Promise((r) => setTimeout(r, reduceMotion ? 350 : ATHAR_WELCOME_HOLD_MS));
