@@ -37,6 +37,9 @@ export function AtharWelcomeSplash({ onComplete }: AtharWelcomeSplashProps) {
 
   if (removed) return null;
 
+  const gleamMask =
+    'linear-gradient(105deg, transparent 36%, rgba(255,255,255,0.15) 44%, #fff 50%, rgba(255,255,255,0.15) 56%, transparent 64%)';
+
   return (
     <motion.div
       className="fixed inset-0 z-[10002] flex items-center justify-center bg-black px-1"
@@ -48,7 +51,7 @@ export function AtharWelcomeSplash({ onComplete }: AtharWelcomeSplashProps) {
       role="img"
     >
       <div
-        className="relative drop-shadow-[0_0_36px_rgba(255,255,255,0.2)]"
+        className="relative"
         style={{
           width: 'min(86vw, 42dvh, 22rem)',
           maxWidth: '86vw',
@@ -56,7 +59,7 @@ export function AtharWelcomeSplash({ onComplete }: AtharWelcomeSplashProps) {
           WebkitClipPath: 'inset(34.17% 0 31.09% 0)',
         }}
       >
-        <div className={`relative aspect-square w-full ${active ? 'aws-shine-active' : ''}`}>
+        <div className="relative aspect-square w-full drop-shadow-[0_0_36px_rgba(255,255,255,0.2)]">
           <img
             src={ATHAR_LOGO_SRC}
             alt="ATHAR"
@@ -69,43 +72,40 @@ export function AtharWelcomeSplash({ onComplete }: AtharWelcomeSplashProps) {
             }`}
             style={{ transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1)' }}
           />
-          <div
+          <img
+            src={ATHAR_LOGO_SRC}
+            alt=""
             aria-hidden
-            className="aws-logo-shine-layer pointer-events-none absolute inset-0 overflow-hidden mix-blend-screen"
+            width={1920}
+            height={1920}
+            decoding="async"
+            draggable={false}
+            className={`pointer-events-none absolute inset-0 h-full w-full object-contain brightness-0 invert ${
+              active ? 'aws-brand-gleam-active' : 'opacity-0'
+            }`}
             style={{
-              WebkitMaskImage: `url('${ATHAR_LOGO_SRC}')`,
-              maskImage: `url('${ATHAR_LOGO_SRC}')`,
-              WebkitMaskSize: 'contain',
-              maskSize: 'contain',
+              filter: 'brightness(0) invert(1) brightness(2.4) drop-shadow(0 0 18px rgba(255,255,255,0.95))',
+              WebkitMaskImage: gleamMask,
+              maskImage: gleamMask,
+              WebkitMaskSize: '280% 100%',
+              maskSize: '280% 100%',
               WebkitMaskRepeat: 'no-repeat',
               maskRepeat: 'no-repeat',
-              WebkitMaskPosition: 'center',
-              maskPosition: 'center',
-              WebkitMaskMode: 'alpha',
-              maskMode: 'alpha',
+              WebkitMaskPosition: '150% center',
+              maskPosition: '150% center',
             }}
           />
         </div>
       </div>
       <style>{`
-        .aws-logo-shine-layer::after {
-          content: '';
-          position: absolute;
-          top: -40%;
-          left: -130%;
-          width: 58%;
-          height: 180%;
-          background: linear-gradient(100deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.35) 42%, rgba(255,255,255,1) 50%, rgba(255,255,255,0.35) 58%, rgba(255,255,255,0) 100%);
-          transform: skewX(-20deg);
-          opacity: 0;
-        }
-        .aws-shine-active .aws-logo-shine-layer::after {
+        .aws-brand-gleam-active {
           opacity: 1;
-          animation: awsLogoShine 2.2s cubic-bezier(0.45, 0, 0.25, 1) 0.4s 2;
+          transition: opacity 0.35s ease-out;
+          animation: awsLogoGleam 2.3s cubic-bezier(0.45, 0, 0.25, 1) 0.45s 2;
         }
-        @keyframes awsLogoShine {
-          0% { left: -130%; }
-          100% { left: 150%; }
+        @keyframes awsLogoGleam {
+          0% { -webkit-mask-position: 150% center; mask-position: 150% center; }
+          100% { -webkit-mask-position: -50% center; mask-position: -50% center; }
         }
       `}</style>
     </motion.div>
