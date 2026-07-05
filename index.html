@@ -2006,36 +2006,15 @@
       pointer-events: none
     }
 
-    #atharWelcomeSplash .aws-logo-wrap {
-      position: relative;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: calc(100vw - 12px);
-      max-width: calc(100vw - 12px);
-      line-height: 0;
-      filter: drop-shadow(0 0 28px rgba(255, 255, 255, 0.14))
-    }
-
-    #atharWelcomeSplash .aws-logo-crop {
-      position: relative;
-      width: 100%;
-      aspect-ratio: 1 / 1;
-      clip-path: inset(34.17% 0 31.09% 0);
-      -webkit-clip-path: inset(34.17% 0 31.09% 0);
-      transform: scale(1.85);
-      transform-origin: center center
-    }
-
     #atharWelcomeSplash .aws-brand-logo {
       display: block;
-      width: 100%;
-      height: 100%;
-      max-width: 100%;
+      width: calc(100vw - 12px);
+      max-width: calc(100vw - 12px);
+      height: auto;
       object-fit: contain;
       clip-path: inset(0 0 100% 0);
       -webkit-clip-path: inset(0 0 100% 0);
-      filter: brightness(0) invert(1)
+      filter: brightness(0) invert(1) drop-shadow(0 0 28px rgba(255, 255, 255, 0.14))
     }
 
     #atharWelcomeSplash.aws-revealed .aws-brand-logo {
@@ -2045,13 +2024,9 @@
     }
 
     @media (min-width: 993px) {
-      #atharWelcomeSplash .aws-logo-wrap {
+      #atharWelcomeSplash .aws-brand-logo {
         width: min(94vw, 52rem);
         max-width: min(94vw, 52rem)
-      }
-
-      #atharWelcomeSplash .aws-logo-crop {
-        transform: scale(1.25)
       }
     }
 
@@ -31408,11 +31383,7 @@
   </div>
 
   <div id="atharWelcomeSplash" aria-hidden="true" hidden>
-    <div class="aws-logo-wrap">
-      <div class="aws-logo-crop">
-        <img src="icons/athar-logo-v401.png" alt="ATHAR" class="aws-brand-logo wefaq-app-logo wefaq-app-logo--athar wefaq-app-logo--athar-img" width="1920" height="1920" decoding="async" draggable="false">
-      </div>
-    </div>
+    <img src="icons/athar-logo-v401.png" alt="ATHAR" class="aws-brand-logo wefaq-app-logo wefaq-app-logo--athar wefaq-app-logo--athar-img" width="1920" height="1920" decoding="async" draggable="false">
   </div>
 
   <div id="loginTransition" aria-hidden="true">
