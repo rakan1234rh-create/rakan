@@ -409,6 +409,36 @@
       top: calc(12px + var(--mr-safe-top, env(safe-area-inset-top, 0px)))
     }
 
+    html.mr-mobile-ui.mr-notif-ptr-active #mrMobilePtr {
+      top: var(--mr-notif-ptr-top, 0px);
+      z-index: 2910
+    }
+
+    html.mr-mobile-ui.mr-notif-ptr-active #appWrap.mr-ptr-drag .app-body,
+    html.mr-mobile-ui.mr-notif-ptr-active #appWrap.mr-ptr-drag > .app-shell > #mobileBottomNav.mobile-bottom-nav,
+    html.mr-mobile-ui.mr-notif-ptr-active #appWrap.mr-ptr-snap .app-body,
+    html.mr-mobile-ui.mr-notif-ptr-active #appWrap.mr-ptr-snap > .app-shell > #mobileBottomNav.mobile-bottom-nav {
+      transform: none !important;
+      transition: none !important;
+      will-change: auto !important
+    }
+
+    html.mr-mobile-ui #tab-notifications.notif-tab-overlay.mr-ptr-drag .notif-list--page,
+    html.mr-mobile-ui #tab-notifications.active.mr-ptr-drag .notif-list--page,
+    html.mr-mobile-ui.mr-notif-page-active #tab-notifications.active.mr-ptr-drag .notif-list--page {
+      transform: translate3d(0, var(--mr-ptr-pull, 0px), 0);
+      transition: none;
+      will-change: transform
+    }
+
+    html.mr-mobile-ui #tab-notifications.notif-tab-overlay.mr-ptr-snap .notif-list--page,
+    html.mr-mobile-ui #tab-notifications.active.mr-ptr-snap .notif-list--page,
+    html.mr-mobile-ui.mr-notif-page-active #tab-notifications.active.mr-ptr-snap .notif-list--page {
+      transform: translate3d(0, 0, 0);
+      transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+      will-change: auto
+    }
+
     html.mr-mobile-ui #appWrap .topbar.unified-banner,
     html.mr-mobile-ui .topbar.unified-banner {
       position: fixed !important;
@@ -38268,30 +38298,59 @@
         ptr.innerHTML = '<div class="mr-ptr-spinner" aria-hidden="true"></div>';
         document.body.appendChild(ptr);
 
+        function getPtrMode() {
+          if (document.body.classList.contains('login-portal-open')) return 'login';
+          if (typeof isNotifPageOpen === 'function' && isNotifPageOpen()) return 'notif';
+          return 'app';
+        }
+
+        function syncNotifPtrTop() {
+          const head = document.querySelector('#tab-notifications .notif-page-head');
+          if (!head) return;
+          document.documentElement.style.setProperty('--mr-notif-ptr-top', head.getBoundingClientRect().bottom + 'px');
+        }
+
+        function setNotifPtrActive(on) {
+          document.documentElement.classList.toggle('mr-notif-ptr-active', on);
+          if (on) syncNotifPtrTop();
+          else document.documentElement.style.removeProperty('--mr-notif-ptr-top');
+        }
+
         function getPtrHosts() {
-          const appWrap = document.getElementById('appWrap');
-          const login = document.getElementById('loginScreen');
-          if (document.body.classList.contains('login-portal-open')) return { appWrap: null, login };
-          return { appWrap, login: null };
+          return {
+            appWrap: document.getElementById('appWrap'),
+            login: document.getElementById('loginScreen'),
+            notifTab: document.getElementById('tab-notifications'),
+          };
         }
 
         function setPtrDrag(on) {
-          const { appWrap, login } = getPtrHosts();
-          appWrap?.classList.toggle('mr-ptr-drag', on);
-          login?.classList.toggle('mr-ptr-drag', on);
+          const mode = getPtrMode();
+          const { appWrap, login, notifTab } = getPtrHosts();
+          appWrap?.classList.toggle('mr-ptr-drag', mode === 'app' && on);
+          login?.classList.toggle('mr-ptr-drag', mode === 'login' && on);
+          notifTab?.classList.toggle('mr-ptr-drag', mode === 'notif' && on);
+          if (mode === 'notif') setNotifPtrActive(on || refreshing);
+          else setNotifPtrActive(false);
           if (on) {
             appWrap?.classList.remove('mr-ptr-snap');
             login?.classList.remove('mr-ptr-snap');
+            notifTab?.classList.remove('mr-ptr-snap');
             ptr.classList.remove('mr-ptr-snap');
           }
         }
 
         function snapPtrBack() {
-          const { appWrap, login } = getPtrHosts();
+          const mode = getPtrMode();
+          const { appWrap, login, notifTab } = getPtrHosts();
           appWrap?.classList.remove('mr-ptr-drag');
           login?.classList.remove('mr-ptr-drag');
-          appWrap?.classList.add('mr-ptr-snap');
-          login?.classList.add('mr-ptr-snap');
+          notifTab?.classList.remove('mr-ptr-drag');
+          if (mode === 'login') login?.classList.add('mr-ptr-snap');
+          else if (mode === 'notif') {
+            notifTab?.classList.add('mr-ptr-snap');
+            setNotifPtrActive(true);
+          } else appWrap?.classList.add('mr-ptr-snap');
           ptr.classList.add('mr-ptr-snap');
           setPull(0);
           window.setTimeout(() => {
@@ -38334,6 +38393,8 @@
           }
           const usersList = document.querySelector('#tab-departments.active #usersList.users-grid--mob-list');
           if (usersList && isScrollable(usersList)) return usersList;
+          const notifList = document.querySelector('#tab-notifications #notifPageList.notif-list--page');
+          if (notifList && isScrollable(notifList) && typeof isNotifPageOpen === 'function' && isNotifPageOpen()) return notifList;
           const main = document.querySelector('#appWrap .main');
           if (main && isScrollable(main)) return main;
           const login = document.getElementById('loginScreen');
@@ -38357,9 +38418,11 @@
           setPtrDrag(false);
           ptr.classList.remove('mr-ptr-visible', 'mr-ptr-ready', 'mr-ptr-snap');
           setPull(0);
-          const { appWrap, login } = getPtrHosts();
+          const { appWrap, login, notifTab } = getPtrHosts();
           appWrap?.classList.remove('mr-ptr-snap', 'mr-ptr-drag');
           login?.classList.remove('mr-ptr-snap', 'mr-ptr-drag');
+          notifTab?.classList.remove('mr-ptr-snap', 'mr-ptr-drag');
+          setNotifPtrActive(false);
         }
 
         function resetPull() {
@@ -38388,6 +38451,19 @@
           const appShown = appWrap && appWrap.style.display !== 'none';
           if (loginOpen || !appShown) {
             location.reload();
+            return;
+          }
+          if (typeof isNotifPageOpen === 'function' && isNotifPageOpen()) {
+            const jobs = [];
+            if (typeof refreshPermissionsFromCloud === 'function') {
+              jobs.push(refreshPermissionsFromCloud({ forceCloud: true }));
+            }
+            if (typeof refreshNotificationsFromDb === 'function') {
+              jobs.push(refreshNotificationsFromDb());
+            }
+            await Promise.allSettled(jobs);
+            if (typeof renderNotifications === 'function') renderNotifications(true);
+            if (typeof flushPermissionsMobileShell === 'function') flushPermissionsMobileShell();
             return;
           }
           const jobs = [];
@@ -38431,6 +38507,7 @@
           if (!ptrEnabled() || isPtrBlocked() || refreshing) return;
           if (e.touches.length !== 1) return;
           if (e.target?.closest?.('.modal, .confirm-overlay, [data-no-ptr], input, textarea, select, .dp-popup, .att-viewer, .td-mob-sheet, .users-io-menu, .wf-status-menu')) return;
+          if (typeof isNotifPageOpen === 'function' && isNotifPageOpen()) syncNotifPtrTop();
           scrollRoot = findScrollRoot(e.target);
           if (getScrollTop(scrollRoot) > 2) return;
           startY = e.touches[0].clientY;
