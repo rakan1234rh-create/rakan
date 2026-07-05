@@ -330,7 +330,7 @@
 
     html.mr-mobile-ui #mrMobilePtr {
       position: fixed;
-      top: calc(var(--unified-topbar-h, 76px) + 6px);
+      top: calc(var(--unified-topbar-h, 76px) + (var(--mr-ptr-pull, 0px) * 0.5) - 19px);
       left: 50%;
       z-index: 2995;
       display: flex;
@@ -338,13 +338,42 @@
       justify-content: center;
       pointer-events: none;
       opacity: 0;
-      transform: translate(-50%, calc(-16px - min(var(--mr-ptr-pull, 0px), 72px)));
-      transition: opacity 0.18s ease, transform 0.12s ease-out;
-      will-change: transform, opacity
+      transform: translateX(-50%);
+      will-change: top, opacity
     }
 
     html.mr-mobile-ui #mrMobilePtr.mr-ptr-visible {
       opacity: 1
+    }
+
+    html.mr-mobile-ui #mrMobilePtr.mr-ptr-snap {
+      transition: top 0.28s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.22s ease
+    }
+
+    html.mr-mobile-ui #appWrap.mr-ptr-drag .app-body,
+    html.mr-mobile-ui #appWrap.mr-ptr-drag > .app-shell > #mobileBottomNav.mobile-bottom-nav {
+      transform: translate3d(0, var(--mr-ptr-pull, 0px), 0);
+      transition: none;
+      will-change: transform
+    }
+
+    html.mr-mobile-ui #appWrap.mr-ptr-snap .app-body,
+    html.mr-mobile-ui #appWrap.mr-ptr-snap > .app-shell > #mobileBottomNav.mobile-bottom-nav {
+      transform: translate3d(0, 0, 0);
+      transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+      will-change: auto
+    }
+
+    html.mr-mobile-ui #loginScreen.mr-ptr-drag .lp-center {
+      transform: translate3d(0, var(--mr-ptr-pull, 0px), 0);
+      transition: none;
+      will-change: transform
+    }
+
+    html.mr-mobile-ui #loginScreen.mr-ptr-snap .lp-center {
+      transform: translate3d(0, 0, 0);
+      transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+      will-change: auto
     }
 
     html.mr-mobile-ui #mrMobilePtr .mr-ptr-chip {
@@ -392,7 +421,7 @@
     }
 
     html.mr-mobile-ui body.login-portal-open #mrMobilePtr {
-      top: calc(12px + var(--mr-safe-top, env(safe-area-inset-top, 0px)))
+      top: calc(max(12px + var(--mr-safe-top, env(safe-area-inset-top, 0px)), (var(--mr-ptr-pull, 0px) * 0.5) - 19px))
     }
 
     html.mr-mobile-ui #appWrap .topbar.unified-banner,
@@ -38238,8 +38267,8 @@
         if (window._mrMobilePtrBound) return;
         window._mrMobilePtrBound = true;
 
-        const PTR_THRESHOLD = 68;
-        const PTR_MAX = 96;
+        const PTR_THRESHOLD = 72;
+        const PTR_MAX = 88;
         let startY = 0;
         let pulling = false;
         let refreshing = false;
@@ -38251,6 +38280,39 @@
         ptr.setAttribute('aria-hidden', 'true');
         ptr.innerHTML = '<div class="mr-ptr-chip"><i class="fas fa-arrow-down mr-ptr-arrow" aria-hidden="true"></i><i class="fas fa-spinner fa-spin mr-ptr-spinner" aria-hidden="true"></i></div>';
         document.body.appendChild(ptr);
+
+        function getPtrHosts() {
+          const appWrap = document.getElementById('appWrap');
+          const login = document.getElementById('loginScreen');
+          if (document.body.classList.contains('login-portal-open')) return { appWrap: null, login };
+          return { appWrap, login: null };
+        }
+
+        function setPtrDrag(on) {
+          const { appWrap, login } = getPtrHosts();
+          appWrap?.classList.toggle('mr-ptr-drag', on);
+          login?.classList.toggle('mr-ptr-drag', on);
+          if (on) {
+            appWrap?.classList.remove('mr-ptr-snap');
+            login?.classList.remove('mr-ptr-snap');
+            ptr.classList.remove('mr-ptr-snap');
+          }
+        }
+
+        function snapPtrBack() {
+          const { appWrap, login } = getPtrHosts();
+          appWrap?.classList.remove('mr-ptr-drag');
+          login?.classList.remove('mr-ptr-drag');
+          appWrap?.classList.add('mr-ptr-snap');
+          login?.classList.add('mr-ptr-snap');
+          ptr.classList.add('mr-ptr-snap');
+          setPull(0);
+          window.setTimeout(() => {
+            appWrap?.classList.remove('mr-ptr-snap');
+            login?.classList.remove('mr-ptr-snap');
+            ptr.classList.remove('mr-ptr-snap');
+          }, 320);
+        }
 
         function ptrEnabled() {
           return document.documentElement.classList.contains('mr-mobile-ui') || (typeof isMobileViewport === 'function' && isMobileViewport());
@@ -38295,20 +38357,32 @@
           return root.scrollTop || 0;
         }
 
-        function setPull(px) {
-          pullPx = Math.max(0, Math.min(PTR_MAX, px));
-          document.documentElement.style.setProperty('--mr-ptr-pull', pullPx + 'px');
-          ptr.classList.toggle('mr-ptr-visible', pullPx > 6);
-          ptr.classList.toggle('mr-ptr-ready', pullPx >= PTR_THRESHOLD);
-        }
-
         function resetPull() {
           window._mrPtrPulling = false;
           pulling = false;
           scrollRoot = null;
-          pullPx = 0;
-          setPull(0);
+          snapPtrBack();
           ptr.classList.remove('mr-ptr-visible', 'mr-ptr-ready');
+        }
+
+        function setPull(px) {
+          pullPx = Math.max(0, Math.min(PTR_MAX, px));
+          document.documentElement.style.setProperty('--mr-ptr-pull', pullPx + 'px');
+          ptr.classList.toggle('mr-ptr-visible', pullPx > 4);
+          ptr.classList.toggle('mr-ptr-ready', pullPx >= PTR_THRESHOLD);
+        }
+
+        function resetPullImmediate() {
+          window._mrPtrPulling = false;
+          pulling = false;
+          scrollRoot = null;
+          pullPx = 0;
+          setPtrDrag(false);
+          setPull(0);
+          ptr.classList.remove('mr-ptr-visible', 'mr-ptr-ready', 'mr-ptr-snap');
+          const { appWrap, login } = getPtrHosts();
+          appWrap?.classList.remove('mr-ptr-snap', 'mr-ptr-drag');
+          login?.classList.remove('mr-ptr-snap', 'mr-ptr-drag');
         }
 
         async function performMobilePullRefresh() {
@@ -38338,6 +38412,7 @@
         function triggerRefresh() {
           if (refreshing) return;
           refreshing = true;
+          setPtrDrag(true);
           ptr.classList.add('mr-ptr-refreshing', 'mr-ptr-visible');
           setPull(PTR_THRESHOLD);
           performMobilePullRefresh()
@@ -38355,6 +38430,8 @@
           pulling = true;
           window._mrPtrPulling = false;
           pullPx = 0;
+          setPtrDrag(true);
+          setPull(0);
         }, { passive: true, capture: true });
 
         document.addEventListener('touchmove', (e) => {
@@ -38370,7 +38447,7 @@
           }
           window._mrPtrPulling = true;
           e.preventDefault();
-          setPull(dy * 0.52);
+          setPull(Math.min(PTR_MAX, dy * 0.92));
         }, { passive: false, capture: true });
 
         document.addEventListener('touchend', () => {
@@ -38382,7 +38459,7 @@
           else resetPull();
         }, { passive: true, capture: true });
 
-        document.addEventListener('touchcancel', resetPull, { passive: true, capture: true });
+        document.addEventListener('touchcancel', resetPullImmediate, { passive: true, capture: true });
       }
 
       const ATHAR_LOGO_VER = 'new-logo-401';
