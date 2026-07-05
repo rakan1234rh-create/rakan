@@ -37,8 +37,6 @@ export function AtharWelcomeSplash({ onComplete }: AtharWelcomeSplashProps) {
 
   if (removed) return null;
 
-  const logoClass = 'block h-full w-full max-w-full object-contain brightness-0 invert';
-
   return (
     <motion.div
       className="fixed inset-0 z-[10002] flex items-center justify-center bg-black px-1.5"
@@ -49,29 +47,22 @@ export function AtharWelcomeSplash({ onComplete }: AtharWelcomeSplashProps) {
       aria-label="ATHAR"
       role="img"
     >
-      <div className="relative flex w-[calc(100vw-12px)] max-w-[calc(100vw-12px)] items-center justify-center drop-shadow-[0_0_28px_rgba(255,255,255,0.14)] md:w-[min(94vw,52rem)] md:max-w-[min(94vw,52rem)]">
-        <div
-          className="relative aspect-square w-full origin-center scale-[1.85] md:scale-125"
-          style={{ clipPath: 'inset(34.17% 0 31.09% 0)', WebkitClipPath: 'inset(34.17% 0 31.09% 0)' }}
-        >
-          <img
-            src={ATHAR_LOGO_SRC}
-            alt="ATHAR"
-            width={1920}
-            height={1920}
-            decoding="async"
-            draggable={false}
-            className={logoClass}
-            style={{
-              clipPath: revealed ? 'inset(0 0 0 0)' : 'inset(0 0 100% 0)',
-              WebkitClipPath: revealed ? 'inset(0 0 0 0)' : 'inset(0 0 100% 0)',
-              transition: revealed
-                ? `clip-path ${REVEAL_DURATION}s cubic-bezier(0.45, 0, 0.55, 1), -webkit-clip-path ${REVEAL_DURATION}s cubic-bezier(0.45, 0, 0.55, 1)`
-                : undefined,
-            }}
-          />
-        </div>
-      </div>
+      <img
+        src={ATHAR_LOGO_SRC}
+        alt="ATHAR"
+        width={1920}
+        height={1920}
+        decoding="async"
+        draggable={false}
+        className="block h-auto w-[calc(100vw-12px)] max-w-[calc(100vw-12px)] object-contain brightness-0 invert drop-shadow-[0_0_28px_rgba(255,255,255,0.14)] md:w-[min(94vw,52rem)] md:max-w-[min(94vw,52rem)]"
+        style={{
+          clipPath: revealed ? 'inset(0 0 0 0)' : 'inset(0 0 100% 0)',
+          WebkitClipPath: revealed ? 'inset(0 0 0 0)' : 'inset(0 0 100% 0)',
+          transition: revealed
+            ? `clip-path ${REVEAL_DURATION}s cubic-bezier(0.45, 0, 0.55, 1), -webkit-clip-path ${REVEAL_DURATION}s cubic-bezier(0.45, 0, 0.55, 1)`
+            : undefined,
+        }}
+      />
     </motion.div>
   );
 }

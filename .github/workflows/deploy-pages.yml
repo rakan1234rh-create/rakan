@@ -65,11 +65,21 @@ jobs:
         uses: actions/deploy-pages@v4
         continue-on-error: true
 
-      - name: Retry Pages deploy
+      - name: Retry Pages deploy (1)
         if: steps.deployment.outcome != 'success'
         uses: actions/deploy-pages@v4
         id: deployment_retry
+        continue-on-error: true
+
+      - name: Wait before final Pages retry
+        if: steps.deployment.outcome != 'success' && steps.deployment_retry.outcome != 'success'
+        run: sleep 45
+
+      - name: Retry Pages deploy (2)
+        if: steps.deployment.outcome != 'success' && steps.deployment_retry.outcome != 'success'
+        uses: actions/deploy-pages@v4
+        id: deployment_retry2
 
       - name: Verify Pages deploy
-        if: steps.deployment.outcome != 'success' && steps.deployment_retry.outcome != 'success'
+        if: steps.deployment.outcome != 'success' && steps.deployment_retry.outcome != 'success' && steps.deployment_retry2.outcome != 'success'
         run: exit 1
