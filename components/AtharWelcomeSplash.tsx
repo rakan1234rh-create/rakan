@@ -3,13 +3,14 @@ import { motion } from 'framer-motion';
 
 const ATHAR_LOGO_SRC = 'icons/athar-logo-v401.png';
 const LETTERS_SPLIT = 0.526;
-const LINE_TOP = 0.586;
-const LETTERS_DURATION = 2.4;
-const LINE_DURATION = 3.2;
+const LINE_TOP = 0.526;
+const TOTAL_DURATION = 5.2;
+const LINE_START_AT = 0.36;
+const LETTERS_DONE_AT = 0.46;
 const HOLD_AFTER_COMPLETE = 1;
 const EXIT_DURATION = 0.7;
 
-const ease = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
+const easeOut = (t: number) => 1 - Math.pow(1 - t, 2.2);
 
 const lettersClip = (rightHidePct: number) =>
   `inset(0 ${rightHidePct}% ${(1 - LETTERS_SPLIT) * 100}% 0)`;
@@ -19,10 +20,13 @@ const lettersLockedClip = () => {
   return `polygon(0% 0%, 100% 0%, 100% ${y}%, 0% ${y}%)`;
 };
 
-const lineClip = (leftHidePct: number) => {
+const lineReveal = (progress: number) => {
   const top = (LINE_TOP * 100).toFixed(2);
-  const left = Math.max(0, Math.min(100, leftHidePct));
-  return `inset(${top}% 0 0 ${left}%)`;
+  const p = Math.max(0, Math.min(1, progress));
+  if (p <= 0) return `polygon(0% 0%, 100% 0%, 100% ${top}%, 100% ${top}%)`;
+  if (p >= 1) return 'inset(0 0 0 0)';
+  const left = (100 - p * 100).toFixed(2);
+  return `polygon(0% 0%, 100% 0%, 100% ${top}%, 0% ${top}%, ${left}% ${top}%, ${left}% 100%, 100% 100%)`;
 };
 
 export type AtharWelcomeSplashProps = {
@@ -31,46 +35,41 @@ export type AtharWelcomeSplashProps = {
 
 export function AtharWelcomeSplash({ onComplete }: AtharWelcomeSplashProps) {
   const [lettersClipPath, setLettersClipPath] = useState(lettersClip(100));
-  const [lineClipPath, setLineClipPath] = useState(lineClip(100));
-  const [lineVisible, setLineVisible] = useState(false);
+  const [lineClipPath, setLineClipPath] = useState(lineReveal(0));
+  const [lineVisible, setLineVisible] = useState(true);
   const [merged, setMerged] = useState(false);
   const [exiting, setExiting] = useState(false);
   const [removed, setRemoved] = useState(false);
   const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
-    const lettersMs = LETTERS_DURATION * 1000;
-    const lineMs = LINE_DURATION * 1000;
+    const totalMs = TOTAL_DURATION * 1000;
     const start = performance.now();
-    let phase: 'letters' | 'line' | 'done' = 'letters';
 
     const tick = (now: number) => {
-      const elapsed = now - start;
+      const p = Math.min(1, (now - start) / totalMs);
 
-      if (phase === 'letters') {
-        const raw = Math.min(1, elapsed / lettersMs);
-        const t = ease(raw);
-        setLettersClipPath(lettersClip(100 * (1 - t)));
-        if (raw >= 1) {
-          setLettersClipPath(lettersLockedClip());
-          setLineVisible(true);
-          phase = 'line';
-        }
-      } else if (phase === 'line') {
-        const lineElapsed = elapsed - lettersMs;
-        const raw = Math.min(1, lineElapsed / lineMs);
-        const t = ease(raw);
-        setLineClipPath(lineClip(100 * (1 - t)));
-        if (raw >= 1) {
-          setMerged(true);
-          setLineVisible(false);
-          phase = 'done';
-          window.setTimeout(() => setExiting(true), HOLD_AFTER_COMPLETE * 1000);
-          return;
-        }
+      const letterP = Math.min(1, p / LETTERS_DONE_AT);
+      if (p < LETTERS_DONE_AT) {
+        setLettersClipPath(lettersClip(100 * (1 - easeOut(letterP))));
+      } else {
+        setLettersClipPath(lettersLockedClip());
       }
 
-      rafRef.current = requestAnimationFrame(tick);
+      if (p >= LINE_START_AT) {
+        const lineP = Math.min(1, (p - LINE_START_AT) / (1 - LINE_START_AT));
+        setLineClipPath(lineReveal(lineP));
+      } else {
+        setLineClipPath(lineReveal(0));
+      }
+
+      if (p < 1) {
+        rafRef.current = requestAnimationFrame(tick);
+      } else {
+        setMerged(true);
+        setLineVisible(false);
+        window.setTimeout(() => setExiting(true), HOLD_AFTER_COMPLETE * 1000);
+      }
     };
 
     rafRef.current = requestAnimationFrame(tick);
