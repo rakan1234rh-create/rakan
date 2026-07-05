@@ -4211,6 +4211,106 @@
       background: color-mix(in srgb, var(--mr-red) 88%, #000)
     }
 
+    /* shadcn/ui Button — vanilla CSS (mirrors @/components/ui/button) */
+    .ui-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.375rem;
+      white-space: nowrap;
+      border-radius: 0.5rem;
+      border: 1px solid transparent;
+      font-family: var(--font);
+      font-size: 0.875rem;
+      font-weight: 500;
+      line-height: 1;
+      transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+      outline-offset: 2px;
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .ui-btn:focus-visible {
+      outline: 2px solid color-mix(in oklch, var(--mr-primary) 70%, transparent);
+    }
+
+    .ui-btn:disabled {
+      pointer-events: none;
+      opacity: 0.5;
+    }
+
+    .ui-btn svg,
+    .ui-btn > i {
+      pointer-events: none;
+      flex-shrink: 0;
+    }
+
+    .ui-btn--default {
+      background: var(--mr-primary);
+      color: #fff;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+
+    .ui-btn--default:hover {
+      background: var(--mr-primary-hover);
+    }
+
+    .ui-btn--outline {
+      background: var(--mr-bg);
+      color: var(--mr-text);
+      border-color: var(--mr-border);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+
+    .ui-btn--outline:hover {
+      background: var(--mr-bg-2);
+      color: var(--mr-text);
+    }
+
+    .ui-btn--secondary {
+      background: var(--mr-bg-2);
+      color: var(--mr-text);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+
+    .ui-btn--secondary:hover {
+      background: color-mix(in oklch, var(--mr-bg-2) 80%, var(--mr-border));
+    }
+
+    .ui-btn--ghost {
+      background: transparent;
+      color: var(--mr-text);
+    }
+
+    .ui-btn--ghost:hover {
+      background: var(--mr-bg-2);
+      color: var(--mr-text);
+    }
+
+    .ui-btn--sm {
+      height: 2rem;
+      padding: 0 0.75rem;
+      font-size: 0.75rem;
+      border-radius: 0.5rem;
+    }
+
+    .ui-btn--default-size {
+      height: 2.25rem;
+      padding: 0.5rem 1rem;
+    }
+
+    .ui-btn--icon {
+      height: 2.25rem;
+      width: 2.25rem;
+      padding: 0;
+    }
+
+    .ui-btn--icon.ui-btn--sm {
+      height: 2rem;
+      width: 2rem;
+    }
+
     .btn-warning {
       background: var(--mr-warning);
       color: #2a2200;
@@ -14534,23 +14634,11 @@
     }
 
     .td-print-btn {
-      background: var(--blue-light);
-      color: var(--blue-text);
-      border: 1px solid transparent;
-      width: 36px;
-      height: 36px;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      touch-action: manipulation;
-      transition: 0.2s
+      flex-shrink: 0;
     }
 
-    .td-print-btn:hover {
-      background: var(--blue);
-      color: #fff
+    #ticketModal .td-print-btn {
+      transform: translateY(-3px);
     }
 
     #ticketModal .ticket-resp-search {
@@ -14713,10 +14801,6 @@
     #ticketModal .td-header-actions {
       align-self: flex-start;
       margin-block-start: -1px
-    }
-
-    #ticketModal .td-print-btn {
-      transform: translateY(-3px)
     }
 
     /* Overdue */
@@ -32814,8 +32898,13 @@
               <h3 id="td-id">-</h3>
               <span class="badge" id="td-badge">-</span>
             </div>
-            <div class="td-header-actions"><button type="button" class="td-print-btn" onclick="printTicketDetail()"
-                title="طباعة التذكرة"><i class="fas fa-print"></i></button></div>
+            <div class="td-header-actions">
+              <button type="button" class="ui-btn ui-btn--default ui-btn--sm td-print-btn" onclick="printTicketDetail()"
+                title="طباعة تقرير المخالفة" aria-label="طباعة تقرير المخالفة">
+                <i class="fas fa-print" aria-hidden="true"></i>
+                <span>طباعة التقرير</span>
+              </button>
+            </div>
           </div>
         </div>
         <div class="td-tabs no-print"><button class="td-tab active" id="tdt-info" onclick="switchDetailTab('info')"><i
