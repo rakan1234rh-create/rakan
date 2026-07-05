@@ -2022,8 +2022,7 @@
       position: relative;
       display: block;
       width: 100%;
-      aspect-ratio: 1 / 1;
-      overflow: hidden
+      aspect-ratio: 1 / 1
     }
 
     #atharWelcomeSplash .aws-brand-logo {
@@ -2043,17 +2042,31 @@
       transition: opacity 0.6s ease-out, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1)
     }
 
+    #atharWelcomeSplash .aws-logo-shine-mask {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+      -webkit-mask-image: url('icons/athar-logo-v401.png');
+      mask-image: url('icons/athar-logo-v401.png');
+      -webkit-mask-size: contain;
+      mask-size: contain;
+      -webkit-mask-repeat: no-repeat;
+      mask-repeat: no-repeat;
+      -webkit-mask-position: center;
+      mask-position: center
+    }
+
     #atharWelcomeSplash .aws-logo-shine {
       position: absolute;
       top: -35%;
       left: -70%;
       width: 52%;
       height: 170%;
-      background: linear-gradient(100deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.05) 38%, rgba(255, 255, 255, 0.55) 50%, rgba(255, 255, 255, 0.05) 62%, rgba(255, 255, 255, 0) 100%);
+      background: linear-gradient(100deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.12) 38%, rgba(255, 255, 255, 0.95) 50%, rgba(255, 255, 255, 0.12) 62%, rgba(255, 255, 255, 0) 100%);
       transform: skewX(-22deg) translateX(-200%);
       opacity: 0;
-      pointer-events: none;
-      mix-blend-mode: screen
+      pointer-events: none
     }
 
     #atharWelcomeSplash.aws-active .aws-logo-shine {
@@ -2084,7 +2097,7 @@
         transform: none
       }
 
-      #atharWelcomeSplash .aws-logo-shine {
+      #atharWelcomeSplash .aws-logo-shine-mask {
         display: none
       }
     }
@@ -31445,7 +31458,9 @@
     <div class="aws-logo-frame">
       <div class="aws-logo-shine-wrap">
         <img src="icons/athar-logo-v401.png" alt="ATHAR" class="aws-brand-logo wefaq-app-logo wefaq-app-logo--athar wefaq-app-logo--athar-img" width="1920" height="1920" decoding="async" draggable="false">
-        <span class="aws-logo-shine" aria-hidden="true"></span>
+        <div class="aws-logo-shine-mask" aria-hidden="true">
+          <span class="aws-logo-shine"></span>
+        </div>
       </div>
     </div>
   </div>
