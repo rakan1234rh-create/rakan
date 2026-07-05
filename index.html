@@ -379,33 +379,30 @@
       will-change: auto
     }
 
-    html.mr-mobile-ui #mrMobilePtr .mr-ptr-chip {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 34px;
-      height: 34px;
-      border-radius: 999px;
-      background: var(--mr-surface, #fff);
-      border: 1px solid color-mix(in srgb, var(--mr-border, #d8d8de) 72%, transparent);
-      color: var(--mr-primary, #1c1c21);
-      flex-shrink: 0;
-      transition: background 0.15s ease, transform 0.15s ease
-    }
-
-    html.mr-mobile-ui #mrMobilePtr.mr-ptr-ready .mr-ptr-chip {
-      background: color-mix(in srgb, var(--mr-primary, #1c1c21) 10%, var(--mr-surface, #fff));
-      transform: scale(1.05)
-    }
-
     html.mr-mobile-ui #mrMobilePtr .mr-ptr-spinner {
-      display: none;
-      font-size: 15px;
-      line-height: 1
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 2.5px solid color-mix(in srgb, var(--mr-muted, #8e8e93) 22%, transparent);
+      border-top-color: color-mix(in srgb, var(--mr-muted, #8e8e93) 62%, transparent);
+      opacity: var(--mr-ptr-spinner-o, 0);
+      transform: scale(var(--mr-ptr-spinner-s, 0.45));
+      flex-shrink: 0;
+      transition: opacity 0.12s ease, transform 0.12s ease
     }
 
     html.mr-mobile-ui #mrMobilePtr.mr-ptr-refreshing .mr-ptr-spinner {
-      display: block
+      opacity: 1;
+      transform: scale(1);
+      animation: mr-ptr-spin 0.75s linear infinite
+    }
+
+    html.mr-mobile-ui #mrMobilePtr.mr-ptr-ready:not(.mr-ptr-refreshing) .mr-ptr-spinner {
+      border-top-color: color-mix(in srgb, var(--mr-muted, #8e8e93) 88%, transparent)
+    }
+
+    @keyframes mr-ptr-spin {
+      to { transform: scale(1) rotate(360deg) }
     }
 
     html.mr-mobile-ui body.login-portal-open #mrMobilePtr {
@@ -38264,12 +38261,11 @@
         let refreshing = false;
         let scrollRoot = null;
         let pullPx = 0;
-        let translateContent = true;
 
         const ptr = document.createElement('div');
         ptr.id = 'mrMobilePtr';
         ptr.setAttribute('aria-hidden', 'true');
-        ptr.innerHTML = '<div class="mr-ptr-chip"><i class="fas fa-spinner fa-spin mr-ptr-spinner" aria-hidden="true"></i></div>';
+        ptr.innerHTML = '<div class="mr-ptr-spinner" aria-hidden="true"></div>';
         document.body.appendChild(ptr);
 
         function getPtrHosts() {
@@ -38280,7 +38276,6 @@
         }
 
         function setPtrDrag(on) {
-          if (!translateContent) return;
           const { appWrap, login } = getPtrHosts();
           appWrap?.classList.toggle('mr-ptr-drag', on);
           login?.classList.toggle('mr-ptr-drag', on);
@@ -38295,10 +38290,8 @@
           const { appWrap, login } = getPtrHosts();
           appWrap?.classList.remove('mr-ptr-drag');
           login?.classList.remove('mr-ptr-drag');
-          if (translateContent) {
-            appWrap?.classList.add('mr-ptr-snap');
-            login?.classList.add('mr-ptr-snap');
-          }
+          appWrap?.classList.add('mr-ptr-snap');
+          login?.classList.add('mr-ptr-snap');
           ptr.classList.add('mr-ptr-snap');
           setPull(0);
           window.setTimeout(() => {
@@ -38333,12 +38326,6 @@
           return !root || root === document.scrollingElement || root === document.documentElement || root === document.body;
         }
 
-        function shouldTranslateForRoot(root) {
-          if (isDocumentScrollRoot(root)) return true;
-          const main = document.querySelector('#appWrap .main');
-          return !!(main && root === main);
-        }
-
         function findScrollRoot(target) {
           let node = target instanceof Element ? target : null;
           while (node && node !== document.body) {
@@ -38367,7 +38354,6 @@
           pulling = false;
           ptrPending = false;
           scrollRoot = null;
-          translateContent = true;
           setPtrDrag(false);
           ptr.classList.remove('mr-ptr-visible', 'mr-ptr-ready', 'mr-ptr-snap');
           setPull(0);
@@ -38384,9 +38370,12 @@
         function setPull(px) {
           pullPx = Math.max(0, Math.min(PTR_MAX, px));
           document.documentElement.style.setProperty('--mr-ptr-pull', pullPx + 'px');
+          const progress = Math.min(1, pullPx / PTR_THRESHOLD);
+          document.documentElement.style.setProperty('--mr-ptr-spinner-o', String(Math.min(1, pullPx / 28)));
+          document.documentElement.style.setProperty('--mr-ptr-spinner-s', String(0.45 + progress * 0.55));
           ptr.classList.toggle('mr-ptr-visible', pullPx > 4);
           ptr.classList.toggle('mr-ptr-ready', pullPx >= PTR_THRESHOLD);
-          if (pullPx > 0 && translateContent) setPtrDrag(true);
+          if (pullPx > 0) setPtrDrag(true);
         }
 
         function resetPullImmediate() {
@@ -38430,7 +38419,7 @@
           pulling = false;
           ptrPending = false;
           window._mrPtrPulling = false;
-          if (translateContent) setPtrDrag(true);
+          setPtrDrag(true);
           ptr.classList.add('mr-ptr-refreshing', 'mr-ptr-visible');
           setPull(PTR_THRESHOLD);
           performMobilePullRefresh()
@@ -38443,7 +38432,6 @@
           if (e.touches.length !== 1) return;
           if (e.target?.closest?.('.modal, .confirm-overlay, [data-no-ptr], input, textarea, select, .dp-popup, .att-viewer, .td-mob-sheet, .users-io-menu, .wf-status-menu')) return;
           scrollRoot = findScrollRoot(e.target);
-          translateContent = shouldTranslateForRoot(scrollRoot);
           if (getScrollTop(scrollRoot) > 2) return;
           startY = e.touches[0].clientY;
           pulling = false;
