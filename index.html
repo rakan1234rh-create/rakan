@@ -2048,14 +2048,19 @@
       left: 0;
       width: 100%;
       z-index: 2;
-      opacity: 0;
-      clip-path: inset(58.6% 0 0 100%);
-      -webkit-clip-path: inset(58.6% 0 0 100%);
-      pointer-events: none
+      opacity: 1;
+      clip-path: inset(52.6% 0 0 100%);
+      -webkit-clip-path: inset(52.6% 0 0 100%);
+      pointer-events: none;
+      will-change: clip-path
     }
 
     #atharWelcomeSplash .aws-brand-logo--line.is-drawing {
       opacity: 1
+    }
+
+    #atharWelcomeSplash .aws-brand-logo--letters {
+      will-change: clip-path
     }
 
     #atharWelcomeSplash.aws-merged .aws-brand-logo--letters {
@@ -36772,14 +36777,15 @@
 
       const ATHAR_WELCOME_SEEN_KEY = 'athar_welcome_seen';
       const ATHAR_SPLASH_LETTERS_SPLIT = 0.526;
-      const ATHAR_SPLASH_LINE_TOP = 0.586;
-      const ATHAR_WELCOME_LETTERS_MS = 2400;
-      const ATHAR_WELCOME_LINE_MS = 3200;
+      const ATHAR_SPLASH_LINE_TOP = 0.526;
+      const ATHAR_WELCOME_TOTAL_MS = 5200;
+      const ATHAR_LINE_START_AT = 0.36;
+      const ATHAR_LETTERS_DONE_AT = 0.46;
       const ATHAR_WELCOME_HOLD_MS = 1000;
       const ATHAR_WELCOME_EXIT_MS = 700;
 
-      function awsSplashEase(t) {
-        return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+      function awsSplashEaseOut(t) {
+        return 1 - Math.pow(1 - t, 2.2);
       }
 
       function awsSplashClipLetters(rightHidePct) {
@@ -36792,10 +36798,16 @@
         return `polygon(0% 0%, 100% 0%, 100% ${y}%, 0% ${y}%)`;
       }
 
-      function awsSplashLineClip(leftHidePct) {
+      /** كشف الشريط من اليمين لليسار — تسلسلي خطي */
+      function awsSplashLineReveal(progress) {
         const top = (ATHAR_SPLASH_LINE_TOP * 100).toFixed(2);
-        const left = Math.max(0, Math.min(100, leftHidePct));
-        return `inset(${top}% 0 0 ${left}%)`;
+        const p = Math.max(0, Math.min(1, progress));
+        if (p <= 0) {
+          return `polygon(0% 0%, 100% 0%, 100% ${top}%, 100% ${top}%)`;
+        }
+        if (p >= 1) return 'inset(0 0 0 0)';
+        const left = (100 - p * 100).toFixed(2);
+        return `polygon(0% 0%, 100% 0%, 100% ${top}%, 0% ${top}%, ${left}% ${top}%, ${left}% 100%, 100% 100%)`;
       }
 
       function consolidateAtharSplashLogo(splash) {
@@ -36805,6 +36817,7 @@
         if (letters) {
           letters.style.clipPath = 'none';
           letters.style.webkitClipPath = 'none';
+          letters.style.willChange = 'auto';
         }
         splash.classList.add('aws-merged');
       }
@@ -36814,45 +36827,43 @@
         el.style.webkitClipPath = clip;
       }
 
-      function animateAwsSplashClipRaf(el, clipAtProgress, durationMs) {
-        return new Promise((resolve) => {
-          const start = performance.now();
-          function frame(now) {
-            const raw = Math.min(1, (now - start) / durationMs);
-            setAwsSplashClip(el, clipAtProgress(awsSplashEase(raw)));
-            if (raw < 1) requestAnimationFrame(frame);
-            else resolve();
-          }
-          requestAnimationFrame(frame);
-        });
-      }
-
       async function animateAtharSplashDraw(splash) {
         const letters = splash.querySelector('.aws-brand-logo--letters');
         const line = splash.querySelector('.aws-brand-logo--line');
         if (!letters || !line) return;
 
         setAwsSplashClip(letters, awsSplashClipLetters(100));
-        setAwsSplashClip(line, awsSplashLineClip(100));
-        line.style.opacity = '0';
-        line.classList.remove('is-drawing');
-
-        await animateAwsSplashClipRaf(
-          letters,
-          (t) => awsSplashClipLetters(100 * (1 - t)),
-          ATHAR_WELCOME_LETTERS_MS
-        );
-        setAwsSplashClip(letters, awsSplashLettersLockedClip());
-
-        line.style.opacity = '1';
+        setAwsSplashClip(line, awsSplashLineReveal(0));
         line.classList.add('is-drawing');
-        await animateAwsSplashClipRaf(
-          line,
-          (t) => awsSplashLineClip(100 * (1 - t)),
-          ATHAR_WELCOME_LINE_MS
-        );
-        setAwsSplashClip(line, awsSplashLineClip(0));
-        consolidateAtharSplashLogo(splash);
+
+        return new Promise((resolve) => {
+          const start = performance.now();
+          function frame(now) {
+            const p = Math.min(1, (now - start) / ATHAR_WELCOME_TOTAL_MS);
+
+            const letterP = Math.min(1, p / ATHAR_LETTERS_DONE_AT);
+            if (p < ATHAR_LETTERS_DONE_AT) {
+              setAwsSplashClip(letters, awsSplashClipLetters(100 * (1 - awsSplashEaseOut(letterP))));
+            } else {
+              setAwsSplashClip(letters, awsSplashLettersLockedClip());
+            }
+
+            if (p >= ATHAR_LINE_START_AT) {
+              const lineP = Math.min(1, (p - ATHAR_LINE_START_AT) / (1 - ATHAR_LINE_START_AT));
+              setAwsSplashClip(line, awsSplashLineReveal(lineP));
+            } else {
+              setAwsSplashClip(line, awsSplashLineReveal(0));
+            }
+
+            if (p < 1) requestAnimationFrame(frame);
+            else {
+              setAwsSplashClip(line, awsSplashLineReveal(1));
+              consolidateAtharSplashLogo(splash);
+              resolve();
+            }
+          }
+          requestAnimationFrame(frame);
+        });
       }
 
       function shouldSkipAtharWelcomeSplash() {
