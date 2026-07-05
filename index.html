@@ -32400,6 +32400,13 @@
                     onclick="openRegionModal()" data-perm="manage_regions">
                     <i class="fas fa-plus"></i><span id="br-panel-action-label">إضافة منطقة</span>
                   </button>
+                  <button type="button" class="rp-tool-btn" onclick="downloadLocationsImportTemplate()" title="قالب Excel للمناطق والفروع" data-perm="manage_regions">
+                    <i class="fas fa-file-download"></i><span>قالب Excel</span>
+                  </button>
+                  <button type="button" class="rp-tool-btn" onclick="triggerLocationsImport()" data-perm="manage_regions">
+                    <i class="fas fa-file-import"></i><span>استيراد Excel</span>
+                  </button>
+                  <input type="file" id="locations-import-file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" style="display:none" onchange="handleLocationsImportFile(event)">
                 </div>
                 <div class="wf-count">عدد النتائج: <strong id="regions-count">0</strong></div>
               </div>
@@ -45074,6 +45081,238 @@
           showToast('تم حذف الفرع', 'info');
         } catch (err) {
           showToast('فشل الحذف: ' + err.message, 'error');
+        }
+      }
+
+      function mapLocationHeaders(headerRow, kind) {
+        const aliases = kind === 'branch'
+          ? {
+            region_name: ['region_name', 'region', 'المنطقة', 'منطقة', 'اسم المنطقة', 'اسم_المنطقة'],
+            branch_name: ['branch_name', 'branch', 'اسم الفرع', 'اسم_الفرع', 'الفرع', 'فرع'],
+            city: ['city', 'المدينة', 'مدينة']
+          }
+          : {
+            region_name: ['region_name', 'region', 'name', 'اسم المنطقة', 'اسم_المنطقة', 'المنطقة', 'منطقة'],
+            supervisor: ['supervisor', 'supervisor_name', 'المشرف', 'مشرف', 'المشرف المسؤول', 'المشرف_المسؤول', 'مشرف المنطقة']
+          };
+        const idx = {};
+        headerRow.forEach((h, i) => {
+          const key = String(h || '').trim().toLowerCase().replace(/\s+/g, '_');
+          for (const [field, list] of Object.entries(aliases)) {
+            if (list.some(a => key === String(a).toLowerCase().replace(/\s+/g, '_'))) idx[field] = i;
+          }
+        });
+        return idx;
+      }
+
+      function findRegionIdByName(name) {
+        const n = String(name || '').trim();
+        if (!n) return null;
+        const lower = n.toLowerCase();
+        const hit = state.regions.find(r => String(r.name || '').trim().toLowerCase() === lower);
+        return hit ? hit.id : null;
+      }
+
+      function resolveSupervisorIdForImport(raw) {
+        const q = String(raw || '').trim();
+        if (!q) return null;
+        const lower = q.toLowerCase();
+        const qDigits = q.replace(/\D/g, '');
+        const supervisors = state.users.filter(u => isActiveUser(u) && normalizeUserRole(u.role) === 'supervisor');
+        if (qDigits) {
+          const byEmp = supervisors.find(u => String(u.employee_number || '').replace(/\D/g, '') === qDigits);
+          if (byEmp) return byEmp.id;
+        }
+        const byName = supervisors.find(u => String(u.name || '').trim().toLowerCase() === lower);
+        return byName ? byName.id : null;
+      }
+
+      async function parseLocationsImportFile(file) {
+        const name = String(file.name || '').toLowerCase();
+        if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
+          const XLSX = await ensureXlsxLib();
+          const buf = await file.arrayBuffer();
+          const wb = XLSX.read(buf, { type: 'array' });
+          let regionsRows = null;
+          let branchesRows = null;
+          const sheets = wb.SheetNames.map(sheetName => {
+            const sheet = wb.Sheets[sheetName];
+            const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', raw: false });
+            return {
+              name: sheetName,
+              rows: rows.filter(r => Array.isArray(r) && r.some(c => String(c ?? '').trim() !== ''))
+            };
+          }).filter(s => s.rows.length > 1);
+          for (const s of sheets) {
+            const sn = String(s.name || '').trim().toLowerCase();
+            if (/فرع|branch/.test(sn)) branchesRows = s.rows;
+            else if (/منطقة|region/.test(sn)) regionsRows = s.rows;
+          }
+          if (!regionsRows && !branchesRows && sheets.length === 1) {
+            const only = sheets[0].rows;
+            const bMap = mapLocationHeaders(only[0], 'branch');
+            if (bMap.branch_name != null && bMap.region_name != null) branchesRows = only;
+            else regionsRows = only;
+          }
+          if (!regionsRows && !branchesRows && sheets.length >= 2) {
+            regionsRows = sheets[0].rows;
+            branchesRows = sheets[1].rows;
+          }
+          return { regionsRows, branchesRows };
+        }
+        const text = await file.text();
+        const rows = parseCsvText(text);
+        if (rows.length < 2) return { regionsRows: null, branchesRows: null };
+        const bMap = mapLocationHeaders(rows[0], 'branch');
+        if (bMap.branch_name != null && bMap.region_name != null) {
+          return { regionsRows: null, branchesRows: rows };
+        }
+        return { regionsRows: rows, branchesRows: null };
+      }
+
+      async function downloadLocationsImportTemplate() {
+        if (!hasPermission('manage_regions')) return showToast('لا تملك صلاحية إدارة المناطق والفروع.', 'warning');
+        const regionHeaders = ['اسم المنطقة', 'المشرف'];
+        const regionExample = ['الرياض', 'محمد العتيبي'];
+        const branchHeaders = ['المنطقة', 'اسم الفرع', 'المدينة'];
+        const branchExample = ['الرياض', 'فرع العليا', 'الرياض'];
+        try {
+          const XLSX = await ensureXlsxLib();
+          const wsRegions = XLSX.utils.aoa_to_sheet([regionHeaders, regionExample]);
+          const wsBranches = XLSX.utils.aoa_to_sheet([branchHeaders, branchExample]);
+          wsRegions['!cols'] = [{ wch: 20 }, { wch: 24 }];
+          wsBranches['!cols'] = [{ wch: 18 }, { wch: 22 }, { wch: 16 }];
+          const wb = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(wb, wsRegions, 'المناطق');
+          XLSX.utils.book_append_sheet(wb, wsBranches, 'الفروع');
+          XLSX.writeFile(wb, 'athar-locations-import-template.xlsx', { cellStyles: true });
+          showToast('تم تنزيل قالب Excel ✓', 'success');
+        } catch (e) {
+          downloadCsvFile('athar-regions-import-template.csv', regionHeaders, [regionExample]);
+          showToast('تم تنزيل قالب المناطق (CSV) ✓', 'success');
+        }
+      }
+
+      function triggerLocationsImport() {
+        if (!hasPermission('manage_regions')) return showToast('لا تملك صلاحية إدارة المناطق والفروع.', 'warning');
+        const inp = document.getElementById('locations-import-file');
+        if (inp) { inp.value = ''; inp.click(); }
+      }
+
+      async function handleLocationsImportFile(ev) {
+        const file = ev.target?.files?.[0];
+        ev.target.value = '';
+        if (!file) return;
+        if (!hasPermission('manage_regions')) return showToast('لا تملك صلاحية إدارة المناطق والفروع.', 'warning');
+        let parsed;
+        try {
+          parsed = await parseLocationsImportFile(file);
+        } catch (e) {
+          return showToast('تعذّر قراءة الملف. استخدم قالب Excel.', 'error');
+        }
+        const regionDataRows = parsed.regionsRows?.length > 1 ? parsed.regionsRows.slice(1) : [];
+        const branchDataRows = parsed.branchesRows?.length > 1 ? parsed.branchesRows.slice(1) : [];
+        if (!regionDataRows.length && !branchDataRows.length) {
+          return showToast('الملف فارغ أو بدون صفوف بيانات', 'error');
+        }
+        const ok = await confirmDialog(
+          `سيتم استيراد ${regionDataRows.length} منطقة و ${branchDataRows.length} فرع.\n` +
+          'المنصة تتعرّف على الأعمدة العربية وتطابق المشرف والمنطقة تلقائياً.\n' +
+          'الصفوف المكررة تُتخطى. متابعة؟',
+          { title: 'استيراد المناطق والفروع', okText: 'استيراد' }
+        );
+        if (!ok) return;
+        let regionsCreated = 0, regionsSkipped = 0, regionsFailed = 0;
+        let branchesCreated = 0, branchesSkipped = 0, branchesFailed = 0;
+        const errors = [];
+        if (parsed.regionsRows?.length > 1) {
+          const colMap = mapLocationHeaders(parsed.regionsRows[0], 'region');
+          if (colMap.region_name == null) {
+            return showToast('ورقة المناطق: العمود المطلوب «اسم المنطقة»', 'error');
+          }
+          for (let ri = 0; ri < regionDataRows.length; ri++) {
+            const row = regionDataRows[ri];
+            const lineNo = ri + 2;
+            const get = (k) => (colMap[k] != null ? String(row[colMap[k]] ?? '').trim() : '');
+            const regionName = Sec.sanitize(get('region_name'));
+            const supervisorRaw = get('supervisor');
+            if (!regionName) { regionsFailed++; errors.push(`منطقة سطر ${lineNo}: الاسم فارغ`); continue; }
+            if (findRegionIdByName(regionName)) { regionsSkipped++; continue; }
+            const supId = resolveSupervisorIdForImport(supervisorRaw);
+            if (supervisorRaw && !supId) {
+              errors.push(`منطقة سطر ${lineNo}: مشرف غير موجود (${supervisorRaw}) — تُضاف بدون مشرف`);
+            }
+            try {
+              const { data, error } = await sb.from('regions').insert({
+                name: regionName,
+                supervisor_id: supId
+              }).select(REGION_ROW_SELECT).single();
+              if (error) throw error;
+              upsertLocalRegion(data);
+              regionsCreated++;
+            } catch (err) {
+              regionsFailed++;
+              errors.push(`منطقة سطر ${lineNo}: ${formatPostgrestError(err) || err.message || 'فشل'}`);
+            }
+          }
+        }
+        if (parsed.branchesRows?.length > 1) {
+          const colMap = mapLocationHeaders(parsed.branchesRows[0], 'branch');
+          if (colMap.region_name == null || colMap.branch_name == null) {
+            return showToast('ورقة الفروع: الأعمدة المطلوبة «المنطقة» و «اسم الفرع»', 'error');
+          }
+          for (let ri = 0; ri < branchDataRows.length; ri++) {
+            const row = branchDataRows[ri];
+            const lineNo = ri + 2;
+            const get = (k) => (colMap[k] != null ? String(row[colMap[k]] ?? '').trim() : '');
+            const regionName = Sec.sanitize(get('region_name'));
+            const branchName = Sec.sanitize(get('branch_name'));
+            const city = Sec.sanitize(get('city'));
+            if (!regionName) { branchesFailed++; errors.push(`فرع سطر ${lineNo}: المنطقة فارغة`); continue; }
+            if (!branchName) { branchesFailed++; errors.push(`فرع سطر ${lineNo}: اسم الفرع فارغ`); continue; }
+            let regionId = findRegionIdByName(regionName);
+            if (!regionId) {
+              try {
+                const { data, error } = await sb.from('regions').insert({
+                  name: regionName,
+                  supervisor_id: null
+                }).select(REGION_ROW_SELECT).single();
+                if (error) throw error;
+                upsertLocalRegion(data);
+                regionId = data.id;
+                regionsCreated++;
+              } catch (err) {
+                branchesFailed++;
+                errors.push(`فرع سطر ${lineNo}: تعذّر إنشاء المنطقة (${regionName})`);
+                continue;
+              }
+            }
+            const dup = state.branches.find(b =>
+              b.region_id === regionId && String(b.name || '').trim().toLowerCase() === branchName.toLowerCase()
+            );
+            if (dup) { branchesSkipped++; continue; }
+            try {
+              const { data, error } = await sb.from('branches').insert({
+                name: branchName,
+                city: city || null,
+                region_id: regionId
+              }).select(BRANCH_ROW_SELECT).single();
+              if (error) throw error;
+              upsertLocalBranch(data);
+              branchesCreated++;
+            } catch (err) {
+              branchesFailed++;
+              errors.push(`فرع سطر ${lineNo}: ${formatPostgrestError(err) || err.message || 'فشل'}`);
+            }
+          }
+        }
+        renderRegions();
+        const summary = `مناطق: ${regionsCreated} جديد، ${regionsSkipped} متخطى، ${regionsFailed} فشل · فروع: ${branchesCreated} جديد، ${branchesSkipped} متخطى، ${branchesFailed} فشل`;
+        showToast(summary, (regionsCreated + branchesCreated) > 0 ? 'success' : ((regionsFailed + branchesFailed) ? 'error' : 'info'));
+        if (errors.length && errors.length <= 5) {
+          setTimeout(() => showToast(errors.join(' · '), 'warning'), 400);
+        } else if (errors.length > 5) {
+          setTimeout(() => showToast(`${errors.slice(0, 3).join(' · ')} … (+${errors.length - 3})`, 'warning'), 400);
         }
       }
 
@@ -63358,6 +63597,9 @@
       window.editRegion = editRegion;
       window.saveRegion = saveRegion;
       window.deleteRegion = deleteRegion;
+      window.downloadLocationsImportTemplate = downloadLocationsImportTemplate;
+      window.triggerLocationsImport = triggerLocationsImport;
+      window.handleLocationsImportFile = handleLocationsImportFile;
       window.openRegionView = openRegionView;
       window.backRegionView = backRegionView;
       window.renderRegions = renderRegions;
