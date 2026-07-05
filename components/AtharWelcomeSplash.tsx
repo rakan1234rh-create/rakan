@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 
 const ATHAR_LOGO_SRC = 'icons/athar-logo-v401.png';
-const REVEAL_DURATION = 3.4;
+const REVEAL_DURATION = 5.2;
 const HOLD_AFTER_COMPLETE = 1;
 const EXIT_DURATION = 0.7;
 
@@ -59,7 +59,7 @@ export function AtharWelcomeSplash({ onComplete }: AtharWelcomeSplashProps) {
         height={555}
         decoding="async"
         draggable={false}
-        className="block h-auto w-full max-w-2xl object-contain brightness-0 invert drop-shadow-[0_0_28px_rgba(255,255,255,0.14)]"
+        className="block h-auto w-full max-w-3xl object-contain brightness-0 invert drop-shadow-[0_0_28px_rgba(255,255,255,0.14)]"
         initial={{ clipPath: 'inset(0 0 0 100%)' }}
         animate={{ clipPath: revealed ? 'inset(0 0 0 0)' : 'inset(0 0 0 100%)' }}
         transition={{ duration: REVEAL_DURATION, ease: [0.45, 0, 0.55, 1] }}
