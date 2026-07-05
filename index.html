@@ -1990,7 +1990,7 @@
       justify-content: center;
       min-height: 100dvh;
       min-height: 100vh;
-      padding: max(16px, env(safe-area-inset-top, 0px)) max(20px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(20px, env(safe-area-inset-left, 0px));
+      padding: max(16px, env(safe-area-inset-top, 0px)) max(14px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(14px, env(safe-area-inset-left, 0px));
       box-sizing: border-box;
       background: #000;
       color: #fff;
@@ -2008,19 +2008,13 @@
 
     #atharWelcomeSplash .aws-brand-logo {
       display: block;
-      width: 70vw;
+      width: 100%;
       height: auto;
-      max-width: 70vw;
+      max-width: 100%;
       object-fit: contain;
-      clip-path: inset(0 0 100% 0);
-      -webkit-clip-path: inset(0 0 100% 0);
+      clip-path: inset(0 100% 42% 0);
+      -webkit-clip-path: inset(0 100% 42% 0);
       filter: brightness(0) invert(1) drop-shadow(0 0 28px rgba(255, 255, 255, 0.14))
-    }
-
-    #atharWelcomeSplash.aws-revealed .aws-brand-logo {
-      clip-path: inset(0 0 0 0);
-      -webkit-clip-path: inset(0 0 0 0);
-      transition: clip-path 5.2s cubic-bezier(0.45, 0, 0.55, 1), -webkit-clip-path 5.2s cubic-bezier(0.45, 0, 0.55, 1)
     }
 
     html.aws-booting #loginScreen,
@@ -36715,9 +36709,48 @@
       }
 
       const ATHAR_WELCOME_SEEN_KEY = 'athar_welcome_seen';
-      const ATHAR_WELCOME_REVEAL_MS = 5200;
+      const ATHAR_SPLASH_LETTERS_SPLIT = 0.58;
+      const ATHAR_WELCOME_LETTERS_MS = 2300;
+      const ATHAR_WELCOME_LINE_MS = 2900;
       const ATHAR_WELCOME_HOLD_MS = 1000;
       const ATHAR_WELCOME_EXIT_MS = 700;
+      const ATHAR_SPLASH_DRAW_EASE = 'cubic-bezier(0.45, 0, 0.55, 1)';
+
+      function awsSplashClipLetters(rightHidePct) {
+        const bottom = (1 - ATHAR_SPLASH_LETTERS_SPLIT) * 100;
+        return `inset(0 ${rightHidePct}% ${bottom}% 0)`;
+      }
+
+      function awsSplashClipLogoBottomRtl(leftPct) {
+        const y = ATHAR_SPLASH_LETTERS_SPLIT * 100;
+        const x = Math.max(0, Math.min(100, leftPct));
+        if (x <= 0) return 'inset(0 0 0 0)';
+        return `polygon(0% 0%, 100% 0%, 100% ${y}%, 0% ${y}%, ${x}% ${y}%, ${x}% 100%, 100% 100%, 100% ${y}%)`;
+      }
+
+      function setAwsSplashClip(logo, clip) {
+        logo.style.clipPath = clip;
+        logo.style.webkitClipPath = clip;
+      }
+
+      async function animateAtharSplashDraw(logo) {
+        const clipProp = [{ clipPath: awsSplashClipLetters(100), offset: 0 }, { clipPath: awsSplashClipLetters(0), offset: 1 }];
+        if (typeof logo.animate === 'function') {
+          await logo.animate(clipProp, { duration: ATHAR_WELCOME_LETTERS_MS, easing: ATHAR_SPLASH_DRAW_EASE, fill: 'forwards' }).finished;
+          await logo.animate([
+            { clipPath: awsSplashClipLogoBottomRtl(96) },
+            { clipPath: 'inset(0 0 0 0)' }
+          ], { duration: ATHAR_WELCOME_LINE_MS, easing: ATHAR_SPLASH_DRAW_EASE, fill: 'forwards' }).finished;
+        } else {
+          setAwsSplashClip(logo, awsSplashClipLetters(100));
+          await new Promise((r) => setTimeout(r, 16));
+          setAwsSplashClip(logo, awsSplashClipLetters(0));
+          await new Promise((r) => setTimeout(r, ATHAR_WELCOME_LETTERS_MS));
+          setAwsSplashClip(logo, awsSplashClipLogoBottomRtl(96));
+          await new Promise((r) => setTimeout(r, ATHAR_WELCOME_LINE_MS));
+        }
+        setAwsSplashClip(logo, 'inset(0 0 0 0)');
+      }
 
       function shouldSkipAtharWelcomeSplash() {
         try {
@@ -36756,12 +36789,10 @@
 
         const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         if (reduceMotion) {
-          logo.style.clipPath = 'inset(0 0 0 0)';
-          logo.style.webkitClipPath = 'inset(0 0 0 0)';
+          setAwsSplashClip(logo, 'inset(0 0 0 0)');
           await new Promise((r) => setTimeout(r, 350));
         } else {
-          splash.classList.add('aws-revealed');
-          await new Promise((r) => setTimeout(r, ATHAR_WELCOME_REVEAL_MS));
+          await animateAtharSplashDraw(logo);
         }
 
         await new Promise((r) => setTimeout(r, reduceMotion ? 350 : ATHAR_WELCOME_HOLD_MS));
