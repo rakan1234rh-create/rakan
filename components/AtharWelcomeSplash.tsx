@@ -8,14 +8,17 @@ const LINE_DURATION = 3.2;
 const HOLD_AFTER_COMPLETE = 1;
 const EXIT_DURATION = 0.7;
 
+const ease = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
+
 const lettersClip = (rightHidePct: number) =>
   `inset(0 ${rightHidePct}% ${(1 - LETTERS_SPLIT) * 100}% 0)`;
 
-const bottomRtlClip = (leftPct: number) => {
-  const y = LETTERS_SPLIT * 100;
-  const x = Math.max(0, Math.min(100, leftPct));
+const combinedClip = (bottomLeftPct: number) => {
+  const y = (LETTERS_SPLIT * 100).toFixed(2);
+  const x = Math.max(0, Math.min(100, bottomLeftPct));
   if (x <= 0) return 'inset(0 0 0 0)';
-  return `polygon(0% 0%, 100% 0%, 100% ${y}%, 0% ${y}%, ${x}% ${y}%, ${x}% 100%, 100% 100%, 100% ${y}%)`;
+  if (x >= 99.999) return `polygon(0% 0%, 100% 0%, 100% ${y}%, 0% ${y}%)`;
+  return `polygon(0% 0%, 100% 0%, 100% ${y}%, ${x}% ${y}%, ${x}% 100%, 100% 100%)`;
 };
 
 export type AtharWelcomeSplashProps = {
@@ -29,25 +32,26 @@ export function AtharWelcomeSplash({ onComplete }: AtharWelcomeSplashProps) {
   const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
-    const ease = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
-    const start = performance.now();
     const totalMs = (LETTERS_DURATION + LINE_DURATION) * 1000;
+    const lettersPortion = LETTERS_DURATION / (LETTERS_DURATION + LINE_DURATION);
+    const start = performance.now();
 
     const tick = (now: number) => {
-      const elapsed = now - start;
-      if (elapsed <= LETTERS_DURATION * 1000) {
-        const t = ease(elapsed / (LETTERS_DURATION * 1000));
+      const raw = Math.min(1, (now - start) / totalMs);
+      if (raw <= lettersPortion) {
+        const t = ease(raw / lettersPortion);
         setClipPath(lettersClip(100 * (1 - t)));
-      } else if (elapsed <= totalMs) {
-        const lineElapsed = elapsed - LETTERS_DURATION * 1000;
-        const t = ease(lineElapsed / (LINE_DURATION * 1000));
-        setClipPath(bottomRtlClip(100 * (1 - t)));
+      } else {
+        const t = ease((raw - lettersPortion) / (1 - lettersPortion));
+        setClipPath(combinedClip(100 * (1 - t)));
+      }
+
+      if (raw < 1) {
+        rafRef.current = requestAnimationFrame(tick);
       } else {
         setClipPath('inset(0 0 0 0)');
         window.setTimeout(() => setExiting(true), HOLD_AFTER_COMPLETE * 1000);
-        return;
       }
-      rafRef.current = requestAnimationFrame(tick);
     };
 
     rafRef.current = requestAnimationFrame(tick);
