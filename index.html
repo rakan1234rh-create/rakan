@@ -389,31 +389,19 @@
       box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
-      transform: rotate(min(calc(var(--mr-ptr-pull, 0px) * 2.4deg), 180deg));
-      transition: background 0.15s ease, transform 0.1s ease
+      transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease
     }
 
     html.mr-mobile-ui #mrMobilePtr.mr-ptr-ready .mr-ptr-chip {
       background: color-mix(in srgb, var(--mr-primary, #1c1c21) 12%, var(--mr-surface, #fff));
-      color: var(--mr-primary, #1c1c21)
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+      transform: scale(1.06)
     }
 
-    html.mr-mobile-ui #mrMobilePtr.mr-ptr-ready .mr-ptr-arrow {
-      transform: rotate(180deg)
-    }
-
-    html.mr-mobile-ui #mrMobilePtr .mr-ptr-arrow,
     html.mr-mobile-ui #mrMobilePtr .mr-ptr-spinner {
+      display: none;
       font-size: 15px;
       line-height: 1
-    }
-
-    html.mr-mobile-ui #mrMobilePtr .mr-ptr-spinner {
-      display: none
-    }
-
-    html.mr-mobile-ui #mrMobilePtr.mr-ptr-refreshing .mr-ptr-arrow {
-      display: none
     }
 
     html.mr-mobile-ui #mrMobilePtr.mr-ptr-refreshing .mr-ptr-spinner {
@@ -38278,7 +38266,7 @@
         const ptr = document.createElement('div');
         ptr.id = 'mrMobilePtr';
         ptr.setAttribute('aria-hidden', 'true');
-        ptr.innerHTML = '<div class="mr-ptr-chip"><i class="fas fa-arrow-down mr-ptr-arrow" aria-hidden="true"></i><i class="fas fa-spinner fa-spin mr-ptr-spinner" aria-hidden="true"></i></div>';
+        ptr.innerHTML = '<div class="mr-ptr-chip"><i class="fas fa-spinner fa-spin mr-ptr-spinner" aria-hidden="true"></i></div>';
         document.body.appendChild(ptr);
 
         function getPtrHosts() {
@@ -38393,14 +38381,21 @@
             location.reload();
             return;
           }
+          const jobs = [];
+          if (typeof refreshPermissionsFromCloud === 'function') {
+            jobs.push(refreshPermissionsFromCloud({ forceCloud: true }));
+          }
+          if (typeof refreshNotificationsFromDb === 'function') {
+            jobs.push(refreshNotificationsFromDb());
+          }
+          await Promise.allSettled(jobs);
           const tab = typeof getActiveTabKey === 'function' ? getActiveTabKey() : null;
           if (tab && typeof goTab === 'function') {
             const btn = typeof getNavButtonForTab === 'function' ? getNavButtonForTab(tab) : null;
             goTab(tab, btn, { force: true });
+          } else if (typeof flushPermissionsMobileShell === 'function') {
+            flushPermissionsMobileShell();
           }
-          const jobs = [];
-          if (typeof refreshNotificationsFromDb === 'function') jobs.push(refreshNotificationsFromDb());
-          await Promise.allSettled(jobs);
         }
 
         function finishRefresh() {
