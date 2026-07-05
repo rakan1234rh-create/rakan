@@ -2008,12 +2008,12 @@
 
     #atharWelcomeSplash .aws-logo-frame {
       position: relative;
-      width: calc(100vw - 8px);
-      max-width: calc(100vw - 8px);
+      width: min(86vw, 42dvh, 22rem);
+      max-width: 86vw;
       line-height: 0;
       clip-path: inset(34.17% 0 31.09% 0);
       -webkit-clip-path: inset(34.17% 0 31.09% 0);
-      transform: scale(2.15);
+      transform: none;
       transform-origin: center center;
       filter: drop-shadow(0 0 36px rgba(255, 255, 255, 0.2))
     }
@@ -2073,9 +2073,8 @@
 
     @media (min-width: 993px) {
       #atharWelcomeSplash .aws-logo-frame {
-        width: min(96vw, 56rem);
-        max-width: min(96vw, 56rem);
-        transform: scale(1.45)
+        width: min(46vw, 36rem);
+        max-width: min(46vw, 36rem)
       }
     }
 

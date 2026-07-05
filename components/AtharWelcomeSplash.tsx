@@ -48,10 +48,10 @@ export function AtharWelcomeSplash({ onComplete }: AtharWelcomeSplashProps) {
       role="img"
     >
       <div
-        className="relative origin-center scale-[2.15] drop-shadow-[0_0_36px_rgba(255,255,255,0.2)] md:scale-[1.45]"
+        className="relative drop-shadow-[0_0_36px_rgba(255,255,255,0.2)]"
         style={{
-          width: 'calc(100vw - 8px)',
-          maxWidth: 'calc(100vw - 8px)',
+          width: 'min(86vw, 42dvh, 22rem)',
+          maxWidth: '86vw',
           clipPath: 'inset(34.17% 0 31.09% 0)',
           WebkitClipPath: 'inset(34.17% 0 31.09% 0)',
         }}
