@@ -36748,11 +36748,15 @@
         return `inset(0 ${rightHidePct}% ${bottom}% 0)`;
       }
 
-      function awsSplashClipLogoBottomRtl(leftPct) {
-        const y = ATHAR_SPLASH_LETTERS_SPLIT * 100;
-        const x = Math.max(0, Math.min(100, leftPct));
+      /** النص يبقى ظاهراً + الشريط السفلي يُكشف من اليمين لليسار */
+      function awsSplashClipCombined(bottomLeftPct) {
+        const y = (ATHAR_SPLASH_LETTERS_SPLIT * 100).toFixed(2);
+        const x = Math.max(0, Math.min(100, bottomLeftPct));
         if (x <= 0) return 'inset(0 0 0 0)';
-        return `polygon(0% 0%, 100% 0%, 100% ${y}%, 0% ${y}%, ${x}% ${y}%, ${x}% 100%, 100% 100%, 100% ${y}%)`;
+        if (x >= 99.999) {
+          return `polygon(0% 0%, 100% 0%, 100% ${y}%, 0% ${y}%)`;
+        }
+        return `polygon(0% 0%, 100% 0%, 100% ${y}%, ${x}% ${y}%, ${x}% 100%, 100% 100%)`;
       }
 
       function setAwsSplashClip(logo, clip) {
@@ -36760,37 +36764,30 @@
         logo.style.webkitClipPath = clip;
       }
 
-      function animateAwsSplashClip(logo, fromClip, toClip, durationMs, valueFn) {
+      async function animateAtharSplashDraw(logo) {
+        const totalMs = ATHAR_WELCOME_LETTERS_MS + ATHAR_WELCOME_LINE_MS;
+        const lettersPortion = ATHAR_WELCOME_LETTERS_MS / totalMs;
+        setAwsSplashClip(logo, awsSplashClipLetters(100));
+
         return new Promise((resolve) => {
           const start = performance.now();
           function frame(now) {
-            const t = Math.min(1, (now - start) / durationMs);
-            const eased = awsSplashEase(t);
-            if (valueFn) {
-              setAwsSplashClip(logo, valueFn(eased));
-            } else if (fromClip === 'letters' && toClip === 'letters-done') {
-              setAwsSplashClip(logo, awsSplashClipLetters(100 * (1 - eased)));
-            } else if (fromClip === 'line' && toClip === 'line-done') {
-              setAwsSplashClip(logo, awsSplashClipLogoBottomRtl(100 * (1 - eased)));
+            const raw = Math.min(1, (now - start) / totalMs);
+            if (raw <= lettersPortion) {
+              const t = awsSplashEase(raw / lettersPortion);
+              setAwsSplashClip(logo, awsSplashClipLetters(100 * (1 - t)));
+            } else {
+              const t = awsSplashEase((raw - lettersPortion) / (1 - lettersPortion));
+              setAwsSplashClip(logo, awsSplashClipCombined(100 * (1 - t)));
             }
-            if (t < 1) requestAnimationFrame(frame);
+            if (raw < 1) requestAnimationFrame(frame);
             else {
-              setAwsSplashClip(logo, toClip === 'letters-done'
-                ? awsSplashClipLetters(0)
-                : 'inset(0 0 0 0)');
+              setAwsSplashClip(logo, 'inset(0 0 0 0)');
               resolve();
             }
           }
           requestAnimationFrame(frame);
         });
-      }
-
-      async function animateAtharSplashDraw(logo) {
-        setAwsSplashClip(logo, awsSplashClipLetters(100));
-        await animateAwsSplashClip(logo, 'letters', 'letters-done', ATHAR_WELCOME_LETTERS_MS);
-        setAwsSplashClip(logo, awsSplashClipLogoBottomRtl(100));
-        await animateAwsSplashClip(logo, 'line', 'line-done', ATHAR_WELCOME_LINE_MS);
-        setAwsSplashClip(logo, 'inset(0 0 0 0)');
       }
 
       function shouldSkipAtharWelcomeSplash() {
