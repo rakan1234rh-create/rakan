@@ -37,6 +37,17 @@ export function AtharWelcomeSplash({ onComplete }: AtharWelcomeSplashProps) {
 
   if (removed) return null;
 
+  const logoMaskStyle = {
+    WebkitMaskImage: `url('${ATHAR_LOGO_SRC}')`,
+    maskImage: `url('${ATHAR_LOGO_SRC}')`,
+    WebkitMaskSize: 'contain',
+    maskSize: 'contain',
+    WebkitMaskRepeat: 'no-repeat',
+    maskRepeat: 'no-repeat',
+    WebkitMaskPosition: 'center',
+    maskPosition: 'center',
+  } as const;
+
   return (
     <motion.div
       className="fixed inset-0 z-[10002] flex items-center justify-center bg-black px-1"
@@ -56,7 +67,7 @@ export function AtharWelcomeSplash({ onComplete }: AtharWelcomeSplashProps) {
           WebkitClipPath: 'inset(34.17% 0 31.09% 0)',
         }}
       >
-        <div className="relative aspect-square w-full overflow-hidden">
+        <div className="relative aspect-square w-full">
           <img
             src={ATHAR_LOGO_SRC}
             alt="ATHAR"
@@ -70,16 +81,21 @@ export function AtharWelcomeSplash({ onComplete }: AtharWelcomeSplashProps) {
             style={{ transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1)' }}
           />
           {active && (
-            <span
+            <div
               aria-hidden
-              className="pointer-events-none absolute -left-[70%] top-[-35%] h-[170%] w-[52%] opacity-100 mix-blend-screen"
-              style={{
-                background:
-                  'linear-gradient(100deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.05) 38%, rgba(255,255,255,0.55) 50%, rgba(255,255,255,0.05) 62%, rgba(255,255,255,0) 100%)',
-                animation: 'awsLogoShine 2.1s cubic-bezier(0.45, 0, 0.25, 1) 0.45s 2',
-                transform: 'skewX(-22deg) translateX(-200%)',
-              }}
-            />
+              className="pointer-events-none absolute inset-0 overflow-hidden"
+              style={logoMaskStyle}
+            >
+              <span
+                className="pointer-events-none absolute -left-[70%] top-[-35%] h-[170%] w-[52%] opacity-100"
+                style={{
+                  background:
+                    'linear-gradient(100deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.12) 38%, rgba(255,255,255,0.95) 50%, rgba(255,255,255,0.12) 62%, rgba(255,255,255,0) 100%)',
+                  animation: 'awsLogoShine 2.1s cubic-bezier(0.45, 0, 0.25, 1) 0.45s 2',
+                  transform: 'skewX(-22deg) translateX(-200%)',
+                }}
+              />
+            </div>
           )}
         </div>
       </div>
