@@ -3,10 +3,11 @@ import { motion } from 'framer-motion';
 
 const ATHAR_LOGO_SRC = 'icons/athar-logo-v401.png';
 const LETTERS_SPLIT = 0.526;
-const LINE_TOP = 0.526;
+const LINE_TOP = 0.576;
 const TOTAL_DURATION = 5.2;
-const LINE_START_AT = 0.36;
-const LETTERS_DONE_AT = 0.46;
+const LINE_START_AT = 0.28;
+const LETTERS_DONE_AT = 0.42;
+const LINE_DONE_AT = 0.74;
 const HOLD_AFTER_COMPLETE = 1;
 const EXIT_DURATION = 0.7;
 
@@ -23,10 +24,8 @@ const lettersLockedClip = () => {
 const lineReveal = (progress: number) => {
   const top = (LINE_TOP * 100).toFixed(2);
   const p = Math.max(0, Math.min(1, progress));
-  if (p <= 0) return `polygon(0% 0%, 100% 0%, 100% ${top}%, 100% ${top}%)`;
-  if (p >= 1) return 'inset(0 0 0 0)';
-  const left = (100 - p * 100).toFixed(2);
-  return `polygon(0% 0%, 100% 0%, 100% ${top}%, 0% ${top}%, ${left}% ${top}%, ${left}% 100%, 100% 100%)`;
+  const right = ((1 - p) * 100).toFixed(2);
+  return `inset(${top}% ${right}% 0 0)`;
 };
 
 export type AtharWelcomeSplashProps = {
@@ -57,7 +56,8 @@ export function AtharWelcomeSplash({ onComplete }: AtharWelcomeSplashProps) {
       }
 
       if (p >= LINE_START_AT) {
-        const lineP = Math.min(1, (p - LINE_START_AT) / (1 - LINE_START_AT));
+        const lineSpan = LINE_DONE_AT - LINE_START_AT;
+        const lineP = Math.min(1, (p - LINE_START_AT) / lineSpan);
         setLineClipPath(lineReveal(lineP));
       } else {
         setLineClipPath(lineReveal(0));
@@ -66,6 +66,7 @@ export function AtharWelcomeSplash({ onComplete }: AtharWelcomeSplashProps) {
       if (p < 1) {
         rafRef.current = requestAnimationFrame(tick);
       } else {
+        setLineClipPath(lineReveal(1));
         setMerged(true);
         setLineVisible(false);
         window.setTimeout(() => setExiting(true), HOLD_AFTER_COMPLETE * 1000);
