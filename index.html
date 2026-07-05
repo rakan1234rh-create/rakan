@@ -77,7 +77,7 @@
   <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Roboto:wght@400;500&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Petrona:wght@400&family=Roboto:wght@400;500&family=ZCOOL+XiaoWei&display=swap">
   <link rel="preload" as="image" href="icons/athar-logo-v401.png">
   
   
@@ -2008,24 +2008,24 @@
 
     #atharWelcomeSplash .aws-svg {
       display: block;
-      width: min(92vw, 28rem);
+      width: min(92vw, 36rem);
       height: auto;
       overflow: visible
     }
 
-    #atharWelcomeSplash #awsAtharText {
+    #atharWelcomeSplash #athar-letters {
       opacity: 0;
       transition: opacity 0.8s ease
     }
 
-    #atharWelcomeSplash.aws-text-visible #awsAtharText {
+    #atharWelcomeSplash.aws-text-visible #athar-letters {
       opacity: 1
     }
 
-    #atharWelcomeSplash #awsAtharLinePath {
+    #atharWelcomeSplash #athar-line path {
       fill: none;
-      stroke: #fff;
-      stroke-width: 3;
+      stroke: currentColor;
+      stroke-width: 4;
       stroke-linejoin: round;
       stroke-linecap: round
     }
@@ -3551,19 +3551,6 @@
 
       50% {
         opacity: 1
-      }
-    }
-
-    @keyframes awsLogoIn {
-      to {
-        opacity: 1;
-        transform: scale(1)
-      }
-    }
-
-    @keyframes awsCursorBlink {
-      50% {
-        opacity: 0
       }
     }
 
@@ -31396,13 +31383,15 @@
   </div>
 
   <div id="atharWelcomeSplash" aria-hidden="true" hidden>
-    <svg class="aws-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 200" role="img" aria-label="ATHAR">
-      <g id="awsAtharText" fill="#fff">
-        <text x="250" y="100" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="64" letter-spacing="8">ATHAR</text>
+    <svg class="aws-svg" viewBox="0 0 800 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ATHAR">
+      <g id="athar-letters" fill="currentColor">
+        <text x="390" y="180" text-anchor="middle" font-family="'ZCOOL XiaoWei', 'Petrona', Georgia, serif" font-size="110" letter-spacing="12">ATHAR</text>
       </g>
-      <g id="athar-line">
-        <path id="awsAtharLinePath"
-          d="M 380 100 C 420 100, 420 150, 380 150 L 280 150 L 260 130 L 240 150 L 260 170 L 280 150 M 240 150 L 220 130 L 200 150 L 220 170 L 240 150 L 50 150" />
+      <g id="athar-line" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+        <path class="aws-line-path" data-aws-line-order="1"
+          d="M 545 180 C 580 180, 640 190, 640 230 C 640 270, 590 280, 480 280 L 430 280 L 410 260 L 390 280 L 370 260 L 350 280 L 180 280" />
+        <path class="aws-line-path" data-aws-line-order="2"
+          d="M 430 280 L 410 300 L 390 280 L 370 300 L 350 280" />
       </g>
     </svg>
   </div>
@@ -36743,7 +36732,7 @@
       }
 
       const ATHAR_WELCOME_SEEN_KEY = 'athar_welcome_seen';
-      const ATHAR_WELCOME_LINE_MS = 2200;
+      const ATHAR_WELCOME_LINE_MS = [1800, 400];
       const ATHAR_WELCOME_TEXT_MS = 800;
       const ATHAR_WELCOME_HOLD_MS = 1000;
       const ATHAR_WELCOME_EXIT_MS = 700;
@@ -36796,8 +36785,9 @@
           return;
         }
 
-        const path = splash.querySelector('#awsAtharLinePath');
-        if (!path) {
+        const paths = Array.from(splash.querySelectorAll('#athar-line .aws-line-path'))
+          .sort((a, b) => Number(a.dataset.awsLineOrder || 0) - Number(b.dataset.awsLineOrder || 0));
+        if (!paths.length) {
           finishAtharWelcomeSplash(splash);
           return;
         }
@@ -36810,12 +36800,16 @@
 
         const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         if (reduceMotion) {
-          path.style.strokeDasharray = 'none';
-          path.style.strokeDashoffset = '0';
+          paths.forEach((path) => {
+            path.style.strokeDasharray = 'none';
+            path.style.strokeDashoffset = '0';
+          });
           splash.classList.add('aws-text-visible');
           await new Promise((r) => setTimeout(r, 350));
         } else {
-          await animateAtharWelcomeLine(path, ATHAR_WELCOME_LINE_MS);
+          for (let i = 0; i < paths.length; i++) {
+            await animateAtharWelcomeLine(paths[i], ATHAR_WELCOME_LINE_MS[i] || 400);
+          }
           splash.classList.add('aws-text-visible');
           await new Promise((r) => setTimeout(r, ATHAR_WELCOME_TEXT_MS));
         }
