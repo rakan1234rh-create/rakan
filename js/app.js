@@ -18,7 +18,7 @@
       const ATHAR_WEB_PUSH_SYNC_KEY = 'athar_web_push_last_sync';
       const ATHAR_WEB_PUSH_USER_KEY = 'athar_web_push_last_user';
       const ATHAR_WEB_PUSH_OPEN_SYNC_MS = 15 * 60 * 1000;
-      const ATHAR_SW_URL = './sw.js?v=10';
+      const ATHAR_SW_URL = './sw.js?v=11';
 
       /** رابط النشر — روابط استعادة كلمة المرور من file:// أو localhost */
       const ATHAR_PUBLIC_ORIGIN = 'https://athar-app.online';
@@ -5283,7 +5283,7 @@
           state.realtimeChannels.push(bCh);
         }
 
-        const permKeys = [MR_PERMS_BUNDLE_DB_KEY, MR_PERMS_DB_KEY, MR_USER_PERMS_DB_KEY, MR_PROFILE_AVATARS_DB_KEY];
+        const permKeys = [MR_PERMS_BUNDLE_DB_KEY, MR_PERMS_DB_KEY, MR_USER_PERMS_DB_KEY, MR_PROFILE_AVATARS_DB_KEY, MR_VIOLATION_EMAIL_ALERTS_KEY];
         state._permsRealtimeSubscribed = false;
         const pCh = sb.channel('public:platform_settings')
           .on('postgres_changes', { event: '*', schema: 'public', table: 'platform_settings' }, (payload) => {
@@ -5300,6 +5300,11 @@
                   }
                 })
                 .catch(e => { if (isMirsadDebugLog()) console.warn('[profile_avatars] realtime refresh', e); });
+              return;
+            }
+            if (key === MR_VIOLATION_EMAIL_ALERTS_KEY) {
+              loadViolationEmailAlertSetting({ forceCloud: true })
+                .catch(e => { if (isMirsadDebugLog()) console.warn('[violation_email_alerts] realtime refresh', e); });
               return;
             }
             if (!permKeys.includes(key)) return;
@@ -5344,6 +5349,7 @@
       const MR_USER_PERMS_DB_KEY = 'user_permissions';
       const MR_PERMS_BUNDLE_DB_KEY = 'permissions_bundle_v1';
       const MR_PROFILE_AVATARS_DB_KEY = 'profile_avatars_v1';
+      const MR_VIOLATION_EMAIL_ALERTS_KEY = 'violation_email_alerts_enabled';
       const MR_MANAGEABLE_ROLES = ['manager', 'auditor', 'supervisor', 'employee', 'branch_manager', 'observer', 'hr'];
 
       const MR_PERMISSION_DEFS = [
@@ -6582,6 +6588,57 @@
         host.innerHTML = html;
       }
 
+      function isSystemAdminUser() {
+        return normalizeUserRole(state.currentUser?.role) === 'admin';
+      }
+
+      function parseViolationEmailAlertsEnabled(value) {
+        if (value == null) return false;
+        if (typeof value === 'boolean') return value;
+        if (typeof value === 'object' && value !== null) return value.enabled === true;
+        if (typeof value === 'string') {
+          try { return parseViolationEmailAlertsEnabled(JSON.parse(value)); } catch (_) { return value === 'true'; }
+        }
+        return false;
+      }
+
+      async function loadViolationEmailAlertSetting(opts = {}) {
+        const panel = document.getElementById('settingsViolationEmailPanel');
+        const toggle = document.getElementById('settingsViolationEmailToggle');
+        if (!panel || !toggle) return false;
+        panel.hidden = !isSystemAdminUser();
+        if (!isSystemAdminUser()) return false;
+
+        let enabled = false;
+        if (!opts.forceCloud) {
+          try {
+            const cached = localStorage.getItem(MR_VIOLATION_EMAIL_ALERTS_KEY);
+            if (cached != null) enabled = parseViolationEmailAlertsEnabled(JSON.parse(cached));
+          } catch (_) {}
+        }
+        const cloud = await loadPlatformSetting(MR_VIOLATION_EMAIL_ALERTS_KEY);
+        if (cloud != null) enabled = parseViolationEmailAlertsEnabled(cloud);
+        toggle.checked = !!enabled;
+        try { localStorage.setItem(MR_VIOLATION_EMAIL_ALERTS_KEY, JSON.stringify({ enabled: !!enabled })); } catch (_) {}
+        return !!enabled;
+      }
+
+      async function saveViolationEmailAlertSetting() {
+        if (!isSystemAdminUser()) {
+          showToast('إعداد البريد متاح لمدير النظام فقط', 'warning');
+          return;
+        }
+        const toggle = document.getElementById('settingsViolationEmailToggle');
+        const enabled = !!toggle?.checked;
+        const res = await savePlatformSetting(MR_VIOLATION_EMAIL_ALERTS_KEY, { enabled });
+        if (!res?.ok) {
+          showToast('فشل حفظ إعداد البريد — تأكد من صلاحيات مدير النظام', 'error');
+          return;
+        }
+        try { localStorage.setItem(MR_VIOLATION_EMAIL_ALERTS_KEY, JSON.stringify({ enabled })); } catch (_) {}
+        showToast(enabled ? 'تم تفعيل بريد تنبيهات المخالفات ✓' : 'تم إيقاف بريد تنبيهات المخالفات', 'success');
+      }
+
       function renderSettingsPermissions() {
         const userBar = document.getElementById('settingsUserPermBar');
         if (userBar) userBar.hidden = state._settingsPermMode !== 'user';
@@ -6591,8 +6648,10 @@
           const note = '<p class="mr-settings-note">هذا القسم متاح لمن يملك صلاحية «صفحة صلاحيات المنصة» أو «تعديل وحفظ صلاحيات المنصة».</p>';
           if (host) host.innerHTML = note;
           if (userHost) userHost.innerHTML = '';
+          loadViolationEmailAlertSetting().catch(() => {});
           return;
         }
+        loadViolationEmailAlertSetting().catch(() => {});
         populateSettingsPermUserSelect();
         if (state._settingsPermMode === 'user') renderUserPermissionsMatrix();
         else renderRolePermissionsMatrix();
@@ -30149,6 +30208,7 @@
       window.handleLogoutFromUserMenu = handleLogoutFromUserMenu;
       window.goTab = goTab;
       window.saveRolePermissionsFromUI = saveRolePermissionsFromUI;
+      window.saveViolationEmailAlertSetting = saveViolationEmailAlertSetting;
       window.resetRolePermissionsToDefaults = resetRolePermissionsToDefaults;
       window.switchSettingsPermMode = switchSettingsPermMode;
       window.onSettingsPermUserChange = onSettingsPermUserChange;
