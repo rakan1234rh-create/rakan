@@ -3661,6 +3661,15 @@
                   <p class="wf-panel-sub">platform permissions</p>
                 </div>
                 <p class="mr-settings-note"><i class="fas fa-shield-halved"></i> مدير النظام يملك صلاحيات كاملة دائماً. التخصيص الفردي يُطبَّق فوق صلاحيات دور المستخدم.</p>
+                <div id="settingsViolationEmailPanel" class="mr-settings-email-panel" data-roles="admin" hidden>
+                  <p class="mr-settings-note"><i class="fas fa-envelope"></i> إعدادات التنبيهات — مدير النظام</p>
+                  <label class="mr-settings-email-toggle" for="settingsViolationEmailToggle">
+                    <input type="checkbox" id="settingsViolationEmailToggle">
+                    <span>إرسال بريد إلكتروني عند المخالفات والتنبيهات المهمة</span>
+                  </label>
+                  <p class="mr-settings-note mr-settings-note--sub">يُرسل للمستلمين الذين لديهم بريد مسجّل في النظام (بالإضافة لإشعار التطبيق). لا يحتوي البريد على روابط.</p>
+                  <button type="button" class="btn btn-primary btn-sm" onclick="saveViolationEmailAlertSetting()"><i class="fas fa-save"></i> حفظ إعداد البريد</button>
+                </div>
                 <div class="mr-settings-toolbar">
                   <div class="mr-settings-seg" role="tablist" aria-label="نوع الصلاحيات">
                     <button type="button" id="settingsPermModeRoles" class="is-active" onclick="switchSettingsPermMode('roles')"><i class="fas fa-users"></i> حسب الدور</button>

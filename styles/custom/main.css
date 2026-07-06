@@ -19580,6 +19580,45 @@
       line-height: 1.6
     }
 
+    .mr-settings-email-panel {
+      margin: 14px 0 4px;
+      padding: 14px 16px;
+      border-radius: 12px;
+      border: 1px solid var(--mr-border, #e4e4e7);
+      background: var(--mr-surface-2, #fafafa)
+    }
+
+    .mr-settings-email-toggle {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin: 10px 0 6px;
+      cursor: pointer;
+      font-size: 14px;
+      line-height: 1.55;
+      color: var(--mr-text, #18181b)
+    }
+
+    .mr-settings-email-toggle input {
+      width: 18px;
+      height: 18px;
+      margin-top: 2px;
+      flex-shrink: 0;
+      accent-color: var(--mr-primary, #6366f1)
+    }
+
+    .mr-settings-note--sub {
+      margin-top: 4px;
+      margin-bottom: 12px;
+      font-size: 11px
+    }
+
+    .mr-settings-email-panel .btn-sm {
+      min-height: 36px;
+      padding: 0 14px;
+      font-size: 13px
+    }
+
   /* إخفاء القائمة والتبويبات حتى اكتمال تطبيق الصلاحيات (تفادي وميض كل الأقسام) */
     #appWrap:not(.rbac-ready) .sidebar-nav .nav-item,
     #appWrap:not(.rbac-ready) .sidebar-nav .nav-section-label {

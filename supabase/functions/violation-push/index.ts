@@ -14,6 +14,10 @@ import {
   type ViolationNotifContext,
   type ViolationNotifTemplate,
 } from './violation-notification-copy.ts';
+import {
+  isViolationEmailAlertsEnabled,
+  sendViolationEmailsToUserIds,
+} from './violation-email.ts';
 
 function buildCorsHeaders(req: Request): Record<string, string> {
   const allowedOrigin = Deno.env.get('ALLOWED_ORIGIN') || 'https://athar-app.online';
@@ -218,9 +222,11 @@ async function dispatchNotificationTemplates(
   if (!templates.length) return { sent: 0, reason: 'no templates' };
 
   let totalSent = 0;
+  let totalEmailsSent = 0;
   const allErrors: string[] = [];
   const recipientCount = new Set<string>();
   const tagPrefix = opts.tagPrefix || 'vnotif';
+  const emailAlertsEnabled = await isViolationEmailAlertsEnabled(supabase);
 
   const templateResults = await Promise.all(templates.map(async (tpl) => {
     const userIds = await resolveRecipientIds(supabase, record, tpl.recipientRole);
@@ -255,16 +261,31 @@ async function dispatchNotificationTemplates(
     const errors: string[] = [];
     if (pushResult.error) errors.push(String(pushResult.error));
     if (pushResult.errors?.length) errors.push(...pushResult.errors);
-    return { sent: pushResult.sent || 0, errors };
+
+    let emailsSent = 0;
+    if (emailAlertsEnabled) {
+      const emailResult = await sendViolationEmailsToUserIds(
+        supabase,
+        userIds,
+        tpl.title,
+        tpl.message,
+      );
+      emailsSent = emailResult.sent || 0;
+      if (emailResult.errors?.length) errors.push(...emailResult.errors);
+    }
+
+    return { sent: pushResult.sent || 0, emailsSent, errors };
   }));
 
   for (const result of templateResults) {
     totalSent += result.sent;
+    totalEmailsSent += result.emailsSent || 0;
     if (result.errors.length) allErrors.push(...result.errors);
   }
 
   return {
     sent: totalSent,
+    emailsSent: totalEmailsSent,
     recipients: recipientCount.size,
     errors: allErrors.length ? allErrors.slice(0, 5) : undefined,
   };
