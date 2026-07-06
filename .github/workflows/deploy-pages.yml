@@ -64,47 +64,82 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url || steps.deployment_retry.outputs.page_url || steps.deployment_retry2.outputs.page_url }}
-    timeout-minutes: 20
+      url: ${{ steps.deployment.outputs.page_url || steps.deployment_retry.outputs.page_url || steps.deployment_retry2.outputs.page_url || steps.deployment_retry3.outputs.page_url || steps.deployment_retry4.outputs.page_url }}
+    timeout-minutes: 45
     env:
       ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
     steps:
+      - name: Brief pause before Pages deploy
+        run: sleep 15
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
         with:
-          timeout: 900000
-          error_count: 15
-          reporting_interval: 10000
+          timeout: 600000
+          error_count: 20
+          reporting_interval: 8000
         continue-on-error: true
 
       - name: Wait for Pages deployment lock to clear (1)
         if: steps.deployment.outcome == 'failure'
-        run: sleep 75
+        run: sleep 90
 
       - name: Deploy to GitHub Pages (retry 1)
         if: steps.deployment.outcome == 'failure'
         id: deployment_retry
         uses: actions/deploy-pages@v4
         with:
-          timeout: 900000
-          error_count: 15
-          reporting_interval: 10000
+          timeout: 600000
+          error_count: 20
+          reporting_interval: 8000
         continue-on-error: true
 
       - name: Wait for Pages deployment lock to clear (2)
         if: steps.deployment.outcome == 'failure' && steps.deployment_retry.outcome == 'failure'
-        run: sleep 120
+        run: sleep 150
 
       - name: Deploy to GitHub Pages (retry 2)
         if: steps.deployment.outcome == 'failure' && steps.deployment_retry.outcome == 'failure'
         id: deployment_retry2
         uses: actions/deploy-pages@v4
         with:
-          timeout: 900000
-          error_count: 15
-          reporting_interval: 10000
+          timeout: 600000
+          error_count: 20
+          reporting_interval: 8000
+        continue-on-error: true
+
+      - name: Wait for Pages deployment lock to clear (3)
+        if: steps.deployment.outcome == 'failure' && steps.deployment_retry.outcome == 'failure' && steps.deployment_retry2.outcome == 'failure'
+        run: sleep 210
+
+      - name: Deploy to GitHub Pages (retry 3)
+        if: steps.deployment.outcome == 'failure' && steps.deployment_retry.outcome == 'failure' && steps.deployment_retry2.outcome == 'failure'
+        id: deployment_retry3
+        uses: actions/deploy-pages@v4
+        with:
+          timeout: 600000
+          error_count: 20
+          reporting_interval: 8000
+        continue-on-error: true
+
+      - name: Wait for Pages deployment lock to clear (4)
+        if: steps.deployment.outcome == 'failure' && steps.deployment_retry.outcome == 'failure' && steps.deployment_retry2.outcome == 'failure' && steps.deployment_retry3.outcome == 'failure'
+        run: sleep 300
+
+      - name: Deploy to GitHub Pages (retry 4)
+        if: steps.deployment.outcome == 'failure' && steps.deployment_retry.outcome == 'failure' && steps.deployment_retry2.outcome == 'failure' && steps.deployment_retry3.outcome == 'failure'
+        id: deployment_retry4
+        uses: actions/deploy-pages@v4
+        with:
+          timeout: 600000
+          error_count: 20
+          reporting_interval: 8000
 
       - name: Verify Pages deploy
-        if: steps.deployment.outcome == 'failure' && steps.deployment_retry.outcome == 'failure' && steps.deployment_retry2.outcome == 'failure'
-        run: exit 1
+        if: steps.deployment.outcome == 'failure' && steps.deployment_retry.outcome == 'failure' && steps.deployment_retry2.outcome == 'failure' && steps.deployment_retry3.outcome == 'failure' && steps.deployment_retry4.outcome == 'failure'
+        run: |
+          echo "::error::GitHub Pages deploy failed after 5 attempts (transient backend error)."
+          echo "Do not re-run only the failed deploy job (duplicate artifact risk)."
+          echo "Use Actions → Deploy to GitHub Pages → Run workflow, or wait for the auto-retry workflow."
+          exit 1

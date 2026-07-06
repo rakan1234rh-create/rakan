@@ -1,0 +1,49 @@
+name: Retry Pages Deploy
+
+# One automatic full redeploy when push build succeeded but Pages deploy failed.
+on:
+  workflow_run:
+    workflows: [Deploy to GitHub Pages]
+    types: [completed]
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  redeploy:
+    if: >
+      github.event.workflow_run.conclusion == 'failure' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.run_attempt == 1
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check deploy job failed (not build)
+        id: check
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const runId = context.payload.workflow_run.id;
+            const { data } = await github.rest.actions.listJobsForWorkflowRun({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: runId,
+            });
+            const build = data.jobs.find((j) => j.name === 'build');
+            const deploy = data.jobs.find((j) => j.name === 'deploy');
+            const shouldRetry = build?.conclusion === 'success' && deploy?.conclusion === 'failure';
+            core.setOutput('should_retry', shouldRetry ? 'true' : 'false');
+
+      - name: Dispatch Deploy to GitHub Pages workflow
+        if: steps.check.outputs.should_retry == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const branch = context.payload.workflow_run.head_branch || 'main';
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'deploy-pages.yml',
+              ref: branch,
+            });
+            core.notice(`Dispatched Pages redeploy for ${branch} after transient deploy failure.`);
