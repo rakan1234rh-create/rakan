@@ -33480,6 +33480,7 @@
       const ATHAR_VAPID_PUBLIC_KEY = 'BAAE2sxYeIGbYADV7uimLzIFB_en9SBWQ3a4-LBULuOIVm40YI7YfjXL2Fddttr1L1tHFkoaiPzmZankfUk_2jc';
       const ATHAR_VAPID_STORAGE_KEY = 'athar_vapid_public_key';
       const ATHAR_WEB_PUSH_SYNC_KEY = 'athar_web_push_last_sync';
+      const ATHAR_WEB_PUSH_USER_KEY = 'athar_web_push_last_user';
       const ATHAR_WEB_PUSH_OPEN_SYNC_MS = 15 * 60 * 1000;
       const ATHAR_SW_URL = './sw.js?v=10';
 
@@ -60216,6 +60217,35 @@
         await sb.from('push_subscriptions').delete().eq('endpoint', endpoint);
       }
 
+      function clearAtharWebPushSyncMarkers() {
+        try {
+          localStorage.removeItem(ATHAR_WEB_PUSH_SYNC_KEY);
+          localStorage.removeItem(ATHAR_WEB_PUSH_USER_KEY);
+        } catch (_) {}
+      }
+
+      /** هل يحتاج الجهاز إعادة ربط الاشتراك بالمستخدم الحالي؟ */
+      async function atharWebPushNeedsResync() {
+        if (!state.currentUser?.id) return true;
+        const userId = String(state.currentUser.id);
+        let lastUser = '';
+        try { lastUser = localStorage.getItem(ATHAR_WEB_PUSH_USER_KEY) || ''; } catch (_) {}
+        if (lastUser && lastUser !== userId) return true;
+        try {
+          const reg = await navigator.serviceWorker.getRegistration('./');
+          const sub = await reg?.pushManager?.getSubscription();
+          if (!sub) return true;
+          const { data, error } = await sb
+            .from('push_subscriptions')
+            .select('user_id')
+            .eq('endpoint', sub.endpoint)
+            .maybeSingle();
+          if (error) return true;
+          if (!data || String(data.user_id) !== userId) return true;
+        } catch (_) { return true; }
+        return false;
+      }
+
       function syncWebPushUiLabels() {
         const supported = isWebPushSupported();
         const perm = typeof Notification !== 'undefined' ? Notification.permission : 'default';
@@ -60297,7 +60327,10 @@
           if (!reg?.pushManager) throw new Error('PushManager غير متاح');
           const sub = await refreshPushSubscription(reg, opts);
           await savePushSubscriptionToDb(sub);
-          try { localStorage.setItem(ATHAR_WEB_PUSH_SYNC_KEY, String(Date.now())); } catch (_) {}
+          try {
+            localStorage.setItem(ATHAR_WEB_PUSH_SYNC_KEY, String(Date.now()));
+            localStorage.setItem(ATHAR_WEB_PUSH_USER_KEY, String(state.currentUser.id));
+          } catch (_) {}
           syncWebPushUiLabels();
           if (opts.welcomeNotify) {
             const shown = await showPushWelcomeNotification();
@@ -60314,7 +60347,8 @@
       async function syncAtharWebPushSubscription(opts = {}) {
         if (!isWebPushSupported() || !state.currentUser || Notification.permission !== 'granted') return false;
         const minIntervalMs = Number(opts.minIntervalMs) || 0;
-        if (minIntervalMs > 0) {
+        const needsResync = !!opts.force || await atharWebPushNeedsResync();
+        if (!needsResync && minIntervalMs > 0) {
           let last = 0;
           try { last = Number(localStorage.getItem(ATHAR_WEB_PUSH_SYNC_KEY) || 0); } catch (_) {}
           if (last && Date.now() - last < minIntervalMs) return true;
@@ -60328,13 +60362,15 @@
           const reg = await navigator.serviceWorker.getRegistration('./');
           const sub = await reg?.pushManager?.getSubscription();
           if (sub) {
-            const ep = sub.endpoint;
-            await sub.unsubscribe();
-            await removePushSubscriptionFromDb(ep);
+            await removePushSubscriptionFromDb(sub.endpoint);
+            if (opts.unsubscribeBrowser) {
+              try { await sub.unsubscribe(); } catch (_) {}
+            }
           }
         } catch (e) {
           if (!opts.silent && isMirsadDebugLog()) console.warn('[webPush] disable', e);
         }
+        clearAtharWebPushSyncMarkers();
         syncWebPushUiLabels();
       }
 
