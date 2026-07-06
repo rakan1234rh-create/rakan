@@ -1,4 +1,5 @@
 import { Resend } from 'npm:resend@4.0.0';
+import { VIOLATION_EMAIL_HTML } from './violation-email-template.ts';
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? '';
 const SENDER_EMAIL = Deno.env.get('SENDER_EMAIL') ?? '';
@@ -11,13 +12,7 @@ const APPLE_DOMAINS = new Set(['icloud.com', 'me.com', 'mac.com']);
 
 export const VIOLATION_EMAIL_ALERTS_KEY = 'violation_email_alerts_enabled';
 
-let htmlTemplate = '';
-
-try {
-  htmlTemplate = await Deno.readTextFile(new URL('./violation-email.html', import.meta.url));
-} catch (e) {
-  console.error('violation-email: failed to load template', e);
-}
+const htmlTemplate = VIOLATION_EMAIL_HTML;
 
 function escapeHtml(value: string): string {
   return String(value || '')
@@ -205,7 +200,7 @@ async function deliverViolationEmail(to: string, title: string, message: string,
   if (!SENDER_EMAIL || (!resend && !brevoConfigured())) {
     throw new Error('Email provider not configured (RESEND_API_KEY or BREVO_API_KEY)');
   }
-  if (!htmlTemplate) throw new Error('Violation email template not loaded');
+  if (!htmlTemplate?.trim()) throw new Error('Violation email template is empty');
 
   const built = buildViolationAlertEmail({ recipientName, title, message });
   const useBrevo = isAppleMailbox(to) && brevoConfigured();
