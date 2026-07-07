@@ -5052,86 +5052,8 @@
             .finally(() => setTimeout(finishRefresh, 650));
         }
 
-        let touchDirectionLocked = false;
-
-        document.addEventListener('touchstart', (e) => {
-          if (!ptrEnabled() || isPtrBlocked() || refreshing) return;
-          if (e.touches.length !== 1) return;
-          if (e.target?.closest?.('.modal, .confirm-overlay, [data-no-ptr], input, textarea, select, .dp-popup, .att-viewer, .td-mob-sheet, .users-io-menu, .wf-status-menu')) return;
-          
-          scrollRoot = findScrollRoot(e.target);
-          const st = getScrollTop(scrollRoot);
-          
-          // السماح بالبدء إذا كنا قريبين جداً من القمة
-          if (st > 2) {
-            ptrPending = false;
-            pulling = false;
-            return;
-          }
-
-          startY = e.touches[0].clientY;
-          pulling = false;
-          ptrPending = true;
-          touchDirectionLocked = false;
-          window._mrPtrPulling = false;
-          pullPx = 0;
-          setPull(0);
-        }, { passive: true, capture: true });
-
-        document.addEventListener('touchmove', (e) => {
-          if (!ptrPending && !pulling) return;
-          if (refreshing || !ptrEnabled() || touchDirectionLocked) return;
-          
-          const dy = e.touches[0].clientY - startY;
-
-          // إذا بدأ المستخدم بالسحب للأعلى، نلغي التحديث لهذه اللمسة
-          if (!pulling && dy < -5) {
-            touchDirectionLocked = true;
-            cancelPtrGesture();
-            return;
-          }
-
-          if (ptrPending && !pulling) {
-            if (dy < PTR_ACTIVATE) return;
-            
-            // تأكيد أننا لا نزال في القمة قبل بدء السحب الفعلي
-            if (getScrollTop(scrollRoot) > 2) {
-              touchDirectionLocked = true;
-              cancelPtrGesture();
-              return;
-            }
-            
-            pulling = true;
-            ptrPending = false;
-          }
-
-          if (!pulling) return;
-
-          if (dy <= 0) {
-            cancelPtrGesture();
-            return;
-          }
-
-          window._mrPtrPulling = true;
-          if (e.cancelable) e.preventDefault();
-          
-          // حركة سحب ناعمة ومتوازنة
-          const pullAmount = Math.min(PTR_MAX, dy * 0.7);
-          requestAnimationFrame(() => setPull(pullAmount));
-        }, { passive: false, capture: true });
-
-        document.addEventListener('touchend', () => {
-          if (!ptrPending && !pulling) return;
-          if (refreshing) return;
-          const shouldRefresh = pulling && pullPx >= PTR_THRESHOLD;
-          pulling = false;
-          ptrPending = false;
-          window._mrPtrPulling = false;
-          if (shouldRefresh) triggerRefresh();
-          else resetPull();
-        }, { passive: true, capture: true });
-
-        document.addEventListener('touchcancel', resetPullImmediate, { passive: true, capture: true });
+        // Pull-to-refresh logic disabled by user request.
+        // The event listeners and state management have been removed to ensure a smooth scrolling experience without accidental refreshes.
       }
 
       const ATHAR_LOGO_VER = 'new-logo-401';
