@@ -17409,7 +17409,17 @@
         if (!headTable || !bodyTable || !bodyScroll) return;
 
         const row = bodyTable.querySelector('tbody tr.wf-ticket-row');
-        if (!row) return;
+        if (!row) {
+          const list = document.getElementById(root.listId);
+          if (list) {
+            list.classList.remove("wf-mob-measuring", "rp-mob-measuring");
+            if (bodyScroll) {
+              bodyScroll.style.visibility = "visible";
+              bodyScroll.style.opacity = "1";
+            }
+          }
+          return;
+        }
 
         const tds = row.querySelectorAll('td');
         const ths = headTable.querySelectorAll('thead th');
@@ -17696,6 +17706,16 @@
         } else {
           const slip = Math.round(tds[0].getBoundingClientRect().left - ths[0].getBoundingClientRect().left);
           if (Math.abs(slip) > 0.5) headTable.style.transform = `translateX(${slip}px)`;
+        }
+
+        // Final safety check to ensure visibility
+        const list = document.getElementById(root.listId);
+        if (list) {
+          list.classList.remove('wf-mob-measuring', 'rp-mob-measuring');
+          if (bodyScroll) {
+            bodyScroll.style.visibility = 'visible';
+            bodyScroll.style.opacity = '1';
+          }
         }
       }
 
