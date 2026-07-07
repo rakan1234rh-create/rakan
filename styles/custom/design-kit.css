@@ -517,7 +517,7 @@
 
       #tab-dashboard .mk-kpi {
         min-height: 68px !important;
-        padding: 3px 0 0 !important;
+        padding: 3px 0px 0 !important;
         gap: 0 !important;
         border-radius: 11px;
         box-shadow: var(--mr-shadow-soft);
