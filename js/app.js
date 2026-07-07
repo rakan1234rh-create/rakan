@@ -5053,7 +5053,7 @@
           if (e.target?.closest?.('.modal, .confirm-overlay, [data-no-ptr], input, textarea, select, .dp-popup, .att-viewer, .td-mob-sheet, .users-io-menu, .wf-status-menu')) return;
           if (typeof isNotifPageOpen === 'function' && isNotifPageOpen()) syncNotifPtrTop();
           scrollRoot = findScrollRoot(e.target);
-          if (getScrollTop(scrollRoot) > 2) return;
+          if (getScrollTop(scrollRoot) > 1) return;
           startY = e.touches[0].clientY;
           pulling = false;
           ptrPending = true;
@@ -5067,12 +5067,12 @@
           if (refreshing || !ptrEnabled()) return;
           const dy = e.touches[0].clientY - startY;
           if (ptrPending && !pulling) {
-            if (dy < -6) {
+            if (dy < -2) {
               cancelPtrGesture();
               return;
             }
-            if (dy < PTR_ACTIVATE) return;
-            if (getScrollTop(scrollRoot) > 2) {
+            if (dy < PTR_ACTIVATE + 10) return; // زيادة مسافة الأمان قبل بدء السحب
+            if (getScrollTop(scrollRoot) > 1) {
               cancelPtrGesture();
               return;
             }
@@ -5084,7 +5084,7 @@
             cancelPtrGesture();
             return;
           }
-          if (getScrollTop(scrollRoot) > 2) {
+          if (getScrollTop(scrollRoot) > 1) {
             cancelPtrGesture();
             return;
           }
