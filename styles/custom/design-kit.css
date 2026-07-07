@@ -449,14 +449,12 @@
     /* لوحة القيادة — جوال: بطاقات أصغر وتنسيق موحّد */
     @media (max-width: 992px) and (pointer: coarse) {
       html.mr-mobile-ui #appWrap .main:has(#tab-dashboard.active) {
-        padding: 8px 0 0 !important;
         overflow-x: visible !important;
         overscroll-behavior-y: none;
         -webkit-overflow-scrolling: touch
       }
 
       html.mr-mobile-ui #appWrap .content:has(#tab-dashboard.active) {
-        padding: 0 !important
       }
 
       html.mr-notif-page-active.mr-mobile-ui #appWrap .main:has(#tab-notifications.active) {
