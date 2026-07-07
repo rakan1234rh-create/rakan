@@ -631,7 +631,7 @@
 
       #tab-dashboard .mk-funnel,
       #tab-dashboard .mk-attn {
-        padding: 12px 10px !important;
+        padding: 12px 0px !important;
         gap: 8px;
         border-radius: 11px;
         box-shadow: var(--mr-shadow-soft)
