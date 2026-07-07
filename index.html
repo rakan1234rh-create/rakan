@@ -2810,10 +2810,13 @@
                       </span>
                     </button>
                   </div>
-                  <button type="button" class="profile-action-btn" id="profilePagePushBtn" onclick="toggleWebPushFromMenu(event)" hidden>
-                    <span class="profile-action-row__lbl"><i class="fas fa-bell" aria-hidden="true"></i> <span id="profilePagePushLabel">تفعيل تنبيهات خارج التطبيق</span></span>
-                    <i class="fas fa-chevron-left" aria-hidden="true"></i>
-                  </button>
+                  <div class="profile-action-row" id="profilePagePushRow" hidden>
+                    <span class="profile-action-row__lbl"><i class="fas fa-bell" aria-hidden="true"></i> التنبيهات</span>
+                    <button type="button" class="push-toggle" id="profilePagePushToggle" onclick="toggleWebPushFromMenu(event)"
+                      aria-label="تبديل التنبيهات" aria-pressed="false">
+                      <span class="push-toggle__knob" aria-hidden="true"></span>
+                    </button>
+                  </div>
                   <button type="button" class="profile-action-btn" id="profilePageSettingsBtn" onclick="openSettingsFromUserMenu(event)" data-perm="tab_settings" hidden>
                     <span class="profile-action-row__lbl"><i class="fas fa-shield-halved" aria-hidden="true"></i> صلاحيات المنصة</span>
                     <i class="fas fa-chevron-left" aria-hidden="true"></i>

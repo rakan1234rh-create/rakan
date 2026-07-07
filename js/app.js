@@ -26803,20 +26803,16 @@
           }
         }
 
-        const profileBtn = document.getElementById('profilePagePushBtn');
-        const profileLabel = document.getElementById('profilePagePushLabel');
-        if (profileBtn && profileLabel) {
+        const profileRow = document.getElementById('profilePagePushRow');
+        const profileToggle = document.getElementById('profilePagePushToggle');
+        if (profileRow && profileToggle) {
           if (!supported) {
-            profileBtn.hidden = true;
+            profileRow.hidden = true;
           } else {
-            profileBtn.hidden = false;
-            if (perm === 'granted') {
-              profileLabel.textContent = 'تنبيهات خارج التطبيق — مفعّلة';
-            } else if (perm === 'denied') {
-              profileLabel.textContent = 'الإشعارات موقوفة — فعّلها من إعدادات الجوال';
-            } else {
-              profileLabel.textContent = 'تفعيل تنبيهات خارج التطبيق';
-            }
+            profileRow.hidden = false;
+            const on = perm === 'granted';
+            profileToggle.classList.toggle('push-toggle--on', on);
+            profileToggle.setAttribute('aria-pressed', on ? 'true' : 'false');
           }
         }
       }
@@ -26958,7 +26954,7 @@
 
         const ok = await confirmDialog(
           'نرجو التكرم بتفعيل الإشعارات لضمان بقائكم على اطلاع دائم بكافة التنبيهات الموجهة لكم من خلال النظام',
-          { type: 'info', title: 'إعدادات التنبيهات', okText: 'تفعيل', hideCancel: false }
+          { type: 'info', title: 'إعدادات التنبيهات', okText: 'تفعيل', hideCancel: true }
         );
         if (!ok) return;
         try {

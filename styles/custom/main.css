@@ -2773,6 +2773,41 @@
       color: #000000;
     }
 
+    /* iOS-style Push Toggle */
+    .push-toggle {
+      display: flex;
+      width: 3.2rem;
+      height: 1.8rem;
+      padding: 2px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: background 0.25s ease;
+      border: none;
+      background: #e9e9ea;
+      flex-shrink: 0;
+      position: relative;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .push-toggle--on {
+      background: #34c759;
+    }
+    .push-toggle__knob {
+      width: calc(1.8rem - 4px);
+      height: calc(1.8rem - 4px);
+      background: #ffffff;
+      border-radius: 50%;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.15), 0 1px 1px rgba(0,0,0,0.16);
+      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      transform: translateX(0);
+    }
+    .push-toggle--on .push-toggle__knob {
+      transform: translateX(calc(-1.4rem));
+    }
+    [dir="ltr"] .push-toggle--on .push-toggle__knob {
+      transform: translateX(calc(1.4rem));
+    }
+
     .topbar-btn--notif {
       width: 36px;
       height: 36px;
