@@ -849,7 +849,7 @@
         align-items: center !important;
         text-align: center;
         gap: 6px !important;
-        padding: 8px 6px 4px
+        padding: 8px 0px 4px
       }
 
       #tab-dashboard #personalIndicators.indicators-row--score-duo .indicator-info {
