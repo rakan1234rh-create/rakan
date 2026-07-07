@@ -21325,10 +21325,10 @@
       }
       .content:has(#tab-dashboard.active),
       .main:has(#tab-dashboard.active) {
-        padding-inline: 0 !important;
+        padding-inline: 1px !important;
       }
       .app-body:has(#tab-dashboard.active) {
-        padding-inline: 0 !important;
+        padding-inline: 1px !important;
       }
 
       .form-grid {
@@ -21358,10 +21358,10 @@
       }
       .content:has(#tab-dashboard.active),
       .main:has(#tab-dashboard.active) {
-        padding-inline: 0 !important;
+        padding-inline: 1px !important;
       }
       .app-body:has(#tab-dashboard.active) {
-        padding-inline: 0 !important;
+        padding-inline: 1px !important;
       }
 
       .form-grid {

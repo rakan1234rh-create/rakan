@@ -22,10 +22,10 @@
     /* Dashboard */
     #appWrap .content:has(#tab-dashboard.active) {
       padding-top: clamp(8px, 1.5vw, 18px);
-      padding-inline: 0 !important;
+      padding-inline: 1px !important;
     }
-    #tab-dashboard { padding-inline: 0 !important; min-width: 0; width: 100%; box-sizing: border-box; }
-    #tab-dashboard .mk-dash { display:flex; flex-direction:column; gap:0px; padding-inline: 0 !important; min-width: 0; }
+    #tab-dashboard { padding-inline: 1px !important; min-width: 0; width: 100%; box-sizing: border-box; }
+    #tab-dashboard .mk-dash { display:flex; flex-direction:column; gap:0px; padding-inline: 1px !important; min-width: 0; }
     #tab-dashboard .mk-dash > .indicators-row {
       margin-bottom: 0;
       padding-bottom: 0;
