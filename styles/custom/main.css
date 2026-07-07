@@ -27111,3 +27111,70 @@
             .cmp-viol-list .score-viol-meta { font-size: 9px; flex-wrap: nowrap; overflow: hidden; }
             .cmp-viol-list .score-viol-meta span:nth-child(n+3) { display: none; }
           }
+
+    /* ═══════════════════════════════════════════════════════════════════════
+       SCROLLING OVERRIDES: Full Page Scrolling (Except Notifications)
+    ═══════════════════════════════════════════════════════════════════════ */
+    
+    /* 1. Allow root elements to scroll when not in notifications mode */
+    html:not(.mr-notif-page-active), 
+    html:not(.mr-notif-page-active) body {
+      height: auto !important;
+      overflow: visible !important;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* 2. Remove height constraints from the app shell */
+    html:not(.mr-notif-page-active) .app,
+    html:not(.mr-notif-page-active) .app-shell,
+    html:not(.mr-notif-page-active) .app-body {
+      height: auto !important;
+      min-height: 100vh !important;
+      overflow: visible !important;
+      display: block !important; /* Switch to block to allow natural height expansion */
+    }
+
+    /* 3. Make the main content area expand naturally */
+    html:not(.mr-notif-page-active) .main {
+      height: auto !important;
+      overflow: visible !important;
+      min-height: 100vh !important;
+      padding-bottom: 80px !important; /* Space for bottom nav */
+    }
+
+    /* 4. Force override for all tab contents except notifications */
+    html.mr-mobile-ui:not(.mr-notif-page-active) .tab-content.active:not(#tab-notifications) {
+      display: block !important;
+      height: auto !important;
+      min-height: 0 !important;
+      overflow: visible !important;
+    }
+
+    /* 5. Specific Mobile Overrides for known "locked" tabs */
+    @media (max-width: 992px) {
+      html.mr-mobile-ui:not(.mr-notif-page-active) #appWrap .main,
+      html.mr-mobile-ui:not(.mr-notif-page-active) #appWrap .content {
+        height: auto !important;
+        overflow: visible !important;
+        display: block !important;
+        padding-bottom: 100px !important;
+      }
+
+      /* Ensure inner panels don't lock scroll */
+      html.mr-mobile-ui:not(.mr-notif-page-active) .wf-panel,
+      html.mr-mobile-ui:not(.mr-notif-page-active) .notif-list--page,
+      html.mr-mobile-ui:not(.mr-notif-page-active) .profile-page-shell,
+      html.mr-mobile-ui:not(.mr-notif-page-active) .viol-grid--mob-list {
+        height: auto !important;
+        overflow: visible !important;
+        min-height: 0 !important;
+      }
+    }
+    
+    /* Keep notifications page exactly as it was (internal scrolling) */
+    html.mr-notif-page-active, 
+    html.mr-notif-page-active body {
+      height: 100vh !important;
+      height: 100dvh !important;
+      overflow: hidden !important;
+    }
