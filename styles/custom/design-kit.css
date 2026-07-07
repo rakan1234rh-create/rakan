@@ -302,7 +302,7 @@
     .mk-kpi__trend.is-down { color:var(--mk-danger); }
     .mk-kpi__period { color:var(--mk-text-3); }
 
-    .mk-dash__split { display:grid; grid-template-columns:minmax(0,1.05fr) minmax(0,1fr); gap:16px; align-items:stretch; }
+    .mk-dash__split { display:grid; grid-template-columns:minmax(0,1.05fr) minmax(0,1fr); gap:16px; align-items:stretch; box-sizing:border-box; max-width:100%; }
 
     @media (min-width: 993px), (hover: hover) and (pointer: fine) {
 #tab-dashboard #branchStaffPanel {
@@ -627,7 +627,8 @@
         gap: 4px;
         width: 100%;
         margin: 0;
-        align-items: stretch
+        align-items: stretch;
+        box-sizing: border-box;
       }
 
       #tab-dashboard .mk-funnel,
@@ -1271,6 +1272,7 @@
         grid-template-columns: 1fr !important;
         gap: 0;
         width: 100%;
+        max-width: 100%;
         margin: 0 !important;
         padding-inline: 0 !important;
         box-sizing: border-box
@@ -1278,6 +1280,7 @@
 
       #tab-dashboard #branchStaffPanel .indicator-card--branch-staff {
         width: 100%;
+        max-width: 100%;
         min-width: 0;
         padding: 0 !important;
         margin: 0;
@@ -1332,7 +1335,7 @@
         padding: 6px 10px 8px;
         gap: 4px;
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
         align-items: stretch;
         box-sizing: border-box
       }
@@ -1349,7 +1352,7 @@
         background: var(--bg2);
         border: 1px solid var(--mr-border);
         border-radius: 8px;
-        box-sizing: border-box
+        box-sizing: border-box;
       }
 
       #tab-dashboard #branchStaffPanel .branch-staff-emp__name {
