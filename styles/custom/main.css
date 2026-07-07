@@ -21520,7 +21520,7 @@
       }
 
       .content {
-        padding: 12px 10px
+        padding: 0 !important;
       }
     }
 
@@ -21598,12 +21598,10 @@
     @media (max-width: 992px) and (pointer: coarse) {
       /* تحسين المساحة العامة وحواف الجسم */
       .main {
-        padding: 12px !important;
         max-width: 100% !important
       }
 
       .content {
-        padding: clamp(12px, 3vw, 16px) !important;
         max-width: 100% !important
       }
 
