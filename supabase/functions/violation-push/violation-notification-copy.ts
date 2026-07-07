@@ -119,9 +119,9 @@ export function buildStateChangeTemplates(
     out.push(
       {
         recipientRole: 'supervisor',
-        title: `نفيدكم بأن الموظف: ${emp} قام بتقديم الإفادة على المخالفة رقم (${ticket}) من نوع: ${vType} يرجى الاطلاع وتقديم الافاده`,
+        title: 'تم تقديم الإفادة على مخالفة ضمن منطقتكم',
         message:
-          `نفيدكم بأن الموظف: ${emp} قام بتقديم الإفادة على المخالفة رقم (${ticket}) من نوع: ${vType}. يُرجى الاطلاع ومتابعة اسيرها.`,
+          `نفيدكم بأن الموظف: ${emp} قام بتقديم الإفادة على المخالفة رقم (${ticket}) من نوع: ${vType} يرجى الاطلاع وتقديم الافادة`,
         eventKeySuffix: 'emp_resp_sup',
         scope: 'team',
         type: 'blue',

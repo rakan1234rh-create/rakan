@@ -367,16 +367,18 @@ async function sendImmediateEmail(to: string, title: string, body: string, recor
   const rawTicket = String(record.ticket_number || record.id);
   const formattedTicket = rawTicket.includes('-') ? rawTicket.split('-').pop() : rawTicket;
 
-  const subject = `${title} رقم (${formattedTicket})`;
+  const subject = `${title} - رقم (${formattedTicket})`;
   const html = `
     <div dir="rtl" style="font-family: sans-serif; line-height: 1.6; color: #333;">
       <h2 style="color: #d9534f;">${title}</h2>
       <p>${body}</p>
       <div style="background: #f4f4f4; padding: 15px; border-radius: 8px; margin-top: 20px;">
-        <p><strong>رقم المخالفة:</strong> ${record.ticket_number || '—'}</p>
+        <p><strong>رقم المخالفة:</strong> ${formattedTicket}</p>
         <p><strong>نوع المخالفة:</strong> ${record.violation_type || '—'}</p>
       </div>
-      <p style="margin-top: 20px;">يرجى مراجعة التفاصيل عبر تطبيق أثر.</p>
+      <p style="margin-top: 20px;">يرجى مراجعة التفاصيل عبر تطبيق أثر</p>
+      <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+      <p style="font-size: 12px; color: #777;">رسالة تلقائية من منصة أثر يرجى عدم الرد على هذا البريد</p>
     </div>
   `;
   const text = `${title}: ${body}. رقم المخالفة: ${record.ticket_number || record.id}`;

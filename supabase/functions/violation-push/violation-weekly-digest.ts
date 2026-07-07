@@ -130,9 +130,9 @@ export async function runWeeklyDigest(supabase: ReturnType<typeof createClient>)
             ${tableRows}
           </tbody>
         </table>
-        <p style="margin-top: 20px;">يرجى الدخول إلى التطبيق لاستكمال الإجراءات.</p>
+        <p style="margin-top: 20px;">يرجى مراجعة التفاصيل عبر تطبيق أثر</p>
         <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0;">
-        <p style="font-size: 12px; color: #777;">هذا البريد تم إرساله تلقائياً من نظام أثر.</p>
+        <p style="font-size: 12px; color: #777;">رسالة تلقائية من منصة أثر يرجى عدم الرد على هذا البريد</p>
       </div>
     `;
 
