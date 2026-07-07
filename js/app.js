@@ -5052,8 +5052,38 @@
             .finally(() => setTimeout(finishRefresh, 650));
         }
 
-        // Pull-to-refresh logic disabled by user request.
-        // The event listeners and state management have been removed to ensure a smooth scrolling experience without accidental refreshes.
+        // Pull-to-refresh logic disabled by user request but structure kept for app stability.
+        let touchDirectionLocked = false;
+
+        document.addEventListener('touchstart', (e) => {
+          if (refreshing) return;
+          if (e.touches.length !== 1) return;
+          if (e.target?.closest?.('.modal, .confirm-overlay, [data-no-ptr], input, textarea, select, .dp-popup, .att-viewer, .td-mob-sheet, .users-io-menu, .wf-status-menu')) return;
+          
+          scrollRoot = findScrollRoot(e.target);
+          startY = e.touches[0].clientY;
+          pulling = false;
+          ptrPending = false; // Disabled
+          touchDirectionLocked = false;
+          window._mrPtrPulling = false;
+          pullPx = 0;
+          setPull(0);
+        }, { passive: true, capture: true });
+
+        document.addEventListener('touchmove', (e) => {
+          // Logic disabled to prevent refresh but allowing event to pass through
+          if (pulling) {
+            cancelPtrGesture();
+          }
+        }, { passive: true, capture: true });
+
+        document.addEventListener('touchend', () => {
+          cancelPtrGesture();
+          ptrPending = false;
+          pulling = false;
+        }, { passive: true, capture: true });
+
+        document.addEventListener('touchcancel', resetPullImmediate, { passive: true, capture: true });
       }
 
       const ATHAR_LOGO_VER = 'new-logo-401';
