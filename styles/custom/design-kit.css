@@ -308,7 +308,7 @@
         grid-column: 1 / -1;
       }
 }
-    .mk-funnel, .mk-attn { background:var(--mr-surface); border:1px solid var(--mr-border); border-radius:var(--mr-radius-card); padding:22px; display:flex; flex-direction:column; gap:16px; box-shadow:var(--mr-shadow-card); height:100%; box-sizing:border-box; }
+    .mk-funnel, .mk-attn { background:var(--mr-surface); border:1px solid var(--mr-border); border-radius:var(--mr-radius-card); padding:22px 0px; display:flex; flex-direction:column; gap:16px; box-shadow:var(--mr-shadow-card); height:100%; box-sizing:border-box; }
     .mk-funnel__head, .mk-attn__head { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-shrink:0; }
     .mk-funnel__head .mk-link, .mk-attn__head .mk-link { flex-shrink:0; align-self:center; line-height:1.25; padding:2px 8px; }
     .mk-funnel__title, .mk-attn__title { margin:0; font-size:17px; font-weight:600; color:var(--mr-text); letter-spacing:-0.01em; }
