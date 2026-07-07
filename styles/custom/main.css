@@ -27113,78 +27113,67 @@
           }
 
     /* ═══════════════════════════════════════════════════════════════════════
-       SCROLLING OVERRIDES: Ultimate Full Page Scrolling (Except Notifications)
+       SCROLLING OVERRIDES: Targeted Full Page Scrolling (Except Notifications)
     ═══════════════════════════════════════════════════════════════════════ */
     
-    /* 1. Global Reset: Allow body and html to expand when not in notifications mode */
-    html:not(.mr-notif-page-active), 
-    html:not(.mr-notif-page-active) body {
-      height: auto !important;
-      min-height: 100% !important;
-      overflow-x: hidden !important;
-      overflow-y: visible !important;
-      display: block !important;
-    }
-
-    /* 2. Break the flex-box prison for the main app containers */
-    html:not(.mr-notif-page-active) #appWrap,
-    html:not(.mr-notif-page-active) .app,
-    html:not(.mr-notif-page-active) .app-shell,
-    html:not(.mr-notif-page-active) .app-body,
-    html:not(.mr-notif-page-active) .main,
-    html:not(.mr-notif-page-active) .content {
-      height: auto !important;
-      min-height: 0 !important;
-      overflow: visible !important;
-      display: block !important;
-      flex: none !important;
-    }
-
-    /* 3. Ensure all tab contents expand naturally */
-    html:not(.mr-notif-page-active) .tab-content.active:not(#tab-notifications) {
-      display: block !important;
-      height: auto !important;
-      overflow: visible !important;
-      min-height: 100vh !important;
-    }
-
-    /* 4. Fix for mobile bottom nav space */
-    @media (max-width: 992px) {
-      html.mr-mobile-ui:not(.mr-notif-page-active) .app-body {
-        padding-bottom: 80px !important;
+    /* 1. Desktop Fix: Allow .main to scroll naturally without breaking flex */
+    @media (min-width: 993px) {
+      html:not(.mr-notif-page-active) .main {
+        overflow-y: auto !important;
+        height: calc(100vh - var(--unified-topbar-h, 60px)) !important;
+        padding-bottom: 40px !important;
       }
-      
-      /* Force inner panels to release their scroll locks */
+    }
+
+    /* 2. Mobile Fix: Enable native-like full page scrolling */
+    @media (max-width: 992px) {
+      html.mr-mobile-ui:not(.mr-notif-page-active),
+      html.mr-mobile-ui:not(.mr-notif-page-active) body {
+        height: auto !important;
+        overflow-y: visible !important;
+        display: block !important;
+      }
+
+      html.mr-mobile-ui:not(.mr-notif-page-active) #appWrap,
+      html.mr-mobile-ui:not(.mr-notif-page-active) .app,
+      html.mr-mobile-ui:not(.mr-notif-page-active) .app-shell,
+      html.mr-mobile-ui:not(.mr-notif-page-active) .app-body,
+      html.mr-mobile-ui:not(.mr-notif-page-active) .main,
+      html.mr-mobile-ui:not(.mr-notif-page-active) .content {
+        height: auto !important;
+        overflow: visible !important;
+        display: block !important;
+        min-height: 0 !important;
+        flex: none !important;
+      }
+
+      html.mr-mobile-ui:not(.mr-notif-page-active) .tab-content.active:not(#tab-notifications) {
+        display: block !important;
+        height: auto !important;
+        overflow: visible !important;
+      }
+
+      /* Force specific mobile panels to expand */
       html.mr-mobile-ui:not(.mr-notif-page-active) .wf-panel,
       html.mr-mobile-ui:not(.mr-notif-page-active) .profile-page-shell,
       html.mr-mobile-ui:not(.mr-notif-page-active) .viol-grid--mob-list,
       html.mr-mobile-ui:not(.mr-notif-page-active) .md-dash,
-      html.mr-mobile-ui:not(.mr-notif-page-active) .rp-page-shell,
-      html.mr-mobile-ui:not(.mr-notif-page-active) .notif-list--page {
+      html.mr-mobile-ui:not(.mr-notif-page-active) .rp-page-shell {
         height: auto !important;
         max-height: none !important;
         overflow: visible !important;
       }
+      
+      /* Add padding for mobile bottom nav */
+      html.mr-mobile-ui:not(.mr-notif-page-active) .app-body {
+        padding-bottom: calc(var(--mr-mob-bottom-nav-h, 60px) + 20px) !important;
+      }
     }
 
-    /* 5. Special Guard for Notifications: Keep it as a fixed full-screen overlay */
+    /* 3. Guard for Notifications: Keep as fixed overlay */
     html.mr-notif-page-active, 
     html.mr-notif-page-active body {
       height: 100vh !important;
       height: 100dvh !important;
       overflow: hidden !important;
-      display: flex !important;
-      flex-direction: column !important;
-    }
-    
-    html.mr-notif-page-active #appWrap,
-    html.mr-notif-page-active .app,
-    html.mr-notif-page-active .app-shell,
-    html.mr-notif-page-active .app-body,
-    html.mr-notif-page-active .main,
-    html.mr-notif-page-active .content {
-      height: 100% !important;
-      overflow: hidden !important;
-      display: flex !important;
-      flex-direction: column !important;
     }
