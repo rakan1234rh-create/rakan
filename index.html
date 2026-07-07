@@ -201,31 +201,14 @@
     }
 
     /* ═══════════════════════════════════════════════════════════════════════
-       MOBILE SCROLL RESTORATION: Fix for "Frozen" UI on Mobile
+       MOBILE FIX: Force Visibility of Measured Lists (Reports/Workflow)
     ═══════════════════════════════════════════════════════════════════════ */
-    html.mr-mobile-ui:not(.mr-notif-page-active) .main,
-    html.mr-mobile-ui:not(.mr-notif-page-active) .app-body,
-    html.mr-mobile-ui:not(.mr-notif-page-active) .app-shell {
-      overflow-y: auto !important;
-      -webkit-overflow-scrolling: touch !important;
-      pointer-events: auto !important;
-    }
-    
-    html.mr-mobile-ui:not(.mr-notif-page-active) .main:has(#tab-workflow.active),
-    html.mr-mobile-ui:not(.mr-notif-page-active) .main:has(#tab-reports.active) {
-      display: flex !important;
-      flex-direction: column !important;
-    }
-
-    html.mr-mobile-ui:not(.mr-notif-page-active) #reportList.rp-mob-measuring > #rpMobTicketsHead,
-    html.mr-mobile-ui:not(.mr-notif-page-active) #reportList.rp-mob-measuring > .wf-mob-tickets-body,
-    html.mr-mobile-ui:not(.mr-notif-page-active) #ticketList.wf-mob-measuring > #wfMobTicketsHead,
-    html.mr-mobile-ui:not(.mr-notif-page-active) #ticketList.wf-mob-measuring > .wf-mob-tickets-body {
+    html.mr-mobile-ui #reportList.rp-mob-measuring > #rpMobTicketsHead,
+    html.mr-mobile-ui #reportList.rp-mob-measuring > .wf-mob-tickets-body,
+    html.mr-mobile-ui #ticketList.wf-mob-measuring > #wfMobTicketsHead,
+    html.mr-mobile-ui #ticketList.wf-mob-measuring > .wf-mob-tickets-body {
       visibility: visible !important;
       opacity: 1 !important;
-    }
-      scrollbar-width: none;
-      transform: none !important
     }
 
     html.mr-mobile-ui #mobileBottomNav.mobile-bottom-nav.mobile-bottom-nav--spread,
