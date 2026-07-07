@@ -24,8 +24,8 @@
       padding-top: clamp(8px, 1.5vw, 18px);
       padding-inline: 0 !important;
     }
-    #tab-dashboard { padding-inline: 0 !important; }
-    #tab-dashboard .mk-dash { display:flex; flex-direction:column; gap:0px; padding-inline: 0 !important; }
+    #tab-dashboard { padding-inline: 0 !important; min-width: 0; width: 100%; box-sizing: border-box; }
+    #tab-dashboard .mk-dash { display:flex; flex-direction:column; gap:0px; padding-inline: 0 !important; min-width: 0; }
     #tab-dashboard .mk-dash > .indicators-row {
       margin-bottom: 0;
       padding-bottom: 0;
@@ -630,6 +630,7 @@
         margin: 0;
         align-items: stretch;
         box-sizing: border-box;
+        min-width: 0;
       }
 
       #tab-dashboard .mk-funnel,
@@ -701,7 +702,8 @@
       #tab-dashboard .mk-funnel__row {
         padding: 6px 4px;
         gap: 2px 8px;
-        border-radius: 9px
+        border-radius: 9px;
+        min-width: 0;
       }
 
       #tab-dashboard .mk-attn {
@@ -1274,6 +1276,7 @@
         gap: 0;
         width: 100%;
         max-width: 100%;
+        min-width: 0;
         margin: 0 !important;
         padding-inline: 0 !important;
         box-sizing: border-box
@@ -1338,7 +1341,9 @@
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
         align-items: stretch;
-        box-sizing: border-box
+        box-sizing: border-box;
+        width: 100%;
+        max-width: 100%;
       }
 
       #tab-dashboard #branchStaffPanel .branch-staff-emp {
@@ -1364,7 +1369,8 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        width: 100%
+        width: 100%;
+        min-width: 0;
       }
 
       #tab-dashboard #branchStaffPanel .branch-staff-emp__meta {
@@ -1377,7 +1383,10 @@
         justify-content: flex-start;
         gap: 3px;
         min-width: 0;
-        width: 100%
+        width: 100%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       #tab-dashboard #branchStaffPanel .branch-staff-emp__meta-txt {
