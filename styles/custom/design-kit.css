@@ -1343,7 +1343,7 @@
         justify-content: center;
         width: 100%;
         min-width: 0;
-        padding: 6px 5px;
+        padding: 6px 0px;
         gap: 2px;
         background: var(--bg2);
         border: 1px solid var(--mr-border);
