@@ -4939,6 +4939,11 @@
           if (usersList && isScrollable(usersList)) return usersList;
           const notifList = document.querySelector('#tab-notifications #notifPageList.notif-list--page');
           if (notifList && isScrollable(notifList) && typeof isNotifPageOpen === 'function' && isNotifPageOpen()) return notifList;
+          const activeList = document.querySelector('.main #ticketList, .main #reportList');
+          if (activeList) {
+            const body = activeList.querySelector('.wf-mob-tickets-body');
+            if (body && isScrollable(body)) return body;
+          }
           const main = document.querySelector('#appWrap .main');
           if (main && isScrollable(main)) return main;
           const login = document.getElementById('loginScreen');
