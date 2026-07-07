@@ -201,8 +201,29 @@
     }
 
     /* ═══════════════════════════════════════════════════════════════════════
-       MOBILE FIX: Force Visibility of Measured Lists (Reports/Workflow)
+       MOBILE FIX: Full Page Scrolling for Tickets and Reports
     ═══════════════════════════════════════════════════════════════════════ */
+    html.mr-mobile-ui:not(.mr-notif-page-active) .app-shell,
+    html.mr-mobile-ui:not(.mr-notif-page-active) .app-body,
+    html.mr-mobile-ui:not(.mr-notif-page-active) .main,
+    html.mr-mobile-ui:not(.mr-notif-page-active) .content {
+      height: auto !important;
+      min-height: 100% !important;
+      overflow-y: visible !important;
+      display: block !important;
+    }
+
+    html.mr-mobile-ui:not(.mr-notif-page-active) #tab-workflow,
+    html.mr-mobile-ui:not(.mr-notif-page-active) #tab-reports,
+    html.mr-mobile-ui:not(.mr-notif-page-active) #ticketList,
+    html.mr-mobile-ui:not(.mr-notif-page-active) #reportList,
+    html.mr-mobile-ui:not(.mr-notif-page-active) .wf-mob-tickets-body {
+      height: auto !important;
+      min-height: 100% !important;
+      overflow-y: visible !important;
+      display: block !important;
+    }
+
     html.mr-mobile-ui #reportList.rp-mob-measuring > #rpMobTicketsHead,
     html.mr-mobile-ui #reportList.rp-mob-measuring > .wf-mob-tickets-body,
     html.mr-mobile-ui #ticketList.wf-mob-measuring > #wfMobTicketsHead,
