@@ -27113,67 +27113,71 @@
           }
 
     /* ═══════════════════════════════════════════════════════════════════════
-       SCROLLING OVERRIDES: Full Page Scrolling (Except Notifications)
+       SCROLLING OVERRIDES: Safe Full Page Scrolling (Except Notifications)
     ═══════════════════════════════════════════════════════════════════════ */
     
-    /* 1. Allow root elements to scroll when not in notifications mode */
+    /* 1. Reset root scrolling behavior safely */
     html:not(.mr-notif-page-active), 
     html:not(.mr-notif-page-active) body {
-      height: auto !important;
-      overflow: visible !important;
-      -webkit-overflow-scrolling: touch;
+      height: 100% !important; /* Keep 100% to maintain flex layout integrity */
+      overflow: hidden !important; /* Keep hidden at root to let .main handle scrolling */
     }
 
-    /* 2. Remove height constraints from the app shell */
+    /* 2. Restore Flex Layout for desktop/mobile consistency */
     html:not(.mr-notif-page-active) .app,
     html:not(.mr-notif-page-active) .app-shell,
     html:not(.mr-notif-page-active) .app-body {
-      height: auto !important;
-      min-height: 100vh !important;
-      overflow: visible !important;
-      display: block !important; /* Switch to block to allow natural height expansion */
+      height: 100% !important;
+      display: flex !important;
+      flex-direction: column !important;
+      overflow: hidden !important;
     }
 
-    /* 3. Make the main content area expand naturally */
+    /* 3. Enable scrolling ONLY on the .main container for all tabs except notifications */
     html:not(.mr-notif-page-active) .main {
-      height: auto !important;
-      overflow: visible !important;
-      min-height: 100vh !important;
-      padding-bottom: 80px !important; /* Space for bottom nav */
+      flex: 1 1 auto !important;
+      height: 100% !important;
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      -webkit-overflow-scrolling: touch !important;
+      display: block !important;
+      padding-bottom: 80px !important;
     }
 
-    /* 4. Force override for all tab contents except notifications */
+    /* 4. Disable internal scrolling in tabs to let .main handle it */
     html.mr-mobile-ui:not(.mr-notif-page-active) .tab-content.active:not(#tab-notifications) {
       display: block !important;
       height: auto !important;
-      min-height: 0 !important;
+      min-height: 100% !important;
       overflow: visible !important;
     }
 
-    /* 5. Specific Mobile Overrides for known "locked" tabs */
+    /* 5. Force panels to expand naturally within the scrolling .main */
     @media (max-width: 992px) {
-      html.mr-mobile-ui:not(.mr-notif-page-active) #appWrap .main,
-      html.mr-mobile-ui:not(.mr-notif-page-active) #appWrap .content {
+      html.mr-mobile-ui:not(.mr-notif-page-active) .content:has(.tab-content.active:not(#tab-notifications)) {
         height: auto !important;
         overflow: visible !important;
         display: block !important;
-        padding-bottom: 100px !important;
       }
 
-      /* Ensure inner panels don't lock scroll */
       html.mr-mobile-ui:not(.mr-notif-page-active) .wf-panel,
-      html.mr-mobile-ui:not(.mr-notif-page-active) .notif-list--page,
       html.mr-mobile-ui:not(.mr-notif-page-active) .profile-page-shell,
-      html.mr-mobile-ui:not(.mr-notif-page-active) .viol-grid--mob-list {
+      html.mr-mobile-ui:not(.mr-notif-page-active) .viol-grid--mob-list,
+      html.mr-mobile-ui:not(.mr-notif-page-active) .md-dash,
+      html.mr-mobile-ui:not(.mr-notif-page-active) .rp-page-shell {
         height: auto !important;
-        overflow: visible !important;
         min-height: 0 !important;
+        overflow: visible !important;
       }
     }
     
-    /* Keep notifications page exactly as it was (internal scrolling) */
+    /* Keep notifications page as a special fixed overlay */
     html.mr-notif-page-active, 
-    html.mr-notif-page-active body {
+    html.mr-notif-page-active body,
+    html.mr-notif-page-active .app,
+    html.mr-notif-page-active .app-shell,
+    html.mr-notif-page-active .app-body,
+    html.mr-notif-page-active .main {
       height: 100vh !important;
       height: 100dvh !important;
       overflow: hidden !important;
