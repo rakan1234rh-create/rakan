@@ -21321,7 +21321,10 @@
 
     @media(max-width:1024px) {
       .content {
-        padding: 0 !important;
+        padding: 18px;
+      }
+      .content:has(#tab-dashboard.active) {
+        padding-inline: 0 !important;
       }
 
       .form-grid {
@@ -21347,7 +21350,10 @@
       }
 
       .content {
-        padding: 0 !important;
+        padding: 14px 12px;
+      }
+      .content:has(#tab-dashboard.active) {
+        padding-inline: 0 !important;
       }
 
       .form-grid {

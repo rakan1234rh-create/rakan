@@ -22,6 +22,7 @@
     /* Dashboard */
     #appWrap .content:has(#tab-dashboard.active) {
       padding-top: clamp(8px, 1.5vw, 18px);
+      padding-inline: 0 !important;
     }
     #tab-dashboard .mk-dash { display:flex; flex-direction:column; gap:0px; }
     #tab-dashboard .mk-dash > .indicators-row {
@@ -308,7 +309,7 @@
         grid-column: 1 / -1;
       }
 }
-    .mk-funnel, .mk-attn { background:var(--mr-surface); border:1px solid var(--mr-border); border-radius:var(--mr-radius-card); padding:22px 0px; display:flex; flex-direction:column; gap:16px; box-shadow:var(--mr-shadow-card); height:100%; box-sizing:border-box; }
+    .mk-funnel, .mk-attn { background:var(--mr-surface); border:1px solid var(--mr-border); border-radius:var(--mr-radius-card); padding:22px; display:flex; flex-direction:column; gap:16px; box-shadow:var(--mr-shadow-card); height:100%; box-sizing:border-box; }
     .mk-funnel__head, .mk-attn__head { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-shrink:0; }
     .mk-funnel__head .mk-link, .mk-attn__head .mk-link { flex-shrink:0; align-self:center; line-height:1.25; padding:2px 8px; }
     .mk-funnel__title, .mk-attn__title { margin:0; font-size:17px; font-weight:600; color:var(--mr-text); letter-spacing:-0.01em; }
@@ -512,12 +513,12 @@
       }
 
       #tab-dashboard .mk-kpi-grid {
-        gap: 0px
+        gap: 4px
       }
 
       #tab-dashboard .mk-kpi {
         min-height: 68px !important;
-        padding: 3px 0px 0 !important;
+        padding: 3px 0 0 !important;
         gap: 0 !important;
         border-radius: 11px;
         box-shadow: var(--mr-shadow-soft);
@@ -535,7 +536,7 @@
         justify-content: space-between;
         gap: 4px !important;
         width: 100%;
-        padding: 0 0px 2px;
+        padding: 0 3px 2px;
         margin: 0;
         min-height: 18px;
         box-sizing: border-box
@@ -623,7 +624,7 @@
       }
 
       #tab-dashboard .mk-dash__split {
-        gap: 0px;
+        gap: 4px;
         width: 100%;
         margin: 0;
         align-items: stretch
@@ -631,7 +632,7 @@
 
       #tab-dashboard .mk-funnel,
       #tab-dashboard .mk-attn {
-        padding: 12px 0px !important;
+        padding: 12px !important;
         gap: 8px;
         border-radius: 11px;
         box-shadow: var(--mr-shadow-soft)
@@ -696,7 +697,7 @@
       }
 
       #tab-dashboard .mk-funnel__row {
-        padding: 6px 0px;
+        padding: 6px 4px;
         gap: 2px 8px;
         border-radius: 9px
       }
@@ -1293,7 +1294,7 @@
       }
 
       #tab-dashboard #branchStaffPanel .indicator-title--branch-staff {
-        padding: 8px 0px 6px;
+        padding: 8px 10px 6px;
         margin: 0 !important;
         font-size: 11px;
         font-weight: 700;
@@ -1321,14 +1322,14 @@
 
       #tab-dashboard #branchStaffPanel .indicator-desc--branch-staff {
         margin: 0;
-        padding: 0 0px 10px;
+        padding: 0 10px 10px;
         font-size: 9.5px;
         line-height: 1.35
       }
 
       #tab-dashboard #branchStaffPanel .score-viol-list--branch-staff {
         margin: 0;
-        padding: 6px 0px 8px;
+        padding: 6px 10px 8px;
         gap: 4px;
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1343,7 +1344,7 @@
         justify-content: center;
         width: 100%;
         min-width: 0;
-        padding: 6px 0px;
+        padding: 6px 5px;
         gap: 2px;
         background: var(--bg2);
         border: 1px solid var(--mr-border);
