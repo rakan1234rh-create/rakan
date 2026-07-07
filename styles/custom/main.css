@@ -23133,15 +23133,6 @@
         letter-spacing: 0
       }
 
-      #tab-reports #reportList.rp-mob-measuring > #rpMobTicketsHead,
-      #tab-reports #reportList.rp-mob-measuring > .wf-mob-tickets-body {
-        visibility: hidden !important
-      }
-
-      #tab-workflow #ticketList.wf-mob-measuring > #wfMobTicketsHead,
-      #tab-workflow #ticketList.wf-mob-measuring > .wf-mob-tickets-body {
-        visibility: hidden !important
-      }
 
       #tab-reports #reportList:not(.rp-mob-cols-ready) .rp-tickets-table--mob col.wf-col-ticket-c,
       #tab-reports #reportList:not(.rp-mob-cols-ready) > #rpMobTicketsHead .rp-tickets-table--mob col.wf-col-ticket-c {

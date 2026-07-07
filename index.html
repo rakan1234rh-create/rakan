@@ -203,41 +203,31 @@
     /* ═══════════════════════════════════════════════════════════════════════
        MOBILE FIX: Full Page Scrolling for Tickets and Reports
     ═══════════════════════════════════════════════════════════════════════ */
+    /* Restore original shell behavior to prevent UI breakage */
     html.mr-mobile-ui:not(.mr-notif-page-active) .app-shell,
     html.mr-mobile-ui:not(.mr-notif-page-active) .app-body,
     html.mr-mobile-ui:not(.mr-notif-page-active) .main,
     html.mr-mobile-ui:not(.mr-notif-page-active) .content {
-      height: auto !important;
-      min-height: 100% !important;
-      overflow-y: visible !important;
-      display: block !important;
+      height: 100% !important;
+      display: flex !important;
     }
 
-    html.mr-mobile-ui:not(.mr-notif-page-active) #tab-workflow.active,
-    html.mr-mobile-ui:not(.mr-notif-page-active) #tab-reports.active,
-    html.mr-mobile-ui:not(.mr-notif-page-active) #tab-profile.active,
-    html.mr-mobile-ui:not(.mr-notif-page-active) #tab-dashboard.active {
-      height: auto !important;
-      min-height: 100% !important;
-      overflow-y: visible !important;
+    /* Only allow the ticket/report body to scroll */
+    html.mr-mobile-ui:not(.mr-notif-page-active) .wf-mob-tickets-body {
+      flex: 1 !important;
+      overflow-y: auto !important;
+      -webkit-overflow-scrolling: touch !important;
       display: block !important;
     }
 
     html.mr-mobile-ui:not(.mr-notif-page-active) #ticketList,
-    html.mr-mobile-ui:not(.mr-notif-page-active) #reportList,
-    html.mr-mobile-ui:not(.mr-notif-page-active) .wf-mob-tickets-body {
-      height: auto !important;
-      overflow-y: visible !important;
-      display: block !important;
+    html.mr-mobile-ui:not(.mr-notif-page-active) #reportList {
+      height: 100% !important;
+      display: flex !important;
+      flex-direction: column !important;
     }
 
-    html.mr-mobile-ui #reportList.rp-mob-measuring > #rpMobTicketsHead,
-    html.mr-mobile-ui #reportList.rp-mob-measuring > .wf-mob-tickets-body,
-    html.mr-mobile-ui #ticketList.wf-mob-measuring > #wfMobTicketsHead,
-    html.mr-mobile-ui #ticketList.wf-mob-measuring > .wf-mob-tickets-body {
-      visibility: visible !important;
-      opacity: 1 !important;
-    }
+
 
     html.mr-mobile-ui #mobileBottomNav.mobile-bottom-nav.mobile-bottom-nav--spread,
     html.mr-mobile-ui #appWrap > .app-shell > #mobileBottomNav.mobile-bottom-nav.mobile-bottom-nav--spread {
