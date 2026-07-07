@@ -21323,7 +21323,11 @@
       .content {
         padding: 18px;
       }
-      .content:has(#tab-dashboard.active) {
+      .content:has(#tab-dashboard.active),
+      .main:has(#tab-dashboard.active) {
+        padding-inline: 0 !important;
+      }
+      .app-body:has(#tab-dashboard.active) {
         padding-inline: 0 !important;
       }
 
@@ -21352,7 +21356,11 @@
       .content {
         padding: 14px 12px;
       }
-      .content:has(#tab-dashboard.active) {
+      .content:has(#tab-dashboard.active),
+      .main:has(#tab-dashboard.active) {
+        padding-inline: 0 !important;
+      }
+      .app-body:has(#tab-dashboard.active) {
         padding-inline: 0 !important;
       }
 
