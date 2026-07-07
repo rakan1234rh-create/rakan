@@ -1321,14 +1321,14 @@
 
       #tab-dashboard #branchStaffPanel .indicator-desc--branch-staff {
         margin: 0;
-        padding: 0 3px 10px;
+        padding: 0 0px 10px;
         font-size: 9.5px;
         line-height: 1.35
       }
 
       #tab-dashboard #branchStaffPanel .score-viol-list--branch-staff {
         margin: 0;
-        padding: 6px 3px 8px;
+        padding: 6px 0px 8px;
         gap: 4px;
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
