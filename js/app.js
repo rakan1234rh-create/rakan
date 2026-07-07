@@ -5062,8 +5062,8 @@
           scrollRoot = findScrollRoot(e.target);
           const st = getScrollTop(scrollRoot);
           
-          // لا نسمح بالبدء إلا إذا كان المستخدم في القمة تماماً
-          if (st > 0.5) {
+          // السماح بالبدء إذا كنا قريبين جداً من القمة
+          if (st > 2) {
             ptrPending = false;
             pulling = false;
             return;
@@ -5082,26 +5082,24 @@
           if (!ptrPending && !pulling) return;
           if (refreshing || !ptrEnabled() || touchDirectionLocked) return;
           
-          const currentY = e.touches[0].clientY;
-          const dy = currentY - startY;
+          const dy = e.touches[0].clientY - startY;
 
-          // إذا كانت أول حركة هي صعود للأعلى، نقفل التحديث لهذه اللمسة تماماً
-          if (!pulling && dy < 0) {
+          // إذا بدأ المستخدم بالسحب للأعلى، نلغي التحديث لهذه اللمسة
+          if (!pulling && dy < -5) {
             touchDirectionLocked = true;
             cancelPtrGesture();
             return;
           }
 
           if (ptrPending && !pulling) {
-            // التحقق مرة أخرى من القمة أثناء الحركة لضمان عدم حدوث رفرش عند الصعود السريع
-            if (getScrollTop(scrollRoot) > 0.5) {
+            if (dy < PTR_ACTIVATE) return;
+            
+            // تأكيد أننا لا نزال في القمة قبل بدء السحب الفعلي
+            if (getScrollTop(scrollRoot) > 2) {
               touchDirectionLocked = true;
               cancelPtrGesture();
               return;
             }
-
-            // مسافة أمان كافية لبدء السحب المقصود فقط
-            if (dy < PTR_ACTIVATE + 15) return;
             
             pulling = true;
             ptrPending = false;
@@ -5109,7 +5107,6 @@
 
           if (!pulling) return;
 
-          // منع التحديث إذا تحول السحب لصعود
           if (dy <= 0) {
             cancelPtrGesture();
             return;
@@ -5118,8 +5115,8 @@
           window._mrPtrPulling = true;
           if (e.cancelable) e.preventDefault();
           
-          // حركة سحب ناعمة جداً
-          const pullAmount = Math.min(PTR_MAX, dy * 0.65);
+          // حركة سحب ناعمة ومتوازنة
+          const pullAmount = Math.min(PTR_MAX, dy * 0.7);
           requestAnimationFrame(() => setPull(pullAmount));
         }, { passive: false, capture: true });
 
