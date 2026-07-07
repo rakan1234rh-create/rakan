@@ -623,7 +623,7 @@
       }
 
       #tab-dashboard .mk-dash__split {
-        gap: 4px;
+        gap: 0px;
         width: 100%;
         margin: 0;
         align-items: stretch
