@@ -27030,21 +27030,38 @@
           showToast(getWebPushUnsupportedReason() || 'المتصفح لا يدعم تنبيهات الجوال على هذا الجهاز', 'warning');
           return;
         }
-        if (Notification.permission === 'granted') {
+
+        const perm = Notification.permission;
+        const toggle = document.getElementById('profilePagePushToggle');
+        const currentlyOn = toggle?.classList.contains('push-toggle--on');
+
+        if (currentlyOn) {
+          // Disable: Remove subscription from DB and clear local markers
+          try {
+            await disableAtharWebPush({ silent: false, unsubscribeBrowser: false });
+            showToast('تم إيقاف التنبيهات على هذا الجهاز', 'info');
+          } catch (e) {
+            showToast('فشل إيقاف التنبيهات', 'error');
+          }
+          return;
+        }
+
+        // Enable:
+        if (perm === 'granted') {
           try {
             await ensureAtharWebPushSubscribed({ forceResubscribe: true, welcomeNotify: true });
             syncWebPushUiLabels();
           } catch (e) {
             showToast('فشل إعادة تفعيل التنبيهات: ' + formatPushError(e), 'error');
           }
-          return;
-        }
-        try {
-          const enabled = await ensureAtharWebPushSubscribed({ requestPermission: true, welcomeNotify: true });
-          if (!enabled) showToast('يُحتاج إذن الإشعارات من إعدادات الجوال/المتصفح', 'warning');
-          else syncWebPushUiLabels();
-        } catch (e) {
-          showToast('فشل التفعيل: ' + formatPushError(e), 'error');
+        } else {
+          try {
+            const enabled = await ensureAtharWebPushSubscribed({ requestPermission: true, welcomeNotify: true });
+            if (!enabled) showToast('يُحتاج إذن الإشعارات من إعدادات الجوال/المتصفح', 'warning');
+            else syncWebPushUiLabels();
+          } catch (e) {
+            showToast('فشل التفعيل: ' + formatPushError(e), 'error');
+          }
         }
       }
 
