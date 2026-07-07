@@ -14,6 +14,8 @@ import {
   type ViolationNotifContext,
   type ViolationNotifTemplate,
 } from './violation-notification-copy.ts';
+import { runWeeklyDigest } from './violation-weekly-digest.ts';
+import { Resend } from 'npm:resend@4.0.0';
 
 function buildCorsHeaders(req: Request): Record<string, string> {
   const allowedOrigin = Deno.env.get('ALLOWED_ORIGIN') || 'https://athar-app.online';
@@ -242,6 +244,27 @@ async function dispatchNotificationTemplates(
       });
     }));
 
+    // Immediate Email Logic
+    if (tpl.sendEmail) {
+      const { data: users } = await supabase
+        .from('users')
+        .select('email')
+        .in('id', Array.from(userIds))
+        .eq('is_active', true);
+      
+      if (users?.length) {
+        for (const u of users) {
+          if (u.email) {
+            try {
+              await sendImmediateEmail(u.email, tpl.title, tpl.message, record);
+            } catch (err) {
+              allErrors.push(`Email failed to ${u.email}: ${err.message}`);
+            }
+          }
+        }
+      }
+    }
+
     const pushResult = await sendPushToUserIds(
       supabase,
       userIds,
@@ -326,6 +349,46 @@ async function dispatchViolationStatePush(
   );
 
   return { ...result, state, dedupeKey };
+}
+
+async function sendImmediateEmail(to: string, title: string, body: string, record: ViolationRow) {
+  const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? '';
+  const BREVO_API_KEY = Deno.env.get('BREVO_API_KEY') ?? '';
+  const SENDER_EMAIL = Deno.env.get('SENDER_EMAIL') ?? 'no-reply@athar-app.online';
+  const BREVO_FROM = Deno.env.get('BREVO_FROM') ?? SENDER_EMAIL;
+
+  const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null;
+  const isApple = (email: string) => new Set(['icloud.com', 'me.com', 'mac.com']).has(email.split('@').pop()?.toLowerCase() ?? '');
+
+  const subject = `${title} - رقم (${record.ticket_number || record.id})`;
+  const html = `
+    <div dir="rtl" style="font-family: sans-serif; line-height: 1.6; color: #333;">
+      <h2 style="color: #d9534f;">${title}</h2>
+      <p>${body}</p>
+      <div style="background: #f4f4f4; padding: 15px; border-radius: 8px; margin-top: 20px;">
+        <p><strong>رقم المخالفة:</strong> ${record.ticket_number || '—'}</p>
+        <p><strong>نوع المخالفة:</strong> ${record.violation_type || '—'}</p>
+      </div>
+      <p style="margin-top: 20px;">يرجى مراجعة التفاصيل عبر تطبيق أثر.</p>
+    </div>
+  `;
+  const text = `${title}: ${body}. رقم المخالفة: ${record.ticket_number || record.id}`;
+
+  if (isApple(to) && BREVO_API_KEY) {
+    await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: { 'api-key': BREVO_API_KEY, 'content-type': 'application/json' },
+      body: JSON.stringify({
+        sender: { name: 'ATHAR', email: BREVO_FROM.includes('<') ? BREVO_FROM.match(/<(.+?)>/)?.[1] : BREVO_FROM },
+        to: [{ email: to }],
+        subject,
+        htmlContent: html,
+        textContent: text
+      }),
+    });
+  } else if (resend) {
+    await resend.emails.send({ from: SENDER_EMAIL, to: [to], subject, html, text });
+  }
 }
 
 async function sendPushToUserIds(
@@ -796,6 +859,18 @@ Deno.serve(async (req) => {
     serviceKey,
     { auth: { persistSession: false } },
   );
+
+  if (payload.weeklyDigest === true) {
+    if (!await isAuthorizedCron(req, payload)) {
+      return json({ error: 'unauthorized cron secret' }, 401);
+    }
+    try {
+      const result = await runWeeklyDigest(supabase);
+      return json({ ok: true, ...result });
+    } catch (err) {
+      return json({ ok: false, error: String(err) }, 500);
+    }
+  }
 
   if (payload.autoForwardCron === true) {
     if (!await isAuthorizedCron(req, payload)) {

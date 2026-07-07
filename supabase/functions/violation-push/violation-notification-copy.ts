@@ -17,6 +17,7 @@ export interface ViolationNotifTemplate {
   type: string;
   icon: string;
   isAuto?: boolean;
+  sendEmail?: boolean;
 }
 
 export interface ViolationNotifContext {
@@ -73,6 +74,7 @@ export function buildNewViolationTemplates(
       scope: 'mine',
       type: 'amber',
       icon: 'fa-bell',
+      sendEmail: true,
     },
     {
       recipientRole: 'supervisor',
@@ -113,7 +115,7 @@ export function buildStateChangeTemplates(
   const out: ViolationNotifTemplate[] = [];
 
   // ✉️ ثانياً: رد الموظف emp → sup (بدون تمرير تلقائي)
-  if (prev === 'emp' && state === 'sup' && !autoEmp) {
+    if (prev === 'emp' && state === 'sup' && !autoEmp) {
     out.push(
       {
         recipientRole: 'supervisor',
@@ -124,6 +126,7 @@ export function buildStateChangeTemplates(
         scope: 'team',
         type: 'blue',
         icon: 'fa-reply',
+        sendEmail: true,
       },
       {
         recipientRole: 'branch_manager',
@@ -140,7 +143,7 @@ export function buildStateChangeTemplates(
   }
 
   // ⏳ ثالثاً: تمرير تلقائي emp → sup
-  if (prev === 'emp' && state === 'sup' && autoEmp) {
+    if (prev === 'emp' && state === 'sup' && autoEmp) {
     out.push(
       {
         recipientRole: 'supervisor',
@@ -152,6 +155,7 @@ export function buildStateChangeTemplates(
         type: 'amber',
         icon: 'fa-robot',
         isAuto: true,
+        sendEmail: true,
       },
       {
         recipientRole: 'branch_manager',
