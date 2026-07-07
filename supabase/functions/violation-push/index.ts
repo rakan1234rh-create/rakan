@@ -356,11 +356,18 @@ async function sendImmediateEmail(to: string, title: string, body: string, recor
   const BREVO_API_KEY = Deno.env.get('BREVO_API_KEY') ?? '';
   const SENDER_EMAIL = Deno.env.get('SENDER_EMAIL') ?? 'no-reply@athar-app.online';
   const BREVO_FROM = Deno.env.get('BREVO_FROM') ?? SENDER_EMAIL;
+  
+  const SENDER_NAME = 'ATHAR';
+  const FULL_SENDER = `${SENDER_NAME} <${SENDER_EMAIL}>`;
 
   const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null;
   const isApple = (email: string) => new Set(['icloud.com', 'me.com', 'mac.com']).has(email.split('@').pop()?.toLowerCase() ?? '');
 
-  const subject = `${title} - رقم (${record.ticket_number || record.id})`;
+  // Format ticket number to show only the last part (e.g., V-2026-0356 -> 0356)
+  const rawTicket = String(record.ticket_number || record.id);
+  const formattedTicket = rawTicket.includes('-') ? rawTicket.split('-').pop() : rawTicket;
+
+  const subject = `${title} رقم (${formattedTicket})`;
   const html = `
     <div dir="rtl" style="font-family: sans-serif; line-height: 1.6; color: #333;">
       <h2 style="color: #d9534f;">${title}</h2>
@@ -379,7 +386,7 @@ async function sendImmediateEmail(to: string, title: string, body: string, recor
       method: 'POST',
       headers: { 'api-key': BREVO_API_KEY, 'content-type': 'application/json' },
       body: JSON.stringify({
-        sender: { name: 'ATHAR', email: BREVO_FROM.includes('<') ? BREVO_FROM.match(/<(.+?)>/)?.[1] : BREVO_FROM },
+        sender: { name: SENDER_NAME, email: SENDER_EMAIL },
         to: [{ email: to }],
         subject,
         htmlContent: html,
@@ -387,7 +394,7 @@ async function sendImmediateEmail(to: string, title: string, body: string, recor
       }),
     });
   } else if (resend) {
-    await resend.emails.send({ from: SENDER_EMAIL, to: [to], subject, html, text });
+    await resend.emails.send({ from: FULL_SENDER, to: [to], subject, html, text });
   }
 }
 

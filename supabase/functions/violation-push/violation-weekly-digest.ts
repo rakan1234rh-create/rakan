@@ -4,7 +4,8 @@ import { Resend } from 'npm:resend@4.0.0';
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? '';
 const BREVO_API_KEY = Deno.env.get('BREVO_API_KEY') ?? '';
 const SENDER_EMAIL = Deno.env.get('SENDER_EMAIL') ?? 'no-reply@athar-app.online';
-const BREVO_FROM = Deno.env.get('BREVO_FROM') ?? SENDER_EMAIL;
+const SENDER_NAME = 'ATHAR';
+const FULL_SENDER = `${SENDER_NAME} <${SENDER_EMAIL}>`;
 
 const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null;
 const APPLE_DOMAINS = new Set(['icloud.com', 'me.com', 'mac.com']);
@@ -31,7 +32,7 @@ async function sendEmail(to: string, subject: string, html: string, text: string
         'content-type': 'application/json',
       },
       body: JSON.stringify({
-        sender: { name: 'ATHAR', email: BREVO_FROM.includes('<') ? BREVO_FROM.match(/<(.+?)>/)?.[1] : BREVO_FROM },
+        sender: { name: SENDER_NAME, email: SENDER_EMAIL },
         to: [{ email: to }],
         subject,
         htmlContent: html,
@@ -43,7 +44,7 @@ async function sendEmail(to: string, subject: string, html: string, text: string
   } else if (resend) {
     // Send via Resend
     const { error } = await resend.emails.send({
-      from: SENDER_EMAIL,
+      from: FULL_SENDER,
       to: [to],
       subject,
       html,
@@ -99,14 +100,18 @@ export async function runWeeklyDigest(supabase: ReturnType<typeof createClient>)
   for (const [email, userViolations] of digestMap.entries()) {
     const subject = `ملخص المخالفات المعلقة بانتظارك - ATHAR`;
     
-    const tableRows = userViolations.map(v => `
-      <tr>
-        <td style="padding: 10px; border: 1px solid #ddd;">${v.ticket_number || '—'}</td>
-        <td style="padding: 10px; border: 1px solid #ddd;">${v.employee?.name || '—'}</td>
-        <td style="padding: 10px; border: 1px solid #ddd;">${v.violation_type || '—'}</td>
-        <td style="padding: 10px; border: 1px solid #ddd;">${new Date(v.created_at).toLocaleDateString('ar-SA')}</td>
-      </tr>
-    `).join('');
+    const tableRows = userViolations.map(v => {
+      const rawTicket = String(v.ticket_number || v.id);
+      const formattedTicket = rawTicket.includes('-') ? rawTicket.split('-').pop() : rawTicket;
+      return `
+        <tr>
+          <td style="padding: 10px; border: 1px solid #ddd;">${formattedTicket}</td>
+          <td style="padding: 10px; border: 1px solid #ddd;">${v.employee?.name || '—'}</td>
+          <td style="padding: 10px; border: 1px solid #ddd;">${v.violation_type || '—'}</td>
+          <td style="padding: 10px; border: 1px solid #ddd;">${new Date(v.created_at).toLocaleDateString('ar-SA')}</td>
+        </tr>
+      `;
+    }).join('');
 
     const html = `
       <div dir="rtl" style="font-family: sans-serif; line-height: 1.6; color: #333;">

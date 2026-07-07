@@ -67,7 +67,7 @@ export function buildNewViolationTemplates(
   return [
     {
       recipientRole: 'employee',
-      title: 'تسجيل مخالفة',
+      title: 'تم تسجيل مخالفة',
       message:
         `تم تسجيل مخالفة برقم مرجعي (${ticket}) نوع المخالفة: ${vType} نأمل تقديم إفادتكم عبر التطبيق خلال 24 ساعة علماً بأنه سيتم تمرير المخالفة تلقائياً في حال عدم الرد`,
       eventKeySuffix: 'vnew_emp',
@@ -119,7 +119,7 @@ export function buildStateChangeTemplates(
     out.push(
       {
         recipientRole: 'supervisor',
-        title: 'تم تقديم الإفادة على مخالفة ضمن منطقتكم',
+        title: `نفيدكم بأن الموظف: ${emp} قام بتقديم الإفادة على المخالفة رقم (${ticket}) من نوع: ${vType} يرجى الاطلاع وتقديم الافاده`,
         message:
           `نفيدكم بأن الموظف: ${emp} قام بتقديم الإفادة على المخالفة رقم (${ticket}) من نوع: ${vType}. يُرجى الاطلاع ومتابعة اسيرها.`,
         eventKeySuffix: 'emp_resp_sup',
