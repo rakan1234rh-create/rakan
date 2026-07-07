@@ -213,13 +213,20 @@
       display: block !important;
     }
 
-    html.mr-mobile-ui:not(.mr-notif-page-active) #tab-workflow,
-    html.mr-mobile-ui:not(.mr-notif-page-active) #tab-reports,
+    html.mr-mobile-ui:not(.mr-notif-page-active) #tab-workflow.active,
+    html.mr-mobile-ui:not(.mr-notif-page-active) #tab-reports.active,
+    html.mr-mobile-ui:not(.mr-notif-page-active) #tab-profile.active,
+    html.mr-mobile-ui:not(.mr-notif-page-active) #tab-dashboard.active {
+      height: auto !important;
+      min-height: 100% !important;
+      overflow-y: visible !important;
+      display: block !important;
+    }
+
     html.mr-mobile-ui:not(.mr-notif-page-active) #ticketList,
     html.mr-mobile-ui:not(.mr-notif-page-active) #reportList,
     html.mr-mobile-ui:not(.mr-notif-page-active) .wf-mob-tickets-body {
       height: auto !important;
-      min-height: 100% !important;
       overflow-y: visible !important;
       display: block !important;
     }
