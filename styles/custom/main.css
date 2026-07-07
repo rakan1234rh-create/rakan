@@ -20437,7 +20437,7 @@
       #appWrap .main {
         flex: 1 1 auto;
         min-height: 0;
-        padding-bottom: calc(var(--mr-mob-bottom-nav-h, 56px) + 16px) !important
+        padding-bottom: calc(var(--mr-mob-bottom-nav-h, 56px) + 32px) !important
       }
 
       #appWrap input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
