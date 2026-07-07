@@ -21321,7 +21321,7 @@
 
     @media(max-width:1024px) {
       .content {
-        padding: 18px
+        padding: 0 !important;
       }
 
       .form-grid {
@@ -21347,7 +21347,7 @@
       }
 
       .content {
-        padding: 14px 12px
+        padding: 0 !important;
       }
 
       .form-grid {
