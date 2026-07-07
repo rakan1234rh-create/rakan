@@ -5065,6 +5065,10 @@
           window._mrPtrPulling = false;
           pullPx = 0;
           setPull(0);
+          // منع التفعيل إذا كان المستخدم يقوم بالتمرير السريع للأعلى
+          if (scrollRoot && scrollRoot.style.scrollBehavior !== 'auto') {
+             ptrPending = false;
+          }
         }, { passive: true, capture: true });
 
         document.addEventListener('touchmove', (e) => {
@@ -5076,8 +5080,8 @@
               cancelPtrGesture();
               return;
             }
-            if (dy < PTR_ACTIVATE + 10) return; // زيادة مسافة الأمان قبل بدء السحب
-            if (getScrollTop(scrollRoot) > 1) {
+            if (dy < PTR_ACTIVATE + 25) return; // زيادة مسافة الأمان بشكل أكبر لمنع التفعيل عند الصعود
+            if (getScrollTop(scrollRoot) > 0.5) { // تشديد الشرط ليكون الصفر الحقيقي
               cancelPtrGesture();
               return;
             }
@@ -5089,13 +5093,15 @@
             cancelPtrGesture();
             return;
           }
-          if (getScrollTop(scrollRoot) > 1) {
+          if (getScrollTop(scrollRoot) > 0.5) {
             cancelPtrGesture();
             return;
           }
           window._mrPtrPulling = true;
           e.preventDefault();
-          setPull(Math.min(PTR_MAX, dy * 0.92));
+          // تحسين سلاسة السحب وتقليل التقطيع
+          const pullAmount = Math.min(PTR_MAX, dy * 0.7);
+          requestAnimationFrame(() => setPull(pullAmount));
         }, { passive: false, capture: true });
 
         document.addEventListener('touchend', () => {
