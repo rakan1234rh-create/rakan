@@ -101,7 +101,7 @@
         display: none;
       }
     }
-    .mk-dash__hero { display:flex; align-items:flex-end; justify-content:space-between; gap:18px; padding:0 4px 4px; flex-wrap:wrap; }
+    .mk-dash__hero { display:flex; align-items:flex-end; justify-content:space-between; gap:18px; padding:0 0 4px; flex-wrap:wrap; }
     .mk-dash__date,
     .mk-dash__sub {
       margin: 0;
