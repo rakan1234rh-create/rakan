@@ -5052,55 +5052,74 @@
             .finally(() => setTimeout(finishRefresh, 650));
         }
 
+        let touchDirectionLocked = false;
+
         document.addEventListener('touchstart', (e) => {
           if (!ptrEnabled() || isPtrBlocked() || refreshing) return;
           if (e.touches.length !== 1) return;
           if (e.target?.closest?.('.modal, .confirm-overlay, [data-no-ptr], input, textarea, select, .dp-popup, .att-viewer, .td-mob-sheet, .users-io-menu, .wf-status-menu')) return;
-          if (typeof isNotifPageOpen === 'function' && isNotifPageOpen()) syncNotifPtrTop();
+          
           scrollRoot = findScrollRoot(e.target);
-          if (getScrollTop(scrollRoot) > 1) return;
+          const st = getScrollTop(scrollRoot);
+          
+          // لا نسمح بالبدء إلا إذا كان المستخدم في القمة تماماً
+          if (st > 0.5) {
+            ptrPending = false;
+            pulling = false;
+            return;
+          }
+
           startY = e.touches[0].clientY;
           pulling = false;
           ptrPending = true;
+          touchDirectionLocked = false;
           window._mrPtrPulling = false;
           pullPx = 0;
           setPull(0);
-          // منع التفعيل إذا كان المستخدم يقوم بالتمرير السريع للأعلى
-          if (scrollRoot && scrollRoot.style.scrollBehavior !== 'auto') {
-             ptrPending = false;
-          }
         }, { passive: true, capture: true });
 
         document.addEventListener('touchmove', (e) => {
           if (!ptrPending && !pulling) return;
-          if (refreshing || !ptrEnabled()) return;
-          const dy = e.touches[0].clientY - startY;
+          if (refreshing || !ptrEnabled() || touchDirectionLocked) return;
+          
+          const currentY = e.touches[0].clientY;
+          const dy = currentY - startY;
+
+          // إذا كانت أول حركة هي صعود للأعلى، نقفل التحديث لهذه اللمسة تماماً
+          if (!pulling && dy < 0) {
+            touchDirectionLocked = true;
+            cancelPtrGesture();
+            return;
+          }
+
           if (ptrPending && !pulling) {
-            if (dy < -2) {
+            // التحقق مرة أخرى من القمة أثناء الحركة لضمان عدم حدوث رفرش عند الصعود السريع
+            if (getScrollTop(scrollRoot) > 0.5) {
+              touchDirectionLocked = true;
               cancelPtrGesture();
               return;
             }
-            if (dy < PTR_ACTIVATE + 25) return; // زيادة مسافة الأمان بشكل أكبر لمنع التفعيل عند الصعود
-            if (getScrollTop(scrollRoot) > 0.5) { // تشديد الشرط ليكون الصفر الحقيقي
-              cancelPtrGesture();
-              return;
-            }
+
+            // مسافة أمان كافية لبدء السحب المقصود فقط
+            if (dy < PTR_ACTIVATE + 15) return;
+            
             pulling = true;
             ptrPending = false;
           }
+
           if (!pulling) return;
+
+          // منع التحديث إذا تحول السحب لصعود
           if (dy <= 0) {
             cancelPtrGesture();
             return;
           }
-          if (getScrollTop(scrollRoot) > 0.5) {
-            cancelPtrGesture();
-            return;
-          }
+
           window._mrPtrPulling = true;
-          e.preventDefault();
-          // تحسين سلاسة السحب وتقليل التقطيع
-          const pullAmount = Math.min(PTR_MAX, dy * 0.7);
+          if (e.cancelable) e.preventDefault();
+          
+          // حركة سحب ناعمة جداً
+          const pullAmount = Math.min(PTR_MAX, dy * 0.65);
           requestAnimationFrame(() => setPull(pullAmount));
         }, { passive: false, capture: true });
 
