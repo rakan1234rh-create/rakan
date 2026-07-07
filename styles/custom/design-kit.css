@@ -23,7 +23,7 @@
     #appWrap .content:has(#tab-dashboard.active) {
       padding-top: clamp(8px, 1.5vw, 18px);
     }
-    #tab-dashboard .mk-dash { display:flex; flex-direction:column; gap:22px; }
+    #tab-dashboard .mk-dash { display:flex; flex-direction:column; gap:0px; }
     #tab-dashboard .mk-dash > .indicators-row {
       margin-bottom: 0;
       padding-bottom: 0;
