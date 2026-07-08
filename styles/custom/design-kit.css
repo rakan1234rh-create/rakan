@@ -2029,3 +2029,26 @@
     .mk-empty i { font-size:32px; margin-bottom:10px; display:block; opacity:.5; }
 
 
+
+/* User Indicators */
+.user-indicator {
+  font-size: 0.8em;
+  margin-inline-start: 5px;
+  vertical-align: middle;
+}
+
+.user-indicator--bell {
+  color: var(--mr-green);
+}
+
+.user-indicator--bell-slash {
+  color: var(--mr-text-3);
+}
+
+.user-indicator--active {
+  color: var(--mr-green);
+}
+
+.user-indicator--inactive {
+  color: var(--mr-text-3);
+}
