@@ -18398,6 +18398,12 @@
       touch-action: manipulation
     }
 
+    @media (max-width: 768px) {
+      .att-viewer-nav {
+        display: none !important;
+      }
+    }
+
     .att-viewer-prev {
       right: 0;
       transform: translateY(-50%)

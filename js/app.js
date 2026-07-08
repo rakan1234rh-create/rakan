@@ -18903,6 +18903,9 @@
           if (!viewer.classList.contains('open')) return;
           _attViewerPointer.valid = true;
           _attViewerPointer.downOnMedia = attViewerPointHitsMedia(viewer, e.clientX, e.clientY);
+          _attViewerPointer.startX = e.clientX;
+          _attViewerPointer.startY = e.clientY;
+          _attViewerPointer.startTime = Date.now();
         }, true);
 
         viewer.addEventListener('click', (e) => {
@@ -18920,8 +18923,18 @@
 
         const dragCloseThreshold = () => Math.max(72, window.innerHeight * 0.12);
 
-        const dragEnd = () => {
-          if (!_attViewerDrag.active && !_attViewerDrag.pending) return;
+        const dragEnd = (clientX, clientY) => {
+          if (!_attViewerDrag.active && !_attViewerDrag.pending) {
+            // Check for horizontal swipe
+            const dx = clientX - _attViewerPointer.startX;
+            const dy = clientY - _attViewerPointer.startY;
+            const dt = Date.now() - _attViewerPointer.startTime;
+            if (dt < 300 && Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
+              if (dx > 0) navAttViewer(-1); // Swipe right -> prev
+              else navAttViewer(1); // Swipe left -> next
+            }
+            return;
+          }
           const threshold = dragCloseThreshold();
           const shouldClose = _attViewerDrag.active && _attViewerDrag.deltaY > threshold;
           const dragged = _attViewerDrag.active;
@@ -18988,14 +19001,19 @@
         });
 
         zone.addEventListener('pointerup', (e) => {
-          if (e.pointerId !== _attViewerDrag.pointerId) return;
-          dragEnd();
-          try { zone.releasePointerCapture(e.pointerId); } catch (_) { /* noop */ }
+          if (e.pointerId !== _attViewerDrag.pointerId && _attViewerDrag.pointerId != null) {
+            if (e.pointerId === _attViewerDrag.pointerId) {
+               dragEnd(e.clientX, e.clientY);
+               try { zone.releasePointerCapture(e.pointerId); } catch (_) { /* noop */ }
+            }
+            return;
+          }
+          dragEnd(e.clientX, e.clientY);
         });
 
         zone.addEventListener('pointercancel', (e) => {
           if (e.pointerId !== _attViewerDrag.pointerId && _attViewerDrag.pointerId != null) return;
-          dragEnd();
+          dragEnd(e.clientX, e.clientY);
         });
       }
 
