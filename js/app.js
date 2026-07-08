@@ -18565,8 +18565,7 @@
         const caption = document.getElementById('attViewerCaption');
         const downloadBtn = document.getElementById('attViewerDownload');
         const counter = document.getElementById('attViewerCounter');
-        const prevBtn = document.getElementById('attViewerPrev');
-        const nextBtn = document.getElementById('attViewerNext');
+
 
         const ext = extractAttachmentExt(fileId, name);
         const isImg = isAttachmentImageExt(ext);
@@ -18830,12 +18829,8 @@
         if (total > 1) {
           counter.style.display = '';
           counter.textContent = `${state._attIndex + 1} / ${total}`;
-          prevBtn.classList.remove('hidden');
-          nextBtn.classList.remove('hidden');
         } else {
           counter.style.display = 'none';
-          prevBtn.classList.add('hidden');
-          nextBtn.classList.add('hidden');
         }
       }
 

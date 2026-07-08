@@ -18376,53 +18376,7 @@
       transition: none !important
     }
 
-    .att-viewer-nav {
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.14);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      border: 1px solid rgba(255, 255, 255, 0.22);
-      color: #fff;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      transition: background 0.2s, transform 0.2s;
-      z-index: 30;
-      touch-action: manipulation
-    }
 
-    @media (max-width: 768px) {
-      .att-viewer-nav {
-        display: none !important;
-      }
-    }
-
-    .att-viewer-prev {
-      right: 0;
-      transform: translateY(-50%)
-    }
-
-    .att-viewer-next {
-      left: 0;
-      transform: translateY(-50%)
-    }
-
-    .att-viewer-nav:hover {
-      background: rgba(255, 255, 255, 0.28);
-      transform: translateY(-50%) scale(1.06)
-    }
-
-    .att-viewer-nav.hidden {
-      opacity: 0;
-      pointer-events: none
-    }
 
     .att-viewer-counter {
       position: static;
