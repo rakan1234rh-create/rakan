@@ -12274,7 +12274,14 @@
           <span class="${avatar.className}" aria-hidden="true"${avatar.style ? ` style="${avatar.style}"` : ''}>${avatar.html}</span>
           <div class="mr-user-card__body">
             <div class="mr-user-card__title">
-              <h3 class="mr-user-card__name">${Sec.escapeHTML(u.name)}</h3>
+              <h3 class="mr-user-card__name">${Sec.escapeHTML(u.name)}
+                ${u.push_subscriptions && u.push_subscriptions.length > 0 ? 
+                  '<i class="fas fa-bell user-indicator user-indicator--bell" title="مفعل الإشعارات"></i>' : 
+                  '<i class="fas fa-bell-slash user-indicator user-indicator--bell-slash" title="غير مفعل الإشعارات"></i>'}
+                ${u.auth_uid ? 
+                  '<i class="fas fa-circle user-indicator user-indicator--active" title="حساب نشط"></i>' : 
+                  '<i class="fas fa-circle user-indicator user-indicator--inactive" title="حساب غير نشط"></i>'}
+              </h3>
               ${roleAfterName}
             </div>
             ${metaLine ? `<p class="mr-user-card__meta">${Sec.escapeHTML(metaLine)}</p>` : ''}
