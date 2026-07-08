@@ -477,7 +477,7 @@
       #tab-dashboard #branchStaffPanel,
       #tab-dashboard .mk-dash__split,
       #tab-dashboard .mk-dash__hero {
-        padding-inline: 0px;
+        padding-inline: 1px;
         box-sizing: border-box
       }
 
