@@ -354,11 +354,11 @@ async function dispatchViolationStatePush(
 async function sendImmediateEmail(to: string, title: string, body: string, record: ViolationRow) {
   const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? '';
   const BREVO_API_KEY = Deno.env.get('BREVO_API_KEY') ?? '';
-  const SENDER_EMAIL = Deno.env.get('SENDER_EMAIL') ?? 'no-reply@athar-app.online';
+  const SENDER_EMAIL_RAW = Deno.env.get('SENDER_EMAIL') ?? 'no-reply@athar-app.online';
+  const FULL_SENDER = SENDER_EMAIL_RAW.includes('<') ? SENDER_EMAIL_RAW : `ATHAR <${SENDER_EMAIL_RAW}>`;
+  const SENDER_EMAIL = SENDER_EMAIL_RAW.includes('<') ? SENDER_EMAIL_RAW.match(/<(.+)>|$/)?.[1] || SENDER_EMAIL_RAW : SENDER_EMAIL_RAW;
+  const SENDER_NAME = SENDER_EMAIL_RAW.includes('<') ? SENDER_EMAIL_RAW.split('<')[0].trim() : 'ATHAR';
   const BREVO_FROM = Deno.env.get('BREVO_FROM') ?? SENDER_EMAIL;
-  
-  const SENDER_NAME = 'ATHAR';
-  const FULL_SENDER = `${SENDER_NAME} <${SENDER_EMAIL}>`;
 
   const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null;
   const isApple = (email: string) => new Set(['icloud.com', 'me.com', 'mac.com']).has(email.split('@').pop()?.toLowerCase() ?? '');
@@ -368,9 +368,14 @@ async function sendImmediateEmail(to: string, title: string, body: string, recor
   const formattedTicket = rawTicket.includes('-') ? rawTicket.split('-').pop() : rawTicket;
 
   const subject = `${title} - رقم (${formattedTicket})`;
+  const { data: userData } = await supabase.from('users').select('name').eq('email', to).maybeSingle();
+  const userName = userData?.name || '';
+  const greeting = userName ? `مرحباً ${userName.split(' ')[0]}،` : 'مرحباً،';
+
   const html = `
     <div dir="rtl" style="font-family: sans-serif; line-height: 1.6; color: #333;">
       <h2 style="color: #d9534f;">${title}</h2>
+      <p><strong>${greeting}</strong></p>
       <p>${body}</p>
       <div style="background: #f4f4f4; padding: 15px; border-radius: 8px; margin-top: 20px;">
         <p><strong>رقم المخالفة:</strong> ${formattedTicket}</p>
