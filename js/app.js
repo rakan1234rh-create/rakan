@@ -12338,8 +12338,9 @@
         <span class="${avatar.className} user-mob-card__avatar"${avatar.style ? ` style="${avatar.style}"` : ''} aria-hidden="true">${avatar.html}</span>
         <div class="user-mob-card__main">
           <h3 class="user-mob-card__name">${Sec.escapeHTML(u.name)}
-            ${u.push_subscriptions && u.push_subscriptions.length > 0 ? '<i class="fas fa-bell user-indicator user-indicator--bell" title="مفعل الإشعارات"></i>' : '<i class="fas fa-bell-slash user-indicator user-indicator--bell-slash" title="غير مفعل الإشعارات"></i>'}
-            ${u.is_active ? '<i class="fas fa-circle user-indicator user-indicator--active" title="حساب نشط"></i>' : '<i class="fas fa-circle user-indicator user-indicator--inactive" title="حساب غير نشط"></i>'}
+            ${u.push_subscriptions && u.push_subscriptions.length > 0 ? '<i class="fas fa-bell user-indicator user-indicator--bell" title="مفعل الإشعارات"></i>' : '<i class="fas fa-bell-slash user-indicator user-indicator--bell-slash" title="غير مفعل الإشعارات"></i>'}                ${u.auth_uid ? 
+                  '<i class="fas fa-circle user-indicator user-indicator--active" title="حساب نشط"></i>' : 
+                  '<i class="fas fa-circle user-indicator user-indicator--inactive" title="حساب غير نشط"></i>'}}
           </h3>
           ${rowsHtml}
         </div>
