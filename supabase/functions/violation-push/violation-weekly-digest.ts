@@ -3,9 +3,19 @@ import { Resend } from 'npm:resend@4.0.0';
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? '';
 const BREVO_API_KEY = Deno.env.get('BREVO_API_KEY') ?? '';
-const SENDER_EMAIL = Deno.env.get('SENDER_EMAIL') ?? 'no-reply@athar-app.online';
-const SENDER_NAME = 'ATHAR';
-const FULL_SENDER = `${SENDER_NAME} <${SENDER_EMAIL}>`;
+const SENDER_EMAIL_RAW = Deno.env.get('SENDER_EMAIL') ?? 'no-reply@athar-app.online';
+// Check if SENDER_EMAIL already contains a display name like "Name <email@example.com>"
+const FULL_SENDER = SENDER_EMAIL_RAW.includes('<') 
+  ? SENDER_EMAIL_RAW 
+  : `ATHAR <${SENDER_EMAIL_RAW}>`;
+
+// Extract just the email part for providers that need it separately
+const SENDER_EMAIL = SENDER_EMAIL_RAW.includes('<')
+  ? SENDER_EMAIL_RAW.match(/<(.+)>|$/)?.[1] || SENDER_EMAIL_RAW
+  : SENDER_EMAIL_RAW;
+const SENDER_NAME = SENDER_EMAIL_RAW.includes('<')
+  ? SENDER_EMAIL_RAW.split('<')[0].trim()
+  : 'ATHAR';
 
 const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null;
 const APPLE_DOMAINS = new Set(['icloud.com', 'me.com', 'mac.com']);
