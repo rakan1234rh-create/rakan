@@ -149,17 +149,7 @@
         if (errMsg.includes('check_platform_email_for_reset') || errMsg.includes('check_password_reset_rate_limit')) {
           return 'التحقق من البريد غير متاح — شغّل supabase/password-reset-rate-limit.sql في SQL Editor';
         }
-        if (status === 500 || /error sending recovery|recovery email|hook|smtp|brevo|sender address|resend rejected/i.test(errMsg)) {
-          const resetEmail = getPasswordResetEmail() || Sec.normalizeEmail(document.getElementById('forgotEmail')?.value || '');
-          if (isAppleMailboxEmail(resetEmail)) {
-            if (/not yet activated|contact@brevo/i.test(errMsg)) {
-              return 'تعذّر إرسال الرمز: حساب Brevo غير مفعّل بعد. راسل contact@brevo.com لتفعيل الإرسال التجاري.';
-            }
-            if (/brevo|sender address|not verified|not valid|BREVO_API_KEY/i.test(errMsg)) {
-              return 'تعذّر إرسال الرمز عبر Brevo. أضف BREVO_API_KEY (مفتاح API يبدأ xkeysib-) وBREVO_FROM=no-reply@athar-app.online في Supabase Secrets. Supabase لا يدعم SMTP — استخدم Brevo HTTP API فقط.';
-            }
-            return 'تعذّر إرسال الرمز إلى بريد iCloud. تحقق من Brevo → Transactional → Logs وSupabase → Edge Functions → send-auth-emails.';
-          }
+        if (status === 500 || /error sending recovery|recovery email|hook|smtp|sender address|resend rejected/i.test(errMsg)) {
           if (/resend rejected|domain|verify|not verified/i.test(errMsg)) {
             return 'تعذّر إرسال الرمز عبر Resend. تحقق أن دومين athar-app.online مُتحقق في Resend وأن SENDER_EMAIL=no-reply@athar-app.online في Supabase Secrets.';
           }

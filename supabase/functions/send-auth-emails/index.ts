@@ -5,18 +5,14 @@ const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? '';
 const HOOK_SECRET = Deno.env.get('SEND_EMAIL_HOOK_SECRET') ?? '';
 const SENDER_EMAIL = Deno.env.get('SENDER_EMAIL') ?? '';
 
-// Brevo HTTP API for Apple/iCloud — Supabase Edge Functions block SMTP ports 25/465/587.
-const BREVO_API_KEY = Deno.env.get('BREVO_API_KEY') ?? '';
-const BREVO_FROM = Deno.env.get('BREVO_FROM') ?? Deno.env.get('SMTP_FROM') ?? SENDER_EMAIL;
-
+// Brevo disabled as per user request due to iCloud delivery issues (HM08).
+// Resend is now the primary and only provider for all email domains.
 const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null;
 
 // Arabic recovery template (base64 UTF-8) — see supabase/email-templates/athar-recovery-simple.html
-const HTML_B64 = 'PCFET0NUWVBFIGh0bWw+CjxodG1sIGxhbmc9ImFyIiBkaXI9InJ0bCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGh0bWwiIHhtbG5zOnY9InVybjpzY2hlbWFzLW1pY3Jvc29mdC1jb206dm1sIiB4bWxuczpvPSJ1cm46c2NoZW1hcy1taWNyb3NvZnQtY29tOm9mZmljZTpvZmZpY2UiPgo8aGVhZD4KICA8bWV0YSBjaGFyc2V0PSJ1dGYtOCI+CiAgPG1ldGEgbmFtZT0idmlld3BvcnQiIGNvbnRlbnQ9IndpZHRoPWRldmljZS13aWR0aCwgaW5pdGlhbC1zY2FsZT0xLjAiPgogIDxtZXRhIG5hbWU9ImNvbG9yLXNjaGVtZSIgY29udGVudD0ibGlnaHQgb25seSI+CiAgPG1ldGEgbmFtZT0ic3VwcG9ydGVkLWNvbG9yLXNjaGVtZXMiIGNvbnRlbnQ9ImxpZ2h0Ij4KICA8IS0tW2lmIG1zb10+PHhtbD48bzpPZmZpY2VEb2N1bWVudFNldHRpbmdzPjxvOlBpeGVsc1BlckluY2g+OTY8L286UGl4ZWxzUGVySW5jaD48L286T2ZmaWNlRG9jdW1lbnRTZXR0aW5ncz48L3htbD48IVtlbmRpZl0tLT4KICA8c3R5bGU+CiAgICA6cm9vdCB7IGNvbG9yLXNjaGVtZTogbGlnaHQgb25seTsgc3VwcG9ydGVkLWNvbG9yLXNjaGVtZXM6IGxpZ2h0OyB9CiAgICBib2R5LCB0YWJsZSwgdGQsIHAsIGRpdiwgc3BhbiB7IGNvbG9yLXNjaGVtZTogbGlnaHQgb25seTsgfQogICAgLmF0aGFyLW91dGVyIHsgYmFja2dyb3VuZC1jb2xvcjogI2Y1ZjVmNSAhaW1wb3J0YW50OyBiYWNrZ3JvdW5kLWltYWdlOiBsaW5lYXItZ3JhZGllbnQoI2Y1ZjVmNSwgI2Y1ZjVmNSkgIWltcG9ydGFudDsgfQogICAgLmF0aGFyLWNhcmQgeyBiYWNrZ3JvdW5kLWNvbG9yOiAjZmZmZmZmICFpbXBvcnRhbnQ7IGJhY2tncm91bmQtaW1hZ2U6IGxpbmVhci1ncmFkaWVudCgjZmZmZmZmLCAjZmZmZmZmKSAhaW1wb3J0YW50OyB9CiAgICAuYXRoYXItdG9rZW4geyBiYWNrZ3JvdW5kLWNvbG9yOiAjZmFmYWZhICFpbXBvcnRhbnQ7IGJhY2tncm91bmQtaW1hZ2U6IGxpbmVhci1ncmFkaWVudCgjZmFmYWZhLCAjZmFmYWZhKSAhaW1wb3J0YW50OyBjb2xvcjogIzE4MTgxYiAhaW1wb3J0YW50OyB9CiAgICAuYXRoYXItdGl0bGUgeyBjb2xvcjogIzE4MTgxYiAhaW1wb3J0YW50OyB9CiAgICAuYXRoYXItYm9keSB7IGNvbG9yOiAjM2YzZjQ2ICFpbXBvcnRhbnQ7IH0KICAgIC5hdGhhci1tdXRlZCB7IGNvbG9yOiAjNzE3MTdhICFpbXBvcnRhbnQ7IH0KICAgIEBtZWRpYSAocHJlZmVycy1jb2xvci1zY2hlbWU6IGRhcmspIHsKICAgICAgLmF0aGFyLW91dGVyIHsgYmFja2dyb3VuZC1jb2xvcjogI2Y1ZjVmNSAhaW1wb3J0YW50OyBiYWNrZ3JvdW5kLWltYWdlOiBsaW5lYXItZ3JhZGllbnQoI2Y1ZjVmNSwgI2Y1ZjVmNSkgIWltcG9ydGFudDsgfQogICAgICAuYXRoYXItY2FyZCB7IGJhY2tncm91bmQtY29sb3I6ICNmZmZmZmYgIWltcG9ydGFudDsgYmFja2dyb3VuZC1pbWFnZTogbGluZWFyLWdyYWRpZW50KCNmZmZmZmYsICNmZmZmZmYpICFpbXBvcnRhbnQ7IH0KICAgICAgLmF0aGFyLXRva2VuIHsgYmFja2dyb3VuZC1jb2xvcjogI2ZhZmFmYSAhaW1wb3J0YW50OyBiYWNrZ3JvdW5kLWltYWdlOiBsaW5lYXItZ3JhZGllbnQoI2ZhZmFmYSwgI2ZhZmFmYSkgIWltcG9ydGFudDsgY29sb3I6ICMxODE4MWIgIWltcG9ydGFudDsgfQogICAgICAuYXRoYXItdGl0bGUgeyBjb2xvcjogIzE4MTgxYiAhaW1wb3J0YW50OyB9CiAgICAgIC5hdGhhci1ib2R5IHsgY29sb3I6ICMzZjNmNDYgIWltcG9ydGFudDsgfQogICAgICAuYXRoYXItbXV0ZWQgeyBjb2xvcjogIzcxNzE3YSAhaW1wb3J0YW50OyB9CiAgICB9CiAgICB1ICsgLmJvZHkgLmF0aGFyLW91dGVyIHsgYmFja2dyb3VuZC1jb2xvcjogI2Y1ZjVmNSAhaW1wb3J0YW50OyBiYWNrZ3JvdW5kLWltYWdlOiBsaW5lYXItZ3JhZGllbnQoI2Y1ZjVmNSwgI2Y1ZjVmNSkgIWltcG9ydGFudDsgfQogICAgdSArIC5ib2R5IC5hdGhhci1jYXJkIHsgYmFja2dyb3VuZC1jb2xvcjogI2ZmZmZmZiAhaW1wb3J0YW50OyBiYWNrZ3JvdW5kLWltYWdlOiBsaW5lYXItZ3JhZGllbnQoI2ZmZmZmZiwgI2ZmZmZmZikgIWltcG9ydGFudDsgfQogICAgdSArIC5ib2R5IC5hdGhhci10b2tlbiB7IGJhY2tncm91bmQtY29sb3I6ICNmYWZhZmEgIWltcG9ydGFudDsgYmFja2dyb3VuZC1pbWFnZTogbGluZWFyLWdyYWRpZW50KCNmYWZhZmEsICNmYWZhZmEpICFpbXBvcnRhbnQ7IGNvbG9yOiAjMTgxODFiICFpbXBvcnRhbnQ7IH0KICAgIHUgKyAuYm9keSAuYXRoYXItdGl0bGUgeyBjb2xvcjogIzE4MTgxYiAhaW1wb3J0YW50OyB9CiAgICB1ICsgLmJvZHkgLmF0aGFyLWJvZHkgeyBjb2xvcjogIzNmM2Y0NiAhaW1wb3J0YW50OyB9CiAgICB1ICsgLmJvZHkgLmF0aGFyLW11dGVkIHsgY29sb3I6ICM3MTcxN2EgIWltcG9ydGFudDsgfQogICAgW2RhdGEtb2dzY10gLmF0aGFyLW91dGVyIHsgYmFja2dyb3VuZC1jb2xvcjogI2Y1ZjVmNSAhaW1wb3J0YW50OyB9CiAgICBbZGF0YS1vZ3NjXSAuYXRoYXItY2FyZCB7IGJhY2tncm91bmQtY29sb3I6ICNmZmZmZmYgIWltcG9ydGFudDsgfQogICAgW2RhdGEtb2dzY10gLmF0aGFyLXRpdGxlIHsgY29sb3I6ICMxODE4MWIgIWltcG9ydGFudDsgfQogICAgW2RhdGEtb2dzY10gLmF0aGFyLWJvZHkgeyBjb2xvcjogIzNmM2Y0NiAhaW1wb3J0YW50OyB9CiAgICBbZGF0YS1vZ3NjXSAuYXRoYXItbXV0ZWQgeyBjb2xvcjogIzcxNzE3YSAhaW1wb3J0YW50OyB9CiAgICBbZGF0YS1vZ3NjXSAuYXRoYXItdG9rZW4geyBiYWNrZ3JvdW5kLWNvbG9yOiAjZmFmYWZhICFpbXBvcnRhbnQ7IGNvbG9yOiAjMTgxODFiICFpbXBvcnRhbnQ7IH0KICA8L3N0eWxlPgo8L2hlYWQ+Cjxib2R5IGNsYXNzPSJib2R5IiBzdHlsZT0ibWFyZ2luOjA7cGFkZGluZzowO2JhY2tncm91bmQtY29sb3I6I2Y1ZjVmNTsiPgo8dGFibGUgcm9sZT0icHJlc2VudGF0aW9uIiBjbGFzcz0iYXRoYXItb3V0ZXIiIHdpZHRoPSIxMDAlIiBjZWxsc3BhY2luZz0iMCIgY2VsbHBhZGRpbmc9IjAiIGJvcmRlcj0iMCIgYmdjb2xvcj0iI2Y1ZjVmNSIgc3R5bGU9ImJhY2tncm91bmQtY29sb3I6I2Y1ZjVmNTtiYWNrZ3JvdW5kLWltYWdlOmxpbmVhci1ncmFkaWVudCgjZjVmNWY1LCNmNWY1ZjUpO2ZvbnQtZmFtaWx5OlNlZ29lIFVJLFRhaG9tYSxBcmlhbCxzYW5zLXNlcmlmOyI+CiAgPHRyPgogICAgPHRkIGFsaWduPSJjZW50ZXIiIGNsYXNzPSJhdGhhci1vdXRlciIgYmdjb2xvcj0iI2Y1ZjVmNSIgc3R5bGU9InBhZGRpbmc6NDBweCAyMHB4O2JhY2tncm91bmQtY29sb3I6I2Y1ZjVmNTtiYWNrZ3JvdW5kLWltYWdlOmxpbmVhci1ncmFkaWVudCgjZjVmNWY1LCNmNWY1ZjUpOyI+CiAgICAgIDx0YWJsZSByb2xlPSJwcmVzZW50YXRpb24iIGNsYXNzPSJhdGhhci1jYXJkIiB3aWR0aD0iMTAwJSIgY2VsbHNwYWNpbmc9IjAiIGNlbGxwYWRkaW5nPSIwIiBib3JkZXI9IjAiIGJnY29sb3I9IiNmZmZmZmYiIHN0eWxlPSJtYXgtd2lkdGg6NDgwcHg7YmFja2dyb3VuZC1jb2xvcjojZmZmZmZmO2JhY2tncm91bmQtaW1hZ2U6bGluZWFyLWdyYWRpZW50KCNmZmZmZmYsI2ZmZmZmZik7Ym9yZGVyLXJhZGl1czoxNnB4O2JvcmRlcjoxcHggc29saWQgI2U0ZTRlNzsiPgogICAgICAgIDx0cj4KICAgICAgICAgIDx0ZCBhbGlnbj0iY2VudGVyIiBjbGFzcz0iYXRoYXItY2FyZCIgYmdjb2xvcj0iI2ZmZmZmZiIgc3R5bGU9InBhZGRpbmc6MzJweCAyOHB4IDE2cHg7YmFja2dyb3VuZC1jb2xvcjojZmZmZmZmO2JhY2tncm91bmQtaW1hZ2U6bGluZWFyLWdyYWRpZW50KCNmZmZmZmYsI2ZmZmZmZik7Ij4KICAgICAgICAgICAgPGltZyBzcmM9Imh0dHBzOi8vYXRoYXItYXBwLm9ubGluZS9pY29ucy9hdGhhci13b3JkbWFyay1lbWFpbC12Mzg4LnBuZyIgd2lkdGg9IjI0MCIgaGVpZ2h0PSIxNDgiIGFsdD0iQVRIQVIiIHN0eWxlPSJkaXNwbGF5OmJsb2NrO3dpZHRoOjI0MHB4O21heC13aWR0aDoxMDAlO2hlaWdodDphdXRvO2JvcmRlcjowO21hcmdpbjowIGF1dG87Ij4KICAgICAgICAgIDwvdGQ+CiAgICAgICAgPC90cj4KICAgICAgICA8dHI+CiAgICAgICAgICA8dGQgZGlyPSJydGwiIGNsYXNzPSJhdGhhci1jYXJkIiBiZ2NvbG9yPSIjZmZmZmZmIiBzdHlsZT0icGFkZGluZzo4cHggMjhweCAyOHB4O3RleHQtYWxpZ246cmlnaHQ7YmFja2dyb3VuZC1jb2xvcjojZmZmZmZmO2JhY2tncm91bmQtaW1hZ2U6bGluZWFyLWdyYWRpZW50KCNmZmZmZmYsI2ZmZmZmZik7Ij4KICAgICAgICAgICAgPHAgY2xhc3M9ImF0aGFyLXRpdGxlIiBzdHlsZT0ibWFyZ2luOjAgMCAxNnB4O2ZvbnQtc2l6ZToxNnB4O2xpbmUtaGVpZ2h0OjEuNztjb2xvcjojMTgxODFiOyI+2YXYsdit2KjYp9mL2Iw8L3A+CiAgICAgICAgICAgIDxwIGNsYXNzPSJhdGhhci1ib2R5IiBzdHlsZT0ibWFyZ2luOjAgMCAyNHB4O2ZvbnQtc2l6ZToxNXB4O2xpbmUtaGVpZ2h0OjEuNzU7Y29sb3I6IzNmM2Y0NjsiPtiq2YTZgtmR2YrZhtinINi32YTYqNin2Ysg2YTYpdi52KfYr9ipINiq2LnZitmK2YYg2YPZhNmF2Kkg2KfZhNmF2LHZiNixINmE2K3Ys9in2KjZgy48L3A+CiAgICAgICAgICAgIDxwIGNsYXNzPSJhdGhhci1ib2R5IiBzdHlsZT0ibWFyZ2luOjAgMCAxMHB4O2ZvbnQtc2l6ZToxNHB4O2xpbmUtaGVpZ2h0OjEuNztjb2xvcjojM2YzZjQ2O3RleHQtYWxpZ246Y2VudGVyOyI+2LHZhdiyINin2YTYqtit2YLZgiDYp9mE2K7Yp9i1INio2YM8L3A+CiAgICAgICAgICAgIDx0YWJsZSByb2xlPSJwcmVzZW50YXRpb24iIGNlbGxzcGFjaW5nPSIwIiBjZWxscGFkZGluZz0iMCIgYm9yZGVyPSIwIiBhbGlnbj0iY2VudGVyIiBzdHlsZT0ibWFyZ2luOjAgYXV0byAyNHB4OyI+CiAgICAgICAgICAgICAgPHRyPgogICAgICAgICAgICAgICAgPHRkIGRpcj0ibHRyIiBjbGFzcz0iYXRoYXItdG9rZW4iIGJnY29sb3I9IiNmYWZhZmEiIHN0eWxlPSJmb250LXNpemU6MzRweDtsZXR0ZXItc3BhY2luZzowLjI1ZW07Zm9udC13ZWlnaHQ6ODAwO2NvbG9yOiMxODE4MWI7YmFja2dyb3VuZC1jb2xvcjojZmFmYWZhO2JhY2tncm91bmQtaW1hZ2U6bGluZWFyLWdyYWRpZW50KCNmYWZhZmEsI2ZhZmFmYSk7Ym9yZGVyOjFweCBzb2xpZCAjZTRlNGU3O2JvcmRlci1yYWRpdXM6MTRweDtwYWRkaW5nOjE2cHggMThweDt0ZXh0LWFsaWduOmNlbnRlcjt3aGl0ZS1zcGFjZTpub3dyYXA7Ij4KICAgICAgICAgICAgICAgICAge3tUT0tFTn19CiAgICAgICAgICAgICAgICA8L3RkPgogICAgICAgICAgICAgIDwvdHI+CiAgICAgICAgICAgIDwvdGFibGU+CiAgICAgICAgICAgIDxwIGNsYXNzPSJhdGhhci1tdXRlZCIgc3R5bGU9Im1hcmdpbjowIDAgMThweDtmb250LXNpemU6MTNweDtsaW5lLWhlaWdodDoxLjc7Y29sb3I6IzcxNzE3YTt0ZXh0LWFsaWduOmNlbnRlcjsiPtin2YPYqtioINmH2LDYpyDYp9mE2LHZhdiyINmB2Yog2LXZgdit2Kkg2KfYs9iq2LnYp9iv2Kkg2YPZhNmF2Kkg2KfZhNmF2LHZiNixINiv2KfYrtmEINin2YTZhdmG2LXYqS48L3A+CiAgICAgICAgICAgIDxwIGNsYXNzPSJhdGhhci1tdXRlZCIgc3R5bGU9Im1hcmdpbjowIDAgMTJweDtmb250LXNpemU6MTNweDtsaW5lLWhlaWdodDoxLjY1O2NvbG9yOiM3MTcxN2E7Ij7Ypdiw2Kcg2YTZhSDYqti32YTYqCDYsNmE2YPYjCDYqtis2KfZh9mEINmH2LDZhyDYp9mE2LHYs9in2YTYqS48L3A+CiAgICAgICAgICAgIDxwIGNsYXNzPSJhdGhhci1tdXRlZCIgc3R5bGU9Im1hcmdpbjowO2ZvbnQtc2l6ZToxMnB4O2xpbmUtaGVpZ2h0OjEuNjtjb2xvcjojNzE3MTdhOyI+2KfZhNix2YXYsiDYtdin2YTYrSDZhNmF2LHYqSDZiNin2K3Yr9ipINmI2YTZhdiv2Kkg2YXYrdiv2YjYr9ipLjwvcD4KICAgICAgICAgIDwvdGQ+CiAgICAgICAgPC90cj4KICAgICAgPC90YWJsZT4KICAgIDwvdGQ+CiAgPC90cj4KPC90YWJsZT4KPC9ib2R5Pgo8L2h0bWw+Cg==';
+const HTML_B64 = 'PCFET0NUWVBFIGh0bWw+CjxodG1sIGxhbmc9ImFyIiBkaXI9InJ0bCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGh0bWwiIHhtbG5zOnY9InVybjpzY2hlbWFzLW1pY3Jvc29mdC1jb206dm1sIiB4bWxuczpvPSJ1cm46c2NoZW1hcy1taWNyb3NvZnQtY29tOm9mZmljZTpvZmZpY2UiPgo8aGVhZD4KICA8bWV0YSBjaGFyc2V0PSJ1dGYtOCI+CiAgPG1ldGEgbmFtZT0idmlld3BvcnQiIGNvbnRlbnQ9IndpZHRoPWRldmljZS13aWR0aCwgaW5pdGlhbC1zY2FsZT0xLjAiPgogIDxtZXRhIG5hbWU9ImNvbG9yLXNjaGVtZSIgY29udGVudD0ibGlnaHQgb25seSI+CiAgPG1ldGEgbmFtZT0ic3VwcG9ydGVkLWNvbG9yLXNjaGVtZXMiIGNvbnRlbnQ9ImxpZ2h0Ij4KICA8IS0tW2lmIG1zb10+PHhtbD48bzpPZmZpY2VEb2N1bWVudFNldHRpbmdzPjxvOlBpeGVsc1BlckluY2g+OTY8L286UGl4ZWxzUGVySW5jaD48L286T2ZmaWNlRG9jdW1lbnRTZXR0aW5ncz48L3htbD48IVtlbmRpZl0tLT4KICA8c3R5bGU+CiAgICA6cm9vdCB7IGNvbG9yLXNjaGVtZTogbGlnaHQgb25seTsgc3VwcG9ydGVkLWNvbG9yLXNjaGVtZXM6IGxpZ2h0OyB9CiAgICBib2R5LCB0YWJsZSwgdGQsIHAsIGRpdiwgc3BhbiB7IGNvbG9yLXNjaGVtZTogbGlnaHQgb25seTsgfQogICAgLmF0aGFyLW91dGVyIHsgYmFja2dyb3VuZC1jb2xvcjogI2Y1ZjVmNSAhaW1wb3J0YW50OyBiYWNrZ3JvdW5kLWltYWdlOiBsaW5lYXItZ3JhZGllbnQoI2Y1ZjVmNSwgI2Y1ZjVmNSkgIWltcG9ydGFudDsgfQogICAgLmF0aGFyLWNhcmQgeyBiYWNrZ3JvdW5kLWNvbG9yOiAjZmZmZmZmICFpbXBvcnRhbnQ7IGJhY2tncm91bmQtaW1hZ2U6 bGluZWFyLWdyYWRpZW50KCNmZmZmZmYsICNmZmZmZmYpICFpbXBvcnRhbnQ7IH0KICAgIC4YXRoYXItdG9rZW4geyBiYWNrZ3JvdW5kLWNvbG9yOiAjZmFmYWZhICFpbXBvcnRhbnQ7IGJhY2tncm91bmQtaW1hZ2U6 bGluZWFyLWdyYWRpZW50KCNmYWZhZmEsICNmYWZhZmEpICFpbXBvcnRhbnQ7IGNvbG9yOiAjMTgxODFiICFpbXBvcnRhbnQ7IH0KICAgIC4YXRoYXItdGl0bGUgeyBjb2xvcjogIzE4MTgxYiAhaW1wb3J0YW50OyB9CiAgICAuYXRoYXItYm9keSB7IGNvbG9yOiAjM2YzZjQ2ICFpbXBvcnRhbnQ7IH0KICAgIC4YXRoYXIttdXRlZCB7IGNvbG9yOiAjNzE3MTdhICFpbXBvcnRhbnQ7IH0KICAgIEBtZWRpYSAocHJlZmVycy1jb2xvci1zY2hlbWU6IGRhcmspIHsKICAgICAgLmF0aGFyLW91dGVyIHsgYmFja2dyb3VuZC1jb2xvcjogI2Y1ZjVmNSAhaW1wb3J0YW50OyBiYWNrZ3JvdW5kLWltYWdlOiBsaW5lYXItZ3JhZGllbnQoI2Y1ZjVmNSwgI2Y1ZjVmNSkgIWltcG9ydGFudDsgfQogICAgICAuYXRoYXItY2FyZCB7IGJhY2tncm91bmQtY29sb3I6ICNmZmZmZmYgIWltcG9ydGFudDsgYmFja2dyb3VuZC1pbWFnZTogbGluZWFyLWdyYWRpZW50KCNmZmZmZmYsICNmZmZmZmYpICFpbXBvcnRhbnQ7IH0KICAgICAgLmF0aGFyLXRva2VuIHsgYmFja2dyb3VuZC1jb2xvcjogI2ZhZmFmYSAhaW1wb3J0YW50OyBiYWNrZ3JvdW5kLWltYWdlOiBsaW5lYXItZ3JhZGllbnQoI2ZhZmFmYSwgI2ZhZmFmYSkgIWltcG9ydGFudDsgY29sb3I6ICMxODE4MWIgIWltcG9ydGFudDsgfQogICAgICAuYXRoYXItdGl0bGUgeyBjb2xvcjogIzE4MTgxYiAhaW1wb3J0YW50OyB9CiAgICAgIC5hdGhhci1ib2R5IHsgY29sb3I6ICMzZjNmNDYgIWltcG9ydGFudDsgfQogICAgICAuYXRoYXItbXV0ZWQgeyBjb2xvcjogIzcxNzE3YSAhaW1wb3J0YW50OyB9CiAgICB9CiAgICB1ICsgLmJvZHkgLmF0aGFyLW91dGVyIHsgYmFja2dyb3VuZC1jb2xvcjogI2Y1ZjVmNSAhaW1wb3J0YW50OyBiYWNrZ3JvdW5kLWltYWdlOiBsaW5lYXItZ3JhZGllbnQoI2Y1ZjVmNSwgI2Y1ZjVmNSkgIWltcG9ydGFudDsgfQogICAgdSArIC5ib2R5IC5hdGhhci1jYXJkIHsgYmFja2dyb3VuZC1jb2xvcjogI2ZmZmZmZiAhaW1wb3J0YW50OyBiYWNrZ3JvdW5kLWltYWdlOiBsaW5lYXItZ3JhZGllbnQoI2ZmZmZmZiwgI2ZmZmZmZikgIWltcG9ydGFudDsgfQogICAgdSArIC5ib2R5IC5hdGhhci10b2tlbiB7IGJhY2tncm91bmQtY29sb3I6ICNmYWZhZmEgIWltcG9ydGFudDsgYmFja2dyb3VuZC1pbWFnZTogbGluZWFyLWdyYWRpZW50KCNmYWZhZmEsICNmYWZhZmEpICFpbXBvcnRhbnQ7IGNvbG9yOiAjMTgxODFiICFpbXBvcnRhbnQ7IH0KICAgIHUgKyAuYm9keSAuYXRoYXItdGl0bGUgeyBjb2xvcjogIzE4MTgxYiAhaW1wb3J0YW50OyB9CiAgICB1ICsgLmJvZHkgLmF0aGFyLWJvZHkgeyBjb2xvcjogIzNmM2Y0NiAhaW1wb3J0YW50OyB9CiAgICB1ICsgLmJvZHkgLmF0aGFyLW11dGVkIHsgY29sb3I6ICM3MTcxN2EgIWltcG9ydGFudDsgfQogICAgW2RhdGEtb2dzY10gLmF0aGFyLW91dGVyIHsgYmFja2dyb3VuZC1jb2xvcjogI2Y1ZjVmNSAhaW1wb3J0YW50OyB9CiAgICBbZGF0YS1vZ3NjXSAuYXRoYXItY2FyZCB7IGJhY2tncm91bmQtY29sb3I6ICNmZmZmZmYgIWltcG9ydGFudDsgfQogICAgW2RhdGEtb2dzY10gLmF0aGFyLXRpdGxlIHsgY29sb3I6ICMxODE4MWIgIWltcG9ydGFudDsgfQogICAgW2RhdGEtb2dzY10gLmF0aGFyLWJvZHkgeyBjb2xvcjogIzNmM2Y0NiAhaW1wb3J0YW50OyB9CiAgICBbZGF0YS1vZ3NjXSAuYXRoYXItbXV0ZWQgeyBjb2xvcjogIzcxNzE3YSAhaW1wb3J0YW50OyB9CiAgICBbZGF0YS1vZ3NjXSAuYXRoYXItdG9rZW4geyBiYWNrZ3JvdW5kLWNvbG9yOiAjZmFmYWZhICFpbXBvcnRhbnQ7IGNvbG9yOiAjMTgxODFiICFpbXBvcnRhbnQ7IH0KICA8L3N0eWxlPgo8L2hlYWQ+Cjxib2R5IGNsYXNzPSJib2R5IiBzdHlsZT0ibWFyZ2luOjA7cGFkZGluZzowO2JhY2tncm91bmQtY29sb3I6I2Y1ZjVmNTsiPgo8dGFibGUgcm9sZT0icHJlc2VudGF0aW9uIiBjbGFzcz0iYXRoYXItb3V0ZXIiIHdpZHRoPSIxMDAlIiBjZWxsc3BhY2luZz0iMCIgY2VsbHBhZGRpbmc9IjAiIGJvcmRlcj0iMCIgYmdjb2xvcj0iI2Y1ZjVmNSIgc3R5bGU9ImJhY2tncm91bmQtY29sb3I6I2Y1ZjVmNTtiYWNrZ3JvdW5kLWltYWdlOmxpbmVhci1ncmFkaWVudCgjZjVmNWY1LCNmNWY1ZjUpO2ZvbnQtZmFtaWx5OlNlZ29lIFVJLFRhaG9tYSxBcmlhbCxzYW5zLXNlcmlmOyI+CiAgPHRyPgogICAgPHRkIGFsaWduPSJjZW50ZXIiIGNsYXNzPSJhdGhhci1vdXRlciIgYmdjb2xvcj0iI2Y1ZjVmNSIgc3R5bGU9InBhZGRpbmc6NDBweCAyMHB4O2JhY2tncm91bmQtY29sb3I6I2Y1ZjVmNTtiYWNrZ3JvdW5kLWltYWdlOmxpbmVhci1ncmFkaWVudCgjZjVmNWY1LCNmNWY1ZjUpOyI+CiAgICAgIDx0YWJsZSByb2xlPSJwcmVzZW50YXRpb24iIGNsYXNzPSJhdGhhci1jYXJkIiB3aWR0aD0iMTAwJSIgY2VsbHNwYWNpbmc9IjAiIGNlbGxwYWRkaW5nPSIwIiBib3JkZXI9IjAiIGJnY29sb3I9IiNmZmZmZmYiIHN0eWxlPSJtYXgtd2lkdGg6NDgwcHg7YmFja2dyb3VuZC1jb2xvcjojZmZmZmZmO2JhY2tncm91bmQtaW1hZ2U6bGluZWFyLWdyYWRpZW50KCNmZmZmZmYsI2ZmZmZmZik7Ym9yZGVyLXJhZGl1czoxNnB4O2JvcmRlcjoxcHggc29saWQgI2U0ZTRlNzsiPgogICAgICAgIDx0cj4KICAgICAgICAgIDx0ZCBhbGlnbj0iY2VudGVyIiBjbGFzcz0iYXRoYXItY2FyZCIgYmdjb2xvcj0iI2ZmZmZmZiIgc3R5bGU9InBhZGRpbmc6MzJweCAyOHB4IDE2cHg7YmFja2dyb3VuZC1jb2xvcjojZmZmZmZmO2JhY2tncm91bmQtaW1hZ2U6bGluZWFyLWdyYWRpZW50KCNmZmZmZmYsI2ZmZmZmZik7Ij4KICAgICAgICAgICAgPGltZyBzcmM9Imh0dHBzOi8vYXRoYXItYXBwLm9ubGluZS9pY29ucy9hdGhhci13b3JkbWFyay1lbWFpbC12Mzg4LnBuZyIgd2lkdGg9IjI0MCIgaGVpZ2h0PSIxNDgiIGFsdD0iQVRIQVIiIHN0eWxlPSJkaXNwbGF5OmJsb2NrO3dpZHRoOjI0MHB4O21heC13aWR0aDoxMDAlO2hlaWdodDphdXRvO2JvcmRlcjowO21hcmdpbjowIGF1dG87Ij4KICAgICAgICAgIDwvdGQ+CiAgICAgICAgPC90cj4KICAgICAgICA8dHI+CiAgICAgICAgICA8dGQgZGlyPSJydGwiIGNsYXNzPSJhdGhhci1jYXJkIiBiZ2NvbG9yPSIjZmZmZmZmIiBzdHlsZT0icGFkZGluZzo4cHggMjhweCAyOHB4O3RleHQtYWxpZ246cmlnaHQ7YmFja2dyb3VuZC1jb2xvcjojZmZmZmZmO2JhY2tncm91bmQtaW1hZ2U6bGluZWFyLWdyYWRpZW50KCNmZmZmZmYsI2ZmZmZmZik7Ij4KICAgICAgICAgICAgPHAgY2xhc3M9ImF0aGFyLXRpdGxlIiBzdHlsZT0ibWFyZ2luOjAgMCAxNnB4O2ZvbnQtc2l6ZToxNnB4O2xpbmUtaGVpZ2h0OjEuNztjb2xvcjojMTgxODFiOyI+2YXYsdit2KjYp9mL2Iw8L3A+CiAgICAgICAgICAgIDxwIGNsYXNzPSJhdGhhci1ib2R5IiBzdHlsZT0ibWFyZ2luOjAgMCAyNHB4O2ZvbnQtc2l6ZToxNXB4O2xpbmUtaGVpZ2h0OjEuNzU7Y29sb3I6IzNmM2Y0NjsiPtiq2YTZgtmR2YrZhtinINi32YTYqNin2Ysg2YTYpdi52KfYr9ipINiq2LnZitmK2YYg2YPZhNmF2Kkg2KfZhNmF2LHZiNixINmE2K3Ys9in2KjZgy48L3A+CiAgICAgICAgICAgIDxwIGNsYXNzPSJhdGhhci1ib2R5IiBzdHlsZT0ibWFyZ2luOjAgMCAxMHB4O2ZvbnQtc2l6ZToxNHB4O2xpbmUtaGVpZ2h0OjEuNztjb2xvcjojM2YzZjQ2O3RleHQtYWxpZ246Y2VudGVyOyI+2LHZhdiyINin2YTYqtit2YLZgiDYp9mE2K7Yp9i1INio2YM8L3A+CiAgICAgICAgICAgIDx0YWJsZSByb2xlPSJwcmVzZW50YXRpb24iIGNlbGxzcGFjaW5nPSIwIiBjZWxscGFkZGluZz0iMCIgYm9yZGVyPSIwIiBhbGlnbj0iY2VudGVyIiBzdHlsZT0ibWFyZ2luOjAgYXV0byAyNHB4OyI+CiAgICAgICAgICAgICAgPHRyPgogICAgICAgICAgICAgICAgPHRkIGRpcj0ibHRyIiBjbGFzcz0iYXRoYXItdG9rZW4iIGJnY29sb3I9IiNmYWZhZmEiIHN0eWxlPSJmb250LXNpemU6MzRweDtsZXR0ZXItc3BhY2luZzowLjI1ZW07Zm9udC13ZWlnaHQ6ODAwO2NvbG9yOiMxODE4MWI7YmFja2dyb3VuZC1jb2xvcjojZmFmYWZhO2JhY2tncm91bmQtaW1hZ2U6bGluZWFyLWdyYWRpZW50KCNmYWZhZmEsI2ZhZmFmYSk7Ym9yZGVyOjFweCBzb2xpZCAjZTRlNGU3O2JvcmRlci1yYWRpdXM6MTRweDtwYWRkaW5nOjE2cHggMThweDt0ZXh0LWFsaWduOmNlbnRlcjt3aGl0ZS1zcGFjZTpub3dyYXA7Ij4KICAgICAgICAgICAgICAgICAge3tUT0tFTn19CiAgICAgICAgICAgICAgICA8L3RkPgogICAgICAgICAgICAgIDwvdHI+CiAgICAgICAgICAgIDwvdGFibGU+CiAgICAgICAgICAgIDxwIGNsYXNzPSJhdGhhci1tdXRlZCIgc3R5bGU9Im1hcmdpbjowIDAgMThweDtmb250LXNpemU6MTNweDtsaW5lLWhlaWdodDoxLjc7Y29sb3I6IzcxNzE3YTt0ZXh0LWFsaWduOmNlbnRlcjsiPtin2YPYqtioINmH2LDYpyDYp9mE2LHZhdiyINmB2Yog2LXZgdit2Kkg2KfYs9iq2LnYp9iv2Kkg2YPZhNmF2Kkg2KfZhNmF2LHZiNixINiv2KfYrtmEINin2YTZhdmG2LXYqS48L3A+CiAgICAgICAgICAgIDxwIGNsYXNzPSJhdGhhci1tdXRlZCIgc3R5bGU9Im1hcmdpbjowIDAgMTJweDtmb250LXNpemU6MTNweDtsaW5lLWhlaWdodDoxLjY1O2NvbG9yOiM3MTcxN2E7Ij7Ypdiw2Kcg2YTZhSDYqti32YTYqCDYsNmE2YPYjCDYqtis2KfZh9mEINmH2LDZhyDYp9mE2LHYs9in2YTYqS48L3A+CiAgICAgICAgICAgIDxwIGNsYXNzPSJhdGhhci1tdXRlZCIgc3R5bGU9Im1hcmdpbjowO2ZvbnQtc2l6ZToxMnB4O2xpbmUtaGVpZ2h0OjEuNjtjb2xvcjojNzE3MTdhOyI+2KfZhNix2YXYsiDYtdin2YTYrSDZhNmF2LHYqSDZiNin2K3Yr9ipINmI2YTZhdiv2Kkg2YXYrdiv2YjYr9ipLjwvcD4KICAgICAgICAgIDwvdGQ+CiAgICAgICAgPC90cj4KICAgICAgPC90YWJsZT4KICAgIDwvdGQ+CiAgPC90cj4KPC90YWJsZT4KPC9ib2R5Pgo8L2h0bWw+Cg==';
 const SUBJECT_B64 = '2KXYudin2K/YqSDYqti52YrZitmGINmD2YTZhdipINin2YTZhdix2YjYsSDigJQgQVRIQVI=';
 const TEXT_B64 = '2LHZhdiyINil2LnYp9iv2Kkg2KrYudmK2YrZhiDZg9mE2YXYqSDYp9mE2YXYsdmI2LEg2KfZhNiu2KfYtSDYqNmDOiB7e1RPS0VOfX0g4oCUINin2YPYqtio2Ycg2YHZiiDYtdmB2K3YqSDYp9iz2KrYudin2K/YqSDZg9mE2YXYqSDYp9mE2YXYsdmI2LEg2K/Yp9iu2YQg2KfZhNmF2YbYtdipLiDYtdin2YTYrSDZhNmF2LHYqSDZiNin2K3Yr9ipINmI2YTZhdiv2Kkg2YXYrdiv2YjYr9ipLg==';
-
-const APPLE_DOMAINS = new Set(['icloud.com', 'me.com', 'mac.com']);
 
 function b64utf8(b64: string): string {
   const bin = atob(b64);
@@ -73,15 +69,6 @@ function senderDomain(raw: string): string | null {
   return match?.[1]?.toLowerCase() ?? null;
 }
 
-function isAppleMailbox(email: string): boolean {
-  const domain = email.split('@').pop()?.toLowerCase() ?? '';
-  return APPLE_DOMAINS.has(domain);
-}
-
-function brevoConfigured(): boolean {
-  return Boolean(BREVO_API_KEY && BREVO_FROM);
-}
-
 type EmailActionType = 'signup' | 'recovery' | 'invite' | 'magiclink' | 'email_change' | 'email';
 
 type WebhookPayload = {
@@ -102,89 +89,6 @@ function json(body: unknown, status = 200) {
     status,
     headers: { 'Content-Type': 'application/json' },
   });
-}
-
-async function sendViaBrevo(
-  to: string,
-  subject: string,
-  html: string,
-  text: string,
-  deliveryRef: string,
-): Promise<void> {
-  const sender = parseSender(BREVO_FROM);
-
-  const response = await fetch('https://api.brevo.com/v3/smtp/email', {
-    method: 'POST',
-    headers: {
-      accept: 'application/json',
-      'api-key': BREVO_API_KEY,
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({
-      sender,
-      to: [{ email: to }],
-      subject,
-      htmlContent: html,
-      textContent: text,
-      headers: antiThreadHeaders(deliveryRef),
-    }),
-  });
-
-  const raw = await response.text();
-  let body: { message?: string; code?: string } = {};
-  try {
-    body = JSON.parse(raw) as { message?: string; code?: string };
-  } catch {
-    body = { message: raw.slice(0, 500) };
-  }
-
-  if (!response.ok) {
-    const detail = body.message || body.code || raw.slice(0, 300) || response.statusText;
-    console.error('send-auth-emails: brevo error status=' + response.status + ' body=' + raw.slice(0, 500));
-    if (/sender|not valid|not verified|domain|from/i.test(detail)) {
-      throw new Error(
-        'Brevo rejected sender ' + sender.email +
-        '. In Brevo add no-reply@athar-app.online under Senders (verified). Details: ' + detail,
-      );
-    }
-    if (/unauthorized|api.?key|authentication|401|403/i.test(detail + response.status)) {
-      throw new Error('Brevo API key invalid or missing permissions. Use xkeysib- key with Send emails permission. Details: ' + detail);
-    }
-    if (/not yet activated|contact@brevo/i.test(detail)) {
-      throw new Error('Brevo account not activated. Email contact@brevo.com to enable transactional sending. Details: ' + detail);
-    }
-    throw new Error('Brevo API send failed (' + response.status + '): ' + detail);
-  }
-
-  console.log('send-auth-emails: brevo sent to ' + to);
-}
-
-async function pingBrevo(): Promise<{ ok: boolean; detail: unknown }> {
-  const response = await fetch('https://api.brevo.com/v3/account', {
-    headers: { accept: 'application/json', 'api-key': BREVO_API_KEY },
-  });
-  const raw = await response.text();
-  let body: unknown = raw;
-  try {
-    body = JSON.parse(raw);
-  } catch {
-    // keep raw text
-  }
-  return { ok: response.ok, detail: { status: response.status, body } };
-}
-
-async function brevoGet(path: string): Promise<{ ok: boolean; status: number; body: unknown }> {
-  const response = await fetch('https://api.brevo.com/v3' + path, {
-    headers: { accept: 'application/json', 'api-key': BREVO_API_KEY },
-  });
-  const raw = await response.text();
-  let body: unknown = raw;
-  try {
-    body = JSON.parse(raw);
-  } catch {
-    // keep raw text
-  }
-  return { ok: response.ok, status: response.status, body };
 }
 
 async function sendViaResend(
@@ -228,33 +132,7 @@ Deno.serve(async (req) => {
 
   if (req.method === 'GET' && url.searchParams.get('health') === '1') {
     const domain = senderDomain(SENDER_EMAIL);
-    const brevoReady = brevoConfigured();
-    const brevoPing = brevoReady && url.searchParams.get('brevo_ping') === '1'
-      ? await pingBrevo()
-      : null;
     const testTo = url.searchParams.get('test_to');
-    const brevoDiag = brevoReady && url.searchParams.get('brevo_diag') === '1'
-      ? {
-        senders: await brevoGet('/senders'),
-        domains: await brevoGet('/senders/domains'),
-        test_send: testTo
-          ? await (async () => {
-            try {
-              await sendViaBrevo(
-                testTo,
-                'ATHAR Brevo test',
-                '<p>ATHAR Brevo test</p>',
-                'If you receive this, Brevo delivery works.',
-                crypto.randomUUID(),
-              );
-              return { ok: true };
-            } catch (error) {
-              return { ok: false, error: error instanceof Error ? error.message : String(error) };
-            }
-          })()
-          : null,
-      }
-      : null;
     const resendDiag = resend && url.searchParams.get('resend_diag') === '1'
       ? {
         sender: formatSender(SENDER_EMAIL),
@@ -277,25 +155,15 @@ Deno.serve(async (req) => {
         RESEND_API_KEY: Boolean(RESEND_API_KEY),
         SEND_EMAIL_HOOK_SECRET: Boolean(HOOK_SECRET),
         SENDER_EMAIL: Boolean(SENDER_EMAIL),
-        BREVO_API_KEY: Boolean(BREVO_API_KEY),
-        BREVO_FROM: BREVO_FROM,
-        BREVO_FALLBACK: brevoReady,
+        BREVO_ENABLED: false,
       },
       deliverability: {
         sender_domain: domain,
         uses_resend_shared_domain: domain === 'resend.dev',
         template: 'arabic-html-wordmark-url',
-        apple_mail_route: brevoReady ? 'brevo-api' : 'resend',
-        apple_hm08_risk_without_brevo: !brevoReady,
-        note: 'Supabase Edge Functions cannot use SMTP ports 25/465/587. Use BREVO_API_KEY (HTTP API), not SMTP.',
-        warning: !brevoReady
-          ? 'Apple/iCloud may bounce on Resend (HM08). Add BREVO_API_KEY and BREVO_FROM in Supabase Secrets.'
-          : !RESEND_API_KEY
-          ? 'RESEND_API_KEY missing — Gmail/non-Apple emails will fail. Re-add RESEND_API_KEY secret.'
-          : null,
+        primary_route: 'resend',
+        note: 'Brevo has been disabled. Resend is now used for all emails including iCloud/Apple.',
       },
-      brevo_ping: brevoPing,
-      brevo_diag: brevoDiag,
       resend_diag: resendDiag,
     });
   }
@@ -304,9 +172,9 @@ Deno.serve(async (req) => {
     return new Response('not allowed', { status: 400 });
   }
 
-  if (!HOOK_SECRET || !SENDER_EMAIL || (!resend && !brevoConfigured())) {
-    console.error('send-auth-emails: missing email provider configuration');
-    return json({ error: { message: 'Email hook is not configured' } }, 500);
+  if (!HOOK_SECRET || !SENDER_EMAIL || !resend) {
+    console.error('send-auth-emails: missing Resend configuration');
+    return json({ error: { message: 'Email provider (Resend) is not configured' } }, 500);
   }
 
   const payload = await req.text();
@@ -328,22 +196,11 @@ Deno.serve(async (req) => {
     }
 
     const mail = buildRecoveryEmail(token);
-    const apple = isAppleMailbox(user.email);
-    const useBrevo = apple && brevoConfigured();
+    
+    // Always use Resend now
+    await sendViaResend(user.email, mail.subject, mail.html, mail.text, mail.deliveryRef);
 
-    if (apple && !brevoConfigured()) {
-      console.warn(
-        'send-auth-emails: Apple mailbox without Brevo fallback — Resend may bounce HM08 for ' + user.email,
-      );
-    }
-
-    if (useBrevo) {
-      await sendViaBrevo(user.email, mail.subject, mail.html, mail.text, mail.deliveryRef);
-    } else {
-      await sendViaResend(user.email, mail.subject, mail.html, mail.text, mail.deliveryRef);
-    }
-
-    return json({ success: true, provider: useBrevo ? 'brevo' : 'resend' });
+    return json({ success: true, provider: 'resend' });
   } catch (error) {
     console.error('send-auth-emails:', error);
     return json({
