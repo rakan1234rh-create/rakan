@@ -256,7 +256,7 @@ async function dispatchNotificationTemplates(
         for (const u of users) {
           if (u.email) {
             try {
-              await sendImmediateEmail(u.email, tpl.title, tpl.message, record);
+              await sendImmediateEmail(supabase, u.email, tpl.title, tpl.message, record);
             } catch (err) {
               allErrors.push(`Email failed to ${u.email}: ${err.message}`);
             }
@@ -351,14 +351,19 @@ async function dispatchViolationStatePush(
   return { ...result, state, dedupeKey };
 }
 
-async function sendImmediateEmail(to: string, title: string, body: string, record: ViolationRow) {
+async function sendImmediateEmail(
+  supabase: ReturnType<typeof createClient>,
+  to: string,
+  title: string,
+  body: string,
+  record: ViolationRow,
+) {
   const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? '';
   const BREVO_API_KEY = Deno.env.get('BREVO_API_KEY') ?? '';
   const SENDER_EMAIL_RAW = Deno.env.get('SENDER_EMAIL') ?? 'no-reply@athar-app.online';
   const FULL_SENDER = SENDER_EMAIL_RAW.includes('<') ? SENDER_EMAIL_RAW : `ATHAR <${SENDER_EMAIL_RAW}>`;
   const SENDER_EMAIL = SENDER_EMAIL_RAW.includes('<') ? SENDER_EMAIL_RAW.match(/<(.+)>|$/)?.[1] || SENDER_EMAIL_RAW : SENDER_EMAIL_RAW;
   const SENDER_NAME = SENDER_EMAIL_RAW.includes('<') ? SENDER_EMAIL_RAW.split('<')[0].trim() : 'ATHAR';
-  const BREVO_FROM = Deno.env.get('BREVO_FROM') ?? SENDER_EMAIL;
 
   const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null;
   const isApple = (email: string) => new Set(['icloud.com', 'me.com', 'mac.com']).has(email.split('@').pop()?.toLowerCase() ?? '');
@@ -389,7 +394,7 @@ async function sendImmediateEmail(to: string, title: string, body: string, recor
   const text = `${title}: ${body}. رقم المخالفة: ${record.ticket_number || record.id}`;
 
   if (isApple(to) && BREVO_API_KEY) {
-    await fetch('https://api.brevo.com/v3/smtp/email', {
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
       method: 'POST',
       headers: { 'api-key': BREVO_API_KEY, 'content-type': 'application/json' },
       body: JSON.stringify({
@@ -400,8 +405,15 @@ async function sendImmediateEmail(to: string, title: string, body: string, recor
         textContent: text
       }),
     });
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`Brevo failed: ${errText}`);
+    }
   } else if (resend) {
-    await resend.emails.send({ from: FULL_SENDER, to: [to], subject, html, text });
+    const { error } = await resend.emails.send({ from: FULL_SENDER, to: [to], subject, html, text });
+    if (error) throw new Error(`Resend failed: ${error.message}`);
+  } else {
+    throw new Error('No email provider (Resend/Brevo) configured');
   }
 }
 
