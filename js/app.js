@@ -19439,10 +19439,22 @@
         if (typeof tr === 'function') tr = tr();
         if (!tr) return showToast('إجراء غير صالح', 'error');
 
+        let logUser = me.name;
+        let logRole = ROLE_LABELS[me.role];
+
+        // إخفاء هوية المستخدم في مراحل التدقيق والمدير بناءً على طلب المستخدم
+        if (t.state === 'aud') {
+          logUser = 'إدارة الجودة - التدقيق';
+          logRole = 'التدقيق';
+        } else if (t.state === 'mgt') {
+          logUser = 'الإدارة';
+          logRole = 'القرار الإداري';
+        }
+
         const newLog = {
           date: getNow(),
-          user: me.name,
-          role: ROLE_LABELS[me.role],
+          user: logUser,
+          role: logRole,
           action: tr.actionLabel,
           note: text
         };
@@ -19481,12 +19493,23 @@
                 fileId = result.fileId;
               }
               if (!fileId) throw new Error('المرفق غير مرفوع بعد — انتظر اكتمال الرفع');
+              let attUser = me.name;
+              let attRole = ROLE_LABELS[me.role] || me.role;
+
+              if (t.state === 'aud') {
+                attUser = 'إدارة الجودة - التدقيق';
+                attRole = 'التدقيق';
+              } else if (t.state === 'mgt') {
+                attUser = 'الإدارة';
+                attRole = 'القرار الإداري';
+              }
+
               uploadedAtts.push({
                 n: file.name,
                 p: fileId,
                 s: tr.actionLabel,
-                b: me.name,
-                r: ROLE_LABELS[me.role] || me.role,
+                b: attUser,
+                r: attRole,
                 t: getNow(),
                 ...(file.devDataUrl ? { u: file.devDataUrl } : {})
               });
