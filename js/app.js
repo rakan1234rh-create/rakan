@@ -18226,10 +18226,17 @@
       }
 
       function formatAttachmentUploaderForDisplay(att, hideObs) {
-        if (hideObs && isObserverStageAttachment(att)) return { role: 'الراصد', user: '' };
+        // نستخدم نفس منطق السجل لتوحيد عرض الأسماء (إخفاء أسماء المدير والمدقق عن الموظف/المشرف)
         const role = att.r || att.uploaderRole || guessAttachmentUploaderRole(att);
         const user = att.b || att.uploadedBy || '';
-        return { role, user };
+        const actor = formatLogActorForDisplay({ role, user }, null, hideObs);
+        
+        // إذا كان المرفق من مرحلة الرصد وكان يجب إخفاء اسم الراصد
+        if (hideObs && isObserverStageAttachment(att)) {
+          return { role: 'الراصد', user: '' };
+        }
+
+        return { role: actor.role, user: actor.user };
       }
 
       /** سجل إجراء يخص مرحلة الرصد (إنشاء التذكرة من الراصد وليس المشرف مباشرة) */
@@ -18249,6 +18256,22 @@
         if (hideObs && isObserverLogEntry(log, ticket)) {
           return { user: 'الراصد', role: '', masked: true };
         }
+
+        const role = String(log.role || '').trim();
+        const me = state.currentUser;
+        const myRole = me?.role;
+        // إخفاء أسماء الإدارة والمدقق عن الموظف والمشرف
+        const isLowRole = myRole === 'employee' || myRole === 'supervisor' || myRole === 'branch_manager' || myRole === 'observer';
+
+        if (isLowRole) {
+          if (role === 'المدقق' || role === 'auditor') {
+            return { user: 'إدارة الجودة · المدقق', role: '', masked: true };
+          }
+          if (role === 'المدير' || role === 'manager' || role === 'المدير العام') {
+            return { user: 'الإدارة', role: '', masked: true };
+          }
+        }
+
         return { user: log.user || '-', role: log.role || '-', masked: false };
       }
 
@@ -28647,9 +28670,17 @@
       ${atts.length ? atts.map((a, i) => {
           const attName = a.n || a.name || 'ملف';
           const uploader = formatAttachmentUploaderForDisplay(a, hideObs);
-          const uploaderLine = hideObs && isObserverStageAttachment(a)
-            ? 'الراصد'
-            : (uploader.user ? `${uploader.role} (${uploader.user})` : uploader.role);
+          let uploaderLine = '';
+          if (hideObs && isObserverStageAttachment(a)) {
+            uploaderLine = 'الراصد';
+          } else {
+            // إذا كان الاسم مخفياً (يحتوي على المسمى الوظيفي فقط بدون دور إضافي)
+            if (uploader.user && !uploader.role) {
+              uploaderLine = uploader.user;
+            } else {
+              uploaderLine = uploader.user ? `${uploader.role} (${uploader.user})` : uploader.role;
+            }
+          }
           return `
         <div class="print-row">
           <strong>${i + 1}.</strong>
