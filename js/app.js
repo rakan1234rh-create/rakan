@@ -18264,10 +18264,10 @@
         const isLowRole = myRole === 'employee' || myRole === 'supervisor' || myRole === 'branch_manager' || myRole === 'observer';
 
         if (isLowRole) {
-          if (role === 'المدقق' || role === 'auditor') {
-            return { user: 'إدارة الجودة · المدقق', role: '', masked: true };
+          if (role === 'المدقق' || role === 'auditor' || role === 'التدقيق') {
+            return { user: 'إدارة الجودة - التدقيق', role: '', masked: true };
           }
-          if (role === 'المدير' || role === 'manager' || role === 'المدير العام') {
+          if (role === 'المدير' || role === 'manager' || role === 'المدير العام' || role === 'القرار الإداري') {
             return { user: 'الإدارة', role: '', masked: true };
           }
         }
@@ -18278,7 +18278,11 @@
       function formatLogMetaLine(log, ticket, hideObs) {
         const date = formatLogDate(log.date) || '-';
         const actor = formatLogActorForDisplay(log, ticket, hideObs);
-        if (actor.masked) return `${date} · الراصد`;
+        if (actor.masked) {
+          const user = String(actor.user || '').trim();
+          if (user && user !== 'الراصد') return `${date} · ${user}`;
+          return `${date} · الراصد`;
+        }
         const user = String(actor.user || '').trim();
         const role = String(actor.role || '').trim();
         if (!user || user === '-') {
