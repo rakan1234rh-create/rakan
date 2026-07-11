@@ -27,9 +27,12 @@ function isAppleMailbox(email: string): boolean {
 
 async function sendEmail(to: string, subject: string, html: string, text: string) {
   const deliveryRef = crypto.randomUUID();
+  const unsubscribeUrl = `https://athar-app.online/settings?unsubscribe=${encodeURIComponent(to)}`;
   const antiThreadHeaders = {
     'X-Entity-Ref-ID': deliveryRef,
     'X-ATHAR-Delivery': deliveryRef,
+    'List-Unsubscribe': `<${unsubscribeUrl}>`,
+    'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
   };
 
   // Brevo disabled as per user request due to iCloud delivery issues (HM08).
@@ -127,7 +130,11 @@ export async function runWeeklyDigest(supabase: ReturnType<typeof createClient>)
         </table>
         <p style="margin-top: 20px;">يرجى مراجعة التفاصيل عبر تطبيق أثر</p>
         <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0;">
-        <p style="font-size: 12px; color: #777;">رسالة تلقائية من منصة أثر يرجى عدم الرد على هذا البريد</p>
+        <p style="font-size: 11px; color: #999; text-align: center;">
+          رسالة تلقائية من منصة أثر يرجى عدم الرد على هذا البريد.
+          <br>
+          <a href="${unsubscribeUrl}" style="color: #999; text-decoration: underline;">إلغاء الاشتراك من هذه التنبيهات</a>
+        </p>
       </div>
     `;
 

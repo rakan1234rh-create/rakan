@@ -41,10 +41,13 @@ function invisibleSubjectSuffix(ref: string): string {
   return '\u200C'.repeat(n);
 }
 
-function antiThreadHeaders(deliveryRef: string): Record<string, string> {
+function emailHeaders(deliveryRef: string, to: string): Record<string, string> {
+  const unsubscribeUrl = `https://athar-app.online/settings?unsubscribe=${encodeURIComponent(to)}`;
   return {
     'X-Entity-Ref-ID': deliveryRef,
     'X-ATHAR-Delivery': deliveryRef,
+    'List-Unsubscribe': `<${unsubscribeUrl}>`,
+    'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
   };
 }
 
@@ -109,7 +112,7 @@ async function sendViaResend(
     subject,
     html,
     text,
-    headers: antiThreadHeaders(deliveryRef),
+    headers: emailHeaders(deliveryRef, to),
   });
 
   if (error) {

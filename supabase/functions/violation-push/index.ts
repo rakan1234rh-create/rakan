@@ -377,6 +377,7 @@ async function sendImmediateEmail(
   const userName = userData?.name || '';
   const greeting = userName ? `مرحباً ${userName.split(' ')[0]}،` : 'مرحباً،';
 
+  const unsubscribeUrl = `https://athar-app.online/settings?unsubscribe=${encodeURIComponent(to)}`;
   const html = `
     <div dir="rtl" style="font-family: sans-serif; line-height: 1.6; color: #333;">
       <h2 style="color: #d9534f;">${title}</h2>
@@ -388,7 +389,11 @@ async function sendImmediateEmail(
       </div>
       <p style="margin-top: 20px;">يرجى مراجعة التفاصيل عبر تطبيق أثر</p>
       <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
-      <p style="font-size: 12px; color: #777;">رسالة تلقائية من منصة أثر يرجى عدم الرد على هذا البريد</p>
+      <p style="font-size: 11px; color: #999; text-align: center;">
+        رسالة تلقائية من منصة أثر يرجى عدم الرد على هذا البريد.
+        <br>
+        <a href="${unsubscribeUrl}" style="color: #999; text-decoration: underline;">إلغاء الاشتراك من هذه التنبيهات</a>
+      </p>
     </div>
   `;
   const text = `${title}: ${body}. رقم المخالفة: ${record.ticket_number || record.id}`;
@@ -396,7 +401,17 @@ async function sendImmediateEmail(
   // Brevo disabled as per user request due to iCloud delivery issues (HM08).
   // Resend is now the primary and only provider for all email domains including Apple/iCloud.
   if (resend) {
-    const { error } = await resend.emails.send({ from: FULL_SENDER, to: [to], subject, html, text });
+    const { error } = await resend.emails.send({ 
+      from: FULL_SENDER, 
+      to: [to], 
+      subject, 
+      html, 
+      text,
+      headers: {
+        'List-Unsubscribe': `<${unsubscribeUrl}>`,
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+      }
+    });
     if (error) throw new Error(`Resend failed: ${error.message}`);
   } else {
     throw new Error('No email provider (Resend) configured. Please add RESEND_API_KEY to Supabase Secrets.');
