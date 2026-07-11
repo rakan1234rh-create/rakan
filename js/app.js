@@ -18264,10 +18264,10 @@
         const isLowRole = myRole === 'employee' || myRole === 'supervisor' || myRole === 'branch_manager' || myRole === 'observer';
 
         if (isLowRole) {
-          if (role === 'المدقق' || role === 'auditor') {
-            return { user: 'إدارة الجودة · المدقق', role: '', masked: true };
+          if (role === 'المدقق' || role === 'auditor' || role === 'التدقيق') {
+            return { user: 'إدارة الجودة - التدقيق', role: '', masked: true };
           }
-          if (role === 'المدير' || role === 'manager' || role === 'المدير العام') {
+          if (role === 'المدير' || role === 'manager' || role === 'المدير العام' || role === 'القرار الإداري') {
             return { user: 'الإدارة', role: '', masked: true };
           }
         }
@@ -18278,7 +18278,11 @@
       function formatLogMetaLine(log, ticket, hideObs) {
         const date = formatLogDate(log.date) || '-';
         const actor = formatLogActorForDisplay(log, ticket, hideObs);
-        if (actor.masked) return `${date} · الراصد`;
+        if (actor.masked) {
+          const user = String(actor.user || '').trim();
+          if (user && user !== 'الراصد') return `${date} · ${user}`;
+          return `${date} · الراصد`;
+        }
         const user = String(actor.user || '').trim();
         const role = String(actor.role || '').trim();
         if (!user || user === '-') {
@@ -19439,10 +19443,22 @@
         if (typeof tr === 'function') tr = tr();
         if (!tr) return showToast('إجراء غير صالح', 'error');
 
+        let logUser = me.name;
+        let logRole = ROLE_LABELS[me.role];
+
+        // إخفاء هوية المستخدم في مراحل التدقيق والمدير بناءً على طلب المستخدم
+        if (t.state === 'aud') {
+          logUser = 'إدارة الجودة - التدقيق';
+          logRole = 'التدقيق';
+        } else if (t.state === 'mgt') {
+          logUser = 'الإدارة';
+          logRole = 'القرار الإداري';
+        }
+
         const newLog = {
           date: getNow(),
-          user: me.name,
-          role: ROLE_LABELS[me.role],
+          user: logUser,
+          role: logRole,
           action: tr.actionLabel,
           note: text
         };
@@ -19481,12 +19497,23 @@
                 fileId = result.fileId;
               }
               if (!fileId) throw new Error('المرفق غير مرفوع بعد — انتظر اكتمال الرفع');
+              let attUser = me.name;
+              let attRole = ROLE_LABELS[me.role] || me.role;
+
+              if (t.state === 'aud') {
+                attUser = 'إدارة الجودة - التدقيق';
+                attRole = 'التدقيق';
+              } else if (t.state === 'mgt') {
+                attUser = 'الإدارة';
+                attRole = 'القرار الإداري';
+              }
+
               uploadedAtts.push({
                 n: file.name,
                 p: fileId,
                 s: tr.actionLabel,
-                b: me.name,
-                r: ROLE_LABELS[me.role] || me.role,
+                b: attUser,
+                r: attRole,
                 t: getNow(),
                 ...(file.devDataUrl ? { u: file.devDataUrl } : {})
               });
