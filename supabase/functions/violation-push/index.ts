@@ -393,27 +393,13 @@ async function sendImmediateEmail(
   `;
   const text = `${title}: ${body}. رقم المخالفة: ${record.ticket_number || record.id}`;
 
-  if (isApple(to) && BREVO_API_KEY) {
-    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
-      method: 'POST',
-      headers: { 'api-key': BREVO_API_KEY, 'content-type': 'application/json' },
-      body: JSON.stringify({
-        sender: { name: SENDER_NAME, email: SENDER_EMAIL },
-        to: [{ email: to }],
-        subject,
-        htmlContent: html,
-        textContent: text
-      }),
-    });
-    if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`Brevo failed: ${errText}`);
-    }
-  } else if (resend) {
+  // Brevo disabled as per user request due to iCloud delivery issues (HM08).
+  // Resend is now the primary and only provider for all email domains including Apple/iCloud.
+  if (resend) {
     const { error } = await resend.emails.send({ from: FULL_SENDER, to: [to], subject, html, text });
     if (error) throw new Error(`Resend failed: ${error.message}`);
   } else {
-    throw new Error('No email provider (Resend/Brevo) configured');
+    throw new Error('No email provider (Resend) configured. Please add RESEND_API_KEY to Supabase Secrets.');
   }
 }
 

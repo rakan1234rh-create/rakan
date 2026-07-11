@@ -32,26 +32,9 @@ async function sendEmail(to: string, subject: string, html: string, text: string
     'X-ATHAR-Delivery': deliveryRef,
   };
 
-  if (isAppleMailbox(to) && BREVO_API_KEY) {
-    // Send via Brevo
-    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
-      method: 'POST',
-      headers: {
-        accept: 'application/json',
-        'api-key': BREVO_API_KEY,
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        sender: { name: SENDER_NAME, email: SENDER_EMAIL },
-        to: [{ email: to }],
-        subject,
-        htmlContent: html,
-        textContent: text,
-        headers: antiThreadHeaders,
-      }),
-    });
-    if (!response.ok) throw new Error(`Brevo failed: ${await response.text()}`);
-  } else if (resend) {
+  // Brevo disabled as per user request due to iCloud delivery issues (HM08).
+  // Resend is now the primary and only provider for all email domains including Apple/iCloud.
+  if (resend) {
     // Send via Resend
     const { error } = await resend.emails.send({
       from: FULL_SENDER,
@@ -62,6 +45,8 @@ async function sendEmail(to: string, subject: string, html: string, text: string
       headers: antiThreadHeaders,
     });
     if (error) throw new Error(`Resend failed: ${error.message}`);
+  } else {
+    throw new Error('No email provider (Resend) configured');
   }
 }
 
