@@ -94,6 +94,30 @@ function json(body: unknown, status = 200) {
   });
 }
 
+const BREVO_API_KEY = Deno.env.get('BREVO_API_KEY') ?? '';
+const APPLE_DOMAINS = new Set(['icloud.com', 'me.com', 'mac.com']);
+
+async function sendViaBrevo(to: string, subject: string, html: string, text: string): Promise<void> {
+  if (!BREVO_API_KEY) throw new Error('Brevo API key is not configured');
+  const { name, email } = parseSender(SENDER_EMAIL);
+  const resp = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: { 'api-key': BREVO_API_KEY, 'content-type': 'application/json' },
+    body: JSON.stringify({
+      sender: { name, email },
+      to: [{ email: to }],
+      subject,
+      htmlContent: html,
+      textContent: text,
+    }),
+  });
+  if (!resp.ok) {
+    const err = await resp.text();
+    throw new Error(`Brevo failed: ${err}`);
+  }
+  console.log('send-auth-emails: brevo sent to ' + to);
+}
+
 async function sendViaResend(
   to: string,
   subject: string,
@@ -101,10 +125,7 @@ async function sendViaResend(
   text: string,
   deliveryRef: string,
 ): Promise<void> {
-  if (!resend) {
-    throw new Error('Resend is not configured');
-  }
-
+  if (!resend) throw new Error('Resend is not configured');
   const from = formatSender(SENDER_EMAIL);
   const { data, error } = await resend.emails.send({
     from,
@@ -114,19 +135,11 @@ async function sendViaResend(
     text,
     headers: emailHeaders(deliveryRef, to),
   });
-
   if (error) {
     const msg = (error as { message?: string; name?: string }).message || 'Resend send failed';
     console.error('send-auth-emails: resend error from=' + from + ' to=' + to + ' msg=' + msg);
-    if (/domain|verify|not verified|invalid.*from|sender/i.test(msg)) {
-      throw new Error(
-        'Resend rejected sender ' + parseSender(SENDER_EMAIL).email +
-        '. Verify athar-app.online in Resend Domains and set SENDER_EMAIL to no-reply@athar-app.online. Details: ' + msg,
-      );
-    }
     throw new Error(msg);
   }
-
   console.log('send-auth-emails: resend sent to ' + to + ' id=' + (data as { id?: string })?.id);
 }
 
@@ -200,8 +213,12 @@ Deno.serve(async (req) => {
 
     const mail = buildRecoveryEmail(token);
     
-    // Always use Resend now
-    await sendViaResend(user.email, mail.subject, mail.html, mail.text, mail.deliveryRef);
+    const isApple = APPLE_DOMAINS.has(user.email.split('@').pop()?.toLowerCase() ?? '');
+    if (isApple && BREVO_API_KEY) {
+      await sendViaBrevo(user.email, mail.subject, mail.html, mail.text);
+    } else {
+      await sendViaResend(user.email, mail.subject, mail.html, mail.text, mail.deliveryRef);
+    }
 
     return json({ success: true, provider: 'resend' });
   } catch (error) {
