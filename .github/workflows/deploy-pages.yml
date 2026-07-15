@@ -26,7 +26,7 @@ jobs:
 
       - uses: actions/configure-pages@v5
 
-      - name: Prepare site
+      - name: Prepare production site
         run: |
           npm install sharp @resvg/resvg-js --no-save
           node scripts/export-athar-homescreen-png.mjs
@@ -35,7 +35,7 @@ jobs:
           mkdir -p site/icons
           cp index.html site/index.html
           sed -i "s/<meta name=\"athar-build\" content=\"[^\"]*\">/<meta name=\"athar-build\" content=\"${SHORT_SHA}\">/" site/index.html
-          printf '%s\n' "{\"build\":\"${SHORT_SHA}\",\"builtAt\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}" > site/app-version.json
+          printf '%s\n' "{\"build\":\"${SHORT_SHA}\",\"builtAt\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"env\":\"production\"}" > site/app-version.json
           cp -r styles site/
           if [ -d js ]; then cp -r js site/; fi
           cp -r vendor site/
@@ -54,6 +54,44 @@ jobs:
           cp icons/athar-pwa-180-v${VER}.png site/apple-touch-icon-precomposed.png
           cp icons/athar-pwa-180-v${VER}.png site/icons/apple-touch-icon.png
           cp icons/athar-pwa-512-v${VER}.png site/favicon.png
+
+      # ينشر فرع staging تحت /staging/ على نفس Pages بدون مستودع أو دومين إضافي
+      - name: Checkout staging branch for /staging
+        uses: actions/checkout@v4
+        with:
+          ref: staging
+          path: staging-src
+
+      - name: Prepare staging site under /staging
+        run: |
+          set -euo pipefail
+          DEST="site/staging"
+          mkdir -p "$DEST/icons"
+          cd staging-src
+          npm install sharp @resvg/resvg-js --no-save
+          node scripts/export-athar-homescreen-png.mjs
+          VER="$(tr -d '\r\n' < icons/icon-cache-ver.txt)"
+          SHORT_SHA="$(git rev-parse --short HEAD)"
+          cp index.html "$GITHUB_WORKSPACE/$DEST/index.html"
+          sed -i "s/<meta name=\"athar-build\" content=\"[^\"]*\">/<meta name=\"athar-build\" content=\"${SHORT_SHA}-staging\">/" "$GITHUB_WORKSPACE/$DEST/index.html"
+          printf '%s\n' "{\"build\":\"${SHORT_SHA}\",\"builtAt\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"env\":\"staging\"}" > "$GITHUB_WORKSPACE/$DEST/app-version.json"
+          cp -r styles "$GITHUB_WORKSPACE/$DEST/"
+          if [ -d js ]; then cp -r js "$GITHUB_WORKSPACE/$DEST/"; fi
+          cp -r vendor "$GITHUB_WORKSPACE/$DEST/"
+          test -f "$GITHUB_WORKSPACE/$DEST/vendor/ffmpeg/worker.js"
+          cp manifest.webmanifest "$GITHUB_WORKSPACE/$DEST/manifest.webmanifest"
+          if [ -f sw.js ]; then cp sw.js "$GITHUB_WORKSPACE/$DEST/sw.js"; fi
+          cp icons/athar-pwa-192-v${VER}.png icons/athar-pwa-512-v${VER}.png \
+            icons/athar-pwa-180-v${VER}.png icons/athar-pwa-maskable-512-v${VER}.png \
+            icons/athar-app-icon.svg icons/athar-homescreen-fullbleed.svg \
+            icons/athar-homescreen-maskable.svg icons/athar-wordmark-email.svg \
+            icons/athar-wordmark-email-v388.png icons/athar-logo-v401.png "$GITHUB_WORKSPACE/$DEST/icons/"
+          if [ -d icons/avatars ]; then mkdir -p "$GITHUB_WORKSPACE/$DEST/icons/avatars" && cp -r icons/avatars/. "$GITHUB_WORKSPACE/$DEST/icons/avatars/"; fi
+          touch "$GITHUB_WORKSPACE/$DEST/.nojekyll"
+          cp icons/athar-pwa-180-v${VER}.png "$GITHUB_WORKSPACE/$DEST/apple-touch-icon.png"
+          cp icons/athar-pwa-180-v${VER}.png "$GITHUB_WORKSPACE/$DEST/apple-touch-icon-precomposed.png"
+          cp icons/athar-pwa-180-v${VER}.png "$GITHUB_WORKSPACE/$DEST/icons/apple-touch-icon.png"
+          cp icons/athar-pwa-512-v${VER}.png "$GITHUB_WORKSPACE/$DEST/favicon.png"
 
       - uses: actions/upload-pages-artifact@v3
         with:
