@@ -14567,8 +14567,13 @@
         for (const src of [fileName, fileId]) {
           if (!src) continue;
           const base = String(src).split('/').pop() || String(src);
-          const m = base.match(/\.([a-z0-9]{2,5})(?:__|[\s-]|$)/i);
-          if (m) return m[1].toLowerCase();
+          const parts = base.split('.');
+          if (parts.length > 1) {
+            const ext = parts.pop().split(/[__\s-]/)[0].toLowerCase();
+            if (ext && /^[a-z0-9]{2,5}$/.test(ext)) {
+              return ext;
+            }
+          }
         }
         return '';
       }
