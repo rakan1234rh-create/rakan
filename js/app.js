@@ -5,12 +5,13 @@
       // ═══════════════════════════════════════════════════════════════════════════
       // 1. CONFIGURATION
       // ═══════════════════════════════════════════════════════════════════════════
-      const SUPABASE_URL = 'https://rizoafuxmqsddjfhbsmf.supabase.co';
+      // Staging Supabase project (فرع staging فقط — لا يمس بيانات الإنتاج)
+      const SUPABASE_URL = 'https://omzclgjbvqfcbpfkcbpk.supabase.co';
 
       // 🔑 Publishable Key (آمن للاستخدام في المتصفح طالما RLS مفعّل)
       // استبدل القيمة أدناه بالـ Publishable Key الجديد من:
       // Supabase Dashboard → Settings → API Keys → Publishable and secret API keys
-      const SUPABASE_ANON = 'sb_publishable__nGAMUih_RNZ_6FMpwzDNw_116hvA7K';
+      const SUPABASE_ANON = 'sb_publishable_u5qNowdxPq9nClg97zKdgw_FkKnMoOD';
 
       /** Web Push — المفتاح العام VAPID (الخاص في Supabase Secrets فقط) */
       const ATHAR_VAPID_PUBLIC_KEY = 'BAAE2sxYeIGbYADV7uimLzIFB_en9SBWQ3a4-LBULuOIVm40YI7YfjXL2Fddttr1L1tHFkoaiPzmZankfUk_2jc';
