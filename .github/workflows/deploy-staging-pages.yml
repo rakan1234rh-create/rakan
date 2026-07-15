@@ -59,7 +59,8 @@ jobs:
               VER="$(tr -d '\r\n' < icons/icon-cache-ver.txt)"
               SHORT_SHA="$(git rev-parse --short HEAD)"
               cp index.html "$DEST/index.html"
-              sed -i "s/<meta name=\"athar-build\" content=\"[^\"]*\">/<meta name=\"athar-build\" content=\"${SHORT_SHA}-${LABEL}\">/" "$DEST/index.html"
+              # athar-build يجب أن يطابق app-version.json.build حرفياً وإلا يحدث رفرش لا نهائي
+              sed -i "s/<meta name=\"athar-build\" content=\"[^\"]*\">/<meta name=\"athar-build\" content=\"${SHORT_SHA}\">/" "$DEST/index.html"
               printf '%s\n' "{\"build\":\"${SHORT_SHA}\",\"builtAt\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"env\":\"${LABEL}\"}" > "$DEST/app-version.json"
               cp -r styles "$DEST/"
               if [ -d js ]; then cp -r js "$DEST/"; fi
