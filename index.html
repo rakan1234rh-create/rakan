@@ -2367,7 +2367,7 @@
 
   <script>
     (function () {
-      if (location.hostname === 'athar-app.online' && (location.pathname !== '/' || location.search || location.hash)) {
+      if ((location.hostname === 'athar-app.online' || location.hostname === 'staging.athar-app.online') && (location.pathname !== '/' || location.search || location.hash)) {
         history.replaceState(null, '', '/');
       }
     })();

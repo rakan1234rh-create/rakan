@@ -1,0 +1,79 @@
+name: Deploy staging site
+
+# ينشر فرع staging إلى مستودع rakan-staging → staging.athar-app.online
+# لا يمس GitHub Pages الخاص بالإنتاج (main / athar-app.online).
+on:
+  push:
+    branches: [staging]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: staging-pages
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://staging.athar-app.online
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Prepare staging site
+        run: |
+          npm install sharp @resvg/resvg-js --no-save
+          node scripts/export-athar-homescreen-png.mjs
+          VER="$(tr -d '\r\n' < icons/icon-cache-ver.txt)"
+          SHORT_SHA="$(git rev-parse --short HEAD)"
+          mkdir -p site/icons
+          cp index.html site/index.html
+          sed -i "s/<meta name=\"athar-build\" content=\"[^\"]*\">/<meta name=\"athar-build\" content=\"${SHORT_SHA}\">/" site/index.html
+          printf '%s\n' "{\"build\":\"${SHORT_SHA}\",\"builtAt\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"env\":\"staging\"}" > site/app-version.json
+          cp -r styles site/
+          if [ -d js ]; then cp -r js site/; fi
+          cp -r vendor site/
+          test -f site/vendor/ffmpeg/worker.js
+          cp manifest.webmanifest site/manifest.webmanifest
+          if [ -f sw.js ]; then cp sw.js site/sw.js; fi
+          # CNAME للبيئة الاختبارية فقط — لا تستخدم CNAME الإنتاج
+          printf '%s\n' 'staging.athar-app.online' > site/CNAME
+          cp icons/athar-pwa-192-v${VER}.png icons/athar-pwa-512-v${VER}.png \
+            icons/athar-pwa-180-v${VER}.png icons/athar-pwa-maskable-512-v${VER}.png \
+            icons/athar-app-icon.svg icons/athar-homescreen-fullbleed.svg \
+            icons/athar-homescreen-maskable.svg icons/athar-wordmark-email.svg \
+            icons/athar-wordmark-email-v388.png icons/athar-logo-v401.png site/icons/
+          if [ -d icons/avatars ]; then mkdir -p site/icons/avatars && cp -r icons/avatars/. site/icons/avatars/; fi
+          touch site/.nojekyll
+          cp icons/athar-pwa-180-v${VER}.png site/apple-touch-icon.png
+          cp icons/athar-pwa-180-v${VER}.png site/apple-touch-icon-precomposed.png
+          cp icons/athar-pwa-180-v${VER}.png site/icons/apple-touch-icon.png
+          cp icons/athar-pwa-512-v${VER}.png site/favicon.png
+
+      - name: Require staging deploy token
+        env:
+          STAGING_PAGES_TOKEN: ${{ secrets.STAGING_PAGES_TOKEN }}
+        run: |
+          if [ -z "$STAGING_PAGES_TOKEN" ]; then
+            echo "::error::أضف Secret باسم STAGING_PAGES_TOKEN (Personal Access Token بصلاحية repo) لنشر staging.athar-app.online"
+            echo "::error::وأنشئ مستودعاً عاماً: rakan1234rh-create/rakan-staging ثم فعّل GitHub Pages من فرع gh-pages"
+            exit 1
+          fi
+
+      - name: Deploy to rakan-staging (GitHub Pages)
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          personal_token: ${{ secrets.STAGING_PAGES_TOKEN }}
+          external_repository: rakan1234rh-create/rakan-staging
+          publish_dir: ./site
+          publish_branch: gh-pages
+          force_orphan: true
+          commit_message: 'Deploy staging ${{ github.sha }}'
+          cname: staging.athar-app.online

@@ -22,7 +22,7 @@
       const ATHAR_SW_URL = './sw.js?v=10';
 
       /** رابط النشر — روابط استعادة كلمة المرور من file:// أو localhost */
-      const ATHAR_PUBLIC_ORIGIN = 'https://athar-app.online';
+      const ATHAR_PUBLIC_ORIGIN = 'https://staging.athar-app.online';
 
       // 📁 Cloudflare Worker اختياري (مسار عارض/تحميل قديم)
       const CLOUDFLARE_WORKER_URL = '/upload';
