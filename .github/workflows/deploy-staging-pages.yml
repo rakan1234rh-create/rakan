@@ -1,0 +1,115 @@
+name: Deploy staging site
+
+# ينشر من فرع staging فقط — دون تعديل أي ملف في main.
+# الجذر = نسخة الإنتاج الحالية من main
+# /staging/ = فرع staging (المنصة الاختبارية)
+#
+# مطلوب مرة واحدة منك:
+# Settings → Environments → github-pages → Deployment branches
+# أضف فرع: staging
+on:
+  push:
+    branches: [staging]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout staging
+        uses: actions/checkout@v4
+        with:
+          path: staging-src
+          ref: staging
+
+      - name: Checkout main (production root only — read-only)
+        uses: actions/checkout@v4
+        with:
+          path: main-src
+          ref: main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - uses: actions/configure-pages@v5
+
+      - name: Build production root + /staging
+        run: |
+          set -euo pipefail
+
+          build_site() {
+            local SRC="$1"
+            local DEST="$2"
+            local LABEL="$3"
+            mkdir -p "$DEST/icons"
+            (
+              cd "$SRC"
+              npm install sharp @resvg/resvg-js --no-save
+              node scripts/export-athar-homescreen-png.mjs
+              VER="$(tr -d '\r\n' < icons/icon-cache-ver.txt)"
+              SHORT_SHA="$(git rev-parse --short HEAD)"
+              cp index.html "$DEST/index.html"
+              sed -i "s/<meta name=\"athar-build\" content=\"[^\"]*\">/<meta name=\"athar-build\" content=\"${SHORT_SHA}-${LABEL}\">/" "$DEST/index.html"
+              printf '%s\n' "{\"build\":\"${SHORT_SHA}\",\"builtAt\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"env\":\"${LABEL}\"}" > "$DEST/app-version.json"
+              cp -r styles "$DEST/"
+              if [ -d js ]; then cp -r js "$DEST/"; fi
+              cp -r vendor "$DEST/"
+              test -f "$DEST/vendor/ffmpeg/worker.js"
+              cp manifest.webmanifest "$DEST/manifest.webmanifest"
+              if [ -f sw.js ]; then cp sw.js "$DEST/sw.js"; fi
+              cp icons/athar-pwa-192-v${VER}.png icons/athar-pwa-512-v${VER}.png \
+                icons/athar-pwa-180-v${VER}.png icons/athar-pwa-maskable-512-v${VER}.png \
+                icons/athar-app-icon.svg icons/athar-homescreen-fullbleed.svg \
+                icons/athar-homescreen-maskable.svg icons/athar-wordmark-email.svg \
+                icons/athar-wordmark-email-v388.png icons/athar-logo-v401.png "$DEST/icons/"
+              if [ -d icons/avatars ]; then mkdir -p "$DEST/icons/avatars" && cp -r icons/avatars/. "$DEST/icons/avatars/"; fi
+              touch "$DEST/.nojekyll"
+              cp icons/athar-pwa-180-v${VER}.png "$DEST/apple-touch-icon.png"
+              cp icons/athar-pwa-180-v${VER}.png "$DEST/apple-touch-icon-precomposed.png"
+              cp icons/athar-pwa-180-v${VER}.png "$DEST/icons/apple-touch-icon.png"
+              cp icons/athar-pwa-512-v${VER}.png "$DEST/favicon.png"
+            )
+          }
+
+          rm -rf site
+          mkdir -p site
+          build_site "$GITHUB_WORKSPACE/main-src" "$GITHUB_WORKSPACE/site" "production"
+          if [ -f "$GITHUB_WORKSPACE/main-src/CNAME" ]; then
+            cp "$GITHUB_WORKSPACE/main-src/CNAME" "$GITHUB_WORKSPACE/site/CNAME"
+          fi
+          build_site "$GITHUB_WORKSPACE/staging-src" "$GITHUB_WORKSPACE/site/staging" "staging"
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: https://athar-app.online/staging/
+    timeout-minutes: 45
+    env:
+      ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
+    steps:
+      - name: Brief pause before Pages deploy
+        run: sleep 15
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+        with:
+          timeout: 600000
+          error_count: 20
+          reporting_interval: 8000
