@@ -1,7 +1,9 @@
 name: Deploy staging site
 
-# ينشر فرع staging إلى مستودع rakan-staging → staging.athar-app.online
-# لا يمس GitHub Pages الخاص بالإنتاج (main / athar-app.online).
+# ينشر فرع staging إلى مستودع rakan-staging
+# الرابط المباشر على GitHub Pages (بدون دومين مخصص):
+# https://rakan1234rh-create.github.io/rakan-staging/
+# لا يمس نشر الإنتاج athar-app.online
 on:
   push:
     branches: [staging]
@@ -19,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: staging
-      url: https://staging.athar-app.online
+      url: https://rakan1234rh-create.github.io/rakan-staging/
     steps:
       - uses: actions/checkout@v4
 
@@ -43,8 +45,8 @@ jobs:
           test -f site/vendor/ffmpeg/worker.js
           cp manifest.webmanifest site/manifest.webmanifest
           if [ -f sw.js ]; then cp sw.js site/sw.js; fi
-          # CNAME للبيئة الاختبارية فقط — لا تستخدم CNAME الإنتاج
-          printf '%s\n' 'staging.athar-app.online' > site/CNAME
+          # بدون CNAME — نستخدم رابط GitHub Pages المباشر فقط
+          rm -f site/CNAME
           cp icons/athar-pwa-192-v${VER}.png icons/athar-pwa-512-v${VER}.png \
             icons/athar-pwa-180-v${VER}.png icons/athar-pwa-maskable-512-v${VER}.png \
             icons/athar-app-icon.svg icons/athar-homescreen-fullbleed.svg \
@@ -62,8 +64,9 @@ jobs:
           STAGING_PAGES_TOKEN: ${{ secrets.STAGING_PAGES_TOKEN }}
         run: |
           if [ -z "$STAGING_PAGES_TOKEN" ]; then
-            echo "::error::أضف Secret باسم STAGING_PAGES_TOKEN (Personal Access Token بصلاحية repo) لنشر staging.athar-app.online"
-            echo "::error::وأنشئ مستودعاً عاماً: rakan1234rh-create/rakan-staging ثم فعّل GitHub Pages من فرع gh-pages"
+            echo "::error::أضف Secret باسم STAGING_PAGES_TOKEN (PAT بصلاحية repo)"
+            echo "::error::وأنشئ مستودعاً عاماً فارغاً: rakan1234rh-create/rakan-staging"
+            echo "::error::ثم فعّل Pages من فرع gh-pages (بدون Custom domain)"
             exit 1
           fi
 
@@ -76,4 +79,4 @@ jobs:
           publish_branch: gh-pages
           force_orphan: true
           commit_message: 'Deploy staging ${{ github.sha }}'
-          cname: staging.athar-app.online
+          # لا تضع cname — نريد رابط github.io المباشر
