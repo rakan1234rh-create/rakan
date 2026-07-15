@@ -2367,8 +2367,16 @@
 
   <script>
     (function () {
-      if ((location.hostname === 'athar-app.online' || location.hostname === 'staging.athar-app.online') && (location.pathname !== '/' || location.search || location.hash)) {
-        history.replaceState(null, '', '/');
+      var host = location.hostname || '';
+      var path = location.pathname || '/';
+      if (host === 'athar-app.online') {
+        // Keep /staging test site intact
+        if (path === '/staging' || path.indexOf('/staging/') === 0) {
+          return;
+        }
+        if (path !== '/' || location.search || location.hash) {
+          history.replaceState(null, '', '/');
+        }
       }
     })();
   </script>

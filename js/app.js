@@ -22,7 +22,7 @@
       const ATHAR_SW_URL = './sw.js?v=10';
 
       /** رابط النشر — روابط استعادة كلمة المرور من file:// أو localhost */
-      const ATHAR_PUBLIC_ORIGIN = 'https://rakan1234rh-create.github.io/rakan-staging';
+      const ATHAR_PUBLIC_ORIGIN = 'https://athar-app.online/staging';
 
       // 📁 Cloudflare Worker اختياري (مسار عارض/تحميل قديم)
       const CLOUDFLARE_WORKER_URL = '/upload';
