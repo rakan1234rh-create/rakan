@@ -54,6 +54,7 @@ jobs:
               cp index.html "$DEST/index.html"
               # athar-build يجب أن يطابق app-version.json.build حرفياً وإلا يحدث رفرش لا نهائي
               sed -i "s/<meta name=\"athar-build\" content=\"[^\"]*\">/<meta name=\"athar-build\" content=\"${SHORT_SHA}\">/" "$DEST/index.html"
+              sed -i "s|href=\"styles/custom/athar-redesign-staging.css\\(?v=[^\"]*\\)\\?\"|href=\"styles/custom/athar-redesign-staging.css?v=${SHORT_SHA}\"|g" "$DEST/index.html"
               # كسر كاش CDN/المتصفح لـ app.js (بدون ?v= يبقى max-age ويعرض منطقاً قديماً على الجوال)
               sed -i "s|src=\"js/app.js\\(?v=[^\"]*\\)\\?\"|src=\"js/app.js?v=${SHORT_SHA}\"|g" "$DEST/index.html"
               printf '%s\n' "{\"build\":\"${SHORT_SHA}\",\"builtAt\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"env\":\"${LABEL}\"}" > "$DEST/app-version.json"
@@ -69,6 +70,8 @@ jobs:
                 icons/athar-homescreen-maskable.svg icons/athar-wordmark-email.svg \
                 icons/athar-wordmark-email-v388.png icons/athar-logo-v401.png "$DEST/icons/"
               if [ -d icons/avatars ]; then mkdir -p "$DEST/icons/avatars" && cp -r icons/avatars/. "$DEST/icons/avatars/"; fi
+              if [ -d icons/redesign ]; then mkdir -p "$DEST/icons/redesign" && cp -r icons/redesign/. "$DEST/icons/redesign/"; fi
+              if [ -d design ]; then cp -r design "$DEST/"; fi
               touch "$DEST/.nojekyll"
               cp icons/athar-pwa-180-v${VER}.png "$DEST/apple-touch-icon.png"
               cp icons/athar-pwa-180-v${VER}.png "$DEST/apple-touch-icon-precomposed.png"

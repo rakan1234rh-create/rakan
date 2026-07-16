@@ -8,7 +8,7 @@
   <meta name="format-detection" content="telephone=no">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="theme-color" content="#1c1c21" id="metaThemeColor">
-  <script id="syncThemeMetaEarly">(function(){try{var t=localStorage.getItem('mp_theme')||'light';document.documentElement.setAttribute('data-theme',t);var m=document.getElementById('metaThemeColor');if(m)m.setAttribute('content',t==='dark'?'#1c1c21':'#f5f5f7');}catch(e){}})();</script>
+  <script id="syncThemeMetaEarly">(function(){try{document.documentElement.classList.add('athar-staging-redesign');var t=localStorage.getItem('mp_theme')||'dark';document.documentElement.setAttribute('data-theme',t);var m=document.getElementById('metaThemeColor');if(m)m.setAttribute('content',t==='dark'?'#000000':'#e5e5ea');}catch(e){}})();</script>
   <meta name="apple-mobile-web-app-title" content="ATHAR">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -767,6 +767,7 @@
   </style>
   <link rel="stylesheet" href="styles/custom/main.css">
   <link rel="stylesheet" href="styles/custom/design-kit.css" id="mk-design-kit">
+  <link rel="stylesheet" href="styles/custom/athar-redesign-staging.css?v=dev" id="athar-redesign-staging">
   <!-- Mirsad tokens + kit: مضمّنة في index.html — لا روابط design-system (تجنّب 404 عند file://) -->
   <style>
     /* Reset figma-search-input inside figma-search-wrap to prevent overlapping border/background from platform-bridge.css */
