@@ -2656,6 +2656,9 @@
               </div>
               <div class="topbar-clock-date" id="clockDate">---</div>
             </div>
+            <button type="button" class="topbar-btn" id="rdThemeBtn" title="ثيم التطبيق" aria-label="تبديل الثيم" onclick="toggleTheme(event)" style="display:none">
+              <i class="fas fa-moon" id="rdThemeIcon" aria-hidden="true"></i>
+            </button>
             <button type="button" class="topbar-btn topbar-btn--notif" id="notifBellBtn" title="التنبيهات" aria-label="التنبيهات" aria-controls="tab-notifications"><i
                 class="fas fa-bell"></i><span class="notif-bell-count" id="notifBellCount"
                 style="display:none">0</span></button>
@@ -2862,7 +2865,8 @@
           </div>
           <!-- DASHBOARD -->
           <div class="tab-content" id="tab-dashboard" hidden>
-            <section class="mk-dash">
+            <section class="rd-dash" id="rdDash" hidden aria-label="لوحة القيادة — إعادة التصميم"></section>
+            <section class="mk-dash mk-dash--classic">
               <header class="mk-dash__hero">
                 <div>
                   <p class="mk-dash__date" id="dash-date-kicker">—</p>
@@ -3101,7 +3105,7 @@
             <div class="panel wf-panel">
               <div class="wf-panel-banner">
                 <div class="wf-panel-intro">
-                  <h2 class="wf-panel-title">معالجة التذاكر</h2>
+                  <h2 class="wf-panel-title">التذاكر</h2>
                   <p class="wf-panel-sub">tickets workflow</p>
                 </div>
                 <div class="toolbar wf-toolbar">

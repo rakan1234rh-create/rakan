@@ -2846,6 +2846,7 @@
             ghost.innerHTML = themeToggleMoonSvg('', 'theme-toggle__icon--on-light-ghost');
           }
         }
+        try { syncRdChromeUi(); } catch (_) { /* noop */ }
       }
 
       function syncTopbarUserMenuTheme() {
@@ -2885,7 +2886,8 @@
       }
 
       function loadTheme() {
-        const saved = localStorage.getItem('mp_theme') || 'light';
+        const redesignDefault = document.documentElement.classList.contains('athar-staging-redesign') ? 'dark' : 'light';
+        const saved = localStorage.getItem('mp_theme') || redesignDefault;
         document.documentElement.setAttribute('data-theme', saved);
         syncThemeMetaColor(saved);
         syncTopbarUserMenuTheme();
@@ -4814,6 +4816,76 @@
         // كمبيوتر/لابتوب حقيقي (فأرة + hover) يبقى واجهة كمبيوتر مهما ضاق العرض
         const isRealDesktop = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
         return isTouch || (!isRealDesktop && !isWide);
+      }
+
+      /** Staging redesign shell — matches Athar Redesign Standalone on mobile only */
+      function isAtharRedesignUi() {
+        return document.documentElement.classList.contains('athar-staging-redesign')
+          && typeof isMobileViewport === 'function'
+          && isMobileViewport();
+      }
+
+      function rdClassifyScore(value) {
+        if (value < 0) return 'var(--danger)';
+        if (value >= 90) return 'var(--success)';
+        if (value >= 75) return 'var(--info)';
+        if (value >= 50) return 'var(--warning)';
+        return 'var(--danger)';
+      }
+
+      function syncRdChromeUi() {
+        const theme = document.documentElement.getAttribute('data-theme') || 'light';
+        const icon = document.getElementById('rdThemeIcon');
+        if (icon) icon.className = 'fas ' + (theme === 'dark' ? 'fa-sun' : 'fa-moon');
+        const av = document.getElementById('topbarUserAv');
+        if (!av) return;
+        if (!isAtharRedesignUi() || !state.currentUser) {
+          av.classList.remove('rd-top-av');
+          return;
+        }
+        const initial = (state.currentUser.name || 'م').trim().charAt(0) || 'م';
+        av.classList.add('rd-top-av');
+        av.textContent = initial;
+      }
+
+      function getRdCleanStreakDays(me) {
+        if (!me) return 0;
+        const myViols = (state.violations || []).filter(v =>
+          v.employee_id === me.id && v.state !== 'uploading' && !violationExcludedFromDeduction(v)
+        );
+        let warnMs = 0;
+        (state.violations || []).filter(v =>
+          v.employee_id === me.id &&
+          (v.state === 'Warning_Issued' ||
+            (v.state === 'closed' && /تنبيه|اكتفاء بالتنبيه|Warning_Issued/i.test(v.status_text || '')))
+        ).forEach(v => {
+          const t = new Date(v.updated_at || v.created_at).getTime();
+          if (!isNaN(t) && t > warnMs) warnMs = t;
+        });
+        let streakStartMs;
+        if (myViols.length > 0) {
+          const sorted = [...myViols].sort((a, b) => violationObservationMs(b) - violationObservationMs(a));
+          streakStartMs = Math.max(warnMs, violationObservationMs(sorted[0]));
+        } else if (me.created_at) {
+          streakStartMs = Math.max(warnMs, new Date(me.created_at).getTime());
+        } else {
+          streakStartMs = Math.max(warnMs, Date.now());
+        }
+        return Math.max(0, Math.floor((Date.now() - streakStartMs) / (1000 * 60 * 60 * 24)));
+      }
+
+      function getRdBranchRankLabel(me) {
+        if (!me?.branch_id) return '—';
+        const branchEmps = (typeof getBranchStaff === 'function'
+          ? getBranchStaff(me.branch_id)
+          : (state.users || []).filter(u => u.branch_id === me.branch_id && u.role === 'employee'));
+        if (!branchEmps.length) return '—';
+        const ranked = branchEmps
+          .map(e => ({ id: e.id, score: calcEmpScore(e.id, state.violations || []).score }))
+          .sort((a, b) => b.score - a.score);
+        const idx = ranked.findIndex(r => r.id === me.id);
+        if (idx < 0) return '—';
+        return 'المركز ' + (idx + 1) + ' من ' + ranked.length;
       }
 
       function initMobilePullToRefresh() {
@@ -10945,6 +11017,156 @@
         if (recent) recent.innerHTML = loading;
       }
 
+      function renderDashboardRedesign(visible, allVisible, monthFromIso, nextFromIso, ksaNowParts) {
+        const host = document.getElementById('rdDash');
+        if (!host) return;
+        const me = state.currentUser;
+        const monthLbl = formatDashMonthYear(ksaNowParts.year, ksaNowParts.month);
+        const greetingDate = document.getElementById('dash-date-kicker')?.textContent || '—';
+        const greetingName = me?.name || '—';
+        const greetingSub = getDashWelcomeSubtitle(me?.role, monthLbl);
+
+        const streakDays = getRdCleanStreakDays(me);
+        const bestKey = 'athar_rd_best_streak_' + (me?.id || 'x');
+        let personalBest = Number(localStorage.getItem(bestKey) || 0);
+        if (!Number.isFinite(personalBest) || personalBest < streakDays) {
+          personalBest = streakDays;
+          try { localStorage.setItem(bestKey, String(personalBest)); } catch (_) { /* noop */ }
+        }
+        const CIRC = 339.292;
+        const streakPct = personalBest > 0 ? Math.min(100, Math.round((streakDays / personalBest) * 100)) : (streakDays > 0 ? 100 : 0);
+        const streakOffset = CIRC - (CIRC * streakPct) / 100;
+        const branchRankLabel = getRdBranchRankLabel(me);
+        const streakBadge = streakDays >= 30 ? 'بطل الالتزام لهذا الشهر 🔥' : (streakDays >= 10 ? 'منضبط هذا الشهر' : 'ابدأ سلسلة انضباطك');
+
+        let responseScore = 100;
+        let autoCount = 0;
+        try {
+          if (me && (me.role === 'employee' || me.role === 'branch_manager')) {
+            const rd = calcResponseRate(me.id, 'employee');
+            responseScore = rd.score;
+            autoCount = rd.autoCount;
+          }
+        } catch (_) { /* noop */ }
+        const responsePct = Math.min(100, Math.abs(responseScore));
+        const responseColor = rdClassifyScore(responseScore);
+        const responseStatus = responseScore < 0 ? 'تنبيه' : (responseScore >= 75 ? 'جيد' : 'تحذير');
+
+        const total = visible.length;
+        const pending = visible.filter(v => isTicketWorkflowOpen(v)).length;
+        const closed = visible.filter(v => v.state === 'closed').length;
+        const autoFwd = visible.filter(v => v.auto_forwarded_emp || v.auto_forwarded_sup).length;
+
+        const recent = sortNotifsNewestFirst(visible.map(v => ({
+          ...v,
+          time: v.updated_at || v.created_at
+        }))).slice(0, 5);
+
+        const statusItems = [
+          { key: 'emp', label: 'بانتظار الموظف', icon: 'fa-user', colorKey: 'warning' },
+          { key: 'sup', label: 'بانتظار المشرف', icon: 'fa-user-shield', colorKey: 'info' },
+          { key: 'aud', label: 'بانتظار التدقيق', icon: 'fa-magnifying-glass', colorKey: 'purple' },
+          { key: 'mgt', label: 'بانتظار الإدارة', icon: 'fa-bolt', colorKey: 'danger' },
+          { key: 'hr', label: 'بانتظار الموارد البشرية', icon: 'fa-id-badge', colorKey: 'gold' },
+          { key: 'closed', label: 'مغلقة', icon: 'fa-check', colorKey: 'success' },
+          { key: 'Warning_Issued', label: 'تنبيه إداري صادر', icon: 'fa-bell', colorKey: 'text3' }
+        ].map(s => {
+          const count = visible.filter(v => v.state === s.key).length;
+          const colorVar = s.colorKey === 'gold' ? 'var(--gold)'
+            : s.colorKey === 'text3' ? 'var(--text3)'
+            : s.colorKey === 'purple' ? 'var(--purple)'
+            : `var(--${s.colorKey === 'info' ? 'info' : s.colorKey})`;
+          return { ...s, count, colorVar };
+        });
+
+        const recentHtml = recent.length
+          ? recent.map(t => {
+              const name = t._empName || '—';
+              const initial = name.trim().charAt(0) || '—';
+              const colorVar = (t.auto_forwarded_emp || t.auto_forwarded_sup) ? 'var(--danger)'
+                : (t.state === 'closed' ? 'var(--success)' : 'var(--warning)');
+              return `
+                <button type="button" class="rd-list__row" onclick="openTicket('${t.id}')">
+                  <div class="rd-av">${Sec.escapeHTML(initial)}</div>
+                  <div style="flex:1;min-width:0">
+                    <div class="rd-list__name">${Sec.escapeHTML(name)}</div>
+                    <div class="rd-list__sub">${Sec.escapeHTML(t.violation_type || '—')}</div>
+                  </div>
+                  <div class="rd-list__meta">
+                    <div class="rd-dot" style="background:${colorVar}"></div>
+                    <div class="rd-list__time">${Sec.escapeHTML(formatRelativeAr(t.created_at))}</div>
+                  </div>
+                </button>`;
+            }).join('')
+          : '<div class="rd-list__row" style="cursor:default"><div class="rd-list__sub">لا توجد تذاكر بعد</div></div>';
+
+        host.innerHTML = `
+          <div class="rd-screen">
+            <div class="rd-greet">
+              <div class="rd-greet__date">${Sec.escapeHTML(greetingDate)}</div>
+              <div class="rd-greet__name">مرحباً، ${Sec.escapeHTML(greetingName)} 👋</div>
+              <div class="rd-greet__sub">${Sec.escapeHTML(greetingSub)}</div>
+            </div>
+            <div class="rd-streak">
+              <div class="rd-streak__badge"><i class="fas fa-medal"></i>${Sec.escapeHTML(streakBadge)}</div>
+              <div class="rd-streak__ring">
+                <svg width="136" height="136" viewBox="0 0 132 132">
+                  <circle cx="66" cy="66" r="54" fill="none" stroke="var(--border)" stroke-width="10"></circle>
+                  <circle cx="66" cy="66" r="54" fill="none" stroke="var(--success)" stroke-width="10" stroke-linecap="round" stroke-dasharray="${CIRC}" stroke-dashoffset="${streakOffset}"></circle>
+                </svg>
+                <div class="rd-streak__center">
+                  <i class="fas fa-fire" style="font-size:14px;color:var(--success);margin-bottom:3px"></i>
+                  <span class="rd-streak__days">${streakDays}</span>
+                  <span class="rd-streak__lbl">يوم بدون مخالفات</span>
+                </div>
+              </div>
+            </div>
+            <div class="rd-mini-grid">
+              <div class="rd-mini">
+                <div class="rd-mini__val" style="color:var(--gold)">${personalBest}</div>
+                <div class="rd-mini__lbl">أفضل رقم لك</div>
+              </div>
+              <div class="rd-mini">
+                <div class="rd-mini__val" style="color:var(--success)">${Sec.escapeHTML(branchRankLabel)}</div>
+                <div class="rd-mini__lbl">ترتيب فرعك بالالتزام</div>
+              </div>
+            </div>
+            <div class="rd-metric">
+              <div class="rd-metric__top">
+                <span class="rd-metric__label">الاستجابة</span>
+                <span class="rd-metric__val" style="color:${responseColor}">${responseScore} · ${responseStatus}</span>
+              </div>
+              <div class="rd-metric__bar"><div class="rd-metric__fill" style="width:${responsePct}%;background:${responseColor}"></div></div>
+              <div class="rd-metric__sub">${autoCount} تمريرات تلقائية</div>
+            </div>
+            <div class="rd-stat-grid">
+              <div class="rd-stat"><div class="rd-stat__row"><span class="rd-stat__val">${autoFwd}</span><span class="rd-stat__ico" style="color:var(--warning)"><i class="fas fa-clock"></i></span></div><div class="rd-stat__lbl">مخالفات تم تمريرها تلقائيا</div></div>
+              <div class="rd-stat"><div class="rd-stat__row"><span class="rd-stat__val">${pending}</span><span class="rd-stat__ico" style="color:var(--info)"><i class="fas fa-spinner"></i></span></div><div class="rd-stat__lbl">قيد المعالجة</div></div>
+              <div class="rd-stat"><div class="rd-stat__row"><span class="rd-stat__val">${closed}</span><span class="rd-stat__ico" style="color:var(--success)"><i class="fas fa-check-double"></i></span></div><div class="rd-stat__lbl">مغلقة</div></div>
+              <div class="rd-stat"><div class="rd-stat__row"><span class="rd-stat__val">${total}</span><span class="rd-stat__ico" style="color:var(--gold)"><i class="fas fa-chart-simple"></i></span></div><div class="rd-stat__lbl">الإجمالي هذا الشهر</div></div>
+            </div>
+            <div class="rd-sec">
+              <div class="rd-sec__head">
+                <span class="rd-sec__title">آخر النشاطات</span>
+                <button type="button" class="rd-sec__link" onclick="dashGoTab('workflow')">عرض الكل</button>
+              </div>
+              <div class="rd-list">${recentHtml}</div>
+            </div>
+            <div class="rd-sec">
+              <div class="rd-sec__head"><span class="rd-sec__title">توزيع الحالات</span></div>
+              <div class="rd-list">
+                ${statusItems.map(s => `
+                  <button type="button" class="rd-list__row" onclick="dashFunnelNavigate('${s.key}')">
+                    <div class="rd-dist-ico" style="color:${s.colorVar}"><i class="fas ${s.icon}"></i></div>
+                    <div class="rd-dist-label">${Sec.escapeHTML(s.label)}</div>
+                    <div class="rd-dist-count" style="color:${s.colorVar}">${s.count}</div>
+                  </button>`).join('')}
+              </div>
+            </div>
+          </div>`;
+        host.hidden = false;
+      }
+
       function renderDashboard() {
         if (isAppDataPending()) {
           renderDashboardMobLite();
@@ -10969,6 +11191,7 @@
           ws.textContent = getDashWelcomeSubtitle(state.currentUser?.role, monthLbl);
         }
         updateDashDateKicker();
+        try { syncRdChromeUi(); } catch (_) { /* noop */ }
 
         const dashShell = document.querySelector('#tab-dashboard .md-dash');
         if (dashShell && !isMobileViewport() && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -10985,6 +11208,21 @@
           const iso = dashViolationIsoDate(v);
           return iso && iso >= monthFromIso && iso < nextFromIso;
         });
+
+        if (isAtharRedesignUi()) {
+          try {
+            renderDashboardRedesign(visible, allVisible, monthFromIso, nextFromIso, ksaNowParts);
+          } catch (e) {
+            if (isMirsadDebugLog()) console.warn('[rdDash]', e);
+          }
+          const playEntryRd = !!state._dashHandPlayEntryWave;
+          state._dashHandPlayEntryWave = false;
+          try { renderDashWelcomeHand(playEntryRd); } catch (_) { /* noop */ }
+          updatePendingBadge();
+          return;
+        }
+        const rdHost = document.getElementById('rdDash');
+        if (rdHost) { rdHost.innerHTML = ''; rdHost.hidden = true; }
         
         const total = visible.length;
 
@@ -17051,6 +17289,50 @@
               ? '<div class="empty"><i class="fas fa-inbox"></i><p>لا توجد بيانات في الفترة المحددة</p></div>'
               : '<div class="empty"><i class="fas fa-inbox"></i><p>لا توجد تذاكر مطابقة</p></div>');
           appendTicketListHtml(list, emptyHtml, true);
+          return;
+        }
+
+        if (mobSplit && isAtharRedesignUi()) {
+          if (mobHead) {
+            mobHead.innerHTML = '';
+            mobHead.setAttribute('aria-hidden', 'true');
+          }
+          const toneFor = (t) => {
+            if (t.state === 'closed') return 'var(--success)';
+            if (t.state === 'Warning_Issued') return 'var(--text3)';
+            if (t.state === 'mgt' || t.state === 'hr') return 'var(--danger)';
+            if (t.state === 'sup' || t.state === 'aud') return 'var(--info)';
+            return 'var(--warning)';
+          };
+          const cards = tickets.map((t, i) => {
+            const empName = (t._empName || '').trim() || '...';
+            const initial = empName.charAt(0) || '—';
+            const violName = (t.violation_type || '').trim() || '...';
+            const statusText = (t.status_text || STATE_LABELS[t.state] || '').trim();
+            const colorVar = toneFor(t);
+            const delay = (i * 0.045).toFixed(3);
+            const rel = formatRelativeAr(t.created_at || t.updated_at);
+            return `
+              <button type="button" class="rd-ticket" style="animation-delay:${delay}s"
+                ontouchstart="prefetchTicketDetail('${t.id}')" onclick="openTicket('${t.id}')">
+                <div class="rd-ticket__top">
+                  <span class="rd-ticket__id">#${Sec.escapeHTML(shortTicketNum(t.ticket_number))}</span>
+                  <span class="rd-ticket__time">${Sec.escapeHTML(rel)}</span>
+                </div>
+                <div class="rd-ticket__body">
+                  <div class="rd-ticket__av">${Sec.escapeHTML(initial)}</div>
+                  <div style="flex:1;min-width:0">
+                    <div class="rd-ticket__name">${Sec.escapeHTML(empName)}</div>
+                    <div class="rd-ticket__type">${Sec.escapeHTML(violName)}</div>
+                  </div>
+                </div>
+                <div class="rd-ticket__badge" style="background:${colorVar}22;color:${colorVar}">${Sec.escapeHTML(statusText)}</div>
+              </button>`;
+          }).join('');
+          resetTicketListChildren(list, true);
+          list.classList.remove('wf-mob-measuring', 'rp-mob-measuring');
+          list.classList.add(wfMob ? 'wf-mob-cols-ready' : 'rp-mob-cols-ready');
+          getOrCreateTicketMobBody(list).innerHTML = `<div class="rd-ticket-list">${cards}</div>`;
           return;
         }
 
