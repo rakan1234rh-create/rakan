@@ -387,26 +387,218 @@ html.mr-desktop-ui .sidebar {
   background: var(--login-portal-bg, var(--mr-bg)) !important;
 }
 
-/* Staging banner chip (subtle) */
-html.athar-staging-redesign::before {
-  content: "Staging · Redesign";
-  position: fixed;
-  z-index: 99999;
-  top: calc(8px + env(safe-area-inset-top, 0px));
-  inset-inline-end: 10px;
-  font: 600 10px/1 "IBM Plex Sans Arabic", sans-serif;
-  letter-spacing: 0.02em;
-  padding: 5px 8px;
-  border-radius: 999px;
-  background: var(--goldSoft, rgba(0, 0, 0, 0.06));
-  color: var(--gold, var(--mr-primary));
-  border: 1px solid var(--mr-border);
-  pointer-events: none;
-  opacity: 0.9;
+/* ═══ Exact mockup components (rd-*) — mobile redesign ═══ */
+html.athar-staging-redesign.mr-mobile-ui .mk-dash--classic,
+html.athar-staging-redesign.mr-mobile-ui #personalIndicators,
+html.athar-staging-redesign.mr-mobile-ui #branchStaffPanel { display: none !important; }
+html.athar-staging-redesign.mr-mobile-ui #rdDash { display: block !important; }
+html:not(.athar-staging-redesign) #rdDash,
+html.athar-staging-redesign.mr-desktop-ui #rdDash { display: none !important; }
+
+.rd-screen { animation: atharRdScreenIn .32s ease; padding-bottom: 8px; }
+.rd-greet { margin-bottom: 16px; }
+.rd-greet__date { font-size: 12.5px; color: var(--text2); }
+.rd-greet__name { font-size: 20px; font-weight: 700; color: var(--text); margin-top: 4px; }
+.rd-greet__sub { font-size: 13px; color: var(--text2); margin-top: 4px; line-height: 1.6; }
+
+.rd-streak {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 22px;
+  padding: 22px 18px 18px; margin-bottom: 10px; display: flex; flex-direction: column;
+  align-items: center; position: relative; animation: atharRdCardIn .4s ease both;
+}
+.rd-streak__badge {
+  position: absolute; top: 14px; inset-inline-start: 14px; display: flex; align-items: center;
+  gap: 5px; background: var(--goldSoft); color: var(--gold); padding: 5px 10px;
+  border-radius: 999px; font-size: 10.5px; font-weight: 700;
+}
+.rd-streak__ring { position: relative; width: 136px; height: 136px; margin-top: 22px; }
+.rd-streak__ring svg { transform: rotate(-90deg); position: absolute; inset: 0; }
+.rd-streak__center {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+.rd-streak__days { font-size: 32px; font-weight: 800; color: var(--text); line-height: 1; }
+.rd-streak__lbl { font-size: 10.5px; color: var(--text3); margin-top: 3px; }
+
+.rd-mini-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.rd-mini {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+  padding: 13px; text-align: center; animation: atharRdCardIn .4s ease both;
+}
+.rd-mini__val { font-size: 19px; font-weight: 700; }
+.rd-mini__lbl { font-size: 10.5px; color: var(--text2); margin-top: 4px; }
+
+.rd-metric {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 18px;
+  padding: 16px; margin-bottom: 14px; animation: atharRdCardIn .4s ease both;
+}
+.rd-metric__top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px; }
+.rd-metric__label { font-size: 12.5px; font-weight: 600; color: var(--text); }
+.rd-metric__val { font-size: 12px; font-weight: 700; }
+.rd-metric__bar { height: 7px; border-radius: 999px; background: var(--surface2); overflow: hidden; }
+.rd-metric__fill { height: 100%; border-radius: 999px; }
+.rd-metric__sub { font-size: 10.5px; color: var(--text3); margin-top: 6px; }
+
+.rd-stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px; }
+.rd-stat {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+  padding: 13px 14px; animation: atharRdCardIn .4s ease both;
+}
+.rd-stat__row { display: flex; align-items: center; justify-content: space-between; }
+.rd-stat__val { font-size: 20px; font-weight: 700; color: var(--text); }
+.rd-stat__ico {
+  width: 28px; height: 28px; border-radius: 9px; background: var(--surface2);
+  display: flex; align-items: center; justify-content: center; font-size: 12px;
+}
+.rd-stat__lbl { font-size: 11.5px; color: var(--text2); margin-top: 6px; }
+
+.rd-sec { margin-bottom: 18px; }
+.rd-sec__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.rd-sec__title { font-size: 14.5px; font-weight: 700; color: var(--text); }
+.rd-sec__link { font-size: 11.5px; color: var(--gold); font-weight: 600; background: none; border: none; cursor: pointer; padding: 0; font-family: inherit; }
+.rd-list { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; overflow: hidden; }
+.rd-list__row {
+  display: flex; align-items: center; gap: 12px; padding: 12px 14px;
+  border-bottom: 1px solid var(--border); width: 100%; background: transparent;
+  border-left: none; border-right: none; border-top: none; text-align: start;
+  color: inherit; font-family: inherit; cursor: pointer;
+}
+.rd-list__row:last-child { border-bottom: none; }
+.rd-av {
+  width: 36px; height: 36px; border-radius: 50%; background: var(--surface2); color: var(--text2);
+  display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0;
+}
+.rd-list__name { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rd-list__sub { font-size: 11.5px; color: var(--text3); margin-top: 2px; }
+.rd-list__meta { text-align: start; flex-shrink: 0; }
+.rd-dot { width: 8px; height: 8px; border-radius: 50%; margin-inline-start: auto; }
+.rd-list__time { font-size: 10px; color: var(--text3); margin-top: 6px; white-space: nowrap; }
+
+.rd-dist-ico {
+  width: 32px; height: 32px; border-radius: 9px; background: var(--surface2);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 12px;
+}
+.rd-dist-label { flex: 1; font-size: 12.5px; color: var(--text); font-weight: 500; }
+.rd-dist-count { font-size: 14px; font-weight: 700; }
+
+/* Tickets page */
+html.athar-staging-redesign.mr-mobile-ui #tab-workflow .wf-panel-banner {
+  padding: 0 0 12px !important; border: none !important; background: transparent !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-workflow .wf-panel-title {
+  font-size: 18px !important; font-weight: 700 !important; color: var(--text) !important; margin: 0 0 14px !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-workflow .wf-panel-sub { display: none !important; }
+html.athar-staging-redesign.mr-mobile-ui #tab-workflow .wf-count { display: none !important; }
+html.athar-staging-redesign.mr-mobile-ui #tab-workflow .wf-toolbar {
+  display: flex !important; gap: 8px !important; margin-bottom: 16px !important;
+  overflow-x: auto !important; flex-wrap: nowrap !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-workflow .wf-search {
+  flex: 1 1 auto !important; min-width: 140px !important;
+  background: var(--searchFill) !important; border: none !important; border-radius: 10px !important;
+  box-shadow: none !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-workflow .wf-status-filter { flex: 0 0 auto !important; }
+
+.rd-ticket-list { display: flex; flex-direction: column; gap: 10px; }
+.rd-ticket {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+  padding: 14px; animation: atharRdCardIn .4s ease both; cursor: pointer; text-align: start;
+  width: 100%; font-family: inherit; color: inherit;
+}
+.rd-ticket__top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.rd-ticket__id { font-size: 11px; color: var(--text3); font-family: ui-monospace, monospace; }
+.rd-ticket__time { font-size: 10.5px; color: var(--text3); }
+.rd-ticket__body { display: flex; align-items: center; gap: 10px; }
+.rd-ticket__av {
+  width: 34px; height: 34px; border-radius: 50%; background: var(--surface2); color: var(--text2);
+  display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0;
+}
+.rd-ticket__name { font-size: 13px; font-weight: 600; color: var(--text); }
+.rd-ticket__type { font-size: 11.5px; color: var(--text3); margin-top: 2px; }
+.rd-ticket__badge {
+  margin-top: 10px; display: inline-flex; padding: 5px 12px; border-radius: 999px;
+  font-size: 11px; font-weight: 600;
 }
 
-html.mr-mobile-ui.athar-staging-redesign::before {
-  top: auto;
-  bottom: calc(var(--mr-mob-bottom-nav-h, 64px) + 10px);
-  inset-inline-end: 12px;
+/* Bottom nav exact mockup metrics */
+html.athar-staging-redesign.mr-mobile-ui #mobileBottomNav.mobile-bottom-nav {
+  padding: 8px 4px calc(8px + env(safe-area-inset-bottom, 0px)) !important;
+  min-height: calc(63px + env(safe-area-inset-bottom, 0px)) !important;
+}
+html.athar-staging-redesign.mr-mobile-ui .mob-nav-item > i { font-size: 19px !important; }
+html.athar-staging-redesign.mr-mobile-ui .mob-nav-item span { font-size: 8px !important; font-weight: 600 !important; }
+html.athar-staging-redesign.mr-mobile-ui .mob-nav-badge {
+  top: 0 !important; inset-inline-end: 2px !important; min-width: 14px !important;
+  height: 14px !important; font-size: 8px !important; padding: 0 3px !important;
+}
+
+/* Topbar theme btn + avatar circle */
+html.athar-staging-redesign.mr-mobile-ui #rdThemeBtn { display: inline-flex !important; }
+html:not(.athar-staging-redesign) #rdThemeBtn,
+html.athar-staging-redesign.mr-desktop-ui #rdThemeBtn { display: none !important; }
+html.athar-staging-redesign.mr-mobile-ui #topbarUserAv.rd-top-av {
+  width: 36px !important; height: 36px !important; border-radius: 50% !important;
+  background: var(--text) !important; color: var(--surface) !important;
+  display: flex !important; align-items: center !important; justify-content: center !important;
+  font-size: 13px !important; font-weight: 700 !important; border: none !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #topbarUserAv.rd-top-av svg { display: none !important; }
+html.athar-staging-redesign.mr-mobile-ui .mr-topbar-user-trigger {
+  border: none !important; background: transparent !important; padding: 0 !important;
+  width: auto !important; height: auto !important; min-width: 0 !important;
+}
+
+/* New ticket form — mockup chrome */
+html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .mk-form-panel {
+  background: transparent !important; border: none !important; box-shadow: none !important; padding: 0 !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .mk-form-hd__ico {
+  width: 44px !important; height: 44px !important; border-radius: 13px !important;
+  background: var(--goldSoft) !important; color: var(--gold) !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .mk-form-hd h2,
+html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .mk-form-hd .mk-form-hd__title {
+  font-size: 17px !important; font-weight: 700 !important;
+}
+
+/* Page titles match mockup */
+html.athar-staging-redesign.mr-mobile-ui #tab-reports .panel > h2,
+html.athar-staging-redesign.mr-mobile-ui #tab-compliance .mk-cmp-hd__title,
+html.athar-staging-redesign.mr-mobile-ui #tab-violations h2,
+html.athar-staging-redesign.mr-mobile-ui #tab-locations h2,
+html.athar-staging-redesign.mr-mobile-ui #tab-departments h2 {
+  font-size: 18px !important; font-weight: 700 !important; color: var(--text) !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui .content {
+  padding: 18px 18px 28px !important;
+}
+
+/* Ensure mockup semantic vars exist even if main.css aliases differ */
+html.athar-staging-redesign {
+  --purple: var(--mr-purple);
+  --info: var(--mr-blue);
+}
+
+/* Users / locations / violations — closer to mockup cards */
+html.athar-staging-redesign.mr-mobile-ui .user-mob-card,
+html.athar-staging-redesign.mr-mobile-ui .rb-region-card,
+html.athar-staging-redesign.mr-mobile-ui .viol-type-list-item,
+html.athar-staging-redesign.mr-mobile-ui .mr-user-card {
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 16px !important;
+  box-shadow: none !important;
+  padding: 14px !important;
+  margin-bottom: 10px !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui .users-grid--mob-list,
+html.athar-staging-redesign.mr-mobile-ui #regionsList,
+html.athar-staging-redesign.mr-mobile-ui #violGrid {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
 }
