@@ -1388,7 +1388,8 @@
       const VIOL_TYPE_ROW_SELECT = DESKTOP_VIOLATION_TYPES_SELECT;
 
       function getViolationsFetchLimit() {
-        if (isMobileViewport()) return 50;
+        // Same role-based limits on mobile and desktop so lists stay complete
+        // (mobile previously capped at 50 while desktop fetched 80–200).
         if (!state.currentUser) return 200;
         if (canViewAllTickets()) return 200;
         const role = normalizeUserRole(state.currentUser.role);
