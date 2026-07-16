@@ -54,6 +54,8 @@ jobs:
               cp index.html "$DEST/index.html"
               # athar-build يجب أن يطابق app-version.json.build حرفياً وإلا يحدث رفرش لا نهائي
               sed -i "s/<meta name=\"athar-build\" content=\"[^\"]*\">/<meta name=\"athar-build\" content=\"${SHORT_SHA}\">/" "$DEST/index.html"
+              # كسر كاش CDN/المتصفح لـ app.js (بدون ?v= يبقى max-age ويعرض منطقاً قديماً على الجوال)
+              sed -i "s|src=\"js/app.js\\(?v=[^\"]*\\)\\?\"|src=\"js/app.js?v=${SHORT_SHA}\"|g" "$DEST/index.html"
               printf '%s\n' "{\"build\":\"${SHORT_SHA}\",\"builtAt\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"env\":\"${LABEL}\"}" > "$DEST/app-version.json"
               cp -r styles "$DEST/"
               if [ -d js ]; then cp -r js "$DEST/"; fi
