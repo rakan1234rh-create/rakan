@@ -3108,7 +3108,9 @@
                   <h2 class="wf-panel-title">التذاكر</h2>
                   <p class="wf-panel-sub">tickets workflow</p>
                 </div>
-                <div class="toolbar wf-toolbar">
+                <!-- Redesign chips (staging mobile) — matches Athar Redesign Standalone -->
+                <div class="rd-wf-chips" id="rdWfChips" hidden role="tablist" aria-label="فلتر التذاكر"></div>
+                <div class="toolbar wf-toolbar" id="wfClassicToolbar">
                   <div class="figma-search-wrap wf-search">
                     <input type="text" class="figma-search-input" id="wf-search"
                       placeholder="ابحث برقم التذكرة، اسم الموظف، أو الرقم الوظيفي..." oninput="filterTickets()">
