@@ -1413,6 +1413,7 @@
         t._branchName = br?.name || '-';
         t._regionName = region?.name || '-';
         t.logs = parseDbJsonArray(t.logs);
+        if (t.attachments != null) t.attachments = parseDbJsonArray(t.attachments);
         return t;
       }
 
@@ -4664,6 +4665,7 @@
       function enrichViolation(t) {
         if (!t) return t;
         t.logs = parseDbJsonArray(t.logs);
+        if (t.attachments != null) t.attachments = parseDbJsonArray(t.attachments);
         if (!state._userById || !state._branchById || !state._regionById) rebuildLookupMaps();
         const emp = state._userById.get(t.employee_id);
         const sup = state._userById.get(t.supervisor_id);
@@ -13937,7 +13939,8 @@
           }
 
           // نجهز البيانات النهائية (بدون حالة 'uploading' لأننا رفعنا بالفعل)
-          const finalPayload = { ...payload, attachments: JSON.stringify(tempAttachments), state: initialState };
+          // jsonb: مرّر المصفوفة مباشرة — JSON.stringify يخزّنها كنص داخل jsonb ويُعطّل العرض
+          const finalPayload = { ...payload, attachments: tempAttachments, state: initialState };
           const { data: insertData, error: insertError } = await sb.from('violations').insert(finalPayload).select();
 
           if (insertError) {
@@ -14169,7 +14172,7 @@
                 }
               }
               if (movedAny) {
-                await sb.from('violations').update({ attachments: JSON.stringify(updatedAtts) }).eq('id', violationId);
+                await sb.from('violations').update({ attachments: updatedAtts }).eq('id', violationId);
                 const idx = state.violations.findIndex(v => v.id === violationId);
                 if (idx !== -1) state.violations[idx].attachments = updatedAtts;
               }
@@ -14202,7 +14205,7 @@
           }
 
           if (movedAny) {
-            await sb.from('violations').update({ attachments: JSON.stringify(updatedAtts) }).eq('id', violationId);
+            await sb.from('violations').update({ attachments: updatedAtts }).eq('id', violationId);
             if (isMirsadDebugLog()) console.log(`[R2-Move] DB paths updated for ${ticketNumber}`);
             const idx = state.violations.findIndex(v => v.id === violationId);
             if (idx !== -1) {
@@ -14402,32 +14405,36 @@
             if (!contentType || contentType === 'application/octet-stream') contentType = 'image/jpeg';
           }
 
-          const isVideo = fileEntry.rawFile instanceof Blob
-            || /^video\//i.test(contentType)
-            || /\.(mp4|mov|webm|m4v|avi|mkv)$/i.test(uploadName);
+          const isVideo = /^video\//i.test(contentType)
+            || /\.(mp4|mov|webm|m4v|avi|mkv|mpeg|mpg|ts|m2ts)$/i.test(uploadName);
 
           if (isVideo && body instanceof Blob) {
             const vCodec = fileEntry.codecHint || await sniffMp4VideoCodec(body);
             fileEntry.codecHint = vCodec;
-            if (shouldPrepTranscodeVideo(body, uploadName, vCodec)) {
+            if (videoNeedsPlayableTranscode(vCodec, uploadName)) {
+              const gate = explainVideoTranscodeGate(body, uploadName, vCodec);
+              if (gate) throw new Error(gate);
               if (fileEntry._cancelled) return;
               fileEntry.prepStatus = 'transcoding';
-              fileEntry.prepStatusMsg = 'جاري التحويل…';
+              fileEntry.prepStatusMsg = 'جاري التحويل إلى H.264…';
               updateAttachmentPrepUi(scope, fileEntry._fileId);
-              const { blob } = await transcodeHevcBlobToPlayableBlob(body, contentType, (msg) => {
+              const { blob } = await transcodeVideoBlobToPlayableH264(body, contentType, (msg) => {
                 fileEntry.prepStatusMsg = msg;
                 updateAttachmentPrepUi(scope, fileEntry._fileId);
-              });
+              }, { purpose: 'upload' });
               if (fileEntry._cancelled) return;
               body = blob;
               contentType = 'video/mp4';
               uploadName = mp4NameAfterTranscode(uploadName);
               fileEntry.name = uploadName;
+              fileEntry.type = 'video/mp4';
               fileEntry.transcoded = true;
+              fileEntry.codecHint = 'h264';
               if (fileEntry.blobUrl) {
                 try { URL.revokeObjectURL(fileEntry.blobUrl); } catch (_) { /* */ }
               }
               fileEntry.blobUrl = URL.createObjectURL(blob);
+              fileEntry.rawFile = blob;
             }
           }
 
@@ -14942,7 +14949,7 @@
         }
         if (!changed) return false;
         try {
-          await sb.from('violations').update({ attachments: JSON.stringify(updated) }).eq('id', ticket.id);
+          await sb.from('violations').update({ attachments: updated }).eq('id', ticket.id);
           ticket.attachments = updated;
           const idx = state.violations.findIndex(v => v.id === ticket.id);
           if (idx !== -1) state.violations[idx].attachments = updated;
@@ -14984,7 +14991,12 @@
       }
 
       const VIDEO_BLOB_MAX_BYTES = 6 * 1024 * 1024;
-      const HEVC_TRANSCODE_MAX_BYTES = 20 * 1024 * 1024;
+      /** حد التحويل داخل عارض المرفقات (يحتاج تحميل من الشبكة أولاً) */
+      const HEVC_TRANSCODE_VIEWER_MAX_BYTES = 40 * 1024 * 1024;
+      /** حد التحويل عند الرفع (الملف محلي — يسمح بملفات كاميرات أكبر) */
+      const HEVC_TRANSCODE_UPLOAD_MAX_BYTES = 180 * 1024 * 1024;
+      /** توافق مع الاستدعاءات القديمة */
+      const HEVC_TRANSCODE_MAX_BYTES = HEVC_TRANSCODE_VIEWER_MAX_BYTES;
       const FFMPEG_CLASS_WORKER_CDN = 'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/worker.js';
       let _ffmpegTranscodeInstance = null;
       const _hevcReplaceInflight = {};
@@ -15079,6 +15091,22 @@
           if (c0 === 0x68 && c1 === 0x76 && c2 === 0x63 && c3 === 0x43) sawH265 = true;
           if (c0 === 0x68 && c1 === 0x76 && c2 === 0x65 && c3 === 0x43) sawH265 = true;
         }
+        // كاميرات DVR غالباً MPEG-PS/TS بـ Annex-B بدون صناديق MP4
+        if (!sawH265 && !sawH264) {
+          for (let i = 0; i < buf.length - 5; i++) {
+            let nalStart = -1;
+            if (buf[i] === 0 && buf[i + 1] === 0 && buf[i + 2] === 1) nalStart = i + 3;
+            else if (buf[i] === 0 && buf[i + 1] === 0 && buf[i + 2] === 0 && buf[i + 3] === 1) nalStart = i + 4;
+            if (nalStart < 0 || nalStart >= buf.length) continue;
+            const hevcType = (buf[nalStart] >> 1) & 0x3f;
+            if (hevcType === 32 || hevcType === 33 || hevcType === 34) {
+              sawH265 = true;
+              break;
+            }
+            const avcType = buf[nalStart] & 0x1f;
+            if (avcType === 7) sawH264 = true;
+          }
+        }
         if (sawH265) return 'h265';
         if (sawH264) return 'h264';
         return null;
@@ -15090,11 +15118,15 @@
             // لا fetch لروابط R2 — يتعارض مع Service Worker القديم وCORP
             return 'unknown';
           }
-          const scanSize = 524288;
+          const scanSize = 1024 * 1024;
           const chunks = [];
           chunks.push(urlOrBlob.slice(0, Math.min(urlOrBlob.size, scanSize)));
           if (urlOrBlob.size > scanSize) {
             chunks.push(urlOrBlob.slice(Math.max(0, urlOrBlob.size - scanSize)));
+          }
+          if (urlOrBlob.size > scanSize * 2) {
+            const mid = Math.floor(urlOrBlob.size / 2);
+            chunks.push(urlOrBlob.slice(mid, Math.min(urlOrBlob.size, mid + Math.floor(scanSize / 2))));
           }
           let sawH264 = false;
           for (const chunk of chunks) {
@@ -15143,15 +15175,33 @@
         return stem + '.mp4';
       }
 
-      function shouldPrepTranscodeVideo(blob, fileName, codec) {
-        if (!isAtharDesktopViewer()) return false;
-        if (!(blob instanceof Blob) || !blob.size) return false;
-        if (blob.size > HEVC_TRANSCODE_MAX_BYTES) return false;
+      function videoNeedsPlayableTranscode(codec, fileName) {
         if (codec === 'h264') return false;
         if (isHevcCodec(codec)) return true;
         const ext = String(fileName || '').toLowerCase();
-        if (codec === 'unknown' && /\.(mp4|mov|m4v)$/i.test(ext)) return true;
+        if (/\.(mov|mkv|avi|ts|m2ts|mpeg|mpg)$/i.test(ext)) return true;
+        if (codec === 'unknown' && /\.(mp4|m4v)$/i.test(ext)) return true;
         return false;
+      }
+
+      function explainVideoTranscodeGate(blob, fileName, codec) {
+        if (!videoNeedsPlayableTranscode(codec, fileName)) return '';
+        if (!(blob instanceof Blob) || !blob.size) return 'ملف الفيديو غير صالح';
+        const mb = Math.round(blob.size / 1048576);
+        if (blob.size > HEVC_TRANSCODE_UPLOAD_MAX_BYTES) {
+          return `حجم الفيديو ${mb}MB أكبر من حد التحويل التلقائي (${Math.round(HEVC_TRANSCODE_UPLOAD_MAX_BYTES / 1048576)}MB). اضغطه إلى H.264 720p ثم ارفعه.`;
+        }
+        if (!isAtharDesktopViewer() && blob.size > 48 * 1024 * 1024) {
+          return `هذا الفيديو (${mb}MB) يحتاج تحويل H.264 من جهاز كمبيوتر (ليس من الجوال).`;
+        }
+        return '';
+      }
+
+      function shouldPrepTranscodeVideo(blob, fileName, codec) {
+        if (!videoNeedsPlayableTranscode(codec, fileName)) return false;
+        if (!(blob instanceof Blob) || !blob.size) return false;
+        if (explainVideoTranscodeGate(blob, fileName, codec)) return false;
+        return true;
       }
 
       function areAttachmentsReady(scope) {
@@ -15246,7 +15296,7 @@
             : (readCfCache(cacheKey) || ''));
         const streamHref = (viewerCtx && viewerCtx.streamUrl) || (isR2StreamPlayUrl(href) ? href : readVideoStreamFallback(cacheKey)) || href;
         const fileBytes = viewerCtx?.fileBytes || 0;
-        const showTranscode = isR2StreamPlayUrl(streamHref) && (!fileBytes || fileBytes <= HEVC_TRANSCODE_MAX_BYTES);
+        const showTranscode = isR2StreamPlayUrl(streamHref) && (!fileBytes || fileBytes <= HEVC_TRANSCODE_VIEWER_MAX_BYTES);
         return { downloadHref: href, streamHref, showTranscode, codec: codec || 'h265' };
       }
 
@@ -15489,19 +15539,21 @@
         return args;
       }
 
-      async function transcodeHevcBlobToPlayableBlob(blob, mimeType, onStatus) {
+      async function transcodeVideoBlobToPlayableH264(blob, mimeType, onStatus, opts) {
         if (!(blob instanceof Blob) || !blob.size) throw new Error('ملف فيديو غير صالح');
-        if (blob.size > HEVC_TRANSCODE_MAX_BYTES) {
+        const purpose = opts?.purpose === 'upload' ? 'upload' : 'viewer';
+        const maxBytes = purpose === 'upload' ? HEVC_TRANSCODE_UPLOAD_MAX_BYTES : HEVC_TRANSCODE_VIEWER_MAX_BYTES;
+        if (blob.size > maxBytes) {
           throw new Error('حجم الفيديو ' + Math.round(blob.size / 1048576) + 'MB — كبير للتحويل داخل المتصفح');
         }
         const ffmpeg = await ensureFfmpegTranscoder(onStatus);
         const hasAudio = await mp4BlobHasAudioTrack(blob);
-        onStatus?.('تحويل H.265 → H.264 (720p · preset fast' + (hasAudio ? ' · صوت' : '') + ')…');
+        onStatus?.('تحويل إلى H.264 (720p · preset fast' + (hasAudio ? ' · صوت' : '') + ')…');
         const inName = 'hevc_in.mp4';
         const outName = 'h264_out.mp4';
         await ffmpeg.writeFile(inName, new Uint8Array(await blob.arrayBuffer()));
         const execHb = setInterval(() => {
-          onStatus?.('جاري التحويل… لا تغلق الصفحة');
+          onStatus?.('جاري التحويل… لا تغلق الصفحة' + (purpose === 'upload' ? ' حتى يكتمل الرفع' : ''));
         }, 8000);
         try {
           await ffmpeg.exec(buildHevcToH264FfmpegArgs(inName, outName, hasAudio));
@@ -15517,9 +15569,13 @@
         return { blob: outBlob };
       }
 
+      async function transcodeHevcBlobToPlayableBlob(blob, mimeType, onStatus) {
+        return transcodeVideoBlobToPlayableH264(blob, mimeType, onStatus, { purpose: 'viewer' });
+      }
+
       async function transcodeHevcStreamToPlayableBlob(streamUrl, mimeType, onStatus) {
         const len = await probeR2StreamContentLength(streamUrl);
-        if (len > HEVC_TRANSCODE_MAX_BYTES) {
+        if (len > HEVC_TRANSCODE_VIEWER_MAX_BYTES) {
           throw new Error('حجم الفيديو ' + Math.round(len / 1048576) + 'MB — كبير للتحويل داخل المتصفح. حمّله أو ثبّت HEVC Extensions.');
         }
         onStatus?.('تحميل الفيديو وأداة التحويل معاً…');
@@ -15653,7 +15709,7 @@
         };
         window._attHevcRetryCtx = hevcCtx;
 
-        if (isAtharDesktopViewer() && streamUrl && r2Key.includes('/') && hevcCtx.fileBytes <= HEVC_TRANSCODE_MAX_BYTES) {
+        if (isAtharDesktopViewer() && streamUrl && r2Key.includes('/') && hevcCtx.fileBytes <= HEVC_TRANSCODE_VIEWER_MAX_BYTES) {
           const setStatus = (msg) => {
             const el = document.getElementById('hevc-tc-status');
             if (el) el.textContent = msg;
@@ -16164,7 +16220,8 @@
 
           try {
             const isImg = file.type.startsWith('image/');
-            const isVid = file.type.startsWith('video/') || /\.(mp4|mov|webm|avi|mkv)$/i.test(file.name);
+            const isVid = file.type.startsWith('video/')
+              || /\.(mp4|mov|webm|avi|mkv|m4v|mpeg|mpg|ts|m2ts)$/i.test(file.name);
             let base64Data = null;
             let finalType = file.type;
             let uploadFile = file;
@@ -16186,10 +16243,20 @@
               finalType = 'image/jpeg';
             } else if (isVid) {
               vCodecHint = await sniffMp4VideoCodec(file);
+              const gate = explainVideoTranscodeGate(file, file.name, vCodecHint);
+              if (gate) {
+                showToast(gate, 'error');
+                item.remove();
+                continue;
+              }
               if (shouldPrepTranscodeVideo(file, file.name, vCodecHint)) {
-                showToast('سيتم تحويل الفيديو إلى H.264 تلقائياً أثناء التحضير.', 'info');
-              } else if (isHevcCodec(vCodecHint)) {
-                showToast('تحذير: قد لا يُشغّل هذا الفيديو على الكمبيوتر — جرّب H.264 من إعدادات التسجيل.', 'info');
+                const mb = Math.round(file.size / 1048576);
+                showToast(
+                  mb >= 40
+                    ? `سيتم تحويل الفيديو (${mb}MB) إلى H.264 تلقائياً — قد يستغرق عدة دقائق، لا تغلق الصفحة.`
+                    : 'سيتم تحويل الفيديو إلى H.264 تلقائياً أثناء التحضير.',
+                  'info',
+                );
               }
             }
 
@@ -19526,6 +19593,7 @@
                 b: attUser,
                 r: attRole,
                 t: getNow(),
+                ...(file.transcoded ? { v: 'h264' } : {}),
                 ...(file.devDataUrl ? { u: file.devDataUrl } : {})
               });
             }
@@ -19550,7 +19618,7 @@
             p_status_text: tr.statusText || null,
             p_reply_field: tr.fieldKey,
             p_reply_text: text,
-            p_attachments: JSON.stringify(newAttachments),
+            p_attachments: newAttachments,
             p_reset_auto_forwarded_emp: action === 'respond' ? true : false,
             p_reset_auto_forwarded_sup: action === 'sup_process' ? true : false,
           });
