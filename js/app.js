@@ -6996,9 +6996,15 @@
       }
 
       function workflowForwardButtonLabel(fromStage) {
-        const next = getNextWorkflowState(fromStage);
-        if (!next) return 'اعتماد نهائي';
-        return `تمرير — ${STATE_LABELS[next] || next}`;
+        // Label by the actor stage (statement/decision), not the destination stage
+        const byStage = {
+          emp: 'إفادة الموظف',
+          sup: 'إفادة المشرف',
+          aud: 'إفادة التدقيق',
+          mgt: 'إفادة الإدارة',
+          hr: 'قرار الموارد البشرية',
+        };
+        return byStage[fromStage] || 'اعتماد نهائي';
       }
 
       function workflowRespondButtonLabel() {
@@ -19440,7 +19446,7 @@
           mgt_delete: { newState: 'closed', statusText: 'ملغاة بقرار إداري', fieldKey: 'management_reply', actionLabel: 'إلغاء (الإدارة)' },
           mgt_warning: { newState: 'Warning_Issued', statusText: 'تنبيه إداري — اكتفاء بالتنبيه (بدون أثر على النقاط)', fieldKey: 'management_reply', actionLabel: 'اكتفاء بالتنبيه (تنبيه المرة الأولى)' },
           hr_delete: { newState: 'closed', statusText: 'ملغاة بقرار الموارد البشرية', fieldKey: 'hr_reply', actionLabel: 'إلغاء (الموارد البشرية)' },
-          hr_approve: { newState: 'closed', statusText: 'معتمدة نهائياً', fieldKey: 'hr_reply', actionLabel: 'اعتماد نهائي' },
+          hr_approve: { newState: 'closed', statusText: 'معتمدة نهائياً', fieldKey: 'hr_reply', actionLabel: 'قرار الموارد البشرية' },
           hr_warning: { newState: 'Warning_Issued', statusText: 'تنبيه إداري — اكتفاء بالتنبيه (بدون أثر على النقاط)', fieldKey: 'hr_reply', actionLabel: 'اكتفاء بالتنبيه (تنبيه المرة الأولى)' },
         };
 
