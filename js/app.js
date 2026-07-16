@@ -12943,56 +12943,146 @@
         }
       }
 
+      function canvasSupportsWebp() {
+        try {
+          const c = document.createElement('canvas');
+          c.width = 1;
+          c.height = 1;
+          return c.toDataURL('image/webp').indexOf('data:image/webp') === 0;
+        } catch (_) {
+          return false;
+        }
+      }
+
+      function dataUrlToUint8(dataUrl) {
+        const comma = String(dataUrl || '').indexOf(',');
+        if (comma < 0) return null;
+        const header = dataUrl.slice(0, comma);
+        const b64 = dataUrl.slice(comma + 1);
+        const mimeMatch = header.match(/data:([^;]+)/i);
+        const mime = (mimeMatch && mimeMatch[1]) || 'application/octet-stream';
+        const bin = atob(b64);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        return { bytes, mime, base64: b64 };
+      }
+
+      function renameAttachmentWithExt(fileName, ext) {
+        const base = String(fileName || 'image').trim() || 'image';
+        const stem = base.replace(/\.[^.]+$/, '') || 'image';
+        const safeExt = String(ext || 'jpg').replace(/^\./, '').toLowerCase();
+        return stem + '.' + safeExt;
+      }
+
+      /**
+       * ضغط صورة المرفق داخل المتصفح (WebP إن أمكن، وإلا JPEG).
+       * الهدف: صور الرصد تحت ~500KB مع حد أقصى للحافة 1600px.
+       */
       function compressImageFile(file) {
         return new Promise((resolve, reject) => {
-          // لا نضغط الفيديوهات، الملفات غير الصورية، الصور المتحركة، أو الصور الصغيرة جداً
-          if (!file.type.startsWith('image/') || file.type === 'image/svg+xml' || file.type === 'image/gif' || file.size < 300 * 1024) {
-            return fileToBase64(file).then(b => resolve({ base64: b, isCompressed: false })).catch(reject);
+          const failPassthrough = (err) => {
+            if (err && isMirsadDebugLog()) console.error('[Compress]', err);
+            fileToBase64(file)
+              .then((b) => resolve({
+                base64: b,
+                type: file.type || 'application/octet-stream',
+                isCompressed: false,
+                ext: null,
+                blob: file instanceof Blob ? file : null,
+              }))
+              .catch(reject);
+          };
+
+          if (!file?.type?.startsWith('image/') || file.type === 'image/svg+xml' || file.type === 'image/gif') {
+            return failPassthrough();
           }
+
+          const MIN_COMPRESS_BYTES = 200 * 1024;
+          const TARGET_MAX_BYTES = 500 * 1024;
+          const MAX_EDGE = 1600;
 
           const reader = new FileReader();
           reader.readAsDataURL(file);
           reader.onload = (event) => {
-            const originalBase64 = event.target.result.split(',')[1];
+            const dataUrlIn = String(event.target.result || '');
+            const originalBase64 = dataUrlIn.split(',')[1] || '';
             const img = new Image();
             img.loading = 'eager';
             img.decoding = 'sync';
-            img.src = event.target.result;
-            img.onerror = () => {
-               resolve({ base64: originalBase64, isCompressed: false });
-            };
+            img.src = dataUrlIn;
+            img.onerror = () => failPassthrough();
             img.onload = () => {
-               try {
-                  const canvas = document.createElement('canvas');
-                  let width = img.width;
-                  let height = img.height;
-                  const MAX_SIZE = 1920;
-                  if (width > height) {
-                    if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; }
-                  } else {
-                    if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; }
-                  }
-                  canvas.width = width;
-                  canvas.height = height;
-                  const ctx = canvas.getContext('2d');
+              try {
+                const needsResize = img.width > MAX_EDGE || img.height > MAX_EDGE;
+                const needsShrink = file.size >= MIN_COMPRESS_BYTES || needsResize;
+                if (!needsShrink && file.size < MIN_COMPRESS_BYTES) {
+                  return resolve({
+                    base64: originalBase64,
+                    type: file.type || 'image/jpeg',
+                    isCompressed: false,
+                    ext: null,
+                    blob: file,
+                  });
+                }
+
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+                if (width > height) {
+                  if (width > MAX_EDGE) { height = Math.round(height * MAX_EDGE / width); width = MAX_EDGE; }
+                } else if (height > MAX_EDGE) {
+                  width = Math.round(width * MAX_EDGE / height);
+                  height = MAX_EDGE;
+                }
+                canvas.width = Math.max(1, width);
+                canvas.height = Math.max(1, height);
+                const ctx = canvas.getContext('2d');
+                const useWebp = canvasSupportsWebp();
+                // JPEG لا يدعم الشفافية — خلفية بيضاء. WebP يحافظ على الشفافية.
+                if (!useWebp) {
                   ctx.fillStyle = '#ffffff';
-                  ctx.fillRect(0, 0, width, height);
-                  ctx.drawImage(img, 0, 0, width, height);
-                  const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
-                  const compressedBase64 = dataUrl.split(',')[1];
-                  
-                  if (compressedBase64.length >= originalBase64.length) {
-                    resolve({ base64: originalBase64, isCompressed: false });
-                  } else {
-                    resolve({ base64: compressedBase64, isCompressed: true });
+                  ctx.fillRect(0, 0, canvas.width, canvas.height);
+                }
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                const qualities = useWebp ? [0.78, 0.68, 0.58] : [0.72, 0.62, 0.52];
+                const mime = useWebp ? 'image/webp' : 'image/jpeg';
+                const ext = useWebp ? 'webp' : 'jpg';
+                let best = null;
+                for (const q of qualities) {
+                  const outUrl = canvas.toDataURL(mime, q);
+                  const parsed = dataUrlToUint8(outUrl);
+                  if (!parsed?.bytes?.length) continue;
+                  if (!best || parsed.bytes.length < best.bytes.length) best = parsed;
+                  if (parsed.bytes.length <= TARGET_MAX_BYTES) {
+                    best = parsed;
+                    break;
                   }
-               } catch (e) {
-                  if (isMirsadDebugLog()) console.error('[Compress] Canvas error:', e);
-                  resolve({ base64: originalBase64, isCompressed: false });
-               }
+                }
+
+                if (!best || best.bytes.length >= file.size) {
+                  return resolve({
+                    base64: originalBase64,
+                    type: file.type || 'image/jpeg',
+                    isCompressed: false,
+                    ext: null,
+                    blob: file,
+                  });
+                }
+
+                resolve({
+                  base64: best.base64,
+                  type: best.mime || mime,
+                  isCompressed: true,
+                  ext,
+                  blob: new Blob([best.bytes], { type: best.mime || mime }),
+                });
+              } catch (e) {
+                failPassthrough(e);
+              }
             };
           };
-          reader.onerror = error => {
+          reader.onerror = (error) => {
             if (isMirsadDebugLog()) console.error('[Compress] Reader error:', error);
             reject(error);
           };
@@ -14279,7 +14369,13 @@
           }
           return fileEntry.prepStatusMsg || 'جاري الرفع…';
         }
-        if (fileEntry.prepStatus === 'ready') return fileEntry.transcoded ? 'جاهز (H.264)' : 'جاهز للإرسال';
+        if (fileEntry.prepStatus === 'ready') {
+          if (fileEntry.transcoded) return 'جاهز (H.264)';
+          if (fileEntry.imageCompressed) {
+            return /webp/i.test(String(fileEntry.type || '')) ? 'جاهز (WebP)' : 'جاهز (مضغوط)';
+          }
+          return 'جاهز للإرسال';
+        }
         if (fileEntry.prepStatus === 'error') return 'فشل: ' + (fileEntry.prepError || 'خطأ');
         if (fileEntry.prepStatus === 'cancelled') return 'ملغى';
         return 'جاري التحضير…';
@@ -16163,41 +16259,90 @@
         }
       }
 
-      // تحميل جميع صور Cloudflare في الصفحة (lazy load)
-      function loadAllCloudflareImages() {
-        const images = document.querySelectorAll('img[data-cf-id]');
-        if (images.length > 0 && isMirsadDebugLog()) console.log(`[CloudflareProxy] Attempting to load ${images.length} thumbnails...`);
+      // تحميل صور المرفقات عند اقترابها من الشاشة فقط (Lazy + حد تزامن)
+      let _cfThumbObserver = null;
+      let _cfThumbActive = 0;
+      const _cfThumbQueue = [];
+      const CF_THUMB_MAX_CONCURRENT = 3;
 
-        images.forEach(async (img) => {
-          if (img.dataset.cfThumbDone === '1') return;
-          if (img.dataset.loading === 'true') return;
+      function pumpCfThumbQueue() {
+        while (_cfThumbActive < CF_THUMB_MAX_CONCURRENT && _cfThumbQueue.length) {
+          const img = _cfThumbQueue.shift();
+          if (!img || !img.isConnected) continue;
+          if (img.dataset.cfThumbDone === '1' || img.dataset.loading === 'true') continue;
+          void loadOneCloudflareThumb(img);
+        }
+      }
 
-          const fid = img.dataset.cfId;
-          if (!fid) return;
+      function queueCfThumbLoad(img) {
+        if (!img || img.dataset.cfThumbDone === '1' || img.dataset.loading === 'true') return;
+        if (_cfThumbQueue.includes(img)) return;
+        _cfThumbQueue.push(img);
+        pumpCfThumbQueue();
+      }
 
-          img.dataset.loading = 'true';
-          try {
-            const resolved = await loadCloudflareFile(fid, state.editingTicket);
-            const ck = cfCacheKey(fid, state.editingTicket);
-            img.onload = () => {
-              img.dataset.cfThumbDone = '1';
-              img.style.opacity = '1';
-            };
-            img.onerror = () => {
-              delete _cloudflareCache[ck];
-              delete img.dataset.cfThumbDone;
-              img.alt = 'خطأ في التحميل';
-              img.style.opacity = '0.3';
-            };
-            img.src = resolved;
-          } catch (e) {
-            const ck = cfCacheKey(fid, state.editingTicket);
+      async function loadOneCloudflareThumb(img) {
+        const fid = img.dataset.cfId;
+        if (!fid) return;
+        img.dataset.loading = 'true';
+        _cfThumbActive++;
+        try {
+          const resolved = await loadCloudflareFile(fid, state.editingTicket);
+          if (!img.isConnected) return;
+          const ck = cfCacheKey(fid, state.editingTicket);
+          img.onload = () => {
+            img.dataset.cfThumbDone = '1';
+            img.style.opacity = '1';
+          };
+          img.onerror = () => {
             delete _cloudflareCache[ck];
+            delete img.dataset.cfThumbDone;
             img.alt = 'خطأ في التحميل';
             img.style.opacity = '0.3';
-          } finally {
-            delete img.dataset.loading;
+          };
+          img.src = resolved;
+        } catch (e) {
+          const ck = cfCacheKey(fid, state.editingTicket);
+          delete _cloudflareCache[ck];
+          if (img.isConnected) {
+            img.alt = 'خطأ في التحميل';
+            img.style.opacity = '0.3';
           }
+        } finally {
+          delete img.dataset.loading;
+          _cfThumbActive = Math.max(0, _cfThumbActive - 1);
+          pumpCfThumbQueue();
+        }
+      }
+
+      function ensureCfThumbObserver() {
+        if (typeof IntersectionObserver === 'undefined') return null;
+        if (_cfThumbObserver) return _cfThumbObserver;
+        _cfThumbObserver = new IntersectionObserver((entries) => {
+          for (const entry of entries) {
+            if (!entry.isIntersecting) continue;
+            const img = entry.target;
+            try { _cfThumbObserver.unobserve(img); } catch (_) { /* */ }
+            queueCfThumbLoad(img);
+          }
+        }, { root: null, rootMargin: '160px 0px', threshold: 0.01 });
+        return _cfThumbObserver;
+      }
+
+      function loadAllCloudflareImages() {
+        const images = document.querySelectorAll('img[data-cf-id]');
+        if (!images.length) return;
+        if (isMirsadDebugLog()) console.log(`[CloudflareProxy] Lazy thumbs: ${images.length}`);
+        const obs = ensureCfThumbObserver();
+        images.forEach((img) => {
+          if (img.dataset.cfThumbDone === '1') return;
+          if (!obs) {
+            queueCfThumbLoad(img);
+            return;
+          }
+          if (img.dataset.cfObserved === '1') return;
+          img.dataset.cfObserved = '1';
+          obs.observe(img);
         });
       }
 
@@ -16237,10 +16382,25 @@
             const statusEl = item.querySelector('.file-item-status');
 
             let vCodecHint = null;
+            let imageCompressed = false;
             if (isImg) {
+              if (statusEl) statusEl.textContent = 'ضغط الصورة…';
               const compressResult = await compressImageFile(file);
-              base64Data = compressResult.base64;
-              finalType = 'image/jpeg';
+              base64Data = null;
+              finalType = compressResult.type || 'image/jpeg';
+              imageCompressed = !!compressResult.isCompressed;
+              if (compressResult.isCompressed && compressResult.blob) {
+                const outName = renameAttachmentWithExt(file.name, compressResult.ext || 'jpg');
+                uploadFile = new File([compressResult.blob], outName, { type: finalType });
+                const savedMb = (file.size - uploadFile.size) / 1048576;
+                if (savedMb >= 1) {
+                  showToast(`تم ضغط الصورة ووفّرنا ~${savedMb.toFixed(1)}MB.`, 'info');
+                }
+              } else if (compressResult.blob instanceof Blob) {
+                uploadFile = compressResult.blob instanceof File
+                  ? compressResult.blob
+                  : new File([compressResult.blob], file.name, { type: finalType });
+              }
             } else if (isVid) {
               vCodecHint = await sniffMp4VideoCodec(file);
               const gate = explainVideoTranscodeGate(file, file.name, vCodecHint);
@@ -16269,13 +16429,14 @@
               name: uploadFile.name,
               type: finalType,
               base64: base64Data,
-              rawFile: isImg ? null : uploadFile,
+              rawFile: uploadFile,
               blobUrl: URL.createObjectURL(uploadFile),
               prepStatus: 'preparing',
               prepStatusMsg: '',
               prepError: null,
               tempKey: null,
               transcoded: false,
+              imageCompressed,
               codecHint: vCodecHint,
             });
             const idx = state.uploadedFiles[scope].length - 1;
@@ -18247,11 +18408,11 @@
           let thumb;
           if (isImg) {
             if (a.isGDrive) {
-              thumb = `<div class="att-thumb"><img src="${a.url}" alt="" loading="lazy"></div>`;
+              thumb = `<div class="att-thumb"><img src="${a.url}" alt="" loading="lazy" decoding="async"></div>`;
             } else if ((a.url || '').startsWith('data:image/')) {
-              thumb = `<div class="att-thumb"><img src="${a.url}" alt="" loading="lazy"></div>`;
+              thumb = `<div class="att-thumb"><img src="${a.url}" alt="" loading="lazy" decoding="async"></div>`;
             } else {
-              thumb = `<div class="att-thumb"><img data-cf-id="${Sec.escapeHTML(cfId)}" src="${placeholderSvg}" alt="" loading="lazy"></div>`;
+              thumb = `<div class="att-thumb"><img data-cf-id="${Sec.escapeHTML(cfId)}" src="${placeholderSvg}" alt="" loading="lazy" decoding="async"></div>`;
             }
           } else {
             thumb = `<div class="att-thumb"><i class="fas ${isVid ? 'fa-video' : 'fa-file-lines'}"></i></div>`;
