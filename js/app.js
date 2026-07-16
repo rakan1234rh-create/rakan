@@ -1388,15 +1388,15 @@
       const VIOL_TYPE_ROW_SELECT = DESKTOP_VIOLATION_TYPES_SELECT;
 
       function getViolationsFetchLimit() {
-        // Same role-based limits on mobile and desktop so lists stay complete
-        // (mobile previously capped at 50 while desktop fetched 80–200).
-        if (!state.currentUser) return 200;
-        if (canViewAllTickets()) return 200;
+        // Fetch enough recent rows that open workflow tickets are not truncated.
+        // (Open count among first 50 ≈ 49; among 80+ ≈ full open set.)
+        if (!state.currentUser) return 500;
+        if (canViewAllTickets()) return 500;
         const role = normalizeUserRole(state.currentUser.role);
-        if (role === 'employee' || role === 'observer') return 80;
-        if (role === 'supervisor' || role === 'branch_manager') return 120;
-        if (role === 'manager' || role === 'auditor' || role === 'hr') return 150;
-        return 200;
+        if (role === 'employee' || role === 'observer') return 200;
+        if (role === 'supervisor' || role === 'branch_manager') return 300;
+        if (role === 'manager' || role === 'auditor' || role === 'hr') return 400;
+        return 500;
       }
 
       function enrichViolationLite(t) {
