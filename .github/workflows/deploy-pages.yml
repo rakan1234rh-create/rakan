@@ -18,7 +18,17 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout main (production root)
+        uses: actions/checkout@v4
+        with:
+          path: main-src
+          ref: main
+
+      - name: Checkout staging (for /staging/ subpath)
+        uses: actions/checkout@v4
+        with:
+          path: staging-src
+          ref: staging
 
       - uses: actions/setup-node@v4
         with:
@@ -26,34 +36,53 @@ jobs:
 
       - uses: actions/configure-pages@v5
 
-      - name: Prepare site
+      - name: Build production root + /staging
         run: |
-          npm install sharp @resvg/resvg-js --no-save
-          node scripts/export-athar-homescreen-png.mjs
-          VER="$(tr -d '\r\n' < icons/icon-cache-ver.txt)"
-          SHORT_SHA="$(git rev-parse --short HEAD)"
-          mkdir -p site/icons
-          cp index.html site/index.html
-          sed -i "s/<meta name=\"athar-build\" content=\"[^\"]*\">/<meta name=\"athar-build\" content=\"${SHORT_SHA}\">/" site/index.html
-          printf '%s\n' "{\"build\":\"${SHORT_SHA}\",\"builtAt\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}" > site/app-version.json
-          cp -r styles site/
-          if [ -d js ]; then cp -r js site/; fi
-          cp -r vendor site/
-          test -f site/vendor/ffmpeg/worker.js
-          cp manifest.webmanifest site/manifest.webmanifest
-          if [ -f sw.js ]; then cp sw.js site/sw.js; fi
-          if [ -f CNAME ]; then cp CNAME site/CNAME; fi
-          cp icons/athar-pwa-192-v${VER}.png icons/athar-pwa-512-v${VER}.png \
-            icons/athar-pwa-180-v${VER}.png icons/athar-pwa-maskable-512-v${VER}.png \
-            icons/athar-app-icon.svg icons/athar-homescreen-fullbleed.svg \
-            icons/athar-homescreen-maskable.svg icons/athar-wordmark-email.svg \
-            icons/athar-wordmark-email-v388.png icons/athar-logo-v401.png site/icons/
-          if [ -d icons/avatars ]; then mkdir -p site/icons/avatars && cp -r icons/avatars/. site/icons/avatars/; fi
-          touch site/.nojekyll
-          cp icons/athar-pwa-180-v${VER}.png site/apple-touch-icon.png
-          cp icons/athar-pwa-180-v${VER}.png site/apple-touch-icon-precomposed.png
-          cp icons/athar-pwa-180-v${VER}.png site/icons/apple-touch-icon.png
-          cp icons/athar-pwa-512-v${VER}.png site/favicon.png
+          set -euo pipefail
+
+          build_site() {
+            local SRC="$1"
+            local DEST="$2"
+            local LABEL="$3"
+            mkdir -p "$DEST/icons"
+            (
+              cd "$SRC"
+              npm install sharp @resvg/resvg-js --no-save
+              node scripts/export-athar-homescreen-png.mjs
+              VER="$(tr -d '\r\n' < icons/icon-cache-ver.txt)"
+              SHORT_SHA="$(git rev-parse --short HEAD)"
+              cp index.html "$DEST/index.html"
+              # athar-build يجب أن يطابق app-version.json.build حرفياً وإلا يحدث رفرش لا نهائي
+              sed -i "s/<meta name=\"athar-build\" content=\"[^\"]*\">/<meta name=\"athar-build\" content=\"${SHORT_SHA}\">/" "$DEST/index.html"
+              printf '%s\n' "{\"build\":\"${SHORT_SHA}\",\"builtAt\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"env\":\"${LABEL}\"}" > "$DEST/app-version.json"
+              cp -r styles "$DEST/"
+              if [ -d js ]; then cp -r js "$DEST/"; fi
+              cp -r vendor "$DEST/"
+              test -f "$DEST/vendor/ffmpeg/worker.js"
+              cp manifest.webmanifest "$DEST/manifest.webmanifest"
+              if [ -f sw.js ]; then cp sw.js "$DEST/sw.js"; fi
+              cp icons/athar-pwa-192-v${VER}.png icons/athar-pwa-512-v${VER}.png \
+                icons/athar-pwa-180-v${VER}.png icons/athar-pwa-maskable-512-v${VER}.png \
+                icons/athar-app-icon.svg icons/athar-homescreen-fullbleed.svg \
+                icons/athar-homescreen-maskable.svg icons/athar-wordmark-email.svg \
+                icons/athar-wordmark-email-v388.png icons/athar-logo-v401.png "$DEST/icons/"
+              if [ -d icons/avatars ]; then mkdir -p "$DEST/icons/avatars" && cp -r icons/avatars/. "$DEST/icons/avatars/"; fi
+              touch "$DEST/.nojekyll"
+              cp icons/athar-pwa-180-v${VER}.png "$DEST/apple-touch-icon.png"
+              cp icons/athar-pwa-180-v${VER}.png "$DEST/apple-touch-icon-precomposed.png"
+              cp icons/athar-pwa-180-v${VER}.png "$DEST/icons/apple-touch-icon.png"
+              cp icons/athar-pwa-512-v${VER}.png "$DEST/favicon.png"
+            )
+          }
+
+          rm -rf site
+          mkdir -p site
+          build_site "$GITHUB_WORKSPACE/main-src" "$GITHUB_WORKSPACE/site" "production"
+          if [ -f "$GITHUB_WORKSPACE/main-src/CNAME" ]; then
+            cp "$GITHUB_WORKSPACE/main-src/CNAME" "$GITHUB_WORKSPACE/site/CNAME"
+          fi
+          # لا تمسح /staging عند نشر الإنتاج — انشره من فرع staging دائماً
+          build_site "$GITHUB_WORKSPACE/staging-src" "$GITHUB_WORKSPACE/site/staging" "staging"
 
       - uses: actions/upload-pages-artifact@v3
         with:
