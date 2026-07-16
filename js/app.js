@@ -4837,6 +4837,7 @@
         const theme = document.documentElement.getAttribute('data-theme') || 'light';
         const icon = document.getElementById('rdThemeIcon');
         if (icon) icon.className = 'fas ' + (theme === 'dark' ? 'fa-sun' : 'fa-moon');
+        try { syncRdWfChips(); } catch (_) { /* noop */ }
         const av = document.getElementById('topbarUserAv');
         if (!av) return;
         if (!isAtharRedesignUi() || !state.currentUser) {
@@ -4846,6 +4847,38 @@
         const initial = (state.currentUser.name || 'م').trim().charAt(0) || 'م';
         av.classList.add('rd-top-av');
         av.textContent = initial;
+      }
+
+      /** Chips على صفحة التذاكر (تصميم الاختبار) — الكل / بانتظار ردي / مُرسلة */
+      function syncRdWfChips(openTickets) {
+        const host = document.getElementById('rdWfChips');
+        if (!host) return;
+        if (!isAtharRedesignUi()) {
+          host.hidden = true;
+          host.innerHTML = '';
+          return;
+        }
+        const open = Array.isArray(openTickets)
+          ? openTickets
+          : getVisibleViolations().filter(isTicketWorkflowOpen);
+        const chip = state._rdWfChip || 'all';
+        const mineN = open.filter(canActOnTicket).length;
+        const chips = [
+          { id: 'all', label: 'الكل', count: open.length },
+          { id: 'mine', label: 'بانتظار ردي', count: mineN },
+          { id: 'sent', label: 'مُرسلة', count: Math.max(0, open.length - mineN) },
+        ];
+        host.hidden = false;
+        host.innerHTML = chips.map((c) => {
+          const active = c.id === chip;
+          return `<button type="button" class="rd-wf-chip${active ? ' is-active' : ''}" role="tab" aria-selected="${active ? 'true' : 'false'}" onclick="rdWfPickChip('${c.id}')">${Sec.escapeHTML(c.label)} (${c.count})</button>`;
+        }).join('');
+      }
+
+      function rdWfPickChip(id) {
+        if (id !== 'all' && id !== 'mine' && id !== 'sent') id = 'all';
+        state._rdWfChip = id;
+        filterTickets();
       }
 
       function getRdCleanStreakDays(me) {
@@ -16927,6 +16960,7 @@
         if (sel) sel.value = '';
         wfStatusSyncUi('');
         wfStatusClose();
+        state._rdWfChip = 'all';
 
         const menu = document.getElementById('wf-status-menu');
         const filter = document.getElementById('wf-status-filter');
@@ -17175,10 +17209,21 @@
       }
 
       function filterTickets() {
+        let visible = getVisibleViolations().filter(isTicketWorkflowOpen);
+
+        if (isAtharRedesignUi()) {
+          syncRdWfChips(visible);
+          const chip = state._rdWfChip || 'all';
+          if (chip === 'mine') visible = visible.filter(canActOnTicket);
+          else if (chip === 'sent') visible = visible.filter(t => !canActOnTicket(t));
+          const countEl = document.getElementById('wf-count');
+          if (countEl) countEl.textContent = visible.length;
+          renderTicketList(visible);
+          return;
+        }
+
         const search = (document.getElementById('wf-search')?.value || '').toLowerCase().trim();
         const status = document.getElementById('wf-status')?.value || '';
-
-        let visible = getVisibleViolations().filter(isTicketWorkflowOpen);
 
         if (status) visible = visible.filter(v => v.state === status);
         if (search) {
@@ -17188,7 +17233,8 @@
           });
         }
 
-        document.getElementById('wf-count').textContent = visible.length;
+        const countEl = document.getElementById('wf-count');
+        if (countEl) countEl.textContent = visible.length;
         renderTicketList(visible);
       }
 
@@ -17287,8 +17333,17 @@
             ? dataLoadingEmptyHTML(isReportsList ? 'جاري تحميل التقارير…' : 'جاري تحميل التذاكر…')
             : (isReportsList
               ? '<div class="empty"><i class="fas fa-inbox"></i><p>لا توجد بيانات في الفترة المحددة</p></div>'
-              : '<div class="empty"><i class="fas fa-inbox"></i><p>لا توجد تذاكر مطابقة</p></div>');
-          appendTicketListHtml(list, emptyHtml, true);
+              : (isAtharRedesignUi()
+                ? '<div class="rd-ticket-empty"><i class="fas fa-inbox"></i><p>لا توجد تذاكر مطابقة</p></div>'
+                : '<div class="empty"><i class="fas fa-inbox"></i><p>لا توجد تذاكر مطابقة</p></div>'));
+          if (isAtharRedesignUi() && !isReportsList) {
+            resetTicketListChildren(list, true);
+            list.classList.remove('wf-mob-measuring', 'rp-mob-measuring');
+            list.classList.add('wf-mob-cols-ready');
+            getOrCreateTicketMobBody(list).innerHTML = emptyHtml;
+          } else {
+            appendTicketListHtml(list, emptyHtml, true);
+          }
           return;
         }
 
@@ -30827,6 +30882,7 @@
       window.removeFile = removeFile;
       window.removeFileById = removeFileById;
       window.filterTickets = filterTickets;
+      window.rdWfPickChip = rdWfPickChip;
       window.wfStatusToggle = wfStatusToggle;
       window.wfStatusPick = wfStatusPick;
       window.wfStatusMobNativeChange = wfStatusMobNativeChange;

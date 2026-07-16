@@ -481,45 +481,152 @@ html.athar-staging-redesign.mr-desktop-ui #rdDash { display: none !important; }
 .rd-dist-label { flex: 1; font-size: 12.5px; color: var(--text); font-weight: 500; }
 .rd-dist-count { font-size: 14px; font-weight: 700; }
 
-/* Tickets page */
+/* ═══ Tickets page — exact Standalone mockup ═══ */
+html.athar-staging-redesign.mr-mobile-ui #tab-workflow .panel.wf-panel {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
 html.athar-staging-redesign.mr-mobile-ui #tab-workflow .wf-panel-banner {
-  padding: 0 0 12px !important; border: none !important; background: transparent !important;
+  padding: 0 0 0 !important;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  display: block !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-workflow .wf-panel-intro {
+  margin: 0 !important;
+  padding: 0 !important;
 }
 html.athar-staging-redesign.mr-mobile-ui #tab-workflow .wf-panel-title {
-  font-size: 18px !important; font-weight: 700 !important; color: var(--text) !important; margin: 0 0 14px !important;
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  color: var(--text) !important;
+  margin: 0 0 14px !important;
+  line-height: 1.3 !important;
 }
-html.athar-staging-redesign.mr-mobile-ui #tab-workflow .wf-panel-sub { display: none !important; }
-html.athar-staging-redesign.mr-mobile-ui #tab-workflow .wf-count { display: none !important; }
-html.athar-staging-redesign.mr-mobile-ui #tab-workflow .wf-toolbar {
-  display: flex !important; gap: 8px !important; margin-bottom: 16px !important;
-  overflow-x: auto !important; flex-wrap: nowrap !important;
+html.athar-staging-redesign.mr-mobile-ui #tab-workflow .wf-panel-sub,
+html.athar-staging-redesign.mr-mobile-ui #tab-workflow .wf-count,
+html.athar-staging-redesign.mr-mobile-ui #tab-workflow #wfClassicToolbar {
+  display: none !important;
 }
-html.athar-staging-redesign.mr-mobile-ui #tab-workflow .wf-search {
-  flex: 1 1 auto !important; min-width: 140px !important;
-  background: var(--searchFill) !important; border: none !important; border-radius: 10px !important;
-  box-shadow: none !important;
-}
-html.athar-staging-redesign.mr-mobile-ui #tab-workflow .wf-status-filter { flex: 0 0 auto !important; }
 
-.rd-ticket-list { display: flex; flex-direction: column; gap: 10px; }
-.rd-ticket {
-  background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
-  padding: 14px; animation: atharRdCardIn .4s ease both; cursor: pointer; text-align: start;
-  width: 100%; font-family: inherit; color: inherit;
+html.athar-staging-redesign.mr-mobile-ui #rdWfChips {
+  display: flex !important;
+  gap: 8px;
+  margin-bottom: 16px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
 }
-.rd-ticket__top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-.rd-ticket__id { font-size: 11px; color: var(--text3); font-family: ui-monospace, monospace; }
+html.athar-staging-redesign.mr-mobile-ui #rdWfChips::-webkit-scrollbar { display: none; }
+html:not(.athar-staging-redesign) #rdWfChips,
+html.athar-staging-redesign.mr-desktop-ui #rdWfChips {
+  display: none !important;
+}
+
+.rd-wf-chip {
+  flex: 0 0 auto;
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text2);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+.rd-wf-chip.is-active {
+  background: var(--gold);
+  color: var(--onGold);
+  border-color: var(--gold);
+}
+
+html.athar-staging-redesign.mr-mobile-ui #ticketList.wf-desk-tickets-host,
+html.athar-staging-redesign.mr-mobile-ui #ticketList .wf-mob-tickets-body {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+.rd-ticket-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: atharRdScreenIn .32s ease;
+}
+.rd-ticket {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 14px;
+  animation: atharRdCardIn .4s ease both;
+  cursor: pointer;
+  text-align: start;
+  width: 100%;
+  font-family: inherit;
+  color: inherit;
+  box-shadow: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.rd-ticket:active { opacity: 0.92; }
+.rd-ticket__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.rd-ticket__id {
+  font-size: 11px;
+  color: var(--text3);
+  font-family: ui-monospace, "JetBrains Mono", monospace;
+}
 .rd-ticket__time { font-size: 10.5px; color: var(--text3); }
 .rd-ticket__body { display: flex; align-items: center; gap: 10px; }
 .rd-ticket__av {
-  width: 34px; height: 34px; border-radius: 50%; background: var(--surface2); color: var(--text2);
-  display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--surface2);
+  color: var(--text2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
 }
 .rd-ticket__name { font-size: 13px; font-weight: 600; color: var(--text); }
 .rd-ticket__type { font-size: 11.5px; color: var(--text3); margin-top: 2px; }
 .rd-ticket__badge {
-  margin-top: 10px; display: inline-flex; padding: 5px 12px; border-radius: 999px;
-  font-size: 11px; font-weight: 600;
+  margin-top: 10px;
+  display: inline-flex;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.rd-ticket-empty {
+  text-align: center;
+  padding: 36px 16px;
+  color: var(--text3);
+  font-size: 13px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+.rd-ticket-empty i {
+  display: block;
+  font-size: 22px;
+  margin-bottom: 10px;
+  opacity: 0.7;
 }
 
 /* Bottom nav exact mockup metrics */
