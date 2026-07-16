@@ -1389,14 +1389,15 @@
       const VIOL_TYPE_ROW_SELECT = DESKTOP_VIOLATION_TYPES_SELECT;
 
       function getViolationsFetchLimit() {
-        if (isMobileViewport()) return 50;
-        if (!state.currentUser) return 200;
-        if (canViewAllTickets()) return 200;
+        // Fetch enough recent rows that open workflow tickets are not truncated.
+        // (Open count among first 50 ≈ 49; among 80+ ≈ full open set.)
+        if (!state.currentUser) return 500;
+        if (canViewAllTickets()) return 500;
         const role = normalizeUserRole(state.currentUser.role);
-        if (role === 'employee' || role === 'observer') return 80;
-        if (role === 'supervisor' || role === 'branch_manager') return 120;
-        if (role === 'manager' || role === 'auditor' || role === 'hr') return 150;
-        return 200;
+        if (role === 'employee' || role === 'observer') return 200;
+        if (role === 'supervisor' || role === 'branch_manager') return 300;
+        if (role === 'manager' || role === 'auditor' || role === 'hr') return 400;
+        return 500;
       }
 
       function enrichViolationLite(t) {
@@ -1414,6 +1415,7 @@
         t._branchName = br?.name || '-';
         t._regionName = region?.name || '-';
         t.logs = parseDbJsonArray(t.logs);
+        if (t.attachments != null) t.attachments = parseDbJsonArray(t.attachments);
         return t;
       }
 
@@ -4665,6 +4667,7 @@
       function enrichViolation(t) {
         if (!t) return t;
         t.logs = parseDbJsonArray(t.logs);
+        if (t.attachments != null) t.attachments = parseDbJsonArray(t.attachments);
         if (!state._userById || !state._branchById || !state._regionById) rebuildLookupMaps();
         const emp = state._userById.get(t.employee_id);
         const sup = state._userById.get(t.supervisor_id);
@@ -12942,56 +12945,146 @@
         }
       }
 
+      function canvasSupportsWebp() {
+        try {
+          const c = document.createElement('canvas');
+          c.width = 1;
+          c.height = 1;
+          return c.toDataURL('image/webp').indexOf('data:image/webp') === 0;
+        } catch (_) {
+          return false;
+        }
+      }
+
+      function dataUrlToUint8(dataUrl) {
+        const comma = String(dataUrl || '').indexOf(',');
+        if (comma < 0) return null;
+        const header = dataUrl.slice(0, comma);
+        const b64 = dataUrl.slice(comma + 1);
+        const mimeMatch = header.match(/data:([^;]+)/i);
+        const mime = (mimeMatch && mimeMatch[1]) || 'application/octet-stream';
+        const bin = atob(b64);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        return { bytes, mime, base64: b64 };
+      }
+
+      function renameAttachmentWithExt(fileName, ext) {
+        const base = String(fileName || 'image').trim() || 'image';
+        const stem = base.replace(/\.[^.]+$/, '') || 'image';
+        const safeExt = String(ext || 'jpg').replace(/^\./, '').toLowerCase();
+        return stem + '.' + safeExt;
+      }
+
+      /**
+       * ضغط صورة المرفق داخل المتصفح (WebP إن أمكن، وإلا JPEG).
+       * الهدف: صور الرصد تحت ~500KB مع حد أقصى للحافة 1600px.
+       */
       function compressImageFile(file) {
         return new Promise((resolve, reject) => {
-          // لا نضغط الفيديوهات، الملفات غير الصورية، الصور المتحركة، أو الصور الصغيرة جداً
-          if (!file.type.startsWith('image/') || file.type === 'image/svg+xml' || file.type === 'image/gif' || file.size < 300 * 1024) {
-            return fileToBase64(file).then(b => resolve({ base64: b, isCompressed: false })).catch(reject);
+          const failPassthrough = (err) => {
+            if (err && isMirsadDebugLog()) console.error('[Compress]', err);
+            fileToBase64(file)
+              .then((b) => resolve({
+                base64: b,
+                type: file.type || 'application/octet-stream',
+                isCompressed: false,
+                ext: null,
+                blob: file instanceof Blob ? file : null,
+              }))
+              .catch(reject);
+          };
+
+          if (!file?.type?.startsWith('image/') || file.type === 'image/svg+xml' || file.type === 'image/gif') {
+            return failPassthrough();
           }
+
+          const MIN_COMPRESS_BYTES = 200 * 1024;
+          const TARGET_MAX_BYTES = 500 * 1024;
+          const MAX_EDGE = 1600;
 
           const reader = new FileReader();
           reader.readAsDataURL(file);
           reader.onload = (event) => {
-            const originalBase64 = event.target.result.split(',')[1];
+            const dataUrlIn = String(event.target.result || '');
+            const originalBase64 = dataUrlIn.split(',')[1] || '';
             const img = new Image();
             img.loading = 'eager';
             img.decoding = 'sync';
-            img.src = event.target.result;
-            img.onerror = () => {
-               resolve({ base64: originalBase64, isCompressed: false });
-            };
+            img.src = dataUrlIn;
+            img.onerror = () => failPassthrough();
             img.onload = () => {
-               try {
-                  const canvas = document.createElement('canvas');
-                  let width = img.width;
-                  let height = img.height;
-                  const MAX_SIZE = 1920;
-                  if (width > height) {
-                    if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; }
-                  } else {
-                    if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; }
-                  }
-                  canvas.width = width;
-                  canvas.height = height;
-                  const ctx = canvas.getContext('2d');
+              try {
+                const needsResize = img.width > MAX_EDGE || img.height > MAX_EDGE;
+                const needsShrink = file.size >= MIN_COMPRESS_BYTES || needsResize;
+                if (!needsShrink && file.size < MIN_COMPRESS_BYTES) {
+                  return resolve({
+                    base64: originalBase64,
+                    type: file.type || 'image/jpeg',
+                    isCompressed: false,
+                    ext: null,
+                    blob: file,
+                  });
+                }
+
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+                if (width > height) {
+                  if (width > MAX_EDGE) { height = Math.round(height * MAX_EDGE / width); width = MAX_EDGE; }
+                } else if (height > MAX_EDGE) {
+                  width = Math.round(width * MAX_EDGE / height);
+                  height = MAX_EDGE;
+                }
+                canvas.width = Math.max(1, width);
+                canvas.height = Math.max(1, height);
+                const ctx = canvas.getContext('2d');
+                const useWebp = canvasSupportsWebp();
+                // JPEG لا يدعم الشفافية — خلفية بيضاء. WebP يحافظ على الشفافية.
+                if (!useWebp) {
                   ctx.fillStyle = '#ffffff';
-                  ctx.fillRect(0, 0, width, height);
-                  ctx.drawImage(img, 0, 0, width, height);
-                  const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
-                  const compressedBase64 = dataUrl.split(',')[1];
-                  
-                  if (compressedBase64.length >= originalBase64.length) {
-                    resolve({ base64: originalBase64, isCompressed: false });
-                  } else {
-                    resolve({ base64: compressedBase64, isCompressed: true });
+                  ctx.fillRect(0, 0, canvas.width, canvas.height);
+                }
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                const qualities = useWebp ? [0.78, 0.68, 0.58] : [0.72, 0.62, 0.52];
+                const mime = useWebp ? 'image/webp' : 'image/jpeg';
+                const ext = useWebp ? 'webp' : 'jpg';
+                let best = null;
+                for (const q of qualities) {
+                  const outUrl = canvas.toDataURL(mime, q);
+                  const parsed = dataUrlToUint8(outUrl);
+                  if (!parsed?.bytes?.length) continue;
+                  if (!best || parsed.bytes.length < best.bytes.length) best = parsed;
+                  if (parsed.bytes.length <= TARGET_MAX_BYTES) {
+                    best = parsed;
+                    break;
                   }
-               } catch (e) {
-                  if (isMirsadDebugLog()) console.error('[Compress] Canvas error:', e);
-                  resolve({ base64: originalBase64, isCompressed: false });
-               }
+                }
+
+                if (!best || best.bytes.length >= file.size) {
+                  return resolve({
+                    base64: originalBase64,
+                    type: file.type || 'image/jpeg',
+                    isCompressed: false,
+                    ext: null,
+                    blob: file,
+                  });
+                }
+
+                resolve({
+                  base64: best.base64,
+                  type: best.mime || mime,
+                  isCompressed: true,
+                  ext,
+                  blob: new Blob([best.bytes], { type: best.mime || mime }),
+                });
+              } catch (e) {
+                failPassthrough(e);
+              }
             };
           };
-          reader.onerror = error => {
+          reader.onerror = (error) => {
             if (isMirsadDebugLog()) console.error('[Compress] Reader error:', error);
             reject(error);
           };
@@ -13938,7 +14031,8 @@
           }
 
           // نجهز البيانات النهائية (بدون حالة 'uploading' لأننا رفعنا بالفعل)
-          const finalPayload = { ...payload, attachments: JSON.stringify(tempAttachments), state: initialState };
+          // jsonb: مرّر المصفوفة مباشرة — JSON.stringify يخزّنها كنص داخل jsonb ويُعطّل العرض
+          const finalPayload = { ...payload, attachments: tempAttachments, state: initialState };
           const { data: insertData, error: insertError } = await sb.from('violations').insert(finalPayload).select();
 
           if (insertError) {
@@ -14170,7 +14264,7 @@
                 }
               }
               if (movedAny) {
-                await sb.from('violations').update({ attachments: JSON.stringify(updatedAtts) }).eq('id', violationId);
+                await sb.from('violations').update({ attachments: updatedAtts }).eq('id', violationId);
                 const idx = state.violations.findIndex(v => v.id === violationId);
                 if (idx !== -1) state.violations[idx].attachments = updatedAtts;
               }
@@ -14203,7 +14297,7 @@
           }
 
           if (movedAny) {
-            await sb.from('violations').update({ attachments: JSON.stringify(updatedAtts) }).eq('id', violationId);
+            await sb.from('violations').update({ attachments: updatedAtts }).eq('id', violationId);
             if (isMirsadDebugLog()) console.log(`[R2-Move] DB paths updated for ${ticketNumber}`);
             const idx = state.violations.findIndex(v => v.id === violationId);
             if (idx !== -1) {
@@ -14277,7 +14371,13 @@
           }
           return fileEntry.prepStatusMsg || 'جاري الرفع…';
         }
-        if (fileEntry.prepStatus === 'ready') return fileEntry.transcoded ? 'جاهز (H.264)' : 'جاهز للإرسال';
+        if (fileEntry.prepStatus === 'ready') {
+          if (fileEntry.transcoded) return 'جاهز (H.264)';
+          if (fileEntry.imageCompressed) {
+            return /webp/i.test(String(fileEntry.type || '')) ? 'جاهز (WebP)' : 'جاهز (مضغوط)';
+          }
+          return 'جاهز للإرسال';
+        }
         if (fileEntry.prepStatus === 'error') return 'فشل: ' + (fileEntry.prepError || 'خطأ');
         if (fileEntry.prepStatus === 'cancelled') return 'ملغى';
         return 'جاري التحضير…';
@@ -14403,32 +14503,36 @@
             if (!contentType || contentType === 'application/octet-stream') contentType = 'image/jpeg';
           }
 
-          const isVideo = fileEntry.rawFile instanceof Blob
-            || /^video\//i.test(contentType)
-            || /\.(mp4|mov|webm|m4v|avi|mkv)$/i.test(uploadName);
+          const isVideo = /^video\//i.test(contentType)
+            || /\.(mp4|mov|webm|m4v|avi|mkv|mpeg|mpg|ts|m2ts)$/i.test(uploadName);
 
           if (isVideo && body instanceof Blob) {
             const vCodec = fileEntry.codecHint || await sniffMp4VideoCodec(body);
             fileEntry.codecHint = vCodec;
-            if (shouldPrepTranscodeVideo(body, uploadName, vCodec)) {
+            if (videoNeedsPlayableTranscode(vCodec, uploadName)) {
+              const gate = explainVideoTranscodeGate(body, uploadName, vCodec);
+              if (gate) throw new Error(gate);
               if (fileEntry._cancelled) return;
               fileEntry.prepStatus = 'transcoding';
-              fileEntry.prepStatusMsg = 'جاري التحويل…';
+              fileEntry.prepStatusMsg = 'جاري التحويل إلى H.264…';
               updateAttachmentPrepUi(scope, fileEntry._fileId);
-              const { blob } = await transcodeHevcBlobToPlayableBlob(body, contentType, (msg) => {
+              const { blob } = await transcodeVideoBlobToPlayableH264(body, contentType, (msg) => {
                 fileEntry.prepStatusMsg = msg;
                 updateAttachmentPrepUi(scope, fileEntry._fileId);
-              });
+              }, { purpose: 'upload' });
               if (fileEntry._cancelled) return;
               body = blob;
               contentType = 'video/mp4';
               uploadName = mp4NameAfterTranscode(uploadName);
               fileEntry.name = uploadName;
+              fileEntry.type = 'video/mp4';
               fileEntry.transcoded = true;
+              fileEntry.codecHint = 'h264';
               if (fileEntry.blobUrl) {
                 try { URL.revokeObjectURL(fileEntry.blobUrl); } catch (_) { /* */ }
               }
               fileEntry.blobUrl = URL.createObjectURL(blob);
+              fileEntry.rawFile = blob;
             }
           }
 
@@ -14574,8 +14678,13 @@
         for (const src of [fileName, fileId]) {
           if (!src) continue;
           const base = String(src).split('/').pop() || String(src);
-          const m = base.match(/\.([a-z0-9]{2,5})(?:__|[\s-]|$)/i);
-          if (m) return m[1].toLowerCase();
+          const parts = base.split('.');
+          if (parts.length > 1) {
+            const ext = parts.pop().split(/[__\s-]/)[0].toLowerCase();
+            if (ext && /^[a-z0-9]{2,5}$/.test(ext)) {
+              return ext;
+            }
+          }
         }
         return '';
       }
@@ -14938,7 +15047,7 @@
         }
         if (!changed) return false;
         try {
-          await sb.from('violations').update({ attachments: JSON.stringify(updated) }).eq('id', ticket.id);
+          await sb.from('violations').update({ attachments: updated }).eq('id', ticket.id);
           ticket.attachments = updated;
           const idx = state.violations.findIndex(v => v.id === ticket.id);
           if (idx !== -1) state.violations[idx].attachments = updated;
@@ -14980,7 +15089,12 @@
       }
 
       const VIDEO_BLOB_MAX_BYTES = 6 * 1024 * 1024;
-      const HEVC_TRANSCODE_MAX_BYTES = 20 * 1024 * 1024;
+      /** حد التحويل داخل عارض المرفقات (يحتاج تحميل من الشبكة أولاً) */
+      const HEVC_TRANSCODE_VIEWER_MAX_BYTES = 40 * 1024 * 1024;
+      /** حد التحويل عند الرفع (الملف محلي — يسمح بملفات كاميرات أكبر) */
+      const HEVC_TRANSCODE_UPLOAD_MAX_BYTES = 180 * 1024 * 1024;
+      /** توافق مع الاستدعاءات القديمة */
+      const HEVC_TRANSCODE_MAX_BYTES = HEVC_TRANSCODE_VIEWER_MAX_BYTES;
       const FFMPEG_CLASS_WORKER_CDN = 'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/worker.js';
       let _ffmpegTranscodeInstance = null;
       const _hevcReplaceInflight = {};
@@ -15075,6 +15189,22 @@
           if (c0 === 0x68 && c1 === 0x76 && c2 === 0x63 && c3 === 0x43) sawH265 = true;
           if (c0 === 0x68 && c1 === 0x76 && c2 === 0x65 && c3 === 0x43) sawH265 = true;
         }
+        // كاميرات DVR غالباً MPEG-PS/TS بـ Annex-B بدون صناديق MP4
+        if (!sawH265 && !sawH264) {
+          for (let i = 0; i < buf.length - 5; i++) {
+            let nalStart = -1;
+            if (buf[i] === 0 && buf[i + 1] === 0 && buf[i + 2] === 1) nalStart = i + 3;
+            else if (buf[i] === 0 && buf[i + 1] === 0 && buf[i + 2] === 0 && buf[i + 3] === 1) nalStart = i + 4;
+            if (nalStart < 0 || nalStart >= buf.length) continue;
+            const hevcType = (buf[nalStart] >> 1) & 0x3f;
+            if (hevcType === 32 || hevcType === 33 || hevcType === 34) {
+              sawH265 = true;
+              break;
+            }
+            const avcType = buf[nalStart] & 0x1f;
+            if (avcType === 7) sawH264 = true;
+          }
+        }
         if (sawH265) return 'h265';
         if (sawH264) return 'h264';
         return null;
@@ -15086,11 +15216,15 @@
             // لا fetch لروابط R2 — يتعارض مع Service Worker القديم وCORP
             return 'unknown';
           }
-          const scanSize = 524288;
+          const scanSize = 1024 * 1024;
           const chunks = [];
           chunks.push(urlOrBlob.slice(0, Math.min(urlOrBlob.size, scanSize)));
           if (urlOrBlob.size > scanSize) {
             chunks.push(urlOrBlob.slice(Math.max(0, urlOrBlob.size - scanSize)));
+          }
+          if (urlOrBlob.size > scanSize * 2) {
+            const mid = Math.floor(urlOrBlob.size / 2);
+            chunks.push(urlOrBlob.slice(mid, Math.min(urlOrBlob.size, mid + Math.floor(scanSize / 2))));
           }
           let sawH264 = false;
           for (const chunk of chunks) {
@@ -15139,15 +15273,33 @@
         return stem + '.mp4';
       }
 
-      function shouldPrepTranscodeVideo(blob, fileName, codec) {
-        if (!isAtharDesktopViewer()) return false;
-        if (!(blob instanceof Blob) || !blob.size) return false;
-        if (blob.size > HEVC_TRANSCODE_MAX_BYTES) return false;
+      function videoNeedsPlayableTranscode(codec, fileName) {
         if (codec === 'h264') return false;
         if (isHevcCodec(codec)) return true;
         const ext = String(fileName || '').toLowerCase();
-        if (codec === 'unknown' && /\.(mp4|mov|m4v)$/i.test(ext)) return true;
+        if (/\.(mov|mkv|avi|ts|m2ts|mpeg|mpg)$/i.test(ext)) return true;
+        if (codec === 'unknown' && /\.(mp4|m4v)$/i.test(ext)) return true;
         return false;
+      }
+
+      function explainVideoTranscodeGate(blob, fileName, codec) {
+        if (!videoNeedsPlayableTranscode(codec, fileName)) return '';
+        if (!(blob instanceof Blob) || !blob.size) return 'ملف الفيديو غير صالح';
+        const mb = Math.round(blob.size / 1048576);
+        if (blob.size > HEVC_TRANSCODE_UPLOAD_MAX_BYTES) {
+          return `حجم الفيديو ${mb}MB أكبر من حد التحويل التلقائي (${Math.round(HEVC_TRANSCODE_UPLOAD_MAX_BYTES / 1048576)}MB). اضغطه إلى H.264 720p ثم ارفعه.`;
+        }
+        if (!isAtharDesktopViewer() && blob.size > 48 * 1024 * 1024) {
+          return `هذا الفيديو (${mb}MB) يحتاج تحويل H.264 من جهاز كمبيوتر (ليس من الجوال).`;
+        }
+        return '';
+      }
+
+      function shouldPrepTranscodeVideo(blob, fileName, codec) {
+        if (!videoNeedsPlayableTranscode(codec, fileName)) return false;
+        if (!(blob instanceof Blob) || !blob.size) return false;
+        if (explainVideoTranscodeGate(blob, fileName, codec)) return false;
+        return true;
       }
 
       function areAttachmentsReady(scope) {
@@ -15242,7 +15394,7 @@
             : (readCfCache(cacheKey) || ''));
         const streamHref = (viewerCtx && viewerCtx.streamUrl) || (isR2StreamPlayUrl(href) ? href : readVideoStreamFallback(cacheKey)) || href;
         const fileBytes = viewerCtx?.fileBytes || 0;
-        const showTranscode = isR2StreamPlayUrl(streamHref) && (!fileBytes || fileBytes <= HEVC_TRANSCODE_MAX_BYTES);
+        const showTranscode = isR2StreamPlayUrl(streamHref) && (!fileBytes || fileBytes <= HEVC_TRANSCODE_VIEWER_MAX_BYTES);
         return { downloadHref: href, streamHref, showTranscode, codec: codec || 'h265' };
       }
 
@@ -15485,19 +15637,21 @@
         return args;
       }
 
-      async function transcodeHevcBlobToPlayableBlob(blob, mimeType, onStatus) {
+      async function transcodeVideoBlobToPlayableH264(blob, mimeType, onStatus, opts) {
         if (!(blob instanceof Blob) || !blob.size) throw new Error('ملف فيديو غير صالح');
-        if (blob.size > HEVC_TRANSCODE_MAX_BYTES) {
+        const purpose = opts?.purpose === 'upload' ? 'upload' : 'viewer';
+        const maxBytes = purpose === 'upload' ? HEVC_TRANSCODE_UPLOAD_MAX_BYTES : HEVC_TRANSCODE_VIEWER_MAX_BYTES;
+        if (blob.size > maxBytes) {
           throw new Error('حجم الفيديو ' + Math.round(blob.size / 1048576) + 'MB — كبير للتحويل داخل المتصفح');
         }
         const ffmpeg = await ensureFfmpegTranscoder(onStatus);
         const hasAudio = await mp4BlobHasAudioTrack(blob);
-        onStatus?.('تحويل H.265 → H.264 (720p · preset fast' + (hasAudio ? ' · صوت' : '') + ')…');
+        onStatus?.('تحويل إلى H.264 (720p · preset fast' + (hasAudio ? ' · صوت' : '') + ')…');
         const inName = 'hevc_in.mp4';
         const outName = 'h264_out.mp4';
         await ffmpeg.writeFile(inName, new Uint8Array(await blob.arrayBuffer()));
         const execHb = setInterval(() => {
-          onStatus?.('جاري التحويل… لا تغلق الصفحة');
+          onStatus?.('جاري التحويل… لا تغلق الصفحة' + (purpose === 'upload' ? ' حتى يكتمل الرفع' : ''));
         }, 8000);
         try {
           await ffmpeg.exec(buildHevcToH264FfmpegArgs(inName, outName, hasAudio));
@@ -15513,9 +15667,13 @@
         return { blob: outBlob };
       }
 
+      async function transcodeHevcBlobToPlayableBlob(blob, mimeType, onStatus) {
+        return transcodeVideoBlobToPlayableH264(blob, mimeType, onStatus, { purpose: 'viewer' });
+      }
+
       async function transcodeHevcStreamToPlayableBlob(streamUrl, mimeType, onStatus) {
         const len = await probeR2StreamContentLength(streamUrl);
-        if (len > HEVC_TRANSCODE_MAX_BYTES) {
+        if (len > HEVC_TRANSCODE_VIEWER_MAX_BYTES) {
           throw new Error('حجم الفيديو ' + Math.round(len / 1048576) + 'MB — كبير للتحويل داخل المتصفح. حمّله أو ثبّت HEVC Extensions.');
         }
         onStatus?.('تحميل الفيديو وأداة التحويل معاً…');
@@ -15649,7 +15807,7 @@
         };
         window._attHevcRetryCtx = hevcCtx;
 
-        if (isAtharDesktopViewer() && streamUrl && r2Key.includes('/') && hevcCtx.fileBytes <= HEVC_TRANSCODE_MAX_BYTES) {
+        if (isAtharDesktopViewer() && streamUrl && r2Key.includes('/') && hevcCtx.fileBytes <= HEVC_TRANSCODE_VIEWER_MAX_BYTES) {
           const setStatus = (msg) => {
             const el = document.getElementById('hevc-tc-status');
             if (el) el.textContent = msg;
@@ -16103,41 +16261,90 @@
         }
       }
 
-      // تحميل جميع صور Cloudflare في الصفحة (lazy load)
-      function loadAllCloudflareImages() {
-        const images = document.querySelectorAll('img[data-cf-id]');
-        if (images.length > 0 && isMirsadDebugLog()) console.log(`[CloudflareProxy] Attempting to load ${images.length} thumbnails...`);
+      // تحميل صور المرفقات عند اقترابها من الشاشة فقط (Lazy + حد تزامن)
+      let _cfThumbObserver = null;
+      let _cfThumbActive = 0;
+      const _cfThumbQueue = [];
+      const CF_THUMB_MAX_CONCURRENT = 3;
 
-        images.forEach(async (img) => {
-          if (img.dataset.cfThumbDone === '1') return;
-          if (img.dataset.loading === 'true') return;
+      function pumpCfThumbQueue() {
+        while (_cfThumbActive < CF_THUMB_MAX_CONCURRENT && _cfThumbQueue.length) {
+          const img = _cfThumbQueue.shift();
+          if (!img || !img.isConnected) continue;
+          if (img.dataset.cfThumbDone === '1' || img.dataset.loading === 'true') continue;
+          void loadOneCloudflareThumb(img);
+        }
+      }
 
-          const fid = img.dataset.cfId;
-          if (!fid) return;
+      function queueCfThumbLoad(img) {
+        if (!img || img.dataset.cfThumbDone === '1' || img.dataset.loading === 'true') return;
+        if (_cfThumbQueue.includes(img)) return;
+        _cfThumbQueue.push(img);
+        pumpCfThumbQueue();
+      }
 
-          img.dataset.loading = 'true';
-          try {
-            const resolved = await loadCloudflareFile(fid, state.editingTicket);
-            const ck = cfCacheKey(fid, state.editingTicket);
-            img.onload = () => {
-              img.dataset.cfThumbDone = '1';
-              img.style.opacity = '1';
-            };
-            img.onerror = () => {
-              delete _cloudflareCache[ck];
-              delete img.dataset.cfThumbDone;
-              img.alt = 'خطأ في التحميل';
-              img.style.opacity = '0.3';
-            };
-            img.src = resolved;
-          } catch (e) {
-            const ck = cfCacheKey(fid, state.editingTicket);
+      async function loadOneCloudflareThumb(img) {
+        const fid = img.dataset.cfId;
+        if (!fid) return;
+        img.dataset.loading = 'true';
+        _cfThumbActive++;
+        try {
+          const resolved = await loadCloudflareFile(fid, state.editingTicket);
+          if (!img.isConnected) return;
+          const ck = cfCacheKey(fid, state.editingTicket);
+          img.onload = () => {
+            img.dataset.cfThumbDone = '1';
+            img.style.opacity = '1';
+          };
+          img.onerror = () => {
             delete _cloudflareCache[ck];
+            delete img.dataset.cfThumbDone;
             img.alt = 'خطأ في التحميل';
             img.style.opacity = '0.3';
-          } finally {
-            delete img.dataset.loading;
+          };
+          img.src = resolved;
+        } catch (e) {
+          const ck = cfCacheKey(fid, state.editingTicket);
+          delete _cloudflareCache[ck];
+          if (img.isConnected) {
+            img.alt = 'خطأ في التحميل';
+            img.style.opacity = '0.3';
           }
+        } finally {
+          delete img.dataset.loading;
+          _cfThumbActive = Math.max(0, _cfThumbActive - 1);
+          pumpCfThumbQueue();
+        }
+      }
+
+      function ensureCfThumbObserver() {
+        if (typeof IntersectionObserver === 'undefined') return null;
+        if (_cfThumbObserver) return _cfThumbObserver;
+        _cfThumbObserver = new IntersectionObserver((entries) => {
+          for (const entry of entries) {
+            if (!entry.isIntersecting) continue;
+            const img = entry.target;
+            try { _cfThumbObserver.unobserve(img); } catch (_) { /* */ }
+            queueCfThumbLoad(img);
+          }
+        }, { root: null, rootMargin: '160px 0px', threshold: 0.01 });
+        return _cfThumbObserver;
+      }
+
+      function loadAllCloudflareImages() {
+        const images = document.querySelectorAll('img[data-cf-id]');
+        if (!images.length) return;
+        if (isMirsadDebugLog()) console.log(`[CloudflareProxy] Lazy thumbs: ${images.length}`);
+        const obs = ensureCfThumbObserver();
+        images.forEach((img) => {
+          if (img.dataset.cfThumbDone === '1') return;
+          if (!obs) {
+            queueCfThumbLoad(img);
+            return;
+          }
+          if (img.dataset.cfObserved === '1') return;
+          img.dataset.cfObserved = '1';
+          obs.observe(img);
         });
       }
 
@@ -16160,7 +16367,8 @@
 
           try {
             const isImg = file.type.startsWith('image/');
-            const isVid = file.type.startsWith('video/') || /\.(mp4|mov|webm|avi|mkv)$/i.test(file.name);
+            const isVid = file.type.startsWith('video/')
+              || /\.(mp4|mov|webm|avi|mkv|m4v|mpeg|mpg|ts|m2ts)$/i.test(file.name);
             let base64Data = null;
             let finalType = file.type;
             let uploadFile = file;
@@ -16176,16 +16384,41 @@
             const statusEl = item.querySelector('.file-item-status');
 
             let vCodecHint = null;
+            let imageCompressed = false;
             if (isImg) {
+              if (statusEl) statusEl.textContent = 'ضغط الصورة…';
               const compressResult = await compressImageFile(file);
-              base64Data = compressResult.base64;
-              finalType = 'image/jpeg';
+              base64Data = null;
+              finalType = compressResult.type || 'image/jpeg';
+              imageCompressed = !!compressResult.isCompressed;
+              if (compressResult.isCompressed && compressResult.blob) {
+                const outName = renameAttachmentWithExt(file.name, compressResult.ext || 'jpg');
+                uploadFile = new File([compressResult.blob], outName, { type: finalType });
+                const savedMb = (file.size - uploadFile.size) / 1048576;
+                if (savedMb >= 1) {
+                  showToast(`تم ضغط الصورة ووفّرنا ~${savedMb.toFixed(1)}MB.`, 'info');
+                }
+              } else if (compressResult.blob instanceof Blob) {
+                uploadFile = compressResult.blob instanceof File
+                  ? compressResult.blob
+                  : new File([compressResult.blob], file.name, { type: finalType });
+              }
             } else if (isVid) {
               vCodecHint = await sniffMp4VideoCodec(file);
+              const gate = explainVideoTranscodeGate(file, file.name, vCodecHint);
+              if (gate) {
+                showToast(gate, 'error');
+                item.remove();
+                continue;
+              }
               if (shouldPrepTranscodeVideo(file, file.name, vCodecHint)) {
-                showToast('سيتم تحويل الفيديو إلى H.264 تلقائياً أثناء التحضير.', 'info');
-              } else if (isHevcCodec(vCodecHint)) {
-                showToast('تحذير: قد لا يُشغّل هذا الفيديو على الكمبيوتر — جرّب H.264 من إعدادات التسجيل.', 'info');
+                const mb = Math.round(file.size / 1048576);
+                showToast(
+                  mb >= 40
+                    ? `سيتم تحويل الفيديو (${mb}MB) إلى H.264 تلقائياً — قد يستغرق عدة دقائق، لا تغلق الصفحة.`
+                    : 'سيتم تحويل الفيديو إلى H.264 تلقائياً أثناء التحضير.',
+                  'info',
+                );
               }
             }
 
@@ -16198,13 +16431,14 @@
               name: uploadFile.name,
               type: finalType,
               base64: base64Data,
-              rawFile: isImg ? null : uploadFile,
+              rawFile: uploadFile,
               blobUrl: URL.createObjectURL(uploadFile),
               prepStatus: 'preparing',
               prepStatusMsg: '',
               prepError: null,
               tempKey: null,
               transcoded: false,
+              imageCompressed,
               codecHint: vCodecHint,
             });
             const idx = state.uploadedFiles[scope].length - 1;
@@ -18176,11 +18410,11 @@
           let thumb;
           if (isImg) {
             if (a.isGDrive) {
-              thumb = `<div class="att-thumb"><img src="${a.url}" alt="" loading="lazy"></div>`;
+              thumb = `<div class="att-thumb"><img src="${a.url}" alt="" loading="lazy" decoding="async"></div>`;
             } else if ((a.url || '').startsWith('data:image/')) {
-              thumb = `<div class="att-thumb"><img src="${a.url}" alt="" loading="lazy"></div>`;
+              thumb = `<div class="att-thumb"><img src="${a.url}" alt="" loading="lazy" decoding="async"></div>`;
             } else {
-              thumb = `<div class="att-thumb"><img data-cf-id="${Sec.escapeHTML(cfId)}" src="${placeholderSvg}" alt="" loading="lazy"></div>`;
+              thumb = `<div class="att-thumb"><img data-cf-id="${Sec.escapeHTML(cfId)}" src="${placeholderSvg}" alt="" loading="lazy" decoding="async"></div>`;
             }
           } else {
             thumb = `<div class="att-thumb"><i class="fas ${isVid ? 'fa-video' : 'fa-file-lines'}"></i></div>`;
@@ -19522,6 +19756,7 @@
                 b: attUser,
                 r: attRole,
                 t: getNow(),
+                ...(file.transcoded ? { v: 'h264' } : {}),
                 ...(file.devDataUrl ? { u: file.devDataUrl } : {})
               });
             }
@@ -19546,7 +19781,7 @@
             p_status_text: tr.statusText || null,
             p_reply_field: tr.fieldKey,
             p_reply_text: text,
-            p_attachments: JSON.stringify(newAttachments),
+            p_attachments: newAttachments,
             p_reset_auto_forwarded_emp: action === 'respond' ? true : false,
             p_reset_auto_forwarded_sup: action === 'sup_process' ? true : false,
           });
