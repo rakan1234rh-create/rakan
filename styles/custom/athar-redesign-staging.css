@@ -1,0 +1,412 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   ATHAR Redesign — Staging only
+   Visual system from «Athar Redesign - Standalone» (iOS surfaces + B/W accent).
+   Does not ship on production (main). Safe to load only from staging index.html.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@keyframes atharRdScreenIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes atharRdCardIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Light theme tokens (mockup) ─────────────────────────────────────────── */
+html[data-theme="light"] {
+  --mr-primary: #000000;
+  --mr-primary-hover: #1c1c1e;
+  --mr-primary-soft: rgba(0, 0, 0, 0.06);
+  --mr-primary-softer: rgba(0, 0, 0, 0.04);
+  --mr-primary-text: #ffffff;
+  --mr-surface: #ffffff;
+  --mr-bg: #f2f2f7;
+  --mr-bg-2: #e5e5ea;
+  --mr-theme-chrome: #ffffff;
+  --mr-border: rgba(60, 60, 67, 0.18);
+  --mr-border-2: rgba(60, 60, 67, 0.28);
+  --mr-text: #000000;
+  --mr-text-2: #6e6e73;
+  --mr-text-3: #8e8e93;
+  --mr-text-muted: #8e8e93;
+  --mr-success: #34c759;
+  --mr-green: #34c759;
+  --mr-warning: #ff9500;
+  --mr-amber: #ff9500;
+  --mr-danger: #ff3b30;
+  --mr-red: #ff3b30;
+  --mr-blue: #007aff;
+  --mr-purple: #af52de;
+  --success: #34c759;
+  --warning: #ff9500;
+  --info: #007aff;
+  --destructive: #ff3b30;
+  --bg: #f2f2f7;
+  --bg2: #e5e5ea;
+  --bg3: #ffffff;
+  --surface: #ffffff;
+  --surface2: #f2f2f7;
+  --border: rgba(60, 60, 67, 0.18);
+  --border2: rgba(60, 60, 67, 0.28);
+  --text: #000000;
+  --text2: #6e6e73;
+  --text3: #8e8e93;
+  --accent: #000000;
+  --accent2: #1c1c1e;
+  --gold: #000000;
+  --onGold: #ffffff;
+  --goldSoft: rgba(0, 0, 0, 0.06);
+  --searchFill: rgba(118, 118, 128, 0.12);
+  --mr-radius-card: 16px;
+  --mr-radius-md: 14px;
+  --mr-radius-pill: 999px;
+  --mr-shadow-card: none;
+  --mr-shadow-soft: none;
+  --shadow: none;
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.06);
+  --sidebar-bg: #ffffff;
+  --sidebar-active: #000000;
+  --sidebar-active-text: #ffffff;
+  --login-portal-bg: #e5e5ea;
+}
+
+/* ── Dark theme tokens (mockup default) ──────────────────────────────────── */
+html[data-theme="dark"],
+:root[data-theme="dark"] {
+  --mr-primary: #ffffff;
+  --mr-primary-hover: #e5e5ea;
+  --mr-primary-soft: rgba(255, 255, 255, 0.14);
+  --mr-primary-softer: rgba(255, 255, 255, 0.09);
+  --mr-primary-text: #000000;
+  --mr-surface: #1c1c1e;
+  --mr-bg: #000000;
+  --mr-bg-2: #000000;
+  --mr-theme-chrome: #1c1c1e;
+  --mr-border: rgba(255, 255, 255, 0.12);
+  --mr-border-2: rgba(255, 255, 255, 0.2);
+  --mr-text: #ffffff;
+  --mr-text-2: #a1a1a6;
+  --mr-text-3: #8e8e93;
+  --mr-text-muted: #8e8e93;
+  --mr-success: #30d158;
+  --mr-green: #30d158;
+  --mr-warning: #ff9f0a;
+  --mr-amber: #ff9f0a;
+  --mr-danger: #ff453a;
+  --mr-red: #ff453a;
+  --mr-blue: #0a84ff;
+  --mr-purple: #bf5af2;
+  --success: #30d158;
+  --warning: #ff9f0a;
+  --info: #0a84ff;
+  --destructive: #ff453a;
+  --bg: #000000;
+  --bg2: #1c1c1e;
+  --bg3: #2c2c2e;
+  --surface: #1c1c1e;
+  --surface2: #2c2c2e;
+  --border: rgba(255, 255, 255, 0.12);
+  --border2: rgba(255, 255, 255, 0.2);
+  --text: #ffffff;
+  --text2: #a1a1a6;
+  --text3: #8e8e93;
+  --accent: #ffffff;
+  --accent2: #e5e5ea;
+  --gold: #ffffff;
+  --onGold: #000000;
+  --goldSoft: rgba(255, 255, 255, 0.14);
+  --searchFill: rgba(142, 142, 147, 0.24);
+  --mr-radius-card: 16px;
+  --mr-radius-md: 14px;
+  --mr-radius-pill: 999px;
+  --mr-shadow-card: none;
+  --mr-shadow-soft: none;
+  --shadow: none;
+  --shadow-md: 0 16px 40px rgba(0, 0, 0, 0.45);
+  --sidebar-bg: #1c1c1e;
+  --sidebar-text: #a1a1a6;
+  --sidebar-hover: #2c2c2e;
+  --sidebar-border: rgba(255, 255, 255, 0.12);
+  --sidebar-active: #ffffff;
+  --sidebar-active-text: #000000;
+  --login-portal-bg: #000000;
+}
+
+html,
+body,
+#appWrap {
+  background: var(--mr-bg) !important;
+  color: var(--mr-text);
+  font-family: "IBM Plex Sans Arabic", sans-serif;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+/* ── Top bar (mockup lockup) ─────────────────────────────────────────────── */
+html.mr-mobile-ui #appWrap .topbar.unified-banner,
+html.mr-mobile-ui .topbar.unified-banner {
+  background: var(--mr-surface) !important;
+  border-bottom: 1px solid var(--mr-border) !important;
+  box-shadow: none !important;
+  padding: 14px 18px calc(12px + env(safe-area-inset-top, 0px)) !important;
+  padding-top: calc(14px + env(safe-area-inset-top, 0px)) !important;
+  min-height: calc(68px + env(safe-area-inset-top, 0px)) !important;
+  align-items: center !important;
+}
+
+html.mr-mobile-ui .topbar-brand-divider,
+html.mr-mobile-ui .topbar-clock {
+  display: none !important;
+}
+
+html.mr-mobile-ui .topbar-brand-zone {
+  padding: 0 !important;
+}
+
+html.mr-mobile-ui #brandArea .wefaq-app-logo--athar,
+html.mr-mobile-ui #brandArea .wefaq-app-logo--athar-img {
+  height: 41px !important;
+  width: auto !important;
+  max-width: 120px !important;
+  object-fit: contain !important;
+}
+
+html[data-theme="dark"].mr-mobile-ui #brandArea .wefaq-app-logo--athar,
+html[data-theme="dark"].mr-mobile-ui #brandArea .wefaq-app-logo--athar-img {
+  filter: invert(1);
+}
+
+html.mr-mobile-ui #appWrap .topbar-btn,
+html.mr-mobile-ui #appWrap .mr-topbar-user-trigger {
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  min-height: 36px !important;
+  border-radius: 50% !important;
+  border: 1px solid var(--mr-border) !important;
+  background: var(--surface2, var(--mr-bg-2)) !important;
+  color: var(--mr-text-2) !important;
+  box-shadow: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+}
+
+html.mr-mobile-ui #appWrap .topbar-btn:hover,
+html.mr-mobile-ui #appWrap .mr-topbar-user-trigger:hover {
+  background: var(--surface2, var(--mr-bg-2)) !important;
+  color: var(--mr-text) !important;
+}
+
+html.mr-mobile-ui #appWrap .topbar-btn--notif .notif-bell-count,
+html.mr-mobile-ui #notifBellCount {
+  top: -2px !important;
+  inset-inline-start: -2px !important;
+  width: 15px !important;
+  height: 15px !important;
+  min-width: 15px !important;
+  border-radius: 50% !important;
+  background: var(--mr-danger) !important;
+  color: #fff !important;
+  font-size: 9px !important;
+  font-weight: 700 !important;
+  border: none !important;
+}
+
+html.mr-mobile-ui .topbar-actions-zone {
+  gap: 8px !important;
+}
+
+/* ── Bottom nav ──────────────────────────────────────────────────────────── */
+html.mr-mobile-ui #mobileBottomNav.mobile-bottom-nav {
+  background: var(--mr-surface) !important;
+  border-top: 1px solid var(--mr-border) !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  padding-top: 8px !important;
+}
+
+html.mr-mobile-ui .mob-nav-item {
+  color: var(--mr-text-3) !important;
+  border-radius: 12px !important;
+  gap: 4px !important;
+}
+
+html.mr-mobile-ui .mob-nav-item > i {
+  font-size: 18px !important;
+  width: auto !important;
+  height: auto !important;
+  background: transparent !important;
+  color: inherit !important;
+  box-shadow: none !important;
+}
+
+html.mr-mobile-ui .mob-nav-item span {
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  color: inherit !important;
+}
+
+html.mr-mobile-ui .mob-nav-item.active,
+html.mr-mobile-ui .mob-nav-item.active > i,
+html.mr-mobile-ui .mob-nav-item.active span {
+  color: var(--gold, var(--mr-primary)) !important;
+  background: transparent !important;
+}
+
+html.mr-mobile-ui .mob-nav-item.active > i {
+  transform: none !important;
+}
+
+html.mr-mobile-ui .mob-nav-badge {
+  background: var(--mr-danger) !important;
+  color: #fff !important;
+  border: none !important;
+  min-width: 16px !important;
+  height: 16px !important;
+  font-size: 9px !important;
+  font-weight: 700 !important;
+}
+
+/* ── Content chrome ──────────────────────────────────────────────────────── */
+html.mr-mobile-ui .main,
+html.mr-mobile-ui .content,
+html.mr-mobile-ui .tab-content {
+  background: var(--mr-bg) !important;
+}
+
+html.mr-mobile-ui .tab-content.active {
+  animation: atharRdScreenIn 0.32s ease;
+}
+
+html.mr-mobile-ui .mk-dash,
+html.mr-mobile-ui #tab-dashboard,
+html.mr-mobile-ui #tab-workflow,
+html.mr-mobile-ui #tab-reports,
+html.mr-mobile-ui #tab-compliance,
+html.mr-mobile-ui #tab-violations,
+html.mr-mobile-ui #tab-locations,
+html.mr-mobile-ui #tab-departments,
+html.mr-mobile-ui #tab-newTicket {
+  padding-inline: 16px !important;
+}
+
+/* Cards / panels → soft iOS surfaces */
+html.mr-mobile-ui .mk-card,
+html.mr-mobile-ui .mk-kpi,
+html.mr-mobile-ui .mk-panel,
+html.mr-mobile-ui .mk-form-panel,
+html.mr-mobile-ui .score-card,
+html.mr-mobile-ui .rb-region-card,
+html.mr-mobile-ui .rb-branch-card,
+html.mr-mobile-ui .user-mob-card,
+html.mr-mobile-ui .mr-user-card,
+html.mr-mobile-ui .viol-type-list-item,
+html.mr-mobile-ui .kpi-card,
+html.mr-mobile-ui .mk-attn,
+html.mr-mobile-ui .mk-funnel,
+html.mr-mobile-ui .cmp-board-card,
+html.mr-mobile-ui [class*="mk-"][class*="card"] {
+  background: var(--mr-surface) !important;
+  border: 1px solid var(--mr-border) !important;
+  border-radius: 16px !important;
+  box-shadow: none !important;
+  animation: atharRdCardIn 0.4s ease both;
+}
+
+html.mr-mobile-ui .btn-primary,
+html.mr-mobile-ui button.btn.btn-primary,
+html.mr-mobile-ui .mk-btn-primary {
+  background: var(--gold, var(--mr-primary)) !important;
+  color: var(--onGold, var(--mr-primary-text)) !important;
+  border: none !important;
+  border-radius: 14px !important;
+  font-weight: 700 !important;
+  box-shadow: none !important;
+}
+
+html.mr-mobile-ui .btn-ghost,
+html.mr-mobile-ui .btn-secondary {
+  border: 1px solid var(--mr-border) !important;
+  border-radius: 14px !important;
+  background: transparent !important;
+  color: var(--mr-text-2) !important;
+}
+
+html.mr-mobile-ui .form-input,
+html.mr-mobile-ui .form-select,
+html.mr-mobile-ui input[type="text"],
+html.mr-mobile-ui input[type="search"],
+html.mr-mobile-ui textarea,
+html.mr-mobile-ui select {
+  background: var(--mr-surface) !important;
+  border: 1px solid var(--mr-border) !important;
+  border-radius: 14px !important;
+  color: var(--mr-text) !important;
+  box-shadow: none !important;
+}
+
+html.mr-mobile-ui .badge {
+  border-radius: 999px !important;
+  font-weight: 600 !important;
+}
+
+/* Workflow / reports lists — surface chrome only (keep table layout intact) */
+html.mr-mobile-ui #ticketList .wf-table-wrap,
+html.mr-mobile-ui #reportList .wf-table-wrap,
+html.mr-mobile-ui .wf-tickets-table--mob-head,
+html.mr-mobile-ui .wf-tickets-table--mob-body {
+  background: var(--mr-surface) !important;
+  border-color: var(--mr-border) !important;
+  box-shadow: none !important;
+}
+
+html.mr-mobile-ui .wf-ticket-row {
+  border-color: var(--mr-border) !important;
+}
+
+/* Desktop sidebar active (staging redesign) */
+html.mr-desktop-ui .nav-item.active {
+  background: var(--sidebar-active) !important;
+  color: var(--sidebar-active-text) !important;
+  border-radius: 14px !important;
+}
+
+html.mr-desktop-ui .sidebar {
+  background: var(--sidebar-bg) !important;
+  border-color: var(--mr-border) !important;
+}
+
+/* Login portal */
+#loginScreen,
+.login-portal,
+.login-shell {
+  background: var(--login-portal-bg, var(--mr-bg)) !important;
+}
+
+/* Staging banner chip (subtle) */
+html.athar-staging-redesign::before {
+  content: "Staging · Redesign";
+  position: fixed;
+  z-index: 99999;
+  top: calc(8px + env(safe-area-inset-top, 0px));
+  inset-inline-end: 10px;
+  font: 600 10px/1 "IBM Plex Sans Arabic", sans-serif;
+  letter-spacing: 0.02em;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: var(--goldSoft, rgba(0, 0, 0, 0.06));
+  color: var(--gold, var(--mr-primary));
+  border: 1px solid var(--mr-border);
+  pointer-events: none;
+  opacity: 0.9;
+}
+
+html.mr-mobile-ui.athar-staging-redesign::before {
+  top: auto;
+  bottom: calc(var(--mr-mob-bottom-nav-h, 64px) + 10px);
+  inset-inline-end: 12px;
+}
