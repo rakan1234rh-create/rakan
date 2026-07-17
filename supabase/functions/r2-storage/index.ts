@@ -7,19 +7,56 @@
  *   (بدائل مقبولة: AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY، CLOUDFLARE_ACCOUNT_ID، R2_BUCKET / AWS_S3_BUCKET)
  */
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8'
-import {
-  AbortMultipartUploadCommand,
-  CompleteMultipartUploadCommand,
-  CopyObjectCommand,
-  CreateMultipartUploadCommand,
-  DeleteObjectCommand,
-  GetObjectCommand,
-  HeadObjectCommand,
-  PutObjectCommand,
-  UploadPartCommand,
-  S3Client,
-} from 'npm:@aws-sdk/client-s3@3.733.0'
-import { getSignedUrl } from 'npm:@aws-sdk/s3-request-presigner@3.733.0'
+
+/* Lazy AWS SDK — OPTIONS/health/ping must not pay cold-start cost of client-s3. */
+// deno-lint-ignore no-explicit-any
+let AbortMultipartUploadCommand: any
+// deno-lint-ignore no-explicit-any
+let CompleteMultipartUploadCommand: any
+// deno-lint-ignore no-explicit-any
+let CopyObjectCommand: any
+// deno-lint-ignore no-explicit-any
+let CreateMultipartUploadCommand: any
+// deno-lint-ignore no-explicit-any
+let DeleteObjectCommand: any
+// deno-lint-ignore no-explicit-any
+let GetObjectCommand: any
+// deno-lint-ignore no-explicit-any
+let HeadObjectCommand: any
+// deno-lint-ignore no-explicit-any
+let PutObjectCommand: any
+// deno-lint-ignore no-explicit-any
+let UploadPartCommand: any
+// deno-lint-ignore no-explicit-any
+let S3Client: any
+// deno-lint-ignore no-explicit-any
+let getSignedUrl: any
+
+let _awsReady: Promise<void> | null = null
+
+async function ensureAws(): Promise<void> {
+  if (S3Client) return
+  if (!_awsReady) {
+    _awsReady = (async () => {
+      const [s3mod, signermod] = await Promise.all([
+        import('npm:@aws-sdk/client-s3@3.733.0'),
+        import('npm:@aws-sdk/s3-request-presigner@3.733.0'),
+      ])
+      AbortMultipartUploadCommand = s3mod.AbortMultipartUploadCommand
+      CompleteMultipartUploadCommand = s3mod.CompleteMultipartUploadCommand
+      CopyObjectCommand = s3mod.CopyObjectCommand
+      CreateMultipartUploadCommand = s3mod.CreateMultipartUploadCommand
+      DeleteObjectCommand = s3mod.DeleteObjectCommand
+      GetObjectCommand = s3mod.GetObjectCommand
+      HeadObjectCommand = s3mod.HeadObjectCommand
+      PutObjectCommand = s3mod.PutObjectCommand
+      UploadPartCommand = s3mod.UploadPartCommand
+      S3Client = s3mod.S3Client
+      getSignedUrl = signermod.getSignedUrl
+    })()
+  }
+  await _awsReady
+}
 
 function buildCors(req: Request): Record<string, string> {
   const raw = Deno.env.get('ALLOWED_ORIGIN') || 'https://athar-app.online';
@@ -309,7 +346,8 @@ async function verifyStreamToken(
 
 async function handleStreamRequest(
   req: Request,
-  s3: S3Client,
+  // deno-lint-ignore no-explicit-any
+  s3: any,
   bucket: string,
   env: NonNullable<ReturnType<typeof requireR2Env>>,
 ): Promise<Response | null> {
@@ -378,6 +416,33 @@ Deno.serve(async (req) => {
     return new Response('ok', { headers: _cors })
   }
 
+  // فحص إعداد الأسرار بدون مصادقة — لا يحمّل AWS SDK (يُستخدم أيضاً لتسخين الـ isolate)
+  if (req.method === 'GET') {
+    const u = new URL(req.url)
+    if (u.searchParams.get('health') === '1' || u.searchParams.get('warmup') === '1') {
+      const accessKeyId = envFirst('R2_ACCESS_KEY_ID', 'AWS_ACCESS_KEY_ID')
+      const secretAccessKey = envFirst('R2_SECRET_ACCESS_KEY', 'AWS_SECRET_ACCESS_KEY')
+      const accountRaw = envFirst('R2_ACCOUNT_ID', 'CLOUDFLARE_ACCOUNT_ID')
+      const bucketRaw = envFirst('R2_BUCKET_NAME', 'R2_BUCKET', 'AWS_S3_BUCKET')
+      const accountId = normalizeR2AccountId(accountRaw)
+      const bucket = normalizeR2BucketName(bucketRaw)
+      const envOk = !!(accessKeyId && secretAccessKey && accountId && bucket)
+      return json({
+        ok: envOk,
+        warm: true,
+        hasAccessKeyId: !!accessKeyId,
+        hasSecretAccessKey: !!secretAccessKey,
+        hasAccountId: !!accountRaw,
+        hasBucket: !!bucketRaw,
+        accountIdLen: accountId.length,
+        accountIdSuffix: accountId ? accountId.slice(-4) : '',
+        accountIdLooksValid: /^[a-f0-9]{32}$/i.test(accountId),
+        bucket,
+        endpoint: accountId ? `https://${accountId}.r2.cloudflarestorage.com` : null,
+      })
+    }
+  }
+
   const env = requireR2Env()
 
   if (req.method === 'POST' && req.headers.get('X-R2-Action') === 'uploadPart') {
@@ -397,6 +462,7 @@ Deno.serve(async (req) => {
       if (bytes.length > R2_PROXY_PART_MAX_BYTES) {
         return json({ error: 'حجم الجزء كبير جداً للرفع عبر الخادم' }, 413)
       }
+      await ensureAws()
       const s3 = makeS3(env)
       const out = await s3.send(
         new UploadPartCommand({
@@ -444,6 +510,7 @@ Deno.serve(async (req) => {
       if (bytes.length > R2_PROXY_PUT_MAX_BYTES) {
         return json({ error: 'حجم الملف كبير جداً للرفع عبر الخادم' }, 413)
       }
+      await ensureAws()
       const s3 = makeS3(env)
       await s3.send(
         new PutObjectCommand({
@@ -476,6 +543,7 @@ Deno.serve(async (req) => {
       if (bytes.length > AVATAR_PRESET_MAX_BYTES) {
         return json({ error: 'حجم صورة البروفايل كبير جداً (الحد 8 ميغابايت)' }, 413)
       }
+      await ensureAws()
       const s3 = makeS3(env)
       await s3.send(
         new PutObjectCommand({
@@ -509,6 +577,7 @@ Deno.serve(async (req) => {
       if (bytes.length > R2_PROXY_PUT_MAX_BYTES) {
         return json({ error: 'حجم الملف كبير جداً للرفع عبر الخادم' }, 413)
       }
+      await ensureAws()
       const s3 = makeS3(env)
       // R2 + AWS SDK PutObjectCommand مع Body داخل Deno يفشل أحياناً بصمت/بطء.
       // المسار الأوثق: توقيع URL ثم PUT مباشر بـ fetch.
@@ -549,6 +618,7 @@ Deno.serve(async (req) => {
 
   if (req.method === 'GET' || req.method === 'HEAD') {
     if (!env) return json({ error: 'R2 غير مُعدّ (متغيرات البيئة على الدالة)' }, 503)
+    await ensureAws()
     const s3 = makeS3(env)
     const streamResp = await handleStreamRequest(req, s3, env.bucket, env)
     if (streamResp) return streamResp
@@ -585,37 +655,17 @@ Deno.serve(async (req) => {
     return json({ error: 'R2 غير مُعدّ (متغيرات البيئة على الدالة)' }, 503)
   }
 
-  const s3 = makeS3(env)
   const { bucket } = env
 
   try {
     if (action === 'ping') {
-      // ok=true طالما الأسرار موجودة (حتى لا يتعطّل العميل). r2 يوضح اتصال الـ bucket.
+      // لا تحمّل AWS SDK ولا تستدعِ R2 — يكفي وجود الأسرار لتمرير resolve في العميل.
       const diag = r2PublicDiag(env)
-      try {
-        await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: '__athar_r2_ping__' }))
-        return json({ ok: true, mode: 'edge', r2: 'ok', ...diag })
-      } catch (e) {
-        const info = r2ErrInfo(e)
-        if (
-          info.name === 'NotFound' ||
-          info.name === 'NoSuchKey' ||
-          info.name === '404' ||
-          /Not Found|NoSuchKey/i.test(info.message)
-        ) {
-          return json({ ok: true, mode: 'edge', r2: 'ok', ...diag })
-        }
-        console.error('[r2-storage] ping r2 check', info.name, info.message)
-        return json({
-          ok: true,
-          mode: 'edge',
-          r2: 'error',
-          r2Error: info.name,
-          r2Message: info.message,
-          ...diag,
-        })
-      }
+      return json({ ok: true, mode: 'edge', r2: 'ready', ...diag })
     }
+
+    await ensureAws()
+    const s3 = makeS3(env)
 
     if (action === 'signPut') {
       const key = assertTempUploadKey(body.key || '', user.id)
