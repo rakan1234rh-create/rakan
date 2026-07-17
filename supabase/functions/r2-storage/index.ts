@@ -387,7 +387,7 @@ Deno.serve(async (req) => {
     const accountId = normalizeR2AccountId(accountRaw)
     const bucket = normalizeR2BucketName(bucketRaw)
     const envOk = !!(accessKeyId && secretAccessKey && accountId && bucket)
-    return json({
+    const base = {
       ok: envOk,
       hasAccessKeyId: !!accessKeyId,
       hasSecretAccessKey: !!secretAccessKey,
@@ -398,7 +398,24 @@ Deno.serve(async (req) => {
       accountIdLooksValid: /^[a-f0-9]{32}$/i.test(accountId),
       bucket,
       endpoint: accountId ? `https://${accountId}.r2.cloudflarestorage.com` : null,
-    })
+    }
+    if (!envOk) return json(base)
+    try {
+      const s3 = makeS3({ accessKeyId, secretAccessKey, accountId, bucket })
+      await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: '__athar_r2_ping__' }))
+      return json({ ...base, r2: 'ok' })
+    } catch (e) {
+      const info = r2ErrInfo(e)
+      if (
+        info.name === 'NotFound' ||
+        info.name === 'NoSuchKey' ||
+        info.name === '404' ||
+        /Not Found|NoSuchKey/i.test(info.message)
+      ) {
+        return json({ ...base, r2: 'ok' })
+      }
+      return json({ ...base, r2: 'error', r2Error: info.name, r2Message: info.message })
+    }
   }
 
   const env = requireR2Env()
