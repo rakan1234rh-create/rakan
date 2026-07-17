@@ -49,6 +49,19 @@ function json(body: unknown, status = 200) {
   })
 }
 
+/** رسالة خطأ R2/S3 آمنة للعميل (بدون أسرار) */
+function r2ErrInfo(e: unknown): { name: string; message: string } {
+  const name =
+    e && typeof e === 'object' && 'name' in e
+      ? String((e as { name: string }).name)
+      : ''
+  const message =
+    e instanceof Error
+      ? String(e.message || '').slice(0, 240)
+      : String(e || '').slice(0, 240)
+  return { name: name || 'Error', message: message || 'unknown' }
+}
+
 function assertKey(key: unknown): string {
   if (typeof key !== 'string' || !key.length) throw new Error('key مطلوب')
   if (key.length > 2048) throw new Error('key طويل جداً')
@@ -440,8 +453,13 @@ Deno.serve(async (req) => {
       )
       return json({ ok: true, key })
     } catch (e) {
-      console.error('[r2-storage] putObject', e)
-      return json({ error: 'حدث خطأ أثناء رفع الملف' }, 500)
+      const info = r2ErrInfo(e)
+      console.error('[r2-storage] putObject', info.name, info.message, e)
+      return json({
+        error: `فشل الرفع إلى R2 (${info.name}): ${info.message}`,
+        bucket: env.bucket,
+        r2Error: info.name,
+      }, 500)
     }
   }
 
@@ -488,7 +506,30 @@ Deno.serve(async (req) => {
 
   try {
     if (action === 'ping') {
-      return json({ ok: true, mode: 'edge' })
+      // ok=true طالما الأسرار موجودة (حتى لا يتعطّل العميل). r2 يوضح اتصال الـ bucket.
+      try {
+        await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: '__athar_r2_ping__' }))
+        return json({ ok: true, mode: 'edge', r2: 'ok', bucket })
+      } catch (e) {
+        const info = r2ErrInfo(e)
+        if (
+          info.name === 'NotFound' ||
+          info.name === 'NoSuchKey' ||
+          info.name === '404' ||
+          /Not Found|NoSuchKey/i.test(info.message)
+        ) {
+          return json({ ok: true, mode: 'edge', r2: 'ok', bucket })
+        }
+        console.error('[r2-storage] ping r2 check', info.name, info.message)
+        return json({
+          ok: true,
+          mode: 'edge',
+          r2: 'error',
+          bucket,
+          r2Error: info.name,
+          r2Message: info.message,
+        })
+      }
     }
 
     if (action === 'signPut') {
@@ -751,7 +792,12 @@ Deno.serve(async (req) => {
 
     return json({ error: 'عملية غير معروفة' }, 400)
   } catch (e) {
-    console.error('[r2-storage]', e)
-    return json({ error: 'حدث خطأ أثناء المعالجة' }, 500)
+    const info = r2ErrInfo(e)
+    console.error('[r2-storage]', info.name, info.message, e)
+    return json({
+      error: `حدث خطأ أثناء المعالجة (${info.name}): ${info.message}`,
+      bucket,
+      r2Error: info.name,
+    }, 500)
   }
 })
