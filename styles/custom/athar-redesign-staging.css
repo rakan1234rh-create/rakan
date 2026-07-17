@@ -1284,16 +1284,28 @@ html.athar-staging-redesign.mr-mobile-ui #tab-violations .mr-users-list-wrap {
   border: none !important;
   box-shadow: none !important;
   padding: 0 !important;
-  max-height: none !important;
-  overflow: visible !important;
+  /* Keep flex scroll chain — do not force overflow:visible (breaks pan-y) */
+  overflow: hidden !important;
 }
 html.athar-staging-redesign.mr-mobile-ui #tab-violations #violGrid.rd-viol-list {
   display: flex !important;
   flex-direction: column !important;
   gap: 0 !important;
-  max-height: none !important;
-  overflow: visible !important;
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
   height: auto !important;
+  overflow-y: scroll !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
+  touch-action: pan-y !important;
+  overscroll-behavior-y: contain;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)) !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-violations #violGrid.rd-viol-list .rd-viol-group,
+html.athar-staging-redesign.mr-mobile-ui #tab-violations #violGrid.rd-viol-list .rd-viol-row,
+html.athar-staging-redesign.mr-mobile-ui #tab-violations #violGrid.rd-viol-list .rd-ticket-empty {
+  flex: 0 0 auto;
+  touch-action: pan-y;
 }
 
 .rd-viol-list {
@@ -2431,15 +2443,56 @@ html.athar-staging-redesign.mr-desktop-ui #rdTdHd {
   display: none !important;
 }
 
-/* ═══ Employee compliance detail sheet (Standalone 2) ═══ */
-html.athar-staging-redesign.mr-mobile-ui #cmpDetailModal.cmp-detail--rd-emp.modal.open::before {
+/* ═══ Compliance detail sheet — above bottom nav + smooth dismiss ═══ */
+html.athar-staging-redesign.mr-mobile-ui body.cmp-detail-open #cmpDetailModal.modal.open::before {
   background: rgba(0, 0, 0, 0.45) !important;
+  bottom: var(--mob-chrome-bottom, var(--mr-mob-bottom-nav-h, calc(56px + env(safe-area-inset-bottom, 0px)))) !important;
 }
 
+html.athar-staging-redesign.mr-mobile-ui body.cmp-detail-open #cmpDetailModal .modal-card.cmp-detail-card {
+  bottom: var(--mob-chrome-bottom, var(--mr-mob-bottom-nav-h, calc(56px + env(safe-area-inset-bottom, 0px)))) !important;
+  top: auto !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: min(
+    88dvh,
+    calc(
+      100dvh
+      - var(--unified-topbar-h, 76px)
+      - var(--mob-chrome-bottom, var(--mr-mob-bottom-nav-h, calc(56px + env(safe-area-inset-bottom, 0px))))
+      - 8px
+    )
+  ) !important;
+  max-height: min(
+    88dvh,
+    calc(
+      100dvh
+      - var(--unified-topbar-h, 76px)
+      - var(--mob-chrome-bottom, var(--mr-mob-bottom-nav-h, calc(56px + env(safe-area-inset-bottom, 0px))))
+      - 8px
+    )
+  ) !important;
+  animation: none !important;
+  transition: transform 0.36s cubic-bezier(0.32, 0.72, 0, 1) !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #cmpDetailModal.modal.sheet-dragging .modal-card.cmp-detail-card {
+  transition: none !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #cmpDetailModal.modal.sheet-closing {
+  opacity: 1 !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #cmpDetailModal.modal.sheet-closing::before {
+  opacity: 0 !important;
+  transition: opacity 0.28s ease !important;
+}
+
+/* Employee redesign chrome (Standalone 2) */
 html.athar-staging-redesign.mr-mobile-ui #cmpDetailModal .modal-card.cmp-detail-card--rd-emp {
   border-radius: 26px 26px 0 0 !important;
-  max-height: min(90dvh, 90%) !important;
-  height: auto !important;
   background: var(--bg) !important;
   border: none !important;
   box-shadow: none !important;
@@ -2450,13 +2503,17 @@ html.athar-staging-redesign.mr-mobile-ui #cmpDetailModal .cmp-detail-card--rd-em
   background: var(--bg) !important;
   border-bottom: none !important;
   border-radius: 26px 26px 0 0;
+  touch-action: none !important;
 }
 
 html.athar-staging-redesign.mr-mobile-ui #cmpDetailModal .cmp-detail-card--rd-emp .cmp-sheet-grabber-wrap {
   display: flex !important;
   justify-content: center;
-  padding: 6px 0 0 !important;
+  align-items: center;
+  min-height: 28px !important;
+  padding: 10px 0 8px !important;
   background: transparent !important;
+  touch-action: none !important;
 }
 
 html.athar-staging-redesign.mr-mobile-ui #cmpDetailModal .cmp-detail-card--rd-emp .cmp-sheet-grabber {
@@ -2477,6 +2534,7 @@ html.athar-staging-redesign.mr-mobile-ui #cmpDetailModal .cmp-detail-card--rd-em
   overflow-x: hidden !important;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
+  touch-action: pan-y !important;
   padding: 0 18px 24px !important;
   background: var(--bg) !important;
   display: block !important;

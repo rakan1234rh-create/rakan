@@ -1673,12 +1673,16 @@
           closeTicketSheet();
           return;
         }
+        if (id === 'cmpDetailModal' && typeof closeCmpDetailSheet === 'function') {
+          closeCmpDetailSheet();
+          return;
+        }
         document.getElementById(id)?.classList.remove('open');
         if (id === 'cmpDetailModal') {
           const cmpSheet = document.querySelector('#cmpDetailModal .modal-card.cmp-detail-card');
           const cmpModal = document.getElementById('cmpDetailModal');
           if (cmpSheet) cmpSheet.style.transform = '';
-          cmpModal?.classList.remove('sheet-dragging', 'cmp-detail--rd-emp');
+          cmpModal?.classList.remove('sheet-dragging', 'sheet-closing', 'sheet-ready', 'cmp-detail--rd-emp');
           cmpSheet?.classList.remove('cmp-detail-card--rd-emp');
           document.body.classList.remove('cmp-detail-open');
         }
@@ -2100,6 +2104,69 @@
         setTimeout(onEnd, 420);
       }
 
+      function closeCmpDetailSheet() {
+        const modal = document.getElementById('cmpDetailModal');
+        const sheet = modal?.querySelector('.modal-card.cmp-detail-card');
+        if (!modal) return;
+        const finish = () => {
+          modal.classList.remove('open', 'sheet-ready', 'sheet-closing', 'sheet-dragging', 'cmp-detail--rd-emp');
+          if (sheet) {
+            sheet.style.transform = '';
+            sheet.classList.remove('cmp-detail-card--rd-emp');
+          }
+          document.body.classList.remove('cmp-detail-open');
+          if (!document.querySelector('.modal.open')) {
+            document.body.classList.remove('modal-open');
+          }
+        };
+        if (!modal.classList.contains('open')) {
+          finish();
+          return;
+        }
+        if (!isCmpDetailMobSheet() || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          finish();
+          return;
+        }
+        modal.classList.remove('sheet-ready');
+        modal.classList.add('sheet-closing');
+        if (sheet) sheet.style.transform = 'translateY(100%)';
+        let done = false;
+        const onEnd = (e) => {
+          if (e && e.propertyName && e.propertyName !== 'transform') return;
+          if (done) return;
+          done = true;
+          sheet?.removeEventListener('transitionend', onEnd);
+          finish();
+        };
+        sheet?.addEventListener('transitionend', onEnd);
+        setTimeout(onEnd, 420);
+      }
+
+      function openCmpDetailSheet() {
+        const modal = document.getElementById('cmpDetailModal');
+        const sheet = modal?.querySelector('.modal-card.cmp-detail-card');
+        if (!modal || !sheet) return;
+        const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (typeof syncMobViewportLayout === 'function') syncMobViewportLayout();
+        modal.classList.remove('sheet-ready', 'sheet-closing', 'sheet-dragging');
+        modal.classList.add('open');
+        document.body.classList.add('modal-open');
+        if (isCmpDetailMobSheet()) document.body.classList.add('cmp-detail-open');
+        document.body.appendChild(modal);
+        if (!isCmpDetailMobSheet() || reduced) {
+          modal.classList.add('sheet-ready');
+          sheet.style.transform = '';
+          return;
+        }
+        sheet.style.transform = 'translateY(100%)';
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            modal.classList.add('sheet-ready');
+            sheet.style.removeProperty('transform');
+          });
+        });
+      }
+
       function initCmpDetailSheetDrag() {
         const modal = document.getElementById('cmpDetailModal');
         const zone = modal?.querySelector('.cmp-sheet-drag-zone');
@@ -2111,7 +2178,7 @@
         modal.addEventListener('click', (e) => {
           if (!modal.classList.contains('open')) return;
           if (e.target.closest('.modal-card.cmp-detail-card')) return;
-          closeModal('cmpDetailModal');
+          closeCmpDetailSheet();
         });
 
         const dragEnd = () => {
@@ -2119,14 +2186,19 @@
           _cmpDetailDrag.active = false;
           modal.classList.remove('sheet-dragging');
           zone.style.cursor = '';
-          const threshold = Math.max(72, sheet.offsetHeight * 0.16);
+          const fromGrabber = !!_cmpDetailDrag.fromGrabber;
+          const threshold = fromGrabber
+            ? Math.max(48, sheet.offsetHeight * 0.1)
+            : Math.max(72, sheet.offsetHeight * 0.16);
           if (_cmpDetailDrag.deltaY > threshold) {
-            closeModal('cmpDetailModal');
+            closeCmpDetailSheet();
           } else {
+            modal.classList.add('sheet-ready');
             sheet.style.transform = '';
           }
           _cmpDetailDrag.deltaY = 0;
           _cmpDetailDrag.pointerId = null;
+          _cmpDetailDrag.fromGrabber = false;
         };
 
         const dragMove = (clientY) => {
@@ -2135,11 +2207,13 @@
           sheet.style.transform = `translateY(${_cmpDetailDrag.deltaY}px)`;
         };
 
-        const dragStart = (clientY) => {
+        const dragStart = (clientY, fromGrabber) => {
           if (!modal.classList.contains('open') || !isCmpDetailMobSheet()) return;
           _cmpDetailDrag.active = true;
           _cmpDetailDrag.startY = clientY;
           _cmpDetailDrag.deltaY = 0;
+          _cmpDetailDrag.fromGrabber = !!fromGrabber;
+          modal.classList.remove('sheet-ready');
           modal.classList.add('sheet-dragging');
           zone.style.cursor = 'grabbing';
           sheet.style.transform = 'translateY(0)';
@@ -2147,8 +2221,11 @@
 
         zone.addEventListener('pointerdown', (e) => {
           if (e.button !== undefined && e.button !== 0) return;
+          if (e.target.closest('button, a, input, textarea, select, label[for]')) return;
+          if (!modal.classList.contains('open') || !isCmpDetailMobSheet()) return;
+          const fromGrabber = !!e.target.closest('.cmp-sheet-grabber-wrap, .cmp-sheet-grabber');
           _cmpDetailDrag.pointerId = e.pointerId;
-          dragStart(e.clientY);
+          dragStart(e.clientY, fromGrabber);
           try { zone.setPointerCapture(e.pointerId); } catch (_) { /* noop */ }
         });
 
@@ -2164,13 +2241,13 @@
 
         zone.addEventListener('pointercancel', dragEnd);
 
-        const cmpViolScrollAllowed = (el) => el?.closest?.(
+        const cmpBodyScrollAllowed = (el) => el?.closest?.(
           '.cmp-detail-section--violations .cmp-viol-list, .cmp-detail-section--violations .score-viol-list, .rd-cmp-emp-detail, #cmpDetailModal.cmp-detail--rd-emp .modal-body'
         );
 
         modal.addEventListener('touchmove', (e) => {
           if (!modal.classList.contains('open') || !isCmpDetailMobSheet()) return;
-          if (cmpViolScrollAllowed(e.target)) return;
+          if (cmpBodyScrollAllowed(e.target)) return;
           e.preventDefault();
         }, { passive: false });
       }
@@ -8260,7 +8337,7 @@
         };
         const mob = typeof isMobileViewport === 'function' && isMobileViewport();
         const active = document.getElementById('tab-violations')?.classList.contains('active');
-        if (!mob || !active || !grid.classList.contains('viol-grid--mob-list')) {
+        if (!mob || !active || !(grid.classList.contains('viol-grid--mob-list') || grid.classList.contains('rd-viol-list'))) {
           clearViolMobListHeight();
           return;
         }
@@ -13402,7 +13479,7 @@
         const rd = typeof isAtharRedesignUi === 'function' && isAtharRedesignUi();
         if (titleEl) titleEl.textContent = rd ? 'دليل المخالفات' : 'أنواع المخالفات';
         grid.className = rd
-          ? 'rd-viol-list'
+          ? 'rd-viol-list viol-grid viol-grid--mob-list'
           : (violMob ? 'viol-grid viol-grid--mob-list' : 'mr-users-list');
         if (isAppDataPending()) {
           if (countEl) countEl.textContent = '…';
@@ -24848,7 +24925,8 @@
         document.getElementById('cmpDetailBody').innerHTML = buildCmpDetailHTML(item, viols, violations);
         bindCmpTimelineNav(document.getElementById('cmpDetailBody'));
 
-        openModal('cmpDetailModal');
+        if (typeof openCmpDetailSheet === 'function') openCmpDetailSheet();
+        else openModal('cmpDetailModal');
       }
 
 
