@@ -1868,9 +1868,12 @@ html.athar-staging-redesign.mr-mobile-ui #ticketModal #tdInlineAttachments > div
   flex-wrap: wrap !important;
   gap: 8px !important;
 }
-html.athar-staging-redesign.mr-mobile-ui #ticketModal #tdInlineAttachments .att-thumb,
-html.athar-staging-redesign.mr-mobile-ui #ticketModal #tdInlineAttachments .file-item,
-html.athar-staging-redesign.mr-mobile-ui #ticketModal #tdInlineAttachments [class*="att-card"] {
+html.athar-staging-redesign.mr-mobile-ui #ticketModal #tdInlineAttachments .att-grid--rd {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #ticketModal #tdInlineAttachments .att-grid--rd .att-card {
   width: 64px !important;
   height: 64px !important;
   border-radius: 10px !important;
@@ -1878,6 +1881,31 @@ html.athar-staging-redesign.mr-mobile-ui #ticketModal #tdInlineAttachments [clas
   border: 1px solid var(--border) !important;
   box-shadow: none !important;
   overflow: hidden !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #ticketModal #tdInlineAttachments .att-grid--rd .att-name,
+html.athar-staging-redesign.mr-mobile-ui #ticketModal #tdInlineAttachments .att-grid--rd .att-uploader {
+  display: none !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #ticketModal #tdInlineAttachments .att-grid--rd .att-thumb {
+  width: 100% !important;
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: var(--text3) !important;
+  font-size: 16px !important;
+  background: transparent !important;
+  border: none !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #ticketModal #tdInlineAttachments .att-grid--rd .att-thumb img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
 }
 
 /* Workflow timeline */
