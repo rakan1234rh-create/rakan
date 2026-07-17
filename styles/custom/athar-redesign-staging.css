@@ -1679,11 +1679,19 @@ html.athar-staging-redesign.mr-mobile-ui body.ticket-sheet-open #ticketModal .td
   border-radius: 26px 26px 0 0 !important;
   border: none !important;
   box-shadow: none !important;
-  max-height: 92% !important;
+  /* Explicit height required — height:auto collapses the flex content pane */
   top: auto !important;
   bottom: 0 !important;
+  height: 92% !important;
+  max-height: 92% !important;
+  min-height: 0 !important;
   padding: 10px 18px 24px !important;
   animation: atharRdCardIn 0.3s ease both;
+}
+html.athar-staging-redesign.mr-mobile-ui body.ticket-sheet-open #ticketModal .td-content-area {
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
 }
 html.athar-staging-redesign.mr-mobile-ui #ticketModal .td-sheet-grabber-wrap {
   padding: 6px 0 14px !important;
