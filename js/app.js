@@ -13222,15 +13222,67 @@
         <span class="${avatar.className} user-mob-card__avatar"${avatar.style ? ` style="${avatar.style}"` : ''} aria-hidden="true">${avatar.html}</span>
         <div class="user-mob-card__main">
           <h3 class="user-mob-card__name">${Sec.escapeHTML(u.name)}
-            ${u.push_subscriptions && u.push_subscriptions.length > 0 ? '<i class="fas fa-bell user-indicator user-indicator--bell" title="مفعل الإشعارات"></i>' : '<i class="fas fa-bell-slash user-indicator user-indicator--bell-slash" title="غير مفعل الإشعارات"></i>'}                ${u.auth_uid ? 
-                  '<i class="fas fa-circle user-indicator user-indicator--active" title="حساب نشط"></i>' : 
-                  '<i class="fas fa-circle user-indicator user-indicator--inactive" title="حساب غير نشط"></i>'}}
+            ${u.push_subscriptions && u.push_subscriptions.length > 0 ? '<i class="fas fa-bell user-indicator user-indicator--bell" title="مفعل الإشعارات"></i>' : '<i class="fas fa-bell-slash user-indicator user-indicator--bell-slash" title="غير مفعل الإشعارات"></i>'}
+            ${u.auth_uid
+              ? '<i class="fas fa-circle user-indicator user-indicator--active" title="حساب نشط"></i>'
+              : '<i class="fas fa-circle user-indicator user-indicator--inactive" title="حساب غير نشط"></i>'}
           </h3>
           ${rowsHtml}
         </div>
       </div>
       ${adminBtns}
     </article>`;
+      }
+
+      function rdUsrCardHTML(u, canManage, delayIdx) {
+        const branch = state._branchById ? state._branchById.get(u.branch_id) : state.branches.find(b => b.id === u.branch_id);
+        const roleKey = normalizeUserRole(u.role);
+        const roleLabel = userTableRoleLabel(u) || ROLE_LABELS[roleKey] || roleKey;
+        const roleColor = ROLE_COLORS[roleKey] || ROLE_COLORS[u.role] || '#8e8e93';
+        const empNum = padEmpNum(u.employee_number);
+        const uid = String(u.id || '').replace(/'/g, "\\'");
+        const delay = Math.min(0.28, (Number(delayIdx) || 0) * 0.04);
+        const active = !!(u.auth_uid && isActiveUser(u));
+        const initial = String(u.name || '؟').trim().charAt(0) || '؟';
+        const avatar = buildUserListAvatarMarkup(u);
+        const rows = [];
+        if (empNum) {
+          rows.push(`<div class="rd-usr__row"><i class="fas fa-id-badge" aria-hidden="true"></i>الرقم الوظيفي: ${Sec.escapeHTML(empNum)}</div>`);
+        }
+        if (u.phone) {
+          rows.push(`<div class="rd-usr__row"><i class="fas fa-phone" aria-hidden="true"></i><span dir="ltr">${Sec.escapeHTML(u.phone)}</span></div>`);
+        }
+        if (u.email) {
+          rows.push(`<div class="rd-usr__row rd-usr__row--clip"><i class="fas fa-envelope" aria-hidden="true"></i>${Sec.escapeHTML(u.email)}</div>`);
+        }
+        if (branch?.name) {
+          rows.push(`<div class="rd-usr__row"><i class="fas fa-location-dot" aria-hidden="true"></i>${Sec.escapeHTML(branch.name)}</div>`);
+        }
+        const actions = canManage
+          ? `<div class="rd-usr__actions">
+              <button type="button" class="rd-usr__btn" onclick="editUser('${uid}')"><i class="fas fa-pen" aria-hidden="true"></i>تعديل</button>
+              <button type="button" class="rd-usr__btn rd-usr__btn--danger" onclick="deleteUser('${uid}')"><i class="fas fa-trash" aria-hidden="true"></i>حذف</button>
+            </div>`
+          : '';
+        const hasPhoto = avatar.className.includes('has-avatar-photo') || avatar.className.includes('has-default-icon');
+        const avInner = hasPhoto
+          ? `<span class="${avatar.className} rd-usr__av-media"${avatar.style ? ` style="${avatar.style}"` : ''} aria-hidden="true">${avatar.html}</span>`
+          : `<span class="rd-usr__av-fallback" aria-hidden="true">${Sec.escapeHTML(initial)}</span>`;
+        return `
+          <article class="rd-usr" role="listitem" style="animation-delay:${delay}s">
+            ${roleLabel ? `<span class="rd-usr__role" style="--rc:${roleColor}">${Sec.escapeHTML(roleLabel)}</span>` : ''}
+            <div class="rd-usr__head">
+              <div class="rd-usr__av-wrap">
+                ${avInner}
+                <span class="rd-usr__dot${active ? ' is-on' : ''}" title="${active ? 'حساب نشط' : 'حساب غير نشط'}" aria-hidden="true"></span>
+              </div>
+              <div class="rd-usr__body">
+                <div class="rd-usr__name">${Sec.escapeHTML(u.name || '')}</div>
+                <div class="rd-usr__rows">${rows.join('')}</div>
+              </div>
+            </div>
+            ${actions}
+          </article>`;
       }
 
       function renderUsers() {
@@ -13242,12 +13294,27 @@
 
         const countEl = document.getElementById('users-count');
         const usersMob = isMobileViewport();
-        list.className = usersMob ? 'mr-users-list users-grid--mob-list' : 'mr-users-list';
+        const rd = typeof isAtharRedesignUi === 'function' && isAtharRedesignUi();
+        const subEl = document.querySelector('#tab-departments .wf-panel-sub');
+        if (subEl) subEl.textContent = rd ? 'USERS MANAGEMENT' : 'users management';
+
+        const searchEl = document.getElementById('user-search');
+        if (rd && searchEl && !searchEl.dataset.rdPlaceholder) {
+          searchEl.placeholder = 'ابحث بالاسم، الرقم الوظيفي، البريد...';
+          searchEl.dataset.rdPlaceholder = '1';
+        }
+
+        list.className = rd
+          ? 'mr-users-list users-grid--mob-list rd-usr-list'
+          : (usersMob ? 'mr-users-list users-grid--mob-list' : 'mr-users-list');
+
         if (isAppDataPending()) {
           if (countEl) countEl.textContent = '…';
-          list.innerHTML = usersMob
-            ? '<div class="empty users-empty-mob"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i><p>جاري تحميل المستخدمين…</p></div>'
-            : '<div class="mr-users-empty empty mr-data-loading"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i><p>جاري تحميل المستخدمين…</p></div>';
+          list.innerHTML = rd
+            ? '<div class="rd-ticket-empty"><i class="fas fa-spinner fa-spin"></i><p>جاري تحميل المستخدمين…</p></div>'
+            : (usersMob
+              ? '<div class="empty users-empty-mob"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i><p>جاري تحميل المستخدمين…</p></div>'
+              : '<div class="mr-users-empty empty mr-data-loading"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i><p>جاري تحميل المستخدمين…</p></div>');
           syncUsersMobileScrollShell('departments');
           return;
         }
@@ -13257,16 +13324,20 @@
         if (countEl) countEl.textContent = String(filtered.length);
 
         if (!filtered.length) {
-          list.innerHTML = usersMob
-            ? '<div class="empty users-empty-mob"><i class="fas fa-users-slash"></i><p>لا يوجد مستخدمون</p></div>'
-            : '<div class="mr-users-empty empty"><i class="fas fa-users-slash"></i><p>لا يوجد مستخدمون</p></div>';
+          list.innerHTML = rd
+            ? '<div class="rd-ticket-empty"><i class="fas fa-users-slash"></i><p>لا يوجد مستخدمون</p></div>'
+            : (usersMob
+              ? '<div class="empty users-empty-mob"><i class="fas fa-users-slash"></i><p>لا يوجد مستخدمون</p></div>'
+              : '<div class="mr-users-empty empty"><i class="fas fa-users-slash"></i><p>لا يوجد مستخدمون</p></div>');
           syncUsersMobileScrollShell('departments');
           return;
         }
 
-        list.innerHTML = usersMob
-          ? filtered.map(u => renderUserMobItem(u, canManage)).join('')
-          : filtered.map(u => renderUserCard(u, canManage)).join('');
+        list.innerHTML = rd
+          ? filtered.map((u, i) => rdUsrCardHTML(u, canManage, i)).join('')
+          : (usersMob
+            ? filtered.map(u => renderUserMobItem(u, canManage)).join('')
+            : filtered.map(u => renderUserCard(u, canManage)).join(''));
         hydrateProfileAvatarImages(list).catch(() => {});
         syncUsersMobileScrollShell('departments');
         requestAnimationFrame(() => syncUsersMobileScrollShell('departments'));

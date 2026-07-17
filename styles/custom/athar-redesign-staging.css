@@ -1725,7 +1725,7 @@ html.athar-staging-redesign.mr-mobile-ui #tab-locations #regionsList.rb-regions-
   padding: 8px 0;
 }
 
-/* ═══ Users — mockup user cards ═══ */
+/* ═══ Users / مستخدمون — Standalone (2) ═══ */
 html.athar-staging-redesign.mr-mobile-ui #tab-departments .panel.wf-panel {
   background: transparent !important;
   border: none !important;
@@ -1738,12 +1738,18 @@ html.athar-staging-redesign.mr-mobile-ui #tab-departments .wf-panel-banner {
   background: transparent !important;
   box-shadow: none !important;
 }
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .wf-panel-title {
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  color: var(--text) !important;
+  margin: 0 !important;
+}
 html.athar-staging-redesign.mr-mobile-ui #tab-departments .wf-panel-sub {
   font-size: 10.5px !important;
   color: var(--text3) !important;
   letter-spacing: 0.08em !important;
   text-transform: uppercase !important;
-  margin: -10px 0 14px !important;
+  margin: 3px 0 16px !important;
 }
 html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-io-group--desk {
   display: none !important;
@@ -1755,23 +1761,61 @@ html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-toolbar {
   border: none !important;
   box-shadow: none !important;
   padding: 0 !important;
-  margin: 0 0 10px !important;
+  margin: 0 0 12px !important;
 }
 html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-toolbar {
   display: flex !important;
-  flex-wrap: wrap !important;
+  flex-wrap: nowrap !important;
   gap: 8px !important;
   align-items: center !important;
+  width: 100% !important;
 }
 html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-toolbar .figma-search-wrap {
-  flex: 1 1 100% !important;
-}
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .user-role-dd,
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-io-mob-wrap {
   flex: 1 1 auto !important;
+  min-width: 0 !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  border: none !important;
+  border-radius: 10px !important;
+  background: var(--searchFill) !important;
+  padding: 0 14px !important;
 }
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .wf-status-trigger,
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-toolbar .figma-search-input {
+  font-size: 11.5px !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-toolbar .figma-search-input::placeholder {
+  color: var(--text3) !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-io-mob-wrap {
+  flex: 0 0 auto !important;
+}
 html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-io-more-btn {
+  width: 46px !important;
+  min-width: 46px !important;
+  height: 41px !important;
+  min-height: 41px !important;
+  padding: 0 !important;
+  border-radius: 12px !important;
+  border: 1px solid var(--border) !important;
+  background: var(--surface) !important;
+  color: var(--text2) !important;
+  box-shadow: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-io-more-btn span {
+  display: none !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-io-more-btn i {
+  font-size: 13px !important;
+  margin: 0 !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .user-role-dd {
+  flex: 0 0 auto !important;
+  max-width: 42% !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .wf-status-trigger {
   height: 41px !important;
   min-height: 41px !important;
   border-radius: 12px !important;
@@ -1779,107 +1823,173 @@ html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-io-more-btn {
   background: var(--surface) !important;
   box-shadow: none !important;
   font-size: 12px !important;
+  font-weight: 600 !important;
+  padding: 0 12px !important;
+  gap: 6px !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .wf-status-trigger__ico {
+  display: none !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-meta-row {
+  margin: 0 0 10px !important;
+  padding: 0 !important;
+  border: none !important;
+  background: transparent !important;
 }
 html.athar-staging-redesign.mr-mobile-ui #tab-departments .wf-count {
   font-size: 12px !important;
   color: var(--text2) !important;
-  margin: 0 0 10px !important;
+  margin: 0 !important;
 }
+html.athar-staging-redesign.mr-mobile-ui #tab-departments #usersDeskHost,
 html.athar-staging-redesign.mr-mobile-ui #tab-departments #usersDeskHost .mr-users-list-wrap {
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
   padding: 0 !important;
-  max-height: none !important;
-  overflow: visible !important;
+  overflow: hidden !important;
 }
-html.athar-staging-redesign.mr-mobile-ui #tab-departments #usersList {
+html.athar-staging-redesign.mr-mobile-ui #tab-departments #usersList.rd-usr-list,
+html.athar-staging-redesign.mr-mobile-ui #tab-departments #usersList.users-grid--mob-list {
   display: flex !important;
   flex-direction: column !important;
   gap: 10px !important;
-}
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .user-mob-card {
-  position: relative !important;
-  background: var(--surface) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 18px !important;
-  box-shadow: none !important;
-  padding: 16px !important;
-  margin: 0 !important;
-  animation: atharRdCardIn 0.4s ease both;
-}
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .user-mob-card__role {
-  position: absolute !important;
-  top: 14px !important;
-  inset-inline-start: 14px !important;
-  padding: 4px 10px !important;
-  border-radius: 999px !important;
-  font-size: 10px !important;
-  font-weight: 700 !important;
-  background: color-mix(in srgb, var(--rc, var(--purple)) 14%, transparent) !important;
-  color: var(--rc, var(--purple)) !important;
-  border: none !important;
-  z-index: 1 !important;
-}
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .user-mob-card__head {
-  margin-top: 28px !important;
-  display: flex !important;
-  gap: 12px !important;
-  align-items: flex-start !important;
-}
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .user-mob-card__avatar {
-  width: 44px !important;
-  height: 44px !important;
-  border-radius: 50% !important;
-  background: var(--surface2) !important;
-  flex-shrink: 0 !important;
-}
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .user-mob-card__name {
-  font-size: 14px !important;
-  font-weight: 700 !important;
-  color: var(--text) !important;
-}
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .user-mob-card__rows {
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 6px !important;
-  margin-top: 9px !important;
-  padding: 0 !important;
-  list-style: none !important;
-}
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .user-mob-card__row {
-  font-size: 12px !important;
-  color: var(--text2) !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 8px !important;
-}
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .user-mob-card__row i {
-  width: 13px !important;
-  color: var(--text3) !important;
-  font-size: 11px !important;
-}
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .user-mob-card__actions {
-  display: flex !important;
-  justify-content: flex-end !important;
-  gap: 8px !important;
-  margin-top: 14px !important;
-  padding-top: 12px !important;
-  border-top: 1px solid var(--border) !important;
-}
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .user-mob-card__actions .mr-viol-act {
-  padding: 6px 12px !important;
-  width: auto !important;
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
   height: auto !important;
-  border-radius: 9px !important;
-  border: 1px solid var(--border) !important;
+  overflow-y: scroll !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
+  touch-action: pan-y !important;
+  overscroll-behavior-y: contain;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)) !important;
   background: transparent !important;
-  color: var(--text2) !important;
-  font-size: 11px !important;
 }
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .user-mob-card__actions .mr-viol-act:last-child {
-  color: var(--danger) !important;
+
+.rd-usr {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 16px;
+  animation: atharRdCardIn 0.4s ease both;
+  direction: rtl;
 }
+.rd-usr__role {
+  position: absolute;
+  top: 14px;
+  inset-inline-start: 14px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  background: color-mix(in srgb, var(--rc, #8e8e93) 14%, transparent);
+  color: var(--rc, #8e8e93);
+  z-index: 1;
+}
+.rd-usr__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 28px;
+}
+.rd-usr__av-wrap {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+}
+.rd-usr__av-fallback,
+.rd-usr__av-media {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: var(--surface2);
+  color: var(--text2);
+  font-size: 14px;
+  font-weight: 700;
+}
+.rd-usr__av-media img,
+.rd-usr__av-media .profile-hero__default-svg,
+.rd-usr__av-media svg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.rd-usr__dot {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--text3);
+  border: 2px solid var(--surface);
+}
+.rd-usr__dot.is-on { background: var(--success); }
+.rd-usr__body { flex: 1; min-width: 0; }
+.rd-usr__name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.3;
+}
+.rd-usr__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 9px;
+}
+.rd-usr__row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+  color: var(--text2);
+  min-width: 0;
+}
+.rd-usr__row i {
+  width: 13px;
+  color: var(--text3);
+  font-size: 11px;
+  flex-shrink: 0;
+  text-align: center;
+}
+.rd-usr__row--clip {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rd-usr__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.rd-usr__btn {
+  padding: 6px 12px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text2);
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.rd-usr__btn i { font-size: 10px; }
+.rd-usr__btn--danger { color: var(--danger); }
+.rd-usr__btn:active { opacity: 0.88; }
 
 /* ═══ New ticket / رصد — Athar Redesign Standalone (2) ═══ */
 html.athar-staging-redesign.mr-mobile-ui #tab-newTicket {
