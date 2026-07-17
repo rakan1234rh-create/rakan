@@ -49,6 +49,19 @@ function json(body: unknown, status = 200) {
   })
 }
 
+/** رسالة خطأ R2/S3 آمنة للعميل (بدون أسرار) */
+function r2ErrInfo(e: unknown): { name: string; message: string } {
+  const name =
+    e && typeof e === 'object' && 'name' in e
+      ? String((e as { name: string }).name)
+      : ''
+  const message =
+    e instanceof Error
+      ? String(e.message || '').slice(0, 240)
+      : String(e || '').slice(0, 240)
+  return { name: name || 'Error', message: message || 'unknown' }
+}
+
 function assertKey(key: unknown): string {
   if (typeof key !== 'string' || !key.length) throw new Error('key مطلوب')
   if (key.length > 2048) throw new Error('key طويل جداً')
@@ -126,6 +139,18 @@ function requireR2Env() {
   const bucket = envFirst('R2_BUCKET_NAME', 'R2_BUCKET', 'AWS_S3_BUCKET')
   if (!accessKeyId || !secretAccessKey || !accountId || !bucket) return null
   return { accessKeyId, secretAccessKey, accountId, bucket }
+}
+
+/** بيانات تشخيص آمنة (بدون كشف الأسرار) */
+function r2PublicDiag(env: NonNullable<ReturnType<typeof requireR2Env>>) {
+  return {
+    bucket: env.bucket,
+    accountIdLen: env.accountId.length,
+    accountIdSuffix: env.accountId.slice(-4),
+    accessKeyIdPrefix: env.accessKeyId.slice(0, 4),
+    accessKeyIdLen: env.accessKeyId.length,
+    endpoint: `https://${env.accountId}.r2.cloudflarestorage.com`,
+  }
 }
 
 function makeS3(env: NonNullable<ReturnType<typeof requireR2Env>>) {
@@ -430,18 +455,40 @@ Deno.serve(async (req) => {
         return json({ error: 'حجم الملف كبير جداً للرفع عبر الخادم' }, 413)
       }
       const s3 = makeS3(env)
-      await s3.send(
+      // R2 + AWS SDK PutObjectCommand مع Body داخل Deno يفشل أحياناً بصمت/بطء.
+      // المسار الأوثق: توقيع URL ثم PUT مباشر بـ fetch.
+      const signed = await getSignedUrl(
+        s3,
         new PutObjectCommand({
           Bucket: env.bucket,
           Key: key,
-          Body: bytes,
           ContentType: contentType,
         }),
+        { expiresIn: 3600 },
       )
+      const putRes = await fetch(signed, {
+        method: 'PUT',
+        headers: { 'Content-Type': contentType },
+        body: bytes,
+      })
+      if (!putRes.ok) {
+        const errText = (await putRes.text().catch(() => '')).slice(0, 240)
+        console.error('[r2-storage] putObject signed PUT', putRes.status, errText)
+        return json({
+          error: `فشل الرفع إلى R2 (HTTP ${putRes.status}): ${errText || putRes.statusText}`,
+          r2Error: `HTTP_${putRes.status}`,
+          ...r2PublicDiag(env),
+        }, 500)
+      }
       return json({ ok: true, key })
     } catch (e) {
-      console.error('[r2-storage] putObject', e)
-      return json({ error: 'حدث خطأ أثناء رفع الملف' }, 500)
+      const info = r2ErrInfo(e)
+      console.error('[r2-storage] putObject', info.name, info.message, e)
+      return json({
+        error: `فشل الرفع إلى R2 (${info.name}): ${info.message}`,
+        r2Error: info.name,
+        ...r2PublicDiag(env),
+      }, 500)
     }
   }
 
@@ -488,7 +535,31 @@ Deno.serve(async (req) => {
 
   try {
     if (action === 'ping') {
-      return json({ ok: true, mode: 'edge' })
+      // ok=true طالما الأسرار موجودة (حتى لا يتعطّل العميل). r2 يوضح اتصال الـ bucket.
+      const diag = r2PublicDiag(env)
+      try {
+        await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: '__athar_r2_ping__' }))
+        return json({ ok: true, mode: 'edge', r2: 'ok', ...diag })
+      } catch (e) {
+        const info = r2ErrInfo(e)
+        if (
+          info.name === 'NotFound' ||
+          info.name === 'NoSuchKey' ||
+          info.name === '404' ||
+          /Not Found|NoSuchKey/i.test(info.message)
+        ) {
+          return json({ ok: true, mode: 'edge', r2: 'ok', ...diag })
+        }
+        console.error('[r2-storage] ping r2 check', info.name, info.message)
+        return json({
+          ok: true,
+          mode: 'edge',
+          r2: 'error',
+          r2Error: info.name,
+          r2Message: info.message,
+          ...diag,
+        })
+      }
     }
 
     if (action === 'signPut') {
@@ -751,7 +822,12 @@ Deno.serve(async (req) => {
 
     return json({ error: 'عملية غير معروفة' }, 400)
   } catch (e) {
-    console.error('[r2-storage]', e)
-    return json({ error: 'حدث خطأ أثناء المعالجة' }, 500)
+    const info = r2ErrInfo(e)
+    console.error('[r2-storage]', info.name, info.message, e)
+    return json({
+      error: `حدث خطأ أثناء المعالجة (${info.name}): ${info.message}`,
+      bucket,
+      r2Error: info.name,
+    }, 500)
   }
 })
