@@ -4955,6 +4955,215 @@
         filterTickets();
       }
 
+      /** متوسط معدل الالتزام للموظفين الظاهرين في النطاق */
+      function rdAvgComplianceRate(violations) {
+        const emps = (state.users || []).filter(u => typeof isViolationSubjectUser === 'function' && isViolationSubjectUser(u));
+        if (!emps.length) return 100;
+        const sum = emps.reduce((a, e) => a + (calcEmpScore(e.id, violations || state.violations).score || 0), 0);
+        return Math.round((sum / emps.length) * 10) / 10;
+      }
+
+      /** تقدير متوسط زمن الاستجابة بالساعات من سجلات التذكرة */
+      function rdAvgResponseHours(violations) {
+        let total = 0;
+        let n = 0;
+        (violations || []).forEach((v) => {
+          const created = new Date(v.created_at || v.violation_date || 0).getTime();
+          if (!created || Number.isNaN(created)) return;
+          const logs = parseDbJsonArray(v.logs);
+          const reply = logs.find((l) => {
+            const action = String(l?.action || '');
+            return /رد|استجابة|تعقيب|موافقة|رفض|إحالة|تمرير/i.test(action)
+              && !/إنشاء|رصد/i.test(action);
+          });
+          if (!reply?.date && !reply?.t) return;
+          const replied = new Date(reply.date || reply.t).getTime();
+          if (!replied || Number.isNaN(replied) || replied < created) return;
+          const hours = (replied - created) / 3600000;
+          if (hours >= 0 && hours < 720) {
+            total += hours;
+            n++;
+          }
+        });
+        return n ? total / n : null;
+      }
+
+      function rdFormatHoursAr(hours) {
+        if (hours == null || !Number.isFinite(hours)) return '—';
+        if (hours < 1) return `${Math.max(1, Math.round(hours * 60))} د`;
+        const h = Math.round(hours * 10) / 10;
+        return `${h} س`;
+      }
+
+      function rdTrendText(delta, unit) {
+        if (delta == null || !Number.isFinite(delta) || Math.abs(delta) < 0.05) return 'بدون تغيّر ملحوظ';
+        const sign = delta > 0 ? '+' : '';
+        if (unit === '%') return `${sign}${Math.round(delta)}% عن الفترة السابقة`;
+        if (unit === 'count') return `${sign}${Math.round(delta)} عن الفترة السابقة`;
+        if (unit === 'hours') {
+          const mins = Math.round(Math.abs(delta) * 60);
+          if (delta < 0) return `أسرع بـ ${mins} دقيقة`;
+          return `أبطأ بـ ${mins} دقيقة`;
+        }
+        return '';
+      }
+
+      function rdLastSixMonthRanges() {
+        if (typeof ksaMonthSlots !== 'function' || typeof ksaMonthRange !== 'function') return [];
+        return ksaMonthSlots(6).map((slot) => {
+          const range = ksaMonthRange(slot.year, slot.month);
+          const nextSlot = ksaShiftMonth(slot.year, slot.month, 1);
+          const next = ksaMonthRange(nextSlot.year, nextSlot.month);
+          const short = (slot.monthName || KSA_AR_MONTHS[slot.month] || '').slice(0, 4);
+          return {
+            label: short || String(slot.month + 1),
+            fromIso: range.fromIso,
+            nextIso: next.fromIso,
+            year: slot.year,
+            month: slot.month,
+          };
+        });
+      }
+
+      function rdMonthlyCommitmentBars(allViolations) {
+        const ranges = rdLastSixMonthRanges();
+        const bars = ranges.map((r) => {
+          const monthViols = (allViolations || []).filter((v) => {
+            if (v.state === 'uploading') return false;
+            const iso = typeof dashViolationIsoDate === 'function' ? dashViolationIsoDate(v) : String(v.violation_date || v.created_at || '').slice(0, 10);
+            return iso && iso >= r.fromIso && iso < r.nextIso;
+          });
+          // تقدير الالتزام: يبدأ 100 ويُخصم لكل مخالفة مؤثرة
+          const hits = monthViols.filter((v) => !violationExcludedFromDeduction(v) && !(v.state === 'closed' && /ملغ/i.test(v.status_text || ''))).length;
+          const rate = Math.max(0, Math.min(100, 100 - hits * 4));
+          return { label: r.label, pct: Math.max(8, Math.round(rate)) };
+        });
+        return bars;
+      }
+
+      function renderReportsRedesign() {
+        const host = document.getElementById('rdReports');
+        if (!host) return;
+        if (!isAtharRedesignUi()) {
+          host.hidden = true;
+          host.innerHTML = '';
+          return;
+        }
+
+        const allVisible = getVisibleViolations().filter((v) => v.state !== 'uploading');
+        const cur = typeof ksaCurrentMonthRange === 'function' ? ksaCurrentMonthRange() : null;
+        const thisMonth = cur
+          ? allVisible.filter((v) => {
+              const iso = dashViolationIsoDate(v);
+              return iso && iso >= cur.fromIso && iso < cur.nextFromIso;
+            })
+          : allVisible;
+
+        // الشهر السابق للمقارنة
+        const ranges = rdLastSixMonthRanges();
+        const prev = ranges.length >= 2 ? ranges[ranges.length - 2] : null;
+        const prevMonth = prev
+          ? allVisible.filter((v) => {
+              const iso = dashViolationIsoDate(v);
+              return iso && iso >= prev.fromIso && iso < prev.nextIso;
+            })
+          : [];
+
+        const rateNow = rdAvgComplianceRate(allVisible);
+        const ratePrev = prev ? rdAvgComplianceRate(
+          allVisible.filter((v) => {
+            const iso = dashViolationIsoDate(v);
+            return !iso || iso < prev.nextIso;
+          }),
+        ) : rateNow;
+
+        const hoursNow = rdAvgResponseHours(thisMonth.length ? thisMonth : allVisible.slice(0, 80));
+        const hoursPrev = rdAvgResponseHours(prevMonth.length ? prevMonth : null);
+
+        const metrics = [
+          {
+            label: 'معدل الالتزام العام',
+            value: `${Math.round(rateNow)}%`,
+            trend: rdTrendText(rateNow - ratePrev, '%'),
+            delay: 0,
+          },
+          {
+            label: 'إجمالي المخالفات',
+            value: String(thisMonth.length),
+            trend: rdTrendText(thisMonth.length - prevMonth.length, 'count'),
+            delay: 0.05,
+          },
+          {
+            label: 'متوسط زمن الاستجابة',
+            value: rdFormatHoursAr(hoursNow),
+            trend: hoursNow != null && hoursPrev != null
+              ? rdTrendText(hoursNow - hoursPrev, 'hours')
+              : 'حسب سجلات الردود',
+            delay: 0.1,
+          },
+        ];
+
+        const bars = rdMonthlyCommitmentBars(allVisible);
+        const links = [
+          {
+            title: 'تقرير الالتزام الشهري',
+            sub: 'ملخص تلقائي شهري لكل الفروع',
+            icon: 'fa-file-lines',
+            action: "goTab('compliance')",
+            delay: 0.05,
+          },
+          {
+            title: 'تقرير المخالفات حسب الفرع',
+            sub: 'مقارنة الأداء بين الفروع',
+            icon: 'fa-code-branch',
+            action: "goTab('locations')",
+            delay: 0.1,
+          },
+          {
+            title: 'تقرير الاستجابة للموظفين',
+            sub: 'متوسط زمن الرد على البلاغات',
+            icon: 'fa-gauge-high',
+            action: "goTab('departments')",
+            delay: 0.15,
+          },
+        ];
+
+        host.innerHTML = `
+          <div class="rd-rp-metrics">
+            ${metrics.map((m) => `
+              <div class="rd-rp-metric" style="animation-delay:${m.delay}s">
+                <div>
+                  <div class="rd-rp-metric__label">${Sec.escapeHTML(m.label)}</div>
+                  <div class="rd-rp-metric__trend">${Sec.escapeHTML(m.trend)}</div>
+                </div>
+                <div class="rd-rp-metric__value">${Sec.escapeHTML(m.value)}</div>
+              </div>`).join('')}
+          </div>
+          <div class="rd-rp-sec-title">اتجاه الالتزام الشهري</div>
+          <div class="rd-rp-bars-card">
+            <div class="rd-rp-bars" role="img" aria-label="اتجاه الالتزام الشهري">
+              ${bars.map((b) => `
+                <div class="rd-rp-bar">
+                  <div class="rd-rp-bar__fill" style="height:${b.pct}%"></div>
+                  <span class="rd-rp-bar__lbl">${Sec.escapeHTML(b.label)}</span>
+                </div>`).join('')}
+            </div>
+          </div>
+          <div class="rd-rp-sec-title">تقارير سريعة</div>
+          <div class="rd-rp-links">
+            ${links.map((r) => `
+              <button type="button" class="rd-rp-link" style="animation-delay:${r.delay}s" onclick="${r.action}">
+                <div class="rd-rp-link__ico"><i class="fas ${r.icon}" aria-hidden="true"></i></div>
+                <div class="rd-rp-link__body">
+                  <div class="rd-rp-link__title">${Sec.escapeHTML(r.title)}</div>
+                  <div class="rd-rp-link__sub">${Sec.escapeHTML(r.sub)}</div>
+                </div>
+                <i class="fas fa-chevron-left rd-rp-link__chev" aria-hidden="true"></i>
+              </button>`).join('')}
+          </div>`;
+        host.hidden = false;
+      }
+
       function getRdCleanStreakDays(me) {
         if (!me) return 0;
         const myViols = (state.violations || []).filter(v =>
@@ -25162,6 +25371,17 @@
           renderReportsLoadingState();
           return;
         }
+
+        if (isAtharRedesignUi()) {
+          try {
+            renderReportsRedesign();
+          } catch (e) {
+            if (isMirsadDebugLog()) console.warn('[rdReports]', e);
+          }
+          return;
+        }
+        const rdHost = document.getElementById('rdReports');
+        if (rdHost) { rdHost.innerHTML = ''; rdHost.hidden = true; }
 
         const search = (document.getElementById('rp-search')?.value || '').toLowerCase().trim();
         const fromDate = document.getElementById('rp-from')?.value || '';
