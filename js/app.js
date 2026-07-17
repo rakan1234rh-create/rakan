@@ -14257,8 +14257,7 @@
         const descError = Sec.checkSafe(desc);
         if (descError) return showToast('الوصف: ' + descError, 'error');
 
-        if (!files.length) return showToast('أرفق ملف واحد على الأقل', 'error');
-
+        // المرفقات اختيارية — إن وُجدت يجب أن تكون جاهزة قبل الإرسال
         for (const f of filesToUpload) {
           if (f.prepStatus !== 'ready') {
             showToast('انتظر اكتمال تحضير المرفقات (تحويل/رفع) قبل الإرسال', 'warning');
@@ -14587,6 +14586,7 @@
        * نقل مرفقات التذكرة من المجلد المؤقت إلى المجلد النهائي الرسمي
        */
       async function moveAttachmentsToFinalFolder(violationId, ticketNumber, attachments) {
+        if (!Array.isArray(attachments) || !attachments.length) return null;
         if (isMirsadDebugLog()) console.log(`[R2-Move] Starting move for ${ticketNumber}...`);
         try {
           const backend = await resolveR2Backend();
