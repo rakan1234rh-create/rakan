@@ -2335,15 +2335,20 @@
           _ticketDetailDrag.active = false;
           modal.classList.remove('sheet-dragging');
           zone.style.cursor = '';
-          const threshold = Math.max(72, sheet.offsetHeight * 0.18);
+          const fromGrabber = !!_ticketDetailDrag.fromGrabber;
+          const threshold = fromGrabber
+            ? Math.max(48, sheet.offsetHeight * 0.1)
+            : Math.max(72, sheet.offsetHeight * 0.18);
           if (_ticketDetailDrag.deltaY > threshold) {
             closeTicketSheet();
           } else {
             modal.classList.add('sheet-ready');
+            sheet.style.transition = '';
             sheet.style.transform = '';
           }
           _ticketDetailDrag.deltaY = 0;
           _ticketDetailDrag.pointerId = null;
+          _ticketDetailDrag.fromGrabber = false;
         };
 
         const dragMove = (clientY) => {
@@ -2352,11 +2357,12 @@
           sheet.style.transform = `translateY(${_ticketDetailDrag.deltaY}px)`;
         };
 
-        const dragStart = (clientY) => {
+        const dragStart = (clientY, fromGrabber) => {
           if (!modal.classList.contains('open') || !isViolDetailMobSheet()) return;
           _ticketDetailDrag.active = true;
           _ticketDetailDrag.startY = clientY;
           _ticketDetailDrag.deltaY = 0;
+          _ticketDetailDrag.fromGrabber = !!fromGrabber;
           modal.classList.remove('sheet-ready');
           modal.classList.add('sheet-dragging');
           zone.style.cursor = 'grabbing';
@@ -2367,8 +2373,9 @@
           if (e.button !== undefined && e.button !== 0) return;
           if (e.target.closest('button, a, input, textarea, select, label[for]')) return;
           if (!modal.classList.contains('open') || !isViolDetailMobSheet()) return;
+          const fromGrabber = !!e.target.closest('.td-sheet-grabber-wrap, .viol-sheet-grabber');
           _ticketDetailDrag.pointerId = e.pointerId;
-          dragStart(e.clientY);
+          dragStart(e.clientY, fromGrabber);
           try { zone.setPointerCapture(e.pointerId); } catch (_) { /* noop */ }
         });
 

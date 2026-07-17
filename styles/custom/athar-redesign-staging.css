@@ -1679,28 +1679,56 @@ html.athar-staging-redesign.mr-mobile-ui body.ticket-sheet-open #ticketModal .td
   border-radius: 26px 26px 0 0 !important;
   border: none !important;
   box-shadow: none !important;
-  /* Explicit height required — height:auto collapses the flex content pane */
-  top: auto !important;
+  /* Open up to just below the top header (not a floating 92% card) */
+  top: var(--ticket-sheet-top, var(--unified-topbar-h, calc(56px + env(safe-area-inset-top, 0px)))) !important;
   bottom: 0 !important;
-  height: 92% !important;
-  max-height: 92% !important;
+  height: auto !important;
+  max-height: none !important;
   min-height: 0 !important;
-  padding: 10px 18px 24px !important;
-  animation: atharRdCardIn 0.3s ease both;
+  padding: 0 18px 24px !important;
+  /* Do not use entrance animation here — it fights drag/close translateY */
+  animation: none !important;
+  transition: transform 0.36s cubic-bezier(0.32, 0.72, 0, 1) !important;
+}
+html.athar-staging-redesign.mr-mobile-ui body.ticket-sheet-open #ticketModal.modal.sheet-dragging .td-mob-sheet {
+  transition: none !important;
+}
+/* Keep opacity while sliding closed — fade-out made the dismiss feel abrupt */
+html.athar-staging-redesign.mr-mobile-ui #ticketModal.modal.sheet-closing {
+  opacity: 1 !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #ticketModal.modal.sheet-closing::before {
+  opacity: 0 !important;
+  transition: opacity 0.28s ease !important;
 }
 html.athar-staging-redesign.mr-mobile-ui body.ticket-sheet-open #ticketModal .td-content-area {
   flex: 1 1 0 !important;
   min-height: 0 !important;
   overflow-y: auto !important;
 }
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .td-sheet-drag-zone {
+  flex-shrink: 0 !important;
+  touch-action: none !important;
+  cursor: grab !important;
+  padding-top: 2px !important;
+}
 html.athar-staging-redesign.mr-mobile-ui #ticketModal .td-sheet-grabber-wrap {
-  padding: 6px 0 14px !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  width: 100% !important;
+  /* Larger hit target for the gray grabber line */
+  min-height: 28px !important;
+  padding: 10px 0 8px !important;
+  touch-action: none !important;
+  cursor: grab !important;
 }
 html.athar-staging-redesign.mr-mobile-ui #ticketModal .viol-sheet-grabber {
   width: 36px !important;
   height: 4px !important;
   border-radius: 999px !important;
   background: var(--border) !important;
+  pointer-events: none !important;
 }
 html.athar-staging-redesign.mr-mobile-ui #ticketModal .modal-header {
   display: block !important;
