@@ -18747,12 +18747,45 @@
         fetchTicketFullDetail(id);
       }
 
+      function rdTicketStatusTone(t) {
+        const cls = getTicketBadgeClass(t) || '';
+        if (cls.includes('b-green')) return { color: 'var(--success)', soft: 'color-mix(in srgb, var(--success) 18%, transparent)' };
+        if (cls.includes('b-red')) return { color: 'var(--danger)', soft: 'color-mix(in srgb, var(--danger) 18%, transparent)' };
+        if (cls.includes('b-amber') || cls.includes('b-orange')) return { color: 'var(--warning)', soft: 'color-mix(in srgb, var(--warning) 18%, transparent)' };
+        if (cls.includes('b-blue')) return { color: 'var(--info)', soft: 'color-mix(in srgb, var(--info) 18%, transparent)' };
+        if (cls.includes('b-purple')) return { color: 'var(--purple)', soft: 'color-mix(in srgb, var(--purple) 18%, transparent)' };
+        return { color: 'var(--text2)', soft: 'var(--surface2)' };
+      }
+
+      function syncRdTicketDetailHeader(t) {
+        const rdHd = document.getElementById('rdTdHd');
+        if (!rdHd) return;
+        const useRd = typeof isAtharRedesignUi === 'function' && isAtharRedesignUi();
+        rdHd.hidden = !useRd;
+        if (!useRd || !t) return;
+        const nameEl = document.getElementById('rd-td-name');
+        const typeEl = document.getElementById('rd-td-type');
+        const badgeEl = document.getElementById('rd-td-badge');
+        const numEl = document.getElementById('rd-td-num');
+        if (nameEl) nameEl.textContent = t._empName || '—';
+        if (typeEl) typeEl.textContent = t.violation_type || '—';
+        if (badgeEl) {
+          const status = t.status_text || STATE_LABELS[t.state] || '—';
+          const tone = rdTicketStatusTone(t);
+          badgeEl.textContent = status;
+          badgeEl.style.color = tone.color;
+          badgeEl.style.background = tone.soft;
+        }
+        if (numEl) numEl.textContent = '#' + (shortTicketNum(t.ticket_number) || '—');
+      }
+
       function renderTicketDetailUI(t) {
         if (!t) return;
         document.getElementById('td-id').textContent = shortTicketNum(t.ticket_number);
         const badge = document.getElementById('td-badge');
         badge.className = `badge ${getTicketBadgeClass(t)}`;
         badge.textContent = t.status_text || STATE_LABELS[t.state];
+        syncRdTicketDetailHeader(t);
         switchDetailTab('info');
         buildTicketInfo(t);
         buildWfSteps(t);
@@ -19027,8 +19060,11 @@
         const c = document.getElementById('tdInlineAttachments');
         if (!c) return;
 
+        const rdAtt = typeof isAtharRedesignUi === 'function' && isAtharRedesignUi();
         if (!ticketDetailExtrasReady(t)) {
-          c.innerHTML = `
+          c.innerHTML = rdAtt
+            ? `<div class="td-att-section-head"><i class="fas fa-paperclip" aria-hidden="true"></i><span>المرفقات (…)</span></div>`
+            : `
       <div class="td-att-section-head">
         <h3><i class="fas fa-paperclip"></i> المرفقات</h3>
         <span class="td-att-loading"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i> جاري تحميل المرفقات…</span>
@@ -19039,7 +19075,9 @@
         const atts = getVisibleAttachments(t);
 
         if (!atts || !atts.length) {
-          c.innerHTML = `
+          c.innerHTML = rdAtt
+            ? `<div class="td-att-section-head"><i class="fas fa-paperclip" aria-hidden="true"></i><span>المرفقات (0)</span></div>`
+            : `
       <div class="td-att-section-head">
         <h3><i class="fas fa-paperclip"></i> المرفقات</h3>
         <span class="td-att-hint">لا توجد مرفقات</span>
@@ -20127,6 +20165,37 @@
         const orderMap = { obs: 0, emp: 1, sup: 2, aud: 3, mgt: 4, hr: 5, closed: 6, Warning_Issued: 6 };
         const wfState = (t.state === 'closed' || t.state === 'Warning_Issued') ? t.state : getEffectiveWorkflowState(t.state);
         const currentOrder = (wfState === 'closed' || wfState === 'Warning_Issued') ? 99 : (orderMap[wfState] || 1);
+
+        if (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi()) {
+          const rows = visibleSteps.map((s, i) => {
+            const stepOrder = orderMap[s.code];
+            let status = 'pending';
+            let icon = s.icon;
+            if (t.state === 'closed' || t.state === 'Warning_Issued' || stepOrder < currentOrder) {
+              status = 'done';
+              icon = 'fa-check';
+            } else if (stepOrder === currentOrder) {
+              status = 'active';
+            }
+            const hasLine = i < visibleSteps.length - 1;
+            return `
+              <div class="rd-td-step rd-td-step--${status}">
+                <div class="rd-td-step__rail">
+                  <div class="rd-td-step__ico"><i class="fas ${icon}" aria-hidden="true"></i></div>
+                  ${hasLine ? '<div class="rd-td-step__line" aria-hidden="true"></div>' : ''}
+                </div>
+                <div class="rd-td-step__body">
+                  <div class="rd-td-step__label">${Sec.escapeHTML(s.label)}</div>
+                  <div class="rd-td-step__sub">${Sec.escapeHTML(s.sub)}</div>
+                </div>
+              </div>`;
+          }).join('');
+          c.innerHTML = `
+            <div class="rd-td-wf-title">سير العمل المعياري</div>
+            <div class="rd-td-wf">${rows}</div>`;
+          return;
+        }
+
         const snakeCols = getWfSnakeCols(visibleSteps.length);
 
         const renderSnakeStep = (s) => {
@@ -20207,6 +20276,28 @@
           return;
         }
         const hideObs = shouldHideObserverName();
+        if (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi()) {
+          c.innerHTML = logs.map(l => {
+            const actor = formatLogActorForDisplay(l, t, hideObs);
+            const author = actor.masked
+              ? (String(actor.user || '').trim() && String(actor.user).trim() !== 'الراصد' ? String(actor.user).trim() : 'الراصد')
+              : (String(actor.user || '').trim() || '—');
+            const role = actor.masked ? '' : (String(actor.role || '').trim() || '');
+            const time = formatLogDate(l.date) || '—';
+            const isAuto = (l.user === 'النظام' || l.role === 'النظام' || /تلقائي/.test(l.action || ''));
+            const content = [l.action, l.note].filter(Boolean).join('\n') || '—';
+            return `
+      <article class="rd-td-log${isAuto ? ' rd-td-log--auto' : ''}">
+        <div class="rd-td-log__top">
+          <span class="rd-td-log__author">${Sec.escapeHTML(author)}</span>
+          <span class="rd-td-log__time">${Sec.escapeHTML(time)}</span>
+        </div>
+        ${role ? `<div class="rd-td-log__role">${Sec.escapeHTML(role)}</div>` : ''}
+        <div class="rd-td-log__body">${Sec.escapeHTML(content)}</div>
+      </article>`;
+          }).join('');
+          return;
+        }
         c.innerHTML = logs.map(l => {
           const metaLine = formatLogMetaLine(l, t, hideObs);
           const isAuto = (l.user === 'النظام' || l.role === 'النظام' || /تلقائي/.test(l.action || ''));

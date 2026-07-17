@@ -1668,3 +1668,395 @@ html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .mk-btn:not(.mk-btn--pri
   border: 1px solid var(--border) !important;
   color: var(--text2) !important;
 }
+
+/* ═══ Ticket detail sheet — Athar Redesign Standalone (2) ═══ */
+html.athar-staging-redesign.mr-mobile-ui body.ticket-sheet-open #ticketModal.modal.open::before {
+  background: rgba(0, 0, 0, 0.45) !important;
+  opacity: 1 !important;
+}
+html.athar-staging-redesign.mr-mobile-ui body.ticket-sheet-open #ticketModal .td-mob-sheet {
+  background: var(--bg) !important;
+  border-radius: 26px 26px 0 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+  max-height: 92% !important;
+  top: auto !important;
+  bottom: 0 !important;
+  padding: 10px 18px 24px !important;
+  animation: atharRdCardIn 0.3s ease both;
+}
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .td-sheet-grabber-wrap {
+  padding: 6px 0 14px !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .viol-sheet-grabber {
+  width: 36px !important;
+  height: 4px !important;
+  border-radius: 999px !important;
+  background: var(--border) !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .modal-header {
+  display: block !important;
+  padding: 0 !important;
+  margin: 0 0 16px !important;
+  border: none !important;
+  background: transparent !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .td-header-main,
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .td-header-actions {
+  display: none !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #ticketModal #rdTdHd {
+  display: flex !important;
+  align-items: center;
+  gap: 12px;
+}
+html.athar-staging-redesign.mr-mobile-ui #ticketModal #rdTdHd[hidden] {
+  display: none !important;
+}
+.rd-td-hd__main { flex: 1; min-width: 0; }
+.rd-td-hd__name {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--text);
+}
+.rd-td-hd__type {
+  font-size: 11.5px;
+  color: var(--text3);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rd-td-hd__side {
+  text-align: start;
+  flex-shrink: 0;
+}
+.rd-td-hd__badge {
+  display: inline-flex;
+  padding: 5px 11px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 700;
+  background: var(--surface2);
+  color: var(--text2);
+}
+.rd-td-hd__id {
+  font-size: 10px;
+  color: var(--text3);
+  margin-top: 5px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  direction: ltr;
+  unicode-bidi: plaintext;
+}
+
+/* Segmented tabs */
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .td-tabs {
+  display: flex !important;
+  gap: 3px !important;
+  background: var(--surface2) !important;
+  border-radius: 12px !important;
+  padding: 3px !important;
+  margin: 0 0 18px !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .td-tab {
+  flex: 1 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  padding: 9px 6px !important;
+  border: none !important;
+  border-radius: 9px !important;
+  background: transparent !important;
+  color: var(--text3) !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  box-shadow: none !important;
+  margin: 0 !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .td-tab i {
+  font-size: 10.5px !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .td-tab.active {
+  background: var(--gold) !important;
+  color: var(--onGold) !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .td-tab.td-tab--needs-action:not(.active) {
+  color: var(--warning) !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .td-content-area {
+  padding: 0 !important;
+  background: transparent !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #ticketModal #tdp-workflow.td-pane,
+html.athar-staging-redesign.mr-mobile-ui #ticketModal #tdp-logs.td-pane {
+  padding: 0 !important;
+}
+
+/* Info rows card */
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .td-info-rows {
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 16px !important;
+  padding: 4px 16px !important;
+  margin-bottom: 16px !important;
+  box-shadow: none !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .info-row {
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 14px !important;
+  padding: 12px 0 !important;
+  border-bottom: 1px solid var(--border) !important;
+  flex-wrap: nowrap !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .td-info-rows .info-row:last-child {
+  border-bottom: none !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .info-label {
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  color: var(--text3) !important;
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .info-value {
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  color: var(--text) !important;
+  text-align: start !important;
+  margin: 0 !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .overdue-banner,
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .countdown-card {
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 16px !important;
+  box-shadow: none !important;
+  margin-bottom: 12px !important;
+}
+
+/* Attachments */
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .td-att-section-head {
+  border: none !important;
+  padding: 0 0 9px !important;
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .td-att-section-head h3 {
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  color: var(--text3) !important;
+  margin: 0 !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .td-att-hint,
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .td-att-loading {
+  font-size: 12px !important;
+  color: var(--text3) !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .td-att-grid,
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .att-thumbs,
+html.athar-staging-redesign.mr-mobile-ui #ticketModal #tdInlineAttachments .file-list,
+html.athar-staging-redesign.mr-mobile-ui #ticketModal #tdInlineAttachments > div:not(.td-att-section-head) {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #ticketModal #tdInlineAttachments .att-thumb,
+html.athar-staging-redesign.mr-mobile-ui #ticketModal #tdInlineAttachments .file-item,
+html.athar-staging-redesign.mr-mobile-ui #ticketModal #tdInlineAttachments [class*="att-card"] {
+  width: 64px !important;
+  height: 64px !important;
+  border-radius: 10px !important;
+  background: var(--surface2) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: none !important;
+  overflow: hidden !important;
+}
+
+/* Workflow timeline */
+.rd-td-wf-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 14px;
+}
+.rd-td-wf {
+  display: flex;
+  flex-direction: column;
+}
+.rd-td-step {
+  display: flex;
+  gap: 12px;
+}
+.rd-td-step__rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+}
+.rd-td-step__ico {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  background: var(--surface2);
+  color: var(--text3);
+  flex-shrink: 0;
+}
+.rd-td-step--done .rd-td-step__ico {
+  background: color-mix(in srgb, var(--success) 18%, transparent);
+  color: var(--success);
+}
+.rd-td-step--active .rd-td-step__ico {
+  background: var(--gold);
+  color: var(--onGold);
+}
+.rd-td-step__line {
+  width: 2px;
+  flex: 1;
+  min-height: 20px;
+  background: var(--border);
+}
+.rd-td-step--done .rd-td-step__line {
+  background: color-mix(in srgb, var(--success) 45%, var(--border));
+}
+.rd-td-step__body {
+  padding-bottom: 22px;
+  min-width: 0;
+}
+.rd-td-step__label {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text);
+  padding-top: 6px;
+}
+.rd-td-step__sub {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 3px;
+  line-height: 1.6;
+}
+
+/* Log compose + cards */
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .log-item--compose {
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 14px !important;
+  padding: 12px !important;
+  margin: 0 0 16px !important;
+  box-shadow: none !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .log-compose-title {
+  display: none !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .log-item--compose .ticket-resp-input {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  min-height: 36px !important;
+  height: auto !important;
+  max-height: 120px !important;
+  font-size: 12px !important;
+  color: var(--text) !important;
+  padding: 0 !important;
+  margin-bottom: 10px !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .log-item--compose .ticket-resp-input::placeholder {
+  color: var(--text3) !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .log-compose-actions {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  align-items: center !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .log-compose-attach,
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .log-compose-actions .td-resp-action,
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .log-compose-actions button {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 8px 12px !important;
+  border-radius: 10px !important;
+  font-size: 11.5px !important;
+  font-weight: 600 !important;
+  box-shadow: none !important;
+  height: auto !important;
+  min-height: 0 !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .log-compose-attach {
+  border: 1px solid var(--border) !important;
+  background: transparent !important;
+  color: var(--text2) !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .log-compose-actions .btn-primary,
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .log-compose-actions .td-resp-action--primary,
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .log-compose-actions button.btn-primary {
+  border: none !important;
+  background: var(--gold) !important;
+  color: var(--onGold) !important;
+  font-weight: 700 !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .log-compose-actions .btn-danger,
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .log-compose-actions button.danger,
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .log-compose-actions .td-resp-action--danger {
+  border: 1px solid var(--border) !important;
+  background: transparent !important;
+  color: var(--danger) !important;
+}
+
+.rd-td-log {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin-bottom: 18px;
+  animation: atharRdCardIn 0.4s ease both;
+}
+.rd-td-log__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+.rd-td-log__author {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+}
+.rd-td-log__time {
+  font-size: 9.5px;
+  color: var(--text3);
+  flex-shrink: 0;
+}
+.rd-td-log__role {
+  font-size: 10.5px;
+  color: var(--gold);
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.rd-td-log__body {
+  font-size: 12px;
+  color: var(--text2);
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+.rd-td-log--auto .rd-td-log__role {
+  color: var(--danger);
+}
+
+html:not(.athar-staging-redesign) #rdTdHd,
+html.athar-staging-redesign.mr-desktop-ui #rdTdHd {
+  display: none !important;
+}
