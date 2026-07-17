@@ -19156,7 +19156,11 @@
       </div>`;
         }).join('');
 
-        c.innerHTML = `
+        c.innerHTML = rdAtt
+          ? `
+    <div class="td-att-section-head"><i class="fas fa-paperclip" aria-hidden="true"></i><span>المرفقات (${normalizedAtts.length})</span></div>
+    <div class="att-grid att-grid--rd">${items}</div>`
+          : `
     <div class="td-att-section-head">
       <h3><i class="fas fa-paperclip"></i> المرفقات (${normalizedAtts.length})</h3>
       <span class="td-att-hint">اضغط على أي مرفق لفتحه</span>
