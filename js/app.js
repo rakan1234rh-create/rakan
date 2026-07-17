@@ -13929,6 +13929,7 @@
         el.textContent = has ? formatNtDateDisplay(inp.value) : 'اختر التاريخ';
         el.setAttribute('dir', has ? 'ltr' : 'rtl');
         el.classList.toggle('mk-dt-control__text--empty', !has);
+        if (typeof syncRdNewTicketChrome === 'function') syncRdNewTicketChrome();
       }
 
       const ntTpState = { hour: 0, minute: 0 };
@@ -14104,6 +14105,7 @@
         if (!has) {
           el.textContent = 'اختر الوقت';
           el.classList.add('mk-dt-control__text--empty');
+          if (typeof syncRdNewTicketChrome === 'function') syncRdNewTicketChrome();
           return;
         }
         try {
@@ -14124,6 +14126,7 @@
         }
         el.setAttribute('dir', 'ltr');
         el.classList.remove('mk-dt-control__text--empty');
+        if (typeof syncRdNewTicketChrome === 'function') syncRdNewTicketChrome();
       }
 
       function prepareNewTicket() {
@@ -14151,6 +14154,7 @@
         syncNtDateDisplay();
         syncNtTimeDisplay();
         syncAttachmentSubmitButtons('nt');
+        syncRdNewTicketChrome();
       }
 
       // إغلاق القوائم عند النقر خارجها
@@ -14235,6 +14239,71 @@
         return { branch, region, supervisor };
       }
 
+      function rdNtSevTone(sev) {
+        let s = sev || 'منخفض';
+        if (s === 'حرج') s = 'عالي';
+        if (s === 'عالي') return { key: s, color: 'var(--danger)' };
+        if (s === 'متوسط') return { key: s, color: 'var(--warning)' };
+        return { key: 'منخفض', color: 'var(--info)' };
+      }
+
+      function syncRdNewTicketChrome() {
+        const useRd = typeof isAtharRedesignUi === 'function' && isAtharRedesignUi();
+        const sevEl = document.getElementById('rdNtSevPreview');
+        const sumEl = document.getElementById('rdNtSummary');
+        if (sevEl) sevEl.hidden = !useRd;
+        if (sumEl) sumEl.hidden = !useRd;
+        if (!useRd) return;
+
+        const picked = state.ntPickedViolationType;
+        let sample = picked;
+        if (!sample) {
+          const types = state.violationTypes || [];
+          sample = types.find(v => {
+            let sev = v.severity || '';
+            if (sev === 'حرج') sev = 'عالي';
+            return sev === 'عالي';
+          }) || types[0] || null;
+        }
+        if (sevEl) {
+          if (!sample) {
+            sevEl.innerHTML = '';
+            sevEl.hidden = true;
+          } else {
+            const tone = rdNtSevTone(sample.severity);
+            const points = sample.weight ?? sample.points ?? 0;
+            const label = picked ? Sec.escapeHTML(sample.name) : ('مثال: ' + Sec.escapeHTML(sample.name));
+            sevEl.hidden = false;
+            sevEl.innerHTML = `
+              <i class="fas fa-circle-exclamation" style="color:${tone.color}" aria-hidden="true"></i>
+              <span class="rd-nt-sev__name">${label}</span>
+              <span class="rd-nt-sev__pts" style="color:${tone.color}">−${Sec.escapeHTML(String(points))} نقاط</span>`;
+          }
+        }
+
+        const typeEl = document.getElementById('rdNtSumType');
+        const empEl = document.getElementById('rdNtSumEmp');
+        const whenEl = document.getElementById('rdNtSumWhen');
+        if (typeEl) {
+          typeEl.textContent = picked?.name || document.getElementById('nt-type')?.value || 'لم يُحدد بعد';
+          typeEl.classList.toggle('is-empty', !picked && !document.getElementById('nt-type')?.value);
+        }
+        if (empEl) {
+          const emp = state.ntPickedEmployee;
+          empEl.textContent = emp?.name || 'لم يُحدد بعد';
+          empEl.classList.toggle('is-empty', !emp);
+        }
+        if (whenEl) {
+          const dateTxt = document.getElementById('nt-dateDisplay')?.textContent || '';
+          const timeTxt = document.getElementById('nt-timeDisplay')?.textContent || '';
+          const hasDate = dateTxt && !/اختر/.test(dateTxt);
+          const hasTime = timeTxt && !/اختر/.test(timeTxt);
+          whenEl.textContent = (hasDate || hasTime)
+            ? `${hasDate ? dateTxt : '—'} · ${hasTime ? timeTxt : '—'}`
+            : '—';
+        }
+      }
+
       function selectNtEmployee(emp) {
         if (!emp) return;
         state.ntPickedEmployee = emp;
@@ -14251,6 +14320,7 @@
           foundDiv.style.display = 'block';
           foundDiv.innerHTML = renderNtEmpPickBanner(emp);
         }
+        syncRdNewTicketChrome();
       }
 
       /** إبقاء بنر الموظف المختار ظاهراً أثناء البحث عن موظف آخر */
@@ -14407,6 +14477,7 @@
           foundDiv.style.display = 'block';
           foundDiv.innerHTML = renderNtViolationTypePickBanner(v);
         }
+        syncRdNewTicketChrome();
       }
 
       function ensureNtViolationTypeBannerVisible() {
@@ -14508,6 +14579,7 @@
         state.uploadedFiles.nt = [];
         prepareNewTicket();
         syncAttachmentSubmitButtons('nt');
+        syncRdNewTicketChrome();
       }
 
       async function submitNewTicket() {
