@@ -143,16 +143,29 @@ body,
   transition: background 0.3s ease, color 0.3s ease;
 }
 
-/* ── Top bar (mockup lockup) ─────────────────────────────────────────────── */
+/* ── Top bar (mockup lockup) — keep under status bar, no double safe-area ─── */
+html.athar-staging-redesign.mr-mobile-ui #appWrap .topbar.unified-banner,
+html.athar-staging-redesign.mr-mobile-ui .topbar.unified-banner {
+  background: var(--mr-surface) !important;
+  border-bottom: 1px solid var(--mr-border) !important;
+  box-shadow: none !important;
+  /* safe-area مرة واحدة فقط في padding-top — لا تضعها في الأسفل */
+  padding-top: calc(8px + var(--mr-safe-top, env(safe-area-inset-top, 0px))) !important;
+  padding-bottom: 8px !important;
+  padding-inline: 16px !important;
+  height: calc(56px + var(--mr-safe-top, env(safe-area-inset-top, 0px))) !important;
+  min-height: calc(56px + var(--mr-safe-top, env(safe-area-inset-top, 0px))) !important;
+  max-height: calc(56px + var(--mr-safe-top, env(safe-area-inset-top, 0px))) !important;
+  align-items: center !important;
+  box-sizing: border-box !important;
+}
+
+/* Fallback if older staging builds applied topbar rules without athar class */
 html.mr-mobile-ui #appWrap .topbar.unified-banner,
 html.mr-mobile-ui .topbar.unified-banner {
   background: var(--mr-surface) !important;
   border-bottom: 1px solid var(--mr-border) !important;
   box-shadow: none !important;
-  padding: 14px 18px calc(12px + env(safe-area-inset-top, 0px)) !important;
-  padding-top: calc(14px + env(safe-area-inset-top, 0px)) !important;
-  min-height: calc(68px + env(safe-area-inset-top, 0px)) !important;
-  align-items: center !important;
 }
 
 html.mr-mobile-ui .topbar-brand-divider,
@@ -166,7 +179,7 @@ html.mr-mobile-ui .topbar-brand-zone {
 
 html.mr-mobile-ui #brandArea .wefaq-app-logo--athar,
 html.mr-mobile-ui #brandArea .wefaq-app-logo--athar-img {
-  height: 41px !important;
+  height: 34px !important;
   width: auto !important;
   max-width: 120px !important;
   object-fit: contain !important;
@@ -845,6 +858,11 @@ html.athar-staging-redesign.mr-mobile-ui #tab-departments h2 {
 
 html.athar-staging-redesign.mr-mobile-ui .content {
   padding: 18px 18px 28px !important;
+}
+
+/* Ensure content offset matches the compact topbar before JS measures it */
+html.athar-staging-redesign.mr-mobile-ui {
+  --unified-topbar-h: calc(56px + var(--mr-safe-top, env(safe-area-inset-top, 0px)));
 }
 
 /* Ensure mockup semantic vars exist even if main.css aliases differ */

@@ -1275,6 +1275,11 @@
           mobHead.setAttribute('aria-hidden', 'true');
         }
         if (list) appendTicketListHtml(list, dataLoadingEmptyHTML('جاري تحميل التقارير…'), true);
+        const rd = document.getElementById('rdReports');
+        if (rd && typeof isAtharRedesignUi === 'function' && isAtharRedesignUi()) {
+          rd.hidden = false;
+          rd.innerHTML = `<div class="rd-rp-metric"><div class="rd-rp-metric__label">جاري تحميل التقارير…</div></div>`;
+        }
         const countEl = document.getElementById('rp-count');
         if (countEl) countEl.textContent = '…';
         ['rp-total', 'rp-approved', 'rp-pending', 'rp-rejected'].forEach(id => {
