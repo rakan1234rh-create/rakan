@@ -42,6 +42,7 @@ html[data-theme="light"] {
   --success: #34c759;
   --warning: #ff9500;
   --info: #007aff;
+  --danger: #ff3b30;
   --destructive: #ff3b30;
   --bg: #f2f2f7;
   --bg2: #e5e5ea;
@@ -101,6 +102,7 @@ html[data-theme="dark"],
   --success: #30d158;
   --warning: #ff9f0a;
   --info: #0a84ff;
+  --danger: #ff453a;
   --destructive: #ff453a;
   --bg: #000000;
   --bg2: #1c1c1e;
@@ -2428,3 +2430,247 @@ html:not(.athar-staging-redesign) #rdTdHd,
 html.athar-staging-redesign.mr-desktop-ui #rdTdHd {
   display: none !important;
 }
+
+/* ═══ Employee compliance detail sheet (Standalone 2) ═══ */
+html.athar-staging-redesign.mr-mobile-ui #cmpDetailModal.cmp-detail--rd-emp.modal.open::before {
+  background: rgba(0, 0, 0, 0.45) !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #cmpDetailModal .modal-card.cmp-detail-card--rd-emp {
+  border-radius: 26px 26px 0 0 !important;
+  max-height: min(90dvh, 90%) !important;
+  height: auto !important;
+  background: var(--bg) !important;
+  border: none !important;
+  box-shadow: none !important;
+  overflow: hidden !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #cmpDetailModal .cmp-detail-card--rd-emp .cmp-sheet-drag-zone {
+  background: var(--bg) !important;
+  border-bottom: none !important;
+  border-radius: 26px 26px 0 0;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #cmpDetailModal .cmp-detail-card--rd-emp .cmp-sheet-grabber-wrap {
+  display: flex !important;
+  justify-content: center;
+  padding: 6px 0 0 !important;
+  background: transparent !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #cmpDetailModal .cmp-detail-card--rd-emp .cmp-sheet-grabber {
+  width: 36px !important;
+  height: 4px !important;
+  border-radius: 999px !important;
+  background: var(--border) !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #cmpDetailModal .cmp-detail-card--rd-emp .cmp-detail-modal-header {
+  padding: 0 18px 0 !important;
+  border-bottom: none !important;
+  background: transparent !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #cmpDetailModal .cmp-detail-card--rd-emp .modal-body {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding: 0 18px 24px !important;
+  background: var(--bg) !important;
+  display: block !important;
+}
+
+.rd-cmp-emp-hd {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 14px 0 4px;
+  direction: rtl;
+  animation: atharRdCardIn 0.3s ease both;
+}
+.rd-cmp-emp-hd__av {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: var(--surface2);
+  color: var(--text2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.rd-cmp-emp-hd__body { flex: 1; min-width: 0; }
+.rd-cmp-emp-hd__name {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rd-cmp-emp-hd__role {
+  font-size: 11.5px;
+  color: var(--text3);
+  margin-top: 2px;
+}
+
+.rd-cmp-emp-detail {
+  direction: rtl;
+  animation: atharRdScreenIn 0.32s ease;
+}
+.rd-cmp-emp-gauges {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 14px 0 18px;
+}
+.rd-cmp-emp-gauge {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: atharRdCardIn 0.4s ease both;
+}
+.rd-cmp-emp-gauge:nth-child(2) { animation-delay: 0.05s; }
+.rd-cmp-emp-gauge__ring {
+  position: relative;
+  width: 72px;
+  height: 72px;
+}
+.rd-cmp-emp-gauge__ring svg {
+  position: absolute;
+  inset: 0;
+  transform: rotate(-90deg);
+  display: block;
+}
+.rd-cmp-emp-gauge__val {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+}
+.rd-cmp-emp-gauge__lbl {
+  font-size: 11px;
+  color: var(--text2);
+  margin-top: 8px;
+}
+
+.rd-cmp-emp-sec-hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.rd-cmp-emp-sec-hd__title,
+.rd-cmp-emp-sec-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+.rd-cmp-emp-sec-hd__meta {
+  font-size: 11.5px;
+  color: var(--text3);
+  flex-shrink: 0;
+}
+.rd-cmp-emp-sec-title { margin: 0 0 10px; }
+
+.rd-cmp-emp-months {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  height: 90px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px 14px;
+  margin-bottom: 18px;
+  direction: ltr;
+  animation: atharRdCardIn 0.4s ease both;
+  animation-delay: 0.08s;
+}
+.rd-cmp-emp-bar {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  height: 100%;
+  min-width: 0;
+}
+.rd-cmp-emp-bar__val {
+  font-size: 10px;
+  color: var(--text3);
+  line-height: 1;
+}
+.rd-cmp-emp-bar__fill {
+  width: 100%;
+  max-width: 22px;
+  border-radius: 6px 6px 0 0;
+  background: var(--gold);
+  min-height: 3px;
+  transition: height 0.35s ease;
+}
+.rd-cmp-emp-bar__lbl {
+  font-size: 9.5px;
+  color: var(--text3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.rd-cmp-emp-sev {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.rd-cmp-emp-sev__row {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px 14px;
+  animation: atharRdCardIn 0.4s ease both;
+}
+.rd-cmp-emp-sev__row:nth-child(1) { animation-delay: 0.1s; }
+.rd-cmp-emp-sev__row:nth-child(2) { animation-delay: 0.14s; }
+.rd-cmp-emp-sev__row:nth-child(3) { animation-delay: 0.18s; }
+.rd-cmp-emp-sev__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.rd-cmp-emp-sev__lbl {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text);
+}
+.rd-cmp-emp-sev__count {
+  font-size: 13px;
+  font-weight: 700;
+}
+.rd-cmp-emp-sev__track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--surface2);
+  overflow: hidden;
+}
+.rd-cmp-emp-sev__fill {
+  height: 100%;
+  border-radius: 999px;
+  min-width: 0;
+  transition: width 0.35s ease;
+}
+
