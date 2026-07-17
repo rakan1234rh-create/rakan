@@ -13346,41 +13346,101 @@
       </article>`;
       }
 
+      function renderViolTypesRedesign(types, canManage) {
+        const order = [
+          { sev: 'عالي', label: 'مخالفات عالية', color: 'var(--danger)' },
+          { sev: 'متوسط', label: 'مخالفات متوسطة', color: 'var(--warning)' },
+          { sev: 'منخفض', label: 'مخالفات منخفضة', color: 'var(--info)' },
+        ];
+        const groups = order.map((g, gi) => {
+          const items = types.filter((v) => violTypeSeverity(v) === g.sev);
+          if (!items.length) return '';
+          const rows = items.map((v) => {
+            const points = v.weight ?? v.points ?? 0;
+            const admin = canManage
+              ? `<span class="rd-viol-row__acts" onclick="event.stopPropagation()">
+                  <button type="button" class="rd-viol-act" onclick="editViolType('${v.id}')" aria-label="تعديل"><i class="fas fa-pen"></i></button>
+                  <button type="button" class="rd-viol-act" onclick="deleteViolType('${v.id}')" aria-label="حذف"><i class="fas fa-trash"></i></button>
+                </span>`
+              : '';
+            return `
+              <button type="button" class="rd-viol-row" onclick="openViolDetailSheet('${v.id}')">
+                <span class="rd-viol-row__name">${Sec.escapeHTML(v.name)}</span>
+                <span class="rd-viol-row__end">
+                  <span class="rd-viol-row__pts" style="color:${g.color}">−${points} نقاط</span>
+                  ${admin}
+                </span>
+              </button>`;
+          }).join('');
+          return `
+            <section class="rd-viol-group" style="animation-delay:${gi * 0.05}s">
+              <div class="rd-viol-group__hd">
+                <span class="rd-viol-group__dot" style="background:${g.color}"></span>
+                <span class="rd-viol-group__label">${Sec.escapeHTML(g.label)}</span>
+              </div>
+              <div class="rd-viol-group__card">${rows}</div>
+            </section>`;
+        }).filter(Boolean).join('');
+        return groups || '<div class="rd-ticket-empty"><i class="fas fa-triangle-exclamation"></i><p>لا توجد أنواع مخالفات</p></div>';
+      }
+
       async function renderViolTypes() {
         const grid = document.getElementById('violGrid');
         if (!grid) return;
         const countEl = document.getElementById('viol-types-count');
+        const titleEl = document.querySelector('#tab-violations .wf-panel-title');
         const canManage = canManageViolationTypes();
         const violMob = isMobileViewport();
-        grid.className = violMob ? 'viol-grid viol-grid--mob-list' : 'mr-users-list';
+        const rd = typeof isAtharRedesignUi === 'function' && isAtharRedesignUi();
+        if (titleEl) titleEl.textContent = rd ? 'دليل المخالفات' : 'أنواع المخالفات';
+        grid.className = rd
+          ? 'rd-viol-list'
+          : (violMob ? 'viol-grid viol-grid--mob-list' : 'mr-users-list');
         if (isAppDataPending()) {
           if (countEl) countEl.textContent = '…';
-          grid.innerHTML = violMob
-            ? '<div class="empty viol-types-empty"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i><p>جاري تحميل أنواع المخالفات…</p></div>'
-            : '<div class="mr-users-empty empty mr-data-loading"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i><p>جاري تحميل أنواع المخالفات…</p></div>';
+          grid.innerHTML = rd
+            ? '<div class="rd-ticket-empty"><i class="fas fa-spinner fa-spin"></i><p>جاري تحميل دليل المخالفات…</p></div>'
+            : (violMob
+              ? '<div class="empty viol-types-empty"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i><p>جاري تحميل أنواع المخالفات…</p></div>'
+              : '<div class="mr-users-empty empty mr-data-loading"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i><p>جاري تحميل أنواع المخالفات…</p></div>');
           return;
         }
         if (!state.violationTypes.length) {
-          grid.innerHTML = violMob
-            ? '<div class="empty viol-types-empty"><i class="fas fa-spinner fa-spin"></i><p>جاري تحميل أنواع المخالفات…</p></div>'
-            : '<div class="mr-users-empty empty"><i class="fas fa-spinner fa-spin"></i><p>جاري تحميل أنواع المخالفات…</p></div>';
+          grid.innerHTML = rd
+            ? '<div class="rd-ticket-empty"><i class="fas fa-spinner fa-spin"></i><p>جاري تحميل دليل المخالفات…</p></div>'
+            : (violMob
+              ? '<div class="empty viol-types-empty"><i class="fas fa-spinner fa-spin"></i><p>جاري تحميل أنواع المخالفات…</p></div>'
+              : '<div class="mr-users-empty empty"><i class="fas fa-spinner fa-spin"></i><p>جاري تحميل أنواع المخالفات…</p></div>');
           if (countEl) countEl.textContent = '0';
           const ok = await ensureViolationTypesLoaded();
           if (!ok) {
-            grid.innerHTML = violMob
-              ? '<div class="empty viol-types-empty"><i class="fas fa-triangle-exclamation"></i><p>لا توجد أنواع مخالفات</p></div>'
-              : '<div class="mr-users-empty empty"><i class="fas fa-triangle-exclamation"></i><p>لا توجد أنواع مخالفات</p></div>';
+            grid.innerHTML = rd
+              ? '<div class="rd-ticket-empty"><i class="fas fa-triangle-exclamation"></i><p>لا توجد أنواع مخالفات</p></div>'
+              : (violMob
+                ? '<div class="empty viol-types-empty"><i class="fas fa-triangle-exclamation"></i><p>لا توجد أنواع مخالفات</p></div>'
+                : '<div class="mr-users-empty empty"><i class="fas fa-triangle-exclamation"></i><p>لا توجد أنواع مخالفات</p></div>');
             return;
           }
         }
         if (!state.violationTypes.length) {
           if (countEl) countEl.textContent = '0';
-          grid.innerHTML = violMob
-            ? '<div class="empty viol-types-empty"><i class="fas fa-triangle-exclamation"></i><p>لا توجد أنواع مخالفات</p></div>'
-            : '<div class="mr-users-empty empty"><i class="fas fa-triangle-exclamation"></i><p>لا توجد أنواع مخالفات</p></div>';
+          grid.innerHTML = rd
+            ? '<div class="rd-ticket-empty"><i class="fas fa-triangle-exclamation"></i><p>لا توجد أنواع مخالفات</p></div>'
+            : (violMob
+              ? '<div class="empty viol-types-empty"><i class="fas fa-triangle-exclamation"></i><p>لا توجد أنواع مخالفات</p></div>'
+              : '<div class="mr-users-empty empty"><i class="fas fa-triangle-exclamation"></i><p>لا توجد أنواع مخالفات</p></div>');
           return;
         }
         if (countEl) countEl.textContent = String(state.violationTypes.length);
+        if (rd) {
+          grid.innerHTML = renderViolTypesRedesign(state.violationTypes, canManage);
+          syncViolMobileScrollShell('violations');
+          requestAnimationFrame(() => {
+            syncViolMobileScrollShell('violations');
+            syncViolMobListHeight();
+          });
+          return;
+        }
         grid.innerHTML = violMob
           ? state.violationTypes.map(v => renderViolTypeMobItem(v, canManage)).join('')
           : state.violationTypes.map(v => renderViolTypeCard(v, canManage)).join('');
@@ -23253,11 +23313,27 @@
         const ring = cmpNeoRingSVG(rawScore, { animKey });
         const rateTone = cmpScoreRateColor(rawScore);
         const cardLow = isNeg || rawScore < 75;
-        const cardId = String(card.id || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
         const clickAttr = card.onClick ? `onclick="${Sec.escapeHTML(card.onClick)}"` : 'data-static="true"';
-        const statA = view === 'regions' ? 'الفروع' : (view === 'branches' ? 'منضبطون' : 'المخالفات');
-        const statB = view === 'employees' ? 'النقاط' : 'الموظفون';
+        const statA = view === 'regions' ? 'فروع' : (view === 'branches' ? 'منضبطون' : 'مخالفات');
+        const statB = view === 'employees' ? 'نقاط' : 'موظفون';
         const rankCls = card.rank === 'top' ? ' cmp-neo-card--top' : (card.rank === 'bottom' ? ' cmp-neo-card--bottom' : '');
+
+        if (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi()) {
+          return `
+              <article class="rd-cmp-card${cardLow ? ' rd-cmp-card--low' : ''}${rankCls}" ${clickAttr} role="${card.onClick ? 'button' : 'presentation'}" tabindex="${card.onClick ? '0' : '-1'}">
+                ${ring.html}
+                <div class="rd-cmp-body">
+                  <div class="rd-cmp-name" title="${Sec.escapeHTML(card.name)}">${Sec.escapeHTML(card.name)}</div>
+                  <div class="rd-cmp-sub">${card.subHtml != null ? card.subHtml : Sec.escapeHTML(card.sub || '—')}</div>
+                  <div class="rd-cmp-meta">
+                    <span><strong>${card.branches}</strong> ${Sec.escapeHTML(statA)}</span>
+                    <span><strong>${card.employees}</strong> ${Sec.escapeHTML(statB)}</span>
+                    <span class="rd-cmp-rate" style="color:${rateTone}">${rateStr}</span>
+                  </div>
+                </div>
+              </article>`;
+        }
+
         const rankTitle = view === 'branches'
           ? (card.rank === 'top' ? 'أعلى فرع' : 'أدنى فرع')
           : (card.rank === 'top' ? 'أعلى منطقة' : 'أدنى منطقة');
@@ -23275,8 +23351,8 @@
                 </div>
                 <div class="cmp-neo-body">
                   <div class="cmp-neo-metrics">
-                    <div class="cmp-neo-stat"><span class="cmp-neo-stat__lbl">${Sec.escapeHTML(statA)}</span><strong class="cmp-neo-stat__val">${card.branches}</strong></div>
-                    <div class="cmp-neo-stat"><span class="cmp-neo-stat__lbl">${Sec.escapeHTML(statB)}</span><strong class="cmp-neo-stat__val">${card.employees}</strong></div>
+                    <div class="cmp-neo-stat"><span class="cmp-neo-stat__lbl">${Sec.escapeHTML(view === 'regions' ? 'الفروع' : (view === 'branches' ? 'منضبطون' : 'المخالفات'))}</span><strong class="cmp-neo-stat__val">${card.branches}</strong></div>
+                    <div class="cmp-neo-stat"><span class="cmp-neo-stat__lbl">${Sec.escapeHTML(view === 'employees' ? 'النقاط' : 'الموظفون')}</span><strong class="cmp-neo-stat__val">${card.employees}</strong></div>
                     <div class="cmp-neo-stat"><span class="cmp-neo-stat__lbl">معدل الالتزام</span><strong class="cmp-neo-stat__val cmp-neo-rate-val" data-cmp-anim-key="${Sec.escapeHTML(animKey + '-rate')}" data-cmp-target="${rawScore}" style="color:${rateTone}">${rateStr}</strong></div>
                   </div>
                   ${ring.html}
@@ -23475,8 +23551,9 @@
 
         let title = 'مؤشرات الامتثال';
         let titleContext = '';
-        let subtitle = 'نظرة عامة على أداء كل المناطق ';
+        let subtitle = 'نظرة عامة على أداء كل المناطق';
         let backNav = '';
+        const rdCmp = typeof isAtharRedesignUi === 'function' && isAtharRedesignUi();
 
         if (view === 'branches') {
           const region = state.regions.find(r => r.id === state._cmpDrill.regionId);
@@ -23495,7 +23572,7 @@
           if (state._cmpDrill.branchId && branch && !isBranchMgr) {
             title = 'تقييم الموظفين';
             titleContext = branch.name;
-            subtitle = 'نظرة عامة على أداء كل الموظفين';
+            subtitle = rdCmp ? '' : 'نظرة عامة على أداء كل الموظفين';
             backNav = cmpNeoBackBtnHTML('كل الفروع', 'cmpBackToBranches()', null, { combo: true });
           } else if (isBranchMgr) {
             title = 'تقييم الموظفين';
@@ -23506,6 +23583,9 @@
             titleContext = '';
             subtitle = 'نظرة عامة على أداء كل الموظفين';
           }
+        }
+        if (rdCmp && view === 'regions') {
+          subtitle = 'أداء المناطق حسب معدل الالتزام';
         }
 
         const scoreExtremes = cmpFindScoreExtremes(items);
