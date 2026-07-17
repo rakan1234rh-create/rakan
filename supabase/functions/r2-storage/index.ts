@@ -378,6 +378,29 @@ Deno.serve(async (req) => {
     return new Response('ok', { headers: _cors })
   }
 
+  // فحص إعداد الأسرار بدون مصادقة (قيم عامة فقط)
+  if (req.method === 'GET' && new URL(req.url).searchParams.get('health') === '1') {
+    const accessKeyId = envFirst('R2_ACCESS_KEY_ID', 'AWS_ACCESS_KEY_ID')
+    const secretAccessKey = envFirst('R2_SECRET_ACCESS_KEY', 'AWS_SECRET_ACCESS_KEY')
+    const accountRaw = envFirst('R2_ACCOUNT_ID', 'CLOUDFLARE_ACCOUNT_ID')
+    const bucketRaw = envFirst('R2_BUCKET_NAME', 'R2_BUCKET', 'AWS_S3_BUCKET')
+    const accountId = normalizeR2AccountId(accountRaw)
+    const bucket = normalizeR2BucketName(bucketRaw)
+    const envOk = !!(accessKeyId && secretAccessKey && accountId && bucket)
+    return json({
+      ok: envOk,
+      hasAccessKeyId: !!accessKeyId,
+      hasSecretAccessKey: !!secretAccessKey,
+      hasAccountId: !!accountRaw,
+      hasBucket: !!bucketRaw,
+      accountIdLen: accountId.length,
+      accountIdSuffix: accountId ? accountId.slice(-4) : '',
+      accountIdLooksValid: /^[a-f0-9]{32}$/i.test(accountId),
+      bucket,
+      endpoint: accountId ? `https://${accountId}.r2.cloudflarestorage.com` : null,
+    })
+  }
+
   const env = requireR2Env()
 
   if (req.method === 'POST' && req.headers.get('X-R2-Action') === 'uploadPart') {
