@@ -1678,7 +1678,8 @@
           const cmpSheet = document.querySelector('#cmpDetailModal .modal-card.cmp-detail-card');
           const cmpModal = document.getElementById('cmpDetailModal');
           if (cmpSheet) cmpSheet.style.transform = '';
-          cmpModal?.classList.remove('sheet-dragging');
+          cmpModal?.classList.remove('sheet-dragging', 'cmp-detail--rd-emp');
+          cmpSheet?.classList.remove('cmp-detail-card--rd-emp');
           document.body.classList.remove('cmp-detail-open');
         }
         if (!document.querySelector('.modal.open')) {
@@ -2164,7 +2165,7 @@
         zone.addEventListener('pointercancel', dragEnd);
 
         const cmpViolScrollAllowed = (el) => el?.closest?.(
-          '.cmp-detail-section--violations .cmp-viol-list, .cmp-detail-section--violations .score-viol-list'
+          '.cmp-detail-section--violations .cmp-viol-list, .cmp-detail-section--violations .score-viol-list, .rd-cmp-emp-detail, #cmpDetailModal.cmp-detail--rd-emp .modal-body'
         );
 
         modal.addEventListener('touchmove', (e) => {
@@ -22356,7 +22357,119 @@
         </div>`;
       }
 
+      function rdCmpGaugeRingHTML(score, color) {
+        const r = 54;
+        const circ = 2 * Math.PI * r;
+        const raw = Number(score);
+        const pct = Math.max(0, Math.min(100, Number.isFinite(raw) ? raw : 0));
+        const offset = circ - (circ * pct) / 100;
+        const rounded = Math.round((Number.isFinite(raw) ? raw : 0) * 10) / 10;
+        const disp = Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+        const stroke = color || cmpScoreRateColor(raw);
+        return `
+          <div class="rd-cmp-emp-gauge__ring" aria-hidden="true">
+            <svg width="72" height="72" viewBox="0 0 132 132">
+              <circle cx="66" cy="66" r="${r}" fill="none" stroke="var(--border)" stroke-width="12"></circle>
+              <circle cx="66" cy="66" r="${r}" fill="none" stroke="${stroke}" stroke-width="12"
+                stroke-linecap="round" stroke-dasharray="${circ.toFixed(3)}" stroke-dashoffset="${offset.toFixed(3)}"></circle>
+            </svg>
+            <div class="rd-cmp-emp-gauge__val" style="color:${stroke}">${Sec.escapeHTML(disp)}</div>
+          </div>`;
+      }
+
+      function buildRdCmpEmpDetailHeroHTML(item) {
+        const emp = state.users.find(u => u.id === item.id);
+        const role = emp
+          ? getStaffJobTitle(emp)
+          : (normalizeUserRole(item.role) === 'branch_manager' ? 'مدير فرع' : 'موظف');
+        const initial = String(item.name || '؟').trim().charAt(0) || '؟';
+        return `
+          <div class="rd-cmp-emp-hd">
+            <span class="rd-cmp-emp-hd__av" aria-hidden="true">${Sec.escapeHTML(initial)}</span>
+            <div class="rd-cmp-emp-hd__body">
+              <div class="rd-cmp-emp-hd__name">${Sec.escapeHTML(item.name || '')}</div>
+              <div class="rd-cmp-emp-hd__role">${Sec.escapeHTML(role || 'موظف')}</div>
+            </div>
+          </div>`;
+      }
+
+      function buildRdCmpEmpDetailHTML(item, viols, scoringViols) {
+        const score = Number(item.score) || 0;
+        const scoreColor = typeof rdClassifyScore === 'function' ? rdClassifyScore(score) : cmpScoreRateColor(score);
+        const emp = state.users.find(u => u.id === item.id);
+        const respRole = normalizeUserRole(emp?.role) === 'branch_manager' ? 'branch_manager' : 'employee';
+        const respData = calcResponseRate(item.id, respRole, scoringViols);
+        const respScore = Number(respData.score) || 0;
+        const respColor = typeof rdClassifyScore === 'function' ? rdClassifyScore(respScore) : cmpScoreRateColor(respScore);
+
+        const affecting = getRateImpactingViolations(viols || []);
+        const months = ksaMonthSlots(6).map(m => ({ ...m, count: 0 }));
+        affecting.forEach(v => {
+          if (violationExcludedFromDeduction(v)) return;
+          const iso = dashViolationIsoDate(v);
+          if (!iso) return;
+          const mo = months.find(m => ksaIsoInMonth(iso, m.year, m.month));
+          if (mo) mo.count++;
+        });
+        const maxMonthly = Math.max(1, ...months.map(m => m.count));
+        const totalViol = months.reduce((s, m) => s + m.count, 0);
+        const barsHTML = months.map(m => {
+          const pct = m.count ? Math.max(4, Math.round((m.count / maxMonthly) * 100)) : 4;
+          return `
+            <div class="rd-cmp-emp-bar">
+              <span class="rd-cmp-emp-bar__val">${m.count}</span>
+              <div class="rd-cmp-emp-bar__fill" style="height:${pct}%"></div>
+              <span class="rd-cmp-emp-bar__lbl">${Sec.escapeHTML(m.monthName)}</span>
+            </div>`;
+        }).join('');
+
+        const sev = computeSeverityForItem(item, viols || []);
+        const high = (sev.high || 0) + (sev.crit || 0);
+        const mid = sev.mid || 0;
+        const low = sev.low || 0;
+        const sevTotal = Math.max(1, high + mid + low);
+        const sevRows = [
+          { label: 'عالية', count: high, color: 'var(--danger)', pct: Math.round((high / sevTotal) * 100) },
+          { label: 'متوسطة', count: mid, color: 'var(--warning)', pct: Math.round((mid / sevTotal) * 100) },
+          { label: 'منخفضة', count: low, color: 'var(--info)', pct: Math.round((low / sevTotal) * 100) }
+        ];
+        const sevHTML = sevRows.map(sv => `
+          <div class="rd-cmp-emp-sev__row">
+            <div class="rd-cmp-emp-sev__top">
+              <span class="rd-cmp-emp-sev__lbl">${Sec.escapeHTML(sv.label)}</span>
+              <span class="rd-cmp-emp-sev__count" style="color:${sv.color}">${sv.count}</span>
+            </div>
+            <div class="rd-cmp-emp-sev__track">
+              <div class="rd-cmp-emp-sev__fill" style="width:${sv.pct}%;background:${sv.color}"></div>
+            </div>
+          </div>`).join('');
+
+        return `
+          <div class="rd-cmp-emp-detail">
+            <div class="rd-cmp-emp-gauges">
+              <div class="rd-cmp-emp-gauge">
+                ${rdCmpGaugeRingHTML(score, scoreColor)}
+                <div class="rd-cmp-emp-gauge__lbl">معدل الالتزام</div>
+              </div>
+              <div class="rd-cmp-emp-gauge">
+                ${rdCmpGaugeRingHTML(respScore, respColor)}
+                <div class="rd-cmp-emp-gauge__lbl">معدل الاستجابة</div>
+              </div>
+            </div>
+            <div class="rd-cmp-emp-sec-hd">
+              <span class="rd-cmp-emp-sec-hd__title">المخالفات — آخر 6 أشهر</span>
+              <span class="rd-cmp-emp-sec-hd__meta">الإجمالي: ${totalViol}</span>
+            </div>
+            <div class="rd-cmp-emp-months">${barsHTML}</div>
+            <div class="rd-cmp-emp-sec-title">توزيع خطورة المخالفات</div>
+            <div class="rd-cmp-emp-sev">${sevHTML}</div>
+          </div>`;
+      }
+
       function buildCmpDetailHeroHTML(item) {
+        if (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi() && item.type === 'employee') {
+          return buildRdCmpEmpDetailHeroHTML(item);
+        }
         const score = item.score;
         const lvlText = score >= 90 ? 'ممتاز' : (score >= 75 ? 'جيد' : (score >= 50 ? 'تحذير' : 'متعثر'));
         const subLine = item.type === 'employee'
@@ -22407,6 +22520,9 @@
       }
 
       function buildCmpDetailHTML(item, viols, scoringViols) {
+        if (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi() && item.type === 'employee') {
+          return buildRdCmpEmpDetailHTML(item, viols, scoringViols);
+        }
         const score = item.score;
         const lvl = levelClass(score);
         const lvlText = score >= 90 ? 'ممتاز' : (score >= 75 ? 'جيد' : (score >= 50 ? 'تحذير' : 'متعثر'));
@@ -24722,6 +24838,12 @@
         }
 
         // ─── تحديث Modal ───
+        const cmpModal = document.getElementById('cmpDetailModal');
+        const cmpCard = cmpModal?.querySelector('.modal-card.cmp-detail-card');
+        const rdEmp = typeof isAtharRedesignUi === 'function' && isAtharRedesignUi() && type === 'employee';
+        cmpModal?.classList.toggle('cmp-detail--rd-emp', !!rdEmp);
+        cmpCard?.classList.toggle('cmp-detail-card--rd-emp', !!rdEmp);
+
         document.getElementById('cmpDetailHero').innerHTML = buildCmpDetailHeroHTML(item);
         document.getElementById('cmpDetailBody').innerHTML = buildCmpDetailHTML(item, viols, violations);
         bindCmpTimelineNav(document.getElementById('cmpDetailBody'));
