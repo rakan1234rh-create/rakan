@@ -23446,6 +23446,9 @@
 
       function cmpNeoExtremesBarHTML(extremes, view) {
         if (!extremes) return '';
+        if (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi()) {
+          return rdCmpHiLoHTML(extremes, view);
+        }
         const labels = view === 'branches'
           ? { top: 'أعلى فرع', bottom: 'أدنى فرع' }
           : view === 'employees'
@@ -23478,6 +23481,129 @@
         return `<div class="cmp-neo-extremes" role="group" aria-label="أعلى وأدنى أداء">${pill('top', extremes.top)}${pill('bottom', extremes.bottom)}</div>`;
       }
 
+      function rdCmpScoreBarPct(score) {
+        const n = Number(score);
+        if (!Number.isFinite(n)) return 0;
+        return Math.max(0, Math.min(100, Math.round(n)));
+      }
+
+      function rdCmpOrgHeroHTML(score) {
+        const raw = Number(score);
+        const tone = cmpScoreRateColor(raw);
+        const disp = (Math.round(raw * 10) / 10).toFixed(raw % 1 ? 1 : 0);
+        const pct = rdCmpScoreBarPct(raw);
+        const C = 339.292;
+        const offset = (C - (C * pct) / 100).toFixed(3);
+        return `
+          <div class="rd-cmp-hero">
+            <div class="rd-cmp-hero__ring" aria-hidden="true">
+              <svg viewBox="0 0 132 132">
+                <circle cx="66" cy="66" r="54" fill="none" stroke="var(--border)" stroke-width="12"></circle>
+                <circle cx="66" cy="66" r="54" fill="none" stroke="${tone}" stroke-width="12" stroke-linecap="round"
+                  stroke-dasharray="339.292" stroke-dashoffset="${offset}"></circle>
+              </svg>
+              <div class="rd-cmp-hero__val" style="color:${tone}">${Sec.escapeHTML(disp)}</div>
+            </div>
+            <div class="rd-cmp-hero__copy">
+              <div class="rd-cmp-hero__title">معدل الالتزام العام</div>
+              <div class="rd-cmp-hero__sub">لكل المناطق والفروع مجتمعة هذا الشهر</div>
+            </div>
+          </div>`;
+      }
+
+      function rdCmpHiLoHTML(extremes, view) {
+        if (!extremes) return '';
+        const topLabel = view === 'branches' ? 'أعلى فرع' : (view === 'employees' ? 'أعلى تقييم' : 'أعلى منطقة');
+        const bottomLabel = view === 'branches' ? 'أدنى فرع' : (view === 'employees' ? 'أقل تقييم' : 'بحاجة لمتابعة');
+        const onClick = view === 'branches'
+          ? (id) => `cmpOpenBranchCompliance('${id}')`
+          : view === 'employees'
+            ? (id) => `openCmpItemDetail('employee','${id}')`
+            : (id) => `cmpOpenRegionCompliance('${id}')`;
+        const card = (kind, item, label, icon) => {
+          const rate = (Math.round(Number(item.score) * 10) / 10).toFixed(1);
+          return `
+            <button type="button" class="rd-cmp-hilo rd-cmp-hilo--${kind}" onclick="${onClick(item.id)}">
+              <div class="rd-cmp-hilo__lbl"><i class="fas ${icon}" aria-hidden="true"></i>${Sec.escapeHTML(label)}</div>
+              <div class="rd-cmp-hilo__rate">${Sec.escapeHTML(rate)}%</div>
+              <div class="rd-cmp-hilo__name">${Sec.escapeHTML(item.name || '—')}</div>
+            </button>`;
+        };
+        return `<div class="rd-cmp-hilo-row">${card('top', extremes.top, topLabel, 'fa-arrow-trend-up')}${card('bottom', extremes.bottom, bottomLabel, 'fa-arrow-trend-down')}</div>`;
+      }
+
+      function rdCmpRegionCardHTML(card) {
+        const raw = Number(card.score);
+        const tone = cmpScoreRateColor(raw);
+        const rateStr = (Math.round(raw * 10) / 10).toFixed(1) + '%';
+        const bar = rdCmpScoreBarPct(raw);
+        const clickAttr = card.onClick ? `onclick="${Sec.escapeHTML(card.onClick)}"` : '';
+        const manager = Sec.escapeHTML(card.sub || '—');
+        return `
+          <article class="rd-cmp-region" ${clickAttr} role="button" tabindex="0">
+            <div class="rd-cmp-region__top">
+              <div class="rd-cmp-region__who">
+                <span class="rd-cmp-region__name">${Sec.escapeHTML(card.name)}</span>
+                <span class="rd-cmp-region__mgr">${manager}</span>
+              </div>
+              <div class="rd-cmp-region__end">
+                <span class="rd-cmp-region__rate" style="color:${tone}">${rateStr}</span>
+                <i class="fas fa-chevron-left" aria-hidden="true"></i>
+              </div>
+            </div>
+            <div class="rd-cmp-region__bar" aria-hidden="true"><span style="width:${bar}%;background:${tone}"></span></div>
+            <div class="rd-cmp-region__meta">
+              <span><i class="fas fa-code-branch" aria-hidden="true"></i><strong>${card.branches}</strong> فروع</span>
+              <span><i class="fas fa-users" aria-hidden="true"></i><strong>${card.employees}</strong> موظفون</span>
+            </div>
+          </article>`;
+      }
+
+      function rdCmpBranchCardHTML(card) {
+        const raw = Number(card.score);
+        const tone = cmpScoreRateColor(raw);
+        const disp = String(Math.round(raw));
+        const pct = rdCmpScoreBarPct(raw);
+        const C = 339.292;
+        const offset = (C - (C * pct) / 100).toFixed(3);
+        const clickAttr = card.onClick ? `onclick="${Sec.escapeHTML(card.onClick)}"` : '';
+        return `
+          <article class="rd-cmp-branch" ${clickAttr} role="button" tabindex="0">
+            <div class="rd-cmp-branch__ring" aria-hidden="true">
+              <svg viewBox="0 0 132 132">
+                <circle cx="66" cy="66" r="54" fill="none" stroke="var(--border)" stroke-width="14"></circle>
+                <circle cx="66" cy="66" r="54" fill="none" stroke="${tone}" stroke-width="14" stroke-linecap="round"
+                  stroke-dasharray="339.292" stroke-dashoffset="${offset}"></circle>
+              </svg>
+              <div class="rd-cmp-branch__val" style="color:${tone}">${Sec.escapeHTML(disp)}</div>
+            </div>
+            <div class="rd-cmp-branch__body">
+              <div class="rd-cmp-branch__name">${Sec.escapeHTML(card.name)}</div>
+              <div class="rd-cmp-branch__sub">${card.employees} موظفون</div>
+            </div>
+            <i class="fas fa-chevron-left rd-cmp-branch__chev" aria-hidden="true"></i>
+          </article>`;
+      }
+
+      function rdCmpEmpRowHTML(card) {
+        const raw = Number(card.score);
+        const tone = cmpScoreRateColor(raw);
+        const disp = (Math.round(raw * 10) / 10).toFixed(raw % 1 ? 1 : 0);
+        const initial = String(card.name || '؟').trim().charAt(0) || '؟';
+        const role = card.isBm ? 'مدير فرع' : 'موظف';
+        const click = card.onClick || `openCmpItemDetail('employee','${String(card.id || '').replace(/'/g, "\\'")}')`;
+        return `
+          <article class="rd-cmp-emp" onclick="${Sec.escapeHTML(click)}" role="button" tabindex="0">
+            <span class="rd-cmp-emp__av" aria-hidden="true">${Sec.escapeHTML(initial)}</span>
+            <div class="rd-cmp-emp__body">
+              <div class="rd-cmp-emp__name">${Sec.escapeHTML(card.name)}</div>
+              <div class="rd-cmp-emp__role">${Sec.escapeHTML(role)}</div>
+            </div>
+            <span class="rd-cmp-emp__score" style="color:${tone}">${Sec.escapeHTML(disp)}</span>
+            <i class="fas fa-chevron-left" aria-hidden="true"></i>
+          </article>`;
+      }
+
       function cmpNeoBoardCardHTML(card, view, opts = {}) {
         const rawScore = Number(card.score);
         const isNeg = rawScore < 0;
@@ -23493,19 +23619,9 @@
         const rankCls = card.rank === 'top' ? ' cmp-neo-card--top' : (card.rank === 'bottom' ? ' cmp-neo-card--bottom' : '');
 
         if (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi()) {
-          return `
-              <article class="rd-cmp-card${cardLow ? ' rd-cmp-card--low' : ''}${rankCls}" ${clickAttr} role="${card.onClick ? 'button' : 'presentation'}" tabindex="${card.onClick ? '0' : '-1'}">
-                ${ring.html}
-                <div class="rd-cmp-body">
-                  <div class="rd-cmp-name" title="${Sec.escapeHTML(card.name)}">${Sec.escapeHTML(card.name)}</div>
-                  <div class="rd-cmp-sub">${card.subHtml != null ? card.subHtml : Sec.escapeHTML(card.sub || '—')}</div>
-                  <div class="rd-cmp-meta">
-                    <span><strong>${card.branches}</strong> ${Sec.escapeHTML(statA)}</span>
-                    <span><strong>${card.employees}</strong> ${Sec.escapeHTML(statB)}</span>
-                    <span class="rd-cmp-rate" style="color:${rateTone}">${rateStr}</span>
-                  </div>
-                </div>
-              </article>`;
+          if (view === 'regions') return rdCmpRegionCardHTML(card);
+          if (view === 'branches') return rdCmpBranchCardHTML(card);
+          return rdCmpRegionCardHTML(card);
         }
 
         const rankTitle = view === 'branches'
@@ -23780,7 +23896,7 @@
             const empViols = violations.filter(v => v.employee_id === item.id);
             const branch = state.branches.find(b => b.id === (state.users.find(u => u.id === item.id)?.branch_id));
             const isMgr = !!(branch && state.users.find(u => u.id === item.id && u.role === 'branch_manager'));
-            return cmpEmpCardHTML({
+            const empCard = {
               id: item.id,
               name: item.name,
               empNumber: item.empNumber || item.extraInfo?.empNumber,
@@ -23800,7 +23916,10 @@
               trend: cmpNeoTrendMeta(empViols),
               rank: item.id === topId ? 'top' : (item.id === bottomId ? 'bottom' : ''),
               onClick: `openCmpItemDetail('employee','${item.id}')`
-            });
+            };
+            return rdCmp
+              ? rdCmpEmpRowHTML(empCard)
+              : cmpEmpCardHTML(empCard);
           }).join('');
         } else if (view === 'branches') {
           cardsHTML = items.map(item => {
@@ -23848,7 +23967,78 @@
         const cmpSearchPh = cmpSearchPlaceholder(view);
         if (!cmpDataPending) cmpSnapshotBoardAnim(board);
 
-        board.innerHTML = `
+        if (rdCmp) {
+          const isRegionsRoot = view === 'regions';
+          const drilledRegion = state.regions.find(r => r.id === state._cmpDrill.regionId);
+          const drilledBranch = state.branches.find(b => b.id === state._cmpDrill.branchId);
+          let listTitle = 'حسب المنطقة';
+          let rdBack = '';
+          if (view === 'branches' && drilledRegion) {
+            listTitle = 'فروع ' + drilledRegion.name;
+            rdBack = `<button type="button" class="rd-cmp-back" onclick="cmpBackToRegions()"><i class="fas fa-arrow-right" aria-hidden="true"></i>كل المناطق</button>`;
+          } else if (view === 'employees' && drilledBranch && !isBranchMgr) {
+            listTitle = 'موظفو ' + drilledBranch.name;
+            rdBack = `<button type="button" class="rd-cmp-back" onclick="cmpBackToBranches()"><i class="fas fa-arrow-right" aria-hidden="true"></i>فروع ${Sec.escapeHTML(drilledRegion?.name || '')}</button>`;
+          } else if (view === 'employees' && isBranchMgr) {
+            listTitle = 'موظفو ' + (drilledBranch?.name || 'الفرع');
+          } else if (view === 'branches') {
+            listTitle = 'حسب الفرع';
+          } else if (view === 'employees') {
+            listTitle = 'حسب الموظف';
+          }
+
+          let orgScore = 100;
+          if (!cmpDataPending && isRegionsRoot && items.length) {
+            orgScore = items.reduce((a, it) => a + Number(it.score || 0), 0) / items.length;
+          } else if (!cmpDataPending && (state.regions || []).length) {
+            const regs = state.regions;
+            orgScore = regs.reduce((a, r) => a + calcRegionStability(r.id, violations).score, 0) / regs.length;
+          }
+
+          board.innerHTML = `
+            <section class="cmp-neo-board rd-cmp-board">
+              <header class="rd-cmp-hd">
+                <h3>مؤشرات الامتثال</h3>
+                <p class="rd-cmp-hd__eye">COMPLIANCE OVERVIEW</p>
+              </header>
+              ${isRegionsRoot && !cmpDataPending ? rdCmpOrgHeroHTML(orgScore) : ''}
+              ${isRegionsRoot ? extremesBarHTML : ''}
+              <div class="rd-cmp-toolbar">
+                <div class="figma-search-wrap rd-cmp-search">
+                  <input type="text" class="figma-search-input" id="cmp-search"
+                    value="${Sec.escapeHTML(cmpSearchVal)}"
+                    placeholder="${Sec.escapeHTML(cmpSearchPh || 'ابحث باسم المنطقة أو المدير...')}"
+                    oninput="filterCmpSearch()" autocomplete="off" enterkeyhint="search">
+                  <button type="button" class="figma-search-btn" onclick="filterCmpSearch()" aria-label="بحث">
+                    <i class="fas fa-magnifying-glass"></i>
+                  </button>
+                </div>
+                ${canPickCmpScope() ? `<div class="wf-status-filter" id="cmp-filter-dd">
+                  <button type="button" class="wf-status-trigger" id="cmp-filter-trigger"
+                    onclick="cmpFilterToggle(event)" aria-haspopup="listbox" aria-expanded="false">
+                    <span class="wf-status-trigger__label" id="cmp-filter-label">كل المناطق</span>
+                    <i class="fas fa-chevron-down wf-status-trigger__chev" aria-hidden="true"></i>
+                  </button>
+                  <select id="cmp-filter-scope" class="wf-status-select-native" tabindex="-1" aria-hidden="true"
+                    aria-label="نطاق العرض" onchange="cmpFilterMobNativeChange(this)">
+                    <option value="regions">كل المناطق</option>
+                    <option value="branches">كل الفروع</option>
+                    <option value="employees">كل الموظفين</option>
+                  </select>
+                </div>` : ''}
+                <div class="rp-date-wrap" id="cmpNeoDateWrap" hidden>
+                  <button type="button" class="rp-tool-btn rp-date-btn" onclick="toggleCmpDatePicker(event)" id="cmp-date-btn">
+                    <i class="fas fa-calendar"></i><span id="cmp-date-label">${Sec.escapeHTML(dateLabel)}</span>
+                  </button>
+                </div>
+              </div>
+              <p class="cmp-neo-search-meta" hidden>عدد النتائج: <strong id="cmp-search-count">${cmpDataPending ? '…' : items.length}</strong></p>
+              ${rdBack}
+              <div class="rd-cmp-list-title">${Sec.escapeHTML(listTitle)}</div>
+              <div class="rd-cmp-list ${gridCls}">${cardsHTML}</div>
+            </section>`;
+        } else {
+          board.innerHTML = `
           <section class="cmp-neo-board">
             <header class="cmp-neo-board-head">
               <div class="cmp-neo-head-main">
@@ -23904,6 +24094,7 @@
             ${extremesBarHTML}
             <div class="${gridCls}">${cardsHTML}</div>
           </section>`;
+        }
 
         const neoBoard = board.querySelector('.cmp-neo-board');
         const filtersBar = document.getElementById('cmpActiveFiltersBar');
