@@ -740,9 +740,20 @@
         throw lastErr || new Error('فشل الاتصال بـ r2-storage');
       }
 
+      /** تسخين isolate خفيف (GET بدون AWS SDK) قبل POST — يقلل 503 البوابة */
+      async function warmR2StorageFn() {
+        try {
+          await fetch(`${R2_STORAGE_FN_URL}?warmup=1`, {
+            method: 'GET',
+            headers: { 'apikey': SUPABASE_ANON },
+          });
+        } catch (_) { /* ignore */ }
+      }
+
       async function r2StoragePing(session) {
         const token = session?.access_token;
         if (!token) return null;
+        await warmR2StorageFn();
         return fetchR2StorageWithRetry(R2_STORAGE_FN_URL, {
           method: 'POST',
           headers: {
@@ -751,7 +762,7 @@
             'Authorization': `Bearer ${token}`,
           },
           body: JSON.stringify({ action: 'ping' }),
-        }, { attempts: 4, baseDelayMs: 500 });
+        }, { attempts: 5, baseDelayMs: 700 });
       }
 
       /**
@@ -800,6 +811,26 @@
               return 'edge';
             }
             if (res?.status === 503) {
+              // بوابة 503 بدون CORS — جرّب health الخفيف؛ إن كانت الأسرار جاهزة نعتبر edge متاحاً
+              try {
+                const healthRes = await fetch(`${R2_STORAGE_FN_URL}?health=1`, {
+                  method: 'GET',
+                  headers: { 'apikey': SUPABASE_ANON },
+                });
+                if (healthRes.ok) {
+                  const hj = await healthRes.json().catch(() => null);
+                  if (hj && hj.ok) {
+                    console.info('[R2] ping 503 لكن health ok — نستخدم edge', {
+                      bucket: hj.bucket,
+                      accountIdSuffix: hj.accountIdSuffix,
+                    });
+                    _r2EdgeRecheckAt = 0;
+                    _r2ResolvedMode = 'edge';
+                    _r2LastResolveNote = '';
+                    return 'edge';
+                  }
+                }
+              } catch (_) { /* noop */ }
               let hint = 'خدمة التخزين مشغولة مؤقتاً (503) — حدّث الصفحة وأعد المحاولة. إن تكرر: تحقق من أسرار R2 في Supabase staging.';
               try {
                 const j = await res.clone().json();
@@ -14226,8 +14257,7 @@
         const descError = Sec.checkSafe(desc);
         if (descError) return showToast('الوصف: ' + descError, 'error');
 
-        if (!files.length) return showToast('أرفق ملف واحد على الأقل', 'error');
-
+        // المرفقات اختيارية — إن وُجدت يجب أن تكون جاهزة قبل الإرسال
         for (const f of filesToUpload) {
           if (f.prepStatus !== 'ready') {
             showToast('انتظر اكتمال تحضير المرفقات (تحويل/رفع) قبل الإرسال', 'warning');
@@ -14556,6 +14586,7 @@
        * نقل مرفقات التذكرة من المجلد المؤقت إلى المجلد النهائي الرسمي
        */
       async function moveAttachmentsToFinalFolder(violationId, ticketNumber, attachments) {
+        if (!Array.isArray(attachments) || !attachments.length) return null;
         if (isMirsadDebugLog()) console.log(`[R2-Move] Starting move for ${ticketNumber}...`);
         try {
           const backend = await resolveR2Backend();
