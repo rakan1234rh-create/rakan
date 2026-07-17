@@ -2965,7 +2965,7 @@
               <section class="mk-form-panel">
                 <header class="mk-form-hd">
                   <div style="display:flex; gap:14px; align-items:flex-start; flex:1; min-width:0">
-                    <span class="mk-form-hd__ico"><i class="fas fa-circle-plus" aria-hidden="true"></i></span>
+                    <span class="mk-form-hd__ico"><i class="fas fa-plus" aria-hidden="true"></i></span>
                     <div>
                       <h2>رصد مخالفة جديدة</h2>
                       <p>NEW VIOLATION TICKET · سجّل مخالفة بأكبر قدر من التفاصيل</p>
@@ -2974,32 +2974,36 @@
                 </header>
 
                 <div class="mk-form-grid">
-                  <div class="mk-field">
-                    <label class="mk-field__lbl" for="nt-empSearch">الموظف المخالف <span class="mk-req">*</span></label>
-                    <div class="figma-search-wrap">
-                      <input type="text" id="nt-empSearch" class="figma-search-input" placeholder="ابحث باسم الموظف أو رقمه…"
-                        oninput="lookupEmployee()" onfocus="lookupEmployee()" autocomplete="off">
-                      <button type="button" class="figma-search-btn" onclick="lookupEmployee()" aria-label="بحث">
-                        <i class="fas fa-magnifying-glass"></i>
-                      </button>
-                    </div>
-                    <input type="hidden" id="nt-empId">
-                    <div id="nt-empDropdown" class="autocomplete-dropdown" style="display:none;"></div>
-                    <div id="nt-empFound" class="mk-pick-banner-slot" style="display:none" aria-live="polite"></div>
-                  </div>
-
-                  <div class="mk-field">
+                  <div class="mk-field mk-field--type">
                     <label class="mk-field__lbl" for="nt-typeSearch">نوع المخالفة <span class="mk-req">*</span></label>
                     <div class="figma-search-wrap">
-                      <input type="text" id="nt-typeSearch" class="figma-search-input" placeholder="ابحث عن نوع المخالفة…"
+                      <input type="text" id="nt-typeSearch" class="figma-search-input" placeholder="ابحث عن نوع المخالفة..."
                         oninput="lookupViolationType()" onfocus="lookupViolationType()" autocomplete="off">
                       <button type="button" class="figma-search-btn" onclick="lookupViolationType()" aria-label="بحث">
                         <i class="fas fa-magnifying-glass"></i>
                       </button>
+                      <i class="fas fa-chevron-down rd-nt-chev" aria-hidden="true"></i>
                     </div>
                     <input type="hidden" id="nt-type">
                     <div id="nt-typeDropdown" class="autocomplete-dropdown" style="display:none;"></div>
                     <div id="nt-typeFound" class="mk-pick-banner-slot" style="display:none" aria-live="polite"></div>
+                    <!-- Redesign severity preview (Standalone 2) -->
+                    <div class="rd-nt-sev" id="rdNtSevPreview" hidden aria-live="polite"></div>
+                  </div>
+
+                  <div class="mk-field mk-field--emp">
+                    <label class="mk-field__lbl" for="nt-empSearch">الموظف المخالف <span class="mk-req">*</span></label>
+                    <div class="figma-search-wrap">
+                      <input type="text" id="nt-empSearch" class="figma-search-input" placeholder="ابحث باسم الموظف أو الرقم الوظيفي..."
+                        oninput="lookupEmployee()" onfocus="lookupEmployee()" autocomplete="off">
+                      <button type="button" class="figma-search-btn" onclick="lookupEmployee()" aria-label="بحث">
+                        <i class="fas fa-magnifying-glass"></i>
+                      </button>
+                      <i class="fas fa-chevron-down rd-nt-chev" aria-hidden="true"></i>
+                    </div>
+                    <input type="hidden" id="nt-empId">
+                    <div id="nt-empDropdown" class="autocomplete-dropdown" style="display:none;"></div>
+                    <div id="nt-empFound" class="mk-pick-banner-slot" style="display:none" aria-live="polite"></div>
                   </div>
 
                   <div class="mk-field mk-field--dt-row">
@@ -3075,8 +3079,8 @@
 
                   <div class="mk-field mk-field--full">
                     <label class="mk-field__lbl" for="nt-desc">وصف المخالفة <span class="mk-req">*</span></label>
-                    <textarea id="nt-desc" class="mk-input--ta" placeholder="اشرح تفاصيل المخالفة بدقة (الزمن، السبب، الشواهد…)"></textarea>
-                    <span class="mk-field__hint">كلما زادت تفاصيل الوصف، كلما أُتيحت معالجة أفضل للتذكرة.</span>
+                    <textarea id="nt-desc" class="mk-input--ta" placeholder="اشرح تفاصيل المخالفة بدقة (الزمن، السبب، الشهود...)"></textarea>
+                    <span class="mk-field__hint">كلما زادت تفاصيل الوصف، كلما أتيحت معالجة أفضل للتذكرة.</span>
                   </div>
 
                   <div class="mk-field mk-field--full">
@@ -3093,6 +3097,14 @@
                     <div id="ntFileArea" class="file-list"></div>
                   </div>
                 </div>
+
+                <!-- Redesign ticket summary (Standalone 2) -->
+                <aside class="rd-nt-summary" id="rdNtSummary" hidden>
+                  <div class="rd-nt-summary__title">ملخص التذكرة</div>
+                  <div class="rd-nt-summary__row"><span>النوع</span><strong id="rdNtSumType">لم يُحدد بعد</strong></div>
+                  <div class="rd-nt-summary__row"><span>الموظف</span><strong id="rdNtSumEmp">لم يُحدد بعد</strong></div>
+                  <div class="rd-nt-summary__row"><span>التاريخ والوقت</span><strong id="rdNtSumWhen">—</strong></div>
+                </aside>
 
                 <footer class="mk-form-ft">
                   <button type="button" class="mk-btn" onclick="resetNewTicket()">
