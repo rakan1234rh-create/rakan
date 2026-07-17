@@ -757,9 +757,18 @@
               }
             }
             if (res?.ok) {
+              try {
+                const pingBody = await res.clone().json();
+                if (pingBody && pingBody.r2 === 'error') {
+                  console.warn('[R2] ping: الأسرار موجودة لكن R2 رفض الاتصال', pingBody);
+                  _r2LastResolveNote = 'R2 error: ' + (pingBody.r2Error || '') + ' ' + (pingBody.r2Message || '') + ' bucket=' + (pingBody.bucket || '');
+                } else if (pingBody && pingBody.bucket) {
+                  console.info('[R2] ping ok', { bucket: pingBody.bucket, accountIdSuffix: pingBody.accountIdSuffix, r2: pingBody.r2 });
+                }
+              } catch (_) { /* noop */ }
               _r2EdgeRecheckAt = 0;
               _r2ResolvedMode = 'edge';
-              _r2LastResolveNote = '';
+              _r2LastResolveNote = _r2LastResolveNote || '';
               return 'edge';
             }
             if (res?.status === 503) {
@@ -875,13 +884,18 @@
 
         if (!res.ok) {
           const msg = data.error || data.message || `فشل الرفع عبر الخادم (${res.status})`;
+          try {
+            console.error('[R2] uploadR2ViaEdgeProxy failed', res.status, data);
+          } catch (_) { /* noop */ }
           if (res.status === 401) {
             throw new Error('انتهت الجلسة — سجّل الخروج ثم الدخول من جديد.');
           }
           if (res.status === 413) {
             throw new Error('R2_EDGE_PAYLOAD_TOO_LARGE');
           }
-          throw new Error(msg);
+          const detail = [msg, data.r2Error && (`[${data.r2Error}]`), data.bucket && (`bucket=${data.bucket}`)]
+            .filter(Boolean).join(' ');
+          throw new Error(detail);
         }
         return data;
       }
