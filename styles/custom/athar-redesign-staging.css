@@ -1392,7 +1392,7 @@ html.athar-staging-redesign.mr-mobile-ui #tab-violations #violGrid.rd-viol-list 
 }
 .rd-viol-act:last-child { color: var(--danger); }
 
-/* ═══ Locations — mockup region cards ═══ */
+/* ═══ Locations / فروع — Standalone (2) ═══ */
 html.athar-staging-redesign.mr-mobile-ui #tab-locations .panel.wf-panel {
   background: transparent !important;
   border: none !important;
@@ -1405,13 +1405,21 @@ html.athar-staging-redesign.mr-mobile-ui #tab-locations .wf-panel-banner {
   background: transparent !important;
   box-shadow: none !important;
 }
+html.athar-staging-redesign.mr-mobile-ui #tab-locations .wf-panel-title {
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  color: var(--text) !important;
+  margin: 0 !important;
+}
 html.athar-staging-redesign.mr-mobile-ui #tab-locations .wf-panel-sub {
   font-size: 10.5px !important;
   color: var(--text3) !important;
   letter-spacing: 0.08em !important;
   text-transform: uppercase !important;
-  margin: -10px 0 14px !important;
+  margin: 3px 0 12px !important;
 }
+html.athar-staging-redesign.mr-mobile-ui #tab-locations .rb-drill-summary,
+html.athar-staging-redesign.mr-mobile-ui #tab-locations .wf-count,
 html.athar-staging-redesign.mr-mobile-ui #tab-locations .rb-toolbar .rp-tool-btn:not(#br-panel-action-btn) {
   display: none !important;
 }
@@ -1419,23 +1427,37 @@ html.athar-staging-redesign.mr-mobile-ui #tab-locations .rb-toolbar {
   display: flex !important;
   flex-wrap: wrap !important;
   gap: 8px !important;
-  margin-bottom: 10px !important;
+  margin: 0 0 12px !important;
   padding: 0 !important;
   background: transparent !important;
   border: none !important;
 }
 html.athar-staging-redesign.mr-mobile-ui #tab-locations .rb-search-combo {
   flex: 1 1 100% !important;
+  order: 1;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-locations #rbBackBtnSlot {
+  display: none !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-locations .rb-search-combo .figma-search-wrap {
+  background: var(--searchFill) !important;
+  border: none !important;
+  border-radius: 10px !important;
+  padding: 0 14px !important;
+  min-height: 44px !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-locations .rb-search-combo .figma-search-input {
+  font-size: 12.5px !important;
+  color: var(--text) !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-locations .rb-search-combo .figma-search-input::placeholder {
+  color: var(--text3) !important;
 }
 html.athar-staging-redesign.mr-mobile-ui #tab-locations #br-panel-action-btn {
+  order: 2;
   height: 40px !important;
   border-radius: 10px !important;
   font-size: 12px !important;
-}
-html.athar-staging-redesign.mr-mobile-ui #tab-locations .wf-count {
-  font-size: 12px !important;
-  color: var(--text2) !important;
-  margin: 0 0 10px !important;
 }
 html.athar-staging-redesign.mr-mobile-ui #tab-locations #regionsDeskHost,
 html.athar-staging-redesign.mr-mobile-ui #tab-locations .mr-users-list-wrap {
@@ -1443,116 +1465,264 @@ html.athar-staging-redesign.mr-mobile-ui #tab-locations .mr-users-list-wrap {
   border: none !important;
   box-shadow: none !important;
   padding: 0 !important;
-  max-height: none !important;
-  overflow: visible !important;
+  overflow: hidden !important;
 }
-html.athar-staging-redesign.mr-mobile-ui #tab-locations #regionsList {
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 10px !important;
+html.athar-staging-redesign.mr-mobile-ui #tab-locations #regionsList.rb-regions-scroll {
+  display: block !important;
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
+  height: auto !important;
+  overflow-y: scroll !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
+  touch-action: pan-y !important;
+  overscroll-behavior-y: contain;
+  padding: 0 0 calc(12px + env(safe-area-inset-bottom, 0px)) !important;
+  background: transparent !important;
+  gap: 0 !important;
 }
-html.athar-staging-redesign.mr-mobile-ui #tab-locations .rb-region-card {
-  background: var(--surface) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 18px !important;
-  box-shadow: none !important;
-  padding: 14px 16px !important;
-  margin: 0 !important;
+
+.rd-loc-board {
+  animation: atharRdScreenIn 0.32s ease;
+  direction: rtl;
+}
+.rd-loc-summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.rd-loc-stat {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px;
+  text-align: center;
+}
+.rd-loc-stat__val {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.1;
+}
+.rd-loc-stat__lbl {
+  font-size: 10px;
+  color: var(--text3);
+  margin-top: 3px;
+}
+.rd-loc-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0;
+  margin: 0 0 12px;
+  border: none;
+  background: transparent;
+  color: var(--text2);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+.rd-loc-back i { font-size: 11px; }
+.rd-loc-list-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 10px;
+}
+.rd-loc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rd-loc-ring {
+  position: relative;
+  width: 46px;
+  height: 46px;
+  flex-shrink: 0;
+}
+.rd-loc-ring svg {
+  position: absolute;
+  inset: 0;
+  transform: rotate(-90deg);
+  display: block;
+}
+.rd-loc-ring__val {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.rd-loc-region,
+.rd-loc-branch {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 16px;
   animation: atharRdCardIn 0.4s ease both;
 }
-html.athar-staging-redesign.mr-mobile-ui #tab-locations .rb-region-card__chevron {
-  display: none !important;
+.rd-loc-region {
+  cursor: pointer;
 }
-html.athar-staging-redesign.mr-mobile-ui #tab-locations .rb-region-card__icon {
-  width: 42px !important;
-  height: 42px !important;
-  border-radius: 13px !important;
-  background: var(--goldSoft) !important;
-  color: var(--gold) !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  font-size: 16px !important;
-  box-shadow: none !important;
-  border: none !important;
+.rd-loc-region:active { opacity: 0.94; }
+.rd-loc-region__top,
+.rd-loc-branch__top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
-html.athar-staging-redesign.mr-mobile-ui #tab-locations .rb-region-card__name {
-  font-size: 14px !important;
-  font-weight: 700 !important;
-  color: var(--text) !important;
+.rd-loc-region__body,
+.rd-loc-branch__body { flex: 1; min-width: 0; }
+.rd-loc-region__name,
+.rd-loc-branch__name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-html.athar-staging-redesign.mr-mobile-ui #tab-locations .rb-region-card__sup {
-  font-size: 11.5px !important;
-  color: var(--text3) !important;
-  margin-top: 2px !important;
+.rd-loc-branch__name { font-size: 13.5px; }
+.rd-loc-region__mgr {
+  font-size: 11.5px;
+  color: var(--text3);
+  margin-top: 3px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
 }
-html.athar-staging-redesign.mr-mobile-ui #tab-locations .rb-region-card__sup i {
-  display: none !important;
+.rd-loc-region__mgr i { font-size: 10px; flex-shrink: 0; }
+.rd-loc-branch__sub {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 3px;
 }
-html.athar-staging-redesign.mr-mobile-ui #tab-locations .rb-region-card__foot {
-  margin-top: 12px !important;
-  padding-top: 12px !important;
-  border-top: 1px solid var(--border) !important;
-  background: transparent !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  gap: 8px !important;
+.rd-loc-region__foot {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
 }
-html.athar-staging-redesign.mr-mobile-ui #tab-locations .rb-region-card__stat {
-  font-size: 12px !important;
-  color: var(--text2) !important;
+.rd-loc-region__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text2);
 }
-html.athar-staging-redesign.mr-mobile-ui #tab-locations .rb-region-card__stat i {
-  display: none !important;
+.rd-loc-region__meta i {
+  font-size: 11px;
+  color: var(--text3);
 }
-html.athar-staging-redesign.mr-mobile-ui #tab-locations .rb-region-card__stat strong {
-  font-weight: 700 !important;
-  color: var(--text) !important;
+.rd-loc-region__meta strong {
+  color: var(--text);
+  font-weight: 700;
 }
-html.athar-staging-redesign.mr-mobile-ui #tab-locations .rb-branch-card__act {
-  padding: 6px 12px !important;
-  border-radius: 9px !important;
-  border: 1px solid var(--border) !important;
-  background: transparent !important;
-  font-size: 11px !important;
-  font-weight: 600 !important;
-  color: var(--text2) !important;
-  box-shadow: none !important;
+
+.rd-loc-menu {
+  position: relative;
+  flex-shrink: 0;
 }
-html.athar-staging-redesign.mr-mobile-ui #tab-locations .rb-branch-card__act--delete {
-  color: var(--danger) !important;
+.rd-loc-menu__btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text3);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
 }
-html.athar-staging-redesign.mr-mobile-ui #tab-locations .rb-branch-card {
-  background: var(--surface) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 18px !important;
-  box-shadow: none !important;
-  padding: 14px 16px !important;
-  margin: 0 !important;
-  animation: atharRdCardIn 0.4s ease both;
+.rd-loc-menu__btn i { font-size: 14px; }
+.rd-loc-menu__pop {
+  position: absolute;
+  top: calc(100% + 4px);
+  inset-inline-end: 0;
+  min-width: 132px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 4px;
+  z-index: 5;
+  box-shadow: var(--shadow-md, 0 8px 24px rgba(0, 0, 0, 0.08));
 }
-html.athar-staging-redesign.mr-mobile-ui #tab-locations .rb-branch-card__icon {
-  width: 42px !important;
-  height: 42px !important;
-  border-radius: 13px !important;
-  background: var(--goldSoft) !important;
-  color: var(--gold) !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  border: none !important;
-  box-shadow: none !important;
+.rd-loc-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--text2);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  padding: 9px 10px;
+  border-radius: 9px;
+  cursor: pointer;
+  text-align: start;
 }
-html.athar-staging-redesign.mr-mobile-ui #tab-locations .rb-branch-card__name {
-  font-size: 14px !important;
-  font-weight: 700 !important;
+.rd-loc-menu__item:active { background: var(--surface2); }
+.rd-loc-menu__item--danger { color: var(--danger); }
+.rd-loc-menu__item i { font-size: 11px; width: 14px; text-align: center; }
+
+.rd-loc-branch__staff {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
-html.athar-staging-redesign.mr-mobile-ui #tab-locations .rb-branch-card__foot {
-  margin-top: 12px !important;
-  padding-top: 12px !important;
-  border-top: 1px solid var(--border) !important;
-  background: transparent !important;
+.rd-loc-emp {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.rd-loc-emp__av {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--surface2);
+  color: var(--text2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.rd-loc-emp__body { flex: 1; min-width: 0; }
+.rd-loc-emp__name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rd-loc-emp__role {
+  font-size: 10.5px;
+  color: var(--text3);
+  margin-top: 1px;
+}
+.rd-loc-emp-empty {
+  font-size: 12px;
+  color: var(--text3);
+  text-align: center;
+  padding: 8px 0;
 }
 
 /* ═══ Users — mockup user cards ═══ */
