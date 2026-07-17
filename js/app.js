@@ -712,10 +712,38 @@
         return data.session;
       }
 
+      /** إعادة محاولة عند 503/فشل شبكة عابر من Edge (غالباً يظهر كـ CORS في المتصفح) */
+      async function fetchR2StorageWithRetry(url, init, opts = {}) {
+        const maxAttempts = Math.max(1, Number(opts.attempts) || 3);
+        const baseDelayMs = Math.max(50, Number(opts.baseDelayMs) || 450);
+        let lastErr = null;
+        let lastRes = null;
+        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+          try {
+            const res = await fetch(url, init);
+            lastRes = res;
+            // 503 من بوابة Supabase بدون CORS → المتصفح يرمي TypeError؛ هنا نعيد المحاولة
+            if (res.status === 503 && attempt < maxAttempts) {
+              await new Promise((r) => setTimeout(r, baseDelayMs * attempt));
+              continue;
+            }
+            return res;
+          } catch (err) {
+            lastErr = err;
+            const msg = String(err?.message || err || '');
+            const transient = /Failed to fetch|NetworkError|Load failed|ERR_FAILED|CORS|503/i.test(msg);
+            if (!transient || attempt >= maxAttempts) throw err;
+            await new Promise((r) => setTimeout(r, baseDelayMs * attempt));
+          }
+        }
+        if (lastRes) return lastRes;
+        throw lastErr || new Error('فشل الاتصال بـ r2-storage');
+      }
+
       async function r2StoragePing(session) {
         const token = session?.access_token;
         if (!token) return null;
-        return fetch(R2_STORAGE_FN_URL, {
+        return fetchR2StorageWithRetry(R2_STORAGE_FN_URL, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -723,7 +751,7 @@
             'Authorization': `Bearer ${token}`,
           },
           body: JSON.stringify({ action: 'ping' }),
-        });
+        }, { attempts: 4, baseDelayMs: 500 });
       }
 
       /**
@@ -772,13 +800,14 @@
               return 'edge';
             }
             if (res?.status === 503) {
-              let hint = 'أضف أسرار R2 في Supabase → Edge Functions → r2-storage → Secrets (R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_ACCOUNT_ID, R2_BUCKET_NAME).';
+              let hint = 'خدمة التخزين مشغولة مؤقتاً (503) — حدّث الصفحة وأعد المحاولة. إن تكرر: تحقق من أسرار R2 في Supabase staging.';
               try {
                 const j = await res.clone().json();
                 if (j && j.error) hint = j.error + ' — ' + hint;
               } catch (_) { /* noop */ }
-              _r2LastResolveNote = 'سبب التخطي: r2-storage أرجع 503 (أسرار R2 أو إعداد الدالة). ' + hint;
-              if (isMirsadDebugLog()) console.warn('[R2] الدالة r2-storage أرجعت 503 (الخدمة غير جاهزة).', hint);
+              _r2LastResolveNote = 'سبب التخطي: r2-storage أرجع 503. ' + hint;
+              if (isMirsadDebugLog()) console.warn('[R2] الدالة r2-storage أرجعت 503.', hint);
+              _r2EdgeRecheckAt = Date.now() + 8_000;
             }
             if (res?.status === 401) {
               _r2LastResolveNote = 'سبب التخطي: r2-storage أرجع 401 — سجّل الخروج ثم الدخول من جديد، أو عطّل Enforce JWT Verification على الدالة.';
@@ -817,7 +846,7 @@
           throw new Error('انتهت الجلسة، يرجى تسجيل الدخول من جديد');
         }
 
-        const res = await fetch(R2_STORAGE_FN_URL, {
+        const res = await fetchR2StorageWithRetry(R2_STORAGE_FN_URL, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -825,7 +854,7 @@
             'Authorization': `Bearer ${session.access_token}`
           },
           body: JSON.stringify({ action, ...payload })
-        });
+        }, { attempts: 3, baseDelayMs: 400 });
 
         let data = {};
         try { data = await res.json(); } catch (_) { }
@@ -859,7 +888,7 @@
           throw new Error('انتهت الجلسة، يرجى تسجيل الدخول من جديد');
         }
 
-        const res = await fetch(R2_STORAGE_FN_URL, {
+        const res = await fetchR2StorageWithRetry(R2_STORAGE_FN_URL, {
           method: 'POST',
           headers: {
             'Content-Type': contentType,
@@ -869,7 +898,7 @@
             'X-R2-Key': objectKey,
           },
           body,
-        });
+        }, { attempts: 3, baseDelayMs: 500 });
 
         let data = {};
         try { data = await res.json(); } catch (_) { }
