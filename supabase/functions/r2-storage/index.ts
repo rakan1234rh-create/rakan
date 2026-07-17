@@ -132,11 +132,66 @@ function envFirst(...keys: string[]) {
   return ''
 }
 
+/**
+ * يستخرج Account ID الحقيقي إذا لصق المستخدم رابط R2 كامل بالغلط.
+ * أمثلة مقبولة:
+ *   4621f6487cfcd2be41fe670609190c2e
+ *   https://4621....r2.cloudflarestorage.com
+ *   https://4621....r2.cloudflarestorage.com/athar-staging
+ */
+function normalizeR2AccountId(raw: string): string {
+  let s = String(raw || '').trim()
+  if (!s) return ''
+  // أزل اقتباسات شائعة من اللصق
+  s = s.replace(/^['"]+|['"]+$/g, '')
+  // إذا كان رابطاً، خذ الـ host فقط
+  try {
+    if (/^https?:\/\//i.test(s) || s.includes('.r2.cloudflarestorage.com')) {
+      const withScheme = /^https?:\/\//i.test(s) ? s : `https://${s}`
+      const u = new URL(withScheme)
+      s = u.hostname || s
+    }
+  } catch {
+    /* keep s */
+  }
+  // ACCOUNT_ID.r2.cloudflarestorage.com → ACCOUNT_ID
+  const m = s.match(/^([a-f0-9]{32})\.r2\.cloudflarestorage\.com$/i)
+  if (m) return m[1].toLowerCase()
+  // أحياناً يُلصق: ACCOUNT_ID.r2.../bucket أو نص فيه الـ id
+  const anywhere = s.match(/([a-f0-9]{32})/i)
+  if (anywhere && /r2\.cloudflarestorage\.com/i.test(String(raw))) {
+    return anywhere[1].toLowerCase()
+  }
+  // قيمة نظيفة بطول 32 hex
+  if (/^[a-f0-9]{32}$/i.test(s)) return s.toLowerCase()
+  return s
+}
+
+function normalizeR2BucketName(raw: string): string {
+  let s = String(raw || '').trim().replace(/^['"]+|['"]+$/g, '')
+  if (!s) return ''
+  // لو لصق رابط فيه اسم الـ bucket في المسار
+  try {
+    if (/^https?:\/\//i.test(s) || s.includes('.r2.cloudflarestorage.com')) {
+      const withScheme = /^https?:\/\//i.test(s) ? s : `https://${s}`
+      const u = new URL(withScheme)
+      const seg = (u.pathname || '').split('/').filter(Boolean)[0]
+      if (seg) return seg
+    }
+  } catch {
+    /* keep s */
+  }
+  // athar-staging.r2.cloudflarestorage.com بالغلط
+  const m = s.match(/^([a-z0-9][a-z0-9._-]*)\.r2\.cloudflarestorage\.com$/i)
+  if (m) return m[1]
+  return s
+}
+
 function requireR2Env() {
   const accessKeyId = envFirst('R2_ACCESS_KEY_ID', 'AWS_ACCESS_KEY_ID')
   const secretAccessKey = envFirst('R2_SECRET_ACCESS_KEY', 'AWS_SECRET_ACCESS_KEY')
-  const accountId = envFirst('R2_ACCOUNT_ID', 'CLOUDFLARE_ACCOUNT_ID')
-  const bucket = envFirst('R2_BUCKET_NAME', 'R2_BUCKET', 'AWS_S3_BUCKET')
+  const accountId = normalizeR2AccountId(envFirst('R2_ACCOUNT_ID', 'CLOUDFLARE_ACCOUNT_ID'))
+  const bucket = normalizeR2BucketName(envFirst('R2_BUCKET_NAME', 'R2_BUCKET', 'AWS_S3_BUCKET'))
   if (!accessKeyId || !secretAccessKey || !accountId || !bucket) return null
   return { accessKeyId, secretAccessKey, accountId, bucket }
 }
