@@ -561,37 +561,6 @@ html.athar-staging-redesign.mr-desktop-ui #rdWfChips {
   border-color: var(--gold);
 }
 
-.rd-team-platform {
-  margin-bottom: 14px;
-}
-.rd-team-viols-btn {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  width: 100%;
-  margin-top: 10px;
-  padding: 13px 14px;
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  background: var(--goldSoft, color-mix(in srgb, var(--gold) 14%, transparent));
-  color: var(--gold);
-  font: inherit;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  box-sizing: border-box;
-  -webkit-tap-highlight-color: transparent;
-}
-.rd-team-viols-btn:active { opacity: 0.9; }
-.rd-team-viols-btn > i:first-child {
-  font-size: 14px;
-}
-.rd-team-viols-btn > span { flex: 1; text-align: start; }
-.rd-team-viols-btn > i:last-child {
-  font-size: 11px;
-  opacity: 0.85;
-}
 
 html.athar-staging-redesign.mr-mobile-ui #ticketList.wf-desk-tickets-host,
 html.athar-staging-redesign.mr-mobile-ui #ticketList .wf-mob-tickets-body {
