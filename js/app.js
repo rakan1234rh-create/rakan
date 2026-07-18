@@ -14911,10 +14911,11 @@
           return;
         }
 
+        const compactRd = typeof isAtharRedesignUi === 'function' && isAtharRedesignUi();
         dropdown.innerHTML = '';
         results.forEach(v => {
           const item = document.createElement('div');
-          item.className = 'autocomplete-item';
+          item.className = compactRd ? 'autocomplete-item rd-nt-type-item' : 'autocomplete-item';
 
           // توحيد التصنيفات والألوان بناءً على طلب المستخدم
           let severityText = v.severity || 'منخفض';
@@ -14925,27 +14926,40 @@
           else if (severityText === 'متوسط') badgeColor = '#FFCC00'; // أصفر النظام (iOS)
 
           const badgeBg = `${badgeColor}1a`; // شفافية 10%
+          const sevClass = severityText === 'عالي' ? 'is-high' : (severityText === 'متوسط' ? 'is-mid' : 'is-low');
 
-          item.innerHTML = `
-          <div style="display: flex; gap: 14px; align-items: flex-start; padding: 6px 0;">
-            <div style="background: ${badgeBg}; color: ${badgeColor}; width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 18px; border: 1px solid ${badgeColor}33;">
-              <i class="fas fa-exclamation-triangle"></i>
-            </div>
-            <div style="flex: 1;">
-              <div class="ac-name" style="font-size: 14px; margin-bottom: 2px;"><bdi>${highlightMatch(v.name, query)}</bdi></div>
-              <div style="font-size: 12px; color: var(--text3); margin-bottom: 6px; opacity: 0.8;">${Sec.escapeHTML(v.category || '-')}</div>
-              
-              <div style="display: flex; gap: 10px; align-items: center;">
-                 <span style="background: ${badgeBg}; color: ${badgeColor}; font-size: 10px; padding: 2px 8px; border-radius: 12px; font-weight: bold; border: 1px solid ${badgeColor}44; white-space: nowrap; flex-shrink: 0;">
-                   ${Sec.escapeHTML(severityText)}
-                 </span>
-                 <div style="font-size: 11px; color: var(--text2); opacity: 0.8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${Sec.escapeHTML(v.description || '')}">
-                    ${Sec.escapeHTML(v.description || '')}
-                 </div>
+          if (compactRd) {
+            // Compact single-row results for mobile redesign (keyboard-friendly)
+            item.innerHTML = `
+            <div class="rd-nt-type-row">
+              <div class="rd-nt-type-row__main">
+                <div class="rd-nt-type-row__name"><bdi>${highlightMatch(v.name, query)}</bdi></div>
+                <div class="rd-nt-type-row__meta">${Sec.escapeHTML(v.category || '-')}</div>
+              </div>
+              <span class="rd-nt-type-row__sev ${sevClass}">${Sec.escapeHTML(severityText)}</span>
+            </div>`;
+          } else {
+            item.innerHTML = `
+            <div style="display: flex; gap: 14px; align-items: flex-start; padding: 6px 0;">
+              <div style="background: ${badgeBg}; color: ${badgeColor}; width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 18px; border: 1px solid ${badgeColor}33;">
+                <i class="fas fa-exclamation-triangle"></i>
+              </div>
+              <div style="flex: 1;">
+                <div class="ac-name" style="font-size: 14px; margin-bottom: 2px;"><bdi>${highlightMatch(v.name, query)}</bdi></div>
+                <div style="font-size: 12px; color: var(--text3); margin-bottom: 6px; opacity: 0.8;">${Sec.escapeHTML(v.category || '-')}</div>
+                
+                <div style="display: flex; gap: 10px; align-items: center;">
+                   <span style="background: ${badgeBg}; color: ${badgeColor}; font-size: 10px; padding: 2px 8px; border-radius: 12px; font-weight: bold; border: 1px solid ${badgeColor}44; white-space: nowrap; flex-shrink: 0;">
+                     ${Sec.escapeHTML(severityText)}
+                   </span>
+                   <div style="font-size: 11px; color: var(--text2); opacity: 0.8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${Sec.escapeHTML(v.description || '')}">
+                      ${Sec.escapeHTML(v.description || '')}
+                   </div>
+                </div>
               </div>
             </div>
-          </div>
-        `;
+          `;
+          }
           item.onclick = (e) => {
             e.stopPropagation();
             selectNtViolationType(v);
