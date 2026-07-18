@@ -1995,6 +1995,8 @@ html.athar-staging-redesign.mr-mobile-ui #tab-departments #usersList.users-grid-
 html.athar-staging-redesign.mr-mobile-ui #tab-newTicket {
   animation: atharRdScreenIn 0.32s ease;
   padding-inline: 4px !important;
+  overflow-x: clip !important;
+  max-width: 100% !important;
 }
 html.athar-staging-redesign.mr-mobile-ui #tab-newTicket > .panel {
   background: transparent !important;
@@ -2253,6 +2255,30 @@ html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .mk-dt-pair {
   display: grid !important;
   grid-template-columns: 1fr 1fr !important;
   gap: 10px !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .mk-dt-wrap {
+  position: relative !important;
+  min-width: 0 !important;
+  overflow: visible !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .nt-time-picker {
+  inset-inline: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: auto !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .ntp-cols {
+  gap: 6px !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .ntp-col--ampm {
+  flex: 0 0 36px !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .ntp-opt {
+  font-size: 12px !important;
+  padding: 6px 2px !important;
 }
 html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .mk-dt-control {
   background: var(--surface) !important;

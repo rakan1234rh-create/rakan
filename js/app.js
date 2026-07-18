@@ -14382,9 +14382,10 @@
         minsEl.innerHTML = minsHtml;
 
         requestAnimationFrame(() => {
-          hoursEl.querySelector('.ntp-opt.selected')?.scrollIntoView({ block: 'center' });
-          ampmEl.querySelector('.ntp-opt.selected')?.scrollIntoView({ block: 'center' });
-          minsEl.querySelector('.ntp-opt.selected')?.scrollIntoView({ block: 'center' });
+          const scrollOpt = { block: 'center', inline: 'nearest' };
+          hoursEl.querySelector('.ntp-opt.selected')?.scrollIntoView(scrollOpt);
+          ampmEl.querySelector('.ntp-opt.selected')?.scrollIntoView(scrollOpt);
+          minsEl.querySelector('.ntp-opt.selected')?.scrollIntoView(scrollOpt);
         });
       }
 
