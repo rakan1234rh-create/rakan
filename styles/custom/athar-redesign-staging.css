@@ -571,6 +571,20 @@ html.athar-staging-redesign.mr-mobile-ui #ticketList .wf-mob-tickets-body {
   overflow: visible !important;
 }
 
+/* Legacy table column header (ID / الموظف / …) — removed in redesign cards UI */
+html.athar-staging-redesign.mr-mobile-ui #tab-workflow #wfMobTicketsHead,
+html.athar-staging-redesign.mr-mobile-ui #tab-workflow .wf-mob-tickets-head,
+html.athar-staging-redesign.mr-mobile-ui #tab-workflow .wf-tickets-table--mob-head,
+html.athar-staging-redesign.mr-mobile-ui #tab-workflow .wf-table-wrap--head {
+  display: none !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  border: none !important;
+  visibility: hidden !important;
+}
+
 .rd-ticket-list {
   display: flex;
   flex-direction: column;

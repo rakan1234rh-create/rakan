@@ -18097,7 +18097,14 @@
       function seedWfMobTicketsHeadIfNeeded() {
         if (typeof isDesktopUi === 'function' ? isDesktopUi() : !(typeof isMobileViewport === 'function' && isMobileViewport())) return;
         const mobHead = document.getElementById('wfMobTicketsHead');
-        if (!mobHead || mobHead.querySelector('.wf-tickets-table--mob-head')) return;
+        if (!mobHead) return;
+        // Redesign tickets use cards — never show the legacy table column header
+        if (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi()) {
+          mobHead.innerHTML = '';
+          mobHead.setAttribute('aria-hidden', 'true');
+          return;
+        }
+        if (mobHead.querySelector('.wf-tickets-table--mob-head')) return;
         mobHead.innerHTML = buildMobTicketsHeadHtml({ wfMob: true, rpMob: false });
         mobHead.setAttribute('aria-hidden', 'false');
       }
@@ -18143,7 +18150,7 @@
 
         if (!tickets.length) {
           if (mobHead) {
-            if (isAppDataPending() && wfMob) {
+            if (isAppDataPending() && wfMob && !(typeof isAtharRedesignUi === 'function' && isAtharRedesignUi())) {
               seedWfMobTicketsHeadIfNeeded();
             } else {
               mobHead.innerHTML = '';
