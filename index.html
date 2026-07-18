@@ -2709,6 +2709,8 @@
           <button class="nav-item" onclick="goTab('workflow',this)" data-perm="tab_workflow"><span class="nav-icon-wrap"><i class="fas fa-clipboard-list" aria-hidden="true"></i></span><span
               class="nav-item-label">معالجة التذاكر</span><span class="nav-badge" id="pendBadge"
               style="display:none">0</span></button>
+          <button class="nav-item" onclick="goTab('breaks',this)" data-perm="tab_breaks"><span class="nav-icon-wrap"><i
+              class="fas fa-mug-hot" aria-hidden="true"></i></span><span class="nav-item-label">بريكات الموظفين</span></button>
           <button class="nav-item" onclick="goTab('reports',this)" data-perm="tab_reports"><span class="nav-icon-wrap"><i
               class="fas fa-chart-line" aria-hidden="true"></i></span><span class="nav-item-label">التقارير</span></button>
           <button class="nav-item" onclick="goTab('compliance',this)" data-perm="tab_compliance"><span class="nav-icon-wrap"><i
@@ -3487,6 +3489,25 @@
             </div>
           </div>
 
+          <!-- STAFF BREAKS -->
+          <div class="tab-content" id="tab-breaks" hidden>
+            <div class="panel wf-panel breaks-panel">
+              <div class="wf-panel-banner">
+                <div class="wf-panel-intro">
+                  <h2 class="wf-panel-title">بريكات الموظفين</h2>
+                  <p class="wf-panel-sub">عداد تنازلي حسب المدة المجدولة — التجاوز يكمّل بالسالب</p>
+                </div>
+                <div class="toolbar wf-toolbar" data-perm="manage_break_schedules">
+                  <button type="button" class="rp-tool-btn rp-tool-btn-primary" onclick="openBreakScheduleModal()">
+                    <i class="fas fa-sliders"></i><span>تعديل مدة</span>
+                  </button>
+                </div>
+              </div>
+              <div id="rdBreaks" class="rd-breaks-host" hidden></div>
+              <div id="breaksClassicHost" class="breaks-classic-host"></div>
+            </div>
+          </div>
+
           <!-- VIOLATIONS -->
           <div class="tab-content" id="tab-violations">
             <div class="panel wf-panel">
@@ -3856,6 +3877,11 @@
         <span>تذاكر</span>
         <span class="mob-nav-badge" id="mobPendBadge" style="display:none">0</span>
       </button>
+      <button type="button" class="mob-nav-item" data-tab="breaks" data-perm="tab_breaks"
+        onclick="mobileNavGo('breaks', this)">
+        <i class="fas fa-mug-hot" aria-hidden="true"></i>
+        <span>بريكات</span>
+      </button>
       <button type="button" class="mob-nav-item" data-tab="reports" data-perm="tab_reports"
         onclick="mobileNavGo('reports', this)">
         <i class="fas fa-chart-line" aria-hidden="true"></i>
@@ -3962,6 +3988,63 @@
         </div>
       </div>
     </div>
+    <div class="modal" id="breakOvertimeModal" role="dialog" aria-modal="true" aria-labelledby="breakOtTitle">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3 id="breakOtTitle">سبب تجاوز مدة البريك</h3>
+          <button type="button" class="btn btn-ghost" onclick="closeModal('breakOvertimeModal')" aria-label="إغلاق"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+          <p class="form-hint" id="breakOtHint" style="margin-bottom:12px;color:var(--text2);font-size:13px;line-height:1.6"></p>
+          <div class="form-group">
+            <label class="form-label" for="breakOtReason">سبب التجاوز <span class="required-mark">*</span></label>
+            <textarea id="breakOtReason" class="form-input" rows="3" placeholder="مثال: ازدحام الفرع / مهمة طارئة"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn" onclick="closeModal('breakOvertimeModal')">إلغاء</button>
+          <button type="button" class="btn btn-primary" onclick="submitBreakOvertimeReason()"><i class="fas fa-check"></i> إنهاء البريك</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal" id="breakScheduleModal" role="dialog" aria-modal="true" aria-labelledby="breakSchTitle">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3 id="breakSchTitle">جدولة مدة البريك</h3>
+          <button type="button" class="btn btn-ghost" onclick="closeModal('breakScheduleModal')" aria-label="إغلاق"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label" for="breakSchScopeType">النطاق</label>
+            <select id="breakSchScopeType" class="form-select" onchange="syncBreakScheduleScopeFields()">
+              <option value="global">عام (كل المنصة)</option>
+              <option value="region">منطقة</option>
+              <option value="branch" selected>فرع</option>
+              <option value="user">موظف محدد</option>
+            </select>
+          </div>
+          <p class="form-hint" id="breakSchGlobalNote" hidden style="margin:-4px 0 12px;color:var(--text3);font-size:12px">تُطبَّق على الجميع ما لم تُضبط مدة أدق لمنطقة/فرع/موظف.</p>
+          <div class="form-group" id="breakSchScopeIdWrap">
+            <label class="form-label" for="breakSchScopeId">اختر</label>
+            <select id="breakSchScopeId" class="form-select"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="breakSchMinutes">المدة بالدقائق <span class="required-mark">*</span></label>
+            <input type="number" id="breakSchMinutes" class="form-input" min="1" max="480" step="1" value="15">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="breakSchLabel">وصف اختياري</label>
+            <input type="text" id="breakSchLabel" class="form-input" placeholder="مثلاً: استراحة قصيرة">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn" onclick="closeModal('breakScheduleModal')">إلغاء</button>
+          <button type="button" class="btn btn-primary" onclick="saveBreakScheduleFromUi()"><i class="fas fa-save"></i> حفظ المدة</button>
+        </div>
+      </div>
+    </div>
+
     <div class="modal" id="regionModal">
       <div class="modal-card">
         <div class="modal-header">

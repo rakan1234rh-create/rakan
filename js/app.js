@@ -1238,7 +1238,12 @@
         profileAvatars: null,
         _profileAvatarsFromCloud: false,
         _dataLoading: false,
-        _dataReady: false
+        _dataReady: false,
+        staffBreaks: [],
+        staffBreakSchedules: [],
+        _myBreakDurationMins: 15,
+        _staffBreakTicker: null,
+        _staffBreaksChannel: null
       };
 
       /** مستخدم محلي عند عدم وجود جلسة Supabase (بعد إزالة شاشة الدخول) */
@@ -4695,6 +4700,7 @@
           state._dataLoading = false;
           state._dataReady = true;
           state._wfViolationsScope = canViewAllTickets();
+          try { loadStaffBreaksData(); } catch (_) { /* noop */ }
           setConnStatus('connected');
           if (mobLoad) showGlobalLoader(false);
           return true;
@@ -5749,6 +5755,8 @@
           .subscribe();
         state.realtimeChannels.push(vCh);
 
+        try { setupStaffBreaksRealtime(); } catch (_) { /* noop */ }
+
         if (!isMobileViewport()) {
           const uCh = sb.channel('public:users')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, (payload) => {
@@ -5845,6 +5853,8 @@
         { id: 'tab_departments', label: 'إدارة المستخدمين', group: 'الإعدادات', roles: ['admin'] },
         { id: 'tab_settings', label: 'صفحة صلاحيات المنصة', group: 'الإعدادات', roles: [] },
         { id: 'tab_broadcasts', label: 'نشرات الجوال', group: 'الإعدادات', roles: ['admin'] },
+        { id: 'tab_breaks', label: 'بريكات الموظفين', group: 'التنقل', roles: ['admin', 'supervisor', 'branch_manager', 'observer', 'employee'] },
+        { id: 'manage_break_schedules', label: 'تعديل مدد البريك (منطقة/فرع/موظف)', group: 'إجراءات إدارية', roles: ['admin', 'supervisor'] },
         { id: 'view_all_tickets', label: 'عرض جميع التذاكر (كل الفروع)', group: 'سير العمل', roles: ['admin', 'manager', 'auditor', 'hr'] },
         { id: 'respond_own_ticket', label: 'الرد على التذكرة الموجّهة إليه', group: 'سير العمل', roles: ['admin', 'employee', 'branch_manager'] },
         { id: 'act_as_supervisor', label: 'معالجة مرحلة المشرف', group: 'سير العمل', roles: ['admin', 'supervisor'] },
@@ -5883,7 +5893,8 @@
         locations: 'tab_locations',
         departments: 'tab_departments',
         settings: 'tab_settings',
-        broadcasts: 'tab_broadcasts'
+        broadcasts: 'tab_broadcasts',
+        breaks: 'tab_breaks'
       };
 
       function buildDefaultRolePermissions() {
@@ -6117,7 +6128,7 @@
           return ['tab_locations', 'tab_departments', 'tab_settings', 'tab_broadcasts'].some(p => hasPermission(p));
         }
         if (permId === 'section_main') {
-          return ['tab_dashboard', 'tab_newTicket', 'tab_workflow', 'tab_reports', 'tab_compliance', 'tab_violations'].some(p => hasPermission(p));
+          return ['tab_dashboard', 'tab_newTicket', 'tab_workflow', 'tab_breaks', 'tab_reports', 'tab_compliance', 'tab_violations'].some(p => hasPermission(p));
         }
         if (role === 'admin') return true;
         const uid = state.currentUser.id;
@@ -7162,12 +7173,13 @@
           else if (tab === 'settings' && typeof renderSettingsPermissions === 'function') renderSettingsPermissions();
           else if (tab === 'profileAvatars' && typeof renderProfileAvatarsAdmin === 'function') renderProfileAvatarsAdmin();
           else if (tab === 'broadcasts' && typeof renderBroadcastsPage === 'function') renderBroadcastsPage();
+          else if (tab === 'breaks' && typeof renderStaffBreaksPage === 'function') renderStaffBreaksPage({ soft: true });
         } catch (e) {
           if (isMirsadDebugLog()) console.warn('[permissions] active tab refresh', e);
         }
       }
 
-      const MR_NAV_TAB_ORDER = ['dashboard', 'workflow', 'newTicket', 'reports', 'compliance', 'violations', 'locations', 'departments', 'settings', 'broadcasts'];
+      const MR_NAV_TAB_ORDER = ['dashboard', 'workflow', 'newTicket', 'breaks', 'reports', 'compliance', 'violations', 'locations', 'departments', 'settings', 'broadcasts'];
 
       function hasAnyNavTabPermission() {
         return MR_NAV_TAB_ORDER.some(tab => {
@@ -7936,6 +7948,7 @@
         dashboard: { title: 'لوحة القيادة', sub: 'ATHAR' },
         newTicket: { title: 'رصد مخالفة جديدة', sub: 'create new violation' },
         workflow: { title: 'معالجة التذاكر', sub: 'tickets workflow' },
+        breaks: { title: 'بريكات الموظفين', sub: 'staff breaks' },
         reports: { title: 'التقارير', sub: 'reports & analytics' },
         compliance: { title: 'لوحة مؤشرات الامتثال', sub: 'compliance dashboard' },
         locations: { title: 'المناطق والفروع', sub: 'regions & branches' },
@@ -8456,7 +8469,7 @@
         }
       }
 
-      const MR_TABS_WITH_OWN_TITLE = ['dashboard', 'newTicket', 'workflow', 'reports', 'locations', 'departments', 'violations', 'compliance', 'settings', 'profileAvatars', 'broadcasts', 'notifications', 'profile'];
+      const MR_TABS_WITH_OWN_TITLE = ['dashboard', 'newTicket', 'workflow', 'breaks', 'reports', 'locations', 'departments', 'violations', 'compliance', 'settings', 'profileAvatars', 'broadcasts', 'notifications', 'profile'];
 
       function switchTabShellFast(tab, btn) {
         rememberActiveTab(tab);
@@ -8576,6 +8589,9 @@
           if (leavingTab === 'workflow' && typeof resetWorkflowTabFilters === 'function') {
             resetWorkflowTabFilters();
           }
+          if (leavingTab === 'breaks' && typeof stopStaffBreakTicker === 'function') {
+            stopStaffBreakTicker();
+          }
         }
 
         rememberActiveTab(tab);
@@ -8687,6 +8703,7 @@
           if (tab === 'settings') renderSettingsPermissions();
           if (tab === 'profileAvatars') renderProfileAvatarsAdmin();
           if (tab === 'broadcasts') renderBroadcastsPage();
+          if (tab === 'breaks') renderStaffBreaksPage();
           if (tab === 'newTicket') prepareNewTicket();
         }
 
@@ -9814,6 +9831,10 @@
         if (document.getElementById('tab-broadcasts')?.classList.contains('active')) {
           if (typeof refreshBroadcastTargetPickers === 'function') refreshBroadcastTargetPickers();
           if (typeof updateBroadcastPreview === 'function') updateBroadcastPreview();
+        }
+        if (document.getElementById('tab-breaks')?.classList.contains('active')
+          && typeof renderStaffBreaksPage === 'function') {
+          renderStaffBreaksPage({ soft: true });
         }
 
         updatePendingBadge();
@@ -32277,6 +32298,597 @@
       window.bcExpTpClear = bcExpTpClear;
       window.submitNewTicket = submitNewTicket;
       window.handleFiles = handleFiles;
+      // ═══════════════════════════════════════════════════════════════════════════
+      // STAFF BREAKS — بريكات الموظفين (عداد دائري + جدولة المدد)
+      // ═══════════════════════════════════════════════════════════════════════════
+
+      const STAFF_BREAK_RING_CIRC = 2 * Math.PI * 54; // r=54 like rd-streak
+
+      function canTakeStaffBreak() {
+        const role = normalizeUserRole(state.currentUser?.role);
+        return ['admin', 'employee', 'branch_manager', 'observer', 'supervisor'].includes(role);
+      }
+
+      function canManageStaffBreakSchedules() {
+        if (typeof hasPermission === 'function' && hasPermission('manage_break_schedules')) return true;
+        const role = normalizeUserRole(state.currentUser?.role);
+        return role === 'admin' || role === 'supervisor';
+      }
+
+      function stopStaffBreakTicker() {
+        if (state._staffBreakTicker) {
+          clearInterval(state._staffBreakTicker);
+          state._staffBreakTicker = null;
+        }
+      }
+
+      function ensureStaffBreakTicker() {
+        stopStaffBreakTicker();
+        const tab = document.getElementById('tab-breaks');
+        if (!tab?.classList.contains('active')) return;
+        state._staffBreakTicker = setInterval(() => {
+          try { paintStaffBreakCountdownOnly(); } catch (_) { /* noop */ }
+        }, 1000);
+      }
+
+      function formatBreakClock(totalSeconds) {
+        const neg = totalSeconds < 0;
+        const abs = Math.abs(Math.floor(totalSeconds));
+        const h = Math.floor(abs / 3600);
+        const m = Math.floor((abs % 3600) / 60);
+        const s = abs % 60;
+        const body = h > 0
+          ? `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+          : `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        return neg ? `-${body}` : body;
+      }
+
+      function getBreakRemainingSeconds(brk, nowMs = Date.now()) {
+        if (!brk?.started_at) return 0;
+        const start = new Date(brk.started_at).getTime();
+        const plannedMs = (Number(brk.planned_duration_minutes) || 0) * 60 * 1000;
+        return Math.floor((start + plannedMs - nowMs) / 1000);
+      }
+
+      function getMyActiveStaffBreak() {
+        const me = state.currentUser?.id;
+        if (!me) return null;
+        return (state.staffBreaks || []).find(b => b.status === 'active' && b.user_id === me) || null;
+      }
+
+      function enrichStaffBreak(row) {
+        if (!row) return row;
+        if (!state._userById || !state._branchById || !state._regionById) rebuildLookupMaps();
+        const u = state._userById?.get(row.user_id) || state.users.find(x => x.id === row.user_id);
+        const branch = row.branch_id
+          ? (state._branchById?.get(row.branch_id) || state.branches.find(b => b.id === row.branch_id))
+          : null;
+        const region = row.region_id
+          ? (state._regionById?.get(row.region_id) || state.regions.find(r => r.id === row.region_id))
+          : (branch?.region_id
+            ? (state._regionById?.get(branch.region_id) || state.regions.find(r => r.id === branch.region_id))
+            : null);
+        row._user = u || null;
+        row._userName = u?.name || '—';
+        row._roleLabel = u ? (ROLE_LABELS[normalizeUserRole(u.role)] || u.role) : '';
+        row._branchName = branch?.name || '—';
+        row._regionName = region?.name || '—';
+        return row;
+      }
+
+      async function loadStaffBreaksData() {
+        if (!state.currentUser?.id || state.currentUser.id === GUEST_LOCAL_PROFILE.id) {
+          state.staffBreaks = [];
+          state.staffBreakSchedules = [];
+          return;
+        }
+        try {
+          const [{ data: breaks, error: bErr }, { data: schedules, error: sErr }, { data: myMins, error: dErr }] = await Promise.all([
+            sb.from('staff_breaks')
+              .select('id,user_id,branch_id,region_id,planned_duration_minutes,started_at,ended_at,overtime_seconds,overtime_reason,status,created_at,updated_at')
+              .eq('status', 'active')
+              .order('started_at', { ascending: false })
+              .limit(200),
+            sb.from('staff_break_schedules')
+              .select('id,scope_type,scope_id,duration_minutes,label,is_active,updated_at')
+              .eq('is_active', true)
+              .order('updated_at', { ascending: false })
+              .limit(500),
+            sb.rpc('resolve_staff_break_duration', {
+              p_user_id: state.currentUser.id,
+              p_branch_id: state.currentUser.branch_id || null,
+              p_region_id: null
+            })
+          ]);
+          if (bErr && isMirsadDebugLog()) console.warn('[staff_breaks]', bErr);
+          if (sErr && isMirsadDebugLog()) console.warn('[staff_break_schedules]', sErr);
+          if (dErr && isMirsadDebugLog()) console.warn('[resolve_staff_break_duration]', dErr);
+          state.staffBreaks = (breaks || []).map(enrichStaffBreak);
+          state.staffBreakSchedules = schedules || [];
+          state._myBreakDurationMins = Number(myMins) > 0 ? Number(myMins) : 15;
+        } catch (e) {
+          if (isMirsadDebugLog()) console.warn('[staff_breaks] load', e);
+          state.staffBreaks = state.staffBreaks || [];
+          state.staffBreakSchedules = state.staffBreakSchedules || [];
+        }
+      }
+
+      function setupStaffBreaksRealtime() {
+        if (state._staffBreaksChannel) {
+          try { sb.removeChannel(state._staffBreaksChannel); } catch (_) { /* noop */ }
+          state._staffBreaksChannel = null;
+        }
+        const ch = sb.channel('public:staff_breaks')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'staff_breaks' }, (payload) => {
+            applyRealtimeChange(state.staffBreaks, payload, enrichStaffBreak);
+            state.staffBreaks = (state.staffBreaks || [])
+              .filter(b => b.status === 'active')
+              .map(enrichStaffBreak)
+              .sort((a, b) => new Date(b.started_at) - new Date(a.started_at));
+            const tab = document.getElementById('tab-breaks');
+            if (tab?.classList.contains('active')) renderStaffBreaksPage({ soft: true });
+          })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'staff_break_schedules' }, () => {
+            loadStaffBreaksData().then(() => {
+              const tab = document.getElementById('tab-breaks');
+              if (tab?.classList.contains('active')) renderStaffBreaksPage({ soft: true });
+            });
+          })
+          .subscribe();
+        state._staffBreaksChannel = ch;
+        state.realtimeChannels.push(ch);
+      }
+
+      function getStaffBreakScopeLabel(sch) {
+        if (!sch) return '—';
+        if (sch.scope_type === 'global') return 'عام (كل المنصة)';
+        if (sch.scope_type === 'region') {
+          const r = state.regions.find(x => x.id === sch.scope_id);
+          return `منطقة: ${r?.name || '—'}`;
+        }
+        if (sch.scope_type === 'branch') {
+          const b = state.branches.find(x => x.id === sch.scope_id);
+          return `فرع: ${b?.name || '—'}`;
+        }
+        if (sch.scope_type === 'user') {
+          const u = state.users.find(x => x.id === sch.scope_id);
+          return `موظف: ${u?.name || '—'}`;
+        }
+        return sch.scope_type;
+      }
+
+      function getSupervisedRegionsForBreaks() {
+        const me = state.currentUser;
+        if (!me) return [];
+        if (normalizeUserRole(me.role) === 'admin') return state.regions.slice();
+        return state.regions.filter(r => r.supervisor_id === me.id);
+      }
+
+      function getSupervisedBranchesForBreaks() {
+        const regions = getSupervisedRegionsForBreaks();
+        if (normalizeUserRole(state.currentUser?.role) === 'admin') return state.branches.slice();
+        const ids = new Set(regions.map(r => r.id));
+        return state.branches.filter(b => ids.has(b.region_id));
+      }
+
+      function getManageableBreakUsers() {
+        const branches = getSupervisedBranchesForBreaks();
+        const bids = new Set(branches.map(b => b.id));
+        return state.users.filter(u =>
+          isActiveUser(u) &&
+          u.branch_id &&
+          bids.has(u.branch_id) &&
+          ['employee', 'branch_manager', 'observer', 'supervisor'].includes(normalizeUserRole(u.role))
+        );
+      }
+
+      function paintStaffBreakCountdownOnly() {
+        const host = document.getElementById('rdBreaksRingHost') || document.getElementById('breaksRingHost');
+        if (!host) return;
+        const mine = getMyActiveStaffBreak();
+        const plannedMins = mine
+          ? (Number(mine.planned_duration_minutes) || state._myBreakDurationMins || 15)
+          : (state._myBreakDurationMins || 15);
+        const remaining = mine ? getBreakRemainingSeconds(mine) : plannedMins * 60;
+        const overtime = remaining < 0;
+        const plannedSec = Math.max(1, plannedMins * 60);
+        let progress;
+        if (!mine) progress = 1;
+        else if (!overtime) progress = Math.max(0, Math.min(1, remaining / plannedSec));
+        else progress = Math.min(1, Math.abs(remaining) / plannedSec);
+
+        const circ = STAFF_BREAK_RING_CIRC;
+        const offset = circ * (1 - progress);
+        const stroke = !mine ? 'var(--border)' : (overtime ? 'var(--danger)' : 'var(--success)');
+        const daysEl = host.querySelector('[data-break-clock]');
+        const lblEl = host.querySelector('[data-break-lbl]');
+        const ringEl = host.querySelector('[data-break-ring-progress]');
+        const icoEl = host.querySelector('[data-break-ico]');
+        if (daysEl) {
+          daysEl.textContent = mine ? formatBreakClock(remaining) : formatBreakClock(plannedSec);
+          daysEl.style.color = overtime ? 'var(--danger)' : 'var(--text)';
+        }
+        if (lblEl) {
+          lblEl.textContent = !mine
+            ? 'مدة البريك المعتمدة'
+            : (overtime ? 'تجاوز المدة' : 'متبقي من البريك');
+          lblEl.style.color = overtime ? 'var(--danger)' : 'var(--text3)';
+        }
+        if (ringEl) {
+          ringEl.setAttribute('stroke', stroke);
+          ringEl.setAttribute('stroke-dasharray', String(circ));
+          ringEl.setAttribute('stroke-dashoffset', mine ? String(offset) : '0');
+        }
+        if (icoEl) {
+          icoEl.style.color = overtime ? 'var(--danger)' : 'var(--success)';
+          icoEl.className = 'fas ' + (overtime ? 'fa-triangle-exclamation' : (mine ? 'fa-mug-hot' : 'fa-clock'));
+        }
+        document.querySelectorAll('[data-break-row-clock]').forEach(el => {
+          const id = el.getAttribute('data-break-row-clock');
+          const brk = (state.staffBreaks || []).find(b => b.id === id);
+          if (!brk) return;
+          const rem = getBreakRemainingSeconds(brk);
+          el.textContent = formatBreakClock(rem);
+          el.classList.toggle('rd-break-row__clock--over', rem < 0);
+        });
+      }
+
+      function renderStaffBreakRingHtml(mine) {
+        const plannedMins = mine
+          ? (Number(mine.planned_duration_minutes) || 15)
+          : (state._myBreakDurationMins || 15);
+        const remaining = mine ? getBreakRemainingSeconds(mine) : plannedMins * 60;
+        const overtime = !!(mine && remaining < 0);
+        const plannedSec = Math.max(1, plannedMins * 60);
+        let progress;
+        if (!mine) progress = 1;
+        else if (!overtime) progress = Math.max(0, Math.min(1, remaining / plannedSec));
+        else progress = Math.min(1, Math.abs(remaining) / plannedSec);
+        const circ = STAFF_BREAK_RING_CIRC;
+        const offset = circ * (1 - progress);
+        const stroke = !mine ? 'var(--border)' : (overtime ? 'var(--danger)' : 'var(--success)');
+        const badge = mine
+          ? (overtime ? 'تجاوز' : 'جاري البريك')
+          : `${plannedMins} دقيقة`;
+        const badgeIco = mine ? (overtime ? 'fa-triangle-exclamation' : 'fa-mug-hot') : 'fa-hourglass-half';
+
+        return `
+          <div class="rd-streak rd-break-card" id="rdBreaksRingHost">
+            <div class="rd-streak__badge"><i class="fas ${badgeIco}"></i>${Sec.escapeHTML(badge)}</div>
+            <div class="rd-streak__ring">
+              <svg width="136" height="136" viewBox="0 0 132 132" aria-hidden="true">
+                <circle cx="66" cy="66" r="54" fill="none" stroke="var(--border)" stroke-width="10"></circle>
+                <circle data-break-ring-progress cx="66" cy="66" r="54" fill="none" stroke="${stroke}" stroke-width="10"
+                  stroke-linecap="round" stroke-dasharray="${circ}" stroke-dashoffset="${mine ? offset : 0}"></circle>
+              </svg>
+              <div class="rd-streak__center">
+                <i data-break-ico class="fas ${overtime ? 'fa-triangle-exclamation' : (mine ? 'fa-mug-hot' : 'fa-clock')}"
+                  style="font-size:14px;color:${overtime ? 'var(--danger)' : 'var(--success)'};margin-bottom:3px"></i>
+                <span class="rd-streak__days" data-break-clock style="color:${overtime ? 'var(--danger)' : 'var(--text)'}">${formatBreakClock(remaining)}</span>
+                <span class="rd-streak__lbl" data-break-lbl style="color:${overtime ? 'var(--danger)' : 'var(--text3)'}">${
+                  !mine ? 'مدة البريك المعتمدة' : (overtime ? 'تجاوز المدة' : 'متبقي من البريك')
+                }</span>
+              </div>
+            </div>
+            <div class="rd-break-actions">
+              ${mine
+                ? `<button type="button" class="btn btn-primary rd-break-btn" onclick="endStaffBreakFromUi()"><i class="fas fa-stopwatch"></i> إنهاء البريك</button>`
+                : (canTakeStaffBreak()
+                  ? `<button type="button" class="btn btn-primary rd-break-btn" onclick="startStaffBreakFromUi()"><i class="fas fa-play"></i> بدء البريك</button>`
+                  : `<p class="rd-break-note">دورك الحالي للعرض فقط</p>`)
+              }
+            </div>
+          </div>`;
+      }
+
+      function renderStaffBreaksListHtml() {
+        const rows = (state.staffBreaks || [])
+          .filter(b => b.status === 'active')
+          .slice()
+          .sort((a, b) => new Date(b.started_at) - new Date(a.started_at));
+        if (!rows.length) {
+          return '<div class="rd-list__row" style="cursor:default"><div class="rd-list__sub">لا يوجد أحد في بريك حالياً</div></div>';
+        }
+        return rows.map(b => {
+          const rem = getBreakRemainingSeconds(b);
+          const over = rem < 0;
+          const me = b.user_id === state.currentUser?.id;
+          return `
+            <div class="rd-list__row rd-break-row${me ? ' rd-break-row--me' : ''}${over ? ' rd-break-row--over' : ''}" style="cursor:default">
+              <div class="rd-break-row__av" aria-hidden="true">${Sec.escapeHTML((b._userName || 'م').trim().charAt(0) || 'م')}</div>
+              <div class="rd-list__main">
+                <div class="rd-list__title">${Sec.escapeHTML(b._userName || '—')}${me ? ' <span class="rd-break-me-tag">أنت</span>' : ''}</div>
+                <div class="rd-list__sub">${Sec.escapeHTML(b._branchName || '—')} · ${Sec.escapeHTML(b._roleLabel || '')} · ${Number(b.planned_duration_minutes) || 0} د</div>
+              </div>
+              <div class="rd-break-row__clock${over ? ' rd-break-row__clock--over' : ''}" data-break-row-clock="${Sec.escapeHTML(b.id)}">${formatBreakClock(rem)}</div>
+            </div>`;
+        }).join('');
+      }
+
+      function renderStaffBreakSchedulesHtml() {
+        if (!canManageStaffBreakSchedules()) return '';
+        const schedules = (state.staffBreakSchedules || []).slice()
+          .sort((a, b) => {
+            const rank = { global: 0, region: 1, branch: 2, user: 3 };
+            return (rank[a.scope_type] ?? 9) - (rank[b.scope_type] ?? 9);
+          });
+        const rows = schedules.length
+          ? schedules.map(s => `
+              <div class="rd-list__row" style="cursor:default">
+                <div class="rd-list__main">
+                  <div class="rd-list__title">${Sec.escapeHTML(getStaffBreakScopeLabel(s))}</div>
+                  <div class="rd-list__sub">${s.label ? Sec.escapeHTML(s.label) : 'مدة معتمدة'}</div>
+                </div>
+                <div class="rd-break-sched-mins">${Number(s.duration_minutes) || 0} د</div>
+              </div>`).join('')
+          : '<div class="rd-list__row" style="cursor:default"><div class="rd-list__sub">لا توجد جداول بعد — المدة الافتراضية 15 دقيقة</div></div>';
+
+        return `
+          <div class="rd-sec">
+            <div class="rd-sec__head">
+              <span class="rd-sec__title">جدولة مدد البريك</span>
+              <button type="button" class="rd-sec__link" onclick="openBreakScheduleModal()"><i class="fas fa-sliders"></i> تعديل مدة</button>
+            </div>
+            <div class="rd-list">${rows}</div>
+          </div>`;
+      }
+
+      function renderStaffBreaksClassic() {
+        const host = document.getElementById('breaksClassicHost');
+        if (!host) return;
+        const mine = getMyActiveStaffBreak();
+        host.innerHTML = `
+          <div class="breaks-classic-grid">
+            <div id="breaksRingHost">${renderStaffBreakRingHtml(mine)}</div>
+            <div class="rd-sec" style="margin:0">
+              <div class="rd-sec__head"><span class="rd-sec__title">في البريك الآن</span></div>
+              <div class="rd-list">${renderStaffBreaksListHtml()}</div>
+            </div>
+            ${renderStaffBreakSchedulesHtml()}
+          </div>`;
+      }
+
+      function renderStaffBreaksRedesign() {
+        const host = document.getElementById('rdBreaks');
+        if (!host) return;
+        const mine = getMyActiveStaffBreak();
+        const activeCount = (state.staffBreaks || []).filter(b => b.status === 'active').length;
+        host.innerHTML = `
+          <div class="rd-screen">
+            <div class="rd-greet">
+              <div class="rd-greet__name">بريكات الموظفين</div>
+              <div class="rd-greet__sub">ابدأ بريكك وعدّاد المدة يتناقص — التجاوز يكمّل بالسالب</div>
+            </div>
+            ${renderStaffBreakRingHtml(mine)}
+            <div class="rd-mini-grid">
+              <div class="rd-mini">
+                <div class="rd-mini__val" style="color:var(--info)">${activeCount}</div>
+                <div class="rd-mini__lbl">في بريك الآن</div>
+              </div>
+              <div class="rd-mini">
+                <div class="rd-mini__val" style="color:var(--gold)">${state._myBreakDurationMins || 15}</div>
+                <div class="rd-mini__lbl">مدتك المعتمدة (د)</div>
+              </div>
+            </div>
+            <div class="rd-sec">
+              <div class="rd-sec__head"><span class="rd-sec__title">القائمة المباشرة</span></div>
+              <div class="rd-list">${renderStaffBreaksListHtml()}</div>
+            </div>
+            ${renderStaffBreakSchedulesHtml()}
+          </div>`;
+        host.hidden = false;
+      }
+
+      async function renderStaffBreaksPage(opts = {}) {
+        const tab = document.getElementById('tab-breaks');
+        if (!tab) return;
+        if (!opts.soft) {
+          if (isAppDataPending()) {
+            const rd = document.getElementById('rdBreaks');
+            const classic = document.getElementById('breaksClassicHost');
+            if (rd && isAtharRedesignUi()) rd.innerHTML = dataLoadingEmptyHTML('جاري تحميل البريكات…');
+            if (classic) classic.innerHTML = dataLoadingEmptyHTML('جاري تحميل البريكات…');
+          }
+          await loadStaffBreaksData();
+        }
+        if (isAtharRedesignUi()) {
+          const classic = document.getElementById('breaksClassicHost');
+          if (classic) classic.hidden = true;
+          renderStaffBreaksRedesign();
+        } else {
+          const rd = document.getElementById('rdBreaks');
+          if (rd) { rd.hidden = true; rd.innerHTML = ''; }
+          const classic = document.getElementById('breaksClassicHost');
+          if (classic) classic.hidden = false;
+          renderStaffBreaksClassic();
+        }
+        paintStaffBreakCountdownOnly();
+        ensureStaffBreakTicker();
+      }
+
+      async function startStaffBreakFromUi() {
+        if (!canTakeStaffBreak()) {
+          showToast('دورك لا يسمح ببدء بريك', 'warning');
+          return;
+        }
+        if (getMyActiveStaffBreak()) {
+          showToast('لديك بريك نشط بالفعل', 'info');
+          return;
+        }
+        try {
+          const { data, error } = await sb.rpc('start_staff_break');
+          if (error) throw error;
+          if (!data?.ok) {
+            showToast(data?.error || 'تعذّر بدء البريك', 'error');
+            return;
+          }
+          if (data.break) {
+            const row = enrichStaffBreak(data.break);
+            state.staffBreaks = [row, ...(state.staffBreaks || []).filter(b => b.id !== row.id && b.status === 'active')];
+          }
+          showToast('بدأ البريك — بالتوفيق', 'success');
+          await renderStaffBreaksPage({ soft: true });
+        } catch (e) {
+          showToast('فشل بدء البريك: ' + (e.message || e), 'error');
+        }
+      }
+
+      async function endStaffBreakFromUi(reasonFromModal) {
+        const mine = getMyActiveStaffBreak();
+        if (!mine) {
+          showToast('لا يوجد بريك نشط', 'info');
+          return;
+        }
+        const remaining = getBreakRemainingSeconds(mine);
+        if (remaining < 0 && !reasonFromModal) {
+          openBreakOvertimeModal(mine);
+          return;
+        }
+        try {
+          const { data, error } = await sb.rpc('end_staff_break', {
+            p_break_id: mine.id,
+            p_overtime_reason: reasonFromModal || null
+          });
+          if (error) throw error;
+          if (data?.needs_reason) {
+            openBreakOvertimeModal(mine, data.overtime_seconds);
+            return;
+          }
+          if (!data?.ok) {
+            showToast(data?.error || 'تعذّر إنهاء البريك', 'error');
+            return;
+          }
+          state.staffBreaks = (state.staffBreaks || []).filter(b => b.id !== mine.id);
+          closeModal('breakOvertimeModal');
+          showToast('تم إنهاء البريك', 'success');
+          await renderStaffBreaksPage({ soft: true });
+        } catch (e) {
+          showToast('فشل إنهاء البريك: ' + (e.message || e), 'error');
+        }
+      }
+
+      function openBreakOvertimeModal(brk, overtimeSeconds) {
+        const rem = overtimeSeconds != null ? overtimeSeconds : Math.abs(getBreakRemainingSeconds(brk));
+        const hint = document.getElementById('breakOtHint');
+        const input = document.getElementById('breakOtReason');
+        if (hint) hint.textContent = `تجاوزت المدة بمقدار ${formatBreakClock(-rem)} — أضف سبب التجاوز لإكمال إنهاء البريك.`;
+        if (input) input.value = '';
+        openModal('breakOvertimeModal');
+        setTimeout(() => input?.focus(), 80);
+      }
+
+      async function submitBreakOvertimeReason() {
+        const reason = String(document.getElementById('breakOtReason')?.value || '').trim();
+        if (!reason) {
+          showToast('أدخل سبب تجاوز المدة', 'warning');
+          return;
+        }
+        if (reason.length < 3) {
+          showToast('السبب قصير جداً', 'warning');
+          return;
+        }
+        await endStaffBreakFromUi(reason);
+      }
+
+      function syncBreakScheduleScopeFields() {
+        const type = document.getElementById('breakSchScopeType')?.value || 'branch';
+        const wrap = document.getElementById('breakSchScopeIdWrap');
+        const sel = document.getElementById('breakSchScopeId');
+        const globalNote = document.getElementById('breakSchGlobalNote');
+        if (!sel || !wrap) return;
+        if (type === 'global') {
+          wrap.hidden = true;
+          if (globalNote) globalNote.hidden = false;
+          sel.innerHTML = '';
+          return;
+        }
+        wrap.hidden = false;
+        if (globalNote) globalNote.hidden = true;
+        let options = [];
+        if (type === 'region') {
+          options = getSupervisedRegionsForBreaks().map(r => ({ id: r.id, label: r.name }));
+        } else if (type === 'branch') {
+          options = getSupervisedBranchesForBreaks().map(b => {
+            const r = state.regions.find(x => x.id === b.region_id);
+            return { id: b.id, label: r ? `${b.name} — ${r.name}` : b.name };
+          });
+        } else if (type === 'user') {
+          options = getManageableBreakUsers().map(u => {
+            const b = state.branches.find(x => x.id === u.branch_id);
+            return { id: u.id, label: b ? `${u.name} — ${b.name}` : u.name };
+          });
+        }
+        sel.innerHTML = options.length
+          ? options.map(o => `<option value="${Sec.escapeHTML(o.id)}">${Sec.escapeHTML(o.label)}</option>`).join('')
+          : '<option value="">— لا توجد خيارات —</option>';
+      }
+
+      function openBreakScheduleModal() {
+        if (!canManageStaffBreakSchedules()) {
+          showToast('لا تملك صلاحية تعديل مدد البريك', 'warning');
+          return;
+        }
+        const typeSel = document.getElementById('breakSchScopeType');
+        const mins = document.getElementById('breakSchMinutes');
+        const role = normalizeUserRole(state.currentUser?.role);
+        if (typeSel) {
+          const allowGlobal = role === 'admin';
+          [...typeSel.options].forEach(opt => {
+            if (opt.value === 'global') opt.hidden = !allowGlobal;
+          });
+          if (!allowGlobal && typeSel.value === 'global') typeSel.value = 'branch';
+        }
+        if (mins) mins.value = String(state._myBreakDurationMins || 15);
+        syncBreakScheduleScopeFields();
+        openModal('breakScheduleModal');
+      }
+
+      async function saveBreakScheduleFromUi() {
+        if (!canManageStaffBreakSchedules()) {
+          showToast('لا تملك صلاحية تعديل مدد البريك', 'warning');
+          return;
+        }
+        const scopeType = document.getElementById('breakSchScopeType')?.value || 'branch';
+        const scopeIdRaw = document.getElementById('breakSchScopeId')?.value || '';
+        const minutes = Number(document.getElementById('breakSchMinutes')?.value || 0);
+        const label = String(document.getElementById('breakSchLabel')?.value || '').trim();
+        if (!Number.isFinite(minutes) || minutes < 1 || minutes > 480) {
+          showToast('أدخل مدة بين 1 و 480 دقيقة', 'warning');
+          return;
+        }
+        if (scopeType !== 'global' && !scopeIdRaw) {
+          showToast('اختر النطاق', 'warning');
+          return;
+        }
+        try {
+          const { data, error } = await sb.rpc('upsert_staff_break_schedule', {
+            p_scope_type: scopeType,
+            p_scope_id: scopeType === 'global' ? null : scopeIdRaw,
+            p_duration_minutes: minutes,
+            p_label: label || null
+          });
+          if (error) throw error;
+          if (!data?.ok) {
+            showToast(data?.error || 'تعذّر الحفظ', 'error');
+            return;
+          }
+          closeModal('breakScheduleModal');
+          showToast('تم حفظ مدة البريك', 'success');
+          await loadStaffBreaksData();
+          await renderStaffBreaksPage({ soft: true });
+        } catch (e) {
+          showToast('فشل الحفظ: ' + (e.message || e), 'error');
+        }
+      }
+
+      window.startStaffBreakFromUi = startStaffBreakFromUi;
+      window.endStaffBreakFromUi = endStaffBreakFromUi;
+      window.submitBreakOvertimeReason = submitBreakOvertimeReason;
+      window.openBreakScheduleModal = openBreakScheduleModal;
+      window.saveBreakScheduleFromUi = saveBreakScheduleFromUi;
+      window.syncBreakScheduleScopeFields = syncBreakScheduleScopeFields;
+
+
       window.removeFile = removeFile;
       window.removeFileById = removeFileById;
       window.filterTickets = filterTickets;
