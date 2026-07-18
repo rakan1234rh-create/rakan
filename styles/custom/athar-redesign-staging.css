@@ -305,9 +305,11 @@ html.mr-mobile-ui #tab-compliance,
 html.mr-mobile-ui #tab-violations,
 html.mr-mobile-ui #tab-locations,
 html.mr-mobile-ui #tab-departments,
-html.mr-mobile-ui #tab-breaks,
 html.mr-mobile-ui #tab-newTicket {
   padding-inline: 16px !important;
+}
+html.mr-mobile-ui #tab-breaks {
+  padding-inline: 1px !important;
 }
 
 /* Cards / panels → soft iOS surfaces */
@@ -920,6 +922,13 @@ html.athar-staging-redesign.mr-mobile-ui .content:has(#tab-newTicket.active) {
   padding-inline: 1px !important;
   padding-top: 2px !important;
   padding-bottom: calc(var(--mr-mob-bottom-nav-h, 56px) + 28px) !important;
+}
+
+/* Breaks: flush sides (1px) like new ticket */
+html.athar-staging-redesign.mr-mobile-ui .content:has(#tab-breaks.active) {
+  padding-inline: 1px !important;
+  padding-top: 8px !important;
+  padding-bottom: calc(var(--mr-mob-bottom-nav-h, 56px) + 20px) !important;
 }
 
 /* Ensure content offset matches the compact topbar before JS measures it */
@@ -3262,16 +3271,14 @@ html.athar-staging-redesign.mr-mobile-ui #tab-breaks .breaks-panel {
   padding: 0 !important;
   margin: 0 !important;
   display: block !important;
-  min-height: calc(
-    100dvh - var(--unified-topbar-h, 56px) - var(--mr-mob-bottom-nav-h, 63px) - 8px
-  ) !important;
+  min-height: 0 !important;
 }
 html.athar-staging-redesign.mr-mobile-ui #rdBreaks:not([hidden]) {
   display: block !important;
   width: 100% !important;
   max-width: 100% !important;
   box-sizing: border-box !important;
-  min-height: inherit !important;
+  min-height: 0 !important;
 }
 html:not(.athar-staging-redesign) #rdBreaks,
 html.athar-staging-redesign.mr-desktop-ui #rdBreaks,
@@ -3294,16 +3301,18 @@ html.athar-staging-redesign.mr-mobile-ui #rdBreaks[hidden] {
   display: flex;
   flex-direction: column;
   width: 100%;
-  min-height: inherit;
+  min-height: 0;
   padding-bottom: 4px;
+  gap: 10px;
 }
 .rd-breaks-page__head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  margin-bottom: 12px;
+  margin-bottom: 0;
   width: 100%;
+  padding-inline: 1px;
 }
 .rd-breaks-page__title {
   margin: 0;
@@ -3328,10 +3337,10 @@ html.athar-staging-redesign.mr-mobile-ui #rdBreaks[hidden] {
 .rd-break-card {
   width: 100% !important;
   max-width: 100% !important;
-  margin: 0 0 14px !important;
+  margin: 0 !important;
   box-sizing: border-box !important;
   flex-shrink: 0;
-  padding: 26px 18px 22px !important;
+  padding: 22px 12px 18px !important;
   align-items: center !important;
 }
 .rd-break-ring {
@@ -3395,13 +3404,18 @@ html.athar-staging-redesign.mr-mobile-ui #rdBreaks[hidden] {
   flex-direction: column;
   width: 100%;
   margin-bottom: 0 !important;
+  flex: 0 0 auto !important;
+}
+.rd-break-list-sec + .rd-break-list-sec {
+  margin-top: 2px;
 }
 .rd-break-list {
   width: 100%;
-  min-height: 180px;
+  min-height: 0 !important;
 }
 .rd-break-empty {
-  min-height: 120px;
+  min-height: 0 !important;
+  padding: 14px 12px !important;
   align-items: center;
   justify-content: center;
 }
