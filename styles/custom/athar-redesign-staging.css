@@ -3345,6 +3345,8 @@ html.athar-staging-redesign.mr-mobile-ui #rdBreaks[hidden] {
 }
 .rd-break-actions {
   display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
   margin-top: 16px;
   width: 100%;
@@ -3367,10 +3369,6 @@ html.athar-staging-redesign.mr-mobile-ui #rdBreaks[hidden] {
   margin-top: 8px;
   line-height: 1.5;
   max-width: 280px;
-}
-.rd-break-actions {
-  flex-direction: column;
-  align-items: center;
 }
 .rd-break-roster__mins {
   font-size: 14px;
