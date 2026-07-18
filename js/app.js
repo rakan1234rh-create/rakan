@@ -8478,6 +8478,8 @@
 
       function switchTabShellFast(tab, btn) {
         rememberActiveTab(tab);
+        // Allow a fresh single entrance on real tab switches
+        if (typeof clearRdEnterPaintLock === 'function') clearRdEnterPaintLock();
 
         document.querySelectorAll('.tab-content').forEach(t => {
           t.classList.remove('active');
@@ -9843,12 +9845,17 @@
         document.documentElement.classList.add('rd-soft-paint');
       }
       function endRdSoftPaint() {
-        // Double rAF so rebuilt nodes skip entrance before the class lifts
+        // Settle BEFORE lifting soft-paint, otherwise removing the override
+        // restarts entrance animations on the new nodes (double shake).
+        document.documentElement.classList.add('rd-anim-settled');
         requestAnimationFrame(() => {
           requestAnimationFrame(() => {
             document.documentElement.classList.remove('rd-soft-paint');
           });
         });
+      }
+      function clearRdEnterPaintLock() {
+        document.documentElement.classList.remove('rd-soft-paint', 'rd-anim-settled');
       }
 
       function renderAll() {
@@ -32896,6 +32903,7 @@
         const tab = document.getElementById('tab-breaks');
         if (!tab) return;
         const softPaint = !!opts.soft;
+        let settleAfterLoad = false;
         if (softPaint) beginRdSoftPaint();
         try {
           if (!opts.soft) {
@@ -32915,6 +32923,9 @@
               if (classic) classic.innerHTML = dataLoadingEmptyHTML('جاري تحميل البريكات…');
             }
             await loadStaffBreaksData();
+            // Tab already played its enter slide — don't replay card entrance on rebuild
+            beginRdSoftPaint();
+            settleAfterLoad = true;
           }
           if (isAtharRedesignUi()) {
             const classic = document.getElementById('breaksClassicHost');
@@ -32930,7 +32941,7 @@
           paintStaffBreakCountdownOnly();
           ensureStaffBreakTicker();
         } finally {
-          if (softPaint) endRdSoftPaint();
+          if (softPaint || settleAfterLoad) endRdSoftPaint();
         }
       }
 
