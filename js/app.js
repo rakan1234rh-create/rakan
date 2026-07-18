@@ -6214,13 +6214,17 @@
       function cmpRefreshAfterPermissionChange() {
         cmpSyncGeoScopeForPermissions();
         if (document.getElementById('tab-compliance')?.classList.contains('active')) {
+          beginRdSoftPaint();
           try {
             populateCmpfSelects();
             renderCompliance();
-          } catch (_) {}
+          } catch (_) { /* noop */ }
+          finally { endRdSoftPaint(); }
         }
         if (document.getElementById('tab-locations')?.classList.contains('active')) {
-          try { renderRegions(); } catch (_) {}
+          beginRdSoftPaint();
+          try { renderRegions(); } catch (_) { /* noop */ }
+          finally { endRdSoftPaint(); }
         }
       }
 
@@ -8682,20 +8686,38 @@
             syncProfilePageShell(false);
           }
           if (tab === 'workflow') {
-            syncWorkflowAccessAndRender().finally(() => {
+            // Paint immediately so the tab isn't empty while access sync awaits
+            try {
               populateWfFilters();
               filterTickets();
+            } catch (_) { /* noop */ }
+            syncWorkflowAccessAndRender().finally(() => {
+              beginRdSoftPaint();
+              try {
+                populateWfFilters();
+                filterTickets();
+              } finally {
+                endRdSoftPaint();
+              }
             });
           }
           if (tab === 'reports') {
             const skipReportsReload = alreadyOnTab && !opts.force
               && typeof isMobileViewport === 'function' && isMobileViewport();
             if (isAppDataPending()) renderReportsLoadingState();
+            else {
+              try { filterReports(); } catch (_) { /* noop */ }
+            }
             if (!opts.shellOnly && !skipReportsReload) {
-              syncWorkflowAccessAndRender().finally(() => filterReports());
+              syncWorkflowAccessAndRender().finally(() => {
+                beginRdSoftPaint();
+                try { filterReports(); }
+                finally { endRdSoftPaint(); }
+              });
             }
           }
           if (tab === 'compliance') {
+            try { renderCompliance(); } catch (_) { /* noop */ }
             syncComplianceAccessAndRender();
           }
           if (tab === 'locations') renderRegions();
@@ -32877,10 +32899,19 @@
         if (softPaint) beginRdSoftPaint();
         try {
           if (!opts.soft) {
-            if (isAppDataPending()) {
+            // Keep redesign host visible during load so the tab isn't a blank flash
+            if (isAtharRedesignUi()) {
               const rd = document.getElementById('rdBreaks');
               const classic = document.getElementById('breaksClassicHost');
-              if (rd && isAtharRedesignUi()) rd.innerHTML = dataLoadingEmptyHTML('جاري تحميل البريكات…');
+              if (classic) classic.hidden = true;
+              if (rd) {
+                rd.hidden = false;
+                if (!rd.innerHTML.trim() || isAppDataPending()) {
+                  rd.innerHTML = dataLoadingEmptyHTML('جاري تحميل البريكات…');
+                }
+              }
+            } else if (isAppDataPending()) {
+              const classic = document.getElementById('breaksClassicHost');
               if (classic) classic.innerHTML = dataLoadingEmptyHTML('جاري تحميل البريكات…');
             }
             await loadStaffBreaksData();
