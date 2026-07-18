@@ -32624,7 +32624,13 @@
           if (bErr && isMirsadDebugLog()) console.warn('[staff_breaks]', bErr);
           if (sErr && isMirsadDebugLog()) console.warn('[staff_break_schedules]', sErr);
           if (dErr && isMirsadDebugLog()) console.warn('[resolve_staff_break_duration]', dErr);
-          const enriched = (breaks || []).map(enrichStaffBreak);
+          const seenIds = new Set();
+          const enriched = [];
+          (breaks || []).forEach((raw) => {
+            if (!raw?.id || seenIds.has(raw.id)) return;
+            seenIds.add(raw.id);
+            enriched.push(enrichStaffBreak(raw));
+          });
           rebuildStaffBreakDayMap(enriched);
           state.staffBreakDayRows = enriched;
           state.staffBreaks = enriched.filter(b => b.status === 'active' || b.status === 'paused');
@@ -32677,11 +32683,18 @@
             } else if (payload.new && !isToday) {
               dayRows = dayRows.filter(b => b.id !== payload.new.id);
             }
-            dayRows = dayRows
-              .filter(b => !b.day_key || String(b.day_key).slice(0, 10) === todayKey)
-              .sort((a, b) => new Date(b.started_at || b.updated_at || 0) - new Date(a.started_at || a.updated_at || 0));
-            state.staffBreakDayRows = dayRows;
-            state.staffBreaks = dayRows
+            const uniq = [];
+            const seen = new Set();
+            dayRows
+              .filter(b => b?.id && (!b.day_key || String(b.day_key).slice(0, 10) === todayKey))
+              .sort((a, b) => new Date(b.started_at || b.updated_at || 0) - new Date(a.started_at || a.updated_at || 0))
+              .forEach((b) => {
+                if (seen.has(b.id)) return;
+                seen.add(b.id);
+                uniq.push(b);
+              });
+            state.staffBreakDayRows = uniq;
+            state.staffBreaks = uniq
               .filter(b => b.status === 'active' || b.status === 'paused')
               .map(enrichStaffBreak);
 
@@ -32882,12 +32895,38 @@
           </div>`;
       }
 
-      function renderStaffBreaksListHtml() {
+      function getPrimaryStaffBreakLogRows() {
+        // One row per employee for today — avoid listing every start/stop as duplicates
         const todayKey = getStaffBreakTodayKey();
-        const rows = (state.staffBreakDayRows || state.staffBreaks || [])
-          .filter(b => !b.day_key || String(b.day_key).slice(0, 10) === todayKey)
-          .slice()
-          .sort((a, b) => new Date(b.started_at || b.updated_at || 0) - new Date(a.started_at || a.updated_at || 0));
+        const rank = { active: 3, paused: 2, ended: 1 };
+        const byUser = new Map();
+        (state.staffBreakDayRows || state.staffBreaks || []).forEach((row) => {
+          if (!row?.user_id) return;
+          if (row.day_key && String(row.day_key).slice(0, 10) !== todayKey) return;
+          const prev = byUser.get(row.user_id);
+          if (!prev) {
+            byUser.set(row.user_id, row);
+            return;
+          }
+          const prevRank = rank[prev.status] || 0;
+          const nextRank = rank[row.status] || 0;
+          if (nextRank > prevRank) {
+            byUser.set(row.user_id, row);
+            return;
+          }
+          if (nextRank === prevRank) {
+            const prevT = new Date(prev.updated_at || prev.started_at || 0).getTime();
+            const nextT = new Date(row.updated_at || row.started_at || 0).getTime();
+            if (nextT >= prevT) byUser.set(row.user_id, row);
+          }
+        });
+        return [...byUser.values()].sort(
+          (a, b) => new Date(b.updated_at || b.started_at || 0) - new Date(a.updated_at || a.started_at || 0)
+        );
+      }
+
+      function renderStaffBreaksListHtml() {
+        const rows = getPrimaryStaffBreakLogRows();
         if (!rows.length) {
           return '<div class="rd-list__row rd-break-empty" style="cursor:default"><div class="rd-list__sub">لا توجد سجلات بريك لهذا اليوم</div></div>';
         }
@@ -32899,7 +32938,7 @@
           const me = b.user_id === state.currentUser?.id;
           const statusLbl = b.status === 'active'
             ? 'في بريك'
-            : (b.status === 'paused' ? 'متوقف' : (over || (Number(b.overtime_seconds) || 0) > 0 ? 'انتهى مع تجاوز' : 'انتهى'));
+            : (b.status === 'paused' ? 'متوقف' : ((Number(b.overtime_seconds) || 0) > 0 || rem < 0 ? 'انتهى مع تجاوز' : 'انتهى'));
           const clock = b.status === 'ended'
             ? (rem > 0 ? `${Math.ceil(rem / 60)} د متبقي` : 'خلصت')
             : formatBreakClock(rem);
