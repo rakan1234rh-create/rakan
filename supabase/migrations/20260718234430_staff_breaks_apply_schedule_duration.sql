@@ -34,26 +34,8 @@ BEGIN
     RETURN 0;
   END IF;
 
-  WITH matched AS (
-    SELECT
-      sb.id,
-      sb.status,
-      sb.started_at,
-      sb.ended_at,
-      sb.paused_at,
-      GREATEST(
-        0,
-        (COALESCE(sb.planned_duration_minutes, p_duration_minutes) * 60)
-          - COALESCE(
-              sb.remaining_seconds,
-              COALESCE(sb.planned_duration_minutes, p_duration_minutes) * 60
-            )
-          + CASE
-              WHEN sb.status = 'active' THEN
-                GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (now() - sb.started_at)))::integer)
-              ELSE 0
-            END
-      ) AS used_seconds
+  WITH scoped AS (
+    SELECT sb.*
     FROM public.staff_breaks sb
     LEFT JOIN public.branches b ON b.id = sb.branch_id
     WHERE sb.day_key = v_today
@@ -71,15 +53,42 @@ BEGIN
         )
       )
   ),
+  ranked AS (
+    SELECT
+      s.*,
+      ROW_NUMBER() OVER (
+        PARTITION BY s.user_id
+        ORDER BY
+          CASE s.status WHEN 'active' THEN 1 WHEN 'paused' THEN 2 ELSE 3 END,
+          s.updated_at DESC NULLS LAST,
+          s.started_at DESC NULLS LAST
+      ) AS rn
+    FROM scoped s
+  ),
+  primary_row AS (
+    SELECT * FROM ranked WHERE rn = 1
+  ),
   computed AS (
     SELECT
-      m.id,
-      m.status,
-      m.ended_at,
-      m.paused_at,
-      m.started_at,
-      (p_duration_minutes * 60) - m.used_seconds AS new_remaining
-    FROM matched m
+      p.id,
+      p.status,
+      p.ended_at,
+      p.paused_at,
+      p.started_at,
+      (p_duration_minutes * 60) - GREATEST(
+        0,
+        (COALESCE(p.planned_duration_minutes, p_duration_minutes) * 60)
+          - COALESCE(
+              p.remaining_seconds,
+              COALESCE(p.planned_duration_minutes, p_duration_minutes) * 60
+            )
+          + CASE
+              WHEN p.status = 'active' THEN
+                GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (now() - p.started_at)))::integer)
+              ELSE 0
+            END
+      ) AS new_remaining
+    FROM primary_row p
   )
   UPDATE public.staff_breaks sb
   SET
