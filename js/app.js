@@ -19244,7 +19244,11 @@
           badgeEl.style.color = tone.color;
           badgeEl.style.background = tone.soft;
         }
-        if (numEl) numEl.textContent = '#' + (shortTicketNum(t.ticket_number) || '—');
+        // رقم المخالفة مخفي في إعادة التصميم (يبقى في الواجهة الكلاسيكية فقط)
+        if (numEl) {
+          numEl.textContent = '';
+          numEl.hidden = true;
+        }
       }
 
       function renderTicketDetailUI(t) {
@@ -19401,8 +19405,9 @@
       </div>`;
         }
 
+        const useRdInfo = typeof isAtharRedesignUi === 'function' && isAtharRedesignUi();
         const rows = [
-          ['رقم التذكرة', shortTicketNum(t.ticket_number)],
+          ...(useRdInfo ? [] : [['رقم التذكرة', shortTicketNum(t.ticket_number)]]),
           ['الحالة', t.status_text || STATE_LABELS[t.state]],
           ['الموظف', `${t._empName} (${t._empNumber || '-'})`],
           ['الفرع', t._branchName],
@@ -19416,7 +19421,8 @@
 
         // الراصد - يظهر فقط لمن يحق له (بعد وقت المخالفة)
         if (!hideObs && t.observer_id) {
-          rows.splice(8, 0, ['الراصد', t._obsName]);
+          const obsAt = useRdInfo ? 7 : 8;
+          rows.splice(obsAt, 0, ['الراصد', t._obsName]);
         }
 
         const infoRowsHtml = rows.map(([label, value]) => {
