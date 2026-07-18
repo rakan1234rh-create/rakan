@@ -305,6 +305,7 @@ html.mr-mobile-ui #tab-compliance,
 html.mr-mobile-ui #tab-violations,
 html.mr-mobile-ui #tab-locations,
 html.mr-mobile-ui #tab-departments,
+html.mr-mobile-ui #tab-breaks,
 html.mr-mobile-ui #tab-newTicket {
   padding-inline: 16px !important;
 }
@@ -3240,7 +3241,7 @@ html.athar-staging-redesign.mr-mobile-ui #cmpDetailModal .cmp-detail-card--rd-em
 }
 
 
-/* ═══ Staff breaks page (full screen, no filler) ═══ */
+/* ═══ Staff breaks page (full width, stacked — not side-by-side) ═══ */
 html.athar-staging-redesign.mr-mobile-ui #tab-breaks .wf-panel-banner,
 html.athar-staging-redesign.mr-mobile-ui #tab-breaks .breaks-panel-banner {
   display: none !important;
@@ -3248,30 +3249,51 @@ html.athar-staging-redesign.mr-mobile-ui #tab-breaks .breaks-panel-banner {
 html.athar-staging-redesign.mr-mobile-ui #tab-breaks .breaks-classic-host {
   display: none !important;
 }
+html.athar-staging-redesign.mr-mobile-ui #tab-breaks,
+html.athar-staging-redesign.mr-mobile-ui #tab-breaks .breaks-panel {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
 html.athar-staging-redesign.mr-mobile-ui #tab-breaks .breaks-panel {
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
   padding: 0 !important;
   margin: 0 !important;
+  display: block !important;
   min-height: calc(
     100dvh - var(--unified-topbar-h, 56px) - var(--mr-mob-bottom-nav-h, 63px) - 8px
   ) !important;
 }
-html.athar-staging-redesign.mr-mobile-ui #rdBreaks {
-  display: flex !important;
-  flex-direction: column !important;
+html.athar-staging-redesign.mr-mobile-ui #rdBreaks:not([hidden]) {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
   min-height: inherit !important;
 }
 html:not(.athar-staging-redesign) #rdBreaks,
-html.athar-staging-redesign.mr-desktop-ui #rdBreaks {
+html.athar-staging-redesign.mr-desktop-ui #rdBreaks,
+html.athar-staging-redesign.mr-mobile-ui #rdBreaks[hidden] {
   display: none !important;
 }
 
+#tab-breaks,
+#tab-breaks .breaks-panel,
+#tab-breaks .breaks-classic-host,
+#tab-breaks #rdBreaks,
+#tab-breaks .rd-breaks-page,
+#tab-breaks .breaks-full-page {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
 .rd-breaks-page {
-  flex: 1;
   display: flex;
   flex-direction: column;
+  width: 100%;
   min-height: inherit;
   padding-bottom: 4px;
 }
@@ -3281,6 +3303,7 @@ html.athar-staging-redesign.mr-desktop-ui #rdBreaks {
   justify-content: space-between;
   gap: 10px;
   margin-bottom: 12px;
+  width: 100%;
 }
 .rd-breaks-page__title {
   margin: 0;
@@ -3300,16 +3323,22 @@ html.athar-staging-redesign.mr-desktop-ui #rdBreaks {
   justify-content: center;
   cursor: pointer;
   font-size: 15px;
+  flex-shrink: 0;
 }
 .rd-break-card {
-  margin-bottom: 14px;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 0 14px !important;
+  box-sizing: border-box !important;
   flex-shrink: 0;
   padding: 26px 18px 22px !important;
+  align-items: center !important;
 }
 .rd-break-ring {
   width: 168px !important;
   height: 168px !important;
   margin-top: 18px !important;
+  margin-inline: auto !important;
 }
 .rd-break-clock {
   font-size: 36px !important;
@@ -3321,7 +3350,8 @@ html.athar-staging-redesign.mr-desktop-ui #rdBreaks {
   width: 100%;
 }
 .rd-break-btn {
-  min-width: min(240px, 100%);
+  width: 100%;
+  max-width: 280px;
   border-radius: 14px !important;
   font-weight: 700 !important;
   min-height: 46px;
@@ -3333,14 +3363,13 @@ html.athar-staging-redesign.mr-desktop-ui #rdBreaks {
   text-align: center;
 }
 .rd-break-list-sec {
-  flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 0;
+  width: 100%;
   margin-bottom: 0 !important;
 }
 .rd-break-list {
-  flex: 1;
+  width: 100%;
   min-height: 180px;
 }
 .rd-break-empty {
@@ -3391,6 +3420,7 @@ html.athar-staging-redesign.mr-desktop-ui #rdBreaks {
 }
 .rd-break-manage {
   margin-top: 14px;
+  width: 100%;
 }
 .rd-break-manage-btn {
   width: 100%;
@@ -3409,23 +3439,17 @@ html.athar-staging-redesign.mr-desktop-ui #rdBreaks {
   gap: 8px;
 }
 
+/* Always stacked vertically — never side-by-side columns */
 .breaks-full-page {
-  display: flex;
-  flex-direction: column;
+  display: flex !important;
+  flex-direction: column !important;
   gap: 16px;
-  min-height: 60vh;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-height: 0;
 }
-@media (min-width: 993px) {
-  .breaks-full-page {
-    display: grid;
-    grid-template-columns: minmax(300px, 380px) 1fr;
-    align-items: stretch;
-    min-height: calc(100vh - 160px);
-  }
-  .breaks-full-page .rd-break-list-sec {
-    margin: 0;
-  }
-  .breaks-full-page .rd-break-manage {
-    grid-column: 1 / -1;
-  }
+.breaks-full-page > * {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
 }
