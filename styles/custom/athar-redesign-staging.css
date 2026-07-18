@@ -2154,6 +2154,12 @@ html.athar-staging-redesign.mr-mobile-ui #tab-newTicket #nt-typeDropdown.autocom
   background: var(--surface) !important;
   overflow-y: auto !important;
   -webkit-overflow-scrolling: touch;
+  /* Span both search columns for readable results */
+  inset-inline-start: 0 !important;
+  inset-inline-end: calc(-100% - 8px) !important;
+  width: auto !important;
+  left: auto !important;
+  right: auto !important;
 }
 html.athar-staging-redesign.mr-mobile-ui #tab-newTicket #nt-typeDropdown .autocomplete-item,
 html.athar-staging-redesign.mr-mobile-ui #tab-newTicket #nt-typeDropdown .rd-nt-type-item {
@@ -2225,6 +2231,11 @@ html.athar-staging-redesign.mr-mobile-ui #tab-newTicket #nt-typeDropdown .autoco
 html.athar-staging-redesign.mr-mobile-ui #tab-newTicket #nt-empDropdown.autocomplete-dropdown {
   max-height: min(38vh, 220px) !important;
   border-radius: 12px !important;
+  inset-inline-end: 0 !important;
+  inset-inline-start: calc(-100% - 8px) !important;
+  width: auto !important;
+  left: auto !important;
+  right: auto !important;
 }
 html.athar-staging-redesign.mr-mobile-ui #tab-newTicket #nt-empDropdown .autocomplete-item {
   padding: 8px 10px !important;
