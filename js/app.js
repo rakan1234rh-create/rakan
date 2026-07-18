@@ -14646,27 +14646,17 @@
         if (!useRd) return;
 
         const picked = state.ntPickedViolationType;
-        let sample = picked;
-        if (!sample) {
-          const types = state.violationTypes || [];
-          sample = types.find(v => {
-            let sev = v.severity || '';
-            if (sev === 'حرج') sev = 'عالي';
-            return sev === 'عالي';
-          }) || types[0] || null;
-        }
         if (sevEl) {
-          if (!sample) {
+          if (!picked) {
             sevEl.innerHTML = '';
             sevEl.hidden = true;
           } else {
-            const tone = rdNtSevTone(sample.severity);
-            const points = sample.weight ?? sample.points ?? 0;
-            const label = picked ? Sec.escapeHTML(sample.name) : ('مثال: ' + Sec.escapeHTML(sample.name));
+            const tone = rdNtSevTone(picked.severity);
+            const points = picked.weight ?? picked.points ?? 0;
             sevEl.hidden = false;
             sevEl.innerHTML = `
               <i class="fas fa-circle-exclamation" style="color:${tone.color}" aria-hidden="true"></i>
-              <span class="rd-nt-sev__name">${label}</span>
+              <span class="rd-nt-sev__name">${Sec.escapeHTML(picked.name)}</span>
               <span class="rd-nt-sev__pts" style="color:${tone.color}">−${Sec.escapeHTML(String(points))} نقاط</span>`;
           }
         }

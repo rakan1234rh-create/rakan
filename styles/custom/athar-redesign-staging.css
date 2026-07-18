@@ -853,6 +853,13 @@ html.athar-staging-redesign.mr-mobile-ui .content {
   padding: 18px 18px 28px !important;
 }
 
+/* New ticket: nearly flush sides, less top space, clear bottom nav */
+html.athar-staging-redesign.mr-mobile-ui .content:has(#tab-newTicket.active) {
+  padding-inline: 1px !important;
+  padding-top: 2px !important;
+  padding-bottom: calc(var(--mr-mob-bottom-nav-h, 56px) + 28px) !important;
+}
+
 /* Ensure content offset matches the compact topbar before JS measures it */
 html.athar-staging-redesign.mr-mobile-ui {
   --unified-topbar-h: calc(56px + var(--mr-safe-top, env(safe-area-inset-top, 0px)));
@@ -1994,7 +2001,9 @@ html.athar-staging-redesign.mr-mobile-ui #tab-departments #usersList.users-grid-
 /* ═══ New ticket / رصد — Athar Redesign Standalone (2) ═══ */
 html.athar-staging-redesign.mr-mobile-ui #tab-newTicket {
   animation: atharRdScreenIn 0.32s ease;
-  padding-inline: 4px !important;
+  padding-inline: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 12px !important;
   overflow-x: clip !important;
   max-width: 100% !important;
 }
@@ -2012,8 +2021,8 @@ html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .mk-form-panel {
   border-radius: 0 !important;
 }
 html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .mk-form-hd {
-  margin-bottom: 10px !important;
-  padding: 0 2px !important;
+  margin-bottom: 8px !important;
+  padding: 0 !important;
   border: none !important;
   background: transparent !important;
 }
@@ -2383,7 +2392,8 @@ html.athar-staging-redesign.mr-desktop-ui .rd-nt-sev {
 html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .mk-form-ft {
   display: flex !important;
   gap: 10px !important;
-  margin-top: 0 !important;
+  margin-top: 4px !important;
+  margin-bottom: 8px !important;
   padding: 0 !important;
   border: none !important;
   background: transparent !important;
