@@ -3240,40 +3240,113 @@ html.athar-staging-redesign.mr-mobile-ui #cmpDetailModal .cmp-detail-card--rd-em
 }
 
 
-/* ═══ Staff breaks page ═══ */
-html.athar-staging-redesign.mr-mobile-ui #tab-breaks .wf-panel-banner {
+/* ═══ Staff breaks page (full screen, no filler) ═══ */
+html.athar-staging-redesign.mr-mobile-ui #tab-breaks .wf-panel-banner,
+html.athar-staging-redesign.mr-mobile-ui #tab-breaks .breaks-panel-banner {
   display: none !important;
 }
 html.athar-staging-redesign.mr-mobile-ui #tab-breaks .breaks-classic-host {
   display: none !important;
 }
+html.athar-staging-redesign.mr-mobile-ui #tab-breaks .breaks-panel {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  min-height: calc(
+    100dvh - var(--unified-topbar-h, 56px) - var(--mr-mob-bottom-nav-h, 63px) - 8px
+  ) !important;
+}
 html.athar-staging-redesign.mr-mobile-ui #rdBreaks {
-  display: block !important;
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: inherit !important;
 }
 html:not(.athar-staging-redesign) #rdBreaks,
 html.athar-staging-redesign.mr-desktop-ui #rdBreaks {
   display: none !important;
 }
 
+.rd-breaks-page {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: inherit;
+  padding-bottom: 4px;
+}
+.rd-breaks-page__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.rd-breaks-page__title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+}
+.rd-breaks-page__gear {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 15px;
+}
 .rd-break-card {
   margin-bottom: 14px;
+  flex-shrink: 0;
+  padding: 26px 18px 22px !important;
+}
+.rd-break-ring {
+  width: 168px !important;
+  height: 168px !important;
+  margin-top: 18px !important;
+}
+.rd-break-clock {
+  font-size: 36px !important;
 }
 .rd-break-actions {
   display: flex;
   justify-content: center;
-  margin-top: 14px;
+  margin-top: 16px;
   width: 100%;
 }
 .rd-break-btn {
-  min-width: 180px;
+  min-width: min(240px, 100%);
   border-radius: 14px !important;
   font-weight: 700 !important;
+  min-height: 46px;
 }
 .rd-break-note {
   font-size: 12px;
   color: var(--text3);
   margin: 0;
   text-align: center;
+}
+.rd-break-list-sec {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  margin-bottom: 0 !important;
+}
+.rd-break-list {
+  flex: 1;
+  min-height: 180px;
+}
+.rd-break-empty {
+  min-height: 120px;
+  align-items: center;
+  justify-content: center;
 }
 .rd-break-row__av {
   width: 36px;
@@ -3316,23 +3389,43 @@ html.athar-staging-redesign.mr-desktop-ui #rdBreaks {
   border-radius: 999px;
   vertical-align: middle;
 }
-.rd-break-sched-mins {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--gold);
-  flex-shrink: 0;
+.rd-break-manage {
+  margin-top: 14px;
+}
+.rd-break-manage-btn {
+  width: 100%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 14px;
+  padding: 12px 14px;
+  font: inherit;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
-.breaks-classic-grid {
-  display: grid;
+.breaks-full-page {
+  display: flex;
+  flex-direction: column;
   gap: 16px;
+  min-height: 60vh;
 }
 @media (min-width: 993px) {
-  .breaks-classic-grid {
-    grid-template-columns: minmax(280px, 360px) 1fr;
-    align-items: start;
+  .breaks-full-page {
+    display: grid;
+    grid-template-columns: minmax(300px, 380px) 1fr;
+    align-items: stretch;
+    min-height: calc(100vh - 160px);
   }
-  .breaks-classic-grid > .rd-sec:last-child {
+  .breaks-full-page .rd-break-list-sec {
+    margin: 0;
+  }
+  .breaks-full-page .rd-break-manage {
     grid-column: 1 / -1;
   }
 }
