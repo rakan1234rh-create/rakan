@@ -2125,12 +2125,12 @@ html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .mk-pick-banner-slot {
 .rd-nt-sev {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   background: var(--goldSoft);
-  border-radius: 10px;
-  padding: 7px 10px;
+  border-radius: 9px;
+  padding: 6px 8px;
   margin: 0;
-  font-size: 11px;
+  font-size: 10.5px;
 }
 .rd-nt-sev[hidden] { display: none !important; }
 .rd-nt-sev__name {
