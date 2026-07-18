@@ -32631,21 +32631,25 @@
 
         const circ = STAFF_BREAK_RING_CIRC;
         const offset = circ * (1 - progress);
-        const stroke = overtime ? 'var(--danger)' : (active ? 'var(--success)' : (isPaused ? 'var(--gold)' : 'var(--border)'));
+        const pauseYellow = 'var(--warning, #ff9500)';
+        const stroke = overtime ? 'var(--danger)' : (active ? 'var(--success)' : (isPaused ? pauseYellow : 'var(--border)'));
+        const clockColor = overtime ? 'var(--danger)' : (isPaused ? pauseYellow : 'var(--text)');
         const daysEl = host.querySelector('[data-break-clock]');
         const lblEl = host.querySelector('[data-break-lbl]');
         const ringEl = host.querySelector('[data-break-ring-progress]');
         const icoEl = host.querySelector('[data-break-ico]');
         const badgeEl = host.querySelector('[data-break-badge]');
+        host.classList.toggle('rd-break-card--paused', !!isPaused);
+        host.classList.toggle('rd-break-card--over', !!overtime);
         if (daysEl) {
           daysEl.textContent = formatBreakClock(remaining);
-          daysEl.style.color = overtime ? 'var(--danger)' : 'var(--text)';
+          daysEl.style.color = clockColor;
         }
         if (lblEl) {
           lblEl.textContent = overtime
             ? 'تجاوز المدة'
             : (active ? 'متبقي من البريك' : (isPaused ? 'متوقف — متبقي' : 'مدة البريك'));
-          lblEl.style.color = overtime ? 'var(--danger)' : 'var(--text3)';
+          lblEl.style.color = overtime ? 'var(--danger)' : (isPaused ? pauseYellow : 'var(--text3)');
         }
         if (badgeEl) {
           badgeEl.innerHTML = overtime
@@ -32662,7 +32666,7 @@
           ringEl.setAttribute('stroke-dashoffset', open ? String(offset) : '0');
         }
         if (icoEl) {
-          icoEl.style.color = overtime ? 'var(--danger)' : (active ? 'var(--success)' : 'var(--gold)');
+          icoEl.style.color = overtime ? 'var(--danger)' : (active ? 'var(--success)' : (isPaused ? pauseYellow : 'var(--text3)'));
           icoEl.className = 'fas ' + (overtime ? 'fa-triangle-exclamation' : (active ? 'fa-mug-hot' : (isPaused ? 'fa-pause' : 'fa-clock')));
         }
         document.querySelectorAll('[data-break-row-clock]').forEach(el => {
@@ -32699,7 +32703,11 @@
         else progress = Math.min(1, Math.abs(remaining) / plannedSec);
         const circ = STAFF_BREAK_RING_CIRC;
         const offset = circ * (1 - progress);
-        const stroke = overtime ? 'var(--danger)' : (active ? 'var(--success)' : (isPaused ? 'var(--gold)' : 'var(--border)'));
+        const pauseYellow = 'var(--warning, #ff9500)';
+        const stroke = overtime ? 'var(--danger)' : (active ? 'var(--success)' : (isPaused ? pauseYellow : 'var(--border)'));
+        const clockColor = overtime ? 'var(--danger)' : (isPaused ? pauseYellow : 'var(--text)');
+        const icoColor = overtime ? 'var(--danger)' : (active ? 'var(--success)' : (isPaused ? pauseYellow : 'var(--text3)'));
+        const lblColor = overtime ? 'var(--danger)' : (isPaused ? pauseYellow : 'var(--text3)');
         const badge = overtime
           ? '<i class="fas fa-triangle-exclamation"></i>تجاوز'
           : (active
@@ -32722,7 +32730,7 @@
         }
 
         return `
-          <div class="rd-streak rd-break-card" id="rdBreaksRingHost">
+          <div class="rd-streak rd-break-card${isPaused ? ' rd-break-card--paused' : ''}${overtime ? ' rd-break-card--over' : ''}" id="rdBreaksRingHost">
             <div class="rd-streak__badge" data-break-badge>${badge}</div>
             <div class="rd-streak__ring rd-break-ring">
               <svg width="168" height="168" viewBox="0 0 132 132" aria-hidden="true">
@@ -32732,9 +32740,9 @@
               </svg>
               <div class="rd-streak__center">
                 <i data-break-ico class="fas ${overtime ? 'fa-triangle-exclamation' : (active ? 'fa-mug-hot' : (isPaused ? 'fa-pause' : 'fa-clock'))}"
-                  style="font-size:16px;color:${overtime ? 'var(--danger)' : (active ? 'var(--success)' : 'var(--gold)')};margin-bottom:4px"></i>
-                <span class="rd-streak__days rd-break-clock" data-break-clock style="color:${overtime ? 'var(--danger)' : 'var(--text)'}">${formatBreakClock(remaining)}</span>
-                <span class="rd-streak__lbl" data-break-lbl style="color:${overtime ? 'var(--danger)' : 'var(--text3)'}">${
+                  style="font-size:16px;color:${icoColor};margin-bottom:4px"></i>
+                <span class="rd-streak__days rd-break-clock" data-break-clock style="color:${clockColor}">${formatBreakClock(remaining)}</span>
+                <span class="rd-streak__lbl" data-break-lbl style="color:${lblColor}">${
                   overtime ? 'تجاوز المدة' : (active ? 'متبقي من البريك' : (isPaused ? 'متوقف — متبقي' : 'مدة البريك'))
                 }</span>
               </div>
