@@ -20556,7 +20556,7 @@
 
         let progEnd = 0;
         for (let i = 0; i < stepEls.length; i++) {
-          if (stepEls[i].classList.contains('done') || stepEls[i].classList.contains('active')) progEnd = i;
+          if (wfStepIsProgressed(stepEls[i])) progEnd = i;
         }
         prog.setAttribute('d', buildWfSnakePathD(points.slice(0, progEnd + 1)));
       }
@@ -20575,12 +20575,12 @@
         if (!stepEls.length) return;
 
         let railEndEl = null;
-        const allDone = stepEls.every((el) => el.classList.contains('done'));
+        const allDone = stepEls.every((el) => el.classList.contains('done') || el.classList.contains('auto') || el.classList.contains('cancel') || el.classList.contains('warn'));
         if (allDone) {
           railEndEl = stepEls[stepEls.length - 1];
         } else {
           stepEls.forEach((el) => {
-            if (el.classList.contains('done') || el.classList.contains('active')) {
+            if (wfStepIsProgressed(el)) {
               railEndEl = el;
             }
           });
@@ -20620,6 +20620,107 @@
         wfSteps._wfRailRO.observe(wfSteps);
       }
 
+      function wfStepIsProgressed(el) {
+        if (!el) return false;
+        return ['done', 'auto', 'cancel', 'warn', 'active'].some((c) => el.classList.contains(c));
+      }
+
+      /** نتيجة نهائية للتذكرة في المسار: warn | cancel | approved | null */
+      function getWfTerminalOutcome(t) {
+        const st = String(t?.status_text || '');
+        const state = t?.state;
+        if (state === 'Warning_Issued' || (state === 'closed' && /تنبيه|اكتفاء بالتنبيه/i.test(st))) {
+          return 'warn';
+        }
+        if (state === 'closed' && /ملغ/i.test(st)) return 'cancel';
+        if (state === 'closed') return 'approved';
+        return null;
+      }
+
+      /** المرحلة التي توقف عندها الإلغاء أو التنبيه */
+      function getWfTerminalStopStage(t, outcome) {
+        const st = String(t?.status_text || '');
+        if (outcome === 'cancel') {
+          if (/الموارد البشرية/i.test(st)) return 'hr';
+          if (/التدقيق/i.test(st)) return 'aud';
+          if (/إداري/i.test(st)) return 'mgt';
+        }
+
+        const logs = parseDbJsonArray(t?.logs);
+        for (let i = logs.length - 1; i >= 0; i--) {
+          const a = String(logs[i]?.action || '');
+          const role = String(logs[i]?.role || '');
+          const hay = `${a} ${role}`;
+          if (outcome === 'cancel' && /إلغاء|ملغ/i.test(a)) {
+            if (/الموارد|hr/i.test(hay)) return 'hr';
+            if (/التدقيق|تدقيق/i.test(hay)) return 'aud';
+            if (/إدارة|إداري|management/i.test(hay)) return 'mgt';
+          }
+          if (outcome === 'warn' && /تنبيه|اكتفاء بالتنبيه/i.test(a)) {
+            if (/الموارد|hr/i.test(hay)) return 'hr';
+            if (/إدارة|قرار إداري|management/i.test(hay)) return 'mgt';
+          }
+        }
+
+        if (outcome === 'warn') {
+          if (t?.hr_reply) return 'hr';
+          if (t?.management_reply) return 'mgt';
+          return 'mgt';
+        }
+        if (outcome === 'cancel') {
+          if (t?.hr_reply) return 'hr';
+          if (t?.audit_reply) return 'aud';
+          if (t?.management_reply) return 'mgt';
+          return 'mgt';
+        }
+        return null;
+      }
+
+      function isWfStepAutoForwarded(t, stepCode) {
+        if (stepCode === 'emp') return isDbTruthy(t?.auto_forwarded_emp);
+        if (stepCode === 'sup') return isDbTruthy(t?.auto_forwarded_sup);
+        return false;
+      }
+
+      /**
+       * حالة وأيقونة مرحلة المسار:
+       * - تمرير تلقائي → روبوت
+       * - إلغاء → X ويتوقف عند مرحلة الإلغاء
+       * - تنبيه → جرس ويتوقف عند مرحلة التنبيه
+       */
+      function resolveWfStepVisual(t, step, orderMap, liveCurrentOrder) {
+        const stepOrder = orderMap[step.code] ?? 0;
+        const outcome = getWfTerminalOutcome(t);
+
+        if (outcome === 'cancel' || outcome === 'warn') {
+          const stopStage = getWfTerminalStopStage(t, outcome);
+          const stopOrder = orderMap[stopStage] ?? 99;
+          if (stepOrder < stopOrder) {
+            if (isWfStepAutoForwarded(t, step.code)) {
+              return { status: 'auto', icon: 'fa-robot' };
+            }
+            return { status: 'done', icon: 'fa-check' };
+          }
+          if (stepOrder === stopOrder) {
+            if (outcome === 'cancel') return { status: 'cancel', icon: 'fa-times' };
+            return { status: 'warn', icon: 'fa-bell' };
+          }
+          return { status: 'pending', icon: step.icon };
+        }
+
+        const currentOrder = outcome === 'approved' ? 99 : liveCurrentOrder;
+        if (outcome === 'approved' || stepOrder < currentOrder) {
+          if (isWfStepAutoForwarded(t, step.code)) {
+            return { status: 'auto', icon: 'fa-robot' };
+          }
+          return { status: 'done', icon: 'fa-check' };
+        }
+        if (stepOrder === currentOrder) {
+          return { status: 'active', icon: step.icon };
+        }
+        return { status: 'pending', icon: step.icon };
+      }
+
       // ───────────────────────────────────────────────────────────────────────────
       // بناء واجهة المسار (Workflow Steps)
       // ───────────────────────────────────────────────────────────────────────────
@@ -20646,20 +20747,13 @@
         }
 
         const orderMap = { obs: 0, emp: 1, sup: 2, aud: 3, mgt: 4, hr: 5, closed: 6, Warning_Issued: 6 };
-        const wfState = (t.state === 'closed' || t.state === 'Warning_Issued') ? t.state : getEffectiveWorkflowState(t.state);
-        const currentOrder = (wfState === 'closed' || wfState === 'Warning_Issued') ? 99 : (orderMap[wfState] || 1);
+        const terminal = getWfTerminalOutcome(t);
+        const wfState = terminal ? t.state : getEffectiveWorkflowState(t.state);
+        const liveCurrentOrder = terminal ? 99 : (orderMap[wfState] || 1);
 
         if (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi()) {
           const rows = visibleSteps.map((s, i) => {
-            const stepOrder = orderMap[s.code];
-            let status = 'pending';
-            let icon = s.icon;
-            if (t.state === 'closed' || t.state === 'Warning_Issued' || stepOrder < currentOrder) {
-              status = 'done';
-              icon = 'fa-check';
-            } else if (stepOrder === currentOrder) {
-              status = 'active';
-            }
+            const { status, icon } = resolveWfStepVisual(t, s, orderMap, liveCurrentOrder);
             const hasLine = i < visibleSteps.length - 1;
             return `
               <div class="rd-td-step rd-td-step--${status}">
@@ -20682,25 +20776,17 @@
         const snakeCols = getWfSnakeCols(visibleSteps.length);
 
         const renderSnakeStep = (s) => {
-          const stepOrder = orderMap[s.code];
-          let cls = 'wf-step wf-step--snake';
-          let icon = `<i class="fas ${s.icon}"></i>`;
-
-          if (t.state === 'closed' || t.state === 'Warning_Issued') {
-            cls += ' done';
-            icon = '<i class="fas fa-check"></i>';
-          } else if (stepOrder < currentOrder) {
-            cls += ' done';
-            icon = '<i class="fas fa-check"></i>';
-          } else if (stepOrder === currentOrder) {
-            cls += ' active';
-            icon = '';
-          }
+          const { status, icon } = resolveWfStepVisual(t, s, orderMap, liveCurrentOrder);
+          let cls = `wf-step wf-step--snake ${status}`;
+          // Active keeps the pulse dot (empty circle) in classic snake UI
+          const iconHtml = status === 'active'
+            ? ''
+            : `<i class="fas ${icon}"></i>`;
 
           return `
                 <div class="${cls}">
                   <div class="wf-step-rail" aria-hidden="true">
-                    <div class="wf-step-circle">${icon}</div>
+                    <div class="wf-step-circle">${iconHtml}</div>
                   </div>
                   <div class="wf-step-content">
                     <div class="wf-step-label">${s.label}</div>

@@ -2731,6 +2731,18 @@ html.athar-staging-redesign.mr-mobile-ui #ticketModal #tdInlineAttachments .att-
   background: color-mix(in srgb, var(--success) 18%, transparent);
   color: var(--success);
 }
+.rd-td-step--auto .rd-td-step__ico {
+  background: color-mix(in srgb, var(--amber, #f5a524) 22%, transparent);
+  color: var(--amber, #c47f0a);
+}
+.rd-td-step--cancel .rd-td-step__ico {
+  background: color-mix(in srgb, var(--danger) 18%, transparent);
+  color: var(--danger);
+}
+.rd-td-step--warn .rd-td-step__ico {
+  background: color-mix(in srgb, var(--amber, #f5a524) 22%, transparent);
+  color: var(--amber, #c47f0a);
+}
 .rd-td-step--active .rd-td-step__ico {
   background: var(--gold);
   color: var(--onGold);
@@ -2741,9 +2753,11 @@ html.athar-staging-redesign.mr-mobile-ui #ticketModal #tdInlineAttachments .att-
   min-height: 20px;
   background: var(--border);
 }
-.rd-td-step--done .rd-td-step__line {
+.rd-td-step--done .rd-td-step__line,
+.rd-td-step--auto .rd-td-step__line {
   background: color-mix(in srgb, var(--success) 45%, var(--border));
 }
+/* Cancel/warn stop here — outgoing line stays muted */
 .rd-td-step__body {
   padding-bottom: 22px;
   min-width: 0;

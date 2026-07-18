@@ -5625,6 +5625,24 @@
       color: #fff;
     }
 
+    .wf-step.auto .wf-step-circle {
+      background: var(--amber);
+      border-color: var(--amber);
+      color: #2a2200;
+    }
+
+    .wf-step.cancel .wf-step-circle {
+      background: var(--red, var(--danger, #ff3b30));
+      border-color: var(--red, var(--danger, #ff3b30));
+      color: #fff;
+    }
+
+    .wf-step.warn .wf-step-circle {
+      background: var(--amber);
+      border-color: var(--amber);
+      color: #2a2200;
+    }
+
     .wf-step.active .wf-step-circle {
       background: var(--surface2);
       border-color: var(--blue);
@@ -5661,6 +5679,18 @@
 
     .wf-step.done .wf-step-label {
       color: var(--green-text);
+    }
+
+    .wf-step.auto .wf-step-label {
+      color: var(--amber);
+    }
+
+    .wf-step.cancel .wf-step-label {
+      color: var(--red, var(--danger, #ff3b30));
+    }
+
+    .wf-step.warn .wf-step-label {
+      color: var(--amber);
     }
 
     /* Pulse for active dot */
