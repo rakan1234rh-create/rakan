@@ -611,7 +611,8 @@ html.athar-staging-redesign.mr-mobile-ui #tab-workflow .wf-table-wrap--head {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  animation: atharRdScreenIn .32s ease;
+  /* Slide only — full-list opacity fade flashes the transparent workflow panel */
+  animation: atharRdTabIn .28s ease;
 }
 .rd-ticket {
   background: var(--surface);
@@ -737,16 +738,18 @@ html.athar-staging-redesign.mr-mobile-ui #tab-reports #reportList {
   display: none !important;
 }
 
-html.athar-staging-redesign.mr-mobile-ui #rdReports {
+html.athar-staging-redesign.mr-mobile-ui #rdReports:not([hidden]) {
   display: block !important;
 }
 html:not(.athar-staging-redesign) #rdReports,
-html.athar-staging-redesign.mr-desktop-ui #rdReports {
+html.athar-staging-redesign.mr-desktop-ui #rdReports,
+html.athar-staging-redesign.mr-mobile-ui #rdReports[hidden] {
   display: none !important;
 }
 
 .rd-reports {
-  animation: atharRdScreenIn .32s ease;
+  /* Slide only — opacity on the reports shell flashes over hidden classic chrome */
+  animation: atharRdTabIn .28s ease;
 }
 .rd-rp-metrics {
   display: flex;
@@ -993,7 +996,8 @@ html.athar-staging-redesign.mr-mobile-ui #tab-compliance .rd-cmp-board {
   border: none !important;
   box-shadow: none !important;
   padding: 0 !important;
-  animation: atharRdScreenIn 0.32s ease;
+  /* Slide only — fading the whole board flashes the empty compliance panel */
+  animation: atharRdTabIn 0.28s ease;
 }
 html.athar-staging-redesign.mr-mobile-ui #tab-compliance .cmp-neo-btn--pdf-export,
 html.athar-staging-redesign.mr-mobile-ui #tab-compliance #cmpActiveFiltersBar,
@@ -3297,6 +3301,10 @@ html.athar-staging-redesign.mr-mobile-ui #rdBreaks:not([hidden]) {
   max-width: 100% !important;
   box-sizing: border-box !important;
   min-height: 0 !important;
+}
+/* Breaks page shell: slide only (cards keep fade). Opacity here flashes blank tab. */
+html.athar-staging-redesign.mr-mobile-ui #tab-breaks .rd-screen {
+  animation: atharRdTabIn 0.28s ease;
 }
 html:not(.athar-staging-redesign) #rdBreaks,
 html.athar-staging-redesign.mr-desktop-ui #rdBreaks,
