@@ -2375,12 +2375,7 @@ html.athar-staging-redesign.mr-mobile-ui #ticketModal #rdTdHd[hidden] {
   color: var(--text2);
 }
 .rd-td-hd__id {
-  font-size: 10px;
-  color: var(--text3);
-  margin-top: 5px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  direction: ltr;
-  unicode-bidi: plaintext;
+  display: none !important;
 }
 
 /* Segmented tabs */
