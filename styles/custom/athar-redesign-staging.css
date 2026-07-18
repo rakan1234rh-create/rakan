@@ -3345,6 +3345,8 @@ html.athar-staging-redesign.mr-mobile-ui #rdBreaks[hidden] {
 }
 .rd-break-actions {
   display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
   margin-top: 16px;
   width: 100%;
@@ -3361,6 +3363,32 @@ html.athar-staging-redesign.mr-mobile-ui #rdBreaks[hidden] {
   color: var(--text3);
   margin: 0;
   text-align: center;
+}
+.rd-break-note--warn {
+  color: var(--warning, #d97706);
+  margin-top: 8px;
+  line-height: 1.5;
+  max-width: 280px;
+}
+.rd-break-roster__mins {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--gold);
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+.rd-break-roster__mins--zero {
+  color: var(--text3) !important;
+}
+.rd-break-roster__mins--active {
+  color: var(--success) !important;
+}
+.rd-break-roster-row--active {
+  background: color-mix(in srgb, var(--success) 7%, transparent);
+}
+.rd-break-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 .rd-break-list-sec {
   display: flex;
