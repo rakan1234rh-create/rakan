@@ -5,12 +5,12 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 @keyframes atharRdScreenIn {
-  from { opacity: 0; transform: translateY(8px); }
+  from { opacity: 1; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes atharRdCardIn {
-  from { opacity: 0; transform: translateY(10px); }
+  from { opacity: 1; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
@@ -293,8 +293,16 @@ html.mr-mobile-ui .tab-content {
   background: var(--mr-bg) !important;
 }
 
+/* Avoid opacity flash on tab enter — keep a light slide only */
 html.mr-mobile-ui .tab-content.active {
-  animation: atharRdScreenIn 0.32s ease;
+  animation: atharRdScreenIn 0.18s ease;
+}
+html.athar-staging-redesign.mr-mobile-ui .tab-content,
+html.athar-staging-redesign.mr-mobile-ui .tab-content.active {
+  animation: none !important;
+}
+html.athar-staging-redesign.mr-mobile-ui .rd-screen {
+  animation: none !important;
 }
 
 html.mr-mobile-ui .mk-dash,
@@ -3342,6 +3350,19 @@ html.athar-staging-redesign.mr-mobile-ui #rdBreaks[hidden] {
   flex-shrink: 0;
   padding: 22px 12px 18px !important;
   align-items: center !important;
+}
+.rd-break-card--paused .rd-break-clock,
+.rd-break-card--paused [data-break-clock],
+.rd-break-card--paused [data-break-lbl],
+.rd-break-card--paused [data-break-ico] {
+  color: var(--warning, #ff9500) !important;
+}
+.rd-break-card--paused [data-break-ring-progress] {
+  stroke: var(--warning, #ff9500) !important;
+}
+.rd-break-card--paused .rd-streak__badge {
+  background: color-mix(in srgb, var(--warning, #ff9500) 16%, transparent) !important;
+  color: var(--warning, #ff9500) !important;
 }
 .rd-break-ring {
   width: 168px !important;
