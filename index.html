@@ -1942,9 +1942,13 @@
     #tab-broadcasts .nt-time-picker {
       position: absolute;
       top: calc(100% + 6px);
+      inset-inline-start: 0;
+      inset-inline-end: 0;
+      left: 0;
       right: 0;
-      left: auto;
-      width: min(280px, calc(100vw - 32px));
+      width: auto;
+      max-width: 100%;
+      min-width: 0;
       background: var(--mr-surface);
       border: 1px solid var(--mr-border);
       border-radius: 14px;
