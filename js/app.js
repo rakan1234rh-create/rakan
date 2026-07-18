@@ -1242,6 +1242,8 @@
         staffBreaks: [],
         staffBreakSchedules: [],
         staffBreakDayByUser: {},
+        staffBreakDayRows: [],
+        _staffBreakDayKey: null,
         _myBreakDurationMins: 15,
         _staffBreakTicker: null,
         _staffBreaksChannel: null
@@ -32375,8 +32377,30 @@
         const tab = document.getElementById('tab-breaks');
         if (!tab?.classList.contains('active')) return;
         state._staffBreakTicker = setInterval(() => {
-          try { paintStaffBreakCountdownOnly(); } catch (_) { /* noop */ }
+          try {
+            // KSA midnight: reload so daily logs / remaining minutes reset
+            if (typeof maybeRollStaffBreaksDay === 'function') {
+              maybeRollStaffBreaksDay();
+            }
+            paintStaffBreakCountdownOnly();
+          } catch (_) { /* noop */ }
         }, 1000);
+      }
+
+      function maybeRollStaffBreaksDay() {
+        const todayKey = getStaffBreakTodayKey();
+        if (!todayKey) return false;
+        if (!state._staffBreakDayKey) {
+          state._staffBreakDayKey = todayKey;
+          return false;
+        }
+        if (state._staffBreakDayKey === todayKey) return false;
+        state._staffBreakDayKey = todayKey;
+        loadStaffBreaksData().then(() => {
+          const tab = document.getElementById('tab-breaks');
+          if (tab?.classList.contains('active')) renderStaffBreaksPage({ soft: true });
+        }).catch(() => { /* noop */ });
+        return true;
       }
 
       function formatBreakClock(totalSeconds) {
@@ -32481,11 +32505,30 @@
       function getActiveBreakColleagueInMyBranch() {
         const me = state.currentUser;
         if (!me?.id || !me.branch_id) return null;
+        const todayKey = getStaffBreakTodayKey();
         return (state.staffBreaks || []).find(b =>
           b.status === 'active' &&
+          (!b.day_key || String(b.day_key).slice(0, 10) === todayKey) &&
           b.branch_id === me.branch_id &&
           b.user_id !== me.id
         ) || null;
+      }
+
+      function upsertStaffBreakDayRow(row) {
+        if (!row?.id) return;
+        const todayKey = getStaffBreakTodayKey();
+        if (row.day_key && String(row.day_key).slice(0, 10) !== todayKey) return;
+        const next = enrichStaffBreak(row);
+        const list = [...(state.staffBreakDayRows || [])];
+        const idx = list.findIndex(b => b.id === next.id);
+        if (idx >= 0) list[idx] = next;
+        else list.unshift(next);
+        state.staffBreakDayRows = list.sort(
+          (a, b) => new Date(b.started_at || b.updated_at || 0) - new Date(a.started_at || a.updated_at || 0)
+        );
+        if (next.user_id) {
+          state.staffBreakDayByUser = { ...(state.staffBreakDayByUser || {}), [next.user_id]: next };
+        }
       }
 
       function getBreakRosterUsers() {
@@ -32545,10 +32588,14 @@
           state.staffBreaks = [];
           state.staffBreakSchedules = [];
           state.staffBreakDayByUser = {};
+          state.staffBreakDayRows = [];
+          state._staffBreakDayKey = null;
           return;
         }
         try {
           const todayKey = getStaffBreakTodayKey();
+          // Close yesterday's open sessions so remaining minutes / logs reset for the new KSA day
+          try { await sb.rpc('close_stale_staff_breaks'); } catch (_) { /* older DB */ }
           const [{ data: breaks, error: bErr }, { data: schedules, error: sErr }, { data: myMins, error: dErr }] = await Promise.all([
             sb.from('staff_breaks')
               .select('id,user_id,branch_id,region_id,planned_duration_minutes,remaining_seconds,used_seconds,started_at,paused_at,ended_at,overtime_seconds,overtime_reason,status,day_key,created_at,updated_at')
@@ -32572,14 +32619,17 @@
           if (dErr && isMirsadDebugLog()) console.warn('[resolve_staff_break_duration]', dErr);
           const enriched = (breaks || []).map(enrichStaffBreak);
           rebuildStaffBreakDayMap(enriched);
+          state.staffBreakDayRows = enriched;
           state.staffBreaks = enriched.filter(b => b.status === 'active' || b.status === 'paused');
           state.staffBreakSchedules = schedules || [];
           state._myBreakDurationMins = Number(myMins) > 0 ? Number(myMins) : 15;
+          state._staffBreakDayKey = todayKey;
         } catch (e) {
           if (isMirsadDebugLog()) console.warn('[staff_breaks] load', e);
           state.staffBreaks = state.staffBreaks || [];
           state.staffBreakSchedules = state.staffBreakSchedules || [];
           state.staffBreakDayByUser = state.staffBreakDayByUser || {};
+          state.staffBreakDayRows = state.staffBreakDayRows || [];
         }
       }
 
@@ -32590,21 +32640,38 @@
         }
         const ch = sb.channel('public:staff_breaks')
           .on('postgres_changes', { event: '*', schema: 'public', table: 'staff_breaks' }, (payload) => {
+            const todayKey = getStaffBreakTodayKey();
             const row = enrichStaffBreak(payload.new || payload.old);
-            if (row?.user_id) {
-              const todayKey = getStaffBreakTodayKey();
-              if (!row.day_key || row.day_key === todayKey) {
-                const map = { ...(state.staffBreakDayByUser || {}) };
-                if (payload.eventType === 'DELETE') delete map[row.user_id];
-                else map[row.user_id] = enrichStaffBreak(payload.new);
-                state.staffBreakDayByUser = map;
-              }
+            const rowDay = row?.day_key ? String(row.day_key).slice(0, 10) : '';
+            const isToday = !rowDay || rowDay === todayKey;
+
+            if (row?.user_id && isToday) {
+              const map = { ...(state.staffBreakDayByUser || {}) };
+              if (payload.eventType === 'DELETE') delete map[row.user_id];
+              else if (payload.new) map[row.user_id] = enrichStaffBreak(payload.new);
+              state.staffBreakDayByUser = map;
             }
-            applyRealtimeChange(state.staffBreaks, payload, enrichStaffBreak);
-            state.staffBreaks = (state.staffBreaks || [])
-              .filter(b => b.status === 'active' || b.status === 'paused')
-              .map(enrichStaffBreak)
+
+            // Keep day log + open list scoped to today's KSA day only
+            let dayRows = [...(state.staffBreakDayRows || [])];
+            if (payload.eventType === 'DELETE' && row?.id) {
+              dayRows = dayRows.filter(b => b.id !== row.id);
+            } else if (payload.new && isToday) {
+              const next = enrichStaffBreak(payload.new);
+              const idx = dayRows.findIndex(b => b.id === next.id);
+              if (idx >= 0) dayRows[idx] = next;
+              else dayRows.unshift(next);
+            } else if (payload.new && !isToday) {
+              dayRows = dayRows.filter(b => b.id !== payload.new.id);
+            }
+            dayRows = dayRows
+              .filter(b => !b.day_key || String(b.day_key).slice(0, 10) === todayKey)
               .sort((a, b) => new Date(b.started_at || b.updated_at || 0) - new Date(a.started_at || a.updated_at || 0));
+            state.staffBreakDayRows = dayRows;
+            state.staffBreaks = dayRows
+              .filter(b => b.status === 'active' || b.status === 'paused')
+              .map(enrichStaffBreak);
+
             const tab = document.getElementById('tab-breaks');
             if (tab?.classList.contains('active')) renderStaffBreaksPage({ soft: true });
           })
@@ -32799,25 +32866,34 @@
       }
 
       function renderStaffBreaksListHtml() {
-        const rows = (state.staffBreaks || [])
-          .filter(b => b.status === 'active')
+        const todayKey = getStaffBreakTodayKey();
+        const rows = (state.staffBreakDayRows || state.staffBreaks || [])
+          .filter(b => !b.day_key || String(b.day_key).slice(0, 10) === todayKey)
           .slice()
-          .sort((a, b) => new Date(b.started_at) - new Date(a.started_at));
+          .sort((a, b) => new Date(b.started_at || b.updated_at || 0) - new Date(a.started_at || a.updated_at || 0));
         if (!rows.length) {
-          return '<div class="rd-list__row rd-break-empty" style="cursor:default"><div class="rd-list__sub">لا يوجد أحد في بريك حالياً</div></div>';
+          return '<div class="rd-list__row rd-break-empty" style="cursor:default"><div class="rd-list__sub">لا توجد سجلات بريك لهذا اليوم</div></div>';
         }
         return rows.map(b => {
-          const rem = getBreakRemainingSeconds(b);
-          const over = rem < 0;
+          const rem = b.status === 'ended'
+            ? Math.max(0, Number(b.remaining_seconds) || 0)
+            : getBreakRemainingSeconds(b);
+          const over = b.status === 'active' && rem < 0;
           const me = b.user_id === state.currentUser?.id;
+          const statusLbl = b.status === 'active'
+            ? 'في بريك'
+            : (b.status === 'paused' ? 'متوقف' : (over || (Number(b.overtime_seconds) || 0) > 0 ? 'انتهى مع تجاوز' : 'انتهى'));
+          const clock = b.status === 'ended'
+            ? (rem > 0 ? `${Math.ceil(rem / 60)} د متبقي` : 'خلصت')
+            : formatBreakClock(rem);
           return `
-            <div class="rd-list__row rd-break-row${me ? ' rd-break-row--me' : ''}${over ? ' rd-break-row--over' : ''}" style="cursor:default">
+            <div class="rd-list__row rd-break-row${me ? ' rd-break-row--me' : ''}${over ? ' rd-break-row--over' : ''}${b.status === 'ended' ? ' rd-break-row--ended' : ''}" style="cursor:default">
               <div class="rd-break-row__av" aria-hidden="true">${Sec.escapeHTML((b._userName || 'م').trim().charAt(0) || 'م')}</div>
               <div class="rd-list__main">
                 <div class="rd-list__title">${Sec.escapeHTML(b._userName || '—')}${me ? ' <span class="rd-break-me-tag">أنت</span>' : ''}</div>
-                <div class="rd-list__sub">${Sec.escapeHTML(b._branchName || '—')} · ${Sec.escapeHTML(b._roleLabel || '')}</div>
+                <div class="rd-list__sub">${Sec.escapeHTML(b._branchName || '—')} · ${Sec.escapeHTML(statusLbl)}</div>
               </div>
-              <div class="rd-break-row__clock${over ? ' rd-break-row__clock--over' : ''}" data-break-row-clock="${Sec.escapeHTML(b.id)}">${formatBreakClock(rem)}</div>
+              <div class="rd-break-row__clock${over ? ' rd-break-row__clock--over' : ''}" data-break-row-clock="${Sec.escapeHTML(b.id)}">${Sec.escapeHTML(clock)}</div>
             </div>`;
         }).join('');
       }
@@ -32976,8 +33052,8 @@
           }
           if (data.break) {
             const row = enrichStaffBreak(data.break);
+            upsertStaffBreakDayRow(row);
             state.staffBreaks = [row, ...(state.staffBreaks || []).filter(b => b.id !== row.id && (b.status === 'active' || b.status === 'paused'))];
-            state.staffBreakDayByUser = { ...(state.staffBreakDayByUser || {}), [row.user_id]: row };
           }
           showToast(data.resumed ? 'متابعة البريك من المتبقي' : 'بدأ البريك', 'success');
           await renderStaffBreaksPage({ soft: true });
@@ -33014,7 +33090,7 @@
           closeModal('breakOvertimeModal');
           if (data.break) {
             const row = enrichStaffBreak(data.break);
-            state.staffBreakDayByUser = { ...(state.staffBreakDayByUser || {}), [row.user_id]: row };
+            upsertStaffBreakDayRow(row);
             if (row.status === 'paused') {
               state.staffBreaks = [row, ...(state.staffBreaks || []).filter(b => b.id !== row.id)];
               showToast(`توقف البريك — المتبقي ${formatBreakClock(getBreakBalanceSeconds(row))}`, 'success');
