@@ -9817,31 +9817,49 @@
 // ═══════════════════════════════════════════════════════════════════════════
       // 12. MASTER RENDER
       // ═══════════════════════════════════════════════════════════════════════════
+      function beginRdSoftPaint() {
+        document.documentElement.classList.add('rd-soft-paint');
+      }
+      function endRdSoftPaint() {
+        // Double rAF so rebuilt nodes skip entrance before the class lifts
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            document.documentElement.classList.remove('rd-soft-paint');
+          });
+        });
+      }
+
       function renderAll() {
-        const dashActive = document.getElementById('tab-dashboard')?.classList.contains('active');
-        if (dashActive) renderDashboard();
+        // Live refresh rebuilds DOM — suppress entrance fades to avoid page flashes
+        beginRdSoftPaint();
+        try {
+          const dashActive = document.getElementById('tab-dashboard')?.classList.contains('active');
+          if (dashActive) renderDashboard();
 
-        if (document.getElementById('tab-workflow')?.classList.contains('active')) {
-          populateWfFilters(); filterTickets();
-        }
-        if (document.getElementById('tab-reports')?.classList.contains('active')) filterReports();
-        if (document.getElementById('tab-compliance')?.classList.contains('active')) renderCompliance();
-        if (document.getElementById('tab-locations')?.classList.contains('active')) renderRegions();
-        if (document.getElementById('tab-departments')?.classList.contains('active')) renderUsers();
-        if (document.getElementById('tab-violations')?.classList.contains('active')) renderViolTypes();
-        if (document.getElementById('tab-broadcasts')?.classList.contains('active')) {
-          if (typeof refreshBroadcastTargetPickers === 'function') refreshBroadcastTargetPickers();
-          if (typeof updateBroadcastPreview === 'function') updateBroadcastPreview();
-        }
-        if (document.getElementById('tab-breaks')?.classList.contains('active')
-          && typeof renderStaffBreaksPage === 'function') {
-          renderStaffBreaksPage({ soft: true });
-        }
+          if (document.getElementById('tab-workflow')?.classList.contains('active')) {
+            populateWfFilters(); filterTickets();
+          }
+          if (document.getElementById('tab-reports')?.classList.contains('active')) filterReports();
+          if (document.getElementById('tab-compliance')?.classList.contains('active')) renderCompliance();
+          if (document.getElementById('tab-locations')?.classList.contains('active')) renderRegions();
+          if (document.getElementById('tab-departments')?.classList.contains('active')) renderUsers();
+          if (document.getElementById('tab-violations')?.classList.contains('active')) renderViolTypes();
+          if (document.getElementById('tab-broadcasts')?.classList.contains('active')) {
+            if (typeof refreshBroadcastTargetPickers === 'function') refreshBroadcastTargetPickers();
+            if (typeof updateBroadcastPreview === 'function') updateBroadcastPreview();
+          }
+          if (document.getElementById('tab-breaks')?.classList.contains('active')
+            && typeof renderStaffBreaksPage === 'function') {
+            renderStaffBreaksPage({ soft: true });
+          }
 
-        updatePendingBadge();
-        const notifPanelOpen = document.getElementById('notifPanel')?.classList.contains('open');
-        if (notifPanelOpen) refreshOpenNotifPanel(false);
-        else syncNotifBellBadge(false);
+          updatePendingBadge();
+          const notifPanelOpen = document.getElementById('notifPanel')?.classList.contains('open');
+          if (notifPanelOpen) refreshOpenNotifPanel(false);
+          else syncNotifBellBadge(false);
+        } finally {
+          endRdSoftPaint();
+        }
       }
 
       // عداد التذاكر المعلقة في القائمة الجانبية
@@ -32855,28 +32873,34 @@
       async function renderStaffBreaksPage(opts = {}) {
         const tab = document.getElementById('tab-breaks');
         if (!tab) return;
-        if (!opts.soft) {
-          if (isAppDataPending()) {
-            const rd = document.getElementById('rdBreaks');
-            const classic = document.getElementById('breaksClassicHost');
-            if (rd && isAtharRedesignUi()) rd.innerHTML = dataLoadingEmptyHTML('جاري تحميل البريكات…');
-            if (classic) classic.innerHTML = dataLoadingEmptyHTML('جاري تحميل البريكات…');
+        const softPaint = !!opts.soft;
+        if (softPaint) beginRdSoftPaint();
+        try {
+          if (!opts.soft) {
+            if (isAppDataPending()) {
+              const rd = document.getElementById('rdBreaks');
+              const classic = document.getElementById('breaksClassicHost');
+              if (rd && isAtharRedesignUi()) rd.innerHTML = dataLoadingEmptyHTML('جاري تحميل البريكات…');
+              if (classic) classic.innerHTML = dataLoadingEmptyHTML('جاري تحميل البريكات…');
+            }
+            await loadStaffBreaksData();
           }
-          await loadStaffBreaksData();
+          if (isAtharRedesignUi()) {
+            const classic = document.getElementById('breaksClassicHost');
+            if (classic) classic.hidden = true;
+            renderStaffBreaksRedesign();
+          } else {
+            const rd = document.getElementById('rdBreaks');
+            if (rd) { rd.hidden = true; rd.innerHTML = ''; }
+            const classic = document.getElementById('breaksClassicHost');
+            if (classic) classic.hidden = false;
+            renderStaffBreaksClassic();
+          }
+          paintStaffBreakCountdownOnly();
+          ensureStaffBreakTicker();
+        } finally {
+          if (softPaint) endRdSoftPaint();
         }
-        if (isAtharRedesignUi()) {
-          const classic = document.getElementById('breaksClassicHost');
-          if (classic) classic.hidden = true;
-          renderStaffBreaksRedesign();
-        } else {
-          const rd = document.getElementById('rdBreaks');
-          if (rd) { rd.hidden = true; rd.innerHTML = ''; }
-          const classic = document.getElementById('breaksClassicHost');
-          if (classic) classic.hidden = false;
-          renderStaffBreaksClassic();
-        }
-        paintStaffBreakCountdownOnly();
-        ensureStaffBreakTicker();
       }
 
       async function startStaffBreakFromUi() {
