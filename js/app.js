@@ -7915,34 +7915,6 @@
         filterReports();
       }
 
-      /** مدير الفرع: فتح تقارير مخالفات فريق فرعه */
-      function dashOpenBranchTeamViolations() {
-        const me = state.currentUser;
-        if (!me || normalizeUserRole(me.role) !== 'branch_manager') return;
-        if (!me.branch_id) {
-          showToast('فرعك غير مضبوط على الحساب', 'warning');
-          return;
-        }
-
-        state.rpDashPreset = null;
-        clearFpStateObject(fpState);
-        fpState.scope = 'branch';
-
-        const searchInput = document.getElementById('rp-search');
-        if (searchInput) searchInput.value = '';
-
-        const { fromIso, toIso } = dashGetCurrentMonthRange();
-        dashApplyReportsMonthFilter(fromIso, toIso);
-        populateFpSelects();
-        dashSyncFpChipsFromState();
-        syncFpScopeChips();
-        updateActiveFiltersTags();
-
-        dashGoTab('reports');
-        filterReports();
-        showToast('عرض مخالفات فريق الفرع', 'info');
-      }
-
       // ═══════════════════════════════════════════════════════════════════════════
       // 11. NAVIGATION
       // ═══════════════════════════════════════════════════════════════════════════
@@ -10618,10 +10590,6 @@
               <span>موظفو الفرع — الالتزام</span>
             </div>
             <div class="score-viol-list score-viol-list--branch-staff">${empListHtml}</div>
-            <button type="button" class="branch-staff-viols-btn" onclick="dashOpenBranchTeamViolations()">
-              <span>مخالفات فريق الفرع</span>
-              <i class="fas fa-arrow-left" aria-hidden="true"></i>
-            </button>
           </div>
         `;
           }
@@ -11561,54 +11529,6 @@
             }).join('')
           : '<div class="rd-list__row" style="cursor:default"><div class="rd-list__sub">لا توجد تذاكر بعد</div></div>';
 
-        let teamPlatformHtml = '';
-        if (me?.role === 'branch_manager') {
-          const bid = me.branch_id;
-          if (!bid) {
-            teamPlatformHtml = `
-            <div class="rd-sec rd-team-platform">
-              <div class="rd-sec__head"><span class="rd-sec__title">منصة الفريق</span></div>
-              <div class="rd-list">
-                <div class="rd-list__row" style="cursor:default">
-                  <div class="rd-list__sub">فرعك غير مضبوط على الحساب</div>
-                </div>
-              </div>
-            </div>`;
-          } else {
-            const staffRows = getBranchStaff(bid)
-              .map(e => {
-                const es = calcEmpScore(e.id, state.violations || []);
-                return { id: e.id, name: e.name, score: Math.round(es.score) };
-              })
-              .sort((a, b) => b.score - a.score)
-              .slice(0, 6);
-            const staffHtml = staffRows.length
-              ? staffRows.map(e => {
-                  const color = rdClassifyScore(e.score);
-                  return `
-                    <div class="rd-list__row" style="cursor:default">
-                      <div class="rd-av">${Sec.escapeHTML((e.name || '—').charAt(0))}</div>
-                      <div style="flex:1;min-width:0">
-                        <div class="rd-list__name">${Sec.escapeHTML(e.name || '—')}</div>
-                        <div class="rd-list__sub">معدل الالتزام</div>
-                      </div>
-                      <div class="rd-dist-count" style="color:${color}">${e.score}</div>
-                    </div>`;
-                }).join('')
-              : '<div class="rd-list__row" style="cursor:default"><div class="rd-list__sub">لا يوجد موظفون نشطون في الفرع</div></div>';
-            teamPlatformHtml = `
-            <div class="rd-sec rd-team-platform">
-              <div class="rd-sec__head"><span class="rd-sec__title">منصة الفريق</span></div>
-              <div class="rd-list">${staffHtml}</div>
-              <button type="button" class="rd-team-viols-btn" onclick="dashOpenBranchTeamViolations()">
-                <i class="fas fa-clipboard-list" aria-hidden="true"></i>
-                <span>مخالفات فريق الفرع</span>
-                <i class="fas fa-arrow-left" aria-hidden="true"></i>
-              </button>
-            </div>`;
-          }
-        }
-
         host.innerHTML = `
           <div class="rd-screen">
             <div class="rd-greet">
@@ -11648,7 +11568,6 @@
               <div class="rd-metric__bar"><div class="rd-metric__fill" style="width:${responsePct}%;background:${responseColor}"></div></div>
               <div class="rd-metric__sub">${autoCount} تمريرات تلقائية</div>
             </div>
-            ${teamPlatformHtml}
             <div class="rd-stat-grid">
               <div class="rd-stat"><div class="rd-stat__row"><span class="rd-stat__val">${autoFwd}</span><span class="rd-stat__ico" style="color:var(--warning)"><i class="fas fa-clock"></i></span></div><div class="rd-stat__lbl">مخالفات تم تمريرها تلقائيا</div></div>
               <div class="rd-stat"><div class="rd-stat__row"><span class="rd-stat__val">${pending}</span><span class="rd-stat__ico" style="color:var(--info)"><i class="fas fa-spinner"></i></span></div><div class="rd-stat__lbl">قيد المعالجة</div></div>
@@ -32402,5 +32321,4 @@
       window.dashKpiNavigate = dashKpiNavigate;
       window.dashKpiKey = dashKpiKey;
       window.dashFunnelNavigate = dashFunnelNavigate;
-      window.dashOpenBranchTeamViolations = dashOpenBranchTeamViolations;
       window.showOverdueTickets = showOverdueTickets;
