@@ -32343,17 +32343,42 @@
         return neg ? `-${body}` : body;
       }
 
+      function getBreakBalanceSeconds(brk) {
+        if (!brk) return 0;
+        if (brk.remaining_seconds != null && Number.isFinite(Number(brk.remaining_seconds))) {
+          return Number(brk.remaining_seconds);
+        }
+        return Math.max(0, (Number(brk.planned_duration_minutes) || 0) * 60);
+      }
+
       function getBreakRemainingSeconds(brk, nowMs = Date.now()) {
-        if (!brk?.started_at) return 0;
+        if (!brk) return 0;
+        const balance = getBreakBalanceSeconds(brk);
+        if (brk.status === 'paused') return balance;
+        if (brk.status !== 'active' || !brk.started_at) return balance;
         const start = new Date(brk.started_at).getTime();
-        const plannedMs = (Number(brk.planned_duration_minutes) || 0) * 60 * 1000;
-        return Math.floor((start + plannedMs - nowMs) / 1000);
+        const elapsed = Math.max(0, Math.floor((nowMs - start) / 1000));
+        return balance - elapsed;
       }
 
       function getMyActiveStaffBreak() {
         const me = state.currentUser?.id;
         if (!me) return null;
         return (state.staffBreaks || []).find(b => b.status === 'active' && b.user_id === me) || null;
+      }
+
+      function getMyOpenStaffBreak() {
+        const me = state.currentUser?.id;
+        if (!me) return null;
+        return (state.staffBreaks || []).find(b =>
+          b.user_id === me && (b.status === 'active' || b.status === 'paused')
+        ) || null;
+      }
+
+      function getMyDisplayBreakSeconds() {
+        const open = getMyOpenStaffBreak();
+        if (open) return getBreakRemainingSeconds(open);
+        return Math.max(0, (state._myBreakDurationMins || 15) * 60);
       }
 
       function enrichStaffBreak(row) {
@@ -32385,8 +32410,8 @@
         try {
           const [{ data: breaks, error: bErr }, { data: schedules, error: sErr }, { data: myMins, error: dErr }] = await Promise.all([
             sb.from('staff_breaks')
-              .select('id,user_id,branch_id,region_id,planned_duration_minutes,started_at,ended_at,overtime_seconds,overtime_reason,status,created_at,updated_at')
-              .eq('status', 'active')
+              .select('id,user_id,branch_id,region_id,planned_duration_minutes,remaining_seconds,used_seconds,started_at,paused_at,ended_at,overtime_seconds,overtime_reason,status,day_key,created_at,updated_at')
+              .in('status', ['active', 'paused'])
               .order('started_at', { ascending: false })
               .limit(200),
             sb.from('staff_break_schedules')
@@ -32422,9 +32447,9 @@
           .on('postgres_changes', { event: '*', schema: 'public', table: 'staff_breaks' }, (payload) => {
             applyRealtimeChange(state.staffBreaks, payload, enrichStaffBreak);
             state.staffBreaks = (state.staffBreaks || [])
-              .filter(b => b.status === 'active')
+              .filter(b => b.status === 'active' || b.status === 'paused')
               .map(enrichStaffBreak)
-              .sort((a, b) => new Date(b.started_at) - new Date(a.started_at));
+              .sort((a, b) => new Date(b.started_at || b.updated_at || 0) - new Date(a.started_at || a.updated_at || 0));
             const tab = document.getElementById('tab-breaks');
             if (tab?.classList.contains('active')) renderStaffBreaksPage({ soft: true });
           })
@@ -32485,96 +32510,109 @@
       function paintStaffBreakCountdownOnly() {
         const host = document.getElementById('rdBreaksRingHost') || document.getElementById('breaksRingHost');
         if (!host) return;
-        const mine = getMyActiveStaffBreak();
-        const plannedMins = mine
-          ? (Number(mine.planned_duration_minutes) || state._myBreakDurationMins || 15)
-          : (state._myBreakDurationMins || 15);
-        const remaining = mine ? getBreakRemainingSeconds(mine) : plannedMins * 60;
-        const overtime = remaining < 0;
-        const plannedSec = Math.max(1, plannedMins * 60);
+        const open = getMyOpenStaffBreak();
+        const active = open?.status === 'active' ? open : null;
+        const plannedSec = Math.max(1, (Number(open?.planned_duration_minutes) || state._myBreakDurationMins || 15) * 60);
+        const remaining = getMyDisplayBreakSeconds();
+        const overtime = !!(active && remaining < 0);
+        const isPaused = open?.status === 'paused';
         let progress;
-        if (!mine) progress = 1;
+        if (!open) progress = 1;
         else if (!overtime) progress = Math.max(0, Math.min(1, remaining / plannedSec));
         else progress = Math.min(1, Math.abs(remaining) / plannedSec);
 
         const circ = STAFF_BREAK_RING_CIRC;
         const offset = circ * (1 - progress);
-        const stroke = !mine ? 'var(--border)' : (overtime ? 'var(--danger)' : 'var(--success)');
+        const stroke = overtime ? 'var(--danger)' : (active ? 'var(--success)' : (isPaused ? 'var(--gold)' : 'var(--border)'));
         const daysEl = host.querySelector('[data-break-clock]');
         const lblEl = host.querySelector('[data-break-lbl]');
         const ringEl = host.querySelector('[data-break-ring-progress]');
         const icoEl = host.querySelector('[data-break-ico]');
+        const badgeEl = host.querySelector('[data-break-badge]');
         if (daysEl) {
-          daysEl.textContent = mine ? formatBreakClock(remaining) : formatBreakClock(plannedSec);
+          daysEl.textContent = formatBreakClock(remaining);
           daysEl.style.color = overtime ? 'var(--danger)' : 'var(--text)';
         }
         if (lblEl) {
-          lblEl.textContent = !mine
-            ? 'مدة البريك المعتمدة'
-            : (overtime ? 'تجاوز المدة' : 'متبقي من البريك');
+          lblEl.textContent = overtime
+            ? 'تجاوز المدة'
+            : (active ? 'متبقي من البريك' : (isPaused ? 'متوقف — متبقي' : 'مدة البريك'));
           lblEl.style.color = overtime ? 'var(--danger)' : 'var(--text3)';
+        }
+        if (badgeEl) {
+          badgeEl.innerHTML = overtime
+            ? '<i class="fas fa-triangle-exclamation"></i>تجاوز'
+            : (active
+              ? '<i class="fas fa-mug-hot"></i>جاري البريك'
+              : (isPaused
+                ? '<i class="fas fa-pause"></i>متوقف'
+                : `<i class="fas fa-hourglass-half"></i>${state._myBreakDurationMins || 15} دقيقة`));
         }
         if (ringEl) {
           ringEl.setAttribute('stroke', stroke);
           ringEl.setAttribute('stroke-dasharray', String(circ));
-          ringEl.setAttribute('stroke-dashoffset', mine ? String(offset) : '0');
+          ringEl.setAttribute('stroke-dashoffset', open ? String(offset) : '0');
         }
         if (icoEl) {
-          icoEl.style.color = overtime ? 'var(--danger)' : 'var(--success)';
-          icoEl.className = 'fas ' + (overtime ? 'fa-triangle-exclamation' : (mine ? 'fa-mug-hot' : 'fa-clock'));
+          icoEl.style.color = overtime ? 'var(--danger)' : (active ? 'var(--success)' : 'var(--gold)');
+          icoEl.className = 'fas ' + (overtime ? 'fa-triangle-exclamation' : (active ? 'fa-mug-hot' : (isPaused ? 'fa-pause' : 'fa-clock')));
         }
         document.querySelectorAll('[data-break-row-clock]').forEach(el => {
           const id = el.getAttribute('data-break-row-clock');
           const brk = (state.staffBreaks || []).find(b => b.id === id);
-          if (!brk) return;
+          if (!brk || brk.status !== 'active') return;
           const rem = getBreakRemainingSeconds(brk);
           el.textContent = formatBreakClock(rem);
           el.classList.toggle('rd-break-row__clock--over', rem < 0);
         });
       }
 
-      function renderStaffBreakRingHtml(mine) {
-        const plannedMins = mine
-          ? (Number(mine.planned_duration_minutes) || 15)
-          : (state._myBreakDurationMins || 15);
-        const remaining = mine ? getBreakRemainingSeconds(mine) : plannedMins * 60;
-        const overtime = !!(mine && remaining < 0);
-        const plannedSec = Math.max(1, plannedMins * 60);
+      function renderStaffBreakRingHtml() {
+        const open = getMyOpenStaffBreak();
+        const active = open?.status === 'active' ? open : null;
+        const isPaused = open?.status === 'paused';
+        const plannedSec = Math.max(1, (Number(open?.planned_duration_minutes) || state._myBreakDurationMins || 15) * 60);
+        const remaining = getMyDisplayBreakSeconds();
+        const overtime = !!(active && remaining < 0);
         let progress;
-        if (!mine) progress = 1;
+        if (!open) progress = 1;
         else if (!overtime) progress = Math.max(0, Math.min(1, remaining / plannedSec));
         else progress = Math.min(1, Math.abs(remaining) / plannedSec);
         const circ = STAFF_BREAK_RING_CIRC;
         const offset = circ * (1 - progress);
-        const stroke = !mine ? 'var(--border)' : (overtime ? 'var(--danger)' : 'var(--success)');
-        const badge = mine
-          ? (overtime ? 'تجاوز' : 'جاري البريك')
-          : `${plannedMins} دقيقة`;
-        const badgeIco = mine ? (overtime ? 'fa-triangle-exclamation' : 'fa-mug-hot') : 'fa-hourglass-half';
+        const stroke = overtime ? 'var(--danger)' : (active ? 'var(--success)' : (isPaused ? 'var(--gold)' : 'var(--border)'));
+        const badge = overtime
+          ? '<i class="fas fa-triangle-exclamation"></i>تجاوز'
+          : (active
+            ? '<i class="fas fa-mug-hot"></i>جاري البريك'
+            : (isPaused
+              ? '<i class="fas fa-pause"></i>متوقف'
+              : `<i class="fas fa-hourglass-half"></i>${state._myBreakDurationMins || 15} دقيقة`));
+        const startLabel = isPaused ? 'متابعة البريك' : 'بدء البريك';
 
         return `
           <div class="rd-streak rd-break-card" id="rdBreaksRingHost">
-            <div class="rd-streak__badge"><i class="fas ${badgeIco}"></i>${Sec.escapeHTML(badge)}</div>
-            <div class="rd-streak__ring">
-              <svg width="136" height="136" viewBox="0 0 132 132" aria-hidden="true">
+            <div class="rd-streak__badge" data-break-badge>${badge}</div>
+            <div class="rd-streak__ring rd-break-ring">
+              <svg width="168" height="168" viewBox="0 0 132 132" aria-hidden="true">
                 <circle cx="66" cy="66" r="54" fill="none" stroke="var(--border)" stroke-width="10"></circle>
                 <circle data-break-ring-progress cx="66" cy="66" r="54" fill="none" stroke="${stroke}" stroke-width="10"
-                  stroke-linecap="round" stroke-dasharray="${circ}" stroke-dashoffset="${mine ? offset : 0}"></circle>
+                  stroke-linecap="round" stroke-dasharray="${circ}" stroke-dashoffset="${open ? offset : 0}"></circle>
               </svg>
               <div class="rd-streak__center">
-                <i data-break-ico class="fas ${overtime ? 'fa-triangle-exclamation' : (mine ? 'fa-mug-hot' : 'fa-clock')}"
-                  style="font-size:14px;color:${overtime ? 'var(--danger)' : 'var(--success)'};margin-bottom:3px"></i>
-                <span class="rd-streak__days" data-break-clock style="color:${overtime ? 'var(--danger)' : 'var(--text)'}">${formatBreakClock(remaining)}</span>
+                <i data-break-ico class="fas ${overtime ? 'fa-triangle-exclamation' : (active ? 'fa-mug-hot' : (isPaused ? 'fa-pause' : 'fa-clock'))}"
+                  style="font-size:16px;color:${overtime ? 'var(--danger)' : (active ? 'var(--success)' : 'var(--gold)')};margin-bottom:4px"></i>
+                <span class="rd-streak__days rd-break-clock" data-break-clock style="color:${overtime ? 'var(--danger)' : 'var(--text)'}">${formatBreakClock(remaining)}</span>
                 <span class="rd-streak__lbl" data-break-lbl style="color:${overtime ? 'var(--danger)' : 'var(--text3)'}">${
-                  !mine ? 'مدة البريك المعتمدة' : (overtime ? 'تجاوز المدة' : 'متبقي من البريك')
+                  overtime ? 'تجاوز المدة' : (active ? 'متبقي من البريك' : (isPaused ? 'متوقف — متبقي' : 'مدة البريك'))
                 }</span>
               </div>
             </div>
             <div class="rd-break-actions">
-              ${mine
-                ? `<button type="button" class="btn btn-primary rd-break-btn" onclick="endStaffBreakFromUi()"><i class="fas fa-stopwatch"></i> إنهاء البريك</button>`
+              ${active
+                ? `<button type="button" class="btn btn-primary rd-break-btn" onclick="endStaffBreakFromUi()"><i class="fas fa-pause"></i> إيقاف البريك</button>`
                 : (canTakeStaffBreak()
-                  ? `<button type="button" class="btn btn-primary rd-break-btn" onclick="startStaffBreakFromUi()"><i class="fas fa-play"></i> بدء البريك</button>`
+                  ? `<button type="button" class="btn btn-primary rd-break-btn" onclick="startStaffBreakFromUi()"><i class="fas fa-play"></i> ${Sec.escapeHTML(startLabel)}</button>`
                   : `<p class="rd-break-note">دورك الحالي للعرض فقط</p>`)
               }
             </div>
@@ -32587,7 +32625,7 @@
           .slice()
           .sort((a, b) => new Date(b.started_at) - new Date(a.started_at));
         if (!rows.length) {
-          return '<div class="rd-list__row" style="cursor:default"><div class="rd-list__sub">لا يوجد أحد في بريك حالياً</div></div>';
+          return '<div class="rd-list__row rd-break-empty" style="cursor:default"><div class="rd-list__sub">لا يوجد أحد في بريك حالياً</div></div>';
         }
         return rows.map(b => {
           const rem = getBreakRemainingSeconds(b);
@@ -32598,7 +32636,7 @@
               <div class="rd-break-row__av" aria-hidden="true">${Sec.escapeHTML((b._userName || 'م').trim().charAt(0) || 'م')}</div>
               <div class="rd-list__main">
                 <div class="rd-list__title">${Sec.escapeHTML(b._userName || '—')}${me ? ' <span class="rd-break-me-tag">أنت</span>' : ''}</div>
-                <div class="rd-list__sub">${Sec.escapeHTML(b._branchName || '—')} · ${Sec.escapeHTML(b._roleLabel || '')} · ${Number(b.planned_duration_minutes) || 0} د</div>
+                <div class="rd-list__sub">${Sec.escapeHTML(b._branchName || '—')} · ${Sec.escapeHTML(b._roleLabel || '')}</div>
               </div>
               <div class="rd-break-row__clock${over ? ' rd-break-row__clock--over' : ''}" data-break-row-clock="${Sec.escapeHTML(b.id)}">${formatBreakClock(rem)}</div>
             </div>`;
@@ -32607,42 +32645,23 @@
 
       function renderStaffBreakSchedulesHtml() {
         if (!canManageStaffBreakSchedules()) return '';
-        const schedules = (state.staffBreakSchedules || []).slice()
-          .sort((a, b) => {
-            const rank = { global: 0, region: 1, branch: 2, user: 3 };
-            return (rank[a.scope_type] ?? 9) - (rank[b.scope_type] ?? 9);
-          });
-        const rows = schedules.length
-          ? schedules.map(s => `
-              <div class="rd-list__row" style="cursor:default">
-                <div class="rd-list__main">
-                  <div class="rd-list__title">${Sec.escapeHTML(getStaffBreakScopeLabel(s))}</div>
-                  <div class="rd-list__sub">${s.label ? Sec.escapeHTML(s.label) : 'مدة معتمدة'}</div>
-                </div>
-                <div class="rd-break-sched-mins">${Number(s.duration_minutes) || 0} د</div>
-              </div>`).join('')
-          : '<div class="rd-list__row" style="cursor:default"><div class="rd-list__sub">لا توجد جداول بعد — المدة الافتراضية 15 دقيقة</div></div>';
-
         return `
-          <div class="rd-sec">
-            <div class="rd-sec__head">
-              <span class="rd-sec__title">جدولة مدد البريك</span>
-              <button type="button" class="rd-sec__link" onclick="openBreakScheduleModal()"><i class="fas fa-sliders"></i> تعديل مدة</button>
-            </div>
-            <div class="rd-list">${rows}</div>
+          <div class="rd-break-manage">
+            <button type="button" class="rd-break-manage-btn" onclick="openBreakScheduleModal()">
+              <i class="fas fa-sliders"></i> تعديل مدة البريك
+            </button>
           </div>`;
       }
 
       function renderStaffBreaksClassic() {
         const host = document.getElementById('breaksClassicHost');
         if (!host) return;
-        const mine = getMyActiveStaffBreak();
         host.innerHTML = `
-          <div class="breaks-classic-grid">
-            <div id="breaksRingHost">${renderStaffBreakRingHtml(mine)}</div>
-            <div class="rd-sec" style="margin:0">
+          <div class="breaks-full-page">
+            <div id="breaksRingHost">${renderStaffBreakRingHtml()}</div>
+            <div class="rd-sec rd-break-list-sec">
               <div class="rd-sec__head"><span class="rd-sec__title">في البريك الآن</span></div>
-              <div class="rd-list">${renderStaffBreaksListHtml()}</div>
+              <div class="rd-list rd-break-list">${renderStaffBreaksListHtml()}</div>
             </div>
             ${renderStaffBreakSchedulesHtml()}
           </div>`;
@@ -32651,30 +32670,19 @@
       function renderStaffBreaksRedesign() {
         const host = document.getElementById('rdBreaks');
         if (!host) return;
-        const mine = getMyActiveStaffBreak();
-        const activeCount = (state.staffBreaks || []).filter(b => b.status === 'active').length;
         host.innerHTML = `
-          <div class="rd-screen">
-            <div class="rd-greet">
-              <div class="rd-greet__name">بريكات الموظفين</div>
-              <div class="rd-greet__sub">ابدأ بريكك وعدّاد المدة يتناقص — التجاوز يكمّل بالسالب</div>
+          <div class="rd-screen rd-breaks-page">
+            <div class="rd-breaks-page__head">
+              <h2 class="rd-breaks-page__title">بريكات الموظفين</h2>
+              ${canManageStaffBreakSchedules()
+                ? `<button type="button" class="rd-breaks-page__gear" onclick="openBreakScheduleModal()" aria-label="تعديل مدة البريك"><i class="fas fa-sliders"></i></button>`
+                : ''}
             </div>
-            ${renderStaffBreakRingHtml(mine)}
-            <div class="rd-mini-grid">
-              <div class="rd-mini">
-                <div class="rd-mini__val" style="color:var(--info)">${activeCount}</div>
-                <div class="rd-mini__lbl">في بريك الآن</div>
-              </div>
-              <div class="rd-mini">
-                <div class="rd-mini__val" style="color:var(--gold)">${state._myBreakDurationMins || 15}</div>
-                <div class="rd-mini__lbl">مدتك المعتمدة (د)</div>
-              </div>
+            ${renderStaffBreakRingHtml()}
+            <div class="rd-sec rd-break-list-sec">
+              <div class="rd-sec__head"><span class="rd-sec__title">في البريك الآن</span></div>
+              <div class="rd-list rd-break-list">${renderStaffBreaksListHtml()}</div>
             </div>
-            <div class="rd-sec">
-              <div class="rd-sec__head"><span class="rd-sec__title">القائمة المباشرة</span></div>
-              <div class="rd-list">${renderStaffBreaksListHtml()}</div>
-            </div>
-            ${renderStaffBreakSchedulesHtml()}
           </div>`;
         host.hidden = false;
       }
@@ -32724,9 +32732,9 @@
           }
           if (data.break) {
             const row = enrichStaffBreak(data.break);
-            state.staffBreaks = [row, ...(state.staffBreaks || []).filter(b => b.id !== row.id && b.status === 'active')];
+            state.staffBreaks = [row, ...(state.staffBreaks || []).filter(b => b.id !== row.id && (b.status === 'active' || b.status === 'paused'))];
           }
-          showToast('بدأ البريك — بالتوفيق', 'success');
+          showToast(data.resumed ? 'متابعة البريك من المتبقي' : 'بدأ البريك', 'success');
           await renderStaffBreaksPage({ soft: true });
         } catch (e) {
           showToast('فشل بدء البريك: ' + (e.message || e), 'error');
@@ -32755,15 +32763,26 @@
             return;
           }
           if (!data?.ok) {
-            showToast(data?.error || 'تعذّر إنهاء البريك', 'error');
+            showToast(data?.error || 'تعذّر إيقاف البريك', 'error');
             return;
           }
-          state.staffBreaks = (state.staffBreaks || []).filter(b => b.id !== mine.id);
           closeModal('breakOvertimeModal');
-          showToast('تم إنهاء البريك', 'success');
+          if (data.break) {
+            const row = enrichStaffBreak(data.break);
+            if (row.status === 'paused') {
+              state.staffBreaks = [row, ...(state.staffBreaks || []).filter(b => b.id !== row.id)];
+              showToast(`توقف البريك — المتبقي ${formatBreakClock(getBreakBalanceSeconds(row))}`, 'success');
+            } else {
+              state.staffBreaks = (state.staffBreaks || []).filter(b => b.id !== mine.id);
+              showToast(data.ended ? 'انتهت مدة البريك' : 'تم إيقاف البريك', 'success');
+            }
+          } else {
+            state.staffBreaks = (state.staffBreaks || []).filter(b => b.id !== mine.id);
+            showToast('تم إيقاف البريك', 'success');
+          }
           await renderStaffBreaksPage({ soft: true });
         } catch (e) {
-          showToast('فشل إنهاء البريك: ' + (e.message || e), 'error');
+          showToast('فشل إيقاف البريك: ' + (e.message || e), 'error');
         }
       }
 
@@ -32771,7 +32790,7 @@
         const rem = overtimeSeconds != null ? overtimeSeconds : Math.abs(getBreakRemainingSeconds(brk));
         const hint = document.getElementById('breakOtHint');
         const input = document.getElementById('breakOtReason');
-        if (hint) hint.textContent = `تجاوزت المدة بمقدار ${formatBreakClock(-rem)} — أضف سبب التجاوز لإكمال إنهاء البريك.`;
+        if (hint) hint.textContent = `تجاوزت المدة بمقدار ${formatBreakClock(-rem)} — أضف سبب التجاوز لإكمال إيقاف البريك.`;
         if (input) input.value = '';
         openModal('breakOvertimeModal');
         setTimeout(() => input?.focus(), 80);
