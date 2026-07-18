@@ -868,6 +868,23 @@ html.athar-staging-redesign.mr-mobile-ui .mob-nav-badge {
 html.athar-staging-redesign.mr-mobile-ui #rdThemeBtn { display: inline-flex !important; }
 html:not(.athar-staging-redesign) #rdThemeBtn,
 html.athar-staging-redesign.mr-desktop-ui #rdThemeBtn { display: none !important; }
+
+/* Redesign mobile: hide ATHAR wordmark; user avatar takes the brand slot */
+html.athar-staging-redesign.mr-mobile-ui #brandArea {
+  display: none !important;
+}
+html.athar-staging-redesign.mr-mobile-ui .topbar-brand-zone {
+  flex: 0 0 auto !important;
+  max-width: none !important;
+  gap: 0 !important;
+  padding: 0 !important;
+}
+html.athar-staging-redesign.mr-mobile-ui .topbar-brand-zone > #topbarUserChip {
+  display: flex !important;
+  align-items: center !important;
+  flex-shrink: 0 !important;
+}
+
 html.athar-staging-redesign.mr-mobile-ui #topbarUserAv.rd-top-av {
   width: 36px !important; height: 36px !important; border-radius: 50% !important;
   background: var(--text) !important; color: var(--surface) !important;

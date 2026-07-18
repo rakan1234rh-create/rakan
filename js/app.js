@@ -4962,6 +4962,7 @@
           const mobNav = document.getElementById('mobileBottomNav');
           if (mobNav) mobNav.style.removeProperty('display');
         }
+        try { syncRdChromeUi(); } catch (_) { /* noop */ }
         if (viewportChanged && typeof window.initMobileViewportSync === 'function') {
           window.dispatchEvent(new Event('resize'));
         }
@@ -4997,11 +4998,24 @@
         return 'var(--danger)';
       }
 
+      /** Redesign mobile: user chip in brand slot (logo place); classic/desktop: back in actions */
+      function syncRdTopbarUserSlot() {
+        const chip = document.getElementById('topbarUserChip');
+        const brand = document.querySelector('#appWrap .topbar-brand-zone');
+        const actions = document.querySelector('#appWrap .topbar-actions-zone');
+        if (!chip || !brand || !actions) return;
+        const inBrandSlot = isAtharRedesignUi()
+          && document.documentElement.classList.contains('mr-mobile-ui');
+        const target = inBrandSlot ? brand : actions;
+        if (chip.parentElement !== target) target.appendChild(chip);
+      }
+
       function syncRdChromeUi() {
         const theme = document.documentElement.getAttribute('data-theme') || 'light';
         const icon = document.getElementById('rdThemeIcon');
         if (icon) icon.className = 'fas ' + (theme === 'dark' ? 'fa-sun' : 'fa-moon');
         try { syncRdWfChips(); } catch (_) { /* noop */ }
+        try { syncRdTopbarUserSlot(); } catch (_) { /* noop */ }
         const av = document.getElementById('topbarUserAv');
         if (!av) return;
         if (!isAtharRedesignUi() || !state.currentUser) {
