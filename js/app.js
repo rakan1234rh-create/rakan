@@ -18205,18 +18205,18 @@
             mobHead.setAttribute('aria-hidden', 'true');
           }
           const toneFor = (t) => {
-            if (t.state === 'closed') return 'var(--success)';
-            if (t.state === 'Warning_Issued') return 'var(--text3)';
-            if (t.state === 'mgt' || t.state === 'hr') return 'var(--danger)';
-            if (t.state === 'sup' || t.state === 'aud') return 'var(--info)';
-            return 'var(--warning)';
+            if (t.state === 'closed') return 'success';
+            if (t.state === 'Warning_Issued') return 'muted';
+            if (t.state === 'mgt' || t.state === 'hr') return 'danger';
+            if (t.state === 'sup' || t.state === 'aud') return 'info';
+            return 'warning';
           };
           const cards = tickets.map((t, i) => {
             const empName = (t._empName || '').trim() || '...';
             const initial = empName.charAt(0) || '—';
             const violName = (t.violation_type || '').trim() || '...';
             const statusText = (t.status_text || STATE_LABELS[t.state] || '').trim();
-            const colorVar = toneFor(t);
+            const tone = toneFor(t);
             const delay = (i * 0.045).toFixed(3);
             const rel = formatRelativeAr(t.created_at || t.updated_at);
             return `
@@ -18233,7 +18233,7 @@
                     <div class="rd-ticket__type">${Sec.escapeHTML(violName)}</div>
                   </div>
                 </div>
-                <div class="rd-ticket__badge" style="background:${colorVar}22;color:${colorVar}">${Sec.escapeHTML(statusText)}</div>
+                <div class="rd-ticket__badge rd-ticket__badge--${tone}">${Sec.escapeHTML(statusText)}</div>
               </button>`;
           }).join('');
           resetTicketListChildren(list, true);
