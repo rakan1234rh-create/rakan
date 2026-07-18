@@ -32683,11 +32683,18 @@
             } else if (payload.new && !isToday) {
               dayRows = dayRows.filter(b => b.id !== payload.new.id);
             }
-            dayRows = dayRows
-              .filter(b => !b.day_key || String(b.day_key).slice(0, 10) === todayKey)
-              .sort((a, b) => new Date(b.started_at || b.updated_at || 0) - new Date(a.started_at || a.updated_at || 0));
-            state.staffBreakDayRows = dayRows;
-            state.staffBreaks = dayRows
+            const uniq = [];
+            const seen = new Set();
+            dayRows
+              .filter(b => b?.id && (!b.day_key || String(b.day_key).slice(0, 10) === todayKey))
+              .sort((a, b) => new Date(b.started_at || b.updated_at || 0) - new Date(a.started_at || a.updated_at || 0))
+              .forEach((b) => {
+                if (seen.has(b.id)) return;
+                seen.add(b.id);
+                uniq.push(b);
+              });
+            state.staffBreakDayRows = uniq;
+            state.staffBreaks = uniq
               .filter(b => b.status === 'active' || b.status === 'paused')
               .map(enrichStaffBreak);
 
