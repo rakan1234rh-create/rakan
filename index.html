@@ -2977,7 +2977,7 @@
                   <div class="mk-field mk-field--type">
                     <label class="mk-field__lbl" for="nt-typeSearch">نوع المخالفة <span class="mk-req">*</span></label>
                     <div class="figma-search-wrap">
-                      <input type="text" id="nt-typeSearch" class="figma-search-input" placeholder="ابحث عن نوع المخالفة..."
+                      <input type="text" id="nt-typeSearch" class="figma-search-input" placeholder="ابحث عن النوع..."
                         oninput="lookupViolationType()" onfocus="lookupViolationType()" autocomplete="off">
                       <button type="button" class="figma-search-btn" onclick="lookupViolationType()" aria-label="بحث">
                         <i class="fas fa-magnifying-glass"></i>
@@ -2987,14 +2987,12 @@
                     <input type="hidden" id="nt-type">
                     <div id="nt-typeDropdown" class="autocomplete-dropdown" style="display:none;"></div>
                     <div id="nt-typeFound" class="mk-pick-banner-slot" style="display:none" aria-live="polite"></div>
-                    <!-- Redesign severity preview (Standalone 2) -->
-                    <div class="rd-nt-sev" id="rdNtSevPreview" hidden aria-live="polite"></div>
                   </div>
 
                   <div class="mk-field mk-field--emp">
                     <label class="mk-field__lbl" for="nt-empSearch">الموظف المخالف <span class="mk-req">*</span></label>
                     <div class="figma-search-wrap">
-                      <input type="text" id="nt-empSearch" class="figma-search-input" placeholder="ابحث باسم الموظف أو الرقم الوظيفي..."
+                      <input type="text" id="nt-empSearch" class="figma-search-input" placeholder="ابحث عن الموظف..."
                         oninput="lookupEmployee()" onfocus="lookupEmployee()" autocomplete="off">
                       <button type="button" class="figma-search-btn" onclick="lookupEmployee()" aria-label="بحث">
                         <i class="fas fa-magnifying-glass"></i>
@@ -3005,6 +3003,9 @@
                     <div id="nt-empDropdown" class="autocomplete-dropdown" style="display:none;"></div>
                     <div id="nt-empFound" class="mk-pick-banner-slot" style="display:none" aria-live="polite"></div>
                   </div>
+
+                  <!-- Redesign severity preview — full width under type + employee row -->
+                  <div class="rd-nt-sev" id="rdNtSevPreview" hidden aria-live="polite"></div>
 
                   <div class="mk-field mk-field--dt-row">
                     <div class="mk-dt-pair">
