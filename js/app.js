@@ -5013,7 +5013,21 @@
         av.textContent = initial;
       }
 
-      /** Chips على صفحة التذاكر (تصميم الاختبار) — الكل / بانتظار ردي / مُرسلة */
+      /** Chips على صفحة التذاكر (تصميم الاختبار) — الكل / بانتظار ردي / مُرسلة / الفريق */
+      function isBranchManagerTeamChipUser() {
+        return normalizeUserRole(state.currentUser?.role) === 'branch_manager'
+          && !!state.currentUser?.branch_id;
+      }
+
+      function isBranchTeamTicket(t) {
+        if (!t || !isBranchManagerTeamChipUser()) return false;
+        const bid = state.currentUser.branch_id;
+        if (t.branch_id === bid) return true;
+        const staffIds = new Set(getBranchStaff(bid).map(e => e.id));
+        staffIds.add(state.currentUser.id);
+        return staffIds.has(t.employee_id);
+      }
+
       function syncRdWfChips(openTickets) {
         const host = document.getElementById('rdWfChips');
         if (!host) return;
@@ -5025,13 +5039,20 @@
         const open = Array.isArray(openTickets)
           ? openTickets
           : getVisibleViolations().filter(isTicketWorkflowOpen);
-        const chip = state._rdWfChip || 'all';
+        let chip = state._rdWfChip || 'all';
+        const showTeam = isBranchManagerTeamChipUser();
+        if (chip === 'team' && !showTeam) {
+          chip = 'all';
+          state._rdWfChip = 'all';
+        }
         const mineN = open.filter(canActOnTicket).length;
+        const teamN = showTeam ? open.filter(isBranchTeamTicket).length : 0;
         const chips = [
           { id: 'all', label: 'الكل', count: open.length },
           { id: 'mine', label: 'بانتظار ردي', count: mineN },
           { id: 'sent', label: 'مُرسلة', count: Math.max(0, open.length - mineN) },
         ];
+        if (showTeam) chips.push({ id: 'team', label: 'الفريق', count: teamN });
         host.hidden = false;
         host.innerHTML = chips.map((c) => {
           const active = c.id === chip;
@@ -5040,7 +5061,9 @@
       }
 
       function rdWfPickChip(id) {
-        if (id !== 'all' && id !== 'mine' && id !== 'sent') id = 'all';
+        const allowed = new Set(['all', 'mine', 'sent']);
+        if (isBranchManagerTeamChipUser()) allowed.add('team');
+        if (!allowed.has(id)) id = 'all';
         state._rdWfChip = id;
         filterTickets();
       }
@@ -18118,6 +18141,7 @@
           const chip = state._rdWfChip || 'all';
           if (chip === 'mine') visible = visible.filter(canActOnTicket);
           else if (chip === 'sent') visible = visible.filter(t => !canActOnTicket(t));
+          else if (chip === 'team') visible = visible.filter(isBranchTeamTicket);
           const countEl = document.getElementById('wf-count');
           if (countEl) countEl.textContent = visible.length;
           renderTicketList(visible);
