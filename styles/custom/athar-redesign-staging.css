@@ -638,10 +638,39 @@ html.athar-staging-redesign.mr-mobile-ui #tab-workflow .wf-table-wrap--head {
 .rd-ticket__badge {
   margin-top: 10px;
   display: inline-flex;
+  align-items: center;
   padding: 5px 12px;
   border-radius: 999px;
   font-size: 11px;
   font-weight: 600;
+  line-height: 1.35;
+  border: 1px solid transparent;
+  max-width: 100%;
+}
+.rd-ticket__badge--warning {
+  background: color-mix(in srgb, var(--warning) 16%, transparent);
+  color: var(--warning);
+  border-color: color-mix(in srgb, var(--warning) 28%, transparent);
+}
+.rd-ticket__badge--info {
+  background: color-mix(in srgb, var(--info) 16%, transparent);
+  color: var(--info);
+  border-color: color-mix(in srgb, var(--info) 28%, transparent);
+}
+.rd-ticket__badge--danger {
+  background: color-mix(in srgb, var(--danger) 14%, transparent);
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 26%, transparent);
+}
+.rd-ticket__badge--success {
+  background: color-mix(in srgb, var(--success) 16%, transparent);
+  color: var(--success);
+  border-color: color-mix(in srgb, var(--success) 28%, transparent);
+}
+.rd-ticket__badge--muted {
+  background: color-mix(in srgb, var(--text3) 14%, transparent);
+  color: var(--text3);
+  border-color: color-mix(in srgb, var(--text3) 24%, transparent);
 }
 .rd-ticket-empty {
   text-align: center;
