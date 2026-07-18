@@ -32385,10 +32385,7 @@
       }
 
       function getStaffBreakTodayKey() {
-        const p = typeof ksaFormatParts === 'function' ? ksaFormatParts() : null;
-        if (p?.year && p?.month && p?.day) {
-          return `${p.year}-${String(p.month).padStart(2, '0')}-${String(p.day).padStart(2, '0')}`;
-        }
+        // Prefer Intl directly — ksaFormatParts().month is 0-indexed
         try {
           return new Intl.DateTimeFormat('en-CA', {
             timeZone: 'Asia/Riyadh',
@@ -32396,9 +32393,12 @@
             month: '2-digit',
             day: '2-digit'
           }).format(new Date());
-        } catch (_) {
-          return new Date().toISOString().slice(0, 10);
+        } catch (_) { /* fall through */ }
+        const p = typeof ksaFormatParts === 'function' ? ksaFormatParts() : null;
+        if (p?.year != null && p?.month != null && p?.day != null) {
+          return `${p.year}-${String(p.month + 1).padStart(2, '0')}-${String(p.day).padStart(2, '0')}`;
         }
+        return new Date().toISOString().slice(0, 10);
       }
 
       function resolveBreakDurationMinsForUser(u) {
@@ -32886,6 +32886,7 @@
         }
         if (getMyActiveStaffBreak()) {
           showToast('لديك بريك نشط بالفعل', 'info');
+          await renderStaffBreaksPage();
           return;
         }
         const colleague = getActiveBreakColleagueInMyBranch();
@@ -32899,7 +32900,12 @@
           if (error) throw error;
           if (!data?.ok) {
             showToast(data?.error || 'تعذّر بدء البريك', 'error');
-            if (data?.branch_busy) await renderStaffBreaksPage({ soft: true });
+            // Sync UI if server already has an open break the client missed
+            if (data?.break || /نشط|بريك/i.test(String(data?.error || ''))) {
+              await renderStaffBreaksPage();
+            } else if (data?.branch_busy) {
+              await renderStaffBreaksPage({ soft: true });
+            }
             return;
           }
           if (data.break) {
