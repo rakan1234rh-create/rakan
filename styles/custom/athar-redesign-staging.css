@@ -5,13 +5,19 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 @keyframes atharRdScreenIn {
-  from { opacity: 1; transform: translateY(4px); }
+  from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes atharRdCardIn {
-  from { opacity: 1; transform: translateY(4px); }
+  from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* Tab shell: slide only — opacity here flashes the empty parent underneath */
+@keyframes atharRdTabIn {
+  from { transform: translateY(8px); }
+  to { transform: translateY(0); }
 }
 
 /* ── Light theme tokens (mockup) ─────────────────────────────────────────── */
@@ -293,16 +299,20 @@ html.mr-mobile-ui .tab-content {
   background: var(--mr-bg) !important;
 }
 
-/* Avoid opacity flash on tab enter — keep a light slide only */
+/* Tab shell slides without opacity (opacity on the shell flashes the parent).
+   Inner .rd-screen / cards keep the full fade+slide entrance. */
 html.mr-mobile-ui .tab-content.active {
-  animation: atharRdScreenIn 0.18s ease;
+  animation: atharRdTabIn 0.28s ease;
+  isolation: isolate;
 }
-html.athar-staging-redesign.mr-mobile-ui .tab-content,
-html.athar-staging-redesign.mr-mobile-ui .tab-content.active {
+/* Soft live updates rebuild HTML — jump to end-state so opacity entrance doesn't flash */
+html.rd-soft-paint .tab-content.active,
+html.rd-soft-paint .rd-screen {
   animation: none !important;
 }
-html.athar-staging-redesign.mr-mobile-ui .rd-screen {
-  animation: none !important;
+html.rd-soft-paint .tab-content.active * {
+  animation-duration: 0s !important;
+  animation-delay: 0s !important;
 }
 
 html.mr-mobile-ui .mk-dash,
