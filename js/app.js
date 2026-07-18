@@ -32450,9 +32450,11 @@
       function getMyDisplayBreakSeconds() {
         const open = getMyOpenStaffBreak();
         if (open) return getBreakRemainingSeconds(open);
-        const dayRow = state.staffBreakDayByUser?.[state.currentUser?.id];
+        const me = state.currentUser;
+        const dayRow = me?.id ? state.staffBreakDayByUser?.[me.id] : null;
         if (dayRow?.status === 'ended') return Math.max(0, Number(dayRow.remaining_seconds) || 0);
-        return Math.max(0, (state._myBreakDurationMins || 15) * 60);
+        // Prefer live schedule resolution so admin/supervisor duration edits show immediately
+        return Math.max(0, resolveBreakDurationMinsForUser(me) * 60);
       }
 
       function getStaffBreakTodayKey() {
@@ -32474,21 +32476,26 @@
 
       function resolveBreakDurationMinsForUser(u) {
         if (!u) return state._myBreakDurationMins || 15;
-        const schedules = state.staffBreakSchedules || [];
-        const userSch = schedules.find(s => s.scope_type === 'user' && s.scope_id === u.id);
-        if (userSch) return Number(userSch.duration_minutes) || 15;
+        const schedules = (state.staffBreakSchedules || []).filter(s => s && s.is_active !== false);
+        const pick = (type, id) => {
+          const rows = schedules.filter(s => s.scope_type === type && (id == null ? !s.scope_id : s.scope_id === id));
+          if (!rows.length) return null;
+          rows.sort((a, b) => new Date(b.updated_at || 0) - new Date(a.updated_at || 0));
+          return Number(rows[0].duration_minutes) || null;
+        };
+        const userMins = pick('user', u.id);
+        if (userMins) return userMins;
         if (u.branch_id) {
-          const bSch = schedules.find(s => s.scope_type === 'branch' && s.scope_id === u.branch_id);
-          if (bSch) return Number(bSch.duration_minutes) || 15;
+          const branchMins = pick('branch', u.branch_id);
+          if (branchMins) return branchMins;
           if (!state._branchById) rebuildLookupMaps();
           const branch = state._branchById?.get(u.branch_id) || state.branches.find(b => b.id === u.branch_id);
           if (branch?.region_id) {
-            const rSch = schedules.find(s => s.scope_type === 'region' && s.scope_id === branch.region_id);
-            if (rSch) return Number(rSch.duration_minutes) || 15;
+            const regionMins = pick('region', branch.region_id);
+            if (regionMins) return regionMins;
           }
         }
-        const g = schedules.find(s => s.scope_type === 'global');
-        return Number(g?.duration_minutes) || state._myBreakDurationMins || 15;
+        return pick('global', null) || state._myBreakDurationMins || 15;
       }
 
       function getUserBreakRemainingSeconds(u) {
@@ -32622,7 +32629,13 @@
           state.staffBreakDayRows = enriched;
           state.staffBreaks = enriched.filter(b => b.status === 'active' || b.status === 'paused');
           state.staffBreakSchedules = schedules || [];
-          state._myBreakDurationMins = Number(myMins) > 0 ? Number(myMins) : 15;
+          const resolvedMins = Number(myMins) > 0
+            ? Number(myMins)
+            : resolveBreakDurationMinsForUser(state.currentUser);
+          state._myBreakDurationMins = resolvedMins > 0 ? resolvedMins : 15;
+          // Keep personal minutes aligned with the freshest schedule row (region/branch/user)
+          const liveMins = resolveBreakDurationMinsForUser(state.currentUser);
+          if (liveMins > 0) state._myBreakDurationMins = liveMins;
           state._staffBreakDayKey = todayKey;
         } catch (e) {
           if (isMirsadDebugLog()) console.warn('[staff_breaks] load', e);
@@ -32676,9 +32689,13 @@
             if (tab?.classList.contains('active')) renderStaffBreaksPage({ soft: true });
           })
           .on('postgres_changes', { event: '*', schema: 'public', table: 'staff_break_schedules' }, () => {
+            // Duration edits must refresh minutes for every connected employee immediately
             loadStaffBreaksData().then(() => {
               const tab = document.getElementById('tab-breaks');
               if (tab?.classList.contains('active')) renderStaffBreaksPage({ soft: true });
+              else if (typeof paintStaffBreakCountdownOnly === 'function') {
+                try { paintStaffBreakCountdownOnly(); } catch (_) { /* noop */ }
+              }
             });
           })
           .subscribe();
@@ -33214,7 +33231,13 @@
             return;
           }
           closeModal('breakScheduleModal');
-          showToast('تم حفظ مدة البريك', 'success');
+          const applied = Number(data?.applied_sessions) || 0;
+          showToast(
+            applied > 0
+              ? `تم حفظ مدة البريك وتحديث ${applied} جلسة لليوم`
+              : 'تم حفظ مدة البريك — تظهر للموظفين فورًا',
+            'success'
+          );
           await loadStaffBreaksData();
           await renderStaffBreaksPage({ soft: true });
         } catch (e) {
