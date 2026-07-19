@@ -5857,7 +5857,7 @@
         { id: 'tab_settings', label: 'صفحة صلاحيات المنصة', group: 'الإعدادات', roles: [] },
         { id: 'tab_broadcasts', label: 'نشرات الجوال', group: 'الإعدادات', roles: ['admin'] },
         { id: 'tab_breaks', label: 'بريكات الموظفين', group: 'التنقل', roles: ['admin', 'supervisor', 'branch_manager', 'observer', 'employee'] },
-        { id: 'manage_break_schedules', label: 'تعديل مدد البريك (منطقة/فرع/موظف)', group: 'إجراءات إدارية', roles: ['admin', 'supervisor'] },
+        { id: 'manage_break_schedules', label: 'تعديل مدد البريك (منطقة/فرع/موظف)', group: 'إجراءات إدارية', roles: ['admin'] },
         { id: 'view_all_tickets', label: 'عرض جميع التذاكر (كل الفروع)', group: 'سير العمل', roles: ['admin', 'manager', 'auditor', 'hr'] },
         { id: 'respond_own_ticket', label: 'الرد على التذكرة الموجّهة إليه', group: 'سير العمل', roles: ['admin', 'employee', 'branch_manager'] },
         { id: 'act_as_supervisor', label: 'معالجة مرحلة المشرف', group: 'سير العمل', roles: ['admin', 'supervisor'] },
@@ -32367,9 +32367,9 @@
       }
 
       function canManageStaffBreakSchedules() {
-        if (typeof hasPermission === 'function' && hasPermission('manage_break_schedules')) return true;
+        // مدة البريك: مدير النظام فقط (حتى لو وُجدت صلاحية محفوظة قديمة للمشرف).
         const role = normalizeUserRole(state.currentUser?.role);
-        return role === 'admin' || role === 'supervisor';
+        return role === 'admin';
       }
 
       function canViewStaffBreakHistory() {
