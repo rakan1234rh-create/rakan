@@ -33107,9 +33107,14 @@
         if (!userId) return;
         const u = state._userById?.get(userId) || state.users.find(x => x.id === userId);
         const title = document.getElementById('breakHistTitle');
+        const empNumEl = document.getElementById('breakHistEmpNum');
         const sub = document.getElementById('breakHistSub');
         const list = document.getElementById('breakHistList');
         if (title) title.textContent = u?.name ? `سجل بريكات · ${u.name}` : 'سجل بريكات الموظف';
+        if (empNumEl) {
+          const empNum = u?.employee_number ? padEmpNum(u.employee_number) : '';
+          empNumEl.textContent = empNum && empNum !== '-' ? empNum : '—';
+        }
         if (sub) sub.textContent = `جلسات اليوم (${getStaffBreakTodayKey()}) — كل بدء جديد يظهر كسجل منفصل`;
         if (list) list.innerHTML = '<div class="break-history-empty">جاري التحميل…</div>';
         openModal('breakHistoryModal');

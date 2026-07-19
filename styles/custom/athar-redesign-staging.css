@@ -3569,6 +3569,29 @@ html.athar-staging-redesign.mr-mobile-ui #rdBreaks[hidden] {
 .rd-break-row--clickable:active {
   filter: brightness(0.98);
 }
+.break-history-card .modal-header {
+  align-items: center;
+  gap: 10px;
+}
+.break-history-card .modal-header h3 {
+  flex: 1;
+  min-width: 0;
+}
+.break-history-empnum {
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  color: var(--text2);
+  background: var(--surface2, var(--surface));
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 6px 10px;
+  line-height: 1.2;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
 .break-history-card .modal-body {
   padding-top: 8px;
 }
