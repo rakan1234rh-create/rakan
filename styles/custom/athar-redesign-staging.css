@@ -3664,6 +3664,25 @@ html.athar-staging-redesign.mr-mobile-ui #rdBreaks[hidden] {
   font-weight: 600;
   text-align: end;
 }
+.break-history-item__reason {
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 4px;
+  margin-top: 2px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+.break-history-item__reason dd {
+  text-align: start;
+  font-weight: 500;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.break-history-item__reason-empty {
+  color: var(--text3);
+  font-weight: 500;
+}
 .rd-break-manage {
   margin-top: 14px;
   width: 100%;
