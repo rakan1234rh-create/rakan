@@ -32838,11 +32838,13 @@
           if (!u) return;
           const remSec = getUserBreakRemainingSeconds(u);
           const mins = Math.max(0, Math.ceil(remSec / 60));
-          el.textContent = `${mins} د`;
           const paused = !!(state.staffBreaks || []).some(b => b.user_id === uid && b.status === 'paused');
           const dayRow = state.staffBreakDayByUser?.[uid];
-          const overEnded = dayRow?.status === 'ended' && ((Number(dayRow.overtime_seconds) || 0) > 0 || Number(dayRow.remaining_seconds) < 0);
-          el.classList.toggle('rd-break-roster__mins--zero', mins <= 0 && !paused);
+          const overSec = !paused && dayRow?.status === 'ended' ? getStaffBreakOvertimeSeconds(dayRow) : 0;
+          const overEnded = overSec > 0;
+          const overMins = overEnded ? Math.max(1, Math.ceil(overSec / 60)) : 0;
+          el.textContent = overEnded ? `+${overMins} د` : `${mins} د`;
+          el.classList.toggle('rd-break-roster__mins--zero', mins <= 0 && !paused && !overEnded);
           el.classList.toggle('rd-break-roster__mins--paused', paused);
           el.classList.toggle('rd-break-roster__mins--over', overEnded);
           const row = el.closest('[data-break-roster-row]');
@@ -32947,6 +32949,15 @@
         }).join('');
       }
 
+      function getStaffBreakOvertimeSeconds(dayRow) {
+        if (!dayRow) return 0;
+        const fromField = Number(dayRow.overtime_seconds);
+        if (Number.isFinite(fromField) && fromField > 0) return fromField;
+        const rem = Number(dayRow.remaining_seconds);
+        if (Number.isFinite(rem) && rem < 0) return Math.abs(rem);
+        return 0;
+      }
+
       function renderStaffBreakRosterHtml() {
         // «السجل»: المتوقفون والمنتهون (النشطون يظهرون في «في البريك» فقط)
         const activeIds = new Set(
@@ -32961,11 +32972,13 @@
           const mins = Math.max(0, Math.ceil(remSec / 60));
           const paused = (state.staffBreaks || []).find(b => b.user_id === u.id && b.status === 'paused');
           const dayRow = state.staffBreakDayByUser?.[u.id];
-          const overEnded = !paused && dayRow?.status === 'ended'
-            && ((Number(dayRow.overtime_seconds) || 0) > 0 || Number(dayRow.remaining_seconds) < 0);
+          const overSec = !paused && dayRow?.status === 'ended' ? getStaffBreakOvertimeSeconds(dayRow) : 0;
+          const overEnded = overSec > 0;
+          const overMins = overEnded ? Math.max(1, Math.ceil(overSec / 60)) : 0;
           const statusLbl = paused
             ? 'متوقف'
             : (overEnded ? 'انتهى مع تجاوز' : (dayRow?.status === 'ended' || mins <= 0 ? 'خلصت المدة' : 'متاح'));
+          const minsLabel = overEnded ? `+${overMins} د` : `${mins} د`;
           const branch = state._branchById?.get(u.branch_id) || state.branches.find(b => b.id === u.branch_id);
           const me = u.id === state.currentUser?.id;
           const rowTone = paused ? ' rd-break-roster-row--paused' : (overEnded ? ' rd-break-roster-row--over' : '');
@@ -32977,8 +32990,8 @@
                 <div class="rd-list__title">${Sec.escapeHTML(u.name || '—')}${me ? ' <span class="rd-break-me-tag">أنت</span>' : ''}</div>
                 <div class="rd-list__sub">${Sec.escapeHTML(branch?.name || '—')} · <span class="rd-break-status${overEnded ? ' rd-break-status--over' : ''}${paused ? ' rd-break-status--paused' : ''}">${Sec.escapeHTML(statusLbl)}</span></div>
               </div>
-              <div class="rd-break-roster__mins${mins <= 0 && !paused ? ' rd-break-roster__mins--zero' : ''}${paused ? ' rd-break-roster__mins--paused' : ''}${overEnded ? ' rd-break-roster__mins--over' : ''}"
-                data-break-roster-user="${Sec.escapeHTML(u.id)}">${mins} د</div>
+              <div class="rd-break-roster__mins${mins <= 0 && !paused && !overEnded ? ' rd-break-roster__mins--zero' : ''}${paused ? ' rd-break-roster__mins--paused' : ''}${overEnded ? ' rd-break-roster__mins--over' : ''}"
+                data-break-roster-user="${Sec.escapeHTML(u.id)}" data-break-roster-over="${overEnded ? '1' : '0'}">${Sec.escapeHTML(minsLabel)}</div>
             </div>`;
         }).join('');
       }
