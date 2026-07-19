@@ -14506,6 +14506,9 @@
             || /\.(mp4|mov|webm|m4v|avi|mkv|mpeg|mpg|ts|m2ts)$/i.test(uploadName);
 
           if (isVideo && body instanceof Blob) {
+            if (!body.size) {
+              throw new Error('ملف الفيديو فارغ — اختر المقطع من جديد من الكاميرا');
+            }
             const vCodec = fileEntry.codecHint || await sniffMp4VideoCodec(body);
             fileEntry.codecHint = vCodec;
             if (videoNeedsPlayableTranscode(vCodec, uploadName)) {
@@ -14559,6 +14562,14 @@
           if (fileEntry._cancelled) {
             await deleteR2TempObject(objectKey);
             return;
+          }
+
+          if (isVideo) {
+            const uploadedSize = await attachmentObjectByteSize(objectKey, '');
+            if (uploadedSize === 0) {
+              try { await deleteR2TempObject(objectKey); } catch (_) { /* */ }
+              throw new Error('رُفع ملف فيديو فارغ إلى التخزين — أعد الرفع');
+            }
           }
 
           fileEntry.tempKey = objectKey;
@@ -15410,6 +15421,33 @@
           </div>`;
       }
 
+      function emptyAttachmentVideoHtml() {
+        return `
+          <div style="padding:20px;background:rgba(0,0,0,0.55);border-radius:10px;text-align:center;max-width:440px;line-height:1.7">
+            <i class="fas fa-file-excel" style="color:var(--amber);font-size:28px;margin-bottom:10px"></i>
+            <p style="margin:0 0 8px;font-weight:700">المرفق فارغ على التخزين</p>
+            <p style="font-size:12px;color:#cbd5e1;margin:0">الملف موجود كمسار فقط وحجمه 0 بايت — لا يمكن التشغيل أو التحويل. أعد رفع مقطع الكاميرا من iVMS (يفضّل H.264).</p>
+          </div>`;
+      }
+
+      async function attachmentObjectByteSize(fileId, streamFb) {
+        const key = String(fileId || '').trim();
+        if (key) {
+          try {
+            const head = await callR2StorageFn('headObject', { key });
+            if (head && head.ok && typeof head.contentLength === 'number') {
+              return Number(head.contentLength);
+            }
+            if (head && head.ok === false) return -1;
+          } catch (_) { /* */ }
+        }
+        if (streamFb) {
+          const len = await probeR2StreamContentLength(streamFb);
+          if (len > 0) return len;
+        }
+        return -1;
+      }
+
       function videoPlaybackFailedHtml(downloadHref, codec) {
         const dl = downloadHref
           ? `<a href="${Sec.escapeHTML(downloadHref)}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary" style="text-decoration:none;margin:4px"><i class="fas fa-external-link"></i> فتح / تحميل الفيديو</a>`
@@ -16121,6 +16159,14 @@
         const streamFb = readVideoStreamFallback(ck);
         let playUrl = await loadAttachmentPlayUrl(fileId, name, ticketCtx);
         if (viewerLoadGen !== state._attViewerLoadGen) return null;
+
+        const byteSize = await attachmentObjectByteSize(fileId, streamFb || (isR2StreamPlayUrl(playUrl) ? playUrl : ''));
+        if (byteSize === 0) {
+          showAttViewerLoader(emptyAttachmentVideoHtml());
+          const err = new Error('VIDEO_EMPTY');
+          err.code = 'VIDEO';
+          throw err;
+        }
 
         const markedH264 = isAttachmentH264Ready(attMeta);
         const openHrefEarly = attachmentVideoOpenHref(ck, playUrl, streamFb);
