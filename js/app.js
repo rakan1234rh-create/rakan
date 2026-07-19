@@ -32388,13 +32388,26 @@
         stopStaffBreakTicker();
         const tab = document.getElementById('tab-breaks');
         if (!tab?.classList.contains('active')) return;
+        state._staffBreakSchedulePollAt = 0;
         state._staffBreakTicker = setInterval(() => {
           try {
             // KSA midnight: reload so daily logs / remaining minutes reset
             if (typeof maybeRollStaffBreaksDay === 'function') {
               maybeRollStaffBreaksDay();
             }
-            paintStaffBreakCountdownOnly();
+            // Fallback if realtime schedule events were missed: refresh every 12s
+            const now = Date.now();
+            if (!state._staffBreakSchedulePollAt || now - state._staffBreakSchedulePollAt > 12000) {
+              state._staffBreakSchedulePollAt = now;
+              loadStaffBreaksData().then(() => {
+                try { paintStaffBreakCountdownOnly(); } catch (_) { /* noop */ }
+              }).catch(() => { /* noop */ });
+            } else {
+              // Keep idle duration badge aligned with latest in-memory schedules
+              const liveMins = resolveBreakDurationMinsForUser(state.currentUser);
+              if (liveMins > 0) state._myBreakDurationMins = liveMins;
+              paintStaffBreakCountdownOnly();
+            }
           } catch (_) { /* noop */ }
         }, 1000);
       }
@@ -33431,10 +33444,13 @@
           }
           closeModal('breakScheduleModal');
           const applied = Number(data?.applied_sessions) || 0;
+          const cleared = Number(data?.cleared_overrides) || 0;
           showToast(
             applied > 0
               ? `تم حفظ مدة البريك وتحديث ${applied} جلسة لليوم`
-              : 'تم حفظ مدة البريك — تظهر للموظفين فورًا',
+              : (cleared > 0
+                ? `تم حفظ مدة البريك وإلغاء ${cleared} تخصيص أخص — تظهر للموظفين فورًا`
+                : 'تم حفظ مدة البريك — تظهر للموظفين فورًا'),
             'success'
           );
           await loadStaffBreaksData();
