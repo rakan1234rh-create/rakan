@@ -15960,13 +15960,16 @@
         }
       }
 
-      async function playVideoInViewer(vid, playUrl, mimeType, streamFallback) {
+      async function playVideoInViewer(vid, playUrl, mimeType, streamFallback, cacheKey) {
         const mime = mimeType || 'video/mp4';
         let url = resolveMediaPlayUrl(playUrl);
         const fb = String(streamFallback || '').trim();
-        if (isDirectR2SignedUrl(url) && fb && isR2StreamPlayUrl(fb)) url = fb;
+        const directR2 = (cacheKey && readVideoDirectR2Url(cacheKey)) || '';
+        if (isDirectR2SignedUrl(url) && fb && isR2StreamPlayUrl(fb)) {
+          // أبقِ stream كاحتياطي فقط؛ التشغيل الأساسي من R2 إن وُجد
+        }
 
-        if (!isFastVideoStreamUrl(url)) {
+        if (!isFastVideoStreamUrl(url) && !isR2StreamPlayUrl(url)) {
           await setVideoElementSource(vid, url, mime);
           revealAttViewerMedia(vid);
           return url;
@@ -15977,6 +15980,7 @@
         let lastMediaCode = 0;
 
         const tryAttach = async (src, label, maxMs) => {
+          if (!src) return null;
           vid.src = '';
           vid.innerHTML = '';
           try {
@@ -15988,6 +15992,24 @@
           }
           return null;
         };
+
+        // 1) رابط R2 موقّع أولاً (أكثر ثباتاً من بروكسي Edge للفيديو)
+        if (directR2 && isDirectR2SignedUrl(directR2)) {
+          if (isMirsadDebugLog()) console.info('[Viewer] تشغيل عبر رابط R2 موقّع');
+          const viaR2 = await tryAttach(directR2, 'R2 موقّع', 45000);
+          if (viaR2) {
+            revealAttViewerMedia(vid);
+            return viaR2;
+          }
+        }
+
+        if (url && isDirectR2SignedUrl(url)) {
+          const viaUrl = await tryAttach(url, 'R2 من الرابط', 45000);
+          if (viaUrl) {
+            revealAttViewerMedia(vid);
+            return viaUrl;
+          }
+        }
 
         if (streamUrl) {
           if (isMirsadDebugLog()) console.info('[Viewer] بث مباشر عبر Edge Function');
@@ -16023,7 +16045,7 @@
           }
         }
 
-        if (url && url !== streamUrl) {
+        if (url && url !== streamUrl && url !== directR2) {
           const alt = await tryAttach(url, 'رابط بديل', 30000);
           if (alt) {
             revealAttViewerMedia(vid);
@@ -16055,7 +16077,7 @@
 
         let playErrMediaCode = 0;
         try {
-          playUrl = await playVideoInViewer(vid, playUrl, mime, streamFb);
+          playUrl = await playVideoInViewer(vid, playUrl, mime, streamFb, ck);
           if (await waitVideoElementPlayable(vid, 10000)) {
             revealAttViewerMedia(vid);
             return playUrl;
@@ -16210,7 +16232,8 @@
                 if (streamPlay) _videoStreamFallback[cacheKey] = streamPlay;
                 if (signed.url) _videoDirectR2Url[cacheKey] = signed.url;
                 if (useStream) {
-                  const playUrl = streamPlay || signed.url;
+                  // فضّل رابط R2 الموقّع للفيديو — بث Edge الكامل كثيراً يفشل (500) على الملفات الكبيرة
+                  const playUrl = signed.url || streamPlay;
                   writeCfCache(cacheKey, playUrl);
                   return playUrl;
                 }

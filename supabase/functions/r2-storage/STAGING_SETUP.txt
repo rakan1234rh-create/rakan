@@ -1,0 +1,20 @@
+إعداد بيئة Staging لدالة r2-storage
+=====================================
+
+1. إنشاء حاوية Cloudflare R2 باسم athar-staging
+   - في نفس حساب Cloudflare (ليس حاوية الإنتاج)
+   - حاوية منفصلة تماماً عن الإنتاج
+
+2. بيانات اعتماد R2 API Token
+   - يمكن إعادة استخدام نفس مفاتيح R2 API Token المستخدمة في الإنتاج
+   - R2_ACCESS_KEY_ID و R2_SECRET_ACCESS_KEY و R2_ACCOUNT_ID
+
+3. إضافة الأسرار في مشروع Supabase Staging (omzclgjbvqfcbpfkcbpk)
+   - Dashboard → Edge Functions → Secrets
+   - R2_ACCESS_KEY_ID
+   - R2_SECRET_ACCESS_KEY
+   - R2_ACCOUNT_ID
+   - R2_BUCKET_NAME=athar-staging
+
+4. (اختياري) إعداد CORS على حاوية R2
+   - السماح للأصل: https://athar-app.online
