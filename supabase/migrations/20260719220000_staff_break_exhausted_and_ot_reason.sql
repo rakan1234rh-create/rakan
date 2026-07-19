@@ -80,7 +80,7 @@ BEGIN
       RETURN jsonb_build_object(
         'ok', false,
         'exhausted', true,
-        'error', 'خلصت مدة بريك اليوم — اطلب من مدير النظام زيادة المدة إن لزم'
+        'error', 'خلصت مدة بريك اليوم'
       );
     END IF;
 
@@ -133,7 +133,7 @@ BEGIN
     RETURN jsonb_build_object(
       'ok', false,
       'exhausted', true,
-      'error', 'خلصت مدة بريك اليوم — اطلب من مدير النظام زيادة المدة إن لزم'
+      'error', 'خلصت مدة بريك اليوم'
     );
   END IF;
 
@@ -147,7 +147,7 @@ BEGIN
     RETURN jsonb_build_object(
       'ok', false,
       'exhausted', true,
-      'error', 'خلصت مدة بريك اليوم — اطلب من مدير النظام زيادة المدة إن لزم'
+      'error', 'خلصت مدة بريك اليوم'
     );
   END IF;
 

@@ -32930,7 +32930,7 @@
         } else if (exhausted) {
           actionsHtml = `
             <button type="button" class="btn btn-primary rd-break-btn" disabled aria-disabled="true"><i class="fas fa-ban"></i> بدء البريك</button>
-            <p class="rd-break-note rd-break-note--warn">خلصت مدة بريك اليوم — إذا احتجت وقتاً إضافياً اطلب من مدير النظام</p>`;
+            <p class="rd-break-note rd-break-note--warn">خلصت مدة بريك اليوم</p>`;
         } else if (colleague) {
           actionsHtml = `
             <button type="button" class="btn btn-primary rd-break-btn" disabled aria-disabled="true"><i class="fas fa-ban"></i> ${Sec.escapeHTML(startLabel)}</button>
@@ -33279,7 +33279,7 @@
           return;
         }
         if (isMyBreakAllowanceExhausted()) {
-          showToast('خلصت مدة بريك اليوم — اطلب من مدير النظام زيادة المدة إن لزم', 'warning');
+          showToast('خلصت مدة بريك اليوم', 'warning');
           await renderStaffBreaksPage({ soft: true });
           return;
         }
