@@ -18988,7 +18988,7 @@
                 <i class="fas fa-spinner fa-spin fa-2x"></i>
                 <p style="font-size:15px;font-weight:500;text-shadow:0 2px 4px rgba(0,0,0,0.5)">جاري تحميل الملف…</p>
               </div>
-              <iframe id="att-proxy-pdf" style="display:none;width:100%;height:70vh;border:none"></iframe>
+              <iframe id="att-proxy-pdf" title="عرض PDF" style="display:none;width:100%;height:70vh;border:none;background:#fff"></iframe>
             </div>`;
           setTimeout(async () => {
             if (viewerLoadGen !== state._attViewerLoadGen) return;
@@ -18997,7 +18997,34 @@
               if (viewerLoadGen !== state._attViewerLoadGen) return;
               const pdf = document.getElementById('att-proxy-pdf');
               const loader = document.getElementById('att-loading');
-              const safeSrc = typeof dataUrl === 'string' ? dataUrl.trim() : '';
+              let safeSrc = typeof dataUrl === 'string' ? dataUrl.trim() : '';
+              // iframe عبر https لـ R2/Supabase غالباً يُحظر بـ CSP أو X-Frame-Options —
+              // نجلب الملف كـ blob ثم نعرضه محلياً (يعمل للموظف/المشرف PDF).
+              if (/^https?:\/\//i.test(safeSrc)) {
+                try {
+                  let blob;
+                  if (typeof isR2StreamPlayUrl === 'function' && isR2StreamPlayUrl(safeSrc)
+                    && typeof fetchAuthedStreamResponse === 'function') {
+                    const res = await fetchAuthedStreamResponse(safeSrc, { method: 'GET' });
+                    blob = await res.blob();
+                  } else {
+                    const res = await fetch(safeSrc);
+                    if (!res.ok) throw new Error('pdf fetch ' + res.status);
+                    blob = await res.blob();
+                  }
+                  if (viewerLoadGen !== state._attViewerLoadGen) return;
+                  const pdfBlob = (!blob.type || /pdf/i.test(blob.type))
+                    ? (blob.type === 'application/pdf' ? blob : new Blob([blob], { type: 'application/pdf' }))
+                    : new Blob([blob], { type: 'application/pdf' });
+                  if (state._attPdfBlobUrl) {
+                    try { URL.revokeObjectURL(state._attPdfBlobUrl); } catch (_) { /* noop */ }
+                  }
+                  safeSrc = URL.createObjectURL(pdfBlob);
+                  state._attPdfBlobUrl = safeSrc;
+                } catch (fetchErr) {
+                  if (isMirsadDebugLog()) console.warn('[Viewer] PDF blob fetch failed, fallback to URL', fetchErr);
+                }
+              }
               const isSafePdfSrc = /^https?:\/\//i.test(safeSrc) || /^blob:/i.test(safeSrc)
                 || /^data:application\/pdf/i.test(safeSrc) || /^data:application\/x-pdf/i.test(safeSrc);
               if (pdf) {
@@ -19005,20 +19032,27 @@
                   if (isMirsadDebugLog()) console.warn('[Viewer] PDF: رابط غير مدعوم لعرض iframe أو فارغ — تجنّب file:// والروابط النسبية فقط.', safeSrc ? safeSrc.slice(0, 96) : '');
                   if (loader) {
                     loader.style.pointerEvents = 'auto';
-                    const extOpen = (cfUrl && /^https?:\/\//i.test(String(cfUrl).trim()))
-                      ? `<div style="margin-top:15px"><a href="${Sec.escapeHTML(String(cfUrl).trim())}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary" style="text-decoration:none"><i class="fas fa-external-link"></i> فتح الرابط</a></div>`
+                    const openHref = (safeSrc && /^https?:\/\//i.test(safeSrc))
+                      ? safeSrc
+                      : ((cfUrl && /^https?:\/\//i.test(String(cfUrl).trim())) ? String(cfUrl).trim() : '');
+                    const extOpen = openHref
+                      ? `<div style="margin-top:15px"><a href="${Sec.escapeHTML(openHref)}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary" style="text-decoration:none"><i class="fas fa-external-link"></i> فتح الملف</a></div>`
                       : '';
                     loader.innerHTML = `
                   <div style="padding:20px;background:rgba(0,0,0,0.5);border-radius:8px;text-align:center;max-width:440px;color:#fff">
                     <i class="fas fa-file-pdf" style="color:var(--amber);font-size:30px;margin-bottom:10px;display:block"></i>
-                    <p style="margin:0">تعذّر عرض PDF داخل الصفحة (رابط غير صالح أو قيود المتصفح على <span style="direction:ltr;font-family:var(--mono)">file://</span>).</p>
+                    <p style="margin:0">تعذّر عرض PDF داخل الصفحة.</p>
                     ${extOpen}
                   </div>`;
                   }
                 } else {
                   pdf.src = safeSrc;
                   pdf.onload = () => revealAttViewerMedia(pdf);
-                  if (pdf.complete) revealAttViewerMedia(pdf);
+                  // بعض المتصفحات لا تطلق onload لـ PDF — أظهر الإطار بعد مهلة قصيرة
+                  setTimeout(() => {
+                    if (viewerLoadGen !== state._attViewerLoadGen) return;
+                    revealAttViewerMedia(pdf);
+                  }, 400);
                 }
               }
               if (loader && !pdf) loader.remove();
@@ -19026,15 +19060,17 @@
               if (isMirsadDebugLog()) console.error('Lightbox PDF Load Error:', e);
               const loader = document.getElementById('att-loading');
               if (loader) {
+                loader.style.pointerEvents = 'auto';
+                const openHref = (cfUrl && /^https?:\/\//i.test(String(cfUrl).trim())) ? String(cfUrl).trim() : '';
                 loader.innerHTML = `
                   <div style="padding:20px;background:rgba(0,0,0,0.5);border-radius:8px">
                     <i class="fas fa-file-pdf" style="color:var(--amber);font-size:30px;margin-bottom:10px"></i>
                     <p>تعذر عرض ملف PDF مباشرة</p>
-                    <div style="margin-top:15px">
-                       <a href="${Sec.escapeHTML(String(cfUrl || ''))}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary" style="text-decoration:none">
-                         <i class="fas fa-external-link"></i> فتح في كلاود فلير
+                    ${openHref ? `<div style="margin-top:15px">
+                       <a href="${Sec.escapeHTML(openHref)}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary" style="text-decoration:none">
+                         <i class="fas fa-external-link"></i> فتح الملف
                        </a>
-                    </div>
+                    </div>` : ''}
                   </div>`;
               }
             }
@@ -19135,6 +19171,10 @@
         viewer?.classList.remove('open', 'att-dragging');
         resetAttViewerDragVisual(viewer, stage);
         document.getElementById('attViewerContent').innerHTML = '';
+        if (state._attPdfBlobUrl) {
+          try { URL.revokeObjectURL(state._attPdfBlobUrl); } catch (_) { /* noop */ }
+          state._attPdfBlobUrl = null;
+        }
         document.body.style.overflow = '';
         releaseAttViewerFromBody();
         _attViewerDrag.active = false;
