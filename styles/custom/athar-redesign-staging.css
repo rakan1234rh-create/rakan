@@ -3400,12 +3400,25 @@ html.athar-staging-redesign.mr-mobile-ui #rdBreaks[hidden] {
   margin-top: 16px;
   width: 100%;
 }
+.rd-break-actions .rd-break-btn,
 .rd-break-btn {
-  width: 100%;
-  max-width: 280px;
+  width: auto !important;
+  max-width: max-content !important;
+  align-self: center;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  padding: 10px 20px !important;
   border-radius: 14px !important;
   font-weight: 700 !important;
-  min-height: 46px;
+  min-height: 42px;
+  text-align: center !important;
+  margin-inline: auto;
+}
+.rd-break-actions .rd-break-btn i,
+.rd-break-btn i {
+  margin: 0 !important;
 }
 .rd-break-note {
   font-size: 12px;
