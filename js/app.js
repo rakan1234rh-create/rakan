@@ -32365,6 +32365,11 @@
         return role === 'admin' || role === 'supervisor';
       }
 
+      function canViewStaffBreakHistory() {
+        const role = normalizeUserRole(state.currentUser?.role);
+        return role === 'admin' || role === 'supervisor' || role === 'branch_manager' || role === 'observer';
+      }
+
       function stopStaffBreakTicker() {
         if (state._staffBreakTicker) {
           clearInterval(state._staffBreakTicker);
@@ -32932,15 +32937,19 @@
         if (!rows.length) {
           return '<div class="rd-list__row rd-break-empty" style="cursor:default"><div class="rd-list__sub">لا يوجد أحد في بريك حالياً</div></div>';
         }
+        const canHist = canViewStaffBreakHistory();
         return rows.map(b => {
           const rem = getBreakRemainingSeconds(b);
           const over = rem < 0;
           const me = b.user_id === state.currentUser?.id;
           // Still running → تجاوز المدة; ended/stopped with overtime uses «انتهى مع تجاوز» in السجل
           const statusLbl = over ? 'تجاوز المدة' : 'في بريك';
+          const clickAttr = canHist
+            ? ` role="button" tabindex="0" onclick="openStaffBreakHistory('${Sec.escapeHTML(b.user_id)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openStaffBreakHistory('${Sec.escapeHTML(b.user_id)}')}"`
+            : '';
           return `
-            <div class="rd-list__row rd-break-row rd-break-row--live${over ? ' rd-break-row--over' : ' rd-break-row--active'}${me ? ' rd-break-row--me' : ''}"
-              data-break-live-row="${Sec.escapeHTML(b.id)}" style="cursor:default">
+            <div class="rd-list__row rd-break-row rd-break-row--live${over ? ' rd-break-row--over' : ' rd-break-row--active'}${me ? ' rd-break-row--me' : ''}${canHist ? ' rd-break-row--clickable' : ''}"
+              data-break-live-row="${Sec.escapeHTML(b.id)}" style="cursor:${canHist ? 'pointer' : 'default'}"${clickAttr}>
               <div class="rd-break-row__av" aria-hidden="true">${Sec.escapeHTML((b._userName || 'م').trim().charAt(0) || 'م')}</div>
               <div class="rd-list__main">
                 <div class="rd-list__title">${Sec.escapeHTML(b._userName || '—')}${me ? ' <span class="rd-break-me-tag">أنت</span>' : ''}</div>
@@ -32969,6 +32978,7 @@
         if (!users.length) {
           return '<div class="rd-list__row rd-break-empty" style="cursor:default"><div class="rd-list__sub">لا توجد سجلات حالياً</div></div>';
         }
+        const canHist = canViewStaffBreakHistory();
         return users.map(u => {
           const remSec = getUserBreakRemainingSeconds(u);
           const mins = Math.max(0, Math.ceil(remSec / 60));
@@ -32984,9 +32994,12 @@
           const branch = state._branchById?.get(u.branch_id) || state.branches.find(b => b.id === u.branch_id);
           const me = u.id === state.currentUser?.id;
           const rowTone = paused ? ' rd-break-roster-row--paused' : (overEnded ? ' rd-break-roster-row--over' : '');
+          const clickAttr = canHist
+            ? ` role="button" tabindex="0" onclick="openStaffBreakHistory('${Sec.escapeHTML(u.id)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openStaffBreakHistory('${Sec.escapeHTML(u.id)}')}"`
+            : '';
           return `
-            <div class="rd-list__row rd-break-roster-row${rowTone}${me ? ' rd-break-row--me' : ''}"
-              data-break-roster-row="${Sec.escapeHTML(u.id)}" style="cursor:default">
+            <div class="rd-list__row rd-break-roster-row${rowTone}${me ? ' rd-break-row--me' : ''}${canHist ? ' rd-break-row--clickable' : ''}"
+              data-break-roster-row="${Sec.escapeHTML(u.id)}" style="cursor:${canHist ? 'pointer' : 'default'}"${clickAttr}>
               <div class="rd-break-row__av" aria-hidden="true">${Sec.escapeHTML((u.name || 'م').trim().charAt(0) || 'م')}</div>
               <div class="rd-list__main">
                 <div class="rd-list__title">${Sec.escapeHTML(u.name || '—')}${me ? ' <span class="rd-break-me-tag">أنت</span>' : ''}</div>
@@ -32996,6 +33009,106 @@
                 data-break-roster-user="${Sec.escapeHTML(u.id)}" data-break-roster-over="${overEnded ? '1' : '0'}">${Sec.escapeHTML(minsLabel)}</div>
             </div>`;
         }).join('');
+      }
+
+      function formatBreakHistoryWhen(iso) {
+        if (!iso) return '—';
+        if (typeof ksaFormatDateTime === 'function') return ksaFormatDateTime(iso);
+        try { return new Date(iso).toLocaleString('ar-SA'); } catch (_) { return String(iso); }
+      }
+
+      function getBreakSessionUsedLabel(row) {
+        const used = Number(row?.used_seconds);
+        if (Number.isFinite(used) && used > 0) {
+          return `${Math.max(1, Math.ceil(used / 60))} د`;
+        }
+        if (row?.status === 'active') {
+          const rem = getBreakRemainingSeconds(row);
+          const planned = Math.max(0, (Number(row.planned_duration_minutes) || 15) * 60);
+          const elapsed = Math.max(0, planned - rem);
+          return `${Math.max(1, Math.ceil(elapsed / 60))} د`;
+        }
+        if (row?.started_at && row?.ended_at) {
+          const sec = Math.max(0, Math.floor((new Date(row.ended_at) - new Date(row.started_at)) / 1000));
+          return `${Math.max(1, Math.ceil(sec / 60))} د`;
+        }
+        return '—';
+      }
+
+      function renderStaffBreakHistorySessionsHtml(sessions) {
+        if (!sessions.length) {
+          return '<div class="break-history-empty">لا توجد جلسات بريك لهذا اليوم</div>';
+        }
+        const total = sessions.length;
+        return sessions.map((row, idx) => {
+          const n = total - idx;
+          const overSec = getStaffBreakOvertimeSeconds(row);
+          let statusLbl = 'انتهى';
+          let tone = '';
+          if (row.status === 'active') {
+            statusLbl = overSec > 0 || getBreakRemainingSeconds(row) < 0 ? 'جاري — تجاوز المدة' : 'جاري الآن';
+            tone = ' break-history-item--active';
+          } else if (row.status === 'paused') {
+            statusLbl = 'متوقف';
+            tone = ' break-history-item--paused';
+          } else if (overSec > 0) {
+            statusLbl = `انتهى مع تجاوز (+${Math.max(1, Math.ceil(overSec / 60))} د)`;
+            tone = ' break-history-item--over';
+          }
+          const endLbl = row.status === 'active'
+            ? 'ما زال جاريًا'
+            : (row.status === 'paused'
+              ? formatBreakHistoryWhen(row.paused_at || row.updated_at)
+              : formatBreakHistoryWhen(row.ended_at || row.updated_at));
+          const endKey = row.status === 'active' ? 'الانتهاء' : (row.status === 'paused' ? 'توقّف عند' : 'الانتهاء');
+          return `
+            <article class="break-history-item${tone}">
+              <header class="break-history-item__hd">
+                <span class="break-history-item__n">الجلسة ${n}</span>
+                <span class="break-history-item__st">${Sec.escapeHTML(statusLbl)}</span>
+              </header>
+              <dl class="break-history-item__dl">
+                <div><dt>البدء</dt><dd>${Sec.escapeHTML(formatBreakHistoryWhen(row.started_at))}</dd></div>
+                <div><dt>${endKey}</dt><dd>${Sec.escapeHTML(endLbl)}</dd></div>
+                <div><dt>مدة الاستمرار</dt><dd>${Sec.escapeHTML(getBreakSessionUsedLabel(row))}</dd></div>
+              </dl>
+            </article>`;
+        }).join('');
+      }
+
+      async function openStaffBreakHistory(userId) {
+        if (!canViewStaffBreakHistory()) {
+          showToast('لا تملك صلاحية عرض سجل البريكات', 'warning');
+          return;
+        }
+        if (!userId) return;
+        const u = state._userById?.get(userId) || state.users.find(x => x.id === userId);
+        const title = document.getElementById('breakHistTitle');
+        const sub = document.getElementById('breakHistSub');
+        const list = document.getElementById('breakHistList');
+        if (title) title.textContent = u?.name ? `سجل بريكات · ${u.name}` : 'سجل بريكات الموظف';
+        if (sub) sub.textContent = `جلسات اليوم (${getStaffBreakTodayKey()}) — كل بدء جديد يظهر كسجل منفصل`;
+        if (list) list.innerHTML = '<div class="break-history-empty">جاري التحميل…</div>';
+        openModal('breakHistoryModal');
+        try {
+          const todayKey = getStaffBreakTodayKey();
+          let sessions = (state.staffBreakDayRows || [])
+            .filter(b => b.user_id === userId && (!b.day_key || String(b.day_key).slice(0, 10) === todayKey));
+          const { data, error } = await sb.from('staff_breaks')
+            .select('id,user_id,branch_id,planned_duration_minutes,remaining_seconds,used_seconds,started_at,paused_at,ended_at,overtime_seconds,overtime_reason,status,day_key,updated_at')
+            .eq('user_id', userId)
+            .eq('day_key', todayKey)
+            .order('started_at', { ascending: false })
+            .limit(100);
+          if (error && isMirsadDebugLog()) console.warn('[staff_breaks] history', error);
+          if (data?.length) sessions = data.map(enrichStaffBreak);
+          sessions = sessions
+            .slice()
+            .sort((a, b) => new Date(b.started_at || b.updated_at || 0) - new Date(a.started_at || a.updated_at || 0));
+          if (list) list.innerHTML = renderStaffBreakHistorySessionsHtml(sessions);
+        } catch (e) {
+          if (list) list.innerHTML = `<div class="break-history-empty">تعذّر التحميل: ${Sec.escapeHTML(e.message || e)}</div>`;
+        }
       }
 
       function renderStaffBreakSchedulesHtml() {
@@ -33309,6 +33422,7 @@
       window.openBreakScheduleModal = openBreakScheduleModal;
       window.saveBreakScheduleFromUi = saveBreakScheduleFromUi;
       window.syncBreakScheduleScopeFields = syncBreakScheduleScopeFields;
+      window.openStaffBreakHistory = openStaffBreakHistory;
 
 
       window.removeFile = removeFile;

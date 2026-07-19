@@ -4007,6 +4007,22 @@
       </div>
     </div>
 
+    <div class="modal" id="breakHistoryModal" role="dialog" aria-modal="true" aria-labelledby="breakHistTitle">
+      <div class="modal-card break-history-card">
+        <div class="modal-header">
+          <h3 id="breakHistTitle">سجل بريكات الموظف</h3>
+          <button type="button" class="btn btn-ghost" onclick="closeModal('breakHistoryModal')" aria-label="إغلاق"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+          <p class="break-history-sub" id="breakHistSub"></p>
+          <div id="breakHistList" class="break-history-list" aria-live="polite"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" onclick="closeModal('breakHistoryModal')">إغلاق</button>
+        </div>
+      </div>
+    </div>
+
     <div class="modal" id="breakScheduleModal" role="dialog" aria-modal="true" aria-labelledby="breakSchTitle">
       <div class="modal-card">
         <div class="modal-header">
