@@ -32355,8 +32355,15 @@
       const STAFF_BREAK_RING_CIRC = 2 * Math.PI * 54; // r=54 like rd-streak
 
       function canTakeStaffBreak() {
+        // المشرف ومدير النظام يشرفون فقط — لا يأخذون بريك
         const role = normalizeUserRole(state.currentUser?.role);
-        return ['admin', 'employee', 'branch_manager', 'observer', 'supervisor'].includes(role);
+        return role === 'employee' || role === 'branch_manager' || role === 'observer';
+      }
+
+      function isStaffBreakParticipantUser(u) {
+        if (!u || !isActiveUser(u)) return false;
+        const role = normalizeUserRole(u.role);
+        return role === 'employee' || role === 'branch_manager' || role === 'observer';
       }
 
       function canManageStaffBreakSchedules() {
@@ -32757,10 +32764,9 @@
         const branches = getSupervisedBranchesForBreaks();
         const bids = new Set(branches.map(b => b.id));
         return state.users.filter(u =>
-          isActiveUser(u) &&
+          isStaffBreakParticipantUser(u) &&
           u.branch_id &&
-          bids.has(u.branch_id) &&
-          ['employee', 'branch_manager', 'observer', 'supervisor'].includes(normalizeUserRole(u.role))
+          bids.has(u.branch_id)
         );
       }
 
@@ -32862,6 +32868,7 @@
       }
 
       function renderStaffBreakRingHtml() {
+        if (!canTakeStaffBreak()) return '';
         const open = getMyOpenStaffBreak();
         const active = open?.status === 'active' ? open : null;
         const isPaused = open?.status === 'paused';
@@ -32926,7 +32933,14 @@
       function getActiveStaffBreakLiveRows() {
         const todayKey = getStaffBreakTodayKey();
         return (state.staffBreaks || [])
-          .filter(b => b.status === 'active' && (!b.day_key || String(b.day_key).slice(0, 10) === todayKey))
+          .filter(b => {
+            if (b.status !== 'active') return false;
+            if (b.day_key && String(b.day_key).slice(0, 10) !== todayKey) return false;
+            const u = state._userById?.get(b.user_id) || state.users.find(x => x.id === b.user_id);
+            // إخفاء جلسات مشرف/مدير نظام إن وُجدت قديماً
+            if (u && !isStaffBreakParticipantUser(u)) return false;
+            return true;
+          })
           .slice()
           .sort((a, b) => new Date(b.started_at || b.updated_at || 0) - new Date(a.started_at || a.updated_at || 0));
       }
