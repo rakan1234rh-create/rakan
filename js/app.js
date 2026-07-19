@@ -32828,7 +32828,8 @@
           }
           const statusEl = rowEl.querySelector('[data-break-row-status]');
           if (statusEl) {
-            statusEl.textContent = over ? 'انتهى مع تجاوز' : 'في بريك';
+            // Active + overtime → تجاوز المدة; "انتهى مع تجاوز" only after stop
+            statusEl.textContent = over ? 'تجاوز المدة' : 'في بريك';
             statusEl.classList.toggle('rd-break-status--over', over);
           }
         });
@@ -32935,7 +32936,8 @@
           const rem = getBreakRemainingSeconds(b);
           const over = rem < 0;
           const me = b.user_id === state.currentUser?.id;
-          const statusLbl = over ? 'انتهى مع تجاوز' : 'في بريك';
+          // Still running → تجاوز المدة; ended/stopped with overtime uses «انتهى مع تجاوز» in السجل
+          const statusLbl = over ? 'تجاوز المدة' : 'في بريك';
           return `
             <div class="rd-list__row rd-break-row rd-break-row--live${over ? ' rd-break-row--over' : ' rd-break-row--active'}${me ? ' rd-break-row--me' : ''}"
               data-break-live-row="${Sec.escapeHTML(b.id)}" style="cursor:default">
