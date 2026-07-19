@@ -3489,7 +3489,7 @@ html.athar-staging-redesign.mr-mobile-ui #rdBreaks[hidden] {
   flex-shrink: 0;
 }
 .rd-break-row__clock--over {
-  color: #fff !important;
+  color: var(--danger) !important;
 }
 .rd-break-row--live {
   border: 1px solid transparent;
@@ -3503,29 +3503,19 @@ html.athar-staging-redesign.mr-mobile-ui #rdBreaks[hidden] {
   color: #fff;
 }
 .rd-break-row--over {
-  background: color-mix(in srgb, var(--danger) 82%, #000) !important;
-  border-color: var(--danger) !important;
-  color: #fff !important;
+  background: color-mix(in srgb, var(--danger) 16%, var(--surface)) !important;
+  border-color: color-mix(in srgb, var(--danger) 45%, var(--border)) !important;
 }
-.rd-break-row--over .rd-list__title,
-.rd-break-row--over .rd-list__sub,
-.rd-break-row--over .rd-break-status {
-  color: #fff !important;
+.rd-break-row--over .rd-list__title {
+  color: var(--text) !important;
 }
 .rd-break-row--over .rd-break-row__av {
-  background: rgba(255, 255, 255, 0.22);
+  background: var(--danger);
   color: #fff;
-}
-.rd-break-row--over .rd-break-me-tag {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.2);
 }
 .rd-break-status--over {
   color: var(--danger) !important;
   font-weight: 700;
-}
-.rd-break-row--over .rd-break-status--over {
-  color: #fff !important;
 }
 .rd-break-status--paused {
   color: var(--warning, #ff9500) !important;
