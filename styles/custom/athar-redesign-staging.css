@@ -3422,18 +3422,26 @@ html.athar-staging-redesign.mr-mobile-ui #rdBreaks[hidden] {
 .rd-break-roster__mins {
   font-size: 14px;
   font-weight: 700;
-  color: var(--gold);
+  color: var(--text2);
   flex-shrink: 0;
   font-variant-numeric: tabular-nums;
 }
 .rd-break-roster__mins--zero {
   color: var(--text3) !important;
 }
-.rd-break-roster__mins--active {
-  color: var(--success) !important;
+.rd-break-roster__mins--paused {
+  color: var(--warning, #ff9500) !important;
 }
-.rd-break-roster-row--active {
-  background: color-mix(in srgb, var(--success) 7%, transparent);
+.rd-break-roster__mins--over {
+  color: var(--danger) !important;
+}
+.rd-break-roster-row--paused {
+  background: color-mix(in srgb, var(--warning, #ff9500) 16%, var(--surface)) !important;
+  border-color: color-mix(in srgb, var(--warning, #ff9500) 35%, var(--border)) !important;
+}
+.rd-break-roster-row--over {
+  background: color-mix(in srgb, var(--danger) 14%, var(--surface)) !important;
+  border-color: color-mix(in srgb, var(--danger) 35%, var(--border)) !important;
 }
 .rd-break-btn:disabled {
   opacity: 0.55;
@@ -3483,11 +3491,38 @@ html.athar-staging-redesign.mr-mobile-ui #rdBreaks[hidden] {
 .rd-break-row__clock--over {
   color: var(--danger) !important;
 }
-.rd-break-row--me {
-  background: color-mix(in srgb, var(--gold) 8%, transparent);
+.rd-break-row--live {
+  border: 1px solid transparent;
+}
+.rd-break-row--active {
+  background: color-mix(in srgb, var(--success) 18%, var(--surface)) !important;
+  border-color: color-mix(in srgb, var(--success) 40%, var(--border)) !important;
+}
+.rd-break-row--active .rd-break-row__av {
+  background: var(--success);
+  color: #fff;
 }
 .rd-break-row--over {
-  background: color-mix(in srgb, var(--danger) 6%, transparent);
+  background: color-mix(in srgb, var(--danger) 16%, var(--surface)) !important;
+  border-color: color-mix(in srgb, var(--danger) 45%, var(--border)) !important;
+}
+.rd-break-row--over .rd-list__title {
+  color: var(--text) !important;
+}
+.rd-break-row--over .rd-break-row__av {
+  background: var(--danger);
+  color: #fff;
+}
+.rd-break-status--over {
+  color: var(--danger) !important;
+  font-weight: 700;
+}
+.rd-break-status--paused {
+  color: var(--warning, #ff9500) !important;
+  font-weight: 700;
+}
+.rd-break-row--me:not(.rd-break-row--active):not(.rd-break-row--over):not(.rd-break-roster-row--paused):not(.rd-break-roster-row--over) {
+  background: color-mix(in srgb, var(--gold) 8%, transparent);
 }
 .rd-break-me-tag {
   display: inline-block;

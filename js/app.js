@@ -32813,13 +32813,24 @@
           icoEl.style.color = overtime ? 'var(--danger)' : (active ? 'var(--success)' : (isPaused ? pauseYellow : 'var(--text3)'));
           icoEl.className = 'fas ' + (overtime ? 'fa-triangle-exclamation' : (active ? 'fa-mug-hot' : (isPaused ? 'fa-pause' : 'fa-clock')));
         }
-        document.querySelectorAll('[data-break-row-clock]').forEach(el => {
-          const id = el.getAttribute('data-break-row-clock');
-          const brk = (state.staffBreaks || []).find(b => b.id === id);
-          if (!brk || brk.status !== 'active') return;
+        document.querySelectorAll('[data-break-live-row]').forEach(rowEl => {
+          const id = rowEl.getAttribute('data-break-live-row');
+          const brk = (state.staffBreaks || []).find(b => b.id === id && b.status === 'active');
+          if (!brk) return;
           const rem = getBreakRemainingSeconds(brk);
-          el.textContent = formatBreakClock(rem);
-          el.classList.toggle('rd-break-row__clock--over', rem < 0);
+          const over = rem < 0;
+          rowEl.classList.toggle('rd-break-row--active', !over);
+          rowEl.classList.toggle('rd-break-row--over', over);
+          const clock = rowEl.querySelector('[data-break-row-clock]');
+          if (clock) {
+            clock.textContent = formatBreakClock(rem);
+            clock.classList.toggle('rd-break-row__clock--over', over);
+          }
+          const statusEl = rowEl.querySelector('[data-break-row-status]');
+          if (statusEl) {
+            statusEl.textContent = over ? 'انتهى مع تجاوز' : 'في بريك';
+            statusEl.classList.toggle('rd-break-status--over', over);
+          }
         });
         document.querySelectorAll('[data-break-roster-user]').forEach(el => {
           const uid = el.getAttribute('data-break-roster-user');
@@ -32828,8 +32839,17 @@
           const remSec = getUserBreakRemainingSeconds(u);
           const mins = Math.max(0, Math.ceil(remSec / 60));
           el.textContent = `${mins} د`;
-          el.classList.toggle('rd-break-roster__mins--zero', mins <= 0);
-          el.classList.toggle('rd-break-roster__mins--active', !!(state.staffBreaks || []).some(b => b.user_id === uid && b.status === 'active'));
+          const paused = !!(state.staffBreaks || []).some(b => b.user_id === uid && b.status === 'paused');
+          const dayRow = state.staffBreakDayByUser?.[uid];
+          const overEnded = dayRow?.status === 'ended' && ((Number(dayRow.overtime_seconds) || 0) > 0 || Number(dayRow.remaining_seconds) < 0);
+          el.classList.toggle('rd-break-roster__mins--zero', mins <= 0 && !paused);
+          el.classList.toggle('rd-break-roster__mins--paused', paused);
+          el.classList.toggle('rd-break-roster__mins--over', overEnded);
+          const row = el.closest('[data-break-roster-row]');
+          if (row) {
+            row.classList.toggle('rd-break-roster-row--paused', paused);
+            row.classList.toggle('rd-break-roster-row--over', overEnded);
+          }
         });
       }
 
@@ -32895,85 +32915,69 @@
           </div>`;
       }
 
-      function getPrimaryStaffBreakLogRows() {
-        // One row per employee for today — avoid listing every start/stop as duplicates
+      function getActiveStaffBreakLiveRows() {
         const todayKey = getStaffBreakTodayKey();
-        const rank = { active: 3, paused: 2, ended: 1 };
-        const byUser = new Map();
-        (state.staffBreakDayRows || state.staffBreaks || []).forEach((row) => {
-          if (!row?.user_id) return;
-          if (row.day_key && String(row.day_key).slice(0, 10) !== todayKey) return;
-          const prev = byUser.get(row.user_id);
-          if (!prev) {
-            byUser.set(row.user_id, row);
-            return;
-          }
-          const prevRank = rank[prev.status] || 0;
-          const nextRank = rank[row.status] || 0;
-          if (nextRank > prevRank) {
-            byUser.set(row.user_id, row);
-            return;
-          }
-          if (nextRank === prevRank) {
-            const prevT = new Date(prev.updated_at || prev.started_at || 0).getTime();
-            const nextT = new Date(row.updated_at || row.started_at || 0).getTime();
-            if (nextT >= prevT) byUser.set(row.user_id, row);
-          }
-        });
-        return [...byUser.values()].sort(
-          (a, b) => new Date(b.updated_at || b.started_at || 0) - new Date(a.updated_at || a.started_at || 0)
-        );
+        return (state.staffBreaks || [])
+          .filter(b => b.status === 'active' && (!b.day_key || String(b.day_key).slice(0, 10) === todayKey))
+          .slice()
+          .sort((a, b) => new Date(b.started_at || b.updated_at || 0) - new Date(a.started_at || a.updated_at || 0));
       }
 
       function renderStaffBreaksListHtml() {
-        const rows = getPrimaryStaffBreakLogRows();
+        // «في البريك»: فقط من بريكهم جاري الآن
+        const rows = getActiveStaffBreakLiveRows();
         if (!rows.length) {
-          return '<div class="rd-list__row rd-break-empty" style="cursor:default"><div class="rd-list__sub">لا توجد سجلات بريك لهذا اليوم</div></div>';
+          return '<div class="rd-list__row rd-break-empty" style="cursor:default"><div class="rd-list__sub">لا يوجد أحد في بريك حالياً</div></div>';
         }
         return rows.map(b => {
-          const rem = b.status === 'ended'
-            ? Math.max(0, Number(b.remaining_seconds) || 0)
-            : getBreakRemainingSeconds(b);
-          const over = b.status === 'active' && rem < 0;
+          const rem = getBreakRemainingSeconds(b);
+          const over = rem < 0;
           const me = b.user_id === state.currentUser?.id;
-          const statusLbl = b.status === 'active'
-            ? 'في بريك'
-            : (b.status === 'paused' ? 'متوقف' : ((Number(b.overtime_seconds) || 0) > 0 || rem < 0 ? 'انتهى مع تجاوز' : 'انتهى'));
-          const clock = b.status === 'ended'
-            ? (rem > 0 ? `${Math.ceil(rem / 60)} د متبقي` : 'خلصت')
-            : formatBreakClock(rem);
+          const statusLbl = over ? 'انتهى مع تجاوز' : 'في بريك';
           return `
-            <div class="rd-list__row rd-break-row${me ? ' rd-break-row--me' : ''}${over ? ' rd-break-row--over' : ''}${b.status === 'ended' ? ' rd-break-row--ended' : ''}" style="cursor:default">
+            <div class="rd-list__row rd-break-row rd-break-row--live${over ? ' rd-break-row--over' : ' rd-break-row--active'}${me ? ' rd-break-row--me' : ''}"
+              data-break-live-row="${Sec.escapeHTML(b.id)}" style="cursor:default">
               <div class="rd-break-row__av" aria-hidden="true">${Sec.escapeHTML((b._userName || 'م').trim().charAt(0) || 'م')}</div>
               <div class="rd-list__main">
                 <div class="rd-list__title">${Sec.escapeHTML(b._userName || '—')}${me ? ' <span class="rd-break-me-tag">أنت</span>' : ''}</div>
-                <div class="rd-list__sub">${Sec.escapeHTML(b._branchName || '—')} · ${Sec.escapeHTML(statusLbl)}</div>
+                <div class="rd-list__sub">${Sec.escapeHTML(b._branchName || '—')} · <span data-break-row-status class="rd-break-status${over ? ' rd-break-status--over' : ''}">${Sec.escapeHTML(statusLbl)}</span></div>
               </div>
-              <div class="rd-break-row__clock${over ? ' rd-break-row__clock--over' : ''}" data-break-row-clock="${Sec.escapeHTML(b.id)}">${Sec.escapeHTML(clock)}</div>
+              <div class="rd-break-row__clock${over ? ' rd-break-row__clock--over' : ''}" data-break-row-clock="${Sec.escapeHTML(b.id)}">${formatBreakClock(rem)}</div>
             </div>`;
         }).join('');
       }
 
       function renderStaffBreakRosterHtml() {
-        const users = getBreakRosterUsers();
+        // «السجل»: المتوقفون والمنتهون (النشطون يظهرون في «في البريك» فقط)
+        const activeIds = new Set(
+          (state.staffBreaks || []).filter(b => b.status === 'active').map(b => b.user_id)
+        );
+        const users = getBreakRosterUsers().filter(u => !activeIds.has(u.id));
         if (!users.length) {
-          return '<div class="rd-list__row rd-break-empty" style="cursor:default"><div class="rd-list__sub">لا يوجد موظفون لعرض المتبقي</div></div>';
+          return '<div class="rd-list__row rd-break-empty" style="cursor:default"><div class="rd-list__sub">لا توجد سجلات حالياً</div></div>';
         }
         return users.map(u => {
           const remSec = getUserBreakRemainingSeconds(u);
           const mins = Math.max(0, Math.ceil(remSec / 60));
-          const open = (state.staffBreaks || []).find(b => b.user_id === u.id && (b.status === 'active' || b.status === 'paused'));
-          const statusLbl = open?.status === 'active' ? 'في بريك' : (open?.status === 'paused' ? 'متوقف' : (mins <= 0 ? 'خلصت المدة' : 'متاح'));
+          const paused = (state.staffBreaks || []).find(b => b.user_id === u.id && b.status === 'paused');
+          const dayRow = state.staffBreakDayByUser?.[u.id];
+          const overEnded = !paused && dayRow?.status === 'ended'
+            && ((Number(dayRow.overtime_seconds) || 0) > 0 || Number(dayRow.remaining_seconds) < 0);
+          const statusLbl = paused
+            ? 'متوقف'
+            : (overEnded ? 'انتهى مع تجاوز' : (dayRow?.status === 'ended' || mins <= 0 ? 'خلصت المدة' : 'متاح'));
           const branch = state._branchById?.get(u.branch_id) || state.branches.find(b => b.id === u.branch_id);
           const me = u.id === state.currentUser?.id;
+          const rowTone = paused ? ' rd-break-roster-row--paused' : (overEnded ? ' rd-break-roster-row--over' : '');
           return `
-            <div class="rd-list__row rd-break-roster-row${me ? ' rd-break-row--me' : ''}${open?.status === 'active' ? ' rd-break-roster-row--active' : ''}" style="cursor:default">
+            <div class="rd-list__row rd-break-roster-row${rowTone}${me ? ' rd-break-row--me' : ''}"
+              data-break-roster-row="${Sec.escapeHTML(u.id)}" style="cursor:default">
               <div class="rd-break-row__av" aria-hidden="true">${Sec.escapeHTML((u.name || 'م').trim().charAt(0) || 'م')}</div>
               <div class="rd-list__main">
                 <div class="rd-list__title">${Sec.escapeHTML(u.name || '—')}${me ? ' <span class="rd-break-me-tag">أنت</span>' : ''}</div>
-                <div class="rd-list__sub">${Sec.escapeHTML(branch?.name || '—')} · ${Sec.escapeHTML(statusLbl)}</div>
+                <div class="rd-list__sub">${Sec.escapeHTML(branch?.name || '—')} · <span class="rd-break-status${overEnded ? ' rd-break-status--over' : ''}${paused ? ' rd-break-status--paused' : ''}">${Sec.escapeHTML(statusLbl)}</span></div>
               </div>
-              <div class="rd-break-roster__mins${mins <= 0 ? ' rd-break-roster__mins--zero' : ''}${open?.status === 'active' ? ' rd-break-roster__mins--active' : ''}"
+              <div class="rd-break-roster__mins${mins <= 0 && !paused ? ' rd-break-roster__mins--zero' : ''}${paused ? ' rd-break-roster__mins--paused' : ''}${overEnded ? ' rd-break-roster__mins--over' : ''}"
                 data-break-roster-user="${Sec.escapeHTML(u.id)}">${mins} د</div>
             </div>`;
         }).join('');
@@ -32996,11 +33000,11 @@
           <div class="breaks-full-page">
             <div id="breaksRingHost">${renderStaffBreakRingHtml()}</div>
             <div class="rd-sec rd-break-list-sec">
-              <div class="rd-sec__head"><span class="rd-sec__title">سجل البريكات</span></div>
+              <div class="rd-sec__head"><span class="rd-sec__title">في البريك</span></div>
               <div class="rd-list rd-break-list">${renderStaffBreaksListHtml()}</div>
             </div>
             <div class="rd-sec rd-break-list-sec">
-              <div class="rd-sec__head"><span class="rd-sec__title">سجلات الموظفين</span></div>
+              <div class="rd-sec__head"><span class="rd-sec__title">السجل</span></div>
               <div class="rd-list rd-break-list">${renderStaffBreakRosterHtml()}</div>
             </div>
             ${renderStaffBreakSchedulesHtml()}
@@ -33020,11 +33024,11 @@
             </div>
             ${renderStaffBreakRingHtml()}
             <div class="rd-sec rd-break-list-sec">
-              <div class="rd-sec__head"><span class="rd-sec__title">سجل البريكات</span></div>
+              <div class="rd-sec__head"><span class="rd-sec__title">في البريك</span></div>
               <div class="rd-list rd-break-list">${renderStaffBreaksListHtml()}</div>
             </div>
             <div class="rd-sec rd-break-list-sec">
-              <div class="rd-sec__head"><span class="rd-sec__title">سجلات الموظفين</span></div>
+              <div class="rd-sec__head"><span class="rd-sec__title">السجل</span></div>
               <div class="rd-list rd-break-list">${renderStaffBreakRosterHtml()}</div>
             </div>
           </div>`;
