@@ -24,6 +24,8 @@ let GetObjectCommand: any
 // deno-lint-ignore no-explicit-any
 let HeadObjectCommand: any
 // deno-lint-ignore no-explicit-any
+let ListObjectsV2Command: any
+// deno-lint-ignore no-explicit-any
 let PutObjectCommand: any
 // deno-lint-ignore no-explicit-any
 let UploadPartCommand: any
@@ -49,6 +51,7 @@ async function ensureAws(): Promise<void> {
       DeleteObjectCommand = s3mod.DeleteObjectCommand
       GetObjectCommand = s3mod.GetObjectCommand
       HeadObjectCommand = s3mod.HeadObjectCommand
+      ListObjectsV2Command = s3mod.ListObjectsV2Command
       PutObjectCommand = s3mod.PutObjectCommand
       UploadPartCommand = s3mod.UploadPartCommand
       S3Client = s3mod.S3Client
@@ -715,6 +718,7 @@ Deno.serve(async (req) => {
     action?: string
     key?: string
     contentType?: string
+    prefix?: string
     fromKey?: string
     toKey?: string
     uploadId?: string
@@ -916,6 +920,30 @@ Deno.serve(async (req) => {
         }
         throw e
       }
+    }
+
+    if (action === 'adminListPrefix') {
+      if (!isServiceRole) {
+        return json({ error: 'غير مصرح' }, 403)
+      }
+      const prefix = String(body.prefix || '').trim()
+      if (!prefix || prefix.includes('..')) {
+        return json({ error: 'prefix غير صالح' }, 400)
+      }
+      const out = await s3.send(
+        new ListObjectsV2Command({
+          Bucket: bucket,
+          Prefix: prefix,
+          MaxKeys: 100,
+        }),
+      )
+      const items = (out.Contents || []).map((o: { Key?: string; Size?: number; LastModified?: Date; ETag?: string }) => ({
+        key: o.Key,
+        size: o.Size ?? 0,
+        lastModified: o.LastModified ? new Date(o.LastModified).toISOString() : null,
+        etag: o.ETag || null,
+      }))
+      return json({ ok: true, prefix, items })
     }
 
     if (action === 'signGet') {
