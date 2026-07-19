@@ -137,12 +137,46 @@ async function requireMirsadAdmin(
   return data === 'admin'
 }
 
+function getBearerToken(req: Request): string {
+  const authHeader = req.headers.get('Authorization') || ''
+  const m = authHeader.match(/^Bearer\s+(.+)$/i)
+  return m ? m[1].trim() : ''
+}
+
+/** مفتاح service_role من بيئة الدالة (JWT القديم أو sb_secret_*) */
+function serviceRoleKeys(): string[] {
+  return [
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '',
+    Deno.env.get('SERVICE_ROLE_KEY') || '',
+  ].map((s) => s.trim()).filter(Boolean)
+}
+
+function isServiceRoleRequest(req: Request): boolean {
+  const token = getBearerToken(req)
+  if (!token) return false
+  if (serviceRoleKeys().some((k) => k === token)) return true
+  // رمز صيانة لمرة التحويلات من الخادم (اختياري عبر سر R2_MAINT_TOKEN)
+  const maint = (Deno.env.get('R2_MAINT_TOKEN') || '').trim()
+  if (maint && token === maint) return true
+  return false
+}
+
 async function authenticateRequest(req: Request) {
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!
   const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
   const authHeader = req.headers.get('Authorization')
   if (!authHeader) {
     return { error: json({ error: 'لا يوجد رمز مصادقة' }, 401) }
+  }
+
+  if (isServiceRoleRequest(req)) {
+    const serviceKey = serviceRoleKeys()[0]
+    const supabase = createClient(supabaseUrl, serviceKey)
+    return {
+      user: { id: 'service-role' } as { id: string },
+      supabase,
+      isServiceRole: true as const,
+    }
   }
 
   const supabase = createClient(supabaseUrl, supabaseAnonKey, {
@@ -157,7 +191,7 @@ async function authenticateRequest(req: Request) {
     return { error: json({ error: 'جلسة غير صالحة' }, 401) }
   }
 
-  return { user, supabase }
+  return { user, supabase, isServiceRole: false as const }
 }
 
 /** أول قيمة غير فارغة بعد trim (يدعم أسماء بديلة شائعة من Cloudflare / AWS) */
@@ -674,7 +708,7 @@ Deno.serve(async (req) => {
 
   const auth = await authenticateRequest(req)
   if ('error' in auth && auth.error) return auth.error
-  const { user, supabase } = auth
+  const { user, supabase, isServiceRole } = auth
   void user
 
   let body: {
@@ -822,16 +856,18 @@ Deno.serve(async (req) => {
       if (!/\.(mp4|mov|m4v|webm|avi|mkv)$/i.test(key)) {
         return json({ error: 'استبدال الملف مسموح لفيديوهات المرفقات فقط' }, 400)
       }
-      const { data: canSee, error: permErr } = await supabase.rpc(
-        'mirsad_user_can_see_attachment',
-        { p_key: key },
-      )
-      if (permErr) {
-        console.error('[r2-storage] signReplacePut perm check failed', permErr.message)
-        return json({ error: 'تعذّر التحقق من صلاحية الملف' }, 500)
-      }
-      if (!canSee) {
-        return json({ error: 'غير مصرح بالوصول لهذا الملف' }, 403)
+      if (!isServiceRole) {
+        const { data: canSee, error: permErr } = await supabase.rpc(
+          'mirsad_user_can_see_attachment',
+          { p_key: key },
+        )
+        if (permErr) {
+          console.error('[r2-storage] signReplacePut perm check failed', permErr.message)
+          return json({ error: 'تعذّر التحقق من صلاحية الملف' }, 500)
+        }
+        if (!canSee) {
+          return json({ error: 'غير مصرح بالوصول لهذا الملف' }, 403)
+        }
       }
       const ct =
         typeof body.contentType === 'string' && body.contentType.trim()
@@ -886,16 +922,19 @@ Deno.serve(async (req) => {
       const key = assertKey(body.key)
       // [أمان] منع IDOR: لا نوقّع رابطاً/بثّاً إلا لملف يخص مخالفة يستطيع
       // المستخدم رؤيتها (تُفرض عبر RLS داخل الدالة SECURITY INVOKER).
-      const { data: canSee, error: permErr } = await supabase.rpc(
-        'mirsad_user_can_see_attachment',
-        { p_key: key },
-      )
-      if (permErr) {
-        console.error('[r2-storage] perm check failed', permErr.message)
-        return json({ error: 'تعذّر التحقق من صلاحية الملف' }, 500)
-      }
-      if (!canSee) {
-        return json({ error: 'غير مصرح بالوصول لهذا الملف' }, 403)
+      // استثناء: service_role للصيانة (تحويل HEVC من الخادم).
+      if (!isServiceRole) {
+        const { data: canSee, error: permErr } = await supabase.rpc(
+          'mirsad_user_can_see_attachment',
+          { p_key: key },
+        )
+        if (permErr) {
+          console.error('[r2-storage] perm check failed', permErr.message)
+          return json({ error: 'تعذّر التحقق من صلاحية الملف' }, 500)
+        }
+        if (!canSee) {
+          return json({ error: 'غير مصرح بالوصول لهذا الملف' }, 403)
+        }
       }
       const ct =
         typeof body.contentType === 'string' && body.contentType.trim()
@@ -914,21 +953,27 @@ Deno.serve(async (req) => {
 
     if (action === 'headObject') {
       const key = assertKey(body.key)
-      // [أمان] فحص صلاحية نفسه مثل signGet
-      const { data: canSee, error: permErr } = await supabase.rpc(
-        'mirsad_user_can_see_attachment',
-        { p_key: key },
-      )
-      if (permErr) {
-        console.error('[r2-storage] headObject perm check failed', permErr.message)
-        return json({ error: 'تعذّر التحقق من صلاحية الملف' }, 500)
-      }
-      if (!canSee) {
-        return json({ error: 'غير مصرح بالوصول لهذا الملف' }, 403)
+      if (!isServiceRole) {
+        const { data: canSee, error: permErr } = await supabase.rpc(
+          'mirsad_user_can_see_attachment',
+          { p_key: key },
+        )
+        if (permErr) {
+          console.error('[r2-storage] headObject perm check failed', permErr.message)
+          return json({ error: 'تعذّر التحقق من صلاحية الملف' }, 500)
+        }
+        if (!canSee) {
+          return json({ error: 'غير مصرح بالوصول لهذا الملف' }, 403)
+        }
       }
       try {
-        await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: key }))
-        return json({ ok: true, key })
+        const head = await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: key }))
+        return json({
+          ok: true,
+          key,
+          contentLength: head.ContentLength ?? null,
+          contentType: head.ContentType || guessContentTypeFromKey(key),
+        })
       } catch (e: unknown) {
         const name =
           e && typeof e === 'object' && 'name' in e
