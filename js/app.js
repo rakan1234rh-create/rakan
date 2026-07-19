@@ -14506,6 +14506,9 @@
             || /\.(mp4|mov|webm|m4v|avi|mkv|mpeg|mpg|ts|m2ts)$/i.test(uploadName);
 
           if (isVideo && body instanceof Blob) {
+            if (!body.size) {
+              throw new Error('ملف الفيديو فارغ — اختر المقطع من جديد من الكاميرا');
+            }
             const vCodec = fileEntry.codecHint || await sniffMp4VideoCodec(body);
             fileEntry.codecHint = vCodec;
             if (videoNeedsPlayableTranscode(vCodec, uploadName)) {
@@ -14520,6 +14523,9 @@
                 updateAttachmentPrepUi(scope, fileEntry._fileId);
               }, { purpose: 'upload' });
               if (fileEntry._cancelled) return;
+              if (!(blob instanceof Blob) || !blob.size) {
+                throw new Error('فشل التحويل — الناتج فارغ. أعد رفع فيديو H.264');
+              }
               body = blob;
               contentType = 'video/mp4';
               uploadName = mp4NameAfterTranscode(uploadName);
@@ -14543,6 +14549,13 @@
           fileEntry.prepUploadTotal = 0;
           updateAttachmentPrepUi(scope, fileEntry._fileId);
 
+          const uploadBytes = (body instanceof Blob && body.size)
+            || (body && body.byteLength)
+            || 0;
+          if (isVideo && uploadBytes < 1) {
+            throw new Error('ملف الفيديو فارغ قبل الرفع');
+          }
+
           await uploadPreparedBlobToR2(
             objectKey,
             body,
@@ -14559,6 +14572,14 @@
           if (fileEntry._cancelled) {
             await deleteR2TempObject(objectKey);
             return;
+          }
+
+          if (isVideo) {
+            const uploadedSize = await attachmentObjectByteSize(objectKey, '');
+            if (uploadedSize === 0) {
+              try { await deleteR2TempObject(objectKey); } catch (_) { /* */ }
+              throw new Error('رُفع ملف فيديو فارغ إلى التخزين — أعد الرفع');
+            }
           }
 
           fileEntry.tempKey = objectKey;
@@ -15096,7 +15117,23 @@
       const HEVC_TRANSCODE_MAX_BYTES = HEVC_TRANSCODE_VIEWER_MAX_BYTES;
       const FFMPEG_CLASS_WORKER_CDN = 'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/worker.js';
       let _ffmpegTranscodeInstance = null;
+      let _ffmpegExecChain = Promise.resolve();
       const _hevcReplaceInflight = {};
+
+      /** طابور تحويل واحد — يمنع تعارض ملفات ffmpeg.wasm عند رفع أكثر من فيديو معاً */
+      function withFfmpegExclusive(task) {
+        const run = _ffmpegExecChain.then(
+          () => task(),
+          () => task(),
+        );
+        _ffmpegExecChain = run.then(() => undefined, () => undefined);
+        return run;
+      }
+
+      function newFfmpegTempNames() {
+        const id = 't' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+        return { inName: id + '_in.mp4', outName: id + '_out.mp4' };
+      }
 
       function isAtharDesktopViewer() {
         return document.documentElement.classList.contains('mr-desktop-ui')
@@ -15301,6 +15338,7 @@
 
       function isAttachmentH264Ready(att) {
         if (!att) return false;
+        if (att.v === 'empty' || att.empty === true) return false;
         if (att.v === 'h264' || att.h264 === true || att.h264 === 1) return true;
         const name = String(att.n || att.name || att.p || att.path || '');
         return /\.h264\.mp4$/i.test(name) || /\b_h264\.mp4$/i.test(name);
@@ -15408,6 +15446,42 @@
             <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:14px">${transcode}${retry}${tab}${dl}</div>
             <p style="font-size:10px;color:#64748b;margin:12px 0 0">التحويل مرة واحدة — بدون صوت إن لم يكن مسجّلاً. المرات التالية تشغيل فوري.</p>
           </div>`;
+      }
+
+      function emptyAttachmentVideoHtml() {
+        return `
+          <div style="padding:20px;background:rgba(0,0,0,0.55);border-radius:10px;text-align:center;max-width:440px;line-height:1.7">
+            <i class="fas fa-file-excel" style="color:var(--amber);font-size:28px;margin-bottom:10px"></i>
+            <p style="margin:0 0 8px;font-weight:700">المرفق فارغ على التخزين</p>
+            <p style="font-size:12px;color:#cbd5e1;margin:0">الملف موجود كمسار فقط وحجمه 0 بايت — لا يمكن التشغيل أو التحويل. أعد رفع مقطع الكاميرا (يفضّل H.264 من iVMS).</p>
+          </div>`;
+      }
+
+      async function attachmentObjectByteSize(fileId, streamFb) {
+        const key = String(fileId || '').trim();
+        if (key) {
+          try {
+            const head = await callR2StorageFn('headObject', { key });
+            if (head && head.ok && typeof head.contentLength === 'number') {
+              return Number(head.contentLength);
+            }
+            if (head && head.ok === false) return -1;
+          } catch (_) { /* */ }
+          try {
+            const signed = await callR2StorageFn('signGet', { key, contentType: 'video/mp4' });
+            if (signed?.url) {
+              const res = await fetch(signed.url, { method: 'HEAD', mode: 'cors' });
+              const len = parseInt(res.headers.get('Content-Length') || '', 10);
+              if (Number.isFinite(len) && len >= 0) return len;
+            }
+          } catch (_) { /* */ }
+        }
+        if (streamFb) {
+          const len = await probeR2StreamContentLength(streamFb);
+          if (len > 0) return len;
+          if (len === 0) return 0;
+        }
+        return -1;
       }
 
       function videoPlaybackFailedHtml(downloadHref, codec) {
@@ -15684,27 +15758,31 @@
         if (blob.size > maxBytes) {
           throw new Error('حجم الفيديو ' + Math.round(blob.size / 1048576) + 'MB — كبير للتحويل داخل المتصفح');
         }
-        const ffmpeg = await ensureFfmpegTranscoder(onStatus);
-        const hasAudio = await mp4BlobHasAudioTrack(blob);
-        onStatus?.('تحويل إلى H.264 (720p · preset fast' + (hasAudio ? ' · صوت' : '') + ')…');
-        const inName = 'hevc_in.mp4';
-        const outName = 'h264_out.mp4';
-        await ffmpeg.writeFile(inName, new Uint8Array(await blob.arrayBuffer()));
-        const execHb = setInterval(() => {
-          onStatus?.('جاري التحويل… لا تغلق الصفحة' + (purpose === 'upload' ? ' حتى يكتمل الرفع' : ''));
-        }, 8000);
-        try {
-          await ffmpeg.exec(buildHevcToH264FfmpegArgs(inName, outName, hasAudio));
-        } finally {
-          clearInterval(execHb);
-        }
-        const data = await ffmpeg.readFile(outName);
-        try {
-          await ffmpeg.deleteFile(inName);
-          await ffmpeg.deleteFile(outName);
-        } catch (_) { /* */ }
-        const outBlob = new Blob([data], { type: 'video/mp4' });
-        return { blob: outBlob };
+        return withFfmpegExclusive(async () => {
+          const ffmpeg = await ensureFfmpegTranscoder(onStatus);
+          const hasAudio = await mp4BlobHasAudioTrack(blob);
+          onStatus?.('تحويل إلى H.264 (720p · preset fast' + (hasAudio ? ' · صوت' : '') + ')…');
+          const { inName, outName } = newFfmpegTempNames();
+          await ffmpeg.writeFile(inName, new Uint8Array(await blob.arrayBuffer()));
+          const execHb = setInterval(() => {
+            onStatus?.('جاري التحويل… لا تغلق الصفحة' + (purpose === 'upload' ? ' حتى يكتمل الرفع' : ''));
+          }, 8000);
+          try {
+            await ffmpeg.exec(buildHevcToH264FfmpegArgs(inName, outName, hasAudio));
+          } finally {
+            clearInterval(execHb);
+          }
+          const data = await ffmpeg.readFile(outName);
+          try {
+            await ffmpeg.deleteFile(inName);
+            await ffmpeg.deleteFile(outName);
+          } catch (_) { /* */ }
+          const outBlob = new Blob([data], { type: 'video/mp4' });
+          if (!outBlob.size) {
+            throw new Error('فشل التحويل — الملف الناتج فارغ. أعد المحاولة أو ارفع H.264 جاهزاً');
+          }
+          return { blob: outBlob };
+        });
       }
 
       async function transcodeHevcBlobToPlayableBlob(blob, mimeType, onStatus) {
@@ -15717,29 +15795,14 @@
           throw new Error('حجم الفيديو ' + Math.round(len / 1048576) + 'MB — كبير للتحويل داخل المتصفح. حمّله أو ثبّت HEVC Extensions.');
         }
         onStatus?.('تحميل الفيديو وأداة التحويل معاً…');
-        const [{ blob }, ffmpeg] = await Promise.all([
+        const [{ blob }] = await Promise.all([
           fetchAuthedStreamBlobUrl(streamUrl, mimeType || 'video/mp4'),
           ensureFfmpegTranscoder(onStatus),
         ]);
-        const hasAudio = await mp4BlobHasAudioTrack(blob);
-        onStatus?.('تحويل H.265 → H.264 (720p · preset fast' + (hasAudio ? ' · صوت' : '') + ')…');
-        const inName = 'hevc_in.mp4';
-        const outName = 'h264_out.mp4';
-        await ffmpeg.writeFile(inName, new Uint8Array(await blob.arrayBuffer()));
-        const execHb = setInterval(() => {
-          onStatus?.('جاري التحويل… لا تغلق الصفحة (قد يستغرق عدة دقائق)');
-        }, 8000);
-        try {
-          await ffmpeg.exec(buildHevcToH264FfmpegArgs(inName, outName, hasAudio));
-        } finally {
-          clearInterval(execHb);
+        if (!(blob instanceof Blob) || !blob.size) {
+          throw new Error('تعذّر تحميل الفيديو للتحويل — الملف فارغ أو غير متاح');
         }
-        const data = await ffmpeg.readFile(outName);
-        try {
-          await ffmpeg.deleteFile(inName);
-          await ffmpeg.deleteFile(outName);
-        } catch (_) { /* */ }
-        const outBlob = new Blob([data], { type: 'video/mp4' });
+        const { blob: outBlob } = await transcodeVideoBlobToPlayableH264(blob, mimeType, onStatus, { purpose: 'viewer' });
         return { blobUrl: URL.createObjectURL(outBlob), blob: outBlob };
       }
 
@@ -16121,6 +16184,24 @@
         const streamFb = readVideoStreamFallback(ck);
         let playUrl = await loadAttachmentPlayUrl(fileId, name, ticketCtx);
         if (viewerLoadGen !== state._attViewerLoadGen) return null;
+
+        if (attMeta?.v === 'empty' || attMeta?.empty === true) {
+          showAttViewerLoader(emptyAttachmentVideoHtml());
+          const err = new Error('VIDEO_EMPTY');
+          err.code = 'VIDEO';
+          throw err;
+        }
+
+        const byteSize = await attachmentObjectByteSize(
+          fileId,
+          streamFb || (isR2StreamPlayUrl(playUrl) ? playUrl : ''),
+        );
+        if (byteSize === 0) {
+          showAttViewerLoader(emptyAttachmentVideoHtml());
+          const err = new Error('VIDEO_EMPTY');
+          err.code = 'VIDEO';
+          throw err;
+        }
 
         const markedH264 = isAttachmentH264Ready(attMeta);
         const openHrefEarly = attachmentVideoOpenHref(ck, playUrl, streamFb);

@@ -927,8 +927,13 @@ Deno.serve(async (req) => {
         return json({ error: 'غير مصرح بالوصول لهذا الملف' }, 403)
       }
       try {
-        await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: key }))
-        return json({ ok: true, key })
+        const head = await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: key }))
+        return json({
+          ok: true,
+          key,
+          contentLength: head.ContentLength ?? null,
+          contentType: head.ContentType || guessContentTypeFromKey(key),
+        })
       } catch (e: unknown) {
         const name =
           e && typeof e === 'object' && 'name' in e
