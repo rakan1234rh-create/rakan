@@ -33061,6 +33061,14 @@
               ? formatBreakHistoryWhen(row.paused_at || row.updated_at)
               : formatBreakHistoryWhen(row.ended_at || row.updated_at));
           const endKey = row.status === 'active' ? 'الانتهاء' : (row.status === 'paused' ? 'توقّف عند' : 'الانتهاء');
+          const reason = String(row.overtime_reason || '').trim();
+          const showReason = overSec > 0 || !!reason || (row.status === 'active' && getBreakRemainingSeconds(row) < 0);
+          const reasonHtml = showReason
+            ? `<div class="break-history-item__reason">
+                <dt>سبب التجاوز</dt>
+                <dd>${reason ? Sec.escapeHTML(reason) : '<span class="break-history-item__reason-empty">لم يُسجَّل بعد</span>'}</dd>
+              </div>`
+            : '';
           return `
             <article class="break-history-item${tone}">
               <header class="break-history-item__hd">
@@ -33071,6 +33079,7 @@
                 <div><dt>البدء</dt><dd>${Sec.escapeHTML(formatBreakHistoryWhen(row.started_at))}</dd></div>
                 <div><dt>${endKey}</dt><dd>${Sec.escapeHTML(endLbl)}</dd></div>
                 <div><dt>مدة الاستمرار</dt><dd>${Sec.escapeHTML(getBreakSessionUsedLabel(row))}</dd></div>
+                ${reasonHtml}
               </dl>
             </article>`;
         }).join('');
