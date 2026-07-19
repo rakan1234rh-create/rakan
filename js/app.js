@@ -32350,6 +32350,7 @@
       window.handleFiles = handleFiles;
       // ═══════════════════════════════════════════════════════════════════════════
       // STAFF BREAKS — بريكات الموظفين (عداد دائري + جدولة المدد)
+      const BREAK_OVERTIME_REASON_AFTER_SEC = 5 * 60; // خانة السبب بعد تجاوز 5 دقائق
       // ═══════════════════════════════════════════════════════════════════════════
 
       const STAFF_BREAK_RING_CIRC = 2 * Math.PI * 54; // r=54 like rd-streak
@@ -32480,6 +32481,18 @@
         if (dayRow?.status === 'ended') return Math.max(0, Number(dayRow.remaining_seconds) || 0);
         // Prefer live schedule resolution so admin/supervisor duration edits show immediately
         return Math.max(0, resolveBreakDurationMinsForUser(me) * 60);
+      }
+
+      /** خلصت مدة اليوم (بعد الإيقاف) ولا يوجد متبقي — يمنع بدء بريك جديد حتى يزيد المدير المدة */
+      function isMyBreakAllowanceExhausted() {
+        if (getMyOpenStaffBreak()) return false;
+        const me = state.currentUser;
+        if (!me?.id) return false;
+        const dayRow = state.staffBreakDayByUser?.[me.id];
+        if (!dayRow) return false;
+        if (dayRow.status === 'ended' && Number(dayRow.remaining_seconds || 0) <= 0) return true;
+        if (dayRow.status === 'paused' && Number(dayRow.remaining_seconds || 0) <= 0) return true;
+        return false;
       }
 
       function getStaffBreakTodayKey() {
@@ -32908,11 +32921,16 @@
               ? '<i class="fas fa-pause"></i>متوقف'
               : `<i class="fas fa-hourglass-half"></i>${state._myBreakDurationMins || 15} دقيقة`));
         const startLabel = isPaused ? 'متابعة البريك' : 'بدء البريك';
+        const exhausted = !active && !isPaused && isMyBreakAllowanceExhausted();
         let actionsHtml;
         if (active) {
           actionsHtml = `<button type="button" class="btn btn-primary rd-break-btn" onclick="endStaffBreakFromUi()"><i class="fas fa-pause"></i> إيقاف البريك</button>`;
         } else if (!canTakeStaffBreak()) {
           actionsHtml = `<p class="rd-break-note">دورك الحالي للعرض فقط</p>`;
+        } else if (exhausted) {
+          actionsHtml = `
+            <button type="button" class="btn btn-primary rd-break-btn" disabled aria-disabled="true"><i class="fas fa-ban"></i> بدء البريك</button>
+            <p class="rd-break-note rd-break-note--warn">خلصت مدة بريك اليوم — إذا احتجت وقتاً إضافياً اطلب من مدير النظام</p>`;
         } else if (colleague) {
           actionsHtml = `
             <button type="button" class="btn btn-primary rd-break-btn" disabled aria-disabled="true"><i class="fas fa-ban"></i> ${Sec.escapeHTML(startLabel)}</button>
@@ -33260,6 +33278,11 @@
           await renderStaffBreaksPage();
           return;
         }
+        if (isMyBreakAllowanceExhausted()) {
+          showToast('خلصت مدة بريك اليوم — اطلب من مدير النظام زيادة المدة إن لزم', 'warning');
+          await renderStaffBreaksPage({ soft: true });
+          return;
+        }
         const colleague = getActiveBreakColleagueInMyBranch();
         if (colleague) {
           showToast(`يوجد زميل في بريك حالياً (${colleague._userName || '—'}) — انتظر حتى يعود`, 'warning');
@@ -33274,7 +33297,7 @@
             // Sync UI if server already has an open break the client missed
             if (data?.break || /نشط|بريك/i.test(String(data?.error || ''))) {
               await renderStaffBreaksPage();
-            } else if (data?.branch_busy) {
+            } else if (data?.branch_busy || data?.exhausted) {
               await renderStaffBreaksPage({ soft: true });
             }
             return;
@@ -33298,7 +33321,8 @@
           return;
         }
         const remaining = getBreakRemainingSeconds(mine);
-        if (remaining < 0 && !reasonFromModal) {
+        // خانة السبب فقط بعد تجاوز 5 دقائق
+        if (remaining < -BREAK_OVERTIME_REASON_AFTER_SEC && !reasonFromModal) {
           openBreakOvertimeModal(mine);
           return;
         }
@@ -33338,10 +33362,14 @@
       }
 
       function openBreakOvertimeModal(brk, overtimeSeconds) {
-        const rem = overtimeSeconds != null ? overtimeSeconds : Math.abs(getBreakRemainingSeconds(brk));
+        const rem = overtimeSeconds != null
+          ? Number(overtimeSeconds)
+          : Math.abs(Math.min(0, getBreakRemainingSeconds(brk)));
         const hint = document.getElementById('breakOtHint');
         const input = document.getElementById('breakOtReason');
-        if (hint) hint.textContent = `تجاوزت المدة بمقدار ${formatBreakClock(-rem)} — أضف سبب التجاوز لإكمال إيقاف البريك.`;
+        if (hint) {
+          hint.textContent = `تجاوزت المدة بمقدار ${formatBreakClock(Math.abs(rem))} (أكثر من 5 دقائق) — أضف سبب التجاوز لإكمال إيقاف البريك.`;
+        }
         if (input) input.value = '';
         openModal('breakOvertimeModal');
         setTimeout(() => input?.focus(), 80);
