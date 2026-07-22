@@ -4042,15 +4042,32 @@
           <p class="form-hint" id="breakSchGlobalNote" hidden style="margin:-4px 0 12px;color:var(--text3);font-size:12px">تُطبَّق على الجميع ما لم تُضبط مدة أدق لمنطقة/فرع/موظف.</p>
           <div class="form-group" id="breakSchScopeIdWrap">
             <label class="form-label" for="breakSchScopeId">اختر</label>
-            <select id="breakSchScopeId" class="form-select"></select>
+            <select id="breakSchScopeId" class="form-select" onchange="syncBreakScheduleFormFields()"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="breakSchDayOfWeek">يوم الأسبوع <span class="required-mark">*</span></label>
+            <select id="breakSchDayOfWeek" class="form-select" onchange="syncBreakScheduleFormFields()">
+              <option value="0">الأحد</option>
+              <option value="1">الإثنين</option>
+              <option value="2">الثلاثاء</option>
+              <option value="3">الأربعاء</option>
+              <option value="4">الخميس</option>
+              <option value="5">الجمعة</option>
+              <option value="6">السبت</option>
+            </select>
           </div>
           <div class="form-group">
             <label class="form-label" for="breakSchMinutes">المدة بالدقائق <span class="required-mark">*</span></label>
-            <input type="number" id="breakSchMinutes" class="form-input" min="1" max="480" step="1" value="15">
+            <input type="number" id="breakSchMinutes" class="form-input" min="1" max="480" step="1" placeholder="مثلاً: 15">
+            <div style="font-size:11px;color:var(--text3);margin-top:4px">أي يوم بدون مدة محفوظة = لا يُسمح بأخذ بريك فيه.</div>
           </div>
           <div class="form-group">
             <label class="form-label" for="breakSchLabel">وصف اختياري</label>
             <input type="text" id="breakSchLabel" class="form-input" placeholder="مثلاً: استراحة قصيرة">
+          </div>
+          <div class="form-group">
+            <label class="form-label">مدد هذا النطاق خلال الأسبوع</label>
+            <div id="breakSchWeekSummary"></div>
           </div>
         </div>
         <div class="modal-footer">
