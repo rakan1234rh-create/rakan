@@ -1244,7 +1244,7 @@
         staffBreakDayByUser: {},
         staffBreakDayRows: [],
         _staffBreakDayKey: null,
-        _myBreakDurationMins: 15,
+        _myBreakDurationMins: null,
         _staffBreakTicker: null,
         _staffBreaksChannel: null
       };
@@ -32405,8 +32405,7 @@
               }).catch(() => { /* noop */ });
             } else {
               // Keep idle duration badge aligned with latest in-memory schedules
-              const liveMins = resolveBreakDurationMinsForUser(state.currentUser);
-              if (liveMins > 0) state._myBreakDurationMins = liveMins;
+              state._myBreakDurationMins = resolveBreakDurationMinsForUser(state.currentUser);
               paintStaffBreakCountdownOnly();
             }
           } catch (_) { /* noop */ }
@@ -32480,7 +32479,7 @@
         const dayRow = me?.id ? state.staffBreakDayByUser?.[me.id] : null;
         if (dayRow?.status === 'ended') return Math.max(0, Number(dayRow.remaining_seconds) || 0);
         // Prefer live schedule resolution so admin/supervisor duration edits show immediately
-        return Math.max(0, resolveBreakDurationMinsForUser(me) * 60);
+        return Math.max(0, (resolveBreakDurationMinsForUser(me) || 0) * 60);
       }
 
       /** خلصت مدة اليوم (بعد الإيقاف) ولا يوجد متبقي — يمنع بدء بريك جديد حتى يزيد المدير المدة */
@@ -32493,6 +32492,12 @@
         if (dayRow.status === 'ended' && Number(dayRow.remaining_seconds || 0) <= 0) return true;
         if (dayRow.status === 'paused' && Number(dayRow.remaining_seconds || 0) <= 0) return true;
         return false;
+      }
+
+      /** لا يوجد بريك مجدول لهذا اليوم (لا يوجد نطاق فيه مدة ليوم الأسبوع الحالي) */
+      function isMyBreakUnscheduledToday() {
+        if (getMyOpenStaffBreak()) return false;
+        return !resolveBreakDurationMinsForUser(state.currentUser);
       }
 
       function getStaffBreakTodayKey() {
@@ -32512,9 +32517,17 @@
         return new Date().toISOString().slice(0, 10);
       }
 
+      function getStaffBreakTodayWeekday() {
+        const key = getStaffBreakTodayKey();
+        const [y, m, d] = key.split('-').map(Number);
+        return ksaWeekdayIndex(y, (m || 1) - 1, d);
+      }
+
+      /** يرجع مدة البريك بالدقائق لهذا اليوم، أو null إن لم تكن مجدولة (لا يوجد بريك اليوم) */
       function resolveBreakDurationMinsForUser(u) {
-        if (!u) return state._myBreakDurationMins || 15;
-        const schedules = (state.staffBreakSchedules || []).filter(s => s && s.is_active !== false);
+        if (!u) return state._myBreakDurationMins || null;
+        const dow = getStaffBreakTodayWeekday();
+        const schedules = (state.staffBreakSchedules || []).filter(s => s && s.is_active !== false && Number(s.day_of_week) === dow);
         const pick = (type, id) => {
           const rows = schedules.filter(s => s.scope_type === type && (id == null ? !s.scope_id : s.scope_id === id));
           if (!rows.length) return null;
@@ -32533,7 +32546,7 @@
             if (regionMins) return regionMins;
           }
         }
-        return pick('global', null) || state._myBreakDurationMins || 15;
+        return pick('global', null);
       }
 
       function getUserBreakRemainingSeconds(u) {
@@ -32544,7 +32557,7 @@
         if (open) return getBreakRemainingSeconds(open);
         const dayRow = state.staffBreakDayByUser?.[u.id];
         if (dayRow?.status === 'ended') return Math.max(0, Number(dayRow.remaining_seconds) || 0);
-        return Math.max(0, resolveBreakDurationMinsForUser(u) * 60);
+        return Math.max(0, (resolveBreakDurationMinsForUser(u) || 0) * 60);
       }
 
       function getActiveBreakColleagueInMyBranch() {
@@ -32649,7 +32662,7 @@
               .order('started_at', { ascending: false })
               .limit(500),
             sb.from('staff_break_schedules')
-              .select('id,scope_type,scope_id,duration_minutes,label,is_active,updated_at')
+              .select('id,scope_type,scope_id,day_of_week,duration_minutes,label,is_active,updated_at')
               .eq('is_active', true)
               .order('updated_at', { ascending: false })
               .limit(500),
@@ -32673,13 +32686,11 @@
           state.staffBreakDayRows = enriched;
           state.staffBreaks = enriched.filter(b => b.status === 'active' || b.status === 'paused');
           state.staffBreakSchedules = schedules || [];
+          // null means no break scheduled for today's weekday at any scope
           const resolvedMins = Number(myMins) > 0
             ? Number(myMins)
             : resolveBreakDurationMinsForUser(state.currentUser);
-          state._myBreakDurationMins = resolvedMins > 0 ? resolvedMins : 15;
-          // Keep personal minutes aligned with the freshest schedule row (region/branch/user)
-          const liveMins = resolveBreakDurationMinsForUser(state.currentUser);
-          if (liveMins > 0) state._myBreakDurationMins = liveMins;
+          state._myBreakDurationMins = resolvedMins > 0 ? resolvedMins : null;
           state._staffBreakDayKey = todayKey;
         } catch (e) {
           if (isMirsadDebugLog()) console.warn('[staff_breaks] load', e);
@@ -32839,7 +32850,9 @@
               ? '<i class="fas fa-mug-hot"></i>جاري البريك'
               : (isPaused
                 ? '<i class="fas fa-pause"></i>متوقف'
-                : `<i class="fas fa-hourglass-half"></i>${state._myBreakDurationMins || 15} دقيقة`));
+                : (state._myBreakDurationMins
+                  ? `<i class="fas fa-hourglass-half"></i>${state._myBreakDurationMins} دقيقة`
+                  : '<i class="fas fa-ban"></i>لا يوجد بريك اليوم')));
         }
         if (ringEl) {
           ringEl.setAttribute('stroke', stroke);
@@ -32919,9 +32932,12 @@
             ? '<i class="fas fa-mug-hot"></i>جاري البريك'
             : (isPaused
               ? '<i class="fas fa-pause"></i>متوقف'
-              : `<i class="fas fa-hourglass-half"></i>${state._myBreakDurationMins || 15} دقيقة`));
+              : (state._myBreakDurationMins
+                ? `<i class="fas fa-hourglass-half"></i>${state._myBreakDurationMins} دقيقة`
+                : '<i class="fas fa-ban"></i>لا يوجد بريك اليوم')));
         const startLabel = isPaused ? 'متابعة البريك' : 'بدء البريك';
         const exhausted = !active && !isPaused && isMyBreakAllowanceExhausted();
+        const unscheduledToday = !active && !isPaused && !exhausted && isMyBreakUnscheduledToday();
         let actionsHtml;
         if (active) {
           actionsHtml = `<button type="button" class="btn btn-primary rd-break-btn" onclick="endStaffBreakFromUi()"><i class="fas fa-pause"></i> إيقاف البريك</button>`;
@@ -32931,6 +32947,10 @@
           actionsHtml = `
             <button type="button" class="btn btn-primary rd-break-btn" disabled aria-disabled="true"><i class="fas fa-ban"></i> بدء البريك</button>
             <p class="rd-break-note rd-break-note--warn">خلصت مدة بريك اليوم</p>`;
+        } else if (unscheduledToday) {
+          actionsHtml = `
+            <button type="button" class="btn btn-primary rd-break-btn" disabled aria-disabled="true"><i class="fas fa-ban"></i> بدء البريك</button>
+            <p class="rd-break-note rd-break-note--warn">لا يوجد بريك مجدول لهذا اليوم</p>`;
         } else if (colleague) {
           actionsHtml = `
             <button type="button" class="btn btn-primary rd-break-btn" disabled aria-disabled="true"><i class="fas fa-ban"></i> ${Sec.escapeHTML(startLabel)}</button>
@@ -33032,9 +33052,12 @@
           const overSec = !paused && dayRow?.status === 'ended' ? getStaffBreakOvertimeSeconds(dayRow) : 0;
           const overEnded = overSec > 0;
           const overMins = overEnded ? Math.max(1, Math.ceil(overSec / 60)) : 0;
+          const unscheduled = !dayRow && !resolveBreakDurationMinsForUser(u);
           const statusLbl = paused
             ? 'متوقف'
-            : (overEnded ? 'انتهى مع تجاوز' : (dayRow?.status === 'ended' || mins <= 0 ? 'خلصت المدة' : 'متاح'));
+            : (overEnded
+              ? 'انتهى مع تجاوز'
+              : (unscheduled ? 'غير مجدول اليوم' : (dayRow?.status === 'ended' || mins <= 0 ? 'خلصت المدة' : 'متاح')));
           const minsLabel = overEnded ? `+${overMins} د` : `${mins} د`;
           const branch = state._branchById?.get(u.branch_id) || state.branches.find(b => b.id === u.branch_id);
           const me = u.id === state.currentUser?.id;
@@ -33398,6 +33421,7 @@
           wrap.hidden = true;
           if (globalNote) globalNote.hidden = false;
           sel.innerHTML = '';
+          syncBreakScheduleFormFields();
           return;
         }
         wrap.hidden = false;
@@ -33419,6 +33443,41 @@
         sel.innerHTML = options.length
           ? options.map(o => `<option value="${Sec.escapeHTML(o.id)}">${Sec.escapeHTML(o.label)}</option>`).join('')
           : '<option value="">— لا توجد خيارات —</option>';
+        syncBreakScheduleFormFields();
+      }
+
+      function findExistingBreakSchedule(scopeType, scopeId, dow) {
+        const dowNum = Number(dow);
+        return (state.staffBreakSchedules || []).find(s =>
+          s && s.is_active !== false &&
+          s.scope_type === scopeType &&
+          Number(s.day_of_week) === dowNum &&
+          (scopeType === 'global' ? true : s.scope_id === scopeId)
+        ) || null;
+      }
+
+      /** يعبّي مدخلات المدة/الوصف بما هو محفوظ فعلاً لهذا النطاق واليوم، ويعرض ملخص أيام الأسبوع */
+      function syncBreakScheduleFormFields() {
+        const type = document.getElementById('breakSchScopeType')?.value || 'branch';
+        const scopeIdRaw = document.getElementById('breakSchScopeId')?.value || null;
+        const dow = document.getElementById('breakSchDayOfWeek')?.value;
+        const mins = document.getElementById('breakSchMinutes');
+        const label = document.getElementById('breakSchLabel');
+        const scopeId = type === 'global' ? null : scopeIdRaw;
+        if (dow !== '' && dow != null) {
+          const existing = findExistingBreakSchedule(type, scopeId, dow);
+          if (mins) mins.value = existing ? String(existing.duration_minutes) : '';
+          if (label) label.value = existing ? (existing.label || '') : '';
+        }
+        const summaryHost = document.getElementById('breakSchWeekSummary');
+        if (summaryHost) {
+          summaryHost.innerHTML = KSA_AR_WEEKDAYS.map((name, i) => {
+            const existing = findExistingBreakSchedule(type, scopeId, i);
+            const val = existing ? `${existing.duration_minutes} د` : '—';
+            const isSelected = String(i) === String(dow);
+            return `<span class="break-sch-week-chip${isSelected ? ' break-sch-week-chip--active' : ''}" style="display:inline-block;margin:2px 6px 2px 0;padding:2px 8px;border-radius:10px;font-size:11px;${isSelected ? 'background:var(--primary,#2563eb);color:#fff' : 'background:var(--bg2,#f1f5f9);color:var(--text3)'}">${Sec.escapeHTML(name)}: ${Sec.escapeHTML(val)}</span>`;
+          }).join('');
+        }
       }
 
       function openBreakScheduleModal() {
@@ -33427,7 +33486,7 @@
           return;
         }
         const typeSel = document.getElementById('breakSchScopeType');
-        const mins = document.getElementById('breakSchMinutes');
+        const daySel = document.getElementById('breakSchDayOfWeek');
         const role = normalizeUserRole(state.currentUser?.role);
         if (typeSel) {
           const allowGlobal = role === 'admin';
@@ -33436,7 +33495,7 @@
           });
           if (!allowGlobal && typeSel.value === 'global') typeSel.value = 'branch';
         }
-        if (mins) mins.value = String(state._myBreakDurationMins || 15);
+        if (daySel) daySel.value = String(getStaffBreakTodayWeekday());
         syncBreakScheduleScopeFields();
         openModal('breakScheduleModal');
       }
@@ -33448,8 +33507,13 @@
         }
         const scopeType = document.getElementById('breakSchScopeType')?.value || 'branch';
         const scopeIdRaw = document.getElementById('breakSchScopeId')?.value || '';
+        const dayOfWeek = Number(document.getElementById('breakSchDayOfWeek')?.value);
         const minutes = Number(document.getElementById('breakSchMinutes')?.value || 0);
         const label = String(document.getElementById('breakSchLabel')?.value || '').trim();
+        if (!Number.isInteger(dayOfWeek) || dayOfWeek < 0 || dayOfWeek > 6) {
+          showToast('اختر يوم الأسبوع', 'warning');
+          return;
+        }
         if (!Number.isFinite(minutes) || minutes < 1 || minutes > 480) {
           showToast('أدخل مدة بين 1 و 480 دقيقة', 'warning');
           return;
@@ -33462,6 +33526,7 @@
           const { data, error } = await sb.rpc('upsert_staff_break_schedule', {
             p_scope_type: scopeType,
             p_scope_id: scopeType === 'global' ? null : scopeIdRaw,
+            p_day_of_week: dayOfWeek,
             p_duration_minutes: minutes,
             p_label: label || null
           });
@@ -33473,12 +33538,13 @@
           closeModal('breakScheduleModal');
           const applied = Number(data?.applied_sessions) || 0;
           const cleared = Number(data?.cleared_overrides) || 0;
+          const dayName = KSA_AR_WEEKDAYS[dayOfWeek] || '';
           showToast(
             applied > 0
-              ? `تم حفظ مدة البريك وتحديث ${applied} جلسة لليوم`
+              ? `تم حفظ مدة يوم ${dayName} وتحديث ${applied} جلسة لليوم`
               : (cleared > 0
-                ? `تم حفظ مدة البريك وإلغاء ${cleared} تخصيص أخص — تظهر للموظفين فورًا`
-                : 'تم حفظ مدة البريك — تظهر للموظفين فورًا'),
+                ? `تم حفظ مدة يوم ${dayName} وإلغاء ${cleared} تخصيص أخص — تظهر للموظفين فورًا`
+                : `تم حفظ مدة يوم ${dayName} — تظهر للموظفين فورًا`),
             'success'
           );
           await loadStaffBreaksData();
@@ -33494,6 +33560,7 @@
       window.openBreakScheduleModal = openBreakScheduleModal;
       window.saveBreakScheduleFromUi = saveBreakScheduleFromUi;
       window.syncBreakScheduleScopeFields = syncBreakScheduleScopeFields;
+      window.syncBreakScheduleFormFields = syncBreakScheduleFormFields;
       window.openStaffBreakHistory = openStaffBreakHistory;
 
 
