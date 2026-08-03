@@ -3765,7 +3765,7 @@ html.athar-staging-redesign.mr-mobile-ui #rdBreaks[hidden] {
 
 html.athar-staging-redesign.mr-desktop-ui {
   --fig-sidebar-w: 252px;
-  --fig-sidebar-collapsed-w: 252px;
+  --fig-sidebar-collapsed-w: 72px;
   --unified-topbar-h: 68px;
 }
 
@@ -3779,10 +3779,10 @@ html.athar-staging-redesign.mr-desktop-ui {
 html.athar-staging-redesign.mr-desktop-ui #appWrap .app-body .sidebar,
 html.athar-staging-redesign.mr-desktop-ui #appWrap #sidebar,
 html.athar-staging-redesign.mr-desktop-ui #sidebar {
-  width: 252px !important;
-  min-width: 252px !important;
-  max-width: 252px !important;
-  flex: 0 0 252px !important;
+  width: var(--fig-sidebar-collapsed-w) !important;
+  min-width: var(--fig-sidebar-collapsed-w) !important;
+  max-width: var(--fig-sidebar-w) !important;
+  flex: 0 0 var(--fig-sidebar-collapsed-w) !important;
   padding: 0 !important;
   display: flex !important;
   flex-direction: column !important;
@@ -3790,6 +3790,22 @@ html.athar-staging-redesign.mr-desktop-ui #sidebar {
   border-inline-end: 1px solid var(--border) !important;
   height: 100% !important;
   align-self: stretch !important;
+  overflow: hidden !important;
+  transition: width 200ms ease, flex-basis 200ms ease, min-width 200ms ease, box-shadow 200ms ease !important;
+  z-index: 900 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #sidebar:hover,
+html.athar-staging-redesign.mr-desktop-ui #sidebar.sidebar-rail-hover,
+html.athar-staging-redesign.mr-desktop-ui #sidebar.sidebar-rail-open,
+html.athar-staging-redesign.mr-desktop-ui #sidebar.sidebar-rail-expanded,
+html.athar-staging-redesign.mr-desktop-ui #sidebar[data-rail-hover="1"],
+html.athar-staging-redesign.mr-desktop-ui #sidebar[data-rail-expanded="1"] {
+  width: var(--fig-sidebar-w) !important;
+  min-width: var(--fig-sidebar-w) !important;
+  max-width: var(--fig-sidebar-w) !important;
+  flex: 0 0 var(--fig-sidebar-w) !important;
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.12) !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #sidebar .rd-side-brand {
@@ -3799,6 +3815,7 @@ html.athar-staging-redesign.mr-desktop-ui #sidebar .rd-side-brand {
 html.athar-staging-redesign.mr-desktop-ui #sidebar .sidebar-nav {
   flex: 1 1 auto !important;
   overflow-y: auto !important;
+  overflow-x: hidden !important;
   padding: 18px 0 6px !important;
   display: flex !important;
   flex-direction: column !important;
@@ -3806,17 +3823,37 @@ html.athar-staging-redesign.mr-desktop-ui #sidebar .sidebar-nav {
   min-height: 0 !important;
 }
 
-html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item-label,
-html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-section-label {
+/* Collapsed: hide labels */
+html.athar-staging-redesign.mr-desktop-ui #sidebar:not(:hover):not(.sidebar-rail-hover):not(.sidebar-rail-open):not(.sidebar-rail-expanded):not([data-rail-hover="1"]):not([data-rail-expanded="1"]) .nav-item-label,
+html.athar-staging-redesign.mr-desktop-ui #sidebar:not(:hover):not(.sidebar-rail-hover):not(.sidebar-rail-open):not(.sidebar-rail-expanded):not([data-rail-hover="1"]):not([data-rail-expanded="1"]) .nav-badge,
+html.athar-staging-redesign.mr-desktop-ui #sidebar:not(:hover):not(.sidebar-rail-hover):not(.sidebar-rail-open):not(.sidebar-rail-expanded):not([data-rail-hover="1"]):not([data-rail-expanded="1"]) .rd-side-foot__meta {
+  opacity: 0 !important;
+  max-width: 0 !important;
+  width: 0 !important;
+  overflow: hidden !important;
+  visibility: hidden !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  pointer-events: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #sidebar:hover .nav-item-label,
+html.athar-staging-redesign.mr-desktop-ui #sidebar.sidebar-rail-hover .nav-item-label,
+html.athar-staging-redesign.mr-desktop-ui #sidebar.sidebar-rail-open .nav-item-label,
+html.athar-staging-redesign.mr-desktop-ui #sidebar.sidebar-rail-expanded .nav-item-label,
+html.athar-staging-redesign.mr-desktop-ui #sidebar[data-rail-hover="1"] .nav-item-label,
+html.athar-staging-redesign.mr-desktop-ui #sidebar[data-rail-expanded="1"] .nav-item-label {
   opacity: 1 !important;
-  max-width: none !important;
+  max-width: 160px !important;
   visibility: visible !important;
+  overflow: visible !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item {
   display: flex !important;
   grid-template-columns: none !important;
   align-items: center !important;
+  justify-content: flex-start !important;
   gap: 12px !important;
   padding: 11px 16px !important;
   margin: 0 12px !important;
@@ -3831,6 +3868,15 @@ html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item {
   position: relative !important;
   width: auto !important;
   box-shadow: none !important;
+  overflow: hidden !important;
+}
+
+/* Collapsed nav: center icons only */
+html.athar-staging-redesign.mr-desktop-ui #sidebar:not(:hover):not(.sidebar-rail-hover):not(.sidebar-rail-open):not(.sidebar-rail-expanded):not([data-rail-hover="1"]):not([data-rail-expanded="1"]) .nav-item {
+  justify-content: center !important;
+  padding: 11px 0 !important;
+  margin: 0 10px !important;
+  gap: 0 !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item:hover {
@@ -3880,6 +3926,7 @@ html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item.active .nav-item-la
 html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item-label {
   flex: 1 1 auto !important;
   white-space: nowrap !important;
+  transition: opacity 160ms ease, max-width 200ms ease !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-badge {
@@ -3897,6 +3944,7 @@ html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-badge {
   margin: 0 !important;
   position: static !important;
   inset: auto !important;
+  flex-shrink: 0 !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item--desk-hide {
@@ -3916,6 +3964,17 @@ html.athar-staging-redesign.mr-desktop-ui #sidebar .rd-side-foot {
   padding: 14px 16px !important;
   border-top: 1px solid var(--border) !important;
   flex-shrink: 0 !important;
+  overflow: hidden !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #sidebar:not(:hover):not(.sidebar-rail-hover):not(.sidebar-rail-open):not(.sidebar-rail-expanded):not([data-rail-hover="1"]):not([data-rail-expanded="1"]) .rd-side-foot {
+  justify-content: center !important;
+  padding: 14px 0 !important;
+  gap: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #sidebar:not(:hover):not(.sidebar-rail-hover):not(.sidebar-rail-open):not(.sidebar-rail-expanded):not([data-rail-hover="1"]):not([data-rail-expanded="1"]) .rd-side-foot__theme {
+  display: none !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #sidebar .rd-side-foot__user {
@@ -3931,6 +3990,11 @@ html.athar-staging-redesign.mr-desktop-ui #sidebar .rd-side-foot__user {
   text-align: right !important;
   color: inherit !important;
   font-family: inherit !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #sidebar:not(:hover):not(.sidebar-rail-hover):not(.sidebar-rail-open):not(.sidebar-rail-expanded):not([data-rail-hover="1"]):not([data-rail-expanded="1"]) .rd-side-foot__user {
+  flex: 0 0 auto !important;
+  justify-content: center !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #sidebar .rd-side-foot__av {
@@ -3954,6 +4018,18 @@ html.athar-staging-redesign.mr-desktop-ui #sidebar .rd-side-foot__meta {
   display: flex !important;
   flex-direction: column !important;
   gap: 2px !important;
+  transition: opacity 160ms ease !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #sidebar:hover .rd-side-foot__meta,
+html.athar-staging-redesign.mr-desktop-ui #sidebar.sidebar-rail-hover .rd-side-foot__meta,
+html.athar-staging-redesign.mr-desktop-ui #sidebar.sidebar-rail-open .rd-side-foot__meta,
+html.athar-staging-redesign.mr-desktop-ui #sidebar.sidebar-rail-expanded .rd-side-foot__meta,
+html.athar-staging-redesign.mr-desktop-ui #sidebar[data-rail-hover="1"] .rd-side-foot__meta,
+html.athar-staging-redesign.mr-desktop-ui #sidebar[data-rail-expanded="1"] .rd-side-foot__meta {
+  opacity: 1 !important;
+  max-width: none !important;
+  visibility: visible !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #sidebar .rd-side-foot__name {

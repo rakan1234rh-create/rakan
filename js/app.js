@@ -8474,26 +8474,23 @@
           sb?.classList.remove('sidebar-rail-expanded');
           return;
         }
-        // تصميم Desktop الحرفي: شريط ثابت بعرض 252px دائماً
-        if (typeof isAtharDesktopRedesignUi === 'function' && isAtharDesktopRedesignUi()) {
-          sb.style.setProperty('width', '252px', 'important');
-          sb.style.setProperty('min-width', '252px', 'important');
-          sb.style.setProperty('max-width', '252px', 'important');
-          sb.style.setProperty('flex', '0 0 252px', 'important');
-          sb.classList.add('sidebar-rail-expanded');
-          sb.setAttribute('data-rail-expanded', '1');
-          return;
-        }
+        const deskRd = typeof isAtharDesktopRedesignUi === 'function' && isAtharDesktopRedesignUi();
+        const openW = deskRd ? '252px' : '236px';
+        const closedW = deskRd ? '72px' : '68px';
         if (expanded) {
-          sb.style.setProperty('width', '236px', 'important');
-          sb.style.setProperty('min-width', '236px', 'important');
-          sb.style.setProperty('flex', '0 0 236px', 'important');
+          sb.style.setProperty('width', openW, 'important');
+          sb.style.setProperty('min-width', openW, 'important');
+          sb.style.setProperty('max-width', openW, 'important');
+          sb.style.setProperty('flex', `0 0 ${openW}`, 'important');
         } else {
-          sb.style.setProperty('width', '68px', 'important');
-          sb.style.setProperty('min-width', '68px', 'important');
-          sb.style.setProperty('flex', '0 0 68px', 'important');
+          sb.style.setProperty('width', closedW, 'important');
+          sb.style.setProperty('min-width', closedW, 'important');
+          sb.style.setProperty('max-width', openW, 'important');
+          sb.style.setProperty('flex', `0 0 ${closedW}`, 'important');
         }
         sb.classList.toggle('sidebar-rail-expanded', !!expanded);
+        if (expanded) sb.setAttribute('data-rail-expanded', '1');
+        else sb.removeAttribute('data-rail-expanded');
       }
 
       let _deskSidebarLastExpanded = null;
