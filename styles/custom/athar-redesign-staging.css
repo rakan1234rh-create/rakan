@@ -2482,10 +2482,12 @@ html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .mk-drop__txt span {
 }
 .rd-nt-summary__row strong.is-empty { color: var(--text3); font-weight: 400; }
 html:not(.athar-staging-redesign) .rd-nt-summary,
-html.athar-staging-redesign.mr-desktop-ui .rd-nt-summary,
-html:not(.athar-staging-redesign) .rd-nt-sev,
-html.athar-staging-redesign.mr-desktop-ui .rd-nt-sev {
+html:not(.athar-staging-redesign) .rd-nt-sev {
   display: none !important;
+}
+html.athar-staging-redesign.mr-desktop-ui .rd-nt-summary,
+html.athar-staging-redesign.mr-desktop-ui .rd-nt-sev {
+  /* enabled via athar-desktop-screens.css */
 }
 
 html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .mk-form-ft {

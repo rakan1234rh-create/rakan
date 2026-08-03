@@ -5065,7 +5065,9 @@
       function syncRdWfChips(openTickets) {
         const host = document.getElementById('rdWfChips');
         if (!host) return;
-        if (!isAtharRedesignUi()) {
+        const useRd = (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi())
+          || (typeof isAtharDesktopRedesignUi === 'function' && isAtharDesktopRedesignUi());
+        if (!useRd) {
           host.hidden = true;
           host.innerHTML = '';
           return;
@@ -14935,7 +14937,8 @@
       }
 
       function syncRdNewTicketChrome() {
-        const useRd = typeof isAtharRedesignUi === 'function' && isAtharRedesignUi();
+        const useRd = (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi())
+          || (typeof isAtharDesktopRedesignUi === 'function' && isAtharDesktopRedesignUi());
         const sevEl = document.getElementById('rdNtSevPreview');
         const sumEl = document.getElementById('rdNtSummary');
         if (sevEl) sevEl.hidden = !useRd;
