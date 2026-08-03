@@ -18332,7 +18332,9 @@
       function filterTickets() {
         let visible = getVisibleViolations().filter(isTicketWorkflowOpen);
 
-        if (isAtharRedesignUi()) {
+        const useRdChips = (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi())
+          || (typeof isAtharDesktopRedesignUi === 'function' && isAtharDesktopRedesignUi());
+        if (useRdChips) {
           syncRdWfChips(visible);
           const chip = state._rdWfChip || 'all';
           if (chip === 'mine') visible = visible.filter(canActOnTicket);
