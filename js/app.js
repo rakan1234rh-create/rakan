@@ -5195,6 +5195,149 @@
         return bars;
       }
 
+      /** يُخرج لون حسب درجة الالتزام/الاستجابة */
+      function rdRpScoreColorVar(v) {
+        if (v == null || !Number.isFinite(v)) return 'var(--text3)';
+        if (v >= 90) return 'var(--success)';
+        if (v >= 75) return 'var(--info)';
+        if (v >= 50) return 'var(--warning)';
+        return 'var(--danger)';
+      }
+
+      function rdRpRespStatusLabel(v) {
+        if (v == null || !Number.isFinite(v)) return '—';
+        if (v >= 90) return 'ممتاز';
+        if (v >= 75) return 'جيد';
+        if (v >= 50) return 'مقبول';
+        return 'بحاجة لمتابعة';
+      }
+
+      /** يحوّل متوسط ساعات الاستجابة إلى مقياس 0-100 (كلما قل الزمن ارتفعت الدرجة) */
+      function rdRpHoursToScore(hours) {
+        if (hours == null || !Number.isFinite(hours)) return null;
+        const score = 100 - hours * 6;
+        return Math.max(0, Math.min(100, Math.round(score)));
+      }
+
+      /** تجميع بيانات تقرير استجابة الموظفين من مخالفات النظام الحقيقية */
+      function rdRpBuildEmployeeResponse() {
+        const emps = (state.users || []).filter(u => typeof isViolationSubjectUser === 'function' ? isViolationSubjectUser(u) : (normalizeUserRole(u.role) === 'employee'));
+        const allViolations = (state.violations || []).filter(v => v.state !== 'uploading');
+        const rows = [];
+        emps.forEach((u) => {
+          const myViols = allViolations.filter(v => v.employee_id === u.id);
+          if (!myViols.length && rows.length >= 20) return;
+          const branch = (state.branches || []).find(b => b.id === u.branch_id);
+          const region = branch ? (state.regions || []).find(r => r.id === branch.region_id) : null;
+          const branchLabel = branch
+            ? (region ? region.name + ' — ' + branch.name : branch.name)
+            : '—';
+          const hours = rdAvgResponseHours(myViols);
+          let response = rdRpHoursToScore(hours);
+          if (response == null) {
+            const score = (typeof calcEmpScore === 'function') ? (calcEmpScore(u.id, allViolations).score || 0) : 0;
+            response = Math.max(0, Math.min(100, Math.round(score)));
+          }
+          rows.push({
+            id: u.id,
+            name: u.name || '—',
+            role: u.role_title || u.role || '',
+            branchName: branchLabel,
+            ticketCount: myViols.length,
+            response,
+          });
+        });
+        if (!rows.length) {
+          // بيانات عرض تجريبية لواجهة فارغة
+          return [
+            { id: 'demo-1', name: 'ريان الحربي', role: 'موظف مبيعات', branchName: 'الرياض — العليا', ticketCount: 7, response: 78 },
+            { id: 'demo-2', name: 'نورة القحطاني', role: 'مشرفة عمليات', branchName: 'الرياض — العليا', ticketCount: 11, response: 65 },
+            { id: 'demo-3', name: 'خالد العتيبي', role: 'موظف صيانة', branchName: 'الرياض — النخيل', ticketCount: 21, response: 42 },
+            { id: 'demo-4', name: 'سارة المطيري', role: 'موارد بشرية', branchName: 'الرياض — النخيل', ticketCount: 5, response: 72 },
+            { id: 'demo-5', name: 'عبدالله الزهراني', role: 'مدير فرع', branchName: 'الدمام — الشاطئ', ticketCount: 2, response: 90 },
+          ];
+        }
+        return rows;
+      }
+
+      /** تجميع بيانات تقرير المخالفات حسب الفرع (شدة/مجموع/معدل) */
+      function rdRpBuildVbRows() {
+        const branches = state.branches || [];
+        const allViolations = (state.violations || []).filter(v => v.state !== 'uploading');
+        const vTypeById = new Map();
+        (state.violationTypes || []).forEach(vt => { if (vt && vt.id) vTypeById.set(vt.id, vt); });
+        const empBranch = new Map();
+        (state.users || []).forEach(u => { if (u && u.id) empBranch.set(u.id, u.branch_id); });
+        const rows = branches.map(b => {
+          const region = (state.regions || []).find(r => r.id === b.region_id);
+          let high = 0, medium = 0, low = 0;
+          allViolations.forEach(v => {
+            const bId = empBranch.get(v.employee_id);
+            if (bId !== b.id) return;
+            const type = vTypeById.get(v.violation_type_id);
+            let sev = type?.severity || 'منخفض';
+            if (sev === 'حرج') sev = 'عالي';
+            if (sev === 'عالي') high++;
+            else if (sev === 'متوسط') medium++;
+            else low++;
+          });
+          const total = high + medium + low;
+          // معدل الالتزام للفرع: 100 مع خصم بسيط لكل مخالفة مؤثرة
+          const score = Math.max(0, Math.min(100, 100 - total * 4));
+          return {
+            id: b.id,
+            name: b.name || '—',
+            regionName: region?.name || '—',
+            total,
+            high,
+            medium,
+            low,
+            score,
+          };
+        });
+        if (!rows.length || rows.every(r => r.total === 0)) {
+          return [
+            { id: 'demo-b1', name: 'فرع العليا', regionName: 'الرياض', total: 12, high: 1, medium: 5, low: 6, score: 88 },
+            { id: 'demo-b2', name: 'فرع النخيل', regionName: 'الرياض', total: 20, high: 3, medium: 9, low: 8, score: 72 },
+            { id: 'demo-b3', name: 'فرع الشاطئ', regionName: 'الدمام', total: 6, high: 0, medium: 2, low: 4, score: 93 },
+            { id: 'demo-b4', name: 'فرع أبها', regionName: 'الجنوبية', total: 8, high: 0, medium: 3, low: 5, score: 89 },
+            { id: 'demo-b5', name: 'فرع المركزي', regionName: 'تبت', total: 15, high: 2, medium: 6, low: 7, score: 71 },
+          ];
+        }
+        return rows;
+      }
+
+      /** تجميع صفوف تقرير الالتزام الشهري بالتفاصيل */
+      function rdRpBuildMcRows() {
+        const ranges = rdLastSixMonthRanges();
+        const allViolations = (state.violations || []).filter(v => v.state !== 'uploading');
+        if (!ranges.length) {
+          return [
+            { label: 'فبراير', rate: 52, violations: 38, resolved: 34 },
+            { label: 'مارس', rate: 61, violations: 33, resolved: 30 },
+            { label: 'أبريل', rate: 58, violations: 35, resolved: 31 },
+            { label: 'مايو', rate: 70, violations: 28, resolved: 27 },
+            { label: 'يونيو', rate: 65, violations: 31, resolved: 29 },
+            { label: 'يوليو', rate: 82, violations: 22, resolved: 21 },
+          ];
+        }
+        return ranges.map((r) => {
+          const monthViols = allViolations.filter((v) => {
+            const iso = typeof dashViolationIsoDate === 'function' ? dashViolationIsoDate(v) : String(v.violation_date || v.created_at || '').slice(0, 10);
+            return iso && iso >= r.fromIso && iso < r.nextIso;
+          });
+          const hits = monthViols.filter((v) => !violationExcludedFromDeduction(v) && !(v.state === 'closed' && /ملغ/i.test(v.status_text || ''))).length;
+          const rate = Math.max(0, Math.min(100, 100 - hits * 4));
+          const resolved = monthViols.filter(v => v.state === 'closed').length;
+          return {
+            label: r.label,
+            rate,
+            violations: monthViols.length,
+            resolved,
+          };
+        });
+      }
+
       function renderReportsRedesign() {
         const host = document.getElementById('rdReports');
         if (!host) return;
@@ -5204,7 +5347,22 @@
           host.innerHTML = '';
           return;
         }
+        // شاشات الاسترسال متاحة على سطح المكتب فقط — احتفظ بواجهة الموبايل كما هي
+        if (!desk) state._rdReportView = 'main';
+        const view = state._rdReportView || 'main';
+        if (view === 'employeeResponse') {
+          host.innerHTML = rdRpRenderEmployeeResponse();
+        } else if (view === 'violationsByBranch') {
+          host.innerHTML = rdRpRenderViolationsByBranch();
+        } else if (view === 'monthlyCompliance') {
+          host.innerHTML = rdRpRenderMonthlyCompliance();
+        } else {
+          host.innerHTML = rdRpRenderMain(desk);
+        }
+        host.hidden = false;
+      }
 
+      function rdRpRenderMain(desk) {
         const allVisible = getVisibleViolations().filter((v) => v.state !== 'uploading');
         const cur = typeof ksaCurrentMonthRange === 'function' ? ksaCurrentMonthRange() : null;
         const thisMonth = cur
@@ -5213,8 +5371,6 @@
               return iso && iso >= cur.fromIso && iso < cur.nextFromIso;
             })
           : allVisible;
-
-        // الشهر السابق للمقارنة
         const ranges = rdLastSixMonthRanges();
         const prev = ranges.length >= 2 ? ranges[ranges.length - 2] : null;
         const prevMonth = prev
@@ -5223,7 +5379,6 @@
               return iso && iso >= prev.fromIso && iso < prev.nextIso;
             })
           : [];
-
         const rateNow = rdAvgComplianceRate(allVisible);
         const ratePrev = prev ? rdAvgComplianceRate(
           allVisible.filter((v) => {
@@ -5231,57 +5386,27 @@
             return !iso || iso < prev.nextIso;
           }),
         ) : rateNow;
-
         const hoursNow = rdAvgResponseHours(thisMonth.length ? thisMonth : allVisible.slice(0, 80));
         const hoursPrev = rdAvgResponseHours(prevMonth.length ? prevMonth : null);
 
         const metrics = [
-          {
-            label: 'معدل الالتزام العام',
-            value: `${Math.round(rateNow)}%`,
-            trend: rdTrendText(rateNow - ratePrev, '%'),
-            delay: 0,
-          },
-          {
-            label: 'إجمالي المخالفات',
-            value: String(thisMonth.length),
-            trend: rdTrendText(thisMonth.length - prevMonth.length, 'count'),
-            delay: 0.05,
-          },
-          {
-            label: 'متوسط زمن الاستجابة',
-            value: rdFormatHoursAr(hoursNow),
-            trend: hoursNow != null && hoursPrev != null
-              ? rdTrendText(hoursNow - hoursPrev, 'hours')
-              : 'حسب سجلات الردود',
-            delay: 0.1,
-          },
+          { label: 'معدل الالتزام العام', value: `${Math.round(rateNow)}%`, trend: rdTrendText(rateNow - ratePrev, '%'), delay: 0 },
+          { label: 'إجمالي المخالفات', value: String(thisMonth.length), trend: rdTrendText(thisMonth.length - prevMonth.length, 'count'), delay: 0.05 },
+          { label: 'متوسط زمن الاستجابة', value: rdFormatHoursAr(hoursNow), trend: hoursNow != null && hoursPrev != null ? rdTrendText(hoursNow - hoursPrev, 'hours') : 'حسب سجلات الردود', delay: 0.1 },
         ];
 
         const bars = rdMonthlyCommitmentBars(allVisible);
-        const links = [
-          {
-            title: 'تقرير الالتزام الشهري',
-            sub: 'ملخص تلقائي شهري لكل الفروع',
-            icon: 'fa-file-lines',
-            action: "goTab('compliance')",
-            delay: 0.05,
-          },
-          {
-            title: 'تقرير المخالفات حسب الفرع',
-            sub: 'مقارنة الأداء بين الفروع',
-            icon: 'fa-code-branch',
-            action: "goTab('locations')",
-            delay: 0.1,
-          },
-          {
-            title: 'تقرير الاستجابة للموظفين',
-            sub: 'متوسط زمن الرد على البلاغات',
-            icon: 'fa-gauge-high',
-            action: "goTab('departments')",
-            delay: 0.15,
-          },
-        ];
+        const links = desk
+          ? [
+              { title: 'تقرير الالتزام الشهري', sub: 'ملخص تلقائي شهري لكل الفروع', icon: 'fa-file-lines', action: "rdOpenReportView('monthlyCompliance')", delay: 0.05 },
+              { title: 'تقرير المخالفات حسب الفرع', sub: 'مقارنة الأداء بين الفروع', icon: 'fa-code-branch', action: "rdOpenReportView('violationsByBranch')", delay: 0.1 },
+              { title: 'تقرير الاستجابة للموظفين', sub: 'متوسط زمن الرد على البلاغات', icon: 'fa-gauge-high', action: "rdOpenReportView('employeeResponse')", delay: 0.15 },
+            ]
+          : [
+              { title: 'تقرير الالتزام الشهري', sub: 'ملخص تلقائي شهري لكل الفروع', icon: 'fa-file-lines', action: "goTab('compliance')", delay: 0.05 },
+              { title: 'تقرير المخالفات حسب الفرع', sub: 'مقارنة الأداء بين الفروع', icon: 'fa-code-branch', action: "goTab('locations')", delay: 0.1 },
+              { title: 'تقرير الاستجابة للموظفين', sub: 'متوسط زمن الرد على البلاغات', icon: 'fa-gauge-high', action: "goTab('departments')", delay: 0.15 },
+            ];
 
         const metricsHtml = `
           <div class="rd-rp-metrics">
@@ -5318,11 +5443,292 @@
                 <i class="fas fa-chevron-left rd-rp-link__chev" aria-hidden="true"></i>
               </button>`).join('')}
           </div>`;
-        // Desktop layout wrapper only — mobile markup stays sequential
-        host.innerHTML = desk
+        return desk
           ? `${metricsHtml}<div class="rd-rp-desk-split"><div class="rd-rp-desk-split__main">${barsHtml}</div><div class="rd-rp-desk-split__side">${linksHtml}</div></div>`
           : `${metricsHtml}${barsHtml}${linksHtml}`;
-        host.hidden = false;
+      }
+
+      function rdRpDrillHead(icon, title, sub) {
+        return `
+          <button type="button" class="rd-rp-back" onclick="rdBackReportsMain()">
+            <i class="fas fa-arrow-right" aria-hidden="true"></i>التقارير
+          </button>
+          <div class="rd-rp-drill-hero">
+            <div class="rd-rp-drill-hero__ico"><i class="fas ${icon}" aria-hidden="true"></i></div>
+            <div>
+              <div class="rd-rp-drill-hero__title">${Sec.escapeHTML(title)}</div>
+              <div class="rd-rp-drill-hero__sub">${Sec.escapeHTML(sub)}</div>
+            </div>
+          </div>`;
+      }
+
+      function rdRpSortIcon(activeKey, key, dir) {
+        if (activeKey !== key) return 'fa-sort';
+        return dir === 1 ? 'fa-sort-up' : 'fa-sort-down';
+      }
+
+      function rdRpSortRows(rows, key, dir) {
+        if (!key) return rows;
+        return [...rows].sort((a, b) => {
+          const av = a[key], bv = b[key];
+          if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * dir;
+          return String(av || '').localeCompare(String(bv || ''), 'ar') * dir;
+        });
+      }
+
+      function rdRpRenderEmployeeResponse() {
+        let rows = rdRpBuildEmployeeResponse();
+        const q = (state._rdEmpResponseQuery || '').toLowerCase().trim();
+        if (q) rows = rows.filter(r => (`${r.name} ${r.branchName}`).toLowerCase().includes(q));
+        const sortKey = state._rdEmpResponseSortKey || null;
+        const sortDir = state._rdEmpResponseSortDir || 1;
+        rows = rdRpSortRows(rows, sortKey, sortDir);
+
+        const allValues = rows.map(r => r.response).filter(v => Number.isFinite(v));
+        const avg = allValues.length ? Math.round(allValues.reduce((s, v) => s + v, 0) / allValues.length) : null;
+        const best = rows.length ? rows.reduce((a, b) => (b.response > a.response ? b : a)) : null;
+        const worst = rows.length ? rows.reduce((a, b) => (b.response < a.response ? b : a)) : null;
+
+        const sortName = rdRpSortIcon(sortKey, 'name', sortDir);
+        const sortResp = rdRpSortIcon(sortKey, 'response', sortDir);
+
+        const rowsHtml = rows.map((r, i) => {
+          const color = rdRpScoreColorVar(r.response);
+          const pct = Math.max(0, Math.min(100, Math.round(r.response)));
+          const status = rdRpRespStatusLabel(r.response);
+          const initial = String(r.name || '؟').trim().charAt(0) || '؟';
+          return `
+            <div class="rd-rp-drill-row rd-rp-emp-row" style="animation-delay:${Math.min(0.3, i * 0.03)}s">
+              <div class="rd-rp-emp-cell rd-rp-emp-cell--name">
+                <span class="rd-rp-emp-av">${Sec.escapeHTML(initial)}</span>
+                <span class="rd-rp-emp-name">${Sec.escapeHTML(r.name)}</span>
+              </div>
+              <span class="rd-rp-emp-cell rd-rp-emp-branch">${Sec.escapeHTML(r.branchName)}</span>
+              <div class="rd-rp-emp-cell rd-rp-emp-bar">
+                <div class="rd-rp-bar-track"><div class="rd-rp-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+                <span class="rd-rp-emp-val" style="color:${color}">${pct}</span>
+              </div>
+              <span class="rd-rp-emp-cell rd-rp-emp-count">${r.ticketCount}</span>
+              <span class="rd-rp-emp-cell rd-rp-emp-status" style="--sc:${color}">${Sec.escapeHTML(status)}</span>
+            </div>`;
+        }).join('');
+
+        return `
+          <div class="rd-rp-drill">
+            ${rdRpDrillHead('fa-gauge-high', 'تقرير الاستجابة للموظفين', 'متوسط زمن الرد على البلاغات وسرعة التعامل معها')}
+            <div class="rd-rp-drill-metrics">
+              <div class="rd-rp-drill-metric">
+                <div class="rd-rp-drill-metric__lbl">متوسط الاستجابة العام</div>
+                <div class="rd-rp-drill-metric__val" style="color:${rdRpScoreColorVar(avg)}">${avg == null ? '—' : avg}</div>
+              </div>
+              <div class="rd-rp-drill-metric">
+                <div class="rd-rp-drill-metric__lbl">الأسرع استجابة</div>
+                <div class="rd-rp-drill-metric__val" style="color:var(--success)">${Sec.escapeHTML(best?.name || '—')}</div>
+                <div class="rd-rp-drill-metric__sub">${best ? best.response : '—'}</div>
+              </div>
+              <div class="rd-rp-drill-metric">
+                <div class="rd-rp-drill-metric__lbl">بحاجة لتحسين</div>
+                <div class="rd-rp-drill-metric__val" style="color:var(--danger)">${Sec.escapeHTML(worst?.name || '—')}</div>
+                <div class="rd-rp-drill-metric__sub">${worst ? worst.response : '—'}</div>
+              </div>
+            </div>
+            <div class="rd-rp-drill-toolbar">
+              <div class="figma-search-wrap wf-search rd-rp-drill-search">
+                <input type="text" class="figma-search-input" value="${Sec.escapeHTML(state._rdEmpResponseQuery || '')}"
+                  placeholder="ابحث بالاسم أو الفرع..." oninput="rdEmpResponseSearch(this.value)">
+                <button type="button" class="figma-search-btn" aria-label="بحث"><i class="fas fa-magnifying-glass"></i></button>
+              </div>
+            </div>
+            <div class="rd-rp-drill-table">
+              <div class="rd-rp-drill-thead rd-rp-emp-row">
+                <button type="button" class="rd-rp-th" onclick="rdEmpResponseSort('name')">الموظف<i class="fas ${sortName}" aria-hidden="true"></i></button>
+                <span class="rd-rp-th">الفرع</span>
+                <button type="button" class="rd-rp-th" onclick="rdEmpResponseSort('response')">معدل الاستجابة<i class="fas ${sortResp}" aria-hidden="true"></i></button>
+                <span class="rd-rp-th">التذاكر</span>
+                <span class="rd-rp-th">الحالة</span>
+              </div>
+              ${rowsHtml || '<div class="rd-ticket-empty"><i class="fas fa-users"></i><p>لا توجد بيانات</p></div>'}
+            </div>
+          </div>`;
+      }
+
+      function rdRpRenderViolationsByBranch() {
+        let rows = rdRpBuildVbRows();
+        const q = (state._rdVbQuery || '').toLowerCase().trim();
+        if (q) rows = rows.filter(r => (`${r.name} ${r.regionName}`).toLowerCase().includes(q));
+        const sortKey = state._rdVbSortKey || null;
+        const sortDir = state._rdVbSortDir || 1;
+        rows = rdRpSortRows(rows, sortKey, sortDir);
+
+        const total = rows.reduce((s, r) => s + r.total, 0);
+        const withData = rows.filter(r => r.total > 0);
+        const worst = withData.length ? withData.reduce((a, b) => (b.total > a.total ? b : a)) : null;
+        const best = withData.length ? withData.reduce((a, b) => (b.total < a.total ? b : a)) : null;
+        const sortTotal = rdRpSortIcon(sortKey, 'total', sortDir);
+
+        const rowsHtml = rows.map((r, i) => {
+          const t = Math.max(1, r.total);
+          const hp = Math.round((r.high / t) * 100);
+          const mp = Math.round((r.medium / t) * 100);
+          const lp = Math.round((r.low / t) * 100);
+          const color = rdRpScoreColorVar(r.score);
+          return `
+            <div class="rd-rp-drill-row rd-rp-vb-row" style="animation-delay:${Math.min(0.3, i * 0.03)}s">
+              <span class="rd-rp-vb-cell rd-rp-vb-name">${Sec.escapeHTML(r.name)}</span>
+              <span class="rd-rp-vb-cell rd-rp-vb-region">${Sec.escapeHTML(r.regionName)}</span>
+              <span class="rd-rp-vb-cell rd-rp-vb-total">${r.total}</span>
+              <div class="rd-rp-vb-cell rd-rp-vb-sev" title="عالية:${r.high} · متوسطة:${r.medium} · منخفضة:${r.low}">
+                <div class="rd-rp-vb-sev__seg" style="width:${hp}%;background:var(--danger)"></div>
+                <div class="rd-rp-vb-sev__seg" style="width:${mp}%;background:var(--warning)"></div>
+                <div class="rd-rp-vb-sev__seg" style="width:${lp}%;background:var(--info)"></div>
+              </div>
+              <span class="rd-rp-vb-cell rd-rp-vb-score" style="color:${color}">${r.score}</span>
+            </div>`;
+        }).join('');
+
+        return `
+          <div class="rd-rp-drill">
+            ${rdRpDrillHead('fa-code-branch', 'تقرير المخالفات حسب الفرع', 'مقارنة عدد المخالفات وتوزيع خطورتها بين الفروع')}
+            <div class="rd-rp-drill-metrics">
+              <div class="rd-rp-drill-metric">
+                <div class="rd-rp-drill-metric__lbl">إجمالي المخالفات</div>
+                <div class="rd-rp-drill-metric__val" style="color:var(--gold)">${total}</div>
+              </div>
+              <div class="rd-rp-drill-metric">
+                <div class="rd-rp-drill-metric__lbl">الأكثر مخالفات</div>
+                <div class="rd-rp-drill-metric__val" style="color:var(--danger)">${Sec.escapeHTML(worst?.name || '—')}</div>
+                <div class="rd-rp-drill-metric__sub">${worst ? worst.total : 0} مخالفة</div>
+              </div>
+              <div class="rd-rp-drill-metric">
+                <div class="rd-rp-drill-metric__lbl">الأقل مخالفات</div>
+                <div class="rd-rp-drill-metric__val" style="color:var(--success)">${Sec.escapeHTML(best?.name || '—')}</div>
+                <div class="rd-rp-drill-metric__sub">${best ? best.total : 0} مخالفة</div>
+              </div>
+            </div>
+            <div class="rd-rp-drill-toolbar">
+              <div class="figma-search-wrap wf-search rd-rp-drill-search">
+                <input type="text" class="figma-search-input" value="${Sec.escapeHTML(state._rdVbQuery || '')}"
+                  placeholder="ابحث بالفرع أو المنطقة..." oninput="rdVbSearch(this.value)">
+                <button type="button" class="figma-search-btn" aria-label="بحث"><i class="fas fa-magnifying-glass"></i></button>
+              </div>
+            </div>
+            <div class="rd-rp-drill-table">
+              <div class="rd-rp-drill-thead rd-rp-vb-row">
+                <span class="rd-rp-th">الفرع</span>
+                <span class="rd-rp-th">المنطقة</span>
+                <button type="button" class="rd-rp-th" onclick="rdVbSort('total')">الإجمالي<i class="fas ${sortTotal}" aria-hidden="true"></i></button>
+                <span class="rd-rp-th">توزيع الخطورة</span>
+                <span class="rd-rp-th">معدل الالتزام</span>
+              </div>
+              ${rowsHtml || '<div class="rd-ticket-empty"><i class="fas fa-code-branch"></i><p>لا توجد بيانات</p></div>'}
+            </div>
+          </div>`;
+      }
+
+      function rdRpRenderMonthlyCompliance() {
+        const rowsRaw = rdRpBuildMcRows();
+        const rows = rowsRaw.map((m, i) => {
+          const prev = i > 0 ? rowsRaw[i - 1].rate : m.rate;
+          const delta = m.rate - prev;
+          return {
+            ...m,
+            delta,
+            deltaLabel: (delta >= 0 ? '+' : '') + delta + '%',
+            deltaColor: delta >= 0 ? 'var(--success)' : 'var(--danger)',
+            color: rdRpScoreColorVar(m.rate),
+          };
+        });
+        const cur = rows[rows.length - 1] || { rate: 0, color: 'var(--text3)' };
+        const prev = rows[rows.length - 2];
+        const trendDelta = prev ? cur.rate - prev.rate : 0;
+        const trendLabel = (trendDelta >= 0 ? '+' : '') + trendDelta + '% عن الشهر الماضي';
+        const bestRow = rows.reduce((a, b) => (b.rate > a.rate ? b : a), rows[0] || { label: '—', rate: 0 });
+        const worstRow = rows.reduce((a, b) => (b.rate < a.rate ? b : a), rows[0] || { label: '—', rate: 0 });
+
+        const barsHtml = rows.map((m, i) => `
+          <div class="rd-rp-mc-bar" style="animation-delay:${Math.min(0.3, i * 0.04)}s">
+            <span class="rd-rp-mc-bar__pct">${m.rate}%</span>
+            <div class="rd-rp-mc-bar__fill" style="height:${m.rate}%"></div>
+            <span class="rd-rp-mc-bar__lbl">${Sec.escapeHTML(m.label)}</span>
+          </div>`).join('');
+
+        const rowsHtml = rows.map((m, i) => `
+          <div class="rd-rp-drill-row rd-rp-mc-row" style="animation-delay:${Math.min(0.3, i * 0.03)}s">
+            <span class="rd-rp-mc-cell rd-rp-mc-month">${Sec.escapeHTML(m.label)}</span>
+            <span class="rd-rp-mc-cell rd-rp-mc-rate" style="color:${m.color}">${m.rate}%</span>
+            <span class="rd-rp-mc-cell rd-rp-mc-viols">${m.violations}</span>
+            <span class="rd-rp-mc-cell rd-rp-mc-res">${m.resolved}</span>
+            <span class="rd-rp-mc-cell rd-rp-mc-delta" style="color:${m.deltaColor}">${Sec.escapeHTML(m.deltaLabel)}</span>
+          </div>`).join('');
+
+        return `
+          <div class="rd-rp-drill">
+            ${rdRpDrillHead('fa-file-lines', 'تقرير الالتزام الشهري', 'ملخص تلقائي شهري لمعدل الالتزام على مستوى كل الفروع')}
+            <div class="rd-rp-drill-metrics">
+              <div class="rd-rp-drill-metric">
+                <div class="rd-rp-drill-metric__lbl">معدل الشهر الحالي</div>
+                <div class="rd-rp-drill-metric__val" style="color:${cur.color}">${cur.rate}%</div>
+                <div class="rd-rp-drill-metric__sub">${Sec.escapeHTML(trendLabel)}</div>
+              </div>
+              <div class="rd-rp-drill-metric">
+                <div class="rd-rp-drill-metric__lbl">أفضل شهر</div>
+                <div class="rd-rp-drill-metric__val" style="color:var(--success)">${Sec.escapeHTML(bestRow.label)}</div>
+                <div class="rd-rp-drill-metric__sub">${bestRow.rate}%</div>
+              </div>
+              <div class="rd-rp-drill-metric">
+                <div class="rd-rp-drill-metric__lbl">أضعف شهر</div>
+                <div class="rd-rp-drill-metric__val" style="color:var(--danger)">${Sec.escapeHTML(worstRow.label)}</div>
+                <div class="rd-rp-drill-metric__sub">${worstRow.rate}%</div>
+              </div>
+            </div>
+            <div class="rd-rp-mc-chart-card">
+              <div class="rd-rp-mc-bars">${barsHtml}</div>
+            </div>
+            <div class="rd-rp-sec-title">التفاصيل الشهرية</div>
+            <div class="rd-rp-drill-table">
+              <div class="rd-rp-drill-thead rd-rp-mc-row">
+                <span class="rd-rp-th">الشهر</span>
+                <span class="rd-rp-th">معدل الالتزام</span>
+                <span class="rd-rp-th">المخالفات</span>
+                <span class="rd-rp-th">المغلقة</span>
+                <span class="rd-rp-th">التغيّر عن الشهر السابق</span>
+              </div>
+              ${rowsHtml}
+            </div>
+          </div>`;
+      }
+
+      function rdOpenReportView(viewId) {
+        const allowed = ['main', 'employeeResponse', 'violationsByBranch', 'monthlyCompliance'];
+        state._rdReportView = allowed.includes(viewId) ? viewId : 'main';
+        renderReportsRedesign();
+      }
+
+      function rdBackReportsMain() {
+        state._rdReportView = 'main';
+        renderReportsRedesign();
+      }
+
+      function rdEmpResponseSearch(val) {
+        state._rdEmpResponseQuery = val || '';
+        renderReportsRedesign();
+      }
+
+      function rdEmpResponseSort(key) {
+        if (state._rdEmpResponseSortKey === key) state._rdEmpResponseSortDir = -(state._rdEmpResponseSortDir || 1);
+        else { state._rdEmpResponseSortKey = key; state._rdEmpResponseSortDir = 1; }
+        renderReportsRedesign();
+      }
+
+      function rdVbSearch(val) {
+        state._rdVbQuery = val || '';
+        renderReportsRedesign();
+      }
+
+      function rdVbSort(key) {
+        if (state._rdVbSortKey === key) state._rdVbSortDir = -(state._rdVbSortDir || 1);
+        else { state._rdVbSortKey = key; state._rdVbSortDir = 1; }
+        renderReportsRedesign();
       }
 
       function getRdCleanStreakDays(me) {
@@ -8642,6 +9048,23 @@
           if (leavingTab === 'breaks' && typeof stopStaffBreakTicker === 'function') {
             stopStaffBreakTicker();
           }
+          if (leavingTab === 'reports' && tab !== 'reports') {
+            state._rdReportView = 'main';
+            state._rdEmpResponseQuery = '';
+            state._rdEmpResponseSortKey = null;
+            state._rdEmpResponseSortDir = 1;
+            state._rdVbQuery = '';
+            state._rdVbSortKey = null;
+            state._rdVbSortDir = 1;
+          }
+          if (leavingTab === 'schedule' && tab !== 'schedule') {
+            try {
+              if (state._rdSchForm) state._rdSchForm.open = false;
+              if (state._rdOutageForm) state._rdOutageForm.open = false;
+              const soh = document.getElementById('rdSchOverlayHost');
+              if (soh) soh.innerHTML = '';
+            } catch (_) { /* noop */ }
+          }
         }
 
         rememberActiveTab(tab);
@@ -8773,6 +9196,14 @@
           if (tab === 'broadcasts') renderBroadcastsPage();
           if (tab === 'breaks') renderStaffBreaksPage();
           if (tab === 'schedule') { try { renderScheduleDesktop(); } catch (_) { /* noop */ } }
+          else {
+            try {
+              if (state._rdSchForm) state._rdSchForm.open = false;
+              if (state._rdOutageForm) state._rdOutageForm.open = false;
+              const soh = document.getElementById('rdSchOverlayHost');
+              if (soh) soh.innerHTML = '';
+            } catch (_) { /* noop */ }
+          }
           if (tab === 'complaints') { try { renderComplaintsDesktop(); } catch (_) { /* noop */ } }
           else {
             try {
@@ -32759,9 +33190,84 @@
       }
 
       function rdShiftMeta(shift) {
-        if (shift === 'evening') return { label: 'مسائية', color: 'var(--info)' };
-        if (shift === 'night') return { label: 'ليلية', color: 'var(--purple)' };
-        return { label: 'صباحية', color: 'var(--success)' };
+        if (shift === 'evening') return { label: 'مسائي', color: 'var(--purple)' };
+        if (shift === 'full') return { label: 'كامل اليوم', color: 'var(--info)' };
+        if (shift === 'night') return { label: 'ليلي', color: 'var(--purple)' };
+        return { label: 'صباحي', color: 'var(--warning)' };
+      }
+
+      const RD_OUTAGE_KEY = 'athar_rd_outages_v1';
+      const RD_SCH_DAYS = [
+        { key: 'sat', label: 'السبت' },
+        { key: 'sun', label: 'الأحد' },
+        { key: 'mon', label: 'الاثنين' },
+        { key: 'tue', label: 'الثلاثاء' },
+        { key: 'wed', label: 'الأربعاء' },
+        { key: 'thu', label: 'الخميس' },
+        { key: 'fri', label: 'الجمعة' },
+      ];
+      const RD_SCH_SHIFTS = [
+        { key: 'morning', label: 'صباحي' },
+        { key: 'evening', label: 'مسائي' },
+        { key: 'full', label: 'كامل اليوم' },
+      ];
+      const RD_SCH_FREQS = [
+        { key: 'daily', label: 'يومي' },
+        { key: 'weekly', label: 'أسبوعي' },
+      ];
+
+      function rdSchDayLabel(key) {
+        const d = RD_SCH_DAYS.find(x => x.key === key);
+        return d ? d.label : key;
+      }
+
+      function getRdOutages() {
+        const rows = rdLoadJson(RD_OUTAGE_KEY, null);
+        return Array.isArray(rows) ? rows : [];
+      }
+
+      function saveRdOutages(rows) {
+        rdSaveJson(RD_OUTAGE_KEY, rows || []);
+      }
+
+      function rdSchOverlayHost() {
+        let el = document.getElementById('rdSchOverlayHost');
+        if (!el) {
+          el = document.createElement('div');
+          el.id = 'rdSchOverlayHost';
+          document.body.appendChild(el);
+        }
+        return el;
+      }
+
+      function rdSchEnsureForm() {
+        if (!state._rdSchForm) {
+          state._rdSchForm = {
+            open: false,
+            editId: null,
+            monitorId: '',
+            branchIds: [],
+            shift: 'morning',
+            frequency: 'daily',
+            days: [],
+            startTime: '08:00',
+            endTime: '16:00',
+          };
+        }
+        return state._rdSchForm;
+      }
+
+      function rdSchEnsureOutageForm() {
+        if (!state._rdOutageForm) {
+          state._rdOutageForm = {
+            open: false,
+            branchId: '',
+            branchName: '',
+            reason: '',
+            attachCount: 0,
+          };
+        }
+        return state._rdOutageForm;
       }
 
       function renderScheduleDesktop() {
@@ -32769,53 +33275,237 @@
         if (!host) return;
         if (!isAtharDesktopScreenUi()) {
           host.innerHTML = '<div class="rd-ticket-empty"><i class="fas fa-desktop"></i><p>شاشة الجدول متاحة على سطح المكتب</p></div>';
+          rdSchOverlayHost().innerHTML = '';
           return;
         }
         const q = (state._rdSchSearch || '').toLowerCase().trim();
         let rows = getRdSchedules();
+        const outages = getRdOutages();
         if (q) {
           rows = rows.filter(r => {
             const names = (r.branchIds || []).map(id => (state.branches || []).find(b => b.id === id)?.name || '').join(' ');
             return `${r.monitorName} ${names}`.toLowerCase().includes(q);
           });
         }
+
         const cards = rows.map((r, i) => {
           const shift = rdShiftMeta(r.shift);
           const initial = String(r.monitorName || '؟').trim().charAt(0) || '؟';
-          const chips = (r.branchIds || []).map(id => {
-            const br = (state.branches || []).find(b => b.id === id);
-            return `<span class="rd-sch-chip"><i class="fas fa-store" aria-hidden="true"></i>${Sec.escapeHTML(br?.name || 'فرع')}</span>`;
+          const branches = (r.branchIds || []).map(id => (state.branches || []).find(b => b.id === id))
+            .filter(Boolean);
+          const chips = branches.slice(0, 2).map(b => {
+            const hasOut = outages.some(o => o.branchId === b.id);
+            const cls = 'rd-sch-chip' + (hasOut ? ' is-outage' : '');
+            return `
+              <span class="${cls}">
+                <i class="fas fa-store" aria-hidden="true"></i>
+                <span class="rd-sch-chip__lbl">${Sec.escapeHTML(b.name || 'فرع')}</span>
+                <button type="button" class="rd-sch-chip__report" onclick="event.stopPropagation();rdOpenOutageReport('${Sec.escapeHTML(b.id)}','${Sec.escapeHTML((b.name || '').replace(/'/g, '&#39;'))}')" title="الإبلاغ عن تعطل الفرع" aria-label="الإبلاغ عن تعطل الفرع">
+                  <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
+                </button>
+              </span>`;
           }).join('');
-          const freq = r.frequency === 'weekly' ? 'أسبوعي' : 'يومي';
+          const extra = branches.length > 2
+            ? `<span class="rd-sch-chip-extra">+${branches.length - 2}</span>`
+            : '';
+          const freqLabel = r.frequency === 'weekly' ? 'أسبوعي' : 'يومي';
+          const daysSuffix = (r.frequency === 'weekly' && Array.isArray(r.days) && r.days.length)
+            ? ` (${r.days.map(rdSchDayLabel).join('، ')})`
+            : '';
           return `
             <article class="rd-sch-card" style="animation-delay:${Math.min(0.3, i * 0.04)}s">
               <div class="rd-sch-card__top">
                 <div class="rd-sch-card__who">
                   <span class="rd-sch-card__av">${Sec.escapeHTML(initial)}</span>
-                  <div>
+                  <div class="rd-sch-card__who-body">
                     <div class="rd-sch-card__name">${Sec.escapeHTML(r.monitorName || '—')}</div>
-                    <div class="rd-sch-card__meta"><span dir="ltr">${Sec.escapeHTML(r.startTime || '')} – ${Sec.escapeHTML(r.endTime || '')}</span> · ${freq}</div>
+                    <div class="rd-sch-card__meta"><span dir="ltr">${Sec.escapeHTML(r.startTime || '')} – ${Sec.escapeHTML(r.endTime || '')}</span> · ${freqLabel}${Sec.escapeHTML(daysSuffix)}</div>
                   </div>
                 </div>
                 <div class="rd-sch-card__acts">
                   <span class="rd-sch-shift" style="--sc:${shift.color}">${Sec.escapeHTML(shift.label)}</span>
-                  <button type="button" class="rd-desk-act" onclick="rdDeleteSchedule('${Sec.escapeHTML(r.id)}')" aria-label="حذف"><i class="fas fa-trash"></i></button>
+                  <button type="button" class="rd-desk-act" onclick="rdOpenScheduleForm('${Sec.escapeHTML(r.id)}')" aria-label="تعديل"><i class="fas fa-pen"></i></button>
+                  <button type="button" class="rd-desk-act rd-desk-act--danger" onclick="rdDeleteSchedule('${Sec.escapeHTML(r.id)}')" aria-label="حذف"><i class="fas fa-trash"></i></button>
                 </div>
               </div>
-              <div class="rd-sch-card__chips">${chips || '<span class="rd-desk-muted">لا فروع</span>'}</div>
+              <div class="rd-sch-card__chips">${chips || '<span class="rd-desk-muted">لا فروع</span>'}${extra}</div>
             </article>`;
         }).join('');
+
+        const outageSection = outages.length
+          ? `
+            <div class="rd-sch-outage-title">بلاغات تعطل الفروع</div>
+            <div class="rd-sch-outage-list">
+              ${outages.map((o, i) => `
+                <div class="rd-sch-outage" style="animation-delay:${Math.min(0.3, i * 0.04)}s">
+                  <div class="rd-sch-outage__ico"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i></div>
+                  <div class="rd-sch-outage__body">
+                    <div class="rd-sch-outage__branch">${Sec.escapeHTML(o.branchName || '')}</div>
+                    <div class="rd-sch-outage__reason">${Sec.escapeHTML(o.reason || '')}</div>
+                    <div class="rd-sch-outage__meta">${Sec.escapeHTML(o.time || '')}${o.attachCount ? ' · ' + o.attachCount + ' مرفق' : ''}</div>
+                  </div>
+                  <button type="button" class="rd-sch-outage__resolve" onclick="rdResolveOutage('${Sec.escapeHTML(o.id)}')">تم الحل</button>
+                </div>`).join('')}
+            </div>`
+          : '';
+
         host.innerHTML = `
-          <p class="rd-sch-intro">كل راصد يرى ويتابع الفروع المسندة له فقط ضمن الجدول أدناه.</p>
+          <p class="rd-sch-intro">كل راصد يرى ويتابع بريكات الفروع المسندة له فقط، ولا يمكنه إصدار مخالفة إلا على الفروع المجدولة له أدناه.</p>
           <div class="rd-sch-toolbar">
             <div class="figma-search-wrap wf-search">
               <input type="text" class="figma-search-input" id="rdSchSearch" value="${Sec.escapeHTML(state._rdSchSearch || '')}"
                 placeholder="ابحث باسم الراصد أو الفرع..." oninput="rdSchSearch(this.value)">
               <button type="button" class="figma-search-btn" aria-label="بحث"><i class="fas fa-magnifying-glass"></i></button>
             </div>
-            <button type="button" class="mk-btn mk-btn--primary" onclick="rdAddSchedulePrompt()"><i class="fas fa-plus"></i>تعيين جدول</button>
+            <button type="button" class="mk-btn mk-btn--primary" onclick="rdOpenScheduleForm()"><i class="fas fa-plus"></i>تعيين جدول</button>
           </div>
-          <div class="rd-sch-list">${cards || '<div class="rd-ticket-empty"><i class="fas fa-calendar-days"></i><p>لا توجد جداول تعيين</p></div>'}</div>`;
+          <div class="rd-sch-list">${cards || '<div class="rd-ticket-empty"><i class="fas fa-calendar-days"></i><p>لا توجد جداول تعيين</p></div>'}</div>
+          ${outageSection}`;
+
+        renderScheduleOverlays();
+      }
+
+      function renderScheduleOverlays() {
+        const overlay = rdSchOverlayHost();
+        if (!isAtharDesktopScreenUi()) {
+          overlay.innerHTML = '';
+          return;
+        }
+        const form = rdSchEnsureForm();
+        const outageForm = rdSchEnsureOutageForm();
+        let html = '';
+
+        if (form.open) {
+          const observers = (state.users || []).filter(u => normalizeUserRole(u.role) === 'observer');
+          const monitorOpts = observers.map(o => `<option value="${Sec.escapeHTML(o.id)}"${o.id === form.monitorId ? ' selected' : ''}>${Sec.escapeHTML(o.name || 'راصد')}</option>`).join('');
+
+          const branchesByRegion = new Map();
+          (state.branches || []).forEach(b => {
+            const key = b.region_id || '__none__';
+            if (!branchesByRegion.has(key)) branchesByRegion.set(key, []);
+            branchesByRegion.get(key).push(b);
+          });
+          const regionGroups = [];
+          (state.regions || []).forEach(r => {
+            const list = branchesByRegion.get(r.id) || [];
+            if (list.length) regionGroups.push({ name: r.name || 'منطقة', branches: list });
+          });
+          if (branchesByRegion.has('__none__')) {
+            regionGroups.push({ name: 'بدون منطقة', branches: branchesByRegion.get('__none__') });
+          }
+
+          const regionsHtml = regionGroups.map(rg => `
+            <div class="rd-sch-panel__region">
+              <div class="rd-sch-panel__region-name">${Sec.escapeHTML(rg.name)}</div>
+              ${rg.branches.map(b => `
+                <label class="rd-sch-panel__branch">
+                  <input type="checkbox"${form.branchIds.includes(b.id) ? ' checked' : ''} onchange="rdSchToggleBranch('${Sec.escapeHTML(b.id)}')">
+                  <span>${Sec.escapeHTML(b.name || 'فرع')}</span>
+                </label>`).join('')}
+            </div>`).join('');
+
+          const shiftBtns = RD_SCH_SHIFTS.map(s => {
+            const on = form.shift === s.key;
+            return `<button type="button" class="rd-sch-panel__toggle${on ? ' is-active' : ''}" onclick="rdSchSetShift('${s.key}')">${Sec.escapeHTML(s.label)}</button>`;
+          }).join('');
+          const freqBtns = RD_SCH_FREQS.map(f => {
+            const on = form.frequency === f.key;
+            return `<button type="button" class="rd-sch-panel__toggle${on ? ' is-active' : ''}" onclick="rdSchSetFrequency('${f.key}')">${Sec.escapeHTML(f.label)}</button>`;
+          }).join('');
+          const daysBtns = form.frequency === 'weekly'
+            ? `
+              <div class="rd-sch-panel__field-label">أيام التكرار</div>
+              <div class="rd-sch-panel__days">
+                ${RD_SCH_DAYS.map(d => {
+                  const on = (form.days || []).includes(d.key);
+                  return `<button type="button" class="rd-sch-panel__day${on ? ' is-active' : ''}" onclick="rdSchToggleDay('${d.key}')">${Sec.escapeHTML(d.label)}</button>`;
+                }).join('')}
+              </div>`
+            : '';
+
+          const title = form.editId ? 'تعديل جدول رصد' : 'تعيين جدول رصد';
+          html += `
+            <div class="rd-sch-overlay" role="dialog" aria-modal="true">
+              <div class="rd-sch-overlay__scrim" onclick="rdCloseScheduleForm()"></div>
+              <div class="rd-sch-panel">
+                <div class="rd-sch-panel__head">
+                  <div class="rd-sch-panel__title">${Sec.escapeHTML(title)}</div>
+                  <button type="button" class="rd-sch-panel__close" onclick="rdCloseScheduleForm()" aria-label="إغلاق"><i class="fas fa-xmark"></i></button>
+                </div>
+
+                <div class="rd-sch-panel__field-label">الراصد</div>
+                <select class="rd-sch-panel__select" onchange="rdSchSetMonitor(this.value)">
+                  <option value="" ${form.monitorId ? '' : 'selected'}>اختر راصداً</option>
+                  ${monitorOpts}
+                </select>
+
+                <div class="rd-sch-panel__field-row">
+                  <span class="rd-sch-panel__field-label">الفروع المسؤول عنها</span>
+                  <span class="rd-desk-muted">${(form.branchIds || []).length} فرع محدد</span>
+                </div>
+                <div class="rd-sch-panel__branches">${regionsHtml || '<div class="rd-desk-muted">لا توجد فروع</div>'}</div>
+
+                <div class="rd-sch-panel__field-label">نوع الوردية</div>
+                <div class="rd-sch-panel__toggles">${shiftBtns}</div>
+
+                <div class="rd-sch-panel__field-label">أوقات الوردية</div>
+                <div class="rd-sch-panel__time-grid">
+                  <div>
+                    <div class="rd-desk-muted">بداية الشفت</div>
+                    <input type="time" class="rd-sch-panel__time" value="${Sec.escapeHTML(form.startTime || '08:00')}" oninput="rdSchSetStart(this.value)">
+                  </div>
+                  <div>
+                    <div class="rd-desk-muted">نهاية الشفت</div>
+                    <input type="time" class="rd-sch-panel__time" value="${Sec.escapeHTML(form.endTime || '16:00')}" oninput="rdSchSetEnd(this.value)">
+                  </div>
+                </div>
+
+                <div class="rd-sch-panel__field-label">التكرار</div>
+                <div class="rd-sch-panel__toggles">${freqBtns}</div>
+                ${daysBtns}
+
+                <button type="button" class="rd-sch-panel__save" onclick="rdSaveScheduleForm()">حفظ الجدول</button>
+              </div>
+            </div>`;
+        }
+
+        if (outageForm.open) {
+          const attachLabel = outageForm.attachCount > 0
+            ? outageForm.attachCount + ' ملف مرفق — اضغط لإضافة المزيد'
+            : 'اضغط لإرفاق ملف';
+          html += `
+            <div class="rd-sch-overlay" role="dialog" aria-modal="true">
+              <div class="rd-sch-overlay__scrim" onclick="rdCloseOutageReport()"></div>
+              <div class="rd-sch-panel rd-sch-panel--outage">
+                <div class="rd-sch-panel__head">
+                  <div class="rd-sch-panel__title">الإبلاغ عن تعطل فرع</div>
+                  <button type="button" class="rd-sch-panel__close" onclick="rdCloseOutageReport()" aria-label="إغلاق"><i class="fas fa-xmark"></i></button>
+                </div>
+                <div class="rd-sch-outage-hero">
+                  <div class="rd-sch-outage-hero__ico"><i class="fas fa-store-slash" aria-hidden="true"></i></div>
+                  <span>${Sec.escapeHTML(outageForm.branchName || '')}</span>
+                </div>
+                <div class="rd-sch-panel__field-label">سبب التعطل <span class="rd-sch-req">*</span></div>
+                <textarea id="rdOutageReasonInput" class="rd-sch-panel__textarea"
+                  placeholder="اشرح سبب تعطل الفرع (انقطاع كهرباء، عطل بالكاميرات، إغلاق مؤقت...)">${Sec.escapeHTML(outageForm.reason || '')}</textarea>
+                <div class="rd-sch-panel__field-label">المرفقات (صورة/فيديو)</div>
+                <button type="button" class="rd-sch-panel__attach" onclick="rdSchOutageAttach()">
+                  <i class="fas fa-paperclip" aria-hidden="true"></i>
+                  <span>${Sec.escapeHTML(attachLabel)}</span>
+                </button>
+                <button type="button" class="rd-sch-panel__save rd-sch-panel__save--danger" onclick="rdSubmitOutage()">إرسال البلاغ</button>
+              </div>
+            </div>`;
+        }
+
+        overlay.innerHTML = html;
+
+        const reasonInput = document.getElementById('rdOutageReasonInput');
+        if (reasonInput) {
+          reasonInput.addEventListener('input', (e) => {
+            rdSchEnsureOutageForm().reason = e.target.value;
+          });
+        }
       }
 
       function rdSchSearch(val) {
@@ -32823,35 +33513,150 @@
         renderScheduleDesktop();
       }
 
-      function rdAddSchedulePrompt() {
+      function rdOpenScheduleForm(editId) {
         const observers = (state.users || []).filter(u => normalizeUserRole(u.role) === 'observer');
-        const branches = state.branches || [];
-        if (!observers.length || !branches.length) {
+        if (!observers.length || !(state.branches || []).length) {
           showToast('يلزم وجود راصد وفرع واحد على الأقل', 'warning');
           return;
         }
-        const obs = observers[0];
+        const form = rdSchEnsureForm();
+        if (editId) {
+          const row = getRdSchedules().find(r => r.id === editId);
+          if (!row) return;
+          form.open = true;
+          form.editId = row.id;
+          form.monitorId = row.monitorId || (observers[0]?.id || '');
+          form.branchIds = Array.isArray(row.branchIds) ? [...row.branchIds] : [];
+          form.shift = row.shift || 'morning';
+          form.frequency = row.frequency || 'daily';
+          form.days = Array.isArray(row.days) ? [...row.days] : [];
+          form.startTime = row.startTime || '08:00';
+          form.endTime = row.endTime || '16:00';
+        } else {
+          form.open = true;
+          form.editId = null;
+          form.monitorId = observers[0]?.id || '';
+          form.branchIds = [];
+          form.shift = 'morning';
+          form.frequency = 'daily';
+          form.days = [];
+          form.startTime = '08:00';
+          form.endTime = '16:00';
+        }
+        renderScheduleOverlays();
+      }
+
+      function rdCloseScheduleForm() {
+        rdSchEnsureForm().open = false;
+        renderScheduleOverlays();
+      }
+
+      function rdSchSetMonitor(id) { rdSchEnsureForm().monitorId = id || ''; }
+      function rdSchSetShift(key) { rdSchEnsureForm().shift = key; renderScheduleOverlays(); }
+      function rdSchSetFrequency(key) {
+        const f = rdSchEnsureForm();
+        f.frequency = key;
+        if (key !== 'weekly') f.days = [];
+        renderScheduleOverlays();
+      }
+      function rdSchSetStart(v) { rdSchEnsureForm().startTime = v || '08:00'; }
+      function rdSchSetEnd(v) { rdSchEnsureForm().endTime = v || '16:00'; }
+      function rdSchToggleBranch(id) {
+        const f = rdSchEnsureForm();
+        if (f.branchIds.includes(id)) f.branchIds = f.branchIds.filter(x => x !== id);
+        else f.branchIds = [...f.branchIds, id];
+        renderScheduleOverlays();
+      }
+      function rdSchToggleDay(key) {
+        const f = rdSchEnsureForm();
+        if ((f.days || []).includes(key)) f.days = f.days.filter(x => x !== key);
+        else f.days = [...(f.days || []), key];
+        renderScheduleOverlays();
+      }
+
+      function rdSaveScheduleForm() {
+        const f = rdSchEnsureForm();
+        if (!f.monitorId) { showToast('اختر الراصد أولاً', 'warning'); return; }
+        if (!f.branchIds.length) { showToast('اختر فرعاً واحداً على الأقل', 'warning'); return; }
+        if (f.frequency === 'weekly' && !(f.days || []).length) {
+          showToast('اختر أيام التكرار', 'warning');
+          return;
+        }
+        const observers = (state.users || []).filter(u => normalizeUserRole(u.role) === 'observer');
+        const obs = observers.find(u => u.id === f.monitorId);
+        const rec = {
+          id: f.editId || ('sch-' + Date.now()),
+          monitorId: f.monitorId,
+          monitorName: obs?.name || 'راصد',
+          branchIds: [...f.branchIds],
+          shift: f.shift,
+          frequency: f.frequency,
+          days: f.frequency === 'weekly' ? [...(f.days || [])] : [],
+          startTime: f.startTime || '08:00',
+          endTime: f.endTime || '16:00',
+        };
         const rows = getRdSchedules();
-        rows.unshift({
-          id: 'sch-' + Date.now(),
-          monitorId: obs.id,
-          monitorName: obs.name || 'راصد',
-          branchIds: branches.slice(0, 2).map(b => b.id),
-          shift: 'morning',
-          frequency: 'daily',
-          days: [],
-          startTime: '08:00',
-          endTime: '16:00'
-        });
+        const idx = rows.findIndex(r => r.id === rec.id);
+        if (idx >= 0) rows[idx] = rec;
+        else rows.unshift(rec);
         rdSaveJson(RD_SCH_KEY, rows);
+        f.open = false;
         renderScheduleDesktop();
-        showToast('تم إضافة تعيين جدول', 'success');
+        showToast(f.editId ? 'تم حفظ التعديل' : 'تم إضافة تعيين جدول', 'success');
       }
 
       function rdDeleteSchedule(id) {
         const rows = getRdSchedules().filter(r => r.id !== id);
         rdSaveJson(RD_SCH_KEY, rows);
         renderScheduleDesktop();
+      }
+
+      function rdOpenOutageReport(branchId, branchName) {
+        const f = rdSchEnsureOutageForm();
+        f.open = true;
+        f.branchId = branchId || '';
+        f.branchName = branchName || '';
+        f.reason = '';
+        f.attachCount = 0;
+        renderScheduleOverlays();
+      }
+
+      function rdCloseOutageReport() {
+        rdSchEnsureOutageForm().open = false;
+        renderScheduleOverlays();
+      }
+
+      function rdSchOutageAttach() {
+        const f = rdSchEnsureOutageForm();
+        f.attachCount = (f.attachCount || 0) + 1;
+        renderScheduleOverlays();
+      }
+
+      function rdSubmitOutage() {
+        const f = rdSchEnsureOutageForm();
+        const el = document.getElementById('rdOutageReasonInput');
+        const reason = String((el && el.value) || f.reason || '').trim();
+        if (!reason) { showToast('اكتب سبب التعطل أولاً', 'warning'); return; }
+        const outages = getRdOutages();
+        outages.unshift({
+          id: 'out-' + Date.now(),
+          branchId: f.branchId,
+          branchName: f.branchName,
+          reason,
+          time: 'الآن',
+          attachCount: f.attachCount || 0,
+        });
+        saveRdOutages(outages);
+        f.open = false;
+        renderScheduleDesktop();
+        showToast('تم إرسال البلاغ', 'success');
+      }
+
+      function rdResolveOutage(id) {
+        const outages = getRdOutages().filter(o => o.id !== id);
+        saveRdOutages(outages);
+        renderScheduleDesktop();
+        showToast('تم تحديدها كمحلولة', 'success');
       }
 
       function renderComplaintsDesktop() {
@@ -33196,8 +34001,30 @@
       }
 
       window.rdSchSearch = rdSchSearch;
-      window.rdAddSchedulePrompt = rdAddSchedulePrompt;
+      window.rdOpenScheduleForm = rdOpenScheduleForm;
+      window.rdCloseScheduleForm = rdCloseScheduleForm;
+      window.rdSchSetMonitor = rdSchSetMonitor;
+      window.rdSchSetShift = rdSchSetShift;
+      window.rdSchSetFrequency = rdSchSetFrequency;
+      window.rdSchSetStart = rdSchSetStart;
+      window.rdSchSetEnd = rdSchSetEnd;
+      window.rdSchToggleBranch = rdSchToggleBranch;
+      window.rdSchToggleDay = rdSchToggleDay;
+      window.rdSaveScheduleForm = rdSaveScheduleForm;
       window.rdDeleteSchedule = rdDeleteSchedule;
+      window.rdOpenOutageReport = rdOpenOutageReport;
+      window.rdCloseOutageReport = rdCloseOutageReport;
+      window.rdSchOutageAttach = rdSchOutageAttach;
+      window.rdSubmitOutage = rdSubmitOutage;
+      window.rdResolveOutage = rdResolveOutage;
+      // Legacy alias — some places may still reference the old add-prompt API
+      window.rdAddSchedulePrompt = rdOpenScheduleForm;
+      window.rdOpenReportView = rdOpenReportView;
+      window.rdBackReportsMain = rdBackReportsMain;
+      window.rdEmpResponseSearch = rdEmpResponseSearch;
+      window.rdEmpResponseSort = rdEmpResponseSort;
+      window.rdVbSearch = rdVbSearch;
+      window.rdVbSort = rdVbSort;
       window.rdCmplFilter = rdCmplFilter;
       window.rdOpenComplaintForm = rdOpenComplaintForm;
       window.rdCloseComplaintForm = rdCloseComplaintForm;
