@@ -767,8 +767,8 @@
   </style>
   <link rel="stylesheet" href="styles/custom/main.css">
   <link rel="stylesheet" href="styles/custom/design-kit.css" id="mk-design-kit">
-  <link rel="stylesheet" href="styles/custom/athar-redesign-staging.css?v=desk9" id="athar-redesign-staging">
-  <link rel="stylesheet" href="styles/custom/athar-desktop-screens.css?v=desk9" id="athar-desktop-screens">
+  <link rel="stylesheet" href="styles/custom/athar-redesign-staging.css?v=desk10" id="athar-redesign-staging">
+  <link rel="stylesheet" href="styles/custom/athar-desktop-screens.css?v=desk10" id="athar-desktop-screens">
   <!-- Mirsad tokens + kit: مضمّنة في index.html — لا روابط design-system (تجنّب 404 عند file://) -->
   <style>
     /* Reset figma-search-input inside figma-search-wrap to prevent overlapping border/background from platform-bridge.css */
@@ -2659,7 +2659,16 @@
           <div class="topbar-vdivider topbar-brand-divider" aria-hidden="true"></div>
         </div>
 
+        <div class="rd-top-titles" id="rdTopTitles" aria-live="polite">
+          <div class="rd-top-titles__title" id="rdTopTitle">نظرة عامة</div>
+          <div class="rd-top-titles__sub" id="rdTopSub">ملخص أداء اليوم</div>
+        </div>
+
         <div class="topbar-actions-zone">
+            <div class="rd-global-search" id="rdGlobalSearch">
+              <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
+              <input type="search" id="rdGlobalSearchInput" placeholder="بحث سريع..." autocomplete="off" enterkeyhint="search" aria-label="بحث سريع">
+            </div>
             <div class="topbar-clock" id="topbarClock" dir="ltr" aria-live="polite" aria-label="الوقت">
               <div class="topbar-clock-time">
                 <span class="topbar-clock-hm" id="clockText">--:--</span>
@@ -2701,6 +2710,9 @@
     </header>
       <div class="app-body">
       <aside class="sidebar" id="sidebar">
+        <div class="rd-side-brand" id="rdSideBrand">
+          <img src="icons/athar-logo-v401.png" alt="أثر" class="rd-side-brand__logo" width="120" height="32" decoding="async">
+        </div>
         <nav class="sidebar-nav" id="sidebarNav">
           <div id="navSectionMain" class="nav-section-label" data-perm="section_main">الرئيسية</div>
           <button class="nav-item" onclick="goTab('dashboard',this)" data-perm="tab_dashboard"><span class="nav-icon-wrap"><i class="fas fa-house" aria-hidden="true"></i></span><span
@@ -2728,6 +2740,18 @@
           <button class="nav-item" onclick="goTab('departments',this)" data-perm="tab_departments"><span class="nav-icon-wrap"><i
               class="fas fa-user-group" aria-hidden="true"></i></span><span class="nav-item-label">مستخدمون</span></button>
         </nav>
+        <div class="rd-side-foot" id="rdSideFoot">
+          <button type="button" class="rd-side-foot__user" id="rdSideUserBtn" onclick="openProfilePage(event)" aria-label="الملف الشخصي">
+            <span class="rd-side-foot__av" id="rdSideAv" aria-hidden="true">م</span>
+            <span class="rd-side-foot__meta">
+              <span class="rd-side-foot__name" id="rdSideName">—</span>
+              <span class="rd-side-foot__email" id="rdSideEmail">—</span>
+            </span>
+          </button>
+          <button type="button" class="rd-side-foot__theme" id="rdSideThemeBtn" onclick="toggleTheme(event)" title="تبديل الثيم" aria-label="تبديل الثيم">
+            <i class="fas fa-moon" id="rdSideThemeIcon" aria-hidden="true"></i>
+          </button>
+        </div>
       </aside>
 
       <div class="main">
@@ -4557,7 +4581,7 @@
 
     <div id="rdCmplOverlayHost"></div>
     <div id="rdSchOverlayHost"></div>
-    <script src="js/app.js?v=desk9"></script>
+    <script src="js/app.js?v=desk10"></script>
         <style>
       @media (max-width: 992px) {
         /* ── workflow: منع التمدد الأفقي ── */

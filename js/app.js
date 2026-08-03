@@ -5039,8 +5039,11 @@
         const theme = document.documentElement.getAttribute('data-theme') || 'light';
         const icon = document.getElementById('rdThemeIcon');
         if (icon) icon.className = 'fas ' + (theme === 'dark' ? 'fa-sun' : 'fa-moon');
+        const sideTheme = document.getElementById('rdSideThemeIcon');
+        if (sideTheme) sideTheme.className = 'fas ' + (theme === 'dark' ? 'fa-sun' : 'fa-moon');
         try { syncRdWfChips(); } catch (_) { /* noop */ }
         try { syncRdTopbarUserSlot(); } catch (_) { /* noop */ }
+        try { syncRdSideFoot(); } catch (_) { /* noop */ }
         const av = document.getElementById('topbarUserAv');
         if (!av) return;
         if (!isAtharRedesignUi() || !state.currentUser) {
@@ -5050,6 +5053,31 @@
         const initial = (state.currentUser.name || 'م').trim().charAt(0) || 'م';
         av.classList.add('rd-top-av');
         av.textContent = initial;
+      }
+
+      function syncRdSideFoot() {
+        const nameEl = document.getElementById('rdSideName');
+        const emailEl = document.getElementById('rdSideEmail');
+        const avEl = document.getElementById('rdSideAv');
+        if (!nameEl && !emailEl && !avEl) return;
+        const u = state.currentUser;
+        const name = (u && (u.name || u.fullName)) || 'مستخدم';
+        const email = (u && (u.email || u.username)) || '';
+        const initial = String(name).trim().charAt(0) || 'م';
+        if (nameEl) nameEl.textContent = name;
+        if (emailEl) emailEl.textContent = email || '—';
+        if (avEl) {
+          avEl.textContent = initial;
+          avEl.innerHTML = '';
+          avEl.textContent = initial;
+        }
+      }
+
+      function syncRdTopTitles(title, sub) {
+        const t = document.getElementById('rdTopTitle');
+        const s = document.getElementById('rdTopSub');
+        if (t && title != null) t.textContent = title;
+        if (s) s.textContent = sub || '';
       }
 
       /** Chips على صفحة التذاكر (تصميم الاختبار) — الكل / بانتظار ردي / مُرسلة / الفريق */
@@ -8959,6 +8987,7 @@
         const ps = document.getElementById('pageSubtitle');
         if (pt) pt.textContent = meta.title;
         if (ps) ps.textContent = meta.sub;
+        try { syncRdTopTitles(meta.title, meta.sub); } catch (_) { /* noop */ }
 
         const titleBar = document.getElementById('pageTitleBar');
         if (titleBar) {
@@ -9100,6 +9129,7 @@
         const meta = TAB_TITLES[tab] || { title: tab, sub: '' };
         document.getElementById('pageTitle').textContent = meta.title;
         document.getElementById('pageSubtitle').textContent = meta.sub;
+        try { syncRdTopTitles(meta.title, meta.sub); } catch (_) { /* noop */ }
 
         // إظهار/إخفاء بنر اسم القسم
         const titleBar = document.getElementById('pageTitleBar');
@@ -9271,6 +9301,8 @@
           tbAv.style.background = u.color;
         }
         syncTopbarUserAvatar(u);
+
+        try { syncRdSideFoot(); } catch (_) { /* noop */ }
 
         const chip = document.getElementById('topbarUserChip');
         const roleKey = normalizeUserRole(u.role);
