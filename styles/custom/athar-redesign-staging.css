@@ -429,8 +429,13 @@ html.athar-staging-redesign.mr-mobile-ui .mk-dash--classic,
 html.athar-staging-redesign.mr-mobile-ui #personalIndicators,
 html.athar-staging-redesign.mr-mobile-ui #branchStaffPanel { display: none !important; }
 html.athar-staging-redesign.mr-mobile-ui #rdDash { display: block !important; }
-html:not(.athar-staging-redesign) #rdDash,
-html.athar-staging-redesign.mr-desktop-ui #rdDash { display: none !important; }
+html:not(.athar-staging-redesign) #rdDash { display: none !important; }
+
+/* Desktop redesign: show rdDash, hide classic dash */
+html.athar-staging-redesign.mr-desktop-ui #rdDash { display: block !important; }
+html.athar-staging-redesign.mr-desktop-ui .mk-dash--classic,
+html.athar-staging-redesign.mr-desktop-ui #personalIndicators,
+html.athar-staging-redesign.mr-desktop-ui #branchStaffPanel { display: none !important; }
 
 .rd-screen { animation: atharRdScreenIn .32s ease; padding-bottom: 8px; }
 .rd-greet { margin-bottom: 16px; }
@@ -3753,4 +3758,327 @@ html.athar-staging-redesign.mr-mobile-ui #rdBreaks[hidden] {
   width: 100% !important;
   max-width: 100% !important;
   min-width: 0 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ATHAR Desktop Redesign — literal shell + dashboard
+   Excludes: #tab-breaks, #tab-settings (permissions)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.athar-staging-redesign.mr-desktop-ui {
+  --fig-sidebar-w: 252px;
+  --fig-sidebar-collapsed-w: 252px;
+  --unified-topbar-h: 68px;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #appWrap .app-body .sidebar,
+html.athar-staging-redesign.mr-desktop-ui #appWrap #sidebar,
+html.athar-staging-redesign.mr-desktop-ui #sidebar {
+  width: 252px !important;
+  min-width: 252px !important;
+  max-width: 252px !important;
+  flex: 0 0 252px !important;
+  padding: 18px 12px 14px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item-label,
+html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-section-label {
+  opacity: 1 !important;
+  max-width: 160px !important;
+  visibility: visible !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item {
+  display: flex !important;
+  grid-template-columns: none !important;
+  align-items: center !important;
+  gap: 12px !important;
+  padding: 11px 16px !important;
+  margin: 0 0 2px !important;
+  min-height: 0 !important;
+  border-radius: 12px !important;
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item.active {
+  background: var(--gold) !important;
+  color: var(--onGold) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item.active .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item.active .nav-icon-wrap i,
+html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item.active .nav-item-label {
+  color: var(--onGold) !important;
+  background: transparent !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #appWrap .topbar.unified-banner,
+html.athar-staging-redesign.mr-desktop-ui .topbar.unified-banner {
+  height: 68px !important;
+  min-height: 68px !important;
+  padding-inline: 32px !important;
+  background: var(--surface) !important;
+  border-bottom: 1px solid var(--border) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #pageTitleBar {
+  display: flex !important;
+  align-items: center !important;
+  min-height: 0 !important;
+  padding: 18px 32px 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+}
+html.athar-staging-redesign.mr-desktop-ui #pageTitleBar h1 {
+  font-size: 17px !important;
+  font-weight: 700 !important;
+  margin: 0 !important;
+  color: var(--text) !important;
+}
+html.athar-staging-redesign.mr-desktop-ui #pageTitleBar p,
+html.athar-staging-redesign.mr-desktop-ui #pageSubtitle {
+  font-size: 11px !important;
+  color: var(--text3) !important;
+  margin-top: 2px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #appWrap .main .content {
+  padding: 18px 32px 32px !important;
+}
+
+/* Desktop dashboard layout (2-column) */
+.rd-desk-dash { animation: atharRdScreenIn .3s ease; }
+.rd-desk-dash__greet { margin-bottom: 18px; }
+.rd-desk-dash__date { font-size: 12.5px; color: var(--text2); }
+.rd-desk-dash__name { font-size: 22px; font-weight: 700; color: var(--text); margin-top: 4px; }
+.rd-desk-dash__sub { font-size: 13px; color: var(--text2); margin-top: 4px; line-height: 1.6; }
+.rd-desk-dash__grid {
+  display: grid;
+  grid-template-columns: 2.1fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+.rd-desk-dash__main,
+.rd-desk-dash__side {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.rd-desk-streak {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px 28px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 24px;
+  position: relative;
+}
+.rd-desk-streak__badge {
+  position: absolute;
+  top: 14px;
+  inset-inline-start: 24px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--goldSoft);
+  color: var(--gold);
+  padding: 5px 11px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.rd-desk-streak__ring {
+  position: relative;
+  width: 118px;
+  height: 118px;
+  flex-shrink: 0;
+  margin-top: 8px;
+}
+.rd-desk-streak__ring svg {
+  transform: rotate(-90deg);
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.rd-desk-streak__center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.rd-desk-streak__center i { font-size: 13px; color: var(--success); margin-bottom: 2px; }
+.rd-desk-streak__days { font-size: 28px; font-weight: 800; color: var(--text); line-height: 1; }
+.rd-desk-streak__lbl { font-size: 9.5px; color: var(--text3); margin-top: 2px; }
+.rd-desk-streak__minis {
+  flex: 1;
+  min-width: 180px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 8px;
+}
+.rd-desk-mini {
+  background: var(--surface2);
+  border-radius: 14px;
+  padding: 12px 8px;
+  text-align: center;
+  min-width: 0;
+}
+.rd-desk-mini__val { font-size: 19px; font-weight: 700; white-space: nowrap; }
+.rd-desk-mini__lbl { font-size: 10.5px; color: var(--text2); margin-top: 4px; white-space: nowrap; }
+
+.rd-desk-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+.rd-desk-stat {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+  animation: atharRdCardIn .4s ease both;
+}
+.rd-desk-stat__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.rd-desk-stat__val { font-size: 22px; font-weight: 700; color: var(--text); }
+.rd-desk-stat__ico {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: var(--surface2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+}
+.rd-desk-stat__lbl { font-size: 12px; color: var(--text2); margin-top: 8px; }
+
+.rd-desk-sec__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.rd-desk-sec__title { font-size: 14px; font-weight: 700; color: var(--text); }
+.rd-desk-sec__link {
+  border: 0;
+  background: transparent;
+  color: var(--gold);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.rd-desk-activity,
+.rd-desk-dist {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+.rd-desk-activity__row,
+.rd-desk-dist__row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 16px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+  color: inherit;
+  text-align: right;
+  cursor: pointer;
+  font: inherit;
+}
+.rd-desk-activity__row:last-child,
+.rd-desk-dist__row:last-child { border-bottom: 0; }
+.rd-desk-activity__row--empty { cursor: default; }
+.rd-desk-av {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--surface2);
+  color: var(--text2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.rd-desk-activity__body { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.rd-desk-activity__name { font-size: 13px; font-weight: 600; color: var(--text); }
+.rd-desk-activity__type { font-size: 12px; color: var(--text3); }
+.rd-desk-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.rd-desk-activity__time { font-size: 11px; color: var(--text3); flex-shrink: 0; width: 70px; text-align: left; }
+
+.rd-desk-metric {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 18px;
+}
+.rd-desk-metric__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.rd-desk-metric__label { font-size: 12.5px; font-weight: 600; color: var(--text); }
+.rd-desk-metric__val { font-size: 12px; font-weight: 700; }
+.rd-desk-metric__bar {
+  height: 7px;
+  border-radius: 999px;
+  background: var(--surface2);
+  overflow: hidden;
+}
+.rd-desk-metric__fill { height: 100%; border-radius: 999px; }
+.rd-desk-metric__sub { font-size: 11px; color: var(--text3); margin-top: 7px; }
+
+.rd-desk-dist__row { padding: 11px 14px; }
+.rd-desk-dist__ico {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: var(--surface2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 11px;
+}
+.rd-desk-dist__label { flex: 1; font-size: 12px; color: var(--text); font-weight: 500; text-align: right; }
+.rd-desk-dist__count { font-size: 13px; font-weight: 700; }
+
+/* Keep breaks + permissions pages on classic desktop chrome */
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks.active ~ *,
+html.athar-staging-redesign.mr-desktop-ui body:has(#tab-breaks.active) {
+  /* no-op anchor for future overrides */
+}
+html.athar-staging-redesign.mr-desktop-ui:has(#tab-breaks.active) #pageTitleBar,
+html.athar-staging-redesign.mr-desktop-ui:has(#tab-settings.active) #pageTitleBar {
+  display: flex !important;
+}
+
+@media (max-width: 1100px) {
+  html.athar-staging-redesign.mr-desktop-ui .rd-desk-dash__grid {
+    grid-template-columns: 1fr;
+  }
+  html.athar-staging-redesign.mr-desktop-ui .rd-desk-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }

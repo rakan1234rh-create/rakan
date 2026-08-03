@@ -4999,6 +4999,17 @@
           && isMobileViewport();
       }
 
+      /** تصميم Desktop الحرفي من Athar Redesign — Desktop (ما عدا البريكات والصلاحيات) */
+      function isAtharDesktopRedesignUi() {
+        return document.documentElement.classList.contains('athar-staging-redesign')
+          && document.documentElement.classList.contains('mr-desktop-ui');
+      }
+
+      /** صفحات تُستثنى من إعادة التصميم الحرفي على سطح المكتب */
+      function isAtharDesktopRedesignExcludedTab(tab) {
+        return tab === 'breaks' || tab === 'settings';
+      }
+
       function rdClassifyScore(value) {
         if (value < 0) return 'var(--danger)';
         if (value >= 90) return 'var(--success)';
@@ -7952,15 +7963,15 @@
       // 11. NAVIGATION
       // ═══════════════════════════════════════════════════════════════════════════
       const TAB_TITLES = {
-        dashboard: { title: 'لوحة القيادة', sub: 'ATHAR' },
-        newTicket: { title: 'رصد مخالفة جديدة', sub: 'create new violation' },
-        workflow: { title: 'معالجة التذاكر', sub: 'tickets workflow' },
+        dashboard: { title: 'نظرة عامة', sub: 'ملخص أداء اليوم' },
+        newTicket: { title: 'رصد مخالفة جديدة', sub: 'سجّل مخالفة بأكبر قدر من التفاصيل' },
+        workflow: { title: 'التذاكر', sub: 'إدارة ومتابعة تذاكر المخالفات' },
         breaks: { title: 'بريكات الموظفين', sub: 'staff breaks' },
-        reports: { title: 'التقارير', sub: 'reports & analytics' },
-        compliance: { title: 'لوحة مؤشرات الامتثال', sub: 'compliance dashboard' },
-        locations: { title: 'المناطق والفروع', sub: 'regions & branches' },
-        departments: { title: 'إدارة المستخدمين', sub: 'users management' },
-        violations: { title: 'أنواع المخالفات', sub: 'violation types' },
+        reports: { title: 'التقارير', sub: 'مؤشرات الأداء والاتجاهات' },
+        compliance: { title: 'مؤشرات الامتثال', sub: 'نظرة عامة على أداء كل المناطق' },
+        locations: { title: 'المناطق والفروع', sub: 'إدارة المناطق والفروع' },
+        departments: { title: 'إدارة المستخدمين', sub: 'كل مستخدمي النظام' },
+        violations: { title: 'دليل المخالفات', sub: 'تصنيف المخالفات حسب الخطورة' },
         settings: { title: 'صلاحيات المنصة', sub: 'platform permissions' },
         profileAvatars: { title: 'صور الملف الشخصي', sub: 'profile avatars' },
         broadcasts: { title: 'نشرات الجوال', sub: 'mobile broadcasts' },
@@ -8007,6 +8018,16 @@
           sb?.style.removeProperty('flex');
           sb?.style.removeProperty('max-width');
           sb?.classList.remove('sidebar-rail-expanded');
+          return;
+        }
+        // تصميم Desktop الحرفي: شريط ثابت بعرض 252px دائماً
+        if (typeof isAtharDesktopRedesignUi === 'function' && isAtharDesktopRedesignUi()) {
+          sb.style.setProperty('width', '252px', 'important');
+          sb.style.setProperty('min-width', '252px', 'important');
+          sb.style.setProperty('max-width', '252px', 'important');
+          sb.style.setProperty('flex', '0 0 252px', 'important');
+          sb.classList.add('sidebar-rail-expanded');
+          sb.setAttribute('data-rail-expanded', '1');
           return;
         }
         if (expanded) {
@@ -11531,6 +11552,162 @@
         if (recent) recent.innerHTML = loading;
       }
 
+      function renderDashboardDesktopRedesign(visible, allVisible, monthFromIso, nextFromIso, ksaNowParts) {
+        const host = document.getElementById('rdDash');
+        if (!host) return;
+        const me = state.currentUser;
+
+        const streakDays = getRdCleanStreakDays(me);
+        const bestKey = 'athar_rd_best_streak_' + (me?.id || 'x');
+        let personalBest = Number(localStorage.getItem(bestKey) || 0);
+        if (!Number.isFinite(personalBest) || personalBest < streakDays) {
+          personalBest = streakDays;
+          try { localStorage.setItem(bestKey, String(personalBest)); } catch (_) { /* noop */ }
+        }
+        const CIRC = 339.292;
+        const streakPct = personalBest > 0 ? Math.min(100, Math.round((streakDays / personalBest) * 100)) : (streakDays > 0 ? 100 : 0);
+        const streakOffset = CIRC - (CIRC * streakPct) / 100;
+        const branchRankLabel = getRdBranchRankLabel(me);
+        const streakBadge = streakDays >= 30 ? 'بطل الالتزام لهذا الشهر' : (streakDays >= 10 ? 'منضبط هذا الشهر' : 'ابدأ سلسلة انضباطك');
+
+        let responseScore = 100;
+        let autoCount = 0;
+        try {
+          if (me && (me.role === 'employee' || me.role === 'branch_manager')) {
+            const rd = calcResponseRate(me.id, 'employee');
+            responseScore = rd.score;
+            autoCount = rd.autoCount;
+          }
+        } catch (_) { /* noop */ }
+        const responsePct = Math.min(100, Math.abs(responseScore));
+        const responseColor = rdClassifyScore(responseScore);
+        const responseStatus = responseScore < 0 ? 'تنبيه' : (responseScore >= 75 ? 'جيد' : 'تحذير');
+
+        const total = visible.length;
+        const pending = visible.filter(v => isTicketWorkflowOpen(v)).length;
+        const closed = visible.filter(v => v.state === 'closed').length;
+        const autoFwd = visible.filter(v => v.auto_forwarded_emp || v.auto_forwarded_sup).length;
+
+        const recent = sortNotifsNewestFirst(visible.map(v => ({
+          ...v,
+          time: v.updated_at || v.created_at
+        }))).slice(0, 5);
+
+        const statusItems = [
+          { key: 'emp', label: 'بانتظار الموظف', icon: 'fa-user', colorKey: 'warning' },
+          { key: 'sup', label: 'بانتظار المشرف', icon: 'fa-user-shield', colorKey: 'info' },
+          { key: 'aud', label: 'بانتظار التدقيق', icon: 'fa-magnifying-glass', colorKey: 'purple' },
+          { key: 'mgt', label: 'بانتظار الإدارة', icon: 'fa-bolt', colorKey: 'danger' },
+          { key: 'hr', label: 'بانتظار الموارد البشرية', icon: 'fa-id-badge', colorKey: 'gold' },
+          { key: 'closed', label: 'مغلقة', icon: 'fa-check', colorKey: 'success' },
+          { key: 'Warning_Issued', label: 'تنبيه إداري صادر', icon: 'fa-bell', colorKey: 'text3' }
+        ].map(s => {
+          const count = visible.filter(v => v.state === s.key).length;
+          const colorVar = s.colorKey === 'gold' ? 'var(--gold)'
+            : s.colorKey === 'text3' ? 'var(--text3)'
+            : s.colorKey === 'purple' ? 'var(--purple)'
+            : `var(--${s.colorKey === 'info' ? 'info' : s.colorKey})`;
+          return { ...s, count, colorVar };
+        });
+
+        const stats = [
+          { value: autoFwd, label: 'مخالفات تم تمريرها تلقائيا', icon: 'fa-clock', color: 'var(--warning)', delay: 0 },
+          { value: pending, label: 'قيد المعالجة', icon: 'fa-spinner', color: 'var(--info)', delay: 0.04 },
+          { value: closed, label: 'مغلقة', icon: 'fa-check-double', color: 'var(--success)', delay: 0.08 },
+          { value: total, label: 'الإجمالي هذا الشهر', icon: 'fa-chart-simple', color: 'var(--gold)', delay: 0.12 }
+        ];
+
+        const recentHtml = recent.length
+          ? recent.map(t => {
+              const name = t._empName || '—';
+              const initial = name.trim().charAt(0) || '—';
+              const colorVar = (t.auto_forwarded_emp || t.auto_forwarded_sup) ? 'var(--danger)'
+                : (t.state === 'closed' ? 'var(--success)' : 'var(--warning)');
+              return `
+                <button type="button" class="rd-desk-activity__row" onclick="openTicket('${t.id}')">
+                  <div class="rd-desk-av">${Sec.escapeHTML(initial)}</div>
+                  <div class="rd-desk-activity__body">
+                    <span class="rd-desk-activity__name">${Sec.escapeHTML(name)}</span>
+                    <span class="rd-desk-activity__type">${Sec.escapeHTML(t.violation_type || '—')}</span>
+                  </div>
+                  <div class="rd-desk-dot" style="background:${colorVar}"></div>
+                  <span class="rd-desk-activity__time">${Sec.escapeHTML(formatRelativeAr(t.created_at))}</span>
+                </button>`;
+            }).join('')
+          : '<div class="rd-desk-activity__row rd-desk-activity__row--empty"><span class="rd-desk-activity__type">لا توجد تذاكر بعد</span></div>';
+
+        host.innerHTML = `
+          <div class="rd-desk-dash">
+            <div class="rd-desk-dash__grid">
+              <div class="rd-desk-dash__main">
+                <div class="rd-desk-streak">
+                  <div class="rd-desk-streak__badge"><i class="fas fa-medal" aria-hidden="true"></i>${Sec.escapeHTML(streakBadge)}</div>
+                  <div class="rd-desk-streak__ring">
+                    <svg width="118" height="118" viewBox="0 0 132 132" aria-hidden="true">
+                      <circle cx="66" cy="66" r="54" fill="none" stroke="var(--border)" stroke-width="10"></circle>
+                      <circle cx="66" cy="66" r="54" fill="none" stroke="var(--success)" stroke-width="10" stroke-linecap="round" stroke-dasharray="${CIRC}" stroke-dashoffset="${streakOffset}"></circle>
+                    </svg>
+                    <div class="rd-desk-streak__center">
+                      <i class="fas fa-fire" aria-hidden="true"></i>
+                      <span class="rd-desk-streak__days">${streakDays}</span>
+                      <span class="rd-desk-streak__lbl">يوم بدون مخالفات</span>
+                    </div>
+                  </div>
+                  <div class="rd-desk-streak__minis">
+                    <div class="rd-desk-mini">
+                      <div class="rd-desk-mini__val" style="color:var(--gold)">${personalBest}</div>
+                      <div class="rd-desk-mini__lbl">أفضل رقم لك</div>
+                    </div>
+                    <div class="rd-desk-mini">
+                      <div class="rd-desk-mini__val" style="color:var(--success)">${Sec.escapeHTML(branchRankLabel)}</div>
+                      <div class="rd-desk-mini__lbl">ترتيب فرعك</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="rd-desk-stats">
+                  ${stats.map(s => `
+                    <div class="rd-desk-stat" style="animation-delay:${s.delay}s">
+                      <div class="rd-desk-stat__row">
+                        <span class="rd-desk-stat__val">${s.value}</span>
+                        <span class="rd-desk-stat__ico" style="color:${s.color}"><i class="fas ${s.icon}" aria-hidden="true"></i></span>
+                      </div>
+                      <div class="rd-desk-stat__lbl">${Sec.escapeHTML(s.label)}</div>
+                    </div>`).join('')}
+                </div>
+                <div class="rd-desk-sec">
+                  <div class="rd-desk-sec__head">
+                    <span class="rd-desk-sec__title">آخر النشاطات</span>
+                    <button type="button" class="rd-desk-sec__link" onclick="dashGoTab('workflow')">عرض الكل</button>
+                  </div>
+                  <div class="rd-desk-activity">${recentHtml}</div>
+                </div>
+              </div>
+              <div class="rd-desk-dash__side">
+                <div class="rd-desk-metric">
+                  <div class="rd-desk-metric__top">
+                    <span class="rd-desk-metric__label">الاستجابة</span>
+                    <span class="rd-desk-metric__val" style="color:${responseColor}">${responseScore} · ${responseStatus}</span>
+                  </div>
+                  <div class="rd-desk-metric__bar"><div class="rd-desk-metric__fill" style="width:${responsePct}%;background:${responseColor}"></div></div>
+                  <div class="rd-desk-metric__sub">${autoCount} تمريرات تلقائية</div>
+                </div>
+                <div class="rd-desk-sec">
+                  <div class="rd-desk-sec__head"><span class="rd-desk-sec__title">توزيع الحالات</span></div>
+                  <div class="rd-desk-dist">
+                    ${statusItems.map(s => `
+                      <button type="button" class="rd-desk-dist__row" onclick="dashFunnelNavigate('${s.key}')">
+                        <div class="rd-desk-dist__ico" style="color:${s.colorVar}"><i class="fas ${s.icon}" aria-hidden="true"></i></div>
+                        <div class="rd-desk-dist__label">${Sec.escapeHTML(s.label)}</div>
+                        <div class="rd-desk-dist__count" style="color:${s.colorVar}">${s.count}</div>
+                      </button>`).join('')}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>`;
+        host.hidden = false;
+      }
+
       function renderDashboardRedesign(visible, allVisible, monthFromIso, nextFromIso, ksaNowParts) {
         const host = document.getElementById('rdDash');
         if (!host) return;
@@ -11723,6 +11900,18 @@
           return iso && iso >= monthFromIso && iso < nextFromIso;
         });
 
+        if (isAtharDesktopRedesignUi()) {
+          try {
+            renderDashboardDesktopRedesign(visible, allVisible, monthFromIso, nextFromIso, ksaNowParts);
+          } catch (e) {
+            if (isMirsadDebugLog()) console.warn('[rdDashDesk]', e);
+          }
+          const playEntryDesk = !!state._dashHandPlayEntryWave;
+          state._dashHandPlayEntryWave = false;
+          try { renderDashWelcomeHand(playEntryDesk); } catch (_) { /* noop */ }
+          updatePendingBadge();
+          return;
+        }
         if (isAtharRedesignUi()) {
           try {
             renderDashboardRedesign(visible, allVisible, monthFromIso, nextFromIso, ksaNowParts);
