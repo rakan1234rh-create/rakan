@@ -4018,11 +4018,21 @@ html.athar-staging-redesign.mr-desktop-ui .topbar-brand-zone {
   flex: 0 0 auto !important;
 }
 
-html.athar-staging-redesign.mr-desktop-ui .topbar-brand-divider,
+html.athar-staging-redesign.mr-desktop-ui .topbar-brand-divider {
+  display: block !important;
+  width: 1px !important;
+  height: 28px !important;
+  min-height: 28px !important;
+  margin-inline: 16px !important;
+  background: var(--border) !important;
+  opacity: 1 !important;
+  flex-shrink: 0 !important;
+  align-self: center !important;
+}
+
 html.athar-staging-redesign.mr-desktop-ui #topbarClock,
 html.athar-staging-redesign.mr-desktop-ui #topbarUserChip,
-html.athar-staging-redesign.mr-desktop-ui #rdThemeBtn,
-html.athar-staging-redesign.mr-desktop-ui .rd-global-search {
+html.athar-staging-redesign.mr-desktop-ui #rdThemeBtn {
   display: none !important;
 }
 
