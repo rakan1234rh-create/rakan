@@ -3800,15 +3800,26 @@ html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item {
 }
 
 html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item.active {
-  background: var(--gold) !important;
-  color: var(--onGold) !important;
+  background: var(--goldSoft) !important;
+  color: var(--gold) !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item.active .nav-icon-wrap,
 html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item.active .nav-icon-wrap i,
 html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item.active .nav-item-label {
-  color: var(--onGold) !important;
+  color: var(--gold) !important;
   background: transparent !important;
+}
+
+/* Desktop nav: hide breaks, show schedule/complaints; reverse on mobile */
+html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item--desk-hide {
+  display: none !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #sidebar .nav-item--desk-only {
+  display: none !important;
+}
+html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-section-label {
+  display: none !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #appWrap .topbar.unified-banner,

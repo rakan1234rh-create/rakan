@@ -767,8 +767,8 @@
   </style>
   <link rel="stylesheet" href="styles/custom/main.css">
   <link rel="stylesheet" href="styles/custom/design-kit.css" id="mk-design-kit">
-  <link rel="stylesheet" href="styles/custom/athar-redesign-staging.css?v=desk6" id="athar-redesign-staging">
-  <link rel="stylesheet" href="styles/custom/athar-desktop-screens.css?v=desk6" id="athar-desktop-screens">
+  <link rel="stylesheet" href="styles/custom/athar-redesign-staging.css?v=desk7" id="athar-redesign-staging">
+  <link rel="stylesheet" href="styles/custom/athar-desktop-screens.css?v=desk7" id="athar-desktop-screens">
   <!-- Mirsad tokens + kit: مضمّنة في index.html — لا روابط design-system (تجنّب 404 عند file://) -->
   <style>
     /* Reset figma-search-input inside figma-search-wrap to prevent overlapping border/background from platform-bridge.css */
@@ -2325,7 +2325,7 @@
 
     }
   </style>
-  <script id="syncPlatformDesktopStylesLate">(function(){var KEEP_IDS=['platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link'];var CLASSIC_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){var redesign=document.documentElement.classList.contains('athar-staging-redesign');var i,el;for(i=0;i<CLASSIC_IDS.length;i++){el=document.getElementById(CLASSIC_IDS[i]);if(el)el.disabled=!isDesktop||redesign;}for(i=0;i<KEEP_IDS.length;i++){el=document.getElementById(KEEP_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
+  <script id="syncPlatformDesktopStylesLate">(function(){var KEEP_IDS=['platform-settings-shell-link','platform-viewport-baseline-link'];var CLASSIC_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link','desktop-ui-shell-lock-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){var redesign=document.documentElement.classList.contains('athar-staging-redesign');var i,el;for(i=0;i<CLASSIC_IDS.length;i++){el=document.getElementById(CLASSIC_IDS[i]);if(el)el.disabled=!isDesktop||redesign;}for(i=0;i<KEEP_IDS.length;i++){el=document.getElementById(KEEP_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
   <meta name="app-build" content="athar-avatar-new-badge-edit-v1050">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
@@ -2710,7 +2710,7 @@
           <button class="nav-item" onclick="goTab('workflow',this)" data-perm="tab_workflow"><span class="nav-icon-wrap"><i class="fas fa-clipboard-list" aria-hidden="true"></i></span><span
               class="nav-item-label">تذاكر</span><span class="nav-badge" id="pendBadge"
               style="display:none">0</span></button>
-          <button class="nav-item" onclick="goTab('breaks',this)" data-perm="tab_breaks"><span class="nav-icon-wrap"><i
+          <button class="nav-item nav-item--desk-hide" onclick="goTab('breaks',this)" data-perm="tab_breaks"><span class="nav-icon-wrap"><i
               class="fas fa-mug-hot" aria-hidden="true"></i></span><span class="nav-item-label">بريكات الموظفين</span></button>
           <button class="nav-item" onclick="goTab('reports',this)" data-perm="tab_reports"><span class="nav-icon-wrap"><i
               class="fas fa-chart-line" aria-hidden="true"></i></span><span class="nav-item-label">تقارير</span></button>
@@ -2721,6 +2721,10 @@
           <div id="navSectionSettings" class="nav-section-label" data-perm="section_settings">الإعدادات</div>
           <button class="nav-item" onclick="goTab('locations',this)" data-perm="tab_locations"><span class="nav-icon-wrap"><i
               class="fas fa-location-dot" aria-hidden="true"></i></span><span class="nav-item-label">فروع</span></button>
+          <button class="nav-item nav-item--desk-only" onclick="goTab('schedule',this)" data-perm="tab_schedule"><span class="nav-icon-wrap"><i
+              class="fas fa-calendar-days" aria-hidden="true"></i></span><span class="nav-item-label">الجدول</span></button>
+          <button class="nav-item nav-item--desk-only" onclick="goTab('complaints',this)" data-perm="tab_complaints"><span class="nav-icon-wrap"><i
+              class="fas fa-comment-dots" aria-hidden="true"></i></span><span class="nav-item-label">الشكاوى والاقتراحات</span></button>
           <button class="nav-item" onclick="goTab('departments',this)" data-perm="tab_departments"><span class="nav-icon-wrap"><i
               class="fas fa-user-group" aria-hidden="true"></i></span><span class="nav-item-label">مستخدمون</span></button>
         </nav>
@@ -3487,6 +3491,20 @@
                   <div id="usersList" class="mr-users-list" role="list" aria-label="قائمة المستخدمين"></div>
                 </div>
               </div>
+            </div>
+          </div>
+
+          <!-- SCHEDULE (Desktop redesign) -->
+          <div class="tab-content" id="tab-schedule" hidden>
+            <div class="panel wf-panel rd-desk-panel">
+              <div id="rdScheduleHost" class="rd-schedule-host" aria-live="polite"></div>
+            </div>
+          </div>
+
+          <!-- COMPLAINTS (Desktop redesign) -->
+          <div class="tab-content" id="tab-complaints" hidden>
+            <div class="panel wf-panel rd-desk-panel">
+              <div id="rdComplaintsHost" class="rd-complaints-host" aria-live="polite"></div>
             </div>
           </div>
 
@@ -4537,7 +4555,7 @@
     </div>
   </div><!-- /#appWrap -->
 
-    <script src="js/app.js?v=dev"></script>
+    <script src="js/app.js?v=desk7"></script>
         <style>
       @media (max-width: 992px) {
         /* ── workflow: منع التمدد الأفقي ── */

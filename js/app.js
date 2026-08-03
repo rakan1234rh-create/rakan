@@ -5882,6 +5882,8 @@
         { id: 'tab_settings', label: 'صفحة صلاحيات المنصة', group: 'الإعدادات', roles: [] },
         { id: 'tab_broadcasts', label: 'نشرات الجوال', group: 'الإعدادات', roles: ['admin'] },
         { id: 'tab_breaks', label: 'بريكات الموظفين', group: 'التنقل', roles: ['admin', 'supervisor', 'branch_manager', 'observer', 'employee'] },
+        { id: 'tab_schedule', label: 'الجدول', group: 'التنقل', roles: ['admin', 'manager', 'auditor', 'supervisor', 'observer'] },
+        { id: 'tab_complaints', label: 'الشكاوى والاقتراحات', group: 'التنقل', roles: ['admin', 'manager', 'auditor', 'supervisor', 'employee', 'branch_manager', 'observer', 'hr'] },
         { id: 'manage_break_schedules', label: 'تعديل مدد البريك (منطقة/فرع/موظف)', group: 'إجراءات إدارية', roles: ['admin'] },
         { id: 'view_all_tickets', label: 'عرض جميع التذاكر (كل الفروع)', group: 'سير العمل', roles: ['admin', 'manager', 'auditor', 'hr'] },
         { id: 'respond_own_ticket', label: 'الرد على التذكرة الموجّهة إليه', group: 'سير العمل', roles: ['admin', 'employee', 'branch_manager'] },
@@ -5922,7 +5924,9 @@
         departments: 'tab_departments',
         settings: 'tab_settings',
         broadcasts: 'tab_broadcasts',
-        breaks: 'tab_breaks'
+        breaks: 'tab_breaks',
+        schedule: 'tab_schedule',
+        complaints: 'tab_complaints'
       };
 
       function buildDefaultRolePermissions() {
@@ -7981,6 +7985,8 @@
         newTicket: { title: 'رصد مخالفة جديدة', sub: 'سجّل مخالفة بأكبر قدر من التفاصيل' },
         workflow: { title: 'التذاكر', sub: 'إدارة ومتابعة تذاكر المخالفات' },
         breaks: { title: 'بريكات الموظفين', sub: 'staff breaks' },
+        schedule: { title: 'جدول الرصد', sub: 'تعيين الراصدين على الفروع وتحديد الورديات والتكرار' },
+        complaints: { title: 'الشكاوى والاقتراحات', sub: 'ارفع شكواك أو اقتراحك وتابع الرد عليها' },
         reports: { title: 'التقارير', sub: 'مؤشرات الأداء والاتجاهات' },
         compliance: { title: 'مؤشرات الامتثال', sub: 'نظرة عامة على أداء كل المناطق' },
         locations: { title: 'المناطق والفروع', sub: 'إدارة المناطق والفروع' },
@@ -8766,6 +8772,8 @@
           if (tab === 'profileAvatars') renderProfileAvatarsAdmin();
           if (tab === 'broadcasts') renderBroadcastsPage();
           if (tab === 'breaks') renderStaffBreaksPage();
+          if (tab === 'schedule') { try { renderScheduleDesktop(); } catch (_) { /* noop */ } }
+          if (tab === 'complaints') { try { renderComplaintsDesktop(); } catch (_) { /* noop */ } }
           if (tab === 'newTicket') prepareNewTicket();
         }
 
@@ -32612,6 +32620,247 @@
       window.closeProfilePage = closeProfilePage;
       window.toggleThemeFromUserMenu = toggleThemeFromUserMenu;
       window.handleLogoutFromUserMenu = handleLogoutFromUserMenu;
+      /* ── Desktop: الجدول + الشكاوى (من Athar Redesign Desktop) ── */
+      const RD_SCH_KEY = 'athar_rd_schedule_v1';
+      const RD_CMPL_KEY = 'athar_rd_complaints_v1';
+
+      function rdLoadJson(key, fallback) {
+        try {
+          const raw = localStorage.getItem(key);
+          if (!raw) return fallback;
+          const parsed = JSON.parse(raw);
+          return parsed != null ? parsed : fallback;
+        } catch (_) { return fallback; }
+      }
+      function rdSaveJson(key, val) {
+        try { localStorage.setItem(key, JSON.stringify(val)); } catch (_) { /* noop */ }
+      }
+
+      function rdDefaultSchedules() {
+        const observers = (state.users || []).filter(u => normalizeUserRole(u.role) === 'observer').slice(0, 3);
+        const branches = (state.branches || []).slice(0, 4);
+        if (!observers.length || !branches.length) return [];
+        return observers.map((o, i) => ({
+          id: 'sch-seed-' + o.id,
+          monitorId: o.id,
+          monitorName: o.name || 'راصد',
+          branchIds: branches.slice(0, Math.min(2, branches.length)).map(b => b.id),
+          shift: i % 2 ? 'evening' : 'morning',
+          frequency: 'daily',
+          days: [],
+          startTime: i % 2 ? '16:00' : '08:00',
+          endTime: i % 2 ? '00:00' : '16:00'
+        }));
+      }
+
+      function getRdSchedules() {
+        let rows = rdLoadJson(RD_SCH_KEY, null);
+        if (!Array.isArray(rows)) {
+          rows = rdDefaultSchedules();
+          rdSaveJson(RD_SCH_KEY, rows);
+        }
+        return rows;
+      }
+
+      function getRdComplaints() {
+        let rows = rdLoadJson(RD_CMPL_KEY, null);
+        if (!Array.isArray(rows)) {
+          rows = [];
+          rdSaveJson(RD_CMPL_KEY, rows);
+        }
+        return rows;
+      }
+
+      function rdShiftMeta(shift) {
+        if (shift === 'evening') return { label: 'مسائية', color: 'var(--info)' };
+        if (shift === 'night') return { label: 'ليلية', color: 'var(--purple)' };
+        return { label: 'صباحية', color: 'var(--success)' };
+      }
+
+      function renderScheduleDesktop() {
+        const host = document.getElementById('rdScheduleHost');
+        if (!host) return;
+        if (!isAtharDesktopScreenUi()) {
+          host.innerHTML = '<div class="rd-ticket-empty"><i class="fas fa-desktop"></i><p>شاشة الجدول متاحة على سطح المكتب</p></div>';
+          return;
+        }
+        const q = (state._rdSchSearch || '').toLowerCase().trim();
+        let rows = getRdSchedules();
+        if (q) {
+          rows = rows.filter(r => {
+            const names = (r.branchIds || []).map(id => (state.branches || []).find(b => b.id === id)?.name || '').join(' ');
+            return `${r.monitorName} ${names}`.toLowerCase().includes(q);
+          });
+        }
+        const cards = rows.map((r, i) => {
+          const shift = rdShiftMeta(r.shift);
+          const initial = String(r.monitorName || '؟').trim().charAt(0) || '؟';
+          const chips = (r.branchIds || []).map(id => {
+            const br = (state.branches || []).find(b => b.id === id);
+            return `<span class="rd-sch-chip"><i class="fas fa-store" aria-hidden="true"></i>${Sec.escapeHTML(br?.name || 'فرع')}</span>`;
+          }).join('');
+          const freq = r.frequency === 'weekly' ? 'أسبوعي' : 'يومي';
+          return `
+            <article class="rd-sch-card" style="animation-delay:${Math.min(0.3, i * 0.04)}s">
+              <div class="rd-sch-card__top">
+                <div class="rd-sch-card__who">
+                  <span class="rd-sch-card__av">${Sec.escapeHTML(initial)}</span>
+                  <div>
+                    <div class="rd-sch-card__name">${Sec.escapeHTML(r.monitorName || '—')}</div>
+                    <div class="rd-sch-card__meta"><span dir="ltr">${Sec.escapeHTML(r.startTime || '')} – ${Sec.escapeHTML(r.endTime || '')}</span> · ${freq}</div>
+                  </div>
+                </div>
+                <div class="rd-sch-card__acts">
+                  <span class="rd-sch-shift" style="--sc:${shift.color}">${Sec.escapeHTML(shift.label)}</span>
+                  <button type="button" class="rd-desk-act" onclick="rdDeleteSchedule('${Sec.escapeHTML(r.id)}')" aria-label="حذف"><i class="fas fa-trash"></i></button>
+                </div>
+              </div>
+              <div class="rd-sch-card__chips">${chips || '<span class="rd-desk-muted">لا فروع</span>'}</div>
+            </article>`;
+        }).join('');
+        host.innerHTML = `
+          <p class="rd-sch-intro">كل راصد يرى ويتابع الفروع المسندة له فقط ضمن الجدول أدناه.</p>
+          <div class="rd-sch-toolbar">
+            <div class="figma-search-wrap wf-search">
+              <input type="text" class="figma-search-input" id="rdSchSearch" value="${Sec.escapeHTML(state._rdSchSearch || '')}"
+                placeholder="ابحث باسم الراصد أو الفرع..." oninput="rdSchSearch(this.value)">
+              <button type="button" class="figma-search-btn" aria-label="بحث"><i class="fas fa-magnifying-glass"></i></button>
+            </div>
+            <button type="button" class="mk-btn mk-btn--primary" onclick="rdAddSchedulePrompt()"><i class="fas fa-plus"></i>تعيين جدول</button>
+          </div>
+          <div class="rd-sch-list">${cards || '<div class="rd-ticket-empty"><i class="fas fa-calendar-days"></i><p>لا توجد جداول تعيين</p></div>'}</div>`;
+      }
+
+      function rdSchSearch(val) {
+        state._rdSchSearch = val || '';
+        renderScheduleDesktop();
+      }
+
+      function rdAddSchedulePrompt() {
+        const observers = (state.users || []).filter(u => normalizeUserRole(u.role) === 'observer');
+        const branches = state.branches || [];
+        if (!observers.length || !branches.length) {
+          showToast('يلزم وجود راصد وفرع واحد على الأقل', 'warning');
+          return;
+        }
+        const obs = observers[0];
+        const rows = getRdSchedules();
+        rows.unshift({
+          id: 'sch-' + Date.now(),
+          monitorId: obs.id,
+          monitorName: obs.name || 'راصد',
+          branchIds: branches.slice(0, 2).map(b => b.id),
+          shift: 'morning',
+          frequency: 'daily',
+          days: [],
+          startTime: '08:00',
+          endTime: '16:00'
+        });
+        rdSaveJson(RD_SCH_KEY, rows);
+        renderScheduleDesktop();
+        showToast('تم إضافة تعيين جدول', 'success');
+      }
+
+      function rdDeleteSchedule(id) {
+        const rows = getRdSchedules().filter(r => r.id !== id);
+        rdSaveJson(RD_SCH_KEY, rows);
+        renderScheduleDesktop();
+      }
+
+      function renderComplaintsDesktop() {
+        const host = document.getElementById('rdComplaintsHost');
+        if (!host) return;
+        if (!isAtharDesktopScreenUi()) {
+          host.innerHTML = '<div class="rd-ticket-empty"><i class="fas fa-desktop"></i><p>شاشة الشكاوى متاحة على سطح المكتب</p></div>';
+          return;
+        }
+        const filter = state._rdCmplFilter || 'all';
+        let rows = getRdComplaints();
+        if (filter === 'complaint') rows = rows.filter(r => r.kind === 'complaint');
+        if (filter === 'suggestion') rows = rows.filter(r => r.kind === 'suggestion');
+        const all = getRdComplaints();
+        const total = all.length;
+        const onlyC = all.filter(r => r.kind === 'complaint').length;
+        const onlyS = all.filter(r => r.kind === 'suggestion').length;
+        const pending = all.filter(r => r.status === 'pending').length;
+        const resolved = all.filter(r => r.status === 'resolved').length;
+        const chip = (id, label) => {
+          const on = filter === id;
+          return `<button type="button" class="rd-wf-chip${on ? ' is-active' : ''}" onclick="rdCmplFilter('${id}')">${Sec.escapeHTML(label)}</button>`;
+        };
+        const list = rows.map((r, i) => {
+          const num = '#' + (1001 + all.findIndex(x => x.id === r.id));
+          const kindLbl = r.kind === 'suggestion' ? 'اقتراح' : 'شكوى';
+          const stLbl = r.status === 'resolved' ? 'تم الحل' : 'قيد المراجعة';
+          const tone = r.status === 'resolved' ? 'var(--success)' : 'var(--warning)';
+          return `
+            <article class="rd-cmpl-card" style="animation-delay:${Math.min(0.3, i * 0.04)}s">
+              <div class="rd-cmpl-card__top">
+                <span class="rd-desk-mono">${Sec.escapeHTML(num)}</span>
+                <span class="rd-desk-ticket-badge" style="color:${tone};background:color-mix(in srgb, ${tone} 18%, transparent)">${Sec.escapeHTML(stLbl)}</span>
+              </div>
+              <div class="rd-cmpl-card__title">${Sec.escapeHTML(kindLbl)} · ${Sec.escapeHTML(r.category || 'عام')}</div>
+              <div class="rd-cmpl-card__body">${Sec.escapeHTML(r.desc || '')}</div>
+              <div class="rd-cmpl-card__foot">
+                <span class="rd-desk-muted">${Sec.escapeHTML(r.createdAt || '')}</span>
+                ${r.status !== 'resolved' ? `<button type="button" class="rd-desk-act" onclick="rdResolveComplaint('${Sec.escapeHTML(r.id)}')">تم الحل</button>` : ''}
+              </div>
+            </article>`;
+        }).join('');
+        host.innerHTML = `
+          <div class="rd-cmpl-head">
+            <p class="rd-sch-intro">يمكنك رفع شكوى أو اقتراح حول بيئة العمل، وستتم متابعتها من الإدارة المختصة.</p>
+            <button type="button" class="mk-btn mk-btn--primary" onclick="rdOpenComplaintForm()"><i class="fas fa-plus"></i>رفع شكوى أو اقتراح</button>
+          </div>
+          <div class="rd-cmpl-metrics">
+            <div class="rd-cmpl-metric"><div class="rd-cmpl-metric__lbl">الإجمالي</div><div class="rd-cmpl-metric__val">${total}</div></div>
+            <div class="rd-cmpl-metric"><div class="rd-cmpl-metric__lbl">شكاواي</div><div class="rd-cmpl-metric__val" style="color:var(--danger)">${onlyC}</div></div>
+            <div class="rd-cmpl-metric"><div class="rd-cmpl-metric__lbl">اقتراحاتي</div><div class="rd-cmpl-metric__val" style="color:var(--info)">${onlyS}</div></div>
+            <div class="rd-cmpl-metric"><div class="rd-cmpl-metric__lbl">قيد المراجعة</div><div class="rd-cmpl-metric__val" style="color:var(--warning)">${pending}</div></div>
+            <div class="rd-cmpl-metric"><div class="rd-cmpl-metric__lbl">تم الحل</div><div class="rd-cmpl-metric__val" style="color:var(--success)">${resolved}</div></div>
+          </div>
+          <div class="rd-sch-toolbar" style="margin-bottom:14px">${chip('all','الكل')}${chip('complaint','الشكاوى')}${chip('suggestion','الاقتراحات')}</div>
+          <div class="rd-cmpl-list">${list || '<div class="rd-ticket-empty"><i class="fas fa-inbox"></i><p>لا توجد شكاوى أو اقتراحات</p></div>'}</div>`;
+      }
+
+      function rdCmplFilter(id) {
+        state._rdCmplFilter = id || 'all';
+        renderComplaintsDesktop();
+      }
+
+      function rdOpenComplaintForm() {
+        const kind = window.confirm('موافق = شكوى · إلغاء = اقتراح') ? 'complaint' : 'suggestion';
+        const desc = window.prompt(kind === 'complaint' ? 'اكتب نص الشكوى:' : 'اكتب نص الاقتراح:');
+        if (!desc || !String(desc).trim()) return;
+        const rows = getRdComplaints();
+        rows.unshift({
+          id: 'cmpl-' + Date.now(),
+          kind,
+          category: 'عام',
+          desc: String(desc).trim(),
+          status: 'pending',
+          createdAt: new Date().toLocaleString('ar-SA')
+        });
+        rdSaveJson(RD_CMPL_KEY, rows);
+        renderComplaintsDesktop();
+        showToast(kind === 'complaint' ? 'تم رفع الشكوى' : 'تم رفع الاقتراح', 'success');
+      }
+
+      function rdResolveComplaint(id) {
+        const rows = getRdComplaints().map(r => r.id === id ? { ...r, status: 'resolved' } : r);
+        rdSaveJson(RD_CMPL_KEY, rows);
+        renderComplaintsDesktop();
+      }
+
+      window.rdSchSearch = rdSchSearch;
+      window.rdAddSchedulePrompt = rdAddSchedulePrompt;
+      window.rdDeleteSchedule = rdDeleteSchedule;
+      window.rdCmplFilter = rdCmplFilter;
+      window.rdOpenComplaintForm = rdOpenComplaintForm;
+      window.rdResolveComplaint = rdResolveComplaint;
+      window.renderScheduleDesktop = renderScheduleDesktop;
+      window.renderComplaintsDesktop = renderComplaintsDesktop;
+
       window.goTab = goTab;
       window.saveRolePermissionsFromUI = saveRolePermissionsFromUI;
       window.resetRolePermissionsToDefaults = resetRolePermissionsToDefaults;
