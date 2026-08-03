@@ -1284,7 +1284,7 @@
         }
         if (list) appendTicketListHtml(list, dataLoadingEmptyHTML('جاري تحميل التقارير…'), true);
         const rd = document.getElementById('rdReports');
-        if (rd && typeof isAtharRedesignUi === 'function' && isAtharRedesignUi()) {
+        if (rd && ((typeof isAtharRedesignUi === 'function' && isAtharRedesignUi()) || isAtharDesktopScreenUi())) {
           rd.hidden = false;
           rd.innerHTML = `<div class="rd-rp-metric"><div class="rd-rp-metric__label">جاري تحميل التقارير…</div></div>`;
         }
@@ -5010,6 +5010,11 @@
         return tab === 'breaks' || tab === 'settings';
       }
 
+      /** سطح المكتب فقط — لا يمس مسار الجوال `isAtharRedesignUi` */
+      function isAtharDesktopScreenUi() {
+        return typeof isAtharDesktopRedesignUi === 'function' && isAtharDesktopRedesignUi();
+      }
+
       function rdClassifyScore(value) {
         if (value < 0) return 'var(--danger)';
         if (value >= 90) return 'var(--success)';
@@ -5193,7 +5198,8 @@
       function renderReportsRedesign() {
         const host = document.getElementById('rdReports');
         if (!host) return;
-        if (!isAtharRedesignUi()) {
+        const desk = isAtharDesktopScreenUi();
+        if (!isAtharRedesignUi() && !desk) {
           host.hidden = true;
           host.innerHTML = '';
           return;
@@ -5277,7 +5283,7 @@
           },
         ];
 
-        host.innerHTML = `
+        const metricsHtml = `
           <div class="rd-rp-metrics">
             ${metrics.map((m) => `
               <div class="rd-rp-metric" style="animation-delay:${m.delay}s">
@@ -5287,7 +5293,8 @@
                 </div>
                 <div class="rd-rp-metric__value">${Sec.escapeHTML(m.value)}</div>
               </div>`).join('')}
-          </div>
+          </div>`;
+        const barsHtml = `
           <div class="rd-rp-sec-title">اتجاه الالتزام الشهري</div>
           <div class="rd-rp-bars-card">
             <div class="rd-rp-bars" role="img" aria-label="اتجاه الالتزام الشهري">
@@ -5297,7 +5304,8 @@
                   <span class="rd-rp-bar__lbl">${Sec.escapeHTML(b.label)}</span>
                 </div>`).join('')}
             </div>
-          </div>
+          </div>`;
+        const linksHtml = `
           <div class="rd-rp-sec-title">تقارير سريعة</div>
           <div class="rd-rp-links">
             ${links.map((r) => `
@@ -5310,6 +5318,10 @@
                 <i class="fas fa-chevron-left rd-rp-link__chev" aria-hidden="true"></i>
               </button>`).join('')}
           </div>`;
+        // Desktop layout wrapper only — mobile markup stays sequential
+        host.innerHTML = desk
+          ? `${metricsHtml}<div class="rd-rp-desk-split"><div class="rd-rp-desk-split__main">${barsHtml}</div><div class="rd-rp-desk-split__side">${linksHtml}</div></div>`
+          : `${metricsHtml}${barsHtml}${linksHtml}`;
         host.hidden = false;
       }
 
@@ -12454,7 +12466,7 @@
 
         if (isAppDataPending()) {
           setRegionsResultCount(0);
-          container.innerHTML = (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi())
+          container.innerHTML = (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi()) || isAtharDesktopScreenUi()
             ? '<div class="rd-loc-board"><div class="rd-ticket-empty"><i class="fas fa-spinner fa-spin"></i><p>جاري تحميل المناطق والفروع…</p></div></div>'
             : dataLoadingEmptyHTML('جاري تحميل المناطق والفروع…');
           return;
@@ -12509,7 +12521,7 @@
         }
         const visibleRegions = visibleAll.filter(regionMatchesSearch);
 
-        if (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi()) {
+        if ((typeof isAtharRedesignUi === 'function' && isAtharRedesignUi()) || isAtharDesktopScreenUi()) {
           renderRegionsRedesign({
             container,
             visibleAll,
@@ -13584,6 +13596,49 @@
           </article>`;
       }
 
+      /** جدول مستخدمين حرفي لسطح المكتب فقط — لا يُستخدم في الجوال */
+      function rdUsrDeskTableHTML(users, canManage) {
+        const head = `
+          <div class="rd-desk-table rd-desk-table--users" role="table">
+            <div class="rd-desk-table__head" role="row">
+              <span role="columnheader">الموظف</span>
+              <span role="columnheader">الدور</span>
+              <span role="columnheader">الرقم الوظيفي</span>
+              <span role="columnheader">الهاتف</span>
+              <span role="columnheader">البريد</span>
+              <span role="columnheader">إجراءات</span>
+            </div>`;
+        const rows = users.map((u, i) => {
+          const roleKey = normalizeUserRole(u.role);
+          const roleLabel = userTableRoleLabel(u) || ROLE_LABELS[roleKey] || roleKey;
+          const roleColor = ROLE_COLORS[roleKey] || ROLE_COLORS[u.role] || '#8e8e93';
+          const empNum = padEmpNum(u.employee_number);
+          const uid = String(u.id || '').replace(/'/g, "\\'");
+          const active = !!(u.auth_uid && isActiveUser(u));
+          const initial = String(u.name || '؟').trim().charAt(0) || '؟';
+          const delay = Math.min(0.28, i * 0.035);
+          const actions = canManage
+            ? `<div class="rd-desk-acts">
+                <button type="button" class="rd-desk-act" onclick="editUser('${uid}')" aria-label="تعديل"><i class="fas fa-pen"></i></button>
+                <button type="button" class="rd-desk-act rd-desk-act--danger" onclick="deleteUser('${uid}')" aria-label="حذف"><i class="fas fa-trash"></i></button>
+              </div>`
+            : '<span class="rd-desk-muted">—</span>';
+          return `
+            <div class="rd-desk-table__row" role="row" style="animation-delay:${delay}s">
+              <div class="rd-desk-user" role="cell">
+                <span class="rd-desk-user__av">${Sec.escapeHTML(initial)}<i class="rd-desk-user__dot${active ? ' is-on' : ''}" aria-hidden="true"></i></span>
+                <span class="rd-desk-user__name">${Sec.escapeHTML(u.name || '')}</span>
+              </div>
+              <span role="cell"><span class="rd-desk-role" style="--rc:${roleColor}">${Sec.escapeHTML(roleLabel || '—')}</span></span>
+              <span role="cell" class="rd-desk-mono">${Sec.escapeHTML(empNum || '—')}</span>
+              <span role="cell" class="rd-desk-muted" dir="ltr">${Sec.escapeHTML(u.phone || '—')}</span>
+              <span role="cell" class="rd-desk-muted rd-desk-clip">${Sec.escapeHTML(u.email || '—')}</span>
+              <span role="cell">${actions}</span>
+            </div>`;
+        }).join('');
+        return `${head}${rows}</div>`;
+      }
+
       function renderUsers() {
         const list = document.getElementById('usersList');
         if (!list) return;
@@ -13593,7 +13648,9 @@
 
         const countEl = document.getElementById('users-count');
         const usersMob = isMobileViewport();
-        const rd = typeof isAtharRedesignUi === 'function' && isAtharRedesignUi();
+        const rdMob = typeof isAtharRedesignUi === 'function' && isAtharRedesignUi();
+        const rdDesk = isAtharDesktopScreenUi();
+        const rd = rdMob || rdDesk;
         const subEl = document.querySelector('#tab-departments .wf-panel-sub');
         if (subEl) subEl.textContent = rd ? 'USERS MANAGEMENT' : 'users management';
 
@@ -13603,9 +13660,11 @@
           searchEl.dataset.rdPlaceholder = '1';
         }
 
-        list.className = rd
-          ? 'mr-users-list users-grid--mob-list rd-usr-list'
-          : (usersMob ? 'mr-users-list users-grid--mob-list' : 'mr-users-list');
+        list.className = rdDesk
+          ? 'mr-users-list rd-usr-desk'
+          : (rdMob
+            ? 'mr-users-list users-grid--mob-list rd-usr-list'
+            : (usersMob ? 'mr-users-list users-grid--mob-list' : 'mr-users-list'));
 
         if (isAppDataPending()) {
           if (countEl) countEl.textContent = '…';
@@ -13632,7 +13691,13 @@
           return;
         }
 
-        list.innerHTML = rd
+        if (rdDesk) {
+          list.innerHTML = rdUsrDeskTableHTML(filtered, canManage);
+          hydrateProfileAvatarImages(list).catch(() => {});
+          return;
+        }
+
+        list.innerHTML = rdMob
           ? filtered.map((u, i) => rdUsrCardHTML(u, canManage, i)).join('')
           : (usersMob
             ? filtered.map(u => renderUserMobItem(u, canManage)).join('')
@@ -14086,10 +14151,13 @@
         const titleEl = document.querySelector('#tab-violations .wf-panel-title');
         const canManage = canManageViolationTypes();
         const violMob = isMobileViewport();
-        const rd = typeof isAtharRedesignUi === 'function' && isAtharRedesignUi();
+        const rd = (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi())
+          || isAtharDesktopScreenUi();
         if (titleEl) titleEl.textContent = rd ? 'دليل المخالفات' : 'أنواع المخالفات';
         grid.className = rd
-          ? 'rd-viol-list viol-grid viol-grid--mob-list'
+          ? (isAtharDesktopScreenUi()
+            ? 'rd-viol-list rd-viol-list--desk viol-grid'
+            : 'rd-viol-list viol-grid viol-grid--mob-list')
           : (violMob ? 'viol-grid viol-grid--mob-list' : 'mr-users-list');
         if (isAppDataPending()) {
           if (countEl) countEl.textContent = '…';
@@ -23262,7 +23330,7 @@
       }
 
       function buildCmpDetailHeroHTML(item) {
-        if (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi() && item.type === 'employee') {
+        if (((typeof isAtharRedesignUi === 'function' && isAtharRedesignUi()) || isAtharDesktopScreenUi()) && item.type === 'employee') {
           return buildRdCmpEmpDetailHeroHTML(item);
         }
         const score = item.score;
@@ -23315,7 +23383,7 @@
       }
 
       function buildCmpDetailHTML(item, viols, scoringViols) {
-        if (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi() && item.type === 'employee') {
+        if (((typeof isAtharRedesignUi === 'function' && isAtharRedesignUi()) || isAtharDesktopScreenUi()) && item.type === 'employee') {
           return buildRdCmpEmpDetailHTML(item, viols, scoringViols);
         }
         const score = item.score;
@@ -24357,7 +24425,7 @@
 
       function cmpNeoExtremesBarHTML(extremes, view) {
         if (!extremes) return '';
-        if (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi()) {
+        if ((typeof isAtharRedesignUi === 'function' && isAtharRedesignUi()) || isAtharDesktopScreenUi()) {
           return rdCmpHiLoHTML(extremes, view);
         }
         const labels = view === 'branches'
@@ -24529,7 +24597,7 @@
         const statB = view === 'employees' ? 'نقاط' : 'موظفون';
         const rankCls = card.rank === 'top' ? ' cmp-neo-card--top' : (card.rank === 'bottom' ? ' cmp-neo-card--bottom' : '');
 
-        if (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi()) {
+        if ((typeof isAtharRedesignUi === 'function' && isAtharRedesignUi()) || isAtharDesktopScreenUi()) {
           if (view === 'regions') return rdCmpRegionCardHTML(card);
           if (view === 'branches') return rdCmpBranchCardHTML(card);
           return rdCmpRegionCardHTML(card);
@@ -24754,7 +24822,8 @@
         let titleContext = '';
         let subtitle = 'نظرة عامة على أداء كل المناطق';
         let backNav = '';
-        const rdCmp = typeof isAtharRedesignUi === 'function' && isAtharRedesignUi();
+        const rdCmp = (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi())
+          || isAtharDesktopScreenUi();
 
         if (view === 'branches') {
           const region = state.regions.find(r => r.id === state._cmpDrill.regionId);
@@ -25635,7 +25704,7 @@
         // ─── تحديث Modal ───
         const cmpModal = document.getElementById('cmpDetailModal');
         const cmpCard = cmpModal?.querySelector('.modal-card.cmp-detail-card');
-        const rdEmp = typeof isAtharRedesignUi === 'function' && isAtharRedesignUi() && type === 'employee';
+        const rdEmp = ((typeof isAtharRedesignUi === 'function' && isAtharRedesignUi()) || isAtharDesktopScreenUi()) && type === 'employee';
         cmpModal?.classList.toggle('cmp-detail--rd-emp', !!rdEmp);
         cmpCard?.classList.toggle('cmp-detail-card--rd-emp', !!rdEmp);
 
@@ -26740,7 +26809,7 @@
           return;
         }
 
-        if (isAtharRedesignUi()) {
+        if (isAtharRedesignUi() || isAtharDesktopScreenUi()) {
           try {
             renderReportsRedesign();
           } catch (e) {
