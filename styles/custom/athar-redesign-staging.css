@@ -563,8 +563,7 @@ html.athar-staging-redesign.mr-mobile-ui #rdWfChips {
   scrollbar-width: none;
 }
 html.athar-staging-redesign.mr-mobile-ui #rdWfChips::-webkit-scrollbar { display: none; }
-html:not(.athar-staging-redesign) #rdWfChips,
-html.athar-staging-redesign.mr-desktop-ui #rdWfChips {
+html:not(.athar-staging-redesign) #rdWfChips {
   display: none !important;
 }
 
@@ -748,7 +747,6 @@ html.athar-staging-redesign.mr-mobile-ui #rdReports:not([hidden]) {
   display: block !important;
 }
 html:not(.athar-staging-redesign) #rdReports,
-html.athar-staging-redesign.mr-desktop-ui #rdReports,
 html.athar-staging-redesign.mr-mobile-ui #rdReports[hidden] {
   display: none !important;
 }
@@ -2222,8 +2220,7 @@ html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .rd-nt-chev {
   flex-shrink: 0 !important;
   margin-inline-start: auto !important;
 }
-html:not(.athar-staging-redesign) .rd-nt-chev,
-html.athar-staging-redesign.mr-desktop-ui .rd-nt-chev {
+html:not(.athar-staging-redesign) .rd-nt-chev {
   display: none !important;
 }
 
@@ -2985,8 +2982,7 @@ html.athar-staging-redesign.mr-mobile-ui #ticketModal .log-compose-actions .td-r
   color: var(--danger);
 }
 
-html:not(.athar-staging-redesign) #rdTdHd,
-html.athar-staging-redesign.mr-desktop-ui #rdTdHd {
+html:not(.athar-staging-redesign) #rdTdHd {
   display: none !important;
 }
 

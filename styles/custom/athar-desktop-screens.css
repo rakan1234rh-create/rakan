@@ -230,6 +230,22 @@ html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .mk-btn {
 }
 
 /* ── Workflow / تذاكر ── */
+html.athar-staging-redesign.mr-desktop-ui #tab-workflow .wf-panel-banner {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-workflow #rdWfChips {
+  display: flex !important;
+  gap: 8px !important;
+  flex-wrap: wrap !important;
+  margin: 0 !important;
+  order: 2 !important;
+}
+
 html.athar-staging-redesign.mr-desktop-ui #tab-workflow .wf-toolbar,
 html.athar-staging-redesign.mr-desktop-ui #tab-workflow #wfClassicToolbar {
   display: flex !important;
@@ -240,6 +256,8 @@ html.athar-staging-redesign.mr-desktop-ui #tab-workflow #wfClassicToolbar {
   padding: 0 !important;
   background: transparent !important;
   border: none !important;
+  order: 1 !important;
+  flex: 1 1 auto !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #tab-workflow .wf-search {
@@ -248,39 +266,12 @@ html.athar-staging-redesign.mr-desktop-ui #tab-workflow .wf-search {
   padding: 10px 14px !important;
 }
 
-html.athar-staging-redesign.mr-desktop-ui #tab-workflow .wf-status-trigger,
-html.athar-staging-redesign.mr-desktop-ui #tab-workflow .wf-status-opt {
-  border-radius: 10px !important;
-  font-size: 12px !important;
-  font-weight: 600 !important;
-}
-
 html.athar-staging-redesign.mr-desktop-ui #tab-workflow .wf-count {
   display: none !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #tab-workflow #wfClassicToolbar .wf-status-filter {
   display: none !important;
-}
-
-html.athar-staging-redesign.mr-desktop-ui #tab-workflow #rdWfChips {
-  display: flex !important;
-  gap: 8px !important;
-  flex-wrap: wrap !important;
-  margin: 0 0 4px !important;
-  order: 2 !important;
-}
-
-html.athar-staging-redesign.mr-desktop-ui #tab-workflow .wf-toolbar,
-html.athar-staging-redesign.mr-desktop-ui #tab-workflow #wfClassicToolbar {
-  display: flex !important;
-  align-items: center !important;
-  gap: 10px !important;
-  flex-wrap: wrap !important;
-  margin: 0 0 12px !important;
-  padding: 0 !important;
-  background: transparent !important;
-  border: none !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #tab-workflow .rd-wf-chip {
@@ -610,6 +601,74 @@ html.athar-staging-redesign.mr-desktop-ui .rd-desk-act {
 
 html.athar-staging-redesign.mr-desktop-ui .rd-desk-act--danger {
   color: var(--danger) !important;
+}
+
+/* ── Tickets desk table (mockup columns) ── */
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--tickets .rd-desk-table__head,
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--tickets .rd-desk-ticket-row {
+  display: grid !important;
+  grid-template-columns: 90px 2fr 1.6fr 1.3fr 90px 90px !important;
+  gap: 12px !important;
+  align-items: center !important;
+  padding: 13px 18px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-ticket-row {
+  width: 100% !important;
+  border: none !important;
+  border-top: 1px solid var(--border) !important;
+  background: transparent !important;
+  color: inherit !important;
+  font: inherit !important;
+  text-align: start !important;
+  cursor: pointer !important;
+  animation: atharRdCardIn .35s ease both;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-ticket-row:hover {
+  background: var(--surface2) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-ticket-badge {
+  display: inline-flex !important;
+  padding: 4px 10px !important;
+  border-radius: 999px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  width: fit-content !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-ticket-pts {
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-workflow .wf-table-wrap,
+html.athar-staging-redesign.mr-desktop-ui #tab-workflow .data-table.wf-tickets-table {
+  display: none !important;
+}
+
+/* ── Hide remaining classic computer chrome ── */
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .mk-pick-banner-slot,
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rb-toolbar .rp-tool-btn:not(#br-panel-action-btn),
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .wf-count,
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-io-group--desk,
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .wf-count,
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-meta-row,
+html.athar-staging-redesign.mr-desktop-ui #tab-violations .viol-types-meta-row .wf-count,
+html.athar-staging-redesign.mr-desktop-ui #tab-violations .viol-types-meta-row,
+html.athar-staging-redesign.mr-desktop-ui #cmpActiveFiltersBar,
+html.athar-staging-redesign.mr-desktop-ui .mk-dash--classic,
+html.athar-staging-redesign.mr-desktop-ui #ticketModal .td-header-main {
+  display: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #ticketModal #rdTdHd {
+  display: flex !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #ticketModal #rdTdHd[hidden] {
+  display: none !important;
 }
 
 /* Keep breaks + permissions classic (undo shared panel wipe) */

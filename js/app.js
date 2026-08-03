@@ -15270,7 +15270,8 @@
           return;
         }
 
-        const compactRd = typeof isAtharRedesignUi === 'function' && isAtharRedesignUi();
+        const compactRd = (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi())
+          || isAtharDesktopScreenUi();
         dropdown.innerHTML = '';
         results.forEach(v => {
           const item = document.createElement('div');
@@ -18408,6 +18409,15 @@
           if (chip === 'mine') visible = visible.filter(canActOnTicket);
           else if (chip === 'sent') visible = visible.filter(t => !canActOnTicket(t));
           else if (chip === 'team') visible = visible.filter(isBranchTeamTicket);
+          if (isAtharDesktopScreenUi()) {
+            const search = (document.getElementById('wf-search')?.value || '').toLowerCase().trim();
+            if (search) {
+              visible = visible.filter(v => {
+                const hay = `${v.ticket_number} ${v._empName} ${v._empNumber} ${v.violation_type} ${v._branchName}`.toLowerCase();
+                return hay.includes(search);
+              });
+            }
+          }
           const countEl = document.getElementById('wf-count');
           if (countEl) countEl.textContent = visible.length;
           renderTicketList(visible);
@@ -18532,14 +18542,18 @@
             ? dataLoadingEmptyHTML(isReportsList ? 'جاري تحميل التقارير…' : 'جاري تحميل التذاكر…')
             : (isReportsList
               ? '<div class="empty"><i class="fas fa-inbox"></i><p>لا توجد بيانات في الفترة المحددة</p></div>'
-              : (isAtharRedesignUi()
+              : ((isAtharRedesignUi() || isAtharDesktopScreenUi())
                 ? '<div class="rd-ticket-empty"><i class="fas fa-inbox"></i><p>لا توجد تذاكر مطابقة</p></div>'
                 : '<div class="empty"><i class="fas fa-inbox"></i><p>لا توجد تذاكر مطابقة</p></div>'));
-          if (isAtharRedesignUi() && !isReportsList) {
+          if ((isAtharRedesignUi() || isAtharDesktopScreenUi()) && !isReportsList) {
             resetTicketListChildren(list, true);
             list.classList.remove('wf-mob-measuring', 'rp-mob-measuring');
             list.classList.add('wf-mob-cols-ready');
-            getOrCreateTicketMobBody(list).innerHTML = emptyHtml;
+            if (isAtharDesktopScreenUi()) {
+              appendTicketListHtml(list, emptyHtml, true);
+            } else {
+              getOrCreateTicketMobBody(list).innerHTML = emptyHtml;
+            }
           } else {
             appendTicketListHtml(list, emptyHtml, true);
           }
@@ -18587,6 +18601,60 @@
           list.classList.remove('wf-mob-measuring', 'rp-mob-measuring');
           list.classList.add(wfMob ? 'wf-mob-cols-ready' : 'rp-mob-cols-ready');
           getOrCreateTicketMobBody(list).innerHTML = `<div class="rd-ticket-list">${cards}</div>`;
+          return;
+        }
+
+        /* Desktop redesign ticket table — replaces classic computer table */
+        if (!isReportsList && isAtharDesktopScreenUi()) {
+          if (mobHead) {
+            mobHead.innerHTML = '';
+            mobHead.setAttribute('aria-hidden', 'true');
+          }
+          const toneFor = (t) => {
+            if (t.state === 'closed') return { color: 'var(--success)', soft: 'color-mix(in srgb, var(--success) 18%, transparent)' };
+            if (t.state === 'Warning_Issued') return { color: 'var(--warning)', soft: 'color-mix(in srgb, var(--warning) 18%, transparent)' };
+            if (t.state === 'mgt' || t.state === 'hr') return { color: 'var(--danger)', soft: 'color-mix(in srgb, var(--danger) 18%, transparent)' };
+            if (t.state === 'sup' || t.state === 'aud') return { color: 'var(--info)', soft: 'color-mix(in srgb, var(--info) 18%, transparent)' };
+            return { color: 'var(--warning)', soft: 'color-mix(in srgb, var(--warning) 18%, transparent)' };
+          };
+          const pointsFor = (t) => {
+            const types = state.violationTypes || [];
+            const vt = (t.violation_type_id && types.find(x => x.id === t.violation_type_id))
+              || types.find(x => x.name === t.violation_type);
+            return Number(vt?.weight ?? vt?.points ?? 0) || 0;
+          };
+          const rows = tickets.map((t, i) => {
+            const empName = (t._empName || '').trim() || '—';
+            const violName = (t.violation_type || '').trim() || '—';
+            const statusText = (t.status_text || STATE_LABELS[t.state] || '').trim() || '—';
+            const tone = (typeof rdTicketStatusTone === 'function' ? rdTicketStatusTone(t) : null) || toneFor(t);
+            const pts = pointsFor(t);
+            const rel = formatRelativeAr(t.created_at || t.updated_at);
+            const delay = Math.min(0.3, i * 0.035);
+            return `
+              <button type="button" class="rd-desk-table__row rd-desk-ticket-row" style="animation-delay:${delay}s"
+                onclick="openTicket('${t.id}')">
+                <span class="rd-desk-mono" role="cell">#${Sec.escapeHTML(shortTicketNum(t.ticket_number))}</span>
+                <span class="rd-desk-user__name" role="cell">${Sec.escapeHTML(empName)}</span>
+                <span class="rd-desk-muted rd-desk-clip" role="cell">${Sec.escapeHTML(violName)}</span>
+                <span role="cell"><span class="rd-desk-ticket-badge" style="color:${tone.color};background:${tone.soft}">${Sec.escapeHTML(statusText)}</span></span>
+                <span class="rd-desk-ticket-pts" role="cell" style="color:${tone.color}">−${pts}</span>
+                <span class="rd-desk-muted" role="cell">${Sec.escapeHTML(rel)}</span>
+              </button>`;
+          }).join('');
+          const html = `
+            <div class="rd-desk-table rd-desk-table--tickets" role="table">
+              <div class="rd-desk-table__head" role="row">
+                <span role="columnheader">#</span>
+                <span role="columnheader">الموظف</span>
+                <span role="columnheader">النوع</span>
+                <span role="columnheader">الحالة</span>
+                <span role="columnheader">النقاط</span>
+                <span role="columnheader">الوقت</span>
+              </div>
+              ${rows || '<div class="rd-ticket-empty"><i class="fas fa-inbox"></i><p>لا توجد تذاكر مطابقة</p></div>'}
+            </div>`;
+          appendTicketListHtml(list, html, true);
           return;
         }
 
@@ -19611,7 +19679,8 @@
       function syncRdTicketDetailHeader(t) {
         const rdHd = document.getElementById('rdTdHd');
         if (!rdHd) return;
-        const useRd = typeof isAtharRedesignUi === 'function' && isAtharRedesignUi();
+        const useRd = (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi())
+          || isAtharDesktopScreenUi();
         rdHd.hidden = !useRd;
         if (!useRd || !t) return;
         const nameEl = document.getElementById('rd-td-name');
@@ -19788,7 +19857,8 @@
       </div>`;
         }
 
-        const useRdInfo = typeof isAtharRedesignUi === 'function' && isAtharRedesignUi();
+        const useRdInfo = (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi())
+          || isAtharDesktopScreenUi();
         const rows = [
           ...(useRdInfo ? [] : [['رقم التذكرة', shortTicketNum(t.ticket_number)]]),
           ['الحالة', t.status_text || STATE_LABELS[t.state]],
@@ -19917,7 +19987,8 @@
         const c = document.getElementById('tdInlineAttachments');
         if (!c) return;
 
-        const rdAtt = typeof isAtharRedesignUi === 'function' && isAtharRedesignUi();
+        const rdAtt = (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi())
+          || isAtharDesktopScreenUi();
         if (!ticketDetailExtrasReady(t)) {
           c.innerHTML = rdAtt
             ? `<div class="td-att-section-head"><i class="fas fa-paperclip" aria-hidden="true"></i><span>المرفقات (…)</span></div>`
@@ -21129,7 +21200,7 @@
         const wfState = terminal ? t.state : getEffectiveWorkflowState(t.state);
         const liveCurrentOrder = terminal ? 99 : (orderMap[wfState] || 1);
 
-        if (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi()) {
+        if ((typeof isAtharRedesignUi === 'function' && isAtharRedesignUi()) || isAtharDesktopScreenUi()) {
           const rows = visibleSteps.map((s, i) => {
             const { status, icon } = resolveWfStepVisual(t, s, orderMap, liveCurrentOrder);
             const hasLine = i < visibleSteps.length - 1;
@@ -21223,7 +21294,7 @@
           return;
         }
         const hideObs = shouldHideObserverName();
-        if (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi()) {
+        if ((typeof isAtharRedesignUi === 'function' && isAtharRedesignUi()) || isAtharDesktopScreenUi()) {
           c.innerHTML = logs.map(l => {
             const actor = formatLogActorForDisplay(l, t, hideObs);
             const author = actor.masked
