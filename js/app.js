@@ -8774,6 +8774,14 @@
           if (tab === 'breaks') renderStaffBreaksPage();
           if (tab === 'schedule') { try { renderScheduleDesktop(); } catch (_) { /* noop */ } }
           if (tab === 'complaints') { try { renderComplaintsDesktop(); } catch (_) { /* noop */ } }
+          else {
+            try {
+              if (state._rdCmplForm) state._rdCmplForm.open = false;
+              state._rdCmplDetailId = null;
+              const oh = document.getElementById('rdCmplOverlayHost');
+              if (oh) oh.innerHTML = '';
+            } catch (_) { /* noop */ }
+          }
           if (tab === 'newTicket') prepareNewTicket();
         }
 
@@ -32622,7 +32630,7 @@
       window.handleLogoutFromUserMenu = handleLogoutFromUserMenu;
       /* ── Desktop: الجدول + الشكاوى (من Athar Redesign Desktop) ── */
       const RD_SCH_KEY = 'athar_rd_schedule_v1';
-      const RD_CMPL_KEY = 'athar_rd_complaints_v1';
+      const RD_CMPL_KEY = 'athar_rd_complaints_v2';
 
       function rdLoadJson(key, fallback) {
         try {
@@ -32662,13 +32670,92 @@
         return rows;
       }
 
+      const RD_COMPLAINT_CATS = [
+        { label: 'بيئة العمل', icon: 'fa-building' },
+        { label: 'زملاء العمل', icon: 'fa-people-arrows' },
+        { label: 'الرواتب والمزايا', icon: 'fa-wallet' },
+        { label: 'الإدارة', icon: 'fa-user-tie' },
+        { label: 'أخرى', icon: 'fa-ellipsis' }
+      ];
+      const RD_SUGGESTION_CATS = [
+        { label: 'تحسين الإجراءات', icon: 'fa-lightbulb' },
+        { label: 'تقنية ونظام', icon: 'fa-laptop-code' },
+        { label: 'خدمة العملاء', icon: 'fa-headset' },
+        { label: 'أخرى', icon: 'fa-ellipsis' }
+      ];
+
+      function rdCatsForKind(kind) {
+        return kind === 'suggestion' ? RD_SUGGESTION_CATS : RD_COMPLAINT_CATS;
+      }
+
+      function rdDefaultComplaints() {
+        return [
+          {
+            id: 'cp1', kind: 'complaint', employeeName: 'ريان الحربي', category: 'بيئة العمل', categoryIcon: 'fa-building',
+            description: 'إضاءة ضعيفة في صالة الموظفين بفرع العليا تؤثر على الأداء.', time: 'منذ 3 أيام', status: 'resolved',
+            thread: [{ author: 'الإدارة', text: 'تم التواصل مع الصيانة واستبدال الإضاءة. شكراً لملاحظتك.', time: 'منذ يومين', isAdmin: true }]
+          },
+          {
+            id: 'cp2', kind: 'complaint', employeeName: 'نورة القحطاني', category: 'زملاء العمل', categoryIcon: 'fa-people-arrows',
+            description: 'خلاف متكرر مع أحد الزملاء حول توزيع المناوبات.', time: 'أمس', status: 'pending', thread: []
+          },
+          {
+            id: 'cp3', kind: 'suggestion', employeeName: 'سارة المطيري', category: 'تحسين الإجراءات', categoryIcon: 'fa-lightbulb',
+            description: 'اقتراح إضافة خاصية تنبيه تلقائي للموظف قبل انتهاء البريك بخمس دقائق.', time: 'منذ يومين', status: 'pending', thread: []
+          }
+        ];
+      }
+
       function getRdComplaints() {
         let rows = rdLoadJson(RD_CMPL_KEY, null);
         if (!Array.isArray(rows)) {
-          rows = [];
+          rows = rdDefaultComplaints();
           rdSaveJson(RD_CMPL_KEY, rows);
         }
         return rows;
+      }
+
+      function rdCmplEnsureForm() {
+        if (!state._rdCmplForm) {
+          state._rdCmplForm = {
+            open: false,
+            kind: 'complaint',
+            category: RD_COMPLAINT_CATS[0].label,
+            desc: '',
+            attachCount: 0
+          };
+        }
+        return state._rdCmplForm;
+      }
+
+      function rdCmplOverlayHost() {
+        let el = document.getElementById('rdCmplOverlayHost');
+        if (!el) {
+          el = document.createElement('div');
+          el.id = 'rdCmplOverlayHost';
+          document.body.appendChild(el);
+        }
+        return el;
+      }
+
+      function rdCmplTone(kind) {
+        return kind === 'suggestion' ? 'var(--info)' : 'var(--danger)';
+      }
+
+      function rdCmplStatusMeta(status) {
+        if (status === 'resolved') return { label: 'تم الرد', color: 'var(--success)' };
+        return { label: 'قيد المراجعة', color: 'var(--warning)' };
+      }
+
+      function rdCmplNumber(id) {
+        const idx = getRdComplaints().findIndex(c => c.id === id);
+        return '#' + (1001 + Math.max(0, idx));
+      }
+
+      function rdCmplCurrentUserName() {
+        try {
+          return (state.currentUser && (state.currentUser.name || state.currentUser.fullName)) || 'موظف';
+        } catch (_) { return 'موظف'; }
       }
 
       function rdShiftMeta(shift) {
@@ -32772,55 +32859,228 @@
         if (!host) return;
         if (!isAtharDesktopScreenUi()) {
           host.innerHTML = '<div class="rd-ticket-empty"><i class="fas fa-desktop"></i><p>شاشة الشكاوى متاحة على سطح المكتب</p></div>';
+          rdCmplOverlayHost().innerHTML = '';
           return;
         }
         const filter = state._rdCmplFilter || 'all';
-        let rows = getRdComplaints();
-        if (filter === 'complaint') rows = rows.filter(r => r.kind === 'complaint');
-        if (filter === 'suggestion') rows = rows.filter(r => r.kind === 'suggestion');
         const all = getRdComplaints();
+        let rows = all;
+        if (filter === 'complaint') rows = all.filter(r => r.kind === 'complaint');
+        if (filter === 'suggestion') rows = all.filter(r => r.kind === 'suggestion');
+
         const total = all.length;
         const onlyC = all.filter(r => r.kind === 'complaint').length;
         const onlyS = all.filter(r => r.kind === 'suggestion').length;
         const pending = all.filter(r => r.status === 'pending').length;
         const resolved = all.filter(r => r.status === 'resolved').length;
-        const chip = (id, label) => {
-          const on = filter === id;
-          return `<button type="button" class="rd-wf-chip${on ? ' is-active' : ''}" onclick="rdCmplFilter('${id}')">${Sec.escapeHTML(label)}</button>`;
-        };
+
+        const filters = [
+          { id: 'all', label: 'الكل' },
+          { id: 'complaint', label: 'الشكاوى' },
+          { id: 'suggestion', label: 'الاقتراحات' }
+        ].map(f => {
+          const on = filter === f.id;
+          return `<button type="button" class="rd-cmpl-filter${on ? ' is-active' : ''}" onclick="rdCmplFilter('${f.id}')">${Sec.escapeHTML(f.label)}</button>`;
+        }).join('');
+
         const list = rows.map((r, i) => {
-          const num = '#' + (1001 + all.findIndex(x => x.id === r.id));
+          const tone = rdCmplTone(r.kind);
+          const st = rdCmplStatusMeta(r.status);
           const kindLbl = r.kind === 'suggestion' ? 'اقتراح' : 'شكوى';
-          const stLbl = r.status === 'resolved' ? 'تم الحل' : 'قيد المراجعة';
-          const tone = r.status === 'resolved' ? 'var(--success)' : 'var(--warning)';
+          const icon = r.categoryIcon || (r.kind === 'suggestion' ? 'fa-lightbulb' : 'fa-triangle-exclamation');
+          const reply = (r.thread && r.thread.length) ? r.thread[r.thread.length - 1] : null;
+          const replyHtml = reply ? `
+            <div class="rd-cmpl-card__reply">
+              <div class="rd-cmpl-card__reply-av"><i class="fas fa-headset" aria-hidden="true"></i></div>
+              <div class="rd-cmpl-card__reply-body">
+                <div class="rd-cmpl-card__reply-title">رد الإدارة</div>
+                <div class="rd-cmpl-card__reply-text">${Sec.escapeHTML(reply.text || '')}</div>
+              </div>
+            </div>` : '';
           return `
-            <article class="rd-cmpl-card" style="animation-delay:${Math.min(0.3, i * 0.04)}s">
+            <article class="rd-cmpl-card" style="animation-delay:${Math.min(0.3, i * 0.04)}s" onclick="rdOpenComplaintDetail('${Sec.escapeHTML(r.id)}')" role="button" tabindex="0">
               <div class="rd-cmpl-card__top">
-                <span class="rd-desk-mono">${Sec.escapeHTML(num)}</span>
-                <span class="rd-desk-ticket-badge" style="color:${tone};background:color-mix(in srgb, ${tone} 18%, transparent)">${Sec.escapeHTML(stLbl)}</span>
+                <div class="rd-cmpl-card__who">
+                  <div class="rd-cmpl-card__icon" style="--tone:${tone}"><i class="fas ${Sec.escapeHTML(icon)}" aria-hidden="true"></i></div>
+                  <div class="rd-cmpl-card__meta-wrap">
+                    <div class="rd-cmpl-card__title-row">
+                      <span class="rd-cmpl-card__cat">${Sec.escapeHTML(r.category || 'عام')}</span>
+                      <span class="rd-cmpl-card__kind" style="--tone:${tone}">${Sec.escapeHTML(kindLbl)}</span>
+                      <span class="rd-cmpl-card__num">${Sec.escapeHTML(rdCmplNumber(r.id))}</span>
+                    </div>
+                    <div class="rd-cmpl-card__sub">${Sec.escapeHTML(r.employeeName || '')} · ${Sec.escapeHTML(r.time || r.createdAt || '')}</div>
+                  </div>
+                </div>
+                <span class="rd-cmpl-card__status" style="--tone:${st.color}">${Sec.escapeHTML(st.label)}</span>
               </div>
-              <div class="rd-cmpl-card__title">${Sec.escapeHTML(kindLbl)} · ${Sec.escapeHTML(r.category || 'عام')}</div>
-              <div class="rd-cmpl-card__body">${Sec.escapeHTML(r.desc || '')}</div>
-              <div class="rd-cmpl-card__foot">
-                <span class="rd-desk-muted">${Sec.escapeHTML(r.createdAt || '')}</span>
-                ${r.status !== 'resolved' ? `<button type="button" class="rd-desk-act" onclick="rdResolveComplaint('${Sec.escapeHTML(r.id)}')">تم الحل</button>` : ''}
-              </div>
+              <div class="rd-cmpl-card__body">${Sec.escapeHTML(r.description || r.desc || '')}</div>
+              ${replyHtml}
             </article>`;
         }).join('');
+
         host.innerHTML = `
-          <div class="rd-cmpl-head">
-            <p class="rd-sch-intro">يمكنك رفع شكوى أو اقتراح حول بيئة العمل، وستتم متابعتها من الإدارة المختصة.</p>
-            <button type="button" class="mk-btn mk-btn--primary" onclick="rdOpenComplaintForm()"><i class="fas fa-plus"></i>رفع شكوى أو اقتراح</button>
-          </div>
-          <div class="rd-cmpl-metrics">
-            <div class="rd-cmpl-metric"><div class="rd-cmpl-metric__lbl">الإجمالي</div><div class="rd-cmpl-metric__val">${total}</div></div>
-            <div class="rd-cmpl-metric"><div class="rd-cmpl-metric__lbl">شكاواي</div><div class="rd-cmpl-metric__val" style="color:var(--danger)">${onlyC}</div></div>
-            <div class="rd-cmpl-metric"><div class="rd-cmpl-metric__lbl">اقتراحاتي</div><div class="rd-cmpl-metric__val" style="color:var(--info)">${onlyS}</div></div>
-            <div class="rd-cmpl-metric"><div class="rd-cmpl-metric__lbl">قيد المراجعة</div><div class="rd-cmpl-metric__val" style="color:var(--warning)">${pending}</div></div>
-            <div class="rd-cmpl-metric"><div class="rd-cmpl-metric__lbl">تم الحل</div><div class="rd-cmpl-metric__val" style="color:var(--success)">${resolved}</div></div>
-          </div>
-          <div class="rd-sch-toolbar" style="margin-bottom:14px">${chip('all','الكل')}${chip('complaint','الشكاوى')}${chip('suggestion','الاقتراحات')}</div>
-          <div class="rd-cmpl-list">${list || '<div class="rd-ticket-empty"><i class="fas fa-inbox"></i><p>لا توجد شكاوى أو اقتراحات</p></div>'}</div>`;
+          <div class="rd-cmpl-board">
+            <div class="rd-cmpl-head">
+              <p class="rd-sch-intro">يمكنك رفع شكوى أو اقتراح حول أي موضوع يخص بيئة العمل، وستتم متابعتها من الإدارة المختصة.</p>
+              <button type="button" class="rd-cmpl-cta" onclick="rdOpenComplaintForm()"><i class="fas fa-plus" aria-hidden="true"></i>رفع شكوى أو اقتراح</button>
+            </div>
+            <div class="rd-cmpl-metrics">
+              <div class="rd-cmpl-metric">
+                <div>
+                  <div class="rd-cmpl-metric__lbl">الإجمالي</div>
+                  <div class="rd-cmpl-metric__val">${total}</div>
+                </div>
+                <div class="rd-cmpl-metric__ico"><i class="fas fa-inbox" aria-hidden="true"></i></div>
+              </div>
+              <div class="rd-cmpl-metric">
+                <div>
+                  <div class="rd-cmpl-metric__lbl">شكاواي</div>
+                  <div class="rd-cmpl-metric__val" style="color:var(--danger)">${onlyC}</div>
+                </div>
+                <div class="rd-cmpl-metric__ico rd-cmpl-metric__ico--danger"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i></div>
+              </div>
+              <div class="rd-cmpl-metric">
+                <div>
+                  <div class="rd-cmpl-metric__lbl">اقتراحاتي</div>
+                  <div class="rd-cmpl-metric__val" style="color:var(--info)">${onlyS}</div>
+                </div>
+                <div class="rd-cmpl-metric__ico rd-cmpl-metric__ico--info"><i class="fas fa-lightbulb" aria-hidden="true"></i></div>
+              </div>
+              <div class="rd-cmpl-metric">
+                <div>
+                  <div class="rd-cmpl-metric__lbl">قيد المراجعة</div>
+                  <div class="rd-cmpl-metric__val" style="color:var(--warning)">${pending}</div>
+                </div>
+                <div class="rd-cmpl-metric__ico rd-cmpl-metric__ico--warning"><i class="fas fa-hourglass-half" aria-hidden="true"></i></div>
+              </div>
+              <div class="rd-cmpl-metric">
+                <div>
+                  <div class="rd-cmpl-metric__lbl">تم الرد عليها</div>
+                  <div class="rd-cmpl-metric__val" style="color:var(--success)">${resolved}</div>
+                </div>
+                <div class="rd-cmpl-metric__ico rd-cmpl-metric__ico--success"><i class="fas fa-check-double" aria-hidden="true"></i></div>
+              </div>
+            </div>
+            <div class="rd-cmpl-filters">${filters}</div>
+            <div class="rd-cmpl-list">${list || '<div class="rd-ticket-empty"><i class="fas fa-inbox"></i><p>لا توجد شكاوى أو اقتراحات</p></div>'}</div>
+          </div>`;
+
+        renderComplaintsOverlays();
+      }
+
+      function renderComplaintsOverlays() {
+        const overlay = rdCmplOverlayHost();
+        if (!isAtharDesktopScreenUi()) {
+          overlay.innerHTML = '';
+          return;
+        }
+        const form = rdCmplEnsureForm();
+        const detailId = state._rdCmplDetailId || null;
+        const active = detailId ? getRdComplaints().find(c => c.id === detailId) : null;
+        let html = '';
+
+        if (active) {
+          const tone = rdCmplTone(active.kind);
+          const st = rdCmplStatusMeta(active.status);
+          const kindLbl = active.kind === 'suggestion' ? 'اقتراح' : 'شكوى';
+          const replyLabel = 'الرد على ' + (active.kind === 'suggestion' ? 'الاقتراح' : 'الشكوى');
+          const thread = (active.thread || []).map(msg => `
+            <div class="rd-cmpl-thread-msg">
+              <div class="rd-cmpl-thread-av"><i class="fas fa-headset" aria-hidden="true"></i></div>
+              <div class="rd-cmpl-thread-bubble${msg.isAdmin ? ' is-admin' : ''}">
+                <div class="rd-cmpl-thread-meta">
+                  <span class="rd-cmpl-thread-author${msg.isAdmin ? ' is-admin' : ''}">${Sec.escapeHTML(msg.author || '')}</span>
+                  <span class="rd-cmpl-thread-time">${Sec.escapeHTML(msg.time || '')}</span>
+                </div>
+                <div class="rd-cmpl-thread-text">${Sec.escapeHTML(msg.text || '')}</div>
+              </div>
+            </div>`).join('');
+          const resolveBtn = active.status === 'resolved'
+            ? `<button type="button" class="rd-cmpl-btn rd-cmpl-btn--resolved" disabled><i class="fas fa-check" aria-hidden="true"></i>تم الحل</button>`
+            : `<button type="button" class="rd-cmpl-btn rd-cmpl-btn--ghost" onclick="rdResolveComplaint('${Sec.escapeHTML(active.id)}')"><i class="fas fa-check" aria-hidden="true"></i>تحديد كمحلولة</button>`;
+          html += `
+            <div class="rd-cmpl-overlay" role="dialog" aria-modal="true">
+              <div class="rd-cmpl-overlay__scrim" onclick="rdCloseComplaintDetail()"></div>
+              <div class="rd-cmpl-panel rd-cmpl-panel--detail">
+                <div class="rd-cmpl-panel__head">
+                  <div class="rd-cmpl-panel__title-row">
+                    <span class="rd-cmpl-panel__title">${Sec.escapeHTML(active.category || '')}</span>
+                    <span class="rd-cmpl-card__kind" style="--tone:${tone}">${Sec.escapeHTML(kindLbl)}</span>
+                    <span class="rd-cmpl-card__num">${Sec.escapeHTML(rdCmplNumber(active.id))}</span>
+                  </div>
+                  <button type="button" class="rd-cmpl-panel__close" onclick="rdCloseComplaintDetail()" aria-label="إغلاق"><i class="fas fa-xmark"></i></button>
+                </div>
+                <div class="rd-cmpl-panel__subrow">
+                  <span class="rd-cmpl-panel__who">${Sec.escapeHTML(active.employeeName || '')} <span class="rd-desk-muted">· ${Sec.escapeHTML(active.time || '')}</span></span>
+                  <span class="rd-cmpl-card__status" style="--tone:${st.color}">${Sec.escapeHTML(st.label)}</span>
+                </div>
+                <div class="rd-cmpl-panel__desc">${Sec.escapeHTML(active.description || active.desc || '')}</div>
+                <div class="rd-cmpl-thread">${thread}</div>
+                <div class="rd-cmpl-field-label">${Sec.escapeHTML(replyLabel)}</div>
+                <textarea class="rd-cmpl-textarea" id="rdCmplReplyInput" placeholder="اكتب ردك هنا..." rows="4">${Sec.escapeHTML(state._rdCmplReply || '')}</textarea>
+                <div class="rd-cmpl-panel__actions">
+                  <button type="button" class="rd-cmpl-btn rd-cmpl-btn--primary" onclick="rdSubmitComplaintReply()">إرسال الرد</button>
+                  ${resolveBtn}
+                </div>
+              </div>
+            </div>`;
+        }
+
+        if (form.open) {
+          const kindOpts = [
+            { key: 'complaint', label: 'شكوى', icon: 'fa-triangle-exclamation' },
+            { key: 'suggestion', label: 'اقتراح', icon: 'fa-lightbulb' }
+          ].map(k => {
+            const on = form.kind === k.key;
+            return `<button type="button" class="rd-cmpl-kind${on ? ' is-active' : ''}" onclick="rdCmplSetKind('${k.key}')"><i class="fas ${k.icon}" aria-hidden="true"></i>${k.label}</button>`;
+          }).join('');
+          const cats = rdCatsForKind(form.kind).map(c => {
+            const on = form.category === c.label;
+            return `<button type="button" class="rd-cmpl-cat${on ? ' is-active' : ''}" onclick="rdCmplSetCategory('${Sec.escapeHTML(c.label)}')"><i class="fas ${c.icon}" aria-hidden="true"></i>${Sec.escapeHTML(c.label)}</button>`;
+          }).join('');
+          const detailsLabel = form.kind === 'suggestion' ? 'تفاصيل الاقتراح' : 'تفاصيل الشكوى';
+          const submitLabel = form.kind === 'suggestion' ? 'إرسال الاقتراح' : 'إرسال الشكوى';
+          const attachLabel = form.attachCount > 0
+            ? `${form.attachCount} ملف مرفق — اضغط لإضافة المزيد`
+            : 'اضغط لإرفاق ملف';
+          html += `
+            <div class="rd-cmpl-overlay" role="dialog" aria-modal="true">
+              <div class="rd-cmpl-overlay__scrim" onclick="rdCloseComplaintForm()"></div>
+              <div class="rd-cmpl-panel">
+                <div class="rd-cmpl-panel__head">
+                  <div class="rd-cmpl-panel__title">رفع شكوى أو اقتراح</div>
+                  <button type="button" class="rd-cmpl-panel__close" onclick="rdCloseComplaintForm()" aria-label="إغلاق"><i class="fas fa-xmark"></i></button>
+                </div>
+                <div class="rd-cmpl-field-label">النوع <span class="rd-cmpl-req">*</span></div>
+                <div class="rd-cmpl-kind-row">${kindOpts}</div>
+                <div class="rd-cmpl-field-label">التصنيف <span class="rd-cmpl-req">*</span></div>
+                <div class="rd-cmpl-cat-row">${cats}</div>
+                <div class="rd-cmpl-field-label">${Sec.escapeHTML(detailsLabel)} <span class="rd-cmpl-req">*</span></div>
+                <textarea class="rd-cmpl-textarea" id="rdCmplDescInput" placeholder="اشرح شكواك بالتفصيل..." rows="6">${Sec.escapeHTML(form.desc || '')}</textarea>
+                <div class="rd-cmpl-field-label">مرفقات (اختياري)</div>
+                <button type="button" class="rd-cmpl-attach" onclick="rdCmplSimulateAttach()">
+                  <i class="fas fa-paperclip" aria-hidden="true"></i>
+                  <span>${Sec.escapeHTML(attachLabel)}</span>
+                </button>
+                <button type="button" class="rd-cmpl-btn rd-cmpl-btn--primary rd-cmpl-btn--block" onclick="rdSubmitComplaintForm()">${Sec.escapeHTML(submitLabel)}</button>
+              </div>
+            </div>`;
+        }
+
+        overlay.innerHTML = html;
+
+        const descInput = document.getElementById('rdCmplDescInput');
+        if (descInput) {
+          descInput.addEventListener('input', (e) => {
+            rdCmplEnsureForm().desc = e.target.value;
+          });
+        }
+        const replyInput = document.getElementById('rdCmplReplyInput');
+        if (replyInput) {
+          replyInput.addEventListener('input', (e) => {
+            state._rdCmplReply = e.target.value;
+          });
+        }
       }
 
       function rdCmplFilter(id) {
@@ -32829,27 +33089,110 @@
       }
 
       function rdOpenComplaintForm() {
-        const kind = window.confirm('موافق = شكوى · إلغاء = اقتراح') ? 'complaint' : 'suggestion';
-        const desc = window.prompt(kind === 'complaint' ? 'اكتب نص الشكوى:' : 'اكتب نص الاقتراح:');
-        if (!desc || !String(desc).trim()) return;
+        state._rdCmplDetailId = null;
+        state._rdCmplForm = {
+          open: true,
+          kind: 'complaint',
+          category: RD_COMPLAINT_CATS[0].label,
+          desc: '',
+          attachCount: 0
+        };
+        renderComplaintsOverlays();
+      }
+
+      function rdCloseComplaintForm() {
+        const form = rdCmplEnsureForm();
+        form.open = false;
+        renderComplaintsOverlays();
+      }
+
+      function rdCmplSetKind(kind) {
+        const form = rdCmplEnsureForm();
+        form.kind = kind === 'suggestion' ? 'suggestion' : 'complaint';
+        form.category = rdCatsForKind(form.kind)[0].label;
+        renderComplaintsOverlays();
+      }
+
+      function rdCmplSetCategory(label) {
+        const form = rdCmplEnsureForm();
+        form.category = label;
+        renderComplaintsOverlays();
+      }
+
+      function rdCmplSimulateAttach() {
+        const form = rdCmplEnsureForm();
+        form.attachCount = (form.attachCount || 0) + 1;
+        renderComplaintsOverlays();
+      }
+
+      function rdSubmitComplaintForm() {
+        const form = rdCmplEnsureForm();
+        const descEl = document.getElementById('rdCmplDescInput');
+        const desc = String((descEl && descEl.value) || form.desc || '').trim();
+        if (!desc) {
+          showToast('اكتب التفاصيل أولاً', 'warning');
+          return;
+        }
+        const cat = rdCatsForKind(form.kind).find(c => c.label === form.category) || rdCatsForKind(form.kind)[0];
         const rows = getRdComplaints();
         rows.unshift({
-          id: 'cmpl-' + Date.now(),
-          kind,
-          category: 'عام',
-          desc: String(desc).trim(),
+          id: 'cp-' + Date.now(),
+          kind: form.kind,
+          employeeName: rdCmplCurrentUserName(),
+          category: cat.label,
+          categoryIcon: cat.icon,
+          description: desc,
+          time: 'الآن',
           status: 'pending',
-          createdAt: new Date().toLocaleString('ar-SA')
+          thread: [],
+          attachCount: form.attachCount || 0
         });
         rdSaveJson(RD_CMPL_KEY, rows);
+        form.open = false;
         renderComplaintsDesktop();
-        showToast(kind === 'complaint' ? 'تم رفع الشكوى' : 'تم رفع الاقتراح', 'success');
+        showToast(form.kind === 'complaint' ? 'تم رفع الشكوى' : 'تم رفع الاقتراح', 'success');
+      }
+
+      function rdOpenComplaintDetail(id) {
+        const form = rdCmplEnsureForm();
+        form.open = false;
+        state._rdCmplDetailId = id;
+        state._rdCmplReply = '';
+        renderComplaintsOverlays();
+      }
+
+      function rdCloseComplaintDetail() {
+        state._rdCmplDetailId = null;
+        state._rdCmplReply = '';
+        renderComplaintsOverlays();
+      }
+
+      function rdSubmitComplaintReply() {
+        const id = state._rdCmplDetailId;
+        if (!id) return;
+        const input = document.getElementById('rdCmplReplyInput');
+        const text = String((input && input.value) || state._rdCmplReply || '').trim();
+        if (!text) {
+          showToast('اكتب الرد أولاً', 'warning');
+          return;
+        }
+        const rows = getRdComplaints().map(r => {
+          if (r.id !== id) return r;
+          const thread = Array.isArray(r.thread) ? r.thread.slice() : [];
+          thread.push({ author: 'الإدارة', text, time: 'الآن', isAdmin: true });
+          return { ...r, thread };
+        });
+        rdSaveJson(RD_CMPL_KEY, rows);
+        state._rdCmplReply = '';
+        renderComplaintsDesktop();
+        showToast('تم إرسال الرد', 'success');
       }
 
       function rdResolveComplaint(id) {
         const rows = getRdComplaints().map(r => r.id === id ? { ...r, status: 'resolved' } : r);
         rdSaveJson(RD_CMPL_KEY, rows);
         renderComplaintsDesktop();
+        showToast('تم تحديدها كمحلولة', 'success');
       }
 
       window.rdSchSearch = rdSchSearch;
@@ -32857,6 +33200,14 @@
       window.rdDeleteSchedule = rdDeleteSchedule;
       window.rdCmplFilter = rdCmplFilter;
       window.rdOpenComplaintForm = rdOpenComplaintForm;
+      window.rdCloseComplaintForm = rdCloseComplaintForm;
+      window.rdCmplSetKind = rdCmplSetKind;
+      window.rdCmplSetCategory = rdCmplSetCategory;
+      window.rdCmplSimulateAttach = rdCmplSimulateAttach;
+      window.rdSubmitComplaintForm = rdSubmitComplaintForm;
+      window.rdOpenComplaintDetail = rdOpenComplaintDetail;
+      window.rdCloseComplaintDetail = rdCloseComplaintDetail;
+      window.rdSubmitComplaintReply = rdSubmitComplaintReply;
       window.rdResolveComplaint = rdResolveComplaint;
       window.renderScheduleDesktop = renderScheduleDesktop;
       window.renderComplaintsDesktop = renderComplaintsDesktop;
