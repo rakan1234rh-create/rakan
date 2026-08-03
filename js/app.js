@@ -8558,7 +8558,7 @@
               }
               syncSidebarRailAttrs(sb);
               leaveTimer = null;
-            }, 48);
+            }, 180);
           }
           syncSidebarRailAttrs(sb);
         };
@@ -8566,6 +8566,12 @@
         sb.addEventListener('pointerleave', () => syncHover(false), { passive: true });
         sb.addEventListener('mouseenter', () => syncHover(true), { passive: true });
         sb.addEventListener('mouseleave', () => syncHover(false), { passive: true });
+        sb.addEventListener('pointerdown', (e) => {
+          if (!isDesktopUi()) return;
+          if (e.target?.closest?.('.nav-item, .rd-side-foot__user, .rd-side-foot__theme')) {
+            syncHover(true);
+          }
+        }, { passive: true });
         bindDeskSidebarColSync();
       }
 
@@ -9110,6 +9116,12 @@
           tabEl.removeAttribute('hidden');
           tabEl.classList.add('active');
         }
+        try {
+          const mainEl = document.querySelector('#appWrap .main');
+          if (mainEl) mainEl.scrollTop = 0;
+          const contentEl = document.querySelector('#appWrap .content');
+          if (contentEl) contentEl.scrollTop = 0;
+        } catch (_) { /* noop */ }
         const noAccess = document.getElementById('tab-noAccess');
         if (noAccess) {
           noAccess.classList.remove('active');
@@ -9216,7 +9228,7 @@
             syncComplianceAccessAndRender();
           }
           if (tab === 'locations') renderRegions();
-          if (tab === 'departments') renderUsers();
+          if (tab === 'departments') { try { renderUsers(); } catch (_) { /* noop */ } }
           if (tab === 'violations') renderViolTypes();
           if (tab === 'settings') renderSettingsPermissions();
           if (tab === 'profileAvatars') renderProfileAvatarsAdmin();
@@ -9240,7 +9252,7 @@
               if (oh) oh.innerHTML = '';
             } catch (_) { /* noop */ }
           }
-          if (tab === 'newTicket') prepareNewTicket();
+          if (tab === 'newTicket') { try { prepareNewTicket(); } catch (_) { /* noop */ } }
         }
 
         const sb = document.getElementById('sidebar');
@@ -15366,8 +15378,9 @@
         // ملء قائمة أنواع المخالفات
         const sel = document.getElementById('nt-type');
         if (sel) {
+          const types = Array.isArray(state.violationTypes) ? state.violationTypes : [];
           sel.innerHTML = '<option value="">-- اختر --</option>' +
-            state.violationTypes.map(v => `<option value="${Sec.escapeHTML(v.name)}">${Sec.escapeHTML(v.name)}</option>`).join('');
+            types.map(v => `<option value="${Sec.escapeHTML(v.name)}">${Sec.escapeHTML(v.name)}</option>`).join('');
         }
         // تعيين التاريخ والوقت الحاليين
         const dateF = document.getElementById('nt-date');

@@ -4221,6 +4221,23 @@ html.athar-staging-redesign.mr-desktop-ui #appWrap .main .content {
   padding: 32px 40px !important;
 }
 
+/* Keep users page scrollable under redesign (users-shell may set overflow:hidden) */
+html.athar-staging-redesign.mr-desktop-ui .main:has(#tab-departments.active),
+html.athar-staging-redesign.mr-desktop-ui #appWrap .main:has(#tab-departments.active) {
+  overflow-x: clip !important;
+  overflow-y: auto !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .content:has(#tab-departments.active),
+html.athar-staging-redesign.mr-desktop-ui .main:has(#tab-departments.active) .content {
+  overflow: visible !important;
+  padding: 32px 40px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-departments.tab-content.active {
+  overflow: visible !important;
+}
+
 /* Desktop dashboard layout (2-column) */
 .rd-desk-dash { animation: atharRdScreenIn .3s ease; }
 .rd-desk-dash__greet { margin-bottom: 18px; }

@@ -3,6 +3,62 @@
    Excludes: #tab-breaks, #tab-settings
    ═══════════════════════════════════════════════════════════════════════════ */
 
+/* Active tabs must paint even when some classic shells are off */
+html.athar-staging-redesign.mr-desktop-ui .content > .tab-content.active {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  min-height: 120px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket.tab-content.active,
+html.athar-staging-redesign.mr-desktop-ui #tab-departments.tab-content.active {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-departments.tab-content.active {
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .wf-panel {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-departments #usersDeskHost,
+html.athar-staging-redesign.mr-desktop-ui #tab-departments #usersList {
+  display: block !important;
+  visibility: visible !important;
+  min-height: 80px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-toolbar,
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-filters-toolbar {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 10px !important;
+  align-items: center !important;
+  margin: 0 0 14px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket > .panel {
+  display: block !important;
+  visibility: visible !important;
+  min-height: 200px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .mk-form-panel {
+  display: grid !important;
+  visibility: visible !important;
+  min-height: 200px !important;
+}
+
 /* Shared panel language */
 html.athar-staging-redesign.mr-desktop-ui .content > .tab-content:not(#tab-breaks):not(#tab-settings) .panel,
 html.athar-staging-redesign.mr-desktop-ui .content > .tab-content:not(#tab-breaks):not(#tab-settings) .wf-panel {
