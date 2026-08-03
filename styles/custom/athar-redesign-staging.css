@@ -3772,8 +3772,7 @@ html.athar-staging-redesign.mr-desktop-ui {
 /* Hide redesign-only shell chrome on mobile / classic */
 .rd-side-brand,
 .rd-side-foot,
-.rd-top-titles,
-.rd-global-search {
+.rd-top-titles {
   display: none !important;
 }
 
@@ -3794,29 +3793,13 @@ html.athar-staging-redesign.mr-desktop-ui #sidebar {
 }
 
 html.athar-staging-redesign.mr-desktop-ui #sidebar .rd-side-brand {
-  display: flex !important;
-  align-items: center !important;
-  gap: 10px !important;
-  padding: 22px 22px 18px !important;
-  flex-shrink: 0 !important;
-}
-
-html.athar-staging-redesign.mr-desktop-ui #sidebar .rd-side-brand__logo {
-  height: 32px !important;
-  width: auto !important;
-  max-width: 140px !important;
-  object-fit: contain !important;
-  display: block !important;
-}
-
-html[data-theme="dark"].athar-staging-redesign.mr-desktop-ui #sidebar .rd-side-brand__logo {
-  filter: invert(1);
+  display: none !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #sidebar .sidebar-nav {
   flex: 1 1 auto !important;
   overflow-y: auto !important;
-  padding: 6px 0 !important;
+  padding: 18px 0 6px !important;
   display: flex !important;
   flex-direction: column !important;
   gap: 2px !important;
@@ -4009,7 +3992,7 @@ html.athar-staging-redesign.mr-desktop-ui #sidebar .rd-side-foot__theme i {
   font-size: 12px !important;
 }
 
-/* Topbar: title + search + bell only (design) */
+/* Topbar: brand logo + titles + bell (no quick search) */
 html.athar-staging-redesign.mr-desktop-ui #appWrap .topbar.unified-banner,
 html.athar-staging-redesign.mr-desktop-ui .topbar.unified-banner {
   height: 68px !important;
@@ -4025,12 +4008,42 @@ html.athar-staging-redesign.mr-desktop-ui .topbar.unified-banner {
   overflow: visible !important;
 }
 
-html.athar-staging-redesign.mr-desktop-ui .topbar-brand-zone,
+html.athar-staging-redesign.mr-desktop-ui .topbar-brand-zone {
+  display: flex !important;
+  align-items: center !important;
+  height: auto !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  flex: 0 0 auto !important;
+}
+
 html.athar-staging-redesign.mr-desktop-ui .topbar-brand-divider,
 html.athar-staging-redesign.mr-desktop-ui #topbarClock,
 html.athar-staging-redesign.mr-desktop-ui #topbarUserChip,
-html.athar-staging-redesign.mr-desktop-ui #rdThemeBtn {
+html.athar-staging-redesign.mr-desktop-ui #rdThemeBtn,
+html.athar-staging-redesign.mr-desktop-ui .rd-global-search {
   display: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .topbar-brand-zone .brand-area,
+html.athar-staging-redesign.mr-desktop-ui #brandArea {
+  height: 44px !important;
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #brandArea .brand-icon.wefaq-logo-slot,
+html.athar-staging-redesign.mr-desktop-ui #brandArea .brand-icon.wefaq-logo-slot .wefaq-app-logo--athar {
+  width: auto !important;
+  max-width: 140px !important;
+  height: 32px !important;
+  max-height: 32px !important;
+  transform: none !important;
+  margin: 0 !important;
+  object-fit: contain !important;
+  object-position: center !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui .rd-top-titles {
@@ -4062,43 +4075,6 @@ html.athar-staging-redesign.mr-desktop-ui .topbar-actions-zone {
   margin: 0 !important;
   padding: 0 !important;
   flex: 0 0 auto !important;
-}
-
-html.athar-staging-redesign.mr-desktop-ui .rd-global-search {
-  display: flex !important;
-  align-items: center !important;
-  gap: 8px !important;
-  background: var(--searchFill, var(--surface2)) !important;
-  border-radius: 10px !important;
-  padding: 9px 14px !important;
-  width: 280px !important;
-  max-width: 32vw !important;
-  box-sizing: border-box !important;
-}
-
-html.athar-staging-redesign.mr-desktop-ui .rd-global-search i {
-  color: var(--text3) !important;
-  font-size: 12px !important;
-  flex-shrink: 0 !important;
-}
-
-html.athar-staging-redesign.mr-desktop-ui .rd-global-search input {
-  flex: 1 1 auto !important;
-  min-width: 0 !important;
-  border: none !important;
-  background: transparent !important;
-  outline: none !important;
-  box-shadow: none !important;
-  font-size: 12.5px !important;
-  color: var(--text) !important;
-  font-family: inherit !important;
-  padding: 0 !important;
-  height: auto !important;
-  min-height: 0 !important;
-}
-
-html.athar-staging-redesign.mr-desktop-ui .rd-global-search input::placeholder {
-  color: var(--text3) !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #notifBellBtn.topbar-btn--notif,
