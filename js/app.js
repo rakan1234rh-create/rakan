@@ -33737,8 +33737,9 @@
             : '';
           const freqLabel = r.frequency === 'weekly' ? 'أسبوعي' : 'يومي';
           const daysSuffix = (r.frequency === 'weekly' && Array.isArray(r.days) && r.days.length)
-            ? ` (${r.days.map(rdSchDayLabel).join('، ')})`
+            ? `(${r.days.map(rdSchDayLabel).join('، ')})`
             : '';
+          const metaFreq = daysSuffix ? `${freqLabel} ${daysSuffix}` : freqLabel;
           return `
             <article class="rd-sch-card" style="animation-delay:${Math.min(0.3, i * 0.04)}s">
               <div class="rd-sch-card__top">
@@ -33746,7 +33747,7 @@
                   <span class="rd-sch-card__av">${Sec.escapeHTML(initial)}</span>
                   <div class="rd-sch-card__who-body">
                     <div class="rd-sch-card__name">${Sec.escapeHTML(r.monitorName || '—')}</div>
-                    <div class="rd-sch-card__meta"><span dir="ltr">${Sec.escapeHTML(r.startTime || '')} – ${Sec.escapeHTML(r.endTime || '')}</span> · ${freqLabel}${Sec.escapeHTML(daysSuffix)}</div>
+                    <div class="rd-sch-card__meta"><span dir="ltr" style="unicode-bidi:isolate">${Sec.escapeHTML(r.startTime || '')} – ${Sec.escapeHTML(r.endTime || '')}</span> · ${Sec.escapeHTML(metaFreq)}</div>
                   </div>
                 </div>
                 <div class="rd-sch-card__acts">
