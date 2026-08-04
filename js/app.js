@@ -9230,7 +9230,10 @@
           seedWfMobTicketsHeadIfNeeded();
         }
 
-        if (tab !== 'locations') state._activeRegionId = null;
+        if (tab !== 'locations') {
+          state._activeRegionId = null;
+          state._activeBranchId = null;
+        }
 
         // تبديل التبويب يُرسم فوراً (أعلاه)، والعمل الثقيل يُؤجَّل إطاراً واحداً
         // حتى يصبح الضغط فورياً وسلساً (الشريط السفلي + زر العودة من التنبيهات)
@@ -12645,14 +12648,27 @@
       // ═══════════════════════════════════════════════════════════════════════════
 
       state._activeRegionId = state._activeRegionId || null;
+      state._activeBranchId = state._activeBranchId || null;
 
       function openRegionView(regionId) {
         state._activeRegionId = regionId;
+        state._activeBranchId = null;
         renderRegions();
       }
 
       function backRegionView() {
         state._activeRegionId = null;
+        state._activeBranchId = null;
+        renderRegions();
+      }
+
+      function openLocBranchView(branchId) {
+        state._activeBranchId = branchId;
+        renderRegions();
+      }
+
+      function backLocBranchView() {
+        state._activeBranchId = null;
         renderRegions();
       }
 
@@ -12948,7 +12964,177 @@
           </article>`;
       }
 
+      function rdLocDeskRegionRowHTML(reg, canManage, canDelete, delayIdx) {
+        const regionBranches = state.branches.filter(b => b.region_id === reg.id);
+        const totalEmps = regionBranches.reduce((n, b) => n + getBranchStaff(b.id).length, 0);
+        const sup = reg?.supervisor_id ? state.users.find(u => u.id === reg.supervisor_id) : null;
+        const manager = (sup && String(sup.name || '').trim()) ? sup.name : 'لا يوجد مشرف';
+        const delay = Math.min(0.25, (Number(delayIdx) || 0) * 0.04);
+        const rid = String(reg.id || '').replace(/'/g, "\\'");
+        const acts = (canManage || canDelete)
+          ? `<div class="rd-loc-desk-acts" onclick="event.stopPropagation()">
+              ${canManage ? `<button type="button" class="rd-loc-desk-act" onclick="editRegion('${rid}')"><i class="fas fa-pen" aria-hidden="true"></i>تعديل</button>` : ''}
+              ${canDelete ? `<button type="button" class="rd-loc-desk-act rd-loc-desk-act--danger" onclick="deleteRegion('${rid}')"><i class="fas fa-trash" aria-hidden="true"></i>حذف</button>` : ''}
+            </div>`
+          : '<span></span>';
+        return `
+          <button type="button" class="rd-loc-desk-row rd-loc-desk-row--region" style="animation-delay:${delay}s"
+            onclick="openRegionView('${rid}')">
+            <span class="rd-loc-desk-who">
+              <span class="rd-loc-desk-ico" aria-hidden="true"><i class="fas fa-map-location-dot"></i></span>
+              <span class="rd-loc-desk-name">${Sec.escapeHTML(reg.name || '')}</span>
+            </span>
+            <span class="rd-loc-desk-muted rd-loc-desk-clip">${Sec.escapeHTML(manager)}</span>
+            <span class="rd-loc-desk-num">${regionBranches.length}</span>
+            <span class="rd-loc-desk-num">${totalEmps}</span>
+            ${acts}
+          </button>`;
+      }
+
+      function rdLocDeskBranchRowHTML(br, delayIdx) {
+        const employees = getBranchStaff(br.id);
+        const delay = Math.min(0.25, (Number(delayIdx) || 0) * 0.04);
+        const bid = String(br.id || '').replace(/'/g, "\\'");
+        return `
+          <button type="button" class="rd-loc-desk-row rd-loc-desk-row--branch" style="animation-delay:${delay}s"
+            onclick="openLocBranchView('${bid}')">
+            <span class="rd-loc-desk-who">
+              <span class="rd-loc-desk-ico" aria-hidden="true"><i class="fas fa-store"></i></span>
+              <span class="rd-loc-desk-name">${Sec.escapeHTML(br.name || '')}</span>
+            </span>
+            <span class="rd-loc-desk-num">${employees.length}</span>
+          </button>`;
+      }
+
+      function rdLocDeskEmpRowHTML(emp, delayIdx) {
+        const delay = Math.min(0.25, (Number(delayIdx) || 0) * 0.04);
+        const role = emp.role === 'branch_manager' ? 'مدير فرع' : (getStaffJobTitle(emp) || 'موظف');
+        const initial = String(emp.name || '؟').trim().charAt(0) || '؟';
+        const empId = padEmpNum(emp.employee_number) || '—';
+        return `
+          <div class="rd-loc-desk-row rd-loc-desk-row--emp" style="animation-delay:${delay}s">
+            <span class="rd-loc-desk-who">
+              <span class="rd-loc-desk-av" aria-hidden="true">${Sec.escapeHTML(initial)}</span>
+              <span class="rd-loc-desk-name rd-loc-desk-name--emp">${Sec.escapeHTML(emp.name || '')}</span>
+            </span>
+            <span class="rd-loc-desk-mono">${Sec.escapeHTML(empId)}</span>
+            <span class="rd-loc-desk-muted">${Sec.escapeHTML(role)}</span>
+          </div>`;
+      }
+
+      function renderLocationsDesktop(ctx) {
+        const {
+          container, visibleAll, visibleRegions, activeRegion, canManageRegions,
+          canDeleteRegionsPerm, branchMatchesSearch, emptyMsg
+        } = ctx;
+
+        const searchEl = document.getElementById('br-search');
+        if (searchEl) {
+          searchEl.placeholder = 'ابحث في المناطق أو المشرفين...';
+          searchEl.dataset.rdPlaceholder = '1';
+        }
+
+        const banner = document.querySelector('#tab-locations .rb-locations-page-banner');
+        const activeBranchId = state._activeBranchId;
+        let activeBranch = null;
+        if (activeRegion && activeBranchId) {
+          activeBranch = state.branches.find(b => b.id === activeBranchId && b.region_id === activeRegion.id) || null;
+          if (!activeBranch) state._activeBranchId = null;
+        } else if (!activeRegion) {
+          state._activeBranchId = null;
+        }
+
+        if (banner) banner.classList.toggle('rd-loc-banner--drill', !!(activeRegion));
+
+        if (!visibleAll.length) {
+          syncRegionsPanelAction(null);
+          setRegionsResultCount(0);
+          container.innerHTML = `<div class="rd-loc-board rd-loc-board--desk"><div class="rd-ticket-empty"><i class="fas fa-map-location-dot"></i><p>${Sec.escapeHTML(emptyMsg)}</p></div></div>`;
+          return;
+        }
+
+        /* Employees of selected branch */
+        if (activeRegion && activeBranch) {
+          syncRegionsPanelAction(activeRegion.id);
+          const employees = getBranchStaff(activeBranch.id).filter((e) => {
+            const search = (document.getElementById('br-search')?.value || '').toLowerCase().trim();
+            if (!search) return true;
+            return `${e.name || ''} ${e.employee_number || ''} ${e.email || ''} ${e.phone || ''}`.toLowerCase().includes(search);
+          });
+          const rows = employees.length
+            ? employees.map((e, i) => rdLocDeskEmpRowHTML(e, i)).join('')
+            : '<div class="rd-ticket-empty"><i class="fas fa-user-slash"></i><p>لا يوجد موظفون</p></div>';
+          container.innerHTML = `
+            <div class="rd-loc-board rd-loc-board--desk">
+              <button type="button" class="rd-loc-back" onclick="backLocBranchView()">
+                <i class="fas fa-arrow-right" aria-hidden="true"></i>فروع ${Sec.escapeHTML(activeRegion.name || '')}
+              </button>
+              <div class="rd-loc-list-title">موظفو ${Sec.escapeHTML(activeBranch.name || '')}</div>
+              <div class="rd-loc-desk-table">
+                <div class="rd-loc-desk-thead rd-loc-desk-thead--emp" role="row">
+                  <span>الموظف</span><span>الرقم الوظيفي</span><span>الدور</span>
+                </div>
+                <div class="rd-loc-desk-body">${rows}</div>
+              </div>
+            </div>`;
+          setRegionsResultCount(employees.length);
+          return;
+        }
+
+        /* Branches of selected region */
+        if (activeRegion) {
+          syncRegionsPanelAction(activeRegion.id);
+          const regionBranches = state.branches.filter(b => b.region_id === activeRegion.id);
+          const visibleBranches = regionBranches.filter(branchMatchesSearch);
+          const rows = visibleBranches.length
+            ? visibleBranches.map((br, i) => rdLocDeskBranchRowHTML(br, i)).join('')
+            : '<div class="rd-ticket-empty"><i class="fas fa-store-slash"></i><p>لا توجد فروع مطابقة</p></div>';
+          container.innerHTML = `
+            <div class="rd-loc-board rd-loc-board--desk">
+              <button type="button" class="rd-loc-back" onclick="backRegionView()">
+                <i class="fas fa-arrow-right" aria-hidden="true"></i>كل المناطق
+              </button>
+              <div class="rd-loc-list-title">فروع ${Sec.escapeHTML(activeRegion.name || '')}</div>
+              <div class="rd-loc-desk-table">
+                <div class="rd-loc-desk-thead rd-loc-desk-thead--branch" role="row">
+                  <span>الفرع</span><span>الموظفون</span>
+                </div>
+                <div class="rd-loc-desk-body">${rows}</div>
+              </div>
+            </div>`;
+          setRegionsResultCount(visibleBranches.length);
+          return;
+        }
+
+        /* Regions root */
+        syncRegionsPanelAction(null);
+        if (!visibleRegions.length) {
+          container.innerHTML = `
+            <div class="rd-loc-board rd-loc-board--desk">
+              <div class="rd-ticket-empty"><i class="fas fa-magnifying-glass"></i><p>لا توجد نتائج مطابقة</p></div>
+            </div>`;
+          setRegionsResultCount(0);
+          return;
+        }
+        container.innerHTML = `
+          <div class="rd-loc-board rd-loc-board--desk">
+            <div class="rd-loc-desk-table">
+              <div class="rd-loc-desk-thead rd-loc-desk-thead--region" role="row">
+                <span>المنطقة</span><span>المدير</span><span>الفروع</span><span>الموظفون</span><span>إجراءات</span>
+              </div>
+              <div class="rd-loc-desk-body">
+                ${visibleRegions.map((reg, i) => rdLocDeskRegionRowHTML(reg, canManageRegions, canDeleteRegionsPerm, i)).join('')}
+              </div>
+            </div>
+          </div>`;
+        setRegionsResultCount(visibleRegions.length);
+      }
+
       function renderRegionsRedesign(ctx) {
+        if (typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi()) {
+          renderLocationsDesktop(ctx);
+          return;
+        }
         const {
           container, visibleAll, visibleRegions, activeRegion, canManageRegions,
           canDeleteRegionsPerm, branchMatchesSearch, emptyMsg
@@ -13264,7 +13450,10 @@
         try {
           const { error } = await sb.from('regions').delete().eq('id', id);
           if (error) throw error;
-          if (state._activeRegionId === id) state._activeRegionId = null;
+          if (state._activeRegionId === id) {
+            state._activeRegionId = null;
+            state._activeBranchId = null;
+          }
           removeLocalRegion(id);
           renderRegions();
           showToast('تم حذف المنطقة', 'info');
@@ -13347,6 +13536,7 @@
         try {
           const { error } = await sb.from('branches').delete().eq('id', id);
           if (error) throw error;
+          if (state._activeBranchId === id) state._activeBranchId = null;
           removeLocalBranch(id);
           renderRegions();
           showToast('تم حذف الفرع', 'info');
@@ -34303,6 +34493,8 @@
       window.handleLocationsImportFile = handleLocationsImportFile;
       window.openRegionView = openRegionView;
       window.backRegionView = backRegionView;
+      window.openLocBranchView = openLocBranchView;
+      window.backLocBranchView = backLocBranchView;
       window.renderRegions = renderRegions;
       window.toggleRdLocMenu = toggleRdLocMenu;
       window.openUserModal = openUserModal;
