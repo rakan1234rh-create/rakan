@@ -819,7 +819,26 @@ html.athar-staging-redesign.mr-desktop-ui #tab-reports .rd-rp-link__chev {
   flex-shrink: 0 !important;
 }
 
-/* ── Violations 3 columns ── */
+/* ── Violations / دليل المخالفات — literal Athar Desktop mockup ── */
+html.athar-staging-redesign.mr-desktop-ui #tab-violations {
+  animation: atharRdScreenIn 0.3s ease !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-violations #violDeskHost.wf-desk-tickets-host,
+html.athar-staging-redesign.mr-desktop-ui #tab-violations .mr-users-list-wrap,
+html.athar-staging-redesign.mr-desktop-ui #tab-violations .wf-table-wrap {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  overflow: visible !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-violations .viol-types-meta-row {
+  display: none !important;
+}
+
 html.athar-staging-redesign.mr-desktop-ui #tab-violations #violGrid.rd-viol-list--desk {
   display: grid !important;
   grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
@@ -827,6 +846,64 @@ html.athar-staging-redesign.mr-desktop-ui #tab-violations #violGrid.rd-viol-list
   align-items: start !important;
   background: transparent !important;
   border: none !important;
+  padding: 0 !important;
+  animation: atharRdFadeUp 0.3s ease !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-violations #violGrid.rd-viol-list--desk > .rd-viol-desk-tools {
+  grid-column: 1 / -1 !important;
+  display: flex !important;
+  justify-content: flex-end !important;
+  margin: 0 0 4px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-violations .rd-viol-desk-add {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 10px 16px !important;
+  border: none !important;
+  border-radius: 12px !important;
+  background: var(--gold) !important;
+  color: var(--onGold) !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  font-family: inherit !important;
+  cursor: pointer !important;
+  box-shadow: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-violations .rd-viol-desk-add i {
+  font-size: 12px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-violations #violGrid.rd-viol-list--desk > .rd-ticket-empty {
+  grid-column: 1 / -1 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-violations .rd-viol-group {
+  margin: 0 !important;
+  animation: atharRdCardIn 0.4s ease both !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-violations .rd-viol-group__hd {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  margin-bottom: 10px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-violations .rd-viol-group__dot {
+  width: 8px !important;
+  height: 8px !important;
+  border-radius: 50% !important;
+  flex-shrink: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-violations .rd-viol-group__label {
+  font-size: 13.5px !important;
+  font-weight: 700 !important;
+  color: var(--text) !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #tab-violations .rd-viol-group__card {
@@ -837,7 +914,77 @@ html.athar-staging-redesign.mr-desktop-ui #tab-violations .rd-viol-group__card {
 }
 
 html.athar-staging-redesign.mr-desktop-ui #tab-violations .rd-viol-row {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
   padding: 13px 16px !important;
+  border: none !important;
+  border-bottom: 1px solid var(--border) !important;
+  background: transparent !important;
+  color: inherit !important;
+  font: inherit !important;
+  text-align: start !important;
+  width: 100% !important;
+  cursor: pointer !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-violations .rd-viol-row:last-child {
+  border-bottom: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-violations .rd-viol-row:hover {
+  background: color-mix(in srgb, var(--surface2) 55%, transparent) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-violations .rd-viol-row__name {
+  font-size: 12.5px !important;
+  color: var(--text) !important;
+  flex: 1 !important;
+  min-width: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-violations .rd-viol-row__pts {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  white-space: nowrap !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-violations .rd-viol-row__acts {
+  display: none !important;
+  gap: 4px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-violations .rd-viol-row:hover .rd-viol-row__acts,
+html.athar-staging-redesign.mr-desktop-ui #tab-violations .rd-viol-row:focus-within .rd-viol-row__acts {
+  display: inline-flex !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-violations .rd-viol-act {
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 8px !important;
+  border: 1px solid var(--border) !important;
+  background: var(--surface) !important;
+  color: var(--text2) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  font-size: 11px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-violations .rd-viol-act:last-child {
+  color: var(--danger) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-violations .rd-viol-empty {
+  padding: 18px 16px !important;
+  font-size: 12px !important;
+  color: var(--text3) !important;
+  text-align: center !important;
 }
 
 /* ── Compliance desktop — literal Athar mockup ── */

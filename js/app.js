@@ -14667,6 +14667,7 @@
       }
 
       function renderViolTypesRedesign(types, canManage) {
+        const desk = typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi();
         const order = [
           { sev: 'عالي', label: 'مخالفات عالية', color: 'var(--danger)' },
           { sev: 'متوسط', label: 'مخالفات متوسطة', color: 'var(--warning)' },
@@ -14674,24 +14675,27 @@
         ];
         const groups = order.map((g, gi) => {
           const items = types.filter((v) => violTypeSeverity(v) === g.sev);
-          if (!items.length) return '';
-          const rows = items.map((v) => {
-            const points = v.weight ?? v.points ?? 0;
-            const admin = canManage
-              ? `<span class="rd-viol-row__acts" onclick="event.stopPropagation()">
-                  <button type="button" class="rd-viol-act" onclick="editViolType('${v.id}')" aria-label="تعديل"><i class="fas fa-pen"></i></button>
-                  <button type="button" class="rd-viol-act" onclick="deleteViolType('${v.id}')" aria-label="حذف"><i class="fas fa-trash"></i></button>
-                </span>`
-              : '';
-            return `
-              <button type="button" class="rd-viol-row" onclick="openViolDetailSheet('${v.id}')">
-                <span class="rd-viol-row__name">${Sec.escapeHTML(v.name)}</span>
-                <span class="rd-viol-row__end">
-                  <span class="rd-viol-row__pts" style="color:${g.color}">−${points} نقاط</span>
-                  ${admin}
-                </span>
-              </button>`;
-          }).join('');
+          if (!items.length && !desk) return '';
+          const rows = items.length
+            ? items.map((v) => {
+              const points = v.weight ?? v.points ?? 0;
+              const ptsLabel = desk ? `−${points}` : `−${points} نقاط`;
+              const admin = canManage
+                ? `<span class="rd-viol-row__acts" onclick="event.stopPropagation()">
+                    <button type="button" class="rd-viol-act" onclick="editViolType('${v.id}')" aria-label="تعديل"><i class="fas fa-pen"></i></button>
+                    <button type="button" class="rd-viol-act" onclick="deleteViolType('${v.id}')" aria-label="حذف"><i class="fas fa-trash"></i></button>
+                  </span>`
+                : '';
+              return `
+                <button type="button" class="rd-viol-row" onclick="openViolDetailSheet('${v.id}')">
+                  <span class="rd-viol-row__name">${Sec.escapeHTML(v.name)}</span>
+                  <span class="rd-viol-row__end">
+                    <span class="rd-viol-row__pts" style="color:${g.color}">${ptsLabel}</span>
+                    ${admin}
+                  </span>
+                </button>`;
+            }).join('')
+            : '<div class="rd-viol-empty">لا توجد مخالفات في هذا التصنيف</div>';
           return `
             <section class="rd-viol-group" style="animation-delay:${gi * 0.05}s">
               <div class="rd-viol-group__hd">
@@ -14701,7 +14705,14 @@
               <div class="rd-viol-group__card">${rows}</div>
             </section>`;
         }).filter(Boolean).join('');
-        return groups || '<div class="rd-ticket-empty"><i class="fas fa-triangle-exclamation"></i><p>لا توجد أنواع مخالفات</p></div>';
+        const addBtn = desk && canManage
+          ? `<div class="rd-viol-desk-tools">
+               <button type="button" class="rd-viol-desk-add" onclick="openViolModal()">
+                 <i class="fas fa-plus" aria-hidden="true"></i>إضافة نوع
+               </button>
+             </div>`
+          : '';
+        return (addBtn + (groups || '<div class="rd-ticket-empty"><i class="fas fa-triangle-exclamation"></i><p>لا توجد أنواع مخالفات</p></div>'));
       }
 
       async function renderViolTypes() {
