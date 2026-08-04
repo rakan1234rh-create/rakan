@@ -25130,6 +25130,8 @@
         const pct = rdCmpScoreBarPct(raw);
         const C = 339.292;
         const offset = (C - (C * pct) / 100).toFixed(3);
+        const desk = typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi();
+        const sub = desk ? 'لكل المناطق هذا الشهر' : 'لكل المناطق والفروع مجتمعة هذا الشهر';
         return `
           <div class="rd-cmp-hero">
             <div class="rd-cmp-hero__ring" aria-hidden="true">
@@ -25142,20 +25144,25 @@
             </div>
             <div class="rd-cmp-hero__copy">
               <div class="rd-cmp-hero__title">معدل الالتزام العام</div>
-              <div class="rd-cmp-hero__sub">لكل المناطق والفروع مجتمعة هذا الشهر</div>
+              <div class="rd-cmp-hero__sub">${Sec.escapeHTML(sub)}</div>
             </div>
           </div>`;
       }
 
       function rdCmpHiLoHTML(extremes, view) {
         if (!extremes) return '';
-        const topLabel = view === 'branches' ? 'أعلى فرع' : (view === 'employees' ? 'أعلى تقييم' : 'أعلى منطقة');
-        const bottomLabel = view === 'branches' ? 'أدنى فرع' : (view === 'employees' ? 'أقل تقييم' : 'بحاجة لمتابعة');
-        const onClick = view === 'branches'
-          ? (id) => `cmpOpenBranchCompliance('${id}')`
-          : view === 'employees'
-            ? (id) => `openCmpItemDetail('employee','${id}')`
-            : (id) => `cmpOpenRegionCompliance('${id}')`;
+        const desk = typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi();
+        const topLabel = desk || view === 'regions'
+          ? 'أعلى منطقة'
+          : (view === 'branches' ? 'أعلى فرع' : 'أعلى تقييم');
+        const bottomLabel = desk || view === 'regions'
+          ? 'بحاجة لمتابعة'
+          : (view === 'branches' ? 'أدنى فرع' : 'أقل تقييم');
+        const onClick = (desk || view === 'regions')
+          ? (id) => `cmpOpenRegionCompliance('${id}')`
+          : view === 'branches'
+            ? (id) => `cmpOpenBranchCompliance('${id}')`
+            : (id) => `openCmpItemDetail('employee','${id}')`;
         const card = (kind, item, label, icon) => {
           const rate = (Math.round(Number(item.score) * 10) / 10).toFixed(1);
           return `
@@ -25175,6 +25182,19 @@
         const bar = rdCmpScoreBarPct(raw);
         const clickAttr = card.onClick ? `onclick="${Sec.escapeHTML(card.onClick)}"` : '';
         const manager = Sec.escapeHTML(card.sub || '—');
+        if (typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi()) {
+          return `
+            <button type="button" class="rd-cmp-region rd-cmp-row rd-cmp-row--region" ${clickAttr}>
+              <span class="rd-cmp-row__name">${Sec.escapeHTML(card.name)}</span>
+              <span class="rd-cmp-row__muted rd-cmp-clip">${manager}</span>
+              <span class="rd-cmp-row__num">${card.branches}</span>
+              <span class="rd-cmp-row__num">${card.employees}</span>
+              <span class="rd-cmp-row__bar">
+                <span class="rd-cmp-row__track"><span style="width:${bar}%;background:${tone}"></span></span>
+                <span class="rd-cmp-row__rate" style="color:${tone}">${rateStr}</span>
+              </span>
+            </button>`;
+        }
         return `
           <article class="rd-cmp-region" ${clickAttr} role="button" tabindex="0">
             <div class="rd-cmp-region__top">
@@ -25200,9 +25220,20 @@
         const tone = cmpScoreRateColor(raw);
         const disp = String(Math.round(raw));
         const pct = rdCmpScoreBarPct(raw);
+        const clickAttr = card.onClick ? `onclick="${Sec.escapeHTML(card.onClick)}"` : '';
+        if (typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi()) {
+          return `
+            <button type="button" class="rd-cmp-branch rd-cmp-row rd-cmp-row--branch" ${clickAttr}>
+              <span class="rd-cmp-row__name">${Sec.escapeHTML(card.name)}</span>
+              <span class="rd-cmp-row__num">${card.employees}</span>
+              <span class="rd-cmp-row__bar">
+                <span class="rd-cmp-row__track"><span style="width:${pct}%;background:${tone}"></span></span>
+                <span class="rd-cmp-row__rate" style="color:${tone}">${Sec.escapeHTML(disp)}</span>
+              </span>
+            </button>`;
+        }
         const C = 339.292;
         const offset = (C - (C * pct) / 100).toFixed(3);
-        const clickAttr = card.onClick ? `onclick="${Sec.escapeHTML(card.onClick)}"` : '';
         return `
           <article class="rd-cmp-branch" ${clickAttr} role="button" tabindex="0">
             <div class="rd-cmp-branch__ring" aria-hidden="true">
@@ -25228,6 +25259,17 @@
         const initial = String(card.name || '؟').trim().charAt(0) || '؟';
         const role = card.isBm ? 'مدير فرع' : 'موظف';
         const click = card.onClick || `openCmpItemDetail('employee','${String(card.id || '').replace(/'/g, "\\'")}')`;
+        if (typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi()) {
+          return `
+            <button type="button" class="rd-cmp-emp rd-cmp-row rd-cmp-row--emp" onclick="${Sec.escapeHTML(click)}">
+              <span class="rd-cmp-row__who">
+                <span class="rd-cmp-emp__av" aria-hidden="true">${Sec.escapeHTML(initial)}</span>
+                <span class="rd-cmp-row__name">${Sec.escapeHTML(card.name)}</span>
+              </span>
+              <span class="rd-cmp-row__muted">${Sec.escapeHTML(role)}</span>
+              <span class="rd-cmp-row__score" style="color:${tone}">${Sec.escapeHTML(disp)}</span>
+            </button>`;
+        }
         return `
           <article class="rd-cmp-emp" onclick="${Sec.escapeHTML(click)}" role="button" tabindex="0">
             <span class="rd-cmp-emp__av" aria-hidden="true">${Sec.escapeHTML(initial)}</span>
@@ -25238,6 +25280,25 @@
             <span class="rd-cmp-emp__score" style="color:${tone}">${Sec.escapeHTML(disp)}</span>
             <i class="fas fa-chevron-left" aria-hidden="true"></i>
           </article>`;
+      }
+
+      function rdCmpTheadHTML(view) {
+        if (view === 'branches') {
+          return `
+            <div class="rd-cmp-thead rd-cmp-thead--branch" role="row">
+              <span>الفرع</span><span>الموظفون</span><span>معدل الالتزام</span>
+            </div>`;
+        }
+        if (view === 'employees') {
+          return `
+            <div class="rd-cmp-thead rd-cmp-thead--emp" role="row">
+              <span>الموظف</span><span>الدور</span><span>معدل الالتزام</span>
+            </div>`;
+        }
+        return `
+          <div class="rd-cmp-thead rd-cmp-thead--region" role="row">
+            <span>المنطقة</span><span>المدير</span><span>الفروع</span><span>الموظفون</span><span>معدل الالتزام</span>
+          </div>`;
       }
 
       function cmpNeoBoardCardHTML(card, view, opts = {}) {
@@ -25606,6 +25667,7 @@
 
         if (rdCmp) {
           const isRegionsRoot = view === 'regions';
+          const desk = typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi();
           const drilledRegion = state.regions.find(r => r.id === state._cmpDrill.regionId);
           const drilledBranch = state.branches.find(b => b.id === state._cmpDrill.branchId);
           let listTitle = 'حسب المنطقة';
@@ -25632,14 +25694,31 @@
             orgScore = regs.reduce((a, r) => a + calcRegionStability(r.id, violations).score, 0) / regs.length;
           }
 
-          board.innerHTML = `
-            <section class="cmp-neo-board rd-cmp-board">
+          let metricsHTML = '';
+          if (!cmpDataPending) {
+            if (desk || isRegionsRoot) {
+              let hiLo = extremesBarHTML;
+              if (desk && !isRegionsRoot) {
+                const regItems = (state.regions || []).map((r) => ({
+                  id: r.id,
+                  name: r.name,
+                  score: calcRegionStability(r.id, violations).score,
+                }));
+                hiLo = rdCmpHiLoHTML(cmpFindScoreExtremes(regItems), 'regions');
+              }
+              metricsHTML = `${rdCmpOrgHeroHTML(orgScore)}${hiLo}`;
+            }
+          }
+
+          const listTitleHTML = (desk && isRegionsRoot)
+            ? ''
+            : `<div class="rd-cmp-list-title">${Sec.escapeHTML(listTitle)}</div>`;
+          const theadHTML = desk && !cmpDataPending && items.length ? rdCmpTheadHTML(view) : '';
+          const toolbarHTML = desk ? '' : `
               <header class="rd-cmp-hd">
                 <h3>مؤشرات الامتثال</h3>
                 <p class="rd-cmp-hd__eye">COMPLIANCE OVERVIEW</p>
               </header>
-              ${isRegionsRoot && !cmpDataPending ? rdCmpOrgHeroHTML(orgScore) : ''}
-              ${isRegionsRoot ? extremesBarHTML : ''}
               <div class="rd-cmp-toolbar">
                 <div class="figma-search-wrap rd-cmp-search">
                   <input type="text" class="figma-search-input" id="cmp-search"
@@ -25669,10 +25748,18 @@
                   </button>
                 </div>
               </div>
-              <p class="cmp-neo-search-meta" hidden>عدد النتائج: <strong id="cmp-search-count">${cmpDataPending ? '…' : items.length}</strong></p>
+              <p class="cmp-neo-search-meta" hidden>عدد النتائج: <strong id="cmp-search-count">${cmpDataPending ? '…' : items.length}</strong></p>`;
+
+          board.innerHTML = `
+            <section class="cmp-neo-board rd-cmp-board${desk ? ' rd-cmp-board--desk' : ''}">
+              ${toolbarHTML}
+              ${metricsHTML}
               ${rdBack}
-              <div class="rd-cmp-list-title">${Sec.escapeHTML(listTitle)}</div>
-              <div class="rd-cmp-list ${gridCls}">${cardsHTML}</div>
+              ${listTitleHTML}
+              <div class="rd-cmp-table${desk ? ' rd-cmp-table--desk' : ''}">
+                ${theadHTML}
+                <div class="rd-cmp-list ${gridCls}">${cardsHTML}</div>
+              </div>
             </section>`;
         } else {
           board.innerHTML = `
