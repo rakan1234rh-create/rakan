@@ -5042,6 +5042,7 @@
         const sideTheme = document.getElementById('rdSideThemeIcon');
         if (sideTheme) sideTheme.className = 'fas ' + (theme === 'dark' ? 'fa-sun' : 'fa-moon');
         try { syncRdWfChips(); } catch (_) { /* noop */ }
+        try { syncRdWfSearchChrome(); } catch (_) { /* noop */ }
         try { syncRdTopbarUserSlot(); } catch (_) { /* noop */ }
         try { syncRdSideFoot(); } catch (_) { /* noop */ }
         const av = document.getElementById('topbarUserAv');
@@ -5093,6 +5094,65 @@
         const staffIds = new Set(getBranchStaff(bid).map(e => e.id));
         staffIds.add(state.currentUser.id);
         return staffIds.has(t.employee_id);
+      }
+
+      function rdWfSortIcon(key) {
+        const cur = state._rdWfSortKey;
+        const dir = state._rdWfSortDir || 1;
+        if (cur !== key) return 'fa-sort';
+        return dir === 1 ? 'fa-sort-up' : 'fa-sort-down';
+      }
+
+      function rdWfToggleSort(key) {
+        if (!isAtharDesktopScreenUi()) return;
+        if (state._rdWfSortKey === key) {
+          state._rdWfSortDir = (state._rdWfSortDir || 1) * -1;
+        } else {
+          state._rdWfSortKey = key;
+          state._rdWfSortDir = 1;
+        }
+        filterTickets();
+      }
+
+      function rdWfSortTickets(list) {
+        const key = state._rdWfSortKey;
+        if (!key || !Array.isArray(list)) return list;
+        const dir = state._rdWfSortDir || 1;
+        const pointsFor = (t) => {
+          const types = state.violationTypes || [];
+          const vt = (t.violation_type_id && types.find(x => x.id === t.violation_type_id))
+            || types.find(x => x.name === t.violation_type);
+          return Number(vt?.weight ?? vt?.points ?? 0) || 0;
+        };
+        const copy = list.slice();
+        copy.sort((a, b) => {
+          let av;
+          let bv;
+          if (key === 'id') {
+            av = String(a.ticket_number || a.id || '');
+            bv = String(b.ticket_number || b.id || '');
+            return av.localeCompare(bv, 'ar', { numeric: true }) * dir;
+          }
+          if (key === 'name') {
+            av = String(a._empName || '').trim();
+            bv = String(b._empName || '').trim();
+            return av.localeCompare(bv, 'ar') * dir;
+          }
+          if (key === 'points') {
+            return (pointsFor(a) - pointsFor(b)) * dir;
+          }
+          return 0;
+        });
+        return copy;
+      }
+
+      function syncRdWfSearchChrome() {
+        const input = document.getElementById('wf-search');
+        if (!input) return;
+        const desk = typeof isAtharDesktopRedesignUi === 'function' && isAtharDesktopRedesignUi();
+        input.placeholder = desk
+          ? 'ابحث بالاسم أو النوع أو رقم التذكرة...'
+          : 'ابحث برقم التذكرة، اسم الموظف، أو الرقم الوظيفي...';
       }
 
       function syncRdWfChips(openTickets) {
@@ -18932,6 +18992,7 @@
                 return hay.includes(search);
               });
             }
+            visible = rdWfSortTickets(visible);
           }
           const countEl = document.getElementById('wf-count');
           if (countEl) countEl.textContent = visible.length;
@@ -19150,22 +19211,27 @@
               <button type="button" class="rd-desk-table__row rd-desk-ticket-row" style="animation-delay:${delay}s"
                 onclick="openTicket('${t.id}')">
                 <span class="rd-desk-mono" role="cell">#${Sec.escapeHTML(shortTicketNum(t.ticket_number))}</span>
-                <span class="rd-desk-user__name" role="cell">${Sec.escapeHTML(empName)}</span>
+                <span class="rd-desk-user" role="cell"><span class="rd-desk-user__name">${Sec.escapeHTML(empName)}</span></span>
                 <span class="rd-desk-muted rd-desk-clip" role="cell">${Sec.escapeHTML(violName)}</span>
                 <span role="cell"><span class="rd-desk-ticket-badge" style="color:${tone.color};background:${tone.soft}">${Sec.escapeHTML(statusText)}</span></span>
                 <span class="rd-desk-ticket-pts" role="cell" style="color:${tone.color}">−${pts}</span>
-                <span class="rd-desk-muted" role="cell">${Sec.escapeHTML(rel)}</span>
+                <span class="rd-desk-ticket-time" role="cell">${Sec.escapeHTML(rel)}</span>
               </button>`;
           }).join('');
+          const sortBtn = (key, label) => {
+            const active = state._rdWfSortKey === key;
+            return `<button type="button" class="rd-desk-sort${active ? ' is-active' : ''}" role="columnheader"
+              onclick="event.stopPropagation();rdWfToggleSort('${key}')">${label}<i class="fas ${rdWfSortIcon(key)}" aria-hidden="true"></i></button>`;
+          };
           const html = `
             <div class="rd-desk-table rd-desk-table--tickets" role="table">
               <div class="rd-desk-table__head" role="row">
-                <span role="columnheader">#</span>
-                <span role="columnheader">الموظف</span>
+                ${sortBtn('id', '#')}
+                ${sortBtn('name', 'الموظف')}
                 <span role="columnheader">النوع</span>
                 <span role="columnheader">الحالة</span>
-                <span role="columnheader">النقاط</span>
-                <span role="columnheader">الوقت</span>
+                ${sortBtn('points', 'النقاط')}
+                <span class="rd-desk-head-time" role="columnheader">الوقت</span>
               </div>
               ${rows || '<div class="rd-ticket-empty"><i class="fas fa-inbox"></i><p>لا توجد تذاكر مطابقة</p></div>'}
             </div>`;
@@ -35397,6 +35463,7 @@
       window.removeFileById = removeFileById;
       window.filterTickets = filterTickets;
       window.rdWfPickChip = rdWfPickChip;
+      window.rdWfToggleSort = rdWfToggleSort;
       window.wfStatusToggle = wfStatusToggle;
       window.wfStatusPick = wfStatusPick;
       window.wfStatusMobNativeChange = wfStatusMobNativeChange;
