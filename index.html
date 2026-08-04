@@ -767,8 +767,6 @@
   </style>
   <link rel="stylesheet" href="styles/custom/main.css">
   <link rel="stylesheet" href="styles/custom/design-kit.css" id="mk-design-kit">
-  <link rel="stylesheet" href="styles/custom/athar-redesign-staging.css?v=desk15" id="athar-redesign-staging">
-  <link rel="stylesheet" href="styles/custom/athar-desktop-screens.css?v=desk15" id="athar-desktop-screens">
   <!-- Mirsad tokens + kit: مضمّنة في index.html — لا روابط design-system (تجنّب 404 عند file://) -->
   <style>
     /* Reset figma-search-input inside figma-search-wrap to prevent overlapping border/background from platform-bridge.css */
@@ -2296,6 +2294,9 @@
   <link rel="stylesheet" href="styles/desktop/compliance-shell.css" id="platform-compliance-shell-link" media="screen and (min-width: 993px), screen and (hover: hover) and (pointer: fine)">
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px), screen and (hover: hover) and (pointer: fine)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px), screen and (hover: hover) and (pointer: fine)">
+  <!-- Redesign AFTER classic desktop shells so sidebar/chrome overrides win -->
+  <link rel="stylesheet" href="styles/custom/athar-redesign-staging.css?v=desk16" id="athar-redesign-staging">
+  <link rel="stylesheet" href="styles/custom/athar-desktop-screens.css?v=desk16" id="athar-desktop-screens">
   <style id="mr-topbar-dark-fix" media="screen and (min-width: 993px), screen and (hover: hover) and (pointer: fine)">
     html[data-theme="dark"].mr-desktop-ui #appWrap .topbar.unified-banner,
     html[data-theme="dark"].mr-desktop-ui .topbar.unified-banner {
@@ -4577,7 +4578,7 @@
 
     <div id="rdCmplOverlayHost"></div>
     <div id="rdSchOverlayHost"></div>
-    <script src="js/app.js?v=desk15"></script>
+    <script src="js/app.js?v=desk16"></script>
         <style>
       @media (max-width: 992px) {
         /* ── workflow: منع التمدد الأفقي ── */

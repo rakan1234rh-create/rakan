@@ -405,8 +405,8 @@ html.mr-mobile-ui .wf-ticket-row {
   border-color: var(--mr-border) !important;
 }
 
-/* Desktop sidebar active (staging redesign) */
-html.mr-desktop-ui .nav-item.active {
+/* Desktop sidebar active (staging redesign) — scoped away from Athar desktop redesign rail */
+html.mr-desktop-ui:not(.athar-staging-redesign) .nav-item.active {
   background: var(--sidebar-active) !important;
   color: var(--sidebar-active-text) !important;
   border-radius: 14px !important;
@@ -3823,7 +3823,33 @@ html.athar-staging-redesign.mr-desktop-ui #sidebar .sidebar-nav {
   min-height: 0 !important;
 }
 
-/* Collapsed: hide labels */
+/* Kill classic section headers (duplicate «الرئيسية» / «الإعدادات») — all rail states */
+html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-section-label,
+html.athar-staging-redesign.mr-desktop-ui #sidebar:hover .nav-section-label,
+html.athar-staging-redesign.mr-desktop-ui #sidebar.sidebar-rail-hover .nav-section-label,
+html.athar-staging-redesign.mr-desktop-ui #sidebar.sidebar-rail-open .nav-section-label,
+html.athar-staging-redesign.mr-desktop-ui #sidebar.sidebar-rail-expanded .nav-section-label,
+html.athar-staging-redesign.mr-desktop-ui #sidebar[data-rail-hover="1"] .nav-section-label,
+html.athar-staging-redesign.mr-desktop-ui #sidebar[data-rail-expanded="1"] .nav-section-label,
+html.athar-staging-redesign.mr-desktop-ui #sidebar:not(:hover) .nav-section-label {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  max-height: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  max-width: 0 !important;
+  min-width: 0 !important;
+  line-height: 0 !important;
+  font-size: 0 !important;
+}
+
+/* Collapsed: hide labels only — do NOT re-center icons (that causes horizontal slide) */
 html.athar-staging-redesign.mr-desktop-ui #sidebar:not(:hover):not(.sidebar-rail-hover):not(.sidebar-rail-open):not(.sidebar-rail-expanded):not([data-rail-hover="1"]):not([data-rail-expanded="1"]) .nav-item-label,
 html.athar-staging-redesign.mr-desktop-ui #sidebar:not(:hover):not(.sidebar-rail-hover):not(.sidebar-rail-open):not(.sidebar-rail-expanded):not([data-rail-hover="1"]):not([data-rail-expanded="1"]) .nav-badge,
 html.athar-staging-redesign.mr-desktop-ui #sidebar:not(:hover):not(.sidebar-rail-hover):not(.sidebar-rail-open):not(.sidebar-rail-expanded):not([data-rail-hover="1"]):not([data-rail-expanded="1"]) .rd-side-foot__meta {
@@ -3847,16 +3873,31 @@ html.athar-staging-redesign.mr-desktop-ui #sidebar[data-rail-expanded="1"] .nav-
   max-width: 160px !important;
   visibility: visible !important;
   overflow: visible !important;
+  width: auto !important;
 }
 
-html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item {
+/*
+  Icon column locked to collapsed-rail center:
+  (72px rail − 18px icon) / 2 = 27px inline-start padding.
+  Same padding when expanded → icons never slide during width transition.
+*/
+html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item,
+html.athar-staging-redesign.mr-desktop-ui #sidebar:hover .nav-item,
+html.athar-staging-redesign.mr-desktop-ui #sidebar.sidebar-rail-hover .nav-item,
+html.athar-staging-redesign.mr-desktop-ui #sidebar.sidebar-rail-open .nav-item,
+html.athar-staging-redesign.mr-desktop-ui #sidebar.sidebar-rail-expanded .nav-item,
+html.athar-staging-redesign.mr-desktop-ui #sidebar[data-rail-hover="1"] .nav-item,
+html.athar-staging-redesign.mr-desktop-ui #sidebar[data-rail-expanded="1"] .nav-item,
+html.athar-staging-redesign.mr-desktop-ui #sidebar:not(:hover):not(.sidebar-rail-hover):not(.sidebar-rail-open):not(.sidebar-rail-expanded):not([data-rail-hover="1"]):not([data-rail-expanded="1"]) .nav-item {
   display: flex !important;
   grid-template-columns: none !important;
   align-items: center !important;
   justify-content: flex-start !important;
   gap: 12px !important;
-  padding: 11px 16px !important;
-  margin: 0 12px !important;
+  padding: 11px 0 !important;
+  padding-inline-start: 27px !important;
+  padding-inline-end: 12px !important;
+  margin: 0 !important;
   min-height: 0 !important;
   border: none !important;
   border-radius: 12px !important;
@@ -3866,22 +3907,19 @@ html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item {
   color: var(--text2) !important;
   text-align: right !important;
   position: relative !important;
-  width: auto !important;
+  width: 100% !important;
+  max-width: none !important;
+  box-sizing: border-box !important;
   box-shadow: none !important;
   overflow: hidden !important;
-}
-
-/* Collapsed nav: center icons only */
-html.athar-staging-redesign.mr-desktop-ui #sidebar:not(:hover):not(.sidebar-rail-hover):not(.sidebar-rail-open):not(.sidebar-rail-expanded):not([data-rail-hover="1"]):not([data-rail-expanded="1"]) .nav-item {
-  justify-content: center !important;
-  padding: 11px 0 !important;
-  margin: 0 10px !important;
-  gap: 0 !important;
+  transform: none !important;
+  transition: background 160ms ease, color 160ms ease !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item:hover {
   background: var(--surface2) !important;
   color: var(--text) !important;
+  transform: none !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item.active {
@@ -3889,31 +3927,62 @@ html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item.active {
   color: var(--text) !important;
 }
 
-/* Flatten icon wraps → plain FA icons like the mockup */
-html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-icon-wrap {
+/* Flat icons — kill classic 36px icon boxes from shell/main (all rail states) */
+html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui #sidebar:hover .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui #sidebar.sidebar-rail-hover .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui #sidebar.sidebar-rail-open .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui #sidebar.sidebar-rail-expanded .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui #sidebar[data-rail-hover="1"] .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui #sidebar[data-rail-expanded="1"] .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item:hover .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item:hover:not(.active) .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item.active .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui #sidebar:not(:hover) .nav-item.active .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui #sidebar:hover .nav-item.active .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui[data-theme="dark"] #sidebar .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui[data-theme="dark"] #sidebar .nav-item.active .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui[data-theme="dark"] #sidebar .nav-item:hover:not(.active) .nav-icon-wrap {
   width: 18px !important;
-  height: auto !important;
+  height: 18px !important;
   min-width: 18px !important;
+  max-width: 18px !important;
+  flex: 0 0 18px !important;
   padding: 0 !important;
   margin: 0 !important;
   border: 0 !important;
   border-radius: 0 !important;
   background: transparent !important;
   box-shadow: none !important;
+  color: inherit !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  flex-shrink: 0 !important;
+  justify-self: start !important;
+  align-self: center !important;
+  grid-column: unset !important;
+  grid-row: unset !important;
+  transform: none !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-icon-wrap i,
-html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item i {
+html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item i,
+html.athar-staging-redesign.mr-desktop-ui #sidebar:hover .nav-item i,
+html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item.active i,
+html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item.active .nav-icon-wrap i,
+html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item.active .nav-icon-wrap i::before {
   font-size: 14px !important;
   width: 18px !important;
+  height: auto !important;
   text-align: center !important;
   line-height: 1 !important;
   color: inherit !important;
   background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  transform: none !important;
+  margin: 0 !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item.active .nav-icon-wrap,
@@ -3953,23 +4022,26 @@ html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item--desk-hide {
 html.athar-staging-redesign.mr-mobile-ui #sidebar .nav-item--desk-only {
   display: none !important;
 }
-html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-section-label {
-  display: none !important;
-}
 
 html.athar-staging-redesign.mr-desktop-ui #sidebar .rd-side-foot {
   display: flex !important;
   align-items: center !important;
   gap: 10px !important;
-  padding: 14px 16px !important;
+  padding: 14px 0 !important;
+  padding-inline-start: 19px !important;
+  padding-inline-end: 16px !important;
   border-top: 1px solid var(--border) !important;
   flex-shrink: 0 !important;
   overflow: hidden !important;
+  justify-content: flex-start !important;
+  box-sizing: border-box !important;
+  transition: none !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #sidebar:not(:hover):not(.sidebar-rail-hover):not(.sidebar-rail-open):not(.sidebar-rail-expanded):not([data-rail-hover="1"]):not([data-rail-expanded="1"]) .rd-side-foot {
-  justify-content: center !important;
+  justify-content: flex-start !important;
   padding: 14px 0 !important;
+  padding-inline-start: 19px !important;
   gap: 0 !important;
 }
 
