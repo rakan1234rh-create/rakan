@@ -2295,8 +2295,8 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px), screen and (hover: hover) and (pointer: fine)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px), screen and (hover: hover) and (pointer: fine)">
   <!-- Redesign AFTER classic desktop shells so sidebar/chrome overrides win -->
-  <link rel="stylesheet" href="styles/custom/athar-redesign-staging.css?v=desk18" id="athar-redesign-staging">
-  <link rel="stylesheet" href="styles/custom/athar-desktop-screens.css?v=desk18" id="athar-desktop-screens">
+  <link rel="stylesheet" href="styles/custom/athar-redesign-staging.css?v=desk19" id="athar-redesign-staging">
+  <link rel="stylesheet" href="styles/custom/athar-desktop-screens.css?v=desk19" id="athar-desktop-screens">
   <style id="mr-topbar-dark-fix" media="screen and (min-width: 993px), screen and (hover: hover) and (pointer: fine)">
     html[data-theme="dark"].mr-desktop-ui #appWrap .topbar.unified-banner,
     html[data-theme="dark"].mr-desktop-ui .topbar.unified-banner {
@@ -2995,13 +2995,12 @@
           <div class="tab-content" id="tab-newTicket">
             <div class="panel">
               <section class="mk-form-panel">
+                <div class="rd-nt-form-card">
                 <header class="mk-form-hd">
-                  <div style="display:flex; gap:14px; align-items:flex-start; flex:1; min-width:0">
-                    <span class="mk-form-hd__ico"><i class="fas fa-plus" aria-hidden="true"></i></span>
-                    <div>
-                      <h2>رصد مخالفة جديدة</h2>
-                      <p>NEW VIOLATION TICKET · سجّل مخالفة بأكبر قدر من التفاصيل</p>
-                    </div>
+                  <span class="mk-form-hd__ico"><i class="fas fa-plus" aria-hidden="true"></i></span>
+                  <div>
+                    <h2>رصد مخالفة جديدة</h2>
+                    <p>NEW VIOLATION TICKET · سجّل مخالفة بأكبر قدر من التفاصيل</p>
                   </div>
                 </header>
 
@@ -3009,7 +3008,7 @@
                   <div class="mk-field mk-field--type">
                     <label class="mk-field__lbl" for="nt-typeSearch">نوع المخالفة <span class="mk-req">*</span></label>
                     <div class="figma-search-wrap">
-                      <input type="text" id="nt-typeSearch" class="figma-search-input" placeholder="ابحث عن النوع..."
+                      <input type="text" id="nt-typeSearch" class="figma-search-input" placeholder="ابحث عن نوع المخالفة..."
                         oninput="lookupViolationType()" onfocus="lookupViolationType()" autocomplete="off">
                       <button type="button" class="figma-search-btn" onclick="lookupViolationType()" aria-label="بحث">
                         <i class="fas fa-magnifying-glass"></i>
@@ -3024,7 +3023,7 @@
                   <div class="mk-field mk-field--emp">
                     <label class="mk-field__lbl" for="nt-empSearch">الموظف المخالف <span class="mk-req">*</span></label>
                     <div class="figma-search-wrap">
-                      <input type="text" id="nt-empSearch" class="figma-search-input" placeholder="ابحث عن الموظف..."
+                      <input type="text" id="nt-empSearch" class="figma-search-input" placeholder="ابحث باسم الموظف..."
                         oninput="lookupEmployee()" onfocus="lookupEmployee()" autocomplete="off">
                       <button type="button" class="figma-search-btn" onclick="lookupEmployee()" aria-label="بحث">
                         <i class="fas fa-magnifying-glass"></i>
@@ -3131,14 +3130,6 @@
                   </div>
                 </div>
 
-                <!-- Redesign ticket summary (Standalone 2) -->
-                <aside class="rd-nt-summary" id="rdNtSummary" hidden>
-                  <div class="rd-nt-summary__title">ملخص التذكرة</div>
-                  <div class="rd-nt-summary__row"><span>النوع</span><strong id="rdNtSumType">لم يُحدد بعد</strong></div>
-                  <div class="rd-nt-summary__row"><span>الموظف</span><strong id="rdNtSumEmp">لم يُحدد بعد</strong></div>
-                  <div class="rd-nt-summary__row"><span>التاريخ والوقت</span><strong id="rdNtSumWhen">—</strong></div>
-                </aside>
-
                 <footer class="mk-form-ft">
                   <button type="button" class="mk-btn" onclick="resetNewTicket()">
                     <i class="fas fa-rotate-left"></i> إعادة تعيين
@@ -3147,6 +3138,15 @@
                     <i class="fas fa-paper-plane"></i> إصدار التذكرة
                   </button>
                 </footer>
+                </div>
+
+                <!-- Redesign ticket summary (Standalone 2) -->
+                <aside class="rd-nt-summary" id="rdNtSummary" hidden>
+                  <div class="rd-nt-summary__title">ملخص التذكرة</div>
+                  <div class="rd-nt-summary__row"><span>النوع</span><strong id="rdNtSumType">لم يُحدد بعد</strong></div>
+                  <div class="rd-nt-summary__row"><span>الموظف</span><strong id="rdNtSumEmp">لم يُحدد بعد</strong></div>
+                  <div class="rd-nt-summary__row"><span>التاريخ والوقت</span><strong id="rdNtSumWhen">—</strong></div>
+                </aside>
               </section>
             </div>
           </div>
@@ -4578,7 +4578,7 @@
 
     <div id="rdCmplOverlayHost"></div>
     <div id="rdSchOverlayHost"></div>
-    <script src="js/app.js?v=desk18"></script>
+    <script src="js/app.js?v=desk19"></script>
         <style>
       @media (max-width: 992px) {
         /* ── workflow: منع التمدد الأفقي ── */

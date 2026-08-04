@@ -15501,19 +15501,37 @@
       }
 
       function syncRdNewTicketChrome() {
-        const useRd = (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi())
-          || (typeof isAtharDesktopRedesignUi === 'function' && isAtharDesktopRedesignUi());
+        const useMob = typeof isAtharRedesignUi === 'function' && isAtharRedesignUi();
+        const useDesk = typeof isAtharDesktopRedesignUi === 'function' && isAtharDesktopRedesignUi();
+        const useRd = useMob || useDesk;
         const sevEl = document.getElementById('rdNtSevPreview');
         const sumEl = document.getElementById('rdNtSummary');
         if (sevEl) sevEl.hidden = !useRd;
         if (sumEl) sumEl.hidden = !useRd;
+
+        const hdSub = document.querySelector('#tab-newTicket .mk-form-hd p');
+        if (hdSub) {
+          hdSub.textContent = useDesk
+            ? 'NEW VIOLATION TICKET'
+            : 'NEW VIOLATION TICKET · سجّل مخالفة بأكبر قدر من التفاصيل';
+        }
+
         if (!useRd) return;
 
         const picked = state.ntPickedViolationType;
         if (sevEl) {
           if (!picked) {
-            sevEl.innerHTML = '';
-            sevEl.hidden = true;
+            if (useDesk) {
+              /* Design mock shows a persistent example severity strip */
+              sevEl.hidden = false;
+              sevEl.innerHTML = `
+                <i class="fas fa-circle-exclamation" style="color:var(--warning)" aria-hidden="true"></i>
+                <span class="rd-nt-sev__name">مثال: تأخر متكرر عن الدوام</span>
+                <span class="rd-nt-sev__pts" style="color:var(--warning)">−8 نقاط</span>`;
+            } else {
+              sevEl.innerHTML = '';
+              sevEl.hidden = true;
+            }
           } else {
             const tone = rdNtSevTone(picked.severity);
             const points = picked.weight ?? picked.points ?? 0;
@@ -15545,6 +15563,7 @@
           whenEl.textContent = (hasDate || hasTime)
             ? `${hasDate ? dateTxt : '—'} · ${hasTime ? timeTxt : '—'}`
             : '—';
+          whenEl.classList.toggle('is-empty', !(hasDate || hasTime));
         }
       }
 
