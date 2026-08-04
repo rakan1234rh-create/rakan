@@ -5240,8 +5240,8 @@
       function rdTrendText(delta, unit) {
         if (delta == null || !Number.isFinite(delta) || Math.abs(delta) < 0.05) return 'بدون تغيّر ملحوظ';
         const sign = delta > 0 ? '+' : '';
-        if (unit === '%') return `${sign}${Math.round(delta)}% عن الفترة السابقة`;
-        if (unit === 'count') return `${sign}${Math.round(delta)} عن الفترة السابقة`;
+        if (unit === '%') return `${sign}${Math.round(delta)}% عن الشهر الماضي`;
+        if (unit === 'count') return `${sign}${Math.round(delta)} عن الشهر الماضي`;
         if (unit === 'hours') {
           const mins = Math.round(Math.abs(delta) * 60);
           if (delta < 0) return `أسرع بـ ${mins} دقيقة`;
@@ -5256,9 +5256,9 @@
           const range = ksaMonthRange(slot.year, slot.month);
           const nextSlot = ksaShiftMonth(slot.year, slot.month, 1);
           const next = ksaMonthRange(nextSlot.year, nextSlot.month);
-          const short = (slot.monthName || KSA_AR_MONTHS[slot.month] || '').slice(0, 4);
+          const label = slot.monthName || KSA_AR_MONTHS[slot.month] || String(slot.month + 1);
           return {
-            label: short || String(slot.month + 1),
+            label,
             fromIso: range.fromIso,
             nextIso: next.fromIso,
             year: slot.year,
@@ -5498,7 +5498,12 @@
 
         const metricsHtml = `
           <div class="rd-rp-metrics">
-            ${metrics.map((m) => `
+            ${metrics.map((m) => desk ? `
+              <div class="rd-rp-metric" style="animation-delay:${m.delay}s">
+                <div class="rd-rp-metric__label">${Sec.escapeHTML(m.label)}</div>
+                <div class="rd-rp-metric__value">${Sec.escapeHTML(m.value)}</div>
+                <div class="rd-rp-metric__trend">${Sec.escapeHTML(m.trend)}</div>
+              </div>` : `
               <div class="rd-rp-metric" style="animation-delay:${m.delay}s">
                 <div>
                   <div class="rd-rp-metric__label">${Sec.escapeHTML(m.label)}</div>
@@ -5532,7 +5537,7 @@
               </button>`).join('')}
           </div>`;
         return desk
-          ? `${metricsHtml}<div class="rd-rp-desk-split"><div class="rd-rp-desk-split__main">${barsHtml}</div><div class="rd-rp-desk-split__side">${linksHtml}</div></div>`
+          ? `<div class="rd-rp-main">${metricsHtml}<div class="rd-rp-desk-split"><div class="rd-rp-desk-split__main">${barsHtml}</div><div class="rd-rp-desk-split__side">${linksHtml}</div></div></div>`
           : `${metricsHtml}${barsHtml}${linksHtml}`;
       }
 
@@ -5611,12 +5616,12 @@
               </div>
               <div class="rd-rp-drill-metric">
                 <div class="rd-rp-drill-metric__lbl">الأسرع استجابة</div>
-                <div class="rd-rp-drill-metric__val" style="color:var(--success)">${Sec.escapeHTML(best?.name || '—')}</div>
+                <div class="rd-rp-drill-metric__val rd-rp-drill-metric__val--name" style="color:var(--success)">${Sec.escapeHTML(best?.name || '—')}</div>
                 <div class="rd-rp-drill-metric__sub">${best ? best.response : '—'}</div>
               </div>
               <div class="rd-rp-drill-metric">
                 <div class="rd-rp-drill-metric__lbl">بحاجة لتحسين</div>
-                <div class="rd-rp-drill-metric__val" style="color:var(--danger)">${Sec.escapeHTML(worst?.name || '—')}</div>
+                <div class="rd-rp-drill-metric__val rd-rp-drill-metric__val--name" style="color:var(--danger)">${Sec.escapeHTML(worst?.name || '—')}</div>
                 <div class="rd-rp-drill-metric__sub">${worst ? worst.response : '—'}</div>
               </div>
             </div>
@@ -5684,12 +5689,12 @@
               </div>
               <div class="rd-rp-drill-metric">
                 <div class="rd-rp-drill-metric__lbl">الأكثر مخالفات</div>
-                <div class="rd-rp-drill-metric__val" style="color:var(--danger)">${Sec.escapeHTML(worst?.name || '—')}</div>
+                <div class="rd-rp-drill-metric__val rd-rp-drill-metric__val--name" style="color:var(--danger)">${Sec.escapeHTML(worst?.name || '—')}</div>
                 <div class="rd-rp-drill-metric__sub">${worst ? worst.total : 0} مخالفة</div>
               </div>
               <div class="rd-rp-drill-metric">
                 <div class="rd-rp-drill-metric__lbl">الأقل مخالفات</div>
-                <div class="rd-rp-drill-metric__val" style="color:var(--success)">${Sec.escapeHTML(best?.name || '—')}</div>
+                <div class="rd-rp-drill-metric__val rd-rp-drill-metric__val--name" style="color:var(--success)">${Sec.escapeHTML(best?.name || '—')}</div>
                 <div class="rd-rp-drill-metric__sub">${best ? best.total : 0} مخالفة</div>
               </div>
             </div>
@@ -5760,12 +5765,12 @@
               </div>
               <div class="rd-rp-drill-metric">
                 <div class="rd-rp-drill-metric__lbl">أفضل شهر</div>
-                <div class="rd-rp-drill-metric__val" style="color:var(--success)">${Sec.escapeHTML(bestRow.label)}</div>
+                <div class="rd-rp-drill-metric__val rd-rp-drill-metric__val--name" style="color:var(--success)">${Sec.escapeHTML(bestRow.label)}</div>
                 <div class="rd-rp-drill-metric__sub">${bestRow.rate}%</div>
               </div>
               <div class="rd-rp-drill-metric">
                 <div class="rd-rp-drill-metric__lbl">أضعف شهر</div>
-                <div class="rd-rp-drill-metric__val" style="color:var(--danger)">${Sec.escapeHTML(worstRow.label)}</div>
+                <div class="rd-rp-drill-metric__val rd-rp-drill-metric__val--name" style="color:var(--danger)">${Sec.escapeHTML(worstRow.label)}</div>
                 <div class="rd-rp-drill-metric__sub">${worstRow.rate}%</div>
               </div>
             </div>
