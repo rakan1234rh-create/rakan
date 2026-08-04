@@ -2245,3 +2245,91 @@ html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-thread-tex
     grid-template-columns: 1.5fr 1fr 80px 1.3fr 90px !important;
   }
 }
+
+/* ── Nuclear: kill ALL active/hover nav boxes under Athar desktop redesign ── */
+html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item.active,
+html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item.active:hover,
+html.athar-staging-redesign.mr-desktop-ui #sidebar:hover .nav-item.active,
+html.athar-staging-redesign.mr-desktop-ui #sidebar.sidebar-rail-hover .nav-item.active,
+html.athar-staging-redesign.mr-desktop-ui #sidebar.sidebar-rail-open .nav-item.active,
+html.athar-staging-redesign.mr-desktop-ui #sidebar.sidebar-rail-expanded .nav-item.active,
+html.athar-staging-redesign.mr-desktop-ui #sidebar[data-rail-hover="1"] .nav-item.active,
+html.athar-staging-redesign.mr-desktop-ui #sidebar[data-rail-expanded="1"] .nav-item.active,
+html.athar-staging-redesign.mr-desktop-ui #sidebar:not(:hover) .nav-item.active,
+html.athar-staging-redesign.mr-desktop-ui #appWrap #sidebar .nav-item.active,
+html.athar-staging-redesign.mr-desktop-ui #appWrap #sidebar:hover .nav-item.active,
+html.athar-staging-redesign.mr-desktop-ui[data-theme="dark"] #sidebar .nav-item.active,
+html.athar-staging-redesign.mr-desktop-ui[data-theme="dark"] #sidebar:hover .nav-item.active,
+html.athar-staging-redesign.mr-desktop-ui[data-theme="dark"] #sidebar.sidebar-rail-hover .nav-item.active,
+html.athar-staging-redesign.mr-desktop-ui[data-theme="dark"] #sidebar.sidebar-rail-open .nav-item.active,
+html.athar-staging-redesign.mr-desktop-ui[data-theme="dark"] #sidebar.sidebar-rail-expanded .nav-item.active {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  border: none !important;
+  border-color: transparent !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  outline: none !important;
+  filter: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item.active .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item.active:hover .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui #sidebar:hover .nav-item.active .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui #sidebar.sidebar-rail-hover .nav-item.active .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui #sidebar.sidebar-rail-open .nav-item.active .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui #sidebar.sidebar-rail-expanded .nav-item.active .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui #sidebar[data-rail-hover="1"] .nav-item.active .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui #sidebar[data-rail-expanded="1"] .nav-item.active .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui #sidebar:not(:hover) .nav-item.active .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui #appWrap #sidebar .nav-item.active .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui #appWrap #sidebar:hover .nav-item.active .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui[data-theme="dark"] #sidebar .nav-item.active .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui[data-theme="dark"] #sidebar:hover .nav-item.active .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui[data-theme="dark"] #sidebar.sidebar-rail-hover .nav-item.active .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui[data-theme="dark"] #sidebar.sidebar-rail-open .nav-item.active .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui[data-theme="dark"] #sidebar.sidebar-rail-expanded .nav-item.active .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui[data-theme="dark"] #sidebar:not(:hover) .nav-item.active .nav-icon-wrap {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px !important;
+  max-width: 18px !important;
+  flex: 0 0 18px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item.active,
+html.athar-staging-redesign.mr-desktop-ui #sidebar:hover .nav-item.active,
+html.athar-staging-redesign.mr-desktop-ui #sidebar.sidebar-rail-hover .nav-item.active,
+html.athar-staging-redesign.mr-desktop-ui[data-theme="dark"] #sidebar .nav-item.active,
+html.athar-staging-redesign.mr-desktop-ui[data-theme="dark"] #sidebar:hover .nav-item.active {
+  color: var(--gold) !important;
+  -webkit-text-fill-color: var(--gold) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item.active .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item.active .nav-icon-wrap i,
+html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item.active .nav-icon-wrap i::before,
+html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item.active i,
+html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item.active .nav-item-label,
+html.athar-staging-redesign.mr-desktop-ui #sidebar:hover .nav-item.active .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui #sidebar:hover .nav-item.active .nav-icon-wrap i,
+html.athar-staging-redesign.mr-desktop-ui #sidebar:hover .nav-item.active .nav-item-label,
+html.athar-staging-redesign.mr-desktop-ui[data-theme="dark"] #sidebar .nav-item.active .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui[data-theme="dark"] #sidebar .nav-item.active .nav-icon-wrap i,
+html.athar-staging-redesign.mr-desktop-ui[data-theme="dark"] #sidebar .nav-item.active .nav-icon-wrap i::before,
+html.athar-staging-redesign.mr-desktop-ui[data-theme="dark"] #sidebar:hover .nav-item.active .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui[data-theme="dark"] #sidebar:hover .nav-item.active .nav-item-label {
+  color: var(--gold) !important;
+  -webkit-text-fill-color: var(--gold) !important;
+  background: transparent !important;
+  background-color: transparent !important;
+}

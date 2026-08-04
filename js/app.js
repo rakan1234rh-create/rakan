@@ -8523,6 +8523,13 @@
         if (sb.classList.contains('sidebar-rail-hover')) sb.dataset.railHover = '1';
         else delete sb.dataset.railHover;
         syncDesktopSidebarRailSize(sb);
+        try {
+          const shell = document.querySelector('#appWrap > .app-shell');
+          if (shell) {
+            const expanded = isDesktopSidebarRailExpanded(sb) || sb.matches(':hover');
+            shell.classList.toggle('rd-sidebar-expanded', !!expanded);
+          }
+        } catch (_) { /* noop */ }
       }
 
       function syncSidebarToggleBtn() {
