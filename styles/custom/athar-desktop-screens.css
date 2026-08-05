@@ -3260,35 +3260,39 @@ html.athar-staging-redesign.mr-desktop-ui #breakHistoryModal .break-history-foot
   display: none !important;
 }
 
-/* ── Break schedule modal (literal mockup form) ── */
+/* ── Break schedule side panel (same system as ticket / violations / break history) ── */
 html.athar-staging-redesign.mr-desktop-ui #breakScheduleModal.modal.open {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  padding: 24px !important;
+  display: block !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  padding: 0 !important;
   background: rgba(0, 0, 0, 0.4) !important;
   z-index: 1200 !important;
   animation: atharRdFadeUp 0.2s ease;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #breakScheduleModal .modal-card.break-schedule-card {
-  position: relative !important;
-  inset: auto !important;
+  position: absolute !important;
+  top: 0 !important;
+  inset-inline-end: 0 !important;
+  inset-inline-start: auto !important;
+  bottom: auto !important;
+  height: 100vh !important;
+  max-height: 100vh !important;
   width: 440px !important;
-  max-width: min(440px, 92vw) !important;
-  max-height: min(92vh, 860px) !important;
-  height: auto !important;
+  max-width: 92vw !important;
   margin: 0 !important;
-  border-radius: 18px !important;
-  border: 1px solid var(--border) !important;
+  border-radius: 0 !important;
+  border: none !important;
+  border-inline-start: 1px solid var(--border) !important;
   background: var(--bg) !important;
   padding: 0 !important;
   overflow-x: hidden !important;
   overflow-y: auto !important;
-  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.18) !important;
+  box-shadow: none !important;
   display: flex !important;
   flex-direction: column !important;
-  animation: atharRdFadeUp 0.28s ease both;
+  animation: atharRdPanelIn 0.28s ease both;
   box-sizing: border-box !important;
 }
 
@@ -3299,10 +3303,12 @@ html.athar-staging-redesign.mr-desktop-ui #breakScheduleModal .break-sch-hd {
 
 html.athar-staging-redesign.mr-desktop-ui #breakScheduleModal .break-sch-body {
   padding: 0 22px !important;
+  flex: 1 1 auto !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #breakScheduleModal .break-sch-footer {
   padding: 16px 22px 22px !important;
+  margin-top: auto !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #breakScheduleModal .break-sch-chip.is-on {
