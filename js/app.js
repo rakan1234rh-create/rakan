@@ -20478,6 +20478,21 @@
         const empName = t._empName || '—';
         if (nameEl) nameEl.textContent = empName;
         if (typeEl) typeEl.textContent = t.violation_type || '—';
+        const whenEl = document.getElementById('rd-td-when');
+        if (whenEl) {
+          const dateStr = t.violation_date || '';
+          const timeStr = formatTime12(t.violation_time) || '';
+          const whenParts = [];
+          if (dateStr) whenParts.push(dateStr);
+          if (timeStr) whenParts.push(timeStr);
+          if (whenParts.length) {
+            whenEl.innerHTML = `<i class="fas fa-clock" aria-hidden="true"></i><span>${Sec.escapeHTML(whenParts.join(' · '))}</span>`;
+            whenEl.removeAttribute('aria-hidden');
+          } else {
+            whenEl.textContent = '—';
+            whenEl.setAttribute('aria-hidden', 'true');
+          }
+        }
         if (avEl) {
           const initial = String(empName).trim().charAt(0) || '؟';
           avEl.textContent = initial;

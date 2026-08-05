@@ -2620,6 +2620,9 @@ html.athar-staging-redesign.mr-mobile-ui #ticketModal #rdTdHd[hidden] {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.rd-td-hd__when {
+  display: none;
+}
 .rd-td-hd__side {
   text-align: start;
   flex-shrink: 0;

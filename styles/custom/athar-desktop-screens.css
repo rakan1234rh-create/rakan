@@ -2039,6 +2039,21 @@ html.athar-staging-redesign.mr-desktop-ui #ticketModal .rd-td-hd__type {
   display: none !important;
 }
 
+html.athar-staging-redesign.mr-desktop-ui #ticketModal .rd-td-hd__when {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  font-size: 11.5px !important;
+  color: var(--text3) !important;
+  margin-top: 3px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #ticketModal .rd-td-hd__when i {
+  font-size: 11px !important;
+  color: var(--text3) !important;
+  flex-shrink: 0 !important;
+}
+
 html.athar-staging-redesign.mr-desktop-ui #ticketModal .rd-td-hd__close {
   grid-area: close;
   width: 32px !important;
