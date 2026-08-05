@@ -3427,6 +3427,25 @@ html.athar-staging-redesign.mr-desktop-ui #rdBreaks:not([hidden]) {
   min-height: 42px;
   text-align: center !important;
   margin-inline: auto;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+.rd-break-btn--gold {
+  background: var(--gold) !important;
+  color: var(--onGold) !important;
+}
+.rd-break-btn--danger {
+  background: var(--danger) !important;
+  color: #fff !important;
+}
+.rd-break-btn--success {
+  background: var(--success) !important;
+  color: #fff !important;
+}
+.rd-break-btn--muted {
+  background: var(--surface2) !important;
+  color: var(--text3) !important;
 }
 .rd-break-actions .rd-break-btn i,
 .rd-break-btn i {
@@ -3568,6 +3587,14 @@ html.athar-staging-redesign.mr-desktop-ui #rdBreaks:not([hidden]) {
 .rd-break-row--over .rd-break-row__av {
   background: var(--danger);
   color: #fff;
+}
+.rd-break-row--paused {
+  background: color-mix(in srgb, var(--warning, #ff9500) 16%, var(--surface)) !important;
+  border: 1px solid color-mix(in srgb, var(--warning, #ff9500) 40%, var(--border)) !important;
+  border-radius: 16px !important;
+}
+.rd-break-row__clock--paused {
+  color: var(--warning, #ff9500) !important;
 }
 .rd-break-status--over {
   color: var(--danger) !important;
