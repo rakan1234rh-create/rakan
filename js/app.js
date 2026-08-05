@@ -5084,7 +5084,10 @@
         const t = document.getElementById('rdTopTitle');
         const s = document.getElementById('rdTopSub');
         if (t && title != null) t.textContent = title;
-        if (s) s.textContent = sub || '';
+        if (s) {
+          s.textContent = sub || '';
+          s.hidden = !sub;
+        }
       }
 
       /** Chips على صفحة التذاكر (تصميم الاختبار) — الكل / بانتظار ردي / مُرسلة / الفريق */
@@ -8489,7 +8492,7 @@
         dashboard: { title: 'نظرة عامة', sub: 'ملخص أداء اليوم' },
         newTicket: { title: 'رصد مخالفة جديدة', sub: 'سجّل مخالفة بأكبر قدر من التفاصيل' },
         workflow: { title: 'التذاكر', sub: 'إدارة ومتابعة تذاكر المخالفات' },
-        breaks: { title: 'بريكات الموظفين', sub: 'تتبع بريكات الفروع لحظياً وجدولة مددها' },
+        breaks: { title: 'بريكات الموظفين', sub: '' },
         schedule: { title: 'جدول الرصد', sub: 'تعيين الراصدين على الفروع وتحديد الورديات والتكرار' },
         complaints: { title: 'الشكاوى والاقتراحات', sub: 'ارفع شكواك أو اقتراحك وتابع الرد عليها' },
         reports: { title: 'التقارير', sub: 'مؤشرات الأداء والاتجاهات' },
@@ -9067,7 +9070,10 @@
         const pt = document.getElementById('pageTitle');
         const ps = document.getElementById('pageSubtitle');
         if (pt) pt.textContent = meta.title;
-        if (ps) ps.textContent = meta.sub;
+        if (ps) {
+          ps.textContent = meta.sub || '';
+          ps.hidden = !meta.sub;
+        }
         try { syncRdTopTitles(meta.title, meta.sub); } catch (_) { /* noop */ }
 
         const titleBar = document.getElementById('pageTitleBar');
@@ -9215,7 +9221,11 @@
         if (typeof syncMobileBottomNav === 'function') syncMobileBottomNav(tab, !!opts.instantBack);
         const meta = TAB_TITLES[tab] || { title: tab, sub: '' };
         document.getElementById('pageTitle').textContent = meta.title;
-        document.getElementById('pageSubtitle').textContent = meta.sub;
+        const psGo = document.getElementById('pageSubtitle');
+        if (psGo) {
+          psGo.textContent = meta.sub || '';
+          psGo.hidden = !meta.sub;
+        }
         try { syncRdTopTitles(meta.title, meta.sub); } catch (_) { /* noop */ }
 
         // إظهار/إخفاء بنر اسم القسم
@@ -35132,69 +35142,8 @@
         if (typeof renderStaffBreaksPage === 'function') renderStaffBreaksPage({ soft: true });
       }
 
-      function getBreakPreviewRole() {
-        return state._breakPreviewRole || 'auto';
-      }
-
-      function setBreakPreviewRole(key) {
-        state._breakPreviewRole = key || 'auto';
-        if (typeof renderStaffBreaksPage === 'function') renderStaffBreaksPage({ soft: true });
-      }
-
       function getBreakDeskShowCard() {
-        if (!(typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi())) {
-          return canTakeStaffBreak();
-        }
-        const preview = getBreakPreviewRole();
-        if (preview === 'admin' || preview === 'supervisor') return false;
-        if (preview === 'employee') return true;
         return canTakeStaffBreak();
-      }
-
-      function renderBreaksDeskToolbarHtml() {
-        const filter = getBreakStatusFilter();
-        const preview = getBreakPreviewRole();
-        const role = normalizeUserRole(state.currentUser?.role);
-        const canLogs = canViewStaffBreakHistory();
-        const roleOpts = [
-          { key: 'employee', label: 'موظف / راصد / مدير فرع' },
-          { key: 'supervisor', label: 'مشرف' },
-          { key: 'admin', label: 'أدمن' }
-        ];
-        // تلقائي = دور المستخدم الحقيقي
-        const effectivePreview = preview === 'auto'
-          ? (role === 'admin' ? 'admin' : (role === 'supervisor' ? 'supervisor' : 'employee'))
-          : preview;
-        const roleBtns = roleOpts.map(ro => {
-          const on = effectivePreview === ro.key;
-          return `<button type="button" class="rd-breaks-toolchip${on ? ' is-on' : ''}" onclick="setBreakPreviewRole('${ro.key}')">${Sec.escapeHTML(ro.label)}</button>`;
-        }).join('');
-        const filters = [
-          { key: 'all', label: 'الكل' },
-          { key: 'active', label: 'في البريك الآن' },
-          { key: 'paused', label: 'متوقف مؤقت' },
-          { key: 'overage', label: 'تجاوز المدة' },
-          { key: 'ended', label: 'انتهى' }
-        ].map(f => {
-          const on = filter === f.key;
-          return `<button type="button" class="rd-breaks-toolchip${on ? ' is-on' : ''}" onclick="setBreakStatusFilter('${f.key}')">${Sec.escapeHTML(f.label)}</button>`;
-        }).join('');
-        const logsHint = (effectivePreview === 'employee')
-          ? `<label class="rd-breaks-toolbar__logs">
-               <input type="checkbox" ${canLogs ? 'checked' : ''} disabled>
-               أنت راصد أو مدير فرع (يمكنك فتح سجل الموظفين)
-             </label>`
-          : '';
-        return `
-          <div class="rd-breaks-toolbar">
-            <span class="rd-breaks-toolbar__lbl">معاينة كـ</span>
-            <div class="rd-breaks-toolbar__roles">${roleBtns}</div>
-            ${logsHint}
-            <div class="rd-breaks-toolbar__filters">
-              <span class="rd-breaks-toolbar__lbl">تصفية القوائم:</span>
-              ${filters}
-            </div>
-          </div>`;
       }
 
       function breakRowMatchesFilter(kind) {
@@ -35882,13 +35831,7 @@
         const host = document.getElementById('rdBreaks');
         if (!host) return;
         const desk = typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi();
-        const preview = getBreakPreviewRole();
-        const role = normalizeUserRole(state.currentUser?.role);
-        const effectivePreview = preview === 'auto'
-          ? (role === 'admin' ? 'admin' : (role === 'supervisor' ? 'supervisor' : 'employee'))
-          : preview;
-        const showManage = canManageStaffBreakSchedules() && (!desk || effectivePreview === 'admin');
-        const manageBtn = showManage
+        const manageBtn = canManageStaffBreakSchedules()
           ? (desk
             ? `<button type="button" class="rd-breaks-page__manage" onclick="openBreakScheduleModal()">
                  <i class="fas fa-sliders" aria-hidden="true"></i>تعديل مدة البريك
@@ -35899,8 +35842,7 @@
           ? `<div class="rd-breaks-page__head">
               <p class="rd-breaks-page__intro">بدء/إيقاف بريكك، ومتابعة من في بريك الآن ومن المتاح. شخص واحد فقط من نفس الفرع يكون في بريك نشط بنفس الوقت.</p>
               ${manageBtn}
-            </div>
-            ${renderBreaksDeskToolbarHtml()}`
+            </div>`
           : `<div class="rd-breaks-page__head">
               <h2 class="rd-breaks-page__title">بريكات الموظفين</h2>
               ${manageBtn}
@@ -36247,7 +36189,6 @@
       window.endStaffBreakFromUi = endStaffBreakFromUi;
       window.submitBreakOvertimeReason = submitBreakOvertimeReason;
       window.setBreakStatusFilter = setBreakStatusFilter;
-      window.setBreakPreviewRole = setBreakPreviewRole;
       window.openBreakScheduleModal = openBreakScheduleModal;
       window.saveBreakScheduleFromUi = saveBreakScheduleFromUi;
       window.syncBreakScheduleScopeFields = syncBreakScheduleScopeFields;
