@@ -12843,6 +12843,41 @@
           </div>`;
       }
 
+      function rdDeskActMenuHTML(editOnClick, deleteOnClick, canEdit, canDelete) {
+        if (!canEdit && !canDelete) return '';
+        return `
+          <div class="rd-desk-menu" onclick="event.stopPropagation()">
+            <button type="button" class="rd-desk-menu__btn" aria-label="إجراءات" aria-expanded="false"
+              onclick="toggleRdDeskMenu(this)">
+              <i class="fas fa-ellipsis-vertical" aria-hidden="true"></i>
+            </button>
+            <div class="rd-desk-menu__pop" hidden>
+              ${canEdit ? `<button type="button" class="rd-desk-menu__item" onclick="${editOnClick}"><i class="fas fa-pen" aria-hidden="true"></i>تعديل</button>` : ''}
+              ${canDelete ? `<button type="button" class="rd-desk-menu__item rd-desk-menu__item--danger" onclick="${deleteOnClick}"><i class="fas fa-trash" aria-hidden="true"></i>حذف</button>` : ''}
+            </div>
+          </div>`;
+      }
+
+      function closeAllRdActMenus() {
+        document.querySelectorAll('.rd-loc-menu__pop, .rd-desk-menu__pop').forEach((el) => {
+          el.setAttribute('hidden', '');
+          const menu = el.closest('.rd-loc-menu, .rd-desk-menu');
+          const btn = menu?.querySelector('.rd-loc-menu__btn, .rd-desk-menu__btn');
+          if (btn) btn.setAttribute('aria-expanded', 'false');
+        });
+      }
+
+      function toggleRdDeskMenu(btn) {
+        const pop = btn?.closest?.('.rd-desk-menu')?.querySelector('.rd-desk-menu__pop');
+        if (!pop) return;
+        const willOpen = pop.hasAttribute('hidden');
+        closeAllRdActMenus();
+        if (willOpen) {
+          pop.removeAttribute('hidden');
+          btn.setAttribute('aria-expanded', 'true');
+        }
+      }
+
       function rdLocMenuHTML(kind, id, canManage, canDelete) {
         if (!canManage && !canDelete) return '';
         const editFn = kind === 'region' ? `editRegion('${id}')` : `editBranch('${id}')`;
@@ -12864,10 +12899,7 @@
         const pop = btn?.closest?.('.rd-loc-menu')?.querySelector('.rd-loc-menu__pop');
         if (!pop) return;
         const willOpen = pop.hasAttribute('hidden');
-        document.querySelectorAll('.rd-loc-menu__pop').forEach((el) => {
-          el.setAttribute('hidden', '');
-          el.closest('.rd-loc-menu')?.querySelector('.rd-loc-menu__btn')?.setAttribute('aria-expanded', 'false');
-        });
+        closeAllRdActMenus();
         if (willOpen) {
           pop.removeAttribute('hidden');
           btn.setAttribute('aria-expanded', 'true');
@@ -12878,11 +12910,8 @@
         if (window._rdLocMenuDismissBound) return;
         window._rdLocMenuDismissBound = true;
         document.addEventListener('click', (e) => {
-          if (e.target?.closest?.('.rd-loc-menu')) return;
-          document.querySelectorAll('.rd-loc-menu__pop:not([hidden])').forEach((el) => {
-            el.setAttribute('hidden', '');
-            el.closest('.rd-loc-menu')?.querySelector('.rd-loc-menu__btn')?.setAttribute('aria-expanded', 'false');
-          });
+          if (e.target?.closest?.('.rd-loc-menu') || e.target?.closest?.('.rd-desk-menu')) return;
+          closeAllRdActMenus();
         }, true);
       }
 
@@ -12972,10 +13001,7 @@
         const delay = Math.min(0.25, (Number(delayIdx) || 0) * 0.04);
         const rid = String(reg.id || '').replace(/'/g, "\\'");
         const acts = (canManage || canDelete)
-          ? `<div class="rd-loc-desk-acts" onclick="event.stopPropagation()">
-              ${canManage ? `<button type="button" class="rd-loc-desk-act" onclick="editRegion('${rid}')"><i class="fas fa-pen" aria-hidden="true"></i>تعديل</button>` : ''}
-              ${canDelete ? `<button type="button" class="rd-loc-desk-act rd-loc-desk-act--danger" onclick="deleteRegion('${rid}')"><i class="fas fa-trash" aria-hidden="true"></i>حذف</button>` : ''}
-            </div>`
+          ? rdDeskActMenuHTML(`editRegion('${rid}')`, `deleteRegion('${rid}')`, canManage, canDelete)
           : '<span></span>';
         return `
           <button type="button" class="rd-loc-desk-row rd-loc-desk-row--region" style="animation-delay:${delay}s"
@@ -14368,10 +14394,7 @@
           const initial = String(u.name || '؟').trim().charAt(0) || '؟';
           const delay = Math.min(0.28, i * 0.035);
           const actions = canManage
-            ? `<div class="rd-desk-acts">
-                <button type="button" class="rd-desk-act" onclick="editUser('${uid}')" aria-label="تعديل"><i class="fas fa-pen"></i></button>
-                <button type="button" class="rd-desk-act rd-desk-act--danger" onclick="deleteUser('${uid}')" aria-label="حذف"><i class="fas fa-trash"></i></button>
-              </div>`
+            ? rdDeskActMenuHTML(`editUser('${uid}')`, `deleteUser('${uid}')`, true, true)
             : '<span class="rd-desk-muted">—</span>';
           return `
             <div class="rd-desk-table__row" role="row" style="animation-delay:${delay}s">
@@ -14870,10 +14893,10 @@
             ? items.map((v) => {
               const points = v.weight ?? v.points ?? 0;
               const ptsLabel = desk ? `−${points}` : `−${points} نقاط`;
+              const vid = String(v.id || '').replace(/'/g, "\\'");
               const admin = canManage
                 ? `<span class="rd-viol-row__acts" onclick="event.stopPropagation()">
-                    <button type="button" class="rd-viol-act" onclick="editViolType('${v.id}')" aria-label="تعديل"><i class="fas fa-pen"></i></button>
-                    <button type="button" class="rd-viol-act" onclick="deleteViolType('${v.id}')" aria-label="حذف"><i class="fas fa-trash"></i></button>
+                    ${rdDeskActMenuHTML(`editViolType('${vid}')`, `deleteViolType('${vid}')`, true, true)}
                   </span>`
                 : '';
               return `
@@ -33784,8 +33807,7 @@
                 </div>
                 <div class="rd-sch-card__acts">
                   <span class="rd-sch-shift" style="--sc:${shift.color}">${Sec.escapeHTML(shift.label)}</span>
-                  <button type="button" class="rd-desk-act" onclick="rdOpenScheduleForm('${Sec.escapeHTML(r.id)}')" aria-label="تعديل"><i class="fas fa-pen"></i></button>
-                  <button type="button" class="rd-desk-act rd-desk-act--danger" onclick="rdDeleteSchedule('${Sec.escapeHTML(r.id)}')" aria-label="حذف"><i class="fas fa-trash"></i></button>
+                  ${rdDeskActMenuHTML(`rdOpenScheduleForm('${Sec.escapeHTML(r.id)}')`, `rdDeleteSchedule('${Sec.escapeHTML(r.id)}')`, true, true)}
                 </div>
               </div>
               <div class="rd-sch-card__chips">${chips || '<span class="rd-desk-muted">لا فروع</span>'}${extra}</div>
@@ -34531,6 +34553,7 @@
       window.backLocBranchView = backLocBranchView;
       window.renderRegions = renderRegions;
       window.toggleRdLocMenu = toggleRdLocMenu;
+      window.toggleRdDeskMenu = toggleRdDeskMenu;
       window.openUserModal = openUserModal;
       window.editUser = editUser;
       window.onRoleChange = onRoleChange;

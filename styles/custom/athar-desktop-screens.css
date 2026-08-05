@@ -953,34 +953,85 @@ html.athar-staging-redesign.mr-desktop-ui #tab-violations .rd-viol-row__pts {
 }
 
 html.athar-staging-redesign.mr-desktop-ui #tab-violations .rd-viol-row__acts {
-  display: none !important;
-  gap: 4px !important;
-}
-
-html.athar-staging-redesign.mr-desktop-ui #tab-violations .rd-viol-row:hover .rd-viol-row__acts,
-html.athar-staging-redesign.mr-desktop-ui #tab-violations .rd-viol-row:focus-within .rd-viol-row__acts {
   display: inline-flex !important;
+  align-items: center !important;
+  flex-shrink: 0 !important;
 }
 
-html.athar-staging-redesign.mr-desktop-ui #tab-violations .rd-viol-act {
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-menu {
+  position: relative !important;
+  display: inline-flex !important;
+  flex-shrink: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-menu__btn {
   width: 28px !important;
   height: 28px !important;
   border-radius: 8px !important;
   border: 1px solid var(--border) !important;
-  background: var(--surface) !important;
+  background: transparent !important;
   color: var(--text2) !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
   cursor: pointer !important;
-  font-size: 11px !important;
+  padding: 0 !important;
+  font-family: inherit !important;
 }
 
-html.athar-staging-redesign.mr-desktop-ui #tab-violations .rd-viol-act:last-child {
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-menu__btn i {
+  font-size: 12px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-menu__pop {
+  position: absolute !important;
+  top: calc(100% + 4px) !important;
+  inset-inline-end: 0 !important;
+  min-width: 132px !important;
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+  padding: 4px !important;
+  z-index: 30 !important;
+  box-shadow: var(--shadow-md, 0 8px 24px rgba(0, 0, 0, 0.08)) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-menu__pop[hidden] {
+  display: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-menu__item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  width: 100% !important;
+  padding: 9px 12px !important;
+  border: none !important;
+  border-radius: 9px !important;
+  background: transparent !important;
+  color: var(--text) !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  font-family: inherit !important;
+  cursor: pointer !important;
+  text-align: start !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-menu__item:hover {
+  background: var(--surface2) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-menu__item i {
+  font-size: 11px !important;
+  width: 14px !important;
+  text-align: center !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-menu__item--danger {
   color: var(--danger) !important;
 }
 
-html.athar-staging-redesign.mr-desktop-ui #tab-violations .rd-viol-empty {
+html.athar-staging-redesign.mr-desktop-ui .rd-viol-empty {
   padding: 18px 16px !important;
   font-size: 12px !important;
   color: var(--text3) !important;
