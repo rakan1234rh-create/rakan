@@ -12852,13 +12852,15 @@
               <i class="fas fa-ellipsis" aria-hidden="true"></i>
             </button>
             <div class="rd-desk-menu__pop" hidden>
-              ${canEdit ? `<button type="button" class="rd-desk-menu__item" onclick="${editOnClick}"><i class="fas fa-pen" aria-hidden="true"></i>تعديل</button>` : ''}
-              ${canDelete ? `<button type="button" class="rd-desk-menu__item rd-desk-menu__item--danger" onclick="${deleteOnClick}"><i class="fas fa-trash" aria-hidden="true"></i>حذف</button>` : ''}
+              ${canEdit ? `<button type="button" class="rd-desk-menu__item" onclick="closeAllRdActMenus(); ${editOnClick}"><i class="fas fa-pen" aria-hidden="true"></i>تعديل</button>` : ''}
+              ${canDelete ? `<button type="button" class="rd-desk-menu__item rd-desk-menu__item--danger" onclick="closeAllRdActMenus(); ${deleteOnClick}"><i class="fas fa-trash" aria-hidden="true"></i>حذف</button>` : ''}
             </div>
           </div>`;
       }
 
       function closeAllRdActMenus() {
+        // إزالة النسخة المعلّقة في `document.body` أولًا (لتفادي قصّها داخل `overflow: hidden`)
+        document.querySelectorAll('.rd-desk-menu__pop--portal').forEach((el) => el.remove());
         document.querySelectorAll('.rd-loc-menu__pop, .rd-desk-menu__pop').forEach((el) => {
           el.setAttribute('hidden', '');
           const menu = el.closest('.rd-loc-menu, .rd-desk-menu');
@@ -12871,9 +12873,33 @@
         const pop = btn?.closest?.('.rd-desk-menu')?.querySelector('.rd-desk-menu__pop');
         if (!pop) return;
         const willOpen = pop.hasAttribute('hidden');
+        const menu = btn.closest('.rd-desk-menu');
         closeAllRdActMenus();
         if (willOpen) {
-          pop.removeAttribute('hidden');
+          // بدل عرض القائمة داخل خلية/حاوية قد تحتوي `overflow: hidden`:
+          // ننسخ القائمة إلى `document.body` ونضعها بـ `position: fixed` فوق كل المحتوى.
+          const rect = btn.getBoundingClientRect();
+          const portalPop = pop.cloneNode(true);
+          portalPop.classList.add('rd-desk-menu__pop--portal');
+          portalPop.removeAttribute('hidden');
+          portalPop.style.position = 'fixed';
+          portalPop.style.top = `${rect.bottom + 4}px`;
+          portalPop.style.insetInlineEnd = 'auto';
+          portalPop.style.left = '';
+          portalPop.style.right = '';
+          portalPop.style.zIndex = '9999';
+
+          const dir = (menu ? getComputedStyle(menu).direction : 'ltr').toLowerCase();
+          if (dir === 'rtl') {
+            // محاذاة “نهاية السطر” (inline-end) = يسار في RTL
+            portalPop.style.left = `${rect.left}px`;
+          } else {
+            portalPop.style.right = `${window.innerWidth - rect.right}px`;
+          }
+
+          document.body.appendChild(portalPop);
+          // إبقاء النسخة الأصلية مخفية حتى لا تظهر/تُقصّ داخل الشبكة
+          pop.setAttribute('hidden', '');
           btn.setAttribute('aria-expanded', 'true');
         }
       }
@@ -12889,8 +12915,8 @@
               <i class="fas fa-ellipsis" aria-hidden="true"></i>
             </button>
             <div class="rd-loc-menu__pop" hidden>
-              ${canManage ? `<button type="button" class="rd-loc-menu__item" onclick="${editFn}"><i class="fas fa-pen" aria-hidden="true"></i>تعديل</button>` : ''}
-              ${canDelete ? `<button type="button" class="rd-loc-menu__item rd-loc-menu__item--danger" onclick="${delFn}"><i class="fas fa-trash" aria-hidden="true"></i>حذف</button>` : ''}
+              ${canManage ? `<button type="button" class="rd-loc-menu__item" onclick="closeAllRdActMenus(); ${editFn}"><i class="fas fa-pen" aria-hidden="true"></i>تعديل</button>` : ''}
+              ${canDelete ? `<button type="button" class="rd-loc-menu__item rd-loc-menu__item--danger" onclick="closeAllRdActMenus(); ${delFn}"><i class="fas fa-trash" aria-hidden="true"></i>حذف</button>` : ''}
             </div>
           </div>`;
       }
@@ -12910,7 +12936,11 @@
         if (window._rdLocMenuDismissBound) return;
         window._rdLocMenuDismissBound = true;
         document.addEventListener('click', (e) => {
-          if (e.target?.closest?.('.rd-loc-menu') || e.target?.closest?.('.rd-desk-menu')) return;
+          if (
+            e.target?.closest?.('.rd-loc-menu') ||
+            e.target?.closest?.('.rd-desk-menu') ||
+            e.target?.closest?.('.rd-desk-menu__pop--portal')
+          ) return;
           closeAllRdActMenus();
         }, true);
       }
