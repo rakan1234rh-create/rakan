@@ -35850,21 +35850,21 @@
             : `<button type="button" class="rd-breaks-page__gear" onclick="openBreakScheduleModal()" aria-label="تعديل مدة البريك"><i class="fas fa-sliders"></i></button>`)
           : '';
         const headHtml = desk
-          ? `<div class="rd-breaks-page__head">
-              <p class="rd-breaks-page__intro">بدء/إيقاف بريكك، ومتابعة من في بريك الآن ومن المتاح. شخص واحد فقط من نفس الفرع يكون في بريك نشط بنفس الوقت.</p>
-              ${manageBtn}
-            </div>
-            ${renderBreaksDeskToolbarHtml()}`
+          ? (manageBtn
+            ? `<div class="rd-breaks-page__head rd-breaks-page__head--actions">${manageBtn}</div>`
+            : '')
           : `<div class="rd-breaks-page__head">
               <h2 class="rd-breaks-page__title">بريكات الموظفين</h2>
               ${manageBtn}
             </div>`;
+        const toolbarHtml = desk ? renderBreaksDeskToolbarHtml() : '';
         const liveTitle = desk
           ? `<div class="rd-sec__head"><span class="rd-sec__title"><i class="fas fa-mug-hot" aria-hidden="true"></i>في البريك الآن</span></div>`
           : `<div class="rd-sec__head"><span class="rd-sec__title">في البريك</span></div>`;
         host.innerHTML = `
           <div class="rd-screen rd-breaks-page${desk ? ' rd-breaks-page--desk' : ''}">
             ${headHtml}
+            ${toolbarHtml}
             <div class="rd-breaks-page__body">
               ${renderStaffBreakRingHtml()}
               <div class="rd-breaks-page__lists">

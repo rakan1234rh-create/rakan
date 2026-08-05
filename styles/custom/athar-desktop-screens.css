@@ -2732,12 +2732,16 @@ html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-
   display: none !important;
 }
 
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-breaks-page__head--actions {
+  display: flex !important;
+  justify-content: flex-end !important;
+  align-items: center !important;
+  margin: 0 0 16px !important;
+  padding: 0 !important;
+}
+
 html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page__intro {
-  margin: 0 !important;
-  font-size: 12px !important;
-  color: var(--text3) !important;
-  line-height: 1.7 !important;
-  max-width: 640px !important;
+  display: none !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-toolbar {
