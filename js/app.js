@@ -35148,6 +35148,27 @@
         return canTakeStaffBreak();
       }
 
+      function renderBreaksDeskToolbarHtml() {
+        const filter = getBreakStatusFilter();
+        const filters = [
+          { key: 'all', label: 'الكل' },
+          { key: 'active', label: 'في البريك الآن' },
+          { key: 'paused', label: 'متوقف' },
+          { key: 'overage', label: 'تجاوز المدة' },
+          { key: 'ended', label: 'انتهى' }
+        ].map(f => {
+          const on = filter === f.key;
+          return `<button type="button" class="rd-breaks-toolchip${on ? ' is-on' : ''}" onclick="setBreakStatusFilter('${f.key}')">${Sec.escapeHTML(f.label)}</button>`;
+        }).join('');
+        return `
+          <div class="rd-breaks-toolbar">
+            <div class="rd-breaks-toolbar__filters">
+              <span class="rd-breaks-toolbar__lbl">تصفية القوائم:</span>
+              ${filters}
+            </div>
+          </div>`;
+      }
+
       function breakRowMatchesFilter(kind) {
         const filter = getBreakStatusFilter();
         if (filter === 'all') return true;
@@ -35832,7 +35853,8 @@
           ? `<div class="rd-breaks-page__head">
               <p class="rd-breaks-page__intro">بدء/إيقاف بريكك، ومتابعة من في بريك الآن ومن المتاح. شخص واحد فقط من نفس الفرع يكون في بريك نشط بنفس الوقت.</p>
               ${manageBtn}
-            </div>`
+            </div>
+            ${renderBreaksDeskToolbarHtml()}`
           : `<div class="rd-breaks-page__head">
               <h2 class="rd-breaks-page__title">بريكات الموظفين</h2>
               ${manageBtn}
