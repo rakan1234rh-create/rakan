@@ -12862,27 +12862,11 @@
         document.querySelectorAll('.rd-desk-menu__pop--portal').forEach((el) => el.remove());
         document.querySelectorAll('.rd-loc-menu__pop, .rd-desk-menu__pop').forEach((el) => {
           el.setAttribute('hidden', '');
-          const menu = el.closest('.rd-loc-menu, .rd-desk-menu');
-          const btn = menu?.querySelector('.rd-loc-menu__btn, .rd-desk-menu__btn');
-          if (btn) btn.setAttribute('aria-expanded', 'false');
         });
-      }
-
-      function positionRdDeskMenuPortal(portalPop, btn) {
-        const rect = btn.getBoundingClientRect();
-        const x = Math.round(rect.left);
-        const y = Math.round(rect.bottom + 4);
-        // inline !important يتفوق على قواعد CSS ويضمن الظهور تحت الزر مباشرة
-        portalPop.style.setProperty('position', 'fixed', 'important');
-        portalPop.style.setProperty('top', `${y}px`, 'important');
-        portalPop.style.setProperty('left', `${x}px`, 'important');
-        portalPop.style.setProperty('right', 'auto', 'important');
-        portalPop.style.setProperty('bottom', 'auto', 'important');
-        portalPop.style.setProperty('inset-inline-start', 'auto', 'important');
-        portalPop.style.setProperty('inset-inline-end', 'auto', 'important');
-        portalPop.style.setProperty('transform', 'none', 'important');
-        portalPop.style.setProperty('z-index', '10050', 'important');
-        portalPop.style.setProperty('display', 'flex', 'important');
+        document.querySelectorAll('.rd-loc-menu__btn, .rd-desk-menu__btn').forEach((btn) => {
+          btn.setAttribute('aria-expanded', 'false');
+        });
+        document.querySelectorAll('.rd-desk-menu.is-open').forEach((el) => el.classList.remove('is-open'));
       }
 
       function toggleRdDeskMenu(btn) {
@@ -12892,14 +12876,9 @@
         const isOpen = btn.getAttribute('aria-expanded') === 'true';
         closeAllRdActMenus();
         if (isOpen) return;
-
-        const portalPop = pop.cloneNode(true);
-        portalPop.classList.add('rd-desk-menu__pop--portal');
-        portalPop.removeAttribute('hidden');
-        positionRdDeskMenuPortal(portalPop, btn);
-        document.body.appendChild(portalPop);
+        pop.removeAttribute('hidden');
         btn.setAttribute('aria-expanded', 'true');
-        // منع مستمع الإغلاق من إغلاق القائمة في نفس ضغطة الفتح
+        menu.classList.add('is-open');
         window._rdDeskMenuIgnoreDismissUntil = Date.now() + 120;
       }
 
