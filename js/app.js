@@ -15041,6 +15041,7 @@
         }
         if (countEl) countEl.textContent = String(state.violationTypes.length);
         if (rd) {
+          initRdLocMenuDismiss();
           grid.innerHTML = renderViolTypesRedesign(state.violationTypes, canManage);
           syncViolMobileScrollShell('violations');
           requestAnimationFrame(() => {
