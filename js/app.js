@@ -12849,7 +12849,7 @@
           <div class="rd-desk-menu" onclick="event.stopPropagation()">
             <button type="button" class="rd-desk-menu__btn" aria-label="إجراءات" aria-expanded="false"
               onclick="toggleRdDeskMenu(this)">
-              <i class="fas fa-ellipsis-vertical" aria-hidden="true"></i>
+              <i class="fas fa-ellipsis" aria-hidden="true"></i>
             </button>
             <div class="rd-desk-menu__pop" hidden>
               ${canEdit ? `<button type="button" class="rd-desk-menu__item" onclick="${editOnClick}"><i class="fas fa-pen" aria-hidden="true"></i>تعديل</button>` : ''}
