@@ -35217,6 +35217,7 @@
       function paintStaffBreakCountdownOnly() {
         const host = document.getElementById('rdBreaksRingHost') || document.getElementById('breaksRingHost');
         if (!host) return;
+        const desk = !!(host.closest && host.closest('.rd-breaks-page--desk'));
         const open = getMyOpenStaffBreak();
         const active = open?.status === 'active' ? open : null;
         const plannedSec = Math.max(1, (Number(open?.planned_duration_minutes) || state._myBreakDurationMins || 15) * 60);
@@ -35227,17 +35228,17 @@
         let progress;
         if (!open) progress = 1;
         else if (!overtime) progress = Math.max(0.02, Math.min(1, remaining / plannedSec));
-        else progress = 1;
+        else progress = desk ? 1 : Math.min(1, Math.abs(remaining) / plannedSec);
 
         const circ = STAFF_BREAK_RING_CIRC;
         const offset = circ * (1 - progress);
         const pauseYellow = 'var(--warning, #ff9500)';
         const stroke = overtime
           ? 'var(--danger)'
-          : (active ? 'var(--success)' : (isPaused ? pauseYellow : 'var(--text3)'));
-        const centerColor = overtime
+          : (active ? 'var(--success)' : (isPaused ? pauseYellow : (desk ? 'var(--text3)' : 'var(--border)')));
+        const clockColor = overtime
           ? 'var(--danger)'
-          : (active ? 'var(--success)' : (isPaused ? pauseYellow : 'var(--text3)'));
+          : (active ? (desk ? 'var(--success)' : 'var(--text)') : (isPaused ? pauseYellow : (desk ? 'var(--text3)' : 'var(--text)')));
         const daysEl = host.querySelector('[data-break-clock]');
         const lblEl = host.querySelector('[data-break-lbl]');
         const ringEl = host.querySelector('[data-break-ring-progress]');
@@ -35245,40 +35246,69 @@
         const badgeEl = host.querySelector('[data-break-badge]');
         host.classList.toggle('rd-break-card--paused', !!isPaused);
         host.classList.toggle('rd-break-card--over', !!overtime);
-        host.classList.toggle('rd-break-card--icon-center', !!(host.dataset.breakKind === 'depleted' || host.dataset.breakKind === 'unscheduled' || host.dataset.breakKind === 'viewOnly'));
+        host.classList.toggle('rd-break-card--icon-center', !!(desk && (host.dataset.breakKind === 'depleted' || host.dataset.breakKind === 'unscheduled' || host.dataset.breakKind === 'viewOnly')));
         if (daysEl) {
-          if (overtime) daysEl.textContent = formatBreakOverageClock(remaining);
-          else if (active || isPaused) daysEl.textContent = formatBreakClock(remaining);
-          else if (host.dataset.breakKind === 'branchBusy' || host.dataset.breakKind === 'ready') {
-            daysEl.textContent = formatBreakDurationLabel(readyMins);
-          }
-          daysEl.style.color = centerColor;
-        }
-        if (lblEl) lblEl.hidden = true;
-        if (badgeEl) {
-          if (overtime) {
-            badgeEl.hidden = false;
-            badgeEl.textContent = 'تجاوز';
-            badgeEl.style.color = 'var(--danger)';
-            badgeEl.style.background = 'color-mix(in srgb, var(--danger) 13%, transparent)';
-          } else if (active) {
-            badgeEl.hidden = false;
-            badgeEl.textContent = 'جاري البريك';
-            badgeEl.style.color = 'var(--success)';
-            badgeEl.style.background = 'color-mix(in srgb, var(--success) 13%, transparent)';
-          } else if (isPaused) {
-            badgeEl.hidden = false;
-            badgeEl.textContent = 'متوقف';
-            badgeEl.style.color = pauseYellow;
-            badgeEl.style.background = 'color-mix(in srgb, var(--warning, #ff9500) 13%, transparent)';
-          } else if (host.dataset.breakKind === 'ready') {
-            badgeEl.hidden = false;
-            badgeEl.textContent = formatBreakDurationLabel(readyMins);
-            badgeEl.style.color = 'var(--text3)';
-            badgeEl.style.background = 'color-mix(in srgb, var(--text3) 13%, transparent)';
+          if (desk) {
+            if (overtime) daysEl.textContent = formatBreakOverageClock(remaining);
+            else if (active || isPaused) daysEl.textContent = formatBreakClock(remaining);
+            else if (host.dataset.breakKind === 'branchBusy' || host.dataset.breakKind === 'ready') {
+              daysEl.textContent = formatBreakDurationLabel(readyMins);
+            }
           } else {
-            badgeEl.hidden = true;
-            badgeEl.textContent = '';
+            daysEl.hidden = false;
+            daysEl.textContent = formatBreakClock(remaining);
+          }
+          daysEl.style.color = clockColor;
+        }
+        if (lblEl) {
+          if (desk) {
+            lblEl.hidden = true;
+          } else {
+            lblEl.hidden = false;
+            lblEl.textContent = overtime
+              ? 'تجاوز المدة'
+              : (active ? 'متبقي من البريك' : (isPaused ? 'متوقف — متبقي' : 'مدة البريك'));
+            lblEl.style.color = overtime ? 'var(--danger)' : (isPaused ? pauseYellow : 'var(--text3)');
+          }
+        }
+        if (badgeEl) {
+          if (desk) {
+            if (overtime) {
+              badgeEl.hidden = false;
+              badgeEl.textContent = 'تجاوز';
+              badgeEl.style.color = 'var(--danger)';
+              badgeEl.style.background = 'color-mix(in srgb, var(--danger) 13%, transparent)';
+            } else if (active) {
+              badgeEl.hidden = false;
+              badgeEl.textContent = 'جاري البريك';
+              badgeEl.style.color = 'var(--success)';
+              badgeEl.style.background = 'color-mix(in srgb, var(--success) 13%, transparent)';
+            } else if (isPaused) {
+              badgeEl.hidden = false;
+              badgeEl.textContent = 'متوقف';
+              badgeEl.style.color = pauseYellow;
+              badgeEl.style.background = 'color-mix(in srgb, var(--warning, #ff9500) 13%, transparent)';
+            } else if (host.dataset.breakKind === 'ready') {
+              badgeEl.hidden = false;
+              badgeEl.textContent = formatBreakDurationLabel(readyMins);
+              badgeEl.style.color = 'var(--text3)';
+              badgeEl.style.background = 'color-mix(in srgb, var(--text3) 13%, transparent)';
+            } else {
+              badgeEl.hidden = true;
+              badgeEl.textContent = '';
+            }
+          } else {
+            badgeEl.hidden = false;
+            badgeEl.innerHTML = overtime
+              ? '<i class="fas fa-triangle-exclamation"></i>تجاوز'
+              : (active
+                ? '<i class="fas fa-mug-hot"></i>جاري البريك'
+                : (isPaused
+                  ? '<i class="fas fa-pause"></i>متوقف'
+                  : (state._myBreakDurationMins
+                    ? `<i class="fas fa-hourglass-half"></i>${state._myBreakDurationMins} دقيقة`
+                    : '<i class="fas fa-ban"></i>لا يوجد بريك اليوم')));
+            badgeEl.removeAttribute('style');
           }
         }
         if (ringEl) {
@@ -35287,7 +35317,15 @@
           ringEl.setAttribute('stroke-dashoffset', open ? String(offset) : '0');
         }
         if (icoEl) {
-          icoEl.style.color = centerColor;
+          if (desk) {
+            icoEl.style.color = clockColor;
+          } else {
+            icoEl.hidden = false;
+            icoEl.style.color = overtime ? 'var(--danger)' : (active ? 'var(--success)' : (isPaused ? pauseYellow : 'var(--text3)'));
+            icoEl.className = 'fas ' + (overtime ? 'fa-triangle-exclamation' : (active ? 'fa-mug-hot' : (isPaused ? 'fa-pause' : 'fa-clock')));
+            icoEl.style.fontSize = '16px';
+            icoEl.style.marginBottom = '4px';
+          }
         }
         document.querySelectorAll('[data-break-live-row]').forEach(rowEl => {
           const id = rowEl.getAttribute('data-break-live-row');
@@ -35365,6 +35403,72 @@
         const unscheduledToday = !viewOnly && !active && !isPaused && !exhausted && isMyBreakUnscheduledToday();
         const readyMins = state._myBreakDurationMins || Math.round(plannedSec / 60) || 15;
         const durationLbl = formatBreakDurationLabel(readyMins);
+
+        // ── مسار الجوال: ساعة + تسمية + زر واضح (لا يُطبَّق موك أب سطح المكتب هنا) ──
+        if (!desk) {
+          if (viewOnly) return '';
+          let progress = 1;
+          if (active && !overtime) progress = Math.max(0, Math.min(1, remaining / plannedSec));
+          else if (isPaused) progress = Math.max(0, Math.min(1, remaining / plannedSec));
+          else if (overtime) progress = Math.min(1, Math.abs(remaining) / plannedSec);
+          const circ = STAFF_BREAK_RING_CIRC;
+          const offset = circ * (1 - progress);
+          const pauseYellow = 'var(--warning, #ff9500)';
+          const stroke = overtime ? 'var(--danger)' : (active ? 'var(--success)' : (isPaused ? pauseYellow : 'var(--border)'));
+          const clockColor = overtime ? 'var(--danger)' : (isPaused ? pauseYellow : 'var(--text)');
+          const icoColor = overtime ? 'var(--danger)' : (active ? 'var(--success)' : (isPaused ? pauseYellow : 'var(--text3)'));
+          const lblColor = overtime ? 'var(--danger)' : (isPaused ? pauseYellow : 'var(--text3)');
+          const badge = overtime
+            ? '<i class="fas fa-triangle-exclamation"></i>تجاوز'
+            : (active
+              ? '<i class="fas fa-mug-hot"></i>جاري البريك'
+              : (isPaused
+                ? '<i class="fas fa-pause"></i>متوقف'
+                : (state._myBreakDurationMins
+                  ? `<i class="fas fa-hourglass-half"></i>${state._myBreakDurationMins} دقيقة`
+                  : '<i class="fas fa-ban"></i>لا يوجد بريك اليوم')));
+          let actionsHtml;
+          if (active) {
+            actionsHtml = `<button type="button" class="btn btn-primary rd-break-btn rd-break-btn--danger" onclick="endStaffBreakFromUi()">إيقاف البريك</button>`;
+          } else if (isPaused) {
+            actionsHtml = `<button type="button" class="btn btn-primary rd-break-btn rd-break-btn--success" onclick="startStaffBreakFromUi()">متابعة البريك</button>`;
+          } else if (exhausted) {
+            actionsHtml = `
+              <button type="button" class="btn btn-primary rd-break-btn rd-break-btn--muted" disabled aria-disabled="true">بدء البريك</button>
+              <p class="rd-break-note rd-break-note--warn">خلصت مدة بريك اليوم</p>`;
+          } else if (unscheduledToday) {
+            actionsHtml = `
+              <button type="button" class="btn btn-primary rd-break-btn rd-break-btn--muted" disabled aria-disabled="true">بدء البريك</button>
+              <p class="rd-break-note rd-break-note--warn">لا يوجد بريك مجدول لهذا اليوم</p>`;
+          } else if (colleague) {
+            actionsHtml = `
+              <button type="button" class="btn btn-primary rd-break-btn rd-break-btn--muted" disabled aria-disabled="true">بدء البريك</button>
+              <p class="rd-break-note rd-break-note--warn">زميل في بريك الآن (${Sec.escapeHTML(colleague._userName || '—')}) — انتظر حتى يعود</p>`;
+          } else {
+            actionsHtml = `<button type="button" class="btn btn-primary rd-break-btn rd-break-btn--gold" onclick="startStaffBreakFromUi()">بدء البريك</button>`;
+          }
+          return `
+            <div class="rd-streak rd-break-card${isPaused ? ' rd-break-card--paused' : ''}${overtime ? ' rd-break-card--over' : ''}"
+              id="rdBreaksRingHost" data-break-kind="${active ? (overtime ? 'overage' : 'active') : (isPaused ? 'paused' : (exhausted ? 'depleted' : (unscheduledToday ? 'unscheduled' : (colleague ? 'branchBusy' : 'ready'))))}">
+              <div class="rd-streak__badge" data-break-badge>${badge}</div>
+              <div class="rd-streak__ring rd-break-ring">
+                <svg width="168" height="168" viewBox="0 0 132 132" aria-hidden="true">
+                  <circle cx="66" cy="66" r="54" fill="none" stroke="var(--border)" stroke-width="10"></circle>
+                  <circle data-break-ring-progress cx="66" cy="66" r="54" fill="none" stroke="${stroke}" stroke-width="10"
+                    stroke-linecap="round" stroke-dasharray="${circ}" stroke-dashoffset="${open ? offset : 0}"></circle>
+                </svg>
+                <div class="rd-streak__center">
+                  <i data-break-ico class="fas ${overtime ? 'fa-triangle-exclamation' : (active ? 'fa-mug-hot' : (isPaused ? 'fa-pause' : 'fa-clock'))}"
+                    style="font-size:16px;color:${icoColor};margin-bottom:4px"></i>
+                  <span class="rd-streak__days rd-break-clock" data-break-clock dir="ltr" style="color:${clockColor}">${formatBreakClock(remaining)}</span>
+                  <span class="rd-streak__lbl" data-break-lbl style="color:${lblColor}">${
+                    overtime ? 'تجاوز المدة' : (active ? 'متبقي من البريك' : (isPaused ? 'متوقف — متبقي' : 'مدة البريك'))
+                  }</span>
+                </div>
+              </div>
+              <div class="rd-break-actions">${actionsHtml}</div>
+            </div>`;
+        }
 
         let kind = 'ready';
         if (viewOnly) kind = 'viewOnly';
