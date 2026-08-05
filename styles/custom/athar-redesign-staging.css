@@ -3447,6 +3447,21 @@ html.athar-staging-redesign.mr-desktop-ui #rdBreaks:not([hidden]) {
   background: var(--surface2) !important;
   color: var(--text3) !important;
 }
+.rd-break-btn--ghost {
+  background: transparent !important;
+  color: var(--text2) !important;
+  border: 1px solid var(--border) !important;
+  font-weight: 600 !important;
+}
+.rd-break-empty-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  text-align: center;
+  color: var(--text3);
+  font-size: 12.5px;
+}
 .rd-break-actions .rd-break-btn i,
 .rd-break-btn i {
   margin: 0 !important;

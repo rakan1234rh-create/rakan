@@ -2714,7 +2714,7 @@ html.athar-staging-redesign.mr-desktop-ui #tab-breaks #rdBreaks:not([hidden]) {
 html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk {
   display: flex !important;
   flex-direction: column !important;
-  gap: 20px !important;
+  gap: 0 !important;
   width: 100% !important;
   padding-bottom: 8px !important;
 }
@@ -2724,7 +2724,7 @@ html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-
   align-items: flex-start !important;
   justify-content: space-between !important;
   gap: 12px !important;
-  margin: 0 0 0 !important;
+  margin: 0 0 16px !important;
   padding: 0 !important;
 }
 
@@ -2793,6 +2793,12 @@ html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-
   font-weight: 700 !important;
   margin-bottom: 16px !important;
   margin-top: 0 !important;
+  gap: 0 !important;
+  border: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-streak__badge[hidden] {
+  display: none !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-ring {
@@ -2801,8 +2807,21 @@ html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-
   margin: 0 0 20px !important;
 }
 
-html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-streak__lbl,
-html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk [data-break-ico] {
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-streak__lbl {
+  display: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-card:not(.rd-break-card--icon-center) [data-break-ico] {
+  display: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-card--icon-center [data-break-ico] {
+  display: block !important;
+  font-size: 26px !important;
+  margin: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-card--icon-center .rd-break-clock[hidden] {
   display: none !important;
 }
 
@@ -2810,6 +2829,7 @@ html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-
   font-size: 28px !important;
   font-weight: 800 !important;
   unicode-bidi: isolate !important;
+  line-height: 1 !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-actions {
@@ -2833,6 +2853,7 @@ html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
+  box-shadow: none !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-btn--gold {
@@ -2850,6 +2871,15 @@ html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-
   color: #fff !important;
 }
 
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-btn--ghost {
+  padding: 9px !important;
+  background: transparent !important;
+  color: var(--text2) !important;
+  border: 1px solid var(--border) !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+}
+
 html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-btn--muted,
 html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-btn:disabled {
   background: var(--surface2) !important;
@@ -2860,6 +2890,9 @@ html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-
 
 html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-note {
   font-size: 11px !important;
+  color: var(--text3) !important;
+  text-align: center !important;
+  line-height: 1.6 !important;
   margin-top: 10px !important;
   max-width: none !important;
 }
@@ -2908,10 +2941,19 @@ html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-
   overflow: hidden !important;
 }
 
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-empty-panel {
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 16px !important;
+  padding: 24px !important;
+  text-align: center !important;
+  color: var(--text3) !important;
+  font-size: 12.5px !important;
+}
+
 html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-list .rd-list__row,
 html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-list .rd-break-row,
-html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-list .rd-break-roster-row,
-html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-list .rd-break-empty {
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-list .rd-break-roster-row {
   border: none !important;
   border-bottom: 1px solid var(--border) !important;
   border-radius: 0 !important;
@@ -2919,29 +2961,27 @@ html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-
   padding: 13px 16px !important;
   gap: 12px !important;
   box-shadow: none !important;
+  min-height: 0 !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-list .rd-list__row:last-child,
 html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-list .rd-break-row:last-child,
-html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-list .rd-break-roster-row:last-child,
-html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-list .rd-break-empty:last-child {
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-list .rd-break-roster-row:last-child {
   border-bottom: none !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-row--active,
-html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-row--over,
 html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-row--paused,
 html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-roster-row--over,
 html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-roster-row--paused {
   border-radius: 0 !important;
+  background: transparent !important;
 }
 
-html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-row--over {
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-row--over,
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-roster-row--over {
   background: color-mix(in srgb, var(--danger) 11%, transparent) !important;
-}
-
-html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-row--paused {
-  background: color-mix(in srgb, var(--warning, #ff9500) 10%, transparent) !important;
+  border-radius: 0 !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-row__av {
@@ -2953,7 +2993,8 @@ html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-
 }
 
 html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-row--active .rd-break-row__av,
-html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-row--over .rd-break-row__av {
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-row--over .rd-break-row__av,
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-row--paused .rd-break-row__av {
   background: var(--surface2) !important;
   color: var(--text2) !important;
 }
@@ -2961,41 +3002,80 @@ html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-
 html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-list__title {
   font-size: 13px !important;
   font-weight: 700 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex-wrap: wrap !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-list__sub {
   font-size: 11px !important;
   margin-top: 3px !important;
+  color: var(--text3) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-me-tag {
+  font-size: 9.5px !important;
+  font-weight: 700 !important;
+  color: var(--gold) !important;
+  background: var(--goldSoft) !important;
+  padding: 2px 7px !important;
+  border-radius: 999px !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-row__clock {
   font-size: 14px !important;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
   unicode-bidi: isolate !important;
+  color: var(--text2) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-row__clock--active {
+  color: var(--success) !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-row__clock--paused {
   color: var(--warning, #ff9500) !important;
 }
 
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-row__clock--over {
+  color: var(--danger) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-status {
+  color: var(--border) !important;
+  font-weight: 600 !important;
+}
+
 html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-status--paused {
+  color: var(--warning, #ff9500) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-status--over {
+  color: var(--danger) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-status--busy {
   color: var(--warning, #ff9500) !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-roster__mins {
   font-size: 12.5px !important;
+  font-weight: 700 !important;
+  color: var(--text2) !important;
+  unicode-bidi: isolate !important;
 }
 
-html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-empty {
-  padding: 24px !important;
-  text-align: center !important;
-  justify-content: center !important;
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-roster__mins--busy {
+  color: var(--warning, #ff9500) !important;
 }
 
-html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-empty .rd-list__sub {
-  font-size: 12.5px !important;
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-roster__mins--zero {
   color: var(--text3) !important;
-  margin: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-roster__mins--over {
+  color: var(--danger) !important;
 }
 
 @media (max-width: 1100px) {

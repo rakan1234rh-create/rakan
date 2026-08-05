@@ -35123,6 +35123,17 @@
         );
       }
 
+      function formatBreakDurationLabel(mins) {
+        const n = Math.max(0, Number(mins) || 0);
+        if (n >= 60) return 'ساعة';
+        return `${n} دقيقة`;
+      }
+
+      function formatBreakOverageClock(totalSeconds) {
+        const abs = Math.abs(Math.floor(Number(totalSeconds) || 0));
+        return `+${formatBreakClock(abs)}`;
+      }
+
       function paintStaffBreakCountdownOnly() {
         const host = document.getElementById('rdBreaksRingHost') || document.getElementById('breaksRingHost');
         if (!host) return;
@@ -35132,16 +35143,21 @@
         const remaining = getMyDisplayBreakSeconds();
         const overtime = !!(active && remaining < 0);
         const isPaused = open?.status === 'paused';
+        const readyMins = state._myBreakDurationMins || Math.round(plannedSec / 60);
         let progress;
         if (!open) progress = 1;
-        else if (!overtime) progress = Math.max(0, Math.min(1, remaining / plannedSec));
-        else progress = Math.min(1, Math.abs(remaining) / plannedSec);
+        else if (!overtime) progress = Math.max(0.02, Math.min(1, remaining / plannedSec));
+        else progress = 1;
 
         const circ = STAFF_BREAK_RING_CIRC;
         const offset = circ * (1 - progress);
         const pauseYellow = 'var(--warning, #ff9500)';
-        const stroke = overtime ? 'var(--danger)' : (active ? 'var(--success)' : (isPaused ? pauseYellow : 'var(--border)'));
-        const clockColor = overtime ? 'var(--danger)' : (isPaused ? pauseYellow : 'var(--text)');
+        const stroke = overtime
+          ? 'var(--danger)'
+          : (active ? 'var(--success)' : (isPaused ? pauseYellow : 'var(--text3)'));
+        const centerColor = overtime
+          ? 'var(--danger)'
+          : (active ? 'var(--success)' : (isPaused ? pauseYellow : 'var(--text3)'));
         const daysEl = host.querySelector('[data-break-clock]');
         const lblEl = host.querySelector('[data-break-lbl]');
         const ringEl = host.querySelector('[data-break-ring-progress]');
@@ -35149,26 +35165,41 @@
         const badgeEl = host.querySelector('[data-break-badge]');
         host.classList.toggle('rd-break-card--paused', !!isPaused);
         host.classList.toggle('rd-break-card--over', !!overtime);
+        host.classList.toggle('rd-break-card--icon-center', !!(host.dataset.breakKind === 'depleted' || host.dataset.breakKind === 'unscheduled' || host.dataset.breakKind === 'viewOnly'));
         if (daysEl) {
-          daysEl.textContent = formatBreakClock(remaining);
-          daysEl.style.color = clockColor;
+          if (overtime) daysEl.textContent = formatBreakOverageClock(remaining);
+          else if (active || isPaused) daysEl.textContent = formatBreakClock(remaining);
+          else if (host.dataset.breakKind === 'branchBusy' || host.dataset.breakKind === 'ready') {
+            daysEl.textContent = formatBreakDurationLabel(readyMins);
+          }
+          daysEl.style.color = centerColor;
         }
-        if (lblEl) {
-          lblEl.textContent = overtime
-            ? 'تجاوز المدة'
-            : (active ? 'متبقي من البريك' : (isPaused ? 'متوقف — متبقي' : 'مدة البريك'));
-          lblEl.style.color = overtime ? 'var(--danger)' : (isPaused ? pauseYellow : 'var(--text3)');
-        }
+        if (lblEl) lblEl.hidden = true;
         if (badgeEl) {
-          badgeEl.innerHTML = overtime
-            ? '<i class="fas fa-triangle-exclamation"></i>تجاوز'
-            : (active
-              ? '<i class="fas fa-mug-hot"></i>جاري البريك'
-              : (isPaused
-                ? '<i class="fas fa-pause"></i>متوقف'
-                : (state._myBreakDurationMins
-                  ? `<i class="fas fa-hourglass-half"></i>${state._myBreakDurationMins} دقيقة`
-                  : '<i class="fas fa-ban"></i>لا يوجد بريك اليوم')));
+          if (overtime) {
+            badgeEl.hidden = false;
+            badgeEl.textContent = 'تجاوز';
+            badgeEl.style.color = 'var(--danger)';
+            badgeEl.style.background = 'color-mix(in srgb, var(--danger) 13%, transparent)';
+          } else if (active) {
+            badgeEl.hidden = false;
+            badgeEl.textContent = 'جاري البريك';
+            badgeEl.style.color = 'var(--success)';
+            badgeEl.style.background = 'color-mix(in srgb, var(--success) 13%, transparent)';
+          } else if (isPaused) {
+            badgeEl.hidden = false;
+            badgeEl.textContent = 'متوقف';
+            badgeEl.style.color = pauseYellow;
+            badgeEl.style.background = 'color-mix(in srgb, var(--warning, #ff9500) 13%, transparent)';
+          } else if (host.dataset.breakKind === 'ready') {
+            badgeEl.hidden = false;
+            badgeEl.textContent = formatBreakDurationLabel(readyMins);
+            badgeEl.style.color = 'var(--text3)';
+            badgeEl.style.background = 'color-mix(in srgb, var(--text3) 13%, transparent)';
+          } else {
+            badgeEl.hidden = true;
+            badgeEl.textContent = '';
+          }
         }
         if (ringEl) {
           ringEl.setAttribute('stroke', stroke);
@@ -35176,8 +35207,7 @@
           ringEl.setAttribute('stroke-dashoffset', open ? String(offset) : '0');
         }
         if (icoEl) {
-          icoEl.style.color = overtime ? 'var(--danger)' : (active ? 'var(--success)' : (isPaused ? pauseYellow : 'var(--text3)'));
-          icoEl.className = 'fas ' + (overtime ? 'fa-triangle-exclamation' : (active ? 'fa-mug-hot' : (isPaused ? 'fa-pause' : 'fa-clock')));
+          icoEl.style.color = centerColor;
         }
         document.querySelectorAll('[data-break-live-row]').forEach(rowEl => {
           const id = rowEl.getAttribute('data-break-live-row');
@@ -35191,9 +35221,10 @@
           rowEl.classList.toggle('rd-break-row--over', over);
           const clock = rowEl.querySelector('[data-break-row-clock]');
           if (clock) {
-            clock.textContent = formatBreakClock(rem);
+            clock.textContent = over ? formatBreakOverageClock(rem) : formatBreakClock(rem);
             clock.classList.toggle('rd-break-row__clock--over', over);
             clock.classList.toggle('rd-break-row__clock--paused', paused);
+            clock.classList.toggle('rd-break-row__clock--active', !paused && !over);
           }
           const statusEl = rowEl.querySelector('[data-break-row-status]');
           if (statusEl) {
@@ -35212,12 +35243,29 @@
           const overSec = dayRow?.status === 'ended' ? getStaffBreakOvertimeSeconds(dayRow) : 0;
           const overEnded = overSec > 0;
           const overMins = overEnded ? Math.max(1, Math.ceil(overSec / 60)) : 0;
-          el.textContent = overEnded ? `+${overMins} د` : `${mins} د`;
-          el.classList.toggle('rd-break-roster__mins--zero', mins <= 0 && !overEnded);
+          const unscheduled = !dayRow && !resolveBreakDurationMinsForUser(u);
+          const depleted = !overEnded && (dayRow?.status === 'ended' || mins <= 0);
+          const busy = !overEnded && !depleted && !unscheduled && !!(state.staffBreaks || []).some(b =>
+            b.status === 'active' && b.user_id !== u.id && b.branch_id === u.branch_id
+          );
+          if (overEnded) el.textContent = `+${overMins} د`;
+          else if (unscheduled) el.textContent = '—';
+          else if (depleted) el.textContent = '0 د';
+          else el.textContent = `${mins} د متبقٍ`;
+          el.classList.toggle('rd-break-roster__mins--zero', depleted || unscheduled);
           el.classList.toggle('rd-break-roster__mins--over', overEnded);
+          el.classList.toggle('rd-break-roster__mins--busy', busy);
           const row = el.closest('[data-break-roster-row]');
           if (row) {
             row.classList.toggle('rd-break-roster-row--over', overEnded);
+            const st = row.querySelector('[data-break-roster-status]');
+            if (st) {
+              st.textContent = overEnded
+                ? 'انتهى مع تجاوز'
+                : (unscheduled ? 'غير مجدول اليوم' : (depleted ? 'اكتملت مدة اليوم' : (busy ? 'الفرع مشغول' : 'متاح')));
+              st.classList.toggle('rd-break-status--over', overEnded);
+              st.classList.toggle('rd-break-status--busy', busy);
+            }
           }
         });
       }
@@ -35227,72 +35275,108 @@
         const open = getMyOpenStaffBreak();
         const active = open?.status === 'active' ? open : null;
         const isPaused = open?.status === 'paused';
-        const colleague = !active ? getActiveBreakColleagueInMyBranch() : null;
+        const colleague = !active && !isPaused ? getActiveBreakColleagueInMyBranch() : null;
         const plannedSec = Math.max(1, (Number(open?.planned_duration_minutes) || state._myBreakDurationMins || 15) * 60);
         const remaining = getMyDisplayBreakSeconds();
         const overtime = !!(active && remaining < 0);
-        let progress;
-        if (!open) progress = 1;
-        else if (!overtime) progress = Math.max(0, Math.min(1, remaining / plannedSec));
-        else progress = Math.min(1, Math.abs(remaining) / plannedSec);
+        const exhausted = !active && !isPaused && isMyBreakAllowanceExhausted();
+        const unscheduledToday = !active && !isPaused && !exhausted && isMyBreakUnscheduledToday();
+        const readyMins = state._myBreakDurationMins || Math.round(plannedSec / 60);
+        const durationLbl = formatBreakDurationLabel(readyMins);
+
+        let kind = 'ready';
+        if (overtime) kind = 'overage';
+        else if (active) kind = 'active';
+        else if (isPaused) kind = 'paused';
+        else if (exhausted) kind = 'depleted';
+        else if (unscheduledToday) kind = 'unscheduled';
+        else if (colleague) kind = 'branchBusy';
+
+        let progress = 1;
+        if (active && !overtime) progress = Math.max(0.02, Math.min(1, remaining / plannedSec));
+        else if (isPaused) progress = Math.max(0.02, Math.min(1, remaining / plannedSec));
         const circ = STAFF_BREAK_RING_CIRC;
         const offset = circ * (1 - progress);
         const pauseYellow = 'var(--warning, #ff9500)';
-        const stroke = overtime ? 'var(--danger)' : (active ? 'var(--success)' : (isPaused ? pauseYellow : 'var(--border)'));
-        const clockColor = overtime ? 'var(--danger)' : (isPaused ? pauseYellow : 'var(--text)');
-        const icoColor = overtime ? 'var(--danger)' : (active ? 'var(--success)' : (isPaused ? pauseYellow : 'var(--text3)'));
-        const lblColor = overtime ? 'var(--danger)' : (isPaused ? pauseYellow : 'var(--text3)');
-        const badge = overtime
-          ? '<i class="fas fa-triangle-exclamation"></i>تجاوز'
-          : (active
-            ? '<i class="fas fa-mug-hot"></i>جاري البريك'
-            : (isPaused
-              ? '<i class="fas fa-pause"></i>متوقف'
-              : (state._myBreakDurationMins
-                ? `<i class="fas fa-hourglass-half"></i>${state._myBreakDurationMins} دقيقة`
-                : '<i class="fas fa-ban"></i>لا يوجد بريك اليوم')));
-        const startLabel = 'بدء البريك';
-        const exhausted = !active && !isPaused && isMyBreakAllowanceExhausted();
-        const unscheduledToday = !active && !isPaused && !exhausted && isMyBreakUnscheduledToday();
-        let actionsHtml;
-        if (active) {
-          actionsHtml = `<button type="button" class="rd-break-btn rd-break-btn--danger" onclick="endStaffBreakFromUi()">إيقاف البريك</button>`;
-        } else if (isPaused) {
-          actionsHtml = `<button type="button" class="rd-break-btn rd-break-btn--success" onclick="startStaffBreakFromUi()">متابعة البريك</button>`;
-        } else if (!canTakeStaffBreak()) {
-          actionsHtml = `<p class="rd-break-note">دورك الحالي للعرض فقط</p>`;
-        } else if (exhausted) {
-          actionsHtml = `
-            <button type="button" class="rd-break-btn rd-break-btn--muted" disabled aria-disabled="true">بدء البريك</button>
-            <p class="rd-break-note rd-break-note--warn">خلصت مدة بريك اليوم</p>`;
-        } else if (unscheduledToday) {
-          actionsHtml = `
-            <button type="button" class="rd-break-btn rd-break-btn--muted" disabled aria-disabled="true">بدء البريك</button>
-            <p class="rd-break-note rd-break-note--warn">لا يوجد بريك مجدول لهذا اليوم</p>`;
-        } else if (colleague) {
-          actionsHtml = `
-            <button type="button" class="rd-break-btn rd-break-btn--muted" disabled aria-disabled="true">بدء البريك</button>
-            <p class="rd-break-note rd-break-note--warn">زميل في بريك الآن (${Sec.escapeHTML(colleague._userName || '—')}) — انتظر حتى يعود</p>`;
-        } else {
+
+        const defs = {
+          ready: {
+            badge: durationLbl, badgeColor: 'var(--text3)', ring: 'var(--text3)',
+            center: durationLbl, centerColor: 'var(--text3)', icon: '', actions: 'start'
+          },
+          active: {
+            badge: 'جاري البريك', badgeColor: 'var(--success)', ring: 'var(--success)',
+            center: formatBreakClock(remaining), centerColor: 'var(--success)', icon: '', actions: 'stopWithPause'
+          },
+          paused: {
+            badge: 'متوقف', badgeColor: pauseYellow, ring: pauseYellow,
+            center: formatBreakClock(remaining), centerColor: pauseYellow, icon: '', actions: 'resumeAndStop'
+          },
+          overage: {
+            badge: 'تجاوز', badgeColor: 'var(--danger)', ring: 'var(--danger)',
+            center: formatBreakOverageClock(remaining), centerColor: 'var(--danger)', icon: '', actions: 'stop'
+          },
+          depleted: {
+            badge: '', badgeColor: '', ring: 'var(--text3)',
+            center: '', centerColor: 'var(--text3)', icon: 'fa-check', actions: 'disabled',
+            note: 'خلصت مدة بريك اليوم'
+          },
+          unscheduled: {
+            badge: '', badgeColor: '', ring: 'var(--text3)',
+            center: '', centerColor: 'var(--text3)', icon: 'fa-calendar-xmark', actions: 'disabled',
+            note: 'لا يوجد بريك مجدول لهذا اليوم'
+          },
+          branchBusy: {
+            badge: '', badgeColor: '', ring: 'var(--text3)',
+            center: durationLbl, centerColor: 'var(--text3)', icon: '', actions: 'disabled',
+            note: `زميل في بريك الآن (${colleague?._userName || '—'}) — انتظر حتى يعود`
+          }
+        };
+        const def = defs[kind] || defs.ready;
+
+        let actionsHtml = '';
+        if (def.actions === 'start') {
           actionsHtml = `<button type="button" class="rd-break-btn rd-break-btn--gold" onclick="startStaffBreakFromUi()">بدء البريك</button>`;
+        } else if (def.actions === 'stopWithPause') {
+          // الخادم يجعل end_staff_break إيقافاً مؤقتاً عند بقاء مدة — الزران يطابقان الموك أب بصرياً
+          actionsHtml = `
+            <button type="button" class="rd-break-btn rd-break-btn--danger" onclick="endStaffBreakFromUi()">إيقاف البريك</button>
+            <button type="button" class="rd-break-btn rd-break-btn--ghost" onclick="endStaffBreakFromUi()">إيقاف مؤقت</button>`;
+        } else if (def.actions === 'resumeAndStop') {
+          actionsHtml = `
+            <button type="button" class="rd-break-btn rd-break-btn--success" onclick="startStaffBreakFromUi()">متابعة البريك</button>
+            <button type="button" class="rd-break-btn rd-break-btn--ghost" onclick="endStaffBreakFromUi()">إيقاف البريك</button>`;
+        } else if (def.actions === 'stop') {
+          actionsHtml = `<button type="button" class="rd-break-btn rd-break-btn--danger" onclick="endStaffBreakFromUi()">إيقاف البريك</button>`;
+        } else if (def.actions === 'disabled') {
+          actionsHtml = `<button type="button" class="rd-break-btn rd-break-btn--muted" disabled aria-disabled="true">بدء البريك</button>`;
+        }
+        if (def.note) {
+          actionsHtml += `<div class="rd-break-note">${Sec.escapeHTML(def.note)}</div>`;
         }
 
+        const badgeStyle = def.badge
+          ? `style="color:${def.badgeColor};background:color-mix(in srgb, ${def.badgeColor} 13%, transparent)"`
+          : 'hidden';
+        const centerHtml = def.icon
+          ? `<i data-break-ico class="fas ${def.icon}" style="font-size:26px;color:${def.centerColor}"></i>
+             <span class="rd-streak__days rd-break-clock" data-break-clock hidden dir="ltr"></span>`
+          : `<i data-break-ico class="fas fa-clock" hidden aria-hidden="true"></i>
+             <span class="rd-streak__days rd-break-clock" data-break-clock dir="ltr" style="color:${def.centerColor}">${Sec.escapeHTML(def.center)}</span>`;
+
         return `
-          <div class="rd-streak rd-break-card${isPaused ? ' rd-break-card--paused' : ''}${overtime ? ' rd-break-card--over' : ''}" id="rdBreaksRingHost">
-            <div class="rd-streak__badge" data-break-badge>${badge}</div>
+          <div class="rd-streak rd-break-card${isPaused ? ' rd-break-card--paused' : ''}${overtime ? ' rd-break-card--over' : ''}${def.icon ? ' rd-break-card--icon-center' : ''}"
+            id="rdBreaksRingHost" data-break-kind="${kind}">
+            <div class="rd-streak__badge" data-break-badge ${badgeStyle}>${def.badge ? Sec.escapeHTML(def.badge) : ''}</div>
             <div class="rd-streak__ring rd-break-ring">
               <svg width="168" height="168" viewBox="0 0 132 132" aria-hidden="true">
                 <circle cx="66" cy="66" r="54" fill="none" stroke="var(--border)" stroke-width="10"></circle>
-                <circle data-break-ring-progress cx="66" cy="66" r="54" fill="none" stroke="${stroke}" stroke-width="10"
-                  stroke-linecap="round" stroke-dasharray="${circ}" stroke-dashoffset="${open ? offset : 0}"></circle>
+                <circle data-break-ring-progress cx="66" cy="66" r="54" fill="none" stroke="${def.ring}" stroke-width="10"
+                  stroke-linecap="round" stroke-dasharray="${circ}" stroke-dashoffset="${open || isPaused ? offset : 0}"></circle>
               </svg>
               <div class="rd-streak__center">
-                <i data-break-ico class="fas ${overtime ? 'fa-triangle-exclamation' : (active ? 'fa-mug-hot' : (isPaused ? 'fa-pause' : 'fa-clock'))}"
-                  style="font-size:16px;color:${icoColor};margin-bottom:4px"></i>
-                <span class="rd-streak__days rd-break-clock" data-break-clock dir="ltr" style="color:${clockColor}">${formatBreakClock(remaining)}</span>
-                <span class="rd-streak__lbl" data-break-lbl style="color:${lblColor}">${
-                  overtime ? 'تجاوز المدة' : (active ? 'متبقي من البريك' : (isPaused ? 'متوقف — متبقي' : 'مدة البريك'))
-                }</span>
+                ${centerHtml}
+                <span class="rd-streak__lbl" data-break-lbl hidden></span>
               </div>
             </div>
             <div class="rd-break-actions">${actionsHtml}</div>
@@ -35324,10 +35408,10 @@
         // «في البريك الآن»: الجاري + المتوقف مؤقتاً
         const rows = getActiveStaffBreakLiveRows();
         if (!rows.length) {
-          return '<div class="rd-list__row rd-break-empty" style="cursor:default"><div class="rd-list__sub">لا يوجد أحد في بريك حالياً</div></div>';
+          return '<div class="rd-break-empty-panel">لا يوجد أحد في بريك حالياً</div>';
         }
         const canHist = canViewStaffBreakHistory();
-        return rows.map(b => {
+        const items = rows.map(b => {
           const paused = b.status === 'paused';
           const rem = getBreakRemainingSeconds(b);
           const over = !paused && rem < 0;
@@ -35336,7 +35420,8 @@
           const clickAttr = canHist
             ? ` role="button" tabindex="0" onclick="openStaffBreakHistory('${Sec.escapeHTML(b.user_id)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openStaffBreakHistory('${Sec.escapeHTML(b.user_id)}')}"`
             : '';
-          const tone = paused ? ' rd-break-row--paused' : (over ? ' rd-break-row--over' : ' rd-break-row--active');
+          const tone = over ? ' rd-break-row--over' : (paused ? ' rd-break-row--paused' : ' rd-break-row--active');
+          const timeTxt = over ? formatBreakOverageClock(rem) : formatBreakClock(rem);
           return `
             <div class="rd-list__row rd-break-row rd-break-row--live${tone}${me ? ' rd-break-row--me' : ''}${canHist ? ' rd-break-row--clickable' : ''}"
               data-break-live-row="${Sec.escapeHTML(b.id)}" data-break-live-status="${Sec.escapeHTML(b.status)}" style="cursor:${canHist ? 'pointer' : 'default'}"${clickAttr}>
@@ -35345,9 +35430,10 @@
                 <div class="rd-list__title">${Sec.escapeHTML(b._userName || '—')}${me ? ' <span class="rd-break-me-tag">أنت</span>' : ''}</div>
                 <div class="rd-list__sub">${Sec.escapeHTML(b._branchName || '—')} · <span data-break-row-status class="rd-break-status${over ? ' rd-break-status--over' : ''}${paused ? ' rd-break-status--paused' : ''}">${Sec.escapeHTML(statusLbl)}</span></div>
               </div>
-              <div class="rd-break-row__clock${over ? ' rd-break-row__clock--over' : ''}${paused ? ' rd-break-row__clock--paused' : ''}" data-break-row-clock="${Sec.escapeHTML(b.id)}">${formatBreakClock(rem)}</div>
+              <div class="rd-break-row__clock${over ? ' rd-break-row__clock--over' : ''}${paused ? ' rd-break-row__clock--paused' : ''}${!paused && !over ? ' rd-break-row__clock--active' : ''}" data-break-row-clock="${Sec.escapeHTML(b.id)}" dir="ltr">${timeTxt}</div>
             </div>`;
         }).join('');
+        return `<div class="rd-list rd-break-list">${items}</div>`;
       }
 
       function getStaffBreakOvertimeSeconds(dayRow) {
@@ -35368,10 +35454,10 @@
         );
         const users = getBreakRosterUsers().filter(u => !liveIds.has(u.id));
         if (!users.length) {
-          return '<div class="rd-list__row rd-break-empty" style="cursor:default"><div class="rd-list__sub">لا توجد سجلات حالياً</div></div>';
+          return '<div class="rd-break-empty-panel">لا توجد نتائج مطابقة</div>';
         }
         const canHist = canViewStaffBreakHistory();
-        return users.map(u => {
+        const items = users.map(u => {
           const remSec = getUserBreakRemainingSeconds(u);
           const mins = Math.max(0, Math.ceil(remSec / 60));
           const dayRow = state.staffBreakDayByUser?.[u.id];
@@ -35379,10 +35465,16 @@
           const overEnded = overSec > 0;
           const overMins = overEnded ? Math.max(1, Math.ceil(overSec / 60)) : 0;
           const unscheduled = !dayRow && !resolveBreakDurationMinsForUser(u);
+          const depleted = !overEnded && (dayRow?.status === 'ended' || mins <= 0);
+          const busy = !overEnded && !depleted && !unscheduled && !!(state.staffBreaks || []).some(b =>
+            b.status === 'active' && b.user_id !== u.id && b.branch_id === u.branch_id
+          );
           const statusLbl = overEnded
             ? 'انتهى مع تجاوز'
-            : (unscheduled ? 'غير مجدول اليوم' : (dayRow?.status === 'ended' || mins <= 0 ? 'خلصت المدة' : 'متاح'));
-          const minsLabel = overEnded ? `+${overMins} د` : `${mins} د`;
+            : (unscheduled ? 'غير مجدول اليوم' : (depleted ? 'اكتملت مدة اليوم' : (busy ? 'الفرع مشغول' : 'متاح')));
+          const minsLabel = overEnded
+            ? `+${overMins} د`
+            : (unscheduled ? '—' : (depleted ? '0 د' : `${mins} د متبقٍ`));
           const branch = state._branchById?.get(u.branch_id) || state.branches.find(b => b.id === u.branch_id);
           const me = u.id === state.currentUser?.id;
           const rowTone = overEnded ? ' rd-break-roster-row--over' : '';
@@ -35395,12 +35487,13 @@
               <div class="rd-break-row__av" aria-hidden="true">${Sec.escapeHTML((u.name || 'م').trim().charAt(0) || 'م')}</div>
               <div class="rd-list__main">
                 <div class="rd-list__title">${Sec.escapeHTML(u.name || '—')}${me ? ' <span class="rd-break-me-tag">أنت</span>' : ''}</div>
-                <div class="rd-list__sub">${Sec.escapeHTML(branch?.name || '—')} · <span class="rd-break-status${overEnded ? ' rd-break-status--over' : ''}">${Sec.escapeHTML(statusLbl)}</span></div>
+                <div class="rd-list__sub">${Sec.escapeHTML(branch?.name || '—')} · <span data-break-roster-status class="rd-break-status${overEnded ? ' rd-break-status--over' : ''}${busy ? ' rd-break-status--busy' : ''}">${Sec.escapeHTML(statusLbl)}</span></div>
               </div>
-              <div class="rd-break-roster__mins${mins <= 0 && !overEnded ? ' rd-break-roster__mins--zero' : ''}${overEnded ? ' rd-break-roster__mins--over' : ''}"
-                data-break-roster-user="${Sec.escapeHTML(u.id)}" data-break-roster-over="${overEnded ? '1' : '0'}">${Sec.escapeHTML(minsLabel)}</div>
+              <div class="rd-break-roster__mins${depleted || unscheduled ? ' rd-break-roster__mins--zero' : ''}${overEnded ? ' rd-break-roster__mins--over' : ''}${busy ? ' rd-break-roster__mins--busy' : ''}"
+                data-break-roster-user="${Sec.escapeHTML(u.id)}" data-break-roster-over="${overEnded ? '1' : '0'}" dir="ltr">${Sec.escapeHTML(minsLabel)}</div>
             </div>`;
         }).join('');
+        return `<div class="rd-list rd-break-list">${items}</div>`;
       }
 
       function formatBreakHistoryWhen(iso) {
@@ -35535,11 +35628,11 @@
             <div id="breaksRingHost">${renderStaffBreakRingHtml()}</div>
             <div class="rd-sec rd-break-list-sec">
               <div class="rd-sec__head"><span class="rd-sec__title">في البريك</span></div>
-              <div class="rd-list rd-break-list">${renderStaffBreaksListHtml()}</div>
+              ${renderStaffBreaksListHtml()}
             </div>
             <div class="rd-sec rd-break-list-sec">
               <div class="rd-sec__head"><span class="rd-sec__title">السجل</span></div>
-              <div class="rd-list rd-break-list">${renderStaffBreakRosterHtml()}</div>
+              ${renderStaffBreakRosterHtml()}
             </div>
             ${renderStaffBreakSchedulesHtml()}
           </div>`;
@@ -35576,11 +35669,11 @@
               <div class="rd-breaks-page__lists">
                 <div class="rd-sec rd-break-list-sec">
                   ${liveTitle}
-                  <div class="rd-list rd-break-list">${renderStaffBreaksListHtml()}</div>
+                  ${renderStaffBreaksListHtml()}
                 </div>
                 <div class="rd-sec rd-break-list-sec">
                   <div class="rd-sec__head"><span class="rd-sec__title">السجل</span></div>
-                  <div class="rd-list rd-break-list">${renderStaffBreakRosterHtml()}</div>
+                  ${renderStaffBreakRosterHtml()}
                 </div>
               </div>
             </div>
@@ -35684,6 +35777,11 @@
       async function endStaffBreakFromUi(reasonFromModal) {
         const mine = getMyActiveStaffBreak();
         if (!mine) {
+          const paused = getMyOpenStaffBreak();
+          if (paused?.status === 'paused') {
+            showToast('البريك متوقف مؤقتاً — اضغط متابعة للعودة', 'info');
+            return;
+          }
           showToast('لا يوجد بريك نشط', 'info');
           return;
         }
