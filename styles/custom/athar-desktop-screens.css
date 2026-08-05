@@ -3179,23 +3179,23 @@ html.athar-staging-redesign.mr-desktop-ui #breakHistoryModal .modal-card.break-h
 }
 
 html.athar-staging-redesign.mr-desktop-ui #breakHistoryModal .break-history-hd {
-  display: flex !important;
-  align-items: center !important;
-  gap: 12px !important;
-  margin: 0 0 6px !important;
+  display: block !important;
+  margin: 0 0 16px !important;
   padding: 0 !important;
   border: none !important;
   background: transparent !important;
+  box-shadow: none !important;
 }
 
-html.athar-staging-redesign.mr-desktop-ui #breakHistoryModal .break-history-hd__av {
-  width: 44px !important;
-  height: 44px !important;
-  border-radius: 50% !important;
-  background: var(--surface2) !important;
-  color: var(--text2) !important;
-  font-size: 14px !important;
-  font-weight: 700 !important;
+html.athar-staging-redesign.mr-desktop-ui #breakHistoryModal .break-history-hd__av,
+html.athar-staging-redesign.mr-desktop-ui #breakHistoryModal .break-history-hd__close {
+  display: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #breakHistoryModal .break-history-hd__main {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #breakHistoryModal .break-history-hd__main h3 {
@@ -3203,6 +3203,14 @@ html.athar-staging-redesign.mr-desktop-ui #breakHistoryModal .break-history-hd__
   font-weight: 700 !important;
   color: var(--text) !important;
   margin: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #breakHistoryModal .break-history-meta {
+  font-size: 11.5px !important;
+  color: var(--text2) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 1.5 !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #breakHistoryModal .break-history-empnum {
@@ -3213,20 +3221,8 @@ html.athar-staging-redesign.mr-desktop-ui #breakHistoryModal .break-history-empn
   padding: 0 !important;
 }
 
-html.athar-staging-redesign.mr-desktop-ui #breakHistoryModal .break-history-hd__close {
-  width: 32px !important;
-  height: 32px !important;
-  border-radius: 50% !important;
-  border: 1px solid var(--border) !important;
-  background: var(--surface) !important;
-  color: var(--text2) !important;
-}
-
-html.athar-staging-redesign.mr-desktop-ui #breakHistoryModal .break-history-meta {
-  font-size: 11.5px !important;
-  color: var(--text2) !important;
-  margin: 0 0 20px !important;
-  padding: 0 !important;
+html.athar-staging-redesign.mr-desktop-ui #breakHistoryModal .break-history-live[hidden] {
+  display: none !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #breakHistoryModal .modal-body {

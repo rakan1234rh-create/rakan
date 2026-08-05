@@ -35753,17 +35753,17 @@
         const u = state._userById?.get(userId) || state.users.find(x => x.id === userId);
         const title = document.getElementById('breakHistTitle');
         const empNumEl = document.getElementById('breakHistEmpNum');
-        const avEl = document.getElementById('breakHistAv');
         const metaEl = document.getElementById('breakHistMeta');
         const liveEl = document.getElementById('breakHistLive');
         const sub = document.getElementById('breakHistSub');
         const list = document.getElementById('breakHistList');
         const name = u?.name || 'الموظف';
         if (title) title.textContent = name;
-        if (avEl) avEl.textContent = (String(name).trim().charAt(0) || 'م');
         if (empNumEl) {
           const empNum = u?.employee_number ? padEmpNum(u.employee_number) : '';
-          empNumEl.textContent = empNum && empNum !== '-' ? empNum : '—';
+          const showNum = !!(empNum && empNum !== '-');
+          empNumEl.textContent = showNum ? empNum : '';
+          empNumEl.hidden = !showNum;
         }
         if (metaEl) {
           const roleKey = normalizeUserRole(u?.role);

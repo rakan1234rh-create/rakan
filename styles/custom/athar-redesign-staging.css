@@ -3637,33 +3637,27 @@ html.athar-staging-redesign.mr-desktop-ui #rdBreaks:not([hidden]) {
   filter: brightness(0.98);
 }
 .break-history-card .modal-header {
-  align-items: center;
-  gap: 10px;
+  align-items: flex-start;
+  gap: 0;
+  border: none;
+  border-bottom: none;
+  background: transparent;
+  box-shadow: none;
 }
 .break-history-hd {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+  display: block;
+  gap: 0;
 }
-.break-history-hd__av {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: var(--surface2);
-  color: var(--text2);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  font-weight: 700;
-  flex-shrink: 0;
+.break-history-hd__av,
+.break-history-hd__close {
+  display: none !important;
 }
 .break-history-hd__main {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
 }
 .break-history-card .modal-header h3,
 .break-history-hd__main h3 {
@@ -3674,26 +3668,12 @@ html.athar-staging-redesign.mr-desktop-ui #rdBreaks:not([hidden]) {
   font-weight: 700;
   color: var(--text);
 }
-.break-history-hd__close {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--text2);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  flex-shrink: 0;
-  font-size: 12px;
-  padding: 0;
-}
 .break-history-meta {
   font-size: 11.5px;
   color: var(--text2);
-  margin: 0 0 16px;
-  padding: 0 4px;
+  margin: 0;
+  padding: 0;
+  line-height: 1.5;
 }
 .break-history-live {
   display: flex;
@@ -3706,6 +3686,9 @@ html.athar-staging-redesign.mr-desktop-ui #rdBreaks:not([hidden]) {
   font-size: 12px;
   font-weight: 600;
   color: var(--text);
+}
+.break-history-live[hidden] {
+  display: none !important;
 }
 .break-history-live__dot {
   width: 8px;
@@ -3735,6 +3718,9 @@ html.athar-staging-redesign.mr-desktop-ui #rdBreaks:not([hidden]) {
   direction: ltr;
   unicode-bidi: isolate;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.break-history-empnum[hidden] {
+  display: none !important;
 }
 .break-history-card .modal-body {
   padding-top: 0;
