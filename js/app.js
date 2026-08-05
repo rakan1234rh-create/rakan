@@ -12848,7 +12848,7 @@
         return `
           <div class="rd-desk-menu" onclick="event.stopPropagation()">
             <button type="button" class="rd-desk-menu__btn" aria-label="إجراءات" aria-expanded="false"
-              onclick="toggleRdDeskMenu(this)">
+              onclick="event.stopPropagation(); toggleRdDeskMenu(this)">
               <i class="fas fa-ellipsis" aria-hidden="true"></i>
             </button>
             <div class="rd-desk-menu__pop" hidden>
@@ -12869,39 +12869,34 @@
         });
       }
 
-      function toggleRdDeskMenu(btn) {
-        const pop = btn?.closest?.('.rd-desk-menu')?.querySelector('.rd-desk-menu__pop');
-        if (!pop) return;
-        const willOpen = pop.hasAttribute('hidden');
-        const menu = btn.closest('.rd-desk-menu');
-        closeAllRdActMenus();
-        if (willOpen) {
-          // بدل عرض القائمة داخل خلية/حاوية قد تحتوي `overflow: hidden`:
-          // ننسخ القائمة إلى `document.body` ونضعها بـ `position: fixed` فوق كل المحتوى.
-          const rect = btn.getBoundingClientRect();
-          const portalPop = pop.cloneNode(true);
-          portalPop.classList.add('rd-desk-menu__pop--portal');
-          portalPop.removeAttribute('hidden');
-          portalPop.style.position = 'fixed';
-          portalPop.style.top = `${rect.bottom + 4}px`;
-          portalPop.style.insetInlineEnd = 'auto';
-          portalPop.style.left = '';
-          portalPop.style.right = '';
-          portalPop.style.zIndex = '9999';
-
-          const dir = (menu ? getComputedStyle(menu).direction : 'ltr').toLowerCase();
-          if (dir === 'rtl') {
-            // محاذاة “نهاية السطر” (inline-end) = يسار في RTL
-            portalPop.style.left = `${rect.left}px`;
-          } else {
-            portalPop.style.right = `${window.innerWidth - rect.right}px`;
-          }
-
-          document.body.appendChild(portalPop);
-          // إبقاء النسخة الأصلية مخفية حتى لا تظهر/تُقصّ داخل الشبكة
-          pop.setAttribute('hidden', '');
-          btn.setAttribute('aria-expanded', 'true');
+      function positionRdDeskMenuPortal(portalPop, btn, menu) {
+        const rect = btn.getBoundingClientRect();
+        const dir = (menu ? getComputedStyle(menu).direction : 'rtl').toLowerCase();
+        portalPop.style.setProperty('--rd-desk-menu-top', `${rect.bottom + 4}px`);
+        if (dir === 'rtl') {
+          portalPop.style.setProperty('--rd-desk-menu-left', `${rect.left}px`);
+          portalPop.style.removeProperty('--rd-desk-menu-right');
+        } else {
+          portalPop.style.setProperty('--rd-desk-menu-right', `${window.innerWidth - rect.right}px`);
+          portalPop.style.removeProperty('--rd-desk-menu-left');
         }
+      }
+
+      function toggleRdDeskMenu(btn) {
+        const menu = btn?.closest?.('.rd-desk-menu');
+        const pop = menu?.querySelector?.('.rd-desk-menu__pop');
+        if (!menu || !pop) return;
+        const isOpen = btn.getAttribute('aria-expanded') === 'true';
+        closeAllRdActMenus();
+        if (isOpen) return;
+
+        const portalPop = pop.cloneNode(true);
+        portalPop.classList.add('rd-desk-menu__pop--portal');
+        portalPop.removeAttribute('hidden');
+        positionRdDeskMenuPortal(portalPop, btn, menu);
+        document.body.appendChild(portalPop);
+        pop.setAttribute('hidden', '');
+        btn.setAttribute('aria-expanded', 'true');
       }
 
       function rdLocMenuHTML(kind, id, canManage, canDelete) {
@@ -13084,6 +13079,8 @@
           container, visibleAll, visibleRegions, activeRegion, canManageRegions,
           canDeleteRegionsPerm, branchMatchesSearch, emptyMsg
         } = ctx;
+
+        initRdLocMenuDismiss();
 
         const searchEl = document.getElementById('br-search');
         if (searchEl) {
@@ -34592,6 +34589,7 @@
       window.renderRegions = renderRegions;
       window.toggleRdLocMenu = toggleRdLocMenu;
       window.toggleRdDeskMenu = toggleRdDeskMenu;
+      window.closeAllRdActMenus = closeAllRdActMenus;
       window.openUserModal = openUserModal;
       window.editUser = editUser;
       window.onRoleChange = onRoleChange;
