@@ -929,6 +929,7 @@ html.athar-staging-redesign.mr-desktop-ui #tab-violations .rd-viol-row {
   cursor: pointer !important;
   border-radius: 0 !important;
   box-shadow: none !important;
+  box-sizing: border-box !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #tab-violations .rd-viol-row:last-child {
@@ -944,6 +945,13 @@ html.athar-staging-redesign.mr-desktop-ui #tab-violations .rd-viol-row__name {
   color: var(--text) !important;
   flex: 1 !important;
   min-width: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-violations .rd-viol-row__end {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex-shrink: 0 !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #tab-violations .rd-viol-row__pts {

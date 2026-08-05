@@ -14960,13 +14960,14 @@
                   </span>`
                 : '';
               return `
-                <button type="button" class="rd-viol-row" onclick="openViolDetailSheet('${v.id}')">
+                <div role="button" tabindex="0" class="rd-viol-row" onclick="openViolDetailSheet('${v.id}')"
+                  onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openViolDetailSheet('${v.id}');}">
                   <span class="rd-viol-row__name">${Sec.escapeHTML(v.name)}</span>
                   <span class="rd-viol-row__end">
                     <span class="rd-viol-row__pts" style="color:${g.color}">${ptsLabel}</span>
                     ${admin}
                   </span>
-                </button>`;
+                </div>`;
             }).join('')
             : '<div class="rd-viol-empty">لا توجد مخالفات في هذا التصنيف</div>';
           return `
