@@ -12859,7 +12859,6 @@
       }
 
       function closeAllRdActMenus() {
-        // إزالة النسخة المعلّقة في `document.body` أولًا (لتفادي قصّها داخل `overflow: hidden`)
         document.querySelectorAll('.rd-desk-menu__pop--portal').forEach((el) => el.remove());
         document.querySelectorAll('.rd-loc-menu__pop, .rd-desk-menu__pop').forEach((el) => {
           el.setAttribute('hidden', '');
@@ -12871,15 +12870,24 @@
 
       function positionRdDeskMenuPortal(portalPop, btn) {
         const rect = btn.getBoundingClientRect();
-        const gap = 4;
-        // محاذاة inline-end للقائمة مع inline-end للزر (يسار في RTL) — نفس سلوك inset-inline-end: 0
-        portalPop.style.setProperty('--rd-desk-menu-x', `${Math.round(rect.left)}px`);
-        portalPop.style.setProperty('--rd-desk-menu-y', `${Math.round(rect.bottom + gap)}px`);
+        const x = Math.round(rect.left);
+        const y = Math.round(rect.bottom + 4);
+        // inline !important يتفوق على قواعد CSS ويضمن الظهور تحت الزر مباشرة
+        portalPop.style.setProperty('position', 'fixed', 'important');
+        portalPop.style.setProperty('top', `${y}px`, 'important');
+        portalPop.style.setProperty('left', `${x}px`, 'important');
+        portalPop.style.setProperty('right', 'auto', 'important');
+        portalPop.style.setProperty('bottom', 'auto', 'important');
+        portalPop.style.setProperty('inset-inline-start', 'auto', 'important');
+        portalPop.style.setProperty('inset-inline-end', 'auto', 'important');
+        portalPop.style.setProperty('transform', 'none', 'important');
+        portalPop.style.setProperty('z-index', '10050', 'important');
+        portalPop.style.setProperty('display', 'flex', 'important');
       }
 
       function toggleRdDeskMenu(btn) {
         const menu = btn?.closest?.('.rd-desk-menu');
-        const pop = menu?.querySelector?.('.rd-desk-menu__pop');
+        const pop = menu?.querySelector?.(':scope > .rd-desk-menu__pop');
         if (!menu || !pop) return;
         const isOpen = btn.getAttribute('aria-expanded') === 'true';
         closeAllRdActMenus();
@@ -12890,8 +12898,9 @@
         portalPop.removeAttribute('hidden');
         positionRdDeskMenuPortal(portalPop, btn);
         document.body.appendChild(portalPop);
-        pop.setAttribute('hidden', '');
         btn.setAttribute('aria-expanded', 'true');
+        // منع مستمع الإغلاق من إغلاق القائمة في نفس ضغطة الفتح
+        window._rdDeskMenuIgnoreDismissUntil = Date.now() + 120;
       }
 
       function rdLocMenuHTML(kind, id, canManage, canDelete) {
@@ -12901,7 +12910,7 @@
         return `
           <div class="rd-loc-menu" onclick="event.stopPropagation()">
             <button type="button" class="rd-loc-menu__btn" aria-label="المزيد" aria-expanded="false"
-              onclick="toggleRdLocMenu(this)">
+              onclick="event.stopPropagation(); toggleRdLocMenu(this)">
               <i class="fas fa-ellipsis" aria-hidden="true"></i>
             </button>
             <div class="rd-loc-menu__pop" hidden>
@@ -12926,13 +12935,14 @@
         if (window._rdLocMenuDismissBound) return;
         window._rdLocMenuDismissBound = true;
         document.addEventListener('click', (e) => {
+          if (Date.now() < (window._rdDeskMenuIgnoreDismissUntil || 0)) return;
           if (
             e.target?.closest?.('.rd-loc-menu') ||
             e.target?.closest?.('.rd-desk-menu') ||
             e.target?.closest?.('.rd-desk-menu__pop--portal')
           ) return;
           closeAllRdActMenus();
-        }, true);
+        });
       }
 
       function rdLocSummaryHTML(regionsCount, branchesCount, employeesCount) {

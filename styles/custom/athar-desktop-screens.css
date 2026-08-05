@@ -1016,12 +1016,12 @@ html.athar-staging-redesign.mr-desktop-ui .rd-desk-menu__pop--portal {
   left: 0 !important;
   right: auto !important;
   bottom: auto !important;
-  inset: auto !important;
   inset-inline-start: auto !important;
   inset-inline-end: auto !important;
-  transform: translate(var(--rd-desk-menu-x, 0), var(--rd-desk-menu-y, 0)) !important;
+  transform: none !important;
   direction: rtl !important;
   z-index: 10050 !important;
+  display: flex !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui .rd-desk-menu__item {
