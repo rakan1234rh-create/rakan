@@ -12861,12 +12861,49 @@
       function closeAllRdActMenus() {
         document.querySelectorAll('.rd-desk-menu__pop--portal').forEach((el) => el.remove());
         document.querySelectorAll('.rd-loc-menu__pop, .rd-desk-menu__pop').forEach((el) => {
+          if (el.classList.contains('rd-desk-menu__pop--portal')) return;
           el.setAttribute('hidden', '');
         });
         document.querySelectorAll('.rd-loc-menu__btn, .rd-desk-menu__btn').forEach((btn) => {
           btn.setAttribute('aria-expanded', 'false');
         });
         document.querySelectorAll('.rd-desk-menu.is-open').forEach((el) => el.classList.remove('is-open'));
+      }
+
+      function openRdDeskMenuPortal(btn, sourcePop) {
+        const rect = btn.getBoundingClientRect();
+        const portal = sourcePop.cloneNode(true);
+        portal.classList.add('rd-desk-menu__pop--portal');
+        portal.removeAttribute('hidden');
+        portal.setAttribute('role', 'menu');
+
+        // تثبيت فيزياء الشاشة فقط — بدون inset منطقي حتى لا ينقلب في RTL/LTR
+        portal.style.setProperty('position', 'fixed', 'important');
+        portal.style.setProperty('top', `${Math.round(rect.bottom + 4)}px`, 'important');
+        portal.style.setProperty('left', `${Math.round(rect.left)}px`, 'important');
+        portal.style.setProperty('right', 'auto', 'important');
+        portal.style.setProperty('bottom', 'auto', 'important');
+        portal.style.setProperty('margin', '0', 'important');
+        portal.style.setProperty('transform', 'none', 'important');
+        portal.style.setProperty('z-index', '10050', 'important');
+        portal.style.setProperty('display', 'flex', 'important');
+
+        document.body.appendChild(portal);
+
+        // إن خرجت القائمة عن يسار/يمين الشاشة، أعد ضبطها داخل الإطار
+        const pr = portal.getBoundingClientRect();
+        let left = pr.left;
+        if (pr.right > window.innerWidth - 8) left = Math.max(8, window.innerWidth - 8 - pr.width);
+        if (left < 8) left = 8;
+        if (left !== pr.left) portal.style.setProperty('left', `${Math.round(left)}px`, 'important');
+
+        // إن لم تسعَ للأسفل، افتح للأعلى
+        if (pr.bottom > window.innerHeight - 8) {
+          const upTop = Math.round(rect.top - pr.height - 4);
+          if (upTop >= 8) portal.style.setProperty('top', `${upTop}px`, 'important');
+        }
+
+        return portal;
       }
 
       function toggleRdDeskMenu(btn) {
@@ -12876,10 +12913,12 @@
         const isOpen = btn.getAttribute('aria-expanded') === 'true';
         closeAllRdActMenus();
         if (isOpen) return;
-        pop.removeAttribute('hidden');
+
+        // portal إلى body لتفادي قص overflow من الجدول/التمرير
+        openRdDeskMenuPortal(btn, pop);
         btn.setAttribute('aria-expanded', 'true');
         menu.classList.add('is-open');
-        window._rdDeskMenuIgnoreDismissUntil = Date.now() + 120;
+        window._rdDeskMenuIgnoreDismissUntil = Date.now() + 150;
       }
 
       function rdLocMenuHTML(kind, id, canManage, canDelete) {
@@ -12922,6 +12961,8 @@
           ) return;
           closeAllRdActMenus();
         });
+        window.addEventListener('scroll', () => closeAllRdActMenus(), true);
+        window.addEventListener('resize', () => closeAllRdActMenus());
       }
 
       function rdLocSummaryHTML(regionsCount, branchesCount, employeesCount) {
