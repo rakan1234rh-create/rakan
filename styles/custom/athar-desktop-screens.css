@@ -3260,6 +3260,67 @@ html.athar-staging-redesign.mr-desktop-ui #breakHistoryModal .break-history-foot
   display: none !important;
 }
 
+/* ── Break schedule modal (literal mockup form) ── */
+html.athar-staging-redesign.mr-desktop-ui #breakScheduleModal.modal.open {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 24px !important;
+  background: rgba(0, 0, 0, 0.4) !important;
+  z-index: 1200 !important;
+  animation: atharRdFadeUp 0.2s ease;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #breakScheduleModal .modal-card.break-schedule-card {
+  position: relative !important;
+  inset: auto !important;
+  width: 440px !important;
+  max-width: min(440px, 92vw) !important;
+  max-height: min(92vh, 860px) !important;
+  height: auto !important;
+  margin: 0 !important;
+  border-radius: 18px !important;
+  border: 1px solid var(--border) !important;
+  background: var(--bg) !important;
+  padding: 0 !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.18) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  animation: atharRdFadeUp 0.28s ease both;
+  box-sizing: border-box !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #breakScheduleModal .break-sch-hd {
+  padding: 22px 22px 0 !important;
+  margin-bottom: 20px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #breakScheduleModal .break-sch-body {
+  padding: 0 22px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #breakScheduleModal .break-sch-footer {
+  padding: 16px 22px 22px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #breakScheduleModal .break-sch-chip.is-on {
+  background: var(--gold) !important;
+  color: var(--onGold) !important;
+  border-color: var(--gold) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #breakScheduleModal .break-sch-btn--save {
+  background: var(--gold) !important;
+  color: var(--onGold) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #breakScheduleModal .break-sch-btn--cancel {
+  background: var(--danger) !important;
+  color: #fff !important;
+}
+
 /* ── Schedule + Complaints ── */
 html.athar-staging-redesign.mr-desktop-ui #tab-schedule .rd-schedule-host {
   animation: atharRdFadeUp .3s ease !important;

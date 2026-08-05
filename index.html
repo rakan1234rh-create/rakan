@@ -2295,8 +2295,8 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px), screen and (hover: hover) and (pointer: fine)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px), screen and (hover: hover) and (pointer: fine)">
   <!-- Redesign AFTER classic desktop shells so sidebar/chrome overrides win -->
-  <link rel="stylesheet" href="styles/custom/athar-redesign-staging.css?v=desk51" id="athar-redesign-staging">
-  <link rel="stylesheet" href="styles/custom/athar-desktop-screens.css?v=desk51" id="athar-desktop-screens">
+  <link rel="stylesheet" href="styles/custom/athar-redesign-staging.css?v=desk52" id="athar-redesign-staging">
+  <link rel="stylesheet" href="styles/custom/athar-desktop-screens.css?v=desk52" id="athar-desktop-screens">
   <style id="mr-topbar-dark-fix" media="screen and (min-width: 993px), screen and (hover: hover) and (pointer: fine)">
     html[data-theme="dark"].mr-desktop-ui #appWrap .topbar.unified-banner,
     html[data-theme="dark"].mr-desktop-ui .topbar.unified-banner {
@@ -4069,55 +4069,39 @@
     </div>
 
     <div class="modal" id="breakScheduleModal" role="dialog" aria-modal="true" aria-labelledby="breakSchTitle">
-      <div class="modal-card">
-        <div class="modal-header">
+      <div class="modal-card break-schedule-card">
+        <div class="break-sch-hd">
           <h3 id="breakSchTitle">جدولة مدة البريك</h3>
-          <button type="button" class="btn btn-ghost" onclick="closeModal('breakScheduleModal')" aria-label="إغلاق"><i class="fas fa-times"></i></button>
+          <button type="button" class="break-sch-hd__close" onclick="closeModal('breakScheduleModal')" aria-label="إغلاق">
+            <i class="fas fa-xmark" aria-hidden="true"></i>
+          </button>
         </div>
-        <div class="modal-body">
-          <div class="form-group">
-            <label class="form-label" for="breakSchScopeType">النطاق</label>
-            <select id="breakSchScopeType" class="form-select" onchange="syncBreakScheduleScopeFields()">
-              <option value="global">عام (كل المنصة)</option>
-              <option value="region">منطقة</option>
-              <option value="branch" selected>فرع</option>
-              <option value="user">موظف محدد</option>
-            </select>
+        <div class="break-sch-body">
+          <div class="break-sch-label">النطاق</div>
+          <div class="break-sch-chips" id="breakSchScopeChips" role="group" aria-label="النطاق"></div>
+          <p class="break-sch-hint" id="breakSchGlobalNote">أولوية التطبيق من الأدق للأعم: موظف ← فرع ← منطقة ← عام.</p>
+          <input type="hidden" id="breakSchScopeType" value="global">
+          <div class="break-sch-scope-pick" id="breakSchScopeIdWrap" hidden>
+            <label class="break-sch-label" for="breakSchScopeId">اختر</label>
+            <select id="breakSchScopeId" class="break-sch-input break-sch-select" onchange="syncBreakScheduleFormFields()"></select>
           </div>
-          <p class="form-hint" id="breakSchGlobalNote" hidden style="margin:-4px 0 12px;color:var(--text3);font-size:12px">تُطبَّق على الجميع ما لم تُضبط مدة أدق لمنطقة/فرع/موظف.</p>
-          <div class="form-group" id="breakSchScopeIdWrap">
-            <label class="form-label" for="breakSchScopeId">اختر</label>
-            <select id="breakSchScopeId" class="form-select" onchange="syncBreakScheduleFormFields()"></select>
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="breakSchDayOfWeek">يوم الأسبوع <span class="required-mark">*</span></label>
-            <select id="breakSchDayOfWeek" class="form-select" onchange="syncBreakScheduleFormFields()">
-              <option value="0">الأحد</option>
-              <option value="1">الإثنين</option>
-              <option value="2">الثلاثاء</option>
-              <option value="3">الأربعاء</option>
-              <option value="4">الخميس</option>
-              <option value="5">الجمعة</option>
-              <option value="6">السبت</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="breakSchMinutes">المدة بالدقائق <span class="required-mark">*</span></label>
-            <input type="number" id="breakSchMinutes" class="form-input" min="1" max="480" step="1" placeholder="مثلاً: 15">
-            <div style="font-size:11px;color:var(--text3);margin-top:4px">أي يوم بدون مدة محفوظة = لا يُسمح بأخذ بريك فيه.</div>
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="breakSchLabel">وصف اختياري</label>
-            <input type="text" id="breakSchLabel" class="form-input" placeholder="مثلاً: استراحة قصيرة">
-          </div>
-          <div class="form-group">
-            <label class="form-label">مدد هذا النطاق خلال الأسبوع</label>
-            <div id="breakSchWeekSummary"></div>
-          </div>
+
+          <div class="break-sch-label">يوم الأسبوع</div>
+          <div class="break-sch-chips" id="breakSchDayChips" role="group" aria-label="يوم الأسبوع"></div>
+          <input type="hidden" id="breakSchDayOfWeek" value="0">
+
+          <label class="break-sch-label" for="breakSchMinutes">المدة بالدقائق</label>
+          <input type="number" id="breakSchMinutes" class="break-sch-input" min="1" max="480" step="1" placeholder="0 = ممنوع البريك هذا اليوم" oninput="paintBreakScheduleWeekSummary()">
+
+          <label class="break-sch-label" for="breakSchLabel">وصف (اختياري)</label>
+          <input type="text" id="breakSchLabel" class="break-sch-input" placeholder="ملاحظة داخلية عن هذا الاستثناء...">
+
+          <div class="break-sch-label">ملخص أسبوعي لهذا النطاق</div>
+          <div class="break-sch-week" id="breakSchWeekSummary"></div>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn" onclick="closeModal('breakScheduleModal')">إلغاء</button>
-          <button type="button" class="btn btn-primary" onclick="saveBreakScheduleFromUi()"><i class="fas fa-save"></i> حفظ المدة</button>
+        <div class="break-sch-footer">
+          <button type="button" class="break-sch-btn break-sch-btn--cancel" onclick="closeModal('breakScheduleModal')">إلغاء</button>
+          <button type="button" class="break-sch-btn break-sch-btn--save" onclick="saveBreakScheduleFromUi()">حفظ</button>
         </div>
       </div>
     </div>
@@ -4588,7 +4572,7 @@
 
     <div id="rdCmplOverlayHost"></div>
     <div id="rdSchOverlayHost"></div>
-    <script src="js/app.js?v=desk51"></script>
+    <script src="js/app.js?v=desk52"></script>
         <style>
       @media (max-width: 992px) {
         /* ── workflow: منع التمدد الأفقي ── */

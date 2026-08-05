@@ -36050,20 +36050,18 @@
       }
 
       function syncBreakScheduleScopeFields() {
-        const type = document.getElementById('breakSchScopeType')?.value || 'branch';
+        const type = document.getElementById('breakSchScopeType')?.value || 'global';
         const wrap = document.getElementById('breakSchScopeIdWrap');
         const sel = document.getElementById('breakSchScopeId');
-        const globalNote = document.getElementById('breakSchGlobalNote');
+        paintBreakScheduleScopeChips();
         if (!sel || !wrap) return;
         if (type === 'global') {
           wrap.hidden = true;
-          if (globalNote) globalNote.hidden = false;
           sel.innerHTML = '';
           syncBreakScheduleFormFields();
           return;
         }
         wrap.hidden = false;
-        if (globalNote) globalNote.hidden = true;
         let options = [];
         if (type === 'region') {
           options = getSupervisedRegionsForBreaks().map(r => ({ id: r.id, label: r.name }));
@@ -36078,9 +36076,57 @@
             return { id: u.id, label: b ? `${u.name} — ${b.name}` : u.name };
           });
         }
+        const prev = sel.value;
         sel.innerHTML = options.length
           ? options.map(o => `<option value="${Sec.escapeHTML(o.id)}">${Sec.escapeHTML(o.label)}</option>`).join('')
           : '<option value="">— لا توجد خيارات —</option>';
+        if (prev && options.some(o => o.id === prev)) sel.value = prev;
+        syncBreakScheduleFormFields();
+      }
+
+      function paintBreakScheduleScopeChips() {
+        const host = document.getElementById('breakSchScopeChips');
+        const typeInp = document.getElementById('breakSchScopeType');
+        if (!host || !typeInp) return;
+        const role = normalizeUserRole(state.currentUser?.role);
+        const allowGlobal = role === 'admin';
+        const current = typeInp.value || (allowGlobal ? 'global' : 'branch');
+        if (!allowGlobal && current === 'global') typeInp.value = 'branch';
+        const scopes = [
+          { key: 'global', label: 'عام', adminOnly: true },
+          { key: 'region', label: 'منطقة' },
+          { key: 'branch', label: 'فرع' },
+          { key: 'user', label: 'موظف محدد' }
+        ].filter(s => !s.adminOnly || allowGlobal);
+        host.innerHTML = scopes.map(s => {
+          const on = (typeInp.value || current) === s.key;
+          return `<button type="button" class="break-sch-chip${on ? ' is-on' : ''}" onclick="setBreakSchScope('${s.key}')">${Sec.escapeHTML(s.label)}</button>`;
+        }).join('');
+      }
+
+      function setBreakSchScope(key) {
+        const typeInp = document.getElementById('breakSchScopeType');
+        if (!typeInp) return;
+        typeInp.value = key || 'global';
+        syncBreakScheduleScopeFields();
+      }
+
+      function paintBreakScheduleDayChips() {
+        const host = document.getElementById('breakSchDayChips');
+        const dayInp = document.getElementById('breakSchDayOfWeek');
+        if (!host || !dayInp) return;
+        const current = String(dayInp.value ?? '0');
+        host.innerHTML = KSA_AR_WEEKDAYS.map((name, i) => {
+          const on = current === String(i);
+          return `<button type="button" class="break-sch-chip${on ? ' is-on' : ''}" onclick="setBreakSchDay(${i})">${Sec.escapeHTML(name)}</button>`;
+        }).join('');
+      }
+
+      function setBreakSchDay(dow) {
+        const dayInp = document.getElementById('breakSchDayOfWeek');
+        if (!dayInp) return;
+        dayInp.value = String(dow);
+        paintBreakScheduleDayChips();
         syncBreakScheduleFormFields();
       }
 
@@ -36094,28 +36140,45 @@
         ) || null;
       }
 
+      function paintBreakScheduleWeekSummary() {
+        const summaryHost = document.getElementById('breakSchWeekSummary');
+        if (!summaryHost) return;
+        const type = document.getElementById('breakSchScopeType')?.value || 'global';
+        const scopeIdRaw = document.getElementById('breakSchScopeId')?.value || null;
+        const dow = document.getElementById('breakSchDayOfWeek')?.value;
+        const minsInp = document.getElementById('breakSchMinutes');
+        const scopeId = type === 'global' ? null : scopeIdRaw;
+        summaryHost.innerHTML = KSA_AR_WEEKDAYS.map((name, i) => {
+          const existing = findExistingBreakSchedule(type, scopeId, i);
+          const isSelected = String(i) === String(dow);
+          let val = existing ? Number(existing.duration_minutes) : 0;
+          if (isSelected && minsInp && minsInp.value !== '') {
+            const typed = Number(minsInp.value);
+            if (Number.isFinite(typed)) val = typed;
+          }
+          const isOff = !val || val <= 0;
+          return `<div class="break-sch-week-cell${isSelected ? ' is-editing' : ''}${isOff ? ' is-off' : ''}">
+            <div class="break-sch-week-cell__d">${Sec.escapeHTML(name)}</div>
+            <div class="break-sch-week-cell__m">${isOff ? '0' : Sec.escapeHTML(String(val))}</div>
+          </div>`;
+        }).join('');
+      }
+
       /** يعبّي مدخلات المدة/الوصف بما هو محفوظ فعلاً لهذا النطاق واليوم، ويعرض ملخص أيام الأسبوع */
       function syncBreakScheduleFormFields() {
-        const type = document.getElementById('breakSchScopeType')?.value || 'branch';
+        const type = document.getElementById('breakSchScopeType')?.value || 'global';
         const scopeIdRaw = document.getElementById('breakSchScopeId')?.value || null;
         const dow = document.getElementById('breakSchDayOfWeek')?.value;
         const mins = document.getElementById('breakSchMinutes');
         const label = document.getElementById('breakSchLabel');
         const scopeId = type === 'global' ? null : scopeIdRaw;
+        paintBreakScheduleDayChips();
         if (dow !== '' && dow != null) {
           const existing = findExistingBreakSchedule(type, scopeId, dow);
           if (mins) mins.value = existing ? String(existing.duration_minutes) : '';
           if (label) label.value = existing ? (existing.label || '') : '';
         }
-        const summaryHost = document.getElementById('breakSchWeekSummary');
-        if (summaryHost) {
-          summaryHost.innerHTML = KSA_AR_WEEKDAYS.map((name, i) => {
-            const existing = findExistingBreakSchedule(type, scopeId, i);
-            const val = existing ? `${existing.duration_minutes} د` : '—';
-            const isSelected = String(i) === String(dow);
-            return `<span class="break-sch-week-chip${isSelected ? ' break-sch-week-chip--active' : ''}" style="display:inline-block;margin:2px 6px 2px 0;padding:2px 8px;border-radius:10px;font-size:11px;${isSelected ? 'background:var(--primary,#2563eb);color:#fff' : 'background:var(--bg2,#f1f5f9);color:var(--text3)'}">${Sec.escapeHTML(name)}: ${Sec.escapeHTML(val)}</span>`;
-          }).join('');
-        }
+        paintBreakScheduleWeekSummary();
       }
 
       function openBreakScheduleModal() {
@@ -36123,17 +36186,13 @@
           showToast('لا تملك صلاحية تعديل مدد البريك', 'warning');
           return;
         }
-        const typeSel = document.getElementById('breakSchScopeType');
-        const daySel = document.getElementById('breakSchDayOfWeek');
+        const typeInp = document.getElementById('breakSchScopeType');
+        const dayInp = document.getElementById('breakSchDayOfWeek');
         const role = normalizeUserRole(state.currentUser?.role);
-        if (typeSel) {
-          const allowGlobal = role === 'admin';
-          [...typeSel.options].forEach(opt => {
-            if (opt.value === 'global') opt.hidden = !allowGlobal;
-          });
-          if (!allowGlobal && typeSel.value === 'global') typeSel.value = 'branch';
+        if (typeInp) {
+          typeInp.value = role === 'admin' ? 'global' : 'branch';
         }
-        if (daySel) daySel.value = String(getStaffBreakTodayWeekday());
+        if (dayInp) dayInp.value = String(getStaffBreakTodayWeekday());
         syncBreakScheduleScopeFields();
         openModal('breakScheduleModal');
       }
@@ -36143,7 +36202,7 @@
           showToast('لا تملك صلاحية تعديل مدد البريك', 'warning');
           return;
         }
-        const scopeType = document.getElementById('breakSchScopeType')?.value || 'branch';
+        const scopeType = document.getElementById('breakSchScopeType')?.value || 'global';
         const scopeIdRaw = document.getElementById('breakSchScopeId')?.value || '';
         const dayOfWeek = Number(document.getElementById('breakSchDayOfWeek')?.value);
         const minutes = Number(document.getElementById('breakSchMinutes')?.value || 0);
@@ -36196,6 +36255,9 @@
       window.endStaffBreakFromUi = endStaffBreakFromUi;
       window.submitBreakOvertimeReason = submitBreakOvertimeReason;
       window.setBreakStatusFilter = setBreakStatusFilter;
+      window.setBreakSchScope = setBreakSchScope;
+      window.setBreakSchDay = setBreakSchDay;
+      window.paintBreakScheduleWeekSummary = paintBreakScheduleWeekSummary;
       window.openBreakScheduleModal = openBreakScheduleModal;
       window.saveBreakScheduleFromUi = saveBreakScheduleFromUi;
       window.syncBreakScheduleScopeFields = syncBreakScheduleScopeFields;
