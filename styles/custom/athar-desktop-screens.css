@@ -1563,32 +1563,63 @@ html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-table {
   border: 1px solid var(--border) !important;
   border-radius: 16px !important;
   overflow: hidden !important;
+  direction: rtl !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-table--region {
+  display: grid !important;
+  grid-template-columns: 2fr 1.6fr 90px 100px 140px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-table--branch {
+  display: grid !important;
+  grid-template-columns: 2fr 1fr !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-table--emp {
+  display: grid !important;
+  grid-template-columns: 2fr 110px 1.4fr !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-body {
+  display: contents !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-thead {
-  display: grid !important;
   gap: 12px !important;
   padding: 12px 18px !important;
   background: var(--surface2) !important;
   font-size: 11.5px !important;
   font-weight: 700 !important;
   color: var(--text2) !important;
+  direction: rtl !important;
+  grid-column: 1 / -1 !important;
+  display: grid !important;
 }
 
-html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-thead--region {
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-thead--region,
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-row--region {
   grid-template-columns: 2fr 1.6fr 90px 100px 140px !important;
 }
 
-html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-thead--branch {
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-thead--branch,
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-row--branch {
   grid-template-columns: 2fr 1fr !important;
 }
 
-html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-thead--emp {
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-thead--emp,
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-row--emp {
   grid-template-columns: 2fr 110px 1.4fr !important;
 }
 
+@supports (grid-template-columns: subgrid) {
+  html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-thead,
+  html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-row {
+    grid-template-columns: subgrid !important;
+  }
+}
+
 html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-row {
-  display: grid !important;
   gap: 12px !important;
   align-items: center !important;
   padding: 14px 18px !important;
@@ -1603,27 +1634,53 @@ html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-row {
   margin: 0 !important;
   border-radius: 0 !important;
   animation: atharRdCardIn .35s ease both;
+  direction: rtl !important;
+  grid-column: 1 / -1 !important;
+  display: grid !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-cell--who {
+  grid-column: 1 !important;
+  min-width: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-cell--mgr {
+  grid-column: 2 !important;
+  min-width: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-cell--branches {
+  grid-column: 3 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-cell--emps {
+  grid-column: 4 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-cell--acts {
+  grid-column: 5 !important;
+  justify-self: start !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-table--branch .rd-loc-desk-cell--emps {
+  grid-column: 2 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-cell--id {
+  grid-column: 2 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-cell--role {
+  grid-column: 3 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-body > .rd-loc-desk-row:first-child {
+  border-top: none !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-row--emp {
   padding: 13px 18px !important;
   cursor: default !important;
-}
-
-html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-row--region {
-  grid-template-columns: 2fr 1.6fr 90px 100px 140px !important;
-}
-
-html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-row--branch {
-  grid-template-columns: 2fr 1fr !important;
-}
-
-html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-row--emp {
-  grid-template-columns: 2fr 110px 1.4fr !important;
-}
-
-html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-body > .rd-loc-desk-row:first-child {
-  border-top: none !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-who {
@@ -1702,8 +1759,11 @@ html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-mono {
 
 html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-acts {
   display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
   gap: 8px !important;
   flex-wrap: wrap !important;
+  min-width: 0 !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-act {

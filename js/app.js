@@ -13002,19 +13002,20 @@
         const rid = String(reg.id || '').replace(/'/g, "\\'");
         const acts = (canManage || canDelete)
           ? rdDeskActMenuHTML(`editRegion('${rid}')`, `deleteRegion('${rid}')`, canManage, canDelete)
-          : '<span></span>';
+          : '';
         return `
-          <button type="button" class="rd-loc-desk-row rd-loc-desk-row--region" style="animation-delay:${delay}s"
-            onclick="openRegionView('${rid}')">
-            <span class="rd-loc-desk-who">
+          <div role="button" tabindex="0" class="rd-loc-desk-row rd-loc-desk-row--region" style="animation-delay:${delay}s"
+            onclick="openRegionView('${rid}')"
+            onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openRegionView('${rid}');}">
+            <span class="rd-loc-desk-cell rd-loc-desk-cell--who rd-loc-desk-who" role="cell">
               <span class="rd-loc-desk-ico" aria-hidden="true"><i class="fas fa-map-location-dot"></i></span>
               <span class="rd-loc-desk-name">${Sec.escapeHTML(reg.name || '')}</span>
             </span>
-            <span class="rd-loc-desk-muted rd-loc-desk-clip">${Sec.escapeHTML(manager)}</span>
-            <span class="rd-loc-desk-num">${regionBranches.length}</span>
-            <span class="rd-loc-desk-num">${totalEmps}</span>
-            ${acts}
-          </button>`;
+            <span class="rd-loc-desk-cell rd-loc-desk-cell--mgr rd-loc-desk-muted rd-loc-desk-clip" role="cell">${Sec.escapeHTML(manager)}</span>
+            <span class="rd-loc-desk-cell rd-loc-desk-cell--branches rd-loc-desk-num" role="cell">${regionBranches.length}</span>
+            <span class="rd-loc-desk-cell rd-loc-desk-cell--emps rd-loc-desk-num" role="cell">${totalEmps}</span>
+            <span class="rd-loc-desk-cell rd-loc-desk-cell--acts rd-loc-desk-acts" role="cell">${acts}</span>
+          </div>`;
       }
 
       function rdLocDeskBranchRowHTML(br, delayIdx) {
@@ -13024,11 +13025,11 @@
         return `
           <button type="button" class="rd-loc-desk-row rd-loc-desk-row--branch" style="animation-delay:${delay}s"
             onclick="openLocBranchView('${bid}')">
-            <span class="rd-loc-desk-who">
+            <span class="rd-loc-desk-cell rd-loc-desk-cell--who rd-loc-desk-who" role="cell">
               <span class="rd-loc-desk-ico" aria-hidden="true"><i class="fas fa-store"></i></span>
               <span class="rd-loc-desk-name">${Sec.escapeHTML(br.name || '')}</span>
             </span>
-            <span class="rd-loc-desk-num">${employees.length}</span>
+            <span class="rd-loc-desk-cell rd-loc-desk-cell--emps rd-loc-desk-num" role="cell">${employees.length}</span>
           </button>`;
       }
 
@@ -13039,12 +13040,12 @@
         const empId = padEmpNum(emp.employee_number) || '—';
         return `
           <div class="rd-loc-desk-row rd-loc-desk-row--emp" style="animation-delay:${delay}s">
-            <span class="rd-loc-desk-who">
+            <span class="rd-loc-desk-cell rd-loc-desk-cell--who rd-loc-desk-who" role="cell">
               <span class="rd-loc-desk-av" aria-hidden="true">${Sec.escapeHTML(initial)}</span>
               <span class="rd-loc-desk-name rd-loc-desk-name--emp">${Sec.escapeHTML(emp.name || '')}</span>
             </span>
-            <span class="rd-loc-desk-mono">${Sec.escapeHTML(empId)}</span>
-            <span class="rd-loc-desk-muted">${Sec.escapeHTML(role)}</span>
+            <span class="rd-loc-desk-cell rd-loc-desk-cell--id rd-loc-desk-mono" role="cell">${Sec.escapeHTML(empId)}</span>
+            <span class="rd-loc-desk-cell rd-loc-desk-cell--role rd-loc-desk-muted" role="cell">${Sec.escapeHTML(role)}</span>
           </div>`;
       }
 
@@ -13096,9 +13097,11 @@
                 <i class="fas fa-arrow-right" aria-hidden="true"></i>فروع ${Sec.escapeHTML(activeRegion.name || '')}
               </button>
               <div class="rd-loc-list-title">موظفو ${Sec.escapeHTML(activeBranch.name || '')}</div>
-              <div class="rd-loc-desk-table">
+              <div class="rd-loc-desk-table rd-loc-desk-table--emp">
                 <div class="rd-loc-desk-thead rd-loc-desk-thead--emp" role="row">
-                  <span>الموظف</span><span>الرقم الوظيفي</span><span>الدور</span>
+                  <span class="rd-loc-desk-cell rd-loc-desk-cell--who" role="columnheader">الموظف</span>
+                  <span class="rd-loc-desk-cell rd-loc-desk-cell--id" role="columnheader">الرقم الوظيفي</span>
+                  <span class="rd-loc-desk-cell rd-loc-desk-cell--role" role="columnheader">الدور</span>
                 </div>
                 <div class="rd-loc-desk-body">${rows}</div>
               </div>
@@ -13121,9 +13124,10 @@
                 <i class="fas fa-arrow-right" aria-hidden="true"></i>كل المناطق
               </button>
               <div class="rd-loc-list-title">فروع ${Sec.escapeHTML(activeRegion.name || '')}</div>
-              <div class="rd-loc-desk-table">
+              <div class="rd-loc-desk-table rd-loc-desk-table--branch">
                 <div class="rd-loc-desk-thead rd-loc-desk-thead--branch" role="row">
-                  <span>الفرع</span><span>الموظفون</span>
+                  <span class="rd-loc-desk-cell rd-loc-desk-cell--who" role="columnheader">الفرع</span>
+                  <span class="rd-loc-desk-cell rd-loc-desk-cell--emps" role="columnheader">الموظفون</span>
                 </div>
                 <div class="rd-loc-desk-body">${rows}</div>
               </div>
@@ -13144,9 +13148,13 @@
         }
         container.innerHTML = `
           <div class="rd-loc-board rd-loc-board--desk">
-            <div class="rd-loc-desk-table">
+            <div class="rd-loc-desk-table rd-loc-desk-table--region">
               <div class="rd-loc-desk-thead rd-loc-desk-thead--region" role="row">
-                <span>المنطقة</span><span>المدير</span><span>الفروع</span><span>الموظفون</span><span>إجراءات</span>
+                <span class="rd-loc-desk-cell rd-loc-desk-cell--who" role="columnheader">المنطقة</span>
+                <span class="rd-loc-desk-cell rd-loc-desk-cell--mgr" role="columnheader">المدير</span>
+                <span class="rd-loc-desk-cell rd-loc-desk-cell--branches" role="columnheader">الفروع</span>
+                <span class="rd-loc-desk-cell rd-loc-desk-cell--emps" role="columnheader">الموظفون</span>
+                <span class="rd-loc-desk-cell rd-loc-desk-cell--acts" role="columnheader">إجراءات</span>
               </div>
               <div class="rd-loc-desk-body">
                 ${visibleRegions.map((reg, i) => rdLocDeskRegionRowHTML(reg, canManageRegions, canDeleteRegionsPerm, i)).join('')}
