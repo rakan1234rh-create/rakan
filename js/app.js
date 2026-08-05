@@ -34121,7 +34121,7 @@
           const st = rdCmplStatusMeta(r.status);
           const kindLbl = r.kind === 'suggestion' ? 'اقتراح' : 'شكوى';
           const icon = r.categoryIcon || (r.kind === 'suggestion' ? 'fa-lightbulb' : 'fa-triangle-exclamation');
-          const reply = (r.thread && r.thread.length) ? r.thread[r.thread.length - 1] : null;
+          const reply = (Array.isArray(r.thread) && r.thread.length) ? r.thread[r.thread.length - 1] : null;
           const replyHtml = reply ? `
             <div class="rd-cmpl-card__reply">
               <div class="rd-cmpl-card__reply-av"><i class="fas fa-headset" aria-hidden="true"></i></div>
@@ -34131,7 +34131,7 @@
               </div>
             </div>` : '';
           return `
-            <article class="rd-cmpl-card" style="animation-delay:${Math.min(0.3, i * 0.04)}s" onclick="rdOpenComplaintDetail('${Sec.escapeHTML(r.id)}')" role="button" tabindex="0">
+            <article class="rd-cmpl-card" style="animation-delay:${Math.min(0.3, i * 0.04)}s" onclick="rdOpenComplaintDetail('${Sec.escapeHTML(r.id)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();rdOpenComplaintDetail('${Sec.escapeHTML(r.id)}')}" role="button" tabindex="0">
               <div class="rd-cmpl-card__top">
                 <div class="rd-cmpl-card__who">
                   <div class="rd-cmpl-card__icon" style="--tone:${tone}"><i class="fas ${Sec.escapeHTML(icon)}" aria-hidden="true"></i></div>
@@ -34154,7 +34154,7 @@
         host.innerHTML = `
           <div class="rd-cmpl-board">
             <div class="rd-cmpl-head">
-              <p class="rd-sch-intro">يمكنك رفع شكوى أو اقتراح حول أي موضوع يخص بيئة العمل، وستتم متابعتها من الإدارة المختصة.</p>
+              <p class="rd-cmpl-intro">يمكنك رفع شكوى أو اقتراح حول أي موضوع يخص بيئة العمل، وستتم متابعتها من الإدارة المختصة.</p>
               <button type="button" class="rd-cmpl-cta" onclick="rdOpenComplaintForm()"><i class="fas fa-plus" aria-hidden="true"></i>رفع شكوى أو اقتراح</button>
             </div>
             <div class="rd-cmpl-metrics">
@@ -34273,6 +34273,7 @@
           }).join('');
           const detailsLabel = form.kind === 'suggestion' ? 'تفاصيل الاقتراح' : 'تفاصيل الشكوى';
           const submitLabel = form.kind === 'suggestion' ? 'إرسال الاقتراح' : 'إرسال الشكوى';
+          const descPlaceholder = form.kind === 'suggestion' ? 'اشرح اقتراحك بالتفصيل...' : 'اشرح شكواك بالتفصيل...';
           const attachLabel = form.attachCount > 0
             ? `${form.attachCount} ملف مرفق — اضغط لإضافة المزيد`
             : 'اضغط لإرفاق ملف';
@@ -34289,7 +34290,7 @@
                 <div class="rd-cmpl-field-label">التصنيف <span class="rd-cmpl-req">*</span></div>
                 <div class="rd-cmpl-cat-row">${cats}</div>
                 <div class="rd-cmpl-field-label">${Sec.escapeHTML(detailsLabel)} <span class="rd-cmpl-req">*</span></div>
-                <textarea class="rd-cmpl-textarea" id="rdCmplDescInput" placeholder="اشرح شكواك بالتفصيل..." rows="6">${Sec.escapeHTML(form.desc || '')}</textarea>
+                <textarea class="rd-cmpl-textarea" id="rdCmplDescInput" placeholder="${Sec.escapeHTML(descPlaceholder)}" rows="6">${Sec.escapeHTML(form.desc || '')}</textarea>
                 <div class="rd-cmpl-field-label">مرفقات (اختياري)</div>
                 <button type="button" class="rd-cmpl-attach" onclick="rdCmplSimulateAttach()">
                   <i class="fas fa-paperclip" aria-hidden="true"></i>
