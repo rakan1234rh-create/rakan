@@ -12869,17 +12869,12 @@
         });
       }
 
-      function positionRdDeskMenuPortal(portalPop, btn, menu) {
+      function positionRdDeskMenuPortal(portalPop, btn) {
         const rect = btn.getBoundingClientRect();
-        const dir = (menu ? getComputedStyle(menu).direction : 'rtl').toLowerCase();
-        portalPop.style.setProperty('--rd-desk-menu-top', `${rect.bottom + 4}px`);
-        if (dir === 'rtl') {
-          portalPop.style.setProperty('--rd-desk-menu-left', `${rect.left}px`);
-          portalPop.style.removeProperty('--rd-desk-menu-right');
-        } else {
-          portalPop.style.setProperty('--rd-desk-menu-right', `${window.innerWidth - rect.right}px`);
-          portalPop.style.removeProperty('--rd-desk-menu-left');
-        }
+        const gap = 4;
+        // محاذاة inline-end للقائمة مع inline-end للزر (يسار في RTL) — نفس سلوك inset-inline-end: 0
+        portalPop.style.setProperty('--rd-desk-menu-x', `${Math.round(rect.left)}px`);
+        portalPop.style.setProperty('--rd-desk-menu-y', `${Math.round(rect.bottom + gap)}px`);
       }
 
       function toggleRdDeskMenu(btn) {
@@ -12893,7 +12888,7 @@
         const portalPop = pop.cloneNode(true);
         portalPop.classList.add('rd-desk-menu__pop--portal');
         portalPop.removeAttribute('hidden');
-        positionRdDeskMenuPortal(portalPop, btn, menu);
+        positionRdDeskMenuPortal(portalPop, btn);
         document.body.appendChild(portalPop);
         pop.setAttribute('hidden', '');
         btn.setAttribute('aria-expanded', 'true');
