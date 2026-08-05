@@ -3315,9 +3315,14 @@ html.athar-staging-redesign.mr-mobile-ui #tab-breaks .rd-screen {
   animation: none;
 }
 html:not(.athar-staging-redesign) #rdBreaks,
-html.athar-staging-redesign.mr-desktop-ui #rdBreaks,
 html.athar-staging-redesign.mr-mobile-ui #rdBreaks[hidden] {
   display: none !important;
+}
+html.athar-staging-redesign.mr-desktop-ui #rdBreaks[hidden] {
+  display: none !important;
+}
+html.athar-staging-redesign.mr-desktop-ui #rdBreaks:not([hidden]) {
+  display: block !important;
 }
 
 #tab-breaks,
@@ -3764,7 +3769,7 @@ html.athar-staging-redesign.mr-mobile-ui #rdBreaks[hidden] {
 
 /* ═══════════════════════════════════════════════════════════════════════════
    ATHAR Desktop Redesign — literal shell + dashboard
-   Excludes: #tab-breaks, #tab-settings (permissions)
+   Excludes: #tab-settings (permissions stay classic)
    ═══════════════════════════════════════════════════════════════════════════ */
 
 html.athar-staging-redesign.mr-desktop-ui {

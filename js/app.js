@@ -4999,7 +4999,7 @@
           && isMobileViewport();
       }
 
-      /** تصميم Desktop الحرفي من Athar Redesign — Desktop (ما عدا البريكات والصلاحيات) */
+      /** تصميم Desktop الحرفي من Athar Redesign — Desktop (ما عدا الصلاحيات) */
       function isAtharDesktopRedesignUi() {
         return document.documentElement.classList.contains('athar-staging-redesign')
           && document.documentElement.classList.contains('mr-desktop-ui');
@@ -5007,12 +5007,18 @@
 
       /** صفحات تُستثنى من إعادة التصميم الحرفي على سطح المكتب */
       function isAtharDesktopRedesignExcludedTab(tab) {
-        return tab === 'breaks' || tab === 'settings';
+        return tab === 'settings';
       }
 
       /** سطح المكتب فقط — لا يمس مسار الجوال `isAtharRedesignUi` */
       function isAtharDesktopScreenUi() {
         return typeof isAtharDesktopRedesignUi === 'function' && isAtharDesktopRedesignUi();
+      }
+
+      /** بريكات: Athar على الجوال أو سطح المكتب */
+      function isStaffBreaksAtharUi() {
+        return (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi())
+          || (typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi());
       }
 
       function rdClassifyScore(value) {
@@ -35534,22 +35540,32 @@
       function renderStaffBreaksRedesign() {
         const host = document.getElementById('rdBreaks');
         if (!host) return;
+        const desk = typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi();
+        const manageBtn = canManageStaffBreakSchedules()
+          ? (desk
+            ? `<button type="button" class="rd-breaks-page__manage" onclick="openBreakScheduleModal()">
+                 <i class="fas fa-sliders" aria-hidden="true"></i>تعديل مدة البريك
+               </button>`
+            : `<button type="button" class="rd-breaks-page__gear" onclick="openBreakScheduleModal()" aria-label="تعديل مدة البريك"><i class="fas fa-sliders"></i></button>`)
+          : '';
         host.innerHTML = `
-          <div class="rd-screen rd-breaks-page">
+          <div class="rd-screen rd-breaks-page${desk ? ' rd-breaks-page--desk' : ''}">
             <div class="rd-breaks-page__head">
               <h2 class="rd-breaks-page__title">بريكات الموظفين</h2>
-              ${canManageStaffBreakSchedules()
-                ? `<button type="button" class="rd-breaks-page__gear" onclick="openBreakScheduleModal()" aria-label="تعديل مدة البريك"><i class="fas fa-sliders"></i></button>`
-                : ''}
+              ${manageBtn}
             </div>
-            ${renderStaffBreakRingHtml()}
-            <div class="rd-sec rd-break-list-sec">
-              <div class="rd-sec__head"><span class="rd-sec__title">في البريك</span></div>
-              <div class="rd-list rd-break-list">${renderStaffBreaksListHtml()}</div>
-            </div>
-            <div class="rd-sec rd-break-list-sec">
-              <div class="rd-sec__head"><span class="rd-sec__title">السجل</span></div>
-              <div class="rd-list rd-break-list">${renderStaffBreakRosterHtml()}</div>
+            <div class="rd-breaks-page__body">
+              ${renderStaffBreakRingHtml()}
+              <div class="rd-breaks-page__lists">
+                <div class="rd-sec rd-break-list-sec">
+                  <div class="rd-sec__head"><span class="rd-sec__title">في البريك</span></div>
+                  <div class="rd-list rd-break-list">${renderStaffBreaksListHtml()}</div>
+                </div>
+                <div class="rd-sec rd-break-list-sec">
+                  <div class="rd-sec__head"><span class="rd-sec__title">السجل</span></div>
+                  <div class="rd-list rd-break-list">${renderStaffBreakRosterHtml()}</div>
+                </div>
+              </div>
             </div>
           </div>`;
         host.hidden = false;
@@ -35560,11 +35576,12 @@
         if (!tab) return;
         const softPaint = !!opts.soft;
         let settleAfterLoad = false;
+        const useAthar = typeof isStaffBreaksAtharUi === 'function' && isStaffBreaksAtharUi();
         if (softPaint) beginRdSoftPaint();
         try {
           if (!opts.soft) {
             // Keep redesign host visible during load so the tab isn't a blank flash
-            if (isAtharRedesignUi()) {
+            if (useAthar) {
               const rd = document.getElementById('rdBreaks');
               const classic = document.getElementById('breaksClassicHost');
               if (classic) classic.hidden = true;
@@ -35583,7 +35600,7 @@
             beginRdSoftPaint();
             settleAfterLoad = true;
           }
-          if (isAtharRedesignUi()) {
+          if (useAthar) {
             const classic = document.getElementById('breaksClassicHost');
             if (classic) classic.hidden = true;
             renderStaffBreaksRedesign();
