@@ -2295,8 +2295,8 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px), screen and (hover: hover) and (pointer: fine)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px), screen and (hover: hover) and (pointer: fine)">
   <!-- Redesign AFTER classic desktop shells so sidebar/chrome overrides win -->
-  <link rel="stylesheet" href="styles/custom/athar-redesign-staging.css?v=desk26" id="athar-redesign-staging">
-  <link rel="stylesheet" href="styles/custom/athar-desktop-screens.css?v=desk26" id="athar-desktop-screens">
+  <link rel="stylesheet" href="styles/custom/athar-redesign-staging.css?v=desk27" id="athar-redesign-staging">
+  <link rel="stylesheet" href="styles/custom/athar-desktop-screens.css?v=desk27" id="athar-desktop-screens">
   <style id="mr-topbar-dark-fix" media="screen and (min-width: 993px), screen and (hover: hover) and (pointer: fine)">
     html[data-theme="dark"].mr-desktop-ui #appWrap .topbar.unified-banner,
     html[data-theme="dark"].mr-desktop-ui .topbar.unified-banner {
@@ -4281,8 +4281,9 @@
               <h3 id="td-id">-</h3>
               <span class="badge" id="td-badge">-</span>
             </div>
-            <!-- Redesign header (staging mobile) — Athar Redesign Standalone (2) -->
+            <!-- Redesign header — Athar Desktop/Mobile -->
             <div class="rd-td-hd" id="rdTdHd" hidden>
+              <div class="rd-td-hd__av" id="rd-td-av" aria-hidden="true">؟</div>
               <div class="rd-td-hd__main">
                 <div class="rd-td-hd__name" id="rd-td-name">—</div>
                 <div class="rd-td-hd__type" id="rd-td-type">—</div>
@@ -4291,6 +4292,9 @@
                 <span class="rd-td-hd__badge" id="rd-td-badge">—</span>
                 <div class="rd-td-hd__id" id="rd-td-num">#—</div>
               </div>
+              <button type="button" class="rd-td-hd__close" onclick="closeModal('ticketModal')" aria-label="إغلاق">
+                <i class="fas fa-xmark" aria-hidden="true"></i>
+              </button>
             </div>
             <div class="td-header-actions">
               <button type="button" class="ui-btn ui-btn--default ui-btn--sm td-print-btn" onclick="printTicketDetail()"
@@ -4578,7 +4582,7 @@
 
     <div id="rdCmplOverlayHost"></div>
     <div id="rdSchOverlayHost"></div>
-    <script src="js/app.js?v=desk26"></script>
+    <script src="js/app.js?v=desk27"></script>
         <style>
       @media (max-width: 992px) {
         /* ── workflow: منع التمدد الأفقي ── */

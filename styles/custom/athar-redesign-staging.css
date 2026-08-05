@@ -2603,6 +2603,10 @@ html.athar-staging-redesign.mr-mobile-ui #ticketModal #rdTdHd[hidden] {
   display: none !important;
 }
 .rd-td-hd__main { flex: 1; min-width: 0; }
+.rd-td-hd__av,
+.rd-td-hd__close {
+  display: none;
+}
 .rd-td-hd__name {
   font-size: 14.5px;
   font-weight: 700;

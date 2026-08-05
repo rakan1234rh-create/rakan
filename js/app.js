@@ -20474,8 +20474,14 @@
         const typeEl = document.getElementById('rd-td-type');
         const badgeEl = document.getElementById('rd-td-badge');
         const numEl = document.getElementById('rd-td-num');
-        if (nameEl) nameEl.textContent = t._empName || '—';
+        const avEl = document.getElementById('rd-td-av');
+        const empName = t._empName || '—';
+        if (nameEl) nameEl.textContent = empName;
         if (typeEl) typeEl.textContent = t.violation_type || '—';
+        if (avEl) {
+          const initial = String(empName).trim().charAt(0) || '؟';
+          avEl.textContent = initial;
+        }
         if (badgeEl) {
           const status = t.status_text || STATE_LABELS[t.state] || '—';
           const tone = rdTicketStatusTone(t);
@@ -20483,10 +20489,10 @@
           badgeEl.style.color = tone.color;
           badgeEl.style.background = tone.soft;
         }
-        // رقم المخالفة مخفي في إعادة التصميم (يبقى في الواجهة الكلاسيكية فقط)
         if (numEl) {
-          numEl.textContent = '';
-          numEl.hidden = true;
+          const num = shortTicketNum(t.ticket_number) || t.id || '—';
+          numEl.textContent = '#' + num;
+          numEl.hidden = false;
         }
       }
 
@@ -20646,8 +20652,9 @@
 
         const useRdInfo = (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi())
           || isAtharDesktopScreenUi();
+        const deskTd = isAtharDesktopScreenUi();
         const rows = [
-          ...(useRdInfo ? [] : [['رقم التذكرة', shortTicketNum(t.ticket_number)]]),
+          ...((useRdInfo && !deskTd) ? [] : [['رقم التذكرة', shortTicketNum(t.ticket_number)]]),
           ['الحالة', t.status_text || STATE_LABELS[t.state]],
           ['الموظف', `${t._empName} (${t._empNumber || '-'})`],
           ['الفرع', t._branchName],
@@ -20661,7 +20668,7 @@
 
         // الراصد - يظهر فقط لمن يحق له (بعد وقت المخالفة)
         if (!hideObs && t.observer_id) {
-          const obsAt = useRdInfo ? 7 : 8;
+          const obsAt = (useRdInfo && !deskTd) ? 7 : 8;
           rows.splice(obsAt, 0, ['الراصد', t._obsName]);
         }
 
@@ -32861,8 +32868,14 @@
           if (e.target.id === 'violDetailModal') {
             if (!e.target.closest('.viol-paper-sheet')) closeViolDetailSheet();
           } else if (e.target.id === 'ticketModal') {
-            if (!e.target.closest('.td-mob-sheet')) closeTicketSheet();
-          } else closeModal(e.target.id);
+            if (typeof isViolDetailMobSheet === 'function' && isViolDetailMobSheet()) {
+              if (!e.target.closest('.td-mob-sheet')) closeTicketSheet();
+            } else {
+              closeModal('ticketModal');
+            }
+          } else {
+            closeModal(e.target.id);
+          }
         }
       });
 
