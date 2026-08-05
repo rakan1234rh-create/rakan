@@ -1,0 +1,284 @@
+-- Stop closes a session (ended). Start with remaining mint creates a NEW session row.
+-- Session model: start→stop = جلسة 1, start→stop again = جلسة 2, …
+
+-- Close any legacy paused rows as ended sessions so they leave «في البريك الآن»
+UPDATE public.staff_breaks
+SET
+  status = 'ended',
+  ended_at = COALESCE(paused_at, now()),
+  paused_at = NULL,
+  updated_at = now()
+WHERE status = 'paused';
+
+CREATE OR REPLACE FUNCTION public.end_staff_break(
+  p_break_id uuid,
+  p_overtime_reason text DEFAULT NULL
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_uid uuid := public.current_user_id();
+  v_row public.staff_breaks%ROWTYPE;
+  v_elapsed integer;
+  v_remaining integer;
+  v_reason text := NULLIF(trim(COALESCE(p_overtime_reason, '')), '');
+  v_reason_after integer := 300; -- 5 minutes
+BEGIN
+  IF v_uid IS NULL OR NOT public.current_user_is_active() THEN
+    RETURN jsonb_build_object('ok', false, 'error', 'يجب تسجيل الدخول');
+  END IF;
+
+  SELECT * INTO v_row
+  FROM public.staff_breaks
+  WHERE id = p_break_id AND status = 'active'
+  FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object('ok', false, 'error', 'لا يوجد بريك نشط');
+  END IF;
+
+  IF v_row.user_id <> v_uid AND public.current_user_role() <> 'admin' THEN
+    RETURN jsonb_build_object('ok', false, 'error', 'لا يمكنك إيقاف بريك موظف آخر');
+  END IF;
+
+  v_elapsed := GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (now() - v_row.started_at)))::integer);
+  v_remaining := COALESCE(v_row.remaining_seconds, v_row.planned_duration_minutes * 60) - v_elapsed;
+
+  IF v_remaining < -v_reason_after AND v_reason IS NULL THEN
+    RETURN jsonb_build_object(
+      'ok', false,
+      'needs_reason', true,
+      'overtime_seconds', ABS(v_remaining),
+      'error', 'تجاوزت المدة بأكثر من 5 دقائق — أضف سبب التجاوز'
+    );
+  END IF;
+
+  UPDATE public.staff_breaks
+  SET
+    status = 'ended',
+    ended_at = now(),
+    paused_at = NULL,
+    remaining_seconds = v_remaining,
+    used_seconds = COALESCE(used_seconds, 0) + v_elapsed,
+    overtime_seconds = CASE WHEN v_remaining < 0 THEN ABS(v_remaining) ELSE NULL END,
+    overtime_reason = CASE
+      WHEN v_remaining < -v_reason_after THEN v_reason
+      ELSE NULL
+    END,
+    updated_at = now()
+  WHERE id = v_row.id
+  RETURNING * INTO v_row;
+
+  RETURN jsonb_build_object(
+    'ok', true,
+    'paused', false,
+    'ended', true,
+    'can_restart', (v_remaining > 0),
+    'break', to_jsonb(v_row)
+  );
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.start_staff_break()
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_uid uuid := public.current_user_id();
+  v_role text := public.current_user_role();
+  v_branch uuid;
+  v_region uuid;
+  v_mins integer;
+  v_row public.staff_breaks%ROWTYPE;
+  v_prev public.staff_breaks%ROWTYPE;
+  v_today date := public.staff_break_today_ksa();
+  v_busy_name text;
+  v_remaining integer;
+BEGIN
+  IF v_uid IS NULL OR NOT public.current_user_is_active() THEN
+    RETURN jsonb_build_object('ok', false, 'error', 'يجب تسجيل الدخول');
+  END IF;
+
+  IF v_role NOT IN ('employee', 'branch_manager', 'observer') THEN
+    RETURN jsonb_build_object('ok', false, 'error', 'دورك لا يسمح ببدء بريك');
+  END IF;
+
+  PERFORM public.close_stale_staff_breaks();
+
+  SELECT * INTO v_row
+  FROM public.staff_breaks
+  WHERE user_id = v_uid AND status = 'active' AND day_key = v_today
+  LIMIT 1;
+  IF FOUND THEN
+    RETURN jsonb_build_object('ok', false, 'error', 'لديك بريك نشط بالفعل', 'break', to_jsonb(v_row));
+  END IF;
+
+  SELECT u.branch_id, b.region_id
+    INTO v_branch, v_region
+  FROM public.users u
+  LEFT JOIN public.branches b ON b.id = u.branch_id
+  WHERE u.id = v_uid;
+
+  IF v_branch IS NOT NULL THEN
+    SELECT u.name INTO v_busy_name
+    FROM public.staff_breaks sb
+    JOIN public.users u ON u.id = sb.user_id
+    WHERE sb.branch_id = v_branch
+      AND sb.status = 'active'
+      AND sb.day_key = v_today
+      AND sb.user_id <> v_uid
+    ORDER BY sb.started_at DESC
+    LIMIT 1;
+
+    IF v_busy_name IS NOT NULL THEN
+      RETURN jsonb_build_object(
+        'ok', false,
+        'branch_busy', true,
+        'busy_name', v_busy_name,
+        'error', 'يوجد زميل في بريك حالياً (' || v_busy_name || ') — انتظر حتى يعود'
+      );
+    END IF;
+  END IF;
+
+  -- Legacy paused rows: close as ended session, then mint a NEW session with remaining
+  SELECT * INTO v_prev
+  FROM public.staff_breaks
+  WHERE user_id = v_uid AND status = 'paused' AND day_key = v_today
+  ORDER BY updated_at DESC
+  LIMIT 1
+  FOR UPDATE;
+
+  IF FOUND THEN
+    v_remaining := COALESCE(v_prev.remaining_seconds, 0);
+    UPDATE public.staff_breaks
+    SET
+      status = 'ended',
+      ended_at = COALESCE(paused_at, now()),
+      paused_at = NULL,
+      updated_at = now()
+    WHERE id = v_prev.id;
+
+    IF v_remaining <= 0 THEN
+      RETURN jsonb_build_object(
+        'ok', false,
+        'exhausted', true,
+        'error', 'خلصت مدة بريك اليوم'
+      );
+    END IF;
+
+    INSERT INTO public.staff_breaks (
+      user_id, branch_id, region_id, planned_duration_minutes,
+      remaining_seconds, used_seconds, started_at, status, day_key
+    ) VALUES (
+      v_uid,
+      COALESCE(v_prev.branch_id, v_branch),
+      COALESCE(v_prev.region_id, v_region),
+      v_prev.planned_duration_minutes,
+      v_remaining,
+      0,
+      now(),
+      'active',
+      v_today
+    )
+    RETURNING * INTO v_row;
+
+    RETURN jsonb_build_object('ok', true, 'resumed', false, 'new_session', true, 'break', to_jsonb(v_row));
+  END IF;
+
+  -- Prior ended session with remaining → new session (do not reopen the same row)
+  SELECT * INTO v_prev
+  FROM public.staff_breaks
+  WHERE user_id = v_uid
+    AND status = 'ended'
+    AND day_key = v_today
+    AND COALESCE(remaining_seconds, 0) > 0
+  ORDER BY ended_at DESC NULLS LAST, updated_at DESC
+  LIMIT 1
+  FOR UPDATE;
+
+  IF FOUND THEN
+    v_remaining := COALESCE(v_prev.remaining_seconds, 0);
+    INSERT INTO public.staff_breaks (
+      user_id, branch_id, region_id, planned_duration_minutes,
+      remaining_seconds, used_seconds, started_at, status, day_key
+    ) VALUES (
+      v_uid,
+      COALESCE(v_prev.branch_id, v_branch),
+      COALESCE(v_prev.region_id, v_region),
+      v_prev.planned_duration_minutes,
+      v_remaining,
+      0,
+      now(),
+      'active',
+      v_today
+    )
+    RETURNING * INTO v_row;
+
+    RETURN jsonb_build_object('ok', true, 'resumed', false, 'new_session', true, 'break', to_jsonb(v_row));
+  END IF;
+
+  -- Exhausted: ended today with no remaining
+  IF EXISTS (
+    SELECT 1
+    FROM public.staff_breaks
+    WHERE user_id = v_uid
+      AND day_key = v_today
+      AND status = 'ended'
+      AND COALESCE(remaining_seconds, 0) <= 0
+  ) THEN
+    RETURN jsonb_build_object(
+      'ok', false,
+      'exhausted', true,
+      'error', 'خلصت مدة بريك اليوم'
+    );
+  END IF;
+
+  -- Any leftover open/unknown day rows without remaining → treat as exhausted
+  IF EXISTS (
+    SELECT 1
+    FROM public.staff_breaks
+    WHERE user_id = v_uid
+      AND day_key = v_today
+  ) THEN
+    RETURN jsonb_build_object(
+      'ok', false,
+      'exhausted', true,
+      'error', 'خلصت مدة بريك اليوم'
+    );
+  END IF;
+
+  v_mins := public.resolve_staff_break_duration(v_uid, v_branch, v_region);
+
+  IF v_mins IS NULL THEN
+    RETURN jsonb_build_object(
+      'ok', false,
+      'no_schedule_today', true,
+      'error', 'لا يوجد بريك مجدول لهذا اليوم'
+    );
+  END IF;
+
+  INSERT INTO public.staff_breaks (
+    user_id, branch_id, region_id, planned_duration_minutes,
+    remaining_seconds, used_seconds, started_at, status, day_key
+  ) VALUES (
+    v_uid, v_branch, v_region, v_mins,
+    v_mins * 60, 0, now(), 'active', v_today
+  )
+  RETURNING * INTO v_row;
+
+  RETURN jsonb_build_object('ok', true, 'resumed', false, 'new_session', true, 'break', to_jsonb(v_row));
+END;
+$function$;
+
+GRANT EXECUTE ON FUNCTION public.start_staff_break() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.end_staff_break(uuid, text) TO authenticated;
+
+COMMENT ON FUNCTION public.end_staff_break(uuid, text) IS
+  'Closes the active break as an ended session. Remaining time can start a new session later.';
+COMMENT ON FUNCTION public.start_staff_break() IS
+  'Starts a break session. Each start after a stop creates a new staff_breaks row (جلسة).';
