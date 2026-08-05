@@ -35123,6 +35123,86 @@
         );
       }
 
+      function getBreakStatusFilter() {
+        return state._breakStatusFilter || 'all';
+      }
+
+      function setBreakStatusFilter(key) {
+        state._breakStatusFilter = key || 'all';
+        if (typeof renderStaffBreaksPage === 'function') renderStaffBreaksPage({ soft: true });
+      }
+
+      function getBreakPreviewRole() {
+        return state._breakPreviewRole || 'auto';
+      }
+
+      function setBreakPreviewRole(key) {
+        state._breakPreviewRole = key || 'auto';
+        if (typeof renderStaffBreaksPage === 'function') renderStaffBreaksPage({ soft: true });
+      }
+
+      function getBreakDeskShowCard() {
+        if (!(typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi())) {
+          return canTakeStaffBreak();
+        }
+        const preview = getBreakPreviewRole();
+        if (preview === 'admin' || preview === 'supervisor') return false;
+        if (preview === 'employee') return true;
+        return canTakeStaffBreak();
+      }
+
+      function renderBreaksDeskToolbarHtml() {
+        const filter = getBreakStatusFilter();
+        const preview = getBreakPreviewRole();
+        const role = normalizeUserRole(state.currentUser?.role);
+        const canLogs = canViewStaffBreakHistory();
+        const roleOpts = [
+          { key: 'employee', label: 'موظف / راصد / مدير فرع' },
+          { key: 'supervisor', label: 'مشرف' },
+          { key: 'admin', label: 'أدمن' }
+        ];
+        // تلقائي = دور المستخدم الحقيقي
+        const effectivePreview = preview === 'auto'
+          ? (role === 'admin' ? 'admin' : (role === 'supervisor' ? 'supervisor' : 'employee'))
+          : preview;
+        const roleBtns = roleOpts.map(ro => {
+          const on = effectivePreview === ro.key;
+          return `<button type="button" class="rd-breaks-toolchip${on ? ' is-on' : ''}" onclick="setBreakPreviewRole('${ro.key}')">${Sec.escapeHTML(ro.label)}</button>`;
+        }).join('');
+        const filters = [
+          { key: 'all', label: 'الكل' },
+          { key: 'active', label: 'في البريك الآن' },
+          { key: 'paused', label: 'متوقف مؤقت' },
+          { key: 'overage', label: 'تجاوز المدة' },
+          { key: 'ended', label: 'انتهى' }
+        ].map(f => {
+          const on = filter === f.key;
+          return `<button type="button" class="rd-breaks-toolchip${on ? ' is-on' : ''}" onclick="setBreakStatusFilter('${f.key}')">${Sec.escapeHTML(f.label)}</button>`;
+        }).join('');
+        const logsHint = (effectivePreview === 'employee')
+          ? `<label class="rd-breaks-toolbar__logs">
+               <input type="checkbox" ${canLogs ? 'checked' : ''} disabled>
+               أنت راصد أو مدير فرع (يمكنك فتح سجل الموظفين)
+             </label>`
+          : '';
+        return `
+          <div class="rd-breaks-toolbar">
+            <span class="rd-breaks-toolbar__lbl">معاينة كـ</span>
+            <div class="rd-breaks-toolbar__roles">${roleBtns}</div>
+            ${logsHint}
+            <div class="rd-breaks-toolbar__filters">
+              <span class="rd-breaks-toolbar__lbl">تصفية القوائم:</span>
+              ${filters}
+            </div>
+          </div>`;
+      }
+
+      function breakRowMatchesFilter(kind) {
+        const filter = getBreakStatusFilter();
+        if (filter === 'all') return true;
+        return filter === kind;
+      }
+
       function formatBreakDurationLabel(mins) {
         const n = Math.max(0, Number(mins) || 0);
         if (n >= 60) return 'ساعة';
@@ -35271,7 +35351,9 @@
       }
 
       function renderStaffBreakRingHtml() {
-        if (!canTakeStaffBreak()) return '';
+        const desk = typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi();
+        if (!getBreakDeskShowCard()) return '';
+        const viewOnly = !canTakeStaffBreak();
         const open = getMyOpenStaffBreak();
         const active = open?.status === 'active' ? open : null;
         const isPaused = open?.status === 'paused';
@@ -35279,13 +35361,14 @@
         const plannedSec = Math.max(1, (Number(open?.planned_duration_minutes) || state._myBreakDurationMins || 15) * 60);
         const remaining = getMyDisplayBreakSeconds();
         const overtime = !!(active && remaining < 0);
-        const exhausted = !active && !isPaused && isMyBreakAllowanceExhausted();
-        const unscheduledToday = !active && !isPaused && !exhausted && isMyBreakUnscheduledToday();
-        const readyMins = state._myBreakDurationMins || Math.round(plannedSec / 60);
+        const exhausted = !viewOnly && !active && !isPaused && isMyBreakAllowanceExhausted();
+        const unscheduledToday = !viewOnly && !active && !isPaused && !exhausted && isMyBreakUnscheduledToday();
+        const readyMins = state._myBreakDurationMins || Math.round(plannedSec / 60) || 15;
         const durationLbl = formatBreakDurationLabel(readyMins);
 
         let kind = 'ready';
-        if (overtime) kind = 'overage';
+        if (viewOnly) kind = 'viewOnly';
+        else if (overtime) kind = 'overage';
         else if (active) kind = 'active';
         else if (isPaused) kind = 'paused';
         else if (exhausted) kind = 'depleted';
@@ -35330,6 +35413,11 @@
             badge: '', badgeColor: '', ring: 'var(--text3)',
             center: durationLbl, centerColor: 'var(--text3)', icon: '', actions: 'disabled',
             note: `زميل في بريك الآن (${colleague?._userName || '—'}) — انتظر حتى يعود`
+          },
+          viewOnly: {
+            badge: '', badgeColor: '', ring: 'var(--text3)',
+            center: '', centerColor: 'var(--text3)', icon: 'fa-eye', actions: 'none',
+            note: 'دورك الحالي للعرض فقط'
           }
         };
         const def = defs[kind] || defs.ready;
@@ -35338,7 +35426,6 @@
         if (def.actions === 'start') {
           actionsHtml = `<button type="button" class="rd-break-btn rd-break-btn--gold" onclick="startStaffBreakFromUi()">بدء البريك</button>`;
         } else if (def.actions === 'stopWithPause') {
-          // الخادم يجعل end_staff_break إيقافاً مؤقتاً عند بقاء مدة — الزران يطابقان الموك أب بصرياً
           actionsHtml = `
             <button type="button" class="rd-break-btn rd-break-btn--danger" onclick="endStaffBreakFromUi()">إيقاف البريك</button>
             <button type="button" class="rd-break-btn rd-break-btn--ghost" onclick="endStaffBreakFromUi()">إيقاف مؤقت</button>`;
@@ -35372,7 +35459,7 @@
               <svg width="168" height="168" viewBox="0 0 132 132" aria-hidden="true">
                 <circle cx="66" cy="66" r="54" fill="none" stroke="var(--border)" stroke-width="10"></circle>
                 <circle data-break-ring-progress cx="66" cy="66" r="54" fill="none" stroke="${def.ring}" stroke-width="10"
-                  stroke-linecap="round" stroke-dasharray="${circ}" stroke-dashoffset="${open || isPaused ? offset : 0}"></circle>
+                  stroke-linecap="round" stroke-dasharray="${circ}" stroke-dashoffset="${(open || isPaused) && !viewOnly ? offset : 0}"></circle>
               </svg>
               <div class="rd-streak__center">
                 ${centerHtml}
@@ -35406,7 +35493,16 @@
 
       function renderStaffBreaksListHtml() {
         // «في البريك الآن»: الجاري + المتوقف مؤقتاً
-        const rows = getActiveStaffBreakLiveRows();
+        let rows = getActiveStaffBreakLiveRows();
+        rows = rows.filter(b => {
+          const paused = b.status === 'paused';
+          const rem = getBreakRemainingSeconds(b);
+          const over = !paused && rem < 0;
+          const kind = paused ? 'paused' : (over ? 'overage' : 'active');
+          return breakRowMatchesFilter(kind);
+        });
+        // تصفية «انتهى» لا تعرض أحداً في قائمة الجاري
+        if (getBreakStatusFilter() === 'ended') rows = [];
         if (!rows.length) {
           return '<div class="rd-break-empty-panel">لا يوجد أحد في بريك حالياً</div>';
         }
@@ -35452,7 +35548,20 @@
             .filter(b => b.status === 'active' || b.status === 'paused')
             .map(b => b.user_id)
         );
-        const users = getBreakRosterUsers().filter(u => !liveIds.has(u.id));
+        const users = getBreakRosterUsers().filter(u => !liveIds.has(u.id)).filter(u => {
+          const remSec = getUserBreakRemainingSeconds(u);
+          const mins = Math.max(0, Math.ceil(remSec / 60));
+          const dayRow = state.staffBreakDayByUser?.[u.id];
+          const overSec = dayRow?.status === 'ended' ? getStaffBreakOvertimeSeconds(dayRow) : 0;
+          const overEnded = overSec > 0;
+          const unscheduled = !dayRow && !resolveBreakDurationMinsForUser(u);
+          const depleted = !overEnded && (dayRow?.status === 'ended' || mins <= 0);
+          const filter = getBreakStatusFilter();
+          if (filter === 'all') return true;
+          if (filter === 'active' || filter === 'paused' || filter === 'overage') return false;
+          if (filter === 'ended') return overEnded || depleted || unscheduled;
+          return true;
+        });
         if (!users.length) {
           return '<div class="rd-break-empty-panel">لا توجد نتائج مطابقة</div>';
         }
@@ -35642,7 +35751,13 @@
         const host = document.getElementById('rdBreaks');
         if (!host) return;
         const desk = typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi();
-        const manageBtn = canManageStaffBreakSchedules()
+        const preview = getBreakPreviewRole();
+        const role = normalizeUserRole(state.currentUser?.role);
+        const effectivePreview = preview === 'auto'
+          ? (role === 'admin' ? 'admin' : (role === 'supervisor' ? 'supervisor' : 'employee'))
+          : preview;
+        const showManage = canManageStaffBreakSchedules() && (!desk || effectivePreview === 'admin');
+        const manageBtn = showManage
           ? (desk
             ? `<button type="button" class="rd-breaks-page__manage" onclick="openBreakScheduleModal()">
                  <i class="fas fa-sliders" aria-hidden="true"></i>تعديل مدة البريك
@@ -35653,7 +35768,8 @@
           ? `<div class="rd-breaks-page__head">
               <p class="rd-breaks-page__intro">بدء/إيقاف بريكك، ومتابعة من في بريك الآن ومن المتاح. شخص واحد فقط من نفس الفرع يكون في بريك نشط بنفس الوقت.</p>
               ${manageBtn}
-            </div>`
+            </div>
+            ${renderBreaksDeskToolbarHtml()}`
           : `<div class="rd-breaks-page__head">
               <h2 class="rd-breaks-page__title">بريكات الموظفين</h2>
               ${manageBtn}
@@ -35999,6 +36115,8 @@
       window.startStaffBreakFromUi = startStaffBreakFromUi;
       window.endStaffBreakFromUi = endStaffBreakFromUi;
       window.submitBreakOvertimeReason = submitBreakOvertimeReason;
+      window.setBreakStatusFilter = setBreakStatusFilter;
+      window.setBreakPreviewRole = setBreakPreviewRole;
       window.openBreakScheduleModal = openBreakScheduleModal;
       window.saveBreakScheduleFromUi = saveBreakScheduleFromUi;
       window.syncBreakScheduleScopeFields = syncBreakScheduleScopeFields;
