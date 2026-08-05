@@ -2295,8 +2295,8 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px), screen and (hover: hover) and (pointer: fine)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px), screen and (hover: hover) and (pointer: fine)">
   <!-- Redesign AFTER classic desktop shells so sidebar/chrome overrides win -->
-  <link rel="stylesheet" href="styles/custom/athar-redesign-staging.css?v=desk44" id="athar-redesign-staging">
-  <link rel="stylesheet" href="styles/custom/athar-desktop-screens.css?v=desk44" id="athar-desktop-screens">
+  <link rel="stylesheet" href="styles/custom/athar-redesign-staging.css?v=desk45" id="athar-redesign-staging">
+  <link rel="stylesheet" href="styles/custom/athar-desktop-screens.css?v=desk45" id="athar-desktop-screens">
   <style id="mr-topbar-dark-fix" media="screen and (min-width: 993px), screen and (hover: hover) and (pointer: fine)">
     html[data-theme="dark"].mr-desktop-ui #appWrap .topbar.unified-banner,
     html[data-theme="dark"].mr-desktop-ui .topbar.unified-banner {
@@ -4049,15 +4049,24 @@
 
     <div class="modal" id="breakHistoryModal" role="dialog" aria-modal="true" aria-labelledby="breakHistTitle">
       <div class="modal-card break-history-card">
-        <div class="modal-header">
-          <h3 id="breakHistTitle">سجل بريكات الموظف</h3>
-          <span class="break-history-empnum" id="breakHistEmpNum" title="الرقم الوظيفي" aria-label="الرقم الوظيفي">—</span>
+        <div class="modal-header break-history-hd">
+          <div class="break-history-hd__av" id="breakHistAv" aria-hidden="true">م</div>
+          <div class="break-history-hd__main">
+            <h3 id="breakHistTitle">سجل بريكات الموظف</h3>
+            <span class="break-history-empnum" id="breakHistEmpNum" title="الرقم الوظيفي" aria-label="الرقم الوظيفي">—</span>
+          </div>
+          <button type="button" class="break-history-hd__close" onclick="closeModal('breakHistoryModal')" aria-label="إغلاق">
+            <i class="fas fa-xmark" aria-hidden="true"></i>
+          </button>
         </div>
+        <div class="break-history-meta" id="breakHistMeta"></div>
         <div class="modal-body">
+          <div class="break-history-live" id="breakHistLive" hidden></div>
+          <p class="break-history-sessions-lbl">جلسات اليوم</p>
           <p class="break-history-sub" id="breakHistSub"></p>
           <div id="breakHistList" class="break-history-list" aria-live="polite"></div>
         </div>
-        <div class="modal-footer">
+        <div class="modal-footer break-history-footer">
           <button type="button" class="btn btn-primary" onclick="closeModal('breakHistoryModal')">إغلاق</button>
         </div>
       </div>
@@ -4583,7 +4592,7 @@
 
     <div id="rdCmplOverlayHost"></div>
     <div id="rdSchOverlayHost"></div>
-    <script src="js/app.js?v=desk44"></script>
+    <script src="js/app.js?v=desk45"></script>
         <style>
       @media (max-width: 992px) {
         /* ── workflow: منع التمدد الأفقي ── */

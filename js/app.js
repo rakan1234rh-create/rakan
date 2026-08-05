@@ -35688,14 +35688,41 @@
         const u = state._userById?.get(userId) || state.users.find(x => x.id === userId);
         const title = document.getElementById('breakHistTitle');
         const empNumEl = document.getElementById('breakHistEmpNum');
+        const avEl = document.getElementById('breakHistAv');
+        const metaEl = document.getElementById('breakHistMeta');
+        const liveEl = document.getElementById('breakHistLive');
         const sub = document.getElementById('breakHistSub');
         const list = document.getElementById('breakHistList');
-        if (title) title.textContent = u?.name ? `سجل بريكات · ${u.name}` : 'سجل بريكات الموظف';
+        const name = u?.name || 'الموظف';
+        if (title) title.textContent = name;
+        if (avEl) avEl.textContent = (String(name).trim().charAt(0) || 'م');
         if (empNumEl) {
           const empNum = u?.employee_number ? padEmpNum(u.employee_number) : '';
           empNumEl.textContent = empNum && empNum !== '-' ? empNum : '—';
         }
-        if (sub) sub.textContent = `جلسات اليوم (${getStaffBreakTodayKey()}) — كل بدء جديد يظهر كسجل منفصل`;
+        if (metaEl) {
+          const roleKey = normalizeUserRole(u?.role);
+          const roleLbl = ROLE_LABELS[roleKey] || getStaffJobTitle(u) || '—';
+          const branch = state._branchById?.get(u?.branch_id) || state.branches.find(b => b.id === u?.branch_id);
+          metaEl.textContent = `${roleLbl} · ${branch?.name || '—'}`;
+        }
+        const openBrk = (state.staffBreaks || []).find(b =>
+          b.user_id === userId && (b.status === 'active' || b.status === 'paused')
+        );
+        if (liveEl) {
+          if (openBrk) {
+            const rem = getBreakRemainingSeconds(openBrk);
+            let liveLabel = 'جارية الآن';
+            if (openBrk.status === 'paused') liveLabel = 'متوقفة مؤقتاً';
+            else if (rem < 0) liveLabel = `جارية الآن — تجاوز ${formatBreakOverageClock(rem)}`;
+            liveEl.hidden = false;
+            liveEl.innerHTML = `<span class="break-history-live__dot" aria-hidden="true"></span><span>${Sec.escapeHTML(liveLabel)}</span>`;
+          } else {
+            liveEl.hidden = true;
+            liveEl.innerHTML = '';
+          }
+        }
+        if (sub) sub.textContent = `اليوم (${getStaffBreakTodayKey()}) — كل بدء جديد يظهر كسجل منفصل`;
         if (list) list.innerHTML = '<div class="break-history-empty">جاري التحميل…</div>';
         openModal('breakHistoryModal');
         try {
