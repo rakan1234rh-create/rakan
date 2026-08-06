@@ -47,6 +47,64 @@ html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-filters-toolba
   margin: 0 0 14px !important;
 }
 
+/* نفس شريط بحث صفحة الجداول */
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-filters-toolbar .wf-search,
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-filters-toolbar .figma-search-wrap {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex: 1 1 280px !important;
+  min-width: 200px !important;
+  width: auto !important;
+  max-width: none !important;
+  height: auto !important;
+  min-height: 0 !important;
+  padding: 10px 14px !important;
+  background: var(--searchFill) !important;
+  border: none !important;
+  border-radius: 10px !important;
+  box-shadow: none !important;
+  direction: rtl !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-filters-toolbar .wf-search::before,
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-filters-toolbar .figma-search-wrap::before {
+  content: "\f002" !important;
+  font-family: "Font Awesome 6 Free" !important;
+  font-weight: 900 !important;
+  color: var(--text3) !important;
+  font-size: 12px !important;
+  flex-shrink: 0 !important;
+  line-height: 1 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-filters-toolbar .wf-search .figma-search-btn,
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-filters-toolbar .figma-search-wrap .figma-search-btn {
+  display: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-filters-toolbar .wf-search .figma-search-input,
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-filters-toolbar .figma-search-wrap .figma-search-input {
+  flex: 1 !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  height: auto !important;
+  padding: 0 !important;
+  font-size: 12.5px !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+  text-align: start !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-filters-toolbar .figma-search-input::placeholder {
+  font-size: 12.5px !important;
+  color: var(--text3) !important;
+  opacity: 1 !important;
+  letter-spacing: 0 !important;
+}
+
 html.athar-staging-redesign.mr-desktop-ui #tab-newTicket > .panel {
   display: block !important;
   visibility: visible !important;
