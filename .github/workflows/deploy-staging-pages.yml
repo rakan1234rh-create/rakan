@@ -14,6 +14,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
   pages: write
   id-token: write
 
@@ -105,39 +106,85 @@ jobs:
     environment:
       name: github-pages
       url: https://athar-app.online/staging/
-    timeout-minutes: 45
-    env:
-      ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    # أطول من طابور Pages؛ نستطلع بدون إلغاء حتى لا يُسمَّم الـ SHA
+    timeout-minutes: 50
     steps:
       - name: Pause before Pages deploy
-        run: sleep 45
+        run: sleep 30
 
-      # مهلة deploy-pages القصوى 10 دقائق؛ عند الفشل ننتظر ثم نعيد المحاولة مرة واحدة
-      - name: Deploy to GitHub Pages
+      # لا نستخدم actions/deploy-pages: مهلتها 10 دقائق ثم تلغي النشر،
+      # وإعادة المحاولة لنفس الـ SHA تعطي فوراً «Deployment cancelled».
+      - name: Deploy to GitHub Pages (long poll, no cancel)
         id: deployment
-        continue-on-error: true
-        uses: actions/deploy-pages@v4
+        uses: actions/github-script@v7
         with:
-          timeout: 600000
-          error_count: 40
-          reporting_interval: 5000
+          script: |
+            const owner = context.repo.owner
+            const repo = context.repo.repo
+            const sha = context.sha
+            const pollMs = 15000
+            const maxWaitMs = 40 * 60 * 1000
+            const started = Date.now()
 
-      - name: Wait after failed/canceled Pages deploy
-        if: steps.deployment.outcome == 'failure'
-        run: sleep 90
+            const artifacts = await github.rest.actions.listWorkflowRunArtifacts({
+              owner,
+              repo,
+              run_id: context.runId,
+              per_page: 100
+            })
+            const artifact = artifacts.data.artifacts.find((a) => a.name === 'github-pages' && !a.expired)
+            if (!artifact) {
+              throw new Error('github-pages artifact not found for this run')
+            }
+            core.info(`Using artifact_id=${artifact.id}`)
 
-      - name: Soft-retry Pages deploy
-        id: deployment_retry
-        if: steps.deployment.outcome == 'failure'
-        uses: actions/deploy-pages@v4
-        with:
-          timeout: 600000
-          error_count: 40
-          reporting_interval: 5000
+            const oidcToken = await core.getIDToken()
+            const created = await github.request('POST /repos/{owner}/{repo}/pages/deployments', {
+              owner,
+              repo,
+              artifact_id: artifact.id,
+              pages_build_version: sha,
+              oidc_token: oidcToken
+            })
+            // واجهة Pages تستخدم غالباً الـ SHA كمعرّف للنشر
+            const pagesDeploymentId = created.data.id || sha
+            core.info(`Created Pages deployment id=${pagesDeploymentId}`)
+            if (created.data.page_url) {
+              core.info(`page_url=${created.data.page_url}`)
+            }
+            core.setOutput('page_url', created.data.page_url || 'https://athar-app.online/staging/')
 
-      - name: Fail job if both deploy attempts failed
-        if: steps.deployment.outcome == 'failure' && steps.deployment_retry.outcome == 'failure'
-        run: |
-          echo "Both Pages deploy attempts failed (likely GitHub queue stuck on deployment_queued)."
-          exit 1
+            const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
+            let lastStatus = 'unknown'
+            while (Date.now() - started < maxWaitMs) {
+              await sleep(pollMs)
+              let statusPayload
+              try {
+                statusPayload = await github.request(
+                  'GET /repos/{owner}/{repo}/pages/deployments/{pages_deployment_id}',
+                  { owner, repo, pages_deployment_id: pagesDeploymentId }
+                )
+              } catch (err) {
+                core.warning(`Status poll error: ${err.message}`)
+                continue
+              }
+              lastStatus = statusPayload.data.status || statusPayload.data.state || 'unknown'
+              core.info(`Pages status: ${lastStatus}`)
+              if (lastStatus === 'succeed' || lastStatus === 'success' || lastStatus === 'deployed') {
+                core.info('Pages deployment succeeded')
+                return
+              }
+              if (lastStatus === 'deployment_failed' || lastStatus === 'failed' || lastStatus === 'error') {
+                throw new Error(`Pages deployment failed with status=${lastStatus}`)
+              }
+              if (lastStatus === 'canceled' || lastStatus === 'cancelled') {
+                throw new Error('Pages deployment was cancelled by GitHub (not by this job)')
+              }
+            }
+
+            // لا نلغي النشر — قد يكتمل لاحقاً بعد انتهاء الطابور
+            core.warning(
+              `Timed out after ${Math.round(maxWaitMs / 60000)}m still at status=${lastStatus}. ` +
+                'Leaving deployment running (no cancel). Re-run workflow_dispatch if site stays stale.'
+            )
+            core.setFailed(`Pages still queued/in progress after long poll (last=${lastStatus})`)
