@@ -18,8 +18,9 @@ permissions:
   id-token: write
 
 concurrency:
+  # مجموعة منفصلة عن production؛ لا نلغي الجاري حتى لا يُلغى نشر Pages لنفس الـ SHA
   group: pages-staging
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -109,18 +110,34 @@ jobs:
       ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
-      - name: Brief pause before Pages deploy
-        run: sleep 20
+      - name: Pause before Pages deploy
+        run: sleep 45
 
-      # GitHub Pages أحياناً يعلق على deployment_queued — نعيد المحاولة تلقائياً
+      # مهلة deploy-pages القصوى 10 دقائق؛ عند الفشل ننتظر ثم نعيد المحاولة مرة واحدة
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: Wandalen/wretry.action@v3.8.0
+        continue-on-error: true
+        uses: actions/deploy-pages@v4
         with:
-          attempt_limit: 3
-          attempt_delay: 25000
-          action: actions/deploy-pages@v4
-          with: |
-            timeout: 600000
-            error_count: 30
-            reporting_interval: 5000
+          timeout: 600000
+          error_count: 40
+          reporting_interval: 5000
+
+      - name: Wait after failed/canceled Pages deploy
+        if: steps.deployment.outcome == 'failure'
+        run: sleep 90
+
+      - name: Soft-retry Pages deploy
+        id: deployment_retry
+        if: steps.deployment.outcome == 'failure'
+        uses: actions/deploy-pages@v4
+        with:
+          timeout: 600000
+          error_count: 40
+          reporting_interval: 5000
+
+      - name: Fail job if both deploy attempts failed
+        if: steps.deployment.outcome == 'failure' && steps.deployment_retry.outcome == 'failure'
+        run: |
+          echo "Both Pages deploy attempts failed (likely GitHub queue stuck on deployment_queued)."
+          exit 1
