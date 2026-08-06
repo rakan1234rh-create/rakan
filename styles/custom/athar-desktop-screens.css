@@ -53,10 +53,10 @@ html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-filters-toolba
   display: flex !important;
   align-items: center !important;
   gap: 8px !important;
-  flex: 1 1 280px !important;
-  min-width: 200px !important;
-  width: auto !important;
-  max-width: none !important;
+  max-width: 320px !important;
+  width: 320px !important;
+  flex: 0 0 320px !important;
+  min-width: 0 !important;
   height: auto !important;
   min-height: 0 !important;
   padding: 10px 14px !important;
