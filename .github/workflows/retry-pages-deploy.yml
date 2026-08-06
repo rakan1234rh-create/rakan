@@ -3,7 +3,9 @@ name: Retry Pages Deploy
 # One automatic full redeploy when push build succeeded but Pages deploy failed.
 on:
   workflow_run:
-    workflows: [Deploy to GitHub Pages]
+    workflows:
+      - Deploy to GitHub Pages
+      - Deploy staging site
     types: [completed]
 
 permissions:
@@ -24,6 +26,7 @@ jobs:
         with:
           script: |
             const runId = context.payload.workflow_run.id;
+            const workflowName = context.payload.workflow_run.name || '';
             const { data } = await github.rest.actions.listJobsForWorkflowRun({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -32,18 +35,22 @@ jobs:
             const build = data.jobs.find((j) => j.name === 'build');
             const deploy = data.jobs.find((j) => j.name === 'deploy');
             const shouldRetry = build?.conclusion === 'success' && deploy?.conclusion === 'failure';
+            const isStaging = workflowName === 'Deploy staging site';
             core.setOutput('should_retry', shouldRetry ? 'true' : 'false');
+            core.setOutput('workflow_id', isStaging ? 'deploy-staging-pages.yml' : 'deploy-pages.yml');
+            core.setOutput('ref', isStaging ? 'staging' : (context.payload.workflow_run.head_branch || 'main'));
 
-      - name: Dispatch Deploy to GitHub Pages workflow
+      - name: Dispatch Pages redeploy workflow
         if: steps.check.outputs.should_retry == 'true'
         uses: actions/github-script@v7
         with:
           script: |
-            const branch = context.payload.workflow_run.head_branch || 'main';
+            const workflowId = '${{ steps.check.outputs.workflow_id }}';
+            const ref = '${{ steps.check.outputs.ref }}';
             await github.rest.actions.createWorkflowDispatch({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              workflow_id: 'deploy-pages.yml',
-              ref: branch,
+              workflow_id: workflowId,
+              ref,
             });
-            core.notice(`Dispatched Pages redeploy for ${branch} after transient deploy failure.`);
+            core.notice(`Dispatched ${workflowId} on ${ref} after transient Pages deploy failure.`);
