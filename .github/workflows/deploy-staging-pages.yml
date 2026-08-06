@@ -18,8 +18,8 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
-  cancel-in-progress: false
+  group: pages-staging
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -107,14 +107,20 @@ jobs:
     timeout-minutes: 45
     env:
       ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - name: Brief pause before Pages deploy
-        run: sleep 15
+        run: sleep 20
 
+      # GitHub Pages أحياناً يعلق على deployment_queued — نعيد المحاولة تلقائياً
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: Wandalen/wretry.action@v3.8.0
         with:
-          timeout: 600000
-          error_count: 20
-          reporting_interval: 8000
+          attempt_limit: 3
+          attempt_delay: 25000
+          action: actions/deploy-pages@v4
+          with: |
+            timeout: 600000
+            error_count: 30
+            reporting_interval: 5000
