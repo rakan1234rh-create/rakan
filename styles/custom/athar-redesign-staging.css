@@ -4901,12 +4901,7 @@ html.athar-staging-redesign.mr-desktop-ui #tab-departments.tab-content.active {
 .rd-desk-dist__label { flex: 1; font-size: 12px; color: var(--text); font-weight: 500; text-align: right; }
 .rd-desk-dist__count { font-size: 13px; font-weight: 700; }
 
-/* Keep breaks + permissions pages on classic desktop chrome */
-html.athar-staging-redesign.mr-desktop-ui #tab-breaks.active ~ *,
-html.athar-staging-redesign.mr-desktop-ui body:has(#tab-breaks.active) {
-  /* no-op anchor for future overrides */
-}
-html.athar-staging-redesign.mr-desktop-ui:has(#tab-breaks.active) #pageTitleBar,
+/* Permissions page keeps classic page title bar on desktop */
 html.athar-staging-redesign.mr-desktop-ui:has(#tab-settings.active) #pageTitleBar {
   display: flex !important;
 }
