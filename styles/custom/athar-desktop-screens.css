@@ -186,8 +186,7 @@ html.athar-staging-redesign.mr-desktop-ui .wf-desk-tickets-host {
 }
 
 html.athar-staging-redesign.mr-desktop-ui .data-table thead th,
-html.athar-staging-redesign.mr-desktop-ui .wf-tickets-table thead th,
-html.athar-staging-redesign.mr-desktop-ui .wf-mob-tickets-head {
+html.athar-staging-redesign.mr-desktop-ui .wf-tickets-table thead th {
   background: var(--surface2) !important;
   color: var(--text2) !important;
   font-size: 11.5px !important;
@@ -745,10 +744,25 @@ html.athar-staging-redesign.mr-desktop-ui #tab-workflow .rd-wf-chip[aria-selecte
 html.athar-staging-redesign.mr-desktop-ui #tab-workflow #ticketList.wf-desk-tickets-host {
   background: transparent !important;
   border: none !important;
+  border-top: none !important;
   border-radius: 0 !important;
   box-shadow: none !important;
+  outline: none !important;
   padding: 0 !important;
   overflow: visible !important;
+}
+
+/* رأس الموبايل الفارغ كان يرسم border-bottom كخط مستقيم فوق الجدول */
+html.athar-staging-redesign.mr-desktop-ui #tab-workflow #wfMobTicketsHead,
+html.athar-staging-redesign.mr-desktop-ui #tab-workflow .wf-mob-tickets-head {
+  display: none !important;
+  border: none !important;
+  background: transparent !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
 }
 
 /* ── Reports (desktop redesign — literal mockup) ── */
