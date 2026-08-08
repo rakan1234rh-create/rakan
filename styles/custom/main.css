@@ -1339,7 +1339,7 @@
       color: var(--mr-text-3)
     }
 
-    /* شاشة ترحيب — نفس شعار الشريط العلوي (athar-logo-v402.png) */
+    /* شاشة ترحيب — نفس شعار الشريط العلوي (athar-logo-v403-white.png) */
     #atharWelcomeSplash {
       position: fixed;
       inset: 0;
@@ -1367,12 +1367,11 @@
 
     #atharWelcomeSplash .aws-logo-frame {
       position: relative;
-      width: min(86vw, 42dvh, 22rem);
-      max-width: 86vw;
+      width: min(82vw, 34rem);
+      max-width: 82vw;
       line-height: 0;
-      /* شعار v402 متمركز بلا زخرفة سفلية — قص خفيف فقط */
-      clip-path: inset(18% 4% 18% 4%);
-      -webkit-clip-path: inset(18% 4% 18% 4%);
+      clip-path: none;
+      -webkit-clip-path: none;
       transform: none;
       transform-origin: center center
     }
@@ -1381,7 +1380,7 @@
       position: relative;
       display: block;
       width: 100%;
-      aspect-ratio: 1 / 1;
+      aspect-ratio: 2.5 / 1;
       filter: drop-shadow(0 0 36px rgba(255, 255, 255, 0.2))
     }
 
@@ -1391,7 +1390,7 @@
       height: 100%;
       max-width: 100%;
       object-fit: contain;
-      filter: brightness(0) invert(1);
+      filter: none !important;
       opacity: 0;
       transform: scale(0.94)
     }
@@ -1413,7 +1412,7 @@
       pointer-events: none;
       opacity: 0;
       transform: none;
-      filter: brightness(0) invert(1) brightness(2.4) drop-shadow(0 0 18px rgba(255, 255, 255, 0.95));
+      filter: brightness(1.15) drop-shadow(0 0 18px rgba(255, 255, 255, 0.95));
       -webkit-mask-image: linear-gradient(105deg, transparent 36%, rgba(255, 255, 255, 0.15) 44%, #fff 50%, rgba(255, 255, 255, 0.15) 56%, transparent 64%);
       mask-image: linear-gradient(105deg, transparent 36%, rgba(255, 255, 255, 0.15) 44%, #fff 50%, rgba(255, 255, 255, 0.15) 56%, transparent 64%);
       -webkit-mask-size: 280% 100%;
@@ -1445,8 +1444,8 @@
 
     @media (min-width: 993px) {
       #atharWelcomeSplash .aws-logo-frame {
-        width: min(46vw, 36rem);
-        max-width: min(46vw, 36rem)
+        width: min(52vw, 40rem);
+        max-width: min(52vw, 40rem)
       }
     }
 

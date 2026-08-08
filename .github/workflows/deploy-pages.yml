@@ -72,10 +72,15 @@ jobs:
               # أصول الشعار الجديدة قد تكون على staging فقط — انسخ الموجود دون كسر بناء main
               for f in \
                 icons/athar-wordmark-email-v402.png \
+                icons/athar-wordmark-email-v403.png \
                 icons/athar-logo-v402.png \
                 icons/athar-logo-v402.svg \
                 icons/athar-logo-v402-on-light.png \
-                icons/athar-logo-v402-on-light.svg
+                icons/athar-logo-v402-on-light.svg \
+                icons/athar-logo-v403.png \
+                icons/athar-logo-v403.svg \
+                icons/athar-logo-v403-white.png \
+                icons/athar-logo-v403-white.svg
               do
                 if [ -f "$f" ]; then cp "$f" "$DEST/icons/"; fi
               done
