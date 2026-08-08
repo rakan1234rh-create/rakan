@@ -35175,6 +35175,15 @@
         return filter === kind;
       }
 
+      /** أي أقسام القوائم تُعرض حسب شريحة التصفية النشطة */
+      function getBreakListSectionsVisibility() {
+        const filter = getBreakStatusFilter();
+        return {
+          showLive: filter === 'all' || filter === 'active' || filter === 'overage',
+          showRoster: filter === 'all' || filter === 'paused' || filter === 'ended'
+        };
+      }
+
       function formatBreakDurationLabel(mins) {
         const n = Math.max(0, Number(mins) || 0);
         if (n >= 60) return 'ساعة';
@@ -35823,17 +35832,24 @@
       function renderStaffBreaksClassic() {
         const host = document.getElementById('breaksClassicHost');
         if (!host) return;
+        const { showLive, showRoster } = getBreakListSectionsVisibility();
+        const liveSec = showLive
+          ? `<div class="rd-sec rd-break-list-sec">
+              <div class="rd-sec__head"><span class="rd-sec__title">في البريك</span></div>
+              ${renderStaffBreaksListHtml()}
+            </div>`
+          : '';
+        const rosterSec = showRoster
+          ? `<div class="rd-sec rd-break-list-sec">
+              <div class="rd-sec__head"><span class="rd-sec__title">السجل</span></div>
+              ${renderStaffBreakRosterHtml()}
+            </div>`
+          : '';
         host.innerHTML = `
           <div class="breaks-full-page">
             <div id="breaksRingHost">${renderStaffBreakRingHtml()}</div>
-            <div class="rd-sec rd-break-list-sec">
-              <div class="rd-sec__head"><span class="rd-sec__title">في البريك</span></div>
-              ${renderStaffBreaksListHtml()}
-            </div>
-            <div class="rd-sec rd-break-list-sec">
-              <div class="rd-sec__head"><span class="rd-sec__title">السجل</span></div>
-              ${renderStaffBreakRosterHtml()}
-            </div>
+            ${liveSec}
+            ${rosterSec}
             ${renderStaffBreakSchedulesHtml()}
           </div>`;
       }
@@ -35858,9 +35874,22 @@
               ${manageBtn}
             </div>`;
         const toolbarHtml = desk ? renderBreaksDeskToolbarHtml() : '';
+        const { showLive, showRoster } = getBreakListSectionsVisibility();
         const liveTitle = desk
           ? `<div class="rd-sec__head"><span class="rd-sec__title"><i class="fas fa-mug-hot" aria-hidden="true"></i>في البريك الآن</span></div>`
           : `<div class="rd-sec__head"><span class="rd-sec__title">في البريك</span></div>`;
+        const liveSec = showLive
+          ? `<div class="rd-sec rd-break-list-sec">
+                  ${liveTitle}
+                  ${renderStaffBreaksListHtml()}
+                </div>`
+          : '';
+        const rosterSec = showRoster
+          ? `<div class="rd-sec rd-break-list-sec">
+                  <div class="rd-sec__head"><span class="rd-sec__title">السجل</span></div>
+                  ${renderStaffBreakRosterHtml()}
+                </div>`
+          : '';
         host.innerHTML = `
           <div class="rd-screen rd-breaks-page${desk ? ' rd-breaks-page--desk' : ''}">
             ${headHtml}
@@ -35868,14 +35897,8 @@
             <div class="rd-breaks-page__body">
               ${renderStaffBreakRingHtml()}
               <div class="rd-breaks-page__lists">
-                <div class="rd-sec rd-break-list-sec">
-                  ${liveTitle}
-                  ${renderStaffBreaksListHtml()}
-                </div>
-                <div class="rd-sec rd-break-list-sec">
-                  <div class="rd-sec__head"><span class="rd-sec__title">السجل</span></div>
-                  ${renderStaffBreakRosterHtml()}
-                </div>
+                ${liveSec}
+                ${rosterSec}
               </div>
             </div>
           </div>`;
