@@ -1367,8 +1367,8 @@
 
     #atharWelcomeSplash .aws-logo-frame {
       position: relative;
-      width: min(82vw, 34rem);
-      max-width: 82vw;
+      width: min(92vw, 46rem);
+      max-width: 92vw;
       line-height: 0;
       clip-path: none;
       -webkit-clip-path: none;
@@ -1444,8 +1444,8 @@
 
     @media (min-width: 993px) {
       #atharWelcomeSplash .aws-logo-frame {
-        width: min(52vw, 40rem);
-        max-width: min(52vw, 40rem)
+        width: min(68vw, 52rem);
+        max-width: min(68vw, 52rem)
       }
     }
 

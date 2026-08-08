@@ -187,9 +187,9 @@ html.mr-mobile-ui .topbar-brand-zone {
 
 html.mr-mobile-ui #brandArea .wefaq-app-logo--athar,
 html.mr-mobile-ui #brandArea .wefaq-app-logo--athar-img {
-  height: 34px !important;
+  height: 42px !important;
   width: auto !important;
-  max-width: 120px !important;
+  max-width: 160px !important;
   object-fit: contain !important;
 }
 
@@ -4552,9 +4552,9 @@ html.athar-staging-redesign.mr-desktop-ui #brandArea {
 html.athar-staging-redesign.mr-desktop-ui #brandArea .brand-icon.wefaq-logo-slot,
 html.athar-staging-redesign.mr-desktop-ui #brandArea .brand-icon.wefaq-logo-slot .wefaq-app-logo--athar {
   width: auto !important;
-  max-width: 52px !important;
-  height: 28px !important;
-  max-height: 28px !important;
+  max-width: 96px !important;
+  height: 40px !important;
+  max-height: 40px !important;
   transform: none !important;
   margin: 0 !important;
   object-fit: contain !important;
@@ -4576,9 +4576,9 @@ html.athar-staging-redesign.mr-desktop-ui .app-shell:has(#sidebar[data-rail-expa
 html.athar-staging-redesign.mr-desktop-ui .app-shell:has(#sidebar[data-rail-expanded="1"]) #brandArea .brand-icon.wefaq-logo-slot .wefaq-app-logo--athar,
 html.athar-staging-redesign.mr-desktop-ui .app-shell.rd-sidebar-expanded #brandArea .brand-icon.wefaq-logo-slot,
 html.athar-staging-redesign.mr-desktop-ui .app-shell.rd-sidebar-expanded #brandArea .brand-icon.wefaq-logo-slot .wefaq-app-logo--athar {
-  max-width: 140px !important;
-  height: 36px !important;
-  max-height: 36px !important;
+  max-width: 200px !important;
+  height: 48px !important;
+  max-height: 48px !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui .rd-top-titles {
