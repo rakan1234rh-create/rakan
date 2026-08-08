@@ -4507,8 +4507,8 @@ html.athar-staging-redesign.mr-desktop-ui .app-shell.rd-sidebar-expanded .topbar
   min-width: var(--fig-sidebar-w) !important;
   max-width: var(--fig-sidebar-w) !important;
   flex: 0 0 var(--fig-sidebar-w) !important;
-  justify-content: flex-start !important;
-  padding-inline-start: 22px !important;
+  justify-content: center !important;
+  padding-inline: 14px !important;
 }
 
 /* Continuous vertical line with sidebar border-inline-end (tracks brand zone width) */
@@ -4540,7 +4540,7 @@ html.athar-staging-redesign.mr-desktop-ui #rdThemeBtn {
 
 html.athar-staging-redesign.mr-desktop-ui .topbar-brand-zone .brand-area,
 html.athar-staging-redesign.mr-desktop-ui #brandArea {
-  height: 52px !important;
+  height: 100% !important;
   margin: 0 !important;
   display: flex !important;
   align-items: center !important;
@@ -4549,36 +4549,39 @@ html.athar-staging-redesign.mr-desktop-ui #brandArea {
   max-width: 100% !important;
 }
 
-html.athar-staging-redesign.mr-desktop-ui #brandArea .brand-icon.wefaq-logo-slot,
+html.athar-staging-redesign.mr-desktop-ui #brandArea .brand-icon.wefaq-logo-slot {
+  width: 100% !important;
+  max-width: 100% !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
 html.athar-staging-redesign.mr-desktop-ui #brandArea .brand-icon.wefaq-logo-slot .wefaq-app-logo--athar {
-  width: auto !important;
-  max-width: 96px !important;
-  height: 40px !important;
-  max-height: 40px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: auto !important;
+  max-height: 44px !important;
   transform: none !important;
   margin: 0 !important;
   object-fit: contain !important;
   object-position: center !important;
-  transition: max-width 200ms ease, height 200ms ease !important;
+  transition: max-height 200ms ease !important;
 }
 
-html.athar-staging-redesign.mr-desktop-ui .app-shell:has(#sidebar:hover) #brandArea .brand-icon.wefaq-logo-slot,
 html.athar-staging-redesign.mr-desktop-ui .app-shell:has(#sidebar:hover) #brandArea .brand-icon.wefaq-logo-slot .wefaq-app-logo--athar,
-html.athar-staging-redesign.mr-desktop-ui .app-shell:has(#sidebar.sidebar-rail-hover) #brandArea .brand-icon.wefaq-logo-slot,
 html.athar-staging-redesign.mr-desktop-ui .app-shell:has(#sidebar.sidebar-rail-hover) #brandArea .brand-icon.wefaq-logo-slot .wefaq-app-logo--athar,
-html.athar-staging-redesign.mr-desktop-ui .app-shell:has(#sidebar.sidebar-rail-open) #brandArea .brand-icon.wefaq-logo-slot,
 html.athar-staging-redesign.mr-desktop-ui .app-shell:has(#sidebar.sidebar-rail-open) #brandArea .brand-icon.wefaq-logo-slot .wefaq-app-logo--athar,
-html.athar-staging-redesign.mr-desktop-ui .app-shell:has(#sidebar.sidebar-rail-expanded) #brandArea .brand-icon.wefaq-logo-slot,
 html.athar-staging-redesign.mr-desktop-ui .app-shell:has(#sidebar.sidebar-rail-expanded) #brandArea .brand-icon.wefaq-logo-slot .wefaq-app-logo--athar,
-html.athar-staging-redesign.mr-desktop-ui .app-shell:has(#sidebar[data-rail-hover="1"]) #brandArea .brand-icon.wefaq-logo-slot,
 html.athar-staging-redesign.mr-desktop-ui .app-shell:has(#sidebar[data-rail-hover="1"]) #brandArea .brand-icon.wefaq-logo-slot .wefaq-app-logo--athar,
-html.athar-staging-redesign.mr-desktop-ui .app-shell:has(#sidebar[data-rail-expanded="1"]) #brandArea .brand-icon.wefaq-logo-slot,
 html.athar-staging-redesign.mr-desktop-ui .app-shell:has(#sidebar[data-rail-expanded="1"]) #brandArea .brand-icon.wefaq-logo-slot .wefaq-app-logo--athar,
-html.athar-staging-redesign.mr-desktop-ui .app-shell.rd-sidebar-expanded #brandArea .brand-icon.wefaq-logo-slot,
 html.athar-staging-redesign.mr-desktop-ui .app-shell.rd-sidebar-expanded #brandArea .brand-icon.wefaq-logo-slot .wefaq-app-logo--athar {
-  max-width: 200px !important;
-  height: 48px !important;
-  max-height: 48px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: auto !important;
+  max-height: 56px !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui .rd-top-titles {
