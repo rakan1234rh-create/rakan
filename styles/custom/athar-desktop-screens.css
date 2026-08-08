@@ -3480,6 +3480,10 @@ html.athar-staging-redesign.mr-desktop-ui #breakScheduleModal .break-sch-hd {
   margin-bottom: 20px !important;
 }
 
+html.athar-staging-redesign.mr-desktop-ui #breakScheduleModal .break-sch-hd__close {
+  display: none !important;
+}
+
 html.athar-staging-redesign.mr-desktop-ui #breakScheduleModal .break-sch-body {
   padding: 0 22px !important;
   flex: 1 1 auto !important;
@@ -3867,17 +3871,7 @@ html.athar-staging-redesign.mr-desktop-ui #rdSchOverlayHost .rd-sch-panel__title
 }
 
 html.athar-staging-redesign.mr-desktop-ui #rdSchOverlayHost .rd-sch-panel__close {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--text2);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: 12px;
+  display: none !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #rdSchOverlayHost .rd-sch-panel__field-label {
@@ -4835,18 +4829,7 @@ html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-panel__tit
 }
 
 html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-panel__close {
-  width: 32px !important;
-  height: 32px !important;
-  border-radius: 50% !important;
-  border: 1px solid var(--border) !important;
-  background: var(--surface) !important;
-  color: var(--text2) !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  cursor: pointer !important;
-  flex-shrink: 0 !important;
-  font-size: 12px !important;
+  display: none !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-panel__subrow {
