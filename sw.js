@@ -8,8 +8,8 @@ self.addEventListener('push', (event) => {
   const title = payload.title || 'تنبيه';
   const options = {
     body: payload.body || '',
-    icon: './icons/athar-pwa-192-v406.png',
-    badge: './icons/athar-pwa-192-v406.png',
+    icon: './icons/athar-pwa-192-v407.png',
+    badge: './icons/athar-pwa-192-v407.png',
     tag: payload.tag || payload.ticketId || 'athar-notif',
     renotify: !!(payload.broadcastId),
     dir: 'rtl',
