@@ -4548,12 +4548,14 @@ html.athar-staging-redesign.mr-desktop-ui #brandArea .brand-icon.wefaq-logo-slot
   max-width: 100% !important;
   height: auto !important;
   max-height: 46px !important;
-  transform: none !important;
+  transform: translateX(-12px) !important;
+  transform-origin: center center !important;
   margin: 0 !important;
   object-fit: contain !important;
   object-position: center !important;
   filter: none !important;
   image-rendering: auto !important;
+  shape-rendering: geometricPrecision !important;
 }
 
 html[data-theme="dark"].athar-staging-redesign.mr-desktop-ui #brandArea .brand-icon.wefaq-logo-slot .wefaq-app-logo--athar {
