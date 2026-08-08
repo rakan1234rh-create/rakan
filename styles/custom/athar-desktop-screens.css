@@ -1928,10 +1928,25 @@ html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-menu {
 }
 
 /* ── Users desktop table ── */
+html.athar-staging-redesign.mr-desktop-ui #tab-departments #usersDeskHost.wf-desk-tickets-host,
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .mr-users-list-wrap.wf-table-wrap,
 html.athar-staging-redesign.mr-desktop-ui #tab-departments #usersList.rd-usr-desk {
   background: transparent !important;
   border: none !important;
+  border-top: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  outline: none !important;
   padding: 0 !important;
+  overflow: visible !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .rd-desk-table--users {
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 16px !important;
+  overflow: hidden !important;
+  isolation: isolate !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui .rd-desk-table {
