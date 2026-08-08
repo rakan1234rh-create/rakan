@@ -33906,6 +33906,9 @@
           overlay.innerHTML = '';
           return;
         }
+        const keepQuiet = !!overlay.querySelector('.rd-sch-overlay');
+        const scrollEl = overlay.querySelector('.rd-sch-panel');
+        const savedScroll = scrollEl ? scrollEl.scrollTop : 0;
         const form = rdSchEnsureForm();
         const outageForm = rdSchEnsureOutageForm();
         let html = '';
@@ -34034,6 +34037,13 @@
         }
 
         overlay.innerHTML = html;
+        if (keepQuiet) {
+          overlay.querySelectorAll('.rd-sch-overlay, .rd-sch-panel').forEach((el) => {
+            el.classList.add('rd-side--quiet');
+          });
+        }
+        const panel = overlay.querySelector('.rd-sch-panel');
+        if (panel && savedScroll) panel.scrollTop = savedScroll;
 
         const reasonInput = document.getElementById('rdOutageReasonInput');
         if (reasonInput) {
@@ -34314,6 +34324,9 @@
           overlay.innerHTML = '';
           return;
         }
+        const keepQuiet = !!overlay.querySelector('.rd-cmpl-overlay');
+        const scrollEl = overlay.querySelector('.rd-cmpl-panel');
+        const savedScroll = scrollEl ? scrollEl.scrollTop : 0;
         const form = rdCmplEnsureForm();
         const detailId = state._rdCmplDetailId || null;
         const active = detailId ? getRdComplaints().find(c => c.id === detailId) : null;
@@ -34409,6 +34422,13 @@
         }
 
         overlay.innerHTML = html;
+        if (keepQuiet) {
+          overlay.querySelectorAll('.rd-cmpl-overlay, .rd-cmpl-panel').forEach((el) => {
+            el.classList.add('rd-side--quiet');
+          });
+        }
+        const panel = overlay.querySelector('.rd-cmpl-panel');
+        if (panel && savedScroll) panel.scrollTop = savedScroll;
 
         const descInput = document.getElementById('rdCmplDescInput');
         if (descInput) {

@@ -2236,6 +2236,14 @@ html.athar-staging-redesign.mr-desktop-ui #ticketModal .td-header-main {
   display: none !important;
 }
 
+/* Quiet re-render: keep side panels fixed while toggling chips/options inside */
+html.athar-staging-redesign.mr-desktop-ui .rd-sch-overlay.rd-side--quiet,
+html.athar-staging-redesign.mr-desktop-ui .rd-sch-panel.rd-side--quiet,
+html.athar-staging-redesign.mr-desktop-ui .rd-cmpl-overlay.rd-side--quiet,
+html.athar-staging-redesign.mr-desktop-ui .rd-cmpl-panel.rd-side--quiet {
+  animation: none !important;
+}
+
 /* ── Shared side-drawer motion (all end-docked panels) ── */
 @keyframes atharRdSideScrimIn {
   from { opacity: 0; }
