@@ -1952,9 +1952,15 @@ html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--users .rd-desk-table__
 
 html.athar-staging-redesign.mr-desktop-ui .rd-desk-table__head {
   background: var(--surface2) !important;
+  background-clip: padding-box !important;
   font-size: 11.5px !important;
   font-weight: 700 !important;
   color: var(--text2) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--users > .rd-desk-table__head {
+  border-start-start-radius: 15px !important;
+  border-start-end-radius: 15px !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui .rd-desk-table__row {
