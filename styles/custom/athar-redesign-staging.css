@@ -4476,39 +4476,23 @@ html.athar-staging-redesign.mr-desktop-ui .topbar.unified-banner {
   box-sizing: border-box !important;
 }
 
+/* Brand column stays open at full sidebar width — does not collapse with the rail */
 html.athar-staging-redesign.mr-desktop-ui .topbar-brand-zone {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   height: 100% !important;
   min-height: 0 !important;
-  width: var(--fig-sidebar-collapsed-w) !important;
-  min-width: var(--fig-sidebar-collapsed-w) !important;
-  max-width: var(--fig-sidebar-collapsed-w) !important;
-  flex: 0 0 var(--fig-sidebar-collapsed-w) !important;
-  padding: 0 !important;
+  width: var(--fig-sidebar-w) !important;
+  min-width: var(--fig-sidebar-w) !important;
+  max-width: var(--fig-sidebar-w) !important;
+  flex: 0 0 var(--fig-sidebar-w) !important;
+  padding-inline: 14px !important;
   margin: 0 !important;
   gap: 0 !important;
   position: relative !important;
   overflow: visible !important;
   box-sizing: border-box !important;
-  transition: width 200ms ease, flex-basis 200ms ease, min-width 200ms ease, max-width 200ms ease !important;
-}
-
-/* Expanded sidebar → brand column matches open rail (252px) so divider = sidebar border */
-html.athar-staging-redesign.mr-desktop-ui .app-shell:has(#sidebar:hover) .topbar-brand-zone,
-html.athar-staging-redesign.mr-desktop-ui .app-shell:has(#sidebar.sidebar-rail-hover) .topbar-brand-zone,
-html.athar-staging-redesign.mr-desktop-ui .app-shell:has(#sidebar.sidebar-rail-open) .topbar-brand-zone,
-html.athar-staging-redesign.mr-desktop-ui .app-shell:has(#sidebar.sidebar-rail-expanded) .topbar-brand-zone,
-html.athar-staging-redesign.mr-desktop-ui .app-shell:has(#sidebar[data-rail-hover="1"]) .topbar-brand-zone,
-html.athar-staging-redesign.mr-desktop-ui .app-shell:has(#sidebar[data-rail-expanded="1"]) .topbar-brand-zone,
-html.athar-staging-redesign.mr-desktop-ui .app-shell.rd-sidebar-expanded .topbar-brand-zone {
-  width: var(--fig-sidebar-w) !important;
-  min-width: var(--fig-sidebar-w) !important;
-  max-width: var(--fig-sidebar-w) !important;
-  flex: 0 0 var(--fig-sidebar-w) !important;
-  justify-content: center !important;
-  padding-inline: 14px !important;
 }
 
 /* Continuous vertical line with sidebar border-inline-end (tracks brand zone width) */
@@ -4563,25 +4547,11 @@ html.athar-staging-redesign.mr-desktop-ui #brandArea .brand-icon.wefaq-logo-slot
   width: 100% !important;
   max-width: 100% !important;
   height: auto !important;
-  max-height: 44px !important;
+  max-height: 56px !important;
   transform: none !important;
   margin: 0 !important;
   object-fit: contain !important;
   object-position: center !important;
-  transition: max-height 200ms ease !important;
-}
-
-html.athar-staging-redesign.mr-desktop-ui .app-shell:has(#sidebar:hover) #brandArea .brand-icon.wefaq-logo-slot .wefaq-app-logo--athar,
-html.athar-staging-redesign.mr-desktop-ui .app-shell:has(#sidebar.sidebar-rail-hover) #brandArea .brand-icon.wefaq-logo-slot .wefaq-app-logo--athar,
-html.athar-staging-redesign.mr-desktop-ui .app-shell:has(#sidebar.sidebar-rail-open) #brandArea .brand-icon.wefaq-logo-slot .wefaq-app-logo--athar,
-html.athar-staging-redesign.mr-desktop-ui .app-shell:has(#sidebar.sidebar-rail-expanded) #brandArea .brand-icon.wefaq-logo-slot .wefaq-app-logo--athar,
-html.athar-staging-redesign.mr-desktop-ui .app-shell:has(#sidebar[data-rail-hover="1"]) #brandArea .brand-icon.wefaq-logo-slot .wefaq-app-logo--athar,
-html.athar-staging-redesign.mr-desktop-ui .app-shell:has(#sidebar[data-rail-expanded="1"]) #brandArea .brand-icon.wefaq-logo-slot .wefaq-app-logo--athar,
-html.athar-staging-redesign.mr-desktop-ui .app-shell.rd-sidebar-expanded #brandArea .brand-icon.wefaq-logo-slot .wefaq-app-logo--athar {
-  width: 100% !important;
-  max-width: 100% !important;
-  height: auto !important;
-  max-height: 56px !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui .rd-top-titles {
