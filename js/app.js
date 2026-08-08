@@ -20575,14 +20575,9 @@
         const typeEl = document.getElementById('rd-td-type');
         const badgeEl = document.getElementById('rd-td-badge');
         const numEl = document.getElementById('rd-td-num');
-        const avEl = document.getElementById('rd-td-av');
         const empName = t._empName || '—';
         if (nameEl) nameEl.textContent = empName;
         if (typeEl) typeEl.textContent = t.violation_type || '—';
-        if (avEl) {
-          const initial = String(empName).trim().charAt(0) || '؟';
-          avEl.textContent = initial;
-        }
         if (badgeEl) {
           const status = t.status_text || STATE_LABELS[t.state] || '—';
           const tone = rdTicketStatusTone(t);
