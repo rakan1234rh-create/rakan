@@ -125,6 +125,19 @@ html.athar-staging-redesign.mr-desktop-ui .content > .tab-content:not(#tab-break
   padding: 0 !important;
 }
 
+/* حشوة داخلية فقط لـ: نظرة عامة / التذاكر / التقارير — دون لمس .content أو .main */
+html.athar-staging-redesign.mr-desktop-ui #appWrap #tab-dashboard #rdDash,
+html.athar-staging-redesign.mr-desktop-ui #appWrap #tab-dashboard .mk-dash--classic {
+  padding: 24px !important;
+  box-sizing: border-box !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #appWrap #tab-workflow.tab-content > .panel.wf-panel,
+html.athar-staging-redesign.mr-desktop-ui #appWrap #tab-reports.tab-content > .panel.wf-panel {
+  padding: 24px !important;
+  box-sizing: border-box !important;
+}
+
 html.athar-staging-redesign.mr-desktop-ui .content > .tab-content:not(#tab-breaks):not(#tab-settings) .wf-panel-intro {
   display: none !important;
 }
