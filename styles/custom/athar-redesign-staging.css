@@ -4547,8 +4547,8 @@ html.athar-staging-redesign.mr-desktop-ui #brandArea .brand-icon.wefaq-logo-slot
   width: 100% !important;
   max-width: 100% !important;
   height: auto !important;
-  max-height: 46px !important;
-  transform: translateX(-12px) !important;
+  max-height: 40px !important;
+  transform: translateX(12px) !important;
   transform-origin: center center !important;
   margin: 0 !important;
   object-fit: contain !important;
