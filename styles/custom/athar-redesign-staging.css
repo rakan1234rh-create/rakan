@@ -4472,6 +4472,7 @@ html.athar-staging-redesign.mr-desktop-ui .topbar.unified-banner {
   gap: 0 !important;
   overflow: visible !important;
   position: relative !important;
+  z-index: 1300 !important;
   box-sizing: border-box !important;
 }
 

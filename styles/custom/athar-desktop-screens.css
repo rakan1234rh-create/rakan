@@ -2228,12 +2228,21 @@ html.athar-staging-redesign.mr-desktop-ui #ticketModal .td-header-main {
 /* ── Ticket detail side panel (Athar mockup) ── */
 html.athar-staging-redesign.mr-desktop-ui #ticketModal.modal.open {
   display: block !important;
+  position: fixed !important;
+  top: var(--unified-topbar-h, 68px) !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100% !important;
+  height: calc(100vh - var(--unified-topbar-h, 68px)) !important;
+  max-height: calc(100vh - var(--unified-topbar-h, 68px)) !important;
   align-items: stretch !important;
   justify-content: flex-start !important;
   padding: 0 !important;
   background: rgba(0, 0, 0, 0.4) !important;
   z-index: 1200 !important;
   animation: atharRdFadeUp .2s ease;
+  box-sizing: border-box !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #ticketModal .modal-card.modal-detail.td-mob-sheet {
@@ -2241,9 +2250,9 @@ html.athar-staging-redesign.mr-desktop-ui #ticketModal .modal-card.modal-detail.
   top: 0 !important;
   inset-inline-end: 0 !important;
   inset-inline-start: auto !important;
-  bottom: auto !important;
-  height: 100vh !important;
-  max-height: 100vh !important;
+  bottom: 0 !important;
+  height: 100% !important;
+  max-height: 100% !important;
   width: 460px !important;
   max-width: 92vw !important;
   margin: 0 !important;
