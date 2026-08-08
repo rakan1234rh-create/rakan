@@ -11,7 +11,7 @@ const iconsDir = join(root, 'icons');
 const fontsDir = join(iconsDir, 'fonts');
 const BLEED_BG = '#000000';
 const VIEW = 842;
-const ICON_CACHE_VER = '405';
+const ICON_CACHE_VER = '406';
 
 mkdirSync(fontsDir, { recursive: true });
 
@@ -56,7 +56,8 @@ function buildSvg(contentScale) {
 }
 
 const svgAny = buildSvg(1);
-const svgMask = buildSvg(0.92);
+// Maskable: keep safe-zone padding but still larger than before
+const svgMask = buildSvg(0.88);
 
 writeFileSync(join(iconsDir, 'athar-homescreen-fullbleed.svg'), svgAny);
 writeFileSync(join(iconsDir, 'athar-homescreen-maskable.svg'), svgMask);
