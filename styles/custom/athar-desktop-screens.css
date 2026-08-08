@@ -2042,6 +2042,7 @@ html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--tickets {
   border: 1px solid var(--border) !important;
   border-radius: 16px !important;
   overflow: hidden !important;
+  isolation: isolate !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--tickets .rd-desk-table__head,
@@ -2055,9 +2056,13 @@ html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--tickets .rd-desk-ticke
 html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--tickets .rd-desk-table__head {
   padding: 12px 18px !important;
   background: var(--surface2) !important;
+  background-clip: padding-box !important;
   font-size: 11.5px !important;
   font-weight: 700 !important;
   color: var(--text2) !important;
+  /* قص زوايا الهيدر الرمادي مع منحنى الحاوية (RTL/LTR) */
+  border-start-start-radius: 15px !important;
+  border-start-end-radius: 15px !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--tickets .rd-desk-ticket-row {
