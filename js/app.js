@@ -6137,7 +6137,7 @@
         document.addEventListener('touchcancel', resetPullImmediate, { passive: true, capture: true });
       }
 
-      const ATHAR_LOGO_VER = 'new-logo-401';
+      const ATHAR_LOGO_VER = 'new-logo-402';
       const ATHAR_LOGO_SRC = 'icons/redesign/athar-wordmark.png';
       const ATHAR_DECO_SHIFT = { x: -8, y: -210 }; /* الدخول / الانتقال / الشريط (الإزاحة العمودية للشريط عبر CSS) */
       const ATHAR_LOGO_R_DX = { default: -8 };

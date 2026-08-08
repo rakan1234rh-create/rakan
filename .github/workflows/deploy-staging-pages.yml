@@ -76,7 +76,9 @@ jobs:
                 icons/athar-pwa-180-v${VER}.png icons/athar-pwa-maskable-512-v${VER}.png \
                 icons/athar-app-icon.svg icons/athar-homescreen-fullbleed.svg \
                 icons/athar-homescreen-maskable.svg icons/athar-wordmark-email.svg \
-                icons/athar-wordmark-email-v388.png icons/athar-logo-v401.png "$DEST/icons/"
+                icons/athar-wordmark-email-v388.png icons/athar-wordmark-email-v402.png \
+                icons/athar-logo-v401.png icons/athar-logo-v402.png icons/athar-logo-v402.svg \
+                icons/athar-logo-v402-on-light.png icons/athar-logo-v402-on-light.svg "$DEST/icons/"
               if [ -d icons/avatars ]; then mkdir -p "$DEST/icons/avatars" && cp -r icons/avatars/. "$DEST/icons/avatars/"; fi
               if [ -d icons/redesign ]; then mkdir -p "$DEST/icons/redesign" && cp -r icons/redesign/. "$DEST/icons/redesign/"; fi
               if [ -d design ]; then cp -r design "$DEST/"; fi
