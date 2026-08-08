@@ -1,5 +1,5 @@
 /**
- * ATHAR PWA icons — نفس شعار الدخول مع خطوط ZCOOL XiaoWei + Petrona (resvg).
+ * ATHAR PWA icons — شعار Brandmark الهندسي على خلفية داكنة (بدون خطوط).
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { dirname, join } from 'path';
@@ -11,31 +11,9 @@ const iconsDir = join(root, 'icons');
 const fontsDir = join(iconsDir, 'fonts');
 const BLEED_BG = '#000000';
 const VIEW = 842;
-const ICON_CACHE_VER = '393';
-
-const FONT_SOURCES = [
-  {
-    file: 'ZCOOLXiaoWei-Regular.ttf',
-    url: 'https://raw.githubusercontent.com/google/fonts/main/ofl/zcoolxiaowei/ZCOOLXiaoWei-Regular.ttf',
-  },
-  {
-    file: 'Petrona-wght.ttf',
-    url: 'https://raw.githubusercontent.com/google/fonts/main/ofl/petrona/Petrona%5Bwght%5D.ttf',
-  },
-];
+const ICON_CACHE_VER = '405';
 
 mkdirSync(fontsDir, { recursive: true });
-
-async function ensureFonts() {
-  for (const { file, url } of FONT_SOURCES) {
-    const dest = join(fontsDir, file);
-    if (existsSync(dest)) continue;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`Font download failed: ${url} (${res.status})`);
-    writeFileSync(dest, Buffer.from(await res.arrayBuffer()));
-    console.log('Downloaded', file);
-  }
-}
 
 const logoPaths = readFileSync(join(iconsDir, 'athar-app-icon.svg'), 'utf8')
   .replace(/<\?xml[^>]*>\s*/i, '')
@@ -83,16 +61,12 @@ const svgMask = buildSvg(0.92);
 writeFileSync(join(iconsDir, 'athar-homescreen-fullbleed.svg'), svgAny);
 writeFileSync(join(iconsDir, 'athar-homescreen-maskable.svg'), svgMask);
 
-const fontFiles = FONT_SOURCES.map(({ file }) => join(fontsDir, file));
-
 async function exportPng(svg, size, name) {
   const renderPx = size * 4;
   const resvg = new Resvg(svg, {
     fitTo: { mode: 'width', value: renderPx },
     font: {
-      fontFiles,
       loadSystemFonts: false,
-      defaultFontFamily: 'ZCOOL XiaoWei',
     },
   });
   const rendered = resvg.render();
@@ -105,33 +79,11 @@ async function exportPng(svg, size, name) {
   console.log('Wrote', name, size + 'x' + size);
 }
 
-await ensureFonts();
-
 const v = ICON_CACHE_VER;
 await exportPng(svgAny, 512, `athar-pwa-512-v${v}.png`);
 await exportPng(svgAny, 192, `athar-pwa-192-v${v}.png`);
 await exportPng(svgAny, 180, `athar-pwa-180-v${v}.png`);
 await exportPng(svgMask, 512, `athar-pwa-maskable-512-v${v}.png`);
-
-const WORDMARK_VER = '388';
-const wordmarkSvg = readFileSync(join(iconsDir, 'athar-wordmark-email.svg'), 'utf8');
-const wordmarkW = 840;
-const wordmarkH = Math.round(wordmarkW * (555 / 903));
-const wordmarkResvg = new Resvg(wordmarkSvg, {
-  fitTo: { mode: 'width', value: wordmarkW },
-  background: 'transparent',
-  font: {
-    fontFiles,
-    loadSystemFonts: false,
-    defaultFontFamily: 'ZCOOL XiaoWei',
-  },
-});
-const wordmarkBuf = await sharp(wordmarkResvg.render().asPng())
-  .resize(wordmarkW, wordmarkH, { kernel: sharp.kernel.lanczos3 })
-  .png({ compressionLevel: 9 })
-  .toBuffer();
-writeFileSync(join(iconsDir, `athar-wordmark-email-v${WORDMARK_VER}.png`), wordmarkBuf);
-console.log('Wrote', `athar-wordmark-email-v${WORDMARK_VER}.png`, `${wordmarkW}x${wordmarkH}`);
 
 writeFileSync(join(iconsDir, 'icon-cache-ver.txt'), ICON_CACHE_VER + '\n');
 console.log('Done v' + ICON_CACHE_VER);
