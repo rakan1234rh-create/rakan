@@ -33688,9 +33688,11 @@
             kind: 'complaint',
             category: RD_COMPLAINT_CATS[0].label,
             desc: '',
-            attachCount: 0
+            attachCount: 0,
+            anonymous: false
           };
         }
+        if (typeof state._rdCmplForm.anonymous !== 'boolean') state._rdCmplForm.anonymous = false;
         return state._rdCmplForm;
       }
 
@@ -33722,6 +33724,11 @@
         try {
           return (state.currentUser && (state.currentUser.name || state.currentUser.fullName)) || 'موظف';
         } catch (_) { return 'موظف'; }
+      }
+
+      function rdCmplDisplayName(row) {
+        if (row && row.isAnonymous) return 'مجهول';
+        return (row && row.employeeName) || '';
       }
 
       function rdShiftMeta(shift) {
@@ -34258,7 +34265,7 @@
                       <span class="rd-cmpl-card__kind" style="--tone:${tone}">${Sec.escapeHTML(kindLbl)}</span>
                       <span class="rd-cmpl-card__num">${Sec.escapeHTML(rdCmplNumber(r.id))}</span>
                     </div>
-                    <div class="rd-cmpl-card__sub">${Sec.escapeHTML(r.employeeName || '')} · ${Sec.escapeHTML(r.time || r.createdAt || '')}</div>
+                    <div class="rd-cmpl-card__sub">${Sec.escapeHTML(rdCmplDisplayName(r))} · ${Sec.escapeHTML(r.time || r.createdAt || '')}</div>
                   </div>
                 </div>
                 <span class="rd-cmpl-card__status" style="--tone:${st.color}">${Sec.escapeHTML(st.label)}</span>
@@ -34364,7 +34371,7 @@
                   <button type="button" class="rd-cmpl-panel__close" onclick="rdCloseComplaintDetail()" aria-label="إغلاق"><i class="fas fa-xmark"></i></button>
                 </div>
                 <div class="rd-cmpl-panel__subrow">
-                  <span class="rd-cmpl-panel__who">${Sec.escapeHTML(active.employeeName || '')} <span class="rd-desk-muted">· ${Sec.escapeHTML(active.time || '')}</span></span>
+                  <span class="rd-cmpl-panel__who">${Sec.escapeHTML(rdCmplDisplayName(active))} <span class="rd-desk-muted">· ${Sec.escapeHTML(active.time || '')}</span></span>
                   <span class="rd-cmpl-card__status" style="--tone:${st.color}">${Sec.escapeHTML(st.label)}</span>
                 </div>
                 <div class="rd-cmpl-panel__desc">${Sec.escapeHTML(active.description || active.desc || '')}</div>
@@ -34394,6 +34401,10 @@
           const detailsLabel = form.kind === 'suggestion' ? 'تفاصيل الاقتراح' : 'تفاصيل الشكوى';
           const submitLabel = form.kind === 'suggestion' ? 'إرسال الاقتراح' : 'إرسال الشكوى';
           const descPlaceholder = form.kind === 'suggestion' ? 'اشرح اقتراحك بالتفصيل...' : 'اشرح شكواك بالتفصيل...';
+          const anonLabel = form.kind === 'suggestion' ? 'ارفع الاقتراح كمجهول' : 'ارفع الشكوى كمجهول';
+          const anonHint = form.kind === 'suggestion'
+            ? 'لن يظهر اسمك مع هذا الاقتراح'
+            : 'لن يظهر اسمك مع هذه الشكوى';
           const attachLabel = form.attachCount > 0
             ? `${form.attachCount} ملف مرفق — اضغط لإضافة المزيد`
             : 'اضغط لإرفاق ملف';
@@ -34415,6 +34426,13 @@
                 <button type="button" class="rd-cmpl-attach" onclick="rdCmplSimulateAttach()">
                   <i class="fas fa-paperclip" aria-hidden="true"></i>
                   <span>${Sec.escapeHTML(attachLabel)}</span>
+                </button>
+                <button type="button" class="rd-cmpl-anon${form.anonymous ? ' is-on' : ''}" onclick="rdCmplToggleAnonymous()" aria-pressed="${form.anonymous ? 'true' : 'false'}">
+                  <span class="rd-cmpl-anon__copy">
+                    <span class="rd-cmpl-anon__title"><i class="fas fa-user-secret" aria-hidden="true"></i>${Sec.escapeHTML(anonLabel)}</span>
+                    <span class="rd-cmpl-anon__hint">${Sec.escapeHTML(anonHint)}</span>
+                  </span>
+                  <span class="rd-cmpl-anon__switch" aria-hidden="true"><span class="rd-cmpl-anon__knob"></span></span>
                 </button>
                 <button type="button" class="rd-cmpl-btn rd-cmpl-btn--primary rd-cmpl-btn--block" onclick="rdSubmitComplaintForm()">${Sec.escapeHTML(submitLabel)}</button>
               </div>
@@ -34456,7 +34474,8 @@
           kind: 'complaint',
           category: RD_COMPLAINT_CATS[0].label,
           desc: '',
-          attachCount: 0
+          attachCount: 0,
+          anonymous: false
         };
         renderComplaintsOverlays();
       }
@@ -34486,6 +34505,12 @@
         renderComplaintsOverlays();
       }
 
+      function rdCmplToggleAnonymous() {
+        const form = rdCmplEnsureForm();
+        form.anonymous = !form.anonymous;
+        renderComplaintsOverlays();
+      }
+
       function rdSubmitComplaintForm() {
         const form = rdCmplEnsureForm();
         const descEl = document.getElementById('rdCmplDescInput');
@@ -34495,11 +34520,13 @@
           return;
         }
         const cat = rdCatsForKind(form.kind).find(c => c.label === form.category) || rdCatsForKind(form.kind)[0];
+        const anonymous = !!form.anonymous;
         const rows = getRdComplaints();
         rows.unshift({
           id: 'cp-' + Date.now(),
           kind: form.kind,
-          employeeName: rdCmplCurrentUserName(),
+          isAnonymous: anonymous,
+          employeeName: anonymous ? 'مجهول' : rdCmplCurrentUserName(),
           category: cat.label,
           categoryIcon: cat.icon,
           description: desc,
@@ -34511,7 +34538,12 @@
         rdSaveJson(RD_CMPL_KEY, rows);
         form.open = false;
         renderComplaintsDesktop();
-        showToast(form.kind === 'complaint' ? 'تم رفع الشكوى' : 'تم رفع الاقتراح', 'success');
+        showToast(
+          form.kind === 'complaint'
+            ? (anonymous ? 'تم رفع الشكوى كمجهول' : 'تم رفع الشكوى')
+            : (anonymous ? 'تم رفع الاقتراح كمجهول' : 'تم رفع الاقتراح'),
+          'success'
+        );
       }
 
       function rdOpenComplaintDetail(id) {
@@ -34587,6 +34619,7 @@
       window.rdCmplSetKind = rdCmplSetKind;
       window.rdCmplSetCategory = rdCmplSetCategory;
       window.rdCmplSimulateAttach = rdCmplSimulateAttach;
+      window.rdCmplToggleAnonymous = rdCmplToggleAnonymous;
       window.rdSubmitComplaintForm = rdSubmitComplaintForm;
       window.rdOpenComplaintDetail = rdOpenComplaintDetail;
       window.rdCloseComplaintDetail = rdCloseComplaintDetail;

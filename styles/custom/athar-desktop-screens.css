@@ -4990,6 +4990,90 @@ html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-attach spa
   font-weight: 600 !important;
 }
 
+html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-anon {
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 14px !important;
+  text-align: start !important;
+  background: var(--surface2) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+  padding: 12px 14px !important;
+  margin-bottom: 16px !important;
+  cursor: pointer !important;
+  color: var(--text) !important;
+  font-family: inherit !important;
+  transition: border-color 160ms ease, background 160ms ease !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-anon.is-on {
+  border-color: color-mix(in srgb, var(--gold) 55%, var(--border)) !important;
+  background: color-mix(in srgb, var(--gold) 10%, var(--surface2)) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-anon__copy {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 3px !important;
+  min-width: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-anon__title {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-anon__title i {
+  color: var(--text3) !important;
+  font-size: 13px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-anon.is-on .rd-cmpl-anon__title i {
+  color: var(--gold) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-anon__hint {
+  font-size: 11.5px !important;
+  font-weight: 500 !important;
+  color: var(--text3) !important;
+  line-height: 1.35 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-anon__switch {
+  position: relative !important;
+  flex: 0 0 auto !important;
+  width: 42px !important;
+  height: 24px !important;
+  border-radius: 999px !important;
+  background: var(--border) !important;
+  transition: background 160ms ease !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-anon.is-on .rd-cmpl-anon__switch {
+  background: var(--gold) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-anon__knob {
+  position: absolute !important;
+  top: 3px !important;
+  inset-inline-start: 3px !important;
+  width: 18px !important;
+  height: 18px !important;
+  border-radius: 50% !important;
+  background: #fff !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18) !important;
+  transition: inset-inline-start 160ms ease, transform 160ms ease !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-anon.is-on .rd-cmpl-anon__knob {
+  inset-inline-start: 21px !important;
+}
+
 html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-btn {
   border: none !important;
   border-radius: 12px !important;
