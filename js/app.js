@@ -14484,9 +14484,9 @@
                 <span class="rd-desk-user__name">${Sec.escapeHTML(u.name || '')}</span>
               </div>
               <span role="cell"><span class="rd-desk-role" style="--rc:${roleColor}">${Sec.escapeHTML(roleLabel || '—')}</span></span>
-              <span role="cell" class="rd-desk-muted">${Sec.escapeHTML(branchName)}</span>
+              <span role="cell" class="rd-desk-muted rd-desk-clip">${Sec.escapeHTML(branchName)}</span>
               <span role="cell" class="rd-desk-mono">${Sec.escapeHTML(empNum || '—')}</span>
-              <span role="cell" class="rd-desk-muted" dir="ltr">${Sec.escapeHTML(u.phone || '—')}</span>
+              <span role="cell" class="rd-desk-muted rd-desk-clip" dir="ltr">${Sec.escapeHTML(u.phone || '—')}</span>
               <span role="cell" class="rd-desk-muted rd-desk-clip">${Sec.escapeHTML(u.email || '—')}</span>
               <span role="cell">${actions}</span>
             </div>`;

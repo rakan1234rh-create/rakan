@@ -1956,7 +1956,8 @@ html.athar-staging-redesign.mr-desktop-ui #tab-departments .rd-desk-table--users
   background: var(--surface) !important;
   border: 1px solid var(--border) !important;
   border-radius: 16px !important;
-  overflow: hidden !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
   isolation: isolate !important;
 }
 
@@ -1970,10 +1971,30 @@ html.athar-staging-redesign.mr-desktop-ui .rd-desk-table {
 html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--users .rd-desk-table__head,
 html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--users .rd-desk-table__row {
   display: grid !important;
-  grid-template-columns: 1.8fr 0.9fr 1.2fr 0.9fr 1.2fr 1.4fr 110px !important;
-  gap: 12px !important;
+  grid-template-columns:
+    minmax(150px, 1.45fr)
+    minmax(96px, 0.85fr)
+    minmax(110px, 1.1fr)
+    minmax(100px, 0.85fr)
+    minmax(110px, 0.95fr)
+    minmax(140px, 1.25fr)
+    72px !important;
+  gap: 10px !important;
   align-items: center !important;
-  padding: 13px 18px !important;
+  padding: 12px 16px !important;
+  box-sizing: border-box !important;
+  min-width: 920px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--users .rd-desk-table__head > *,
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--users .rd-desk-table__row > * {
+  min-width: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--users .rd-desk-table__head > *:last-child,
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--users .rd-desk-table__row > *:last-child {
+  justify-self: end !important;
+  overflow: visible !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui .rd-desk-table__head {
@@ -1999,6 +2020,7 @@ html.athar-staging-redesign.mr-desktop-ui .rd-desk-user {
   align-items: center !important;
   gap: 10px !important;
   min-width: 0 !important;
+  width: 100% !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui .rd-desk-user__av {
@@ -2037,22 +2059,30 @@ html.athar-staging-redesign.mr-desktop-ui .rd-desk-user__name {
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
+  min-width: 0 !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui .rd-desk-role {
   display: inline-flex !important;
+  max-width: 100% !important;
   padding: 4px 10px !important;
   border-radius: 999px !important;
   font-size: 10.5px !important;
   font-weight: 700 !important;
   background: color-mix(in srgb, var(--rc, var(--gold)) 14%, transparent) !important;
   color: var(--rc, var(--gold)) !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui .rd-desk-mono {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
   font-size: 12px !important;
   color: var(--text2) !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui .rd-desk-muted {
@@ -2064,6 +2094,8 @@ html.athar-staging-redesign.mr-desktop-ui .rd-desk-clip {
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
+  display: block !important;
+  max-width: 100% !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui .rd-desk-acts {
