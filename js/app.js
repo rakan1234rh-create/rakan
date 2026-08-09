@@ -14455,6 +14455,7 @@
             <div class="rd-desk-table__head" role="row">
               <span role="columnheader">الموظف</span>
               <span role="columnheader">الدور</span>
+              <span role="columnheader">الفرع</span>
               <span role="columnheader">الرقم الوظيفي</span>
               <span role="columnheader">الهاتف</span>
               <span role="columnheader">البريد</span>
@@ -14464,6 +14465,10 @@
           const roleKey = normalizeUserRole(u.role);
           const roleLabel = userTableRoleLabel(u) || ROLE_LABELS[roleKey] || roleKey;
           const roleColor = ROLE_COLORS[roleKey] || ROLE_COLORS[u.role] || '#8e8e93';
+          const branch = state._branchById
+            ? state._branchById.get(u.branch_id)
+            : (state.branches || []).find(b => b.id === u.branch_id);
+          const branchName = (branch && branch.name) || '—';
           const empNum = padEmpNum(u.employee_number);
           const uid = String(u.id || '').replace(/'/g, "\\'");
           const active = !!(u.auth_uid && isActiveUser(u));
@@ -14479,6 +14484,7 @@
                 <span class="rd-desk-user__name">${Sec.escapeHTML(u.name || '')}</span>
               </div>
               <span role="cell"><span class="rd-desk-role" style="--rc:${roleColor}">${Sec.escapeHTML(roleLabel || '—')}</span></span>
+              <span role="cell" class="rd-desk-muted">${Sec.escapeHTML(branchName)}</span>
               <span role="cell" class="rd-desk-mono">${Sec.escapeHTML(empNum || '—')}</span>
               <span role="cell" class="rd-desk-muted" dir="ltr">${Sec.escapeHTML(u.phone || '—')}</span>
               <span role="cell" class="rd-desk-muted rd-desk-clip">${Sec.escapeHTML(u.email || '—')}</span>
