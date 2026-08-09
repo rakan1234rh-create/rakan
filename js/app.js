@@ -33765,11 +33765,25 @@
 
       function getRdOutages() {
         const rows = rdLoadJson(RD_OUTAGE_KEY, null);
-        return Array.isArray(rows) ? rows : [];
+        if (!Array.isArray(rows)) return [];
+        return rows.map((o) => ({
+          ...o,
+          status: o && o.status === 'resolved' ? 'resolved' : 'open',
+        }));
       }
 
       function saveRdOutages(rows) {
         rdSaveJson(RD_OUTAGE_KEY, rows || []);
+      }
+
+      function rdOutageStatusMeta(status) {
+        if (status === 'resolved') return { label: 'تم الحل', color: 'var(--success)' };
+        return { label: 'قيد المتابعة', color: 'var(--warning)' };
+      }
+
+      function rdOutageNumber(id) {
+        const idx = getRdOutages().findIndex(o => o.id === id);
+        return '#' + (2001 + Math.max(0, idx));
       }
 
       function rdSchOverlayHost() {
@@ -33843,28 +33857,37 @@
 
         const list = outages.length
           ? `<div class="rd-sch-outage-list">
-              ${outages.map((o, i) => `
-                <div class="rd-sch-outage" style="animation-delay:${Math.min(0.3, i * 0.04)}s">
-                  <div class="rd-sch-outage__ico"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i></div>
+              ${outages.map((o, i) => {
+                const st = rdOutageStatusMeta(o.status);
+                const resolved = o.status === 'resolved';
+                return `
+                <div class="rd-sch-outage${resolved ? ' is-resolved' : ''}" style="animation-delay:${Math.min(0.3, i * 0.04)}s" onclick="rdOpenOutageDetail('${Sec.escapeHTML(o.id)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();rdOpenOutageDetail('${Sec.escapeHTML(o.id)}')}" role="button" tabindex="0">
+                  <div class="rd-sch-outage__ico"><i class="fas ${resolved ? 'fa-circle-check' : 'fa-triangle-exclamation'}" aria-hidden="true"></i></div>
                   <div class="rd-sch-outage__body">
-                    <div class="rd-sch-outage__branch">${Sec.escapeHTML(o.branchName || 'فرع')}</div>
+                    <div class="rd-sch-outage__top">
+                      <div class="rd-sch-outage__branch">${Sec.escapeHTML(o.branchName || 'فرع')}</div>
+                      <span class="rd-sch-outage__status" style="--tone:${st.color}">${Sec.escapeHTML(st.label)}</span>
+                    </div>
                     <div class="rd-sch-outage__reason">${Sec.escapeHTML(o.reason || '')}</div>
-                    <div class="rd-sch-outage__meta">${Sec.escapeHTML(o.reporterName ? o.reporterName + ' · ' : '')}${Sec.escapeHTML(o.time || '')}${o.attachCount ? ' · ' + o.attachCount + ' مرفق' : ''}</div>
+                    <div class="rd-sch-outage__meta">${Sec.escapeHTML(rdOutageNumber(o.id))} · ${Sec.escapeHTML(o.reporterName ? o.reporterName + ' · ' : '')}${Sec.escapeHTML(o.time || '')}${o.attachCount ? ' · ' + o.attachCount + ' مرفق' : ''}</div>
                   </div>
-                  <button type="button" class="rd-sch-outage__resolve" onclick="rdResolveOutage('${Sec.escapeHTML(o.id)}')">تم الحل</button>
-                </div>`).join('')}
+                </div>`;
+              }).join('')}
             </div>`
           : `<div class="rd-ticket-empty"><i class="fas fa-clipboard-list"></i><p>لا توجد بلاغات بعد — ارفع بلاغاً لأي فرع مباشرة</p></div>`;
 
         host.innerHTML = `
-          <p class="rd-sch-intro">ارفع بلاغ تعطل عن أي فرع مباشرة دون الحاجة لتعيين جدول رصد مسبق. البلاغ يظهر للإدارة للمتابعة حتى يتم حلّه.</p>
+          <p class="rd-sch-intro">ارفع بلاغ تعطل عن أي فرع مباشرة دون الحاجة لتعيين جدول رصد مسبق. البلاغ يظهر للإدارة للمتابعة حتى يتم حلّه، ويبقى محفوظاً بعد الحل.</p>
           <div class="rd-sch-toolbar">
             <div class="figma-search-wrap wf-search">
               <input type="text" class="figma-search-input" id="rdSchSearch" value="${Sec.escapeHTML(state._rdSchSearch || '')}"
                 placeholder="ابحث باسم الفرع أو سبب البلاغ..." oninput="rdSchSearch(this.value)">
               <button type="button" class="figma-search-btn" aria-label="بحث"><i class="fas fa-magnifying-glass"></i></button>
             </div>
-            <button type="button" class="mk-btn mk-btn--primary" onclick="rdOpenOutageReport()"><i class="fas fa-plus"></i>رفع بلاغ</button>
+            <div class="rd-sch-toolbar__acts">
+              <button type="button" class="mk-btn" onclick="rdExportOutages()"><i class="fas fa-file-export"></i>تصدير التقرير</button>
+              <button type="button" class="mk-btn mk-btn--primary" onclick="rdOpenOutageReport()"><i class="fas fa-plus"></i>رفع بلاغ</button>
+            </div>
           </div>
           <div class="rd-sch-outage-title">بلاغات تعطل الفروع</div>
           ${list}`;
@@ -33975,6 +33998,41 @@
                 ${daysBtns}
 
                 <button type="button" class="rd-sch-panel__save" onclick="rdSaveScheduleForm()">حفظ الجدول</button>
+              </div>
+            </div>`;
+        }
+
+        const detailId = state._rdOutageDetailId || null;
+        const activeOutage = detailId ? getRdOutages().find(o => o.id === detailId) : null;
+        if (activeOutage) {
+          const st = rdOutageStatusMeta(activeOutage.status);
+          const resolveBtn = activeOutage.status === 'resolved'
+            ? `<button type="button" class="rd-sch-panel__action rd-sch-panel__action--done" disabled><i class="fas fa-check" aria-hidden="true"></i>تم الحل</button>`
+            : `<button type="button" class="rd-sch-panel__action rd-sch-panel__action--success" onclick="rdResolveOutage('${Sec.escapeHTML(activeOutage.id)}')"><i class="fas fa-check" aria-hidden="true"></i>تحديد كمحلول</button>`;
+          html += `
+            <div class="rd-sch-overlay" role="dialog" aria-modal="true">
+              <div class="rd-sch-overlay__scrim" onclick="rdCloseOutageDetail()"></div>
+              <div class="rd-sch-panel rd-sch-panel--outage rd-sch-panel--detail">
+                <div class="rd-sch-panel__head">
+                  <div class="rd-sch-panel__title-row">
+                    <span class="rd-sch-panel__title">${Sec.escapeHTML(activeOutage.branchName || 'فرع')}</span>
+                    <span class="rd-sch-outage__status" style="--tone:${st.color}">${Sec.escapeHTML(st.label)}</span>
+                    <span class="rd-sch-outage__num">${Sec.escapeHTML(rdOutageNumber(activeOutage.id))}</span>
+                  </div>
+                  <button type="button" class="rd-sch-panel__close" onclick="rdCloseOutageDetail()" aria-label="إغلاق"><i class="fas fa-xmark"></i></button>
+                </div>
+                <div class="rd-sch-panel__subrow">
+                  <span>${Sec.escapeHTML(activeOutage.reporterName || 'راصد')} <span class="rd-desk-muted">· ${Sec.escapeHTML(activeOutage.time || '')}</span></span>
+                </div>
+                <div class="rd-sch-panel__field-label">سبب التعطل</div>
+                <div class="rd-sch-panel__desc">${Sec.escapeHTML(activeOutage.reason || '')}</div>
+                <div class="rd-sch-panel__meta-grid">
+                  <div><span class="rd-desk-muted">المرفقات</span><strong>${Number(activeOutage.attachCount || 0)}</strong></div>
+                  <div><span class="rd-desk-muted">وقت الحل</span><strong>${Sec.escapeHTML(activeOutage.resolvedAt || '—')}</strong></div>
+                </div>
+                <div class="rd-sch-panel__actions">
+                  ${resolveBtn}
+                </div>
               </div>
             </div>`;
         }
@@ -34140,6 +34198,7 @@
           showToast('لا توجد فروع مسجّلة لرفع بلاغ', 'warning');
           return;
         }
+        state._rdOutageDetailId = null;
         const f = rdSchEnsureOutageForm();
         f.open = true;
         f.branchId = branchId || '';
@@ -34155,6 +34214,18 @@
 
       function rdCloseOutageReport() {
         rdSchEnsureOutageForm().open = false;
+        renderScheduleOverlays();
+      }
+
+      function rdOpenOutageDetail(id) {
+        rdSchEnsureOutageForm().open = false;
+        rdSchEnsureForm().open = false;
+        state._rdOutageDetailId = id || null;
+        renderScheduleOverlays();
+      }
+
+      function rdCloseOutageDetail() {
+        state._rdOutageDetailId = null;
         renderScheduleOverlays();
       }
 
@@ -34198,6 +34269,8 @@
           reason,
           reporterName,
           time: 'الآن',
+          createdAt: new Date().toISOString(),
+          status: 'open',
           attachCount: f.attachCount || 0,
         });
         saveRdOutages(outages);
@@ -34207,10 +34280,43 @@
       }
 
       function rdResolveOutage(id) {
-        const outages = getRdOutages().filter(o => o.id !== id);
+        const outages = getRdOutages().map((o) => {
+          if (o.id !== id) return o;
+          if (o.status === 'resolved') return o;
+          return {
+            ...o,
+            status: 'resolved',
+            resolvedAt: 'الآن',
+            resolvedAtIso: new Date().toISOString(),
+          };
+        });
         saveRdOutages(outages);
         renderScheduleDesktop();
-        showToast('تم تحديدها كمحلولة', 'success');
+        showToast('تم تحديد البلاغ كمحلول', 'success');
+      }
+
+      function rdExportOutages() {
+        const rows = getRdOutages();
+        if (!rows.length) {
+          showToast('لا توجد بلاغات للتصدير', 'warning');
+          return;
+        }
+        const headers = ['الرقم', 'الفرع', 'السبب', 'الراصد', 'الحالة', 'وقت البلاغ', 'وقت الحل', 'المرفقات'];
+        const csvRows = rows.map((o) => {
+          const st = rdOutageStatusMeta(o.status);
+          return [
+            rdOutageNumber(o.id),
+            o.branchName || '',
+            o.reason || '',
+            o.reporterName || '',
+            st.label,
+            o.time || '',
+            o.resolvedAt || '',
+            String(o.attachCount || 0),
+          ];
+        });
+        downloadCsvFile(`athar-outages-${ksaCsvDateStamp()}.csv`, headers, csvRows);
+        showToast(`تم تصدير ${rows.length} بلاغ ✓`, 'success');
       }
 
       function renderComplaintsDesktop() {
@@ -34604,10 +34710,13 @@
       window.rdDeleteSchedule = rdDeleteSchedule;
       window.rdOpenOutageReport = rdOpenOutageReport;
       window.rdCloseOutageReport = rdCloseOutageReport;
+      window.rdOpenOutageDetail = rdOpenOutageDetail;
+      window.rdCloseOutageDetail = rdCloseOutageDetail;
       window.rdSchSetOutageBranch = rdSchSetOutageBranch;
       window.rdSchOutageAttach = rdSchOutageAttach;
       window.rdSubmitOutage = rdSubmitOutage;
       window.rdResolveOutage = rdResolveOutage;
+      window.rdExportOutages = rdExportOutages;
       // Legacy alias — some places may still reference the old add-prompt API
       window.rdAddSchedulePrompt = rdOpenScheduleForm;
       window.rdOpenReportView = rdOpenReportView;
