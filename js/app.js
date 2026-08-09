@@ -33786,6 +33786,31 @@
         return '#' + (2001 + Math.max(0, idx));
       }
 
+      function rdOutageCreatedLabel(o) {
+        if (o && o.createdAt) {
+          const f = formatDateTime(o.createdAt);
+          if (f) return f;
+        }
+        const m = String((o && o.id) || '').match(/^out-(\d{10,})$/);
+        if (m) {
+          const f = formatDateTime(new Date(Number(m[1])).toISOString());
+          if (f) return f;
+        }
+        const t = o && o.time;
+        if (t && t !== 'الآن') return t;
+        return '—';
+      }
+
+      function rdOutageResolvedLabel(o) {
+        if (o && o.resolvedAtIso) {
+          const f = formatDateTime(o.resolvedAtIso);
+          if (f) return f;
+        }
+        const t = o && o.resolvedAt;
+        if (t && t !== 'الآن') return t;
+        return '—';
+      }
+
       function rdSchOverlayHost() {
         let el = document.getElementById('rdSchOverlayHost');
         if (!el) {
@@ -33869,7 +33894,7 @@
                       <span class="rd-sch-outage__status" style="--tone:${st.color}">${Sec.escapeHTML(st.label)}</span>
                     </div>
                     <div class="rd-sch-outage__reason">${Sec.escapeHTML(o.reason || '')}</div>
-                    <div class="rd-sch-outage__meta">${Sec.escapeHTML(rdOutageNumber(o.id))} · ${Sec.escapeHTML(o.reporterName ? o.reporterName + ' · ' : '')}${Sec.escapeHTML(o.time || '')}${o.attachCount ? ' · ' + o.attachCount + ' مرفق' : ''}</div>
+                    <div class="rd-sch-outage__meta">${Sec.escapeHTML(rdOutageNumber(o.id))} · ${Sec.escapeHTML(o.reporterName ? o.reporterName + ' · ' : '')}${Sec.escapeHTML(rdOutageCreatedLabel(o))}${o.attachCount ? ' · ' + o.attachCount + ' مرفق' : ''}</div>
                   </div>
                 </div>`;
               }).join('')}
@@ -34022,13 +34047,15 @@
                   <button type="button" class="rd-sch-panel__close" onclick="rdCloseOutageDetail()" aria-label="إغلاق"><i class="fas fa-xmark"></i></button>
                 </div>
                 <div class="rd-sch-panel__subrow">
-                  <span>${Sec.escapeHTML(activeOutage.reporterName || 'راصد')} <span class="rd-desk-muted">· ${Sec.escapeHTML(activeOutage.time || '')}</span></span>
+                  <span>${Sec.escapeHTML(activeOutage.reporterName || 'راصد')}</span>
                 </div>
                 <div class="rd-sch-panel__field-label">سبب التعطل</div>
                 <div class="rd-sch-panel__desc">${Sec.escapeHTML(activeOutage.reason || '')}</div>
                 <div class="rd-sch-panel__meta-grid">
+                  <div><span class="rd-desk-muted">وقت الإنشاء</span><strong>${Sec.escapeHTML(rdOutageCreatedLabel(activeOutage))}</strong></div>
+                  <div><span class="rd-desk-muted">وقت الحل</span><strong>${Sec.escapeHTML(rdOutageResolvedLabel(activeOutage))}</strong></div>
                   <div><span class="rd-desk-muted">المرفقات</span><strong>${Number(activeOutage.attachCount || 0)}</strong></div>
-                  <div><span class="rd-desk-muted">وقت الحل</span><strong>${Sec.escapeHTML(activeOutage.resolvedAt || '—')}</strong></div>
+                  <div><span class="rd-desk-muted">الحالة</span><strong>${Sec.escapeHTML(st.label)}</strong></div>
                 </div>
                 <div class="rd-sch-panel__actions">
                   ${resolveBtn}
@@ -34262,14 +34289,16 @@
           reporterName = (state.currentUser && (state.currentUser.name || state.currentUser.fullName)) || 'راصد';
         } catch (_) { /* noop */ }
         const outages = getRdOutages();
+        const createdAt = new Date().toISOString();
+        const createdLabel = formatDateTime(createdAt) || createdAt;
         outages.unshift({
           id: 'out-' + Date.now(),
           branchId: f.branchId,
           branchName: f.branchName,
           reason,
           reporterName,
-          time: 'الآن',
-          createdAt: new Date().toISOString(),
+          time: createdLabel,
+          createdAt,
           status: 'open',
           attachCount: f.attachCount || 0,
         });
@@ -34280,14 +34309,16 @@
       }
 
       function rdResolveOutage(id) {
+        const resolvedAtIso = new Date().toISOString();
+        const resolvedLabel = formatDateTime(resolvedAtIso) || resolvedAtIso;
         const outages = getRdOutages().map((o) => {
           if (o.id !== id) return o;
           if (o.status === 'resolved') return o;
           return {
             ...o,
             status: 'resolved',
-            resolvedAt: 'الآن',
-            resolvedAtIso: new Date().toISOString(),
+            resolvedAt: resolvedLabel,
+            resolvedAtIso,
           };
         });
         saveRdOutages(outages);
@@ -34301,7 +34332,7 @@
           showToast('لا توجد بلاغات للتصدير', 'warning');
           return;
         }
-        const headers = ['الرقم', 'الفرع', 'السبب', 'الراصد', 'الحالة', 'وقت البلاغ', 'وقت الحل', 'المرفقات'];
+        const headers = ['الرقم', 'الفرع', 'السبب', 'الراصد', 'الحالة', 'وقت الإنشاء', 'وقت الحل', 'المرفقات'];
         const csvRows = rows.map((o) => {
           const st = rdOutageStatusMeta(o.status);
           return [
@@ -34310,8 +34341,8 @@
             o.reason || '',
             o.reporterName || '',
             st.label,
-            o.time || '',
-            o.resolvedAt || '',
+            rdOutageCreatedLabel(o),
+            rdOutageResolvedLabel(o),
             String(o.attachCount || 0),
           ];
         });
