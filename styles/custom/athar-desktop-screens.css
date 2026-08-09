@@ -1973,9 +1973,9 @@ html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--users .rd-desk-table__
   display: grid !important;
   grid-template-columns:
     minmax(150px, 1.45fr)
+    minmax(100px, 0.85fr)
     minmax(96px, 0.85fr)
     minmax(110px, 1.1fr)
-    minmax(100px, 0.85fr)
     minmax(110px, 0.95fr)
     minmax(140px, 1.25fr)
     72px !important;

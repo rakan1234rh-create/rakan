@@ -14454,9 +14454,9 @@
           <div class="rd-desk-table rd-desk-table--users" role="table">
             <div class="rd-desk-table__head" role="row">
               <span role="columnheader">الموظف</span>
+              <span role="columnheader">الرقم الوظيفي</span>
               <span role="columnheader">الدور</span>
               <span role="columnheader">الفرع</span>
-              <span role="columnheader">الرقم الوظيفي</span>
               <span role="columnheader">الهاتف</span>
               <span role="columnheader">البريد</span>
               <span role="columnheader">إجراءات</span>
@@ -14483,9 +14483,9 @@
                 <span class="rd-desk-user__av">${Sec.escapeHTML(initial)}<i class="rd-desk-user__dot${active ? ' is-on' : ''}" aria-hidden="true"></i></span>
                 <span class="rd-desk-user__name">${Sec.escapeHTML(u.name || '')}</span>
               </div>
+              <span role="cell" class="rd-desk-mono">${Sec.escapeHTML(empNum || '—')}</span>
               <span role="cell"><span class="rd-desk-role" style="--rc:${roleColor}">${Sec.escapeHTML(roleLabel || '—')}</span></span>
               <span role="cell" class="rd-desk-muted rd-desk-clip">${Sec.escapeHTML(branchName)}</span>
-              <span role="cell" class="rd-desk-mono">${Sec.escapeHTML(empNum || '—')}</span>
               <span role="cell" class="rd-desk-muted rd-desk-clip" dir="ltr">${Sec.escapeHTML(u.phone || '—')}</span>
               <span role="cell" class="rd-desk-muted rd-desk-clip">${Sec.escapeHTML(u.email || '—')}</span>
               <span role="cell">${actions}</span>
