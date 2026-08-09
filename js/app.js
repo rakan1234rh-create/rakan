@@ -6390,7 +6390,7 @@
         { id: 'tab_settings', label: 'صفحة صلاحيات المنصة', group: 'الإعدادات', roles: [] },
         { id: 'tab_broadcasts', label: 'نشرات الجوال', group: 'الإعدادات', roles: ['admin'] },
         { id: 'tab_breaks', label: 'بريكات الموظفين', group: 'التنقل', roles: ['admin', 'supervisor', 'branch_manager', 'observer', 'employee'] },
-        { id: 'tab_schedule', label: 'الجدول', group: 'التنقل', roles: ['admin', 'manager', 'auditor', 'supervisor', 'observer'] },
+        { id: 'tab_schedule', label: 'البلاغات', group: 'التنقل', roles: ['admin', 'manager', 'auditor', 'supervisor', 'observer'] },
         { id: 'tab_complaints', label: 'الشكاوى والاقتراحات', group: 'التنقل', roles: ['admin', 'manager', 'auditor', 'supervisor', 'employee', 'branch_manager', 'observer', 'hr'] },
         { id: 'manage_break_schedules', label: 'تعديل مدد البريك (منطقة/فرع/موظف)', group: 'إجراءات إدارية', roles: ['admin'] },
         { id: 'view_all_tickets', label: 'عرض جميع التذاكر (كل الفروع)', group: 'سير العمل', roles: ['admin', 'manager', 'auditor', 'hr'] },
@@ -8493,7 +8493,7 @@
         newTicket: { title: 'رصد مخالفة جديدة', sub: 'سجّل مخالفة بأكبر قدر من التفاصيل' },
         workflow: { title: 'التذاكر', sub: 'إدارة ومتابعة تذاكر المخالفات' },
         breaks: { title: 'بريكات الموظفين', sub: '' },
-        schedule: { title: 'جدول الرصد', sub: 'تعيين الراصدين على الفروع وتحديد الورديات والتكرار' },
+        schedule: { title: 'بلاغات الرصد', sub: 'ارفع بلاغ تعطل لأي فرع وتابع حالة البلاغات' },
         complaints: { title: 'الشكاوى والاقتراحات', sub: 'ارفع شكواك أو اقتراحك وتابع الرد عليها' },
         reports: { title: 'التقارير', sub: 'مؤشرات الأداء والاتجاهات' },
         compliance: { title: 'مؤشرات الامتثال', sub: 'نظرة عامة على أداء كل المناطق' },
@@ -33594,7 +33594,7 @@
       window.closeProfilePage = closeProfilePage;
       window.toggleThemeFromUserMenu = toggleThemeFromUserMenu;
       window.handleLogoutFromUserMenu = handleLogoutFromUserMenu;
-      /* ── Desktop: الجدول + الشكاوى (من Athar Redesign Desktop) ── */
+      /* ── Desktop: بلاغات الرصد + الشكاوى (من Athar Redesign Desktop) ── */
       const RD_SCH_KEY = 'athar_rd_schedule_v1';
       const RD_CMPL_KEY = 'athar_rd_complaints_v2';
 
@@ -33812,97 +33812,62 @@
         return state._rdOutageForm;
       }
 
+      function rdSchOutageBranchOptionsHtml(selectedId) {
+        const branches = Array.isArray(state.branches) ? state.branches.slice() : [];
+        branches.sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'ar'));
+        if (!branches.length) {
+          return '<option value="">لا توجد فروع</option>';
+        }
+        return `<option value="">اختر الفرع</option>` + branches.map(b => {
+          const id = String(b.id || '');
+          const sel = id && id === String(selectedId || '') ? ' selected' : '';
+          return `<option value="${Sec.escapeHTML(id)}"${sel}>${Sec.escapeHTML(b.name || 'فرع')}</option>`;
+        }).join('');
+      }
+
       function renderScheduleDesktop() {
         const host = document.getElementById('rdScheduleHost');
         if (!host) return;
         if (!isAtharDesktopScreenUi()) {
-          host.innerHTML = '<div class="rd-ticket-empty"><i class="fas fa-desktop"></i><p>شاشة الجدول متاحة على سطح المكتب</p></div>';
+          host.innerHTML = '<div class="rd-ticket-empty"><i class="fas fa-desktop"></i><p>شاشة البلاغات متاحة على سطح المكتب</p></div>';
           rdSchOverlayHost().innerHTML = '';
           return;
         }
         const q = (state._rdSchSearch || '').toLowerCase().trim();
-        let rows = getRdSchedules();
-        const outages = getRdOutages();
+        let outages = getRdOutages();
         if (q) {
-          rows = rows.filter(r => {
-            const names = (r.branchIds || []).map(id => (state.branches || []).find(b => b.id === id)?.name || '').join(' ');
-            return `${r.monitorName} ${names}`.toLowerCase().includes(q);
-          });
+          outages = outages.filter(o =>
+            `${o.branchName || ''} ${o.reason || ''} ${o.reporterName || ''}`.toLowerCase().includes(q)
+          );
         }
 
-        const cards = rows.map((r, i) => {
-          const shift = rdShiftMeta(r.shift);
-          const initial = String(r.monitorName || '؟').trim().charAt(0) || '؟';
-          const branches = (r.branchIds || []).map(id => (state.branches || []).find(b => b.id === id))
-            .filter(Boolean);
-          const chips = branches.slice(0, 2).map(b => {
-            const hasOut = outages.some(o => o.branchId === b.id);
-            const cls = 'rd-sch-chip' + (hasOut ? ' is-outage' : '');
-            return `
-              <span class="${cls}">
-                <i class="fas fa-store" aria-hidden="true"></i>
-                <span class="rd-sch-chip__lbl">${Sec.escapeHTML(b.name || 'فرع')}</span>
-                <button type="button" class="rd-sch-chip__report" onclick="event.stopPropagation();rdOpenOutageReport('${Sec.escapeHTML(b.id)}','${Sec.escapeHTML((b.name || '').replace(/'/g, '&#39;'))}')" title="الإبلاغ عن تعطل الفرع" aria-label="الإبلاغ عن تعطل الفرع">
-                  <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
-                </button>
-              </span>`;
-          }).join('');
-          const extra = branches.length > 2
-            ? `<span class="rd-sch-chip-extra">+${branches.length - 2}</span>`
-            : '';
-          const freqLabel = r.frequency === 'weekly' ? 'أسبوعي' : 'يومي';
-          const daysSuffix = (r.frequency === 'weekly' && Array.isArray(r.days) && r.days.length)
-            ? `(${r.days.map(rdSchDayLabel).join('، ')})`
-            : '';
-          const metaFreq = daysSuffix ? `${freqLabel} ${daysSuffix}` : freqLabel;
-          return `
-            <article class="rd-sch-card" style="animation-delay:${Math.min(0.3, i * 0.04)}s">
-              <div class="rd-sch-card__top">
-                <div class="rd-sch-card__who">
-                  <span class="rd-sch-card__av">${Sec.escapeHTML(initial)}</span>
-                  <div class="rd-sch-card__who-body">
-                    <div class="rd-sch-card__name">${Sec.escapeHTML(r.monitorName || '—')}</div>
-                    <div class="rd-sch-card__meta"><span dir="ltr" style="unicode-bidi:isolate">${Sec.escapeHTML(r.startTime || '')} – ${Sec.escapeHTML(r.endTime || '')}</span> · ${Sec.escapeHTML(metaFreq)}</div>
-                  </div>
-                </div>
-                <div class="rd-sch-card__acts">
-                  <span class="rd-sch-shift" style="--sc:${shift.color}">${Sec.escapeHTML(shift.label)}</span>
-                  ${rdDeskActMenuHTML(`rdOpenScheduleForm('${Sec.escapeHTML(r.id)}')`, `rdDeleteSchedule('${Sec.escapeHTML(r.id)}')`, true, true)}
-                </div>
-              </div>
-              <div class="rd-sch-card__chips">${chips || '<span class="rd-desk-muted">لا فروع</span>'}${extra}</div>
-            </article>`;
-        }).join('');
-
-        const outageSection = outages.length
-          ? `
-            <div class="rd-sch-outage-title">بلاغات تعطل الفروع</div>
-            <div class="rd-sch-outage-list">
+        const list = outages.length
+          ? `<div class="rd-sch-outage-list">
               ${outages.map((o, i) => `
                 <div class="rd-sch-outage" style="animation-delay:${Math.min(0.3, i * 0.04)}s">
                   <div class="rd-sch-outage__ico"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i></div>
                   <div class="rd-sch-outage__body">
-                    <div class="rd-sch-outage__branch">${Sec.escapeHTML(o.branchName || '')}</div>
+                    <div class="rd-sch-outage__branch">${Sec.escapeHTML(o.branchName || 'فرع')}</div>
                     <div class="rd-sch-outage__reason">${Sec.escapeHTML(o.reason || '')}</div>
-                    <div class="rd-sch-outage__meta">${Sec.escapeHTML(o.time || '')}${o.attachCount ? ' · ' + o.attachCount + ' مرفق' : ''}</div>
+                    <div class="rd-sch-outage__meta">${Sec.escapeHTML(o.reporterName ? o.reporterName + ' · ' : '')}${Sec.escapeHTML(o.time || '')}${o.attachCount ? ' · ' + o.attachCount + ' مرفق' : ''}</div>
                   </div>
                   <button type="button" class="rd-sch-outage__resolve" onclick="rdResolveOutage('${Sec.escapeHTML(o.id)}')">تم الحل</button>
                 </div>`).join('')}
             </div>`
-          : '';
+          : `<div class="rd-ticket-empty"><i class="fas fa-clipboard-list"></i><p>لا توجد بلاغات بعد — ارفع بلاغاً لأي فرع مباشرة</p></div>`;
 
         host.innerHTML = `
-          <p class="rd-sch-intro">كل راصد يرى ويتابع بريكات الفروع المسندة له فقط، ولا يمكنه إصدار مخالفة إلا على الفروع المجدولة له أدناه.</p>
+          <p class="rd-sch-intro">ارفع بلاغ تعطل عن أي فرع مباشرة دون الحاجة لتعيين جدول رصد مسبق. البلاغ يظهر للإدارة للمتابعة حتى يتم حلّه.</p>
           <div class="rd-sch-toolbar">
             <div class="figma-search-wrap wf-search">
               <input type="text" class="figma-search-input" id="rdSchSearch" value="${Sec.escapeHTML(state._rdSchSearch || '')}"
-                placeholder="ابحث باسم الراصد أو الفرع..." oninput="rdSchSearch(this.value)">
+                placeholder="ابحث باسم الفرع أو سبب البلاغ..." oninput="rdSchSearch(this.value)">
               <button type="button" class="figma-search-btn" aria-label="بحث"><i class="fas fa-magnifying-glass"></i></button>
             </div>
-            <button type="button" class="mk-btn mk-btn--primary" onclick="rdOpenScheduleForm()"><i class="fas fa-plus"></i>تعيين جدول</button>
+            <button type="button" class="mk-btn mk-btn--primary" onclick="rdOpenOutageReport()"><i class="fas fa-plus"></i>رفع بلاغ</button>
           </div>
-          <div class="rd-sch-list">${cards || '<div class="rd-ticket-empty"><i class="fas fa-calendar-days"></i><p>لا توجد جداول تعيين</p></div>'}</div>
-          ${outageSection}`;
+          <div class="rd-sch-outage-title">بلاغات تعطل الفروع</div>
+          ${list}`;
 
         renderScheduleOverlays();
       }
@@ -34018,18 +33983,25 @@
           const attachLabel = outageForm.attachCount > 0
             ? outageForm.attachCount + ' ملف مرفق — اضغط لإضافة المزيد'
             : 'اضغط لإرفاق ملف';
+          const hasPresetBranch = !!(outageForm.branchId && outageForm.branchName);
+          const branchBlock = hasPresetBranch
+            ? `<div class="rd-sch-outage-hero">
+                  <div class="rd-sch-outage-hero__ico"><i class="fas fa-store-slash" aria-hidden="true"></i></div>
+                  <span>${Sec.escapeHTML(outageForm.branchName || '')}</span>
+                </div>`
+            : `<div class="rd-sch-panel__field-label">الفرع <span class="rd-sch-req">*</span></div>
+                <select class="rd-sch-panel__select" id="rdOutageBranchSelect" onchange="rdSchSetOutageBranch(this.value)">
+                  ${rdSchOutageBranchOptionsHtml(outageForm.branchId)}
+                </select>`;
           html += `
             <div class="rd-sch-overlay" role="dialog" aria-modal="true">
               <div class="rd-sch-overlay__scrim" onclick="rdCloseOutageReport()"></div>
               <div class="rd-sch-panel rd-sch-panel--outage">
                 <div class="rd-sch-panel__head">
-                  <div class="rd-sch-panel__title">الإبلاغ عن تعطل فرع</div>
+                  <div class="rd-sch-panel__title">رفع بلاغ تعطل</div>
                   <button type="button" class="rd-sch-panel__close" onclick="rdCloseOutageReport()" aria-label="إغلاق"><i class="fas fa-xmark"></i></button>
                 </div>
-                <div class="rd-sch-outage-hero">
-                  <div class="rd-sch-outage-hero__ico"><i class="fas fa-store-slash" aria-hidden="true"></i></div>
-                  <span>${Sec.escapeHTML(outageForm.branchName || '')}</span>
-                </div>
+                ${branchBlock}
                 <div class="rd-sch-panel__field-label">سبب التعطل <span class="rd-sch-req">*</span></div>
                 <textarea id="rdOutageReasonInput" class="rd-sch-panel__textarea"
                   placeholder="اشرح سبب تعطل الفرع (انقطاع كهرباء، عطل بالكاميرات، إغلاق مؤقت...)">${Sec.escapeHTML(outageForm.reason || '')}</textarea>
@@ -34164,10 +34136,18 @@
       }
 
       function rdOpenOutageReport(branchId, branchName) {
+        if (!(state.branches || []).length) {
+          showToast('لا توجد فروع مسجّلة لرفع بلاغ', 'warning');
+          return;
+        }
         const f = rdSchEnsureOutageForm();
         f.open = true;
         f.branchId = branchId || '';
         f.branchName = branchName || '';
+        if (f.branchId && !f.branchName) {
+          const b = (state.branches || []).find(x => String(x.id) === String(f.branchId));
+          f.branchName = b?.name || '';
+        }
         f.reason = '';
         f.attachCount = 0;
         renderScheduleOverlays();
@@ -34178,6 +34158,13 @@
         renderScheduleOverlays();
       }
 
+      function rdSchSetOutageBranch(id) {
+        const f = rdSchEnsureOutageForm();
+        f.branchId = id || '';
+        const b = (state.branches || []).find(x => String(x.id) === String(id || ''));
+        f.branchName = b?.name || '';
+      }
+
       function rdSchOutageAttach() {
         const f = rdSchEnsureOutageForm();
         f.attachCount = (f.attachCount || 0) + 1;
@@ -34186,15 +34173,30 @@
 
       function rdSubmitOutage() {
         const f = rdSchEnsureOutageForm();
+        const branchSel = document.getElementById('rdOutageBranchSelect');
+        if (branchSel) rdSchSetOutageBranch(branchSel.value);
+        if (!f.branchId) {
+          showToast('اختر الفرع أولاً', 'warning');
+          return;
+        }
+        if (!f.branchName) {
+          const b = (state.branches || []).find(x => String(x.id) === String(f.branchId));
+          f.branchName = b?.name || 'فرع';
+        }
         const el = document.getElementById('rdOutageReasonInput');
         const reason = String((el && el.value) || f.reason || '').trim();
         if (!reason) { showToast('اكتب سبب التعطل أولاً', 'warning'); return; }
+        let reporterName = 'راصد';
+        try {
+          reporterName = (state.currentUser && (state.currentUser.name || state.currentUser.fullName)) || 'راصد';
+        } catch (_) { /* noop */ }
         const outages = getRdOutages();
         outages.unshift({
           id: 'out-' + Date.now(),
           branchId: f.branchId,
           branchName: f.branchName,
           reason,
+          reporterName,
           time: 'الآن',
           attachCount: f.attachCount || 0,
         });
@@ -34602,6 +34604,7 @@
       window.rdDeleteSchedule = rdDeleteSchedule;
       window.rdOpenOutageReport = rdOpenOutageReport;
       window.rdCloseOutageReport = rdCloseOutageReport;
+      window.rdSchSetOutageBranch = rdSchSetOutageBranch;
       window.rdSchOutageAttach = rdSchOutageAttach;
       window.rdSubmitOutage = rdSubmitOutage;
       window.rdResolveOutage = rdResolveOutage;
