@@ -1971,7 +1971,7 @@ html.athar-staging-redesign.mr-desktop-ui .rd-desk-table {
 html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--users .rd-desk-table__head,
 html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--users .rd-desk-table__row {
   display: grid !important;
-  grid-template-columns: minmax(0, 1.5fr) minmax(0, 0.85fr) minmax(0, 0.9fr) minmax(0, 1.1fr) minmax(0, 0.95fr) minmax(0, 1.2fr) 72px !important;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 0.85fr) minmax(0, 0.9fr) minmax(0, 1.1fr) minmax(120px, 0.95fr) minmax(0, 1.2fr) 72px !important;
   gap: 10px !important;
   align-items: center !important;
   padding: 12px 16px !important;
@@ -2090,6 +2090,30 @@ html.athar-staging-redesign.mr-desktop-ui .rd-desk-clip {
   text-overflow: ellipsis !important;
   display: block !important;
   max-width: 100% !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--users .rd-desk-table__head > *:nth-child(5),
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--users .rd-desk-table__row > .rd-desk-phone {
+  text-align: start !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-phone {
+  display: block !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  font-size: 12px !important;
+  color: var(--text2) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-phone__val {
+  display: inline-block !important;
+  direction: ltr !important;
+  unicode-bidi: isolate !important;
+  font-variant-numeric: tabular-nums !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
+  font-size: 12px !important;
+  letter-spacing: 0.01em !important;
+  white-space: nowrap !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui .rd-desk-acts {

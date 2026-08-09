@@ -14470,6 +14470,7 @@
             : (state.branches || []).find(b => b.id === u.branch_id);
           const branchName = (branch && branch.name) || '—';
           const empNum = padEmpNum(u.employee_number);
+          const phone = String(u.phone || '').trim() || '—';
           const uid = String(u.id || '').replace(/'/g, "\\'");
           const active = !!(u.auth_uid && isActiveUser(u));
           const initial = String(u.name || '؟').trim().charAt(0) || '؟';
@@ -14486,7 +14487,7 @@
               <span role="cell" class="rd-desk-mono">${Sec.escapeHTML(empNum || '—')}</span>
               <span role="cell"><span class="rd-desk-role" style="--rc:${roleColor}">${Sec.escapeHTML(roleLabel || '—')}</span></span>
               <span role="cell" class="rd-desk-muted rd-desk-clip">${Sec.escapeHTML(branchName)}</span>
-              <span role="cell" class="rd-desk-muted rd-desk-clip" dir="ltr">${Sec.escapeHTML(u.phone || '—')}</span>
+              <span role="cell" class="rd-desk-phone"><span class="rd-desk-phone__val" dir="ltr">${Sec.escapeHTML(phone)}</span></span>
               <span role="cell" class="rd-desk-muted rd-desk-clip">${Sec.escapeHTML(u.email || '—')}</span>
               <span role="cell">${actions}</span>
             </div>`;
