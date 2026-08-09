@@ -1956,9 +1956,9 @@ html.athar-staging-redesign.mr-desktop-ui #tab-departments .rd-desk-table--users
   background: var(--surface) !important;
   border: 1px solid var(--border) !important;
   border-radius: 16px !important;
-  overflow-x: auto !important;
-  overflow-y: hidden !important;
+  overflow: hidden !important;
   isolation: isolate !important;
+  width: 100% !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui .rd-desk-table {
@@ -1971,19 +1971,13 @@ html.athar-staging-redesign.mr-desktop-ui .rd-desk-table {
 html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--users .rd-desk-table__head,
 html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--users .rd-desk-table__row {
   display: grid !important;
-  grid-template-columns:
-    minmax(150px, 1.45fr)
-    minmax(100px, 0.85fr)
-    minmax(96px, 0.85fr)
-    minmax(110px, 1.1fr)
-    minmax(110px, 0.95fr)
-    minmax(140px, 1.25fr)
-    72px !important;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 0.85fr) minmax(0, 0.9fr) minmax(0, 1.1fr) minmax(0, 0.95fr) minmax(0, 1.2fr) 72px !important;
   gap: 10px !important;
   align-items: center !important;
   padding: 12px 16px !important;
   box-sizing: border-box !important;
-  min-width: 920px !important;
+  width: 100% !important;
+  min-width: 0 !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--users .rd-desk-table__head > *,
