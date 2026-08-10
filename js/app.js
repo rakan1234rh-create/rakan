@@ -1684,6 +1684,11 @@
           closeViolDetailSheet();
           return;
         }
+        if (id === 'complaintDetailModal' && typeof isViolDetailMobSheet === 'function' && isViolDetailMobSheet()
+          && typeof closeComplaintDetailSheet === 'function') {
+          closeComplaintDetailSheet();
+          return;
+        }
         if (id === 'ticketModal' && isViolDetailMobSheet() && typeof closeTicketSheet === 'function') {
           closeTicketSheet();
           return;
@@ -1718,6 +1723,7 @@
       const _violDetailDrag = { active: false, startY: 0, deltaY: 0, pointerId: null };
       const _ticketDetailDrag = { active: false, startY: 0, deltaY: 0, pointerId: null };
       const _cmpDetailDrag = { active: false, startY: 0, deltaY: 0, pointerId: null };
+      const _cpDetailDrag = { active: false, startY: 0, deltaY: 0, pointerId: null };
 
       function isCmpDetailMobSheet() {
         return typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches;
@@ -2117,6 +2123,154 @@
         };
         sheet.addEventListener('transitionend', onEnd);
         setTimeout(onEnd, 420);
+      }
+
+      function mountComplaintDetailModalForMob() {
+        const modal = document.getElementById('complaintDetailModal');
+        const shell = document.querySelector('#appWrap > .app-shell');
+        const nav = document.getElementById('mobileBottomNav');
+        if (!modal || !shell) return;
+        if (isViolDetailMobSheet() && nav) {
+          if (modal.parentNode !== shell || modal.nextElementSibling !== nav) {
+            shell.insertBefore(modal, nav);
+          }
+        } else if (modal.parentNode !== document.body) {
+          document.body.appendChild(modal);
+        }
+      }
+
+      function releaseComplaintDetailModalFromShell() {
+        const modal = document.getElementById('complaintDetailModal');
+        if (!modal || modal.parentNode === document.body) return;
+        document.body.appendChild(modal);
+      }
+
+      function openComplaintDetailSheetAnimated() {
+        const modal = document.getElementById('complaintDetailModal');
+        const sheet = modal?.querySelector('.cp-paper-sheet');
+        if (!modal || !sheet) return;
+        const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (typeof syncMobBottomNavHeight === 'function') syncMobBottomNavHeight();
+        mountComplaintDetailModalForMob();
+        if (typeof syncMobViewportLayout === 'function') syncMobViewportLayout();
+        modal.classList.remove('sheet-ready', 'sheet-closing', 'sheet-dragging');
+        modal.classList.add('open');
+        document.body.classList.add('modal-open', 'cp-detail-sheet-open');
+        if (reduced) {
+          modal.classList.add('sheet-ready');
+          sheet.style.transform = '';
+          return;
+        }
+        sheet.style.transform = 'translateY(100%)';
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            modal.classList.add('sheet-ready');
+            sheet.style.removeProperty('transform');
+          });
+        });
+      }
+
+      function closeComplaintDetailSheet() {
+        const modal = document.getElementById('complaintDetailModal');
+        const sheet = modal?.querySelector('.cp-paper-sheet');
+        if (!modal) return;
+        const finish = () => {
+          modal.classList.remove('open', 'sheet-ready', 'sheet-closing', 'sheet-dragging');
+          if (sheet) sheet.style.transform = '';
+          releaseComplaintDetailModalFromShell();
+          if (typeof state !== 'undefined') state.activeComplaintId = null;
+          document.body.classList.remove('cp-detail-sheet-open');
+          if (!document.querySelector('.modal.open')) {
+            document.body.classList.remove('modal-open');
+          }
+        };
+        if (!isViolDetailMobSheet() || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          finish();
+          return;
+        }
+        modal.classList.remove('sheet-ready');
+        modal.classList.add('sheet-closing');
+        if (sheet) sheet.style.transform = 'translateY(100%)';
+        let done = false;
+        const onEnd = (e) => {
+          if (e && e.propertyName && e.propertyName !== 'transform') return;
+          if (done) return;
+          done = true;
+          sheet?.removeEventListener('transitionend', onEnd);
+          finish();
+        };
+        sheet?.addEventListener('transitionend', onEnd);
+        setTimeout(onEnd, 420);
+      }
+
+      function initComplaintDetailSheetDrag() {
+        const modal = document.getElementById('complaintDetailModal');
+        const zone = modal?.querySelector('.cp-sheet-drag-zone');
+        const sheet = modal?.querySelector('.cp-paper-sheet');
+        if (!modal || !zone || !sheet || modal.dataset.dragInit === '1') return;
+        modal.dataset.dragInit = '1';
+
+        sheet.addEventListener('click', (e) => e.stopPropagation());
+        modal.addEventListener('click', (e) => {
+          if (!modal.classList.contains('open')) return;
+          if (e.target.closest('.cp-paper-sheet')) return;
+          if (typeof closeComplaintDetail === 'function') closeComplaintDetail();
+          else closeComplaintDetailSheet();
+        });
+
+        const dragEnd = () => {
+          if (!_cpDetailDrag.active) return;
+          _cpDetailDrag.active = false;
+          modal.classList.remove('sheet-dragging');
+          zone.style.cursor = '';
+          const threshold = Math.max(72, sheet.offsetHeight * 0.18);
+          if (_cpDetailDrag.deltaY > threshold) {
+            if (typeof closeComplaintDetail === 'function') closeComplaintDetail();
+            else closeComplaintDetailSheet();
+          } else {
+            modal.classList.add('sheet-ready');
+            sheet.style.transform = '';
+          }
+          _cpDetailDrag.deltaY = 0;
+          _cpDetailDrag.pointerId = null;
+        };
+
+        const dragMove = (clientY) => {
+          if (!_cpDetailDrag.active) return;
+          _cpDetailDrag.deltaY = Math.max(0, clientY - _cpDetailDrag.startY);
+          sheet.style.transform = `translateY(${_cpDetailDrag.deltaY}px)`;
+        };
+
+        const dragStart = (clientY) => {
+          if (!modal.classList.contains('open') || !isViolDetailMobSheet()) return;
+          _cpDetailDrag.active = true;
+          _cpDetailDrag.startY = clientY;
+          _cpDetailDrag.deltaY = 0;
+          modal.classList.remove('sheet-ready');
+          modal.classList.add('sheet-dragging');
+          zone.style.cursor = 'grabbing';
+          sheet.style.transform = 'translateY(0)';
+        };
+
+        zone.addEventListener('pointerdown', (e) => {
+          if (e.button !== undefined && e.button !== 0) return;
+          if (e.target.closest('.cp-detail-close-btn')) return;
+          _cpDetailDrag.pointerId = e.pointerId;
+          dragStart(e.clientY);
+          try { zone.setPointerCapture(e.pointerId); } catch (_) { /* noop */ }
+        });
+
+        zone.addEventListener('pointermove', (e) => {
+          if (!_cpDetailDrag.active || e.pointerId !== _cpDetailDrag.pointerId) return;
+          dragMove(e.clientY);
+        });
+
+        zone.addEventListener('pointerup', (e) => {
+          if (e.pointerId !== _cpDetailDrag.pointerId) return;
+          dragEnd();
+        });
+
+        zone.addEventListener('pointercancel', dragEnd);
       }
 
       function closeCmpDetailSheet() {
@@ -8883,6 +9037,7 @@
           const id = m.id;
           if (!id) return;
           if (id === 'violDetailModal') closeViolDetailSheet();
+          else if (id === 'complaintDetailModal' && typeof closeComplaintDetail === 'function') closeComplaintDetail();
           else closeModal(id);
         });
 
@@ -9040,6 +9195,7 @@
           const id = m.id;
           if (!id) return;
           if (id === 'violDetailModal') closeViolDetailSheet();
+          else if (id === 'complaintDetailModal' && typeof closeComplaintDetail === 'function') closeComplaintDetail();
           else closeModal(id);
         });
         const attViewer = document.getElementById('attViewer');
@@ -32307,6 +32463,7 @@
           if (typeof initLoginScreenViewportLock === 'function') initLoginScreenViewportLock();
           if (typeof initLoginFieldKeyboard === 'function') initLoginFieldKeyboard();
           if (typeof initViolDetailSheetDrag === 'function') initViolDetailSheetDrag();
+          if (typeof initComplaintDetailSheetDrag === 'function') initComplaintDetailSheetDrag();
           if (typeof initTicketSheetDrag === 'function') initTicketSheetDrag();
           if (typeof initTicketRespKeyboardGuard === 'function') initTicketRespKeyboardGuard();
         if (typeof initViolRespKeyboardGuard === 'function') initViolRespKeyboardGuard();
@@ -36936,11 +37093,21 @@
       function openComplaintDetail(id) {
         state.activeComplaintId = id;
         renderComplaintDetailModal();
-        openModal('complaintDetailModal');
+        if (typeof isViolDetailMobSheet === 'function' && isViolDetailMobSheet()) {
+          openComplaintDetailSheetAnimated();
+        } else {
+          openModal('complaintDetailModal');
+        }
       }
 
       function closeComplaintDetail() {
         state.activeComplaintId = null;
+        const modal = document.getElementById('complaintDetailModal');
+        if (typeof isViolDetailMobSheet === 'function' && isViolDetailMobSheet()
+          && modal?.classList.contains('open')) {
+          closeComplaintDetailSheet();
+          return;
+        }
         closeModal('complaintDetailModal');
       }
 
@@ -37040,6 +37207,7 @@
       window.submitComplaintFromUi = submitComplaintFromUi;
       window.openComplaintDetail = openComplaintDetail;
       window.closeComplaintDetail = closeComplaintDetail;
+      window.closeComplaintDetailSheet = closeComplaintDetailSheet;
       window.submitComplaintReplyFromUi = submitComplaintReplyFromUi;
       window.resolveComplaintFromUi = resolveComplaintFromUi;
 
