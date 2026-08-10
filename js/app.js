@@ -9050,7 +9050,7 @@
         }
       }
 
-      const MR_TABS_WITH_OWN_TITLE = ['dashboard', 'newTicket', 'workflow', 'breaks', 'reports', 'locations', 'departments', 'violations', 'compliance', 'settings', 'profileAvatars', 'broadcasts', 'notifications', 'profile'];
+      const MR_TABS_WITH_OWN_TITLE = ['dashboard', 'newTicket', 'workflow', 'breaks', 'complaints', 'reports', 'locations', 'departments', 'violations', 'compliance', 'settings', 'profileAvatars', 'broadcasts', 'notifications', 'profile'];
 
       function switchTabShellFast(tab, btn) {
         rememberActiveTab(tab);
@@ -36627,18 +36627,22 @@
           </div>`;
 
         host.innerHTML = `
-          <div style="animation:screenIn .32s ease">
-            <button type="button" onclick="openNewComplaintModal()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:14px;border:none;border-radius:14px;background:var(--gold, var(--primary));color:var(--onGold, #fff);font-size:13.5px;font-weight:700;cursor:pointer;margin-bottom:16px">
-              <i class="fas fa-plus" style="font-size:12px"></i>رفع شكوى أو اقتراح
+          <div class="cp-mob-page" style="animation:screenIn .32s ease">
+            <header class="cp-mob-head">
+              <h1 class="cp-mob-head__title">الشكاوى والاقتراحات</h1>
+              <p class="cp-mob-head__sub">ارفع شكواك أو اقتراحك وتابع الرد عليها</p>
+            </header>
+            <button type="button" class="cp-mob-cta" onclick="openNewComplaintModal()">
+              <i class="fas fa-plus" aria-hidden="true"></i>رفع شكوى أو اقتراح
             </button>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+            <div class="cp-mob-stats">
               ${statCard(myComplaints, canManageComplaints() ? 'الشكاوى' : 'شكاواي', 'fa-triangle-exclamation', 'var(--danger)')}
               ${statCard(mySuggestions, canManageComplaints() ? 'الاقتراحات' : 'اقتراحاتي', 'fa-lightbulb', 'var(--info)')}
               ${statCard(pending, 'قيد المراجعة', 'fa-hourglass-half', 'var(--warning)')}
               ${statCard(resolved, 'تم الحل', 'fa-check-double', 'var(--success)')}
             </div>
-            <div style="display:flex;gap:8px;margin-bottom:16px;overflow-x:auto">${filtersHtml}</div>
-            <div>${listHtml}</div>
+            <div class="cp-mob-filters">${filtersHtml}</div>
+            <div class="cp-mob-list">${listHtml}</div>
           </div>`;
       }
 
