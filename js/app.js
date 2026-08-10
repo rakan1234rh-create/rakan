@@ -33688,9 +33688,16 @@
         return kind === 'suggestion' ? RD_SUGGESTION_CATS : RD_COMPLAINT_CATS;
       }
 
+      function complaintIsAnonymous(c) {
+        if (!c) return false;
+        if (c.is_anonymous === true || c.isAnonymous === true) return true;
+        const atts = Array.isArray(c.attachments) ? c.attachments : [];
+        return atts.some(a => a && typeof a === 'object' && a.__anon === true);
+      }
+
       function mapComplaintToDesk(c) {
         if (!c) return null;
-        const isAnonymous = !!c.is_anonymous;
+        const isAnonymous = complaintIsAnonymous(c);
         const emp = (state.users || []).find(u => String(u.id) === String(c.employee_id));
         const cats = (typeof complaintCatsForKind === 'function'
           ? complaintCatsForKind(c.kind)
@@ -34730,28 +34737,23 @@
         }
         const cat = rdCatsForKind(form.kind).find(c => c.label === form.category) || rdCatsForKind(form.kind)[0];
         try {
-          let payload = {
+          const wasAnon = !!form.anonymous;
+          const { data, error } = await sb.from('complaints').insert({
             employee_id: state.currentUser.id,
             kind: form.kind === 'suggestion' ? 'suggestion' : 'complaint',
             category: (cat && cat.label) || form.category || 'أخرى',
             description: desc,
-            is_anonymous: !!form.anonymous
-          };
-          let { data, error } = await sb.from('complaints').insert(payload).select().single();
-          if (error && /is_anonymous/i.test(String(error.message || error.details || ''))) {
-            delete payload.is_anonymous;
-            ({ data, error } = await sb.from('complaints').insert(payload).select().single());
-          }
+            attachments: wasAnon ? [{ __anon: true }] : []
+          }).select().single();
           if (error) throw error;
           state.complaints = [data, ...(state.complaints || [])];
           form.open = false;
           form.desc = '';
           form.attachCount = 0;
-          const wasAnon = !!form.anonymous;
           form.anonymous = false;
           await renderComplaintsDesktop({ soft: true });
           showToast(
-            wasAnon && data && data.is_anonymous
+            wasAnon
               ? (form.kind === 'complaint' ? 'تم رفع الشكوى كمجهول' : 'تم رفع الاقتراح كمجهول')
               : (form.kind === 'complaint' ? 'تم رفع الشكوى' : 'تم رفع الاقتراح'),
             'success'
@@ -36595,19 +36597,11 @@
           state.complaints = [];
           return;
         }
-        const selectFull = 'id,complaint_number,employee_id,branch_id,kind,category,description,attachments,status,logs,is_anonymous,created_at,updated_at,resolved_at';
-        const selectBase = 'id,complaint_number,employee_id,branch_id,kind,category,description,attachments,status,logs,created_at,updated_at,resolved_at';
         try {
-          let { data, error } = await sb.from('complaints')
-            .select(selectFull)
+          const { data, error } = await sb.from('complaints')
+            .select('id,complaint_number,employee_id,branch_id,kind,category,description,attachments,status,logs,created_at,updated_at,resolved_at')
             .order('created_at', { ascending: false })
             .limit(500);
-          if (error && /is_anonymous/i.test(String(error.message || error.details || ''))) {
-            ({ data, error } = await sb.from('complaints')
-              .select(selectBase)
-              .order('created_at', { ascending: false })
-              .limit(500));
-          }
           if (error) throw error;
           state.complaints = data || [];
         } catch (e) {
@@ -36801,29 +36795,19 @@
         }
         const anonymous = !!state.complaintAnonymous;
         try {
-          let payload = {
+          const { data, error } = await sb.from('complaints').insert({
             employee_id: state.currentUser.id,
             kind: state.complaintKind,
             category: state.complaintCategory,
             description: desc,
-            is_anonymous: anonymous
-          };
-          let { data, error } = await sb.from('complaints').insert(payload).select().single();
-          if (error && /is_anonymous/i.test(String(error.message || error.details || ''))) {
-            delete payload.is_anonymous;
-            ({ data, error } = await sb.from('complaints').insert(payload).select().single());
-            if (!error && anonymous) {
-              showToast('تم الإرسال، لكن عمود المجهول غير مفعّل في قاعدة البيانات بعد', 'warning');
-            }
-          }
+            attachments: anonymous ? [{ __anon: true }] : []
+          }).select().single();
           if (error) throw error;
           state.complaints = [data, ...(state.complaints || [])];
           closeModal('newComplaintModal');
           const kindWord = state.complaintKind === 'suggestion' ? 'الاقتراح' : 'الشكوى';
           showToast(
-            anonymous && data.is_anonymous !== false && payload.is_anonymous !== undefined
-              ? `تم إرسال ${kindWord} كمجهول بنجاح`
-              : `تم إرسال ${kindWord} بنجاح`,
+            anonymous ? `تم إرسال ${kindWord} كمجهول بنجاح` : `تم إرسال ${kindWord} بنجاح`,
             'success'
           );
           paintComplaintsPage();
