@@ -34592,8 +34592,7 @@
               : '');
           const composeHtml = active.status === 'resolved'
             ? `<div class="rd-cmpl-panel__compose is-locked">
-                  <div class="rd-cmpl-locked-note"><i class="fas fa-lock" aria-hidden="true"></i>تم حل الشكوى — الرد مقفول</div>
-                  <div class="rd-cmpl-panel__actions">${resolveBtn}</div>
+                  <div class="rd-cmpl-resolved-banner">${active.kind === 'suggestion' ? 'تم حل الاقتراح' : 'تم حل الشكوى'}</div>
                 </div>`
             : `<div class="rd-cmpl-panel__compose">
                   <div class="rd-cmpl-field-label">${Sec.escapeHTML(replyLabel)}</div>
@@ -36919,10 +36918,7 @@
             ${(c.employee_id === state.currentUser?.id || canManageComplaints()) ? (
               isResolved
                 ? `<div class="cp-detail__compose is-locked">
-              <div class="cp-detail__locked-note"><i class="fas fa-lock" aria-hidden="true"></i>تم حل الشكوى — الرد مقفول</div>
-              <div class="cp-detail__actions">
-                <button type="button" class="cp-detail__resolve is-done" disabled><i class="fas fa-check" aria-hidden="true"></i>تم الحل</button>
-              </div>
+              <div class="cp-detail__resolved-banner">${c.kind === 'suggestion' ? 'تم حل الاقتراح' : 'تم حل الشكوى'}</div>
             </div>`
                 : `<div class="cp-detail__compose">
               <div class="cp-detail__compose-label">${Sec.escapeHTML(replyLabel)}</div>
