@@ -5061,6 +5061,9 @@ html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-panel__sub
 }
 
 html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-panel__who {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
   font-size: 11.5px !important;
   color: var(--text2) !important;
   font-weight: 600 !important;
@@ -5402,7 +5405,7 @@ html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-thread-aut
   color: var(--gold) !important;
 }
 
-html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-thread-admin-ic {
+html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-thread-author-ic {
   font-size: 10px !important;
   line-height: 1 !important;
   flex-shrink: 0 !important;

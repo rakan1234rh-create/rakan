@@ -34570,16 +34570,21 @@
           const st = rdCmplStatusMeta(active.status);
           const kindLbl = active.kind === 'suggestion' ? 'اقتراح' : 'شكوى';
           const replyLabel = 'الرد على ' + (active.kind === 'suggestion' ? 'الاقتراح' : 'الشكوى');
-          const thread = (active.thread || []).map(msg => `
+          const thread = (active.thread || []).map(msg => {
+            const authorIc = msg.isAdmin
+              ? 'fa-headset'
+              : (active.isAnonymous ? 'fa-user-secret' : 'fa-user');
+            return `
             <div class="rd-cmpl-thread-msg">
               <div class="rd-cmpl-thread-bubble${msg.isAdmin ? ' is-admin' : ''}">
                 <div class="rd-cmpl-thread-meta">
-                  <span class="rd-cmpl-thread-author${msg.isAdmin ? ' is-admin' : ''}">${msg.isAdmin ? '<i class="fas fa-headset rd-cmpl-thread-admin-ic" aria-hidden="true"></i>' : ''}${Sec.escapeHTML(msg.author || '')}</span>
+                  <span class="rd-cmpl-thread-author${msg.isAdmin ? ' is-admin' : ''}"><i class="fas ${authorIc} rd-cmpl-thread-author-ic" aria-hidden="true"></i>${Sec.escapeHTML(msg.author || '')}</span>
                   <span class="rd-cmpl-thread-time">${Sec.escapeHTML(msg.time || '')}</span>
                 </div>
                 <div class="rd-cmpl-thread-text">${Sec.escapeHTML(msg.text || '')}</div>
               </div>
-            </div>`).join('');
+            </div>`;
+          }).join('');
           const resolveBtn = active.status === 'resolved'
             ? `<button type="button" class="rd-cmpl-btn rd-cmpl-btn--resolved" disabled><i class="fas fa-check" aria-hidden="true"></i>تم الحل</button>`
             : ((typeof canManageComplaints === 'function' && canManageComplaints())
@@ -34599,7 +34604,7 @@
                     <button type="button" class="rd-cmpl-panel__close" onclick="rdCloseComplaintDetail()" aria-label="إغلاق"><i class="fas fa-xmark"></i></button>
                   </div>
                   <div class="rd-cmpl-panel__subrow">
-                    <span class="rd-cmpl-panel__who">${Sec.escapeHTML(rdCmplDisplayName(active))} <span class="rd-desk-muted">· ${Sec.escapeHTML(active.time || '')}</span></span>
+                    <span class="rd-cmpl-panel__who"><i class="fas ${active.isAnonymous ? 'fa-user-secret' : 'fa-user'} rd-cmpl-thread-author-ic" aria-hidden="true"></i>${Sec.escapeHTML(rdCmplDisplayName(active))} <span class="rd-desk-muted">· ${Sec.escapeHTML(active.time || '')}</span></span>
                     <span class="rd-cmpl-card__status" style="--tone:${st.color}">${Sec.escapeHTML(st.label)}</span>
                   </div>
                   <div class="rd-cmpl-panel__desc">${Sec.escapeHTML(active.description || active.desc || '')}</div>
@@ -36848,10 +36853,11 @@
             const bg = isAdmin ? 'color-mix(in srgb, var(--gold, var(--primary)) 12%, var(--surface))' : 'var(--surface)';
             const authorColor = isAdmin ? 'var(--gold, var(--primary))' : 'var(--text2)';
             const time = formatRelativeAr(m.at) || '';
+            const authorIc = isAdmin ? 'fa-headset' : (anon ? 'fa-user-secret' : 'fa-user');
             return `
               <div style="min-width:0;background:${bg};border:1px solid var(--border);border-radius:14px;padding:11px 13px">
                 <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px">
-                  <span style="display:inline-flex;align-items:center;gap:6px;font-size:10.5px;font-weight:700;color:${authorColor}">${isAdmin ? '<i class="fas fa-headset" style="font-size:10px" aria-hidden="true"></i>' : ''}${Sec.escapeHTML(author)}</span>
+                  <span style="display:inline-flex;align-items:center;gap:6px;font-size:10.5px;font-weight:700;color:${authorColor}"><i class="fas ${authorIc}" style="font-size:10px" aria-hidden="true"></i>${Sec.escapeHTML(author)}</span>
                   <span style="font-size:9px;color:var(--text3)">${Sec.escapeHTML(time)}</span>
                 </div>
                 <div style="font-size:11.5px;color:var(--text2);line-height:1.7">${Sec.escapeHTML(m.text || '')}</div>
@@ -36880,6 +36886,7 @@
         const whoName = (typeof complaintIsAnonymous === 'function' && complaintIsAnonymous(c))
           ? 'مجهول'
           : ((state.users || []).find(u => String(u.id) === String(c.employee_id))?.name || 'موظف');
+        const whoIc = whoName === 'مجهول' ? 'fa-user-secret' : 'fa-user';
 
         host.innerHTML = `
           <div class="cp-detail">
@@ -36892,7 +36899,7 @@
                 </div>
               </div>
               <div class="cp-detail__subrow">
-                <span class="cp-detail__who">${Sec.escapeHTML(whoName)} <span class="cp-detail__muted">· ${Sec.escapeHTML(time)}</span></span>
+                <span class="cp-detail__who" style="display:inline-flex;align-items:center;gap:6px"><i class="fas ${whoIc}" style="font-size:10px" aria-hidden="true"></i>${Sec.escapeHTML(whoName)} <span class="cp-detail__muted">· ${Sec.escapeHTML(time)}</span></span>
                 <span class="cp-detail__status" style="--tone:${statusColor}">${Sec.escapeHTML(statusLabel)}</span>
               </div>
               <div class="cp-detail__desc">${Sec.escapeHTML(c.description)}</div>
