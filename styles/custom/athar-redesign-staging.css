@@ -327,45 +327,83 @@ html.mr-mobile-ui #tab-departments,
 html.mr-mobile-ui #tab-newTicket {
   padding-inline: 16px !important;
 }
-html.mr-mobile-ui #tab-complaints {
-  padding-inline: 12px !important;
-  padding-block: 4px 8px !important;
-}
 
-/* Complaints mobile: hide split page-title sidebar; title lives in-content */
-html.mr-mobile-ui:has(#tab-complaints.active) #pageTitleBar,
-html.mr-mobile-ui #tab-complaints.active ~ #pageTitleBar {
+/* Complaints mobile — full-bleed column, small side gutters only */
+html.athar-staging-redesign.mr-mobile-ui .content:has(#tab-complaints.active),
+html.mr-mobile-ui .content:has(#tab-complaints.active) {
+  padding-inline: 0 !important;
+  padding-top: 2px !important;
+  padding-bottom: calc(var(--mr-mob-bottom-nav-h, 56px) + 16px) !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+}
+html.mr-mobile-ui:has(#tab-complaints.active) #pageTitleBar {
   display: none !important;
 }
 html.mr-mobile-ui:has(#tab-complaints.active) #appWrap .main {
-  display: flex !important;
-  flex-direction: column !important;
-  padding: 6px 0 0 !important;
-}
-html.mr-mobile-ui:has(#tab-complaints.active) #appWrap .main .content {
-  padding: 0 !important;
-}
-html.mr-mobile-ui #tab-complaints .rd-complaints-desk-panel {
-  display: none !important;
-}
-html.mr-mobile-ui #tab-complaints .rd-complaints-mob-panel {
   display: block !important;
   width: 100% !important;
   max-width: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+}
+html.mr-mobile-ui #tab-complaints.tab-content.active {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 8px 12px 12px !important;
+  box-sizing: border-box !important;
+}
+html.mr-mobile-ui #tab-complaints .rd-complaints-desk-panel,
+html.mr-mobile-ui #tab-complaints .rd-complaints-desk-panel[hidden] {
+  display: none !important;
+  visibility: hidden !important;
+  position: absolute !important;
+  width: 0 !important;
+  height: 0 !important;
+  max-width: 0 !important;
+  overflow: hidden !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  pointer-events: none !important;
+}
+html.mr-mobile-ui #tab-complaints .rd-complaints-mob-panel,
+html.mr-mobile-ui #tab-complaints .rd-complaints-mob-panel:not([hidden]) {
+  display: block !important;
+  visibility: visible !important;
+  position: static !important;
+  float: none !important;
+  clear: both !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
   margin: 0 !important;
   padding: 0 !important;
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
+  border-radius: 0 !important;
+  box-sizing: border-box !important;
 }
+html.mr-mobile-ui #tab-complaints #complaintsHost,
+html.mr-mobile-ui #tab-complaints .cp-mob-host,
 html.mr-mobile-ui #tab-complaints .cp-mob-page {
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
 }
 html.mr-mobile-ui #tab-complaints .cp-mob-head {
   margin: 0 0 8px;
   text-align: start;
+  width: 100%;
 }
 html.mr-mobile-ui #tab-complaints .cp-mob-head__title {
   margin: 0;
@@ -381,8 +419,9 @@ html.mr-mobile-ui #tab-complaints .cp-mob-head__sub {
   color: var(--text3);
 }
 html.mr-mobile-ui #tab-complaints .cp-mob-cta {
-  width: 100%;
-  display: flex;
+  width: 100% !important;
+  max-width: 100% !important;
+  display: flex !important;
   align-items: center;
   justify-content: center;
   gap: 6px;
@@ -394,23 +433,27 @@ html.mr-mobile-ui #tab-complaints .cp-mob-cta {
   font-size: 12.5px;
   font-weight: 700;
   cursor: pointer;
-  margin-bottom: 10px;
+  margin: 0 0 10px !important;
   font-family: inherit;
+  box-sizing: border-box !important;
 }
 html.mr-mobile-ui #tab-complaints .cp-mob-cta i {
   font-size: 11px;
 }
 html.mr-mobile-ui #tab-complaints .cp-mob-stats {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
   gap: 6px;
-  margin-bottom: 10px;
+  margin: 0 0 10px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
 }
 html.mr-mobile-ui #tab-complaints .cp-mob-stat {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 8px 10px;
+  min-width: 0;
 }
 html.mr-mobile-ui #tab-complaints .cp-mob-stat__row {
   display: flex;
@@ -445,9 +488,11 @@ html.mr-mobile-ui #tab-complaints .cp-mob-stat__lbl {
 html.mr-mobile-ui #tab-complaints .cp-mob-filters {
   display: flex;
   gap: 6px;
-  margin-bottom: 8px;
+  margin: 0 0 8px !important;
   overflow-x: auto;
   padding-bottom: 2px;
+  width: 100%;
+  box-sizing: border-box;
 }
 html.mr-mobile-ui #tab-complaints .cp-mob-filter {
   flex: 0 0 auto;
@@ -467,6 +512,9 @@ html.mr-mobile-ui #tab-complaints .cp-mob-filter.is-active {
   color: var(--onGold, #fff);
   border-color: var(--gold, var(--primary));
 }
+html.mr-mobile-ui #tab-complaints .cp-mob-list {
+  width: 100%;
+}
 html.mr-mobile-ui #tab-complaints .cp-mob-list .rd-list__row {
   padding: 8px 0 !important;
 }
@@ -480,6 +528,8 @@ html.mr-mobile-ui #tab-complaints .cp-card {
   padding: 10px 11px;
   cursor: pointer;
   margin-bottom: 6px;
+  width: 100%;
+  box-sizing: border-box;
 }
 html.mr-mobile-ui #tab-complaints .cp-card__top {
   display: flex;
