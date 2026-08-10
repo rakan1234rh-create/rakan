@@ -2295,8 +2295,8 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px), screen and (hover: hover) and (pointer: fine)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px), screen and (hover: hover) and (pointer: fine)">
   <!-- Redesign AFTER classic desktop shells so sidebar/chrome overrides win -->
-  <link rel="stylesheet" href="styles/custom/athar-redesign-staging.css?v=desk96" id="athar-redesign-staging">
-  <link rel="stylesheet" href="styles/custom/athar-desktop-screens.css?v=desk96" id="athar-desktop-screens">
+  <link rel="stylesheet" href="styles/custom/athar-redesign-staging.css?v=desk97" id="athar-redesign-staging">
+  <link rel="stylesheet" href="styles/custom/athar-desktop-screens.css?v=desk97" id="athar-desktop-screens">
   <style id="mr-topbar-dark-fix" media="screen and (min-width: 993px), screen and (hover: hover) and (pointer: fine)">
     html[data-theme="dark"].mr-desktop-ui #appWrap .topbar.unified-banner,
     html[data-theme="dark"].mr-desktop-ui .topbar.unified-banner {
@@ -2721,6 +2721,8 @@
               style="display:none">0</span></button>
           <button class="nav-item" onclick="goTab('breaks',this)" data-perm="tab_breaks"><span class="nav-icon-wrap"><i
               class="fas fa-mug-hot" aria-hidden="true"></i></span><span class="nav-item-label">بريكات الموظفين</span></button>
+          <button class="nav-item" onclick="goTab('complaints',this)" data-perm="tab_complaints"><span class="nav-icon-wrap"><i
+              class="fas fa-comment-dots" aria-hidden="true"></i></span><span class="nav-item-label">الشكاوى والاقتراحات</span></button>
           <button class="nav-item" onclick="goTab('reports',this)" data-perm="tab_reports"><span class="nav-icon-wrap"><i
               class="fas fa-chart-line" aria-hidden="true"></i></span><span class="nav-item-label">تقارير</span></button>
           <button class="nav-item" onclick="goTab('compliance',this)" data-perm="tab_compliance"><span class="nav-icon-wrap"><i
@@ -2732,8 +2734,6 @@
               class="fas fa-location-dot" aria-hidden="true"></i></span><span class="nav-item-label">فروع</span></button>
           <button class="nav-item nav-item--desk-only" onclick="goTab('schedule',this)" data-perm="tab_schedule"><span class="nav-icon-wrap"><i
               class="fas fa-triangle-exclamation" aria-hidden="true"></i></span><span class="nav-item-label">البلاغات</span></button>
-          <button class="nav-item nav-item--desk-only" onclick="goTab('complaints',this)" data-perm="tab_complaints"><span class="nav-icon-wrap"><i
-              class="fas fa-comment-dots" aria-hidden="true"></i></span><span class="nav-item-label">الشكاوى والاقتراحات</span></button>
           <button class="nav-item" onclick="goTab('departments',this)" data-perm="tab_departments"><span class="nav-icon-wrap"><i
               class="fas fa-user-group" aria-hidden="true"></i></span><span class="nav-item-label">مستخدمون</span></button>
         </nav>
@@ -3522,13 +3522,6 @@
             </div>
           </div>
 
-          <!-- COMPLAINTS (Desktop redesign) -->
-          <div class="tab-content" id="tab-complaints" hidden>
-            <div class="panel wf-panel rd-desk-panel">
-              <div id="rdComplaintsHost" class="rd-complaints-host" aria-live="polite"></div>
-            </div>
-          </div>
-
           <!-- STAFF BREAKS -->
           <div class="tab-content" id="tab-breaks" hidden>
             <div class="panel wf-panel breaks-panel">
@@ -3544,6 +3537,13 @@
               </div>
               <div id="rdBreaks" class="rd-breaks-host" hidden></div>
               <div id="breaksClassicHost" class="breaks-classic-host"></div>
+            </div>
+          </div>
+
+          <!-- COMPLAINTS & SUGGESTIONS -->
+          <div class="tab-content" id="tab-complaints" hidden>
+            <div class="panel wf-panel rd-desk-panel" style="padding:16px">
+              <div id="complaintsHost" aria-live="polite"></div>
             </div>
           </div>
 
@@ -3921,6 +3921,11 @@
         <i class="fas fa-mug-hot" aria-hidden="true"></i>
         <span>بريكات</span>
       </button>
+      <button type="button" class="mob-nav-item" data-tab="complaints" data-perm="tab_complaints"
+        onclick="mobileNavGo('complaints', this)">
+        <i class="fas fa-comment-dots" aria-hidden="true"></i>
+        <span>شكاوى</span>
+      </button>
       <button type="button" class="mob-nav-item" data-tab="reports" data-perm="tab_reports"
         onclick="mobileNavGo('reports', this)">
         <i class="fas fa-chart-line" aria-hidden="true"></i>
@@ -4102,6 +4107,45 @@
         <div class="break-sch-footer">
           <button type="button" class="break-sch-btn break-sch-btn--cancel" onclick="closeModal('breakScheduleModal')">إلغاء</button>
           <button type="button" class="break-sch-btn break-sch-btn--save" onclick="saveBreakScheduleFromUi()">حفظ</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal" id="newComplaintModal" role="dialog" aria-modal="true" aria-labelledby="newComplaintTitle">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3 id="newComplaintTitle">رفع شكوى أو اقتراح</h3>
+          <button type="button" class="btn btn-ghost" onclick="closeModal('newComplaintModal')" aria-label="إغلاق"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">النوع <span class="required-mark">*</span></label>
+            <div id="cpKindOptions" style="display:flex;gap:8px"></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">التصنيف <span class="required-mark">*</span></label>
+            <div id="cpCategoryOptions" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" id="cpDescLabel" for="cpDescText">تفاصيل الشكوى <span class="required-mark">*</span></label>
+            <textarea id="cpDescText" class="form-input" placeholder="اشرح التفاصيل..." style="min-height:110px;resize:vertical"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn" onclick="closeModal('newComplaintModal')">إلغاء</button>
+          <button type="button" id="cpSubmitBtn" class="btn btn-primary" onclick="submitComplaintFromUi()"><i class="fas fa-paper-plane"></i> إرسال الشكوى</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal" id="complaintDetailModal" role="dialog" aria-modal="true" aria-labelledby="complaintDetailTitle">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3 id="complaintDetailTitle">تفاصيل الشكوى</h3>
+          <button type="button" class="btn btn-ghost" onclick="closeComplaintDetail()" aria-label="إغلاق"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+          <div id="cpDetailBody"></div>
         </div>
       </div>
     </div>
@@ -4568,7 +4612,7 @@
 
     <div id="rdCmplOverlayHost"></div>
     <div id="rdSchOverlayHost"></div>
-    <script src="js/app.js?v=desk96"></script>
+    <script src="js/app.js?v=desk97"></script>
         <style>
       @media (max-width: 992px) {
         /* ── workflow: منع التمدد الأفقي ── */
