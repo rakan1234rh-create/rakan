@@ -34468,7 +34468,7 @@
           const kindLbl = r.kind === 'suggestion' ? 'اقتراح' : 'شكوى';
           const icon = r.categoryIcon || (r.kind === 'suggestion' ? 'fa-lightbulb' : 'fa-triangle-exclamation');
           const reply = (Array.isArray(r.thread) && r.thread.length) ? r.thread[r.thread.length - 1] : null;
-          const replyHtml = reply ? `
+          const replyHtml = (reply && reply.isAdmin) ? `
             <div class="rd-cmpl-card__reply">
               <div class="rd-cmpl-card__reply-av"><i class="fas fa-headset" aria-hidden="true"></i></div>
               <div class="rd-cmpl-card__reply-body">
@@ -34572,10 +34572,9 @@
           const replyLabel = 'الرد على ' + (active.kind === 'suggestion' ? 'الاقتراح' : 'الشكوى');
           const thread = (active.thread || []).map(msg => `
             <div class="rd-cmpl-thread-msg">
-              <div class="rd-cmpl-thread-av"><i class="fas fa-headset" aria-hidden="true"></i></div>
               <div class="rd-cmpl-thread-bubble${msg.isAdmin ? ' is-admin' : ''}">
                 <div class="rd-cmpl-thread-meta">
-                  <span class="rd-cmpl-thread-author${msg.isAdmin ? ' is-admin' : ''}">${Sec.escapeHTML(msg.author || '')}</span>
+                  <span class="rd-cmpl-thread-author${msg.isAdmin ? ' is-admin' : ''}">${msg.isAdmin ? '<i class="fas fa-headset rd-cmpl-thread-admin-ic" aria-hidden="true"></i>' : ''}${Sec.escapeHTML(msg.author || '')}</span>
                   <span class="rd-cmpl-thread-time">${Sec.escapeHTML(msg.time || '')}</span>
                 </div>
                 <div class="rd-cmpl-thread-text">${Sec.escapeHTML(msg.text || '')}</div>
@@ -36850,15 +36849,12 @@
             const authorColor = isAdmin ? 'var(--gold, var(--primary))' : 'var(--text2)';
             const time = formatRelativeAr(m.at) || '';
             return `
-              <div style="display:flex;gap:9px">
-                <div style="width:26px;height:26px;border-radius:50%;background:var(--surface2);color:var(--text2);display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0"><i class="fas ${isAdmin ? 'fa-headset' : 'fa-user-secret'}" style="font-size:10px"></i></div>
-                <div style="flex:1;min-width:0;background:${bg};border:1px solid var(--border);border-radius:14px;padding:11px 13px">
-                  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px">
-                    <span style="font-size:10.5px;font-weight:700;color:${authorColor}">${Sec.escapeHTML(author)}</span>
-                    <span style="font-size:9px;color:var(--text3)">${Sec.escapeHTML(time)}</span>
-                  </div>
-                  <div style="font-size:11.5px;color:var(--text2);line-height:1.7">${Sec.escapeHTML(m.text || '')}</div>
+              <div style="min-width:0;background:${bg};border:1px solid var(--border);border-radius:14px;padding:11px 13px">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px">
+                  <span style="display:inline-flex;align-items:center;gap:6px;font-size:10.5px;font-weight:700;color:${authorColor}">${isAdmin ? '<i class="fas fa-headset" style="font-size:10px" aria-hidden="true"></i>' : ''}${Sec.escapeHTML(author)}</span>
+                  <span style="font-size:9px;color:var(--text3)">${Sec.escapeHTML(time)}</span>
                 </div>
+                <div style="font-size:11.5px;color:var(--text2);line-height:1.7">${Sec.escapeHTML(m.text || '')}</div>
               </div>`;
           }).join('') +
           `</div>`;
