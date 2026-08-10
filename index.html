@@ -2711,6 +2711,8 @@
               style="display:none">0</span></button>
           <button class="nav-item" onclick="goTab('breaks',this)" data-perm="tab_breaks"><span class="nav-icon-wrap"><i
               class="fas fa-mug-hot" aria-hidden="true"></i></span><span class="nav-item-label">بريكات الموظفين</span></button>
+          <button class="nav-item" onclick="goTab('complaints',this)" data-perm="tab_complaints"><span class="nav-icon-wrap"><i
+              class="fas fa-comment-dots" aria-hidden="true"></i></span><span class="nav-item-label">الشكاوى والاقتراحات</span></button>
           <button class="nav-item" onclick="goTab('reports',this)" data-perm="tab_reports"><span class="nav-icon-wrap"><i
               class="fas fa-chart-line" aria-hidden="true"></i></span><span class="nav-item-label">التقارير</span></button>
           <button class="nav-item" onclick="goTab('compliance',this)" data-perm="tab_compliance"><span class="nav-icon-wrap"><i
@@ -3507,6 +3509,13 @@
             </div>
           </div>
 
+          <!-- COMPLAINTS & SUGGESTIONS -->
+          <div class="tab-content" id="tab-complaints" hidden>
+            <div class="panel wf-panel" style="padding:16px">
+              <div id="complaintsHost"></div>
+            </div>
+          </div>
+
           <!-- VIOLATIONS -->
           <div class="tab-content" id="tab-violations">
             <div class="panel wf-panel">
@@ -3881,6 +3890,11 @@
         <i class="fas fa-mug-hot" aria-hidden="true"></i>
         <span>بريكات</span>
       </button>
+      <button type="button" class="mob-nav-item" data-tab="complaints" data-perm="tab_complaints"
+        onclick="mobileNavGo('complaints', this)">
+        <i class="fas fa-comment-dots" aria-hidden="true"></i>
+        <span>شكاوى</span>
+      </button>
       <button type="button" class="mob-nav-item" data-tab="reports" data-perm="tab_reports"
         onclick="mobileNavGo('reports', this)">
         <i class="fas fa-chart-line" aria-hidden="true"></i>
@@ -4073,6 +4087,45 @@
         <div class="modal-footer">
           <button type="button" class="btn" onclick="closeModal('breakScheduleModal')">إلغاء</button>
           <button type="button" class="btn btn-primary" onclick="saveBreakScheduleFromUi()"><i class="fas fa-save"></i> حفظ المدة</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal" id="newComplaintModal" role="dialog" aria-modal="true" aria-labelledby="newComplaintTitle">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3 id="newComplaintTitle">رفع شكوى أو اقتراح</h3>
+          <button type="button" class="btn btn-ghost" onclick="closeModal('newComplaintModal')" aria-label="إغلاق"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">النوع <span class="required-mark">*</span></label>
+            <div id="cpKindOptions" style="display:flex;gap:8px"></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">التصنيف <span class="required-mark">*</span></label>
+            <div id="cpCategoryOptions" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" id="cpDescLabel" for="cpDescText">تفاصيل الشكوى <span class="required-mark">*</span></label>
+            <textarea id="cpDescText" class="form-input" placeholder="اشرح التفاصيل..." style="min-height:110px;resize:vertical"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn" onclick="closeModal('newComplaintModal')">إلغاء</button>
+          <button type="button" id="cpSubmitBtn" class="btn btn-primary" onclick="submitComplaintFromUi()"><i class="fas fa-paper-plane"></i> إرسال الشكوى</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal" id="complaintDetailModal" role="dialog" aria-modal="true" aria-labelledby="complaintDetailTitle">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3 id="complaintDetailTitle">تفاصيل الشكوى</h3>
+          <button type="button" class="btn btn-ghost" onclick="closeComplaintDetail()" aria-label="إغلاق"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+          <div id="cpDetailBody"></div>
         </div>
       </div>
     </div>

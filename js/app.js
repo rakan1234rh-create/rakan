@@ -1246,7 +1246,13 @@
         _staffBreakDayKey: null,
         _myBreakDurationMins: null,
         _staffBreakTicker: null,
-        _staffBreaksChannel: null
+        _staffBreaksChannel: null,
+        complaints: [],
+        complaintTypeFilter: 'all',
+        activeComplaintId: null,
+        complaintKind: 'complaint',
+        complaintCategory: '',
+        _complaintsChannel: null
       };
 
       /** مستخدم محلي عند عدم وجود جلسة Supabase (بعد إزالة شاشة الدخول) */
@@ -5759,6 +5765,7 @@
         state.realtimeChannels.push(vCh);
 
         try { setupStaffBreaksRealtime(); } catch (_) { /* noop */ }
+        try { setupComplaintsRealtime(); } catch (_) { /* noop */ }
 
         if (!isMobileViewport()) {
           const uCh = sb.channel('public:users')
@@ -5858,6 +5865,8 @@
         { id: 'tab_broadcasts', label: 'نشرات الجوال', group: 'الإعدادات', roles: ['admin'] },
         { id: 'tab_breaks', label: 'بريكات الموظفين', group: 'التنقل', roles: ['admin', 'supervisor', 'branch_manager', 'observer', 'employee'] },
         { id: 'manage_break_schedules', label: 'تعديل مدد البريك (منطقة/فرع/موظف)', group: 'إجراءات إدارية', roles: ['admin'] },
+        { id: 'tab_complaints', label: 'الشكاوى والاقتراحات', group: 'التنقل', roles: ['admin', 'manager', 'auditor', 'supervisor', 'employee', 'branch_manager', 'observer', 'hr'] },
+        { id: 'manage_complaints', label: 'إدارة الشكاوى والاقتراحات (الرد والإغلاق لأي شكوى)', group: 'إجراءات إدارية', roles: ['admin'] },
         { id: 'view_all_tickets', label: 'عرض جميع التذاكر (كل الفروع)', group: 'سير العمل', roles: ['admin', 'manager', 'auditor', 'hr'] },
         { id: 'respond_own_ticket', label: 'الرد على التذكرة الموجّهة إليه', group: 'سير العمل', roles: ['admin', 'employee', 'branch_manager'] },
         { id: 'act_as_supervisor', label: 'معالجة مرحلة المشرف', group: 'سير العمل', roles: ['admin', 'supervisor'] },
@@ -5897,7 +5906,8 @@
         departments: 'tab_departments',
         settings: 'tab_settings',
         broadcasts: 'tab_broadcasts',
-        breaks: 'tab_breaks'
+        breaks: 'tab_breaks',
+        complaints: 'tab_complaints'
       };
 
       function buildDefaultRolePermissions() {
@@ -7181,12 +7191,13 @@
           else if (tab === 'profileAvatars' && typeof renderProfileAvatarsAdmin === 'function') renderProfileAvatarsAdmin();
           else if (tab === 'broadcasts' && typeof renderBroadcastsPage === 'function') renderBroadcastsPage();
           else if (tab === 'breaks' && typeof renderStaffBreaksPage === 'function') renderStaffBreaksPage({ soft: true });
+          else if (tab === 'complaints' && typeof renderComplaintsPage === 'function') renderComplaintsPage();
         } catch (e) {
           if (isMirsadDebugLog()) console.warn('[permissions] active tab refresh', e);
         }
       }
 
-      const MR_NAV_TAB_ORDER = ['dashboard', 'workflow', 'newTicket', 'breaks', 'reports', 'compliance', 'violations', 'locations', 'departments', 'settings', 'broadcasts'];
+      const MR_NAV_TAB_ORDER = ['dashboard', 'workflow', 'newTicket', 'breaks', 'complaints', 'reports', 'compliance', 'violations', 'locations', 'departments', 'settings', 'broadcasts'];
 
       function hasAnyNavTabPermission() {
         return MR_NAV_TAB_ORDER.some(tab => {
@@ -7956,6 +7967,7 @@
         newTicket: { title: 'رصد مخالفة جديدة', sub: 'create new violation' },
         workflow: { title: 'معالجة التذاكر', sub: 'tickets workflow' },
         breaks: { title: 'بريكات الموظفين', sub: 'staff breaks' },
+        complaints: { title: 'الشكاوى والاقتراحات', sub: 'complaints & suggestions' },
         reports: { title: 'التقارير', sub: 'reports & analytics' },
         compliance: { title: 'لوحة مؤشرات الامتثال', sub: 'compliance dashboard' },
         locations: { title: 'المناطق والفروع', sub: 'regions & branches' },
@@ -8731,6 +8743,7 @@
           if (tab === 'profileAvatars') renderProfileAvatarsAdmin();
           if (tab === 'broadcasts') renderBroadcastsPage();
           if (tab === 'breaks') renderStaffBreaksPage();
+          if (tab === 'complaints') renderComplaintsPage();
           if (tab === 'newTicket') prepareNewTicket();
         }
 
@@ -33562,6 +33575,398 @@
       window.syncBreakScheduleScopeFields = syncBreakScheduleScopeFields;
       window.syncBreakScheduleFormFields = syncBreakScheduleFormFields;
       window.openStaffBreakHistory = openStaffBreakHistory;
+
+      // ═══════════════════════════════════════════════════════════════════════════
+      // COMPLAINTS & SUGGESTIONS — الشكاوى والاقتراحات
+      // ═══════════════════════════════════════════════════════════════════════════
+
+      const COMPLAINT_CATS = [
+        { label: 'بيئة العمل', icon: 'fa-building' },
+        { label: 'زملاء العمل', icon: 'fa-people-arrows' },
+        { label: 'الرواتب والمزايا', icon: 'fa-wallet' },
+        { label: 'الإدارة', icon: 'fa-user-tie' },
+        { label: 'أخرى', icon: 'fa-ellipsis' }
+      ];
+      const SUGGESTION_CATS = [
+        { label: 'تحسين الإجراءات', icon: 'fa-lightbulb' },
+        { label: 'تقنية ونظام', icon: 'fa-laptop-code' },
+        { label: 'خدمة العملاء', icon: 'fa-headset' },
+        { label: 'أخرى', icon: 'fa-ellipsis' }
+      ];
+      const COMPLAINT_KIND_LABELS = { complaint: 'شكوى', suggestion: 'اقتراح' };
+      const COMPLAINT_STATUS_LABELS = { pending: 'قيد المراجعة', resolved: 'تم الحل' };
+
+      function complaintCatsForKind(kind) {
+        return kind === 'suggestion' ? SUGGESTION_CATS : COMPLAINT_CATS;
+      }
+
+      function canManageComplaints() {
+        return normalizeUserRole(state.currentUser?.role) === 'admin';
+      }
+
+      function canSubmitComplaint() {
+        return !!state.currentUser?.id && state.currentUser.id !== GUEST_LOCAL_PROFILE.id;
+      }
+
+      async function loadComplaintsData() {
+        if (!canSubmitComplaint()) {
+          state.complaints = [];
+          return;
+        }
+        try {
+          const { data, error } = await sb.from('complaints')
+            .select('id,complaint_number,employee_id,branch_id,kind,category,description,attachments,status,logs,created_at,updated_at,resolved_at')
+            .order('created_at', { ascending: false })
+            .limit(500);
+          if (error) throw error;
+          state.complaints = data || [];
+        } catch (e) {
+          if (isMirsadDebugLog()) console.warn('[complaints] load', e);
+          state.complaints = state.complaints || [];
+        }
+      }
+
+      function getFilteredComplaints() {
+        const list = state.complaints || [];
+        if (state.complaintTypeFilter === 'all') return list;
+        return list.filter(c => c.kind === state.complaintTypeFilter);
+      }
+
+      function getComplaintById(id) {
+        return (state.complaints || []).find(c => c.id === id) || null;
+      }
+
+      function complaintCategoryIcon(c) {
+        const cats = complaintCatsForKind(c.kind);
+        return cats.find(x => x.label === c.category)?.icon || 'fa-comment-dots';
+      }
+
+      function renderComplaintCardHtml(c) {
+        const kindLabel = COMPLAINT_KIND_LABELS[c.kind] || c.kind;
+        const kindColor = c.kind === 'suggestion' ? 'var(--info)' : 'var(--danger)';
+        const statusLabel = COMPLAINT_STATUS_LABELS[c.status] || c.status;
+        const statusColor = c.status === 'resolved' ? 'var(--success)' : 'var(--warning)';
+        const icon = complaintCategoryIcon(c);
+        const time = formatRelativeAr(c.created_at) || '';
+        return `
+          <div class="cp-card" role="button" tabindex="0" style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px;cursor:pointer;margin-bottom:10px"
+            onclick="openComplaintDetail('${Sec.escapeHTML(c.id)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openComplaintDetail('${Sec.escapeHTML(c.id)}')}">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:9px">
+              <div style="display:flex;align-items:center;gap:9px;min-width:0">
+                <div style="width:32px;height:32px;border-radius:10px;background:color-mix(in srgb, ${kindColor} 14%, transparent);color:${kindColor};display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fas ${icon}" style="font-size:12px"></i></div>
+                <div style="min-width:0">
+                  <div style="font-size:12.5px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${Sec.escapeHTML(c.category)}</div>
+                  <div style="font-size:10px;color:var(--text3);margin-top:2px;font-family:monospace">${Sec.escapeHTML(c.complaint_number || '')} · ${Sec.escapeHTML(time)}</div>
+                </div>
+              </div>
+              <span style="font-size:9.5px;font-weight:700;color:${kindColor};background:color-mix(in srgb, ${kindColor} 14%, transparent);padding:3px 8px;border-radius:999px;flex-shrink:0">${Sec.escapeHTML(kindLabel)}</span>
+            </div>
+            <div style="font-size:12px;color:var(--text2);line-height:1.6">${Sec.escapeHTML(c.description)}</div>
+            <div style="margin-top:10px;display:inline-flex;padding:5px 12px;border-radius:999px;font-size:11px;font-weight:600;background:color-mix(in srgb, ${statusColor} 14%, transparent);color:${statusColor}">${Sec.escapeHTML(statusLabel)}</div>
+          </div>`;
+      }
+
+      async function renderComplaintsPage(opts = {}) {
+        const host = document.getElementById('complaintsHost');
+        if (!host) return;
+        if (!canSubmitComplaint()) {
+          host.innerHTML = '<div class="rd-list__row" style="cursor:default"><div class="rd-list__sub">سجّل الدخول لعرض الشكاوى والاقتراحات</div></div>';
+          return;
+        }
+        if (!opts.soft) await loadComplaintsData();
+        paintComplaintsPage();
+      }
+
+      function paintComplaintsPage() {
+        const host = document.getElementById('complaintsHost');
+        if (!host) return;
+        const rows = state.complaints || [];
+        const myComplaints = rows.filter(c => c.kind === 'complaint').length;
+        const mySuggestions = rows.filter(c => c.kind === 'suggestion').length;
+        const pending = rows.filter(c => c.status === 'pending').length;
+        const resolved = rows.filter(c => c.status === 'resolved').length;
+
+        const filters = [
+          { id: 'all', label: 'الكل' },
+          { id: 'complaint', label: 'الشكاوى' },
+          { id: 'suggestion', label: 'الاقتراحات' }
+        ];
+        const filtersHtml = filters.map(f => {
+          const active = f.id === state.complaintTypeFilter;
+          return `<button type="button" onclick="setComplaintTypeFilter('${f.id}')" style="flex:0 0 auto;padding:8px 16px;border-radius:999px;font-size:12.5px;font-weight:600;white-space:nowrap;cursor:pointer;background:${active ? 'var(--gold, var(--primary))' : 'var(--surface2)'};color:${active ? 'var(--onGold, #fff)' : 'var(--text2)'};border:1px solid ${active ? 'var(--gold, var(--primary))' : 'var(--border)'}">${Sec.escapeHTML(f.label)}</button>`;
+        }).join('');
+
+        const filtered = getFilteredComplaints();
+        const listHtml = filtered.length
+          ? filtered.map(renderComplaintCardHtml).join('')
+          : '<div class="rd-list__row" style="cursor:default"><div class="rd-list__sub">لا توجد شكاوى أو اقتراحات حالياً</div></div>';
+
+        const statCard = (value, label, icon, color) => `
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:13px 14px">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <span style="font-size:20px;font-weight:700;color:${color}">${value}</span>
+              <span style="width:28px;height:28px;border-radius:9px;background:var(--surface2);display:flex;align-items:center;justify-content:center;color:${color}"><i class="fas ${icon}" style="font-size:12px"></i></span>
+            </div>
+            <div style="font-size:11.5px;color:var(--text2);margin-top:6px">${label}</div>
+          </div>`;
+
+        host.innerHTML = `
+          <div style="animation:screenIn .32s ease">
+            <button type="button" onclick="openNewComplaintModal()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:14px;border:none;border-radius:14px;background:var(--gold, var(--primary));color:var(--onGold, #fff);font-size:13.5px;font-weight:700;cursor:pointer;margin-bottom:16px">
+              <i class="fas fa-plus" style="font-size:12px"></i>رفع شكوى أو اقتراح
+            </button>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+              ${statCard(myComplaints, canManageComplaints() ? 'الشكاوى' : 'شكاواي', 'fa-triangle-exclamation', 'var(--danger)')}
+              ${statCard(mySuggestions, canManageComplaints() ? 'الاقتراحات' : 'اقتراحاتي', 'fa-lightbulb', 'var(--info)')}
+              ${statCard(pending, 'قيد المراجعة', 'fa-hourglass-half', 'var(--warning)')}
+              ${statCard(resolved, 'تم الحل', 'fa-check-double', 'var(--success)')}
+            </div>
+            <div style="display:flex;gap:8px;margin-bottom:16px;overflow-x:auto">${filtersHtml}</div>
+            <div>${listHtml}</div>
+          </div>`;
+      }
+
+      function setComplaintTypeFilter(id) {
+        state.complaintTypeFilter = id;
+        paintComplaintsPage();
+      }
+
+      function syncNewComplaintForm() {
+        const kindWrap = document.getElementById('cpKindOptions');
+        const catWrap = document.getElementById('cpCategoryOptions');
+        const descLabel = document.getElementById('cpDescLabel');
+        const submitBtn = document.getElementById('cpSubmitBtn');
+        const kind = state.complaintKind;
+        if (kindWrap) {
+          kindWrap.innerHTML = ['complaint', 'suggestion'].map(k => {
+            const active = k === kind;
+            const icon = k === 'suggestion' ? 'fa-lightbulb' : 'fa-triangle-exclamation';
+            return `<button type="button" onclick="setNewComplaintKind('${k}')" style="flex:1;display:flex;align-items:center;justify-content:center;gap:7px;padding:11px 6px;border-radius:11px;font-size:12.5px;font-weight:600;cursor:pointer;background:${active ? 'var(--gold, var(--primary))' : 'var(--surface2)'};color:${active ? 'var(--onGold, #fff)' : 'var(--text2)'};border:1px solid ${active ? 'var(--gold, var(--primary))' : 'var(--border)'}"><i class="fas ${icon}" style="font-size:11px"></i>${Sec.escapeHTML(COMPLAINT_KIND_LABELS[k])}</button>`;
+          }).join('');
+        }
+        const cats = complaintCatsForKind(kind);
+        if (!cats.some(c => c.label === state.complaintCategory)) state.complaintCategory = cats[0].label;
+        if (catWrap) {
+          catWrap.innerHTML = cats.map(c => {
+            const active = c.label === state.complaintCategory;
+            return `<button type="button" onclick="setNewComplaintCategory('${Sec.escapeHTML(c.label)}')" style="display:flex;align-items:center;gap:7px;padding:9px 13px;border-radius:10px;font-size:11.5px;font-weight:600;cursor:pointer;background:${active ? 'var(--gold, var(--primary))' : 'var(--surface2)'};color:${active ? 'var(--onGold, #fff)' : 'var(--text2)'};border:1px solid ${active ? 'var(--gold, var(--primary))' : 'var(--border)'}"><i class="fas ${c.icon}" style="font-size:11px"></i>${Sec.escapeHTML(c.label)}</button>`;
+          }).join('');
+        }
+        if (descLabel) descLabel.textContent = kind === 'suggestion' ? 'تفاصيل الاقتراح' : 'تفاصيل الشكوى';
+        if (submitBtn) submitBtn.textContent = kind === 'suggestion' ? 'إرسال الاقتراح' : 'إرسال الشكوى';
+      }
+
+      function setNewComplaintKind(kind) {
+        state.complaintKind = kind === 'suggestion' ? 'suggestion' : 'complaint';
+        syncNewComplaintForm();
+      }
+
+      function setNewComplaintCategory(label) {
+        state.complaintCategory = label;
+        syncNewComplaintForm();
+      }
+
+      function openNewComplaintModal() {
+        if (!canSubmitComplaint()) {
+          showToast('سجّل الدخول لرفع شكوى أو اقتراح', 'warning');
+          return;
+        }
+        state.complaintKind = 'complaint';
+        state.complaintCategory = COMPLAINT_CATS[0].label;
+        const desc = document.getElementById('cpDescText');
+        if (desc) desc.value = '';
+        syncNewComplaintForm();
+        openModal('newComplaintModal');
+      }
+
+      async function submitComplaintFromUi() {
+        if (!canSubmitComplaint()) {
+          showToast('سجّل الدخول لرفع شكوى أو اقتراح', 'warning');
+          return;
+        }
+        const desc = String(document.getElementById('cpDescText')?.value || '').trim();
+        if (!desc) {
+          showToast('اكتب تفاصيل الشكوى أو الاقتراح', 'warning');
+          return;
+        }
+        try {
+          const { data, error } = await sb.from('complaints').insert({
+            employee_id: state.currentUser.id,
+            kind: state.complaintKind,
+            category: state.complaintCategory,
+            description: desc
+          }).select().single();
+          if (error) throw error;
+          state.complaints = [data, ...(state.complaints || [])];
+          closeModal('newComplaintModal');
+          showToast('تم إرسال ' + (state.complaintKind === 'suggestion' ? 'الاقتراح' : 'الشكوى') + ' بنجاح', 'success');
+          paintComplaintsPage();
+        } catch (e) {
+          showToast('فشل الإرسال: ' + (e.message || e), 'error');
+        }
+      }
+
+      function renderComplaintThreadHtml(c) {
+        const logs = Array.isArray(c.logs) ? c.logs : [];
+        if (!logs.length) return '';
+        return `<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">` +
+          logs.map(m => {
+            const isAdmin = !!m.is_admin;
+            const bg = isAdmin ? 'color-mix(in srgb, var(--gold, var(--primary)) 12%, var(--surface))' : 'var(--surface)';
+            const authorColor = isAdmin ? 'var(--gold, var(--primary))' : 'var(--text2)';
+            const time = formatRelativeAr(m.at) || '';
+            return `
+              <div style="display:flex;gap:9px">
+                <div style="width:26px;height:26px;border-radius:50%;background:var(--surface2);color:var(--text2);display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0"><i class="fas fa-headset" style="font-size:10px"></i></div>
+                <div style="flex:1;min-width:0;background:${bg};border:1px solid var(--border);border-radius:14px;padding:11px 13px">
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px">
+                    <span style="font-size:10.5px;font-weight:700;color:${authorColor}">${Sec.escapeHTML(m.author || '')}</span>
+                    <span style="font-size:9px;color:var(--text3)">${Sec.escapeHTML(time)}</span>
+                  </div>
+                  <div style="font-size:11.5px;color:var(--text2);line-height:1.7">${Sec.escapeHTML(m.text || '')}</div>
+                </div>
+              </div>`;
+          }).join('') +
+          `</div>`;
+      }
+
+      function renderComplaintDetailModal() {
+        const c = getComplaintById(state.activeComplaintId);
+        const host = document.getElementById('cpDetailBody');
+        if (!host) return;
+        if (!c) {
+          host.innerHTML = '';
+          return;
+        }
+        const kindLabel = COMPLAINT_KIND_LABELS[c.kind] || c.kind;
+        const kindColor = c.kind === 'suggestion' ? 'var(--info)' : 'var(--danger)';
+        const statusLabel = COMPLAINT_STATUS_LABELS[c.status] || c.status;
+        const statusColor = c.status === 'resolved' ? 'var(--success)' : 'var(--warning)';
+        const time = formatRelativeAr(c.created_at) || '';
+        const isResolved = c.status === 'resolved';
+        const canResolve = canManageComplaints() && !isResolved;
+        const replyLabel = 'الرد على ' + (c.kind === 'suggestion' ? 'الاقتراح' : 'الشكوى');
+
+        host.innerHTML = `
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+            <div style="display:flex;align-items:center;gap:8px;min-width:0">
+              <span style="font-size:14.5px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${Sec.escapeHTML(c.category)}</span>
+              <span style="font-size:9.5px;font-weight:700;color:${kindColor};background:color-mix(in srgb, ${kindColor} 14%, transparent);padding:3px 8px;border-radius:999px;flex-shrink:0">${Sec.escapeHTML(kindLabel)}</span>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+            <span style="font-size:11px;color:var(--text3);font-family:monospace">${Sec.escapeHTML(c.complaint_number || '')} · ${Sec.escapeHTML(time)}</span>
+            <span style="display:inline-flex;padding:5px 11px;border-radius:999px;font-size:10.5px;font-weight:700;background:color-mix(in srgb, ${statusColor} 14%, transparent);color:${statusColor}">${Sec.escapeHTML(statusLabel)}</span>
+          </div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:13px;font-size:12.5px;color:var(--text2);line-height:1.8;margin-bottom:16px">${Sec.escapeHTML(c.description)}</div>
+          ${renderComplaintThreadHtml(c)}
+          ${(c.employee_id === state.currentUser?.id || canManageComplaints()) ? `
+          <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:7px">${Sec.escapeHTML(replyLabel)}</div>
+          <textarea id="cpReplyText" placeholder="اكتب ردك هنا..." style="width:100%;min-height:80px;border:1px solid var(--border);border-radius:14px;padding:12px 14px;font-size:12.5px;color:var(--text);background:var(--surface);font-family:inherit;resize:vertical;margin-bottom:14px"></textarea>
+          <div style="display:flex;gap:10px">
+            <button type="button" onclick="submitComplaintReplyFromUi()" style="flex:1;padding:14px;border:none;border-radius:14px;background:var(--gold, var(--primary));color:var(--onGold, #fff);font-size:13.5px;font-weight:700;cursor:pointer">إرسال الرد</button>
+            ${isResolved
+              ? `<button type="button" disabled style="padding:14px 16px;border:1px solid var(--success);border-radius:14px;background:transparent;color:var(--success);font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px;white-space:nowrap"><i class="fas fa-check" style="font-size:10px"></i>تم الحل</button>`
+              : (canResolve ? `<button type="button" onclick="resolveComplaintFromUi()" style="padding:14px 16px;border:1px solid var(--border);border-radius:14px;background:transparent;color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap"><i class="fas fa-check" style="font-size:10px"></i>حل</button>` : '')}
+          </div>` : ''}
+        `;
+      }
+
+      function openComplaintDetail(id) {
+        state.activeComplaintId = id;
+        renderComplaintDetailModal();
+        openModal('complaintDetailModal');
+      }
+
+      function closeComplaintDetail() {
+        state.activeComplaintId = null;
+        closeModal('complaintDetailModal');
+      }
+
+      async function submitComplaintReplyFromUi() {
+        const text = String(document.getElementById('cpReplyText')?.value || '').trim();
+        if (!text) {
+          showToast('اكتب نص الرد', 'warning');
+          return;
+        }
+        if (!state.activeComplaintId) return;
+        try {
+          const { data, error } = await sb.rpc('add_complaint_reply', {
+            p_complaint_id: state.activeComplaintId,
+            p_text: text
+          });
+          if (error) throw error;
+          if (!data?.ok) {
+            showToast(data?.error || 'تعذّر إرسال الرد', 'error');
+            return;
+          }
+          const idx = (state.complaints || []).findIndex(c => c.id === data.complaint.id);
+          if (idx >= 0) state.complaints[idx] = data.complaint;
+          else state.complaints = [data.complaint, ...(state.complaints || [])];
+          renderComplaintDetailModal();
+          paintComplaintsPage();
+          showToast('تم إرسال الرد', 'success');
+        } catch (e) {
+          showToast('فشل إرسال الرد: ' + (e.message || e), 'error');
+        }
+      }
+
+      async function resolveComplaintFromUi() {
+        if (!state.activeComplaintId) return;
+        try {
+          const { data, error } = await sb.rpc('resolve_complaint', { p_complaint_id: state.activeComplaintId });
+          if (error) throw error;
+          if (!data?.ok) {
+            showToast(data?.error || 'تعذّر إغلاق الشكوى', 'error');
+            return;
+          }
+          const idx = (state.complaints || []).findIndex(c => c.id === data.complaint.id);
+          if (idx >= 0) state.complaints[idx] = data.complaint;
+          renderComplaintDetailModal();
+          paintComplaintsPage();
+          showToast('تم وضع علامة "تم الحل"', 'success');
+        } catch (e) {
+          showToast('فشل الإغلاق: ' + (e.message || e), 'error');
+        }
+      }
+
+      function setupComplaintsRealtime() {
+        if (state._complaintsChannel) {
+          try { sb.removeChannel(state._complaintsChannel); } catch (_) { /* noop */ }
+          state._complaintsChannel = null;
+        }
+        if (!canSubmitComplaint()) return;
+        const ch = sb.channel('public:complaints')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'complaints' }, (payload) => {
+            const row = payload.new || payload.old;
+            if (!row?.id) return;
+            let list = [...(state.complaints || [])];
+            if (payload.eventType === 'DELETE') {
+              list = list.filter(c => c.id !== row.id);
+            } else {
+              const idx = list.findIndex(c => c.id === row.id);
+              if (idx >= 0) list[idx] = payload.new;
+              else list.unshift(payload.new);
+            }
+            state.complaints = list.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+            const tab = document.getElementById('tab-complaints');
+            if (tab?.classList.contains('active')) paintComplaintsPage();
+            if (state.activeComplaintId === row.id) renderComplaintDetailModal();
+          })
+          .subscribe();
+        state._complaintsChannel = ch;
+        state.realtimeChannels.push(ch);
+      }
+
+      window.setComplaintTypeFilter = setComplaintTypeFilter;
+      window.openNewComplaintModal = openNewComplaintModal;
+      window.setNewComplaintKind = setNewComplaintKind;
+      window.setNewComplaintCategory = setNewComplaintCategory;
+      window.submitComplaintFromUi = submitComplaintFromUi;
+      window.openComplaintDetail = openComplaintDetail;
+      window.closeComplaintDetail = closeComplaintDetail;
+      window.submitComplaintReplyFromUi = submitComplaintReplyFromUi;
+      window.resolveComplaintFromUi = resolveComplaintFromUi;
 
 
       window.removeFile = removeFile;
