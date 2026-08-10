@@ -33630,7 +33630,6 @@
       window.handleLogoutFromUserMenu = handleLogoutFromUserMenu;
       /* ── Desktop: بلاغات الرصد + الشكاوى (من Athar Redesign Desktop) ── */
       const RD_SCH_KEY = 'athar_rd_schedule_v1';
-      const RD_CMPL_KEY = 'athar_rd_complaints_v2';
 
       function rdLoadJson(key, fallback) {
         try {
@@ -33688,31 +33687,50 @@
         return kind === 'suggestion' ? RD_SUGGESTION_CATS : RD_COMPLAINT_CATS;
       }
 
-      function rdDefaultComplaints() {
-        return [
-          {
-            id: 'cp1', kind: 'complaint', employeeName: 'ريان الحربي', category: 'بيئة العمل', categoryIcon: 'fa-building',
-            description: 'إضاءة ضعيفة في صالة الموظفين بفرع العليا تؤثر على الأداء.', time: 'منذ 3 أيام', status: 'resolved',
-            thread: [{ author: 'الإدارة', text: 'تم التواصل مع الصيانة واستبدال الإضاءة. شكراً لملاحظتك.', time: 'منذ يومين', isAdmin: true }]
-          },
-          {
-            id: 'cp2', kind: 'complaint', employeeName: 'نورة القحطاني', category: 'زملاء العمل', categoryIcon: 'fa-people-arrows',
-            description: 'خلاف متكرر مع أحد الزملاء حول توزيع المناوبات.', time: 'أمس', status: 'pending', thread: []
-          },
-          {
-            id: 'cp3', kind: 'suggestion', employeeName: 'سارة المطيري', category: 'تحسين الإجراءات', categoryIcon: 'fa-lightbulb',
-            description: 'اقتراح إضافة خاصية تنبيه تلقائي للموظف قبل انتهاء البريك بخمس دقائق.', time: 'منذ يومين', status: 'pending', thread: []
-          }
-        ];
+      function mapComplaintToDesk(c) {
+        if (!c) return null;
+        const emp = (state.users || []).find(u => String(u.id) === String(c.employee_id));
+        const cats = (typeof complaintCatsForKind === 'function'
+          ? complaintCatsForKind(c.kind)
+          : (c.kind === 'suggestion' ? RD_SUGGESTION_CATS : RD_COMPLAINT_CATS));
+        const cat = (cats || []).find(x => x.label === c.category) || (cats && cats[0]) || null;
+        const logs = Array.isArray(c.logs) ? c.logs : [];
+        return {
+          id: c.id,
+          kind: c.kind === 'suggestion' ? 'suggestion' : 'complaint',
+          employeeName: (emp && emp.name) || 'موظف',
+          employeeId: c.employee_id,
+          category: c.category || '',
+          categoryIcon: (cat && cat.icon) || (c.kind === 'suggestion' ? 'fa-lightbulb' : 'fa-triangle-exclamation'),
+          description: c.description || '',
+          time: (typeof formatRelativeAr === 'function' && formatRelativeAr(c.created_at)) || '',
+          createdAt: c.created_at,
+          status: c.status === 'resolved' ? 'resolved' : 'pending',
+          complaintNumber: c.complaint_number || '',
+          thread: logs.map(m => ({
+            author: m.author || '',
+            text: m.text || '',
+            time: (typeof formatRelativeAr === 'function' && formatRelativeAr(m.at)) || '',
+            isAdmin: !!m.is_admin
+          })),
+          _raw: c
+        };
       }
 
       function getRdComplaints() {
-        let rows = rdLoadJson(RD_CMPL_KEY, null);
-        if (!Array.isArray(rows)) {
-          rows = rdDefaultComplaints();
-          rdSaveJson(RD_CMPL_KEY, rows);
-        }
-        return rows;
+        return (state.complaints || []).map(mapComplaintToDesk).filter(Boolean);
+      }
+
+      function refreshComplaintsUi() {
+        try {
+          const tab = document.getElementById('tab-complaints');
+          if (!tab || !tab.classList.contains('active')) return;
+          if (typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi()) {
+            if (typeof renderComplaintsDesktop === 'function') renderComplaintsDesktop({ soft: true });
+          } else if (typeof paintComplaintsPage === 'function') {
+            paintComplaintsPage();
+          }
+        } catch (_) { /* noop */ }
       }
 
       function rdCmplEnsureForm() {
@@ -33750,6 +33768,8 @@
       }
 
       function rdCmplNumber(id) {
+        const row = getRdComplaints().find(c => c.id === id);
+        if (row && row.complaintNumber) return row.complaintNumber;
         const idx = getRdComplaints().findIndex(c => c.id === id);
         return '#' + (1001 + Math.max(0, idx));
       }
@@ -34384,13 +34404,16 @@
         showToast(`تم تصدير ${rows.length} بلاغ ✓`, 'success');
       }
 
-      function renderComplaintsDesktop() {
+      async function renderComplaintsDesktop(opts = {}) {
         const host = document.getElementById('rdComplaintsHost');
         if (!host) return;
         if (!isAtharDesktopScreenUi()) {
           host.innerHTML = '<div class="rd-ticket-empty"><i class="fas fa-desktop"></i><p>شاشة الشكاوى متاحة على سطح المكتب</p></div>';
           rdCmplOverlayHost().innerHTML = '';
           return;
+        }
+        if (!opts.soft && typeof loadComplaintsData === 'function') {
+          try { await loadComplaintsData(); } catch (_) { /* noop */ }
         }
         const filter = state._rdCmplFilter || 'all';
         const all = getRdComplaints();
@@ -34448,6 +34471,10 @@
             </article>`;
         }).join('');
 
+        const emptyMsg = (typeof canSubmitComplaint === 'function' && !canSubmitComplaint())
+          ? 'سجّل الدخول لعرض الشكاوى والاقتراحات'
+          : 'لا توجد شكاوى أو اقتراحات';
+
         host.innerHTML = `
           <div class="rd-cmpl-board">
             <div class="rd-cmpl-head">
@@ -34464,14 +34491,14 @@
               </div>
               <div class="rd-cmpl-metric">
                 <div>
-                  <div class="rd-cmpl-metric__lbl">شكاواي</div>
+                  <div class="rd-cmpl-metric__lbl">${(typeof canManageComplaints === 'function' && canManageComplaints()) ? 'الشكاوى' : 'شكاواي'}</div>
                   <div class="rd-cmpl-metric__val" style="color:var(--danger)">${onlyC}</div>
                 </div>
                 <div class="rd-cmpl-metric__ico rd-cmpl-metric__ico--danger"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i></div>
               </div>
               <div class="rd-cmpl-metric">
                 <div>
-                  <div class="rd-cmpl-metric__lbl">اقتراحاتي</div>
+                  <div class="rd-cmpl-metric__lbl">${(typeof canManageComplaints === 'function' && canManageComplaints()) ? 'الاقتراحات' : 'اقتراحاتي'}</div>
                   <div class="rd-cmpl-metric__val" style="color:var(--info)">${onlyS}</div>
                 </div>
                 <div class="rd-cmpl-metric__ico rd-cmpl-metric__ico--info"><i class="fas fa-lightbulb" aria-hidden="true"></i></div>
@@ -34492,7 +34519,7 @@
               </div>
             </div>
             <div class="rd-cmpl-filters">${filters}</div>
-            <div class="rd-cmpl-list">${list || '<div class="rd-ticket-empty"><i class="fas fa-inbox"></i><p>لا توجد شكاوى أو اقتراحات</p></div>'}</div>
+            <div class="rd-cmpl-list">${list || `<div class="rd-ticket-empty"><i class="fas fa-inbox"></i><p>${Sec.escapeHTML(emptyMsg)}</p></div>`}</div>
           </div>`;
 
         renderComplaintsOverlays();
@@ -34530,7 +34557,9 @@
             </div>`).join('');
           const resolveBtn = active.status === 'resolved'
             ? `<button type="button" class="rd-cmpl-btn rd-cmpl-btn--resolved" disabled><i class="fas fa-check" aria-hidden="true"></i>تم الحل</button>`
-            : `<button type="button" class="rd-cmpl-btn rd-cmpl-btn--ghost" onclick="rdResolveComplaint('${Sec.escapeHTML(active.id)}')"><i class="fas fa-check" aria-hidden="true"></i>تحديد كمحلولة</button>`;
+            : ((typeof canManageComplaints === 'function' && canManageComplaints())
+              ? `<button type="button" class="rd-cmpl-btn rd-cmpl-btn--ghost" onclick="rdResolveComplaint('${Sec.escapeHTML(active.id)}')"><i class="fas fa-check" aria-hidden="true"></i>تحديد كمحلولة</button>`
+              : '');
           html += `
             <div class="rd-cmpl-overlay" role="dialog" aria-modal="true">
               <div class="rd-cmpl-overlay__scrim" onclick="rdCloseComplaintDetail()"></div>
@@ -34684,7 +34713,7 @@
         renderComplaintsOverlays();
       }
 
-      function rdSubmitComplaintForm() {
+      async function rdSubmitComplaintForm() {
         const form = rdCmplEnsureForm();
         const descEl = document.getElementById('rdCmplDescInput');
         const desc = String((descEl && descEl.value) || form.desc || '').trim();
@@ -34692,31 +34721,31 @@
           showToast('اكتب التفاصيل أولاً', 'warning');
           return;
         }
+        if (typeof canSubmitComplaint === 'function' && !canSubmitComplaint()) {
+          showToast('سجّل الدخول لرفع شكوى أو اقتراح', 'warning');
+          return;
+        }
         const cat = rdCatsForKind(form.kind).find(c => c.label === form.category) || rdCatsForKind(form.kind)[0];
-        const anonymous = !!form.anonymous;
-        const rows = getRdComplaints();
-        rows.unshift({
-          id: 'cp-' + Date.now(),
-          kind: form.kind,
-          isAnonymous: anonymous,
-          employeeName: anonymous ? 'مجهول' : rdCmplCurrentUserName(),
-          category: cat.label,
-          categoryIcon: cat.icon,
-          description: desc,
-          time: 'الآن',
-          status: 'pending',
-          thread: [],
-          attachCount: form.attachCount || 0
-        });
-        rdSaveJson(RD_CMPL_KEY, rows);
-        form.open = false;
-        renderComplaintsDesktop();
-        showToast(
-          form.kind === 'complaint'
-            ? (anonymous ? 'تم رفع الشكوى كمجهول' : 'تم رفع الشكوى')
-            : (anonymous ? 'تم رفع الاقتراح كمجهول' : 'تم رفع الاقتراح'),
-          'success'
-        );
+        try {
+          const { data, error } = await sb.from('complaints').insert({
+            employee_id: state.currentUser.id,
+            kind: form.kind === 'suggestion' ? 'suggestion' : 'complaint',
+            category: (cat && cat.label) || form.category || 'أخرى',
+            description: desc
+          }).select().single();
+          if (error) throw error;
+          state.complaints = [data, ...(state.complaints || [])];
+          form.open = false;
+          form.desc = '';
+          form.attachCount = 0;
+          await renderComplaintsDesktop({ soft: true });
+          showToast(
+            form.kind === 'complaint' ? 'تم رفع الشكوى' : 'تم رفع الاقتراح',
+            'success'
+          );
+        } catch (e) {
+          showToast('فشل الإرسال: ' + (e.message || e), 'error');
+        }
       }
 
       function rdOpenComplaintDetail(id) {
@@ -34733,7 +34762,7 @@
         renderComplaintsOverlays();
       }
 
-      function rdSubmitComplaintReply() {
+      async function rdSubmitComplaintReply() {
         const id = state._rdCmplDetailId;
         if (!id) return;
         const input = document.getElementById('rdCmplReplyInput');
@@ -34742,23 +34771,47 @@
           showToast('اكتب الرد أولاً', 'warning');
           return;
         }
-        const rows = getRdComplaints().map(r => {
-          if (r.id !== id) return r;
-          const thread = Array.isArray(r.thread) ? r.thread.slice() : [];
-          thread.push({ author: 'الإدارة', text, time: 'الآن', isAdmin: true });
-          return { ...r, thread };
-        });
-        rdSaveJson(RD_CMPL_KEY, rows);
-        state._rdCmplReply = '';
-        renderComplaintsDesktop();
-        showToast('تم إرسال الرد', 'success');
+        try {
+          const { data, error } = await sb.rpc('add_complaint_reply', {
+            p_complaint_id: id,
+            p_text: text
+          });
+          if (error) throw error;
+          if (!data?.ok) {
+            showToast(data?.error || 'تعذّر إرسال الرد', 'error');
+            return;
+          }
+          const idx = (state.complaints || []).findIndex(c => c.id === data.complaint.id);
+          if (idx >= 0) state.complaints[idx] = data.complaint;
+          else state.complaints = [data.complaint, ...(state.complaints || [])];
+          state._rdCmplReply = '';
+          await renderComplaintsDesktop({ soft: true });
+          showToast('تم إرسال الرد', 'success');
+        } catch (e) {
+          showToast('فشل إرسال الرد: ' + (e.message || e), 'error');
+        }
       }
 
-      function rdResolveComplaint(id) {
-        const rows = getRdComplaints().map(r => r.id === id ? { ...r, status: 'resolved' } : r);
-        rdSaveJson(RD_CMPL_KEY, rows);
-        renderComplaintsDesktop();
-        showToast('تم تحديدها كمحلولة', 'success');
+      async function rdResolveComplaint(id) {
+        if (!id) return;
+        if (typeof canManageComplaints === 'function' && !canManageComplaints()) {
+          showToast('مدير النظام فقط يقدر يغلق الشكوى', 'warning');
+          return;
+        }
+        try {
+          const { data, error } = await sb.rpc('resolve_complaint', { p_complaint_id: id });
+          if (error) throw error;
+          if (!data?.ok) {
+            showToast(data?.error || 'تعذّر إغلاق الشكوى', 'error');
+            return;
+          }
+          const idx = (state.complaints || []).findIndex(c => c.id === data.complaint.id);
+          if (idx >= 0) state.complaints[idx] = data.complaint;
+          await renderComplaintsDesktop({ soft: true });
+          showToast('تم تحديدها كمحلولة', 'success');
+        } catch (e) {
+          showToast('فشل الإغلاق: ' + (e.message || e), 'error');
+        }
       }
 
       window.rdSchSearch = rdSchSearch;
@@ -36870,8 +36923,15 @@
             }
             state.complaints = list.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
             const tab = document.getElementById('tab-complaints');
-            if (tab?.classList.contains('active')) paintComplaintsPage();
+            if (tab?.classList.contains('active')) {
+              if (typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi()) {
+                if (typeof renderComplaintsDesktop === 'function') renderComplaintsDesktop({ soft: true });
+              } else if (typeof paintComplaintsPage === 'function') {
+                paintComplaintsPage();
+              }
+            }
             if (state.activeComplaintId === row.id) renderComplaintDetailModal();
+            if (state._rdCmplDetailId === row.id) renderComplaintsOverlays();
           })
           .subscribe();
         state._complaintsChannel = ch;
