@@ -109,6 +109,17 @@ BEGIN
   END IF;
 
   SELECT name INTO v_name FROM public.users WHERE id = v_uid;
+  -- Anonymous tickets store { "__anon": true } in attachments; hide employee name in logs.
+  IF v_role IS DISTINCT FROM 'admin'
+     AND EXISTS (
+       SELECT 1
+       FROM jsonb_array_elements(COALESCE(v_row.attachments, '[]'::jsonb)) AS a
+       WHERE (a.value ->> '__anon') = 'true'
+          OR (a.value -> '__anon') = 'true'::jsonb
+     )
+  THEN
+    v_name := 'مجهول';
+  END IF;
   v_entry := jsonb_build_object(
     'at', to_char(now(), 'YYYY-MM-DD"T"HH24:MI:SSZ'),
     'author', COALESCE(v_name, 'مستخدم'),

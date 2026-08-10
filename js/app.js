@@ -33734,7 +33734,7 @@
           status: c.status === 'resolved' ? 'resolved' : 'pending',
           complaintNumber: c.complaint_number || '',
           thread: logs.map(m => ({
-            author: m.author || '',
+            author: (isAnonymous && !m.is_admin) ? 'مجهول' : (m.author || ''),
             text: m.text || '',
             time: (typeof formatRelativeAr === 'function' && formatRelativeAr(m.at)) || '',
             isAdmin: !!m.is_admin
@@ -36841,18 +36841,20 @@
       function renderComplaintThreadHtml(c) {
         const logs = Array.isArray(c.logs) ? c.logs : [];
         if (!logs.length) return '';
+        const anon = complaintIsAnonymous(c);
         return `<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">` +
           logs.map(m => {
             const isAdmin = !!m.is_admin;
+            const author = (anon && !isAdmin) ? 'مجهول' : (m.author || '');
             const bg = isAdmin ? 'color-mix(in srgb, var(--gold, var(--primary)) 12%, var(--surface))' : 'var(--surface)';
             const authorColor = isAdmin ? 'var(--gold, var(--primary))' : 'var(--text2)';
             const time = formatRelativeAr(m.at) || '';
             return `
               <div style="display:flex;gap:9px">
-                <div style="width:26px;height:26px;border-radius:50%;background:var(--surface2);color:var(--text2);display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0"><i class="fas fa-headset" style="font-size:10px"></i></div>
+                <div style="width:26px;height:26px;border-radius:50%;background:var(--surface2);color:var(--text2);display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0"><i class="fas ${isAdmin ? 'fa-headset' : 'fa-user-secret'}" style="font-size:10px"></i></div>
                 <div style="flex:1;min-width:0;background:${bg};border:1px solid var(--border);border-radius:14px;padding:11px 13px">
                   <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px">
-                    <span style="font-size:10.5px;font-weight:700;color:${authorColor}">${Sec.escapeHTML(m.author || '')}</span>
+                    <span style="font-size:10.5px;font-weight:700;color:${authorColor}">${Sec.escapeHTML(author)}</span>
                     <span style="font-size:9px;color:var(--text3)">${Sec.escapeHTML(time)}</span>
                   </div>
                   <div style="font-size:11.5px;color:var(--text2);line-height:1.7">${Sec.escapeHTML(m.text || '')}</div>
