@@ -15947,6 +15947,8 @@
 
         const typeEl = document.getElementById('rdNtSumType');
         const empEl = document.getElementById('rdNtSumEmp');
+        const branchEl = document.getElementById('rdNtSumBranch');
+        const supEl = document.getElementById('rdNtSumSup');
         const whenEl = document.getElementById('rdNtSumWhen');
         if (typeEl) {
           typeEl.textContent = picked?.name || document.getElementById('nt-type')?.value || 'لم يُحدد بعد';
@@ -15956,6 +15958,20 @@
           const emp = state.ntPickedEmployee;
           empEl.textContent = emp?.name || 'لم يُحدد بعد';
           empEl.classList.toggle('is-empty', !emp);
+        }
+        if (branchEl || supEl) {
+          const ctx = getEmployeePickContext(state.ntPickedEmployee);
+          if (branchEl) {
+            const branchLabel = ctx.branch
+              ? (ctx.region?.name ? `${ctx.region.name} — ${ctx.branch.name}` : ctx.branch.name)
+              : 'لم يُحدد بعد';
+            branchEl.textContent = branchLabel;
+            branchEl.classList.toggle('is-empty', !ctx.branch);
+          }
+          if (supEl) {
+            supEl.textContent = ctx.supervisor?.name || 'لم يُحدد بعد';
+            supEl.classList.toggle('is-empty', !ctx.supervisor);
+          }
         }
         if (whenEl) {
           const dateTxt = document.getElementById('nt-dateDisplay')?.textContent || '';
