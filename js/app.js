@@ -34590,6 +34590,19 @@
             : ((typeof canManageComplaints === 'function' && canManageComplaints())
               ? `<button type="button" class="rd-cmpl-btn rd-cmpl-btn--ghost" onclick="rdResolveComplaint('${Sec.escapeHTML(active.id)}')"><i class="fas fa-check" aria-hidden="true"></i>تحديد كمحلولة</button>`
               : '');
+          const composeHtml = active.status === 'resolved'
+            ? `<div class="rd-cmpl-panel__compose is-locked">
+                  <div class="rd-cmpl-locked-note"><i class="fas fa-lock" aria-hidden="true"></i>تم حل الشكوى — الرد مقفول</div>
+                  <div class="rd-cmpl-panel__actions">${resolveBtn}</div>
+                </div>`
+            : `<div class="rd-cmpl-panel__compose">
+                  <div class="rd-cmpl-field-label">${Sec.escapeHTML(replyLabel)}</div>
+                  <textarea class="rd-cmpl-textarea" id="rdCmplReplyInput" placeholder="اكتب ردك هنا..." rows="4">${Sec.escapeHTML(state._rdCmplReply || '')}</textarea>
+                  <div class="rd-cmpl-panel__actions">
+                    <button type="button" class="rd-cmpl-btn rd-cmpl-btn--primary" onclick="rdSubmitComplaintReply()">إرسال الرد</button>
+                    ${resolveBtn}
+                  </div>
+                </div>`;
           html += `
             <div class="rd-cmpl-overlay" role="dialog" aria-modal="true">
               <div class="rd-cmpl-overlay__scrim" onclick="rdCloseComplaintDetail()"></div>
@@ -34610,14 +34623,7 @@
                   <div class="rd-cmpl-panel__desc">${Sec.escapeHTML(active.description || active.desc || '')}</div>
                 </div>
                 <div class="rd-cmpl-thread">${thread || '<div class="rd-cmpl-thread-empty">لا توجد ردود بعد</div>'}</div>
-                <div class="rd-cmpl-panel__compose">
-                  <div class="rd-cmpl-field-label">${Sec.escapeHTML(replyLabel)}</div>
-                  <textarea class="rd-cmpl-textarea" id="rdCmplReplyInput" placeholder="اكتب ردك هنا..." rows="4">${Sec.escapeHTML(state._rdCmplReply || '')}</textarea>
-                  <div class="rd-cmpl-panel__actions">
-                    <button type="button" class="rd-cmpl-btn rd-cmpl-btn--primary" onclick="rdSubmitComplaintReply()">إرسال الرد</button>
-                    ${resolveBtn}
-                  </div>
-                </div>
+                ${composeHtml}
               </div>
             </div>`;
         }
@@ -34806,6 +34812,11 @@
       async function rdSubmitComplaintReply() {
         const id = state._rdCmplDetailId;
         if (!id) return;
+        const row = (state.complaints || []).find(c => String(c.id) === String(id));
+        if (row && row.status === 'resolved') {
+          showToast('الشكوى محلولة — الرد مقفول', 'warning');
+          return;
+        }
         const input = document.getElementById('rdCmplReplyInput');
         const text = String((input && input.value) || state._rdCmplReply || '').trim();
         if (!text) {
@@ -36905,17 +36916,23 @@
               <div class="cp-detail__desc">${Sec.escapeHTML(c.description)}</div>
             </div>
             <div class="cp-detail__thread">${renderComplaintThreadHtml(c) || '<div class="cp-detail__thread-empty">لا توجد ردود بعد</div>'}</div>
-            ${(c.employee_id === state.currentUser?.id || canManageComplaints()) ? `
-            <div class="cp-detail__compose">
+            ${(c.employee_id === state.currentUser?.id || canManageComplaints()) ? (
+              isResolved
+                ? `<div class="cp-detail__compose is-locked">
+              <div class="cp-detail__locked-note"><i class="fas fa-lock" aria-hidden="true"></i>تم حل الشكوى — الرد مقفول</div>
+              <div class="cp-detail__actions">
+                <button type="button" class="cp-detail__resolve is-done" disabled><i class="fas fa-check" aria-hidden="true"></i>تم الحل</button>
+              </div>
+            </div>`
+                : `<div class="cp-detail__compose">
               <div class="cp-detail__compose-label">${Sec.escapeHTML(replyLabel)}</div>
               <textarea id="cpReplyText" class="cp-detail__reply" placeholder="اكتب ردك هنا..."></textarea>
               <div class="cp-detail__actions">
                 <button type="button" class="cp-detail__send" onclick="submitComplaintReplyFromUi()">إرسال الرد</button>
-                ${isResolved
-                  ? `<button type="button" class="cp-detail__resolve is-done" disabled><i class="fas fa-check" aria-hidden="true"></i>تم الحل</button>`
-                  : (canResolve ? `<button type="button" class="cp-detail__resolve" onclick="resolveComplaintFromUi()"><i class="fas fa-check" aria-hidden="true"></i>حل</button>` : '')}
+                ${canResolve ? `<button type="button" class="cp-detail__resolve" onclick="resolveComplaintFromUi()"><i class="fas fa-check" aria-hidden="true"></i>حل</button>` : ''}
               </div>
-            </div>` : ''}
+            </div>`
+            ) : ''}
           </div>
         `;
       }
@@ -36932,6 +36949,11 @@
       }
 
       async function submitComplaintReplyFromUi() {
+        const c = getComplaintById(state.activeComplaintId);
+        if (c && c.status === 'resolved') {
+          showToast('الشكوى محلولة — الرد مقفول', 'warning');
+          return;
+        }
         const text = String(document.getElementById('cpReplyText')?.value || '').trim();
         if (!text) {
           showToast('اكتب نص الرد', 'warning');

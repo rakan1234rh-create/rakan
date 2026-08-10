@@ -5094,6 +5094,20 @@ html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-panel--det
   background: var(--bg) !important;
 }
 
+html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-locked-note {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 12px 14px !important;
+  margin-bottom: 10px !important;
+  border-radius: 12px !important;
+  border: 1px solid var(--border) !important;
+  background: var(--surface2) !important;
+  color: var(--text2) !important;
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+}
+
 html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-field-label {
   font-size: 12px !important;
   font-weight: 700 !important;
