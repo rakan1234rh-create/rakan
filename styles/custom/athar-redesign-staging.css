@@ -596,6 +596,79 @@ html.mr-mobile-ui #tab-complaints .cp-card__status {
   color: var(--tone, var(--warning));
   background: color-mix(in srgb, var(--tone, var(--warning)) 14%, transparent);
 }
+
+/* Mobile new-complaint anonymous toggle */
+#newComplaintModal .cp-mob-anon {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  text-align: start;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 11px 12px;
+  cursor: pointer;
+  color: var(--text);
+  font-family: inherit;
+}
+#newComplaintModal .cp-mob-anon.is-on {
+  border-color: color-mix(in srgb, var(--gold, var(--primary)) 55%, var(--border));
+  background: color-mix(in srgb, var(--gold, var(--primary)) 10%, var(--surface2));
+}
+#newComplaintModal .cp-mob-anon__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+#newComplaintModal .cp-mob-anon__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+#newComplaintModal .cp-mob-anon__title i {
+  color: var(--text3);
+  font-size: 12px;
+}
+#newComplaintModal .cp-mob-anon.is-on .cp-mob-anon__title i {
+  color: var(--gold, var(--primary));
+}
+#newComplaintModal .cp-mob-anon__hint {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text3);
+  line-height: 1.35;
+}
+#newComplaintModal .cp-mob-anon__switch {
+  position: relative;
+  flex: 0 0 auto;
+  width: 42px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--border);
+  transition: background 160ms ease;
+}
+#newComplaintModal .cp-mob-anon.is-on .cp-mob-anon__switch {
+  background: var(--gold, var(--primary));
+}
+#newComplaintModal .cp-mob-anon__knob {
+  position: absolute;
+  top: 3px;
+  inset-inline-start: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+  transition: inset-inline-start 160ms ease;
+}
+#newComplaintModal .cp-mob-anon.is-on .cp-mob-anon__knob {
+  inset-inline-start: 21px;
+}
 html.mr-mobile-ui #tab-breaks {
   padding-inline: 1px !important;
 }

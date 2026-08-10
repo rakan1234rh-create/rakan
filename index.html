@@ -2295,8 +2295,8 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px), screen and (hover: hover) and (pointer: fine)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px), screen and (hover: hover) and (pointer: fine)">
   <!-- Redesign AFTER classic desktop shells so sidebar/chrome overrides win -->
-  <link rel="stylesheet" href="styles/custom/athar-redesign-staging.css?v=desk102" id="athar-redesign-staging">
-  <link rel="stylesheet" href="styles/custom/athar-desktop-screens.css?v=desk102" id="athar-desktop-screens">
+  <link rel="stylesheet" href="styles/custom/athar-redesign-staging.css?v=desk103" id="athar-redesign-staging">
+  <link rel="stylesheet" href="styles/custom/athar-desktop-screens.css?v=desk103" id="athar-desktop-screens">
   <style id="mr-topbar-dark-fix" media="screen and (min-width: 993px), screen and (hover: hover) and (pointer: fine)">
     html[data-theme="dark"].mr-desktop-ui #appWrap .topbar.unified-banner,
     html[data-theme="dark"].mr-desktop-ui .topbar.unified-banner {
@@ -4133,6 +4133,15 @@
             <label class="form-label" id="cpDescLabel" for="cpDescText">تفاصيل الشكوى <span class="required-mark">*</span></label>
             <textarea id="cpDescText" class="form-input" placeholder="اشرح التفاصيل..." style="min-height:110px;resize:vertical"></textarea>
           </div>
+          <div class="form-group" style="margin-bottom:0">
+            <button type="button" id="cpAnonToggle" class="cp-mob-anon" onclick="toggleComplaintAnonymous()" aria-pressed="false">
+              <span class="cp-mob-anon__copy">
+                <span class="cp-mob-anon__title"><i class="fas fa-user-secret" aria-hidden="true"></i><span id="cpAnonTitle">ارفع الشكوى كمجهول</span></span>
+                <span class="cp-mob-anon__hint" id="cpAnonHint">لن يظهر اسمك مع هذه الشكوى</span>
+              </span>
+              <span class="cp-mob-anon__switch" aria-hidden="true"><span class="cp-mob-anon__knob"></span></span>
+            </button>
+          </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn" onclick="closeModal('newComplaintModal')">إلغاء</button>
@@ -4615,7 +4624,7 @@
 
     <div id="rdCmplOverlayHost"></div>
     <div id="rdSchOverlayHost"></div>
-    <script src="js/app.js?v=desk102"></script>
+    <script src="js/app.js?v=desk103"></script>
         <style>
       @media (max-width: 992px) {
         /* ── workflow: منع التمدد الأفقي ── */

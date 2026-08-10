@@ -1252,6 +1252,7 @@
         activeComplaintId: null,
         complaintKind: 'complaint',
         complaintCategory: '',
+        complaintAnonymous: false,
         _complaintsChannel: null
       };
 
@@ -33689,6 +33690,7 @@
 
       function mapComplaintToDesk(c) {
         if (!c) return null;
+        const isAnonymous = !!c.is_anonymous;
         const emp = (state.users || []).find(u => String(u.id) === String(c.employee_id));
         const cats = (typeof complaintCatsForKind === 'function'
           ? complaintCatsForKind(c.kind)
@@ -33698,7 +33700,8 @@
         return {
           id: c.id,
           kind: c.kind === 'suggestion' ? 'suggestion' : 'complaint',
-          employeeName: (emp && emp.name) || 'موظف',
+          isAnonymous,
+          employeeName: isAnonymous ? 'مجهول' : ((emp && emp.name) || 'موظف'),
           employeeId: c.employee_id,
           category: c.category || '',
           categoryIcon: (cat && cat.icon) || (c.kind === 'suggestion' ? 'fa-lightbulb' : 'fa-triangle-exclamation'),
@@ -34727,20 +34730,30 @@
         }
         const cat = rdCatsForKind(form.kind).find(c => c.label === form.category) || rdCatsForKind(form.kind)[0];
         try {
-          const { data, error } = await sb.from('complaints').insert({
+          let payload = {
             employee_id: state.currentUser.id,
             kind: form.kind === 'suggestion' ? 'suggestion' : 'complaint',
             category: (cat && cat.label) || form.category || 'أخرى',
-            description: desc
-          }).select().single();
+            description: desc,
+            is_anonymous: !!form.anonymous
+          };
+          let { data, error } = await sb.from('complaints').insert(payload).select().single();
+          if (error && /is_anonymous/i.test(String(error.message || error.details || ''))) {
+            delete payload.is_anonymous;
+            ({ data, error } = await sb.from('complaints').insert(payload).select().single());
+          }
           if (error) throw error;
           state.complaints = [data, ...(state.complaints || [])];
           form.open = false;
           form.desc = '';
           form.attachCount = 0;
+          const wasAnon = !!form.anonymous;
+          form.anonymous = false;
           await renderComplaintsDesktop({ soft: true });
           showToast(
-            form.kind === 'complaint' ? 'تم رفع الشكوى' : 'تم رفع الاقتراح',
+            wasAnon && data && data.is_anonymous
+              ? (form.kind === 'complaint' ? 'تم رفع الشكوى كمجهول' : 'تم رفع الاقتراح كمجهول')
+              : (form.kind === 'complaint' ? 'تم رفع الشكوى' : 'تم رفع الاقتراح'),
             'success'
           );
         } catch (e) {
@@ -36582,11 +36595,19 @@
           state.complaints = [];
           return;
         }
+        const selectFull = 'id,complaint_number,employee_id,branch_id,kind,category,description,attachments,status,logs,is_anonymous,created_at,updated_at,resolved_at';
+        const selectBase = 'id,complaint_number,employee_id,branch_id,kind,category,description,attachments,status,logs,created_at,updated_at,resolved_at';
         try {
-          const { data, error } = await sb.from('complaints')
-            .select('id,complaint_number,employee_id,branch_id,kind,category,description,attachments,status,logs,created_at,updated_at,resolved_at')
+          let { data, error } = await sb.from('complaints')
+            .select(selectFull)
             .order('created_at', { ascending: false })
             .limit(500);
+          if (error && /is_anonymous/i.test(String(error.message || error.details || ''))) {
+            ({ data, error } = await sb.from('complaints')
+              .select(selectBase)
+              .order('created_at', { ascending: false })
+              .limit(500));
+          }
           if (error) throw error;
           state.complaints = data || [];
         } catch (e) {
@@ -36709,7 +36730,11 @@
         const catWrap = document.getElementById('cpCategoryOptions');
         const descLabel = document.getElementById('cpDescLabel');
         const submitBtn = document.getElementById('cpSubmitBtn');
+        const anonBtn = document.getElementById('cpAnonToggle');
+        const anonTitle = document.getElementById('cpAnonTitle');
+        const anonHint = document.getElementById('cpAnonHint');
         const kind = state.complaintKind;
+        if (typeof state.complaintAnonymous !== 'boolean') state.complaintAnonymous = false;
         if (kindWrap) {
           kindWrap.innerHTML = ['complaint', 'suggestion'].map(k => {
             const active = k === kind;
@@ -36726,7 +36751,13 @@
           }).join('');
         }
         if (descLabel) descLabel.textContent = kind === 'suggestion' ? 'تفاصيل الاقتراح' : 'تفاصيل الشكوى';
-        if (submitBtn) submitBtn.textContent = kind === 'suggestion' ? 'إرسال الاقتراح' : 'إرسال الشكوى';
+        if (submitBtn) submitBtn.innerHTML = `<i class="fas fa-paper-plane"></i> ${kind === 'suggestion' ? 'إرسال الاقتراح' : 'إرسال الشكوى'}`;
+        if (anonTitle) anonTitle.textContent = kind === 'suggestion' ? 'ارفع الاقتراح كمجهول' : 'ارفع الشكوى كمجهول';
+        if (anonHint) anonHint.textContent = kind === 'suggestion' ? 'لن يظهر اسمك مع هذا الاقتراح' : 'لن يظهر اسمك مع هذه الشكوى';
+        if (anonBtn) {
+          anonBtn.classList.toggle('is-on', !!state.complaintAnonymous);
+          anonBtn.setAttribute('aria-pressed', state.complaintAnonymous ? 'true' : 'false');
+        }
       }
 
       function setNewComplaintKind(kind) {
@@ -36739,6 +36770,11 @@
         syncNewComplaintForm();
       }
 
+      function toggleComplaintAnonymous() {
+        state.complaintAnonymous = !state.complaintAnonymous;
+        syncNewComplaintForm();
+      }
+
       function openNewComplaintModal() {
         if (!canSubmitComplaint()) {
           showToast('سجّل الدخول لرفع شكوى أو اقتراح', 'warning');
@@ -36746,6 +36782,7 @@
         }
         state.complaintKind = 'complaint';
         state.complaintCategory = COMPLAINT_CATS[0].label;
+        state.complaintAnonymous = false;
         const desc = document.getElementById('cpDescText');
         if (desc) desc.value = '';
         syncNewComplaintForm();
@@ -36762,17 +36799,33 @@
           showToast('اكتب تفاصيل الشكوى أو الاقتراح', 'warning');
           return;
         }
+        const anonymous = !!state.complaintAnonymous;
         try {
-          const { data, error } = await sb.from('complaints').insert({
+          let payload = {
             employee_id: state.currentUser.id,
             kind: state.complaintKind,
             category: state.complaintCategory,
-            description: desc
-          }).select().single();
+            description: desc,
+            is_anonymous: anonymous
+          };
+          let { data, error } = await sb.from('complaints').insert(payload).select().single();
+          if (error && /is_anonymous/i.test(String(error.message || error.details || ''))) {
+            delete payload.is_anonymous;
+            ({ data, error } = await sb.from('complaints').insert(payload).select().single());
+            if (!error && anonymous) {
+              showToast('تم الإرسال، لكن عمود المجهول غير مفعّل في قاعدة البيانات بعد', 'warning');
+            }
+          }
           if (error) throw error;
           state.complaints = [data, ...(state.complaints || [])];
           closeModal('newComplaintModal');
-          showToast('تم إرسال ' + (state.complaintKind === 'suggestion' ? 'الاقتراح' : 'الشكوى') + ' بنجاح', 'success');
+          const kindWord = state.complaintKind === 'suggestion' ? 'الاقتراح' : 'الشكوى';
+          showToast(
+            anonymous && data.is_anonymous !== false && payload.is_anonymous !== undefined
+              ? `تم إرسال ${kindWord} كمجهول بنجاح`
+              : `تم إرسال ${kindWord} بنجاح`,
+            'success'
+          );
           paintComplaintsPage();
         } catch (e) {
           showToast('فشل الإرسال: ' + (e.message || e), 'error');
@@ -36943,6 +36996,7 @@
       window.openNewComplaintModal = openNewComplaintModal;
       window.setNewComplaintKind = setNewComplaintKind;
       window.setNewComplaintCategory = setNewComplaintCategory;
+      window.toggleComplaintAnonymous = toggleComplaintAnonymous;
       window.submitComplaintFromUi = submitComplaintFromUi;
       window.openComplaintDetail = openComplaintDetail;
       window.closeComplaintDetail = closeComplaintDetail;
