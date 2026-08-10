@@ -7726,7 +7726,13 @@
           else if (tab === 'profileAvatars' && typeof renderProfileAvatarsAdmin === 'function') renderProfileAvatarsAdmin();
           else if (tab === 'broadcasts' && typeof renderBroadcastsPage === 'function') renderBroadcastsPage();
           else if (tab === 'breaks' && typeof renderStaffBreaksPage === 'function') renderStaffBreaksPage({ soft: true });
-          else if (tab === 'complaints' && typeof renderComplaintsPage === 'function') renderComplaintsPage();
+          else if (tab === 'complaints') {
+            if (typeof isMobileViewport === 'function' && isMobileViewport()) {
+              if (typeof renderComplaintsPage === 'function') renderComplaintsPage();
+            } else if (typeof renderComplaintsDesktop === 'function') {
+              renderComplaintsDesktop();
+            }
+          }
         } catch (e) {
           if (isMirsadDebugLog()) console.warn('[permissions] active tab refresh', e);
         }
@@ -9345,7 +9351,16 @@
           }
           if (tab === 'complaints') {
             try {
-              if (typeof renderComplaintsPage === 'function') renderComplaintsPage();
+              const deskPanel = document.querySelector('.rd-complaints-desk-panel');
+              const mobPanel = document.querySelector('.rd-complaints-mob-panel');
+              const isMob = typeof isMobileViewport === 'function' && isMobileViewport();
+              if (deskPanel) deskPanel.hidden = !!isMob;
+              if (mobPanel) mobPanel.hidden = !isMob;
+              if (isMob) {
+                if (typeof renderComplaintsPage === 'function') renderComplaintsPage();
+              } else if (typeof renderComplaintsDesktop === 'function') {
+                renderComplaintsDesktop();
+              }
             } catch (_) { /* noop */ }
           } else {
             try {
