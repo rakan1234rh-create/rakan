@@ -669,6 +669,172 @@ html.mr-mobile-ui #tab-complaints .cp-card__status {
 #newComplaintModal .cp-mob-anon.is-on .cp-mob-anon__knob {
   inset-inline-start: 21px;
 }
+
+/* Mobile complaint detail: sticky basics, scrollable thread */
+#complaintDetailModal .modal-card {
+  display: flex;
+  flex-direction: column;
+  max-height: min(92vh, 820px);
+}
+#complaintDetailModal .modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding-bottom: 12px;
+}
+#complaintDetailModal #cpDetailBody,
+#complaintDetailModal .cp-detail {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+#complaintDetailModal .cp-detail__basics {
+  flex: 0 0 auto;
+}
+#complaintDetailModal .cp-detail__top {
+  margin-bottom: 10px;
+}
+#complaintDetailModal .cp-detail__title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+#complaintDetailModal .cp-detail__title {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--text);
+}
+#complaintDetailModal .cp-detail__kind {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--tone, var(--danger));
+  background: color-mix(in srgb, var(--tone, var(--danger)) 14%, transparent);
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+#complaintDetailModal .cp-detail__num {
+  font-size: 11px;
+  color: var(--text3);
+  font-family: ui-monospace, monospace;
+}
+#complaintDetailModal .cp-detail__subrow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+#complaintDetailModal .cp-detail__who {
+  font-size: 11.5px;
+  color: var(--text2);
+  font-weight: 600;
+}
+#complaintDetailModal .cp-detail__muted {
+  color: var(--text3);
+  font-weight: 400;
+}
+#complaintDetailModal .cp-detail__status {
+  display: inline-flex;
+  padding: 5px 11px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--tone, var(--warning));
+  background: color-mix(in srgb, var(--tone, var(--warning)) 14%, transparent);
+}
+#complaintDetailModal .cp-detail__desc {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 13px;
+  font-size: 12.5px;
+  color: var(--text2);
+  line-height: 1.8;
+  margin-bottom: 10px;
+  max-height: 120px;
+  overflow-y: auto;
+}
+#complaintDetailModal .cp-detail__thread {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  margin: 0;
+  padding: 2px 0 10px;
+}
+#complaintDetailModal .cp-detail__thread-empty {
+  font-size: 12px;
+  color: var(--text3);
+  text-align: center;
+  padding: 16px 8px;
+}
+#complaintDetailModal .cp-detail__compose {
+  flex: 0 0 auto;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+#complaintDetailModal .cp-detail__compose-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 7px;
+}
+#complaintDetailModal .cp-detail__reply {
+  width: 100%;
+  min-height: 80px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-size: 12.5px;
+  color: var(--text);
+  background: var(--surface);
+  font-family: inherit;
+  resize: vertical;
+  margin-bottom: 12px;
+  box-sizing: border-box;
+}
+#complaintDetailModal .cp-detail__actions {
+  display: flex;
+  gap: 10px;
+}
+#complaintDetailModal .cp-detail__send {
+  flex: 1;
+  padding: 14px;
+  border: none;
+  border-radius: 14px;
+  background: var(--gold, var(--primary));
+  color: var(--onGold, #fff);
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+}
+#complaintDetailModal .cp-detail__resolve {
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: transparent;
+  color: var(--text2);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  font-family: inherit;
+}
+#complaintDetailModal .cp-detail__resolve.is-done {
+  border-color: var(--success);
+  color: var(--success);
+  cursor: default;
+}
 html.mr-mobile-ui #tab-breaks {
   padding-inline: 1px !important;
 }

@@ -5005,6 +5005,13 @@ html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-panel--det
   width: 460px !important;
   display: flex !important;
   flex-direction: column !important;
+  overflow: hidden !important;
+  padding-bottom: 18px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-panel--detail .rd-cmpl-panel__basics {
+  flex: 0 0 auto !important;
+  min-width: 0 !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-panel__head {
@@ -5016,7 +5023,7 @@ html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-panel__hea
 }
 
 html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-panel--detail .rd-cmpl-panel__head {
-  margin-bottom: 18px !important;
+  margin-bottom: 14px !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-panel__title {
@@ -5072,7 +5079,16 @@ html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-panel__des
   font-size: 12.5px !important;
   color: var(--text2) !important;
   line-height: 1.8 !important;
-  margin-bottom: 16px !important;
+  margin-bottom: 12px !important;
+  max-height: 140px !important;
+  overflow-y: auto !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-panel--detail .rd-cmpl-panel__compose {
+  flex: 0 0 auto !important;
+  padding-top: 10px !important;
+  border-top: 1px solid var(--border) !important;
+  background: var(--bg) !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-field-label {
@@ -5331,11 +5347,22 @@ html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-panel__act
 }
 
 html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-thread {
-  flex: 1 !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
   display: flex !important;
   flex-direction: column !important;
   gap: 10px !important;
-  margin-bottom: 16px !important;
+  margin: 0 !important;
+  padding: 4px 2px 12px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-thread-empty {
+  font-size: 12px !important;
+  color: var(--text3) !important;
+  text-align: center !important;
+  padding: 18px 8px !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-thread-msg {

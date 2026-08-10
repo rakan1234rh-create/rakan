@@ -34558,7 +34558,7 @@
           return;
         }
         const keepQuiet = !!overlay.querySelector('.rd-cmpl-overlay');
-        const scrollEl = overlay.querySelector('.rd-cmpl-panel');
+        const scrollEl = overlay.querySelector('.rd-cmpl-thread') || overlay.querySelector('.rd-cmpl-panel');
         const savedScroll = scrollEl ? scrollEl.scrollTop : 0;
         const form = rdCmplEnsureForm();
         const detailId = state._rdCmplDetailId || null;
@@ -34590,25 +34590,29 @@
             <div class="rd-cmpl-overlay" role="dialog" aria-modal="true">
               <div class="rd-cmpl-overlay__scrim" onclick="rdCloseComplaintDetail()"></div>
               <div class="rd-cmpl-panel rd-cmpl-panel--detail">
-                <div class="rd-cmpl-panel__head">
-                  <div class="rd-cmpl-panel__title-row">
-                    <span class="rd-cmpl-panel__title">${Sec.escapeHTML(active.category || '')}</span>
-                    <span class="rd-cmpl-card__kind" style="--tone:${tone}">${Sec.escapeHTML(kindLbl)}</span>
-                    <span class="rd-cmpl-card__num">${Sec.escapeHTML(rdCmplNumber(active.id))}</span>
+                <div class="rd-cmpl-panel__basics">
+                  <div class="rd-cmpl-panel__head">
+                    <div class="rd-cmpl-panel__title-row">
+                      <span class="rd-cmpl-panel__title">${Sec.escapeHTML(active.category || '')}</span>
+                      <span class="rd-cmpl-card__kind" style="--tone:${tone}">${Sec.escapeHTML(kindLbl)}</span>
+                      <span class="rd-cmpl-card__num">${Sec.escapeHTML(rdCmplNumber(active.id))}</span>
+                    </div>
+                    <button type="button" class="rd-cmpl-panel__close" onclick="rdCloseComplaintDetail()" aria-label="إغلاق"><i class="fas fa-xmark"></i></button>
                   </div>
-                  <button type="button" class="rd-cmpl-panel__close" onclick="rdCloseComplaintDetail()" aria-label="إغلاق"><i class="fas fa-xmark"></i></button>
+                  <div class="rd-cmpl-panel__subrow">
+                    <span class="rd-cmpl-panel__who">${Sec.escapeHTML(rdCmplDisplayName(active))} <span class="rd-desk-muted">· ${Sec.escapeHTML(active.time || '')}</span></span>
+                    <span class="rd-cmpl-card__status" style="--tone:${st.color}">${Sec.escapeHTML(st.label)}</span>
+                  </div>
+                  <div class="rd-cmpl-panel__desc">${Sec.escapeHTML(active.description || active.desc || '')}</div>
                 </div>
-                <div class="rd-cmpl-panel__subrow">
-                  <span class="rd-cmpl-panel__who">${Sec.escapeHTML(rdCmplDisplayName(active))} <span class="rd-desk-muted">· ${Sec.escapeHTML(active.time || '')}</span></span>
-                  <span class="rd-cmpl-card__status" style="--tone:${st.color}">${Sec.escapeHTML(st.label)}</span>
-                </div>
-                <div class="rd-cmpl-panel__desc">${Sec.escapeHTML(active.description || active.desc || '')}</div>
-                <div class="rd-cmpl-thread">${thread}</div>
-                <div class="rd-cmpl-field-label">${Sec.escapeHTML(replyLabel)}</div>
-                <textarea class="rd-cmpl-textarea" id="rdCmplReplyInput" placeholder="اكتب ردك هنا..." rows="4">${Sec.escapeHTML(state._rdCmplReply || '')}</textarea>
-                <div class="rd-cmpl-panel__actions">
-                  <button type="button" class="rd-cmpl-btn rd-cmpl-btn--primary" onclick="rdSubmitComplaintReply()">إرسال الرد</button>
-                  ${resolveBtn}
+                <div class="rd-cmpl-thread">${thread || '<div class="rd-cmpl-thread-empty">لا توجد ردود بعد</div>'}</div>
+                <div class="rd-cmpl-panel__compose">
+                  <div class="rd-cmpl-field-label">${Sec.escapeHTML(replyLabel)}</div>
+                  <textarea class="rd-cmpl-textarea" id="rdCmplReplyInput" placeholder="اكتب ردك هنا..." rows="4">${Sec.escapeHTML(state._rdCmplReply || '')}</textarea>
+                  <div class="rd-cmpl-panel__actions">
+                    <button type="button" class="rd-cmpl-btn rd-cmpl-btn--primary" onclick="rdSubmitComplaintReply()">إرسال الرد</button>
+                    ${resolveBtn}
+                  </div>
                 </div>
               </div>
             </div>`;
@@ -34674,7 +34678,9 @@
           });
         }
         const panel = overlay.querySelector('.rd-cmpl-panel');
-        if (panel && savedScroll) panel.scrollTop = savedScroll;
+        const threadEl = overlay.querySelector('.rd-cmpl-thread');
+        if (threadEl && savedScroll) threadEl.scrollTop = savedScroll;
+        else if (panel && savedScroll) panel.scrollTop = savedScroll;
 
         const descInput = document.getElementById('rdCmplDescInput');
         if (descInput) {
@@ -36873,28 +36879,39 @@
         const canResolve = canManageComplaints() && !isResolved;
         const replyLabel = 'الرد على ' + (c.kind === 'suggestion' ? 'الاقتراح' : 'الشكوى');
 
+        const whoName = (typeof complaintIsAnonymous === 'function' && complaintIsAnonymous(c))
+          ? 'مجهول'
+          : ((state.users || []).find(u => String(u.id) === String(c.employee_id))?.name || 'موظف');
+
         host.innerHTML = `
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-            <div style="display:flex;align-items:center;gap:8px;min-width:0">
-              <span style="font-size:14.5px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${Sec.escapeHTML(c.category)}</span>
-              <span style="font-size:9.5px;font-weight:700;color:${kindColor};background:color-mix(in srgb, ${kindColor} 14%, transparent);padding:3px 8px;border-radius:999px;flex-shrink:0">${Sec.escapeHTML(kindLabel)}</span>
+          <div class="cp-detail">
+            <div class="cp-detail__basics">
+              <div class="cp-detail__top">
+                <div class="cp-detail__title-row">
+                  <span class="cp-detail__title">${Sec.escapeHTML(c.category)}</span>
+                  <span class="cp-detail__kind" style="--tone:${kindColor}">${Sec.escapeHTML(kindLabel)}</span>
+                  <span class="cp-detail__num">${Sec.escapeHTML(c.complaint_number || '')}</span>
+                </div>
+              </div>
+              <div class="cp-detail__subrow">
+                <span class="cp-detail__who">${Sec.escapeHTML(whoName)} <span class="cp-detail__muted">· ${Sec.escapeHTML(time)}</span></span>
+                <span class="cp-detail__status" style="--tone:${statusColor}">${Sec.escapeHTML(statusLabel)}</span>
+              </div>
+              <div class="cp-detail__desc">${Sec.escapeHTML(c.description)}</div>
             </div>
+            <div class="cp-detail__thread">${renderComplaintThreadHtml(c) || '<div class="cp-detail__thread-empty">لا توجد ردود بعد</div>'}</div>
+            ${(c.employee_id === state.currentUser?.id || canManageComplaints()) ? `
+            <div class="cp-detail__compose">
+              <div class="cp-detail__compose-label">${Sec.escapeHTML(replyLabel)}</div>
+              <textarea id="cpReplyText" class="cp-detail__reply" placeholder="اكتب ردك هنا..."></textarea>
+              <div class="cp-detail__actions">
+                <button type="button" class="cp-detail__send" onclick="submitComplaintReplyFromUi()">إرسال الرد</button>
+                ${isResolved
+                  ? `<button type="button" class="cp-detail__resolve is-done" disabled><i class="fas fa-check" aria-hidden="true"></i>تم الحل</button>`
+                  : (canResolve ? `<button type="button" class="cp-detail__resolve" onclick="resolveComplaintFromUi()"><i class="fas fa-check" aria-hidden="true"></i>حل</button>` : '')}
+              </div>
+            </div>` : ''}
           </div>
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-            <span style="font-size:11px;color:var(--text3);font-family:monospace">${Sec.escapeHTML(c.complaint_number || '')} · ${Sec.escapeHTML(time)}</span>
-            <span style="display:inline-flex;padding:5px 11px;border-radius:999px;font-size:10.5px;font-weight:700;background:color-mix(in srgb, ${statusColor} 14%, transparent);color:${statusColor}">${Sec.escapeHTML(statusLabel)}</span>
-          </div>
-          <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:13px;font-size:12.5px;color:var(--text2);line-height:1.8;margin-bottom:16px">${Sec.escapeHTML(c.description)}</div>
-          ${renderComplaintThreadHtml(c)}
-          ${(c.employee_id === state.currentUser?.id || canManageComplaints()) ? `
-          <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:7px">${Sec.escapeHTML(replyLabel)}</div>
-          <textarea id="cpReplyText" placeholder="اكتب ردك هنا..." style="width:100%;min-height:80px;border:1px solid var(--border);border-radius:14px;padding:12px 14px;font-size:12.5px;color:var(--text);background:var(--surface);font-family:inherit;resize:vertical;margin-bottom:14px"></textarea>
-          <div style="display:flex;gap:10px">
-            <button type="button" onclick="submitComplaintReplyFromUi()" style="flex:1;padding:14px;border:none;border-radius:14px;background:var(--gold, var(--primary));color:var(--onGold, #fff);font-size:13.5px;font-weight:700;cursor:pointer">إرسال الرد</button>
-            ${isResolved
-              ? `<button type="button" disabled style="padding:14px 16px;border:1px solid var(--success);border-radius:14px;background:transparent;color:var(--success);font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px;white-space:nowrap"><i class="fas fa-check" style="font-size:10px"></i>تم الحل</button>`
-              : (canResolve ? `<button type="button" onclick="resolveComplaintFromUi()" style="padding:14px 16px;border:1px solid var(--border);border-radius:14px;background:transparent;color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap"><i class="fas fa-check" style="font-size:10px"></i>حل</button>` : '')}
-          </div>` : ''}
         `;
       }
 
