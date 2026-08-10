@@ -324,9 +324,12 @@ html.mr-mobile-ui #tab-compliance,
 html.mr-mobile-ui #tab-violations,
 html.mr-mobile-ui #tab-locations,
 html.mr-mobile-ui #tab-departments,
-html.mr-mobile-ui #tab-newTicket,
-html.mr-mobile-ui #tab-complaints {
+html.mr-mobile-ui #tab-newTicket {
   padding-inline: 16px !important;
+}
+html.mr-mobile-ui #tab-complaints {
+  padding-inline: 12px !important;
+  padding-block: 4px 8px !important;
 }
 
 /* Complaints mobile: hide split page-title sidebar; title lives in-content */
@@ -337,6 +340,10 @@ html.mr-mobile-ui #tab-complaints.active ~ #pageTitleBar {
 html.mr-mobile-ui:has(#tab-complaints.active) #appWrap .main {
   display: flex !important;
   flex-direction: column !important;
+  padding: 6px 0 0 !important;
+}
+html.mr-mobile-ui:has(#tab-complaints.active) #appWrap .main .content {
+  padding: 0 !important;
 }
 html.mr-mobile-ui #tab-complaints .rd-complaints-desk-panel {
   display: none !important;
@@ -357,20 +364,20 @@ html.mr-mobile-ui #tab-complaints .cp-mob-page {
   box-sizing: border-box;
 }
 html.mr-mobile-ui #tab-complaints .cp-mob-head {
-  margin: 0 0 14px;
+  margin: 0 0 8px;
   text-align: start;
 }
 html.mr-mobile-ui #tab-complaints .cp-mob-head__title {
   margin: 0;
-  font-size: 20px;
+  font-size: 17px;
   font-weight: 800;
-  line-height: 1.35;
+  line-height: 1.25;
   color: var(--text);
 }
 html.mr-mobile-ui #tab-complaints .cp-mob-head__sub {
-  margin: 6px 0 0;
-  font-size: 12.5px;
-  line-height: 1.55;
+  margin: 3px 0 0;
+  font-size: 11.5px;
+  line-height: 1.4;
   color: var(--text3);
 }
 html.mr-mobile-ui #tab-complaints .cp-mob-cta {
@@ -378,29 +385,166 @@ html.mr-mobile-ui #tab-complaints .cp-mob-cta {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 14px;
+  gap: 6px;
+  padding: 10px 12px;
   border: none;
-  border-radius: 14px;
+  border-radius: 12px;
   background: var(--gold, var(--primary));
   color: var(--onGold, #fff);
-  font-size: 13.5px;
+  font-size: 12.5px;
   font-weight: 700;
   cursor: pointer;
-  margin-bottom: 16px;
+  margin-bottom: 10px;
   font-family: inherit;
+}
+html.mr-mobile-ui #tab-complaints .cp-mob-cta i {
+  font-size: 11px;
 }
 html.mr-mobile-ui #tab-complaints .cp-mob-stats {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-bottom: 16px;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+html.mr-mobile-ui #tab-complaints .cp-mob-stat {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 8px 10px;
+}
+html.mr-mobile-ui #tab-complaints .cp-mob-stat__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+html.mr-mobile-ui #tab-complaints .cp-mob-stat__val {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+}
+html.mr-mobile-ui #tab-complaints .cp-mob-stat__ico {
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  background: var(--surface2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+html.mr-mobile-ui #tab-complaints .cp-mob-stat__ico i {
+  font-size: 10px;
+}
+html.mr-mobile-ui #tab-complaints .cp-mob-stat__lbl {
+  font-size: 10.5px;
+  color: var(--text2);
+  margin-top: 4px;
+  line-height: 1.2;
 }
 html.mr-mobile-ui #tab-complaints .cp-mob-filters {
   display: flex;
-  gap: 8px;
-  margin-bottom: 16px;
+  gap: 6px;
+  margin-bottom: 8px;
   overflow-x: auto;
+  padding-bottom: 2px;
+}
+html.mr-mobile-ui #tab-complaints .cp-mob-filter {
+  flex: 0 0 auto;
+  padding: 5px 11px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  font-family: inherit;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text2);
+}
+html.mr-mobile-ui #tab-complaints .cp-mob-filter.is-active {
+  background: var(--gold, var(--primary));
+  color: var(--onGold, #fff);
+  border-color: var(--gold, var(--primary));
+}
+html.mr-mobile-ui #tab-complaints .cp-mob-list .rd-list__row {
+  padding: 8px 0 !important;
+}
+html.mr-mobile-ui #tab-complaints .cp-mob-list .rd-list__sub {
+  font-size: 12px !important;
+}
+html.mr-mobile-ui #tab-complaints .cp-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 11px;
+  cursor: pointer;
+  margin-bottom: 6px;
+}
+html.mr-mobile-ui #tab-complaints .cp-card__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+html.mr-mobile-ui #tab-complaints .cp-card__who {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+html.mr-mobile-ui #tab-complaints .cp-card__icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: color-mix(in srgb, var(--tone, var(--danger)) 14%, transparent);
+  color: var(--tone, var(--danger));
+}
+html.mr-mobile-ui #tab-complaints .cp-card__icon i {
+  font-size: 10px;
+}
+html.mr-mobile-ui #tab-complaints .cp-card__cat {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+html.mr-mobile-ui #tab-complaints .cp-card__meta {
+  font-size: 9.5px;
+  color: var(--text3);
+  margin-top: 1px;
+  font-family: ui-monospace, monospace;
+}
+html.mr-mobile-ui #tab-complaints .cp-card__kind {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+  flex-shrink: 0;
+  color: var(--tone, var(--danger));
+  background: color-mix(in srgb, var(--tone, var(--danger)) 14%, transparent);
+}
+html.mr-mobile-ui #tab-complaints .cp-card__body {
+  font-size: 11.5px;
+  color: var(--text2);
+  line-height: 1.45;
+}
+html.mr-mobile-ui #tab-complaints .cp-card__status {
+  margin-top: 7px;
+  display: inline-flex;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--tone, var(--warning));
+  background: color-mix(in srgb, var(--tone, var(--warning)) 14%, transparent);
 }
 html.mr-mobile-ui #tab-breaks {
   padding-inline: 1px !important;

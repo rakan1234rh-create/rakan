@@ -36565,20 +36565,20 @@
         const icon = complaintCategoryIcon(c);
         const time = formatRelativeAr(c.created_at) || '';
         return `
-          <div class="cp-card" role="button" tabindex="0" style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px;cursor:pointer;margin-bottom:10px"
+          <div class="cp-card" role="button" tabindex="0"
             onclick="openComplaintDetail('${Sec.escapeHTML(c.id)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openComplaintDetail('${Sec.escapeHTML(c.id)}')}">
-            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:9px">
-              <div style="display:flex;align-items:center;gap:9px;min-width:0">
-                <div style="width:32px;height:32px;border-radius:10px;background:color-mix(in srgb, ${kindColor} 14%, transparent);color:${kindColor};display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fas ${icon}" style="font-size:12px"></i></div>
+            <div class="cp-card__top">
+              <div class="cp-card__who">
+                <div class="cp-card__icon" style="--tone:${kindColor}"><i class="fas ${icon}" aria-hidden="true"></i></div>
                 <div style="min-width:0">
-                  <div style="font-size:12.5px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${Sec.escapeHTML(c.category)}</div>
-                  <div style="font-size:10px;color:var(--text3);margin-top:2px;font-family:monospace">${Sec.escapeHTML(c.complaint_number || '')} · ${Sec.escapeHTML(time)}</div>
+                  <div class="cp-card__cat">${Sec.escapeHTML(c.category)}</div>
+                  <div class="cp-card__meta">${Sec.escapeHTML(c.complaint_number || '')} · ${Sec.escapeHTML(time)}</div>
                 </div>
               </div>
-              <span style="font-size:9.5px;font-weight:700;color:${kindColor};background:color-mix(in srgb, ${kindColor} 14%, transparent);padding:3px 8px;border-radius:999px;flex-shrink:0">${Sec.escapeHTML(kindLabel)}</span>
+              <span class="cp-card__kind" style="--tone:${kindColor}">${Sec.escapeHTML(kindLabel)}</span>
             </div>
-            <div style="font-size:12px;color:var(--text2);line-height:1.6">${Sec.escapeHTML(c.description)}</div>
-            <div style="margin-top:10px;display:inline-flex;padding:5px 12px;border-radius:999px;font-size:11px;font-weight:600;background:color-mix(in srgb, ${statusColor} 14%, transparent);color:${statusColor}">${Sec.escapeHTML(statusLabel)}</div>
+            <div class="cp-card__body">${Sec.escapeHTML(c.description)}</div>
+            <div class="cp-card__status" style="--tone:${statusColor}">${Sec.escapeHTML(statusLabel)}</div>
           </div>`;
       }
 
@@ -36609,7 +36609,7 @@
         ];
         const filtersHtml = filters.map(f => {
           const active = f.id === state.complaintTypeFilter;
-          return `<button type="button" onclick="setComplaintTypeFilter('${f.id}')" style="flex:0 0 auto;padding:8px 16px;border-radius:999px;font-size:12.5px;font-weight:600;white-space:nowrap;cursor:pointer;background:${active ? 'var(--gold, var(--primary))' : 'var(--surface2)'};color:${active ? 'var(--onGold, #fff)' : 'var(--text2)'};border:1px solid ${active ? 'var(--gold, var(--primary))' : 'var(--border)'}">${Sec.escapeHTML(f.label)}</button>`;
+          return `<button type="button" class="cp-mob-filter${active ? ' is-active' : ''}" onclick="setComplaintTypeFilter('${f.id}')">${Sec.escapeHTML(f.label)}</button>`;
         }).join('');
 
         const filtered = getFilteredComplaints();
@@ -36618,12 +36618,12 @@
           : '<div class="rd-list__row" style="cursor:default"><div class="rd-list__sub">لا توجد شكاوى أو اقتراحات حالياً</div></div>';
 
         const statCard = (value, label, icon, color) => `
-          <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:13px 14px">
-            <div style="display:flex;align-items:center;justify-content:space-between">
-              <span style="font-size:20px;font-weight:700;color:${color}">${value}</span>
-              <span style="width:28px;height:28px;border-radius:9px;background:var(--surface2);display:flex;align-items:center;justify-content:center;color:${color}"><i class="fas ${icon}" style="font-size:12px"></i></span>
+          <div class="cp-mob-stat">
+            <div class="cp-mob-stat__row">
+              <span class="cp-mob-stat__val" style="color:${color}">${value}</span>
+              <span class="cp-mob-stat__ico" style="color:${color}"><i class="fas ${icon}" aria-hidden="true"></i></span>
             </div>
-            <div style="font-size:11.5px;color:var(--text2);margin-top:6px">${label}</div>
+            <div class="cp-mob-stat__lbl">${label}</div>
           </div>`;
 
         host.innerHTML = `
