@@ -8232,7 +8232,10 @@
           seedWfMobTicketsHeadIfNeeded();
         }
 
-        if (tab !== 'locations') state._activeRegionId = null;
+        if (tab !== 'locations') {
+          state._activeRegionId = null;
+          state._activeBranchId = null;
+        }
 
         // تبديل التبويب يُرسم فوراً (أعلاه)، والعمل الثقيل يُؤجَّل إطاراً واحداً
         // حتى يصبح الضغط فورياً وسلساً (الشريط السفلي + زر العودة من التنبيهات)
@@ -11419,14 +11422,27 @@
       // ═══════════════════════════════════════════════════════════════════════════
 
       state._activeRegionId = state._activeRegionId || null;
+      state._activeBranchId = state._activeBranchId || null;
 
       function openRegionView(regionId) {
         state._activeRegionId = regionId;
+        state._activeBranchId = null;
         renderRegions();
       }
 
       function backRegionView() {
         state._activeRegionId = null;
+        state._activeBranchId = null;
+        renderRegions();
+      }
+
+      function openLocBranchView(branchId) {
+        state._activeBranchId = branchId;
+        renderRegions();
+      }
+
+      function backLocBranchView() {
+        state._activeBranchId = null;
         renderRegions();
       }
 
@@ -11570,13 +11586,389 @@
       }
 
 
+      function rdLocRingHTML(score) {
+        const r = 54;
+        const circ = 2 * Math.PI * r;
+        const raw = Number(score);
+        const pct = Math.max(0, Math.min(100, Number.isFinite(raw) ? raw : 0));
+        const offset = circ - (circ * pct) / 100;
+        const rounded = Math.round((Number.isFinite(raw) ? raw : 0) * 10) / 10;
+        const disp = Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+        const tone = typeof rdClassifyScore === 'function' ? rdClassifyScore(raw) : 'var(--text2)';
+        return `
+          <div class="rd-loc-ring" aria-hidden="true">
+            <svg width="46" height="46" viewBox="0 0 132 132">
+              <circle cx="66" cy="66" r="${r}" fill="none" stroke="var(--border)" stroke-width="14"></circle>
+              <circle cx="66" cy="66" r="${r}" fill="none" stroke="${tone}" stroke-width="14"
+                stroke-linecap="round" stroke-dasharray="${circ.toFixed(3)}" stroke-dashoffset="${offset.toFixed(3)}"></circle>
+            </svg>
+            <span class="rd-loc-ring__val" style="color:${tone}">${Sec.escapeHTML(disp)}</span>
+          </div>`;
+      }
+
+      function rdLocMenuHTML(kind, id, canManage, canDelete) {
+        if (!canManage && !canDelete) return '';
+        const editFn = kind === 'region' ? `editRegion('${id}')` : `editBranch('${id}')`;
+        const delFn = kind === 'region' ? `deleteRegion('${id}')` : `deleteBranch('${id}')`;
+        return `
+          <div class="rd-loc-menu" onclick="event.stopPropagation()">
+            <button type="button" class="rd-loc-menu__btn" aria-label="المزيد" aria-expanded="false"
+              onclick="event.stopPropagation(); toggleRdLocMenu(this)">
+              <i class="fas fa-ellipsis" aria-hidden="true"></i>
+            </button>
+            <div class="rd-loc-menu__pop" hidden>
+              ${canManage ? `<button type="button" class="rd-loc-menu__item" onclick="closeAllRdActMenus(); ${editFn}"><i class="fas fa-pen" aria-hidden="true"></i>تعديل</button>` : ''}
+              ${canDelete ? `<button type="button" class="rd-loc-menu__item rd-loc-menu__item--danger" onclick="closeAllRdActMenus(); ${delFn}"><i class="fas fa-trash" aria-hidden="true"></i>حذف</button>` : ''}
+            </div>
+          </div>`;
+      }
+
+      function toggleRdLocMenu(btn) {
+        const pop = btn?.closest?.('.rd-loc-menu')?.querySelector('.rd-loc-menu__pop');
+        if (!pop) return;
+        const willOpen = pop.hasAttribute('hidden');
+        closeAllRdActMenus();
+        if (willOpen) {
+          pop.removeAttribute('hidden');
+          btn.setAttribute('aria-expanded', 'true');
+        }
+      }
+
+      function rdLocSummaryHTML(regionsCount, branchesCount, employeesCount) {
+        const cell = (val, label) => `
+          <div class="rd-loc-stat">
+            <div class="rd-loc-stat__val">${val}</div>
+            <div class="rd-loc-stat__lbl">${Sec.escapeHTML(label)}</div>
+          </div>`;
+        return `
+          <div class="rd-loc-summary">
+            ${cell(regionsCount, 'مناطق')}
+            ${cell(branchesCount, 'فروع')}
+            ${cell(employeesCount, 'موظفون')}
+          </div>`;
+      }
+
+      function rdLocRegionCardHTML(reg, canManage, canDelete, violations, delayIdx) {
+        const regionBranches = state.branches.filter(b => b.region_id === reg.id);
+        const totalEmps = regionBranches.reduce((n, b) => n + getBranchStaff(b.id).length, 0);
+        const score = (typeof calcRegionStability === 'function'
+          ? calcRegionStability(reg.id, violations)
+          : { score: 100 }).score;
+        const sup = reg?.supervisor_id ? state.users.find(u => u.id === reg.supervisor_id) : null;
+        const manager = (sup && String(sup.name || '').trim()) ? sup.name : 'لا يوجد مشرف';
+        const delay = Math.min(0.25, (Number(delayIdx) || 0) * 0.04);
+        const rid = String(reg.id || '').replace(/'/g, "\\'");
+        return `
+          <article class="rd-loc-region" role="button" tabindex="0" style="animation-delay:${delay}s"
+            onclick="openRegionView('${rid}')"
+            onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openRegionView('${rid}');}">
+            <div class="rd-loc-region__top">
+              ${rdLocRingHTML(score)}
+              <div class="rd-loc-region__body">
+                <div class="rd-loc-region__name">${Sec.escapeHTML(reg.name || '')}</div>
+                <div class="rd-loc-region__mgr"><i class="fas fa-user-tie" aria-hidden="true"></i>${Sec.escapeHTML(manager)}</div>
+              </div>
+              ${rdLocMenuHTML('region', rid, canManage, canDelete)}
+            </div>
+            <div class="rd-loc-region__foot">
+              <span class="rd-loc-region__meta"><i class="fas fa-code-branch" aria-hidden="true"></i><strong>${regionBranches.length}</strong> فرع</span>
+              <span class="rd-loc-region__meta"><i class="fas fa-users" aria-hidden="true"></i><strong>${totalEmps}</strong> موظف</span>
+            </div>
+          </article>`;
+      }
+
+      function rdLocBranchCardHTML(br, canManage, canDelete, violations, delayIdx) {
+        const employees = getBranchStaff(br.id);
+        const score = (typeof calcBranchSafety === 'function'
+          ? calcBranchSafety(br.id, violations)
+          : { score: 100 }).score;
+        const delay = Math.min(0.25, (Number(delayIdx) || 0) * 0.04);
+        const bid = String(br.id || '').replace(/'/g, "\\'");
+        const staffHTML = employees.length
+          ? employees.map((e) => {
+            const role = e.role === 'branch_manager' ? 'مدير فرع' : (getStaffJobTitle(e) || 'موظف');
+            const initial = String(e.name || '؟').trim().charAt(0) || '؟';
+            return `
+              <div class="rd-loc-emp">
+                <span class="rd-loc-emp__av" aria-hidden="true">${Sec.escapeHTML(initial)}</span>
+                <div class="rd-loc-emp__body">
+                  <div class="rd-loc-emp__name">${Sec.escapeHTML(e.name || '')}</div>
+                  <div class="rd-loc-emp__role">${Sec.escapeHTML(role)} · ${Sec.escapeHTML(padEmpNum(e.employee_number))}</div>
+                </div>
+              </div>`;
+          }).join('')
+          : '<div class="rd-loc-emp-empty">لا يوجد موظفون</div>';
+        return `
+          <article class="rd-loc-branch" style="animation-delay:${delay}s">
+            <div class="rd-loc-branch__top">
+              ${rdLocRingHTML(score)}
+              <div class="rd-loc-branch__body">
+                <div class="rd-loc-branch__name">${Sec.escapeHTML(br.name || '')}</div>
+                <div class="rd-loc-branch__sub">${Sec.escapeHTML(br.city || '—')} · ${employees.length} موظفون</div>
+              </div>
+              ${rdLocMenuHTML('branch', bid, canManage, canDelete)}
+            </div>
+            <div class="rd-loc-branch__staff">${staffHTML}</div>
+          </article>`;
+      }
+
+      function rdLocDeskRegionRowHTML(reg, canManage, canDelete, delayIdx) {
+        const regionBranches = state.branches.filter(b => b.region_id === reg.id);
+        const totalEmps = regionBranches.reduce((n, b) => n + getBranchStaff(b.id).length, 0);
+        const sup = reg?.supervisor_id ? state.users.find(u => u.id === reg.supervisor_id) : null;
+        const manager = (sup && String(sup.name || '').trim()) ? sup.name : 'لا يوجد مشرف';
+        const delay = Math.min(0.25, (Number(delayIdx) || 0) * 0.04);
+        const rid = String(reg.id || '').replace(/'/g, "\\'");
+        const acts = (canManage || canDelete)
+          ? rdDeskActMenuHTML(`editRegion('${rid}')`, `deleteRegion('${rid}')`, canManage, canDelete)
+          : '';
+        return `
+          <div role="button" tabindex="0" class="rd-loc-desk-row rd-loc-desk-row--region" style="animation-delay:${delay}s"
+            onclick="openRegionView('${rid}')"
+            onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openRegionView('${rid}');}">
+            <span class="rd-loc-desk-cell rd-loc-desk-cell--who rd-loc-desk-who" role="cell">
+              <span class="rd-loc-desk-ico" aria-hidden="true"><i class="fas fa-map-location-dot"></i></span>
+              <span class="rd-loc-desk-name">${Sec.escapeHTML(reg.name || '')}</span>
+            </span>
+            <span class="rd-loc-desk-cell rd-loc-desk-cell--mgr rd-loc-desk-muted rd-loc-desk-clip" role="cell">${Sec.escapeHTML(manager)}</span>
+            <span class="rd-loc-desk-cell rd-loc-desk-cell--branches rd-loc-desk-num" role="cell">${regionBranches.length}</span>
+            <span class="rd-loc-desk-cell rd-loc-desk-cell--emps rd-loc-desk-num" role="cell">${totalEmps}</span>
+            <span class="rd-loc-desk-cell rd-loc-desk-cell--acts rd-loc-desk-acts" role="cell">${acts}</span>
+          </div>`;
+      }
+
+      function rdLocDeskBranchRowHTML(br, delayIdx) {
+        const employees = getBranchStaff(br.id);
+        const delay = Math.min(0.25, (Number(delayIdx) || 0) * 0.04);
+        const bid = String(br.id || '').replace(/'/g, "\\'");
+        return `
+          <button type="button" class="rd-loc-desk-row rd-loc-desk-row--branch" style="animation-delay:${delay}s"
+            onclick="openLocBranchView('${bid}')">
+            <span class="rd-loc-desk-cell rd-loc-desk-cell--who rd-loc-desk-who" role="cell">
+              <span class="rd-loc-desk-ico" aria-hidden="true"><i class="fas fa-store"></i></span>
+              <span class="rd-loc-desk-name">${Sec.escapeHTML(br.name || '')}</span>
+            </span>
+            <span class="rd-loc-desk-cell rd-loc-desk-cell--emps rd-loc-desk-num" role="cell">${employees.length}</span>
+          </button>`;
+      }
+
+      function rdLocDeskEmpRowHTML(emp, delayIdx) {
+        const delay = Math.min(0.25, (Number(delayIdx) || 0) * 0.04);
+        const role = emp.role === 'branch_manager' ? 'مدير فرع' : (getStaffJobTitle(emp) || 'موظف');
+        const initial = String(emp.name || '؟').trim().charAt(0) || '؟';
+        const empId = padEmpNum(emp.employee_number) || '—';
+        return `
+          <div class="rd-loc-desk-row rd-loc-desk-row--emp" style="animation-delay:${delay}s">
+            <span class="rd-loc-desk-cell rd-loc-desk-cell--who rd-loc-desk-who" role="cell">
+              <span class="rd-loc-desk-av" aria-hidden="true">${Sec.escapeHTML(initial)}</span>
+              <span class="rd-loc-desk-name rd-loc-desk-name--emp">${Sec.escapeHTML(emp.name || '')}</span>
+            </span>
+            <span class="rd-loc-desk-cell rd-loc-desk-cell--id rd-loc-desk-mono" role="cell">${Sec.escapeHTML(empId)}</span>
+            <span class="rd-loc-desk-cell rd-loc-desk-cell--role rd-loc-desk-muted" role="cell">${Sec.escapeHTML(role)}</span>
+          </div>`;
+      }
+
+      function renderLocationsDesktop(ctx) {
+        const {
+          container, visibleAll, visibleRegions, activeRegion, canManageRegions,
+          canDeleteRegionsPerm, branchMatchesSearch, emptyMsg
+        } = ctx;
+
+        initRdLocMenuDismiss();
+
+        const searchEl = document.getElementById('br-search');
+        if (searchEl) {
+          searchEl.placeholder = 'ابحث في المناطق أو المشرفين...';
+          searchEl.dataset.rdPlaceholder = '1';
+        }
+
+        const banner = document.querySelector('#tab-locations .rb-locations-page-banner');
+        const activeBranchId = state._activeBranchId;
+        let activeBranch = null;
+        if (activeRegion && activeBranchId) {
+          activeBranch = state.branches.find(b => b.id === activeBranchId && b.region_id === activeRegion.id) || null;
+          if (!activeBranch) state._activeBranchId = null;
+        } else if (!activeRegion) {
+          state._activeBranchId = null;
+        }
+
+        if (banner) banner.classList.toggle('rd-loc-banner--drill', !!(activeRegion));
+
+        if (!visibleAll.length) {
+          syncRegionsPanelAction(null);
+          setRegionsResultCount(0);
+          container.innerHTML = `<div class="rd-loc-board rd-loc-board--desk"><div class="rd-ticket-empty"><i class="fas fa-map-location-dot"></i><p>${Sec.escapeHTML(emptyMsg)}</p></div></div>`;
+          return;
+        }
+
+        /* Employees of selected branch */
+        if (activeRegion && activeBranch) {
+          syncRegionsPanelAction(activeRegion.id);
+          const employees = getBranchStaff(activeBranch.id).filter((e) => {
+            const search = (document.getElementById('br-search')?.value || '').toLowerCase().trim();
+            if (!search) return true;
+            return `${e.name || ''} ${e.employee_number || ''} ${e.email || ''} ${e.phone || ''}`.toLowerCase().includes(search);
+          });
+          const rows = employees.length
+            ? employees.map((e, i) => rdLocDeskEmpRowHTML(e, i)).join('')
+            : '<div class="rd-ticket-empty"><i class="fas fa-user-slash"></i><p>لا يوجد موظفون</p></div>';
+          container.innerHTML = `
+            <div class="rd-loc-board rd-loc-board--desk">
+              <button type="button" class="rd-loc-back" onclick="backLocBranchView()">
+                <i class="fas fa-arrow-right" aria-hidden="true"></i>فروع ${Sec.escapeHTML(activeRegion.name || '')}
+              </button>
+              <div class="rd-loc-list-title">موظفو ${Sec.escapeHTML(activeBranch.name || '')}</div>
+              <div class="rd-loc-desk-table rd-loc-desk-table--emp">
+                <div class="rd-loc-desk-thead rd-loc-desk-thead--emp" role="row">
+                  <span class="rd-loc-desk-cell rd-loc-desk-cell--who" role="columnheader">الموظف</span>
+                  <span class="rd-loc-desk-cell rd-loc-desk-cell--id" role="columnheader">الرقم الوظيفي</span>
+                  <span class="rd-loc-desk-cell rd-loc-desk-cell--role" role="columnheader">الدور</span>
+                </div>
+                <div class="rd-loc-desk-body">${rows}</div>
+              </div>
+            </div>`;
+          setRegionsResultCount(employees.length);
+          return;
+        }
+
+        /* Branches of selected region */
+        if (activeRegion) {
+          syncRegionsPanelAction(activeRegion.id);
+          const regionBranches = state.branches.filter(b => b.region_id === activeRegion.id);
+          const visibleBranches = regionBranches.filter(branchMatchesSearch);
+          const rows = visibleBranches.length
+            ? visibleBranches.map((br, i) => rdLocDeskBranchRowHTML(br, i)).join('')
+            : '<div class="rd-ticket-empty"><i class="fas fa-store-slash"></i><p>لا توجد فروع مطابقة</p></div>';
+          container.innerHTML = `
+            <div class="rd-loc-board rd-loc-board--desk">
+              <button type="button" class="rd-loc-back" onclick="backRegionView()">
+                <i class="fas fa-arrow-right" aria-hidden="true"></i>كل المناطق
+              </button>
+              <div class="rd-loc-list-title">فروع ${Sec.escapeHTML(activeRegion.name || '')}</div>
+              <div class="rd-loc-desk-table rd-loc-desk-table--branch">
+                <div class="rd-loc-desk-thead rd-loc-desk-thead--branch" role="row">
+                  <span class="rd-loc-desk-cell rd-loc-desk-cell--who" role="columnheader">الفرع</span>
+                  <span class="rd-loc-desk-cell rd-loc-desk-cell--emps" role="columnheader">الموظفون</span>
+                </div>
+                <div class="rd-loc-desk-body">${rows}</div>
+              </div>
+            </div>`;
+          setRegionsResultCount(visibleBranches.length);
+          return;
+        }
+
+        /* Regions root */
+        syncRegionsPanelAction(null);
+        if (!visibleRegions.length) {
+          container.innerHTML = `
+            <div class="rd-loc-board rd-loc-board--desk">
+              <div class="rd-ticket-empty"><i class="fas fa-magnifying-glass"></i><p>لا توجد نتائج مطابقة</p></div>
+            </div>`;
+          setRegionsResultCount(0);
+          return;
+        }
+        container.innerHTML = `
+          <div class="rd-loc-board rd-loc-board--desk">
+            <div class="rd-loc-desk-table rd-loc-desk-table--region">
+              <div class="rd-loc-desk-thead rd-loc-desk-thead--region" role="row">
+                <span class="rd-loc-desk-cell rd-loc-desk-cell--who" role="columnheader">المنطقة</span>
+                <span class="rd-loc-desk-cell rd-loc-desk-cell--mgr" role="columnheader">المدير</span>
+                <span class="rd-loc-desk-cell rd-loc-desk-cell--branches" role="columnheader">الفروع</span>
+                <span class="rd-loc-desk-cell rd-loc-desk-cell--emps" role="columnheader">الموظفون</span>
+                <span class="rd-loc-desk-cell rd-loc-desk-cell--acts" role="columnheader">إجراءات</span>
+              </div>
+              <div class="rd-loc-desk-body">
+                ${visibleRegions.map((reg, i) => rdLocDeskRegionRowHTML(reg, canManageRegions, canDeleteRegionsPerm, i)).join('')}
+              </div>
+            </div>
+          </div>`;
+        setRegionsResultCount(visibleRegions.length);
+      }
+
+      function renderRegionsRedesign(ctx) {
+        if (typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi()) {
+          renderLocationsDesktop(ctx);
+          return;
+        }
+        const {
+          container, visibleAll, visibleRegions, activeRegion, canManageRegions,
+          canDeleteRegionsPerm, branchMatchesSearch, emptyMsg
+        } = ctx;
+        initRdLocMenuDismiss();
+        const violations = typeof getViolationsForScoring === 'function'
+          ? getViolationsForScoring()
+          : (state.violations || []);
+
+        const searchEl = document.getElementById('br-search');
+        if (searchEl && !searchEl.dataset.rdPlaceholder) {
+          searchEl.placeholder = 'ابحث في المناطق، الفروع، أو المشرفين...';
+          searchEl.dataset.rdPlaceholder = '1';
+        }
+
+        if (!visibleAll.length) {
+          syncRegionsPanelAction(null);
+          setRegionsResultCount(0);
+          container.innerHTML = `<div class="rd-loc-board"><div class="rd-ticket-empty"><i class="fas fa-map-location-dot"></i><p>${Sec.escapeHTML(emptyMsg)}</p></div></div>`;
+          return;
+        }
+
+        if (activeRegion) {
+          syncRegionsPanelAction(activeRegion.id);
+          const drillMeta = document.getElementById('rbDrillMeta');
+          if (drillMeta) { drillMeta.hidden = true; drillMeta.innerHTML = ''; }
+          const regionBranches = state.branches.filter(b => b.region_id === activeRegion.id);
+          const visibleBranches = regionBranches.filter(branchMatchesSearch);
+          const branchesHTML = visibleBranches.length
+            ? visibleBranches.map((br, i) => rdLocBranchCardHTML(br, canManageRegions, canDeleteRegionsPerm, violations, i)).join('')
+            : '<div class="rd-ticket-empty"><i class="fas fa-store-slash"></i><p>لا توجد فروع مطابقة</p></div>';
+          container.innerHTML = `
+            <div class="rd-loc-board">
+              <button type="button" class="rd-loc-back" onclick="backRegionView()">
+                <i class="fas fa-arrow-right" aria-hidden="true"></i>كل المناطق
+              </button>
+              <div class="rd-loc-list-title">فروع ${Sec.escapeHTML(activeRegion.name || '')}</div>
+              <div class="rd-loc-list">${branchesHTML}</div>
+            </div>`;
+          setRegionsResultCount(visibleBranches.length);
+          return;
+        }
+
+        syncRegionsPanelAction(null);
+        const allBranchIds = new Set();
+        let allEmps = 0;
+        visibleAll.forEach((reg) => {
+          const rbs = state.branches.filter(b => b.region_id === reg.id);
+          rbs.forEach((b) => allBranchIds.add(b.id));
+          allEmps += rbs.reduce((n, b) => n + getBranchStaff(b.id).length, 0);
+        });
+        if (!visibleRegions.length) {
+          container.innerHTML = `
+            <div class="rd-loc-board">
+              ${rdLocSummaryHTML(visibleAll.length, allBranchIds.size, allEmps)}
+              <div class="rd-ticket-empty"><i class="fas fa-magnifying-glass"></i><p>لا توجد نتائج مطابقة</p></div>
+            </div>`;
+          setRegionsResultCount(0);
+          return;
+        }
+        container.innerHTML = `
+          <div class="rd-loc-board">
+            ${rdLocSummaryHTML(visibleAll.length, allBranchIds.size, allEmps)}
+            <div class="rd-loc-list">
+              ${visibleRegions.map((reg, i) => rdLocRegionCardHTML(reg, canManageRegions, canDeleteRegionsPerm, violations, i)).join('')}
+            </div>
+          </div>`;
+        setRegionsResultCount(visibleRegions.length);
+      }
+
       function renderRegions() {
         const container = document.getElementById('regionsList');
         if (!container) return;
 
         if (isAppDataPending()) {
           setRegionsResultCount(0);
-          container.innerHTML = dataLoadingEmptyHTML('جاري تحميل المناطق والفروع…');
+          container.innerHTML = (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi()) || isAtharDesktopScreenUi()
+            ? '<div class="rd-loc-board"><div class="rd-ticket-empty"><i class="fas fa-spinner fa-spin"></i><p>جاري تحميل المناطق والفروع…</p></div></div>'
+            : dataLoadingEmptyHTML('جاري تحميل المناطق والفروع…');
           return;
         }
 
@@ -11617,6 +12009,32 @@
           );
         };
 
+        const emptyMsg = isSupervisor
+          ? 'لا توجد مناطق مرتبطة بك'
+          : (canManageRegions ? 'لا توجد مناطق — أضف المنطقة الأولى' : 'لا توجد مناطق');
+
+        const activeRegionId = state._activeRegionId;
+        let activeRegion = activeRegionId ? visibleAll.find(r => r.id === activeRegionId) : null;
+        if (activeRegionId && !activeRegion) {
+          state._activeRegionId = null;
+          activeRegion = null;
+        }
+        const visibleRegions = visibleAll.filter(regionMatchesSearch);
+
+        if ((typeof isAtharRedesignUi === 'function' && isAtharRedesignUi()) || isAtharDesktopScreenUi()) {
+          renderRegionsRedesign({
+            container,
+            visibleAll,
+            visibleRegions,
+            activeRegion: state._activeRegionId ? activeRegion : null,
+            canManageRegions,
+            canDeleteRegionsPerm,
+            branchMatchesSearch,
+            emptyMsg
+          });
+          return;
+        }
+
         const renderBranchEmployees = (employees) => {
           if (!employees.length) {
             return '<div class="rb-emp-empty"><i class="fas fa-user-slash"></i> لا يوجد موظفون</div>';
@@ -11648,17 +12066,8 @@
         if (!visibleAll.length) {
           syncRegionsPanelAction(null);
           setRegionsResultCount(0);
-          const emptyMsg = isSupervisor
-            ? 'لا توجد مناطق مرتبطة بك'
-            : (canManageRegions ? 'لا توجد مناطق — أضف المنطقة الأولى' : 'لا توجد مناطق');
           container.innerHTML = '<div class="empty"><i class="fas fa-map-location-dot"></i><p>' + emptyMsg + '</p></div>';
           return;
-        }
-
-        const activeRegionId = state._activeRegionId;
-        const activeRegion = activeRegionId ? visibleAll.find(r => r.id === activeRegionId) : null;
-        if (activeRegionId && !activeRegion) {
-          state._activeRegionId = null;
         }
 
         if (state._activeRegionId && activeRegion) {
@@ -11666,8 +12075,6 @@
           const regionBranches = state.branches.filter(b => b.region_id === activeRegion.id);
           const visibleBranches = regionBranches.filter(branchMatchesSearch);
 
-
-          const totalEmps = regionBranches.reduce((n, b) => n + getBranchStaff(b.id).length, 0);
           const branchesHTML = visibleBranches.length ? visibleBranches.map(br => {
             const employees = getBranchStaff(br.id);
             const adminActions = (canManageRegions || canDeleteRegionsPerm) ? `
@@ -11707,7 +12114,6 @@
         }
 
         syncRegionsPanelAction(null);
-        const visibleRegions = visibleAll.filter(regionMatchesSearch);
 
         if (!visibleRegions.length) {
           container.innerHTML = '<div class="empty"><i class="fas fa-magnifying-glass"></i><p>لا توجد نتائج مطابقة</p></div>';
@@ -32806,6 +33212,9 @@
       window.handleLocationsImportFile = handleLocationsImportFile;
       window.openRegionView = openRegionView;
       window.backRegionView = backRegionView;
+      window.openLocBranchView = openLocBranchView;
+      window.backLocBranchView = backLocBranchView;
+      window.toggleRdLocMenu = toggleRdLocMenu;
       window.renderRegions = renderRegions;
       window.openUserModal = openUserModal;
       window.editUser = editUser;

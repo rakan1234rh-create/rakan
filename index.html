@@ -777,6 +777,7 @@
   <link rel="stylesheet" href="styles/custom/athar-reports-redesign.css?v=rp5" id="athar-reports-redesign">
   <link rel="stylesheet" href="styles/custom/athar-compliance-redesign.css?v=cm1" id="athar-compliance-redesign">
   <link rel="stylesheet" href="styles/custom/athar-violations-redesign.css?v=vl1" id="athar-violations-redesign">
+  <link rel="stylesheet" href="styles/custom/athar-locations-redesign.css?v=loc1" id="athar-locations-redesign">
 
   <link rel="stylesheet" href="styles/custom/design-kit.css" id="mk-design-kit">
   <!-- Mirsad tokens + kit: مضمّنة في index.html — لا روابط design-system (تجنّب 404 عند file://) -->
@@ -2325,7 +2326,7 @@
 
     }
   </style>
-  <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){var redesign=document.documentElement.classList.contains('athar-staging-redesign');for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(!el)continue;var classic=DESK_IDS[i]==='platform-dashboard-shell-link'||DESK_IDS[i]==='platform-compliance-shell-link'||DESK_IDS[i]==='platform-reports-list-shell-link'||DESK_IDS[i]==='platform-violations-shell-link';el.disabled=!isDesktop||(redesign&&classic);}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
+  <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){var redesign=document.documentElement.classList.contains('athar-staging-redesign');for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(!el)continue;var classic=DESK_IDS[i]==='platform-dashboard-shell-link'||DESK_IDS[i]==='platform-compliance-shell-link'||DESK_IDS[i]==='platform-reports-list-shell-link'||DESK_IDS[i]==='platform-violations-shell-link'||DESK_IDS[i]==='platform-locations-shell-link';el.disabled=!isDesktop||(redesign&&classic);}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
   <meta name="app-build" content="athar-avatar-new-badge-edit-v1050">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
@@ -4434,7 +4435,7 @@
     </div>
   </div><!-- /#appWrap -->
 
-    <script src="js/app.js?v=vl1"></script>
+    <script src="js/app.js?v=loc1"></script>
         <style>
       @media (max-width: 992px) {
         /* ── workflow: منع التمدد الأفقي ── */
