@@ -1,0 +1,788 @@
+/* ATHAR Production — New ticket / رصد (desktop only) */
+
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket.tab-content.active,
+html.athar-staging-redesign.mr-desktop-ui #tab-departments.tab-content.active {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket > .panel {
+  display: block !important;
+  visibility: visible !important;
+  min-height: 200px !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .rd-nt-form-card {
+  display: contents !important;
+}
+
+
+/* ── New ticket / رصد — literal Athar Desktop mockup ── */
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket {
+  animation: atharRdScreenIn 0.3s ease !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket > .panel {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  display: block !important;
+  visibility: visible !important;
+  min-height: 200px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .mk-form-panel {
+  display: grid !important;
+  grid-template-columns: 1.6fr 1fr !important;
+  gap: 24px !important;
+  align-items: start !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  min-height: 200px !important;
+  visibility: visible !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .rd-nt-form-card {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0 !important;
+  min-width: 0 !important;
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 18px !important;
+  padding: 28px !important;
+  box-shadow: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .mk-form-hd {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  margin: 0 0 22px !important;
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  grid-column: unset !important;
+  grid-row: unset !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .mk-form-hd__ico {
+  width: 42px !important;
+  height: 42px !important;
+  border-radius: 12px !important;
+  background: var(--goldSoft) !important;
+  color: var(--gold) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+  font-size: 16px !important;
+  box-shadow: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .mk-form-hd h2 {
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  color: var(--text) !important;
+  margin: 0 !important;
+  line-height: 1.3 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .mk-form-hd p {
+  font-size: 11px !important;
+  color: var(--text3) !important;
+  letter-spacing: 0.05em !important;
+  margin: 2px 0 0 !important;
+  line-height: 1.4 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .mk-form-grid {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 14px !important;
+  margin: 0 0 8px !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  grid-column: unset !important;
+  grid-row: unset !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .mk-form-ft {
+  display: flex !important;
+  flex-direction: row !important;
+  gap: 10px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  grid-column: unset !important;
+  grid-row: unset !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .rd-nt-summary {
+  display: block !important;
+  grid-column: unset !important;
+  grid-row: unset !important;
+  align-self: start !important;
+  position: sticky !important;
+  top: 0 !important;
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 18px !important;
+  padding: 22px !important;
+  margin: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .rd-nt-chev {
+  display: inline-block !important;
+  color: var(--text3) !important;
+  font-size: 10px !important;
+  margin-inline-start: auto !important;
+  flex-shrink: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .mk-btn.mk-btn--primary,
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .mk-btn[onclick*="submit"],
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket button.mk-btn--primary {
+  flex: 1 !important;
+  order: -1 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .rd-nt-summary[hidden] {
+  display: block !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .rd-nt-summary__title {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: var(--text) !important;
+  margin-bottom: 14px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .rd-nt-summary__row {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 11px !important;
+  font-size: 12px !important;
+  margin: 0 !important;
+  margin-top: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .rd-nt-summary__row + .rd-nt-summary__row {
+  margin-top: 11px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .rd-nt-summary__row span {
+  color: var(--text2) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .rd-nt-summary__row strong {
+  color: var(--text) !important;
+  font-weight: 600 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .rd-nt-summary__row strong.is-empty {
+  color: var(--text3) !important;
+  font-weight: 500 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .mk-field {
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  background: transparent !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .mk-field--dt-row,
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .mk-field--full,
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .rd-nt-sev {
+  grid-column: 1 / -1 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .mk-field--dt-row {
+  margin-bottom: 18px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .mk-field--full {
+  margin-bottom: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .mk-pick-banner-slot {
+  display: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .mk-field__lbl,
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .mk-dt-item__lbl {
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: var(--text) !important;
+  margin-bottom: 7px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .mk-req {
+  color: var(--danger) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .mk-optional,
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .mk-field__hint {
+  display: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .figma-search-wrap {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  background: var(--surface2) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 10px !important;
+  padding: 11px 12px !important;
+  box-shadow: none !important;
+  position: relative !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .figma-search-wrap::before {
+  content: "\f002" !important;
+  font-family: "Font Awesome 6 Free" !important;
+  font-weight: 900 !important;
+  color: var(--text3) !important;
+  font-size: 12px !important;
+  flex-shrink: 0 !important;
+  line-height: 1 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .figma-search-btn {
+  display: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .figma-search-input {
+  flex: 1 !important;
+  min-width: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  font-size: 12px !important;
+  color: var(--text) !important;
+  box-shadow: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .figma-search-input::placeholder {
+  color: var(--text3) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .mk-dt-control,
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket textarea.mk-input--ta {
+  background: var(--surface2) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 10px !important;
+  box-shadow: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .mk-dt-control {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  padding: 11px 12px !important;
+  width: 100% !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .mk-dt-control__text {
+  font-size: 12px !important;
+  color: var(--text) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .mk-dt-control__text--empty {
+  color: var(--text3) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .mk-dt-control__ico {
+  color: var(--text3) !important;
+  font-size: 12px !important;
+  order: 2 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .mk-field--full:has(textarea) {
+  margin-bottom: 18px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket textarea.mk-input--ta {
+  min-height: 100px !important;
+  border-radius: 12px !important;
+  padding: 14px !important;
+  font-size: 12.5px !important;
+  line-height: 1.7 !important;
+  color: var(--text) !important;
+  margin: 0 !important;
+  resize: vertical !important;
+  width: 100% !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .rd-nt-sev {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  background: var(--goldSoft) !important;
+  border-radius: 10px !important;
+  padding: 9px 12px !important;
+  margin: 0 0 18px !important;
+  border: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .rd-nt-sev > i {
+  font-size: 11px !important;
+  flex-shrink: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .rd-nt-sev[hidden] {
+  display: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .rd-nt-sev__name {
+  font-size: 11px !important;
+  color: var(--text2) !important;
+  flex: 1 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .rd-nt-sev__pts {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .mk-drop {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  gap: 0 !important;
+  background: var(--surface2) !important;
+  border: 1.5px dashed var(--border) !important;
+  border-radius: 12px !important;
+  padding: 26px 14px !important;
+  margin: 0 0 22px !important;
+  box-shadow: none !important;
+  width: 100% !important;
+  cursor: pointer !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .mk-drop > i {
+  width: auto !important;
+  height: auto !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  margin: 0 0 8px !important;
+  background: none !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  font-size: 22px !important;
+  color: var(--text3) !important;
+  display: block !important;
+  line-height: 1 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .mk-drop__txt {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .mk-drop__txt strong {
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  color: var(--text) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .mk-drop__txt span {
+  font-size: 11px !important;
+  color: var(--text3) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .mk-btn {
+  border-radius: 12px !important;
+  padding: 14px 20px !important;
+  font-weight: 700 !important;
+  font-size: 13.5px !important;
+  box-shadow: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .mk-btn:not(.mk-btn--primary) {
+  background: transparent !important;
+  border: 1px solid var(--border) !important;
+  color: var(--text2) !important;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+  flex: 0 0 auto !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .mk-dt-pair {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 14px !important;
+}
+
+@media (max-width: 1100px) {
+  html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .mk-form-panel {
+    grid-template-columns: 1fr !important;
+  }
+  html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .rd-nt-summary {
+    position: static !important;
+  }
+}
+
+
+@media (max-width: 1100px) {
+  html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .mk-form-panel {
+    grid-template-columns: 1fr !important;
+  }
+  html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .rd-nt-summary {
+    grid-column: 1 !important;
+    position: static !important;
+  }
+}
+
+
+/* Shared rd-nt components */
+html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .mk-field--dt-row,
+html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .mk-field--full,
+html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .rd-nt-sev,
+html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .rd-nt-summary,
+html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .mk-form-ft {
+  grid-column: 1 / -1 !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .mk-field__lbl,
+html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .mk-dt-item__lbl {
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  color: var(--text) !important;
+  margin-bottom: 6px !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .mk-req {
+  color: var(--danger) !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .mk-optional {
+  display: none !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .figma-search-wrap {
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 11px !important;
+  padding: 0 7px !important;
+  height: auto !important;
+  min-height: 40px !important;
+  box-shadow: none !important;
+  gap: 5px !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .figma-search-input {
+  font-size: 11px !important;
+  min-width: 0 !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .figma-search-btn {
+  display: none !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .figma-search-wrap::before {
+  content: '\f002';
+  font-family: 'Font Awesome 6 Free';
+  font-weight: 900;
+  color: var(--text3);
+  font-size: 12px;
+  flex-shrink: 0;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .rd-nt-chev {
+  display: inline-block !important;
+  color: var(--text3) !important;
+  font-size: 10px !important;
+  flex-shrink: 0 !important;
+  margin-inline-start: auto !important;
+}
+html:not(.athar-staging-redesign) .rd-nt-chev {
+  display: none !important;
+}
+
+/* Hide classic pick banners — redesign uses sev chip + summary */
+html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .mk-pick-banner-slot {
+  display: none !important;
+}
+
+.rd-nt-sev {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--goldSoft);
+  border-radius: 9px;
+  padding: 6px 8px;
+  margin: 0;
+  font-size: 10.5px;
+}
+.rd-nt-sev[hidden] { display: none !important; }
+.rd-nt-sev__name {
+  flex: 1;
+  min-width: 0;
+  color: var(--text2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rd-nt-sev__pts {
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* Compact violation-type autocomplete — match parent field width */
+html.athar-staging-redesign.mr-mobile-ui #tab-newTicket #nt-typeDropdown.autocomplete-dropdown,
+html.athar-staging-redesign.mr-mobile-ui #tab-newTicket #nt-empDropdown.autocomplete-dropdown {
+  left: 0 !important;
+  right: 0 !important;
+  inset-inline: 0 !important;
+  width: auto !important;
+  max-width: 100% !important;
+  max-height: min(34vh, 200px) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 6px 18px rgba(15, 18, 36, 0.12) !important;
+  border: 1px solid var(--border) !important;
+  background: var(--surface) !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+  box-sizing: border-box !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-newTicket #nt-typeDropdown .autocomplete-item,
+html.athar-staging-redesign.mr-mobile-ui #tab-newTicket #nt-typeDropdown .rd-nt-type-item {
+  padding: 6px 7px !important;
+  gap: 0 !important;
+  border-bottom: 1px solid var(--border) !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-newTicket #nt-typeDropdown .autocomplete-item:last-child {
+  border-bottom: none !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-newTicket #nt-typeDropdown .autocomplete-item:active {
+  background: var(--surface2) !important;
+}
+.rd-nt-type-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  min-width: 0;
+}
+.rd-nt-type-row__main {
+  flex: 1;
+  min-width: 0;
+}
+.rd-nt-type-row__name {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  white-space: normal;
+  word-break: break-word;
+}
+.rd-nt-type-row__meta {
+  font-size: 9.5px;
+  color: var(--text3);
+  margin-top: 1px;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rd-nt-type-row__sev {
+  flex-shrink: 0;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 999px;
+  white-space: nowrap;
+  line-height: 1.35;
+  border: 1px solid transparent;
+  margin-top: 1px;
+}
+.rd-nt-type-row__sev.is-low {
+  color: #007AFF;
+  background: rgba(0, 122, 255, 0.1);
+  border-color: rgba(0, 122, 255, 0.22);
+}
+.rd-nt-type-row__sev.is-mid {
+  color: #b8860b;
+  background: rgba(255, 204, 0, 0.18);
+  border-color: rgba(255, 204, 0, 0.35);
+}
+.rd-nt-type-row__sev.is-high {
+  color: #FF0000;
+  background: rgba(255, 0, 0, 0.1);
+  border-color: rgba(255, 0, 0, 0.22);
+}
+
+/* Tighten employee dropdown rows on the same screen */
+html.athar-staging-redesign.mr-mobile-ui #tab-newTicket #nt-empDropdown .autocomplete-item {
+  padding: 6px 7px !important;
+  gap: 2px !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-newTicket #nt-empDropdown .ac-name {
+  font-size: 11px !important;
+  line-height: 1.3 !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-newTicket #nt-empDropdown .ac-details {
+  font-size: 9.5px !important;
+  gap: 6px !important;
+  flex-wrap: wrap !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .mk-dt-pair {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 10px !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .mk-dt-wrap {
+  position: relative !important;
+  min-width: 0 !important;
+  overflow: visible !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .nt-time-picker {
+  inset-inline: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: auto !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .ntp-cols {
+  gap: 6px !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .ntp-col--ampm {
+  flex: 0 0 36px !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .ntp-opt {
+  font-size: 12px !important;
+  padding: 6px 2px !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .mk-dt-control {
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
+  min-height: 44px !important;
+  padding: 11px 12px !important;
+  justify-content: space-between !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .mk-dt-control__ico {
+  order: 2 !important;
+  color: var(--text3) !important;
+  font-size: 12px !important;
+  margin: 0 !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .mk-dt-control__text {
+  font-size: 12px !important;
+  color: var(--text) !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .mk-input--ta {
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 14px !important;
+  padding: 12px !important;
+  min-height: 78px !important;
+  box-shadow: none !important;
+  font-size: 12px !important;
+  line-height: 1.7 !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .mk-field__hint {
+  display: block !important;
+  font-size: 10.5px !important;
+  color: var(--text3) !important;
+  margin-top: 6px !important;
+  margin-bottom: 2px !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .mk-drop {
+  background: var(--surface2) !important;
+  border: 1.5px dashed var(--border) !important;
+  border-radius: 14px !important;
+  padding: 16px 12px !important;
+  box-shadow: none !important;
+  text-align: center !important;
+  margin-bottom: 4px !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .mk-drop i {
+  font-size: 20px !important;
+  color: var(--text3) !important;
+  margin-bottom: 8px !important;
+  display: block !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .mk-drop__txt strong {
+  display: block !important;
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  color: var(--text) !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .mk-drop__txt span {
+  display: block !important;
+  font-size: 10.5px !important;
+  color: var(--text3) !important;
+  margin-top: 4px !important;
+}
+
+.rd-nt-summary {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin: 0 0 12px;
+}
+.rd-nt-summary[hidden] { display: none !important; }
+.rd-nt-summary__title {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 10px;
+}
+.rd-nt-summary__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 11.5px;
+  margin-top: 8px;
+}
+.rd-nt-summary__row span { color: var(--text2); }
+.rd-nt-summary__row strong {
+  font-weight: 600;
+  color: var(--text);
+  text-align: start;
+}
+.rd-nt-summary__row strong.is-empty { color: var(--text3); font-weight: 400; }
+html:not(.athar-staging-redesign) .rd-nt-summary,
+html:not(.athar-staging-redesign) .rd-nt-sev {
+  display: none !important;
+}
+html.athar-staging-redesign.mr-desktop-ui .rd-nt-summary,
+html.athar-staging-redesign.mr-desktop-ui .rd-nt-sev {
+  /* enabled via athar-desktop-screens.css */
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .mk-form-ft {
+  display: flex !important;
+  gap: 10px !important;
+  margin-top: 4px !important;
+  margin-bottom: 8px !important;
+  padding: 0 !important;
+  border: none !important;
+  background: transparent !important;

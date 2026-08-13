@@ -7418,7 +7418,7 @@
       // ═══════════════════════════════════════════════════════════════════════════
       const TAB_TITLES = {
         dashboard: { title: 'نظرة عامة', sub: 'ملخص أداء اليوم' },
-        newTicket: { title: 'رصد مخالفة جديدة', sub: 'create new violation' },
+        newTicket: { title: 'رصد مخالفة جديدة', sub: 'سجّل مخالفة بأكبر قدر من التفاصيل' },
         workflow: { title: 'معالجة التذاكر', sub: 'tickets workflow' },
         reports: { title: 'التقارير', sub: 'reports & analytics' },
         compliance: { title: 'لوحة مؤشرات الامتثال', sub: 'compliance dashboard' },
@@ -13575,6 +13575,8 @@
         el.textContent = has ? formatNtDateDisplay(inp.value) : 'اختر التاريخ';
         el.setAttribute('dir', has ? 'ltr' : 'rtl');
         el.classList.toggle('mk-dt-control__text--empty', !has);
+      
+        try { syncRdNewTicketChrome(); } catch (_) { /* noop */ }
       }
 
       const ntTpState = { hour: 0, minute: 0 };
@@ -13770,6 +13772,98 @@
         }
         el.setAttribute('dir', 'ltr');
         el.classList.remove('mk-dt-control__text--empty');
+      
+        try { syncRdNewTicketChrome(); } catch (_) { /* noop */ }
+      }
+
+      function rdNtSevTone(sev) {
+        let s = sev || 'منخفض';
+        if (s === 'حرج') s = 'عالي';
+        if (s === 'عالي') return { key: s, color: 'var(--danger)' };
+        if (s === 'متوسط') return { key: s, color: 'var(--warning)' };
+        return { key: 'منخفض', color: 'var(--info)' };
+      }
+      function syncRdNewTicketChrome() {
+        const useMob = typeof isAtharRedesignUi === 'function' && isAtharRedesignUi();
+        const useDesk = typeof isAtharDesktopRedesignUi === 'function' && isAtharDesktopRedesignUi();
+        const useRd = useMob || useDesk;
+        const sevEl = document.getElementById('rdNtSevPreview');
+        const sumEl = document.getElementById('rdNtSummary');
+        if (sevEl) sevEl.hidden = !useRd;
+        if (sumEl) sumEl.hidden = !useRd;
+
+        const hdSub = document.querySelector('#tab-newTicket .mk-form-hd p');
+        if (hdSub) {
+          hdSub.textContent = useDesk
+            ? 'NEW VIOLATION TICKET'
+            : 'NEW VIOLATION TICKET · سجّل مخالفة بأكبر قدر من التفاصيل';
+        }
+
+        if (!useRd) return;
+
+        const picked = state.ntPickedViolationType;
+        if (sevEl) {
+          if (!picked) {
+            if (useDesk) {
+              /* Design mock shows a persistent example severity strip */
+              sevEl.hidden = false;
+              sevEl.innerHTML = `
+                <i class="fas fa-circle-exclamation" style="color:var(--warning)" aria-hidden="true"></i>
+                <span class="rd-nt-sev__name">مثال: تأخر متكرر عن الدوام</span>
+                <span class="rd-nt-sev__pts" style="color:var(--warning)">−8 نقاط</span>`;
+            } else {
+              sevEl.innerHTML = '';
+              sevEl.hidden = true;
+            }
+          } else {
+            const tone = rdNtSevTone(picked.severity);
+            const points = picked.weight ?? picked.points ?? 0;
+            sevEl.hidden = false;
+            sevEl.innerHTML = `
+              <i class="fas fa-circle-exclamation" style="color:${tone.color}" aria-hidden="true"></i>
+              <span class="rd-nt-sev__name">${Sec.escapeHTML(picked.name)}</span>
+              <span class="rd-nt-sev__pts" style="color:${tone.color}">−${Sec.escapeHTML(String(points))} نقاط</span>`;
+          }
+        }
+
+        const typeEl = document.getElementById('rdNtSumType');
+        const empEl = document.getElementById('rdNtSumEmp');
+        const branchEl = document.getElementById('rdNtSumBranch');
+        const supEl = document.getElementById('rdNtSumSup');
+        const whenEl = document.getElementById('rdNtSumWhen');
+        if (typeEl) {
+          typeEl.textContent = picked?.name || document.getElementById('nt-type')?.value || 'لم يُحدد بعد';
+          typeEl.classList.toggle('is-empty', !picked && !document.getElementById('nt-type')?.value);
+        }
+        if (empEl) {
+          const emp = state.ntPickedEmployee;
+          empEl.textContent = emp?.name || 'لم يُحدد بعد';
+          empEl.classList.toggle('is-empty', !emp);
+        }
+        if (branchEl || supEl) {
+          const ctx = getEmployeePickContext(state.ntPickedEmployee);
+          if (branchEl) {
+            const branchLabel = ctx.branch
+              ? (ctx.region?.name ? `${ctx.region.name} — ${ctx.branch.name}` : ctx.branch.name)
+              : 'لم يُحدد بعد';
+            branchEl.textContent = branchLabel;
+            branchEl.classList.toggle('is-empty', !ctx.branch);
+          }
+          if (supEl) {
+            supEl.textContent = ctx.supervisor?.name || 'لم يُحدد بعد';
+            supEl.classList.toggle('is-empty', !ctx.supervisor);
+          }
+        }
+        if (whenEl) {
+          const dateTxt = document.getElementById('nt-dateDisplay')?.textContent || '';
+          const timeTxt = document.getElementById('nt-timeDisplay')?.textContent || '';
+          const hasDate = dateTxt && !/اختر/.test(dateTxt);
+          const hasTime = timeTxt && !/اختر/.test(timeTxt);
+          whenEl.textContent = (hasDate || hasTime)
+            ? `${hasDate ? dateTxt : '—'} · ${hasTime ? timeTxt : '—'}`
+            : '—';
+          whenEl.classList.toggle('is-empty', !(hasDate || hasTime));
+        }
       }
 
       function prepareNewTicket() {
@@ -13797,6 +13891,8 @@
         syncNtDateDisplay();
         syncNtTimeDisplay();
         syncAttachmentSubmitButtons('nt');
+      
+        try { syncRdNewTicketChrome(); } catch (_) { /* noop */ }
       }
 
       // إغلاق القوائم عند النقر خارجها
@@ -13897,6 +13993,8 @@
           foundDiv.style.display = 'block';
           foundDiv.innerHTML = renderNtEmpPickBanner(emp);
         }
+      
+        try { syncRdNewTicketChrome(); } catch (_) { /* noop */ }
       }
 
       /** إبقاء بنر الموظف المختار ظاهراً أثناء البحث عن موظف آخر */
@@ -14053,6 +14151,8 @@
           foundDiv.style.display = 'block';
           foundDiv.innerHTML = renderNtViolationTypePickBanner(v);
         }
+      
+        try { syncRdNewTicketChrome(); } catch (_) { /* noop */ }
       }
 
       function ensureNtViolationTypeBannerVisible() {
@@ -14097,10 +14197,12 @@
           return;
         }
 
+        const compactRd = (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi())
+          || isAtharDesktopScreenUi();
         dropdown.innerHTML = '';
         results.forEach(v => {
           const item = document.createElement('div');
-          item.className = 'autocomplete-item';
+          item.className = compactRd ? 'autocomplete-item rd-nt-type-item' : 'autocomplete-item';
 
           // توحيد التصنيفات والألوان بناءً على طلب المستخدم
           let severityText = v.severity || 'منخفض';
@@ -14111,27 +14213,40 @@
           else if (severityText === 'متوسط') badgeColor = '#FFCC00'; // أصفر النظام (iOS)
 
           const badgeBg = `${badgeColor}1a`; // شفافية 10%
+          const sevClass = severityText === 'عالي' ? 'is-high' : (severityText === 'متوسط' ? 'is-mid' : 'is-low');
 
-          item.innerHTML = `
-          <div style="display: flex; gap: 14px; align-items: flex-start; padding: 6px 0;">
-            <div style="background: ${badgeBg}; color: ${badgeColor}; width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 18px; border: 1px solid ${badgeColor}33;">
-              <i class="fas fa-exclamation-triangle"></i>
-            </div>
-            <div style="flex: 1;">
-              <div class="ac-name" style="font-size: 14px; margin-bottom: 2px;"><bdi>${highlightMatch(v.name, query)}</bdi></div>
-              <div style="font-size: 12px; color: var(--text3); margin-bottom: 6px; opacity: 0.8;">${Sec.escapeHTML(v.category || '-')}</div>
-              
-              <div style="display: flex; gap: 10px; align-items: center;">
-                 <span style="background: ${badgeBg}; color: ${badgeColor}; font-size: 10px; padding: 2px 8px; border-radius: 12px; font-weight: bold; border: 1px solid ${badgeColor}44; white-space: nowrap; flex-shrink: 0;">
-                   ${Sec.escapeHTML(severityText)}
-                 </span>
-                 <div style="font-size: 11px; color: var(--text2); opacity: 0.8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${Sec.escapeHTML(v.description || '')}">
-                    ${Sec.escapeHTML(v.description || '')}
-                 </div>
+          if (compactRd) {
+            // Compact single-row results for mobile redesign (keyboard-friendly)
+            item.innerHTML = `
+            <div class="rd-nt-type-row">
+              <div class="rd-nt-type-row__main">
+                <div class="rd-nt-type-row__name"><bdi>${highlightMatch(v.name, query)}</bdi></div>
+                <div class="rd-nt-type-row__meta">${Sec.escapeHTML(v.category || '-')}</div>
+              </div>
+              <span class="rd-nt-type-row__sev ${sevClass}">${Sec.escapeHTML(severityText)}</span>
+            </div>`;
+          } else {
+            item.innerHTML = `
+            <div style="display: flex; gap: 14px; align-items: flex-start; padding: 6px 0;">
+              <div style="background: ${badgeBg}; color: ${badgeColor}; width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 18px; border: 1px solid ${badgeColor}33;">
+                <i class="fas fa-exclamation-triangle"></i>
+              </div>
+              <div style="flex: 1;">
+                <div class="ac-name" style="font-size: 14px; margin-bottom: 2px;"><bdi>${highlightMatch(v.name, query)}</bdi></div>
+                <div style="font-size: 12px; color: var(--text3); margin-bottom: 6px; opacity: 0.8;">${Sec.escapeHTML(v.category || '-')}</div>
+                
+                <div style="display: flex; gap: 10px; align-items: center;">
+                   <span style="background: ${badgeBg}; color: ${badgeColor}; font-size: 10px; padding: 2px 8px; border-radius: 12px; font-weight: bold; border: 1px solid ${badgeColor}44; white-space: nowrap; flex-shrink: 0;">
+                     ${Sec.escapeHTML(severityText)}
+                   </span>
+                   <div style="font-size: 11px; color: var(--text2); opacity: 0.8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${Sec.escapeHTML(v.description || '')}">
+                      ${Sec.escapeHTML(v.description || '')}
+                   </div>
+                </div>
               </div>
             </div>
-          </div>
-        `;
+          `;
+          }
           item.onclick = (e) => {
             e.stopPropagation();
             selectNtViolationType(v);
@@ -14154,6 +14269,8 @@
         state.uploadedFiles.nt = [];
         prepareNewTicket();
         syncAttachmentSubmitButtons('nt');
+      
+        try { syncRdNewTicketChrome(); } catch (_) { /* noop */ }
       }
 
       async function submitNewTicket() {
