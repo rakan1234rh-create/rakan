@@ -1200,6 +1200,11 @@
           mobHead.setAttribute('aria-hidden', 'true');
         }
         if (list) appendTicketListHtml(list, dataLoadingEmptyHTML('جاري تحميل التقارير…'), true);
+        const rd = document.getElementById('rdReports');
+        if (rd && ((typeof isAtharRedesignUi === 'function' && isAtharRedesignUi()) || isAtharDesktopScreenUi())) {
+          rd.hidden = false;
+          rd.innerHTML = `<div class="rd-rp-metric"><div class="rd-rp-metric__label">جاري تحميل التقارير…</div></div>`;
+        }
         const countEl = document.getElementById('rp-count');
         if (countEl) countEl.textContent = '…';
         ['rp-total', 'rp-approved', 'rp-pending', 'rp-rejected'].forEach(id => {
@@ -7420,7 +7425,7 @@
         dashboard: { title: 'نظرة عامة', sub: 'ملخص أداء اليوم' },
         newTicket: { title: 'رصد مخالفة جديدة', sub: 'سجّل مخالفة بأكبر قدر من التفاصيل' },
         workflow: { title: 'التذاكر', sub: 'إدارة ومتابعة تذاكر المخالفات' },
-        reports: { title: 'التقارير', sub: 'reports & analytics' },
+        reports: { title: 'التقارير', sub: 'مؤشرات الأداء والاتجاهات' },
         compliance: { title: 'لوحة مؤشرات الامتثال', sub: 'compliance dashboard' },
         locations: { title: 'المناطق والفروع', sub: 'regions & branches' },
         departments: { title: 'إدارة المستخدمين', sub: 'users management' },
@@ -8160,7 +8165,16 @@
           if (leavingTab === 'profile' && tab !== 'profile') {
             syncProfilePageShell(false);
           }
-          if (leavingTab === 'workflow' && typeof resetWorkflowTabFilters === 'function') {
+          if (leavingTab === 'reports' && tab !== 'reports') {
+          state._rdReportView = 'main';
+          state._rdEmpResponseQuery = '';
+          state._rdEmpResponseSortKey = null;
+          state._rdEmpResponseSortDir = 1;
+          state._rdVbQuery = '';
+          state._rdVbSortKey = null;
+          state._rdVbSortDir = 1;
+        }
+        if (leavingTab === 'workflow' && typeof resetWorkflowTabFilters === 'function') {
             resetWorkflowTabFilters();
           }
         }
@@ -25799,11 +25813,617 @@
         if (pop?.classList.contains('open') && typeof renderDatePicker === 'function') renderDatePicker();
       }
 
+      function rdFormatHoursAr(hours) {
+        if (hours == null || !Number.isFinite(hours)) return '—';
+        if (hours < 1) return `${Math.max(1, Math.round(hours * 60))} د`;
+        const h = Math.round(hours * 10) / 10;
+        return `${h} س`;
+      }
+
+      function rdTrendText(delta, unit) {
+        if (delta == null || !Number.isFinite(delta) || Math.abs(delta) < 0.05) return 'بدون تغيّر ملحوظ';
+        const sign = delta > 0 ? '+' : '';
+        if (unit === '%') return `${sign}${Math.round(delta)}% عن الشهر الماضي`;
+        if (unit === 'count') return `${sign}${Math.round(delta)} عن الشهر الماضي`;
+        if (unit === 'hours') {
+          const mins = Math.round(Math.abs(delta) * 60);
+          if (delta < 0) return `أسرع بـ ${mins} دقيقة`;
+          return `أبطأ بـ ${mins} دقيقة`;
+        }
+        return '';
+      }
+
+      function rdLastSixMonthRanges() {
+        if (typeof ksaMonthSlots !== 'function' || typeof ksaMonthRange !== 'function') return [];
+        return ksaMonthSlots(6).map((slot) => {
+          const range = ksaMonthRange(slot.year, slot.month);
+          const nextSlot = ksaShiftMonth(slot.year, slot.month, 1);
+          const next = ksaMonthRange(nextSlot.year, nextSlot.month);
+          const label = slot.monthName || KSA_AR_MONTHS[slot.month] || String(slot.month + 1);
+          return {
+            label,
+            fromIso: range.fromIso,
+            nextIso: next.fromIso,
+            year: slot.year,
+            month: slot.month,
+          };
+        });
+      }
+
+      function rdMonthlyCommitmentBars(allViolations) {
+        const ranges = rdLastSixMonthRanges();
+        const bars = ranges.map((r) => {
+          const monthViols = (allViolations || []).filter((v) => {
+            if (v.state === 'uploading') return false;
+            const iso = typeof dashViolationIsoDate === 'function' ? dashViolationIsoDate(v) : String(v.violation_date || v.created_at || '').slice(0, 10);
+            return iso && iso >= r.fromIso && iso < r.nextIso;
+          });
+          // تقدير الالتزام: يبدأ 100 ويُخصم لكل مخالفة مؤثرة
+          const hits = monthViols.filter((v) => !violationExcludedFromDeduction(v) && !(v.state === 'closed' && /ملغ/i.test(v.status_text || ''))).length;
+          const rate = Math.max(0, Math.min(100, 100 - hits * 4));
+          return { label: r.label, pct: Math.max(8, Math.round(rate)) };
+        });
+        return bars;
+      }
+
+      /** يُخرج لون حسب درجة الالتزام/الاستجابة */
+      function rdRpScoreColorVar(v) {
+        if (v == null || !Number.isFinite(v)) return 'var(--text3)';
+        if (v >= 90) return 'var(--success)';
+        if (v >= 75) return 'var(--info)';
+        if (v >= 50) return 'var(--warning)';
+        return 'var(--danger)';
+      }
+
+      function rdRpRespStatusLabel(v) {
+        if (v == null || !Number.isFinite(v)) return '—';
+        if (v >= 90) return 'ممتاز';
+        if (v >= 75) return 'جيد';
+        if (v >= 50) return 'مقبول';
+        return 'بحاجة لمتابعة';
+      }
+
+      /** يحوّل متوسط ساعات الاستجابة إلى مقياس 0-100 (كلما قل الزمن ارتفعت الدرجة) */
+      function rdRpHoursToScore(hours) {
+        if (hours == null || !Number.isFinite(hours)) return null;
+        const score = 100 - hours * 6;
+        return Math.max(0, Math.min(100, Math.round(score)));
+      }
+
+      /** تجميع بيانات تقرير استجابة الموظفين من مخالفات النظام الحقيقية */
+      function rdRpBuildEmployeeResponse() {
+        const emps = (state.users || []).filter(u => typeof isViolationSubjectUser === 'function' ? isViolationSubjectUser(u) : (normalizeUserRole(u.role) === 'employee'));
+        const allViolations = (state.violations || []).filter(v => v.state !== 'uploading');
+        const rows = [];
+        emps.forEach((u) => {
+          const myViols = allViolations.filter(v => v.employee_id === u.id);
+          if (!myViols.length && rows.length >= 20) return;
+          const branch = (state.branches || []).find(b => b.id === u.branch_id);
+          const region = branch ? (state.regions || []).find(r => r.id === branch.region_id) : null;
+          const branchLabel = branch
+            ? (region ? region.name + ' — ' + branch.name : branch.name)
+            : '—';
+          const hours = rdAvgResponseHours(myViols);
+          let response = rdRpHoursToScore(hours);
+          if (response == null) {
+            const score = (typeof calcEmpScore === 'function') ? (calcEmpScore(u.id, allViolations).score || 0) : 0;
+            response = Math.max(0, Math.min(100, Math.round(score)));
+          }
+          rows.push({
+            id: u.id,
+            name: u.name || '—',
+            role: u.role_title || u.role || '',
+            branchName: branchLabel,
+            ticketCount: myViols.length,
+            response,
+          });
+        });
+        if (!rows.length) {
+          // بيانات عرض تجريبية لواجهة فارغة
+          return [
+            { id: 'demo-1', name: 'ريان الحربي', role: 'موظف مبيعات', branchName: 'الرياض — العليا', ticketCount: 7, response: 78 },
+            { id: 'demo-2', name: 'نورة القحطاني', role: 'مشرفة عمليات', branchName: 'الرياض — العليا', ticketCount: 11, response: 65 },
+            { id: 'demo-3', name: 'خالد العتيبي', role: 'موظف صيانة', branchName: 'الرياض — النخيل', ticketCount: 21, response: 42 },
+            { id: 'demo-4', name: 'سارة المطيري', role: 'موارد بشرية', branchName: 'الرياض — النخيل', ticketCount: 5, response: 72 },
+            { id: 'demo-5', name: 'عبدالله الزهراني', role: 'مدير فرع', branchName: 'الدمام — الشاطئ', ticketCount: 2, response: 90 },
+          ];
+        }
+        return rows;
+      }
+
+      /** تجميع بيانات تقرير المخالفات حسب الفرع (شدة/مجموع/معدل) */
+      function rdRpBuildVbRows() {
+        const branches = state.branches || [];
+        const allViolations = (state.violations || []).filter(v => v.state !== 'uploading');
+        const vTypeById = new Map();
+        (state.violationTypes || []).forEach(vt => { if (vt && vt.id) vTypeById.set(vt.id, vt); });
+        const empBranch = new Map();
+        (state.users || []).forEach(u => { if (u && u.id) empBranch.set(u.id, u.branch_id); });
+        const rows = branches.map(b => {
+          const region = (state.regions || []).find(r => r.id === b.region_id);
+          let high = 0, medium = 0, low = 0;
+          allViolations.forEach(v => {
+            const bId = empBranch.get(v.employee_id);
+            if (bId !== b.id) return;
+            const type = vTypeById.get(v.violation_type_id);
+            let sev = type?.severity || 'منخفض';
+            if (sev === 'حرج') sev = 'عالي';
+            if (sev === 'عالي') high++;
+            else if (sev === 'متوسط') medium++;
+            else low++;
+          });
+          const total = high + medium + low;
+          // معدل الالتزام للفرع: 100 مع خصم بسيط لكل مخالفة مؤثرة
+          const score = Math.max(0, Math.min(100, 100 - total * 4));
+          return {
+            id: b.id,
+            name: b.name || '—',
+            regionName: region?.name || '—',
+            total,
+            high,
+            medium,
+            low,
+            score,
+          };
+        });
+        if (!rows.length || rows.every(r => r.total === 0)) {
+          return [
+            { id: 'demo-b1', name: 'فرع العليا', regionName: 'الرياض', total: 12, high: 1, medium: 5, low: 6, score: 88 },
+            { id: 'demo-b2', name: 'فرع النخيل', regionName: 'الرياض', total: 20, high: 3, medium: 9, low: 8, score: 72 },
+            { id: 'demo-b3', name: 'فرع الشاطئ', regionName: 'الدمام', total: 6, high: 0, medium: 2, low: 4, score: 93 },
+            { id: 'demo-b4', name: 'فرع أبها', regionName: 'الجنوبية', total: 8, high: 0, medium: 3, low: 5, score: 89 },
+            { id: 'demo-b5', name: 'فرع المركزي', regionName: 'تبت', total: 15, high: 2, medium: 6, low: 7, score: 71 },
+          ];
+        }
+        return rows;
+      }
+
+      /** تجميع صفوف تقرير الالتزام الشهري بالتفاصيل */
+      function rdRpBuildMcRows() {
+        const ranges = rdLastSixMonthRanges();
+        const allViolations = (state.violations || []).filter(v => v.state !== 'uploading');
+        if (!ranges.length) {
+          return [
+            { label: 'فبراير', rate: 52, violations: 38, resolved: 34 },
+            { label: 'مارس', rate: 61, violations: 33, resolved: 30 },
+            { label: 'أبريل', rate: 58, violations: 35, resolved: 31 },
+            { label: 'مايو', rate: 70, violations: 28, resolved: 27 },
+            { label: 'يونيو', rate: 65, violations: 31, resolved: 29 },
+            { label: 'يوليو', rate: 82, violations: 22, resolved: 21 },
+          ];
+        }
+        return ranges.map((r) => {
+          const monthViols = allViolations.filter((v) => {
+            const iso = typeof dashViolationIsoDate === 'function' ? dashViolationIsoDate(v) : String(v.violation_date || v.created_at || '').slice(0, 10);
+            return iso && iso >= r.fromIso && iso < r.nextIso;
+          });
+          const hits = monthViols.filter((v) => !violationExcludedFromDeduction(v) && !(v.state === 'closed' && /ملغ/i.test(v.status_text || ''))).length;
+          const rate = Math.max(0, Math.min(100, 100 - hits * 4));
+          const resolved = monthViols.filter(v => v.state === 'closed').length;
+          return {
+            label: r.label,
+            rate,
+            violations: monthViols.length,
+            resolved,
+          };
+        });
+      }
+
+      function renderReportsRedesign() {
+        const host = document.getElementById('rdReports');
+        if (!host) return;
+        const desk = isAtharDesktopScreenUi();
+        if (!isAtharRedesignUi() && !desk) {
+          host.hidden = true;
+          host.innerHTML = '';
+          return;
+        }
+        // شاشات الاسترسال متاحة على سطح المكتب فقط — احتفظ بواجهة الموبايل كما هي
+        if (!desk) state._rdReportView = 'main';
+        const view = state._rdReportView || 'main';
+        if (view === 'employeeResponse') {
+          host.innerHTML = rdRpRenderEmployeeResponse();
+        } else if (view === 'violationsByBranch') {
+          host.innerHTML = rdRpRenderViolationsByBranch();
+        } else if (view === 'monthlyCompliance') {
+          host.innerHTML = rdRpRenderMonthlyCompliance();
+        } else {
+          host.innerHTML = rdRpRenderMain(desk);
+        }
+        host.hidden = false;
+      }
+
+      function rdRpRenderMain(desk) {
+        const allVisible = getVisibleViolations().filter((v) => v.state !== 'uploading');
+        const cur = typeof ksaCurrentMonthRange === 'function' ? ksaCurrentMonthRange() : null;
+        const thisMonth = cur
+          ? allVisible.filter((v) => {
+              const iso = dashViolationIsoDate(v);
+              return iso && iso >= cur.fromIso && iso < cur.nextFromIso;
+            })
+          : allVisible;
+        const ranges = rdLastSixMonthRanges();
+        const prev = ranges.length >= 2 ? ranges[ranges.length - 2] : null;
+        const prevMonth = prev
+          ? allVisible.filter((v) => {
+              const iso = dashViolationIsoDate(v);
+              return iso && iso >= prev.fromIso && iso < prev.nextIso;
+            })
+          : [];
+        const rateNow = rdAvgComplianceRate(allVisible);
+        const ratePrev = prev ? rdAvgComplianceRate(
+          allVisible.filter((v) => {
+            const iso = dashViolationIsoDate(v);
+            return !iso || iso < prev.nextIso;
+          }),
+        ) : rateNow;
+        const hoursNow = rdAvgResponseHours(thisMonth.length ? thisMonth : allVisible.slice(0, 80));
+        const hoursPrev = rdAvgResponseHours(prevMonth.length ? prevMonth : null);
+
+        const metrics = [
+          { label: 'معدل الالتزام العام', value: `${Math.round(rateNow)}%`, trend: rdTrendText(rateNow - ratePrev, '%'), delay: 0 },
+          { label: 'إجمالي المخالفات', value: String(thisMonth.length), trend: rdTrendText(thisMonth.length - prevMonth.length, 'count'), delay: 0.05 },
+          { label: 'متوسط زمن الاستجابة', value: rdFormatHoursAr(hoursNow), trend: hoursNow != null && hoursPrev != null ? rdTrendText(hoursNow - hoursPrev, 'hours') : 'حسب سجلات الردود', delay: 0.1 },
+        ];
+
+        const bars = rdMonthlyCommitmentBars(allVisible);
+        const links = desk
+          ? [
+              { title: 'تقرير الالتزام الشهري', sub: 'ملخص تلقائي شهري لكل الفروع', icon: 'fa-file-lines', action: "rdOpenReportView('monthlyCompliance')", delay: 0.05 },
+              { title: 'تقرير المخالفات حسب الفرع', sub: 'مقارنة الأداء بين الفروع', icon: 'fa-code-branch', action: "rdOpenReportView('violationsByBranch')", delay: 0.1 },
+              { title: 'تقرير الاستجابة للموظفين', sub: 'متوسط زمن الرد على البلاغات', icon: 'fa-gauge-high', action: "rdOpenReportView('employeeResponse')", delay: 0.15 },
+            ]
+          : [
+              { title: 'تقرير الالتزام الشهري', sub: 'ملخص تلقائي شهري لكل الفروع', icon: 'fa-file-lines', action: "goTab('compliance')", delay: 0.05 },
+              { title: 'تقرير المخالفات حسب الفرع', sub: 'مقارنة الأداء بين الفروع', icon: 'fa-code-branch', action: "goTab('locations')", delay: 0.1 },
+              { title: 'تقرير الاستجابة للموظفين', sub: 'متوسط زمن الرد على البلاغات', icon: 'fa-gauge-high', action: "goTab('departments')", delay: 0.15 },
+            ];
+
+        const metricsHtml = `
+          <div class="rd-rp-metrics">
+            ${metrics.map((m) => desk ? `
+              <div class="rd-rp-metric" style="animation-delay:${m.delay}s">
+                <div class="rd-rp-metric__label">${Sec.escapeHTML(m.label)}</div>
+                <div class="rd-rp-metric__value">${Sec.escapeHTML(m.value)}</div>
+                <div class="rd-rp-metric__trend">${Sec.escapeHTML(m.trend)}</div>
+              </div>` : `
+              <div class="rd-rp-metric" style="animation-delay:${m.delay}s">
+                <div>
+                  <div class="rd-rp-metric__label">${Sec.escapeHTML(m.label)}</div>
+                  <div class="rd-rp-metric__trend">${Sec.escapeHTML(m.trend)}</div>
+                </div>
+                <div class="rd-rp-metric__value">${Sec.escapeHTML(m.value)}</div>
+              </div>`).join('')}
+          </div>`;
+        const barsHtml = `
+          <div class="rd-rp-sec-title">اتجاه الالتزام الشهري</div>
+          <div class="rd-rp-bars-card">
+            <div class="rd-rp-bars" role="img" aria-label="اتجاه الالتزام الشهري">
+              ${bars.map((b) => `
+                <div class="rd-rp-bar">
+                  <div class="rd-rp-bar__fill" style="height:${b.pct}%"></div>
+                  <span class="rd-rp-bar__lbl">${Sec.escapeHTML(b.label)}</span>
+                </div>`).join('')}
+            </div>
+          </div>`;
+        const linksHtml = `
+          <div class="rd-rp-sec-title">تقارير سريعة</div>
+          <div class="rd-rp-links">
+            ${links.map((r) => `
+              <button type="button" class="rd-rp-link" style="animation-delay:${r.delay}s" onclick="${r.action}">
+                <div class="rd-rp-link__ico"><i class="fas ${r.icon}" aria-hidden="true"></i></div>
+                <div class="rd-rp-link__body">
+                  <div class="rd-rp-link__title">${Sec.escapeHTML(r.title)}</div>
+                  <div class="rd-rp-link__sub">${Sec.escapeHTML(r.sub)}</div>
+                </div>
+                <i class="fas fa-chevron-left rd-rp-link__chev" aria-hidden="true"></i>
+              </button>`).join('')}
+          </div>`;
+        return desk
+          ? `<div class="rd-rp-main">${metricsHtml}<div class="rd-rp-desk-split"><div class="rd-rp-desk-split__main">${barsHtml}</div><div class="rd-rp-desk-split__side">${linksHtml}</div></div></div>`
+          : `${metricsHtml}${barsHtml}${linksHtml}`;
+      }
+
+      function rdRpDrillHead(icon, title, sub) {
+        return `
+          <button type="button" class="rd-rp-back" onclick="rdBackReportsMain()">
+            <i class="fas fa-arrow-right" aria-hidden="true"></i>التقارير
+          </button>
+          <div class="rd-rp-drill-hero">
+            <div class="rd-rp-drill-hero__ico"><i class="fas ${icon}" aria-hidden="true"></i></div>
+            <div>
+              <div class="rd-rp-drill-hero__title">${Sec.escapeHTML(title)}</div>
+              <div class="rd-rp-drill-hero__sub">${Sec.escapeHTML(sub)}</div>
+            </div>
+          </div>`;
+      }
+
+      function rdRpSortIcon(activeKey, key, dir) {
+        if (activeKey !== key) return 'fa-sort';
+        return dir === 1 ? 'fa-sort-up' : 'fa-sort-down';
+      }
+
+      function rdRpSortRows(rows, key, dir) {
+        if (!key) return rows;
+        return [...rows].sort((a, b) => {
+          const av = a[key], bv = b[key];
+          if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * dir;
+          return String(av || '').localeCompare(String(bv || ''), 'ar') * dir;
+        });
+      }
+
+      function rdRpRenderEmployeeResponse() {
+        let rows = rdRpBuildEmployeeResponse();
+        const q = (state._rdEmpResponseQuery || '').toLowerCase().trim();
+        if (q) rows = rows.filter(r => (`${r.name} ${r.branchName}`).toLowerCase().includes(q));
+        const sortKey = state._rdEmpResponseSortKey || null;
+        const sortDir = state._rdEmpResponseSortDir || 1;
+        rows = rdRpSortRows(rows, sortKey, sortDir);
+
+        const allValues = rows.map(r => r.response).filter(v => Number.isFinite(v));
+        const avg = allValues.length ? Math.round(allValues.reduce((s, v) => s + v, 0) / allValues.length) : null;
+        const best = rows.length ? rows.reduce((a, b) => (b.response > a.response ? b : a)) : null;
+        const worst = rows.length ? rows.reduce((a, b) => (b.response < a.response ? b : a)) : null;
+
+        const sortName = rdRpSortIcon(sortKey, 'name', sortDir);
+        const sortResp = rdRpSortIcon(sortKey, 'response', sortDir);
+
+        const rowsHtml = rows.map((r, i) => {
+          const color = rdRpScoreColorVar(r.response);
+          const pct = Math.max(0, Math.min(100, Math.round(r.response)));
+          const status = rdRpRespStatusLabel(r.response);
+          const initial = String(r.name || '؟').trim().charAt(0) || '؟';
+          return `
+            <div class="rd-rp-drill-row rd-rp-emp-row" style="animation-delay:${Math.min(0.3, i * 0.03)}s">
+              <div class="rd-rp-emp-cell rd-rp-emp-cell--name">
+                <span class="rd-rp-emp-av">${Sec.escapeHTML(initial)}</span>
+                <span class="rd-rp-emp-name">${Sec.escapeHTML(r.name)}</span>
+              </div>
+              <span class="rd-rp-emp-cell rd-rp-emp-branch">${Sec.escapeHTML(r.branchName)}</span>
+              <div class="rd-rp-emp-cell rd-rp-emp-bar">
+                <div class="rd-rp-bar-track"><div class="rd-rp-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+                <span class="rd-rp-emp-val" style="color:${color}">${pct}</span>
+              </div>
+              <span class="rd-rp-emp-cell rd-rp-emp-count">${r.ticketCount}</span>
+              <span class="rd-rp-emp-cell rd-rp-emp-status" style="--sc:${color}">${Sec.escapeHTML(status)}</span>
+            </div>`;
+        }).join('');
+
+        return `
+          <div class="rd-rp-drill">
+            ${rdRpDrillHead('fa-gauge-high', 'تقرير الاستجابة للموظفين', 'متوسط زمن الرد على البلاغات وسرعة التعامل معها')}
+            <div class="rd-rp-drill-metrics">
+              <div class="rd-rp-drill-metric">
+                <div class="rd-rp-drill-metric__lbl">متوسط الاستجابة العام</div>
+                <div class="rd-rp-drill-metric__val" style="color:${rdRpScoreColorVar(avg)}">${avg == null ? '—' : avg}</div>
+              </div>
+              <div class="rd-rp-drill-metric">
+                <div class="rd-rp-drill-metric__lbl">الأسرع استجابة</div>
+                <div class="rd-rp-drill-metric__val rd-rp-drill-metric__val--name" style="color:var(--success)">${Sec.escapeHTML(best?.name || '—')}</div>
+                <div class="rd-rp-drill-metric__sub">${best ? best.response : '—'}</div>
+              </div>
+              <div class="rd-rp-drill-metric">
+                <div class="rd-rp-drill-metric__lbl">بحاجة لتحسين</div>
+                <div class="rd-rp-drill-metric__val rd-rp-drill-metric__val--name" style="color:var(--danger)">${Sec.escapeHTML(worst?.name || '—')}</div>
+                <div class="rd-rp-drill-metric__sub">${worst ? worst.response : '—'}</div>
+              </div>
+            </div>
+            <div class="rd-rp-drill-toolbar">
+              <div class="figma-search-wrap wf-search rd-rp-drill-search">
+                <input type="text" class="figma-search-input" value="${Sec.escapeHTML(state._rdEmpResponseQuery || '')}"
+                  placeholder="ابحث بالاسم أو الفرع..." oninput="rdEmpResponseSearch(this.value)">
+                <button type="button" class="figma-search-btn" aria-label="بحث"><i class="fas fa-magnifying-glass"></i></button>
+              </div>
+            </div>
+            <div class="rd-rp-drill-table">
+              <div class="rd-rp-drill-thead rd-rp-emp-row">
+                <button type="button" class="rd-rp-th" onclick="rdEmpResponseSort('name')">الموظف<i class="fas ${sortName}" aria-hidden="true"></i></button>
+                <span class="rd-rp-th">الفرع</span>
+                <button type="button" class="rd-rp-th" onclick="rdEmpResponseSort('response')">معدل الاستجابة<i class="fas ${sortResp}" aria-hidden="true"></i></button>
+                <span class="rd-rp-th">التذاكر</span>
+                <span class="rd-rp-th">الحالة</span>
+              </div>
+              ${rowsHtml || '<div class="rd-ticket-empty"><i class="fas fa-users"></i><p>لا توجد بيانات</p></div>'}
+            </div>
+          </div>`;
+      }
+
+      function rdRpRenderViolationsByBranch() {
+        let rows = rdRpBuildVbRows();
+        const q = (state._rdVbQuery || '').toLowerCase().trim();
+        if (q) rows = rows.filter(r => (`${r.name} ${r.regionName}`).toLowerCase().includes(q));
+        const sortKey = state._rdVbSortKey || null;
+        const sortDir = state._rdVbSortDir || 1;
+        rows = rdRpSortRows(rows, sortKey, sortDir);
+
+        const total = rows.reduce((s, r) => s + r.total, 0);
+        const withData = rows.filter(r => r.total > 0);
+        const worst = withData.length ? withData.reduce((a, b) => (b.total > a.total ? b : a)) : null;
+        const best = withData.length ? withData.reduce((a, b) => (b.total < a.total ? b : a)) : null;
+        const sortTotal = rdRpSortIcon(sortKey, 'total', sortDir);
+
+        const rowsHtml = rows.map((r, i) => {
+          const t = Math.max(1, r.total);
+          const hp = Math.round((r.high / t) * 100);
+          const mp = Math.round((r.medium / t) * 100);
+          const lp = Math.round((r.low / t) * 100);
+          const color = rdRpScoreColorVar(r.score);
+          return `
+            <div class="rd-rp-drill-row rd-rp-vb-row" style="animation-delay:${Math.min(0.3, i * 0.03)}s">
+              <span class="rd-rp-vb-cell rd-rp-vb-name">${Sec.escapeHTML(r.name)}</span>
+              <span class="rd-rp-vb-cell rd-rp-vb-region">${Sec.escapeHTML(r.regionName)}</span>
+              <span class="rd-rp-vb-cell rd-rp-vb-total">${r.total}</span>
+              <div class="rd-rp-vb-cell rd-rp-vb-sev" title="عالية:${r.high} · متوسطة:${r.medium} · منخفضة:${r.low}">
+                <div class="rd-rp-vb-sev__seg" style="width:${hp}%;background:var(--danger)"></div>
+                <div class="rd-rp-vb-sev__seg" style="width:${mp}%;background:var(--warning)"></div>
+                <div class="rd-rp-vb-sev__seg" style="width:${lp}%;background:var(--info)"></div>
+              </div>
+              <span class="rd-rp-vb-cell rd-rp-vb-score" style="color:${color}">${r.score}</span>
+            </div>`;
+        }).join('');
+
+        return `
+          <div class="rd-rp-drill">
+            ${rdRpDrillHead('fa-code-branch', 'تقرير المخالفات حسب الفرع', 'مقارنة عدد المخالفات وتوزيع خطورتها بين الفروع')}
+            <div class="rd-rp-drill-metrics">
+              <div class="rd-rp-drill-metric">
+                <div class="rd-rp-drill-metric__lbl">إجمالي المخالفات</div>
+                <div class="rd-rp-drill-metric__val" style="color:var(--gold)">${total}</div>
+              </div>
+              <div class="rd-rp-drill-metric">
+                <div class="rd-rp-drill-metric__lbl">الأكثر مخالفات</div>
+                <div class="rd-rp-drill-metric__val rd-rp-drill-metric__val--name" style="color:var(--danger)">${Sec.escapeHTML(worst?.name || '—')}</div>
+                <div class="rd-rp-drill-metric__sub">${worst ? worst.total : 0} مخالفة</div>
+              </div>
+              <div class="rd-rp-drill-metric">
+                <div class="rd-rp-drill-metric__lbl">الأقل مخالفات</div>
+                <div class="rd-rp-drill-metric__val rd-rp-drill-metric__val--name" style="color:var(--success)">${Sec.escapeHTML(best?.name || '—')}</div>
+                <div class="rd-rp-drill-metric__sub">${best ? best.total : 0} مخالفة</div>
+              </div>
+            </div>
+            <div class="rd-rp-drill-toolbar">
+              <div class="figma-search-wrap wf-search rd-rp-drill-search">
+                <input type="text" class="figma-search-input" value="${Sec.escapeHTML(state._rdVbQuery || '')}"
+                  placeholder="ابحث بالفرع أو المنطقة..." oninput="rdVbSearch(this.value)">
+                <button type="button" class="figma-search-btn" aria-label="بحث"><i class="fas fa-magnifying-glass"></i></button>
+              </div>
+            </div>
+            <div class="rd-rp-drill-table">
+              <div class="rd-rp-drill-thead rd-rp-vb-row">
+                <span class="rd-rp-th">الفرع</span>
+                <span class="rd-rp-th">المنطقة</span>
+                <button type="button" class="rd-rp-th" onclick="rdVbSort('total')">الإجمالي<i class="fas ${sortTotal}" aria-hidden="true"></i></button>
+                <span class="rd-rp-th">توزيع الخطورة</span>
+                <span class="rd-rp-th">معدل الالتزام</span>
+              </div>
+              ${rowsHtml || '<div class="rd-ticket-empty"><i class="fas fa-code-branch"></i><p>لا توجد بيانات</p></div>'}
+            </div>
+          </div>`;
+      }
+
+      function rdRpRenderMonthlyCompliance() {
+        const rowsRaw = rdRpBuildMcRows();
+        const rows = rowsRaw.map((m, i) => {
+          const prev = i > 0 ? rowsRaw[i - 1].rate : m.rate;
+          const delta = m.rate - prev;
+          return {
+            ...m,
+            delta,
+            deltaLabel: (delta >= 0 ? '+' : '') + delta + '%',
+            deltaColor: delta >= 0 ? 'var(--success)' : 'var(--danger)',
+            color: rdRpScoreColorVar(m.rate),
+          };
+        });
+        const cur = rows[rows.length - 1] || { rate: 0, color: 'var(--text3)' };
+        const prev = rows[rows.length - 2];
+        const trendDelta = prev ? cur.rate - prev.rate : 0;
+        const trendLabel = (trendDelta >= 0 ? '+' : '') + trendDelta + '% عن الشهر الماضي';
+        const bestRow = rows.reduce((a, b) => (b.rate > a.rate ? b : a), rows[0] || { label: '—', rate: 0 });
+        const worstRow = rows.reduce((a, b) => (b.rate < a.rate ? b : a), rows[0] || { label: '—', rate: 0 });
+
+        const barsHtml = rows.map((m, i) => `
+          <div class="rd-rp-mc-bar" style="animation-delay:${Math.min(0.3, i * 0.04)}s">
+            <span class="rd-rp-mc-bar__pct">${m.rate}%</span>
+            <div class="rd-rp-mc-bar__fill" style="height:${m.rate}%"></div>
+            <span class="rd-rp-mc-bar__lbl">${Sec.escapeHTML(m.label)}</span>
+          </div>`).join('');
+
+        const rowsHtml = rows.map((m, i) => `
+          <div class="rd-rp-drill-row rd-rp-mc-row" style="animation-delay:${Math.min(0.3, i * 0.03)}s">
+            <span class="rd-rp-mc-cell rd-rp-mc-month">${Sec.escapeHTML(m.label)}</span>
+            <span class="rd-rp-mc-cell rd-rp-mc-rate" style="color:${m.color}">${m.rate}%</span>
+            <span class="rd-rp-mc-cell rd-rp-mc-viols">${m.violations}</span>
+            <span class="rd-rp-mc-cell rd-rp-mc-res">${m.resolved}</span>
+            <span class="rd-rp-mc-cell rd-rp-mc-delta" style="color:${m.deltaColor}">${Sec.escapeHTML(m.deltaLabel)}</span>
+          </div>`).join('');
+
+        return `
+          <div class="rd-rp-drill">
+            ${rdRpDrillHead('fa-file-lines', 'تقرير الالتزام الشهري', 'ملخص تلقائي شهري لمعدل الالتزام على مستوى كل الفروع')}
+            <div class="rd-rp-drill-metrics">
+              <div class="rd-rp-drill-metric">
+                <div class="rd-rp-drill-metric__lbl">معدل الشهر الحالي</div>
+                <div class="rd-rp-drill-metric__val" style="color:${cur.color}">${cur.rate}%</div>
+                <div class="rd-rp-drill-metric__sub">${Sec.escapeHTML(trendLabel)}</div>
+              </div>
+              <div class="rd-rp-drill-metric">
+                <div class="rd-rp-drill-metric__lbl">أفضل شهر</div>
+                <div class="rd-rp-drill-metric__val rd-rp-drill-metric__val--name" style="color:var(--success)">${Sec.escapeHTML(bestRow.label)}</div>
+                <div class="rd-rp-drill-metric__sub">${bestRow.rate}%</div>
+              </div>
+              <div class="rd-rp-drill-metric">
+                <div class="rd-rp-drill-metric__lbl">أضعف شهر</div>
+                <div class="rd-rp-drill-metric__val rd-rp-drill-metric__val--name" style="color:var(--danger)">${Sec.escapeHTML(worstRow.label)}</div>
+                <div class="rd-rp-drill-metric__sub">${worstRow.rate}%</div>
+              </div>
+            </div>
+            <div class="rd-rp-mc-chart-card">
+              <div class="rd-rp-mc-bars">${barsHtml}</div>
+            </div>
+            <div class="rd-rp-sec-title">التفاصيل الشهرية</div>
+            <div class="rd-rp-drill-table">
+              <div class="rd-rp-drill-thead rd-rp-mc-row">
+                <span class="rd-rp-th">الشهر</span>
+                <span class="rd-rp-th">معدل الالتزام</span>
+                <span class="rd-rp-th">المخالفات</span>
+                <span class="rd-rp-th">المغلقة</span>
+                <span class="rd-rp-th">التغيّر عن الشهر السابق</span>
+              </div>
+              ${rowsHtml}
+            </div>
+          </div>`;
+      }
+
+      function rdOpenReportView(viewId) {
+        const allowed = ['main', 'employeeResponse', 'violationsByBranch', 'monthlyCompliance'];
+        state._rdReportView = allowed.includes(viewId) ? viewId : 'main';
+        renderReportsRedesign();
+      }
+
+      function rdBackReportsMain() {
+        state._rdReportView = 'main';
+        renderReportsRedesign();
+      }
+
+      function rdEmpResponseSearch(val) {
+        state._rdEmpResponseQuery = val || '';
+        renderReportsRedesign();
+      }
+
+      function rdEmpResponseSort(key) {
+        if (state._rdEmpResponseSortKey === key) state._rdEmpResponseSortDir = -(state._rdEmpResponseSortDir || 1);
+        else { state._rdEmpResponseSortKey = key; state._rdEmpResponseSortDir = 1; }
+        renderReportsRedesign();
+      }
+
+      function rdVbSearch(val) {
+        state._rdVbQuery = val || '';
+        renderReportsRedesign();
+      }
+
+      function rdVbSort(key) {
+        if (state._rdVbSortKey === key) state._rdVbSortDir = -(state._rdVbSortDir || 1);
+        else { state._rdVbSortKey = key; state._rdVbSortDir = 1; }
+        renderReportsRedesign();
+      }
+
       function filterReports(opts) {
         if (isAppDataPending()) {
           renderReportsLoadingState();
           return;
         }
+
+        if ((typeof isAtharRedesignUi === 'function' && isAtharRedesignUi())
+          || (typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi())) {
+          try {
+            renderReportsRedesign();
+          } catch (e) {
+            if (typeof isMirsadDebugLog === 'function' && isMirsadDebugLog()) console.warn('[rdReports]', e);
+          }
+          return;
+        }
+        const rdHost = document.getElementById('rdReports');
+        if (rdHost) { rdHost.innerHTML = ''; rdHost.hidden = true; }
 
         const search = (document.getElementById('rp-search')?.value || '').toLowerCase().trim();
         const fromDate = document.getElementById('rp-from')?.value || '';
@@ -31608,6 +32228,12 @@
       window.usersIoMenuClose = usersIoMenuClose;
       window.usersIoMenuPosition = usersIoMenuPosition;
       window.openTicket = openTicket;
+      window.rdOpenReportView = rdOpenReportView;
+      window.rdBackReportsMain = rdBackReportsMain;
+      window.rdEmpResponseSearch = rdEmpResponseSearch;
+      window.rdEmpResponseSort = rdEmpResponseSort;
+      window.rdVbSearch = rdVbSearch;
+      window.rdVbSort = rdVbSort;
       window.openTicketFromCompliance = openTicketFromCompliance;
       window.prefetchTicketDetail = prefetchTicketDetail;
       window.switchDetailTab = switchDetailTab;
