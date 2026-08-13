@@ -1,0 +1,449 @@
+/* ATHAR Production — أنواع المخالفات / violations guide (desktop) */
+
+html.athar-staging-redesign.mr-desktop-ui #appWrap #tab-violations.tab-content.active {
+  padding: 24px !important;
+}
+html.athar-staging-redesign.mr-desktop-ui #tab-violations > .panel,
+html.athar-staging-redesign.mr-desktop-ui #tab-violations .wf-panel {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+html.athar-staging-redesign.mr-desktop-ui #tab-violations .wf-panel-intro,
+html.athar-staging-redesign.mr-desktop-ui #tab-violations .viol-types-meta-row,
+html.athar-staging-redesign.mr-desktop-ui #tab-violations .viol-types-meta-row .wf-count {
+  display: none !important;
+}
+
+@keyframes atharRdFadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes atharRdCardIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── base .rd-viol-* ── */
+
+/* ═══ Violations — grouped دليل المخالفات ═══ */
+html.athar-staging-redesign.mr-mobile-ui #tab-violations .panel.wf-panel {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-violations .wf-panel-banner {
+  padding: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-violations .wf-panel-sub,
+html.athar-staging-redesign.mr-mobile-ui #tab-violations .viol-types-meta-row .wf-count {
+  display: none !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-violations .viol-types-meta-row {
+  display: flex !important;
+  justify-content: flex-end !important;
+  margin: -4px 0 12px !important;
+  padding: 0 !important;
+  border: none !important;
+  background: transparent !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-violations .viol-types-toolbar {
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-violations #violTypesAddBtn {
+  height: 36px !important;
+  border-radius: 10px !important;
+  padding: 0 12px !important;
+  font-size: 12px !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-violations #violDeskHost,
+html.athar-staging-redesign.mr-mobile-ui #tab-violations .mr-users-list-wrap {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  /* Keep flex scroll chain — do not force overflow:visible (breaks pan-y) */
+  overflow: hidden !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-violations #violGrid.rd-viol-list {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0 !important;
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
+  height: auto !important;
+  overflow-y: scroll !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
+  touch-action: pan-y !important;
+  overscroll-behavior-y: contain;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)) !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-violations #violGrid.rd-viol-list .rd-viol-group,
+html.athar-staging-redesign.mr-mobile-ui #tab-violations #violGrid.rd-viol-list .rd-viol-row,
+html.athar-staging-redesign.mr-mobile-ui #tab-violations #violGrid.rd-viol-list .rd-ticket-empty {
+  flex: 0 0 auto;
+  touch-action: pan-y;
+}
+
+.rd-viol-list {
+  animation: atharRdScreenIn 0.32s ease;
+}
+.rd-viol-group {
+  margin-bottom: 16px;
+  animation: atharRdCardIn 0.4s ease both;
+}
+.rd-viol-group__hd {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.rd-viol-group__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.rd-viol-group__label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+.rd-viol-group__card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+.rd-viol-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.rd-viol-row:last-child { border-bottom: none; }
+.rd-viol-row:active { opacity: 0.92; }
+.rd-viol-row__name {
+  font-size: 12.5px;
+  color: var(--text);
+  flex: 1;
+  min-width: 0;
+}
+.rd-viol-row__end {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.rd-viol-row__pts {
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.rd-viol-row__acts {
+  display: inline-flex;
+  gap: 4px;
+}
+.rd-viol-act {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  cursor: pointer;
+  padding: 0;
+}
+.rd-viol-act:last-child { color: var(--danger); }
+
+/* ── desktop board + desk menu ── */
+
+/* ΓöÇΓöÇ Violations / ╪»┘ä┘è┘ä ╪º┘ä┘à╪«╪º┘ä┘ü╪º╪¬ ΓÇö literal Athar Desktop mockup ΓöÇΓöÇ */
+html.athar-staging-redesign.mr-desktop-ui #tab-violations {
+  animation: atharRdScreenIn 0.3s ease !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-violations #violDeskHost.wf-desk-tickets-host,
+html.athar-staging-redesign.mr-desktop-ui #tab-violations .mr-users-list-wrap,
+html.athar-staging-redesign.mr-desktop-ui #tab-violations .wf-table-wrap {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  overflow: visible !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-violations .viol-types-meta-row {
+  display: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-violations #violGrid.rd-viol-list--desk {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 16px !important;
+  align-items: start !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  animation: atharRdFadeUp 0.3s ease !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-violations #violGrid.rd-viol-list--desk > .rd-viol-desk-tools {
+  grid-column: 1 / -1 !important;
+  display: flex !important;
+  justify-content: flex-end !important;
+  margin: 0 0 4px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-violations .rd-viol-desk-add {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 10px 16px !important;
+  border: none !important;
+  border-radius: 12px !important;
+  background: var(--gold) !important;
+  color: var(--onGold) !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  font-family: inherit !important;
+  cursor: pointer !important;
+  box-shadow: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-violations .rd-viol-desk-add i {
+  font-size: 12px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-violations #violGrid.rd-viol-list--desk > .rd-ticket-empty {
+  grid-column: 1 / -1 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-violations .rd-viol-group {
+  margin: 0 !important;
+  animation: atharRdCardIn 0.4s ease both !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-violations .rd-viol-group__hd {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  margin-bottom: 10px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-violations .rd-viol-group__dot {
+  width: 8px !important;
+  height: 8px !important;
+  border-radius: 50% !important;
+  flex-shrink: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-violations .rd-viol-group__label {
+  font-size: 13.5px !important;
+  font-weight: 700 !important;
+  color: var(--text) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-violations .rd-viol-group__card {
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 16px !important;
+  overflow: hidden !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-violations .rd-viol-row {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  padding: 13px 16px !important;
+  border: none !important;
+  border-bottom: 1px solid var(--border) !important;
+  background: transparent !important;
+  color: inherit !important;
+  font: inherit !important;
+  text-align: start !important;
+  width: 100% !important;
+  cursor: pointer !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  box-sizing: border-box !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-violations .rd-viol-row:last-child {
+  border-bottom: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-violations .rd-viol-row:hover {
+  background: color-mix(in srgb, var(--surface2) 55%, transparent) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-violations .rd-viol-row__name {
+  font-size: 12.5px !important;
+  color: var(--text) !important;
+  flex: 1 !important;
+  min-width: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-violations .rd-viol-row__end {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex-shrink: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-violations .rd-viol-row__pts {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  white-space: nowrap !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-violations .rd-viol-row__acts {
+  display: inline-flex !important;
+  align-items: center !important;
+  flex-shrink: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-menu {
+  position: relative !important;
+  display: inline-flex !important;
+  flex-shrink: 0 !important;
+  z-index: 1 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-menu.is-open {
+  z-index: 100 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-menu__btn {
+  width: auto !important;
+  min-width: 32px !important;
+  height: 28px !important;
+  padding: 0 10px !important;
+  border-radius: 8px !important;
+  border: 1px solid var(--border) !important;
+  background: transparent !important;
+  color: var(--text2) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  font-family: inherit !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-menu__btn i {
+  font-size: 13px !important;
+}
+
+/* ┘à╪┤╪¬╪▒┘â: ╪┤┘â┘ä ╪º┘ä┘é╪º╪ª┘à╪⌐ ┘ü┘é╪╖ ΓÇö ╪¿╪»┘ê┘å ╪¬┘à┘ê╪╢╪╣ */
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-menu__pop {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: stretch !important;
+  gap: 0 !important;
+  min-width: 0 !important;
+  width: max-content !important;
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 10px !important;
+  padding: 4px !important;
+  box-shadow: var(--shadow-md, 0 8px 24px rgba(0, 0, 0, 0.08)) !important;
+  overflow: visible !important;
+}
+
+/* ╪»╪º╪«┘ä ╪º┘ä╪«┘ä┘è╪⌐ ┘ü┘é╪╖ ΓÇö ┘ä╪º ┘è┘Å╪╖╪¿┘æ┘Ä┘é ╪╣┘ä┘ë ┘å╪│╪«╪⌐ portal ┘ü┘è body */
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-menu__pop:not(.rd-desk-menu__pop--portal) {
+  position: absolute !important;
+  top: calc(100% + 4px) !important;
+  left: 0 !important;
+  right: auto !important;
+  inset-inline: auto !important;
+  z-index: 200 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-menu__pop[hidden] {
+  display: none !important;
+}
+
+/* portal: ╪º┘ä╪¬┘à┘ê╪╢╪╣ ┘è╪ú╪¬┘è ┘à┘å JS ┘ü┘é╪╖ (fixed + top/left) ΓÇö ┘ä╪º ╪¬╪╢╪╣ inset ┘ç┘å╪º */
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-menu__pop--portal {
+  position: fixed !important;
+  margin: 0 !important;
+  z-index: 10050 !important;
+  transform: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-menu__item {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  width: auto !important;
+  flex: 0 0 auto !important;
+  padding: 7px 12px !important;
+  border: none !important;
+  border-radius: 8px !important;
+  background: transparent !important;
+  color: var(--text) !important;
+  font-size: 11.5px !important;
+  font-weight: 600 !important;
+  font-family: inherit !important;
+  cursor: pointer !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-menu__item + .rd-desk-menu__item {
+  border-inline-start: 1px solid var(--border) !important;
+  border-radius: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-menu__item:hover {
+  background: var(--surface2) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-menu__item i {
+  font-size: 11px !important;
+  width: 14px !important;
+  text-align: center !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-menu__item--danger {
+  color: var(--danger) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-viol-empty {
+  padding: 18px 16px !important;
+  font-size: 12px !important;
+  color: var(--text3) !important;
+  text-align: center !important;
+}
+
+@media (max-width: 1100px) {
+  html.athar-staging-redesign.mr-desktop-ui #tab-violations #violGrid.rd-viol-list--desk {
+    grid-template-columns: 1fr !important;
+  }
+}

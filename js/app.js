@@ -13076,41 +13076,211 @@
       </article>`;
       }
 
+      function rdDeskActMenuHTML(editOnClick, deleteOnClick, canEdit, canDelete) {
+        if (!canEdit && !canDelete) return '';
+        return `
+          <div class="rd-desk-menu" onclick="event.stopPropagation()">
+            <button type="button" class="rd-desk-menu__btn" aria-label="إجراءات" aria-expanded="false"
+              onclick="event.stopPropagation(); toggleRdDeskMenu(this)">
+              <i class="fas fa-ellipsis" aria-hidden="true"></i>
+            </button>
+            <div class="rd-desk-menu__pop" hidden>
+              ${canEdit ? `<button type="button" class="rd-desk-menu__item" onclick="closeAllRdActMenus(); ${editOnClick}"><i class="fas fa-pen" aria-hidden="true"></i>تعديل</button>` : ''}
+              ${canDelete ? `<button type="button" class="rd-desk-menu__item rd-desk-menu__item--danger" onclick="closeAllRdActMenus(); ${deleteOnClick}"><i class="fas fa-trash" aria-hidden="true"></i>حذف</button>` : ''}
+            </div>
+          </div>`;
+      }
+
+      function closeAllRdActMenus() {
+        document.querySelectorAll('.rd-desk-menu__pop--portal').forEach((el) => el.remove());
+        document.querySelectorAll('.rd-loc-menu__pop, .rd-desk-menu__pop').forEach((el) => {
+          if (el.classList.contains('rd-desk-menu__pop--portal')) return;
+          el.setAttribute('hidden', '');
+        });
+        document.querySelectorAll('.rd-loc-menu__btn, .rd-desk-menu__btn').forEach((btn) => {
+          btn.setAttribute('aria-expanded', 'false');
+        });
+        document.querySelectorAll('.rd-desk-menu.is-open').forEach((el) => el.classList.remove('is-open'));
+      }
+
+      function openRdDeskMenuPortal(btn, sourcePop) {
+        const rect = btn.getBoundingClientRect();
+        const portal = sourcePop.cloneNode(true);
+        portal.classList.add('rd-desk-menu__pop--portal');
+        portal.removeAttribute('hidden');
+        portal.setAttribute('role', 'menu');
+
+        // تثبيت فيزياء الشاشة فقط — بدون inset منطقي حتى لا ينقلب في RTL/LTR
+        portal.style.setProperty('position', 'fixed', 'important');
+        portal.style.setProperty('top', `${Math.round(rect.bottom + 4)}px`, 'important');
+        portal.style.setProperty('left', `${Math.round(rect.left)}px`, 'important');
+        portal.style.setProperty('right', 'auto', 'important');
+        portal.style.setProperty('bottom', 'auto', 'important');
+        portal.style.setProperty('margin', '0', 'important');
+        portal.style.setProperty('transform', 'none', 'important');
+        portal.style.setProperty('z-index', '10050', 'important');
+        portal.style.setProperty('display', 'flex', 'important');
+
+        document.body.appendChild(portal);
+
+        // إن خرجت القائمة عن يسار/يمين الشاشة، أعد ضبطها داخل الإطار
+        const pr = portal.getBoundingClientRect();
+        let left = pr.left;
+        if (pr.right > window.innerWidth - 8) left = Math.max(8, window.innerWidth - 8 - pr.width);
+        if (left < 8) left = 8;
+        if (left !== pr.left) portal.style.setProperty('left', `${Math.round(left)}px`, 'important');
+
+        // إن لم تسعَ للأسفل، افتح للأعلى
+        if (pr.bottom > window.innerHeight - 8) {
+          const upTop = Math.round(rect.top - pr.height - 4);
+          if (upTop >= 8) portal.style.setProperty('top', `${upTop}px`, 'important');
+        }
+
+        return portal;
+      }
+
+      function toggleRdDeskMenu(btn) {
+        const menu = btn?.closest?.('.rd-desk-menu');
+        const pop = menu?.querySelector?.(':scope > .rd-desk-menu__pop');
+        if (!menu || !pop) return;
+        const isOpen = btn.getAttribute('aria-expanded') === 'true';
+        closeAllRdActMenus();
+        if (isOpen) return;
+
+        // portal إلى body لتفادي قص overflow من الجدول/التمرير
+        openRdDeskMenuPortal(btn, pop);
+        btn.setAttribute('aria-expanded', 'true');
+        menu.classList.add('is-open');
+        window._rdDeskMenuIgnoreDismissUntil = Date.now() + 150;
+      }
+
+      function initRdLocMenuDismiss() {
+        if (window._rdLocMenuDismissBound) return;
+        window._rdLocMenuDismissBound = true;
+        document.addEventListener('click', (e) => {
+          if (Date.now() < (window._rdDeskMenuIgnoreDismissUntil || 0)) return;
+          if (
+            e.target?.closest?.('.rd-loc-menu') ||
+            e.target?.closest?.('.rd-desk-menu') ||
+            e.target?.closest?.('.rd-desk-menu__pop--portal')
+          ) return;
+          closeAllRdActMenus();
+        });
+        window.addEventListener('scroll', () => closeAllRdActMenus(), true);
+        window.addEventListener('resize', () => closeAllRdActMenus());
+      }
+
+      function renderViolTypesRedesign(types, canManage) {
+        const desk = typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi();
+        const order = [
+          { sev: 'عالي', label: 'مخالفات عالية', color: 'var(--danger)' },
+          { sev: 'متوسط', label: 'مخالفات متوسطة', color: 'var(--warning)' },
+          { sev: 'منخفض', label: 'مخالفات منخفضة', color: 'var(--info)' },
+        ];
+        const groups = order.map((g, gi) => {
+          const items = types.filter((v) => violTypeSeverity(v) === g.sev);
+          if (!items.length && !desk) return '';
+          const rows = items.length
+            ? items.map((v) => {
+              const points = v.weight ?? v.points ?? 0;
+              const ptsLabel = desk ? `−${points}` : `−${points} نقاط`;
+              const vid = String(v.id || '').replace(/'/g, "\\'");
+              const admin = canManage
+                ? `<span class="rd-viol-row__acts" onclick="event.stopPropagation()">
+                    ${rdDeskActMenuHTML(`editViolType('${vid}')`, `deleteViolType('${vid}')`, true, true)}
+                  </span>`
+                : '';
+              return `
+                <div role="button" tabindex="0" class="rd-viol-row" onclick="openViolDetailSheet('${v.id}')"
+                  onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openViolDetailSheet('${v.id}');}">
+                  <span class="rd-viol-row__name">${Sec.escapeHTML(v.name)}</span>
+                  <span class="rd-viol-row__end">
+                    <span class="rd-viol-row__pts" style="color:${g.color}">${ptsLabel}</span>
+                    ${admin}
+                  </span>
+                </div>`;
+            }).join('')
+            : '<div class="rd-viol-empty">لا توجد مخالفات في هذا التصنيف</div>';
+          return `
+            <section class="rd-viol-group" style="animation-delay:${gi * 0.05}s">
+              <div class="rd-viol-group__hd">
+                <span class="rd-viol-group__dot" style="background:${g.color}"></span>
+                <span class="rd-viol-group__label">${Sec.escapeHTML(g.label)}</span>
+              </div>
+              <div class="rd-viol-group__card">${rows}</div>
+            </section>`;
+        }).filter(Boolean).join('');
+        const addBtn = desk && canManage
+          ? `<div class="rd-viol-desk-tools">
+               <button type="button" class="rd-viol-desk-add" onclick="openViolModal()">
+                 <i class="fas fa-plus" aria-hidden="true"></i>إضافة نوع
+               </button>
+             </div>`
+          : '';
+        return (addBtn + (groups || '<div class="rd-ticket-empty"><i class="fas fa-triangle-exclamation"></i><p>لا توجد أنواع مخالفات</p></div>'));
+      }
+
       async function renderViolTypes() {
         const grid = document.getElementById('violGrid');
         if (!grid) return;
         const countEl = document.getElementById('viol-types-count');
+        const titleEl = document.querySelector('#tab-violations .wf-panel-title');
         const canManage = canManageViolationTypes();
         const violMob = isMobileViewport();
-        grid.className = violMob ? 'viol-grid viol-grid--mob-list' : 'mr-users-list';
+        const rd = (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi())
+          || isAtharDesktopScreenUi();
+        if (titleEl) titleEl.textContent = rd ? 'دليل المخالفات' : 'أنواع المخالفات';
+        grid.className = rd
+          ? (isAtharDesktopScreenUi()
+            ? 'rd-viol-list rd-viol-list--desk viol-grid'
+            : 'rd-viol-list viol-grid viol-grid--mob-list')
+          : (violMob ? 'viol-grid viol-grid--mob-list' : 'mr-users-list');
         if (isAppDataPending()) {
           if (countEl) countEl.textContent = '…';
-          grid.innerHTML = violMob
-            ? '<div class="empty viol-types-empty"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i><p>جاري تحميل أنواع المخالفات…</p></div>'
-            : '<div class="mr-users-empty empty mr-data-loading"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i><p>جاري تحميل أنواع المخالفات…</p></div>';
+          grid.innerHTML = rd
+            ? '<div class="rd-ticket-empty"><i class="fas fa-spinner fa-spin"></i><p>جاري تحميل دليل المخالفات…</p></div>'
+            : (violMob
+              ? '<div class="empty viol-types-empty"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i><p>جاري تحميل أنواع المخالفات…</p></div>'
+              : '<div class="mr-users-empty empty mr-data-loading"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i><p>جاري تحميل أنواع المخالفات…</p></div>');
           return;
         }
         if (!state.violationTypes.length) {
-          grid.innerHTML = violMob
-            ? '<div class="empty viol-types-empty"><i class="fas fa-spinner fa-spin"></i><p>جاري تحميل أنواع المخالفات…</p></div>'
-            : '<div class="mr-users-empty empty"><i class="fas fa-spinner fa-spin"></i><p>جاري تحميل أنواع المخالفات…</p></div>';
+          grid.innerHTML = rd
+            ? '<div class="rd-ticket-empty"><i class="fas fa-spinner fa-spin"></i><p>جاري تحميل دليل المخالفات…</p></div>'
+            : (violMob
+              ? '<div class="empty viol-types-empty"><i class="fas fa-spinner fa-spin"></i><p>جاري تحميل أنواع المخالفات…</p></div>'
+              : '<div class="mr-users-empty empty"><i class="fas fa-spinner fa-spin"></i><p>جاري تحميل أنواع المخالفات…</p></div>');
           if (countEl) countEl.textContent = '0';
           const ok = await ensureViolationTypesLoaded();
           if (!ok) {
-            grid.innerHTML = violMob
-              ? '<div class="empty viol-types-empty"><i class="fas fa-triangle-exclamation"></i><p>لا توجد أنواع مخالفات</p></div>'
-              : '<div class="mr-users-empty empty"><i class="fas fa-triangle-exclamation"></i><p>لا توجد أنواع مخالفات</p></div>';
+            grid.innerHTML = rd
+              ? '<div class="rd-ticket-empty"><i class="fas fa-triangle-exclamation"></i><p>لا توجد أنواع مخالفات</p></div>'
+              : (violMob
+                ? '<div class="empty viol-types-empty"><i class="fas fa-triangle-exclamation"></i><p>لا توجد أنواع مخالفات</p></div>'
+                : '<div class="mr-users-empty empty"><i class="fas fa-triangle-exclamation"></i><p>لا توجد أنواع مخالفات</p></div>');
             return;
           }
         }
         if (!state.violationTypes.length) {
           if (countEl) countEl.textContent = '0';
-          grid.innerHTML = violMob
-            ? '<div class="empty viol-types-empty"><i class="fas fa-triangle-exclamation"></i><p>لا توجد أنواع مخالفات</p></div>'
-            : '<div class="mr-users-empty empty"><i class="fas fa-triangle-exclamation"></i><p>لا توجد أنواع مخالفات</p></div>';
+          grid.innerHTML = rd
+            ? '<div class="rd-ticket-empty"><i class="fas fa-triangle-exclamation"></i><p>لا توجد أنواع مخالفات</p></div>'
+            : (violMob
+              ? '<div class="empty viol-types-empty"><i class="fas fa-triangle-exclamation"></i><p>لا توجد أنواع مخالفات</p></div>'
+              : '<div class="mr-users-empty empty"><i class="fas fa-triangle-exclamation"></i><p>لا توجد أنواع مخالفات</p></div>');
           return;
         }
         if (countEl) countEl.textContent = String(state.violationTypes.length);
+        if (rd) {
+          initRdLocMenuDismiss();
+          grid.innerHTML = renderViolTypesRedesign(state.violationTypes, canManage);
+          syncViolMobileScrollShell('violations');
+          requestAnimationFrame(() => {
+            syncViolMobileScrollShell('violations');
+            syncViolMobListHeight();
+          });
+          return;
+        }
         grid.innerHTML = violMob
           ? state.violationTypes.map(v => renderViolTypeMobItem(v, canManage)).join('')
           : state.violationTypes.map(v => renderViolTypeCard(v, canManage)).join('');
@@ -13158,6 +13328,8 @@
       window.openViolDetailSheet = openViolDetailSheet;
       window.closeViolDetailSheet = closeViolDetailSheet;
       window.closeTicketSheet = closeTicketSheet;
+      window.toggleRdDeskMenu = toggleRdDeskMenu;
+      window.closeAllRdActMenus = closeAllRdActMenus;
 
       // عند تغيير الخطورة، نحدّث الوزن الافتراضي تلقائياً
       function onSeverityChange() {
