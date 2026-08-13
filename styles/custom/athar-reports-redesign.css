@@ -1,11 +1,19 @@
 /* ATHAR Production — التقارير / reports (desktop) */
 
+/* force-hide classic reports chrome */
+html.athar-staging-redesign.mr-desktop-ui #tab-reports #rpClassicChrome,
+html.athar-staging-redesign.mr-desktop-ui #tab-reports #reportList,
+html.athar-staging-redesign.mr-desktop-ui #tab-reports .rp-stats,
+html.athar-staging-redesign.mr-desktop-ui #tab-reports .wf-panel-intro,
+html.athar-staging-redesign.mr-desktop-ui #tab-reports .wf-panel-sub {
+  display: none !important;
+}
+
 @keyframes atharRdFadeUp {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-overlay {
 
 html.athar-staging-redesign.mr-desktop-ui #appWrap #tab-reports.tab-content.active {
   padding: 24px !important;
