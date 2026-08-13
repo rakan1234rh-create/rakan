@@ -105,10 +105,30 @@ html.athar-staging-redesign.mr-desktop-ui #tab-reports .wf-panel-intro {
   min-height: 4px;
   transition: height .35s ease;
 }
+.rd-rp-bar__track {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
 .rd-rp-bar__lbl {
-  font-size: 9.5px;
-  color: var(--text3);
+  flex: 0 0 auto;
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--text2, var(--text3));
   white-space: nowrap;
+  overflow: visible;
+  text-align: center;
+}
+.rd-rp-mc-bar__track {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
 }
 .rd-rp-links {
   display: flex;
@@ -758,3 +778,60 @@ html.athar-staging-redesign.mr-desktop-ui #tab-reports .rd-rp-link__body {
   flex: 1 1 auto !important;
   text-align: start !important;
 }
+
+/* bar label track — keep months under columns, not crushed */
+html.athar-staging-redesign.mr-desktop-ui #tab-reports .rd-rp-bars,
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-mc-bars {
+  overflow: visible !important;
+  align-items: stretch !important;
+}
+html.athar-staging-redesign.mr-desktop-ui #tab-reports .rd-rp-bars-card,
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-mc-chart-card {
+  overflow: visible !important;
+}
+html.athar-staging-redesign.mr-desktop-ui #tab-reports .rd-rp-bar,
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-mc-bar {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  min-width: 0 !important;
+  overflow: visible !important;
+}
+html.athar-staging-redesign.mr-desktop-ui #tab-reports .rd-rp-bar__track,
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-mc-bar__track {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  width: 100% !important;
+  display: flex !important;
+  align-items: flex-end !important;
+  justify-content: center !important;
+}
+html.athar-staging-redesign.mr-desktop-ui #tab-reports .rd-rp-bar__fill,
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-mc-bar__fill {
+  flex: 0 0 auto !important;
+  width: 100% !important;
+  max-width: 36px !important;
+  align-self: center !important;
+}
+html.athar-staging-redesign.mr-desktop-ui #tab-reports .rd-rp-bar__lbl,
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-mc-bar__lbl {
+  flex: 0 0 auto !important;
+  margin-top: 8px !important;
+  padding: 0 2px !important;
+  font-size: 12px !important;
+  line-height: 1.4 !important;
+  font-weight: 500 !important;
+  color: var(--text2, #a8a29a) !important;
+  white-space: nowrap !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  writing-mode: horizontal-tb !important;
+  transform: none !important;
+  letter-spacing: 0 !important;
+}
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-mc-bar__pct {
+  flex: 0 0 auto !important;
+  margin-bottom: 4px !important;
+}
+

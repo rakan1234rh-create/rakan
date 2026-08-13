@@ -26131,7 +26131,9 @@
             <div class="rd-rp-bars" role="img" aria-label="اتجاه الالتزام الشهري">
               ${bars.map((b) => `
                 <div class="rd-rp-bar">
-                  <div class="rd-rp-bar__fill" style="height:${b.pct}%"></div>
+                  <div class="rd-rp-bar__track">
+                    <div class="rd-rp-bar__fill" style="height:${b.pct}%"></div>
+                  </div>
                   <span class="rd-rp-bar__lbl">${Sec.escapeHTML(b.label)}</span>
                 </div>`).join('')}
             </div>
@@ -26354,7 +26356,9 @@
         const barsHtml = rows.map((m, i) => `
           <div class="rd-rp-mc-bar" style="animation-delay:${Math.min(0.3, i * 0.04)}s">
             <span class="rd-rp-mc-bar__pct">${m.rate}%</span>
-            <div class="rd-rp-mc-bar__fill" style="height:${m.rate}%"></div>
+            <div class="rd-rp-mc-bar__track">
+              <div class="rd-rp-mc-bar__fill" style="height:${m.rate}%"></div>
+            </div>
             <span class="rd-rp-mc-bar__lbl">${Sec.escapeHTML(m.label)}</span>
           </div>`).join('');
 
