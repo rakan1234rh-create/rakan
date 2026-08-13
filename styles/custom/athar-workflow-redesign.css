@@ -1,0 +1,440 @@
+/* ATHAR Production — التذاكر / workflow (desktop list only) */
+
+html.athar-staging-redesign.mr-desktop-ui #appWrap #tab-workflow.tab-content.active {
+  padding: 24px !important;
+}
+html.athar-staging-redesign.mr-desktop-ui #tab-workflow > .panel,
+html.athar-staging-redesign.mr-desktop-ui #tab-workflow .wf-panel {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+
+/* ── Workflow / تذاكر — literal Athar Desktop mockup ── */
+html.athar-staging-redesign.mr-desktop-ui #tab-workflow {
+  animation: atharRdScreenIn 0.3s ease !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-workflow .wf-panel-banner {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 10px !important;
+  margin: 0 0 16px !important;
+  padding: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-workflow .wf-toolbar,
+html.athar-staging-redesign.mr-desktop-ui #tab-workflow #wfClassicToolbar {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex-wrap: nowrap !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  order: 1 !important;
+  flex: 0 0 auto !important;
+  width: auto !important;
+  max-width: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-workflow .wf-search {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  max-width: 320px !important;
+  width: 320px !important;
+  flex: 0 0 320px !important;
+  padding: 10px 14px !important;
+  background: var(--searchFill) !important;
+  border: none !important;
+  border-radius: 10px !important;
+  box-shadow: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-workflow .wf-search::before {
+  content: "\f002" !important;
+  font-family: "Font Awesome 6 Free" !important;
+  font-weight: 900 !important;
+  color: var(--text3) !important;
+  font-size: 12px !important;
+  flex-shrink: 0 !important;
+  line-height: 1 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-workflow .wf-search .figma-search-btn {
+  display: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-workflow .wf-search .figma-search-input {
+  flex: 1 !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  font-size: 12.5px !important;
+  color: var(--text) !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-workflow .wf-search .figma-search-input::placeholder {
+  color: var(--text3) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-workflow #rdWfChips {
+  display: flex !important;
+  gap: 8px !important;
+  flex-wrap: wrap !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  order: 2 !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-workflow .wf-count {
+  display: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-workflow #wfClassicToolbar .wf-status-filter {
+  display: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-workflow .rd-wf-chip {
+  padding: 9px 16px !important;
+  border-radius: 10px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  white-space: nowrap !important;
+  border: 1px solid var(--border) !important;
+  background: var(--surface2) !important;
+  color: var(--text2) !important;
+  cursor: pointer !important;
+  box-shadow: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-workflow .rd-wf-chip.is-active,
+html.athar-staging-redesign.mr-desktop-ui #tab-workflow .rd-wf-chip[aria-selected="true"] {
+  background: var(--gold) !important;
+  color: var(--onGold) !important;
+  border-color: var(--gold) !important;
+}
+
+/* Host must not double-card the inner table */
+html.athar-staging-redesign.mr-desktop-ui #tab-workflow #ticketList.wf-desk-tickets-host {
+  background: transparent !important;
+  border: none !important;
+  border-top: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  outline: none !important;
+  padding: 0 !important;
+  overflow: visible !important;
+}
+
+/* رأس الموبايل الفارغ كان يرسم border-bottom كخط مستقيم فوق الجدول */
+html.athar-staging-redesign.mr-desktop-ui #tab-workflow #wfMobTicketsHead,
+html.athar-staging-redesign.mr-desktop-ui #tab-workflow .wf-mob-tickets-head {
+  display: none !important;
+  border: none !important;
+  background: transparent !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-table {
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 16px !important;
+  overflow: hidden !important;
+}
+
+
+
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-table__head {
+  background: var(--surface2) !important;
+  background-clip: padding-box !important;
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  color: var(--text2) !important;
+}
+
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-table__row {
+  border-top: 1px solid var(--border) !important;
+  animation: atharRdCardIn .35s ease both;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-user {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  min-width: 0 !important;
+  width: 100% !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-user__av {
+  position: relative !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 50% !important;
+  background: var(--surface2) !important;
+  color: var(--text2) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  flex-shrink: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-user__dot {
+  position: absolute !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  width: 9px !important;
+  height: 9px !important;
+  border-radius: 50% !important;
+  background: var(--text3) !important;
+  border: 2px solid var(--surface) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-user__dot.is-on {
+  background: var(--success) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-user__name {
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  min-width: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-role {
+  display: inline-flex !important;
+  max-width: 100% !important;
+  padding: 4px 10px !important;
+  border-radius: 999px !important;
+  font-size: 10.5px !important;
+  font-weight: 700 !important;
+  background: color-mix(in srgb, var(--rc, var(--gold)) 14%, transparent) !important;
+  color: var(--rc, var(--gold)) !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
+  font-size: 12px !important;
+  color: var(--text2) !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-muted {
+  font-size: 12px !important;
+  color: var(--text2) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-clip {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  display: block !important;
+  max-width: 100% !important;
+}
+
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-phone {
+  display: block !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  font-size: 12px !important;
+  color: var(--text2) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-phone__val {
+  display: inline-block !important;
+  direction: ltr !important;
+  unicode-bidi: isolate !important;
+  font-variant-numeric: tabular-nums !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
+  font-size: 12px !important;
+  letter-spacing: 0.01em !important;
+  white-space: nowrap !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-acts {
+  display: flex !important;
+  gap: 4px !important;
+  justify-content: flex-end !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-act {
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 8px !important;
+  border: 1px solid var(--border) !important;
+  background: transparent !important;
+  color: var(--text2) !important;
+  cursor: pointer !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-act--danger {
+  color: var(--danger) !important;
+}
+
+
+
+/* ── Tickets desk table (mockup columns) ── */
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--tickets {
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 16px !important;
+  overflow: hidden !important;
+  isolation: isolate !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--tickets .rd-desk-table__head,
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--tickets .rd-desk-ticket-row {
+  display: grid !important;
+  grid-template-columns: 90px 2fr 1.6fr 1.3fr 90px 90px !important;
+  gap: 12px !important;
+  align-items: center !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--tickets .rd-desk-table__head {
+  padding: 12px 18px !important;
+  background: var(--surface2) !important;
+  background-clip: padding-box !important;
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  color: var(--text2) !important;
+  /* قص زوايا الهيدر الرمادي مع منحنى الحاوية (RTL/LTR) */
+  border-start-start-radius: 15px !important;
+  border-start-end-radius: 15px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--tickets .rd-desk-ticket-row {
+  padding: 13px 18px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--tickets .rd-desk-sort {
+  all: unset !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  font: inherit !important;
+  color: inherit !important;
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--tickets .rd-desk-sort i {
+  font-size: 9px !important;
+  color: var(--text3) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--tickets .rd-desk-sort.is-active i {
+  color: var(--text2) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--tickets .rd-desk-head-time {
+  text-align: left !important;
+  justify-self: stretch !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-ticket-row {
+  width: 100% !important;
+  border: none !important;
+  border-top: 1px solid var(--border) !important;
+  background: transparent !important;
+  color: inherit !important;
+  font: inherit !important;
+  text-align: start !important;
+  cursor: pointer !important;
+  animation: atharRdCardIn .35s ease both;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-ticket-row:hover {
+  background: color-mix(in srgb, var(--surface2) 70%, transparent) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-ticket-row .rd-desk-mono {
+  font-size: 11.5px !important;
+  color: var(--text3) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-ticket-row .rd-desk-user {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  min-width: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-ticket-row .rd-desk-user__name {
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: var(--text) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-ticket-row .rd-desk-muted.rd-desk-clip {
+  font-size: 12px !important;
+  color: var(--text2) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-ticket-badge {
+  display: inline-flex !important;
+  padding: 4px 10px !important;
+  border-radius: 999px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  width: fit-content !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-ticket-pts {
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-ticket-row .rd-desk-ticket-time {
+  font-size: 11px !important;
+  color: var(--text3) !important;
+  text-align: left !important;
+  justify-self: stretch !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-workflow .rd-ticket-empty {
+  grid-column: 1 / -1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 36px 18px !important;
+  color: var(--text3) !important;
+  font-size: 13px !important;
+  border: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-workflow .wf-table-wrap,
+html.athar-staging-redesign.mr-desktop-ui #tab-workflow .data-table.wf-tickets-table {
+  display: none !important;
+}
+
+
+/* ── Hide remaining classic computer chrome ── */
