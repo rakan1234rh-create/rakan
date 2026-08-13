@@ -9,6 +9,11 @@ html.athar-staging-redesign.mr-desktop-ui #tab-reports .wf-panel-sub {
   display: none !important;
 }
 
+@keyframes atharRdCardIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 @keyframes atharRdFadeUp {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
@@ -27,6 +32,134 @@ html.athar-staging-redesign.mr-desktop-ui #tab-reports .wf-panel {
 }
 html.athar-staging-redesign.mr-desktop-ui #tab-reports .wf-panel-intro {
   display: none !important;
+}
+
+
+/* Base layout for reports components (from staging redesign) */
+.rd-rp-metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.rd-rp-metric {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  animation: atharRdCardIn .4s ease both;
+}
+.rd-rp-metric__label {
+  font-size: 12px;
+  color: var(--text2);
+}
+.rd-rp-metric__trend {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 4px;
+}
+.rd-rp-metric__value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--gold);
+  flex-shrink: 0;
+}
+.rd-rp-sec-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 10px;
+}
+.rd-rp-bars-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px 14px;
+  margin-bottom: 20px;
+}
+.rd-rp-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  height: 100px;
+}
+.rd-rp-bar {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+  justify-content: flex-end;
+  min-width: 0;
+}
+.rd-rp-bar__fill {
+  width: 100%;
+  max-width: 22px;
+  border-radius: 6px 6px 0 0;
+  background: var(--gold);
+  min-height: 4px;
+  transition: height .35s ease;
+}
+.rd-rp-bar__lbl {
+  font-size: 9.5px;
+  color: var(--text3);
+  white-space: nowrap;
+}
+.rd-rp-links {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.rd-rp-link {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: start;
+  font-family: inherit;
+  color: inherit;
+  cursor: pointer;
+  animation: atharRdCardIn .4s ease both;
+  -webkit-tap-highlight-color: transparent;
+}
+.rd-rp-link:active { opacity: 0.92; }
+.rd-rp-link__ico {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  background: var(--goldSoft);
+  color: var(--gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 14px;
+}
+.rd-rp-link__body { flex: 1; min-width: 0; text-align: start; }
+.rd-rp-link__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+.rd-rp-link__sub {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 2px;
+}
+.rd-rp-link__chev {
+  color: var(--text3);
+  font-size: 12px;
+  flex-shrink: 0;
+  margin-inline-start: auto;
 }
 
 
@@ -589,3 +722,39 @@ html.athar-staging-redesign.mr-desktop-ui .rd-rp-mc-bar__lbl {
   }
 }
 
+
+/* desk bars/links layout boost */
+
+html.athar-staging-redesign.mr-desktop-ui #tab-reports .rd-rp-bars {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: flex-end !important;
+  justify-content: space-between !important;
+  height: 180px !important;
+  gap: 16px !important;
+}
+html.athar-staging-redesign.mr-desktop-ui #tab-reports .rd-rp-bar {
+  display: flex !important;
+  flex: 1 1 0 !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 8px !important;
+  height: 100% !important;
+  min-width: 0 !important;
+}
+html.athar-staging-redesign.mr-desktop-ui #tab-reports .rd-rp-bar__fill {
+  width: 100% !important;
+  max-width: 36px !important;
+  flex: 0 0 auto !important;
+}
+html.athar-staging-redesign.mr-desktop-ui #tab-reports .rd-rp-link {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  text-align: start !important;
+}
+html.athar-staging-redesign.mr-desktop-ui #tab-reports .rd-rp-link__body {
+  flex: 1 1 auto !important;
+  text-align: start !important;
+}
