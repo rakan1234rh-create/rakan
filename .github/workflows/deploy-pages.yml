@@ -68,6 +68,15 @@ jobs:
                 icons/athar-app-icon.svg icons/athar-homescreen-fullbleed.svg \
                 icons/athar-homescreen-maskable.svg icons/athar-wordmark-email.svg \
                 icons/athar-wordmark-email-v388.png icons/athar-logo-v401.png "$DEST/icons/"
+              for f in \
+                icons/athar-logo-v403.png \
+                icons/athar-logo-v403.svg \
+                icons/athar-logo-v403-white.png \
+                icons/athar-logo-v403-white.svg
+              do
+                if [ -f "$f" ]; then cp "$f" "$DEST/icons/"; fi
+              done
+              if [ -d icons/redesign ]; then mkdir -p "$DEST/icons/redesign" && cp -r icons/redesign/. "$DEST/icons/redesign/"; fi
               if [ -d icons/avatars ]; then mkdir -p "$DEST/icons/avatars" && cp -r icons/avatars/. "$DEST/icons/avatars/"; fi
               touch "$DEST/.nojekyll"
               cp icons/athar-pwa-180-v${VER}.png "$DEST/apple-touch-icon.png"
