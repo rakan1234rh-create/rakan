@@ -25813,6 +25813,36 @@
         if (pop?.classList.contains('open') && typeof renderDatePicker === 'function') renderDatePicker();
       }
 
+      function rdAvgComplianceRate(violations) {
+        const emps = (state.users || []).filter(u => typeof isViolationSubjectUser === 'function' && isViolationSubjectUser(u));
+        if (!emps.length) return 100;
+        const sum = emps.reduce((a, e) => a + (calcEmpScore(e.id, violations || state.violations).score || 0), 0);
+        return Math.round((sum / emps.length) * 10) / 10;
+      }
+      function rdAvgResponseHours(violations) {
+        let total = 0;
+        let n = 0;
+        (violations || []).forEach((v) => {
+          const created = new Date(v.created_at || v.violation_date || 0).getTime();
+          if (!created || Number.isNaN(created)) return;
+          const logs = parseDbJsonArray(v.logs);
+          const reply = logs.find((l) => {
+            const action = String(l?.action || '');
+            return /رد|استجابة|تعقيب|موافقة|رفض|إحالة|تمرير/i.test(action)
+              && !/إنشاء|رصد/i.test(action);
+          });
+          if (!reply?.date && !reply?.t) return;
+          const replied = new Date(reply.date || reply.t).getTime();
+          if (!replied || Number.isNaN(replied) || replied < created) return;
+          const hours = (replied - created) / 3600000;
+          if (hours >= 0 && hours < 720) {
+            total += hours;
+            n++;
+          }
+        });
+        return n ? total / n : null;
+      }
+
       function rdFormatHoursAr(hours) {
         if (hours == null || !Number.isFinite(hours)) return '—';
         if (hours < 1) return `${Math.max(1, Math.round(hours * 60))} د`;
@@ -26418,7 +26448,12 @@
           try {
             renderReportsRedesign();
           } catch (e) {
-            if (typeof isMirsadDebugLog === 'function' && isMirsadDebugLog()) console.warn('[rdReports]', e);
+            console.warn('[rdReports]', e);
+            const host = document.getElementById('rdReports');
+            if (host) {
+              host.hidden = false;
+              host.innerHTML = '<div class="rd-rp-metric"><div class="rd-rp-metric__label">تعذر تحميل التقارير. حدّث الصفحة أو أعد المحاولة.</div></div>';
+            }
           }
           return;
         }
