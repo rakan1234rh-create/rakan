@@ -11225,6 +11225,7 @@
           ws.textContent = getDashWelcomeSubtitle(state.currentUser?.role, monthLbl);
         }
         updateDashDateKicker();
+        try { syncRdChromeUi(); } catch (_) { /* noop */ }
 
         const dashShell = document.querySelector('#tab-dashboard .md-dash');
         if (dashShell && !isMobileViewport() && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -11241,7 +11242,22 @@
           const iso = dashViolationIsoDate(v);
           return iso && iso >= monthFromIso && iso < nextFromIso;
         });
-        
+
+        if (typeof isAtharDesktopRedesignUi === 'function' && isAtharDesktopRedesignUi()) {
+          try {
+            renderDashboardDesktopRedesign(visible, allVisible, monthFromIso, nextFromIso, ksaNowParts);
+          } catch (e) {
+            if (typeof isMirsadDebugLog === 'function' && isMirsadDebugLog()) console.warn('[rdDashDesk]', e);
+          }
+          const playEntryDesk = !!state._dashHandPlayEntryWave;
+          state._dashHandPlayEntryWave = false;
+          try { if (typeof renderDashWelcomeHand === 'function') renderDashWelcomeHand(playEntryDesk); } catch (_) { /* noop */ }
+          updatePendingBadge();
+          return;
+        }
+        const rdHost = document.getElementById('rdDash');
+        if (rdHost) { rdHost.innerHTML = ''; rdHost.hidden = true; }
+
         const total = visible.length;
 
         const dashSet = (id, val) => {
