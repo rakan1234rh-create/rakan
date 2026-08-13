@@ -1,0 +1,583 @@
+/* ATHAR Production — التقارير / reports (desktop) */
+
+@keyframes atharRdFadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-overlay {
+
+html.athar-staging-redesign.mr-desktop-ui #appWrap #tab-reports.tab-content.active {
+  padding: 24px !important;
+}
+html.athar-staging-redesign.mr-desktop-ui #tab-reports > .panel,
+html.athar-staging-redesign.mr-desktop-ui #tab-reports .wf-panel {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+html.athar-staging-redesign.mr-desktop-ui #tab-reports .wf-panel-intro {
+  display: none !important;
+}
+
+
+/* ── Reports (desktop redesign — literal mockup) ── */
+html.athar-staging-redesign.mr-desktop-ui #rdReports:not([hidden]) {
+  display: block !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-reports #rpClassicChrome,
+html.athar-staging-redesign.mr-desktop-ui #tab-reports #reportList,
+html.athar-staging-redesign.mr-desktop-ui #tab-reports .rp-stats,
+html.athar-staging-redesign.mr-desktop-ui #tab-reports .wf-panel-sub {
+  display: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-reports .rd-rp-main {
+  animation: atharRdFadeUp 0.3s ease !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-reports .rd-rp-metrics {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+  margin-bottom: 20px !important;
+  flex-direction: unset !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-reports .rd-rp-metric {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  justify-content: flex-start !important;
+  gap: 0 !important;
+  padding: 18px !important;
+  border-radius: 16px !important;
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-reports .rd-rp-metric__label {
+  font-size: 12px !important;
+  color: var(--text2) !important;
+  margin: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-reports .rd-rp-metric__value {
+  font-size: 26px !important;
+  font-weight: 700 !important;
+  color: var(--gold) !important;
+  margin-top: 8px !important;
+  flex-shrink: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-reports .rd-rp-metric__trend {
+  font-size: 11px !important;
+  color: var(--text3) !important;
+  margin-top: 6px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-reports .rd-rp-desk-split {
+  display: grid !important;
+  grid-template-columns: 1.7fr 1fr !important;
+  gap: 20px !important;
+  align-items: start !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-reports .rd-rp-sec-title {
+  font-size: 13.5px !important;
+  font-weight: 700 !important;
+  color: var(--text) !important;
+  margin: 0 0 10px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-reports .rd-rp-bars-card {
+  padding: 24px !important;
+  margin-bottom: 0 !important;
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 16px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-reports .rd-rp-bars {
+  height: 180px !important;
+  gap: 16px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-reports .rd-rp-bar {
+  gap: 8px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-reports .rd-rp-bar__fill {
+  max-width: 36px !important;
+  border-radius: 8px 8px 0 0 !important;
+  background: var(--gold) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-reports .rd-rp-bar__lbl {
+  font-size: 11px !important;
+  color: var(--text3) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-reports .rd-rp-links {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-reports .rd-rp-link {
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 14px !important;
+  padding: 14px !important;
+  gap: 12px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-reports .rd-rp-link__ico {
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 10px !important;
+  background: var(--goldSoft) !important;
+  color: var(--gold) !important;
+  font-size: 13px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-reports .rd-rp-link__title {
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  color: var(--text) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-reports .rd-rp-link__sub {
+  font-size: 10.5px !important;
+  color: var(--text3) !important;
+  margin-top: 2px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-reports .rd-rp-link__chev {
+  color: var(--text3) !important;
+  font-size: 10px !important;
+  flex-shrink: 0 !important;
+}
+
+
+
+/* ── Reports drill-in views ── */
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-drill {
+  animation: atharRdFadeUp .3s ease;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text2);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 14px;
+  font-family: inherit;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-back i {
+  font-size: 11px;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-back:hover {
+  color: var(--text);
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-drill-hero {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-drill-hero__ico {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: var(--goldSoft);
+  color: var(--gold);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 16px;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-drill-hero__title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-drill-hero__sub {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 2px;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-drill-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-drill-metric {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-drill-metric__lbl {
+  font-size: 11.5px;
+  color: var(--text2);
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-drill-metric__val {
+  font-size: 22px;
+  font-weight: 700;
+  margin-top: 6px;
+  color: var(--gold);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-drill-metric__val--name {
+  font-size: 16px;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-drill-metric__sub {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 3px;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-drill-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-drill-search {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  max-width: 320px !important;
+  flex: 1 1 320px !important;
+  padding: 10px 14px !important;
+  background: var(--searchFill) !important;
+  border: none !important;
+  border-radius: 10px !important;
+  box-shadow: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-drill-search::before {
+  content: "\f002" !important;
+  font-family: "Font Awesome 6 Free" !important;
+  font-weight: 900 !important;
+  color: var(--text3) !important;
+  font-size: 12px !important;
+  flex-shrink: 0 !important;
+  line-height: 1 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-drill-search .figma-search-btn {
+  display: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-drill-search .figma-search-input {
+  flex: 1 !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  font-size: 12.5px !important;
+  color: var(--text) !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-drill-table {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-drill-thead {
+  background: var(--surface2);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text2);
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-drill-row {
+  padding: 13px 18px;
+  border-top: 1px solid var(--border);
+  animation: atharRdCardIn .35s ease both;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-drill-thead.rd-rp-emp-row,
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-drill-row.rd-rp-emp-row {
+  display: grid;
+  grid-template-columns: 2fr 1.6fr 110px 100px 120px;
+  gap: 12px;
+  align-items: center;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-drill-thead.rd-rp-vb-row,
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-drill-row.rd-rp-vb-row {
+  display: grid;
+  grid-template-columns: 2fr 1.3fr 100px 1.6fr 110px;
+  gap: 12px;
+  align-items: center;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-drill-thead.rd-rp-mc-row,
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-drill-row.rd-rp-mc-row {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr 1fr 1fr 1.2fr;
+  gap: 12px;
+  align-items: center;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-drill-row:first-of-type {
+  border-top: none;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-th {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text2);
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 700;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: default;
+  text-align: right;
+}
+
+html.athar-staging-redesign.mr-desktop-ui button.rd-rp-th {
+  cursor: pointer;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-th i {
+  font-size: 9px;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emp-av {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--surface2);
+  color: var(--text2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emp-cell.rd-rp-emp-cell--name {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emp-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emp-branch {
+  font-size: 12px;
+  color: var(--text3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emp-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-bar-track {
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--surface2);
+  overflow: hidden;
+  max-width: 60px;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emp-val {
+  font-size: 12px;
+  font-weight: 700;
+  width: 34px;
+  text-align: left;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emp-count {
+  font-size: 12.5px;
+  color: var(--text2);
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emp-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--sc, var(--info)) 14%, transparent);
+  color: var(--sc, var(--info));
+  width: fit-content;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-vb-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-vb-region {
+  font-size: 12px;
+  color: var(--text3);
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-vb-total,
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-vb-score {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-vb-sev {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--surface2);
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-vb-sev__seg {
+  height: 100%;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-mc-month {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-mc-rate {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-mc-viols,
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-mc-res {
+  font-size: 12.5px;
+  color: var(--text2);
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-mc-delta {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-mc-chart-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-mc-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  height: 180px;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-mc-bar {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  height: 100%;
+  justify-content: flex-end;
+  animation: atharRdCardIn .35s ease both;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-mc-bar__pct {
+  font-size: 11px;
+  color: var(--text3);
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-mc-bar__fill {
+  width: 100%;
+  max-width: 36px;
+  border-radius: 8px 8px 0 0;
+  background: var(--gold);
+  min-height: 4px;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-mc-bar__lbl {
+  font-size: 11px;
+  color: var(--text3);
+}
+
+
+@media (max-width: 1100px) {
+  html.athar-staging-redesign.mr-desktop-ui #tab-reports .rd-rp-metrics {
+    grid-template-columns: 1fr !important;
+  }
+  html.athar-staging-redesign.mr-desktop-ui #tab-reports .rd-rp-desk-split {
+    grid-template-columns: 1fr !important;
+  }
+  html.athar-staging-redesign.mr-desktop-ui .rd-rp-drill-metrics {
+    grid-template-columns: 1fr !important;
+  }
+  html.athar-staging-redesign.mr-desktop-ui .rd-rp-drill-thead.rd-rp-emp-row,
+  html.athar-staging-redesign.mr-desktop-ui .rd-rp-drill-row.rd-rp-emp-row {
+    grid-template-columns: 1.5fr 1.2fr 110px 70px 100px !important;
+  }
+  html.athar-staging-redesign.mr-desktop-ui .rd-rp-drill-thead.rd-rp-vb-row,
+  html.athar-staging-redesign.mr-desktop-ui .rd-rp-drill-row.rd-rp-vb-row {
+    grid-template-columns: 1.5fr 1fr 80px 1.3fr 90px !important;
+  }
+}
+
