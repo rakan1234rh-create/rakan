@@ -1603,7 +1603,8 @@
           const cmpSheet = document.querySelector('#cmpDetailModal .modal-card.cmp-detail-card');
           const cmpModal = document.getElementById('cmpDetailModal');
           if (cmpSheet) cmpSheet.style.transform = '';
-          cmpModal?.classList.remove('sheet-dragging');
+          cmpModal?.classList.remove('sheet-dragging', 'sheet-closing', 'sheet-ready', 'cmp-detail--rd-emp');
+          cmpSheet?.classList.remove('cmp-detail-card--rd-emp');
           document.body.classList.remove('cmp-detail-open');
         }
         if (!document.querySelector('.modal.open')) {
@@ -22565,6 +22566,9 @@
       }
 
       function buildCmpDetailHeroHTML(item) {
+        if (((typeof isAtharRedesignUi === 'function' && isAtharRedesignUi()) || isAtharDesktopScreenUi()) && item.type === 'employee') {
+          return buildRdCmpEmpDetailHeroHTML(item);
+        }
         const score = item.score;
         const lvlText = score >= 90 ? 'ممتاز' : (score >= 75 ? 'جيد' : (score >= 50 ? 'تحذير' : 'متعثر'));
         const subLine = item.type === 'employee'
@@ -22615,6 +22619,9 @@
       }
 
       function buildCmpDetailHTML(item, viols, scoringViols) {
+        if (((typeof isAtharRedesignUi === 'function' && isAtharRedesignUi()) || isAtharDesktopScreenUi()) && item.type === 'employee') {
+          return buildRdCmpEmpDetailHTML(item, viols, scoringViols);
+        }
         const score = item.score;
         const lvl = levelClass(score);
         const lvlText = score >= 90 ? 'ممتاز' : (score >= 75 ? 'جيد' : (score >= 50 ? 'تحذير' : 'متعثر'));
@@ -23652,8 +23659,304 @@
         return '—';
       }
 
+      function rdCmpGaugeRingHTML(score, color) {
+        const r = 54;
+        const circ = 2 * Math.PI * r;
+        const raw = Number(score);
+        const pct = Math.max(0, Math.min(100, Number.isFinite(raw) ? raw : 0));
+        const offset = circ - (circ * pct) / 100;
+        const rounded = Math.round((Number.isFinite(raw) ? raw : 0) * 10) / 10;
+        const disp = Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+        const stroke = color || cmpScoreRateColor(raw);
+        return `
+          <div class="rd-cmp-emp-gauge__ring" aria-hidden="true">
+            <svg width="72" height="72" viewBox="0 0 132 132">
+              <circle cx="66" cy="66" r="${r}" fill="none" stroke="var(--border)" stroke-width="12"></circle>
+              <circle cx="66" cy="66" r="${r}" fill="none" stroke="${stroke}" stroke-width="12"
+                stroke-linecap="round" stroke-dasharray="${circ.toFixed(3)}" stroke-dashoffset="${offset.toFixed(3)}"></circle>
+            </svg>
+            <div class="rd-cmp-emp-gauge__val" style="color:${stroke}">${Sec.escapeHTML(disp)}</div>
+          </div>`;
+      }
+
+      function buildRdCmpEmpDetailHeroHTML(item) {
+        const emp = state.users.find(u => u.id === item.id);
+        const role = emp
+          ? getStaffJobTitle(emp)
+          : (normalizeUserRole(item.role) === 'branch_manager' ? 'مدير فرع' : 'موظف');
+        const initial = String(item.name || '؟').trim().charAt(0) || '؟';
+        return `
+          <div class="rd-cmp-emp-hd">
+            <span class="rd-cmp-emp-hd__av" aria-hidden="true">${Sec.escapeHTML(initial)}</span>
+            <div class="rd-cmp-emp-hd__body">
+              <div class="rd-cmp-emp-hd__name">${Sec.escapeHTML(item.name || '')}</div>
+              <div class="rd-cmp-emp-hd__role">${Sec.escapeHTML(role || 'موظف')}</div>
+            </div>
+          </div>`;
+      }
+
+      function buildRdCmpEmpDetailHTML(item, viols, scoringViols) {
+        const score = Number(item.score) || 0;
+        const scoreColor = typeof rdClassifyScore === 'function' ? rdClassifyScore(score) : cmpScoreRateColor(score);
+        const emp = state.users.find(u => u.id === item.id);
+        const respRole = normalizeUserRole(emp?.role) === 'branch_manager' ? 'branch_manager' : 'employee';
+        const respData = calcResponseRate(item.id, respRole, scoringViols);
+        const respScore = Number(respData.score) || 0;
+        const respColor = typeof rdClassifyScore === 'function' ? rdClassifyScore(respScore) : cmpScoreRateColor(respScore);
+
+        const affecting = getRateImpactingViolations(viols || []);
+        const months = ksaMonthSlots(6).map(m => ({ ...m, count: 0 }));
+        affecting.forEach(v => {
+          if (violationExcludedFromDeduction(v)) return;
+          const iso = dashViolationIsoDate(v);
+          if (!iso) return;
+          const mo = months.find(m => ksaIsoInMonth(iso, m.year, m.month));
+          if (mo) mo.count++;
+        });
+        const maxMonthly = Math.max(1, ...months.map(m => m.count));
+        const totalViol = months.reduce((s, m) => s + m.count, 0);
+        const barsHTML = months.map(m => {
+          const pct = m.count ? Math.max(4, Math.round((m.count / maxMonthly) * 100)) : 4;
+          return `
+            <div class="rd-cmp-emp-bar">
+              <span class="rd-cmp-emp-bar__val">${m.count}</span>
+              <div class="rd-cmp-emp-bar__fill" style="height:${pct}%"></div>
+              <span class="rd-cmp-emp-bar__lbl">${Sec.escapeHTML(m.monthName)}</span>
+            </div>`;
+        }).join('');
+
+        const sev = computeSeverityForItem(item, viols || []);
+        const high = (sev.high || 0) + (sev.crit || 0);
+        const mid = sev.mid || 0;
+        const low = sev.low || 0;
+        const sevTotal = Math.max(1, high + mid + low);
+        const sevRows = [
+          { label: 'عالية', count: high, color: 'var(--danger)', pct: Math.round((high / sevTotal) * 100) },
+          { label: 'متوسطة', count: mid, color: 'var(--warning)', pct: Math.round((mid / sevTotal) * 100) },
+          { label: 'منخفضة', count: low, color: 'var(--info)', pct: Math.round((low / sevTotal) * 100) }
+        ];
+        const sevHTML = sevRows.map(sv => `
+          <div class="rd-cmp-emp-sev__row">
+            <div class="rd-cmp-emp-sev__top">
+              <span class="rd-cmp-emp-sev__lbl">${Sec.escapeHTML(sv.label)}</span>
+              <span class="rd-cmp-emp-sev__count" style="color:${sv.color}">${sv.count}</span>
+            </div>
+            <div class="rd-cmp-emp-sev__track">
+              <div class="rd-cmp-emp-sev__fill" style="width:${sv.pct}%;background:${sv.color}"></div>
+            </div>
+          </div>`).join('');
+
+        return `
+          <div class="rd-cmp-emp-detail">
+            <div class="rd-cmp-emp-gauges">
+              <div class="rd-cmp-emp-gauge">
+                ${rdCmpGaugeRingHTML(score, scoreColor)}
+                <div class="rd-cmp-emp-gauge__lbl">معدل الالتزام</div>
+              </div>
+              <div class="rd-cmp-emp-gauge">
+                ${rdCmpGaugeRingHTML(respScore, respColor)}
+                <div class="rd-cmp-emp-gauge__lbl">معدل الاستجابة</div>
+              </div>
+            </div>
+            <div class="rd-cmp-emp-sec-hd">
+              <span class="rd-cmp-emp-sec-hd__title">المخالفات — آخر 6 أشهر</span>
+              <span class="rd-cmp-emp-sec-hd__meta">الإجمالي: ${totalViol}</span>
+            </div>
+            <div class="rd-cmp-emp-months">${barsHTML}</div>
+            <div class="rd-cmp-emp-sec-title">توزيع خطورة المخالفات</div>
+            <div class="rd-cmp-emp-sev">${sevHTML}</div>
+          </div>`;
+      }
+
+      function rdCmpScoreBarPct(score) {
+        const n = Number(score);
+        if (!Number.isFinite(n)) return 0;
+        return Math.max(0, Math.min(100, Math.round(n)));
+      }
+
+      function rdCmpOrgHeroHTML(score) {
+        const raw = Number(score);
+        const tone = cmpScoreRateColor(raw);
+        const disp = (Math.round(raw * 10) / 10).toFixed(raw % 1 ? 1 : 0);
+        const pct = rdCmpScoreBarPct(raw);
+        const C = 339.292;
+        const offset = (C - (C * pct) / 100).toFixed(3);
+        const desk = typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi();
+        const sub = desk ? 'لكل المناطق هذا الشهر' : 'لكل المناطق والفروع مجتمعة هذا الشهر';
+        return `
+          <div class="rd-cmp-hero">
+            <div class="rd-cmp-hero__ring" aria-hidden="true">
+              <svg viewBox="0 0 132 132">
+                <circle cx="66" cy="66" r="54" fill="none" stroke="var(--border)" stroke-width="12"></circle>
+                <circle cx="66" cy="66" r="54" fill="none" stroke="${tone}" stroke-width="12" stroke-linecap="round"
+                  stroke-dasharray="339.292" stroke-dashoffset="${offset}"></circle>
+              </svg>
+              <div class="rd-cmp-hero__val" style="color:${tone}">${Sec.escapeHTML(disp)}</div>
+            </div>
+            <div class="rd-cmp-hero__copy">
+              <div class="rd-cmp-hero__title">معدل الالتزام العام</div>
+              <div class="rd-cmp-hero__sub">${Sec.escapeHTML(sub)}</div>
+            </div>
+          </div>`;
+      }
+
+      function rdCmpHiLoHTML(extremes, view) {
+        if (!extremes) return '';
+        const desk = typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi();
+        const topLabel = desk || view === 'regions'
+          ? 'أعلى منطقة'
+          : (view === 'branches' ? 'أعلى فرع' : 'أعلى تقييم');
+        const bottomLabel = desk || view === 'regions'
+          ? 'بحاجة لمتابعة'
+          : (view === 'branches' ? 'أدنى فرع' : 'أقل تقييم');
+        const onClick = (desk || view === 'regions')
+          ? (id) => `cmpOpenRegionCompliance('${id}')`
+          : view === 'branches'
+            ? (id) => `cmpOpenBranchCompliance('${id}')`
+            : (id) => `openCmpItemDetail('employee','${id}')`;
+        const card = (kind, item, label, icon) => {
+          const rate = (Math.round(Number(item.score) * 10) / 10).toFixed(1);
+          return `
+            <button type="button" class="rd-cmp-hilo rd-cmp-hilo--${kind}" onclick="${onClick(item.id)}">
+              <div class="rd-cmp-hilo__lbl"><i class="fas ${icon}" aria-hidden="true"></i>${Sec.escapeHTML(label)}</div>
+              <div class="rd-cmp-hilo__rate">${Sec.escapeHTML(rate)}%</div>
+              <div class="rd-cmp-hilo__name">${Sec.escapeHTML(item.name || '—')}</div>
+            </button>`;
+        };
+        return `<div class="rd-cmp-hilo-row">${card('top', extremes.top, topLabel, 'fa-arrow-trend-up')}${card('bottom', extremes.bottom, bottomLabel, 'fa-arrow-trend-down')}</div>`;
+      }
+
+      function rdCmpRegionCardHTML(card) {
+        const raw = Number(card.score);
+        const tone = cmpScoreRateColor(raw);
+        const rateStr = (Math.round(raw * 10) / 10).toFixed(1) + '%';
+        const bar = rdCmpScoreBarPct(raw);
+        const clickAttr = card.onClick ? `onclick="${Sec.escapeHTML(card.onClick)}"` : '';
+        const manager = Sec.escapeHTML(card.sub || '—');
+        if (typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi()) {
+          return `
+            <button type="button" class="rd-cmp-region rd-cmp-row rd-cmp-row--region" ${clickAttr}>
+              <span class="rd-cmp-row__name">${Sec.escapeHTML(card.name)}</span>
+              <span class="rd-cmp-row__muted rd-cmp-clip">${manager}</span>
+              <span class="rd-cmp-row__num">${card.branches}</span>
+              <span class="rd-cmp-row__num">${card.employees}</span>
+              <span class="rd-cmp-row__bar">
+                <span class="rd-cmp-row__track"><span style="width:${bar}%;background:${tone}"></span></span>
+                <span class="rd-cmp-row__rate" style="color:${tone}">${rateStr}</span>
+              </span>
+            </button>`;
+        }
+        return `
+          <article class="rd-cmp-region" ${clickAttr} role="button" tabindex="0">
+            <div class="rd-cmp-region__top">
+              <div class="rd-cmp-region__who">
+                <span class="rd-cmp-region__name">${Sec.escapeHTML(card.name)}</span>
+                <span class="rd-cmp-region__mgr">${manager}</span>
+              </div>
+              <div class="rd-cmp-region__end">
+                <span class="rd-cmp-region__rate" style="color:${tone}">${rateStr}</span>
+                <i class="fas fa-chevron-left" aria-hidden="true"></i>
+              </div>
+            </div>
+            <div class="rd-cmp-region__bar" aria-hidden="true"><span style="width:${bar}%;background:${tone}"></span></div>
+            <div class="rd-cmp-region__meta">
+              <span><i class="fas fa-code-branch" aria-hidden="true"></i><strong>${card.branches}</strong> فروع</span>
+              <span><i class="fas fa-users" aria-hidden="true"></i><strong>${card.employees}</strong> موظفون</span>
+            </div>
+          </article>`;
+      }
+
+      function rdCmpBranchCardHTML(card) {
+        const raw = Number(card.score);
+        const tone = cmpScoreRateColor(raw);
+        const disp = String(Math.round(raw));
+        const pct = rdCmpScoreBarPct(raw);
+        const clickAttr = card.onClick ? `onclick="${Sec.escapeHTML(card.onClick)}"` : '';
+        if (typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi()) {
+          return `
+            <button type="button" class="rd-cmp-branch rd-cmp-row rd-cmp-row--branch" ${clickAttr}>
+              <span class="rd-cmp-row__name">${Sec.escapeHTML(card.name)}</span>
+              <span class="rd-cmp-row__num">${card.employees}</span>
+              <span class="rd-cmp-row__bar">
+                <span class="rd-cmp-row__track"><span style="width:${pct}%;background:${tone}"></span></span>
+                <span class="rd-cmp-row__rate" style="color:${tone}">${Sec.escapeHTML(disp)}</span>
+              </span>
+            </button>`;
+        }
+        const C = 339.292;
+        const offset = (C - (C * pct) / 100).toFixed(3);
+        return `
+          <article class="rd-cmp-branch" ${clickAttr} role="button" tabindex="0">
+            <div class="rd-cmp-branch__ring" aria-hidden="true">
+              <svg viewBox="0 0 132 132">
+                <circle cx="66" cy="66" r="54" fill="none" stroke="var(--border)" stroke-width="14"></circle>
+                <circle cx="66" cy="66" r="54" fill="none" stroke="${tone}" stroke-width="14" stroke-linecap="round"
+                  stroke-dasharray="339.292" stroke-dashoffset="${offset}"></circle>
+              </svg>
+              <div class="rd-cmp-branch__val" style="color:${tone}">${Sec.escapeHTML(disp)}</div>
+            </div>
+            <div class="rd-cmp-branch__body">
+              <div class="rd-cmp-branch__name">${Sec.escapeHTML(card.name)}</div>
+              <div class="rd-cmp-branch__sub">${card.employees} موظفون</div>
+            </div>
+            <i class="fas fa-chevron-left rd-cmp-branch__chev" aria-hidden="true"></i>
+          </article>`;
+      }
+
+      function rdCmpEmpRowHTML(card) {
+        const raw = Number(card.score);
+        const tone = cmpScoreRateColor(raw);
+        const disp = (Math.round(raw * 10) / 10).toFixed(raw % 1 ? 1 : 0);
+        const initial = String(card.name || '؟').trim().charAt(0) || '؟';
+        const role = card.isBm ? 'مدير فرع' : 'موظف';
+        const click = card.onClick || `openCmpItemDetail('employee','${String(card.id || '').replace(/'/g, "\\'")}')`;
+        if (typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi()) {
+          return `
+            <button type="button" class="rd-cmp-emp rd-cmp-row rd-cmp-row--emp" onclick="${Sec.escapeHTML(click)}">
+              <span class="rd-cmp-row__who">
+                <span class="rd-cmp-emp__av" aria-hidden="true">${Sec.escapeHTML(initial)}</span>
+                <span class="rd-cmp-row__name">${Sec.escapeHTML(card.name)}</span>
+              </span>
+              <span class="rd-cmp-row__muted">${Sec.escapeHTML(role)}</span>
+              <span class="rd-cmp-row__score" style="color:${tone}">${Sec.escapeHTML(disp)}</span>
+            </button>`;
+        }
+        return `
+          <article class="rd-cmp-emp" onclick="${Sec.escapeHTML(click)}" role="button" tabindex="0">
+            <span class="rd-cmp-emp__av" aria-hidden="true">${Sec.escapeHTML(initial)}</span>
+            <div class="rd-cmp-emp__body">
+              <div class="rd-cmp-emp__name">${Sec.escapeHTML(card.name)}</div>
+              <div class="rd-cmp-emp__role">${Sec.escapeHTML(role)}</div>
+            </div>
+            <span class="rd-cmp-emp__score" style="color:${tone}">${Sec.escapeHTML(disp)}</span>
+            <i class="fas fa-chevron-left" aria-hidden="true"></i>
+          </article>`;
+      }
+
+      function rdCmpTheadHTML(view) {
+        if (view === 'branches') {
+          return `
+            <div class="rd-cmp-thead rd-cmp-thead--branch" role="row">
+              <span>الفرع</span><span>الموظفون</span><span>معدل الالتزام</span>
+            </div>`;
+        }
+        if (view === 'employees') {
+          return `
+            <div class="rd-cmp-thead rd-cmp-thead--emp" role="row">
+              <span>الموظف</span><span>الدور</span><span>معدل الالتزام</span>
+            </div>`;
+        }
+        return `
+          <div class="rd-cmp-thead rd-cmp-thead--region" role="row">
+            <span>المنطقة</span><span>المدير</span><span>الفروع</span><span>الموظفون</span><span>معدل الالتزام</span>
+          </div>`;
+      }
+
       function cmpNeoExtremesBarHTML(extremes, view) {
         if (!extremes) return '';
+        if ((typeof isAtharRedesignUi === 'function' && isAtharRedesignUi()) || isAtharDesktopScreenUi()) {
+          return rdCmpHiLoHTML(extremes, view);
+        }
         const labels = view === 'branches'
           ? { top: 'أعلى فرع', bottom: 'أدنى فرع' }
           : view === 'employees'
@@ -23700,6 +24003,13 @@
         const statA = view === 'regions' ? 'الفروع' : (view === 'branches' ? 'منضبطون' : 'المخالفات');
         const statB = view === 'employees' ? 'النقاط' : 'الموظفون';
         const rankCls = card.rank === 'top' ? ' cmp-neo-card--top' : (card.rank === 'bottom' ? ' cmp-neo-card--bottom' : '');
+
+        if ((typeof isAtharRedesignUi === 'function' && isAtharRedesignUi()) || isAtharDesktopScreenUi()) {
+          if (view === 'regions') return rdCmpRegionCardHTML(card);
+          if (view === 'branches') return rdCmpBranchCardHTML(card);
+          return rdCmpRegionCardHTML(card);
+        }
+
         const rankTitle = view === 'branches'
           ? (card.rank === 'top' ? 'أعلى فرع' : 'أدنى فرع')
           : (card.rank === 'top' ? 'أعلى منطقة' : 'أدنى منطقة');
@@ -23917,8 +24227,10 @@
 
         let title = 'مؤشرات الامتثال';
         let titleContext = '';
-        let subtitle = 'نظرة عامة على أداء كل المناطق ';
+        let subtitle = 'نظرة عامة على أداء كل المناطق';
         let backNav = '';
+        const rdCmp = (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi())
+          || isAtharDesktopScreenUi();
 
         if (view === 'branches') {
           const region = state.regions.find(r => r.id === state._cmpDrill.regionId);
@@ -23937,7 +24249,7 @@
           if (state._cmpDrill.branchId && branch && !isBranchMgr) {
             title = 'تقييم الموظفين';
             titleContext = branch.name;
-            subtitle = 'نظرة عامة على أداء كل الموظفين';
+            subtitle = rdCmp ? '' : 'نظرة عامة على أداء كل الموظفين';
             backNav = cmpNeoBackBtnHTML('كل الفروع', 'cmpBackToBranches()', null, { combo: true });
           } else if (isBranchMgr) {
             title = 'تقييم الموظفين';
@@ -23948,6 +24260,9 @@
             titleContext = '';
             subtitle = 'نظرة عامة على أداء كل الموظفين';
           }
+        }
+        if (rdCmp && view === 'regions') {
+          subtitle = 'أداء المناطق حسب معدل الالتزام';
         }
 
         const scoreExtremes = cmpFindScoreExtremes(items);
@@ -23968,7 +24283,7 @@
             const empViols = violations.filter(v => v.employee_id === item.id);
             const branch = state.branches.find(b => b.id === (state.users.find(u => u.id === item.id)?.branch_id));
             const isMgr = !!(branch && state.users.find(u => u.id === item.id && u.role === 'branch_manager'));
-            return cmpEmpCardHTML({
+            const empCard = {
               id: item.id,
               name: item.name,
               empNumber: item.empNumber || item.extraInfo?.empNumber,
@@ -23988,7 +24303,10 @@
               trend: cmpNeoTrendMeta(empViols),
               rank: item.id === topId ? 'top' : (item.id === bottomId ? 'bottom' : ''),
               onClick: `openCmpItemDetail('employee','${item.id}')`
-            });
+            };
+            return rdCmp
+              ? rdCmpEmpRowHTML(empCard)
+              : cmpEmpCardHTML(empCard);
           }).join('');
         } else if (view === 'branches') {
           cardsHTML = items.map(item => {
@@ -24036,7 +24354,104 @@
         const cmpSearchPh = cmpSearchPlaceholder(view);
         if (!cmpDataPending) cmpSnapshotBoardAnim(board);
 
-        board.innerHTML = `
+        if (rdCmp) {
+          const isRegionsRoot = view === 'regions';
+          const desk = typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi();
+          const drilledRegion = state.regions.find(r => r.id === state._cmpDrill.regionId);
+          const drilledBranch = state.branches.find(b => b.id === state._cmpDrill.branchId);
+          let listTitle = 'حسب المنطقة';
+          let rdBack = '';
+          if (view === 'branches' && drilledRegion) {
+            listTitle = 'فروع ' + drilledRegion.name;
+            rdBack = `<button type="button" class="rd-cmp-back" onclick="cmpBackToRegions()"><i class="fas fa-arrow-right" aria-hidden="true"></i>كل المناطق</button>`;
+          } else if (view === 'employees' && drilledBranch && !isBranchMgr) {
+            listTitle = 'موظفو ' + drilledBranch.name;
+            rdBack = `<button type="button" class="rd-cmp-back" onclick="cmpBackToBranches()"><i class="fas fa-arrow-right" aria-hidden="true"></i>فروع ${Sec.escapeHTML(drilledRegion?.name || '')}</button>`;
+          } else if (view === 'employees' && isBranchMgr) {
+            listTitle = 'موظفو ' + (drilledBranch?.name || 'الفرع');
+          } else if (view === 'branches') {
+            listTitle = 'حسب الفرع';
+          } else if (view === 'employees') {
+            listTitle = 'حسب الموظف';
+          }
+
+          let orgScore = 100;
+          if (!cmpDataPending && isRegionsRoot && items.length) {
+            orgScore = items.reduce((a, it) => a + Number(it.score || 0), 0) / items.length;
+          } else if (!cmpDataPending && (state.regions || []).length) {
+            const regs = state.regions;
+            orgScore = regs.reduce((a, r) => a + calcRegionStability(r.id, violations).score, 0) / regs.length;
+          }
+
+          let metricsHTML = '';
+          if (!cmpDataPending) {
+            if (desk || isRegionsRoot) {
+              let hiLo = extremesBarHTML;
+              if (desk && !isRegionsRoot) {
+                const regItems = (state.regions || []).map((r) => ({
+                  id: r.id,
+                  name: r.name,
+                  score: calcRegionStability(r.id, violations).score,
+                }));
+                hiLo = rdCmpHiLoHTML(cmpFindScoreExtremes(regItems), 'regions');
+              }
+              metricsHTML = `${rdCmpOrgHeroHTML(orgScore)}${hiLo}`;
+            }
+          }
+
+          const listTitleHTML = (desk && isRegionsRoot)
+            ? ''
+            : `<div class="rd-cmp-list-title">${Sec.escapeHTML(listTitle)}</div>`;
+          const theadHTML = desk && !cmpDataPending && items.length ? rdCmpTheadHTML(view) : '';
+          const toolbarHTML = desk ? '' : `
+              <header class="rd-cmp-hd">
+                <h3>مؤشرات الامتثال</h3>
+                <p class="rd-cmp-hd__eye">COMPLIANCE OVERVIEW</p>
+              </header>
+              <div class="rd-cmp-toolbar">
+                <div class="figma-search-wrap rd-cmp-search">
+                  <input type="text" class="figma-search-input" id="cmp-search"
+                    value="${Sec.escapeHTML(cmpSearchVal)}"
+                    placeholder="${Sec.escapeHTML(cmpSearchPh || 'ابحث باسم المنطقة أو المدير...')}"
+                    oninput="filterCmpSearch()" autocomplete="off" enterkeyhint="search">
+                  <button type="button" class="figma-search-btn" onclick="filterCmpSearch()" aria-label="بحث">
+                    <i class="fas fa-magnifying-glass"></i>
+                  </button>
+                </div>
+                ${canPickCmpScope() ? `<div class="wf-status-filter" id="cmp-filter-dd">
+                  <button type="button" class="wf-status-trigger" id="cmp-filter-trigger"
+                    onclick="cmpFilterToggle(event)" aria-haspopup="listbox" aria-expanded="false">
+                    <span class="wf-status-trigger__label" id="cmp-filter-label">كل المناطق</span>
+                    <i class="fas fa-chevron-down wf-status-trigger__chev" aria-hidden="true"></i>
+                  </button>
+                  <select id="cmp-filter-scope" class="wf-status-select-native" tabindex="-1" aria-hidden="true"
+                    aria-label="نطاق العرض" onchange="cmpFilterMobNativeChange(this)">
+                    <option value="regions">كل المناطق</option>
+                    <option value="branches">كل الفروع</option>
+                    <option value="employees">كل الموظفين</option>
+                  </select>
+                </div>` : ''}
+                <div class="rp-date-wrap" id="cmpNeoDateWrap" hidden>
+                  <button type="button" class="rp-tool-btn rp-date-btn" onclick="toggleCmpDatePicker(event)" id="cmp-date-btn">
+                    <i class="fas fa-calendar"></i><span id="cmp-date-label">${Sec.escapeHTML(dateLabel)}</span>
+                  </button>
+                </div>
+              </div>
+              <p class="cmp-neo-search-meta" hidden>عدد النتائج: <strong id="cmp-search-count">${cmpDataPending ? '…' : items.length}</strong></p>`;
+
+          board.innerHTML = `
+            <section class="cmp-neo-board rd-cmp-board${desk ? ' rd-cmp-board--desk' : ''}">
+              ${toolbarHTML}
+              ${metricsHTML}
+              ${rdBack}
+              ${listTitleHTML}
+              <div class="rd-cmp-table${desk ? ' rd-cmp-table--desk' : ''}">
+                ${theadHTML}
+                <div class="rd-cmp-list ${gridCls}">${cardsHTML}</div>
+              </div>
+            </section>`;
+        } else {
+          board.innerHTML = `
           <section class="cmp-neo-board">
             <header class="cmp-neo-board-head">
               <div class="cmp-neo-head-main">
@@ -24092,6 +24507,7 @@
             ${extremesBarHTML}
             <div class="${gridCls}">${cardsHTML}</div>
           </section>`;
+        }
 
         const neoBoard = board.querySelector('.cmp-neo-board');
         const filtersBar = document.getElementById('cmpActiveFiltersBar');
@@ -24719,6 +25135,12 @@
         }
 
         // ─── تحديث Modal ───
+        const cmpModal = document.getElementById('cmpDetailModal');
+        const cmpCard = cmpModal?.querySelector('.modal-card.cmp-detail-card');
+        const rdEmp = ((typeof isAtharRedesignUi === 'function' && isAtharRedesignUi()) || isAtharDesktopScreenUi()) && type === 'employee';
+        cmpModal?.classList.toggle('cmp-detail--rd-emp', !!rdEmp);
+        cmpCard?.classList.toggle('cmp-detail-card--rd-emp', !!rdEmp);
+
         document.getElementById('cmpDetailHero').innerHTML = buildCmpDetailHeroHTML(item);
         document.getElementById('cmpDetailBody').innerHTML = buildCmpDetailHTML(item, viols, violations);
         bindCmpTimelineNav(document.getElementById('cmpDetailBody'));

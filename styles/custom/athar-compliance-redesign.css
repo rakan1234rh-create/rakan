@@ -1,0 +1,961 @@
+/* ATHAR Production — الامتثال / compliance (desktop) */
+
+html.athar-staging-redesign.mr-desktop-ui #cmpActiveFiltersBar {
+  display: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #appWrap #tab-compliance.tab-content.active {
+  padding: 24px !important;
+}
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance > .panel,
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .wf-panel {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+@keyframes atharRdFadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes atharRdCardIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes atharRdScreenIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes atharRdSideScrimIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes atharRdSidePanelIn {
+  from { transform: translate3d(var(--athar-side-panel-from, -100%), 0, 0); }
+  to { transform: translate3d(0, 0, 0); }
+}
+html.athar-staging-redesign.mr-desktop-ui {
+  --athar-side-panel-from: -100%;
+}
+html.athar-staging-redesign.mr-desktop-ui[dir="ltr"],
+html[dir="ltr"].athar-staging-redesign.mr-desktop-ui {
+  --athar-side-panel-from: 100%;
+}
+
+/* ── base .rd-cmp-* ── */
+
+.rd-cmp-hd h3 {
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  color: var(--text) !important;
+  margin: 0 !important;
+}
+.rd-cmp-hd__eye {
+  font-size: 10.5px;
+  color: var(--text3);
+  letter-spacing: 0.08em;
+  margin: 3px 0 16px;
+  text-transform: uppercase;
+}
+
+.rd-cmp-hero {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 12px;
+  animation: atharRdCardIn 0.4s ease both;
+}
+.rd-cmp-hero__ring {
+  position: relative;
+  width: 76px;
+  height: 76px;
+  flex-shrink: 0;
+}
+.rd-cmp-hero__ring svg {
+  width: 76px;
+  height: 76px;
+  transform: rotate(-90deg);
+  position: absolute;
+  inset: 0;
+}
+.rd-cmp-hero__val {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+}
+.rd-cmp-hero__title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+.rd-cmp-hero__sub {
+  font-size: 11.5px;
+  color: var(--text3);
+  margin-top: 4px;
+  line-height: 1.6;
+}
+
+.rd-cmp-hilo-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.rd-cmp-hilo {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 13px 14px;
+  text-align: start;
+  cursor: pointer;
+  font-family: inherit;
+  color: inherit;
+  box-shadow: none;
+  animation: atharRdCardIn 0.4s ease both;
+}
+.rd-cmp-hilo__lbl {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+  color: var(--text2);
+  margin-bottom: 6px;
+}
+.rd-cmp-hilo--top .rd-cmp-hilo__lbl i { color: var(--success); font-size: 10px; }
+.rd-cmp-hilo--bottom .rd-cmp-hilo__lbl i { color: var(--danger); font-size: 10px; }
+.rd-cmp-hilo__rate {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+.rd-cmp-hilo__name {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rd-cmp-toolbar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  align-items: stretch;
+}
+.rd-cmp-search {
+  flex: 1 !important;
+  min-width: 0 !important;
+  background: var(--searchFill) !important;
+  border: none !important;
+  border-radius: 10px !important;
+  min-height: 42px !important;
+  box-shadow: none !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-compliance #cmp-filter-dd {
+  flex: 0 0 auto !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-compliance #cmp-filter-trigger {
+  height: 42px !important;
+  min-height: 42px !important;
+  border-radius: 10px !important;
+  border: 1px solid var(--border) !important;
+  background: var(--surface) !important;
+  padding: 0 12px !important;
+  gap: 6px !important;
+  box-shadow: none !important;
+  font-size: 11.5px !important;
+  font-weight: 600 !important;
+  color: var(--text) !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-compliance .wf-status-trigger__ico {
+  display: none !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-compliance .wf-status-trigger__chev {
+  display: inline-block !important;
+  font-size: 9px !important;
+  color: var(--text3) !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-compliance #cmp-filter-label {
+  font-size: 11.5px !important;
+  white-space: nowrap !important;
+}
+
+.rd-cmp-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0;
+  margin: 0 0 12px;
+  border: none;
+  background: transparent;
+  color: var(--text2);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+.rd-cmp-back i { font-size: 11px; }
+.rd-cmp-list-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 10px;
+}
+.rd-cmp-list {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+}
+
+.rd-cmp-region {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 14px 16px;
+  cursor: pointer;
+  animation: atharRdCardIn 0.4s ease both;
+}
+.rd-cmp-region__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 9px;
+}
+.rd-cmp-region__who { min-width: 0; }
+.rd-cmp-region__name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text);
+}
+.rd-cmp-region__mgr {
+  font-size: 11px;
+  color: var(--text3);
+  margin-inline-start: 8px;
+}
+.rd-cmp-region__end {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  color: var(--text3);
+  font-size: 11px;
+}
+.rd-cmp-region__rate {
+  font-size: 14px;
+  font-weight: 700;
+}
+.rd-cmp-region__bar {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--surface2);
+  overflow: hidden;
+  margin-bottom: 9px;
+}
+.rd-cmp-region__bar span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  min-width: 0;
+}
+.rd-cmp-region__meta {
+  display: flex;
+  gap: 16px;
+  font-size: 11px;
+  color: var(--text2);
+}
+.rd-cmp-region__meta i {
+  font-size: 10px;
+  color: var(--text3);
+  margin-inline-end: 6px;
+}
+.rd-cmp-region__meta strong {
+  color: var(--text);
+  font-weight: 700;
+  margin-inline-end: 3px;
+}
+
+.rd-cmp-branch {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  animation: atharRdCardIn 0.4s ease both;
+}
+.rd-cmp-branch__ring {
+  position: relative;
+  width: 46px;
+  height: 46px;
+  flex-shrink: 0;
+}
+.rd-cmp-branch__ring svg {
+  width: 46px;
+  height: 46px;
+  transform: rotate(-90deg);
+  position: absolute;
+  inset: 0;
+}
+.rd-cmp-branch__val {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+}
+.rd-cmp-branch__body { flex: 1; min-width: 0; }
+.rd-cmp-branch__name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text);
+}
+.rd-cmp-branch__sub {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 3px;
+}
+.rd-cmp-branch__chev {
+  color: var(--text3);
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.rd-cmp-emp {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  animation: atharRdCardIn 0.4s ease both;
+}
+.rd-cmp-emp__av {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--surface2);
+  color: var(--text2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.rd-cmp-emp__body { flex: 1; min-width: 0; }
+.rd-cmp-emp__name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+.rd-cmp-emp__role {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 2px;
+}
+.rd-cmp-emp__score {
+  font-size: 14px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.rd-cmp-emp > .fa-chevron-left {
+  color: var(--text3);
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+/* ── employee detail ── */
+
+.rd-cmp-emp-hd {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 14px 0 4px;
+  direction: rtl;
+  animation: atharRdCardIn 0.3s ease both;
+}
+.rd-cmp-emp-hd__av {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: var(--surface2);
+  color: var(--text2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.rd-cmp-emp-hd__body { flex: 1; min-width: 0; }
+.rd-cmp-emp-hd__name {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rd-cmp-emp-hd__role {
+  font-size: 11.5px;
+  color: var(--text3);
+  margin-top: 2px;
+}
+
+.rd-cmp-emp-detail {
+  direction: rtl;
+  animation: atharRdScreenIn 0.32s ease;
+}
+.rd-cmp-emp-gauges {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 14px 0 18px;
+}
+.rd-cmp-emp-gauge {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: atharRdCardIn 0.4s ease both;
+}
+.rd-cmp-emp-gauge:nth-child(2) { animation-delay: 0.05s; }
+.rd-cmp-emp-gauge__ring {
+  position: relative;
+  width: 72px;
+  height: 72px;
+}
+.rd-cmp-emp-gauge__ring svg {
+  position: absolute;
+  inset: 0;
+  transform: rotate(-90deg);
+  display: block;
+}
+.rd-cmp-emp-gauge__val {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+}
+.rd-cmp-emp-gauge__lbl {
+  font-size: 11px;
+  color: var(--text2);
+  margin-top: 8px;
+}
+
+.rd-cmp-emp-sec-hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.rd-cmp-emp-sec-hd__title,
+.rd-cmp-emp-sec-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+.rd-cmp-emp-sec-hd__meta {
+  font-size: 11.5px;
+  color: var(--text3);
+  flex-shrink: 0;
+}
+.rd-cmp-emp-sec-title { margin: 0 0 10px; }
+
+.rd-cmp-emp-months {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  height: 90px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px 14px;
+  margin-bottom: 18px;
+  direction: ltr;
+  animation: atharRdCardIn 0.4s ease both;
+  animation-delay: 0.08s;
+}
+.rd-cmp-emp-bar {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  height: 100%;
+  min-width: 0;
+}
+.rd-cmp-emp-bar__val {
+  font-size: 10px;
+  color: var(--text3);
+  line-height: 1;
+}
+.rd-cmp-emp-bar__fill {
+  width: 100%;
+  max-width: 22px;
+  border-radius: 6px 6px 0 0;
+  background: var(--gold);
+  min-height: 3px;
+  transition: height 0.35s ease;
+}
+.rd-cmp-emp-bar__lbl {
+  font-size: 9.5px;
+  color: var(--text3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.rd-cmp-emp-sev {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.rd-cmp-emp-sev__row {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px 14px;
+  animation: atharRdCardIn 0.4s ease both;
+}
+.rd-cmp-emp-sev__row:nth-child(1) { animation-delay: 0.1s; }
+.rd-cmp-emp-sev__row:nth-child(2) { animation-delay: 0.14s; }
+.rd-cmp-emp-sev__row:nth-child(3) { animation-delay: 0.18s; }
+.rd-cmp-emp-sev__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.rd-cmp-emp-sev__lbl {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text);
+}
+.rd-cmp-emp-sev__count {
+  font-size: 13px;
+  font-weight: 700;
+}
+.rd-cmp-emp-sev__track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--surface2);
+  overflow: hidden;
+}
+.rd-cmp-emp-sev__fill {
+  height: 100%;
+  border-radius: 999px;
+  min-width: 0;
+  transition: width 0.35s ease;
+}
+
+/* ── desktop board + emp side panel ── */
+
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-board {
+  display: block !important;
+  animation: atharRdFadeUp 0.3s ease !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-board--desk {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr 1fr !important;
+  gap: 14px !important;
+  align-items: start !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-board--desk > .rd-cmp-hero,
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-board--desk > .rd-cmp-hilo-row,
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-board--desk > .rd-cmp-back,
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-board--desk > .rd-cmp-list-title,
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-board--desk > .rd-cmp-table {
+  grid-column: 1 / -1 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-board--desk > .rd-cmp-hero {
+  grid-column: 1 / 2 !important;
+  margin: 0 0 6px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-board--desk > .rd-cmp-hilo-row {
+  grid-column: 2 / -1 !important;
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 14px !important;
+  margin: 0 0 6px !important;
+  width: auto !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-hero,
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-hilo {
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 16px !important;
+  padding: 18px !important;
+  box-shadow: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-hero {
+  display: flex !important;
+  align-items: center !important;
+  gap: 14px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-hero__ring {
+  width: 64px !important;
+  height: 64px !important;
+  position: relative !important;
+  flex-shrink: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-hero__ring svg {
+  width: 64px !important;
+  height: 64px !important;
+  transform: rotate(-90deg) !important;
+  display: block !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-hero__val {
+  position: absolute !important;
+  inset: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-hero__title {
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+  color: var(--text) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-hero__sub {
+  font-size: 10.5px !important;
+  color: var(--text3) !important;
+  margin-top: 4px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-hilo {
+  display: block !important;
+  width: 100% !important;
+  text-align: start !important;
+  font: inherit !important;
+  cursor: pointer !important;
+  color: inherit !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-hilo__lbl {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  font-size: 10.5px !important;
+  color: var(--text2) !important;
+  margin-bottom: 6px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-hilo__rate {
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  color: var(--text) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-hilo__name {
+  font-size: 11px !important;
+  color: var(--text3) !important;
+  margin-top: 2px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-back {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  margin: 8px 0 14px !important;
+  padding: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  color: var(--text2) !important;
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  font-family: inherit !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-list-title {
+  font-size: 13.5px !important;
+  font-weight: 700 !important;
+  color: var(--text) !important;
+  margin: 0 0 10px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-table--desk {
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 16px !important;
+  overflow: hidden !important;
+  margin-top: 14px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-thead {
+  display: grid !important;
+  gap: 12px !important;
+  padding: 12px 18px !important;
+  background: var(--surface2) !important;
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  color: var(--text2) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-thead--region {
+  grid-template-columns: 2fr 1.6fr 100px 100px 120px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-thead--branch {
+  grid-template-columns: 2fr 1fr 120px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-thead--emp {
+  grid-template-columns: 2fr 1.4fr 120px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-list {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  overflow: visible !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-row {
+  display: grid !important;
+  gap: 12px !important;
+  align-items: center !important;
+  padding: 14px 18px !important;
+  border: none !important;
+  border-top: 1px solid var(--border) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: inherit !important;
+  font: inherit !important;
+  text-align: start !important;
+  width: 100% !important;
+  cursor: pointer !important;
+  margin: 0 !important;
+  animation: atharRdCardIn .35s ease both;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-row--emp {
+  padding: 13px 18px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-row--region {
+  grid-template-columns: 2fr 1.6fr 100px 100px 120px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-row--branch {
+  grid-template-columns: 2fr 1fr 120px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-row--emp {
+  grid-template-columns: 2fr 1.4fr 120px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-list > .rd-cmp-row:first-child {
+  border-top: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-row__name {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: var(--text) !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-row--emp .rd-cmp-row__name {
+  font-weight: 600 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-row__muted {
+  font-size: 12px !important;
+  color: var(--text3) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-row--emp .rd-cmp-row__muted {
+  color: var(--text2) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-clip {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-row__num {
+  font-size: 12.5px !important;
+  color: var(--text2) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-row__bar {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-row__track {
+  flex: 1 !important;
+  height: 6px !important;
+  border-radius: 999px !important;
+  background: var(--surface2) !important;
+  overflow: hidden !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-row__track > span {
+  display: block !important;
+  height: 100% !important;
+  border-radius: 999px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-row__rate {
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  width: 40px !important;
+  text-align: left !important;
+  flex-shrink: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-row--branch .rd-cmp-row__rate {
+  width: 32px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-row__who {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  min-width: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-row--emp .rd-cmp-emp__av {
+  width: 30px !important;
+  height: 30px !important;
+  border-radius: 50% !important;
+  background: var(--surface2) !important;
+  color: var(--text2) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  flex-shrink: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-row__score {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+}
+
+/* Hide mobile-only chrome leftovers inside desk rows */
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-row .fa-chevron-left,
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-region__meta,
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-branch__ring,
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-branch__chev {
+  display: none !important;
+}
+
+/* Employee detail ΓÇö end-docked panel on desktop */
+html.athar-staging-redesign.mr-desktop-ui #cmpDetailModal.modal.open.cmp-detail--rd-emp {
+  display: block !important;
+  position: fixed !important;
+  top: var(--unified-topbar-h, 68px) !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100% !important;
+  height: calc(100vh - var(--unified-topbar-h, 68px)) !important;
+  max-height: calc(100vh - var(--unified-topbar-h, 68px)) !important;
+  background: rgba(0, 0, 0, 0.28) !important;
+  animation: atharRdSideScrimIn 0.32s ease both;
+  box-sizing: border-box !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #cmpDetailModal.cmp-detail--rd-emp .modal-card.cmp-detail-card--rd-emp {
+  position: absolute !important;
+  top: 0 !important;
+  inset-inline-end: 0 !important;
+  inset-inline-start: auto !important;
+  bottom: 0 !important;
+  width: 460px !important;
+  max-width: 92vw !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  border: none !important;
+  border-inline-start: 1px solid var(--border) !important;
+  background: var(--bg) !important;
+  overflow-y: auto !important;
+  padding: 22px !important;
+  animation: atharRdSidePanelIn 0.42s cubic-bezier(0.22, 1, 0.36, 1) both !important;
+  will-change: transform;
+  box-shadow: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #cmpDetailModal.cmp-detail--rd-emp .cmp-sheet-drag-zone,
+html.athar-staging-redesign.mr-desktop-ui #cmpDetailModal.cmp-detail--rd-emp .cmp-sheet-grabber-wrap {
+  display: none !important;
+}
+
+/* ── narrow desktop ── */
+@media (max-width: 1100px) {
+  html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-board--desk {
+    grid-template-columns: 1fr !important;
+  }
+  html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-board--desk > .rd-cmp-hero,
+  html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-board--desk > .rd-cmp-hilo-row {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+    margin-inline-start: 0 !important;
+  }
+  html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-thead--region,
+  html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-row--region {
+    grid-template-columns: 1.5fr 1.2fr 70px 70px 110px !important;
+  }
+  html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-thead--branch,
+  html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-row--branch {
+    grid-template-columns: 1.5fr 80px 110px !important;
+  }
+  html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-thead--emp,
+  html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-row--emp {
+    grid-template-columns: 1.5fr 1fr 90px !important;
+  }
+}
