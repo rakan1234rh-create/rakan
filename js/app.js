@@ -7419,7 +7419,7 @@
       const TAB_TITLES = {
         dashboard: { title: 'نظرة عامة', sub: 'ملخص أداء اليوم' },
         newTicket: { title: 'رصد مخالفة جديدة', sub: 'سجّل مخالفة بأكبر قدر من التفاصيل' },
-        workflow: { title: 'معالجة التذاكر', sub: 'tickets workflow' },
+        workflow: { title: 'التذاكر', sub: 'إدارة ومتابعة تذاكر المخالفات' },
         reports: { title: 'التقارير', sub: 'reports & analytics' },
         compliance: { title: 'لوحة مؤشرات الامتثال', sub: 'compliance dashboard' },
         locations: { title: 'المناطق والفروع', sub: 'regions & branches' },
@@ -7561,6 +7561,8 @@
         if (sideTheme) sideTheme.className = 'fas ' + (theme === 'dark' ? 'fa-sun' : 'fa-moon');
         const icon = document.getElementById('rdThemeIcon');
         if (icon) icon.className = 'fas ' + (theme === 'dark' ? 'fa-sun' : 'fa-moon');
+        try { syncRdWfChips(); } catch (_) { /* noop */ }
+        try { syncRdWfSearchChrome(); } catch (_) { /* noop */ }
         try { syncRdSideFoot(); } catch (_) { /* noop */ }
       }
 
@@ -17235,6 +17237,7 @@
 
       /** إعادة بحث وفلتر معالجة التذاكر للوضع الافتراضي عند مغادرة التبويب */
       function resetWorkflowTabFilters() {
+        state._rdWfChip = 'all';
         const search = document.getElementById('wf-search');
         if (search) search.value = '';
 
@@ -17489,11 +17492,160 @@
         renderUsers();
       }
 
+      function isBranchManagerTeamChipUser() {
+        return normalizeUserRole(state.currentUser?.role) === 'branch_manager'
+          && !!state.currentUser?.branch_id;
+      }
+
+      function isBranchTeamTicket(t) {
+        if (!t || !isBranchManagerTeamChipUser()) return false;
+        const bid = state.currentUser.branch_id;
+        if (t.branch_id === bid) return true;
+        const staffIds = new Set(getBranchStaff(bid).map(e => e.id));
+        staffIds.add(state.currentUser.id);
+        return staffIds.has(t.employee_id);
+      }
+
+      function rdWfSortIcon(key) {
+        const cur = state._rdWfSortKey;
+        const dir = state._rdWfSortDir || 1;
+        if (cur !== key) return 'fa-sort';
+        return dir === 1 ? 'fa-sort-up' : 'fa-sort-down';
+      }
+
+      function rdWfToggleSort(key) {
+        if (!isAtharDesktopScreenUi()) return;
+        if (state._rdWfSortKey === key) {
+          state._rdWfSortDir = (state._rdWfSortDir || 1) * -1;
+        } else {
+          state._rdWfSortKey = key;
+          state._rdWfSortDir = 1;
+        }
+        filterTickets();
+      }
+
+      function rdWfSortTickets(list) {
+        const key = state._rdWfSortKey;
+        if (!key || !Array.isArray(list)) return list;
+        const dir = state._rdWfSortDir || 1;
+        const pointsFor = (t) => {
+          const types = state.violationTypes || [];
+          const vt = (t.violation_type_id && types.find(x => x.id === t.violation_type_id))
+            || types.find(x => x.name === t.violation_type);
+          return Number(vt?.weight ?? vt?.points ?? 0) || 0;
+        };
+        const copy = list.slice();
+        copy.sort((a, b) => {
+          let av;
+          let bv;
+          if (key === 'id') {
+            av = String(a.ticket_number || a.id || '');
+            bv = String(b.ticket_number || b.id || '');
+            return av.localeCompare(bv, 'ar', { numeric: true }) * dir;
+          }
+          if (key === 'name') {
+            av = String(a._empName || '').trim();
+            bv = String(b._empName || '').trim();
+            return av.localeCompare(bv, 'ar') * dir;
+          }
+          if (key === 'points') {
+            return (pointsFor(a) - pointsFor(b)) * dir;
+          }
+          return 0;
+        });
+        return copy;
+      }
+
+      function syncRdWfSearchChrome() {
+        const input = document.getElementById('wf-search');
+        if (!input) return;
+        const desk = typeof isAtharDesktopRedesignUi === 'function' && isAtharDesktopRedesignUi();
+        input.placeholder = desk
+          ? 'ابحث بالاسم أو النوع أو رقم التذكرة...'
+          : 'ابحث برقم التذكرة، اسم الموظف، أو الرقم الوظيفي...';
+      }
+
+      function syncRdWfChips(openTickets) {
+        const host = document.getElementById('rdWfChips');
+        if (!host) return;
+        const useRd = (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi())
+          || (typeof isAtharDesktopRedesignUi === 'function' && isAtharDesktopRedesignUi());
+        if (!useRd) {
+          host.hidden = true;
+          host.innerHTML = '';
+          return;
+        }
+        const open = Array.isArray(openTickets)
+          ? openTickets
+          : getVisibleViolations().filter(isTicketWorkflowOpen);
+        let chip = state._rdWfChip || 'all';
+        const showTeam = isBranchManagerTeamChipUser();
+        if (chip === 'team' && !showTeam) {
+          chip = 'all';
+          state._rdWfChip = 'all';
+        }
+        const mineN = open.filter(canActOnTicket).length;
+        const teamN = showTeam ? open.filter(isBranchTeamTicket).length : 0;
+        const chips = [
+          { id: 'all', label: 'الكل', count: open.length },
+          { id: 'mine', label: 'بانتظار ردي', count: mineN },
+          { id: 'sent', label: 'مُرسلة', count: Math.max(0, open.length - mineN) },
+        ];
+        if (showTeam) chips.push({ id: 'team', label: 'الفريق', count: teamN });
+        host.hidden = false;
+        host.innerHTML = chips.map((c) => {
+          const active = c.id === chip;
+          return `<button type="button" class="rd-wf-chip${active ? ' is-active' : ''}" role="tab" aria-selected="${active ? 'true' : 'false'}" onclick="rdWfPickChip('${c.id}')">${Sec.escapeHTML(c.label)} (${c.count})</button>`;
+        }).join('');
+      }
+
+      function rdWfPickChip(id) {
+        const allowed = new Set(['all', 'mine', 'sent']);
+        if (isBranchManagerTeamChipUser()) allowed.add('team');
+        if (!allowed.has(id)) id = 'all';
+        state._rdWfChip = id;
+        filterTickets();
+      }
+
+      function rdTicketStatusTone(t) {
+        const cls = getTicketBadgeClass(t) || '';
+        if (cls.includes('b-green')) return { color: 'var(--success)', soft: 'color-mix(in srgb, var(--success) 18%, transparent)' };
+        if (cls.includes('b-red')) return { color: 'var(--danger)', soft: 'color-mix(in srgb, var(--danger) 18%, transparent)' };
+        if (cls.includes('b-amber') || cls.includes('b-orange')) return { color: 'var(--warning)', soft: 'color-mix(in srgb, var(--warning) 18%, transparent)' };
+        if (cls.includes('b-blue')) return { color: 'var(--info)', soft: 'color-mix(in srgb, var(--info) 18%, transparent)' };
+        if (cls.includes('b-purple')) return { color: 'var(--purple)', soft: 'color-mix(in srgb, var(--purple) 18%, transparent)' };
+        return { color: 'var(--text2)', soft: 'var(--surface2)' };
+      }
+
       function filterTickets() {
+        let visible = getVisibleViolations().filter(isTicketWorkflowOpen);
+
+        const useRdChips = (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi())
+          || (typeof isAtharDesktopRedesignUi === 'function' && isAtharDesktopRedesignUi());
+        if (useRdChips) {
+          syncRdWfChips(visible);
+          const chip = state._rdWfChip || 'all';
+          if (chip === 'mine') visible = visible.filter(canActOnTicket);
+          else if (chip === 'sent') visible = visible.filter(t => !canActOnTicket(t));
+          else if (chip === 'team') visible = visible.filter(isBranchTeamTicket);
+          if (isAtharDesktopScreenUi()) {
+            const search = (document.getElementById('wf-search')?.value || '').toLowerCase().trim();
+            if (search) {
+              visible = visible.filter(v => {
+                const hay = `${v.ticket_number} ${v._empName} ${v._empNumber} ${v.violation_type} ${v._branchName}`.toLowerCase();
+                return hay.includes(search);
+              });
+            }
+            visible = rdWfSortTickets(visible);
+          }
+          const countEl = document.getElementById('wf-count');
+          if (countEl) countEl.textContent = visible.length;
+          renderTicketList(visible);
+          return;
+        }
+
         const search = (document.getElementById('wf-search')?.value || '').toLowerCase().trim();
         const status = document.getElementById('wf-status')?.value || '';
-
-        let visible = getVisibleViolations().filter(isTicketWorkflowOpen);
 
         if (status) visible = visible.filter(v => v.state === status);
         if (search) {
@@ -17503,7 +17655,8 @@
           });
         }
 
-        document.getElementById('wf-count').textContent = visible.length;
+        const countEl = document.getElementById('wf-count');
+        if (countEl) countEl.textContent = visible.length;
         renderTicketList(visible);
       }
 
@@ -17591,7 +17744,7 @@
 
         if (!tickets.length) {
           if (mobHead) {
-            if (isAppDataPending() && wfMob) {
+            if (isAppDataPending() && wfMob && !(typeof isAtharRedesignUi === 'function' && isAtharRedesignUi())) {
               seedWfMobTicketsHeadIfNeeded();
             } else {
               mobHead.innerHTML = '';
@@ -17602,8 +17755,124 @@
             ? dataLoadingEmptyHTML(isReportsList ? 'جاري تحميل التقارير…' : 'جاري تحميل التذاكر…')
             : (isReportsList
               ? '<div class="empty"><i class="fas fa-inbox"></i><p>لا توجد بيانات في الفترة المحددة</p></div>'
-              : '<div class="empty"><i class="fas fa-inbox"></i><p>لا توجد تذاكر مطابقة</p></div>');
-          appendTicketListHtml(list, emptyHtml, true);
+              : ((isAtharRedesignUi() || isAtharDesktopScreenUi())
+                ? '<div class="rd-ticket-empty"><i class="fas fa-inbox"></i><p>لا توجد تذاكر مطابقة</p></div>'
+                : '<div class="empty"><i class="fas fa-inbox"></i><p>لا توجد تذاكر مطابقة</p></div>'));
+          if ((isAtharRedesignUi() || isAtharDesktopScreenUi()) && !isReportsList) {
+            resetTicketListChildren(list, true);
+            list.classList.remove('wf-mob-measuring', 'rp-mob-measuring');
+            list.classList.add('wf-mob-cols-ready');
+            if (isAtharDesktopScreenUi()) {
+              appendTicketListHtml(list, emptyHtml, true);
+            } else {
+              getOrCreateTicketMobBody(list).innerHTML = emptyHtml;
+            }
+          } else {
+            appendTicketListHtml(list, emptyHtml, true);
+          }
+          return;
+        }
+
+        if (mobSplit && isAtharRedesignUi()) {
+          if (mobHead) {
+            mobHead.innerHTML = '';
+            mobHead.setAttribute('aria-hidden', 'true');
+          }
+          const toneFor = (t) => {
+            if (t.state === 'closed') return 'success';
+            if (t.state === 'Warning_Issued') return 'muted';
+            if (t.state === 'mgt' || t.state === 'hr') return 'danger';
+            if (t.state === 'sup' || t.state === 'aud') return 'info';
+            return 'warning';
+          };
+          const cards = tickets.map((t, i) => {
+            const empName = (t._empName || '').trim() || '...';
+            const initial = empName.charAt(0) || '—';
+            const violName = (t.violation_type || '').trim() || '...';
+            const statusText = (t.status_text || STATE_LABELS[t.state] || '').trim();
+            const tone = toneFor(t);
+            const delay = (i * 0.045).toFixed(3);
+            const rel = formatRelativeAr(t.created_at || t.updated_at);
+            return `
+              <button type="button" class="rd-ticket" style="animation-delay:${delay}s"
+                ontouchstart="prefetchTicketDetail('${t.id}')" onclick="openTicket('${t.id}')">
+                <div class="rd-ticket__top">
+                  <span class="rd-ticket__id">#${Sec.escapeHTML(shortTicketNum(t.ticket_number))}</span>
+                  <span class="rd-ticket__time">${Sec.escapeHTML(rel)}</span>
+                </div>
+                <div class="rd-ticket__body">
+                  <div class="rd-ticket__av">${Sec.escapeHTML(initial)}</div>
+                  <div style="flex:1;min-width:0">
+                    <div class="rd-ticket__name">${Sec.escapeHTML(empName)}</div>
+                    <div class="rd-ticket__type">${Sec.escapeHTML(violName)}</div>
+                  </div>
+                </div>
+                <div class="rd-ticket__badge rd-ticket__badge--${tone}">${Sec.escapeHTML(statusText)}</div>
+              </button>`;
+          }).join('');
+          resetTicketListChildren(list, true);
+          list.classList.remove('wf-mob-measuring', 'rp-mob-measuring');
+          list.classList.add(wfMob ? 'wf-mob-cols-ready' : 'rp-mob-cols-ready');
+          getOrCreateTicketMobBody(list).innerHTML = `<div class="rd-ticket-list">${cards}</div>`;
+          return;
+        }
+
+        /* Desktop redesign ticket table — replaces classic computer table */
+        if (!isReportsList && isAtharDesktopScreenUi()) {
+          if (mobHead) {
+            mobHead.innerHTML = '';
+            mobHead.setAttribute('aria-hidden', 'true');
+          }
+          const toneFor = (t) => {
+            if (t.state === 'closed') return { color: 'var(--success)', soft: 'color-mix(in srgb, var(--success) 18%, transparent)' };
+            if (t.state === 'Warning_Issued') return { color: 'var(--warning)', soft: 'color-mix(in srgb, var(--warning) 18%, transparent)' };
+            if (t.state === 'mgt' || t.state === 'hr') return { color: 'var(--danger)', soft: 'color-mix(in srgb, var(--danger) 18%, transparent)' };
+            if (t.state === 'sup' || t.state === 'aud') return { color: 'var(--info)', soft: 'color-mix(in srgb, var(--info) 18%, transparent)' };
+            return { color: 'var(--warning)', soft: 'color-mix(in srgb, var(--warning) 18%, transparent)' };
+          };
+          const pointsFor = (t) => {
+            const types = state.violationTypes || [];
+            const vt = (t.violation_type_id && types.find(x => x.id === t.violation_type_id))
+              || types.find(x => x.name === t.violation_type);
+            return Number(vt?.weight ?? vt?.points ?? 0) || 0;
+          };
+          const rows = tickets.map((t, i) => {
+            const empName = (t._empName || '').trim() || '—';
+            const violName = (t.violation_type || '').trim() || '—';
+            const statusText = (t.status_text || STATE_LABELS[t.state] || '').trim() || '—';
+            const tone = (typeof rdTicketStatusTone === 'function' ? rdTicketStatusTone(t) : null) || toneFor(t);
+            const pts = pointsFor(t);
+            const rel = formatRelativeAr(t.created_at || t.updated_at);
+            const delay = Math.min(0.3, i * 0.035);
+            return `
+              <button type="button" class="rd-desk-table__row rd-desk-ticket-row" style="animation-delay:${delay}s"
+                onclick="openTicket('${t.id}')">
+                <span class="rd-desk-mono" role="cell">#${Sec.escapeHTML(shortTicketNum(t.ticket_number))}</span>
+                <span class="rd-desk-user" role="cell"><span class="rd-desk-user__name">${Sec.escapeHTML(empName)}</span></span>
+                <span class="rd-desk-muted rd-desk-clip" role="cell">${Sec.escapeHTML(violName)}</span>
+                <span role="cell"><span class="rd-desk-ticket-badge" style="color:${tone.color};background:${tone.soft}">${Sec.escapeHTML(statusText)}</span></span>
+                <span class="rd-desk-ticket-pts" role="cell" style="color:${tone.color}">−${pts}</span>
+                <span class="rd-desk-ticket-time" role="cell">${Sec.escapeHTML(rel)}</span>
+              </button>`;
+          }).join('');
+          const sortBtn = (key, label) => {
+            const active = state._rdWfSortKey === key;
+            return `<button type="button" class="rd-desk-sort${active ? ' is-active' : ''}" role="columnheader"
+              onclick="event.stopPropagation();rdWfToggleSort('${key}')">${label}<i class="fas ${rdWfSortIcon(key)}" aria-hidden="true"></i></button>`;
+          };
+          const html = `
+            <div class="rd-desk-table rd-desk-table--tickets" role="table">
+              <div class="rd-desk-table__head" role="row">
+                ${sortBtn('id', '#')}
+                ${sortBtn('name', 'الموظف')}
+                <span role="columnheader">النوع</span>
+                <span role="columnheader">الحالة</span>
+                ${sortBtn('points', 'النقاط')}
+                <span class="rd-desk-head-time" role="columnheader">الوقت</span>
+              </div>
+              ${rows || '<div class="rd-ticket-empty"><i class="fas fa-inbox"></i><p>لا توجد تذاكر مطابقة</p></div>'}
+            </div>`;
+          appendTicketListHtml(list, html, true);
           return;
         }
 
