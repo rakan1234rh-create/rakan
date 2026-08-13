@@ -18884,12 +18884,58 @@
         fetchTicketFullDetail(id);
       }
 
+      function syncRdTicketDetailHeader(t) {
+        const rdHd = document.getElementById('rdTdHd');
+        if (!rdHd) return;
+        const useRd = (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi())
+          || isAtharDesktopScreenUi();
+        rdHd.hidden = !useRd;
+        if (!useRd || !t) return;
+        const nameEl = document.getElementById('rd-td-name');
+        const typeEl = document.getElementById('rd-td-type');
+        const badgeEl = document.getElementById('rd-td-badge');
+        const numEl = document.getElementById('rd-td-num');
+        const empName = t._empName || '—';
+        if (nameEl) nameEl.textContent = empName;
+        if (typeEl) typeEl.textContent = t.violation_type || '—';
+        if (badgeEl) {
+          const status = t.status_text || STATE_LABELS[t.state] || '—';
+          const tone = rdTicketStatusTone(t);
+          badgeEl.textContent = status;
+          badgeEl.style.color = tone.color;
+          badgeEl.style.background = tone.soft;
+        }
+        if (numEl) {
+          const num = shortTicketNum(t.ticket_number) || t.id || '—';
+          numEl.textContent = '#' + num;
+          numEl.hidden = false;
+        }
+      }
+
+      function syncRdTicketCountdownPlacement() {
+        const host = document.getElementById('rdTdCountdownHost');
+        if (!host) return;
+        if (!isAtharDesktopScreenUi()) {
+          host.innerHTML = '';
+          host.hidden = true;
+          return;
+        }
+        const cardInInfo = document.querySelector('#tdInfo .countdown-card');
+        if (cardInInfo) {
+          host.innerHTML = '';
+          host.appendChild(cardInInfo);
+        }
+        const card = host.querySelector('.countdown-card');
+        host.hidden = !card;
+      }
+
       function renderTicketDetailUI(t) {
         if (!t) return;
         document.getElementById('td-id').textContent = shortTicketNum(t.ticket_number);
         const badge = document.getElementById('td-badge');
         badge.className = `badge ${getTicketBadgeClass(t)}`;
         badge.textContent = t.status_text || STATE_LABELS[t.state];
+        syncRdTicketDetailHeader(t);
         switchDetailTab('info');
         buildTicketInfo(t);
         buildWfSteps(t);
@@ -19037,8 +19083,11 @@
       </div>`;
         }
 
+        const useRdInfo = (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi())
+          || (typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi());
+        const deskTd = typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi();
         const rows = [
-          ['رقم التذكرة', shortTicketNum(t.ticket_number)],
+          ...((useRdInfo && !deskTd) ? [] : [['رقم التذكرة', shortTicketNum(t.ticket_number)]]),
           ['الحالة', t.status_text || STATE_LABELS[t.state]],
           ['الموظف', `${t._empName} (${t._empNumber || '-'})`],
           ['الفرع', t._branchName],
@@ -19069,6 +19118,8 @@
 
         // المرفقات داخل نفس الفيو
         buildInlineAttachments(t);
+
+        syncRdTicketCountdownPlacement();
 
         // تشغيل العدّاد إن وجد
         startTicketCountdown();
@@ -19164,8 +19215,12 @@
         const c = document.getElementById('tdInlineAttachments');
         if (!c) return;
 
+        const rdAtt = (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi())
+          || isAtharDesktopScreenUi();
         if (!ticketDetailExtrasReady(t)) {
-          c.innerHTML = `
+          c.innerHTML = rdAtt
+            ? `<div class="td-att-section-head"><i class="fas fa-paperclip" aria-hidden="true"></i><span>المرفقات (…)</span></div>`
+            : `
       <div class="td-att-section-head">
         <h3><i class="fas fa-paperclip"></i> المرفقات</h3>
         <span class="td-att-loading"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i> جاري تحميل المرفقات…</span>
@@ -19176,7 +19231,9 @@
         const atts = getVisibleAttachments(t);
 
         if (!atts || !atts.length) {
-          c.innerHTML = `
+          c.innerHTML = rdAtt
+            ? `<div class="td-att-section-head"><i class="fas fa-paperclip" aria-hidden="true"></i><span>المرفقات (0)</span></div>`
+            : `
       <div class="td-att-section-head">
         <h3><i class="fas fa-paperclip"></i> المرفقات</h3>
         <span class="td-att-hint">لا توجد مرفقات</span>
@@ -19255,7 +19312,11 @@
       </div>`;
         }).join('');
 
-        c.innerHTML = `
+        c.innerHTML = rdAtt
+          ? `
+    <div class="td-att-section-head"><i class="fas fa-paperclip" aria-hidden="true"></i><span>المرفقات (${normalizedAtts.length})</span></div>
+    <div class="att-grid att-grid--rd">${items}</div>`
+          : `
     <div class="td-att-section-head">
       <h3><i class="fas fa-paperclip"></i> المرفقات (${normalizedAtts.length})</h3>
       <span class="td-att-hint">اضغط على أي مرفق لفتحه</span>
@@ -20283,6 +20344,94 @@
       // ───────────────────────────────────────────────────────────────────────────
       // بناء واجهة المسار (Workflow Steps)
       // ───────────────────────────────────────────────────────────────────────────
+      function getWfTerminalOutcome(t) {
+        const st = String(t?.status_text || '');
+        const state = t?.state;
+        if (state === 'Warning_Issued' || (state === 'closed' && /تنبيه|اكتفاء بالتنبيه/i.test(st))) {
+          return 'warn';
+        }
+        if (state === 'closed' && /ملغ/i.test(st)) return 'cancel';
+        if (state === 'closed') return 'approved';
+        return null;
+      }
+
+      function getWfTerminalStopStage(t, outcome) {
+        const st = String(t?.status_text || '');
+        if (outcome === 'cancel') {
+          if (/الموارد البشرية/i.test(st)) return 'hr';
+          if (/التدقيق/i.test(st)) return 'aud';
+          if (/إداري/i.test(st)) return 'mgt';
+        }
+
+        const logs = parseDbJsonArray(t?.logs);
+        for (let i = logs.length - 1; i >= 0; i--) {
+          const a = String(logs[i]?.action || '');
+          const role = String(logs[i]?.role || '');
+          const hay = `${a} ${role}`;
+          if (outcome === 'cancel' && /إلغاء|ملغ/i.test(a)) {
+            if (/الموارد|hr/i.test(hay)) return 'hr';
+            if (/التدقيق|تدقيق/i.test(hay)) return 'aud';
+            if (/إدارة|إداري|management/i.test(hay)) return 'mgt';
+          }
+          if (outcome === 'warn' && /تنبيه|اكتفاء بالتنبيه/i.test(a)) {
+            if (/الموارد|hr/i.test(hay)) return 'hr';
+            if (/إدارة|قرار إداري|management/i.test(hay)) return 'mgt';
+          }
+        }
+
+        if (outcome === 'warn') {
+          if (t?.hr_reply) return 'hr';
+          if (t?.management_reply) return 'mgt';
+          return 'mgt';
+        }
+        if (outcome === 'cancel') {
+          if (t?.hr_reply) return 'hr';
+          if (t?.audit_reply) return 'aud';
+          if (t?.management_reply) return 'mgt';
+          return 'mgt';
+        }
+        return null;
+      }
+
+      function isWfStepAutoForwarded(t, stepCode) {
+        if (stepCode === 'emp') return isDbTruthy(t?.auto_forwarded_emp);
+        if (stepCode === 'sup') return isDbTruthy(t?.auto_forwarded_sup);
+        return false;
+      }
+
+      function resolveWfStepVisual(t, step, orderMap, liveCurrentOrder) {
+        const stepOrder = orderMap[step.code] ?? 0;
+        const outcome = getWfTerminalOutcome(t);
+
+        if (outcome === 'cancel' || outcome === 'warn') {
+          const stopStage = getWfTerminalStopStage(t, outcome);
+          const stopOrder = orderMap[stopStage] ?? 99;
+          if (stepOrder < stopOrder) {
+            if (isWfStepAutoForwarded(t, step.code)) {
+              return { status: 'auto', icon: 'fa-robot' };
+            }
+            return { status: 'done', icon: 'fa-check' };
+          }
+          if (stepOrder === stopOrder) {
+            if (outcome === 'cancel') return { status: 'cancel', icon: 'fa-times' };
+            return { status: 'warn', icon: 'fa-bell' };
+          }
+          return { status: 'pending', icon: step.icon };
+        }
+
+        const currentOrder = outcome === 'approved' ? 99 : liveCurrentOrder;
+        if (outcome === 'approved' || stepOrder < currentOrder) {
+          if (isWfStepAutoForwarded(t, step.code)) {
+            return { status: 'auto', icon: 'fa-robot' };
+          }
+          return { status: 'done', icon: 'fa-check' };
+        }
+        if (stepOrder === currentOrder) {
+          return { status: 'active', icon: step.icon };
+        }
+        return { status: 'pending', icon: step.icon };
+      }
+
       function buildWfSteps(t) {
         const c = document.getElementById('wfStepsContainer');
         if (!c || !t) return;
@@ -20306,30 +20455,46 @@
         }
 
         const orderMap = { obs: 0, emp: 1, sup: 2, aud: 3, mgt: 4, hr: 5, closed: 6, Warning_Issued: 6 };
-        const wfState = (t.state === 'closed' || t.state === 'Warning_Issued') ? t.state : getEffectiveWorkflowState(t.state);
-        const currentOrder = (wfState === 'closed' || wfState === 'Warning_Issued') ? 99 : (orderMap[wfState] || 1);
+        const terminal = getWfTerminalOutcome(t);
+        const wfState = terminal ? t.state : getEffectiveWorkflowState(t.state);
+        const liveCurrentOrder = terminal ? 99 : (orderMap[wfState] || 1);
+
+        if ((typeof isAtharRedesignUi === 'function' && isAtharRedesignUi()) || isAtharDesktopScreenUi()) {
+          const rows = visibleSteps.map((s, i) => {
+            const { status, icon } = resolveWfStepVisual(t, s, orderMap, liveCurrentOrder);
+            const hasLine = i < visibleSteps.length - 1;
+            return `
+              <div class="rd-td-step rd-td-step--${status}">
+                <div class="rd-td-step__rail">
+                  <div class="rd-td-step__ico"><i class="fas ${icon}" aria-hidden="true"></i></div>
+                  ${hasLine ? '<div class="rd-td-step__line" aria-hidden="true"></div>' : ''}
+                </div>
+                <div class="rd-td-step__body">
+                  <div class="rd-td-step__label">${Sec.escapeHTML(s.label)}</div>
+                  <div class="rd-td-step__sub">${Sec.escapeHTML(s.sub)}</div>
+                </div>
+              </div>`;
+          }).join('');
+          c.innerHTML = `
+            <div class="rd-td-wf-title">سير العمل المعياري</div>
+            <div class="rd-td-wf">${rows}</div>`;
+          return;
+        }
+
         const snakeCols = getWfSnakeCols(visibleSteps.length);
 
         const renderSnakeStep = (s) => {
-          const stepOrder = orderMap[s.code];
-          let cls = 'wf-step wf-step--snake';
-          let icon = `<i class="fas ${s.icon}"></i>`;
-
-          if (t.state === 'closed' || t.state === 'Warning_Issued') {
-            cls += ' done';
-            icon = '<i class="fas fa-check"></i>';
-          } else if (stepOrder < currentOrder) {
-            cls += ' done';
-            icon = '<i class="fas fa-check"></i>';
-          } else if (stepOrder === currentOrder) {
-            cls += ' active';
-            icon = '';
-          }
+          const { status, icon } = resolveWfStepVisual(t, s, orderMap, liveCurrentOrder);
+          let cls = `wf-step wf-step--snake ${status}`;
+          // Active keeps the pulse dot (empty circle) in classic snake UI
+          const iconHtml = status === 'active'
+            ? ''
+            : `<i class="fas ${icon}"></i>`;
 
           return `
                 <div class="${cls}">
                   <div class="wf-step-rail" aria-hidden="true">
-                    <div class="wf-step-circle">${icon}</div>
+                    <div class="wf-step-circle">${iconHtml}</div>
                   </div>
                   <div class="wf-step-content">
                     <div class="wf-step-label">${s.label}</div>
@@ -20388,6 +20553,28 @@
           return;
         }
         const hideObs = shouldHideObserverName();
+        if ((typeof isAtharRedesignUi === 'function' && isAtharRedesignUi()) || isAtharDesktopScreenUi()) {
+          c.innerHTML = logs.map(l => {
+            const actor = formatLogActorForDisplay(l, t, hideObs);
+            const author = actor.masked
+              ? (String(actor.user || '').trim() && String(actor.user).trim() !== 'الراصد' ? String(actor.user).trim() : 'الراصد')
+              : (String(actor.user || '').trim() || '—');
+            const role = actor.masked ? '' : (String(actor.role || '').trim() || '');
+            const time = formatLogDate(l.date) || '—';
+            const isAuto = (l.user === 'النظام' || l.role === 'النظام' || /تلقائي/.test(l.action || ''));
+            const content = [l.action, l.note].filter(Boolean).join('\n') || '—';
+            return `
+      <article class="rd-td-log${isAuto ? ' rd-td-log--auto' : ''}">
+        <div class="rd-td-log__top">
+          <span class="rd-td-log__author">${Sec.escapeHTML(author)}</span>
+          <span class="rd-td-log__time">${Sec.escapeHTML(time)}</span>
+        </div>
+        ${role ? `<div class="rd-td-log__role">${Sec.escapeHTML(role)}</div>` : ''}
+        <div class="rd-td-log__body">${Sec.escapeHTML(content)}</div>
+      </article>`;
+          }).join('');
+          return;
+        }
         c.innerHTML = logs.map(l => {
           const metaLine = formatLogMetaLine(l, t, hideObs);
           const isAuto = (l.user === 'النظام' || l.role === 'النظام' || /تلقائي/.test(l.action || ''));
