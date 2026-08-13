@@ -7417,7 +7417,7 @@
       // 11. NAVIGATION
       // ═══════════════════════════════════════════════════════════════════════════
       const TAB_TITLES = {
-        dashboard: { title: 'لوحة القيادة', sub: 'ATHAR' },
+        dashboard: { title: 'نظرة عامة', sub: 'ملخص أداء اليوم' },
         newTicket: { title: 'رصد مخالفة جديدة', sub: 'create new violation' },
         workflow: { title: 'معالجة التذاكر', sub: 'tickets workflow' },
         reports: { title: 'التقارير', sub: 'reports & analytics' },
@@ -7462,6 +7462,106 @@
 
       function usesMobileSidebarDrawer() {
         return false;
+      }
+
+
+      /** Production gradual redesign — home/desktop shell (same class as staging) */
+      function isAtharDesktopRedesignUi() {
+        return document.documentElement.classList.contains('athar-staging-redesign')
+          && document.documentElement.classList.contains('mr-desktop-ui');
+      }
+
+      /** Other pages stay classic until ported; home uses desktop redesign content */
+      function isAtharDesktopScreenUi() {
+        return typeof isAtharDesktopRedesignUi === 'function' && isAtharDesktopRedesignUi();
+      }
+
+      function isAtharRedesignUi() {
+        // Mobile redesign not enabled on production yet
+        return false;
+      }
+
+      function rdClassifyScore(value) {
+        if (value < 0) return 'var(--danger)';
+        if (value >= 90) return 'var(--success)';
+        if (value >= 75) return 'var(--info)';
+        if (value >= 50) return 'var(--warning)';
+        return 'var(--danger)';
+      }
+
+      function getRdCleanStreakDays(me) {
+        if (!me) return 0;
+        const myViols = (state.violations || []).filter(v =>
+          v.employee_id === me.id && v.state !== 'uploading' && !violationExcludedFromDeduction(v)
+        );
+        let warnMs = 0;
+        (state.violations || []).filter(v =>
+          v.employee_id === me.id &&
+          (v.state === 'Warning_Issued' ||
+            (v.state === 'closed' && /تنبيه|اكتفاء بالتنبيه|Warning_Issued/i.test(v.status_text || '')))
+        ).forEach(v => {
+          const t = new Date(v.updated_at || v.created_at).getTime();
+          if (!isNaN(t) && t > warnMs) warnMs = t;
+        });
+        let streakStartMs;
+        if (myViols.length > 0) {
+          const sorted = [...myViols].sort((a, b) => violationObservationMs(b) - violationObservationMs(a));
+          streakStartMs = Math.max(warnMs, violationObservationMs(sorted[0]));
+        } else if (me.created_at) {
+          streakStartMs = Math.max(warnMs, new Date(me.created_at).getTime());
+        } else {
+          streakStartMs = Math.max(warnMs, Date.now());
+        }
+        return Math.max(0, Math.floor((Date.now() - streakStartMs) / (1000 * 60 * 60 * 24)));
+      }
+
+      function getRdBranchRankLabel(me) {
+        if (!me?.branch_id) return '—';
+        const branchEmps = (typeof getBranchStaff === 'function'
+          ? getBranchStaff(me.branch_id)
+          : (state.users || []).filter(u => u.branch_id === me.branch_id && u.role === 'employee'));
+        if (!branchEmps.length) return '—';
+        const ranked = branchEmps
+          .map(e => ({ id: e.id, score: calcEmpScore(e.id, state.violations || []).score }))
+          .sort((a, b) => b.score - a.score);
+        const idx = ranked.findIndex(r => r.id === me.id);
+        if (idx < 0) return '—';
+        return 'المركز ' + (idx + 1) + ' من ' + ranked.length;
+      }
+
+      function syncRdSideFoot() {
+        const nameEl = document.getElementById('rdSideName');
+        const emailEl = document.getElementById('rdSideEmail');
+        const avEl = document.getElementById('rdSideAv');
+        if (!nameEl && !emailEl && !avEl) return;
+        const u = state.currentUser;
+        const name = (u && (u.name || u.fullName)) || 'مستخدم';
+        const email = (u && (u.email || u.username)) || '';
+        const initial = String(name).trim().charAt(0) || 'م';
+        if (nameEl) nameEl.textContent = name;
+        if (emailEl) emailEl.textContent = email || '—';
+        if (avEl) {
+          avEl.textContent = initial;
+        }
+      }
+
+      function syncRdTopTitles(title, sub) {
+        const t = document.getElementById('rdTopTitle');
+        const s = document.getElementById('rdTopSub');
+        if (t && title != null) t.textContent = title;
+        if (s) {
+          s.textContent = sub || '';
+          s.hidden = !sub;
+        }
+      }
+
+      function syncRdChromeUi() {
+        const theme = document.documentElement.getAttribute('data-theme') || 'light';
+        const sideTheme = document.getElementById('rdSideThemeIcon');
+        if (sideTheme) sideTheme.className = 'fas ' + (theme === 'dark' ? 'fa-sun' : 'fa-moon');
+        const icon = document.getElementById('rdThemeIcon');
+        if (icon) icon.className = 'fas ' + (theme === 'dark' ? 'fa-sun' : 'fa-moon');
+        try { syncRdSideFoot(); } catch (_) { /* noop */ }
       }
 
       function applyDesktopSidebarRailSize(sb, expanded) {
@@ -7974,6 +8074,7 @@
         const ps = document.getElementById('pageSubtitle');
         if (pt) pt.textContent = meta.title;
         if (ps) ps.textContent = meta.sub;
+        try { syncRdTopTitles(meta.title, meta.sub); } catch (_) { /* noop */ }
 
         const titleBar = document.getElementById('pageTitleBar');
         if (titleBar) {
@@ -10942,6 +11043,162 @@
         if (dist) dist.innerHTML = loading;
         const recent = document.getElementById('recentList');
         if (recent) recent.innerHTML = loading;
+      }
+
+      function renderDashboardDesktopRedesign(visible, allVisible, monthFromIso, nextFromIso, ksaNowParts) {
+        const host = document.getElementById('rdDash');
+        if (!host) return;
+        const me = state.currentUser;
+
+        const streakDays = getRdCleanStreakDays(me);
+        const bestKey = 'athar_rd_best_streak_' + (me?.id || 'x');
+        let personalBest = Number(localStorage.getItem(bestKey) || 0);
+        if (!Number.isFinite(personalBest) || personalBest < streakDays) {
+          personalBest = streakDays;
+          try { localStorage.setItem(bestKey, String(personalBest)); } catch (_) { /* noop */ }
+        }
+        const CIRC = 339.292;
+        const streakPct = personalBest > 0 ? Math.min(100, Math.round((streakDays / personalBest) * 100)) : (streakDays > 0 ? 100 : 0);
+        const streakOffset = CIRC - (CIRC * streakPct) / 100;
+        const branchRankLabel = getRdBranchRankLabel(me);
+        const streakBadge = streakDays >= 30 ? 'بطل الالتزام لهذا الشهر' : (streakDays >= 10 ? 'منضبط هذا الشهر' : 'ابدأ سلسلة انضباطك');
+
+        let responseScore = 100;
+        let autoCount = 0;
+        try {
+          if (me && (me.role === 'employee' || me.role === 'branch_manager')) {
+            const rd = calcResponseRate(me.id, 'employee');
+            responseScore = rd.score;
+            autoCount = rd.autoCount;
+          }
+        } catch (_) { /* noop */ }
+        const responsePct = Math.min(100, Math.abs(responseScore));
+        const responseColor = rdClassifyScore(responseScore);
+        const responseStatus = responseScore < 0 ? 'تنبيه' : (responseScore >= 75 ? 'جيد' : 'تحذير');
+
+        const total = visible.length;
+        const pending = visible.filter(v => isTicketWorkflowOpen(v)).length;
+        const closed = visible.filter(v => v.state === 'closed').length;
+        const autoFwd = visible.filter(v => v.auto_forwarded_emp || v.auto_forwarded_sup).length;
+
+        const recent = sortNotifsNewestFirst(visible.map(v => ({
+          ...v,
+          time: v.updated_at || v.created_at
+        }))).slice(0, 5);
+
+        const statusItems = [
+          { key: 'emp', label: 'بانتظار الموظف', icon: 'fa-user', colorKey: 'warning' },
+          { key: 'sup', label: 'بانتظار المشرف', icon: 'fa-user-shield', colorKey: 'info' },
+          { key: 'aud', label: 'بانتظار التدقيق', icon: 'fa-magnifying-glass', colorKey: 'purple' },
+          { key: 'mgt', label: 'بانتظار الإدارة', icon: 'fa-bolt', colorKey: 'danger' },
+          { key: 'hr', label: 'بانتظار الموارد البشرية', icon: 'fa-id-badge', colorKey: 'gold' },
+          { key: 'closed', label: 'مغلقة', icon: 'fa-check', colorKey: 'success' },
+          { key: 'Warning_Issued', label: 'تنبيه إداري صادر', icon: 'fa-bell', colorKey: 'text3' }
+        ].map(s => {
+          const count = visible.filter(v => v.state === s.key).length;
+          const colorVar = s.colorKey === 'gold' ? 'var(--gold)'
+            : s.colorKey === 'text3' ? 'var(--text3)'
+            : s.colorKey === 'purple' ? 'var(--purple)'
+            : `var(--${s.colorKey === 'info' ? 'info' : s.colorKey})`;
+          return { ...s, count, colorVar };
+        });
+
+        const stats = [
+          { value: autoFwd, label: 'مخالفات تم تمريرها تلقائيا', icon: 'fa-clock', color: 'var(--warning)', delay: 0 },
+          { value: pending, label: 'قيد المعالجة', icon: 'fa-spinner', color: 'var(--info)', delay: 0.04 },
+          { value: closed, label: 'مغلقة', icon: 'fa-check-double', color: 'var(--success)', delay: 0.08 },
+          { value: total, label: 'الإجمالي هذا الشهر', icon: 'fa-chart-simple', color: 'var(--gold)', delay: 0.12 }
+        ];
+
+        const recentHtml = recent.length
+          ? recent.map(t => {
+              const name = t._empName || '—';
+              const initial = name.trim().charAt(0) || '—';
+              const colorVar = (t.auto_forwarded_emp || t.auto_forwarded_sup) ? 'var(--danger)'
+                : (t.state === 'closed' ? 'var(--success)' : 'var(--warning)');
+              return `
+                <button type="button" class="rd-desk-activity__row" onclick="openTicket('${t.id}')">
+                  <div class="rd-desk-av">${Sec.escapeHTML(initial)}</div>
+                  <div class="rd-desk-activity__body">
+                    <span class="rd-desk-activity__name">${Sec.escapeHTML(name)}</span>
+                    <span class="rd-desk-activity__type">${Sec.escapeHTML(t.violation_type || '—')}</span>
+                  </div>
+                  <div class="rd-desk-dot" style="background:${colorVar}"></div>
+                  <span class="rd-desk-activity__time">${Sec.escapeHTML(formatRelativeAr(t.created_at))}</span>
+                </button>`;
+            }).join('')
+          : '<div class="rd-desk-activity__row rd-desk-activity__row--empty"><span class="rd-desk-activity__type">لا توجد تذاكر بعد</span></div>';
+
+        host.innerHTML = `
+          <div class="rd-desk-dash">
+            <div class="rd-desk-dash__grid">
+              <div class="rd-desk-dash__main">
+                <div class="rd-desk-streak">
+                  <div class="rd-desk-streak__badge"><i class="fas fa-medal" aria-hidden="true"></i>${Sec.escapeHTML(streakBadge)}</div>
+                  <div class="rd-desk-streak__ring">
+                    <svg width="118" height="118" viewBox="0 0 132 132" aria-hidden="true">
+                      <circle cx="66" cy="66" r="54" fill="none" stroke="var(--border)" stroke-width="10"></circle>
+                      <circle cx="66" cy="66" r="54" fill="none" stroke="var(--success)" stroke-width="10" stroke-linecap="round" stroke-dasharray="${CIRC}" stroke-dashoffset="${streakOffset}"></circle>
+                    </svg>
+                    <div class="rd-desk-streak__center">
+                      <i class="fas fa-fire" aria-hidden="true"></i>
+                      <span class="rd-desk-streak__days">${streakDays}</span>
+                      <span class="rd-desk-streak__lbl">يوم بدون مخالفات</span>
+                    </div>
+                  </div>
+                  <div class="rd-desk-streak__minis">
+                    <div class="rd-desk-mini">
+                      <div class="rd-desk-mini__val" style="color:var(--gold)">${personalBest}</div>
+                      <div class="rd-desk-mini__lbl">أفضل رقم لك</div>
+                    </div>
+                    <div class="rd-desk-mini">
+                      <div class="rd-desk-mini__val" style="color:var(--success)">${Sec.escapeHTML(branchRankLabel)}</div>
+                      <div class="rd-desk-mini__lbl">ترتيب فرعك</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="rd-desk-stats">
+                  ${stats.map(s => `
+                    <div class="rd-desk-stat" style="animation-delay:${s.delay}s">
+                      <div class="rd-desk-stat__row">
+                        <span class="rd-desk-stat__val">${s.value}</span>
+                        <span class="rd-desk-stat__ico" style="color:${s.color}"><i class="fas ${s.icon}" aria-hidden="true"></i></span>
+                      </div>
+                      <div class="rd-desk-stat__lbl">${Sec.escapeHTML(s.label)}</div>
+                    </div>`).join('')}
+                </div>
+                <div class="rd-desk-sec">
+                  <div class="rd-desk-sec__head">
+                    <span class="rd-desk-sec__title">آخر النشاطات</span>
+                    <button type="button" class="rd-desk-sec__link" onclick="dashGoTab('workflow')">عرض الكل</button>
+                  </div>
+                  <div class="rd-desk-activity">${recentHtml}</div>
+                </div>
+              </div>
+              <div class="rd-desk-dash__side">
+                <div class="rd-desk-metric">
+                  <div class="rd-desk-metric__top">
+                    <span class="rd-desk-metric__label">الاستجابة</span>
+                    <span class="rd-desk-metric__val" style="color:${responseColor}">${responseScore} · ${responseStatus}</span>
+                  </div>
+                  <div class="rd-desk-metric__bar"><div class="rd-desk-metric__fill" style="width:${responsePct}%;background:${responseColor}"></div></div>
+                  <div class="rd-desk-metric__sub">${autoCount} تمريرات تلقائية</div>
+                </div>
+                <div class="rd-desk-sec">
+                  <div class="rd-desk-sec__head"><span class="rd-desk-sec__title">توزيع الحالات</span></div>
+                  <div class="rd-desk-dist">
+                    ${statusItems.map(s => `
+                      <button type="button" class="rd-desk-dist__row" onclick="dashFunnelNavigate('${s.key}')">
+                        <div class="rd-desk-dist__ico" style="color:${s.colorVar}"><i class="fas ${s.icon}" aria-hidden="true"></i></div>
+                        <div class="rd-desk-dist__label">${Sec.escapeHTML(s.label)}</div>
+                        <div class="rd-desk-dist__count" style="color:${s.colorVar}">${s.count}</div>
+                      </button>`).join('')}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>`;
+        host.hidden = false;
       }
 
       function renderDashboard() {

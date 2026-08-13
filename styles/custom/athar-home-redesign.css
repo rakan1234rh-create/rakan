@@ -1,0 +1,1021 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   ATHAR Production — Home (desktop shell + dashboard)
+   Gradual port from staging redesign. Other pages stay classic content.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@keyframes atharRdScreenIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes atharRdCardIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Tab shell: slide only — opacity here flashes the empty parent underneath */
+@keyframes atharRdTabIn {
+  from { transform: translateY(8px); }
+  to { transform: translateY(0); }
+}
+
+/* ── Light theme tokens (mockup) ─────────────────────────────────────────── */
+html[data-theme="light"] {
+  --mr-primary: #000000;
+  --mr-primary-hover: #1c1c1e;
+  --mr-primary-soft: rgba(0, 0, 0, 0.06);
+  --mr-primary-softer: rgba(0, 0, 0, 0.04);
+  --mr-primary-text: #ffffff;
+  --mr-surface: #ffffff;
+  --mr-bg: #f2f2f7;
+  --mr-bg-2: #e5e5ea;
+  --mr-theme-chrome: #ffffff;
+  --mr-border: rgba(60, 60, 67, 0.18);
+  --mr-border-2: rgba(60, 60, 67, 0.28);
+  --mr-text: #000000;
+  --mr-text-2: #6e6e73;
+  --mr-text-3: #8e8e93;
+  --mr-text-muted: #8e8e93;
+  --mr-success: #34c759;
+  --mr-green: #34c759;
+  --mr-warning: #ff9500;
+  --mr-amber: #ff9500;
+  --mr-danger: #ff3b30;
+  --mr-red: #ff3b30;
+  --mr-blue: #007aff;
+  --mr-purple: #af52de;
+  --success: #34c759;
+  --warning: #ff9500;
+  --info: #007aff;
+  --danger: #ff3b30;
+  --destructive: #ff3b30;
+  --bg: #f2f2f7;
+  --bg2: #e5e5ea;
+  --bg3: #ffffff;
+  --surface: #ffffff;
+  --surface2: #f2f2f7;
+  --border: rgba(60, 60, 67, 0.18);
+  --border2: rgba(60, 60, 67, 0.28);
+  --text: #000000;
+  --text2: #6e6e73;
+  --text3: #8e8e93;
+  --accent: #000000;
+  --accent2: #1c1c1e;
+  --gold: #000000;
+  --onGold: #ffffff;
+  --goldSoft: rgba(0, 0, 0, 0.06);
+  --searchFill: rgba(118, 118, 128, 0.12);
+  --mr-radius-card: 16px;
+  --mr-radius-md: 14px;
+  --mr-radius-pill: 999px;
+  --mr-shadow-card: none;
+  --mr-shadow-soft: none;
+  --shadow: none;
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.06);
+  --sidebar-bg: #ffffff;
+  --sidebar-active: #000000;
+  --sidebar-active-text: #ffffff;
+  --login-portal-bg: #e5e5ea;
+}
+
+/* ── Dark theme tokens (mockup default) ──────────────────────────────────── */
+html[data-theme="dark"],
+:root[data-theme="dark"] {
+  --mr-primary: #ffffff;
+  --mr-primary-hover: #e5e5ea;
+  --mr-primary-soft: rgba(255, 255, 255, 0.14);
+  --mr-primary-softer: rgba(255, 255, 255, 0.09);
+  --mr-primary-text: #000000;
+  --mr-surface: #1c1c1e;
+  --mr-bg: #000000;
+  --mr-bg-2: #000000;
+  --mr-theme-chrome: #1c1c1e;
+  --mr-border: rgba(255, 255, 255, 0.12);
+  --mr-border-2: rgba(255, 255, 255, 0.2);
+  --mr-text: #ffffff;
+  --mr-text-2: #a1a1a6;
+  --mr-text-3: #8e8e93;
+  --mr-text-muted: #8e8e93;
+  --mr-success: #30d158;
+  --mr-green: #30d158;
+  --mr-warning: #ff9f0a;
+  --mr-amber: #ff9f0a;
+  --mr-danger: #ff453a;
+  --mr-red: #ff453a;
+  --mr-blue: #0a84ff;
+  --mr-purple: #bf5af2;
+  --success: #30d158;
+  --warning: #ff9f0a;
+  --info: #0a84ff;
+  --danger: #ff453a;
+  --destructive: #ff453a;
+  --bg: #000000;
+  --bg2: #1c1c1e;
+  --bg3: #2c2c2e;
+  --surface: #1c1c1e;
+  --surface2: #2c2c2e;
+  --border: rgba(255, 255, 255, 0.12);
+  --border2: rgba(255, 255, 255, 0.2);
+  --text: #ffffff;
+  --text2: #a1a1a6;
+  --text3: #8e8e93;
+  --accent: #ffffff;
+  --accent2: #e5e5ea;
+  --gold: #ffffff;
+  --onGold: #000000;
+  --goldSoft: rgba(255, 255, 255, 0.14);
+  --searchFill: rgba(142, 142, 147, 0.24);
+  --mr-radius-card: 16px;
+  --mr-radius-md: 14px;
+  --mr-radius-pill: 999px;
+  --mr-shadow-card: none;
+  --mr-shadow-soft: none;
+  --shadow: none;
+  --shadow-md: 0 16px 40px rgba(0, 0, 0, 0.45);
+  --sidebar-bg: #1c1c1e;
+  --sidebar-text: #a1a1a6;
+  --sidebar-hover: #2c2c2e;
+  --sidebar-border: rgba(255, 255, 255, 0.12);
+  --sidebar-active: #ffffff;
+  --sidebar-active-text: #000000;
+  --login-portal-bg: #000000;
+}
+
+html.athar-staging-redesign,
+html.athar-staging-redesign body,
+html.athar-staging-redesign #appWrap {
+  background: var(--mr-bg) !important;
+  color: var(--mr-text);
+  font-family: "IBM Plex Sans Arabic", sans-serif;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+/* Show redesign dashboard host on desktop; hide classic dash */
+html:not(.athar-staging-redesign) #rdDash { display: none !important; }
+html.athar-staging-redesign.mr-mobile-ui #rdDash { display: none !important; }
+html.athar-staging-redesign.mr-desktop-ui #rdDash { display: block !important; }
+html.athar-staging-redesign.mr-desktop-ui .mk-dash--classic,
+html.athar-staging-redesign.mr-desktop-ui #personalIndicators,
+html.athar-staging-redesign.mr-desktop-ui #branchStaffPanel {
+  display: none !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ATHAR Desktop Redesign — literal shell + dashboard
+   Excludes: #tab-settings (permissions stay classic)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.athar-staging-redesign.mr-desktop-ui {
+  --fig-sidebar-w: 252px;
+  --fig-sidebar-collapsed-w: 72px;
+  --unified-topbar-h: 68px;
+}
+
+/* Hide redesign-only shell chrome on mobile / classic */
+.rd-side-brand,
+.rd-side-foot,
+.rd-top-titles {
+  display: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #appWrap .app-body .sidebar,
+html.athar-staging-redesign.mr-desktop-ui #appWrap #sidebar,
+html.athar-staging-redesign.mr-desktop-ui #sidebar {
+  width: var(--fig-sidebar-collapsed-w) !important;
+  min-width: var(--fig-sidebar-collapsed-w) !important;
+  max-width: var(--fig-sidebar-w) !important;
+  flex: 0 0 var(--fig-sidebar-collapsed-w) !important;
+  padding: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  background: var(--surface) !important;
+  border-inline-end: 1px solid var(--border) !important;
+  height: 100% !important;
+  align-self: stretch !important;
+  overflow: hidden !important;
+  transition: width 200ms ease, flex-basis 200ms ease, min-width 200ms ease, box-shadow 200ms ease !important;
+  z-index: 900 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #sidebar:hover,
+html.athar-staging-redesign.mr-desktop-ui #sidebar.sidebar-rail-hover,
+html.athar-staging-redesign.mr-desktop-ui #sidebar.sidebar-rail-open,
+html.athar-staging-redesign.mr-desktop-ui #sidebar.sidebar-rail-expanded,
+html.athar-staging-redesign.mr-desktop-ui #sidebar[data-rail-hover="1"],
+html.athar-staging-redesign.mr-desktop-ui #sidebar[data-rail-expanded="1"] {
+  width: var(--fig-sidebar-w) !important;
+  min-width: var(--fig-sidebar-w) !important;
+  max-width: var(--fig-sidebar-w) !important;
+  flex: 0 0 var(--fig-sidebar-w) !important;
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.12) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #sidebar .rd-side-brand {
+  display: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #sidebar .sidebar-nav {
+  flex: 1 1 auto !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding: 18px 0 6px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+  min-height: 0 !important;
+  scrollbar-gutter: stable !important;
+}
+
+/* Kill classic section headers (duplicate «الرئيسية» / «الإعدادات») — all rail states */
+html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-section-label,
+html.athar-staging-redesign.mr-desktop-ui #sidebar:hover .nav-section-label,
+html.athar-staging-redesign.mr-desktop-ui #sidebar.sidebar-rail-hover .nav-section-label,
+html.athar-staging-redesign.mr-desktop-ui #sidebar.sidebar-rail-open .nav-section-label,
+html.athar-staging-redesign.mr-desktop-ui #sidebar.sidebar-rail-expanded .nav-section-label,
+html.athar-staging-redesign.mr-desktop-ui #sidebar[data-rail-hover="1"] .nav-section-label,
+html.athar-staging-redesign.mr-desktop-ui #sidebar[data-rail-expanded="1"] .nav-section-label,
+html.athar-staging-redesign.mr-desktop-ui #sidebar:not(:hover) .nav-section-label {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  max-height: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  max-width: 0 !important;
+  min-width: 0 !important;
+  line-height: 0 !important;
+  font-size: 0 !important;
+}
+
+/* Collapsed: hide labels only — do NOT re-center icons (that causes horizontal slide) */
+html.athar-staging-redesign.mr-desktop-ui #sidebar:not(:hover):not(.sidebar-rail-hover):not(.sidebar-rail-open):not(.sidebar-rail-expanded):not([data-rail-hover="1"]):not([data-rail-expanded="1"]) .nav-item-label,
+html.athar-staging-redesign.mr-desktop-ui #sidebar:not(:hover):not(.sidebar-rail-hover):not(.sidebar-rail-open):not(.sidebar-rail-expanded):not([data-rail-hover="1"]):not([data-rail-expanded="1"]) .nav-badge,
+html.athar-staging-redesign.mr-desktop-ui #sidebar:not(:hover):not(.sidebar-rail-hover):not(.sidebar-rail-open):not(.sidebar-rail-expanded):not([data-rail-hover="1"]):not([data-rail-expanded="1"]) .rd-side-foot__meta {
+  opacity: 0 !important;
+  max-width: 0 !important;
+  width: 0 !important;
+  overflow: hidden !important;
+  visibility: hidden !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  pointer-events: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #sidebar:hover .nav-item-label,
+html.athar-staging-redesign.mr-desktop-ui #sidebar.sidebar-rail-hover .nav-item-label,
+html.athar-staging-redesign.mr-desktop-ui #sidebar.sidebar-rail-open .nav-item-label,
+html.athar-staging-redesign.mr-desktop-ui #sidebar.sidebar-rail-expanded .nav-item-label,
+html.athar-staging-redesign.mr-desktop-ui #sidebar[data-rail-hover="1"] .nav-item-label,
+html.athar-staging-redesign.mr-desktop-ui #sidebar[data-rail-expanded="1"] .nav-item-label {
+  opacity: 1 !important;
+  max-width: 160px !important;
+  visibility: visible !important;
+  overflow: visible !important;
+  width: auto !important;
+}
+
+/*
+  Icon column locked to collapsed-rail center:
+  (72px rail − 18px icon) / 2 = 27px inline-start padding.
+  Fixed row height → no vertical drop when labels appear on expand.
+*/
+html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item,
+html.athar-staging-redesign.mr-desktop-ui #sidebar:hover .nav-item,
+html.athar-staging-redesign.mr-desktop-ui #sidebar.sidebar-rail-hover .nav-item,
+html.athar-staging-redesign.mr-desktop-ui #sidebar.sidebar-rail-open .nav-item,
+html.athar-staging-redesign.mr-desktop-ui #sidebar.sidebar-rail-expanded .nav-item,
+html.athar-staging-redesign.mr-desktop-ui #sidebar[data-rail-hover="1"] .nav-item,
+html.athar-staging-redesign.mr-desktop-ui #sidebar[data-rail-expanded="1"] .nav-item,
+html.athar-staging-redesign.mr-desktop-ui #sidebar:not(:hover):not(.sidebar-rail-hover):not(.sidebar-rail-open):not(.sidebar-rail-expanded):not([data-rail-hover="1"]):not([data-rail-expanded="1"]) .nav-item {
+  display: flex !important;
+  grid-template-columns: none !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 12px !important;
+  padding: 0 !important;
+  padding-inline-start: 27px !important;
+  padding-inline-end: 12px !important;
+  margin: 0 !important;
+  margin-bottom: 0 !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  max-height: 40px !important;
+  border: none !important;
+  border-radius: 0 !important;
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
+  line-height: 1 !important;
+  background: transparent !important;
+  color: var(--text2) !important;
+  text-align: right !important;
+  position: relative !important;
+  width: 100% !important;
+  max-width: none !important;
+  box-sizing: border-box !important;
+  box-shadow: none !important;
+  overflow: hidden !important;
+  transform: none !important;
+  transition: color 160ms ease !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item:hover,
+html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item:hover:not(.active) {
+  background: transparent !important;
+  color: var(--text) !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Active: no background box — gold icon/label only */
+html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item.active,
+html.athar-staging-redesign.mr-desktop-ui #sidebar:hover .nav-item.active,
+html.athar-staging-redesign.mr-desktop-ui #sidebar.sidebar-rail-hover .nav-item.active,
+html.athar-staging-redesign.mr-desktop-ui #sidebar.sidebar-rail-open .nav-item.active,
+html.athar-staging-redesign.mr-desktop-ui #sidebar.sidebar-rail-expanded .nav-item.active,
+html.athar-staging-redesign.mr-desktop-ui #sidebar[data-rail-hover="1"] .nav-item.active,
+html.athar-staging-redesign.mr-desktop-ui #sidebar[data-rail-expanded="1"] .nav-item.active,
+html.athar-staging-redesign.mr-desktop-ui #sidebar:not(:hover) .nav-item.active,
+html.athar-staging-redesign.mr-desktop-ui[data-theme="dark"] #sidebar .nav-item.active,
+html.athar-staging-redesign.mr-desktop-ui[data-theme="dark"] #sidebar:hover .nav-item.active {
+  background: transparent !important;
+  color: var(--gold) !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  -webkit-text-fill-color: var(--gold) !important;
+}
+
+/* Flat icons — kill classic 36px icon boxes from shell/main (all rail states) */
+html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui #sidebar:hover .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui #sidebar.sidebar-rail-hover .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui #sidebar.sidebar-rail-open .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui #sidebar.sidebar-rail-expanded .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui #sidebar[data-rail-hover="1"] .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui #sidebar[data-rail-expanded="1"] .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item:hover .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item:hover:not(.active) .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item.active .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui #sidebar:not(:hover) .nav-item.active .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui #sidebar:hover .nav-item.active .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui[data-theme="dark"] #sidebar .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui[data-theme="dark"] #sidebar .nav-item.active .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui[data-theme="dark"] #sidebar .nav-item:hover:not(.active) .nav-icon-wrap {
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px !important;
+  max-width: 18px !important;
+  flex: 0 0 18px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: inherit !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  justify-self: start !important;
+  align-self: center !important;
+  grid-column: unset !important;
+  grid-row: unset !important;
+  transform: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-icon-wrap i,
+html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item i,
+html.athar-staging-redesign.mr-desktop-ui #sidebar:hover .nav-item i,
+html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item.active i,
+html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item.active .nav-icon-wrap i,
+html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item.active .nav-icon-wrap i::before {
+  font-size: 14px !important;
+  width: 18px !important;
+  height: auto !important;
+  text-align: center !important;
+  line-height: 1 !important;
+  color: inherit !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  transform: none !important;
+  margin: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item.active .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item.active .nav-icon-wrap i,
+html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item.active .nav-icon-wrap i::before,
+html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item.active .nav-item-label,
+html.athar-staging-redesign.mr-desktop-ui #sidebar:hover .nav-item.active .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui #sidebar:hover .nav-item.active .nav-icon-wrap i,
+html.athar-staging-redesign.mr-desktop-ui #sidebar:hover .nav-item.active .nav-item-label {
+  color: var(--gold) !important;
+  -webkit-text-fill-color: var(--gold) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item-label {
+  flex: 1 1 auto !important;
+  white-space: nowrap !important;
+  transition: opacity 160ms ease, max-width 200ms ease !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-badge {
+  min-width: 19px !important;
+  height: 19px !important;
+  padding: 0 5px !important;
+  border-radius: 999px !important;
+  background: var(--danger) !important;
+  color: #fff !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 0 !important;
+  position: static !important;
+  inset: auto !important;
+  flex-shrink: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item--desk-hide {
+  display: none !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #sidebar .nav-item--desk-only {
+  display: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #sidebar .rd-side-foot {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 0 !important;
+  padding-inline-start: 19px !important;
+  padding-inline-end: 16px !important;
+  border-top: 1px solid var(--border) !important;
+  flex-shrink: 0 !important;
+  overflow: hidden !important;
+  justify-content: flex-start !important;
+  box-sizing: border-box !important;
+  height: 62px !important;
+  min-height: 62px !important;
+  max-height: 62px !important;
+  transition: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #sidebar:not(:hover):not(.sidebar-rail-hover):not(.sidebar-rail-open):not(.sidebar-rail-expanded):not([data-rail-hover="1"]):not([data-rail-expanded="1"]) .rd-side-foot {
+  justify-content: flex-start !important;
+  padding: 0 !important;
+  padding-inline-start: 19px !important;
+  gap: 10px !important;
+}
+
+/* Keep theme control in layout (opacity only) so footer height never jumps */
+html.athar-staging-redesign.mr-desktop-ui #sidebar:not(:hover):not(.sidebar-rail-hover):not(.sidebar-rail-open):not(.sidebar-rail-expanded):not([data-rail-hover="1"]):not([data-rail-expanded="1"]) .rd-side-foot__theme {
+  display: inline-flex !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  width: 32px !important;
+  min-width: 32px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #sidebar .rd-side-foot__user {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  cursor: pointer !important;
+  text-align: right !important;
+  color: inherit !important;
+  font-family: inherit !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #sidebar:not(:hover):not(.sidebar-rail-hover):not(.sidebar-rail-open):not(.sidebar-rail-expanded):not([data-rail-hover="1"]):not([data-rail-expanded="1"]) .rd-side-foot__user {
+  flex: 0 0 auto !important;
+  justify-content: flex-start !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #sidebar .rd-side-foot__av {
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 50% !important;
+  background: var(--surface2) !important;
+  color: var(--text2) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  flex-shrink: 0 !important;
+  overflow: hidden !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #sidebar .rd-side-foot__meta {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+  transition: opacity 160ms ease !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #sidebar:hover .rd-side-foot__meta,
+html.athar-staging-redesign.mr-desktop-ui #sidebar.sidebar-rail-hover .rd-side-foot__meta,
+html.athar-staging-redesign.mr-desktop-ui #sidebar.sidebar-rail-open .rd-side-foot__meta,
+html.athar-staging-redesign.mr-desktop-ui #sidebar.sidebar-rail-expanded .rd-side-foot__meta,
+html.athar-staging-redesign.mr-desktop-ui #sidebar[data-rail-hover="1"] .rd-side-foot__meta,
+html.athar-staging-redesign.mr-desktop-ui #sidebar[data-rail-expanded="1"] .rd-side-foot__meta {
+  opacity: 1 !important;
+  max-width: none !important;
+  visibility: visible !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #sidebar .rd-side-foot__name {
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+  color: var(--text) !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #sidebar .rd-side-foot__email {
+  font-size: 10.5px !important;
+  color: var(--text3) !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #sidebar .rd-side-foot__theme {
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 9px !important;
+  border: 1px solid var(--border) !important;
+  background: var(--surface2) !important;
+  color: var(--text2) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  flex-shrink: 0 !important;
+  padding: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #sidebar .rd-side-foot__theme i {
+  font-size: 12px !important;
+}
+
+/* Topbar: brand logo + titles + bell — divider aligns with sidebar rail edge */
+html.athar-staging-redesign.mr-desktop-ui #appWrap .topbar.unified-banner,
+html.athar-staging-redesign.mr-desktop-ui .topbar.unified-banner {
+  height: 68px !important;
+  min-height: 68px !important;
+  max-height: 68px !important;
+  padding: 0 !important;
+  padding-inline-end: 32px !important;
+  background: var(--surface) !important;
+  border-bottom: 1px solid var(--border) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 0 !important;
+  overflow: visible !important;
+  position: relative !important;
+  z-index: 1300 !important;
+  box-sizing: border-box !important;
+}
+
+/* Brand column stays open at full sidebar width — does not collapse with the rail */
+html.athar-staging-redesign.mr-desktop-ui .topbar-brand-zone {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  width: var(--fig-sidebar-w) !important;
+  min-width: var(--fig-sidebar-w) !important;
+  max-width: var(--fig-sidebar-w) !important;
+  flex: 0 0 var(--fig-sidebar-w) !important;
+  padding-inline: 2px !important;
+  margin: 0 !important;
+  gap: 0 !important;
+  position: relative !important;
+  overflow: visible !important;
+  box-sizing: border-box !important;
+}
+
+/* Continuous vertical line with sidebar border-inline-end (tracks brand zone width) */
+html.athar-staging-redesign.mr-desktop-ui .topbar-brand-divider {
+  display: block !important;
+  position: absolute !important;
+  inset-inline-end: 0 !important;
+  inset-inline-start: auto !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  width: 1px !important;
+  height: auto !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  background: var(--border) !important;
+  opacity: 1 !important;
+  flex-shrink: 0 !important;
+  align-self: stretch !important;
+  transform: none !important;
+  z-index: 2 !important;
+  pointer-events: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #topbarClock,
+html.athar-staging-redesign.mr-desktop-ui #topbarUserChip,
+html.athar-staging-redesign.mr-desktop-ui #rdThemeBtn {
+  display: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .topbar-brand-zone .brand-area,
+html.athar-staging-redesign.mr-desktop-ui #brandArea {
+  height: 100% !important;
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #brandArea .brand-icon.wefaq-logo-slot {
+  width: 100% !important;
+  max-width: 100% !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #brandArea .brand-icon.wefaq-logo-slot .wefaq-app-logo--athar {
+  width: 100% !important;
+  max-width: 100% !important;
+  height: auto !important;
+  max-height: 40px !important;
+  transform: translateX(24px) !important;
+  transform-origin: center center !important;
+  margin: 0 !important;
+  object-fit: contain !important;
+  object-position: center !important;
+  filter: none !important;
+  image-rendering: auto !important;
+  shape-rendering: geometricPrecision !important;
+}
+
+html[data-theme="dark"].athar-staging-redesign.mr-desktop-ui #brandArea .brand-icon.wefaq-logo-slot .wefaq-app-logo--athar {
+  filter: invert(1) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-top-titles {
+  display: block !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  padding-inline-start: 18px !important;
+  margin: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-top-titles__title {
+  font-size: 17px !important;
+  font-weight: 700 !important;
+  color: var(--text) !important;
+  line-height: 1.3 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-top-titles__sub {
+  font-size: 11px !important;
+  color: var(--text3) !important;
+  margin-top: 2px !important;
+  line-height: 1.4 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .topbar-actions-zone {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  height: auto !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  flex: 0 0 auto !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #notifBellBtn.topbar-btn--notif,
+html.athar-staging-redesign.mr-desktop-ui #notifBellBtn {
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
+  border-radius: 10px !important;
+  border: 1px solid var(--border) !important;
+  background: var(--surface2) !important;
+  color: var(--text2) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: relative !important;
+  flex-shrink: 0 !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #notifBellBtn i {
+  font-size: 13px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #notifBellCount.notif-bell-count,
+html.athar-staging-redesign.mr-desktop-ui #notifBellBtn .notif-bell-count {
+  position: absolute !important;
+  top: -3px !important;
+  left: -3px !important;
+  right: auto !important;
+  width: 15px !important;
+  height: 15px !important;
+  min-width: 15px !important;
+  border-radius: 50% !important;
+  background: var(--danger) !important;
+  color: #fff !important;
+  font-size: 9px !important;
+  font-weight: 700 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+}
+
+/* Titles live in topbar — hide duplicate page title bar */
+html.athar-staging-redesign.mr-desktop-ui #pageTitleBar {
+  display: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #appWrap .main .content {
+  padding: 32px 40px !important;
+}
+
+/* Keep users page scrollable under redesign (users-shell may set overflow:hidden) */
+html.athar-staging-redesign.mr-desktop-ui .main:has(#tab-departments.active),
+html.athar-staging-redesign.mr-desktop-ui #appWrap .main:has(#tab-departments.active) {
+  overflow-x: clip !important;
+  overflow-y: auto !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .content:has(#tab-departments.active),
+html.athar-staging-redesign.mr-desktop-ui .main:has(#tab-departments.active) .content {
+  overflow: visible !important;
+  padding: 32px 40px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-departments.tab-content.active {
+  overflow: visible !important;
+}
+
+/* Desktop dashboard layout (2-column) */
+.rd-desk-dash { animation: atharRdScreenIn .3s ease; }
+.rd-desk-dash__greet { margin-bottom: 18px; }
+.rd-desk-dash__date { font-size: 12.5px; color: var(--text2); }
+.rd-desk-dash__name { font-size: 22px; font-weight: 700; color: var(--text); margin-top: 4px; }
+.rd-desk-dash__sub { font-size: 13px; color: var(--text2); margin-top: 4px; line-height: 1.6; }
+.rd-desk-dash__grid {
+  display: grid;
+  grid-template-columns: 2.1fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+.rd-desk-dash__main,
+.rd-desk-dash__side {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.rd-desk-streak {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px 28px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 24px;
+  position: relative;
+}
+.rd-desk-streak__badge {
+  position: absolute;
+  top: 14px;
+  inset-inline-start: 24px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--goldSoft);
+  color: var(--gold);
+  padding: 5px 11px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.rd-desk-streak__ring {
+  position: relative;
+  width: 118px;
+  height: 118px;
+  flex-shrink: 0;
+  margin-top: 8px;
+}
+.rd-desk-streak__ring svg {
+  transform: rotate(-90deg);
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.rd-desk-streak__center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.rd-desk-streak__center i { font-size: 13px; color: var(--success); margin-bottom: 2px; }
+.rd-desk-streak__days { font-size: 28px; font-weight: 800; color: var(--text); line-height: 1; }
+.rd-desk-streak__lbl { font-size: 9.5px; color: var(--text3); margin-top: 2px; }
+.rd-desk-streak__minis {
+  flex: 1;
+  min-width: 180px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 8px;
+}
+.rd-desk-mini {
+  background: var(--surface2);
+  border-radius: 14px;
+  padding: 12px 8px;
+  text-align: center;
+  min-width: 0;
+}
+.rd-desk-mini__val { font-size: 19px; font-weight: 700; white-space: nowrap; }
+.rd-desk-mini__lbl { font-size: 10.5px; color: var(--text2); margin-top: 4px; white-space: nowrap; }
+
+.rd-desk-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+.rd-desk-stat {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+  animation: atharRdCardIn .4s ease both;
+}
+.rd-desk-stat__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.rd-desk-stat__val { font-size: 22px; font-weight: 700; color: var(--text); }
+.rd-desk-stat__ico {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: var(--surface2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+}
+.rd-desk-stat__lbl { font-size: 12px; color: var(--text2); margin-top: 8px; }
+
+.rd-desk-sec__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.rd-desk-sec__title { font-size: 14px; font-weight: 700; color: var(--text); }
+.rd-desk-sec__link {
+  border: 0;
+  background: transparent;
+  color: var(--gold);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.rd-desk-activity,
+.rd-desk-dist {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+.rd-desk-activity__row,
+.rd-desk-dist__row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 16px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+  color: inherit;
+  text-align: right;
+  cursor: pointer;
+  font: inherit;
+}
+.rd-desk-activity__row:last-child,
+.rd-desk-dist__row:last-child { border-bottom: 0; }
+.rd-desk-activity__row--empty { cursor: default; }
+.rd-desk-av {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--surface2);
+  color: var(--text2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.rd-desk-activity__body { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.rd-desk-activity__name { font-size: 13px; font-weight: 600; color: var(--text); }
+.rd-desk-activity__type { font-size: 12px; color: var(--text3); }
+.rd-desk-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.rd-desk-activity__time { font-size: 11px; color: var(--text3); flex-shrink: 0; width: 70px; text-align: left; }
+
+.rd-desk-metric {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 18px;
+}
+.rd-desk-metric__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.rd-desk-metric__label { font-size: 12.5px; font-weight: 600; color: var(--text); }
+.rd-desk-metric__val { font-size: 12px; font-weight: 700; }
+.rd-desk-metric__bar {
+  height: 7px;
+  border-radius: 999px;
+  background: var(--surface2);
+  overflow: hidden;
+}
+.rd-desk-metric__fill { height: 100%; border-radius: 999px; }
+.rd-desk-metric__sub { font-size: 11px; color: var(--text3); margin-top: 7px; }
+
+.rd-desk-dist__row { padding: 11px 14px; }
+.rd-desk-dist__ico {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: var(--surface2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 11px;
+}
+.rd-desk-dist__label { flex: 1; font-size: 12px; color: var(--text); font-weight: 500; text-align: right; }
+.rd-desk-dist__count { font-size: 13px; font-weight: 700; }
+
+/* Permissions page keeps classic page title bar on desktop */
+html.athar-staging-redesign.mr-desktop-ui:has(#tab-settings.active) #pageTitleBar {
+  display: flex !important;
+}
+
+@media (max-width: 1100px) {
+  html.athar-staging-redesign.mr-desktop-ui .rd-desk-dash__grid {
+    grid-template-columns: 1fr;
+  }
+  html.athar-staging-redesign.mr-desktop-ui .rd-desk-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+

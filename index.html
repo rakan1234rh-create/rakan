@@ -8,7 +8,7 @@
   <meta name="format-detection" content="telephone=no">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="theme-color" content="#1c1c21" id="metaThemeColor">
-  <script id="syncThemeMetaEarly">(function(){try{var t=localStorage.getItem('mp_theme')||'light';document.documentElement.setAttribute('data-theme',t);var m=document.getElementById('metaThemeColor');if(m)m.setAttribute('content',t==='dark'?'#1c1c21':'#f5f5f7');}catch(e){}})();</script>
+  <script id="syncThemeMetaEarly">(function(){try{document.documentElement.classList.add('athar-staging-redesign');var t=localStorage.getItem('mp_theme')||'light';document.documentElement.setAttribute('data-theme',t);var m=document.getElementById('metaThemeColor');if(m)m.setAttribute('content',t==='dark'?'#1c1c21':'#f5f5f7');}catch(e){}})();</script>
   <meta name="apple-mobile-web-app-title" content="ATHAR">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -72,6 +72,10 @@
     });
   })();</script>
   <title>ATHAR</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+
   <link rel="preconnect" href="https://rizoafuxmqsddjfhbsmf.supabase.co" crossorigin>
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
@@ -766,6 +770,8 @@
     }
   </style>
   <link rel="stylesheet" href="styles/custom/main.css">
+  <link rel="stylesheet" href="styles/custom/athar-home-redesign.css?v=home1" id="athar-home-redesign">
+
   <link rel="stylesheet" href="styles/custom/design-kit.css" id="mk-design-kit">
   <!-- Mirsad tokens + kit: مضمّنة في index.html — لا روابط design-system (تجنّب 404 عند file://) -->
   <style>
@@ -2313,7 +2319,7 @@
 
     }
   </style>
-  <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(el)el.disabled=!isDesktop;}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
+  <script id="syncPlatformDesktopStylesLate">(function(){var DESK_IDS=['platform-tabs-link','platform-list-head-link','platform-users-desktop-link','platform-users-shell-link','platform-violations-shell-link','platform-locations-shell-link','platform-settings-shell-link','desktop-ui-shell-lock-link','platform-viewport-baseline-link','platform-compliance-shell-link','platform-dashboard-shell-link','platform-reports-list-shell-link'];window.syncPlatformDesktopStylesheets=function(isDesktop){var redesign=document.documentElement.classList.contains('athar-staging-redesign');for(var i=0;i<DESK_IDS.length;i++){var el=document.getElementById(DESK_IDS[i]);if(!el)continue;var dashOnly=DESK_IDS[i]==='platform-dashboard-shell-link';el.disabled=!isDesktop||(redesign&&dashOnly);}};window.syncPlatformDesktopStylesheets(document.documentElement.classList.contains('mr-desktop-ui'));})();</script>
   <meta name="app-build" content="athar-avatar-new-badge-edit-v1050">
   <!-- مقياس zoom على الجوال يُعطّل لتحسين الأداء — التنسيق عبر CSS الجوال -->
   <script>
@@ -2639,6 +2645,12 @@
           <div class="topbar-vdivider topbar-brand-divider" aria-hidden="true"></div>
         </div>
 
+        <div class="rd-top-titles" id="rdTopTitles" aria-live="polite">
+          <div class="rd-top-titles__title" id="rdTopTitle">نظرة عامة</div>
+          <div class="rd-top-titles__sub" id="rdTopSub">ملخص أداء اليوم</div>
+        </div>
+
+
         <div class="topbar-actions-zone">
             <div class="topbar-clock" id="topbarClock" dir="ltr" aria-live="polite" aria-label="الوقت">
               <div class="topbar-clock-time">
@@ -2678,10 +2690,14 @@
     </header>
       <div class="app-body">
       <aside class="sidebar" id="sidebar">
-        <nav class="sidebar-nav" id="sidebarNav">
+        
+        <div class="rd-side-brand" id="rdSideBrand">
+          <img src="icons/athar-logo-v403.png" alt="أثر" class="rd-side-brand__logo" width="120" height="32" decoding="async">
+        </div>
+<nav class="sidebar-nav" id="sidebarNav">
           <div id="navSectionMain" class="nav-section-label" data-perm="section_main">الرئيسية</div>
           <button class="nav-item" onclick="goTab('dashboard',this)" data-perm="tab_dashboard"><span class="nav-icon-wrap"><i class="fas fa-house" aria-hidden="true"></i></span><span
-              class="nav-item-label">لوحة القيادة</span></button>
+              class="nav-item-label">الرئيسية</span></button>
           <button class="nav-item" onclick="goTab('newTicket',this)" data-perm="tab_newTicket"><span class="nav-icon-wrap"><i
               class="fas fa-circle-plus" aria-hidden="true"></i></span><span class="nav-item-label">رصد مخالفة</span></button>
           <button class="nav-item" onclick="goTab('workflow',this)" data-perm="tab_workflow"><span class="nav-icon-wrap"><i class="fas fa-clipboard-list" aria-hidden="true"></i></span><span
@@ -2699,15 +2715,27 @@
           <button class="nav-item" onclick="goTab('departments',this)" data-perm="tab_departments"><span class="nav-icon-wrap"><i
               class="fas fa-user-group" aria-hidden="true"></i></span><span class="nav-item-label">المستخدمون</span></button>
         </nav>
-      </aside>
+              <div class="rd-side-foot" id="rdSideFoot">
+          <button type="button" class="rd-side-foot__user" id="rdSideUserBtn" onclick="openProfilePage(event)" aria-label="الملف الشخصي">
+            <span class="rd-side-foot__av" id="rdSideAv" aria-hidden="true">م</span>
+            <span class="rd-side-foot__meta">
+              <span class="rd-side-foot__name" id="rdSideName">—</span>
+              <span class="rd-side-foot__email" id="rdSideEmail">—</span>
+            </span>
+          </button>
+          <button type="button" class="rd-side-foot__theme" id="rdSideThemeBtn" onclick="toggleTheme(event)" title="تبديل الثيم" aria-label="تبديل الثيم">
+            <i class="fas fa-moon" id="rdSideThemeIcon" aria-hidden="true"></i>
+          </button>
+        </div>
+</aside>
 
       <div class="main">
 
         <!-- Page Title Bar -->
         <div class="page-title-bar" id="pageTitleBar">
           <div>
-            <h1 id="pageTitle">لوحة القيادة</h1>
-            <p id="pageSubtitle">ATHAR</p>
+            <h1 id="pageTitle">نظرة عامة</h1>
+            <p id="pageSubtitle">ملخص أداء اليوم</p>
           </div>
         </div>
 
@@ -2853,7 +2881,8 @@
           </div>
           <!-- DASHBOARD -->
           <div class="tab-content" id="tab-dashboard" hidden>
-            <section class="mk-dash">
+            <section class="rd-dash" id="rdDash" hidden aria-label="نظرة عامة — إعادة التصميم"></section>
+            <section class="mk-dash mk-dash--classic">
               <header class="mk-dash__hero">
                 <div>
                   <p class="mk-dash__date" id="dash-date-kicker">—</p>
@@ -4369,7 +4398,7 @@
     </div>
   </div><!-- /#appWrap -->
 
-    <script src="js/app.js?v=20260719v0471"></script>
+    <script src="js/app.js?v=home1"></script>
         <style>
       @media (max-width: 992px) {
         /* ── workflow: منع التمدد الأفقي ── */
