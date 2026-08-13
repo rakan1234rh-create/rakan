@@ -1,0 +1,795 @@
+/* ATHAR Production — المناطق والفروع / locations (desktop) */
+
+html.athar-staging-redesign.mr-desktop-ui #appWrap #tab-locations.tab-content.active {
+  padding: 24px !important;
+}
+html.athar-staging-redesign.mr-desktop-ui #tab-locations > .panel,
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .wf-panel {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .wf-panel-intro,
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .wf-count {
+  display: none !important;
+}
+
+@keyframes atharRdFadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes atharRdCardIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes atharRdScreenIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.rd-ticket-empty {
+  text-align: center;
+  padding: 36px 16px;
+  color: var(--text3);
+  font-size: 13px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+.rd-ticket-empty i {
+  display: block;
+  font-size: 22px;
+  margin-bottom: 10px;
+  opacity: 0.7;
+}
+
+/* ── mobile shell + base .rd-loc-* ── */
+
+/* ═══ Locations / فروع — Standalone (2) ═══ */
+html.athar-staging-redesign.mr-mobile-ui #tab-locations .panel.wf-panel {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-locations .wf-panel-banner {
+  padding: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-locations .wf-panel-title {
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  color: var(--text) !important;
+  margin: 0 !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-locations .wf-panel-sub {
+  font-size: 10.5px !important;
+  color: var(--text3) !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  margin: 3px 0 12px !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-locations .rb-drill-summary,
+html.athar-staging-redesign.mr-mobile-ui #tab-locations .wf-count,
+html.athar-staging-redesign.mr-mobile-ui #tab-locations .rb-toolbar .rp-tool-btn:not(#br-panel-action-btn) {
+  display: none !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-locations .rb-toolbar {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  margin: 0 0 12px !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-locations .rb-search-combo {
+  flex: 1 1 100% !important;
+  order: 1;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-locations #rbBackBtnSlot {
+  display: none !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-locations .rb-search-combo .figma-search-wrap {
+  background: var(--searchFill) !important;
+  border: none !important;
+  border-radius: 10px !important;
+  padding: 0 14px !important;
+  min-height: 44px !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-locations .rb-search-combo .figma-search-input {
+  font-size: 12.5px !important;
+  color: var(--text) !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-locations .rb-search-combo .figma-search-input::placeholder {
+  color: var(--text3) !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-locations #br-panel-action-btn {
+  order: 2;
+  height: 40px !important;
+  border-radius: 10px !important;
+  font-size: 12px !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-locations #regionsDeskHost,
+html.athar-staging-redesign.mr-mobile-ui #tab-locations .mr-users-list-wrap {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-locations #regionsList.rb-regions-scroll {
+  display: block !important;
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
+  height: auto !important;
+  overflow-y: scroll !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
+  touch-action: pan-y !important;
+  overscroll-behavior-y: contain;
+  padding: 0 0 calc(12px + env(safe-area-inset-bottom, 0px)) !important;
+  background: transparent !important;
+  gap: 0 !important;
+}
+
+.rd-loc-board {
+  animation: atharRdScreenIn 0.32s ease;
+  direction: rtl;
+}
+.rd-loc-summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.rd-loc-stat {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px;
+  text-align: center;
+}
+.rd-loc-stat__val {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.1;
+}
+.rd-loc-stat__lbl {
+  font-size: 10px;
+  color: var(--text3);
+  margin-top: 3px;
+}
+.rd-loc-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0;
+  margin: 0 0 12px;
+  border: none;
+  background: transparent;
+  color: var(--text2);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+.rd-loc-back i { font-size: 11px; }
+.rd-loc-list-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 10px;
+}
+.rd-loc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rd-loc-ring {
+  position: relative;
+  width: 46px;
+  height: 46px;
+  flex-shrink: 0;
+}
+.rd-loc-ring svg {
+  position: absolute;
+  inset: 0;
+  transform: rotate(-90deg);
+  display: block;
+}
+.rd-loc-ring__val {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.rd-loc-region,
+.rd-loc-branch {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 16px;
+  animation: atharRdCardIn 0.4s ease both;
+}
+.rd-loc-region {
+  cursor: pointer;
+}
+.rd-loc-region:active { opacity: 0.94; }
+.rd-loc-region__top,
+.rd-loc-branch__top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.rd-loc-region__body,
+.rd-loc-branch__body { flex: 1; min-width: 0; }
+.rd-loc-region__name,
+.rd-loc-branch__name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rd-loc-branch__name { font-size: 13.5px; }
+.rd-loc-region__mgr {
+  font-size: 11.5px;
+  color: var(--text3);
+  margin-top: 3px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+.rd-loc-region__mgr i { font-size: 10px; flex-shrink: 0; }
+.rd-loc-branch__sub {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 3px;
+}
+.rd-loc-region__foot {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.rd-loc-region__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text2);
+}
+.rd-loc-region__meta i {
+  font-size: 11px;
+  color: var(--text3);
+}
+.rd-loc-region__meta strong {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.rd-loc-menu {
+  position: relative;
+  flex-shrink: 0;
+}
+.rd-loc-menu__btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text3);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+.rd-loc-menu__btn i { font-size: 14px; }
+.rd-loc-menu__pop {
+  position: absolute;
+  top: calc(100% + 4px);
+  inset-inline-end: 0;
+  min-width: 132px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 4px;
+  z-index: 5;
+  box-shadow: var(--shadow-md, 0 8px 24px rgba(0, 0, 0, 0.08));
+}
+.rd-loc-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--text2);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  padding: 9px 10px;
+  border-radius: 9px;
+  cursor: pointer;
+  text-align: start;
+}
+.rd-loc-menu__item:active { background: var(--surface2); }
+.rd-loc-menu__item--danger { color: var(--danger); }
+.rd-loc-menu__item i { font-size: 11px; width: 14px; text-align: center; }
+
+.rd-loc-branch__staff {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.rd-loc-emp {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.rd-loc-emp__av {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--surface2);
+  color: var(--text2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.rd-loc-emp__body { flex: 1; min-width: 0; }
+.rd-loc-emp__name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rd-loc-emp__role {
+  font-size: 10.5px;
+  color: var(--text3);
+  margin-top: 1px;
+}
+.rd-loc-emp-empty {
+  font-size: 12px;
+  color: var(--text3);
+  text-align: center;
+  padding: 8px 0;
+}
+
+/* ── desktop locations tables ── */
+
+/* ΓöÇΓöÇ Locations desktop ΓÇö literal Athar mockup tables ΓöÇΓöÇ */
+html.athar-staging-redesign.mr-desktop-ui #tab-locations {
+  animation: atharRdScreenIn 0.3s ease !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations #regionsDeskHost.wf-desk-tickets-host,
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .mr-users-list-wrap,
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .wf-table-wrap {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  overflow: visible !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations #regionsList.rb-regions-scroll {
+  overflow-x: visible !important;
+  overflow-y: auto !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rb-locations-page-banner {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 10px !important;
+  margin: 0 0 16px !important;
+  padding: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rb-toolbar,
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .wf-toolbar.rb-toolbar {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  flex-wrap: wrap !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  width: 100% !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rb-search-combo,
+html.athar-staging-redesign.mr-desktop-ui #tab-locations #rbSearchCombo {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex: 0 0 auto !important;
+  max-width: none !important;
+  width: auto !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .wf-search,
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rb-search-combo .figma-search-wrap {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  max-width: 320px !important;
+  width: 320px !important;
+  flex: 0 0 320px !important;
+  padding: 10px 14px !important;
+  background: var(--searchFill) !important;
+  border: none !important;
+  border-radius: 10px !important;
+  box-shadow: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .wf-search::before {
+  content: "\f002" !important;
+  font-family: "Font Awesome 6 Free" !important;
+  font-weight: 900 !important;
+  color: var(--text3) !important;
+  font-size: 12px !important;
+  flex-shrink: 0 !important;
+  line-height: 1 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .wf-search .figma-search-btn {
+  display: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .wf-search .figma-search-input {
+  flex: 1 !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  font-size: 12.5px !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations #br-panel-action-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  height: 40px !important;
+  padding: 0 16px !important;
+  border: none !important;
+  border-radius: 10px !important;
+  background: var(--gold) !important;
+  color: var(--onGold) !important;
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+  box-shadow: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rb-toolbar .rp-tool-btn:not(#br-panel-action-btn) {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 40px !important;
+  height: 40px !important;
+  min-width: 40px !important;
+  padding: 0 !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 10px !important;
+  background: var(--surface) !important;
+  color: var(--text2) !important;
+  box-shadow: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rb-toolbar .rp-tool-btn:not(#br-panel-action-btn) span {
+  display: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rb-toolbar .rp-tool-btn:not(#br-panel-action-btn) i {
+  font-size: 13px !important;
+  margin: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-banner--drill .rb-toolbar {
+  display: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-board--desk {
+  display: block !important;
+  animation: atharRdFadeUp 0.3s ease !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-back {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  margin: 0 0 14px !important;
+  padding: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  color: var(--text2) !important;
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  font-family: inherit !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-list-title {
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  color: var(--text) !important;
+  margin: 0 0 14px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-table {
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 16px !important;
+  overflow: visible !important;
+  direction: rtl !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-row:has(.rd-desk-menu.is-open) {
+  z-index: 50 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-table--region {
+  display: grid !important;
+  grid-template-columns: 2fr 1.6fr 90px 100px 140px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-table--branch {
+  display: grid !important;
+  grid-template-columns: 2fr 1fr !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-table--emp {
+  display: grid !important;
+  grid-template-columns: 2fr 110px 1.4fr !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-body {
+  display: contents !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-thead {
+  gap: 12px !important;
+  padding: 12px 18px !important;
+  background: var(--surface2) !important;
+  background-clip: padding-box !important;
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  color: var(--text2) !important;
+  direction: rtl !important;
+  grid-column: 1 / -1 !important;
+  display: grid !important;
+  /* ╪º┘ä╪¡╪º┘ê┘è╪⌐ overflow:visible ┘ä┘ä┘é┘ê╪º╪ª┘à╪¢ ┘å╪»┘ê┘æ╪▒ ╪º┘ä┘ç┘è╪»╪▒ ╪¡╪¬┘ë ┘ä╪º ╪¬╪«╪▒╪¼ ╪º┘ä╪▓┘ê╪º┘è╪º ╪º┘ä╪¡╪º╪»╪⌐ */
+  border-start-start-radius: 15px !important;
+  border-start-end-radius: 15px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-thead--region,
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-row--region {
+  grid-template-columns: 2fr 1.6fr 90px 100px 140px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-thead--branch,
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-row--branch {
+  grid-template-columns: 2fr 1fr !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-thead--emp,
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-row--emp {
+  grid-template-columns: 2fr 110px 1.4fr !important;
+}
+
+@supports (grid-template-columns: subgrid) {
+  html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-thead,
+  html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-row {
+    grid-template-columns: subgrid !important;
+  }
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-row {
+  gap: 12px !important;
+  align-items: center !important;
+  padding: 14px 18px !important;
+  border: none !important;
+  border-top: 1px solid var(--border) !important;
+  background: transparent !important;
+  color: inherit !important;
+  font: inherit !important;
+  text-align: start !important;
+  width: 100% !important;
+  cursor: pointer !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  animation: atharRdCardIn .35s ease both;
+  direction: rtl !important;
+  grid-column: 1 / -1 !important;
+  display: grid !important;
+  overflow: visible !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-cell--who {
+  grid-column: 1 !important;
+  min-width: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-cell--mgr {
+  grid-column: 2 !important;
+  min-width: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-cell--branches {
+  grid-column: 3 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-cell--emps {
+  grid-column: 4 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-cell--acts {
+  grid-column: 5 !important;
+  justify-self: start !important;
+  overflow: visible !important;
+  position: relative !important;
+  z-index: 2 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-table--branch .rd-loc-desk-cell--emps {
+  grid-column: 2 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-cell--id {
+  grid-column: 2 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-cell--role {
+  grid-column: 3 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-body > .rd-loc-desk-row:first-child {
+  border-top: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-row--emp {
+  padding: 13px 18px !important;
+  cursor: default !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-who {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  min-width: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-ico {
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 9px !important;
+  background: var(--goldSoft) !important;
+  color: var(--gold) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+  font-size: 13px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-av {
+  width: 30px !important;
+  height: 30px !important;
+  border-radius: 50% !important;
+  background: var(--surface2) !important;
+  color: var(--text2) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  flex-shrink: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-name {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: var(--text) !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-name--emp {
+  font-weight: 600 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-muted {
+  font-size: 12px !important;
+  color: var(--text3) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-row--emp .rd-loc-desk-muted {
+  color: var(--text2) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-clip {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-num {
+  font-size: 12.5px !important;
+  color: var(--text2) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
+  font-size: 12px !important;
+  color: var(--text2) !important;
+  text-align: start !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-acts {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 8px !important;
+  flex-wrap: wrap !important;
+  min-width: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-act {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  padding: 6px 12px !important;
+  border-radius: 9px !important;
+  border: 1px solid var(--border) !important;
+  background: transparent !important;
+  color: var(--text2) !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  font-family: inherit !important;
+  cursor: pointer !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-act i {
+  font-size: 10px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-act--danger {
+  color: var(--danger) !important;
+}
+
+/* Hide mobile summary / card chrome leftovers on desk */
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-summary,
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-ring,
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-menu {
+  display: none !important;
+}
