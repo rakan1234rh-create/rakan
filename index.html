@@ -779,7 +779,7 @@
   <link rel="stylesheet" href="styles/custom/athar-violations-redesign.css?v=vl1" id="athar-violations-redesign">
   <link rel="stylesheet" href="styles/custom/athar-locations-redesign.css?v=loc1" id="athar-locations-redesign">
   <link rel="stylesheet" href="styles/custom/athar-users-redesign.css?v=usr1" id="athar-users-redesign">
-  <link rel="stylesheet" href="styles/custom/athar-breaks-redesign.css?v=brk1" id="athar-breaks-redesign">
+  <link rel="stylesheet" href="styles/custom/athar-breaks-redesign.css?v=brk2" id="athar-breaks-redesign">
 
   <link rel="stylesheet" href="styles/custom/design-kit.css" id="mk-design-kit">
   <!-- Mirsad tokens + kit: مضمّنة في index.html — لا روابط design-system (تجنّب 404 عند file://) -->
@@ -4048,7 +4048,8 @@
 
     <div class="modal" id="breakScheduleModal" role="dialog" aria-modal="true" aria-labelledby="breakSchTitle">
       <div class="modal-card break-schedule-card">
-        <div class="break-sch-hd">
+        <div class="break-sch-hd break-sch-drag-zone">
+          <span class="break-sch-grabber" aria-hidden="true"></span>
           <h3 id="breakSchTitle">جدولة مدة البريك</h3>
           <button type="button" class="break-sch-hd__close" onclick="closeModal('breakScheduleModal')" aria-label="إغلاق">
             <i class="fas fa-xmark" aria-hidden="true"></i>
@@ -4543,7 +4544,7 @@
     </div>
   </div><!-- /#appWrap -->
 
-    <script src="js/app.js?v=brk1"></script>
+    <script src="js/app.js?v=brk2"></script>
         <style>
       @media (max-width: 992px) {
         /* ── workflow: منع التمدد الأفقي ── */
