@@ -1,0 +1,1566 @@
+/* ATHAR Production — البريكات / staff breaks (#tab-breaks) */
+
+html.athar-staging-redesign.mr-desktop-ui #appWrap #tab-breaks.tab-content.active {
+  padding: 24px !important;
+  box-sizing: border-box !important;
+}
+
+@keyframes atharRdFadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes atharRdCardIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes atharRdScreenIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes atharRdSideScrimIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes atharRdSidePanelIn {
+  from { transform: translate3d(var(--athar-side-panel-from, -100%), 0, 0); }
+  to { transform: translate3d(0, 0, 0); }
+}
+html.athar-staging-redesign.mr-desktop-ui {
+  --athar-side-panel-from: -100%;
+}
+html.athar-staging-redesign.mr-desktop-ui[dir="ltr"],
+html[dir="ltr"].athar-staging-redesign.mr-desktop-ui {
+  --athar-side-panel-from: 100%;
+}
+
+html.athar-staging-redesign.rd-soft-paint #tab-breaks .rd-screen,
+html.athar-staging-redesign.rd-soft-paint #tab-breaks .rd-streak,
+html.athar-staging-redesign.rd-soft-paint #tab-breaks .rd-sec,
+html.athar-staging-redesign.rd-anim-settled #tab-breaks .rd-screen,
+html.athar-staging-redesign.rd-anim-settled #tab-breaks .rd-streak {
+  animation: none !important;
+}
+
+.rd-list__title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* ── shared primitives used by breaks ── */
+
+.rd-screen { animation: atharRdScreenIn .32s ease; padding-bottom: 8px; }
+.rd-greet { margin-bottom: 16px; }
+.rd-greet__date { font-size: 12.5px; color: var(--text2); }
+.rd-greet__name { font-size: 20px; font-weight: 700; color: var(--text); margin-top: 4px; }
+.rd-greet__sub { font-size: 13px; color: var(--text2); margin-top: 4px; line-height: 1.6; }
+
+.rd-streak {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 22px;
+  padding: 22px 18px 18px; margin-bottom: 10px; display: flex; flex-direction: column;
+  align-items: center; position: relative; animation: atharRdCardIn .4s ease both;
+}
+.rd-streak__badge {
+  position: absolute; top: 14px; inset-inline-start: 14px; display: flex; align-items: center;
+  gap: 5px; background: var(--goldSoft); color: var(--gold); padding: 5px 10px;
+  border-radius: 999px; font-size: 10.5px; font-weight: 700;
+}
+.rd-streak__ring { position: relative; width: 136px; height: 136px; margin-top: 22px; }
+.rd-streak__ring svg { transform: rotate(-90deg); position: absolute; inset: 0; }
+.rd-streak__center {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+.rd-streak__days { font-size: 32px; font-weight: 800; color: var(--text); line-height: 1; }
+.rd-streak__lbl { font-size: 10.5px; color: var(--text3); margin-top: 3px; }
+
+.rd-mini-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.rd-mini {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+  padding: 13px; text-align: center; animation: atharRdCardIn .4s ease both;
+}
+.rd-mini__val { font-size: 19px; font-weight: 700; }
+.rd-mini__lbl { font-size: 10.5px; color: var(--text2); margin-top: 4px; }
+
+.rd-metric {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 18px;
+  padding: 16px; margin-bottom: 14px; animation: atharRdCardIn .4s ease both;
+}
+.rd-metric__top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px; }
+.rd-metric__label { font-size: 12.5px; font-weight: 600; color: var(--text); }
+.rd-metric__val { font-size: 12px; font-weight: 700; }
+.rd-metric__bar { height: 7px; border-radius: 999px; background: var(--surface2); overflow: hidden; }
+.rd-metric__fill { height: 100%; border-radius: 999px; }
+.rd-metric__sub { font-size: 10.5px; color: var(--text3); margin-top: 6px; }
+
+.rd-stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px; }
+.rd-stat {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+  padding: 13px 14px; animation: atharRdCardIn .4s ease both;
+}
+.rd-stat__row { display: flex; align-items: center; justify-content: space-between; }
+.rd-stat__val { font-size: 20px; font-weight: 700; color: var(--text); }
+.rd-stat__ico {
+  width: 28px; height: 28px; border-radius: 9px; background: var(--surface2);
+  display: flex; align-items: center; justify-content: center; font-size: 12px;
+}
+.rd-stat__lbl { font-size: 11.5px; color: var(--text2); margin-top: 6px; }
+
+.rd-sec { margin-bottom: 18px; }
+.rd-sec__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.rd-sec__title { font-size: 14.5px; font-weight: 700; color: var(--text); }
+.rd-sec__link { font-size: 11.5px; color: var(--gold); font-weight: 600; background: none; border: none; cursor: pointer; padding: 0; font-family: inherit; }
+.rd-list { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; overflow: hidden; }
+.rd-list__row {
+  display: flex; align-items: center; gap: 12px; padding: 12px 14px;
+  border-bottom: 1px solid var(--border); width: 100%; background: transparent;
+  border-left: none; border-right: none; border-top: none; text-align: start;
+  color: inherit; font-family: inherit; cursor: pointer;
+}
+.rd-list__row:last-child { border-bottom: none; }
+.rd-av {
+  width: 36px; height: 36px; border-radius: 50%; background: var(--surface2); color: var(--text2);
+  display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0;
+}
+.rd-list__name { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rd-list__sub { font-size: 11.5px; color: var(--text3); margin-top: 2px; }
+.rd-list__meta { text-align: start; flex-shrink: 0; }
+
+/* ── breaks page + cards + history + schedule ── */
+
+/* ═══ Staff breaks page (full width, stacked — not side-by-side) ═══ */
+html.athar-staging-redesign.mr-mobile-ui #tab-breaks .wf-panel-banner,
+html.athar-staging-redesign.mr-mobile-ui #tab-breaks .breaks-panel-banner {
+  display: none !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-breaks .breaks-classic-host {
+  display: none !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-breaks,
+html.athar-staging-redesign.mr-mobile-ui #tab-breaks .breaks-panel {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-breaks .breaks-panel {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: block !important;
+  min-height: 0 !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #rdBreaks:not([hidden]) {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  min-height: 0 !important;
+}
+/* Breaks page shell: no nested slide (tab shell already moves once). */
+html.athar-staging-redesign.mr-mobile-ui #tab-breaks .rd-screen {
+  animation: none;
+}
+html:not(.athar-staging-redesign) #rdBreaks,
+html.athar-staging-redesign.mr-mobile-ui #rdBreaks[hidden] {
+  display: none !important;
+}
+html.athar-staging-redesign.mr-desktop-ui #rdBreaks[hidden] {
+  display: none !important;
+}
+html.athar-staging-redesign.mr-desktop-ui #rdBreaks:not([hidden]) {
+  display: block !important;
+}
+
+#tab-breaks,
+#tab-breaks .breaks-panel,
+#tab-breaks .breaks-classic-host,
+#tab-breaks #rdBreaks,
+#tab-breaks .rd-breaks-page,
+#tab-breaks .breaks-full-page {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.rd-breaks-page {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 0;
+  padding-bottom: 4px;
+  gap: 10px;
+}
+.rd-breaks-page__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 0;
+  width: 100%;
+  padding-inline: 1px;
+}
+.rd-breaks-page__title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+}
+.rd-breaks-page__gear {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+.rd-break-card {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+  flex-shrink: 0;
+  padding: 22px 12px 18px !important;
+  align-items: center !important;
+}
+.rd-break-card--paused .rd-break-clock,
+.rd-break-card--paused [data-break-clock],
+.rd-break-card--paused [data-break-lbl],
+.rd-break-card--paused [data-break-ico] {
+  color: var(--warning, #ff9500) !important;
+}
+.rd-break-card--paused [data-break-ring-progress] {
+  stroke: var(--warning, #ff9500) !important;
+}
+.rd-break-card--paused .rd-streak__badge {
+  background: color-mix(in srgb, var(--warning, #ff9500) 16%, transparent) !important;
+  color: var(--warning, #ff9500) !important;
+}
+.rd-break-ring {
+  width: 168px !important;
+  height: 168px !important;
+  margin-top: 18px !important;
+  margin-inline: auto !important;
+}
+.rd-break-clock {
+  font-size: 36px !important;
+}
+.rd-break-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-top: 16px;
+  width: 100%;
+}
+.rd-break-actions .rd-break-btn,
+.rd-break-btn {
+  width: auto !important;
+  max-width: max-content !important;
+  align-self: center;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  padding: 10px 20px !important;
+  border-radius: 14px !important;
+  font-weight: 700 !important;
+  min-height: 42px;
+  text-align: center !important;
+  margin-inline: auto;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+.rd-break-btn--gold {
+  background: var(--gold) !important;
+  color: var(--onGold) !important;
+}
+.rd-break-btn--danger {
+  background: var(--danger) !important;
+  color: #fff !important;
+}
+.rd-break-btn--success {
+  background: var(--success) !important;
+  color: #fff !important;
+}
+.rd-break-btn--muted {
+  background: var(--surface2) !important;
+  color: var(--text3) !important;
+}
+.rd-break-btn--ghost {
+  background: transparent !important;
+  color: var(--text2) !important;
+  border: 1px solid var(--border) !important;
+  font-weight: 600 !important;
+}
+.rd-break-empty-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  text-align: center;
+  color: var(--text3);
+  font-size: 12.5px;
+}
+.rd-break-actions .rd-break-btn i,
+.rd-break-btn i {
+  margin: 0 !important;
+}
+.rd-break-note {
+  font-size: 12px;
+  color: var(--text3);
+  margin: 0;
+  text-align: center;
+}
+.rd-break-note--warn {
+  color: var(--warning, #d97706);
+  margin-top: 8px;
+  line-height: 1.5;
+  max-width: 280px;
+}
+.rd-break-roster__mins {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text2);
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+.rd-break-roster__mins--zero {
+  color: var(--text3) !important;
+}
+.rd-break-roster__mins--paused {
+  color: var(--warning, #ff9500) !important;
+}
+.rd-break-roster__mins--over {
+  color: var(--danger) !important;
+}
+.rd-break-roster-row--paused {
+  background: color-mix(in srgb, var(--warning, #ff9500) 16%, var(--surface)) !important;
+  border: 1px solid color-mix(in srgb, var(--warning, #ff9500) 40%, var(--border)) !important;
+  border-radius: 16px !important;
+}
+.rd-break-roster-row--over {
+  background: color-mix(in srgb, var(--danger) 14%, var(--surface)) !important;
+  border: 1px solid color-mix(in srgb, var(--danger) 40%, var(--border)) !important;
+  border-radius: 16px !important;
+}
+.rd-break-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.rd-break-list-sec {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin-bottom: 0 !important;
+  flex: 0 0 auto !important;
+  padding-inline: 1px;
+  box-sizing: border-box;
+}
+.rd-break-list-sec + .rd-break-list-sec {
+  margin-top: 2px;
+}
+/* Each break row is its own rounded card — avoid clipped edges from .rd-list overflow */
+.rd-break-list.rd-list,
+.rd-list.rd-break-list {
+  width: 100%;
+  min-height: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  overflow: visible !important;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: none !important;
+}
+.rd-break-list .rd-list__row,
+.rd-break-list .rd-break-row,
+.rd-break-list .rd-break-roster-row,
+.rd-break-list .rd-break-empty {
+  border: 1px solid var(--border) !important;
+  border-radius: 16px !important;
+  background: var(--surface);
+  overflow: hidden;
+  box-sizing: border-box;
+  width: 100%;
+}
+.rd-break-list .rd-list__row + .rd-list__row {
+  border-top: 1px solid var(--border) !important;
+}
+.rd-break-empty {
+  min-height: 0 !important;
+  padding: 14px 12px !important;
+  align-items: center;
+  justify-content: center;
+}
+.rd-break-row__av {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--text);
+  color: var(--surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.rd-break-row__clock {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--success);
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+  flex-shrink: 0;
+}
+.rd-break-row__clock--over {
+  color: var(--danger) !important;
+}
+.rd-break-row--live {
+  border: 1px solid var(--border) !important;
+  border-radius: 16px !important;
+}
+.rd-break-row--active {
+  background: color-mix(in srgb, var(--success) 18%, var(--surface)) !important;
+  border: 1px solid color-mix(in srgb, var(--success) 42%, var(--border)) !important;
+  border-radius: 16px !important;
+}
+.rd-break-row--active .rd-break-row__av {
+  background: var(--success);
+  color: #fff;
+}
+.rd-break-row--over {
+  background: color-mix(in srgb, var(--danger) 16%, var(--surface)) !important;
+  border: 1px solid color-mix(in srgb, var(--danger) 45%, var(--border)) !important;
+  border-radius: 16px !important;
+}
+.rd-break-row--over .rd-list__title {
+  color: var(--text) !important;
+}
+.rd-break-row--over .rd-break-row__av {
+  background: var(--danger);
+  color: #fff;
+}
+.rd-break-row--paused {
+  background: color-mix(in srgb, var(--warning, #ff9500) 16%, var(--surface)) !important;
+  border: 1px solid color-mix(in srgb, var(--warning, #ff9500) 40%, var(--border)) !important;
+  border-radius: 16px !important;
+}
+.rd-break-row__clock--paused {
+  color: var(--warning, #ff9500) !important;
+}
+.rd-break-status--over {
+  color: var(--danger) !important;
+  font-weight: 700;
+}
+.rd-break-status--paused {
+  color: var(--warning, #ff9500) !important;
+  font-weight: 700;
+}
+.rd-break-row--me:not(.rd-break-row--active):not(.rd-break-row--over):not(.rd-break-roster-row--paused):not(.rd-break-roster-row--over) {
+  background: color-mix(in srgb, var(--gold) 8%, transparent);
+}
+.rd-break-me-tag {
+  display: inline-block;
+  margin-inline-start: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--gold);
+  background: var(--goldSoft, color-mix(in srgb, var(--gold) 18%, transparent));
+  padding: 2px 7px;
+  border-radius: 999px;
+  vertical-align: middle;
+}
+.rd-break-row--clickable:active {
+  filter: brightness(0.98);
+}
+.break-history-card .modal-header {
+  align-items: flex-start;
+  gap: 0;
+  border: none;
+  border-bottom: none;
+  background: transparent;
+  box-shadow: none;
+}
+.break-history-hd {
+  display: block;
+  gap: 0;
+}
+.break-history-hd__av,
+.break-history-hd__close {
+  display: none !important;
+}
+.break-history-hd__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.break-history-card .modal-header h3,
+.break-history-hd__main h3 {
+  flex: none;
+  min-width: 0;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+.break-history-meta {
+  font-size: 11.5px;
+  color: var(--text2);
+  margin: 0;
+  padding: 0;
+  line-height: 1.5;
+}
+.break-history-live {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--goldSoft, color-mix(in srgb, var(--gold) 14%, transparent));
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+.break-history-live[hidden] {
+  display: none !important;
+}
+.break-history-live__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--gold);
+  flex-shrink: 0;
+}
+.break-history-sessions-lbl {
+  margin: 0 0 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text);
+}
+.break-history-empnum {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  color: var(--text3);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  line-height: 1.2;
+  direction: ltr;
+  unicode-bidi: isolate;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.break-history-empnum[hidden] {
+  display: none !important;
+}
+.break-history-card .modal-body {
+  padding-top: 0;
+}
+.break-history-sub {
+  margin: 0 0 12px;
+  font-size: 12.5px;
+  color: var(--text3);
+  line-height: 1.55;
+}
+.break-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: min(58vh, 420px);
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.break-history-empty {
+  padding: 18px 14px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text3);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+.break-history-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 12px 14px;
+}
+.break-history-item--active {
+  background: color-mix(in srgb, var(--success) 12%, var(--surface));
+  border-color: color-mix(in srgb, var(--success) 35%, var(--border));
+}
+.break-history-item--paused {
+  background: color-mix(in srgb, var(--warning, #ff9500) 12%, var(--surface));
+  border-color: color-mix(in srgb, var(--warning, #ff9500) 35%, var(--border));
+}
+.break-history-item--over {
+  background: color-mix(in srgb, var(--danger) 12%, var(--surface));
+  border-color: color-mix(in srgb, var(--danger) 35%, var(--border));
+}
+.break-history-item__hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.break-history-item__n {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+.break-history-item__st {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text2);
+}
+.break-history-item--over .break-history-item__st {
+  color: var(--danger);
+}
+.break-history-item--paused .break-history-item__st {
+  color: var(--warning, #ff9500);
+}
+.break-history-item--active .break-history-item__st {
+  color: var(--success);
+}
+.break-history-item__dl {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.break-history-item__dl > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.break-history-item__dl dt {
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--text3);
+  font-weight: 600;
+}
+.break-history-item__dl dd {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--text);
+  font-weight: 600;
+  text-align: end;
+}
+.break-history-item__reason {
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 4px;
+  margin-top: 2px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+.break-history-item__reason dd {
+  text-align: start;
+  font-weight: 500;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.break-history-item__reason-empty {
+  color: var(--text3);
+  font-weight: 500;
+}
+.rd-break-manage {
+  margin-top: 14px;
+  width: 100%;
+}
+.rd-break-manage-btn {
+  width: 100%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 14px;
+  padding: 12px 14px;
+  font: inherit;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.break-schedule-card {
+  width: min(440px, 94vw);
+  max-width: 94vw;
+  padding: 0 !important;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: min(92vh, 820px);
+}
+.break-schedule-card .modal-header,
+.break-schedule-card .modal-body,
+.break-schedule-card .modal-footer {
+  display: none !important;
+}
+.break-sch-hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 22px 22px 0;
+  margin-bottom: 20px;
+}
+.break-sch-hd h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+.break-sch-hd__close {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  font-size: 12px;
+  padding: 0;
+}
+.break-sch-body {
+  padding: 0 22px;
+  overflow-y: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.break-sch-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 8px;
+}
+.break-sch-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.break-sch-chip {
+  padding: 8px 13px;
+  border-radius: 9px;
+  font-size: 11.5px;
+  font-weight: 600;
+  font-family: inherit;
+  background: var(--surface2);
+  color: var(--text2);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.break-sch-chip.is-on {
+  background: var(--gold);
+  color: var(--onGold);
+  border-color: var(--gold);
+}
+.break-sch-hint {
+  font-size: 10px;
+  color: var(--text3);
+  margin: 0 0 18px;
+  line-height: 1.6;
+}
+.break-sch-scope-pick {
+  margin: 0 0 16px;
+}
+.break-sch-scope-pick[hidden] {
+  display: none !important;
+}
+.break-sch-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface2);
+  color: var(--text);
+  font-size: 13px;
+  font-family: inherit;
+  margin-bottom: 14px;
+}
+.break-sch-select {
+  appearance: auto;
+}
+.break-sch-body > .break-sch-label + .break-sch-chips {
+  margin-bottom: 16px;
+}
+.break-sch-week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  margin: 0 0 8px;
+}
+.break-sch-week-cell {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 4px;
+  text-align: center;
+}
+.break-sch-week-cell.is-editing {
+  background: var(--goldSoft, color-mix(in srgb, var(--gold) 14%, transparent));
+  border-color: var(--gold);
+}
+.break-sch-week-cell__d {
+  font-size: 9.5px;
+  color: var(--text3);
+  margin-bottom: 4px;
+  line-height: 1.3;
+}
+.break-sch-week-cell__m {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+}
+.break-sch-week-cell.is-off .break-sch-week-cell__m {
+  color: var(--danger);
+}
+.break-sch-footer {
+  display: flex;
+  gap: 10px;
+  padding: 16px 22px 22px;
+  margin-top: auto;
+}
+.break-sch-btn {
+  flex: 1;
+  padding: 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+}
+.break-sch-btn--cancel {
+  background: var(--danger);
+  color: #fff;
+  font-weight: 600;
+}
+.break-sch-btn--save {
+  background: var(--gold);
+  color: var(--onGold);
+}
+
+/* Always stacked vertically — never side-by-side columns */
+.breaks-full-page {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-height: 0;
+}
+.breaks-full-page > * {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+}
+
+/* ── desktop layout + side panels ── */
+
+  html.athar-staging-redesign.mr-desktop-ui #breakHistoryModal.modal.open,
+  html.athar-staging-redesign.mr-desktop-ui #breakHistoryModal .modal-card.break-history-card,
+  html.athar-staging-redesign.mr-desktop-ui #breakScheduleModal.modal.open,
+  html.athar-staging-redesign.mr-desktop-ui #breakScheduleModal .modal-card.break-schedule-card,
+
+
+/* Staff breaks desktop */
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks {
+  animation: atharRdScreenIn 0.3s ease !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .breaks-panel,
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .panel.wf-panel {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .breaks-panel-banner,
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .wf-panel-banner.breaks-panel-banner {
+  display: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .breaks-classic-host {
+  display: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks #rdBreaks:not([hidden]) {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  animation: atharRdFadeUp 0.3s ease !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0 !important;
+  width: 100% !important;
+  padding-bottom: 8px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-breaks-page__head {
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  margin: 0 0 16px !important;
+  padding: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-breaks-page__title {
+  display: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-breaks-page__head--actions {
+  display: flex !important;
+  justify-content: flex-end !important;
+  align-items: center !important;
+  margin: 0 0 16px !important;
+  padding: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page__intro {
+  display: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-toolbar {
+  display: flex !important;
+  align-items: center !important;
+  gap: 16px !important;
+  flex-wrap: wrap !important;
+  border: 1.5px dashed var(--border) !important;
+  border-radius: 14px !important;
+  padding: 12px 14px !important;
+  margin: 0 0 20px !important;
+  box-sizing: border-box !important;
+  background: transparent !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-toolbar__lbl {
+  font-size: 10.5px !important;
+  font-weight: 700 !important;
+  color: var(--text3) !important;
+  flex-shrink: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-toolbar__filters {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  flex-wrap: wrap !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-toolchip {
+  padding: 7px 13px !important;
+  border-radius: 9px !important;
+  font-size: 11.5px !important;
+  font-weight: 600 !important;
+  font-family: inherit !important;
+  background: var(--surface2) !important;
+  color: var(--text2) !important;
+  border: 1px solid var(--border) !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-toolchip.is-on {
+  background: var(--gold) !important;
+  color: var(--onGold) !important;
+  border-color: var(--gold) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page__manage {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  height: 40px !important;
+  padding: 0 16px !important;
+  border: none !important;
+  border-radius: 10px !important;
+  background: var(--gold) !important;
+  color: var(--onGold) !important;
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+  font-family: inherit !important;
+  cursor: pointer !important;
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page__manage i {
+  font-size: 11px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-breaks-page__body {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 20px !important;
+  align-items: flex-start !important;
+  width: 100% !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-card {
+  width: 300px !important;
+  max-width: 100% !important;
+  flex-shrink: 0 !important;
+  margin: 0 !important;
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 20px !important;
+  padding: 22px !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-streak__badge {
+  display: inline-flex !important;
+  padding: 5px 13px !important;
+  border-radius: 999px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  margin-bottom: 16px !important;
+  margin-top: 0 !important;
+  gap: 0 !important;
+  border: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-streak__badge[hidden] {
+  display: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-ring {
+  width: 168px !important;
+  height: 168px !important;
+  margin: 0 0 20px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-streak__lbl {
+  display: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-card:not(.rd-break-card--icon-center) [data-break-ico] {
+  display: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-card--icon-center [data-break-ico] {
+  display: block !important;
+  font-size: 26px !important;
+  margin: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-card--icon-center .rd-break-clock[hidden] {
+  display: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-clock {
+  font-size: 28px !important;
+  font-weight: 800 !important;
+  unicode-bidi: isolate !important;
+  line-height: 1 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-actions {
+  width: 100% !important;
+  margin-top: 0 !important;
+  gap: 8px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-btn {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  min-height: 0 !important;
+  padding: 13px !important;
+  border-radius: 12px !important;
+  border: none !important;
+  font-size: 13.5px !important;
+  font-weight: 700 !important;
+  font-family: inherit !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-btn--gold {
+  background: var(--gold) !important;
+  color: var(--onGold) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-btn--danger {
+  background: var(--danger) !important;
+  color: #fff !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-btn--success {
+  background: var(--success) !important;
+  color: #fff !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-btn--ghost {
+  padding: 9px !important;
+  background: transparent !important;
+  color: var(--text2) !important;
+  border: 1px solid var(--border) !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-btn--muted,
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-btn:disabled {
+  background: var(--surface2) !important;
+  color: var(--text3) !important;
+  cursor: not-allowed !important;
+  opacity: 1 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-note {
+  font-size: 11px !important;
+  color: var(--text3) !important;
+  text-align: center !important;
+  line-height: 1.6 !important;
+  margin-top: 10px !important;
+  max-width: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-breaks-page__lists {
+  flex: 1 1 320px !important;
+  min-width: 320px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 20px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-list-sec {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-sec__head {
+  margin: 0 0 10px !important;
+  padding: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-sec__title {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  font-size: 13.5px !important;
+  font-weight: 700 !important;
+  color: var(--text) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-sec__title i {
+  font-size: 12px !important;
+  color: var(--gold) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-list {
+  gap: 8px !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  overflow: visible !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-empty-panel {
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 16px !important;
+  padding: 24px !important;
+  text-align: center !important;
+  color: var(--text3) !important;
+  font-size: 12.5px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-list .rd-list__row,
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-list .rd-break-row,
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-list .rd-break-roster-row {
+  border: 1px solid var(--border) !important;
+  border-radius: 16px !important;
+  background: var(--surface) !important;
+  padding: 13px 16px !important;
+  gap: 12px !important;
+  box-shadow: none !important;
+  min-height: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-list .rd-list__row:last-child,
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-list .rd-break-row:last-child,
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-list .rd-break-roster-row:last-child {
+  border-bottom: 1px solid var(--border) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-row--active {
+  background: var(--surface) !important;
+  border-color: var(--border) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-row--paused {
+  background: color-mix(in srgb, var(--warning, #ff9500) 10%, var(--surface)) !important;
+  border-color: color-mix(in srgb, var(--warning, #ff9500) 35%, var(--border)) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-row--over,
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-roster-row--over {
+  background: color-mix(in srgb, var(--danger) 11%, var(--surface)) !important;
+  border-color: color-mix(in srgb, var(--danger) 35%, var(--border)) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-roster-row--paused {
+  border-radius: 16px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-row__av {
+  width: 36px !important;
+  height: 36px !important;
+  background: var(--surface2) !important;
+  color: var(--text2) !important;
+  font-size: 12.5px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-row--active .rd-break-row__av,
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-row--over .rd-break-row__av,
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-row--paused .rd-break-row__av {
+  background: var(--surface2) !important;
+  color: var(--text2) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-list__title {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex-wrap: wrap !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-list__sub {
+  font-size: 11px !important;
+  margin-top: 3px !important;
+  color: var(--text3) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-me-tag {
+  font-size: 9.5px !important;
+  font-weight: 700 !important;
+  color: var(--gold) !important;
+  background: var(--goldSoft) !important;
+  padding: 2px 7px !important;
+  border-radius: 999px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-row__clock {
+  font-size: 14px !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
+  unicode-bidi: isolate !important;
+  color: var(--text2) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-row__clock--active {
+  color: var(--success) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-row__clock--paused {
+  color: var(--warning, #ff9500) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-row__clock--over {
+  color: var(--danger) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-status {
+  color: var(--border) !important;
+  font-weight: 600 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-status--paused {
+  color: var(--warning, #ff9500) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-status--over {
+  color: var(--danger) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-status--busy {
+  color: var(--warning, #ff9500) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-roster__mins {
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+  color: var(--text2) !important;
+  unicode-bidi: isolate !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-roster__mins--busy {
+  color: var(--warning, #ff9500) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-roster__mins--zero {
+  color: var(--text3) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-roster__mins--over {
+  color: var(--danger) !important;
+}
+
+@media (max-width: 1100px) {
+  html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-card {
+    width: 100% !important;
+  }
+  html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-breaks-page__lists {
+    min-width: 0 !important;
+  }
+}
+
+/* Break history side panel */
+html.athar-staging-redesign.mr-desktop-ui #breakHistoryModal.modal.open {
+  display: block !important;
+  position: fixed !important;
+  top: var(--unified-topbar-h, 68px) !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100% !important;
+  height: calc(100vh - var(--unified-topbar-h, 68px)) !important;
+  max-height: calc(100vh - var(--unified-topbar-h, 68px)) !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  padding: 0 !important;
+  background: rgba(0, 0, 0, 0.4) !important;
+  z-index: 1200 !important;
+  animation: atharRdSideScrimIn 0.32s ease both;
+  box-sizing: border-box !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #breakHistoryModal .modal-card.break-history-card {
+  position: absolute !important;
+  top: 0 !important;
+  inset-inline-end: 0 !important;
+  inset-inline-start: auto !important;
+  bottom: 0 !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  width: 420px !important;
+  max-width: 92vw !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  border: none !important;
+  border-inline-start: 1px solid var(--border) !important;
+  background: var(--bg) !important;
+  padding: 22px !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  box-shadow: none !important;
+  display: flex !important;
+  flex-direction: column !important;
+  animation: atharRdSidePanelIn 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: transform;
+  box-sizing: border-box !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #breakHistoryModal .break-history-hd {
+  display: block !important;
+  margin: 0 0 16px !important;
+  padding: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #breakHistoryModal .break-history-hd__av,
+html.athar-staging-redesign.mr-desktop-ui #breakHistoryModal .break-history-hd__close {
+  display: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #breakHistoryModal .break-history-hd__main {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #breakHistoryModal .break-history-hd__main h3 {
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  color: var(--text) !important;
+  margin: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #breakHistoryModal .break-history-meta {
+  font-size: 11.5px !important;
+  color: var(--text2) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 1.5 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #breakHistoryModal .break-history-empnum {
+  font-size: 11px !important;
+  color: var(--text3) !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #breakHistoryModal .break-history-live[hidden] {
+  display: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #breakHistoryModal .modal-body {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  overflow: visible !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #breakHistoryModal .break-history-sessions-lbl {
+  margin: 0 0 10px !important;
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #breakHistoryModal .break-history-sub {
+  display: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #breakHistoryModal .break-history-list {
+  max-height: none !important;
+  overflow: visible !important;
+  gap: 10px !important;
+  flex: 1 1 auto !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #breakHistoryModal .break-history-item {
+  border-radius: 14px !important;
+  padding: 13px 14px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #breakHistoryModal .break-history-footer {
+  display: none !important;
+}
+
+/* Break schedule side panel */
+html.athar-staging-redesign.mr-desktop-ui #breakScheduleModal.modal.open {
+  display: block !important;
+  position: fixed !important;
+  top: var(--unified-topbar-h, 68px) !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100% !important;
+  height: calc(100vh - var(--unified-topbar-h, 68px)) !important;
+  max-height: calc(100vh - var(--unified-topbar-h, 68px)) !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  padding: 0 !important;
+  background: rgba(0, 0, 0, 0.4) !important;
+  z-index: 1200 !important;
+  animation: atharRdSideScrimIn 0.32s ease both;
+  box-sizing: border-box !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #breakScheduleModal .modal-card.break-schedule-card {
+  position: absolute !important;
+  top: 0 !important;
+  inset-inline-end: 0 !important;
+  inset-inline-start: auto !important;
+  bottom: 0 !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  width: 440px !important;
+  max-width: 92vw !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  border: none !important;
+  border-inline-start: 1px solid var(--border) !important;
+  background: var(--bg) !important;
+  padding: 0 !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  box-shadow: none !important;
+  display: flex !important;
+  flex-direction: column !important;
+  animation: atharRdSidePanelIn 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: transform;
+  box-sizing: border-box !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #breakScheduleModal .break-sch-hd {
+  padding: 22px 22px 0 !important;
+  margin-bottom: 20px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #breakScheduleModal .break-sch-hd__close {
+  display: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #breakScheduleModal .break-sch-body {
+  padding: 0 22px !important;
+  flex: 1 1 auto !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #breakScheduleModal .break-sch-footer {
+  padding: 16px 22px 22px !important;
+  margin-top: auto !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #breakScheduleModal .break-sch-chip.is-on {
+  background: var(--gold) !important;
+  color: var(--onGold) !important;
+  border-color: var(--gold) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #breakScheduleModal .break-sch-btn--save {
+  background: var(--gold) !important;
+  color: var(--onGold) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #breakScheduleModal .break-sch-btn--cancel {
+  background: var(--danger) !important;
+  color: #fff !important;
+}
