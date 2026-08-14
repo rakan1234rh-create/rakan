@@ -780,6 +780,7 @@
   <link rel="stylesheet" href="styles/custom/athar-locations-redesign.css?v=loc1" id="athar-locations-redesign">
   <link rel="stylesheet" href="styles/custom/athar-users-redesign.css?v=usr1" id="athar-users-redesign">
   <link rel="stylesheet" href="styles/custom/athar-breaks-redesign.css?v=brk2" id="athar-breaks-redesign">
+  <link rel="stylesheet" href="styles/custom/athar-complaints-redesign.css?v=cmpl1" id="athar-complaints-redesign">
 
   <link rel="stylesheet" href="styles/custom/design-kit.css" id="mk-design-kit">
   <!-- Mirsad tokens + kit: مضمّنة في index.html — لا روابط design-system (تجنّب 404 عند file://) -->
@@ -2370,6 +2371,7 @@
 
     html.mr-session-restore:not(.mr-boot-ready)[data-mr-restore-tab="workflow"] #tab-workflow,
     html.mr-session-restore:not(.mr-boot-ready)[data-mr-restore-tab="breaks"] #tab-breaks,
+    html.mr-session-restore:not(.mr-boot-ready)[data-mr-restore-tab="complaints"] #tab-complaints,
     html.mr-session-restore:not(.mr-boot-ready)[data-mr-restore-tab="newTicket"] #tab-newTicket,
     html.mr-session-restore:not(.mr-boot-ready)[data-mr-restore-tab="reports"] #tab-reports,
     html.mr-session-restore:not(.mr-boot-ready)[data-mr-restore-tab="compliance"] #tab-compliance,
@@ -2715,6 +2717,8 @@
               style="display:none">0</span></button>
           <button class="nav-item" onclick="goTab('breaks',this)" data-perm="tab_breaks"><span class="nav-icon-wrap"><i
               class="fas fa-mug-hot" aria-hidden="true"></i></span><span class="nav-item-label">بريكات الموظفين</span></button>
+          <button class="nav-item" onclick="goTab('complaints',this)" data-perm="tab_complaints"><span class="nav-icon-wrap"><i
+              class="fas fa-comment-dots" aria-hidden="true"></i></span><span class="nav-item-label">الشكاوى والاقتراحات</span></button>
           <button class="nav-item" onclick="goTab('reports',this)" data-perm="tab_reports"><span class="nav-icon-wrap"><i
               class="fas fa-chart-line" aria-hidden="true"></i></span><span class="nav-item-label">التقارير</span></button>
           <button class="nav-item" onclick="goTab('compliance',this)" data-perm="tab_compliance"><span class="nav-icon-wrap"><i
@@ -3267,6 +3271,17 @@
           </div>
 
           <!-- REPORTS -->
+
+          <!-- COMPLAINTS & SUGGESTIONS -->
+          <div class="tab-content" id="tab-complaints" hidden>
+            <div class="panel wf-panel rd-desk-panel rd-complaints-desk-panel" hidden>
+              <div id="rdComplaintsHost" class="rd-complaints-host" aria-live="polite"></div>
+            </div>
+            <div class="rd-complaints-mob-panel" hidden>
+              <div id="complaintsHost" class="cp-mob-host" aria-live="polite"></div>
+            </div>
+          </div>
+
           <div class="tab-content" id="tab-reports">
             <div class="panel wf-panel">
               <div class="wf-panel-banner">
@@ -3824,7 +3839,7 @@
           <script>
             (function () {
               var KEY = 'mirsad_last_ui_tab';
-              var VALID = { dashboard: 1, workflow: 1, newTicket: 1, reports: 1, compliance: 1, violations: 1, locations: 1, departments: 1, settings: 1, profileAvatars: 1, broadcasts: 1 };
+              var VALID = { dashboard: 1, workflow: 1, newTicket: 1, breaks: 1, complaints: 1, reports: 1, compliance: 1, violations: 1, locations: 1, departments: 1, settings: 1, profileAvatars: 1, broadcasts: 1 };
               var saved = 'dashboard';
               try {
                 var s = sessionStorage.getItem(KEY);
@@ -3898,6 +3913,11 @@
         onclick="mobileNavGo('breaks', this)">
         <i class="fas fa-mug-hot" aria-hidden="true"></i>
         <span>بريكات</span>
+      </button>
+      <button type="button" class="mob-nav-item" data-tab="complaints" data-perm="tab_complaints"
+        onclick="mobileNavGo('complaints', this)">
+        <i class="fas fa-comment-dots" aria-hidden="true"></i>
+        <span>شكاوى</span>
       </button>
       <button type="button" class="mob-nav-item" data-tab="reports" data-perm="tab_reports"
         onclick="mobileNavGo('reports', this)">
@@ -4085,7 +4105,70 @@
       </div>
     </div>
 
-        <div class="modal" id="regionModal">
+        <div class="modal" id="newComplaintModal" role="dialog" aria-modal="true" aria-labelledby="newComplaintTitle">
+      <div class="modal-card cp-new-sheet">
+        <div class="cp-new-sheet-head cp-new-sheet-drag-zone">
+          <div class="viol-sheet-grabber-wrap cp-new-sheet-grabber-wrap" aria-hidden="true"><span class="viol-sheet-grabber"></span></div>
+          <div class="cp-new-sheet-head__row">
+            <h3 id="newComplaintTitle">رفع شكوى أو اقتراح</h3>
+            <button type="button" class="btn btn-ghost cp-new-close-btn" onclick="closeNewComplaintModal()" aria-label="إغلاق"><i class="fas fa-times"></i></button>
+          </div>
+        </div>
+        <div class="modal-body cp-new-sheet-body">
+          <div class="form-group">
+            <label class="form-label">النوع <span class="required-mark">*</span></label>
+            <div id="cpKindOptions" style="display:flex;gap:8px"></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">التصنيف <span class="required-mark">*</span></label>
+            <div id="cpCategoryOptions" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" id="cpDescLabel" for="cpDescText">تفاصيل الشكوى <span class="required-mark">*</span></label>
+            <textarea id="cpDescText" class="form-input" placeholder="اشرح التفاصيل..." style="min-height:110px;resize:vertical"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">مرفقات (اختياري)</label>
+            <input type="file" id="cpAttachInput" accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx" multiple hidden onchange="handleFiles(event,'cp')">
+            <button type="button" class="cp-mob-attach" id="cpAttachBtn" onclick="document.getElementById('cpAttachInput').click()">
+              <i class="fas fa-paperclip" aria-hidden="true"></i>
+              <span id="cpAttachLabel">اضغط لإرفاق ملف</span>
+            </button>
+            <div id="cpFileArea" class="file-list cp-mob-file-list"></div>
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <button type="button" id="cpAnonToggle" class="cp-mob-anon" onclick="toggleComplaintAnonymous()" aria-pressed="false">
+              <span class="cp-mob-anon__copy">
+                <span class="cp-mob-anon__title"><i class="fas fa-user-secret" aria-hidden="true"></i><span id="cpAnonTitle">ارفع الشكوى كمجهول</span></span>
+                <span class="cp-mob-anon__hint" id="cpAnonHint">لن يظهر اسمك مع هذه الشكوى</span>
+              </span>
+              <span class="cp-mob-anon__switch" aria-hidden="true"><span class="cp-mob-anon__knob"></span></span>
+            </button>
+          </div>
+        </div>
+        <div class="modal-footer cp-new-sheet-foot">
+          <button type="button" class="btn cp-new-cancel-btn" onclick="closeNewComplaintModal()">إلغاء</button>
+          <button type="button" id="cpSubmitBtn" class="btn btn-primary" onclick="submitComplaintFromUi()"><i class="fas fa-paper-plane"></i> إرسال الشكوى</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal" id="complaintDetailModal" role="dialog" aria-modal="true" aria-labelledby="complaintDetailTitle">
+      <div class="modal-card cp-paper-sheet">
+        <div class="cp-paper-sheet-head cp-sheet-drag-zone">
+          <div class="viol-sheet-grabber-wrap cp-sheet-grabber-wrap" aria-hidden="true"><span class="viol-sheet-grabber"></span></div>
+          <div class="cp-paper-sheet-head__row">
+            <h3 id="complaintDetailTitle">تفاصيل الشكوى</h3>
+            <button type="button" class="btn btn-ghost cp-detail-close-btn" onclick="closeComplaintDetail()" aria-label="إغلاق"><i class="fas fa-times"></i></button>
+          </div>
+        </div>
+        <div class="modal-body cp-paper-sheet-body">
+          <div id="cpDetailBody"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal" id="regionModal">
       <div class="modal-card">
         <div class="modal-header">
           <h3 id="regionModalTitle">إضافة منطقة</h3>
@@ -4544,7 +4627,8 @@
     </div>
   </div><!-- /#appWrap -->
 
-    <script src="js/app.js?v=brk2"></script>
+    <div id="rdCmplOverlayHost"></div>
+    <script src="js/app.js?v=cmpl1"></script>
         <style>
       @media (max-width: 992px) {
         /* ── workflow: منع التمدد الأفقي ── */
