@@ -25,6 +25,22 @@ html.athar-staging-redesign.mr-desktop-ui #appWrap #tab-breaks.tab-content.activ
   from { transform: translate3d(var(--athar-side-panel-from, -100%), 0, 0); }
   to { transform: translate3d(0, 0, 0); }
 }
+@keyframes atharRdSideScrimOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+@keyframes atharRdSidePanelOut {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(var(--athar-side-panel-from, -100%), 0, 0); }
+}
+@keyframes atharBreakSheetIn {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+@keyframes atharBreakSheetOut {
+  from { transform: translateY(0); }
+  to { transform: translateY(100%); }
+}
 html.athar-staging-redesign.mr-desktop-ui {
   --athar-side-panel-from: -100%;
 }
@@ -723,9 +739,27 @@ html.athar-staging-redesign.mr-desktop-ui #rdBreaks:not([hidden]) {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 12px;
   padding: 22px 22px 0;
   margin-bottom: 20px;
+}
+.break-sch-grabber {
+  display: none;
+  width: 100%;
+  height: 18px;
+  margin: -10px 0 2px;
+  cursor: grab;
+  touch-action: none;
+}
+.break-sch-grabber::after {
+  content: '';
+  display: block;
+  width: 36px;
+  height: 4px;
+  margin: 8px auto 0;
+  border-radius: 99px;
+  background: var(--border);
 }
 .break-sch-hd h3 {
   margin: 0;
@@ -888,11 +922,16 @@ html.athar-staging-redesign.mr-desktop-ui #rdBreaks:not([hidden]) {
 
 /* ── desktop layout + side panels ── */
 
+@media (prefers-reduced-motion: reduce) {
   html.athar-staging-redesign.mr-desktop-ui #breakHistoryModal.modal.open,
   html.athar-staging-redesign.mr-desktop-ui #breakHistoryModal .modal-card.break-history-card,
   html.athar-staging-redesign.mr-desktop-ui #breakScheduleModal.modal.open,
   html.athar-staging-redesign.mr-desktop-ui #breakScheduleModal .modal-card.break-schedule-card,
-
+  html.athar-staging-redesign.mr-mobile-ui #breakScheduleModal.modal.open,
+  html.athar-staging-redesign.mr-mobile-ui #breakScheduleModal .modal-card.break-schedule-card {
+    animation: none !important;
+  }
+}
 
 /* Staff breaks desktop */
 html.athar-staging-redesign.mr-desktop-ui #tab-breaks {
@@ -1563,4 +1602,51 @@ html.athar-staging-redesign.mr-desktop-ui #breakScheduleModal .break-sch-btn--sa
 html.athar-staging-redesign.mr-desktop-ui #breakScheduleModal .break-sch-btn--cancel {
   background: var(--danger) !important;
   color: #fff !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #breakHistoryModal.modal.open.rd-side-closing,
+html.athar-staging-redesign.mr-desktop-ui #breakScheduleModal.modal.open.rd-side-closing {
+  animation: atharRdSideScrimOut 0.28s ease both !important;
+}
+html.athar-staging-redesign.mr-desktop-ui #breakHistoryModal.modal.open.rd-side-closing .modal-card.break-history-card,
+html.athar-staging-redesign.mr-desktop-ui #breakScheduleModal.modal.open.rd-side-closing .modal-card.break-schedule-card {
+  animation: atharRdSidePanelOut 0.32s cubic-bezier(0.22, 1, 0.36, 1) both !important;
+}
+
+/* Mobile schedule: bottom sheet that slides up / down */
+html.athar-staging-redesign.mr-mobile-ui #breakScheduleModal.modal.open {
+  display: flex !important;
+  align-items: flex-end !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  background: rgba(0, 0, 0, 0.45) !important;
+  animation: atharRdSideScrimIn 0.32s ease both;
+}
+html.athar-staging-redesign.mr-mobile-ui #breakScheduleModal.modal.open.rd-side-closing {
+  animation: atharRdSideScrimOut 0.28s ease both !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #breakScheduleModal .modal-card.break-schedule-card {
+  width: 100% !important;
+  max-width: 100% !important;
+  max-height: min(92vh, 820px) !important;
+  margin: 0 !important;
+  border-radius: 18px 18px 0 0 !important;
+  animation: atharBreakSheetIn 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: transform;
+}
+html.athar-staging-redesign.mr-mobile-ui #breakScheduleModal.modal.open.rd-side-closing .modal-card.break-schedule-card {
+  animation: atharBreakSheetOut 0.32s cubic-bezier(0.22, 1, 0.36, 1) both !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #breakScheduleModal .break-sch-grabber {
+  display: block;
+}
+html.athar-staging-redesign.mr-mobile-ui #breakScheduleModal .break-sch-hd {
+  padding-top: 8px !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #breakScheduleModal.sheet-dragging,
+html.athar-staging-redesign.mr-mobile-ui #breakScheduleModal.sheet-dragging .modal-card.break-schedule-card,
+html.athar-staging-redesign.mr-desktop-ui #breakScheduleModal.sheet-dragging,
+html.athar-staging-redesign.mr-desktop-ui #breakScheduleModal.sheet-dragging .modal-card.break-schedule-card {
+  animation: none !important;
+  transition: none !important;
 }

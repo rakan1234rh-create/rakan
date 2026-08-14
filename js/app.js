@@ -1580,6 +1580,11 @@
       function openModal(id) {
         const el = document.getElementById(id);
         if (el) {
+          el.classList.remove('rd-side-closing', 'sheet-dragging');
+          if (id === 'breakScheduleModal' || id === 'breakHistoryModal') {
+            const card = el.querySelector('.modal-card');
+            if (card) card.style.transform = '';
+          }
           el.classList.add('open');
           document.body.classList.add('modal-open');
           if (id === 'cmpDetailModal' && isCmpDetailMobSheet()) {
@@ -1597,6 +1602,9 @@
         if (id === 'ticketModal' && isViolDetailMobSheet() && typeof closeTicketSheet === 'function') {
           closeTicketSheet();
           return;
+        }
+        if ((id === 'breakScheduleModal' || id === 'breakHistoryModal') && typeof closeRdBreakSideModal === 'function') {
+          if (closeRdBreakSideModal(id)) return;
         }
         document.getElementById(id)?.classList.remove('open');
         if (id === 'cmpDetailModal') {
@@ -1624,6 +1632,121 @@
       const _violDetailDrag = { active: false, startY: 0, deltaY: 0, pointerId: null };
       const _ticketDetailDrag = { active: false, startY: 0, deltaY: 0, pointerId: null };
       const _cmpDetailDrag = { active: false, startY: 0, deltaY: 0, pointerId: null };
+      const _breakSchDrag = { active: false, startY: 0, deltaY: 0, pointerId: null };
+
+      function isBreakScheduleMobSheet() {
+        return document.documentElement.classList.contains('athar-staging-redesign')
+          && document.documentElement.classList.contains('mr-mobile-ui');
+      }
+
+      function rdBreakModalUsesSlide(id) {
+        const html = document.documentElement;
+        if (!html.classList.contains('athar-staging-redesign')) return false;
+        if (id === 'breakScheduleModal') return true;
+        if (id === 'breakHistoryModal') return html.classList.contains('mr-desktop-ui');
+        return false;
+      }
+
+      function finishRdBreakSideModal(id) {
+        const modal = document.getElementById(id);
+        const card = modal?.querySelector('.modal-card');
+        if (card) card.style.transform = '';
+        modal?.classList.remove('open', 'rd-side-closing', 'sheet-dragging', 'sheet-ready');
+        if (!document.querySelector('.modal.open')) {
+          document.body.classList.remove('modal-open');
+        }
+      }
+
+      function closeRdBreakSideModal(id) {
+        const modal = document.getElementById(id);
+        if (!modal || !modal.classList.contains('open')) return false;
+        if (modal.classList.contains('rd-side-closing')) return true;
+        if (!rdBreakModalUsesSlide(id) || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          return false;
+        }
+        const card = modal.querySelector('.modal-card');
+        const isMob = id === 'breakScheduleModal' && isBreakScheduleMobSheet();
+        modal.classList.remove('sheet-dragging');
+        modal.classList.add('rd-side-closing');
+        if (card && card.style.transform) {
+          card.style.animation = 'none';
+          card.style.transition = 'transform 0.32s cubic-bezier(0.22, 1, 0.36, 1)';
+          card.style.transform = isMob
+            ? 'translateY(100%)'
+            : `translate3d(${getComputedStyle(document.documentElement).getPropertyValue('--athar-side-panel-from').trim() || '-100%'}, 0, 0)`;
+        }
+        let done = false;
+        const finish = () => {
+          if (done) return;
+          done = true;
+          card?.removeEventListener('animationend', onEnd);
+          card?.removeEventListener('transitionend', onEnd);
+          finishRdBreakSideModal(id);
+        };
+        const onEnd = (e) => {
+          if (e && e.target !== card) return;
+          if (e && e.propertyName && e.propertyName !== 'transform') return;
+          finish();
+        };
+        card?.addEventListener('animationend', onEnd);
+        card?.addEventListener('transitionend', onEnd);
+        setTimeout(finish, 420);
+        return true;
+      }
+
+      function initBreakScheduleSheetDrag() {
+        const modal = document.getElementById('breakScheduleModal');
+        const zone = modal?.querySelector('.break-sch-drag-zone');
+        const card = modal?.querySelector('.modal-card.break-schedule-card');
+        if (!modal || !zone || !card || modal.dataset.breakSchDragInit === '1') return;
+        modal.dataset.breakSchDragInit = '1';
+
+        const dragEnd = () => {
+          if (!_breakSchDrag.active) return;
+          _breakSchDrag.active = false;
+          modal.classList.remove('sheet-dragging');
+          const threshold = Math.max(72, card.offsetHeight * 0.16);
+          if (_breakSchDrag.deltaY > threshold) {
+            closeModal('breakScheduleModal');
+          } else {
+            card.style.transform = '';
+          }
+          _breakSchDrag.deltaY = 0;
+          _breakSchDrag.pointerId = null;
+        };
+
+        const dragMove = (clientY) => {
+          if (!_breakSchDrag.active) return;
+          _breakSchDrag.deltaY = Math.max(0, clientY - _breakSchDrag.startY);
+          card.style.transform = `translateY(${_breakSchDrag.deltaY}px)`;
+        };
+
+        const dragStart = (clientY) => {
+          if (!modal.classList.contains('open') || !isBreakScheduleMobSheet()) return;
+          _breakSchDrag.active = true;
+          _breakSchDrag.startY = clientY;
+          _breakSchDrag.deltaY = 0;
+          modal.classList.add('sheet-dragging');
+          card.style.transform = 'translateY(0)';
+        };
+
+        zone.addEventListener('pointerdown', (e) => {
+          if (e.button !== undefined && e.button !== 0) return;
+          if (!isBreakScheduleMobSheet()) return;
+          _breakSchDrag.pointerId = e.pointerId;
+          dragStart(e.clientY);
+          try { zone.setPointerCapture(e.pointerId); } catch (_) { /* noop */ }
+        });
+        zone.addEventListener('pointermove', (e) => {
+          if (!_breakSchDrag.active || e.pointerId !== _breakSchDrag.pointerId) return;
+          dragMove(e.clientY);
+        });
+        zone.addEventListener('pointerup', (e) => {
+          if (e.pointerId !== _breakSchDrag.pointerId) return;
+          dragEnd();
+        });
+        zone.addEventListener('pointercancel', dragEnd);
+      }
 
       function isCmpDetailMobSheet() {
         return typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches;
@@ -34910,6 +35033,7 @@
         }
         if (dayInp) dayInp.value = String(getStaffBreakTodayWeekday());
         syncBreakScheduleScopeFields();
+        initBreakScheduleSheetDrag();
         openModal('breakScheduleModal');
       }
 
