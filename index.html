@@ -779,6 +779,7 @@
   <link rel="stylesheet" href="styles/custom/athar-violations-redesign.css?v=vl1" id="athar-violations-redesign">
   <link rel="stylesheet" href="styles/custom/athar-locations-redesign.css?v=loc1" id="athar-locations-redesign">
   <link rel="stylesheet" href="styles/custom/athar-users-redesign.css?v=usr1" id="athar-users-redesign">
+  <link rel="stylesheet" href="styles/custom/athar-breaks-redesign.css?v=brk1" id="athar-breaks-redesign">
 
   <link rel="stylesheet" href="styles/custom/design-kit.css" id="mk-design-kit">
   <!-- Mirsad tokens + kit: مضمّنة في index.html — لا روابط design-system (تجنّب 404 عند file://) -->
@@ -2368,6 +2369,7 @@
     }
 
     html.mr-session-restore:not(.mr-boot-ready)[data-mr-restore-tab="workflow"] #tab-workflow,
+    html.mr-session-restore:not(.mr-boot-ready)[data-mr-restore-tab="breaks"] #tab-breaks,
     html.mr-session-restore:not(.mr-boot-ready)[data-mr-restore-tab="newTicket"] #tab-newTicket,
     html.mr-session-restore:not(.mr-boot-ready)[data-mr-restore-tab="reports"] #tab-reports,
     html.mr-session-restore:not(.mr-boot-ready)[data-mr-restore-tab="compliance"] #tab-compliance,
@@ -2711,6 +2713,8 @@
           <button class="nav-item" onclick="goTab('workflow',this)" data-perm="tab_workflow"><span class="nav-icon-wrap"><i class="fas fa-clipboard-list" aria-hidden="true"></i></span><span
               class="nav-item-label">التذاكر</span><span class="nav-badge" id="pendBadge"
               style="display:none">0</span></button>
+          <button class="nav-item" onclick="goTab('breaks',this)" data-perm="tab_breaks"><span class="nav-icon-wrap"><i
+              class="fas fa-mug-hot" aria-hidden="true"></i></span><span class="nav-item-label">بريكات الموظفين</span></button>
           <button class="nav-item" onclick="goTab('reports',this)" data-perm="tab_reports"><span class="nav-icon-wrap"><i
               class="fas fa-chart-line" aria-hidden="true"></i></span><span class="nav-item-label">التقارير</span></button>
           <button class="nav-item" onclick="goTab('compliance',this)" data-perm="tab_compliance"><span class="nav-icon-wrap"><i
@@ -3240,6 +3244,25 @@
               <div class="cmp-dist-card" id="cmpDistCard"></div>
               <div class="cmp-podium-row" id="cmpPodium"></div>
               <div class="cmp-table-card" id="cmpTableCard"></div>
+            </div>
+          </div>
+
+
+          <!-- STAFF BREAKS -->
+          <div class="tab-content" id="tab-breaks" hidden>
+            <div class="panel wf-panel breaks-panel">
+              <div class="wf-panel-banner breaks-panel-banner">
+                <div class="wf-panel-intro">
+                  <h2 class="wf-panel-title">بريكات الموظفين</h2>
+                </div>
+                <div class="toolbar wf-toolbar" data-perm="manage_break_schedules">
+                  <button type="button" class="rp-tool-btn rp-tool-btn-primary" onclick="openBreakScheduleModal()">
+                    <i class="fas fa-sliders"></i><span>تعديل مدة</span>
+                  </button>
+                </div>
+              </div>
+              <div id="rdBreaks" class="rd-breaks-host" hidden></div>
+              <div id="breaksClassicHost" class="breaks-classic-host"></div>
             </div>
           </div>
 
@@ -3871,6 +3894,11 @@
         <span>تذاكر</span>
         <span class="mob-nav-badge" id="mobPendBadge" style="display:none">0</span>
       </button>
+      <button type="button" class="mob-nav-item" data-tab="breaks" data-perm="tab_breaks"
+        onclick="mobileNavGo('breaks', this)">
+        <i class="fas fa-mug-hot" aria-hidden="true"></i>
+        <span>بريكات</span>
+      </button>
       <button type="button" class="mob-nav-item" data-tab="reports" data-perm="tab_reports"
         onclick="mobileNavGo('reports', this)">
         <i class="fas fa-chart-line" aria-hidden="true"></i>
@@ -3977,7 +4005,86 @@
         </div>
       </div>
     </div>
-    <div class="modal" id="regionModal">
+    <div class="modal" id="breakOvertimeModal" role="dialog" aria-modal="true" aria-labelledby="breakOtTitle">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3 id="breakOtTitle">سبب تجاوز مدة البريك</h3>
+          <button type="button" class="btn btn-ghost" onclick="closeModal('breakOvertimeModal')" aria-label="إغلاق"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+          <p class="form-hint" id="breakOtHint" style="margin-bottom:12px;color:var(--text2);font-size:13px;line-height:1.6"></p>
+          <div class="form-group">
+            <label class="form-label" for="breakOtReason">سبب التجاوز <span class="required-mark">*</span></label>
+            <textarea id="breakOtReason" class="form-input" rows="3" placeholder="مثال: ازدحام الفرع / مهمة طارئة"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn" onclick="closeModal('breakOvertimeModal')">إلغاء</button>
+          <button type="button" class="btn btn-primary" onclick="submitBreakOvertimeReason()"><i class="fas fa-check"></i> إيقاف البريك</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal" id="breakHistoryModal" role="dialog" aria-modal="true" aria-labelledby="breakHistTitle">
+      <div class="modal-card break-history-card">
+        <div class="modal-header break-history-hd">
+          <div class="break-history-hd__main">
+            <h3 id="breakHistTitle">سجل بريكات الموظف</h3>
+            <div class="break-history-meta" id="breakHistMeta"></div>
+            <span class="break-history-empnum" id="breakHistEmpNum" title="الرقم الوظيفي" aria-label="الرقم الوظيفي" hidden>—</span>
+          </div>
+        </div>
+        <div class="modal-body">
+          <div class="break-history-live" id="breakHistLive" hidden></div>
+          <p class="break-history-sessions-lbl">جلسات اليوم</p>
+          <p class="break-history-sub" id="breakHistSub"></p>
+          <div id="breakHistList" class="break-history-list" aria-live="polite"></div>
+        </div>
+        <div class="modal-footer break-history-footer">
+          <button type="button" class="btn btn-primary" onclick="closeModal('breakHistoryModal')">إغلاق</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal" id="breakScheduleModal" role="dialog" aria-modal="true" aria-labelledby="breakSchTitle">
+      <div class="modal-card break-schedule-card">
+        <div class="break-sch-hd">
+          <h3 id="breakSchTitle">جدولة مدة البريك</h3>
+          <button type="button" class="break-sch-hd__close" onclick="closeModal('breakScheduleModal')" aria-label="إغلاق">
+            <i class="fas fa-xmark" aria-hidden="true"></i>
+          </button>
+        </div>
+        <div class="break-sch-body">
+          <div class="break-sch-label">النطاق</div>
+          <div class="break-sch-chips" id="breakSchScopeChips" role="group" aria-label="النطاق"></div>
+          <p class="break-sch-hint" id="breakSchGlobalNote">أولوية التطبيق من الأدق للأعم: موظف ← فرع ← منطقة ← عام.</p>
+          <input type="hidden" id="breakSchScopeType" value="global">
+          <div class="break-sch-scope-pick" id="breakSchScopeIdWrap" hidden>
+            <label class="break-sch-label" for="breakSchScopeId">اختر</label>
+            <select id="breakSchScopeId" class="break-sch-input break-sch-select" onchange="syncBreakScheduleFormFields()"></select>
+          </div>
+
+          <div class="break-sch-label">يوم الأسبوع</div>
+          <div class="break-sch-chips" id="breakSchDayChips" role="group" aria-label="يوم الأسبوع"></div>
+          <input type="hidden" id="breakSchDayOfWeek" value="0">
+
+          <label class="break-sch-label" for="breakSchMinutes">المدة بالدقائق</label>
+          <input type="number" id="breakSchMinutes" class="break-sch-input" min="1" max="480" step="1" placeholder="0 = ممنوع البريك هذا اليوم" oninput="paintBreakScheduleWeekSummary()">
+
+          <label class="break-sch-label" for="breakSchLabel">وصف (اختياري)</label>
+          <input type="text" id="breakSchLabel" class="break-sch-input" placeholder="ملاحظة داخلية عن هذا الاستثناء...">
+
+          <div class="break-sch-label">ملخص أسبوعي لهذا النطاق</div>
+          <div class="break-sch-week" id="breakSchWeekSummary"></div>
+        </div>
+        <div class="break-sch-footer">
+          <button type="button" class="break-sch-btn break-sch-btn--cancel" onclick="closeModal('breakScheduleModal')">إلغاء</button>
+          <button type="button" class="break-sch-btn break-sch-btn--save" onclick="saveBreakScheduleFromUi()">حفظ</button>
+        </div>
+      </div>
+    </div>
+
+        <div class="modal" id="regionModal">
       <div class="modal-card">
         <div class="modal-header">
           <h3 id="regionModalTitle">إضافة منطقة</h3>
@@ -4436,7 +4543,7 @@
     </div>
   </div><!-- /#appWrap -->
 
-    <script src="js/app.js?v=usr1"></script>
+    <script src="js/app.js?v=brk1"></script>
         <style>
       @media (max-width: 992px) {
         /* ── workflow: منع التمدد الأفقي ── */
