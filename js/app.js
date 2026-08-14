@@ -15952,6 +15952,68 @@
         }
       }
 
+      /** نقل مرفقات الشكوى من temp_ إلى مجلد دائم complaints/{رقم} */
+      async function moveComplaintAttachmentsToFinalFolder(complaintId, complaintNumber, attachments) {
+        if (!Array.isArray(attachments) || !attachments.length) return null;
+        const backend = await resolveR2Backend();
+        const safeNum = String(complaintNumber || complaintId || 'unknown').replace(/[^\w.\-]/g, '_');
+        const r2Folder = `complaints/${safeNum}`;
+        let updatedAtts = attachments.map(a => (a && typeof a === 'object') ? { ...a } : a);
+        let movedAny = false;
+        const failed = [];
+
+        if (backend === 'none') {
+          if (allowAttachmentDevSkip()) {
+            for (let i = 0; i < updatedAtts.length; i++) {
+              const att = updatedAtts[i];
+              if (!att || att.__anon) continue;
+              const oldKey = att.p;
+              if (oldKey && String(oldKey).startsWith('temp_')) {
+                const newKey = `${r2Folder}/${String(oldKey).split('/').pop()}`;
+                await devMediaRename(oldKey, newKey);
+                updatedAtts[i] = { ...att, p: newKey };
+                movedAny = true;
+              }
+            }
+            if (movedAny) {
+              await sb.from('complaints').update({ attachments: updatedAtts }).eq('id', complaintId);
+            }
+            return movedAny ? updatedAtts : null;
+          }
+          return null;
+        }
+
+        const moveOne = async (att, i) => {
+          if (!att || att.__anon) return null;
+          const oldKey = att.p;
+          if (!oldKey || !String(oldKey).startsWith('temp_')) return null;
+          const newKey = `${r2Folder}/${String(oldKey).split('/').pop()}`;
+          try {
+            await callR2StorageFn('moveObject', { fromKey: oldKey, toKey: newKey });
+            return { i, newKey };
+          } catch (e) {
+            failed.push(oldKey);
+            if (isMirsadDebugLog()) console.error('[R2-Move] complaint failed', oldKey, e);
+            return null;
+          }
+        };
+
+        const moveResults = await Promise.all(updatedAtts.map((att, i) => moveOne(att, i)));
+        for (const r of moveResults) {
+          if (!r) continue;
+          updatedAtts[r.i] = { ...updatedAtts[r.i], p: r.newKey };
+          movedAny = true;
+        }
+
+        if (movedAny) {
+          await sb.from('complaints').update({ attachments: updatedAtts }).eq('id', complaintId);
+        }
+        if (failed.length) {
+          throw new Error('فشل تثبيت ' + failed.length + ' مرفق(ات) للشكوى');
+        }
+        return movedAny ? updatedAtts : null;
+      }
+
       function makeAttachmentCancelHandle() {
         return { cancelled: false, abort: null };
       }
@@ -36052,12 +36114,14 @@
             attachments
           }).select().single();
           if (error) throw error;
-          state.complaints = [data, ...(state.complaints || [])];
+          let row = data;
+          row = await finalizeComplaintRowAttachments(row);
+          state.complaints = [row, ...(state.complaints || []).filter(c => c.id !== row.id)];
           form.open = false;
           form.desc = '';
           form.attachCount = 0;
           form.anonymous = false;
-          await clearComplaintAttachFiles();
+          await clearComplaintAttachFiles({ deleteRemote: false });
           await renderComplaintsDesktop({ soft: true });
           showToast(
             wasAnon
@@ -36377,10 +36441,20 @@
           : 'اضغط لإرفاق ملف';
       }
 
-      async function clearComplaintAttachFiles() {
-        try {
-          if (typeof cleanupUploadSession === 'function') await cleanupUploadSession('cp');
-        } catch (_) { /* noop */ }
+      async function clearComplaintAttachFiles(opts = {}) {
+        const deleteRemote = opts.deleteRemote !== false;
+        if (deleteRemote) {
+          try {
+            if (typeof cleanupUploadSession === 'function') await cleanupUploadSession('cp');
+          } catch (_) { /* noop */ }
+        } else {
+          const files = state.uploadedFiles.cp || [];
+          for (const f of files) {
+            try { cancelAttachmentPrep(f); } catch (_) { /* noop */ }
+            f.tempKey = null;
+          }
+          if (state.uploadTempFolders) state.uploadTempFolders.cp = null;
+        }
         state.uploadedFiles.cp = [];
         const area = document.getElementById('cpFileArea');
         if (area) area.innerHTML = '';
@@ -36388,6 +36462,21 @@
         if (input) input.value = '';
         updateCpAttachLabel();
         if (typeof syncAttachmentSubmitButtons === 'function') syncAttachmentSubmitButtons('cp');
+      }
+
+      async function finalizeComplaintRowAttachments(row) {
+        if (!row || !row.id) return row;
+        const atts = Array.isArray(row.attachments) ? row.attachments : [];
+        const hasTemp = atts.some(a => a && a.p && String(a.p).startsWith('temp_'));
+        if (!hasTemp) return row;
+        try {
+          const moved = await moveComplaintAttachmentsToFinalFolder(row.id, row.complaint_number, atts);
+          if (moved) return { ...row, attachments: moved };
+        } catch (e) {
+          if (isMirsadDebugLog()) console.warn('[complaints] move attachments', e);
+          showToast('تم حفظ الشكوى لكن تعذّر تثبيت المرفقات في التخزين', 'warning');
+        }
+        return row;
       }
 
       async function buildComplaintAttachmentsPayload(anonymous) {
@@ -36486,8 +36575,10 @@
             attachments
           }).select().single();
           if (error) throw error;
-          state.complaints = [data, ...(state.complaints || [])];
-          await clearComplaintAttachFiles();
+          let row = data;
+          row = await finalizeComplaintRowAttachments(row);
+          state.complaints = [row, ...(state.complaints || []).filter(c => c.id !== row.id)];
+          await clearComplaintAttachFiles({ deleteRemote: false });
           closeNewComplaintModal();
           const kindWord = state.complaintKind === 'suggestion' ? 'الاقتراح' : 'الشكوى';
           showToast(
