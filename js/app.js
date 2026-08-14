@@ -1147,8 +1147,8 @@
         violationTypes: [],      // أنواع المخالفات
         notifications: [],      // الإشعارات
         broadcastInbox: [],     // نشرات admin الواردة للمستخدم
-        uploadedFiles: { nt: [], resp: [] },  // الملفات المرفوعة
-        uploadTempFolders: { nt: null, resp: null },
+        uploadedFiles: { nt: [], resp: [], cp: [] },  // الملفات المرفوعة
+        uploadTempFolders: { nt: null, resp: null, cp: null },
         ntPickedEmployee: null,  // الموظف المختار في نموذج رصد المخالفة
         ntPickedViolationType: null,  // نوع المخالفة المختار في نموذج رصد المخالفة
         editingTicket: null,    // التذكرة قيد التحرير
@@ -1163,7 +1163,14 @@
         profileAvatars: null,
         _profileAvatarsFromCloud: false,
         _dataLoading: false,
-        _dataReady: false
+        _dataReady: false,
+        complaints: [],
+        complaintTypeFilter: 'all',
+        activeComplaintId: null,
+        complaintKind: 'complaint',
+        complaintCategory: '',
+        complaintAnonymous: false,
+        _complaintsChannel: null
       };
 
       /** مستخدم محلي عند عدم وجود جلسة Supabase (بعد إزالة شاشة الدخول) */
@@ -1599,6 +1606,16 @@
           closeViolDetailSheet();
           return;
         }
+        if (id === 'complaintDetailModal' && typeof isViolDetailMobSheet === 'function' && isViolDetailMobSheet()
+          && typeof closeComplaintDetailSheet === 'function') {
+          closeComplaintDetailSheet();
+          return;
+        }
+        if (id === 'newComplaintModal' && typeof isViolDetailMobSheet === 'function' && isViolDetailMobSheet()
+          && typeof closeNewComplaintSheet === 'function') {
+          closeNewComplaintSheet();
+          return;
+        }
         if (id === 'ticketModal' && isViolDetailMobSheet() && typeof closeTicketSheet === 'function') {
           closeTicketSheet();
           return;
@@ -1633,6 +1650,8 @@
       const _ticketDetailDrag = { active: false, startY: 0, deltaY: 0, pointerId: null };
       const _cmpDetailDrag = { active: false, startY: 0, deltaY: 0, pointerId: null };
       const _breakSchDrag = { active: false, startY: 0, deltaY: 0, pointerId: null };
+      const _cpDetailDrag = { active: false, startY: 0, deltaY: 0, pointerId: null };
+      const _cpNewDrag = { active: false, startY: 0, deltaY: 0, pointerId: null };
 
       function isBreakScheduleMobSheet() {
         return document.documentElement.classList.contains('athar-staging-redesign')
@@ -2284,6 +2303,302 @@
 
         zone.addEventListener('pointerup', (e) => {
           if (e.pointerId !== _violDetailDrag.pointerId) return;
+          dragEnd();
+        });
+
+        zone.addEventListener('pointercancel', dragEnd);
+      }
+
+
+      function mountComplaintDetailModalForMob() {
+        const modal = document.getElementById('complaintDetailModal');
+        const shell = document.querySelector('#appWrap > .app-shell');
+        const nav = document.getElementById('mobileBottomNav');
+        if (!modal || !shell) return;
+        if (isViolDetailMobSheet() && nav) {
+          if (modal.parentNode !== shell || modal.nextElementSibling !== nav) {
+            shell.insertBefore(modal, nav);
+          }
+        } else if (modal.parentNode !== document.body) {
+          document.body.appendChild(modal);
+        }
+      }
+
+      function releaseComplaintDetailModalFromShell() {
+        const modal = document.getElementById('complaintDetailModal');
+        if (!modal || modal.parentNode === document.body) return;
+        document.body.appendChild(modal);
+      }
+
+      function openComplaintDetailSheetAnimated() {
+        const modal = document.getElementById('complaintDetailModal');
+        const sheet = modal?.querySelector('.cp-paper-sheet');
+        if (!modal || !sheet) return;
+        const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (typeof syncMobBottomNavHeight === 'function') syncMobBottomNavHeight();
+        mountComplaintDetailModalForMob();
+        if (typeof syncMobViewportLayout === 'function') syncMobViewportLayout();
+        modal.classList.remove('sheet-ready', 'sheet-closing', 'sheet-dragging');
+        modal.classList.add('open');
+        document.body.classList.add('modal-open', 'cp-detail-sheet-open');
+        if (reduced) {
+          modal.classList.add('sheet-ready');
+          sheet.style.transform = '';
+          return;
+        }
+        sheet.style.transform = 'translateY(100%)';
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            modal.classList.add('sheet-ready');
+            sheet.style.removeProperty('transform');
+          });
+        });
+      }
+
+      function closeComplaintDetailSheet() {
+        const modal = document.getElementById('complaintDetailModal');
+        const sheet = modal?.querySelector('.cp-paper-sheet');
+        if (!modal) return;
+        const finish = () => {
+          modal.classList.remove('open', 'sheet-ready', 'sheet-closing', 'sheet-dragging');
+          if (sheet) sheet.style.transform = '';
+          releaseComplaintDetailModalFromShell();
+          if (typeof state !== 'undefined') state.activeComplaintId = null;
+          document.body.classList.remove('cp-detail-sheet-open');
+          if (!document.querySelector('.modal.open')) {
+            document.body.classList.remove('modal-open');
+          }
+        };
+        if (!isViolDetailMobSheet() || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          finish();
+          return;
+        }
+        modal.classList.remove('sheet-ready');
+        modal.classList.add('sheet-closing');
+        if (sheet) sheet.style.transform = 'translateY(100%)';
+        let done = false;
+        const onEnd = (e) => {
+          if (e && e.propertyName && e.propertyName !== 'transform') return;
+          if (done) return;
+          done = true;
+          sheet?.removeEventListener('transitionend', onEnd);
+          finish();
+        };
+        sheet?.addEventListener('transitionend', onEnd);
+        setTimeout(onEnd, 420);
+      }
+
+      function initComplaintDetailSheetDrag() {
+        const modal = document.getElementById('complaintDetailModal');
+        const zone = modal?.querySelector('.cp-sheet-drag-zone');
+        const sheet = modal?.querySelector('.cp-paper-sheet');
+        if (!modal || !zone || !sheet || modal.dataset.dragInit === '1') return;
+        modal.dataset.dragInit = '1';
+
+        sheet.addEventListener('click', (e) => e.stopPropagation());
+        modal.addEventListener('click', (e) => {
+          if (!modal.classList.contains('open')) return;
+          if (e.target.closest('.cp-paper-sheet')) return;
+          if (typeof closeComplaintDetail === 'function') closeComplaintDetail();
+          else closeComplaintDetailSheet();
+        });
+
+        const dragEnd = () => {
+          if (!_cpDetailDrag.active) return;
+          _cpDetailDrag.active = false;
+          modal.classList.remove('sheet-dragging');
+          zone.style.cursor = '';
+          const threshold = Math.max(72, sheet.offsetHeight * 0.18);
+          if (_cpDetailDrag.deltaY > threshold) {
+            if (typeof closeComplaintDetail === 'function') closeComplaintDetail();
+            else closeComplaintDetailSheet();
+          } else {
+            modal.classList.add('sheet-ready');
+            sheet.style.transform = '';
+          }
+          _cpDetailDrag.deltaY = 0;
+          _cpDetailDrag.pointerId = null;
+        };
+
+        const dragMove = (clientY) => {
+          if (!_cpDetailDrag.active) return;
+          _cpDetailDrag.deltaY = Math.max(0, clientY - _cpDetailDrag.startY);
+          sheet.style.transform = `translateY(${_cpDetailDrag.deltaY}px)`;
+        };
+
+        const dragStart = (clientY) => {
+          if (!modal.classList.contains('open') || !isViolDetailMobSheet()) return;
+          _cpDetailDrag.active = true;
+          _cpDetailDrag.startY = clientY;
+          _cpDetailDrag.deltaY = 0;
+          modal.classList.remove('sheet-ready');
+          modal.classList.add('sheet-dragging');
+          zone.style.cursor = 'grabbing';
+          sheet.style.transform = 'translateY(0)';
+        };
+
+        zone.addEventListener('pointerdown', (e) => {
+          if (e.button !== undefined && e.button !== 0) return;
+          if (e.target.closest('.cp-detail-close-btn')) return;
+          _cpDetailDrag.pointerId = e.pointerId;
+          dragStart(e.clientY);
+          try { zone.setPointerCapture(e.pointerId); } catch (_) { /* noop */ }
+        });
+
+        zone.addEventListener('pointermove', (e) => {
+          if (!_cpDetailDrag.active || e.pointerId !== _cpDetailDrag.pointerId) return;
+          dragMove(e.clientY);
+        });
+
+        zone.addEventListener('pointerup', (e) => {
+          if (e.pointerId !== _cpDetailDrag.pointerId) return;
+          dragEnd();
+        });
+
+        zone.addEventListener('pointercancel', dragEnd);
+      }
+
+      function mountNewComplaintModalForMob() {
+        const modal = document.getElementById('newComplaintModal');
+        const shell = document.querySelector('#appWrap > .app-shell');
+        const nav = document.getElementById('mobileBottomNav');
+        if (!modal || !shell) return;
+        if (isViolDetailMobSheet() && nav) {
+          if (modal.parentNode !== shell || modal.nextElementSibling !== nav) {
+            shell.insertBefore(modal, nav);
+          }
+        } else if (modal.parentNode !== document.body) {
+          document.body.appendChild(modal);
+        }
+      }
+
+      function releaseNewComplaintModalFromShell() {
+        const modal = document.getElementById('newComplaintModal');
+        if (!modal || modal.parentNode === document.body) return;
+        document.body.appendChild(modal);
+      }
+
+      function openNewComplaintSheetAnimated() {
+        const modal = document.getElementById('newComplaintModal');
+        const sheet = modal?.querySelector('.cp-new-sheet');
+        if (!modal || !sheet) return;
+        const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (typeof syncMobBottomNavHeight === 'function') syncMobBottomNavHeight();
+        mountNewComplaintModalForMob();
+        if (typeof syncMobViewportLayout === 'function') syncMobViewportLayout();
+        modal.classList.remove('sheet-ready', 'sheet-closing', 'sheet-dragging');
+        modal.classList.add('open');
+        document.body.classList.add('modal-open', 'cp-new-sheet-open');
+        if (reduced) {
+          modal.classList.add('sheet-ready');
+          sheet.style.transform = '';
+          return;
+        }
+        sheet.style.transform = 'translateY(100%)';
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            modal.classList.add('sheet-ready');
+            sheet.style.removeProperty('transform');
+          });
+        });
+      }
+
+      function closeNewComplaintSheet() {
+        const modal = document.getElementById('newComplaintModal');
+        const sheet = modal?.querySelector('.cp-new-sheet');
+        if (!modal) return;
+        const finish = () => {
+          modal.classList.remove('open', 'sheet-ready', 'sheet-closing', 'sheet-dragging');
+          if (sheet) sheet.style.transform = '';
+          releaseNewComplaintModalFromShell();
+          document.body.classList.remove('cp-new-sheet-open');
+          if (!document.querySelector('.modal.open')) {
+            document.body.classList.remove('modal-open');
+          }
+        };
+        if (!isViolDetailMobSheet() || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          finish();
+          return;
+        }
+        modal.classList.remove('sheet-ready');
+        modal.classList.add('sheet-closing');
+        if (sheet) sheet.style.transform = 'translateY(100%)';
+        let done = false;
+        const onEnd = (e) => {
+          if (e && e.propertyName && e.propertyName !== 'transform') return;
+          if (done) return;
+          done = true;
+          sheet?.removeEventListener('transitionend', onEnd);
+          finish();
+        };
+        sheet?.addEventListener('transitionend', onEnd);
+        setTimeout(onEnd, 420);
+      }
+
+      function initNewComplaintSheetDrag() {
+        const modal = document.getElementById('newComplaintModal');
+        const zone = modal?.querySelector('.cp-new-sheet-drag-zone');
+        const sheet = modal?.querySelector('.cp-new-sheet');
+        if (!modal || !zone || !sheet || modal.dataset.dragInit === '1') return;
+        modal.dataset.dragInit = '1';
+
+        sheet.addEventListener('click', (e) => e.stopPropagation());
+        modal.addEventListener('click', (e) => {
+          if (!modal.classList.contains('open')) return;
+          if (e.target.closest('.cp-new-sheet')) return;
+          if (typeof closeNewComplaintModal === 'function') closeNewComplaintModal();
+          else closeNewComplaintSheet();
+        });
+
+        const dragEnd = () => {
+          if (!_cpNewDrag.active) return;
+          _cpNewDrag.active = false;
+          modal.classList.remove('sheet-dragging');
+          zone.style.cursor = '';
+          const threshold = Math.max(72, sheet.offsetHeight * 0.18);
+          if (_cpNewDrag.deltaY > threshold) {
+            if (typeof closeNewComplaintModal === 'function') closeNewComplaintModal();
+            else closeNewComplaintSheet();
+          } else {
+            modal.classList.add('sheet-ready');
+            sheet.style.transform = '';
+          }
+          _cpNewDrag.deltaY = 0;
+          _cpNewDrag.pointerId = null;
+        };
+
+        const dragMove = (clientY) => {
+          if (!_cpNewDrag.active) return;
+          _cpNewDrag.deltaY = Math.max(0, clientY - _cpNewDrag.startY);
+          sheet.style.transform = `translateY(${_cpNewDrag.deltaY}px)`;
+        };
+
+        const dragStart = (clientY) => {
+          if (!modal.classList.contains('open') || !isViolDetailMobSheet()) return;
+          _cpNewDrag.active = true;
+          _cpNewDrag.startY = clientY;
+          _cpNewDrag.deltaY = 0;
+          modal.classList.remove('sheet-ready');
+          modal.classList.add('sheet-dragging');
+          zone.style.cursor = 'grabbing';
+          sheet.style.transform = 'translateY(0)';
+        };
+
+        zone.addEventListener('pointerdown', (e) => {
+          if (e.button !== undefined && e.button !== 0) return;
+          if (e.target.closest('.cp-new-close-btn')) return;
+          _cpNewDrag.pointerId = e.pointerId;
+          dragStart(e.clientY);
+          try { zone.setPointerCapture(e.pointerId); } catch (_) { /* noop */ }
+        });
+
+        zone.addEventListener('pointermove', (e) => {
+          if (!_cpNewDrag.active || e.pointerId !== _cpNewDrag.pointerId) return;
+          dragMove(e.clientY);
+        });
+
+        zone.addEventListener('pointerup', (e) => {
+          if (e.pointerId !== _cpNewDrag.pointerId) return;
           dragEnd();
         });
 
@@ -4658,6 +4973,7 @@
           state._dataReady = true;
           state._wfViolationsScope = canViewAllTickets();
           try { loadStaffBreaksData(); } catch (_) { /* noop */ }
+          try { loadComplaintsData(); } catch (_) { /* noop */ }
           setConnStatus('connected');
           if (mobLoad) showGlobalLoader(false);
           return true;
@@ -5364,6 +5680,7 @@
         state.realtimeChannels.push(vCh);
 
         try { setupStaffBreaksRealtime(); } catch (_) { /* noop */ }
+        try { setupComplaintsRealtime(); } catch (_) { /* noop */ }
 
         if (!isMobileViewport()) {
           const uCh = sb.channel('public:users')
@@ -5455,6 +5772,7 @@
         { id: 'tab_newTicket', label: 'رصد مخالفة جديدة', group: 'التنقل', roles: ['admin', 'observer', 'supervisor'] },
         { id: 'tab_workflow', label: 'معالجة التذاكر', group: 'التنقل', roles: ['admin', 'manager', 'auditor', 'supervisor', 'employee', 'branch_manager', 'observer', 'hr'] },
         { id: 'tab_breaks', label: 'بريكات الموظفين', group: 'التنقل', roles: ['admin', 'supervisor', 'branch_manager', 'observer', 'employee'] },
+        { id: 'tab_complaints', label: 'الشكاوى والاقتراحات', group: 'التنقل', roles: ['admin', 'supervisor', 'branch_manager', 'observer', 'employee'] },
         { id: 'tab_reports', label: 'التقارير', group: 'التنقل', roles: ['admin', 'manager', 'auditor', 'hr'] },
         { id: 'tab_compliance', label: 'مؤشرات الامتثال', group: 'التنقل', roles: ['admin', 'manager', 'auditor', 'supervisor', 'branch_manager'] },
         { id: 'tab_violations', label: 'أنواع المخالفات', group: 'التنقل', roles: ['admin', 'manager', 'auditor', 'supervisor', 'employee', 'branch_manager', 'observer'] },
@@ -5479,6 +5797,7 @@
         { id: 'manage_regions', label: 'إضافة/تعديل المناطق والفروع', group: 'إجراءات إدارية', roles: ['admin'] },
         { id: 'delete_regions', label: 'حذف المناطق والفروع', group: 'إجراءات إدارية', roles: ['admin'] },
         { id: 'manage_break_schedules', label: 'تعديل مدد البريك (منطقة/فرع/موظف)', group: 'إجراءات إدارية', roles: ['admin'] },
+        { id: 'manage_complaints', label: 'إدارة الشكاوى والاقتراحات (الرد والإغلاق)', group: 'إجراءات إدارية', roles: ['admin'] },
         { id: 'manage_violation_types', label: 'إدارة أنواع المخالفات', group: 'إجراءات إدارية', roles: ['admin'] },
         { id: 'manage_users', label: 'إضافة/تعديل/تعطيل المستخدمين', group: 'إجراءات إدارية', roles: ['admin'] },
         { id: 'import_users', label: 'استيراد المستخدمين CSV', group: 'إجراءات إدارية', roles: ['admin'] },
@@ -5496,6 +5815,7 @@
         newTicket: 'tab_newTicket',
         workflow: 'tab_workflow',
         breaks: 'tab_breaks',
+        complaints: 'tab_complaints',
         reports: 'tab_reports',
         compliance: 'tab_compliance',
         violations: 'tab_violations',
@@ -5736,7 +6056,7 @@
           return ['tab_locations', 'tab_departments', 'tab_settings', 'tab_broadcasts'].some(p => hasPermission(p));
         }
         if (permId === 'section_main') {
-          return ['tab_dashboard', 'tab_newTicket', 'tab_workflow', 'tab_breaks', 'tab_reports', 'tab_compliance', 'tab_violations'].some(p => hasPermission(p));
+          return ['tab_dashboard', 'tab_newTicket', 'tab_workflow', 'tab_breaks', 'tab_complaints', 'tab_reports', 'tab_compliance', 'tab_violations'].some(p => hasPermission(p));
         }
         if (role === 'admin') return true;
         const uid = state.currentUser.id;
@@ -6777,6 +7097,13 @@
           else if (tab === 'compliance' && typeof renderCompliance === 'function') renderCompliance();
           else if (tab === 'violations' && typeof renderViolTypes === 'function') renderViolTypes();
           else if (tab === 'breaks' && typeof renderStaffBreaksPage === 'function') renderStaffBreaksPage({ soft: true });
+          else if (tab === 'complaints') {
+            if (typeof isMobileViewport === 'function' && isMobileViewport()) {
+              if (typeof renderComplaintsPage === 'function') renderComplaintsPage();
+            } else if (typeof renderComplaintsDesktop === 'function') {
+              renderComplaintsDesktop();
+            }
+          }
           else if (tab === 'locations' && typeof renderRegions === 'function') renderRegions();
           else if (tab === 'departments' && typeof renderUsers === 'function') renderUsers();
           else if (tab === 'settings' && typeof renderSettingsPermissions === 'function') renderSettingsPermissions();
@@ -6787,7 +7114,7 @@
         }
       }
 
-      const MR_NAV_TAB_ORDER = ['dashboard', 'workflow', 'newTicket', 'breaks', 'reports', 'compliance', 'violations', 'locations', 'departments', 'settings', 'broadcasts'];
+      const MR_NAV_TAB_ORDER = ['dashboard', 'workflow', 'newTicket', 'breaks', 'complaints', 'reports', 'compliance', 'violations', 'locations', 'departments', 'settings', 'broadcasts'];
 
       function hasAnyNavTabPermission() {
         return MR_NAV_TAB_ORDER.some(tab => {
@@ -7557,6 +7884,7 @@
         newTicket: { title: 'رصد مخالفة جديدة', sub: 'سجّل مخالفة بأكبر قدر من التفاصيل' },
         workflow: { title: 'التذاكر', sub: 'إدارة ومتابعة تذاكر المخالفات' },
         breaks: { title: 'بريكات الموظفين', sub: '' },
+        complaints: { title: 'الشكاوى والاقتراحات', sub: 'ارفع شكواك أو اقتراحك وتابع الرد عليها' },
         reports: { title: 'التقارير', sub: 'مؤشرات الأداء والاتجاهات' },
         compliance: { title: 'لوحة مؤشرات الامتثال', sub: 'compliance dashboard' },
         locations: { title: 'المناطق والفروع', sub: 'regions & branches' },
@@ -7620,6 +7948,10 @@
 
       /** بريكات: Athar على سطح المكتب، وعلى الجوال أيضاً لأنها صفحة جديدة بلا كلاسيك إنتاج */
       function isStaffBreaksAtharUi() {
+        return document.documentElement.classList.contains('athar-staging-redesign');
+      }
+
+      function isComplaintsAtharUi() {
         return document.documentElement.classList.contains('athar-staging-redesign');
       }
 
@@ -8016,6 +8348,8 @@
           const id = m.id;
           if (!id) return;
           if (id === 'violDetailModal') closeViolDetailSheet();
+          else if (id === 'complaintDetailModal' && typeof closeComplaintDetail === 'function') closeComplaintDetail();
+          else if (id === 'newComplaintModal' && typeof closeNewComplaintModal === 'function') closeNewComplaintModal();
           else closeModal(id);
         });
 
@@ -8173,6 +8507,8 @@
           const id = m.id;
           if (!id) return;
           if (id === 'violDetailModal') closeViolDetailSheet();
+          else if (id === 'complaintDetailModal' && typeof closeComplaintDetail === 'function') closeComplaintDetail();
+          else if (id === 'newComplaintModal' && typeof closeNewComplaintModal === 'function') closeNewComplaintModal();
           else closeModal(id);
         });
         const attViewer = document.getElementById('attViewer');
@@ -8184,7 +8520,7 @@
         }
       }
 
-      const MR_TABS_WITH_OWN_TITLE = ['dashboard', 'newTicket', 'workflow', 'reports', 'locations', 'departments', 'violations', 'compliance', 'settings', 'profileAvatars', 'broadcasts', 'notifications', 'profile'];
+      const MR_TABS_WITH_OWN_TITLE = ['dashboard', 'newTicket', 'workflow', 'breaks', 'complaints', 'reports', 'locations', 'departments', 'violations', 'compliance', 'settings', 'profileAvatars', 'broadcasts', 'notifications', 'profile'];
 
       function switchTabShellFast(tab, btn) {
         rememberActiveTab(tab);
@@ -8429,6 +8765,35 @@
           if (tab === 'departments') renderUsers();
           if (tab === 'violations') renderViolTypes();
           if (tab === 'breaks') renderStaffBreaksPage();
+          if (tab === 'complaints') {
+            try {
+              const deskPanel = document.querySelector('.rd-complaints-desk-panel');
+              const mobPanel = document.querySelector('.rd-complaints-mob-panel');
+              const isMob = typeof isMobileViewport === 'function' && isMobileViewport();
+              if (deskPanel) deskPanel.hidden = !!isMob;
+              if (mobPanel) mobPanel.hidden = !isMob;
+              if (isMob) {
+                if (typeof renderComplaintsPage === 'function') renderComplaintsPage();
+              } else if (typeof renderComplaintsDesktop === 'function') {
+                renderComplaintsDesktop();
+              }
+            } catch (_) { /* noop */ }
+          } else {
+            try {
+              if (state._rdCmplForm) state._rdCmplForm.open = false;
+              state._rdCmplDetailId = null;
+              const oh = document.getElementById('rdCmplOverlayHost');
+              if (oh) oh.innerHTML = '';
+              if (typeof closeComplaintDetail === 'function') {
+                const cdm = document.getElementById('complaintDetailModal');
+                if (cdm && cdm.classList.contains('open')) closeComplaintDetail();
+              }
+              if (typeof closeNewComplaintModal === 'function') {
+                const ncm = document.getElementById('newComplaintModal');
+                if (ncm && ncm.classList.contains('open')) closeNewComplaintModal();
+              }
+            } catch (_) { /* noop */ }
+          }
           if (tab === 'settings') renderSettingsPermissions();
           if (tab === 'profileAvatars') renderProfileAvatarsAdmin();
           if (tab === 'broadcasts') renderBroadcastsPage();
@@ -9569,6 +9934,13 @@
         if (document.getElementById('tab-violations')?.classList.contains('active')) renderViolTypes();
         if (document.getElementById('tab-breaks')?.classList.contains('active') && typeof renderStaffBreaksPage === 'function') {
           renderStaffBreaksPage({ soft: true });
+        }
+        if (document.getElementById('tab-complaints')?.classList.contains('active')) {
+          if (typeof isMobileViewport === 'function' && isMobileViewport()) {
+            if (typeof renderComplaintsPage === 'function') renderComplaintsPage({ soft: true });
+          } else if (typeof renderComplaintsDesktop === 'function') {
+            renderComplaintsDesktop({ soft: true });
+          }
         }
         if (document.getElementById('tab-broadcasts')?.classList.contains('active')) {
           if (typeof refreshBroadcastTargetPickers === 'function') refreshBroadcastTargetPickers();
@@ -15612,7 +15984,7 @@
       }
 
       async function ensureUploadTempFolder(scope) {
-        if (!state.uploadTempFolders) state.uploadTempFolders = { nt: null, resp: null };
+        if (!state.uploadTempFolders) state.uploadTempFolders = { nt: null, resp: null, cp: null };
         if (state.uploadTempFolders[scope]) return state.uploadTempFolders[scope];
         const folder = await buildTempUploadFolder();
         state.uploadTempFolders[scope] = folder;
@@ -16684,6 +17056,25 @@
             btn.style.opacity = block ? '0.55' : '';
             btn.style.cursor = block ? 'not-allowed' : '';
           });
+        }
+
+        if (scope === 'cp') {
+          const btn = document.getElementById('cpSubmitBtn');
+          if (btn && btn.dataset.submitting !== '1') {
+            const block = inProgress || hasError || (files.length > 0 && !allReady);
+            btn.disabled = !!block;
+            btn.style.opacity = block ? '0.55' : '';
+            btn.style.cursor = block ? 'not-allowed' : '';
+            if (inProgress) btn.title = 'انتظر اكتمال تحضير المرفقات…';
+            else if (hasError) btn.title = 'أزل المرفق الفاشل أو أعد اختياره';
+            else btn.title = '';
+          }
+          if (typeof updateCpAttachLabel === 'function') updateCpAttachLabel();
+          const form = state._rdCmplForm;
+          if (form) {
+            form.attachCount = files.length;
+            if (form.open && typeof renderComplaintsOverlays === 'function') renderComplaintsOverlays();
+          }
         }
       }
 
@@ -17781,7 +18172,9 @@
         const files = Array.from(event.target.files || []);
         if (!files.length) return;
 
-        const areaId = scope === 'nt' ? 'ntFileArea' : 'respFileArea';
+        if (!state.uploadedFiles[scope]) state.uploadedFiles[scope] = [];
+
+        const areaId = scope === 'nt' ? 'ntFileArea' : (scope === 'cp' ? 'cpFileArea' : 'respFileArea');
         const area = document.getElementById(areaId);
 
         for (let fileIndex = 0; fileIndex < files.length; fileIndex++) {
@@ -32134,6 +32527,8 @@
           if (typeof initLoginScreenViewportLock === 'function') initLoginScreenViewportLock();
           if (typeof initLoginFieldKeyboard === 'function') initLoginFieldKeyboard();
           if (typeof initViolDetailSheetDrag === 'function') initViolDetailSheetDrag();
+          if (typeof initComplaintDetailSheetDrag === 'function') initComplaintDetailSheetDrag();
+          if (typeof initNewComplaintSheetDrag === 'function') initNewComplaintSheetDrag();
           if (typeof initTicketSheetDrag === 'function') initTicketSheetDrag();
           if (typeof initTicketRespKeyboardGuard === 'function') initTicketRespKeyboardGuard();
         if (typeof initViolRespKeyboardGuard === 'function') initViolRespKeyboardGuard();
@@ -35103,6 +35498,1152 @@
       window.syncBreakScheduleScopeFields = syncBreakScheduleScopeFields;
       window.syncBreakScheduleFormFields = syncBreakScheduleFormFields;
       window.openStaffBreakHistory = openStaffBreakHistory;
+
+
+      // ============================================================================
+      // COMPLAINTS DESKTOP
+      // ============================================================================
+
+      const RD_COMPLAINT_CATS = [
+        { label: 'بيئة العمل', icon: 'fa-building' },
+        { label: 'زملاء العمل', icon: 'fa-people-arrows' },
+        { label: 'الرواتب والمزايا', icon: 'fa-wallet' },
+        { label: 'الإدارة', icon: 'fa-user-tie' },
+        { label: 'أخرى', icon: 'fa-ellipsis' }
+      ];
+      const RD_SUGGESTION_CATS = [
+        { label: 'تحسين الإجراءات', icon: 'fa-lightbulb' },
+        { label: 'تقنية ونظام', icon: 'fa-laptop-code' },
+        { label: 'خدمة العملاء', icon: 'fa-headset' },
+        { label: 'أخرى', icon: 'fa-ellipsis' }
+      ];
+
+      function rdCatsForKind(kind) {
+        return kind === 'suggestion' ? RD_SUGGESTION_CATS : RD_COMPLAINT_CATS;
+      }
+
+      function complaintIsAnonymous(c) {
+        if (!c) return false;
+        if (c.is_anonymous === true || c.isAnonymous === true) return true;
+        const atts = Array.isArray(c.attachments) ? c.attachments : [];
+        return atts.some(a => a && typeof a === 'object' && a.__anon === true);
+      }
+
+      function mapComplaintToDesk(c) {
+        if (!c) return null;
+        const isAnonymous = complaintIsAnonymous(c);
+        const emp = (state.users || []).find(u => String(u.id) === String(c.employee_id));
+        const cats = (typeof complaintCatsForKind === 'function'
+          ? complaintCatsForKind(c.kind)
+          : (c.kind === 'suggestion' ? RD_SUGGESTION_CATS : RD_COMPLAINT_CATS));
+        const cat = (cats || []).find(x => x.label === c.category) || (cats && cats[0]) || null;
+        const logs = Array.isArray(c.logs) ? c.logs : [];
+        return {
+          id: c.id,
+          kind: c.kind === 'suggestion' ? 'suggestion' : 'complaint',
+          isAnonymous,
+          employeeName: isAnonymous ? 'مجهول' : ((emp && emp.name) || 'موظف'),
+          employeeId: c.employee_id,
+          category: c.category || '',
+          categoryIcon: (cat && cat.icon) || (c.kind === 'suggestion' ? 'fa-lightbulb' : 'fa-triangle-exclamation'),
+          description: c.description || '',
+          time: (typeof formatRelativeAr === 'function' && formatRelativeAr(c.created_at)) || '',
+          createdAt: c.created_at,
+          status: c.status === 'resolved' ? 'resolved' : 'pending',
+          complaintNumber: c.complaint_number || '',
+          thread: logs.map(m => ({
+            author: (isAnonymous && !m.is_admin) ? 'مجهول' : (m.author || ''),
+            text: m.text || '',
+            time: (typeof formatRelativeAr === 'function' && formatRelativeAr(m.at)) || '',
+            isAdmin: !!m.is_admin
+          })),
+          _raw: c
+        };
+      }
+
+      function getRdComplaints() {
+        return (state.complaints || []).map(mapComplaintToDesk).filter(Boolean);
+      }
+
+      function refreshComplaintsUi() {
+        try {
+          const tab = document.getElementById('tab-complaints');
+          if (!tab || !tab.classList.contains('active')) return;
+          if (typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi()) {
+            if (typeof renderComplaintsDesktop === 'function') renderComplaintsDesktop({ soft: true });
+          } else if (typeof paintComplaintsPage === 'function') {
+            paintComplaintsPage();
+          }
+        } catch (_) { /* noop */ }
+      }
+
+      function rdCmplEnsureForm() {
+        if (!state._rdCmplForm) {
+          state._rdCmplForm = {
+            open: false,
+            kind: 'complaint',
+            category: RD_COMPLAINT_CATS[0].label,
+            desc: '',
+            attachCount: 0,
+            anonymous: false
+          };
+        }
+        if (typeof state._rdCmplForm.anonymous !== 'boolean') state._rdCmplForm.anonymous = false;
+        return state._rdCmplForm;
+      }
+
+      function rdCmplOverlayHost() {
+        let el = document.getElementById('rdCmplOverlayHost');
+        if (!el) {
+          el = document.createElement('div');
+          el.id = 'rdCmplOverlayHost';
+          document.body.appendChild(el);
+        }
+        return el;
+      }
+
+      function rdCmplTone(kind) {
+        return kind === 'suggestion' ? 'var(--info)' : 'var(--danger)';
+      }
+
+      function rdCmplStatusMeta(status) {
+        if (status === 'resolved') return { label: 'تم الرد', color: 'var(--success)' };
+        return { label: 'قيد المراجعة', color: 'var(--warning)' };
+      }
+
+      function rdCmplNumber(id) {
+        const row = getRdComplaints().find(c => c.id === id);
+        if (row && row.complaintNumber) return row.complaintNumber;
+        const idx = getRdComplaints().findIndex(c => c.id === id);
+        return '#' + (1001 + Math.max(0, idx));
+      }
+
+      function rdCmplCurrentUserName() {
+        try {
+          return (state.currentUser && (state.currentUser.name || state.currentUser.fullName)) || 'موظف';
+        } catch (_) { return 'موظف'; }
+      }
+
+      function rdCmplDisplayName(row) {
+        if (row && row.isAnonymous) return 'مجهول';
+        return (row && row.employeeName) || '';
+      }
+
+
+      async function renderComplaintsDesktop(opts = {}) {
+        const host = document.getElementById('rdComplaintsHost');
+        if (!host) return;
+        if (!isAtharDesktopScreenUi()) {
+          host.innerHTML = '<div class="rd-ticket-empty"><i class="fas fa-desktop"></i><p>شاشة الشكاوى متاحة على سطح المكتب</p></div>';
+          rdCmplOverlayHost().innerHTML = '';
+          return;
+        }
+        if (!opts.soft && typeof loadComplaintsData === 'function') {
+          try { await loadComplaintsData(); } catch (_) { /* noop */ }
+        }
+        const filter = state._rdCmplFilter || 'all';
+        const all = getRdComplaints();
+        let rows = all;
+        if (filter === 'complaint') rows = all.filter(r => r.kind === 'complaint');
+        if (filter === 'suggestion') rows = all.filter(r => r.kind === 'suggestion');
+
+        const total = all.length;
+        const onlyC = all.filter(r => r.kind === 'complaint').length;
+        const onlyS = all.filter(r => r.kind === 'suggestion').length;
+        const pending = all.filter(r => r.status === 'pending').length;
+        const resolved = all.filter(r => r.status === 'resolved').length;
+
+        const filters = [
+          { id: 'all', label: 'الكل' },
+          { id: 'complaint', label: 'الشكاوى' },
+          { id: 'suggestion', label: 'الاقتراحات' }
+        ].map(f => {
+          const on = filter === f.id;
+          return `<button type="button" class="rd-cmpl-filter${on ? ' is-active' : ''}" onclick="rdCmplFilter('${f.id}')">${Sec.escapeHTML(f.label)}</button>`;
+        }).join('');
+
+        const list = rows.map((r, i) => {
+          const tone = rdCmplTone(r.kind);
+          const st = rdCmplStatusMeta(r.status);
+          const kindLbl = r.kind === 'suggestion' ? 'اقتراح' : 'شكوى';
+          const icon = r.categoryIcon || (r.kind === 'suggestion' ? 'fa-lightbulb' : 'fa-triangle-exclamation');
+          const reply = (Array.isArray(r.thread) && r.thread.length) ? r.thread[r.thread.length - 1] : null;
+          const replyHtml = (reply && reply.isAdmin) ? `
+            <div class="rd-cmpl-card__reply">
+              <div class="rd-cmpl-card__reply-av"><i class="fas fa-headset" aria-hidden="true"></i></div>
+              <div class="rd-cmpl-card__reply-body">
+                <div class="rd-cmpl-card__reply-title">رد الإدارة</div>
+                <div class="rd-cmpl-card__reply-text">${Sec.escapeHTML(reply.text || '')}</div>
+              </div>
+            </div>` : '';
+          return `
+            <article class="rd-cmpl-card" style="animation-delay:${Math.min(0.3, i * 0.04)}s" onclick="rdOpenComplaintDetail('${Sec.escapeHTML(r.id)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();rdOpenComplaintDetail('${Sec.escapeHTML(r.id)}')}" role="button" tabindex="0">
+              <div class="rd-cmpl-card__top">
+                <div class="rd-cmpl-card__who">
+                  <div class="rd-cmpl-card__icon" style="--tone:${tone}"><i class="fas ${Sec.escapeHTML(icon)}" aria-hidden="true"></i></div>
+                  <div class="rd-cmpl-card__meta-wrap">
+                    <div class="rd-cmpl-card__title-row">
+                      <span class="rd-cmpl-card__cat">${Sec.escapeHTML(r.category || 'عام')}</span>
+                      <span class="rd-cmpl-card__kind" style="--tone:${tone}">${Sec.escapeHTML(kindLbl)}</span>
+                      <span class="rd-cmpl-card__num">${Sec.escapeHTML(rdCmplNumber(r.id))}</span>
+                    </div>
+                    <div class="rd-cmpl-card__sub">${Sec.escapeHTML(rdCmplDisplayName(r))} · ${Sec.escapeHTML(r.time || r.createdAt || '')}</div>
+                  </div>
+                </div>
+                <span class="rd-cmpl-card__status" style="--tone:${st.color}">${Sec.escapeHTML(st.label)}</span>
+              </div>
+              <div class="rd-cmpl-card__body">${Sec.escapeHTML(r.description || r.desc || '')}</div>
+              ${replyHtml}
+            </article>`;
+        }).join('');
+
+        const emptyMsg = (typeof canSubmitComplaint === 'function' && !canSubmitComplaint())
+          ? 'سجّل الدخول لعرض الشكاوى والاقتراحات'
+          : 'لا توجد شكاوى أو اقتراحات';
+
+        host.innerHTML = `
+          <div class="rd-cmpl-board">
+            <div class="rd-cmpl-head">
+              <p class="rd-cmpl-intro">يمكنك رفع شكوى أو اقتراح حول أي موضوع يخص بيئة العمل، وستتم متابعتها من الإدارة المختصة.</p>
+              <button type="button" class="rd-cmpl-cta" onclick="rdOpenComplaintForm()"><i class="fas fa-plus" aria-hidden="true"></i>رفع شكوى أو اقتراح</button>
+            </div>
+            <div class="rd-cmpl-metrics">
+              <div class="rd-cmpl-metric">
+                <div>
+                  <div class="rd-cmpl-metric__lbl">الإجمالي</div>
+                  <div class="rd-cmpl-metric__val">${total}</div>
+                </div>
+                <div class="rd-cmpl-metric__ico"><i class="fas fa-inbox" aria-hidden="true"></i></div>
+              </div>
+              <div class="rd-cmpl-metric">
+                <div>
+                  <div class="rd-cmpl-metric__lbl">${(typeof canManageComplaints === 'function' && canManageComplaints()) ? 'الشكاوى' : 'شكاواي'}</div>
+                  <div class="rd-cmpl-metric__val" style="color:var(--danger)">${onlyC}</div>
+                </div>
+                <div class="rd-cmpl-metric__ico rd-cmpl-metric__ico--danger"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i></div>
+              </div>
+              <div class="rd-cmpl-metric">
+                <div>
+                  <div class="rd-cmpl-metric__lbl">${(typeof canManageComplaints === 'function' && canManageComplaints()) ? 'الاقتراحات' : 'اقتراحاتي'}</div>
+                  <div class="rd-cmpl-metric__val" style="color:var(--info)">${onlyS}</div>
+                </div>
+                <div class="rd-cmpl-metric__ico rd-cmpl-metric__ico--info"><i class="fas fa-lightbulb" aria-hidden="true"></i></div>
+              </div>
+              <div class="rd-cmpl-metric">
+                <div>
+                  <div class="rd-cmpl-metric__lbl">قيد المراجعة</div>
+                  <div class="rd-cmpl-metric__val" style="color:var(--warning)">${pending}</div>
+                </div>
+                <div class="rd-cmpl-metric__ico rd-cmpl-metric__ico--warning"><i class="fas fa-hourglass-half" aria-hidden="true"></i></div>
+              </div>
+              <div class="rd-cmpl-metric">
+                <div>
+                  <div class="rd-cmpl-metric__lbl">تم الرد عليها</div>
+                  <div class="rd-cmpl-metric__val" style="color:var(--success)">${resolved}</div>
+                </div>
+                <div class="rd-cmpl-metric__ico rd-cmpl-metric__ico--success"><i class="fas fa-check-double" aria-hidden="true"></i></div>
+              </div>
+            </div>
+            <div class="rd-cmpl-filters">${filters}</div>
+            <div class="rd-cmpl-list">${list || `<div class="rd-ticket-empty"><i class="fas fa-inbox"></i><p>${Sec.escapeHTML(emptyMsg)}</p></div>`}</div>
+          </div>`;
+
+        renderComplaintsOverlays();
+      }
+
+      function renderComplaintsOverlays() {
+        const overlay = rdCmplOverlayHost();
+        if (!isAtharDesktopScreenUi()) {
+          overlay.innerHTML = '';
+          return;
+        }
+        const keepQuiet = !!overlay.querySelector('.rd-cmpl-overlay');
+        const scrollEl = overlay.querySelector('.rd-cmpl-thread') || overlay.querySelector('.rd-cmpl-panel');
+        const savedScroll = scrollEl ? scrollEl.scrollTop : 0;
+        const form = rdCmplEnsureForm();
+        const detailId = state._rdCmplDetailId || null;
+        const active = detailId ? getRdComplaints().find(c => c.id === detailId) : null;
+        let html = '';
+
+        if (active) {
+          const tone = rdCmplTone(active.kind);
+          const st = rdCmplStatusMeta(active.status);
+          const kindLbl = active.kind === 'suggestion' ? 'اقتراح' : 'شكوى';
+          const replyLabel = 'الرد على ' + (active.kind === 'suggestion' ? 'الاقتراح' : 'الشكوى');
+          const thread = (active.thread || []).map(msg => {
+            const authorIc = msg.isAdmin
+              ? 'fa-headset'
+              : (active.isAnonymous ? 'fa-user-secret' : 'fa-user');
+            return `
+            <div class="rd-cmpl-thread-msg">
+              <div class="rd-cmpl-thread-bubble${msg.isAdmin ? ' is-admin' : ''}">
+                <div class="rd-cmpl-thread-meta">
+                  <span class="rd-cmpl-thread-author${msg.isAdmin ? ' is-admin' : ''}"><i class="fas ${authorIc} rd-cmpl-thread-author-ic" aria-hidden="true"></i>${Sec.escapeHTML(msg.author || '')}</span>
+                  <span class="rd-cmpl-thread-time">${Sec.escapeHTML(msg.time || '')}</span>
+                </div>
+                <div class="rd-cmpl-thread-text">${Sec.escapeHTML(msg.text || '')}</div>
+              </div>
+            </div>`;
+          }).join('');
+          const resolveBtn = active.status === 'resolved'
+            ? `<button type="button" class="rd-cmpl-btn rd-cmpl-btn--resolved" disabled><i class="fas fa-check" aria-hidden="true"></i>تم الحل</button>`
+            : ((typeof canManageComplaints === 'function' && canManageComplaints())
+              ? `<button type="button" class="rd-cmpl-btn rd-cmpl-btn--ghost" onclick="rdResolveComplaint('${Sec.escapeHTML(active.id)}')"><i class="fas fa-check" aria-hidden="true"></i>تحديد كمحلولة</button>`
+              : '');
+          const composeHtml = active.status === 'resolved'
+            ? `<div class="rd-cmpl-panel__compose is-locked">
+                  <div class="rd-cmpl-resolved-banner">${active.kind === 'suggestion' ? 'تم حل الاقتراح' : 'تم حل الشكوى'}</div>
+                </div>`
+            : `<div class="rd-cmpl-panel__compose">
+                  <div class="rd-cmpl-field-label">${Sec.escapeHTML(replyLabel)}</div>
+                  <textarea class="rd-cmpl-textarea" id="rdCmplReplyInput" placeholder="اكتب ردك هنا..." rows="4">${Sec.escapeHTML(state._rdCmplReply || '')}</textarea>
+                  <div class="rd-cmpl-panel__actions">
+                    <button type="button" class="rd-cmpl-btn rd-cmpl-btn--primary" onclick="rdSubmitComplaintReply()">إرسال الرد</button>
+                    ${resolveBtn}
+                  </div>
+                </div>`;
+          html += `
+            <div class="rd-cmpl-overlay" role="dialog" aria-modal="true">
+              <div class="rd-cmpl-overlay__scrim" onclick="rdCloseComplaintDetail()"></div>
+              <div class="rd-cmpl-panel rd-cmpl-panel--detail">
+                <div class="rd-cmpl-panel__basics">
+                  <div class="rd-cmpl-panel__head">
+                    <div class="rd-cmpl-panel__title-row">
+                      <span class="rd-cmpl-panel__title">${Sec.escapeHTML(active.category || '')}</span>
+                      <span class="rd-cmpl-card__kind" style="--tone:${tone}">${Sec.escapeHTML(kindLbl)}</span>
+                      <span class="rd-cmpl-card__num">${Sec.escapeHTML(rdCmplNumber(active.id))}</span>
+                    </div>
+                    <button type="button" class="rd-cmpl-panel__close" onclick="rdCloseComplaintDetail()" aria-label="إغلاق"><i class="fas fa-xmark"></i></button>
+                  </div>
+                  <div class="rd-cmpl-panel__subrow">
+                    <span class="rd-cmpl-panel__who"><i class="fas ${active.isAnonymous ? 'fa-user-secret' : 'fa-user'} rd-cmpl-thread-author-ic" aria-hidden="true"></i>${Sec.escapeHTML(rdCmplDisplayName(active))} <span class="rd-desk-muted">· ${Sec.escapeHTML(active.time || '')}</span></span>
+                    <span class="rd-cmpl-card__status" style="--tone:${st.color}">${Sec.escapeHTML(st.label)}</span>
+                  </div>
+                  <div class="rd-cmpl-panel__desc">${Sec.escapeHTML(active.description || active.desc || '')}</div>
+                </div>
+                <div class="rd-cmpl-thread">${thread || '<div class="rd-cmpl-thread-empty">لا توجد ردود بعد</div>'}</div>
+                ${composeHtml}
+              </div>
+            </div>`;
+        }
+
+        if (form.open) {
+          const kindOpts = [
+            { key: 'complaint', label: 'شكوى', icon: 'fa-triangle-exclamation' },
+            { key: 'suggestion', label: 'اقتراح', icon: 'fa-lightbulb' }
+          ].map(k => {
+            const on = form.kind === k.key;
+            return `<button type="button" class="rd-cmpl-kind${on ? ' is-active' : ''}" onclick="rdCmplSetKind('${k.key}')"><i class="fas ${k.icon}" aria-hidden="true"></i>${k.label}</button>`;
+          }).join('');
+          const cats = rdCatsForKind(form.kind).map(c => {
+            const on = form.category === c.label;
+            return `<button type="button" class="rd-cmpl-cat${on ? ' is-active' : ''}" onclick="rdCmplSetCategory('${Sec.escapeHTML(c.label)}')"><i class="fas ${c.icon}" aria-hidden="true"></i>${Sec.escapeHTML(c.label)}</button>`;
+          }).join('');
+          const detailsLabel = form.kind === 'suggestion' ? 'تفاصيل الاقتراح' : 'تفاصيل الشكوى';
+          const submitLabel = form.kind === 'suggestion' ? 'إرسال الاقتراح' : 'إرسال الشكوى';
+          const descPlaceholder = form.kind === 'suggestion' ? 'اشرح اقتراحك بالتفصيل...' : 'اشرح شكواك بالتفصيل...';
+          const anonLabel = form.kind === 'suggestion' ? 'ارفع الاقتراح كمجهول' : 'ارفع الشكوى كمجهول';
+          const anonHint = form.kind === 'suggestion'
+            ? 'لن يظهر اسمك مع هذا الاقتراح'
+            : 'لن يظهر اسمك مع هذه الشكوى';
+          const attachLabel = ((state.uploadedFiles.cp || []).length || form.attachCount) > 0
+            ? `${(state.uploadedFiles.cp || []).length || form.attachCount} ملف مرفق — اضغط لإضافة المزيد`
+            : 'اضغط لإرفاق ملف';
+          html += `
+            <div class="rd-cmpl-overlay" role="dialog" aria-modal="true">
+              <div class="rd-cmpl-overlay__scrim" onclick="rdCloseComplaintForm()"></div>
+              <div class="rd-cmpl-panel">
+                <div class="rd-cmpl-panel__head">
+                  <div class="rd-cmpl-panel__title">رفع شكوى أو اقتراح</div>
+                  <button type="button" class="rd-cmpl-panel__close" onclick="rdCloseComplaintForm()" aria-label="إغلاق"><i class="fas fa-xmark"></i></button>
+                </div>
+                <div class="rd-cmpl-field-label">النوع <span class="rd-cmpl-req">*</span></div>
+                <div class="rd-cmpl-kind-row">${kindOpts}</div>
+                <div class="rd-cmpl-field-label">التصنيف <span class="rd-cmpl-req">*</span></div>
+                <div class="rd-cmpl-cat-row">${cats}</div>
+                <div class="rd-cmpl-field-label">${Sec.escapeHTML(detailsLabel)} <span class="rd-cmpl-req">*</span></div>
+                <textarea class="rd-cmpl-textarea" id="rdCmplDescInput" placeholder="${Sec.escapeHTML(descPlaceholder)}" rows="6">${Sec.escapeHTML(form.desc || '')}</textarea>
+                <div class="rd-cmpl-field-label">مرفقات (اختياري)</div>
+                <button type="button" class="rd-cmpl-attach" onclick="rdCmplSimulateAttach()">
+                  <i class="fas fa-paperclip" aria-hidden="true"></i>
+                  <span>${Sec.escapeHTML(attachLabel)}</span>
+                </button>
+                <button type="button" class="rd-cmpl-anon${form.anonymous ? ' is-on' : ''}" onclick="rdCmplToggleAnonymous()" aria-pressed="${form.anonymous ? 'true' : 'false'}">
+                  <span class="rd-cmpl-anon__copy">
+                    <span class="rd-cmpl-anon__title"><i class="fas fa-user-secret" aria-hidden="true"></i>${Sec.escapeHTML(anonLabel)}</span>
+                    <span class="rd-cmpl-anon__hint">${Sec.escapeHTML(anonHint)}</span>
+                  </span>
+                  <span class="rd-cmpl-anon__switch" aria-hidden="true"><span class="rd-cmpl-anon__knob"></span></span>
+                </button>
+                <button type="button" class="rd-cmpl-btn rd-cmpl-btn--primary rd-cmpl-btn--block" onclick="rdSubmitComplaintForm()">${Sec.escapeHTML(submitLabel)}</button>
+              </div>
+            </div>`;
+        }
+
+        overlay.innerHTML = html;
+        if (keepQuiet) {
+          overlay.querySelectorAll('.rd-cmpl-overlay, .rd-cmpl-panel').forEach((el) => {
+            el.classList.add('rd-side--quiet');
+          });
+        }
+        const panel = overlay.querySelector('.rd-cmpl-panel');
+        const threadEl = overlay.querySelector('.rd-cmpl-thread');
+        if (threadEl && savedScroll) threadEl.scrollTop = savedScroll;
+        else if (panel && savedScroll) panel.scrollTop = savedScroll;
+
+        const descInput = document.getElementById('rdCmplDescInput');
+        if (descInput) {
+          descInput.addEventListener('input', (e) => {
+            rdCmplEnsureForm().desc = e.target.value;
+          });
+        }
+        const replyInput = document.getElementById('rdCmplReplyInput');
+        if (replyInput) {
+          replyInput.addEventListener('input', (e) => {
+            state._rdCmplReply = e.target.value;
+          });
+        }
+      }
+
+      function rdCmplFilter(id) {
+        state._rdCmplFilter = id || 'all';
+        renderComplaintsDesktop();
+      }
+
+      function rdOpenComplaintForm() {
+        state._rdCmplDetailId = null;
+        void clearComplaintAttachFiles();
+        state._rdCmplForm = {
+          open: true,
+          kind: 'complaint',
+          category: RD_COMPLAINT_CATS[0].label,
+          desc: '',
+          attachCount: 0,
+          anonymous: false
+        };
+        renderComplaintsOverlays();
+      }
+
+      function rdCloseComplaintForm() {
+        const form = rdCmplEnsureForm();
+        form.open = false;
+        renderComplaintsOverlays();
+      }
+
+      function rdCmplSetKind(kind) {
+        const form = rdCmplEnsureForm();
+        form.kind = kind === 'suggestion' ? 'suggestion' : 'complaint';
+        form.category = rdCatsForKind(form.kind)[0].label;
+        renderComplaintsOverlays();
+      }
+
+      function rdCmplSetCategory(label) {
+        const form = rdCmplEnsureForm();
+        form.category = label;
+        renderComplaintsOverlays();
+      }
+
+      function rdCmplSimulateAttach() {
+        document.getElementById('cpAttachInput')?.click();
+      }
+
+      function rdCmplToggleAnonymous() {
+        const form = rdCmplEnsureForm();
+        form.anonymous = !form.anonymous;
+        renderComplaintsOverlays();
+      }
+
+      async function rdSubmitComplaintForm() {
+        const form = rdCmplEnsureForm();
+        const descEl = document.getElementById('rdCmplDescInput');
+        const desc = String((descEl && descEl.value) || form.desc || '').trim();
+        if (!desc) {
+          showToast('اكتب التفاصيل أولاً', 'warning');
+          return;
+        }
+        if (typeof canSubmitComplaint === 'function' && !canSubmitComplaint()) {
+          showToast('سجّل الدخول لرفع شكوى أو اقتراح', 'warning');
+          return;
+        }
+        const files = state.uploadedFiles.cp || [];
+        if (files.some(f => f.prepStatus === 'error')) {
+          showToast('أزل المرفق الفاشل أو أعد اختياره', 'warning');
+          return;
+        }
+        if (files.length && isAttachmentPrepInProgress('cp')) {
+          showToast('انتظر اكتمال تحضير المرفقات', 'warning');
+          return;
+        }
+        const cat = rdCatsForKind(form.kind).find(c => c.label === form.category) || rdCatsForKind(form.kind)[0];
+        const kindKey = form.kind === 'suggestion' ? 'suggestion' : 'complaint';
+        try {
+          const wasAnon = !!form.anonymous;
+          const attachments = await buildComplaintAttachmentsPayload(wasAnon);
+          const { data, error } = await sb.from('complaints').insert({
+            employee_id: state.currentUser.id,
+            kind: kindKey,
+            category: (cat && cat.label) || form.category || 'أخرى',
+            description: desc,
+            attachments
+          }).select().single();
+          if (error) throw error;
+          state.complaints = [data, ...(state.complaints || [])];
+          form.open = false;
+          form.desc = '';
+          form.attachCount = 0;
+          form.anonymous = false;
+          await clearComplaintAttachFiles();
+          await renderComplaintsDesktop({ soft: true });
+          showToast(
+            wasAnon
+              ? (kindKey === 'complaint' ? 'تم رفع الشكوى كمجهول' : 'تم رفع الاقتراح كمجهول')
+              : (kindKey === 'complaint' ? 'تم رفع الشكوى' : 'تم رفع الاقتراح'),
+            'success'
+          );
+        } catch (e) {
+          showToast('فشل الإرسال: ' + (e.message || e), 'error');
+        }
+      }
+
+      function rdOpenComplaintDetail(id) {
+        const form = rdCmplEnsureForm();
+        form.open = false;
+        state._rdCmplDetailId = id;
+        state._rdCmplReply = '';
+        renderComplaintsOverlays();
+      }
+
+      function rdCloseComplaintDetail() {
+        state._rdCmplDetailId = null;
+        state._rdCmplReply = '';
+        renderComplaintsOverlays();
+      }
+
+      async function rdSubmitComplaintReply() {
+        const id = state._rdCmplDetailId;
+        if (!id) return;
+        const row = (state.complaints || []).find(c => String(c.id) === String(id));
+        if (row && row.status === 'resolved') {
+          showToast('الشكوى محلولة — الرد مقفول', 'warning');
+          return;
+        }
+        const input = document.getElementById('rdCmplReplyInput');
+        const text = String((input && input.value) || state._rdCmplReply || '').trim();
+        if (!text) {
+          showToast('اكتب الرد أولاً', 'warning');
+          return;
+        }
+        try {
+          const { data, error } = await sb.rpc('add_complaint_reply', {
+            p_complaint_id: id,
+            p_text: text
+          });
+          if (error) throw error;
+          if (!data?.ok) {
+            showToast(data?.error || 'تعذّر إرسال الرد', 'error');
+            return;
+          }
+          const idx = (state.complaints || []).findIndex(c => c.id === data.complaint.id);
+          if (idx >= 0) state.complaints[idx] = data.complaint;
+          else state.complaints = [data.complaint, ...(state.complaints || [])];
+          state._rdCmplReply = '';
+          await renderComplaintsDesktop({ soft: true });
+          showToast('تم إرسال الرد', 'success');
+        } catch (e) {
+          showToast('فشل إرسال الرد: ' + (e.message || e), 'error');
+        }
+      }
+
+      async function rdResolveComplaint(id) {
+        if (!id) return;
+        if (typeof canManageComplaints === 'function' && !canManageComplaints()) {
+          showToast('مدير النظام فقط يقدر يغلق الشكوى', 'warning');
+          return;
+        }
+        try {
+          const { data, error } = await sb.rpc('resolve_complaint', { p_complaint_id: id });
+          if (error) throw error;
+          if (!data?.ok) {
+            showToast(data?.error || 'تعذّر إغلاق الشكوى', 'error');
+            return;
+          }
+          const idx = (state.complaints || []).findIndex(c => c.id === data.complaint.id);
+          if (idx >= 0) state.complaints[idx] = data.complaint;
+          await renderComplaintsDesktop({ soft: true });
+          showToast('تم تحديدها كمحلولة', 'success');
+        } catch (e) {
+          showToast('فشل الإغلاق: ' + (e.message || e), 'error');
+        }
+      }
+
+      window.rdCmplFilter = rdCmplFilter;
+      window.rdOpenComplaintForm = rdOpenComplaintForm;
+      window.rdCloseComplaintForm = rdCloseComplaintForm;
+      window.rdCmplSetKind = rdCmplSetKind;
+      window.rdCmplSetCategory = rdCmplSetCategory;
+      window.rdCmplSimulateAttach = rdCmplSimulateAttach;
+      window.rdCmplToggleAnonymous = rdCmplToggleAnonymous;
+      window.rdSubmitComplaintForm = rdSubmitComplaintForm;
+      window.rdOpenComplaintDetail = rdOpenComplaintDetail;
+      window.rdCloseComplaintDetail = rdCloseComplaintDetail;
+      window.rdSubmitComplaintReply = rdSubmitComplaintReply;
+      window.rdResolveComplaint = rdResolveComplaint;
+      window.renderComplaintsDesktop = renderComplaintsDesktop;
+
+
+      // ═══════════════════════════════════════════════════════════════════════════
+      // COMPLAINTS & SUGGESTIONS — الشكاوى والاقتراحات
+      // ═══════════════════════════════════════════════════════════════════════════
+
+      const COMPLAINT_CATS = [
+        { label: 'بيئة العمل', icon: 'fa-building' },
+        { label: 'زملاء العمل', icon: 'fa-people-arrows' },
+        { label: 'الرواتب والمزايا', icon: 'fa-wallet' },
+        { label: 'الإدارة', icon: 'fa-user-tie' },
+        { label: 'أخرى', icon: 'fa-ellipsis' }
+      ];
+      const SUGGESTION_CATS = [
+        { label: 'تحسين الإجراءات', icon: 'fa-lightbulb' },
+        { label: 'تقنية ونظام', icon: 'fa-laptop-code' },
+        { label: 'خدمة العملاء', icon: 'fa-headset' },
+        { label: 'أخرى', icon: 'fa-ellipsis' }
+      ];
+      const COMPLAINT_KIND_LABELS = { complaint: 'شكوى', suggestion: 'اقتراح' };
+      const COMPLAINT_STATUS_LABELS = { pending: 'قيد المراجعة', resolved: 'تم الحل' };
+
+      function complaintCatsForKind(kind) {
+        return kind === 'suggestion' ? SUGGESTION_CATS : COMPLAINT_CATS;
+      }
+
+      function canManageComplaints() {
+        return normalizeUserRole(state.currentUser?.role) === 'admin';
+      }
+
+      function canSubmitComplaint() {
+        return !!state.currentUser?.id && state.currentUser.id !== GUEST_LOCAL_PROFILE.id;
+      }
+
+      async function loadComplaintsData() {
+        if (!canSubmitComplaint()) {
+          state.complaints = [];
+          return;
+        }
+        try {
+          const { data, error } = await sb.from('complaints')
+            .select('id,complaint_number,employee_id,branch_id,kind,category,description,attachments,status,logs,created_at,updated_at,resolved_at')
+            .order('created_at', { ascending: false })
+            .limit(500);
+          if (error) throw error;
+          state.complaints = data || [];
+        } catch (e) {
+          if (isMirsadDebugLog()) console.warn('[complaints] load', e);
+          state.complaints = state.complaints || [];
+        }
+      }
+
+      function getFilteredComplaints() {
+        const list = state.complaints || [];
+        if (state.complaintTypeFilter === 'all') return list;
+        return list.filter(c => c.kind === state.complaintTypeFilter);
+      }
+
+      function getComplaintById(id) {
+        return (state.complaints || []).find(c => c.id === id) || null;
+      }
+
+      function complaintCategoryIcon(c) {
+        const cats = complaintCatsForKind(c.kind);
+        return cats.find(x => x.label === c.category)?.icon || 'fa-comment-dots';
+      }
+
+      function renderComplaintCardHtml(c) {
+        const kindLabel = COMPLAINT_KIND_LABELS[c.kind] || c.kind;
+        const kindColor = c.kind === 'suggestion' ? 'var(--info)' : 'var(--danger)';
+        const statusLabel = COMPLAINT_STATUS_LABELS[c.status] || c.status;
+        const statusColor = c.status === 'resolved' ? 'var(--success)' : 'var(--warning)';
+        const icon = complaintCategoryIcon(c);
+        const time = formatRelativeAr(c.created_at) || '';
+        return `
+          <div class="cp-card" role="button" tabindex="0"
+            onclick="openComplaintDetail('${Sec.escapeHTML(c.id)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openComplaintDetail('${Sec.escapeHTML(c.id)}')}">
+            <div class="cp-card__top">
+              <div class="cp-card__who">
+                <div class="cp-card__icon" style="--tone:${kindColor}"><i class="fas ${icon}" aria-hidden="true"></i></div>
+                <div style="min-width:0">
+                  <div class="cp-card__cat">${Sec.escapeHTML(c.category)}</div>
+                  <div class="cp-card__meta">${Sec.escapeHTML(c.complaint_number || '')} · ${Sec.escapeHTML(time)}</div>
+                </div>
+              </div>
+              <span class="cp-card__kind" style="--tone:${kindColor}">${Sec.escapeHTML(kindLabel)}</span>
+            </div>
+            <div class="cp-card__body">${Sec.escapeHTML(c.description)}</div>
+            <div class="cp-card__status" style="--tone:${statusColor}">${Sec.escapeHTML(statusLabel)}</div>
+          </div>`;
+      }
+
+      async function renderComplaintsPage(opts = {}) {
+        const host = document.getElementById('complaintsHost');
+        if (!host) return;
+        if (!canSubmitComplaint()) {
+          host.innerHTML = '<div class="rd-list__row" style="cursor:default"><div class="rd-list__sub">سجّل الدخول لعرض الشكاوى والاقتراحات</div></div>';
+          return;
+        }
+        if (!opts.soft) await loadComplaintsData();
+        paintComplaintsPage();
+      }
+
+      function paintComplaintsPage() {
+        const host = document.getElementById('complaintsHost');
+        if (!host) return;
+        const rows = state.complaints || [];
+        const myComplaints = rows.filter(c => c.kind === 'complaint').length;
+        const mySuggestions = rows.filter(c => c.kind === 'suggestion').length;
+        const pending = rows.filter(c => c.status === 'pending').length;
+        const resolved = rows.filter(c => c.status === 'resolved').length;
+
+        const filters = [
+          { id: 'all', label: 'الكل' },
+          { id: 'complaint', label: 'الشكاوى' },
+          { id: 'suggestion', label: 'الاقتراحات' }
+        ];
+        const filtersHtml = filters.map(f => {
+          const active = f.id === state.complaintTypeFilter;
+          return `<button type="button" class="cp-mob-filter${active ? ' is-active' : ''}" onclick="setComplaintTypeFilter('${f.id}')">${Sec.escapeHTML(f.label)}</button>`;
+        }).join('');
+
+        const filtered = getFilteredComplaints();
+        const listHtml = filtered.length
+          ? filtered.map(renderComplaintCardHtml).join('')
+          : '<div class="rd-list__row" style="cursor:default"><div class="rd-list__sub">لا توجد شكاوى أو اقتراحات حالياً</div></div>';
+
+        const statCard = (value, label, icon, color) => `
+          <div class="cp-mob-stat">
+            <div class="cp-mob-stat__row">
+              <span class="cp-mob-stat__val" style="color:${color}">${value}</span>
+              <span class="cp-mob-stat__ico" style="color:${color}"><i class="fas ${icon}" aria-hidden="true"></i></span>
+            </div>
+            <div class="cp-mob-stat__lbl">${label}</div>
+          </div>`;
+
+        host.innerHTML = `
+          <div class="cp-mob-page" style="animation:screenIn .32s ease">
+            <header class="cp-mob-head">
+              <h1 class="cp-mob-head__title">الشكاوى والاقتراحات</h1>
+              <p class="cp-mob-head__sub">ارفع شكواك أو اقتراحك وتابع الرد عليها</p>
+            </header>
+            <button type="button" class="cp-mob-cta" onclick="openNewComplaintModal()">
+              <i class="fas fa-plus" aria-hidden="true"></i>رفع شكوى أو اقتراح
+            </button>
+            <div class="cp-mob-stats">
+              ${statCard(myComplaints, canManageComplaints() ? 'الشكاوى' : 'شكاواي', 'fa-triangle-exclamation', 'var(--danger)')}
+              ${statCard(mySuggestions, canManageComplaints() ? 'الاقتراحات' : 'اقتراحاتي', 'fa-lightbulb', 'var(--info)')}
+              ${statCard(pending, 'قيد المراجعة', 'fa-hourglass-half', 'var(--warning)')}
+              ${statCard(resolved, 'تم الحل', 'fa-check-double', 'var(--success)')}
+            </div>
+            <div class="cp-mob-filters">${filtersHtml}</div>
+            <div class="cp-mob-list">${listHtml}</div>
+          </div>`;
+      }
+
+      function setComplaintTypeFilter(id) {
+        state.complaintTypeFilter = id;
+        paintComplaintsPage();
+      }
+
+      function syncNewComplaintForm() {
+        const kindWrap = document.getElementById('cpKindOptions');
+        const catWrap = document.getElementById('cpCategoryOptions');
+        const descLabel = document.getElementById('cpDescLabel');
+        const submitBtn = document.getElementById('cpSubmitBtn');
+        const anonBtn = document.getElementById('cpAnonToggle');
+        const anonTitle = document.getElementById('cpAnonTitle');
+        const anonHint = document.getElementById('cpAnonHint');
+        const kind = state.complaintKind;
+        if (typeof state.complaintAnonymous !== 'boolean') state.complaintAnonymous = false;
+        if (kindWrap) {
+          kindWrap.innerHTML = ['complaint', 'suggestion'].map(k => {
+            const active = k === kind;
+            const icon = k === 'suggestion' ? 'fa-lightbulb' : 'fa-triangle-exclamation';
+            return `<button type="button" onclick="setNewComplaintKind('${k}')" style="flex:1;display:flex;align-items:center;justify-content:center;gap:7px;padding:11px 6px;border-radius:11px;font-size:12.5px;font-weight:600;cursor:pointer;background:${active ? 'var(--gold, var(--primary))' : 'var(--surface2)'};color:${active ? 'var(--onGold, #fff)' : 'var(--text2)'};border:1px solid ${active ? 'var(--gold, var(--primary))' : 'var(--border)'}"><i class="fas ${icon}" style="font-size:11px"></i>${Sec.escapeHTML(COMPLAINT_KIND_LABELS[k])}</button>`;
+          }).join('');
+        }
+        const cats = complaintCatsForKind(kind);
+        if (!cats.some(c => c.label === state.complaintCategory)) state.complaintCategory = cats[0].label;
+        if (catWrap) {
+          catWrap.innerHTML = cats.map(c => {
+            const active = c.label === state.complaintCategory;
+            return `<button type="button" onclick="setNewComplaintCategory('${Sec.escapeHTML(c.label)}')" style="display:flex;align-items:center;gap:7px;padding:9px 13px;border-radius:10px;font-size:11.5px;font-weight:600;cursor:pointer;background:${active ? 'var(--gold, var(--primary))' : 'var(--surface2)'};color:${active ? 'var(--onGold, #fff)' : 'var(--text2)'};border:1px solid ${active ? 'var(--gold, var(--primary))' : 'var(--border)'}"><i class="fas ${c.icon}" style="font-size:11px"></i>${Sec.escapeHTML(c.label)}</button>`;
+          }).join('');
+        }
+        if (descLabel) descLabel.textContent = kind === 'suggestion' ? 'تفاصيل الاقتراح' : 'تفاصيل الشكوى';
+        if (submitBtn) submitBtn.innerHTML = `<i class="fas fa-paper-plane"></i> ${kind === 'suggestion' ? 'إرسال الاقتراح' : 'إرسال الشكوى'}`;
+        if (anonTitle) anonTitle.textContent = kind === 'suggestion' ? 'ارفع الاقتراح كمجهول' : 'ارفع الشكوى كمجهول';
+        if (anonHint) anonHint.textContent = kind === 'suggestion' ? 'لن يظهر اسمك مع هذا الاقتراح' : 'لن يظهر اسمك مع هذه الشكوى';
+        if (anonBtn) {
+          anonBtn.classList.toggle('is-on', !!state.complaintAnonymous);
+          anonBtn.setAttribute('aria-pressed', state.complaintAnonymous ? 'true' : 'false');
+        }
+      }
+
+      function setNewComplaintKind(kind) {
+        state.complaintKind = kind === 'suggestion' ? 'suggestion' : 'complaint';
+        syncNewComplaintForm();
+      }
+
+      function setNewComplaintCategory(label) {
+        state.complaintCategory = label;
+        syncNewComplaintForm();
+      }
+
+      function toggleComplaintAnonymous() {
+        state.complaintAnonymous = !state.complaintAnonymous;
+        syncNewComplaintForm();
+      }
+
+      function updateCpAttachLabel() {
+        const label = document.getElementById('cpAttachLabel');
+        if (!label) return;
+        const n = (state.uploadedFiles.cp || []).length;
+        label.textContent = n > 0
+          ? `${n} ملف مرفق — اضغط لإضافة المزيد`
+          : 'اضغط لإرفاق ملف';
+      }
+
+      async function clearComplaintAttachFiles() {
+        try {
+          if (typeof cleanupUploadSession === 'function') await cleanupUploadSession('cp');
+        } catch (_) { /* noop */ }
+        state.uploadedFiles.cp = [];
+        const area = document.getElementById('cpFileArea');
+        if (area) area.innerHTML = '';
+        const input = document.getElementById('cpAttachInput');
+        if (input) input.value = '';
+        updateCpAttachLabel();
+        if (typeof syncAttachmentSubmitButtons === 'function') syncAttachmentSubmitButtons('cp');
+      }
+
+      async function buildComplaintAttachmentsPayload(anonymous) {
+        const files = [...(state.uploadedFiles.cp || [])];
+        const atts = [];
+        if (anonymous) atts.push({ __anon: true });
+        if (!files.length) return atts;
+
+        for (const file of files) {
+          if (file.prepStatus === 'error') {
+            throw new Error(file.prepError || 'مرفق فاشل — أزله أو أعد اختياره');
+          }
+          await waitForAttachmentPrep(file);
+          let fileId = file.tempKey;
+          if (!fileId && file.devSkipR2) {
+            const tempFolder = state.uploadTempFolders?.cp || await ensureUploadTempFolder('cp');
+            const result = await uploadToCloudflare(file, tempFolder, state.currentUser?.name || 'موظف');
+            if (!result || !result.success) throw new Error(result?.error || 'فشل رفع المرفق');
+            fileId = result.fileId;
+          }
+          if (!fileId) throw new Error('المرفق غير جاهز بعد');
+          atts.push({
+            n: file.name,
+            p: fileId,
+            t: (typeof getNow === 'function' ? getNow() : new Date().toISOString()),
+            ...(file.transcoded ? { v: 'h264' } : {}),
+            ...(file.devDataUrl ? { u: file.devDataUrl } : {})
+          });
+        }
+        return atts;
+      }
+
+      function openNewComplaintModal() {
+        if (!canSubmitComplaint()) {
+          showToast('سجّل الدخول لرفع شكوى أو اقتراح', 'warning');
+          return;
+        }
+        state.complaintKind = 'complaint';
+        state.complaintCategory = COMPLAINT_CATS[0].label;
+        state.complaintAnonymous = false;
+        const desc = document.getElementById('cpDescText');
+        if (desc) desc.value = '';
+        void clearComplaintAttachFiles();
+        syncNewComplaintForm();
+        if (typeof isViolDetailMobSheet === 'function' && isViolDetailMobSheet()) {
+          openNewComplaintSheetAnimated();
+        } else {
+          openModal('newComplaintModal');
+        }
+      }
+
+      function closeNewComplaintModal() {
+        const modal = document.getElementById('newComplaintModal');
+        if (typeof isViolDetailMobSheet === 'function' && isViolDetailMobSheet()
+          && modal?.classList.contains('open')) {
+          closeNewComplaintSheet();
+          return;
+        }
+        closeModal('newComplaintModal');
+      }
+
+      async function submitComplaintFromUi() {
+        if (!canSubmitComplaint()) {
+          showToast('سجّل الدخول لرفع شكوى أو اقتراح', 'warning');
+          return;
+        }
+        const desc = String(document.getElementById('cpDescText')?.value || '').trim();
+        if (!desc) {
+          showToast('اكتب تفاصيل الشكوى أو الاقتراح', 'warning');
+          return;
+        }
+        const files = state.uploadedFiles.cp || [];
+        if (files.some(f => f.prepStatus === 'error')) {
+          showToast('أزل المرفق الفاشل أو أعد اختياره', 'warning');
+          return;
+        }
+        if (files.length && isAttachmentPrepInProgress('cp')) {
+          showToast('انتظر اكتمال تحضير المرفقات', 'warning');
+          return;
+        }
+        const anonymous = !!state.complaintAnonymous;
+        const submitBtn = document.getElementById('cpSubmitBtn');
+        const prevHtml = submitBtn?.innerHTML;
+        try {
+          if (submitBtn) {
+            submitBtn.dataset.submitting = '1';
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> جاري الإرسال…`;
+          }
+          const attachments = await buildComplaintAttachmentsPayload(anonymous);
+          const { data, error } = await sb.from('complaints').insert({
+            employee_id: state.currentUser.id,
+            kind: state.complaintKind,
+            category: state.complaintCategory,
+            description: desc,
+            attachments
+          }).select().single();
+          if (error) throw error;
+          state.complaints = [data, ...(state.complaints || [])];
+          await clearComplaintAttachFiles();
+          closeNewComplaintModal();
+          const kindWord = state.complaintKind === 'suggestion' ? 'الاقتراح' : 'الشكوى';
+          showToast(
+            anonymous ? `تم إرسال ${kindWord} كمجهول بنجاح` : `تم إرسال ${kindWord} بنجاح`,
+            'success'
+          );
+          paintComplaintsPage();
+        } catch (e) {
+          showToast('فشل الإرسال: ' + (e.message || e), 'error');
+        } finally {
+          if (submitBtn) {
+            submitBtn.dataset.submitting = '0';
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = prevHtml || `<i class="fas fa-paper-plane"></i> إرسال الشكوى`;
+            syncAttachmentSubmitButtons('cp');
+            syncNewComplaintForm();
+          }
+        }
+      }
+
+      function renderComplaintThreadHtml(c) {
+        const logs = Array.isArray(c.logs) ? c.logs : [];
+        if (!logs.length) return '';
+        const anon = complaintIsAnonymous(c);
+        return `<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">` +
+          logs.map(m => {
+            const isAdmin = !!m.is_admin;
+            const author = (anon && !isAdmin) ? 'مجهول' : (m.author || '');
+            const bg = isAdmin ? 'color-mix(in srgb, var(--gold, var(--primary)) 12%, var(--surface))' : 'var(--surface)';
+            const authorColor = isAdmin ? 'var(--gold, var(--primary))' : 'var(--text2)';
+            const time = formatRelativeAr(m.at) || '';
+            const authorIc = isAdmin ? 'fa-headset' : (anon ? 'fa-user-secret' : 'fa-user');
+            return `
+              <div style="min-width:0;background:${bg};border:1px solid var(--border);border-radius:14px;padding:11px 13px">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px">
+                  <span style="display:inline-flex;align-items:center;gap:6px;font-size:10.5px;font-weight:700;color:${authorColor}"><i class="fas ${authorIc}" style="font-size:10px" aria-hidden="true"></i>${Sec.escapeHTML(author)}</span>
+                  <span style="font-size:9px;color:var(--text3)">${Sec.escapeHTML(time)}</span>
+                </div>
+                <div style="font-size:11.5px;color:var(--text2);line-height:1.7">${Sec.escapeHTML(m.text || '')}</div>
+              </div>`;
+          }).join('') +
+          `</div>`;
+      }
+
+      function renderComplaintDetailModal() {
+        const c = getComplaintById(state.activeComplaintId);
+        const host = document.getElementById('cpDetailBody');
+        if (!host) return;
+        if (!c) {
+          host.innerHTML = '';
+          return;
+        }
+        const kindLabel = COMPLAINT_KIND_LABELS[c.kind] || c.kind;
+        const kindColor = c.kind === 'suggestion' ? 'var(--info)' : 'var(--danger)';
+        const statusLabel = COMPLAINT_STATUS_LABELS[c.status] || c.status;
+        const statusColor = c.status === 'resolved' ? 'var(--success)' : 'var(--warning)';
+        const time = formatRelativeAr(c.created_at) || '';
+        const isResolved = c.status === 'resolved';
+        const canResolve = canManageComplaints() && !isResolved;
+        const replyLabel = 'الرد على ' + (c.kind === 'suggestion' ? 'الاقتراح' : 'الشكوى');
+
+        const whoName = (typeof complaintIsAnonymous === 'function' && complaintIsAnonymous(c))
+          ? 'مجهول'
+          : ((state.users || []).find(u => String(u.id) === String(c.employee_id))?.name || 'موظف');
+        const whoIc = whoName === 'مجهول' ? 'fa-user-secret' : 'fa-user';
+
+        host.innerHTML = `
+          <div class="cp-detail">
+            <div class="cp-detail__basics">
+              <div class="cp-detail__top">
+                <div class="cp-detail__title-row">
+                  <span class="cp-detail__title">${Sec.escapeHTML(c.category)}</span>
+                  <span class="cp-detail__kind" style="--tone:${kindColor}">${Sec.escapeHTML(kindLabel)}</span>
+                  <span class="cp-detail__num">${Sec.escapeHTML(c.complaint_number || '')}</span>
+                </div>
+              </div>
+              <div class="cp-detail__subrow">
+                <span class="cp-detail__who" style="display:inline-flex;align-items:center;gap:6px"><i class="fas ${whoIc}" style="font-size:10px" aria-hidden="true"></i>${Sec.escapeHTML(whoName)} <span class="cp-detail__muted">· ${Sec.escapeHTML(time)}</span></span>
+                <span class="cp-detail__status" style="--tone:${statusColor}">${Sec.escapeHTML(statusLabel)}</span>
+              </div>
+              <div class="cp-detail__desc">${Sec.escapeHTML(c.description)}</div>
+            </div>
+            <div class="cp-detail__thread">${renderComplaintThreadHtml(c) || '<div class="cp-detail__thread-empty">لا توجد ردود بعد</div>'}</div>
+            ${(c.employee_id === state.currentUser?.id || canManageComplaints()) ? (
+              isResolved
+                ? `<div class="cp-detail__compose is-locked">
+              <div class="cp-detail__resolved-banner">${c.kind === 'suggestion' ? 'تم حل الاقتراح' : 'تم حل الشكوى'}</div>
+            </div>`
+                : `<div class="cp-detail__compose">
+              <div class="cp-detail__compose-label">${Sec.escapeHTML(replyLabel)}</div>
+              <textarea id="cpReplyText" class="cp-detail__reply" placeholder="اكتب ردك هنا..."></textarea>
+              <div class="cp-detail__actions">
+                <button type="button" class="cp-detail__send" onclick="submitComplaintReplyFromUi()">إرسال الرد</button>
+                ${canResolve ? `<button type="button" class="cp-detail__resolve" onclick="resolveComplaintFromUi()"><i class="fas fa-check" aria-hidden="true"></i>حل</button>` : ''}
+              </div>
+            </div>`
+            ) : ''}
+          </div>
+        `;
+      }
+
+      function openComplaintDetail(id) {
+        state.activeComplaintId = id;
+        renderComplaintDetailModal();
+        if (typeof isViolDetailMobSheet === 'function' && isViolDetailMobSheet()) {
+          openComplaintDetailSheetAnimated();
+        } else {
+          openModal('complaintDetailModal');
+        }
+      }
+
+      function closeComplaintDetail() {
+        state.activeComplaintId = null;
+        const modal = document.getElementById('complaintDetailModal');
+        if (typeof isViolDetailMobSheet === 'function' && isViolDetailMobSheet()
+          && modal?.classList.contains('open')) {
+          closeComplaintDetailSheet();
+          return;
+        }
+        closeModal('complaintDetailModal');
+      }
+
+      async function submitComplaintReplyFromUi() {
+        const c = getComplaintById(state.activeComplaintId);
+        if (c && c.status === 'resolved') {
+          showToast('الشكوى محلولة — الرد مقفول', 'warning');
+          return;
+        }
+        const text = String(document.getElementById('cpReplyText')?.value || '').trim();
+        if (!text) {
+          showToast('اكتب نص الرد', 'warning');
+          return;
+        }
+        if (!state.activeComplaintId) return;
+        try {
+          const { data, error } = await sb.rpc('add_complaint_reply', {
+            p_complaint_id: state.activeComplaintId,
+            p_text: text
+          });
+          if (error) throw error;
+          if (!data?.ok) {
+            showToast(data?.error || 'تعذّر إرسال الرد', 'error');
+            return;
+          }
+          const idx = (state.complaints || []).findIndex(c => c.id === data.complaint.id);
+          if (idx >= 0) state.complaints[idx] = data.complaint;
+          else state.complaints = [data.complaint, ...(state.complaints || [])];
+          renderComplaintDetailModal();
+          paintComplaintsPage();
+          showToast('تم إرسال الرد', 'success');
+        } catch (e) {
+          showToast('فشل إرسال الرد: ' + (e.message || e), 'error');
+        }
+      }
+
+      async function resolveComplaintFromUi() {
+        if (!state.activeComplaintId) return;
+        try {
+          const { data, error } = await sb.rpc('resolve_complaint', { p_complaint_id: state.activeComplaintId });
+          if (error) throw error;
+          if (!data?.ok) {
+            showToast(data?.error || 'تعذّر إغلاق الشكوى', 'error');
+            return;
+          }
+          const idx = (state.complaints || []).findIndex(c => c.id === data.complaint.id);
+          if (idx >= 0) state.complaints[idx] = data.complaint;
+          renderComplaintDetailModal();
+          paintComplaintsPage();
+          showToast('تم وضع علامة "تم الحل"', 'success');
+        } catch (e) {
+          showToast('فشل الإغلاق: ' + (e.message || e), 'error');
+        }
+      }
+
+      function setupComplaintsRealtime() {
+        if (state._complaintsChannel) {
+          try { sb.removeChannel(state._complaintsChannel); } catch (_) { /* noop */ }
+          state._complaintsChannel = null;
+        }
+        if (!canSubmitComplaint()) return;
+        const ch = sb.channel('public:complaints')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'complaints' }, (payload) => {
+            const row = payload.new || payload.old;
+            if (!row?.id) return;
+            let list = [...(state.complaints || [])];
+            if (payload.eventType === 'DELETE') {
+              list = list.filter(c => c.id !== row.id);
+            } else {
+              const idx = list.findIndex(c => c.id === row.id);
+              if (idx >= 0) list[idx] = payload.new;
+              else list.unshift(payload.new);
+            }
+            state.complaints = list.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+            const tab = document.getElementById('tab-complaints');
+            if (tab?.classList.contains('active')) {
+              if (typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi()) {
+                if (typeof renderComplaintsDesktop === 'function') renderComplaintsDesktop({ soft: true });
+              } else if (typeof paintComplaintsPage === 'function') {
+                paintComplaintsPage();
+              }
+            }
+            if (state.activeComplaintId === row.id) renderComplaintDetailModal();
+            if (state._rdCmplDetailId === row.id) renderComplaintsOverlays();
+          })
+          .subscribe();
+        state._complaintsChannel = ch;
+        state.realtimeChannels.push(ch);
+      }
+
+      window.renderComplaintsPage = renderComplaintsPage;
+      window.setComplaintTypeFilter = setComplaintTypeFilter;
+      window.openNewComplaintModal = openNewComplaintModal;
+      window.closeNewComplaintModal = closeNewComplaintModal;
+      window.closeNewComplaintSheet = closeNewComplaintSheet;
+      window.setNewComplaintKind = setNewComplaintKind;
+      window.setNewComplaintCategory = setNewComplaintCategory;
+      window.toggleComplaintAnonymous = toggleComplaintAnonymous;
+      window.submitComplaintFromUi = submitComplaintFromUi;
+      window.openComplaintDetail = openComplaintDetail;
+      window.closeComplaintDetail = closeComplaintDetail;
+      window.closeComplaintDetailSheet = closeComplaintDetailSheet;
+      window.submitComplaintReplyFromUi = submitComplaintReplyFromUi;
+      window.resolveComplaintFromUi = resolveComplaintFromUi;
+
 
       // ═══════════════════════════════════════════════════════════════════════════
 
