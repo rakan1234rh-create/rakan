@@ -535,13 +535,52 @@ html.mr-mobile-ui #tab-complaints .cp-card__status {
   font-size: 22px;
   color: var(--text3);
 }
+.rd-cmpl-att-card {
+  padding-bottom: 0;
+}
 .rd-cmpl-att-name {
-  padding: 0 8px 8px;
-  font-size: 10.5px;
-  color: var(--text2);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  display: none;
+}
+.rd-cmpl-atts--compact {
+  margin-top: 8px;
+}
+.rd-cmpl-atts--compact .rd-cmpl-atts__grid {
+  gap: 8px;
+}
+.rd-cmpl-atts--compact .rd-cmpl-att-card {
+  width: 64px;
+  min-height: 64px;
+}
+.rd-cmpl-reply-files,
+.cp-detail__reply-files {
+  margin: 0 0 12px;
+}
+.rd-cmpl-attach--reply {
+  margin-bottom: 10px !important;
+}
+.cp-detail__reply-attach {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: var(--surface2);
+  border: 1.5px dashed var(--border);
+  border-radius: 12px;
+  padding: 14px 12px;
+  margin: 0 0 10px;
+  color: var(--text);
+  font-family: inherit;
+  cursor: pointer;
+}
+.cp-detail__reply-attach i {
+  font-size: 16px;
+  color: var(--text3);
+}
+.cp-detail__reply-attach span {
+  font-size: 12px;
+  font-weight: 600;
 }
 .rd-cmpl-card__atts,
 .cp-card__atts {

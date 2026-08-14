@@ -1147,8 +1147,8 @@
         violationTypes: [],      // أنواع المخالفات
         notifications: [],      // الإشعارات
         broadcastInbox: [],     // نشرات admin الواردة للمستخدم
-        uploadedFiles: { nt: [], resp: [], cp: [] },  // الملفات المرفوعة
-        uploadTempFolders: { nt: null, resp: null, cp: null },
+        uploadedFiles: { nt: [], resp: [], cp: [], cpr: [] },  // الملفات المرفوعة
+        uploadTempFolders: { nt: null, resp: null, cp: null, cpr: null },
         ntPickedEmployee: null,  // الموظف المختار في نموذج رصد المخالفة
         ntPickedViolationType: null,  // نوع المخالفة المختار في نموذج رصد المخالفة
         editingTicket: null,    // التذكرة قيد التحرير
@@ -15953,8 +15953,9 @@
       }
 
       /** نقل مرفقات الشكوى من temp_ إلى مجلد دائم complaints/{رقم} */
-      async function moveComplaintAttachmentsToFinalFolder(complaintId, complaintNumber, attachments) {
+      async function moveComplaintAttachmentsToFinalFolder(complaintId, complaintNumber, attachments, opts = {}) {
         if (!Array.isArray(attachments) || !attachments.length) return null;
+        const persistColumn = opts.persistColumn !== false;
         const backend = await resolveR2Backend();
         const safeNum = String(complaintNumber || complaintId || 'unknown').replace(/[^\w.\-]/g, '_');
         const r2Folder = `complaints/${safeNum}`;
@@ -15975,7 +15976,7 @@
                 movedAny = true;
               }
             }
-            if (movedAny) {
+            if (movedAny && persistColumn) {
               await sb.from('complaints').update({ attachments: updatedAtts }).eq('id', complaintId);
             }
             return movedAny ? updatedAtts : null;
@@ -16005,13 +16006,13 @@
           movedAny = true;
         }
 
-        if (movedAny) {
+        if (movedAny && persistColumn) {
           await sb.from('complaints').update({ attachments: updatedAtts }).eq('id', complaintId);
         }
         if (failed.length) {
           throw new Error('فشل تثبيت ' + failed.length + ' مرفق(ات) للشكوى');
         }
-        return movedAny ? updatedAtts : null;
+        return movedAny ? updatedAtts : (updatedAtts.length ? updatedAtts : null);
       }
 
       function makeAttachmentCancelHandle() {
@@ -16046,7 +16047,7 @@
       }
 
       async function ensureUploadTempFolder(scope) {
-        if (!state.uploadTempFolders) state.uploadTempFolders = { nt: null, resp: null, cp: null };
+        if (!state.uploadTempFolders) state.uploadTempFolders = { nt: null, resp: null, cp: null, cpr: null };
         if (state.uploadTempFolders[scope]) return state.uploadTempFolders[scope];
         const folder = await buildTempUploadFolder();
         state.uploadTempFolders[scope] = folder;
@@ -17137,6 +17138,21 @@
             form.attachCount = files.length;
             if (form.open && typeof renderComplaintsOverlays === 'function') renderComplaintsOverlays();
           }
+        }
+
+        if (scope === 'cpr') {
+          if (typeof updateCprAttachLabel === 'function') updateCprAttachLabel();
+          const block = files.length > 0 && (inProgress || hasError || !allReady);
+          ['rdCmplReplySendBtn', 'cpReplySendBtn'].forEach((id) => {
+            const btn = document.getElementById(id);
+            if (!btn || btn.dataset.submitting === '1') return;
+            btn.disabled = !!block;
+            btn.style.opacity = block ? '0.55' : '';
+            btn.style.cursor = block ? 'not-allowed' : '';
+            if (inProgress) btn.title = 'انتظر اكتمال تحضير المرفقات…';
+            else if (hasError) btn.title = 'أزل المرفق الفاشل أو أعد اختياره';
+            else btn.title = '';
+          });
         }
       }
 
@@ -18236,8 +18252,16 @@
 
         if (!state.uploadedFiles[scope]) state.uploadedFiles[scope] = [];
 
-        const areaId = scope === 'nt' ? 'ntFileArea' : (scope === 'cp' ? 'cpFileArea' : 'respFileArea');
+        const areaId = scope === 'nt' ? 'ntFileArea'
+          : scope === 'cp' ? 'cpFileArea'
+            : scope === 'cpr' ? 'cprFileArea'
+              : 'respFileArea';
         const area = document.getElementById(areaId);
+        if (!area) {
+          showToast('تعذّر العثور على منطقة المرفقات', 'error');
+          event.target.value = '';
+          return;
+        }
 
         for (let fileIndex = 0; fileIndex < files.length; fileIndex++) {
           const file = files[fileIndex];
@@ -35593,15 +35617,24 @@
 
       function getComplaintFileAttachments(c) {
         const raw = (c && c._raw) || c || {};
-        let atts = raw.attachments;
+        return normalizeComplaintAttachmentList(raw.attachments);
+      }
+
+      function normalizeComplaintAttachmentList(raw) {
+        let atts = raw;
         if (typeof parseDbJsonArray === 'function') atts = parseDbJsonArray(atts);
         if (!Array.isArray(atts)) return [];
         return atts.filter(a => a && typeof a === 'object' && !a.__anon && (a.p || a.path || a.u || a.url));
       }
 
-      function renderComplaintAttachmentsHtml(atts) {
+      function renderComplaintAttachmentsHtml(atts, opts = {}) {
         if (!atts || !atts.length) return '';
+        const listId = String(opts.listId || 'main');
+        if (!state._complaintAttLists) state._complaintAttLists = {};
+        state._complaintAttLists[listId] = atts;
+        const compact = !!opts.compact;
         const placeholderSvg = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><rect fill="%23e5e7eb" width="80" height="80" rx="8"/><text x="40" y="44" text-anchor="middle" fill="%239ca3af" font-size="10">جاري...</text></svg>')}`;
+        const listIdJs = JSON.stringify(listId);
         const items = atts.map((a, idx) => {
           const ext = typeof attachmentExtFromAtt === 'function' ? attachmentExtFromAtt(a) : '';
           const isImg = typeof isAttachmentImageExt === 'function' && isAttachmentImageExt(ext);
@@ -35619,16 +35652,20 @@
           } else {
             thumb = `<div class="att-thumb"><i class="fas ${isVid ? 'fa-video' : 'fa-file-lines'}" aria-hidden="true"></i></div>`;
           }
-          return `<button type="button" class="rd-cmpl-att-card" onclick="event.stopPropagation();openComplaintAttByIndex(${idx})" aria-label="${Sec.escapeHTML(name)}">${thumb}<span class="rd-cmpl-att-name">${Sec.escapeHTML(name)}</span></button>`;
+          return `<button type="button" class="rd-cmpl-att-card" onclick="event.stopPropagation();openComplaintAttByIndex(${idx}, ${listIdJs})" aria-label="${Sec.escapeHTML(name)}">${thumb}</button>`;
         }).join('');
+        if (compact) {
+          return `<div class="rd-cmpl-atts rd-cmpl-atts--compact"><div class="rd-cmpl-atts__grid">${items}</div></div>`;
+        }
         return `<div class="rd-cmpl-atts">
           <div class="rd-cmpl-atts__lbl"><i class="fas fa-paperclip" aria-hidden="true"></i> المرفقات (${atts.length})</div>
           <div class="rd-cmpl-atts__grid">${items}</div>
         </div>`;
       }
 
-      function openComplaintAttByIndex(idx) {
-        const atts = state._complaintAttList || [];
+      function openComplaintAttByIndex(idx, listId) {
+        const lists = state._complaintAttLists || {};
+        const atts = (listId && lists[listId]) || state._complaintAttList || [];
         if (!atts.length) return;
         state._attList = atts;
         state._attIndex = (idx >= 0 && idx < atts.length) ? idx : 0;
@@ -35672,7 +35709,8 @@
             author: (isAnonymous && !m.is_admin) ? 'مجهول' : (m.author || ''),
             text: m.text || '',
             time: (typeof formatRelativeAr === 'function' && formatRelativeAr(m.at)) || '',
-            isAdmin: !!m.is_admin
+            isAdmin: !!m.is_admin,
+            attachments: normalizeComplaintAttachmentList(m.attachments)
           })),
           _raw: c
         };
@@ -35888,10 +35926,17 @@
           const st = rdCmplStatusMeta(active.status);
           const kindLbl = active.kind === 'suggestion' ? 'اقتراح' : 'شكوى';
           const replyLabel = 'الرد على ' + (active.kind === 'suggestion' ? 'الاقتراح' : 'الشكوى');
-          const thread = (active.thread || []).map(msg => {
+          const thread = (active.thread || []).map((msg, msgIdx) => {
             const authorIc = msg.isAdmin
               ? 'fa-headset'
               : (active.isAnonymous ? 'fa-user-secret' : 'fa-user');
+            const msgAtts = Array.isArray(msg.attachments) ? msg.attachments : [];
+            const msgAttsHtml = msgAtts.length
+              ? renderComplaintAttachmentsHtml(msgAtts, { listId: `desk-reply-${msgIdx}`, compact: true })
+              : '';
+            const textHtml = msg.text
+              ? `<div class="rd-cmpl-thread-text">${Sec.escapeHTML(msg.text)}</div>`
+              : '';
             return `
             <div class="rd-cmpl-thread-msg">
               <div class="rd-cmpl-thread-bubble${msg.isAdmin ? ' is-admin' : ''}">
@@ -35899,7 +35944,8 @@
                   <span class="rd-cmpl-thread-author${msg.isAdmin ? ' is-admin' : ''}"><i class="fas ${authorIc} rd-cmpl-thread-author-ic" aria-hidden="true"></i>${Sec.escapeHTML(msg.author || '')}</span>
                   <span class="rd-cmpl-thread-time">${Sec.escapeHTML(msg.time || '')}</span>
                 </div>
-                <div class="rd-cmpl-thread-text">${Sec.escapeHTML(msg.text || '')}</div>
+                ${textHtml}
+                ${msgAttsHtml}
               </div>
             </div>`;
           }).join('');
@@ -35910,7 +35956,11 @@
               : '');
           const fileAtts = getComplaintFileAttachments(active);
           state._complaintAttList = fileAtts;
-          const attsHtml = renderComplaintAttachmentsHtml(fileAtts);
+          const attsHtml = renderComplaintAttachmentsHtml(fileAtts, { listId: 'desk-main' });
+          const replyAttachN = (state.uploadedFiles.cpr || []).length;
+          const replyAttachLabel = replyAttachN > 0
+            ? `${replyAttachN} ملف مرفق — اضغط لإضافة المزيد`
+            : 'إرفاق ملف مع الرد';
           const composeHtml = active.status === 'resolved'
             ? `<div class="rd-cmpl-panel__compose is-locked">
                   <div class="rd-cmpl-resolved-banner">${active.kind === 'suggestion' ? 'تم حل الاقتراح' : 'تم حل الشكوى'}</div>
@@ -35918,8 +35968,14 @@
             : `<div class="rd-cmpl-panel__compose">
                   <div class="rd-cmpl-field-label">${Sec.escapeHTML(replyLabel)}</div>
                   <textarea class="rd-cmpl-textarea" id="rdCmplReplyInput" placeholder="اكتب ردك هنا..." rows="4">${Sec.escapeHTML(state._rdCmplReply || '')}</textarea>
+                  <input type="file" id="cprAttachInput" accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx" multiple hidden onchange="handleFiles(event,'cpr')">
+                  <button type="button" class="rd-cmpl-attach rd-cmpl-attach--reply" onclick="rdCmplReplySimulateAttach()">
+                    <i class="fas fa-paperclip" aria-hidden="true"></i>
+                    <span id="cprAttachLabel">${Sec.escapeHTML(replyAttachLabel)}</span>
+                  </button>
+                  <div id="cprFileArea" class="file-list rd-cmpl-reply-files"></div>
                   <div class="rd-cmpl-panel__actions">
-                    <button type="button" class="rd-cmpl-btn rd-cmpl-btn--primary" onclick="rdSubmitComplaintReply()">إرسال الرد</button>
+                    <button type="button" class="rd-cmpl-btn rd-cmpl-btn--primary" id="rdCmplReplySendBtn" onclick="rdSubmitComplaintReply()">إرسال الرد</button>
                     ${resolveBtn}
                   </div>
                 </div>`;
@@ -36030,6 +36086,8 @@
             state._rdCmplReply = e.target.value;
           });
         }
+        if (typeof paintComplaintReplyAttachFileList === 'function') paintComplaintReplyAttachFileList();
+        if (typeof syncAttachmentSubmitButtons === 'function') syncAttachmentSubmitButtons('cpr');
       }
 
       function rdCmplFilter(id) {
@@ -36072,6 +36130,10 @@
 
       function rdCmplSimulateAttach() {
         document.getElementById('cpAttachInput')?.click();
+      }
+
+      function rdCmplReplySimulateAttach() {
+        document.getElementById('cprAttachInput')?.click();
       }
 
       function rdCmplToggleAnonymous() {
@@ -36139,12 +36201,14 @@
         form.open = false;
         state._rdCmplDetailId = id;
         state._rdCmplReply = '';
+        void clearComplaintReplyAttachFiles();
         renderComplaintsOverlays();
       }
 
       function rdCloseComplaintDetail() {
         state._rdCmplDetailId = null;
         state._rdCmplReply = '';
+        void clearComplaintReplyAttachFiles();
         renderComplaintsOverlays();
       }
 
@@ -36158,14 +36222,41 @@
         }
         const input = document.getElementById('rdCmplReplyInput');
         const text = String((input && input.value) || state._rdCmplReply || '').trim();
-        if (!text) {
-          showToast('اكتب الرد أولاً', 'warning');
+        const files = state.uploadedFiles.cpr || [];
+        if (files.some(f => f.prepStatus === 'error')) {
+          showToast('أزل المرفق الفاشل أو أعد اختياره', 'warning');
           return;
         }
+        if (files.length && isAttachmentPrepInProgress('cpr')) {
+          showToast('انتظر اكتمال تحضير المرفقات', 'warning');
+          return;
+        }
+        if (!text && !files.length) {
+          showToast('اكتب الرد أو أرفق ملفاً', 'warning');
+          return;
+        }
+        const sendBtn = document.getElementById('rdCmplReplySendBtn');
+        const prevHtml = sendBtn?.innerHTML;
         try {
+          if (sendBtn) {
+            sendBtn.dataset.submitting = '1';
+            sendBtn.disabled = true;
+            sendBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> جاري الإرسال…`;
+          }
+          let attachments = await buildComplaintReplyAttachmentsPayload();
+          if (attachments.length && row) {
+            const moved = await moveComplaintAttachmentsToFinalFolder(
+              row.id,
+              row.complaint_number,
+              attachments,
+              { persistColumn: false }
+            );
+            if (moved) attachments = moved;
+          }
           const { data, error } = await sb.rpc('add_complaint_reply', {
             p_complaint_id: id,
-            p_text: text
+            p_text: text,
+            p_attachments: attachments
           });
           if (error) throw error;
           if (!data?.ok) {
@@ -36176,10 +36267,18 @@
           if (idx >= 0) state.complaints[idx] = data.complaint;
           else state.complaints = [data.complaint, ...(state.complaints || [])];
           state._rdCmplReply = '';
+          await clearComplaintReplyAttachFiles({ deleteRemote: false });
           await renderComplaintsDesktop({ soft: true });
           showToast('تم إرسال الرد', 'success');
         } catch (e) {
           showToast('فشل إرسال الرد: ' + (e.message || e), 'error');
+        } finally {
+          if (sendBtn) {
+            sendBtn.dataset.submitting = '0';
+            sendBtn.disabled = false;
+            sendBtn.innerHTML = prevHtml || 'إرسال الرد';
+            if (typeof syncAttachmentSubmitButtons === 'function') syncAttachmentSubmitButtons('cpr');
+          }
         }
       }
 
@@ -36211,6 +36310,7 @@
       window.rdCmplSetKind = rdCmplSetKind;
       window.rdCmplSetCategory = rdCmplSetCategory;
       window.rdCmplSimulateAttach = rdCmplSimulateAttach;
+      window.rdCmplReplySimulateAttach = rdCmplReplySimulateAttach;
       window.rdCmplToggleAnonymous = rdCmplToggleAnonymous;
       window.rdSubmitComplaintForm = rdSubmitComplaintForm;
       window.rdOpenComplaintDetail = rdOpenComplaintDetail;
@@ -36441,6 +36541,88 @@
           : 'اضغط لإرفاق ملف';
       }
 
+      function updateCprAttachLabel() {
+        const n = (state.uploadedFiles.cpr || []).length;
+        const text = n > 0
+          ? `${n} ملف مرفق — اضغط لإضافة المزيد`
+          : 'إرفاق ملف مع الرد';
+        document.querySelectorAll('#cprAttachLabel').forEach((label) => {
+          label.textContent = text;
+        });
+      }
+
+      function paintComplaintReplyAttachFileList() {
+        const area = document.getElementById('cprFileArea');
+        if (!area) return;
+        const files = state.uploadedFiles.cpr || [];
+        area.innerHTML = files.map((entry) => {
+          const name = entry.name || 'ملف';
+          return `<div class="file-item" data-att-file-id="${Sec.escapeHTML(entry._fileId || '')}">
+            <div class="file-item-content">
+              <i class="fas fa-file-alt" style="color:var(--blue)"></i>
+              <span style="flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${Sec.escapeHTML(name)}">${Sec.escapeHTML(name)}</span>
+              <span class="file-item-status" style="font-size:11px; color:var(--text3);">${Sec.escapeHTML(attachmentPrepStatusLabel(entry))}</span>
+              <button type="button" onclick="removeFileById('cpr', '${Sec.escapeHTML(entry._fileId || '')}', this)">حذف المرفق <i class="fas fa-times"></i></button>
+            </div>
+          </div>`;
+        }).join('');
+        updateCprAttachLabel();
+      }
+
+      async function clearComplaintReplyAttachFiles(opts = {}) {
+        const deleteRemote = opts.deleteRemote !== false;
+        const files = [...(state.uploadedFiles.cpr || [])];
+        state.uploadedFiles.cpr = [];
+        if (deleteRemote) {
+          for (const f of files) {
+            try { cancelAttachmentPrep(f); } catch (_) { /* noop */ }
+          }
+          await Promise.all(files.map((f) => deleteAttachmentTempKey(f).catch(() => {})));
+          if (state.uploadTempFolders) state.uploadTempFolders.cpr = null;
+        } else {
+          for (const f of files) {
+            try { cancelAttachmentPrep(f); } catch (_) { /* noop */ }
+            f.tempKey = null;
+          }
+          if (state.uploadTempFolders) state.uploadTempFolders.cpr = null;
+        }
+        const area = document.getElementById('cprFileArea');
+        if (area) area.innerHTML = '';
+        const input = document.getElementById('cprAttachInput');
+        if (input) input.value = '';
+        updateCprAttachLabel();
+        if (typeof syncAttachmentSubmitButtons === 'function') syncAttachmentSubmitButtons('cpr');
+      }
+
+      async function buildComplaintReplyAttachmentsPayload() {
+        const files = [...(state.uploadedFiles.cpr || [])];
+        const atts = [];
+        if (!files.length) return atts;
+
+        for (const file of files) {
+          if (file.prepStatus === 'error') {
+            throw new Error(file.prepError || 'مرفق فاشل — أزله أو أعد اختياره');
+          }
+          await waitForAttachmentPrep(file);
+          let fileId = file.tempKey;
+          if (!fileId && file.devSkipR2) {
+            const tempFolder = state.uploadTempFolders?.cpr || await ensureUploadTempFolder('cpr');
+            const result = await uploadToCloudflare(file, tempFolder, state.currentUser?.name || 'موظف');
+            if (!result || !result.success) throw new Error(result?.error || 'فشل رفع المرفق');
+            fileId = result.fileId;
+          }
+          if (!fileId) throw new Error('المرفق غير جاهز بعد');
+          atts.push({
+            n: file.name,
+            p: fileId,
+            t: (typeof getNow === 'function' ? getNow() : new Date().toISOString()),
+            ...(file.transcoded ? { v: 'h264' } : {}),
+            ...(file.devDataUrl ? { u: file.devDataUrl } : {})
+          });
+        }
+        return atts;
+      }
+
       async function clearComplaintAttachFiles(opts = {}) {
         const deleteRemote = opts.deleteRemote !== false;
         if (deleteRemote) {
@@ -36604,20 +36786,28 @@
         if (!logs.length) return '';
         const anon = complaintIsAnonymous(c);
         return `<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">` +
-          logs.map(m => {
+          logs.map((m, msgIdx) => {
             const isAdmin = !!m.is_admin;
             const author = (anon && !isAdmin) ? 'مجهول' : (m.author || '');
             const bg = isAdmin ? 'color-mix(in srgb, var(--gold, var(--primary)) 12%, var(--surface))' : 'var(--surface)';
             const authorColor = isAdmin ? 'var(--gold, var(--primary))' : 'var(--text2)';
             const time = formatRelativeAr(m.at) || '';
             const authorIc = isAdmin ? 'fa-headset' : (anon ? 'fa-user-secret' : 'fa-user');
+            const msgAtts = normalizeComplaintAttachmentList(m.attachments);
+            const msgAttsHtml = msgAtts.length
+              ? renderComplaintAttachmentsHtml(msgAtts, { listId: `mob-reply-${msgIdx}`, compact: true })
+              : '';
+            const textHtml = m.text
+              ? `<div style="font-size:11.5px;color:var(--text2);line-height:1.7">${Sec.escapeHTML(m.text)}</div>`
+              : '';
             return `
               <div style="min-width:0;background:${bg};border:1px solid var(--border);border-radius:14px;padding:11px 13px">
                 <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px">
                   <span style="display:inline-flex;align-items:center;gap:6px;font-size:10.5px;font-weight:700;color:${authorColor}"><i class="fas ${authorIc}" style="font-size:10px" aria-hidden="true"></i>${Sec.escapeHTML(author)}</span>
                   <span style="font-size:9px;color:var(--text3)">${Sec.escapeHTML(time)}</span>
                 </div>
-                <div style="font-size:11.5px;color:var(--text2);line-height:1.7">${Sec.escapeHTML(m.text || '')}</div>
+                ${textHtml}
+                ${msgAttsHtml}
               </div>`;
           }).join('') +
           `</div>`;
@@ -36647,7 +36837,11 @@
 
         const fileAtts = getComplaintFileAttachments(c);
         state._complaintAttList = fileAtts;
-        const attsHtml = renderComplaintAttachmentsHtml(fileAtts);
+        const attsHtml = renderComplaintAttachmentsHtml(fileAtts, { listId: 'mob-main' });
+        const replyAttachN = (state.uploadedFiles.cpr || []).length;
+        const replyAttachLabel = replyAttachN > 0
+          ? `${replyAttachN} ملف مرفق — اضغط لإضافة المزيد`
+          : 'إرفاق ملف مع الرد';
 
         host.innerHTML = `
           <div class="cp-detail">
@@ -36675,14 +36869,22 @@
                 : `<div class="cp-detail__compose">
               <div class="cp-detail__compose-label">${Sec.escapeHTML(replyLabel)}</div>
               <textarea id="cpReplyText" class="cp-detail__reply" placeholder="اكتب ردك هنا..."></textarea>
+              <input type="file" id="cprAttachInput" accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx" multiple hidden onchange="handleFiles(event,'cpr')">
+              <button type="button" class="cp-mob-attach cp-detail__reply-attach" onclick="document.getElementById('cprAttachInput').click()">
+                <i class="fas fa-paperclip" aria-hidden="true"></i>
+                <span id="cprAttachLabel">${Sec.escapeHTML(replyAttachLabel)}</span>
+              </button>
+              <div id="cprFileArea" class="file-list cp-mob-file-list cp-detail__reply-files"></div>
               <div class="cp-detail__actions">
-                <button type="button" class="cp-detail__send" onclick="submitComplaintReplyFromUi()">إرسال الرد</button>
+                <button type="button" class="cp-detail__send" id="cpReplySendBtn" onclick="submitComplaintReplyFromUi()">إرسال الرد</button>
                 ${canResolve ? `<button type="button" class="cp-detail__resolve" onclick="resolveComplaintFromUi()"><i class="fas fa-check" aria-hidden="true"></i>حل</button>` : ''}
               </div>
             </div>`
             ) : ''}
           </div>
         `;
+        if (typeof paintComplaintReplyAttachFileList === 'function') paintComplaintReplyAttachFileList();
+        if (typeof syncAttachmentSubmitButtons === 'function') syncAttachmentSubmitButtons('cpr');
         if (typeof loadAllCloudflareImages === 'function') {
           setTimeout(loadAllCloudflareImages, 80);
         }
@@ -36690,6 +36892,7 @@
 
       function openComplaintDetail(id) {
         state.activeComplaintId = id;
+        void clearComplaintReplyAttachFiles();
         renderComplaintDetailModal();
         if (typeof isViolDetailMobSheet === 'function' && isViolDetailMobSheet()) {
           openComplaintDetailSheetAnimated();
@@ -36700,6 +36903,7 @@
 
       function closeComplaintDetail() {
         state.activeComplaintId = null;
+        void clearComplaintReplyAttachFiles();
         const modal = document.getElementById('complaintDetailModal');
         if (typeof isViolDetailMobSheet === 'function' && isViolDetailMobSheet()
           && modal?.classList.contains('open')) {
@@ -36716,15 +36920,42 @@
           return;
         }
         const text = String(document.getElementById('cpReplyText')?.value || '').trim();
-        if (!text) {
-          showToast('اكتب نص الرد', 'warning');
+        const files = state.uploadedFiles.cpr || [];
+        if (files.some(f => f.prepStatus === 'error')) {
+          showToast('أزل المرفق الفاشل أو أعد اختياره', 'warning');
+          return;
+        }
+        if (files.length && isAttachmentPrepInProgress('cpr')) {
+          showToast('انتظر اكتمال تحضير المرفقات', 'warning');
+          return;
+        }
+        if (!text && !files.length) {
+          showToast('اكتب نص الرد أو أرفق ملفاً', 'warning');
           return;
         }
         if (!state.activeComplaintId) return;
+        const sendBtn = document.getElementById('cpReplySendBtn');
+        const prevHtml = sendBtn?.innerHTML;
         try {
+          if (sendBtn) {
+            sendBtn.dataset.submitting = '1';
+            sendBtn.disabled = true;
+            sendBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> جاري الإرسال…`;
+          }
+          let attachments = await buildComplaintReplyAttachmentsPayload();
+          if (attachments.length && c) {
+            const moved = await moveComplaintAttachmentsToFinalFolder(
+              c.id,
+              c.complaint_number,
+              attachments,
+              { persistColumn: false }
+            );
+            if (moved) attachments = moved;
+          }
           const { data, error } = await sb.rpc('add_complaint_reply', {
             p_complaint_id: state.activeComplaintId,
-            p_text: text
+            p_text: text,
+            p_attachments: attachments
           });
           if (error) throw error;
           if (!data?.ok) {
@@ -36734,11 +36965,19 @@
           const idx = (state.complaints || []).findIndex(c => c.id === data.complaint.id);
           if (idx >= 0) state.complaints[idx] = data.complaint;
           else state.complaints = [data.complaint, ...(state.complaints || [])];
+          await clearComplaintReplyAttachFiles({ deleteRemote: false });
           renderComplaintDetailModal();
           paintComplaintsPage();
           showToast('تم إرسال الرد', 'success');
         } catch (e) {
           showToast('فشل إرسال الرد: ' + (e.message || e), 'error');
+        } finally {
+          if (sendBtn) {
+            sendBtn.dataset.submitting = '0';
+            sendBtn.disabled = false;
+            sendBtn.innerHTML = prevHtml || 'إرسال الرد';
+            if (typeof syncAttachmentSubmitButtons === 'function') syncAttachmentSubmitButtons('cpr');
+          }
         }
       }
 
