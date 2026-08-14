@@ -35529,6 +35529,59 @@
         return atts.some(a => a && typeof a === 'object' && a.__anon === true);
       }
 
+      function getComplaintFileAttachments(c) {
+        const raw = (c && c._raw) || c || {};
+        let atts = raw.attachments;
+        if (typeof parseDbJsonArray === 'function') atts = parseDbJsonArray(atts);
+        if (!Array.isArray(atts)) return [];
+        return atts.filter(a => a && typeof a === 'object' && !a.__anon && (a.p || a.path || a.u || a.url));
+      }
+
+      function renderComplaintAttachmentsHtml(atts) {
+        if (!atts || !atts.length) return '';
+        const placeholderSvg = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><rect fill="%23e5e7eb" width="80" height="80" rx="8"/><text x="40" y="44" text-anchor="middle" fill="%239ca3af" font-size="10">جاري...</text></svg>')}`;
+        const items = atts.map((a, idx) => {
+          const ext = typeof attachmentExtFromAtt === 'function' ? attachmentExtFromAtt(a) : '';
+          const isImg = typeof isAttachmentImageExt === 'function' && isAttachmentImageExt(ext);
+          const isVid = typeof isAttachmentVideoExt === 'function' && isAttachmentVideoExt(ext);
+          const name = a.n || a.name || 'ملف';
+          const cfId = a.p || a.path || '';
+          const dataUrl = a.u || a.url || '';
+          let thumb;
+          if (isImg) {
+            if (String(dataUrl).startsWith('data:image/')) {
+              thumb = `<div class="att-thumb"><img src="${Sec.escapeHTML(dataUrl)}" alt="" loading="lazy" decoding="async"></div>`;
+            } else {
+              thumb = `<div class="att-thumb"><img data-cf-id="${Sec.escapeHTML(cfId)}" src="${placeholderSvg}" alt="" loading="lazy" decoding="async"></div>`;
+            }
+          } else {
+            thumb = `<div class="att-thumb"><i class="fas ${isVid ? 'fa-video' : 'fa-file-lines'}" aria-hidden="true"></i></div>`;
+          }
+          return `<button type="button" class="rd-cmpl-att-card" onclick="event.stopPropagation();openComplaintAttByIndex(${idx})" aria-label="${Sec.escapeHTML(name)}">${thumb}<span class="rd-cmpl-att-name">${Sec.escapeHTML(name)}</span></button>`;
+        }).join('');
+        return `<div class="rd-cmpl-atts">
+          <div class="rd-cmpl-atts__lbl"><i class="fas fa-paperclip" aria-hidden="true"></i> المرفقات (${atts.length})</div>
+          <div class="rd-cmpl-atts__grid">${items}</div>
+        </div>`;
+      }
+
+      function openComplaintAttByIndex(idx) {
+        const atts = state._complaintAttList || [];
+        if (!atts.length) return;
+        state._attList = atts;
+        state._attIndex = (idx >= 0 && idx < atts.length) ? idx : 0;
+        state._attViewerLoadGen = (state._attViewerLoadGen || 0) + 1;
+        const viewer = document.getElementById('attViewer');
+        if (!viewer) return;
+        const stage = viewer.querySelector('.att-viewer-stage');
+        if (stage) stage.style.transform = '';
+        viewer.classList.remove('att-dragging');
+        if (typeof mountAttViewerTop === 'function') mountAttViewerTop();
+        viewer.classList.add('open');
+        document.body.style.overflow = 'hidden';
+        if (typeof renderAttViewer === 'function') renderAttViewer();
+      }
+
       function mapComplaintToDesk(c) {
         if (!c) return null;
         const isAnonymous = complaintIsAnonymous(c);
@@ -35538,6 +35591,7 @@
           : (c.kind === 'suggestion' ? RD_SUGGESTION_CATS : RD_COMPLAINT_CATS));
         const cat = (cats || []).find(x => x.label === c.category) || (cats && cats[0]) || null;
         const logs = Array.isArray(c.logs) ? c.logs : [];
+        const fileAtts = getComplaintFileAttachments(c);
         return {
           id: c.id,
           kind: c.kind === 'suggestion' ? 'suggestion' : 'complaint',
@@ -35551,6 +35605,7 @@
           createdAt: c.created_at,
           status: c.status === 'resolved' ? 'resolved' : 'pending',
           complaintNumber: c.complaint_number || '',
+          attachCount: fileAtts.length,
           thread: logs.map(m => ({
             author: (isAnonymous && !m.is_admin) ? 'مجهول' : (m.author || ''),
             text: m.text || '',
@@ -35693,6 +35748,7 @@
                 <span class="rd-cmpl-card__status" style="--tone:${st.color}">${Sec.escapeHTML(st.label)}</span>
               </div>
               <div class="rd-cmpl-card__body">${Sec.escapeHTML(r.description || r.desc || '')}</div>
+              ${Number(r.attachCount) > 0 ? `<div class="rd-cmpl-card__atts"><i class="fas fa-paperclip" aria-hidden="true"></i>${Number(r.attachCount)} مرفق</div>` : ''}
               ${replyHtml}
             </article>`;
         }).join('');
@@ -35790,6 +35846,9 @@
             : ((typeof canManageComplaints === 'function' && canManageComplaints())
               ? `<button type="button" class="rd-cmpl-btn rd-cmpl-btn--ghost" onclick="rdResolveComplaint('${Sec.escapeHTML(active.id)}')"><i class="fas fa-check" aria-hidden="true"></i>تحديد كمحلولة</button>`
               : '');
+          const fileAtts = getComplaintFileAttachments(active);
+          state._complaintAttList = fileAtts;
+          const attsHtml = renderComplaintAttachmentsHtml(fileAtts);
           const composeHtml = active.status === 'resolved'
             ? `<div class="rd-cmpl-panel__compose is-locked">
                   <div class="rd-cmpl-resolved-banner">${active.kind === 'suggestion' ? 'تم حل الاقتراح' : 'تم حل الشكوى'}</div>
@@ -35820,11 +35879,14 @@
                     <span class="rd-cmpl-card__status" style="--tone:${st.color}">${Sec.escapeHTML(st.label)}</span>
                   </div>
                   <div class="rd-cmpl-panel__desc">${Sec.escapeHTML(active.description || active.desc || '')}</div>
+                  ${attsHtml}
                 </div>
                 <div class="rd-cmpl-thread">${thread || '<div class="rd-cmpl-thread-empty">لا توجد ردود بعد</div>'}</div>
                 ${composeHtml}
               </div>
             </div>`;
+        } else {
+          state._complaintAttList = [];
         }
 
         if (form.open) {
@@ -35881,6 +35943,9 @@
         }
 
         overlay.innerHTML = html;
+        if (typeof loadAllCloudflareImages === 'function') {
+          setTimeout(loadAllCloudflareImages, 80);
+        }
         if (keepQuiet) {
           overlay.querySelectorAll('.rd-cmpl-overlay, .rd-cmpl-panel').forEach((el) => {
             el.classList.add('rd-side--quiet');
@@ -36086,6 +36151,7 @@
       window.rdSubmitComplaintForm = rdSubmitComplaintForm;
       window.rdOpenComplaintDetail = rdOpenComplaintDetail;
       window.rdCloseComplaintDetail = rdCloseComplaintDetail;
+      window.openComplaintAttByIndex = openComplaintAttByIndex;
       window.rdSubmitComplaintReply = rdSubmitComplaintReply;
       window.rdResolveComplaint = rdResolveComplaint;
       window.renderComplaintsDesktop = renderComplaintsDesktop;
@@ -36163,6 +36229,7 @@
         const statusColor = c.status === 'resolved' ? 'var(--success)' : 'var(--warning)';
         const icon = complaintCategoryIcon(c);
         const time = formatRelativeAr(c.created_at) || '';
+        const attCount = getComplaintFileAttachments(c).length;
         return `
           <div class="cp-card" role="button" tabindex="0"
             onclick="openComplaintDetail('${Sec.escapeHTML(c.id)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openComplaintDetail('${Sec.escapeHTML(c.id)}')}">
@@ -36177,6 +36244,7 @@
               <span class="cp-card__kind" style="--tone:${kindColor}">${Sec.escapeHTML(kindLabel)}</span>
             </div>
             <div class="cp-card__body">${Sec.escapeHTML(c.description)}</div>
+            ${attCount > 0 ? `<div class="cp-card__atts"><i class="fas fa-paperclip" aria-hidden="true"></i>${attCount} مرفق</div>` : ''}
             <div class="cp-card__status" style="--tone:${statusColor}">${Sec.escapeHTML(statusLabel)}</div>
           </div>`;
       }
@@ -36486,6 +36554,10 @@
           : ((state.users || []).find(u => String(u.id) === String(c.employee_id))?.name || 'موظف');
         const whoIc = whoName === 'مجهول' ? 'fa-user-secret' : 'fa-user';
 
+        const fileAtts = getComplaintFileAttachments(c);
+        state._complaintAttList = fileAtts;
+        const attsHtml = renderComplaintAttachmentsHtml(fileAtts);
+
         host.innerHTML = `
           <div class="cp-detail">
             <div class="cp-detail__basics">
@@ -36501,6 +36573,7 @@
                 <span class="cp-detail__status" style="--tone:${statusColor}">${Sec.escapeHTML(statusLabel)}</span>
               </div>
               <div class="cp-detail__desc">${Sec.escapeHTML(c.description)}</div>
+              ${attsHtml}
             </div>
             <div class="cp-detail__thread">${renderComplaintThreadHtml(c) || '<div class="cp-detail__thread-empty">لا توجد ردود بعد</div>'}</div>
             ${(c.employee_id === state.currentUser?.id || canManageComplaints()) ? (
@@ -36519,6 +36592,9 @@
             ) : ''}
           </div>
         `;
+        if (typeof loadAllCloudflareImages === 'function') {
+          setTimeout(loadAllCloudflareImages, 80);
+        }
       }
 
       function openComplaintDetail(id) {
