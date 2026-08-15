@@ -16477,6 +16477,20 @@
           const r = tryAtts(atts);
           if (r) return r;
         }
+        const cmpls = state.complaints || [];
+        for (let i = 0; i < cmpls.length; i++) {
+          const r = tryAtts(typeof parseDbJsonArray === 'function'
+            ? parseDbJsonArray(cmpls[i].attachments)
+            : cmpls[i].attachments);
+          if (r) return r;
+          const logs = Array.isArray(cmpls[i].logs) ? cmpls[i].logs : [];
+          for (let j = 0; j < logs.length; j++) {
+            const lr = tryAtts(typeof parseDbJsonArray === 'function'
+              ? parseDbJsonArray(logs[j]?.attachments)
+              : logs[j]?.attachments);
+            if (lr) return lr;
+          }
+        }
         return null;
       }
 
@@ -16652,6 +16666,31 @@
           }
         }
         scanAtts(state._attList);
+        const relateComplaint = (c) => {
+          if (!c) return false;
+          if (ctx?.id && c.id === ctx.id) return true;
+          if (ctx?.complaint_number && c.complaint_number === ctx.complaint_number) return true;
+          const atts = parseAtts(c.attachments);
+          if (Array.isArray(atts) && atts.some((a) => (a?.p || a?.path) === id)) return true;
+          const logs = Array.isArray(c.logs) ? c.logs : [];
+          return logs.some((m) => {
+            const matts = parseAtts(m?.attachments);
+            return Array.isArray(matts) && matts.some((a) => (a?.p || a?.path) === id);
+          });
+        };
+        for (const c of state.complaints || []) {
+          if (!relateComplaint(c)) continue;
+          const atts = parseAtts(c.attachments);
+          scanAtts(atts);
+          const logs = Array.isArray(c.logs) ? c.logs : [];
+          for (const m of logs) scanAtts(parseAtts(m?.attachments));
+          const safeNum = String(c.complaint_number || c.id || '').replace(/[^\w.\-]/g, '_');
+          if (safeNum && base) addUnique(ticketFolder, `complaints/${safeNum}/${base}`);
+        }
+        if (ctx?.complaint_number || (ctx && !ctx.ticket_number && ctx.id)) {
+          const safeNum = String(ctx.complaint_number || ctx.id || '').replace(/[^\w.\-]/g, '_');
+          if (safeNum && base) addUnique(ticketFolder, `complaints/${safeNum}/${base}`);
+        }
         const rank = new Map();
         let n = 0;
         const setRank = (k, r) => {
@@ -18181,15 +18220,19 @@
         pumpCfThumbQueue();
       }
 
+      function attLoadCtx() {
+        return state._attComplaintCtx || state.editingTicket || null;
+      }
+
       async function loadOneCloudflareThumb(img) {
         const fid = img.dataset.cfId;
         if (!fid) return;
         img.dataset.loading = 'true';
         _cfThumbActive++;
         try {
-          const resolved = await loadCloudflareFile(fid, state.editingTicket);
+          const resolved = await loadCloudflareFile(fid, attLoadCtx());
           if (!img.isConnected) return;
-          const ck = cfCacheKey(fid, state.editingTicket);
+          const ck = cfCacheKey(fid, attLoadCtx());
           img.onload = () => {
             img.dataset.cfThumbDone = '1';
             img.style.opacity = '1';
@@ -18202,7 +18245,7 @@
           };
           img.src = resolved;
         } catch (e) {
-          const ck = cfCacheKey(fid, state.editingTicket);
+          const ck = cfCacheKey(fid, attLoadCtx());
           delete _cloudflareCache[ck];
           if (img.isConnected) {
             img.alt = 'خطأ في التحميل';
@@ -18229,14 +18272,18 @@
         return _cfThumbObserver;
       }
 
-      function loadAllCloudflareImages() {
-        const images = document.querySelectorAll('img[data-cf-id]');
+      function loadAllCloudflareImages(opts = {}) {
+        const root = opts.root && opts.root.querySelectorAll
+          ? opts.root
+          : document;
+        const images = root.querySelectorAll('img[data-cf-id]');
         if (!images.length) return;
         if (isMirsadDebugLog()) console.log(`[CloudflareProxy] Lazy thumbs: ${images.length}`);
-        const obs = ensureCfThumbObserver();
+        const force = !!opts.force;
+        const obs = force ? null : ensureCfThumbObserver();
         images.forEach((img) => {
           if (img.dataset.cfThumbDone === '1') return;
-          if (!obs) {
+          if (!obs || force) {
             queueCfThumbLoad(img);
             return;
           }
@@ -20983,7 +21030,11 @@
         const overTicket = ticketOpen
           || document.body.classList.contains('ticket-over-cmp')
           || document.body.classList.contains('ticket-over-notif');
+        const overCmpl = !!(state._rdCmplDetailId || state.activeComplaintId
+          || document.querySelector('#rdCmplOverlayHost .rd-cmpl-overlay')
+          || document.getElementById('complaintDetailModal')?.classList.contains('open'));
         viewer.classList.toggle('att-over-ticket', overTicket);
+        viewer.classList.toggle('att-over-cmpl', overCmpl);
         if (viewer.parentNode !== document.body) document.body.appendChild(viewer);
       }
 
@@ -20992,6 +21043,7 @@
         const wrap = document.getElementById('appWrap');
         if (!viewer) return;
         viewer.classList.remove('att-over-ticket');
+        viewer.classList.remove('att-over-cmpl');
         if (wrap && viewer.parentNode === document.body) wrap.appendChild(viewer);
       }
 
@@ -21066,7 +21118,7 @@
         const isVid = isAttachmentVideoExt(ext);
         const isPdf = ext === 'pdf';
 
-        const ticketCtx = state.editingTicket;
+        const ticketCtx = (typeof attLoadCtx === 'function' ? attLoadCtx() : null) || state.editingTicket;
         const viewerLoadGen = state._attViewerLoadGen || 0;
         let html = '';
         const localBlob = state._localBlobUrls && state._localBlobUrls[name];
@@ -35645,14 +35697,14 @@
           let thumb;
           if (isImg) {
             if (String(dataUrl).startsWith('data:image/')) {
-              thumb = `<div class="att-thumb"><img src="${Sec.escapeHTML(dataUrl)}" alt="" loading="lazy" decoding="async"></div>`;
+              thumb = `<div class="att-thumb"><img src="${Sec.escapeHTML(dataUrl)}" alt="" draggable="false"></div>`;
             } else {
-              thumb = `<div class="att-thumb"><img data-cf-id="${Sec.escapeHTML(cfId)}" src="${placeholderSvg}" alt="" loading="lazy" decoding="async"></div>`;
+              thumb = `<div class="att-thumb"><img data-cf-id="${Sec.escapeHTML(cfId)}" src="${placeholderSvg}" alt="" draggable="false"></div>`;
             }
           } else {
             thumb = `<div class="att-thumb"><i class="fas ${isVid ? 'fa-video' : 'fa-file-lines'}" aria-hidden="true"></i></div>`;
           }
-          return `<button type="button" class="rd-cmpl-att-card" onclick="event.stopPropagation();openComplaintAttByIndex(${idx}, ${listIdJs})" aria-label="${Sec.escapeHTML(name)}">${thumb}</button>`;
+          return `<button type="button" class="rd-cmpl-att-card" data-cmpl-att-idx="${idx}" data-cmpl-att-list="${Sec.escapeHTML(listId)}" onclick="event.preventDefault();event.stopPropagation();openComplaintAttByIndex(${idx}, ${listIdJs})" aria-label="${Sec.escapeHTML(name)}">${thumb}</button>`;
         }).join('');
         if (compact) {
           return `<div class="rd-cmpl-atts rd-cmpl-atts--compact"><div class="rd-cmpl-atts__grid">${items}</div></div>`;
@@ -35663,20 +35715,54 @@
         </div>`;
       }
 
-      function openComplaintAttByIndex(idx, listId) {
+      function resolveComplaintAttList(listId) {
         const lists = state._complaintAttLists || {};
-        const atts = (listId && lists[listId]) || state._complaintAttList || [];
-        if (!atts.length) return;
+        if (listId && Array.isArray(lists[listId]) && lists[listId].length) return lists[listId];
+        if (Array.isArray(state._complaintAttList) && state._complaintAttList.length) return state._complaintAttList;
+        const deskId = state._rdCmplDetailId;
+        const mobId = state.activeComplaintId;
+        const row = (deskId && (state.complaints || []).find(c => String(c.id) === String(deskId)))
+          || (mobId && (typeof getComplaintById === 'function' ? getComplaintById(mobId) : null))
+          || null;
+        return row ? getComplaintFileAttachments(row) : [];
+      }
+
+      function complaintCtxFromRow(row) {
+        if (!row) return null;
+        const raw = row._raw || row;
+        return {
+          id: raw.id,
+          complaint_number: raw.complaint_number || row.complaintNumber || '',
+          attachments: raw.attachments,
+          created_at: raw.created_at || row.createdAt
+        };
+      }
+
+      function openComplaintAttByIndex(idx, listId) {
+        const atts = resolveComplaintAttList(listId);
+        if (!atts.length) {
+          showToast('تعذّر فتح المرفق', 'warning');
+          return;
+        }
+        const deskId = state._rdCmplDetailId;
+        const mobId = state.activeComplaintId;
+        const row = (deskId && (state.complaints || []).find(c => String(c.id) === String(deskId)))
+          || (mobId && (typeof getComplaintById === 'function' ? getComplaintById(mobId) : null))
+          || null;
+        state._attComplaintCtx = complaintCtxFromRow(row);
         state._attList = atts;
         state._attIndex = (idx >= 0 && idx < atts.length) ? idx : 0;
         state._attViewerLoadGen = (state._attViewerLoadGen || 0) + 1;
         const viewer = document.getElementById('attViewer');
-        if (!viewer) return;
+        if (!viewer) {
+          showToast('عارض المرفقات غير متاح', 'error');
+          return;
+        }
         const stage = viewer.querySelector('.att-viewer-stage');
         if (stage) stage.style.transform = '';
         viewer.classList.remove('att-dragging');
         if (typeof mountAttViewerTop === 'function') mountAttViewerTop();
-        viewer.classList.add('open');
+        viewer.classList.add('open', 'att-over-cmpl');
         document.body.style.overflow = 'hidden';
         if (typeof renderAttViewer === 'function') renderAttViewer();
       }
@@ -35956,6 +36042,7 @@
               : '');
           const fileAtts = getComplaintFileAttachments(active);
           state._complaintAttList = fileAtts;
+          state._attComplaintCtx = complaintCtxFromRow(active);
           const attsHtml = renderComplaintAttachmentsHtml(fileAtts, { listId: 'desk-main' });
           const replyAttachN = (state.uploadedFiles.cpr || []).length;
           const replyAttachLabel = replyAttachN > 0
@@ -36005,6 +36092,7 @@
             </div>`;
         } else {
           state._complaintAttList = [];
+          if (!state.activeComplaintId) state._attComplaintCtx = null;
         }
 
         if (form.open) {
@@ -36062,7 +36150,7 @@
 
         overlay.innerHTML = html;
         if (typeof loadAllCloudflareImages === 'function') {
-          setTimeout(loadAllCloudflareImages, 80);
+          setTimeout(() => loadAllCloudflareImages({ root: overlay, force: true }), 80);
         }
         if (keepQuiet) {
           overlay.querySelectorAll('.rd-cmpl-overlay, .rd-cmpl-panel').forEach((el) => {
@@ -36208,6 +36296,7 @@
       function rdCloseComplaintDetail() {
         state._rdCmplDetailId = null;
         state._rdCmplReply = '';
+        state._attComplaintCtx = null;
         void clearComplaintReplyAttachFiles();
         renderComplaintsOverlays();
       }
@@ -36837,6 +36926,7 @@
 
         const fileAtts = getComplaintFileAttachments(c);
         state._complaintAttList = fileAtts;
+        state._attComplaintCtx = complaintCtxFromRow(c);
         const attsHtml = renderComplaintAttachmentsHtml(fileAtts, { listId: 'mob-main' });
         const replyAttachN = (state.uploadedFiles.cpr || []).length;
         const replyAttachLabel = replyAttachN > 0
@@ -36886,7 +36976,10 @@
         if (typeof paintComplaintReplyAttachFileList === 'function') paintComplaintReplyAttachFileList();
         if (typeof syncAttachmentSubmitButtons === 'function') syncAttachmentSubmitButtons('cpr');
         if (typeof loadAllCloudflareImages === 'function') {
-          setTimeout(loadAllCloudflareImages, 80);
+          setTimeout(() => loadAllCloudflareImages({
+            root: document.getElementById('complaintDetailModal') || host,
+            force: true
+          }), 80);
         }
       }
 
@@ -36903,6 +36996,7 @@
 
       function closeComplaintDetail() {
         state.activeComplaintId = null;
+        state._attComplaintCtx = null;
         void clearComplaintReplyAttachFiles();
         const modal = document.getElementById('complaintDetailModal');
         if (typeof isViolDetailMobSheet === 'function' && isViolDetailMobSheet()

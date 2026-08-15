@@ -18122,6 +18122,10 @@
       z-index: 3500 !important
     }
 
+    #attViewer.att-over-cmpl.open {
+      z-index: 20000 !important
+    }
+
     .att-viewer-content img,
     .att-viewer-content video {
       max-width: 100%;
