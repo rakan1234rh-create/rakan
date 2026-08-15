@@ -27287,6 +27287,7 @@
       margin-top: 20px; padding-top: 10px; border-top: 1px solid #cbd5e1;
       font-size: 10px; color: #64748b; display: flex; justify-content: space-between;
     }
+    .cmpl-pdf-desc { text-align: right !important; font-size: 10px; line-height: 1.45; word-break: break-word; }
       `;
 
       function cmpPdfScoreClass(score) {
@@ -27474,17 +27475,18 @@
         </div>`;
       }
 
-      function buildCmpPrintDocumentHtml(bodyHtml) {
+      function buildCmpPrintDocumentHtml(bodyHtml, title) {
+        const docTitle = title || 'تقرير مؤشرات الامتثال';
         return `<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="UTF-8">
-          <title>تقرير مؤشرات الامتثال</title>
+          <title>${Sec.escapeHTML(docTitle)}</title>
           <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700;800&display=swap" rel="stylesheet">
           <style>${CMP_PDF_DOC_STYLES}</style></head><body>${bodyHtml}</body></html>`;
       }
 
-      function printCmpPdfReport(bodyHtml) {
-        const html = buildCmpPrintDocumentHtml(bodyHtml);
+      function printCmpPdfReport(bodyHtml, title) {
+        const html = buildCmpPrintDocumentHtml(bodyHtml, title);
         const iframe = document.createElement('iframe');
-        iframe.setAttribute('title', 'تصدير مؤشرات الامتثال');
+        iframe.setAttribute('title', title || 'تصدير مؤشرات الامتثال');
         iframe.setAttribute('aria-hidden', 'true');
         iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden;pointer-events:none';
         document.body.appendChild(iframe);
@@ -37020,6 +37022,144 @@
         return applyComplaintQueryFilters((state.complaints || []).filter(complaintMatchesChipFilters));
       }
 
+      function getFilteredComplaintsDesk() {
+        return applyComplaintQueryFilters(getRdComplaints().filter(complaintMatchesChipFilters));
+      }
+
+      function complaintPdfScopeLabel() {
+        const parts = [];
+        const kind = state.complaintTypeFilter || 'all';
+        if (kind === 'complaint') parts.push('الشكاوى');
+        else if (kind === 'suggestion') parts.push('الاقتراحات');
+        else parts.push('الكل');
+        const status = state.complaintStatusFilter || '';
+        if (status === 'pending') parts.push('قيد المراجعة');
+        else if (status === 'resolved') parts.push('تم الحل');
+        const from = state.complaintDateFrom || '';
+        const to = state.complaintDateTo || '';
+        if (from || to) {
+          const a = from ? dpFormatDisplay(ksaDateFromIso(from)) : '…';
+          const b = to ? dpFormatDisplay(ksaDateFromIso(to)) : '…';
+          parts.push(`الفترة ${a} — ${b}`);
+        }
+        const q = String(state.complaintSearch || '').trim();
+        if (q) parts.push(`بحث: ${q}`);
+        return parts.join(' · ');
+      }
+
+      function complaintPdfBranchName(row) {
+        const bid = row?._raw?.branch_id || row?.branch_id;
+        const b = (state.branches || []).find((x) => String(x.id) === String(bid));
+        return (b && b.name) || '—';
+      }
+
+      function complaintPdfWhen(row) {
+        const raw = row?.createdAt || row?.created_at;
+        if (!raw) return '—';
+        const d = new Date(raw);
+        if (Number.isNaN(d.getTime())) return String(raw).slice(0, 16);
+        const p = ksaFormatParts(d);
+        return `${p.day} ${KSA_AR_MONTHS[p.month]} ${p.year}`;
+      }
+
+      function cmplPdfStatusBadge(row) {
+        const st = rdCmplStatusMeta(row.status, row.kind, row.decision);
+        let cls = 'cmp-pdf-score--warn';
+        if (row.status === 'rejected' || row.decision === 'rejected') cls = 'cmp-pdf-score--danger';
+        else if (row.status === 'resolved' || row.decision === 'accepted' || row.decision === 'resolved') cls = 'cmp-pdf-score--excellent';
+        return `<span class="cmp-pdf-score ${cls}">${Sec.escapeHTML(st.label)}</span>`;
+      }
+
+      function cmplPdfBarRows(buckets) {
+        return buckets.map((b) => `
+          <div class="cmp-pdf-chart-row">
+            <span class="cmp-pdf-chart-row__lbl">${Sec.escapeHTML(b.label)}</span>
+            <div class="cmp-pdf-chart-row__track"><div class="cmp-pdf-chart-row__fill" style="width:${b.pct}%;background:${b.color}"></div></div>
+            <span class="cmp-pdf-chart-row__num">${b.count} (${b.pct}%)</span>
+          </div>`).join('');
+      }
+
+      function buildCmplPdfReportBody(rows) {
+        const list = Array.isArray(rows) ? rows : [];
+        const n = list.length;
+        const exportedAt = new Date().toLocaleString('ar-SA', { timeZone: 'Asia/Riyadh' });
+        const exporter = (typeof rdCmplCurrentUserName === 'function' && rdCmplCurrentUserName()) || '—';
+        const onlyC = list.filter((r) => r.kind === 'complaint').length;
+        const onlyS = list.filter((r) => r.kind === 'suggestion').length;
+        const pending = list.filter((r) => r.status === 'pending').length;
+        const closedOk = list.filter((r) => r.status === 'resolved' && r.decision !== 'rejected').length;
+        const rejected = list.filter((r) => r.status === 'rejected' || r.decision === 'rejected').length;
+        const pct = (count) => (n ? Math.round((count / n) * 1000) / 10 : 0);
+        const kindBuckets = [
+          { label: 'شكاوى', color: '#ef4444', count: onlyC, pct: pct(onlyC) },
+          { label: 'اقتراحات', color: '#3b82f6', count: onlyS, pct: pct(onlyS) }
+        ];
+        const statusBuckets = [
+          { label: 'قيد المراجعة', color: '#f59e0b', count: pending, pct: pct(pending) },
+          { label: 'تم الحل', color: '#22c55e', count: closedOk, pct: pct(closedOk) },
+          { label: 'مرفوض', color: '#ef4444', count: rejected, pct: pct(rejected) }
+        ];
+        const tableRows = list.map((r, i) => {
+          const kindLbl = r.kind === 'suggestion' ? 'اقتراح' : 'شكوى';
+          const desc = String(r.description || r.desc || '').replace(/\s+/g, ' ').trim();
+          const clip = desc.length > 160 ? `${desc.slice(0, 159)}…` : desc;
+          const num = r.complaintNumber || (typeof rdCmplNumber === 'function' ? rdCmplNumber(r.id) : '');
+          return `<tr>
+            <td>${i + 1}</td>
+            <td>${Sec.escapeHTML(num || '—')}</td>
+            <td>${Sec.escapeHTML(kindLbl)}</td>
+            <td>${Sec.escapeHTML(r.category || 'عام')}</td>
+            <td>${Sec.escapeHTML((typeof rdCmplDisplayName === 'function' && rdCmplDisplayName(r)) || '—')}</td>
+            <td>${Sec.escapeHTML(complaintPdfBranchName(r))}</td>
+            <td>${Sec.escapeHTML(complaintPdfWhen(r))}</td>
+            <td>${cmplPdfStatusBadge(r)}</td>
+            <td class="cmpl-pdf-desc">${Sec.escapeHTML(clip || '—')}</td>
+          </tr>`;
+        }).join('');
+        return `
+        <div class="cmp-pdf-page">
+          <div class="cmp-pdf-hero">
+            <h1>تقرير الشكاوى والاقتراحات</h1>
+            <p>ATHAR · النتائج حسب عوامل التصفية الحالية</p>
+          </div>
+          <div class="cmp-pdf-meta">
+            <div class="cmp-pdf-meta-item"><strong>تاريخ التصدير</strong><span>${Sec.escapeHTML(exportedAt)}</span></div>
+            <div class="cmp-pdf-meta-item"><strong>نطاق التصفية</strong><span>${Sec.escapeHTML(complaintPdfScopeLabel())}</span></div>
+            <div class="cmp-pdf-meta-item"><strong>أُعدّ بواسطة</strong><span>${Sec.escapeHTML(exporter)}</span></div>
+          </div>
+          <div class="cmp-pdf-kpis">
+            <div class="cmp-pdf-kpi cmp-pdf-kpi--accent"><div class="cmp-pdf-kpi__val">${n}</div><div class="cmp-pdf-kpi__lbl">سجلات مفلترة</div></div>
+            <div class="cmp-pdf-kpi cmp-pdf-kpi--danger"><div class="cmp-pdf-kpi__val">${onlyC}</div><div class="cmp-pdf-kpi__lbl">شكاوى</div></div>
+            <div class="cmp-pdf-kpi"><div class="cmp-pdf-kpi__val">${onlyS}</div><div class="cmp-pdf-kpi__lbl">اقتراحات</div></div>
+            <div class="cmp-pdf-kpi cmp-pdf-kpi--warn"><div class="cmp-pdf-kpi__val">${pending}</div><div class="cmp-pdf-kpi__lbl">قيد المراجعة</div></div>
+          </div>
+          <div class="cmp-pdf-grid-2">
+            <div class="cmp-pdf-panel"><h2>توزيع النوع</h2>${cmplPdfBarRows(kindBuckets)}</div>
+            <div class="cmp-pdf-panel"><h2>توزيع الحالة</h2>${cmplPdfBarRows(statusBuckets)}</div>
+          </div>
+          <h3 class="cmp-pdf-section-title">سجل التفاصيل (${n})</h3>
+          <table class="cmp-pdf-table">
+            <thead><tr>
+              <th>#</th><th>الرقم</th><th>النوع</th><th>التصنيف</th><th>المقدّم</th><th>الفرع</th><th>التاريخ</th><th>الحالة</th><th>الوصف</th>
+            </tr></thead>
+            <tbody>${tableRows || '<tr><td colspan="9">لا توجد سجلات</td></tr>'}</tbody>
+          </table>
+          <div class="cmp-pdf-foot"><span>ATHAR</span><span>${n} سجل · للاستخدام الداخلي</span></div>
+        </div>`;
+      }
+
+      function exportComplaintsPDF() {
+        const rows = getFilteredComplaintsDesk();
+        if (!rows.length) return showToast('لا توجد بيانات للتصدير في التصفية الحالية', 'warning');
+        try {
+          printCmpPdfReport(buildCmplPdfReportBody(rows), 'تقرير الشكاوى والاقتراحات');
+          showToast('اختر «حفظ كـ PDF» من نافذة الطباعة', 'info');
+        } catch (err) {
+          if (isMirsadDebugLog()) console.warn('[complaints pdf]', err);
+          showToast('تعذّر تصدير PDF', 'error');
+        }
+      }
+
       function complaintCreatedIso(row) {
         const raw = row?.createdAt || row?.created_at || '';
         if (!raw) return '';
@@ -37059,6 +37199,10 @@
           <button type="button" class="rd-cmpl-date-btn" id="${btnId}" onclick="toggleCmplDatePicker(event)" aria-label="اختر الفترة">
             <i class="fas fa-calendar" aria-hidden="true"></i>
             <span class="cmpl-date-label">اختر الفترة</span>
+          </button>
+          <button type="button" class="rd-cmpl-pdf-btn" onclick="exportComplaintsPDF()" aria-label="تصدير PDF للمفلتر">
+            <i class="fas fa-file-pdf" aria-hidden="true"></i>
+            <span>تصدير PDF</span>
           </button>`;
       }
 
@@ -37758,6 +37902,7 @@
       window.renderComplaintsPage = renderComplaintsPage;
       window.setComplaintTypeFilter = setComplaintTypeFilter;
       window.refreshComplaintListFromQuery = refreshComplaintListFromQuery;
+      window.exportComplaintsPDF = exportComplaintsPDF;
       window.openNewComplaintModal = openNewComplaintModal;
       window.closeNewComplaintModal = closeNewComplaintModal;
       window.closeNewComplaintSheet = closeNewComplaintSheet;

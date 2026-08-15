@@ -243,6 +243,26 @@ html.mr-mobile-ui #tab-complaints .cp-mob-filters .rd-cmpl-date-btn.active {
   color: var(--onGold, #fff);
   border-color: var(--gold, var(--primary));
 }
+html.mr-mobile-ui #tab-complaints .cp-mob-filters .rd-cmpl-pdf-btn {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface2);
+  color: var(--text2);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+html.mr-mobile-ui #tab-complaints .cp-mob-filters .rd-cmpl-pdf-btn i {
+  color: #b91c1c;
+}
 html.mr-mobile-ui #tab-complaints .cp-mob-filter {
   flex: 0 0 auto;
   padding: 5px 11px;
@@ -1251,6 +1271,29 @@ html.athar-staging-redesign.mr-desktop-ui .rd-cmpl-date-btn.active {
   background: var(--gold) !important;
   color: var(--onGold) !important;
   border-color: var(--gold) !important;
+}
+html.athar-staging-redesign.mr-desktop-ui .rd-cmpl-pdf-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  height: 38px !important;
+  padding: 0 14px !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 10px !important;
+  background: var(--surface2) !important;
+  color: var(--text2) !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  font-family: inherit !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+}
+html.athar-staging-redesign.mr-desktop-ui .rd-cmpl-pdf-btn i {
+  color: #b91c1c !important;
+}
+html.athar-staging-redesign.mr-desktop-ui .rd-cmpl-pdf-btn:hover {
+  border-color: #b91c1c !important;
+  color: var(--text) !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui .rd-cmpl-filter {
