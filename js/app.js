@@ -35908,7 +35908,8 @@
           description: c.description || '',
           time: (typeof formatRelativeAr === 'function' && formatRelativeAr(c.created_at)) || '',
           createdAt: c.created_at,
-          status: c.status === 'resolved' ? 'resolved' : 'pending',
+          status: c.status === 'rejected' ? 'rejected' : (c.status === 'resolved' ? 'resolved' : 'pending'),
+          decision: getComplaintDecision(c),
           complaintNumber: c.complaint_number || '',
           attachCount: fileAtts.length,
           thread: logs.map(m => ({
@@ -35967,8 +35968,66 @@
         return kind === 'suggestion' ? 'var(--info)' : 'var(--danger)';
       }
 
-      function rdCmplStatusMeta(status) {
-        if (status === 'resolved') return { label: 'تم الرد', color: 'var(--success)' };
+      function getComplaintDecision(c) {
+        const row = c && (c._raw || c);
+        if (!row) return null;
+        const logs = Array.isArray(row.logs) ? row.logs : (Array.isArray(c.logs) ? c.logs : []);
+        for (let i = logs.length - 1; i >= 0; i--) {
+          const t = String(logs[i]?.text || '');
+          if (t.includes('رفض الاقتراح')) return 'rejected';
+          if (t.includes('قبول الاقتراح')) return 'accepted';
+        }
+        if (row.status === 'rejected' || c.status === 'rejected') return 'rejected';
+        if (row.status === 'resolved' || c.status === 'resolved') {
+          return (row.kind === 'suggestion' || c.kind === 'suggestion') ? 'accepted' : 'resolved';
+        }
+        return null;
+      }
+
+      function isComplaintClosed(c) {
+        const s = c && (c.status || c._raw?.status);
+        return s === 'resolved' || s === 'rejected' || !!getComplaintDecision(c);
+      }
+
+      function complaintDecisionNote(decision) {
+        if (decision === 'accepted') return 'تم قبول الاقتراح';
+        if (decision === 'rejected') return 'تم رفض الاقتراح';
+        return 'تم حل الشكوى';
+      }
+
+      function complaintClosedBannerText(kind, decision) {
+        if (kind === 'suggestion') {
+          return decision === 'rejected' ? 'تم رفض الاقتراح' : 'تم قبول الاقتراح';
+        }
+        return 'تم حل الشكوى';
+      }
+
+      function renderComplaintDecisionButtons(id, kind, opts = {}) {
+        if (typeof canManageComplaints === 'function' && !canManageComplaints()) return '';
+        const safeId = Sec.escapeHTML(String(id || ''));
+        const desk = !!opts.desk;
+        if (kind === 'suggestion') {
+          if (desk) {
+            return `<button type="button" class="rd-cmpl-btn rd-cmpl-btn--success" onclick="rdResolveComplaint('${safeId}','accepted')"><i class="fas fa-check" aria-hidden="true"></i>قبول الاقتراح</button>
+                    <button type="button" class="rd-cmpl-btn rd-cmpl-btn--danger" onclick="rdResolveComplaint('${safeId}','rejected')"><i class="fas fa-check" aria-hidden="true"></i>رفض الاقتراح</button>`;
+          }
+          return `<button type="button" class="cp-detail__resolve cp-detail__resolve--ok" onclick="resolveComplaintFromUi('accepted')"><i class="fas fa-check" aria-hidden="true"></i>قبول الاقتراح</button>
+                  <button type="button" class="cp-detail__resolve cp-detail__resolve--no" onclick="resolveComplaintFromUi('rejected')"><i class="fas fa-check" aria-hidden="true"></i>رفض الاقتراح</button>`;
+        }
+        if (desk) {
+          return `<button type="button" class="rd-cmpl-btn rd-cmpl-btn--success" onclick="rdResolveComplaint('${safeId}','resolved')"><i class="fas fa-check" aria-hidden="true"></i>تم حل الشكوى</button>`;
+        }
+        return `<button type="button" class="cp-detail__resolve cp-detail__resolve--ok" onclick="resolveComplaintFromUi('resolved')"><i class="fas fa-check" aria-hidden="true"></i>تم حل الشكوى</button>`;
+      }
+
+      function rdCmplStatusMeta(status, kind, decision) {
+        if (status === 'rejected' || decision === 'rejected') {
+          return { label: kind === 'suggestion' ? 'مرفوض' : 'مرفوضة', color: 'var(--danger)' };
+        }
+        if (status === 'resolved' || decision === 'accepted' || decision === 'resolved') {
+          if (kind === 'suggestion') return { label: 'مقبول', color: 'var(--success)' };
+          return { label: 'تم الحل', color: 'var(--success)' };
+        }
         return { label: 'قيد المراجعة', color: 'var(--warning)' };
       }
 
@@ -36025,7 +36084,7 @@
 
         const list = rows.map((r, i) => {
           const tone = rdCmplTone(r.kind);
-          const st = rdCmplStatusMeta(r.status);
+          const st = rdCmplStatusMeta(r.status, r.kind, r.decision);
           const kindLbl = r.kind === 'suggestion' ? 'اقتراح' : 'شكوى';
           const icon = r.categoryIcon || (r.kind === 'suggestion' ? 'fa-lightbulb' : 'fa-triangle-exclamation');
           const reply = (Array.isArray(r.thread) && r.thread.length) ? r.thread[r.thread.length - 1] : null;
@@ -36129,9 +36188,8 @@
 
         if (active) {
           const tone = rdCmplTone(active.kind);
-          const st = rdCmplStatusMeta(active.status);
+          const st = rdCmplStatusMeta(active.status, active.kind, active.decision);
           const kindLbl = active.kind === 'suggestion' ? 'اقتراح' : 'شكوى';
-          const replyLabel = 'الرد على ' + (active.kind === 'suggestion' ? 'الاقتراح' : 'الشكوى');
           const thread = (active.thread || []).map((msg, msgIdx) => {
             const authorIc = msg.isAdmin
               ? 'fa-headset'
@@ -36156,23 +36214,19 @@
               </div>
             </div>`;
           }).join('');
-          const resolveBtn = active.status === 'resolved'
-            ? `<button type="button" class="rd-cmpl-btn rd-cmpl-btn--resolved" disabled><i class="fas fa-check" aria-hidden="true"></i>تم الحل</button>`
-            : ((typeof canManageComplaints === 'function' && canManageComplaints())
-              ? `<button type="button" class="rd-cmpl-btn rd-cmpl-btn--ghost" onclick="rdResolveComplaint('${Sec.escapeHTML(active.id)}')"><i class="fas fa-check" aria-hidden="true"></i>تحديد كمحلولة</button>`
-              : '');
+          const closed = isComplaintClosed(active);
+          const decisionBtns = closed ? '' : renderComplaintDecisionButtons(active.id, active.kind, { desk: true });
           const fileAtts = getComplaintFileAttachments(active);
           state._complaintAttList = fileAtts;
           state._attComplaintCtx = complaintCtxFromRow(active);
           const deskAttPair = renderComplaintInlineAttPair(fileAtts, 'desk-main');
           const replyAttachN = (state.uploadedFiles.cpr || []).length;
           const replyAttachLabel = replyAttachN > 0 ? `${replyAttachN} مرفق` : 'إرفاق';
-          const composeHtml = active.status === 'resolved'
+          const composeHtml = closed
             ? `<div class="rd-cmpl-panel__compose is-locked">
-                  <div class="rd-cmpl-resolved-banner">${active.kind === 'suggestion' ? 'تم حل الاقتراح' : 'تم حل الشكوى'}</div>
+                  <div class="rd-cmpl-resolved-banner${active.decision === 'rejected' ? ' is-rejected' : ''}">${complaintClosedBannerText(active.kind, active.decision)}</div>
                 </div>`
             : `<div class="rd-cmpl-panel__compose">
-                  <div class="rd-cmpl-field-label">${Sec.escapeHTML(replyLabel)}</div>
                   <textarea class="rd-cmpl-textarea" id="rdCmplReplyInput" placeholder="اكتب ردك هنا..." rows="4">${Sec.escapeHTML(state._rdCmplReply || '')}</textarea>
                   <input type="file" id="cprAttachInput" accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx" multiple hidden onchange="handleFiles(event,'cpr')">
                   <div id="cprFileArea" class="file-list rd-cmpl-reply-files"></div>
@@ -36182,7 +36236,7 @@
                       <i class="fas fa-paperclip" aria-hidden="true"></i>
                       <span id="cprAttachLabel">${Sec.escapeHTML(replyAttachLabel)}</span>
                     </button>
-                    ${resolveBtn}
+                    ${decisionBtns}
                   </div>
                 </div>`;
           html += `
@@ -36427,7 +36481,7 @@
         const id = state._rdCmplDetailId;
         if (!id) return;
         const row = (state.complaints || []).find(c => String(c.id) === String(id));
-        if (row && row.status === 'resolved') {
+        if (row && isComplaintClosed(row)) {
           showToast('الشكوى محلولة — الرد مقفول', 'warning');
           return;
         }
@@ -36493,14 +36547,33 @@
         }
       }
 
-      async function rdResolveComplaint(id) {
+      async function resolveComplaintWithDecision(id, decision) {
+        const choice = decision === 'accepted' || decision === 'rejected' ? decision : 'resolved';
+        const note = complaintDecisionNote(choice);
+        const first = await sb.rpc('resolve_complaint', { p_complaint_id: id, p_decision: choice });
+        if (!first.error) return first;
+        const msg = String(first.error.message || first.error || '');
+        if (!/could not find|schema cache|p_decision|does not exist/i.test(msg)) return first;
+        if (choice === 'accepted' || choice === 'rejected') {
+          let reply = await sb.rpc('add_complaint_reply', { p_complaint_id: id, p_text: note, p_attachments: [] });
+          if (reply.error) {
+            reply = await sb.rpc('add_complaint_reply', { p_complaint_id: id, p_text: note });
+          }
+          if (reply.error || reply.data?.ok === false) {
+            return { data: reply.data, error: reply.error || new Error(reply.data?.error || 'تعذّر تسجيل القرار') };
+          }
+        }
+        return sb.rpc('resolve_complaint', { p_complaint_id: id });
+      }
+
+      async function rdResolveComplaint(id, decision) {
         if (!id) return;
         if (typeof canManageComplaints === 'function' && !canManageComplaints()) {
           showToast('مدير النظام فقط يقدر يغلق الشكوى', 'warning');
           return;
         }
         try {
-          const { data, error } = await sb.rpc('resolve_complaint', { p_complaint_id: id });
+          const { data, error } = await resolveComplaintWithDecision(id, decision);
           if (error) throw error;
           if (!data?.ok) {
             showToast(data?.error || 'تعذّر إغلاق الشكوى', 'error');
@@ -36508,8 +36581,12 @@
           }
           const idx = (state.complaints || []).findIndex(c => c.id === data.complaint.id);
           if (idx >= 0) state.complaints[idx] = data.complaint;
+          else if (data.complaint) {
+            const prev = (state.complaints || []).findIndex(c => c.id === id);
+            if (prev >= 0) state.complaints[prev] = data.complaint;
+          }
           await renderComplaintsDesktop({ soft: true });
-          showToast('تم تحديدها كمحلولة', 'success');
+          showToast(complaintDecisionNote(decision), 'success');
         } catch (e) {
           showToast('فشل الإغلاق: ' + (e.message || e), 'error');
         }
@@ -36550,7 +36627,7 @@
         { label: 'أخرى', icon: 'fa-ellipsis' }
       ];
       const COMPLAINT_KIND_LABELS = { complaint: 'شكوى', suggestion: 'اقتراح' };
-      const COMPLAINT_STATUS_LABELS = { pending: 'قيد المراجعة', resolved: 'تم الحل' };
+      const COMPLAINT_STATUS_LABELS = { pending: 'قيد المراجعة', resolved: 'تم الحل', rejected: 'مرفوض' };
 
       function complaintCatsForKind(kind) {
         return kind === 'suggestion' ? SUGGESTION_CATS : COMPLAINT_CATS;
@@ -36600,8 +36677,10 @@
       function renderComplaintCardHtml(c) {
         const kindLabel = COMPLAINT_KIND_LABELS[c.kind] || c.kind;
         const kindColor = c.kind === 'suggestion' ? 'var(--info)' : 'var(--danger)';
-        const statusLabel = COMPLAINT_STATUS_LABELS[c.status] || c.status;
-        const statusColor = c.status === 'resolved' ? 'var(--success)' : 'var(--warning)';
+        const decision = getComplaintDecision(c);
+        const statusMeta = rdCmplStatusMeta(c.status, c.kind, decision);
+        const statusLabel = statusMeta.label;
+        const statusColor = statusMeta.color;
         const icon = complaintCategoryIcon(c);
         const time = formatRelativeAr(c.created_at) || '';
         const attCount = getComplaintFileAttachments(c).length;
@@ -37036,12 +37115,13 @@
         }
         const kindLabel = COMPLAINT_KIND_LABELS[c.kind] || c.kind;
         const kindColor = c.kind === 'suggestion' ? 'var(--info)' : 'var(--danger)';
-        const statusLabel = COMPLAINT_STATUS_LABELS[c.status] || c.status;
-        const statusColor = c.status === 'resolved' ? 'var(--success)' : 'var(--warning)';
+        const decision = getComplaintDecision(c);
+        const statusMeta = rdCmplStatusMeta(c.status, c.kind, decision);
+        const statusLabel = statusMeta.label;
+        const statusColor = statusMeta.color;
         const time = formatRelativeAr(c.created_at) || '';
-        const isResolved = c.status === 'resolved';
+        const isResolved = isComplaintClosed(c);
         const canResolve = canManageComplaints() && !isResolved;
-        const replyLabel = 'الرد على ' + (c.kind === 'suggestion' ? 'الاقتراح' : 'الشكوى');
 
         const whoName = (typeof complaintIsAnonymous === 'function' && complaintIsAnonymous(c))
           ? 'مجهول'
@@ -37079,10 +37159,9 @@
             ${(c.employee_id === state.currentUser?.id || canManageComplaints()) ? (
               isResolved
                 ? `<div class="cp-detail__compose is-locked">
-              <div class="cp-detail__resolved-banner">${c.kind === 'suggestion' ? 'تم حل الاقتراح' : 'تم حل الشكوى'}</div>
+              <div class="cp-detail__resolved-banner${decision === 'rejected' ? ' is-rejected' : ''}">${complaintClosedBannerText(c.kind, decision)}</div>
             </div>`
                 : `<div class="cp-detail__compose">
-              <div class="cp-detail__compose-label">${Sec.escapeHTML(replyLabel)}</div>
               <textarea id="cpReplyText" class="cp-detail__reply" placeholder="اكتب ردك هنا..."></textarea>
               <input type="file" id="cprAttachInput" accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx" multiple hidden onchange="handleFiles(event,'cpr')">
               <div id="cprFileArea" class="file-list cp-mob-file-list cp-detail__reply-files"></div>
@@ -37092,7 +37171,7 @@
                   <i class="fas fa-paperclip" aria-hidden="true"></i>
                   <span id="cprAttachLabel">${Sec.escapeHTML(replyAttachLabel)}</span>
                 </button>
-                ${canResolve ? `<button type="button" class="cp-detail__resolve" onclick="resolveComplaintFromUi()"><i class="fas fa-check" aria-hidden="true"></i>حل</button>` : ''}
+                ${canResolve ? renderComplaintDecisionButtons(c.id, c.kind) : ''}
               </div>
             </div>`
             ) : ''}
@@ -37134,7 +37213,7 @@
 
       async function submitComplaintReplyFromUi() {
         const c = getComplaintById(state.activeComplaintId);
-        if (c && c.status === 'resolved') {
+        if (c && isComplaintClosed(c)) {
           showToast('الشكوى محلولة — الرد مقفول', 'warning');
           return;
         }
@@ -37200,10 +37279,14 @@
         }
       }
 
-      async function resolveComplaintFromUi() {
+      async function resolveComplaintFromUi(decision) {
         if (!state.activeComplaintId) return;
+        if (!canManageComplaints()) {
+          showToast('مدير النظام فقط يقدر يغلق الشكوى', 'warning');
+          return;
+        }
         try {
-          const { data, error } = await sb.rpc('resolve_complaint', { p_complaint_id: state.activeComplaintId });
+          const { data, error } = await resolveComplaintWithDecision(state.activeComplaintId, decision);
           if (error) throw error;
           if (!data?.ok) {
             showToast(data?.error || 'تعذّر إغلاق الشكوى', 'error');
@@ -37213,7 +37296,7 @@
           if (idx >= 0) state.complaints[idx] = data.complaint;
           renderComplaintDetailModal();
           paintComplaintsPage();
-          showToast('تم وضع علامة "تم الحل"', 'success');
+          showToast(complaintDecisionNote(decision), 'success');
         } catch (e) {
           showToast('فشل الإغلاق: ' + (e.message || e), 'error');
         }

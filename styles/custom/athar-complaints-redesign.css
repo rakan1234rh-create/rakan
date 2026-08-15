@@ -669,10 +669,7 @@ html.mr-mobile-ui #tab-complaints .cp-card__status {
   text-align: center;
 }
 #complaintDetailModal .cp-detail__compose-label {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--text);
-  margin-bottom: 7px;
+  display: none;
 }
 #complaintDetailModal .cp-detail__reply {
   width: 100%;
@@ -690,6 +687,7 @@ html.mr-mobile-ui #tab-complaints .cp-card__status {
 }
 #complaintDetailModal .cp-detail__actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   align-items: stretch;
 }
@@ -720,10 +718,25 @@ html.mr-mobile-ui #tab-complaints .cp-card__status {
   white-space: nowrap;
   font-family: inherit;
 }
+#complaintDetailModal .cp-detail__resolve--ok {
+  background: var(--success);
+  border-color: var(--success);
+  color: #fff;
+}
+#complaintDetailModal .cp-detail__resolve--no {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
 #complaintDetailModal .cp-detail__resolve.is-done {
   border-color: var(--success);
   color: var(--success);
   cursor: default;
+}
+#complaintDetailModal .cp-detail__resolved-banner.is-rejected {
+  border-color: color-mix(in srgb, var(--danger) 35%, transparent);
+  background: color-mix(in srgb, var(--danger) 16%, var(--surface));
+  color: var(--danger);
 }
 
 /* Complaint detail — mobile bottom sheet (same pattern as violation detail) */
@@ -1488,6 +1501,11 @@ html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-resolved-b
   font-weight: 700 !important;
   text-align: center !important;
 }
+html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-resolved-banner.is-rejected {
+  border-color: color-mix(in srgb, var(--danger) 35%, transparent) !important;
+  background: color-mix(in srgb, var(--danger) 16%, var(--surface)) !important;
+  color: var(--danger) !important;
+}
 
 html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-field-label {
   font-size: 12px !important;
@@ -1759,6 +1777,21 @@ html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-btn--ghost
   white-space: nowrap !important;
 }
 
+html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-btn--success {
+  background: var(--success) !important;
+  color: #fff !important;
+  padding: 13px 14px !important;
+  font-size: 12.5px !important;
+  white-space: nowrap !important;
+}
+html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-btn--danger {
+  background: var(--danger) !important;
+  color: #fff !important;
+  padding: 13px 14px !important;
+  font-size: 12.5px !important;
+  white-space: nowrap !important;
+}
+
 html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-btn--resolved {
   padding: 13px 18px !important;
   border: 1px solid var(--success) !important;
@@ -1770,6 +1803,7 @@ html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-btn--resol
 
 html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-panel__actions {
   display: flex !important;
+  flex-wrap: wrap !important;
   gap: 10px !important;
 }
 
