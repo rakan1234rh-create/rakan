@@ -35785,10 +35785,16 @@
         const listId = String(opts.listId || 'main');
         if (!state._complaintAttLists) state._complaintAttLists = {};
         state._complaintAttLists[listId] = atts;
+        const start = Math.max(0, Number(opts.start) || 0);
+        const end = opts.end == null ? atts.length : Math.min(atts.length, Number(opts.end));
+        const slice = atts.slice(start, end);
+        if (!slice.length) return '';
         const compact = !!opts.compact;
-        const placeholderSvg = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><rect fill="%23e5e7eb" width="80" height="80" rx="8"/><text x="40" y="44" text-anchor="middle" fill="%239ca3af" font-size="10">جاري...</text></svg>')}`;
+        const inline = opts.variant === 'inline';
+        const placeholderSvg = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="52" height="52"><rect fill="%23e5e7eb" width="52" height="52" rx="8"/><text x="26" y="30" text-anchor="middle" fill="%239ca3af" font-size="8">…</text></svg>')}`;
         const listIdAttr = Sec.escapeHTML(listId);
-        const items = atts.map((a, idx) => {
+        const items = slice.map((a, i) => {
+          const idx = start + i;
           const ext = typeof attachmentExtFromAtt === 'function' ? attachmentExtFromAtt(a) : '';
           const isImg = typeof isAttachmentImageExt === 'function' && isAttachmentImageExt(ext);
           const isVid = typeof isAttachmentVideoExt === 'function' && isAttachmentVideoExt(ext);
@@ -35807,6 +35813,9 @@
           }
           return `<button type="button" class="rd-cmpl-att-card" data-cmpl-att-idx="${idx}" data-cmpl-att-list="${listIdAttr}" onclick="event.preventDefault();event.stopPropagation();openComplaintAttByIndex(${idx}, this.dataset.cmplAttList)" aria-label="${Sec.escapeHTML(name)}">${thumb}</button>`;
         }).join('');
+        if (inline) {
+          return `<div class="rd-cmpl-atts rd-cmpl-atts--inline">${items}</div>`;
+        }
         if (compact) {
           return `<div class="rd-cmpl-atts rd-cmpl-atts--compact"><div class="rd-cmpl-atts__grid">${items}</div></div>`;
         }
@@ -35814,6 +35823,16 @@
           <div class="rd-cmpl-atts__lbl"><i class="fas fa-paperclip" aria-hidden="true"></i> المرفقات (${atts.length})</div>
           <div class="rd-cmpl-atts__grid">${items}</div>
         </div>`;
+      }
+
+      function renderComplaintInlineAttPair(atts, listId) {
+        if (!atts || !atts.length) return { first: '', rest: '' };
+        return {
+          first: renderComplaintAttachmentsHtml(atts, { listId, variant: 'inline', start: 0, end: 1 }),
+          rest: atts.length > 1
+            ? renderComplaintAttachmentsHtml(atts, { listId, compact: true, start: 1 })
+            : ''
+        };
       }
 
       function resolveComplaintAttList(listId) {
@@ -36118,9 +36137,7 @@
               ? 'fa-headset'
               : (active.isAnonymous ? 'fa-user-secret' : 'fa-user');
             const msgAtts = Array.isArray(msg.attachments) ? msg.attachments : [];
-            const msgAttsHtml = msgAtts.length
-              ? renderComplaintAttachmentsHtml(msgAtts, { listId: `desk-reply-${msgIdx}`, compact: true })
-              : '';
+            const msgAttPair = renderComplaintInlineAttPair(msgAtts, `desk-reply-${msgIdx}`);
             const textHtml = msg.text
               ? `<div class="rd-cmpl-thread-text">${Sec.escapeHTML(msg.text)}</div>`
               : '';
@@ -36131,8 +36148,11 @@
                   <span class="rd-cmpl-thread-author${msg.isAdmin ? ' is-admin' : ''}"><i class="fas ${authorIc} rd-cmpl-thread-author-ic" aria-hidden="true"></i>${Sec.escapeHTML(msg.author || '')}</span>
                   <span class="rd-cmpl-thread-time">${Sec.escapeHTML(msg.time || '')}</span>
                 </div>
-                ${textHtml}
-                ${msgAttsHtml}
+                <div class="rd-cmpl-thread-body${msgAttPair.first ? ' has-inline-att' : ''}">
+                  ${textHtml}
+                  ${msgAttPair.first}
+                </div>
+                ${msgAttPair.rest}
               </div>
             </div>`;
           }).join('');
@@ -36144,7 +36164,7 @@
           const fileAtts = getComplaintFileAttachments(active);
           state._complaintAttList = fileAtts;
           state._attComplaintCtx = complaintCtxFromRow(active);
-          const attsHtml = renderComplaintAttachmentsHtml(fileAtts, { listId: 'desk-main' });
+          const deskAttPair = renderComplaintInlineAttPair(fileAtts, 'desk-main');
           const replyAttachN = (state.uploadedFiles.cpr || []).length;
           const replyAttachLabel = replyAttachN > 0 ? `${replyAttachN} مرفق` : 'إرفاق';
           const composeHtml = active.status === 'resolved'
@@ -36182,8 +36202,11 @@
                     <span class="rd-cmpl-panel__who"><i class="fas ${active.isAnonymous ? 'fa-user-secret' : 'fa-user'} rd-cmpl-thread-author-ic" aria-hidden="true"></i>${Sec.escapeHTML(rdCmplDisplayName(active))} <span class="rd-desk-muted">· ${Sec.escapeHTML(active.time || '')}</span></span>
                     <span class="rd-cmpl-card__status" style="--tone:${st.color}">${Sec.escapeHTML(st.label)}</span>
                   </div>
-                  <div class="rd-cmpl-panel__desc">${Sec.escapeHTML(active.description || active.desc || '')}</div>
-                  ${attsHtml}
+                  <div class="rd-cmpl-panel__desc${deskAttPair.first ? ' has-inline-att' : ''}">
+                    <div class="rd-cmpl-desc-text">${Sec.escapeHTML(active.description || active.desc || '')}</div>
+                    ${deskAttPair.first}
+                  </div>
+                  ${deskAttPair.rest}
                 </div>
                 <div class="rd-cmpl-thread">${thread || '<div class="rd-cmpl-thread-empty">لا توجد ردود بعد</div>'}</div>
                 ${composeHtml}
@@ -36983,11 +37006,9 @@
             const time = formatRelativeAr(m.at) || '';
             const authorIc = isAdmin ? 'fa-headset' : (anon ? 'fa-user-secret' : 'fa-user');
             const msgAtts = normalizeComplaintAttachmentList(m.attachments);
-            const msgAttsHtml = msgAtts.length
-              ? renderComplaintAttachmentsHtml(msgAtts, { listId: `mob-reply-${msgIdx}`, compact: true })
-              : '';
+            const msgAttPair = renderComplaintInlineAttPair(msgAtts, `mob-reply-${msgIdx}`);
             const textHtml = m.text
-              ? `<div style="font-size:11.5px;color:var(--text2);line-height:1.7">${Sec.escapeHTML(m.text)}</div>`
+              ? `<div class="rd-cmpl-thread-text" style="font-size:11.5px;color:var(--text2);line-height:1.7">${Sec.escapeHTML(m.text)}</div>`
               : '';
             return `
               <div style="min-width:0;background:${bg};border:1px solid var(--border);border-radius:14px;padding:11px 13px">
@@ -36995,8 +37016,11 @@
                   <span style="display:inline-flex;align-items:center;gap:6px;font-size:10.5px;font-weight:700;color:${authorColor}"><i class="fas ${authorIc}" style="font-size:10px" aria-hidden="true"></i>${Sec.escapeHTML(author)}</span>
                   <span style="font-size:9px;color:var(--text3)">${Sec.escapeHTML(time)}</span>
                 </div>
-                ${textHtml}
-                ${msgAttsHtml}
+                <div class="rd-cmpl-thread-body${msgAttPair.first ? ' has-inline-att' : ''}">
+                  ${textHtml}
+                  ${msgAttPair.first}
+                </div>
+                ${msgAttPair.rest}
               </div>`;
           }).join('') +
           `</div>`;
@@ -37027,7 +37051,7 @@
         const fileAtts = getComplaintFileAttachments(c);
         state._complaintAttList = fileAtts;
         state._attComplaintCtx = complaintCtxFromRow(c);
-        const attsHtml = renderComplaintAttachmentsHtml(fileAtts, { listId: 'mob-main' });
+        const mobAttPair = renderComplaintInlineAttPair(fileAtts, 'mob-main');
         const replyAttachN = (state.uploadedFiles.cpr || []).length;
         const replyAttachLabel = replyAttachN > 0 ? `${replyAttachN} مرفق` : 'إرفاق';
 
@@ -37045,8 +37069,11 @@
                 <span class="cp-detail__who" style="display:inline-flex;align-items:center;gap:6px"><i class="fas ${whoIc}" style="font-size:10px" aria-hidden="true"></i>${Sec.escapeHTML(whoName)} <span class="cp-detail__muted">· ${Sec.escapeHTML(time)}</span></span>
                 <span class="cp-detail__status" style="--tone:${statusColor}">${Sec.escapeHTML(statusLabel)}</span>
               </div>
-              <div class="cp-detail__desc">${Sec.escapeHTML(c.description)}</div>
-              ${attsHtml}
+              <div class="cp-detail__desc${mobAttPair.first ? ' has-inline-att' : ''}">
+                <div class="rd-cmpl-desc-text">${Sec.escapeHTML(c.description)}</div>
+                ${mobAttPair.first}
+              </div>
+              ${mobAttPair.rest}
             </div>
             <div class="cp-detail__thread">${renderComplaintThreadHtml(c) || '<div class="cp-detail__thread-empty">لا توجد ردود بعد</div>'}</div>
             ${(c.employee_id === state.currentUser?.id || canManageComplaints()) ? (

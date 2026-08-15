@@ -481,6 +481,20 @@ html.mr-mobile-ui #tab-complaints .cp-card__status {
   color: var(--text2);
   line-height: 1.8;
   margin-bottom: 10px;
+}
+#complaintDetailModal .cp-detail__desc.has-inline-att,
+.rd-cmpl-thread-body.has-inline-att {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 10px;
+}
+.rd-cmpl-desc-text,
+.rd-cmpl-thread-body .rd-cmpl-thread-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+#complaintDetailModal .cp-detail__desc .rd-cmpl-desc-text {
   max-height: 120px;
   overflow-y: auto;
 }
@@ -498,17 +512,32 @@ html.mr-mobile-ui #tab-complaints .cp-card__status {
   margin-bottom: 8px;
 }
 .rd-cmpl-atts__grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
-  gap: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.rd-cmpl-atts--inline {
+  margin: 0;
+  flex: 0 0 auto;
+  display: flex;
+}
+#complaintDetailModal .rd-cmpl-atts--inline {
+  margin: 0;
+}
+#complaintDetailModal .rd-cmpl-atts--compact {
+  margin: 8px 0 0;
 }
 .rd-cmpl-att-card {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 0;
+  width: 52px;
+  height: 52px;
+  min-width: 52px;
+  min-height: 52px;
   padding: 0;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 10px;
   background: var(--surface);
   overflow: hidden;
   cursor: pointer;
@@ -521,8 +550,8 @@ html.mr-mobile-ui #tab-complaints .cp-card__status {
   -webkit-user-drag: none;
 }
 .rd-cmpl-att-card .att-thumb {
-  width: 100%;
-  aspect-ratio: 1;
+  width: 52px;
+  height: 52px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -540,24 +569,17 @@ html.mr-mobile-ui #tab-complaints .cp-card__status {
   user-select: none;
 }
 .rd-cmpl-att-card .att-thumb i {
-  font-size: 22px;
+  font-size: 16px;
   color: var(--text3);
-}
-.rd-cmpl-att-card {
-  padding-bottom: 0;
 }
 .rd-cmpl-att-name {
   display: none;
 }
 .rd-cmpl-atts--compact {
-  margin-top: 8px;
+  margin: 8px 0 0;
 }
 .rd-cmpl-atts--compact .rd-cmpl-atts__grid {
-  gap: 8px;
-}
-.rd-cmpl-atts--compact .rd-cmpl-att-card {
-  width: 64px;
-  min-height: 64px;
+  gap: 6px;
 }
 .rd-cmpl-reply-files,
 .cp-detail__reply-files {
@@ -1395,19 +1417,50 @@ html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-panel__des
   color: var(--text2) !important;
   line-height: 1.8 !important;
   margin-bottom: 12px !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-panel__desc.has-inline-att {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: flex-start !important;
+  gap: 10px !important;
+}
+html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-panel__desc .rd-cmpl-desc-text {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
   max-height: 140px !important;
   overflow-y: auto !important;
+}
+html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-thread-body.has-inline-att {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: flex-start !important;
+  gap: 10px !important;
+}
+html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-thread-body .rd-cmpl-thread-text {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-atts {
   margin: 0 0 14px !important;
 }
+html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-atts--inline {
+  margin: 0 !important;
+}
 html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-atts__grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-  gap: 10px !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  grid-template-columns: none !important;
+  gap: 6px !important;
 }
 html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-att-card {
-  border-radius: 12px !important;
+  width: 52px !important;
+  height: 52px !important;
+  min-width: 52px !important;
+  min-height: 52px !important;
+  border-radius: 10px !important;
 }
 html.athar-staging-redesign.mr-desktop-ui .rd-cmpl-card__atts {
   margin-top: 10px !important;
