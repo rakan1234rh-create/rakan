@@ -35895,7 +35895,7 @@
           ? complaintCatsForKind(c.kind)
           : (c.kind === 'suggestion' ? RD_SUGGESTION_CATS : RD_COMPLAINT_CATS));
         const cat = (cats || []).find(x => x.label === c.category) || (cats && cats[0]) || null;
-        const logs = Array.isArray(c.logs) ? c.logs : [];
+        const logs = visibleComplaintLogs(Array.isArray(c.logs) ? c.logs : [], c.kind);
         const fileAtts = getComplaintFileAttachments(c);
         return {
           id: c.id,
@@ -35982,6 +35982,29 @@
           return (row.kind === 'suggestion' || c.kind === 'suggestion') ? 'accepted' : 'resolved';
         }
         return null;
+      }
+
+      function isGenericComplaintCloseLog(text) {
+        const t = String(text || '').replace(/\s+/g, ' ').trim();
+        return t === 'تم حل الشكوى/الاقتراح' || t === 'تم حل الشكوى / الاقتراح';
+      }
+
+      function visibleComplaintLogs(logs, kind) {
+        const list = Array.isArray(logs) ? logs : [];
+        const hasDecisionNote = list.some((m) => {
+          const t = String(m?.text || '');
+          return t.includes('رفض الاقتراح') || t.includes('قبول الاقتراح') || t === 'تم حل الشكوى';
+        });
+        const filtered = hasDecisionNote
+          ? list.filter((m) => !isGenericComplaintCloseLog(m?.text))
+          : list;
+        return filtered.map((m) => {
+          if (!isGenericComplaintCloseLog(m?.text)) return m;
+          return {
+            ...m,
+            text: kind === 'suggestion' ? 'تم قبول الاقتراح' : 'تم حل الشكوى'
+          };
+        });
       }
 
       function isComplaintClosed(c) {
@@ -37073,7 +37096,7 @@
       }
 
       function renderComplaintThreadHtml(c) {
-        const logs = Array.isArray(c.logs) ? c.logs : [];
+        const logs = visibleComplaintLogs(Array.isArray(c.logs) ? c.logs : [], c.kind);
         if (!logs.length) return '';
         const anon = complaintIsAnonymous(c);
         return `<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">` +
