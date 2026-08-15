@@ -18152,16 +18152,13 @@
                   writeCfCache(cacheKey, playUrl);
                   return playUrl;
                 }
-                // الصور وPDF تُعرض عبر رابط R2 الموقّع. فحص HEAD على ?stream=
-                // يفشل غالباً بـ 503/CORS من بوابة الدوال ولا يعني أن الملف غير موجود.
-                if (signed.url) {
-                  writeCfCache(cacheKey, signed.url);
-                  return signed.url;
-                }
-                if (streamPlay) {
-                  writeCfCache(cacheKey, streamPlay);
-                  return streamPlay;
-                }
+                // الصور/PDF تُعرض في <img> عبر رابط البث (GET بسيط، بدون CORS preflight).
+                // لا نفحص HEAD على ?stream= — يفشل بـ 503/CORS من vms-v2 حتى لو GET للصورة ينجح.
+                // رابط R2 الموقّع غالباً يرفضه <img> (403) من هذا الأصل.
+                const resolved = streamPlay || signed.url;
+                if (!resolved) continue;
+                writeCfCache(cacheKey, resolved);
+                return resolved;
               } catch (e) {
                 lastSignErr = e;
               }
@@ -18240,11 +18237,24 @@
             img.style.opacity = '1';
           };
           img.onerror = () => {
+            const streamFb = readVideoStreamFallback(ck);
+            const directFb = _videoDirectR2Url && _videoDirectR2Url[ck];
+            if (streamFb && img.src !== streamFb) {
+              img.referrerPolicy = 'no-referrer';
+              img.src = streamFb;
+              return;
+            }
+            if (directFb && img.src !== directFb) {
+              img.referrerPolicy = 'no-referrer';
+              img.src = directFb;
+              return;
+            }
             delete _cloudflareCache[ck];
             delete img.dataset.cfThumbDone;
             img.alt = 'خطأ في التحميل';
             img.style.opacity = '0.3';
           };
+          img.referrerPolicy = 'no-referrer';
           img.src = resolved;
         } catch (e) {
           const ck = cfCacheKey(fid, attLoadCtx());
@@ -21182,6 +21192,18 @@
                 }
                 if (img) {
                   img.onerror = () => {
+                    const streamFb = readVideoStreamFallback(ck);
+                    const directFb = _videoDirectR2Url && _videoDirectR2Url[ck];
+                    if (streamFb && img.src !== streamFb) {
+                      img.referrerPolicy = 'no-referrer';
+                      img.src = streamFb;
+                      return;
+                    }
+                    if (directFb && img.src !== directFb) {
+                      img.referrerPolicy = 'no-referrer';
+                      img.src = directFb;
+                      return;
+                    }
                     delete _cloudflareCache[ck];
                     if (loader) {
                       loader.style.display = 'flex';
@@ -21194,6 +21216,7 @@
                     }
                   };
                   img.onload = () => revealAttViewerMedia(img);
+                  img.referrerPolicy = 'no-referrer';
                   img.src = dataUrl;
                 }
               } catch (e) {
