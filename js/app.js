@@ -1243,6 +1243,7 @@
         _dataReady: false,
         complaints: [],
         complaintTypeFilter: 'all',
+        complaintStatusFilter: '',
         complaintSearch: '',
         complaintDateFrom: '',
         complaintDateTo: '',
@@ -36385,14 +36386,8 @@
         if (!opts.soft && typeof loadComplaintsData === 'function') {
           try { await loadComplaintsData(); } catch (_) { /* noop */ }
         }
-        const filter = state._rdCmplFilter || 'all';
         const all = getRdComplaints();
-        let rows = all;
-        if (filter === 'complaint') rows = all.filter(r => r.kind === 'complaint');
-        else if (filter === 'suggestion') rows = all.filter(r => r.kind === 'suggestion');
-        else if (filter === 'pending') rows = all.filter(r => r.status === 'pending');
-        else if (filter === 'resolved') rows = all.filter(r => r.status === 'resolved' || r.status === 'rejected');
-        rows = applyComplaintQueryFilters(rows);
+        const rows = applyComplaintQueryFilters(all.filter(complaintMatchesChipFilters));
 
         const total = all.length;
         const onlyC = all.filter(r => r.kind === 'complaint').length;
@@ -36400,16 +36395,7 @@
         const pending = all.filter(r => r.status === 'pending').length;
         const resolved = all.filter(r => r.status === 'resolved').length;
 
-        const filters = [
-          { id: 'all', label: 'الكل' },
-          { id: 'complaint', label: 'الشكاوى' },
-          { id: 'suggestion', label: 'الاقتراحات' },
-          { id: 'pending', label: 'قيد المراجعة' },
-          { id: 'resolved', label: 'تم الحل' }
-        ].map(f => {
-          const on = filter === f.id;
-          return `<button type="button" class="rd-cmpl-filter${on ? ' is-active' : ''}" onclick="rdCmplFilter('${f.id}')">${Sec.escapeHTML(f.label)}</button>`;
-        }).join('');
+        const filters = complaintChipFiltersHtml('rd-cmpl-filter', 'rdCmplFilter');
 
         const list = rows.map((r, i) => {
           const tone = rdCmplTone(r.kind);
@@ -36688,7 +36674,7 @@
       }
 
       function rdCmplFilter(id) {
-        state._rdCmplFilter = id || 'all';
+        applyComplaintChipFilter(id);
         renderComplaintsDesktop({ soft: true });
       }
 
@@ -36993,14 +36979,45 @@
         }
       }
 
+      function applyComplaintChipFilter(id) {
+        if (id === 'pending' || id === 'resolved') {
+          state.complaintStatusFilter = state.complaintStatusFilter === id ? '' : id;
+          return;
+        }
+        if (id === 'all' || id === 'complaint' || id === 'suggestion') {
+          state.complaintTypeFilter = id;
+        }
+      }
+
+      function isComplaintChipActive(id) {
+        if (id === 'pending' || id === 'resolved') return state.complaintStatusFilter === id;
+        return (state.complaintTypeFilter || 'all') === id;
+      }
+
+      function complaintMatchesChipFilters(row) {
+        const kind = state.complaintTypeFilter || 'all';
+        const status = state.complaintStatusFilter || '';
+        if ((kind === 'complaint' || kind === 'suggestion') && row.kind !== kind) return false;
+        if (status === 'pending' && row.status !== 'pending') return false;
+        if (status === 'resolved' && row.status !== 'resolved' && row.status !== 'rejected') return false;
+        return true;
+      }
+
+      function complaintChipFiltersHtml(btnClass, handler) {
+        return [
+          { id: 'all', label: 'الكل' },
+          { id: 'complaint', label: 'الشكاوى' },
+          { id: 'suggestion', label: 'الاقتراحات' },
+          { id: 'pending', label: 'قيد المراجعة' },
+          { id: 'resolved', label: 'تم الحل' }
+        ].map((f) => {
+          const on = isComplaintChipActive(f.id);
+          return `<button type="button" class="${btnClass}${on ? ' is-active' : ''}" onclick="${handler}('${f.id}')">${Sec.escapeHTML(f.label)}</button>`;
+        }).join('');
+      }
+
       function getFilteredComplaints() {
-        const list = state.complaints || [];
-        const filter = state.complaintTypeFilter || 'all';
-        let rows = list;
-        if (filter === 'pending') rows = list.filter(c => c.status === 'pending');
-        else if (filter === 'resolved') rows = list.filter(c => c.status === 'resolved' || c.status === 'rejected');
-        else if (filter !== 'all') rows = list.filter(c => c.kind === filter);
-        return applyComplaintQueryFilters(rows);
+        return applyComplaintQueryFilters((state.complaints || []).filter(complaintMatchesChipFilters));
       }
 
       function complaintCreatedIso(row) {
@@ -37128,17 +37145,7 @@
         const pending = rows.filter(c => c.status === 'pending').length;
         const resolved = rows.filter(c => c.status === 'resolved').length;
 
-        const filters = [
-          { id: 'all', label: 'الكل' },
-          { id: 'complaint', label: 'الشكاوى' },
-          { id: 'suggestion', label: 'الاقتراحات' },
-          { id: 'pending', label: 'قيد المراجعة' },
-          { id: 'resolved', label: 'تم الحل' }
-        ];
-        const filtersHtml = filters.map(f => {
-          const active = f.id === state.complaintTypeFilter;
-          return `<button type="button" class="cp-mob-filter${active ? ' is-active' : ''}" onclick="setComplaintTypeFilter('${f.id}')">${Sec.escapeHTML(f.label)}</button>`;
-        }).join('');
+        const filtersHtml = complaintChipFiltersHtml('cp-mob-filter', 'setComplaintTypeFilter');
 
         const filtered = getFilteredComplaints();
         const listHtml = filtered.length
@@ -37179,7 +37186,7 @@
       }
 
       function setComplaintTypeFilter(id) {
-        state.complaintTypeFilter = id;
+        applyComplaintChipFilter(id);
         paintComplaintsPage();
       }
 
