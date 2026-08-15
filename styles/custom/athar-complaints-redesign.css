@@ -188,12 +188,54 @@ html.mr-mobile-ui #tab-complaints .cp-mob-stat__lbl {
 }
 html.mr-mobile-ui #tab-complaints .cp-mob-filters {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 6px;
   margin: 0 0 8px !important;
   overflow-x: auto;
   padding-bottom: 2px;
   width: 100%;
   box-sizing: border-box;
+}
+html.mr-mobile-ui #tab-complaints .cp-mob-filters .rd-cmpl-search {
+  flex: 1 1 100%;
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 12.5px;
+  box-sizing: border-box;
+}
+html.mr-mobile-ui #tab-complaints .cp-mob-filters .rd-cmpl-date {
+  flex: 1 1 calc(50% - 4px);
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 38px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface2);
+  color: var(--text2);
+  font-size: 11.5px;
+  font-weight: 600;
+  box-sizing: border-box;
+}
+html.mr-mobile-ui #tab-complaints .cp-mob-filters .rd-cmpl-date input[type="date"] {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  font-size: 12px;
 }
 html.mr-mobile-ui #tab-complaints .cp-mob-filter {
   flex: 0 0 auto;
@@ -1162,9 +1204,48 @@ html.athar-staging-redesign.mr-desktop-ui .rd-cmpl-metric__ico--success {
 
 html.athar-staging-redesign.mr-desktop-ui .rd-cmpl-filters {
   display: flex !important;
+  align-items: center !important;
   gap: 8px !important;
   margin-bottom: 16px !important;
   flex-wrap: wrap !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-cmpl-search {
+  flex: 1 1 200px !important;
+  min-width: 180px !important;
+  max-width: 260px !important;
+  height: 38px !important;
+  padding: 0 12px !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 10px !important;
+  background: var(--surface) !important;
+  color: var(--text) !important;
+  font-family: inherit !important;
+  font-size: 12.5px !important;
+  box-sizing: border-box !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-cmpl-date {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  height: 38px !important;
+  padding: 0 10px !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 10px !important;
+  background: var(--surface2) !important;
+  color: var(--text2) !important;
+  font-size: 11.5px !important;
+  font-weight: 600 !important;
+  font-family: inherit !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-cmpl-date input[type="date"] {
+  border: none !important;
+  background: transparent !important;
+  color: inherit !important;
+  font-family: inherit !important;
+  font-size: 12px !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui .rd-cmpl-filter {
