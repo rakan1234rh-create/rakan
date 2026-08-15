@@ -36146,9 +36146,7 @@
           state._attComplaintCtx = complaintCtxFromRow(active);
           const attsHtml = renderComplaintAttachmentsHtml(fileAtts, { listId: 'desk-main' });
           const replyAttachN = (state.uploadedFiles.cpr || []).length;
-          const replyAttachLabel = replyAttachN > 0
-            ? `${replyAttachN} ملف مرفق — اضغط لإضافة المزيد`
-            : 'إرفاق ملف مع الرد';
+          const replyAttachLabel = replyAttachN > 0 ? `${replyAttachN} مرفق` : 'إرفاق';
           const composeHtml = active.status === 'resolved'
             ? `<div class="rd-cmpl-panel__compose is-locked">
                   <div class="rd-cmpl-resolved-banner">${active.kind === 'suggestion' ? 'تم حل الاقتراح' : 'تم حل الشكوى'}</div>
@@ -36157,13 +36155,13 @@
                   <div class="rd-cmpl-field-label">${Sec.escapeHTML(replyLabel)}</div>
                   <textarea class="rd-cmpl-textarea" id="rdCmplReplyInput" placeholder="اكتب ردك هنا..." rows="4">${Sec.escapeHTML(state._rdCmplReply || '')}</textarea>
                   <input type="file" id="cprAttachInput" accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx" multiple hidden onchange="handleFiles(event,'cpr')">
-                  <button type="button" class="rd-cmpl-attach rd-cmpl-attach--reply" onclick="rdCmplReplySimulateAttach()">
-                    <i class="fas fa-paperclip" aria-hidden="true"></i>
-                    <span id="cprAttachLabel">${Sec.escapeHTML(replyAttachLabel)}</span>
-                  </button>
                   <div id="cprFileArea" class="file-list rd-cmpl-reply-files"></div>
                   <div class="rd-cmpl-panel__actions">
                     <button type="button" class="rd-cmpl-btn rd-cmpl-btn--primary" id="rdCmplReplySendBtn" onclick="rdSubmitComplaintReply()">إرسال الرد</button>
+                    <button type="button" class="rd-cmpl-attach rd-cmpl-attach--reply" onclick="rdCmplReplySimulateAttach()" aria-label="إرفاق ملف مع الرد">
+                      <i class="fas fa-paperclip" aria-hidden="true"></i>
+                      <span id="cprAttachLabel">${Sec.escapeHTML(replyAttachLabel)}</span>
+                    </button>
                     ${resolveBtn}
                   </div>
                 </div>`;
@@ -36733,11 +36731,12 @@
 
       function updateCprAttachLabel() {
         const n = (state.uploadedFiles.cpr || []).length;
-        const text = n > 0
-          ? `${n} ملف مرفق — اضغط لإضافة المزيد`
-          : 'إرفاق ملف مع الرد';
+        const text = n > 0 ? `${n} مرفق` : 'إرفاق';
         document.querySelectorAll('#cprAttachLabel').forEach((label) => {
           label.textContent = text;
+        });
+        document.querySelectorAll('.rd-cmpl-attach--reply, .cp-detail__reply-attach').forEach((btn) => {
+          btn.classList.toggle('has-files', n > 0);
         });
       }
 
@@ -37030,9 +37029,7 @@
         state._attComplaintCtx = complaintCtxFromRow(c);
         const attsHtml = renderComplaintAttachmentsHtml(fileAtts, { listId: 'mob-main' });
         const replyAttachN = (state.uploadedFiles.cpr || []).length;
-        const replyAttachLabel = replyAttachN > 0
-          ? `${replyAttachN} ملف مرفق — اضغط لإضافة المزيد`
-          : 'إرفاق ملف مع الرد';
+        const replyAttachLabel = replyAttachN > 0 ? `${replyAttachN} مرفق` : 'إرفاق';
 
         host.innerHTML = `
           <div class="cp-detail">
@@ -37061,13 +37058,13 @@
               <div class="cp-detail__compose-label">${Sec.escapeHTML(replyLabel)}</div>
               <textarea id="cpReplyText" class="cp-detail__reply" placeholder="اكتب ردك هنا..."></textarea>
               <input type="file" id="cprAttachInput" accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx" multiple hidden onchange="handleFiles(event,'cpr')">
-              <button type="button" class="cp-mob-attach cp-detail__reply-attach" onclick="document.getElementById('cprAttachInput').click()">
-                <i class="fas fa-paperclip" aria-hidden="true"></i>
-                <span id="cprAttachLabel">${Sec.escapeHTML(replyAttachLabel)}</span>
-              </button>
               <div id="cprFileArea" class="file-list cp-mob-file-list cp-detail__reply-files"></div>
               <div class="cp-detail__actions">
                 <button type="button" class="cp-detail__send" id="cpReplySendBtn" onclick="submitComplaintReplyFromUi()">إرسال الرد</button>
+                <button type="button" class="cp-mob-attach cp-detail__reply-attach" onclick="document.getElementById('cprAttachInput').click()" aria-label="إرفاق ملف مع الرد">
+                  <i class="fas fa-paperclip" aria-hidden="true"></i>
+                  <span id="cprAttachLabel">${Sec.escapeHTML(replyAttachLabel)}</span>
+                </button>
                 ${canResolve ? `<button type="button" class="cp-detail__resolve" onclick="resolveComplaintFromUi()"><i class="fas fa-check" aria-hidden="true"></i>حل</button>` : ''}
               </div>
             </div>`
