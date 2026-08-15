@@ -1243,6 +1243,9 @@
         _dataReady: false,
         complaints: [],
         complaintTypeFilter: 'all',
+        complaintSearch: '',
+        complaintDateFrom: '',
+        complaintDateTo: '',
         activeComplaintId: null,
         complaintKind: 'complaint',
         complaintCategory: '',
@@ -36091,6 +36094,7 @@
         else if (filter === 'suggestion') rows = all.filter(r => r.kind === 'suggestion');
         else if (filter === 'pending') rows = all.filter(r => r.status === 'pending');
         else if (filter === 'resolved') rows = all.filter(r => r.status === 'resolved' || r.status === 'rejected');
+        rows = applyComplaintQueryFilters(rows);
 
         const total = all.length;
         const onlyC = all.filter(r => r.kind === 'complaint').length;
@@ -36192,7 +36196,10 @@
                 <div class="rd-cmpl-metric__ico rd-cmpl-metric__ico--success"><i class="fas fa-check-double" aria-hidden="true"></i></div>
               </div>
             </div>
-            <div class="rd-cmpl-filters">${filters}</div>
+            <div class="rd-cmpl-filters">
+              ${complaintQueryToolbarHtml('rd')}
+              ${filters}
+            </div>
             <div class="rd-cmpl-list">${list || `<div class="rd-ticket-empty"><i class="fas fa-inbox"></i><p>${Sec.escapeHTML(emptyMsg)}</p></div>`}</div>
           </div>`;
 
@@ -36383,7 +36390,7 @@
 
       function rdCmplFilter(id) {
         state._rdCmplFilter = id || 'all';
-        renderComplaintsDesktop();
+        renderComplaintsDesktop({ soft: true });
       }
 
       function rdOpenComplaintForm() {
@@ -36620,6 +36627,7 @@
       }
 
       window.rdCmplFilter = rdCmplFilter;
+      window.refreshComplaintListFromQuery = refreshComplaintListFromQuery;
       window.rdOpenComplaintForm = rdOpenComplaintForm;
       window.rdCloseComplaintForm = rdCloseComplaintForm;
       window.rdCmplSetKind = rdCmplSetKind;
@@ -36689,10 +36697,84 @@
       function getFilteredComplaints() {
         const list = state.complaints || [];
         const filter = state.complaintTypeFilter || 'all';
-        if (filter === 'all') return list;
-        if (filter === 'pending') return list.filter(c => c.status === 'pending');
-        if (filter === 'resolved') return list.filter(c => c.status === 'resolved' || c.status === 'rejected');
-        return list.filter(c => c.kind === filter);
+        let rows = list;
+        if (filter === 'pending') rows = list.filter(c => c.status === 'pending');
+        else if (filter === 'resolved') rows = list.filter(c => c.status === 'resolved' || c.status === 'rejected');
+        else if (filter !== 'all') rows = list.filter(c => c.kind === filter);
+        return applyComplaintQueryFilters(rows);
+      }
+
+      function complaintCreatedIso(row) {
+        const raw = row?.createdAt || row?.created_at || '';
+        if (!raw) return '';
+        const d = new Date(raw);
+        if (Number.isNaN(d.getTime())) return String(raw).slice(0, 10);
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+      }
+
+      function complaintNumberMatches(row, q) {
+        const needle = String(q || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (!needle) return true;
+        const num = String(row?.complaintNumber || row?.complaint_number || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        return !!num && num.includes(needle);
+      }
+
+      function applyComplaintQueryFilters(rows) {
+        const q = state.complaintSearch || '';
+        const from = state.complaintDateFrom || '';
+        const to = state.complaintDateTo || '';
+        return (rows || []).filter((row) => {
+          if (!complaintNumberMatches(row, q)) return false;
+          const iso = complaintCreatedIso(row);
+          if (from && iso && iso < from) return false;
+          if (to && iso && iso > to) return false;
+          if ((from || to) && !iso) return false;
+          return true;
+        });
+      }
+
+      function complaintQueryToolbarHtml(prefix) {
+        const p = prefix === 'cp' ? 'cp' : 'rd';
+        const searchId = p === 'cp' ? 'cpCmplSearch' : 'rdCmplSearch';
+        const fromId = p === 'cp' ? 'cpCmplFrom' : 'rdCmplFrom';
+        const toId = p === 'cp' ? 'cpCmplTo' : 'rdCmplTo';
+        const q = Sec.escapeHTML(state.complaintSearch || '');
+        const from = Sec.escapeHTML(state.complaintDateFrom || '');
+        const to = Sec.escapeHTML(state.complaintDateTo || '');
+        return `<input type="search" class="rd-cmpl-search" id="${searchId}" value="${q}" placeholder="ابحث برقم الشكوى..." autocomplete="off" inputmode="search" oninput="refreshComplaintListFromQuery(this)" aria-label="بحث برقم الشكوى">
+          <label class="rd-cmpl-date"><span>من</span><input type="date" id="${fromId}" value="${from}" onchange="refreshComplaintListFromQuery(this)" aria-label="من تاريخ"></label>
+          <label class="rd-cmpl-date"><span>إلى</span><input type="date" id="${toId}" value="${to}" onchange="refreshComplaintListFromQuery(this)" aria-label="إلى تاريخ"></label>`;
+      }
+
+      function refreshComplaintListFromQuery(el) {
+        const search = document.getElementById('rdCmplSearch') || document.getElementById('cpCmplSearch');
+        const from = document.getElementById('rdCmplFrom') || document.getElementById('cpCmplFrom');
+        const to = document.getElementById('rdCmplTo') || document.getElementById('cpCmplTo');
+        if (search) state.complaintSearch = search.value || '';
+        if (from) state.complaintDateFrom = from.value || '';
+        if (to) state.complaintDateTo = to.value || '';
+        const id = el && el.id;
+        const start = el && typeof el.selectionStart === 'number' ? el.selectionStart : null;
+        const end = el && typeof el.selectionEnd === 'number' ? el.selectionEnd : start;
+        const restore = () => {
+          if (!id) return;
+          const next = document.getElementById(id);
+          if (!next) return;
+          next.focus();
+          if (start == null) return;
+          try { next.setSelectionRange(start, end); } catch (_) { /* noop */ }
+        };
+        if (typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi()) {
+          const ret = renderComplaintsDesktop({ soft: true });
+          if (ret && typeof ret.then === 'function') ret.then(restore);
+          else restore();
+        } else {
+          paintComplaintsPage();
+          restore();
+        }
       }
 
       function getComplaintById(id) {
@@ -36794,7 +36876,10 @@
               ${statCard(pending, 'قيد المراجعة', 'fa-hourglass-half', 'var(--warning)')}
               ${statCard(resolved, 'تم الحل', 'fa-check-double', 'var(--success)')}
             </div>
-            <div class="cp-mob-filters">${filtersHtml}</div>
+            <div class="cp-mob-filters">
+              ${complaintQueryToolbarHtml('cp')}
+              ${filtersHtml}
+            </div>
             <div class="cp-mob-list">${listHtml}</div>
           </div>`;
       }
@@ -37371,6 +37456,7 @@
 
       window.renderComplaintsPage = renderComplaintsPage;
       window.setComplaintTypeFilter = setComplaintTypeFilter;
+      window.refreshComplaintListFromQuery = refreshComplaintListFromQuery;
       window.openNewComplaintModal = openNewComplaintModal;
       window.closeNewComplaintModal = closeNewComplaintModal;
       window.closeNewComplaintSheet = closeNewComplaintSheet;
