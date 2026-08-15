@@ -35686,7 +35686,7 @@
         state._complaintAttLists[listId] = atts;
         const compact = !!opts.compact;
         const placeholderSvg = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><rect fill="%23e5e7eb" width="80" height="80" rx="8"/><text x="40" y="44" text-anchor="middle" fill="%239ca3af" font-size="10">جاري...</text></svg>')}`;
-        const listIdJs = JSON.stringify(listId);
+        const listIdAttr = Sec.escapeHTML(listId);
         const items = atts.map((a, idx) => {
           const ext = typeof attachmentExtFromAtt === 'function' ? attachmentExtFromAtt(a) : '';
           const isImg = typeof isAttachmentImageExt === 'function' && isAttachmentImageExt(ext);
@@ -35704,7 +35704,7 @@
           } else {
             thumb = `<div class="att-thumb"><i class="fas ${isVid ? 'fa-video' : 'fa-file-lines'}" aria-hidden="true"></i></div>`;
           }
-          return `<button type="button" class="rd-cmpl-att-card" data-cmpl-att-idx="${idx}" data-cmpl-att-list="${Sec.escapeHTML(listId)}" onclick="event.preventDefault();event.stopPropagation();openComplaintAttByIndex(${idx}, ${listIdJs})" aria-label="${Sec.escapeHTML(name)}">${thumb}</button>`;
+          return `<button type="button" class="rd-cmpl-att-card" data-cmpl-att-idx="${idx}" data-cmpl-att-list="${listIdAttr}" onclick="event.preventDefault();event.stopPropagation();openComplaintAttByIndex(${idx}, this.dataset.cmplAttList)" aria-label="${Sec.escapeHTML(name)}">${thumb}</button>`;
         }).join('');
         if (compact) {
           return `<div class="rd-cmpl-atts rd-cmpl-atts--compact"><div class="rd-cmpl-atts__grid">${items}</div></div>`;
