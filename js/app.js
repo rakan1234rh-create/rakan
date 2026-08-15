@@ -36088,7 +36088,9 @@
         const all = getRdComplaints();
         let rows = all;
         if (filter === 'complaint') rows = all.filter(r => r.kind === 'complaint');
-        if (filter === 'suggestion') rows = all.filter(r => r.kind === 'suggestion');
+        else if (filter === 'suggestion') rows = all.filter(r => r.kind === 'suggestion');
+        else if (filter === 'pending') rows = all.filter(r => r.status === 'pending');
+        else if (filter === 'resolved') rows = all.filter(r => r.status === 'resolved' || r.status === 'rejected');
 
         const total = all.length;
         const onlyC = all.filter(r => r.kind === 'complaint').length;
@@ -36099,7 +36101,9 @@
         const filters = [
           { id: 'all', label: 'الكل' },
           { id: 'complaint', label: 'الشكاوى' },
-          { id: 'suggestion', label: 'الاقتراحات' }
+          { id: 'suggestion', label: 'الاقتراحات' },
+          { id: 'pending', label: 'قيد المراجعة' },
+          { id: 'resolved', label: 'تم الحل' }
         ].map(f => {
           const on = filter === f.id;
           return `<button type="button" class="rd-cmpl-filter${on ? ' is-active' : ''}" onclick="rdCmplFilter('${f.id}')">${Sec.escapeHTML(f.label)}</button>`;
@@ -36684,8 +36688,11 @@
 
       function getFilteredComplaints() {
         const list = state.complaints || [];
-        if (state.complaintTypeFilter === 'all') return list;
-        return list.filter(c => c.kind === state.complaintTypeFilter);
+        const filter = state.complaintTypeFilter || 'all';
+        if (filter === 'all') return list;
+        if (filter === 'pending') return list.filter(c => c.status === 'pending');
+        if (filter === 'resolved') return list.filter(c => c.status === 'resolved' || c.status === 'rejected');
+        return list.filter(c => c.kind === filter);
       }
 
       function getComplaintById(id) {
@@ -36749,7 +36756,9 @@
         const filters = [
           { id: 'all', label: 'الكل' },
           { id: 'complaint', label: 'الشكاوى' },
-          { id: 'suggestion', label: 'الاقتراحات' }
+          { id: 'suggestion', label: 'الاقتراحات' },
+          { id: 'pending', label: 'قيد المراجعة' },
+          { id: 'resolved', label: 'تم الحل' }
         ];
         const filtersHtml = filters.map(f => {
           const active = f.id === state.complaintTypeFilter;
