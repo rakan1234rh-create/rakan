@@ -881,9 +881,38 @@
               const blob = await res.blob();
               if (blob && blob.size) return URL.createObjectURL(blob);
             }
-          } catch (_) { /* CORS on R2 */ }
+            if (res.status === 404 || res.status === 403) {
+              throw new Error('R2_MISSING');
+            }
+          } catch (e) {
+            if (String(e?.message || e) === 'R2_MISSING') throw e;
+          }
         }
         return fetchR2ProxyBlobUrl(key, contentType);
+      }
+
+      async function persistComplaintAttachmentKey(oldKey, newKey) {
+        if (!oldKey || !newKey || oldKey === newKey) return;
+        if (String(newKey).startsWith('temp_')) return;
+        const ctx = state._attComplaintCtx;
+        const id = ctx?.id;
+        if (!id) return;
+        const row = (state.complaints || []).find(c => String(c.id) === String(id));
+        if (!row) return;
+        const atts = typeof parseDbJsonArray === 'function'
+          ? parseDbJsonArray(row.attachments)
+          : (Array.isArray(row.attachments) ? row.attachments : []);
+        let changed = false;
+        const next = atts.map((a) => {
+          if (!a || (a.p !== oldKey && a.path !== oldKey)) return a;
+          changed = true;
+          return { ...a, p: newKey };
+        });
+        if (!changed) return;
+        try {
+          await sb.from('complaints').update({ attachments: next }).eq('id', id);
+          row.attachments = next;
+        } catch (_) { /* noop */ }
       }
 
       /** رفع ملف إلى R2 عبر Edge Function (يتجاوز CORS على bucket) */
@@ -16744,7 +16773,9 @@
         const setRank = (k, r) => {
           if (!rank.has(k)) rank.set(k, r);
         };
-        setRank(id, n++);
+        for (const p of ticketFolder) {
+          if (String(p).startsWith('complaints/')) setRank(p, n++);
+        }
         for (const p of sameTicketPaths) {
           if (p !== id) setRank(p, n++);
         }
@@ -16753,9 +16784,13 @@
           if (/^V-\d{4}-/i.test(folder)) setRank(p, n++);
         }
         for (const p of ticketFolder) setRank(p, n++);
-        if (id.startsWith('temp_')) setRank(id, 998);
-        else setRank(id, n++);
-        if (base !== id) setRank(base, id.startsWith('temp_') ? 997 : n++);
+        if (!String(id).startsWith('temp_')) setRank(id, n++);
+        else setRank(id, 980);
+        if (base !== id) setRank(base, String(id).startsWith('temp_') ? 970 : n++);
+        for (const k of all) {
+          if (String(k).startsWith('temp_')) rank.set(k, 980);
+          else if (String(k).startsWith('complaints/')) rank.set(k, Math.min(rank.get(k) ?? 10, 5));
+        }
         return [...all].sort((a, b) => {
           const ra = rank.has(a) ? rank.get(a) : 999;
           const rb = rank.has(b) ? rank.get(b) : 999;
@@ -18183,10 +18218,12 @@
             const ct = mimeTypeFromAttachmentExt(extractAttachmentExt(fileId, ''));
             const candidates = getR2KeyFallbackCandidates(fileId, ticketCtx);
             const useStream = isLikelyVideoAttachmentKey(fileId);
+            const hasFinalComplaintKey = candidates.some((k) => String(k).startsWith('complaints/'));
             let lastSignErr = null;
             for (const key of candidates) {
               try {
                 const isTempKey = String(key).startsWith('temp_');
+                if (isTempKey && hasFinalComplaintKey && !useStream) continue;
                 const exists = await r2ObjectExists(key);
                 if (exists === false) continue;
                 const signed = await callR2StorageFn('signGet', { key, ...(ct ? { contentType: ct } : {}) });
@@ -18204,6 +18241,7 @@
                 // نجلب البايتات عبر POST مصادق (أو رابط R2 إن سمح CORS) ثم blob:.
                 const displayUrl = await resolveImageDisplayUrl(key, signed.url, ct);
                 writeCfCache(cacheKey, displayUrl);
+                if (key !== fileId) void persistComplaintAttachmentKey(fileId, key);
                 return displayUrl;
               } catch (e) {
                 lastSignErr = e;
