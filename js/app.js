@@ -18152,14 +18152,16 @@
                   writeCfCache(cacheKey, playUrl);
                   return playUrl;
                 }
-                if (streamPlay) {
-                  const ok = await probeR2StreamPlayUrl(streamPlay);
-                  if (!ok) continue;
+                // الصور وPDF تُعرض عبر رابط R2 الموقّع. فحص HEAD على ?stream=
+                // يفشل غالباً بـ 503/CORS من بوابة الدوال ولا يعني أن الملف غير موجود.
+                if (signed.url) {
+                  writeCfCache(cacheKey, signed.url);
+                  return signed.url;
                 }
-                const resolved = streamPlay || signed.url;
-                if (!resolved) continue;
-                writeCfCache(cacheKey, resolved);
-                return resolved;
+                if (streamPlay) {
+                  writeCfCache(cacheKey, streamPlay);
+                  return streamPlay;
+                }
               } catch (e) {
                 lastSignErr = e;
               }

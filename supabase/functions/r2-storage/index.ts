@@ -64,10 +64,15 @@ async function ensureAws(): Promise<void> {
 function buildCors(req: Request): Record<string, string> {
   const raw = Deno.env.get('ALLOWED_ORIGIN') || 'https://athar-app.online';
   const allowed = new Set(
-    raw.split(',').map((s) => s.trim()).filter(Boolean).concat(['https://athar-app.online', 'https://athar.app']),
+    raw.split(',').map((s) => s.trim()).filter(Boolean).concat([
+      'https://athar-app.online',
+      'https://athar.app',
+      'https://vms-v2.aromaticfamilies.com',
+    ]),
   );
   const requestOrigin = req.headers.get('Origin') || '';
-  const isAllowed = allowed.has(requestOrigin);
+  const isAllowed = allowed.has(requestOrigin)
+    || (requestOrigin.endsWith('.aromaticfamilies.com') && requestOrigin.startsWith('https://'));
   return {
     'Access-Control-Allow-Origin': isAllowed ? requestOrigin : '',
     'Access-Control-Allow-Headers':
