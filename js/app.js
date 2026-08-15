@@ -838,6 +838,54 @@
         return data;
       }
 
+      async function fetchR2ProxyBlobUrl(key, contentType) {
+        let session = await ensureSupabaseSessionFresh();
+        if (!session?.access_token) {
+          const { data: { session: s2 } } = await sb.auth.getSession();
+          session = s2;
+        }
+        if (!session?.access_token) {
+          throw new Error('انتهت الجلسة، يرجى تسجيل الدخول من جديد');
+        }
+        const res = await fetch(R2_STORAGE_FN_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': SUPABASE_ANON,
+            'Authorization': `Bearer ${session.access_token}`
+          },
+          body: JSON.stringify({
+            action: 'proxyGet',
+            key,
+            ...(contentType ? { contentType } : {})
+          })
+        });
+        if (!res.ok) {
+          let msg = 'فشل جلب المرفق (' + res.status + ')';
+          try {
+            const errData = await res.json();
+            if (errData?.error) msg = errData.error;
+          } catch (_) { /* not json */ }
+          throw new Error(msg);
+        }
+        const blob = await res.blob();
+        if (!blob || !blob.size) throw new Error('المرفق فارغ');
+        return URL.createObjectURL(blob);
+      }
+
+      async function resolveImageDisplayUrl(key, signedUrl, contentType) {
+        if (signedUrl && typeof isDirectR2SignedUrl === 'function' && isDirectR2SignedUrl(signedUrl)) {
+          try {
+            const res = await fetch(signedUrl, { referrerPolicy: 'no-referrer' });
+            if (res.ok) {
+              const blob = await res.blob();
+              if (blob && blob.size) return URL.createObjectURL(blob);
+            }
+          } catch (_) { /* CORS on R2 */ }
+        }
+        return fetchR2ProxyBlobUrl(key, contentType);
+      }
+
       /** رفع ملف إلى R2 عبر Edge Function (يتجاوز CORS على bucket) */
       async function uploadR2ViaEdgeProxy(objectKey, body, contentType, allowRetry = true) {
         let session = await ensureSupabaseSessionFresh();
@@ -18152,13 +18200,11 @@
                   writeCfCache(cacheKey, playUrl);
                   return playUrl;
                 }
-                // الصور/PDF تُعرض في <img> عبر رابط البث (GET بسيط، بدون CORS preflight).
-                // لا نفحص HEAD على ?stream= — يفشل بـ 503/CORS من vms-v2 حتى لو GET للصورة ينجح.
-                // رابط R2 الموقّع غالباً يرفضه <img> (403) من هذا الأصل.
-                const resolved = streamPlay || signed.url;
-                if (!resolved) continue;
-                writeCfCache(cacheKey, resolved);
-                return resolved;
+                // لا نضع ?stream= في <img>: GET على الدالة يرجع 503 بدون جلسة.
+                // نجلب البايتات عبر POST مصادق (أو رابط R2 إن سمح CORS) ثم blob:.
+                const displayUrl = await resolveImageDisplayUrl(key, signed.url, ct);
+                writeCfCache(cacheKey, displayUrl);
+                return displayUrl;
               } catch (e) {
                 lastSignErr = e;
               }
@@ -18237,14 +18283,18 @@
             img.style.opacity = '1';
           };
           img.onerror = () => {
-            const streamFb = readVideoStreamFallback(ck);
-            const directFb = _videoDirectR2Url && _videoDirectR2Url[ck];
-            if (streamFb && img.src !== streamFb) {
-              img.referrerPolicy = 'no-referrer';
-              img.src = streamFb;
+            if (img.dataset.cfRetry === '1') {
+              delete _cloudflareCache[ck];
+              delete img.dataset.cfThumbDone;
+              img.alt = 'خطأ في التحميل';
+              img.style.opacity = '0.3';
               return;
             }
-            if (directFb && img.src !== directFb) {
+            img.dataset.cfRetry = '1';
+            const directFb = typeof readVideoDirectR2Url === 'function'
+              ? readVideoDirectR2Url(ck)
+              : '';
+            if (directFb && img.src !== directFb && !isR2StreamPlayUrl(directFb)) {
               img.referrerPolicy = 'no-referrer';
               img.src = directFb;
               return;
@@ -21192,18 +21242,6 @@
                 }
                 if (img) {
                   img.onerror = () => {
-                    const streamFb = readVideoStreamFallback(ck);
-                    const directFb = _videoDirectR2Url && _videoDirectR2Url[ck];
-                    if (streamFb && img.src !== streamFb) {
-                      img.referrerPolicy = 'no-referrer';
-                      img.src = streamFb;
-                      return;
-                    }
-                    if (directFb && img.src !== directFb) {
-                      img.referrerPolicy = 'no-referrer';
-                      img.src = directFb;
-                      return;
-                    }
                     delete _cloudflareCache[ck];
                     if (loader) {
                       loader.style.display = 'flex';

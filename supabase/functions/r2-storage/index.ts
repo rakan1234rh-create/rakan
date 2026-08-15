@@ -1019,6 +1019,48 @@ Deno.serve(async (req) => {
       }
     }
 
+    if (action === 'proxyGet') {
+      const key = assertKey(body.key)
+      if (!isServiceRole) {
+        const { data: canSee, error: permErr } = await supabase.rpc(
+          'mirsad_user_can_see_attachment',
+          { p_key: key },
+        )
+        if (permErr) {
+          console.error('[r2-storage] proxyGet perm check failed', permErr.message)
+          return json({ error: 'تعذّر التحقق من صلاحية الملف' }, 500)
+        }
+        if (!canSee) {
+          return json({ error: 'غير مصرح بالوصول لهذا الملف' }, 403)
+        }
+      }
+      try {
+        const out = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key }))
+        const ct =
+          (typeof body.contentType === 'string' && body.contentType.trim())
+          || out.ContentType
+          || guessContentTypeFromKey(key)
+        const headers: Record<string, string> = {
+          ..._cors,
+          'Content-Type': ct,
+          'Cache-Control': 'private, max-age=3600',
+          'Content-Disposition': 'inline',
+        }
+        if (out.ContentLength != null) headers['Content-Length'] = String(out.ContentLength)
+        if (!out.Body) return json({ error: 'جسم فارغ' }, 404)
+        return new Response(out.Body as ReadableStream, { status: 200, headers })
+      } catch (e: unknown) {
+        const name =
+          e && typeof e === 'object' && 'name' in e
+            ? String((e as { name: string }).name)
+            : ''
+        if (name === 'NotFound' || name === 'NoSuchKey' || name === '404') {
+          return json({ error: 'غير موجود', key }, 404)
+        }
+        throw e
+      }
+    }
+
     if (action === 'moveObject') {
       const fromKey = assertKey(body.fromKey)
       const toKey = assertKey(body.toKey)
