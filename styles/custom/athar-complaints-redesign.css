@@ -1,5 +1,14 @@
 /* ATHAR Production — الشكاوى والاقتراحات (#tab-complaints) */
 
+#cmplDatePickerHome {
+  position: relative;
+  height: 0;
+  overflow: visible;
+}
+#cmplDatePickerPopup.dp-is-floating {
+  z-index: 1800;
+}
+
 @keyframes atharRdFadeUp {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
@@ -212,30 +221,27 @@ html.mr-mobile-ui #tab-complaints .cp-mob-filters .rd-cmpl-search {
   font-size: 12.5px;
   box-sizing: border-box;
 }
-html.mr-mobile-ui #tab-complaints .cp-mob-filters .rd-cmpl-date {
-  flex: 1 1 calc(50% - 4px);
-  min-width: 0;
+html.mr-mobile-ui #tab-complaints .cp-mob-filters .rd-cmpl-date-btn {
+  flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 7px;
   height: 38px;
-  padding: 0 10px;
+  padding: 0 12px;
   border: 1px solid var(--border);
   border-radius: 10px;
   background: var(--surface2);
   color: var(--text2);
-  font-size: 11.5px;
-  font-weight: 600;
-  box-sizing: border-box;
-}
-html.mr-mobile-ui #tab-complaints .cp-mob-filters .rd-cmpl-date input[type="date"] {
-  flex: 1;
-  min-width: 0;
-  border: none;
-  background: transparent;
-  color: inherit;
   font-family: inherit;
   font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+html.mr-mobile-ui #tab-complaints .cp-mob-filters .rd-cmpl-date-btn.active {
+  background: var(--gold, var(--primary));
+  color: var(--onGold, #fff);
+  border-color: var(--gold, var(--primary));
 }
 html.mr-mobile-ui #tab-complaints .cp-mob-filter {
   flex: 0 0 auto;
@@ -1225,27 +1231,26 @@ html.athar-staging-redesign.mr-desktop-ui .rd-cmpl-search {
   box-sizing: border-box !important;
 }
 
-html.athar-staging-redesign.mr-desktop-ui .rd-cmpl-date {
+html.athar-staging-redesign.mr-desktop-ui .rd-cmpl-date-btn {
   display: inline-flex !important;
   align-items: center !important;
-  gap: 6px !important;
+  gap: 7px !important;
   height: 38px !important;
-  padding: 0 10px !important;
+  padding: 0 14px !important;
   border: 1px solid var(--border) !important;
   border-radius: 10px !important;
   background: var(--surface2) !important;
   color: var(--text2) !important;
-  font-size: 11.5px !important;
+  font-size: 12px !important;
   font-weight: 600 !important;
   font-family: inherit !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
 }
-
-html.athar-staging-redesign.mr-desktop-ui .rd-cmpl-date input[type="date"] {
-  border: none !important;
-  background: transparent !important;
-  color: inherit !important;
-  font-family: inherit !important;
-  font-size: 12px !important;
+html.athar-staging-redesign.mr-desktop-ui .rd-cmpl-date-btn.active {
+  background: var(--gold) !important;
+  color: var(--onGold) !important;
+  border-color: var(--gold) !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui .rd-cmpl-filter {

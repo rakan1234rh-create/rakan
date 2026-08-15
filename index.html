@@ -780,7 +780,7 @@
   <link rel="stylesheet" href="styles/custom/athar-locations-redesign.css?v=loc1" id="athar-locations-redesign">
   <link rel="stylesheet" href="styles/custom/athar-users-redesign.css?v=usr1" id="athar-users-redesign">
   <link rel="stylesheet" href="styles/custom/athar-breaks-redesign.css?v=brk2" id="athar-breaks-redesign">
-  <link rel="stylesheet" href="styles/custom/athar-complaints-redesign.css?v=cmpl16" id="athar-complaints-redesign">
+  <link rel="stylesheet" href="styles/custom/athar-complaints-redesign.css?v=cmpl17" id="athar-complaints-redesign">
 
   <link rel="stylesheet" href="styles/custom/design-kit.css" id="mk-design-kit">
   <!-- Mirsad tokens + kit: مضمّنة في index.html — لا روابط design-system (تجنّب 404 عند file://) -->
@@ -3280,6 +3280,29 @@
             <div class="rd-complaints-mob-panel" hidden>
               <div id="complaintsHost" class="cp-mob-host" aria-live="polite"></div>
             </div>
+            <div class="rd-cmpl-dp-home" id="cmplDatePickerHome">
+              <input type="hidden" id="cmpl-from"><input type="hidden" id="cmpl-to">
+              <div class="date-picker-popup" id="cmplDatePickerPopup" role="dialog" aria-modal="true" aria-label="اختيار فترة الشكاوى">
+                <div class="fig-dp1429428-top-spacer" aria-hidden="true"></div>
+                <div class="dp-popup-body">
+                  <div class="dp-header-fig" dir="ltr">
+                    <button type="button" class="dp-month-trigger" onclick="cmplDpToggleMonthYear()" aria-expanded="false" aria-haspopup="listbox">
+                      <span class="dp-month-label" id="cmplDpMonthLabel">--</span>
+                      <span class="dp-month-chevron" aria-hidden="true"><i class="fas fa-chevron-down"></i></span>
+                    </button>
+                    <div class="dp-month-arrows">
+                      <button type="button" class="dp-icon-btn dp-icon-btn--nav" onclick="cmplDpChangeMonth(1)" aria-label="الشهر التالي"><i class="fas fa-chevron-left"></i></button>
+                      <button type="button" class="dp-icon-btn dp-icon-btn--nav" onclick="cmplDpChangeMonth(-1)" aria-label="الشهر السابق"><i class="fas fa-chevron-right"></i></button>
+                    </div>
+                  </div>
+                  <div class="dp-quick-actions"><button type="button" class="dp-quick-btn" onclick="cmplDpClear()">إلغاء</button><button type="button" class="dp-quick-btn" onclick="cmplDpSelectThisMonth()">هذا الشهر</button></div>
+                  <div class="dp-weekdays">
+                    <span>أ</span><span>إ</span><span>ث</span><span>ر</span><span>خ</span><span>ج</span><span>س</span>
+                  </div>
+                  <div class="dp-days" id="cmplDpDays"></div>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div class="tab-content" id="tab-reports">
@@ -4628,7 +4651,7 @@
   </div><!-- /#appWrap -->
 
     <div id="rdCmplOverlayHost"></div>
-    <script src="js/app.js?v=cmpl16"></script>
+    <script src="js/app.js?v=cmpl17"></script>
         <style>
       @media (max-width: 992px) {
         /* ── workflow: منع التمدد الأفقي ── */

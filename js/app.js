@@ -32895,13 +32895,15 @@
         popup.style.top = `${Math.round(top)}px`;
         popup.style.left = `${Math.round(left)}px`;
         popup.style.right = 'auto';
-        popup.style.zIndex = popup.id === 'cmpDatePickerPopup' ? '2500' : '1200';
+        popup.style.zIndex = popup.id === 'cmpDatePickerPopup' ? '2500' : (popup.id === 'cmplDatePickerPopup' ? '1800' : '1200');
       }
 
       function dpFloatOpen(popup, anchorBtn) {
         if (!popup || !anchorBtn) return;
         if (!popup._dpFloatHome || !popup._dpFloatHome.isConnected) {
-          popup._dpFloatHome = document.getElementById('cmpNeoToolsAnchor') || popup.parentElement;
+          popup._dpFloatHome = popup.id === 'cmplDatePickerPopup'
+            ? (document.getElementById('cmplDatePickerHome') || popup.parentElement)
+            : (document.getElementById('cmpNeoToolsAnchor') || popup.parentElement);
         }
         if (popup.parentElement !== document.body) document.body.appendChild(popup);
         popup.classList.add('open', 'dp-is-floating');
@@ -32909,7 +32911,7 @@
           dpFloatPosition(popup, anchorBtn);
           requestAnimationFrame(() => {
             dpFloatPosition(popup, anchorBtn);
-            if (popup.id === 'datePickerPopup') popup.dataset.dpPosPinned = '1';
+            if (popup.id === 'datePickerPopup' || popup.id === 'cmplDatePickerPopup') popup.dataset.dpPosPinned = '1';
           });
         });
       }
@@ -32921,7 +32923,9 @@
         popup.style.top = popup.style.left = popup.style.right = popup.style.position = popup.style.zIndex = '';
         let home = popup._dpFloatHome;
         if (!home?.isConnected) {
-          home = document.getElementById('cmpNeoToolsAnchor') || document.getElementById('cmpNeoDateWrap');
+          home = popup.id === 'cmplDatePickerPopup'
+            ? document.getElementById('cmplDatePickerHome')
+            : (document.getElementById('cmpNeoToolsAnchor') || document.getElementById('cmpNeoDateWrap'));
           popup._dpFloatHome = home;
         }
         if (home && popup.parentElement === document.body) {
@@ -32939,6 +32943,9 @@
           const cmpPop = document.getElementById('cmpDatePickerPopup');
           const cmpBtn = document.getElementById('cmp-date-btn');
           if (cmpPop?.classList.contains('open')) dpFloatPosition(cmpPop, cmpBtn);
+          const cmplPop = document.getElementById('cmplDatePickerPopup');
+          const cmplBtn = document.getElementById('rdCmplDateBtn') || document.getElementById('cpCmplDateBtn');
+          if (cmplPop?.classList.contains('open')) dpFloatPosition(cmplPop, cmplBtn);
         });
       }
 
@@ -33395,6 +33402,284 @@
         filterReports();
       }
 
+      const cmplDpState = {
+        viewYear: 0,
+        viewMonth: 0,
+        pickerView: 'days',
+        from: null,
+        to: null
+      };
+
+      function cmplDpAnchorBtn() {
+        return document.getElementById('rdCmplDateBtn') || document.getElementById('cpCmplDateBtn');
+      }
+
+      function cmplDpSyncFromState() {
+        const fromIso = state.complaintDateFrom || document.getElementById('cmpl-from')?.value || '';
+        const toIso = state.complaintDateTo || document.getElementById('cmpl-to')?.value || '';
+        cmplDpState.from = fromIso ? ksaDateFromIso(fromIso) : null;
+        cmplDpState.to = toIso ? ksaDateFromIso(toIso) : (cmplDpState.from ? new Date(cmplDpState.from) : null);
+        if (cmplDpState.from) {
+          const p = ksaFormatParts(cmplDpState.from);
+          cmplDpState.viewYear = p.year;
+          cmplDpState.viewMonth = p.month;
+        } else {
+          ksaInitViewState(cmplDpState);
+        }
+      }
+
+      function cmplDpSyncButtonLabel() {
+        const fromIso = state.complaintDateFrom || '';
+        const toIso = state.complaintDateTo || '';
+        const from = fromIso ? ksaDateFromIso(fromIso) : null;
+        const to = toIso ? ksaDateFromIso(toIso) : from;
+        document.querySelectorAll('.rd-cmpl-date-btn').forEach((btn) => {
+          const lbl = btn.querySelector('.cmpl-date-label');
+          dpApplyDateButtonLabel(btn, lbl, from, to);
+          if (!from && lbl) lbl.textContent = 'اختر الفترة';
+        });
+      }
+
+      function toggleCmplDatePicker(e) {
+        if (e) e.stopPropagation();
+        const popup = document.getElementById('cmplDatePickerPopup');
+        const btn = (e && e.currentTarget) || cmplDpAnchorBtn();
+        if (!popup || !btn) return;
+        popup._dpFloatHome = document.getElementById('cmplDatePickerHome') || popup.parentElement;
+        if (popup.classList.contains('open')) {
+          dpFloatClose(popup);
+          return;
+        }
+        cmplDpState.pickerView = 'days';
+        cmplDpSyncFromState();
+        dpPickerSyncChrome(popup, 'days');
+        renderCmplDatePicker();
+        dpFloatOpen(popup, btn);
+      }
+
+      function cmplDpChangeMonth(dir) {
+        if (cmplDpState.pickerView === 'months') {
+          cmplDpState.viewYear += dir;
+        } else {
+          cmplDpState.viewMonth += dir;
+          if (cmplDpState.viewMonth > 11) {
+            cmplDpState.viewMonth = 0;
+            cmplDpState.viewYear++;
+          } else if (cmplDpState.viewMonth < 0) {
+            cmplDpState.viewMonth = 11;
+            cmplDpState.viewYear--;
+          }
+        }
+        renderCmplDatePicker();
+      }
+
+      function cmplDpToggleMonthYear() {
+        const popup = document.getElementById('cmplDatePickerPopup');
+        cmplDpState.pickerView = cmplDpState.pickerView === 'months' ? 'days' : 'months';
+        dpPickerSyncChrome(popup, cmplDpState.pickerView);
+        renderCmplDatePicker();
+      }
+
+      function cmplDpPickMonth(monthIndex) {
+        cmplDpState.viewMonth = monthIndex;
+        cmplDpState.pickerView = 'days';
+        const popup = document.getElementById('cmplDatePickerPopup');
+        dpPickerSyncChrome(popup, 'days');
+        renderCmplDatePicker();
+      }
+
+      function cmplDpInRange(d) {
+        if (!cmplDpState.from || !cmplDpState.to) return false;
+        const t = d.getTime();
+        return t > cmplDpState.from.getTime() && t < cmplDpState.to.getTime();
+      }
+
+      function renderCmplDatePicker() {
+        const pop = document.getElementById('cmplDatePickerPopup');
+        const daysEl = document.getElementById('cmplDpDays');
+        const labelEl = document.getElementById('cmplDpMonthLabel');
+        if (!daysEl || !labelEl) return;
+
+        if (cmplDpState.pickerView === 'months') {
+          labelEl.textContent = String(cmplDpState.viewYear);
+          if (pop) pop.classList.remove('dp-range-pending');
+          daysEl.innerHTML = dpBuildMonthGridHtml(DP_MONTHS, cmplDpState.viewMonth, 'cmplDpPickMonth');
+          daysEl.classList.add('dp-mode-pick');
+          if (pop?.classList.contains('open')) dpFloatScheduleReposition();
+          return;
+        }
+
+        daysEl.classList.remove('dp-mode-pick');
+        labelEl.textContent = `${DP_MONTHS[cmplDpState.viewMonth]} ${cmplDpState.viewYear}`;
+        if (pop) pop.classList.toggle('dp-range-pending', !!(cmplDpState.from && !cmplDpState.to));
+
+        const today = ksaTodayCalendar();
+        const firstDay = ksaCalendarDate(cmplDpState.viewYear, cmplDpState.viewMonth, 1);
+        const totalDays = ksaDaysInCalendarMonth(cmplDpState.viewYear, cmplDpState.viewMonth);
+        const startDayOfWeek = firstDay.getDay();
+        const prevLastDay = ksaDaysInCalendarMonth(
+          cmplDpState.viewMonth === 0 ? cmplDpState.viewYear - 1 : cmplDpState.viewYear,
+          cmplDpState.viewMonth === 0 ? 11 : cmplDpState.viewMonth - 1
+        );
+
+        let html = '';
+        for (let i = startDayOfWeek; i > 0; i--) {
+          html += `<button class="dp-day other-month" disabled>${prevLastDay - i + 1}</button>`;
+        }
+        for (let day = 1; day <= totalDays; day++) {
+          const date = ksaCalendarDate(cmplDpState.viewYear, cmplDpState.viewMonth, day);
+          const iso = ksaCalendarToIso(date);
+          const classes = ['dp-day'];
+          if (dpSameDay(date, today)) classes.push('today');
+          if (cmplDpState.from && dpSameDay(date, cmplDpState.from)) classes.push('start');
+          if (cmplDpState.to && dpSameDay(date, cmplDpState.to)) classes.push('end');
+          if (cmplDpInRange(date)) classes.push('in-range');
+          html += `<button type="button" class="${classes.join(' ')}" data-iso="${iso}">${day}</button>`;
+        }
+        const totalCells = startDayOfWeek + totalDays;
+        const remaining = (7 - (totalCells % 7)) % 7;
+        for (let i = 1; i <= remaining; i++) {
+          html += `<button class="dp-day other-month" disabled>${i}</button>`;
+        }
+        daysEl.innerHTML = html;
+        if (pop?.classList.contains('open')) dpFloatScheduleReposition();
+      }
+
+      function cmplDpSetDragRange(anchorDate, curDate) {
+        const t0 = Math.min(anchorDate.getTime(), curDate.getTime());
+        const t1 = Math.max(anchorDate.getTime(), curDate.getTime());
+        cmplDpState.from = new Date(t0);
+        cmplDpState.to = new Date(t1);
+      }
+
+      function cmplDpSyncRangeClasses() {
+        const grid = document.getElementById('cmplDpDays');
+        if (!grid || !cmplDpState.from) return;
+        grid.querySelectorAll('.dp-day[data-iso]').forEach((btn) => {
+          const d = ksaDateFromIso(btn.dataset.iso);
+          if (!d) return;
+          btn.classList.remove('start', 'end', 'in-range');
+          if (dpSameDay(d, cmplDpState.from)) btn.classList.add('start');
+          if (cmplDpState.to && dpSameDay(d, cmplDpState.to)) btn.classList.add('end');
+          if (cmplDpInRange(d)) btn.classList.add('in-range');
+        });
+        document.getElementById('cmplDatePickerPopup')?.classList.remove('dp-range-pending');
+      }
+
+      function wireCmplDateGrid() {
+        const grid = document.getElementById('cmplDpDays');
+        if (!grid || grid.dataset.cmplRangeWired === '1') return;
+        grid.dataset.cmplRangeWired = '1';
+        const popup = document.getElementById('cmplDatePickerPopup');
+        const ptr = { dragging: false, anchorDate: null, pid: null, paintRaf: 0 };
+
+        const finishDrag = (e) => {
+          if (!ptr.dragging || (e && e.pointerId != null && e.pointerId !== ptr.pid)) return;
+          ptr.dragging = false;
+          ptr.anchorDate = null;
+          ptr.pid = null;
+          grid.classList.remove('is-dragging');
+          popup?.classList.remove('dp-range-dragging');
+          try {
+            if (e?.pointerId != null) grid.releasePointerCapture(e.pointerId);
+          } catch (_) { /* noop */ }
+          if (cmplDpState.from) cmplDpApply();
+        };
+
+        grid.addEventListener('pointerdown', (e) => {
+          if (!e.isPrimary || (e.pointerType === 'mouse' && e.button !== 0)) return;
+          const btn = e.target.closest('.dp-day[data-iso]');
+          if (!btn || !grid.contains(btn) || btn.disabled || btn.classList.contains('other-month')) return;
+          e.preventDefault();
+          e.stopPropagation();
+          ptr.dragging = true;
+          ptr.anchorDate = ksaDateFromIso(btn.dataset.iso) || new Date(btn.dataset.iso);
+          ptr.pid = e.pointerId;
+          cmplDpSetDragRange(ptr.anchorDate, ptr.anchorDate);
+          grid.classList.add('is-dragging');
+          popup?.classList.add('dp-range-dragging');
+          cmplDpSyncRangeClasses();
+          try { grid.setPointerCapture(e.pointerId); } catch (_) { /* noop */ }
+        });
+
+        grid.addEventListener('pointermove', (e) => {
+          if (!ptr.dragging || !e.isPrimary || e.pointerId !== ptr.pid || !ptr.anchorDate) return;
+          const hit = document.elementFromPoint(e.clientX, e.clientY);
+          const btn = hit?.closest?.('.dp-day[data-iso]');
+          if (!btn || !grid.contains(btn) || btn.disabled || btn.classList.contains('other-month')) return;
+          const cur = ksaDateFromIso(btn.dataset.iso) || new Date(btn.dataset.iso);
+          const prevFrom = cmplDpState.from?.getTime();
+          const prevTo = cmplDpState.to?.getTime();
+          cmplDpSetDragRange(ptr.anchorDate, cur);
+          if (cmplDpState.from?.getTime() === prevFrom && cmplDpState.to?.getTime() === prevTo) return;
+          if (ptr.paintRaf) return;
+          ptr.paintRaf = requestAnimationFrame(() => {
+            ptr.paintRaf = 0;
+            cmplDpSyncRangeClasses();
+          });
+        });
+
+        grid.addEventListener('pointerup', finishDrag);
+        grid.addEventListener('pointercancel', finishDrag);
+      }
+
+      function wireCmplDatePickerPopup() {
+        const popup = document.getElementById('cmplDatePickerPopup');
+        if (!popup || popup.dataset.cmplDpWired === '1') return;
+        popup.dataset.cmplDpWired = '1';
+        dpWireMonthPickOnPopup(popup, cmplDpPickMonth);
+        const stopOut = (ev) => ev.stopPropagation();
+        popup.addEventListener('mousedown', stopOut);
+        popup.addEventListener('pointerdown', stopOut);
+        popup.addEventListener('click', stopOut);
+      }
+
+      function cmplDpApply() {
+        if (!cmplDpState.from) return;
+        const from = dpFormatDate(cmplDpState.from);
+        const to = dpFormatDate(cmplDpState.to || cmplDpState.from);
+        const fromIso = from === '--' ? '' : from;
+        const toIso = to === '--' ? '' : to;
+        state.complaintDateFrom = fromIso;
+        state.complaintDateTo = toIso;
+        const fromEl = document.getElementById('cmpl-from');
+        const toEl = document.getElementById('cmpl-to');
+        if (fromEl) fromEl.value = fromIso;
+        if (toEl) toEl.value = toIso;
+        cmplDpSyncButtonLabel();
+        dpFloatClose(document.getElementById('cmplDatePickerPopup'));
+        if (typeof refreshComplaintListFromQuery === 'function') refreshComplaintListFromQuery();
+      }
+
+      function cmplDpClear() {
+        cmplDpState.from = null;
+        cmplDpState.to = null;
+        state.complaintDateFrom = '';
+        state.complaintDateTo = '';
+        const fromEl = document.getElementById('cmpl-from');
+        const toEl = document.getElementById('cmpl-to');
+        if (fromEl) fromEl.value = '';
+        if (toEl) toEl.value = '';
+        cmplDpSyncButtonLabel();
+        const popup = document.getElementById('cmplDatePickerPopup');
+        dpPickerSyncChrome(popup, 'days');
+        dpFloatClose(popup);
+        if (typeof refreshComplaintListFromQuery === 'function') refreshComplaintListFromQuery();
+      }
+
+      function cmplDpSelectThisMonth() {
+        const bounds = ksaMonthCalendarBounds(cmplDpState.viewYear, cmplDpState.viewMonth);
+        cmplDpState.from = bounds.from;
+        cmplDpState.to = bounds.to;
+        cmplDpState.pickerView = 'days';
+        dpPickerSyncChrome(document.getElementById('cmplDatePickerPopup'), 'days');
+        renderCmplDatePicker();
+        cmplDpApply();
+      }
+
+      wireCmplDateGrid();
+      wireCmplDatePickerPopup();
+
       // إغلاق الـ picker عند الضغط خارجه
       document.addEventListener('click', (e) => {
         const popup = document.getElementById('datePickerPopup');
@@ -33405,6 +33690,13 @@
             !btn.contains(e.target)) {
             dpFloatClose(popup);
           }
+        }
+
+        const cmplPop = document.getElementById('cmplDatePickerPopup');
+        const cmplBtn = e.target.closest?.('.rd-cmpl-date-btn');
+        if (cmplPop && cmplPop.classList.contains('open') &&
+          !cmplPop.contains(e.target) && !cmplBtn) {
+          dpFloatClose(cmplPop);
         }
 
         const wfMenu = document.getElementById('wf-status-menu');
@@ -33523,6 +33815,12 @@
       window.dpSelectLast30 = dpSelectLast30;
       window.dpClear = dpClear;
       window.dpApply = dpApply;
+      window.toggleCmplDatePicker = toggleCmplDatePicker;
+      window.cmplDpChangeMonth = cmplDpChangeMonth;
+      window.cmplDpToggleMonthYear = cmplDpToggleMonthYear;
+      window.cmplDpPickMonth = cmplDpPickMonth;
+      window.cmplDpClear = cmplDpClear;
+      window.cmplDpSelectThisMonth = cmplDpSelectThisMonth;
 
       // كشف بعض الدوال للـ window للوصول من inline handlers
       function resetReportFilters() {
@@ -36204,6 +36502,7 @@
           </div>`;
 
         renderComplaintsOverlays();
+        if (typeof cmplDpSyncButtonLabel === 'function') cmplDpSyncButtonLabel();
       }
 
       function renderComplaintsOverlays() {
@@ -36709,10 +37008,8 @@
         if (!raw) return '';
         const d = new Date(raw);
         if (Number.isNaN(d.getTime())) return String(raw).slice(0, 10);
-        const y = d.getFullYear();
-        const m = String(d.getMonth() + 1).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
-        return `${y}-${m}-${day}`;
+        const p = ksaFormatParts(d);
+        return `${p.year}-${ksaPad(p.month + 1)}-${ksaPad(p.day)}`;
       }
 
       function complaintNumberMatches(row, q) {
@@ -36739,27 +37036,23 @@
       function complaintQueryToolbarHtml(prefix) {
         const p = prefix === 'cp' ? 'cp' : 'rd';
         const searchId = p === 'cp' ? 'cpCmplSearch' : 'rdCmplSearch';
-        const fromId = p === 'cp' ? 'cpCmplFrom' : 'rdCmplFrom';
-        const toId = p === 'cp' ? 'cpCmplTo' : 'rdCmplTo';
+        const btnId = p === 'cp' ? 'cpCmplDateBtn' : 'rdCmplDateBtn';
         const q = Sec.escapeHTML(state.complaintSearch || '');
-        const from = Sec.escapeHTML(state.complaintDateFrom || '');
-        const to = Sec.escapeHTML(state.complaintDateTo || '');
         return `<input type="search" class="rd-cmpl-search" id="${searchId}" value="${q}" placeholder="ابحث برقم الشكوى..." autocomplete="off" inputmode="search" oninput="refreshComplaintListFromQuery(this)" aria-label="بحث برقم الشكوى">
-          <label class="rd-cmpl-date"><span>من</span><input type="date" id="${fromId}" value="${from}" onchange="refreshComplaintListFromQuery(this)" aria-label="من تاريخ"></label>
-          <label class="rd-cmpl-date"><span>إلى</span><input type="date" id="${toId}" value="${to}" onchange="refreshComplaintListFromQuery(this)" aria-label="إلى تاريخ"></label>`;
+          <button type="button" class="rd-cmpl-date-btn" id="${btnId}" onclick="toggleCmplDatePicker(event)" aria-label="اختر الفترة">
+            <i class="fas fa-calendar" aria-hidden="true"></i>
+            <span class="cmpl-date-label">اختر الفترة</span>
+          </button>`;
       }
 
       function refreshComplaintListFromQuery(el) {
         const search = document.getElementById('rdCmplSearch') || document.getElementById('cpCmplSearch');
-        const from = document.getElementById('rdCmplFrom') || document.getElementById('cpCmplFrom');
-        const to = document.getElementById('rdCmplTo') || document.getElementById('cpCmplTo');
         if (search) state.complaintSearch = search.value || '';
-        if (from) state.complaintDateFrom = from.value || '';
-        if (to) state.complaintDateTo = to.value || '';
         const id = el && el.id;
         const start = el && typeof el.selectionStart === 'number' ? el.selectionStart : null;
         const end = el && typeof el.selectionEnd === 'number' ? el.selectionEnd : start;
         const restore = () => {
+          if (typeof cmplDpSyncButtonLabel === 'function') cmplDpSyncButtonLabel();
           if (!id) return;
           const next = document.getElementById(id);
           if (!next) return;
@@ -36882,6 +37175,7 @@
             </div>
             <div class="cp-mob-list">${listHtml}</div>
           </div>`;
+        if (typeof cmplDpSyncButtonLabel === 'function') cmplDpSyncButtonLabel();
       }
 
       function setComplaintTypeFilter(id) {
