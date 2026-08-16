@@ -25203,16 +25203,28 @@
 
       function buildRdCmpEmpDetailHeroHTML(item) {
         const emp = state.users.find(u => u.id === item.id);
-        const role = emp
-          ? getStaffJobTitle(emp)
-          : (normalizeUserRole(item.role) === 'branch_manager' ? 'مدير فرع' : 'موظف');
+        const branch = emp?.branch_id
+          ? (state._branchById?.get(emp.branch_id) || state.branches.find(b => b.id === emp.branch_id))
+          : null;
+        const branchName = branch?.name
+          || (item.context || []).find(c => (c.label || '').includes('فرع'))?.value
+          || '';
+        const empRaw = item.empNumber || emp?.employee_number || '';
+        const empNum = empRaw && typeof padEmpNum === 'function' ? padEmpNum(empRaw) : String(empRaw || '');
         const initial = String(item.name || '؟').trim().charAt(0) || '؟';
+        const meta = [];
+        if (empNum && empNum !== '-') {
+          meta.push(`<span class="rd-cmp-emp-hd__num" dir="ltr">${Sec.escapeHTML(empNum)}</span>`);
+        }
+        if (branchName) {
+          meta.push(`<span class="rd-cmp-emp-hd__branch">${Sec.escapeHTML(branchName)}</span>`);
+        }
         return `
           <div class="rd-cmp-emp-hd">
             <span class="rd-cmp-emp-hd__av" aria-hidden="true">${Sec.escapeHTML(initial)}</span>
             <div class="rd-cmp-emp-hd__body">
               <div class="rd-cmp-emp-hd__name">${Sec.escapeHTML(item.name || '')}</div>
-              <div class="rd-cmp-emp-hd__role">${Sec.escapeHTML(role || 'موظف')}</div>
+              ${meta.length ? `<div class="rd-cmp-emp-hd__meta">${meta.join('<span class="rd-cmp-emp-hd__sep" aria-hidden="true">·</span>')}</div>` : ''}
             </div>
           </div>`;
       }
