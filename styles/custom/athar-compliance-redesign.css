@@ -414,6 +414,7 @@ html.athar-staging-redesign.mr-mobile-ui #tab-compliance #cmp-filter-label {
   text-overflow: ellipsis;
 }
 .rd-cmp-emp-hd__role,
+.rd-cmp-emp-hd__job,
 .rd-cmp-emp-hd__meta {
   font-size: 11.5px;
   color: var(--text3);
@@ -894,7 +895,8 @@ html.athar-staging-redesign.mr-desktop-ui #tab-compliance .rd-cmp-branch__chev {
 }
 
 /* Employee detail ΓÇö end-docked panel on desktop */
-html.athar-staging-redesign.mr-desktop-ui #cmpDetailModal.modal.open.cmp-detail--rd-emp {
+html.athar-staging-redesign.mr-desktop-ui #cmpDetailModal.modal.open.cmp-detail--rd-emp,
+html.mr-desktop-ui #appWrap #cmpDetailModal.modal.open.cmp-detail--rd-emp {
   display: block !important;
   position: fixed !important;
   top: var(--unified-topbar-h, 68px) !important;
@@ -907,11 +909,13 @@ html.athar-staging-redesign.mr-desktop-ui #cmpDetailModal.modal.open.cmp-detail-
   background: rgba(0, 0, 0, 0.28) !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
-  animation: atharRdSideScrimIn 0.32s ease both;
+  filter: none !important;
+  animation: none !important;
   box-sizing: border-box !important;
 }
 
-html.athar-staging-redesign.mr-desktop-ui #cmpDetailModal.cmp-detail--rd-emp .modal-card.cmp-detail-card--rd-emp {
+html.athar-staging-redesign.mr-desktop-ui #cmpDetailModal.cmp-detail--rd-emp .modal-card.cmp-detail-card--rd-emp,
+html.mr-desktop-ui #appWrap #cmpDetailModal.cmp-detail--rd-emp .modal-card.cmp-detail-card--rd-emp {
   position: absolute !important;
   top: 0 !important;
   inset-inline-end: 0 !important;
@@ -925,17 +929,37 @@ html.athar-staging-redesign.mr-desktop-ui #cmpDetailModal.cmp-detail--rd-emp .mo
   border-radius: 0 !important;
   border: none !important;
   border-inline-start: 1px solid var(--border) !important;
-  background: var(--bg) !important;
+  background: var(--surface) !important;
   overflow-y: auto !important;
   padding: 22px !important;
-  animation: atharRdSidePanelIn 0.42s cubic-bezier(0.22, 1, 0.36, 1) both !important;
-  will-change: transform;
+  animation: none !important;
+  transform: none !important;
+  will-change: auto !important;
   box-shadow: none !important;
   isolation: isolate !important;
   filter: none !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
   opacity: 1 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #cmpDetailModal.cmp-detail--rd-emp .modal-card.cmp-detail-card--rd-emp *,
+html.mr-desktop-ui #appWrap #cmpDetailModal.cmp-detail--rd-emp .modal-card.cmp-detail-card--rd-emp * {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  filter: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #cmpDetailModal.cmp-detail--rd-emp .rd-cmp-emp-hd__av,
+html.mr-desktop-ui #appWrap #cmpDetailModal.cmp-detail--rd-emp .rd-cmp-emp-hd__av {
+  display: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #cmpDetailModal.cmp-detail--rd-emp .rd-cmp-emp-hd__job {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text2);
+  margin-top: 3px;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #cmpDetailModal.cmp-detail--rd-emp .cmp-sheet-grabber-wrap {
