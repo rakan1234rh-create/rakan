@@ -196,6 +196,27 @@ html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--users .rd-desk-table__
   overflow: visible !important;
 }
 
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--users .rd-desk-sort {
+  all: unset !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  font: inherit !important;
+  color: inherit !important;
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--users .rd-desk-sort i {
+  font-size: 9px !important;
+  color: var(--text3) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--users .rd-desk-sort.is-active i {
+  color: var(--text2) !important;
+}
+
 html.athar-staging-redesign.mr-desktop-ui .rd-desk-table__head {
   background: var(--surface2) !important;
   background-clip: padding-box !important;

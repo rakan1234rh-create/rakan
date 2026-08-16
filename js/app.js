@@ -13594,10 +13594,37 @@
       </article>`;
       }
 
+      function rdUsrSortIcon(key) {
+        const cur = state._rdUsrSortKey;
+        const dir = state._rdUsrSortDir || 1;
+        if (cur !== key) return 'fa-sort';
+        return dir === 1 ? 'fa-sort-up' : 'fa-sort-down';
+      }
+
+      function rdUsrToggleSort(key) {
+        if (!isAtharDesktopScreenUi()) return;
+        if (state._rdUsrSortKey === key) {
+          state._rdUsrSortDir = (state._rdUsrSortDir || 1) * -1;
+        } else {
+          state._rdUsrSortKey = key;
+          state._rdUsrSortDir = 1;
+        }
+        renderUsers();
+      }
+
       function sortUsersForDisplay(list) {
+        const key = state._rdUsrSortKey;
+        const dir = state._rdUsrSortDir || 1;
         return list
           .map((u, i) => ({ u, i }))
           .sort((a, b) => {
+            if (key === 'emp') {
+              const av = String(a.u.employee_number || '').replace(/\D/g, '');
+              const bv = String(b.u.employee_number || '').replace(/\D/g, '');
+              const cmp = av.localeCompare(bv, 'en', { numeric: true });
+              if (cmp) return cmp * dir;
+              return a.i - b.i;
+            }
             const pa = normalizeUserRole(a.u.role) === 'admin' ? 0 : 1;
             const pb = normalizeUserRole(b.u.role) === 'admin' ? 0 : 1;
             if (pa !== pb) return pa - pb;
@@ -13707,7 +13734,7 @@
           <div class="rd-desk-table rd-desk-table--users" role="table">
             <div class="rd-desk-table__head" role="row">
               <span role="columnheader">الموظف</span>
-              <span role="columnheader">الرقم الوظيفي</span>
+              <button type="button" class="rd-desk-sort${state._rdUsrSortKey === 'emp' ? ' is-active' : ''}" role="columnheader" onclick="event.stopPropagation();rdUsrToggleSort('emp')">الرقم الوظيفي<i class="fas ${rdUsrSortIcon('emp')}" aria-hidden="true"></i></button>
               <span role="columnheader">الدور</span>
               <span role="columnheader">الفرع</span>
               <span role="columnheader">الهاتف</span>
@@ -37994,6 +38021,7 @@
       window.exportReportExcel = exportReportExcel;
       window.exportReportCSV = exportReportCSV;
       window.renderUsers = renderUsers;
+      window.rdUsrToggleSort = rdUsrToggleSort;
       window.exportUsersCSV = exportUsersCSV;
       window.downloadUsersImportTemplate = downloadUsersImportTemplate;
       window.triggerUsersImport = triggerUsersImport;
