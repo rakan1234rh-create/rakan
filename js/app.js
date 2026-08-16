@@ -35376,16 +35376,16 @@
       }
 
       function getBreakRosterRowView(u) {
-        const remSec = getUserBreakRemainingSeconds(u);
-        const mins = Math.max(0, Math.ceil(remSec / 60));
+        const remSec = Math.max(0, Math.floor(Number(getUserBreakRemainingSeconds(u)) || 0));
+        const mins = Math.max(0, Math.floor(remSec / 60));
         const dayRow = state.staffBreakDayByUser?.[u.id];
         const overSec = dayRow?.status === 'ended' ? getStaffBreakOvertimeSeconds(dayRow) : 0;
         const overEnded = overSec > 0 && Number(dayRow?.remaining_seconds || 0) <= 0;
         const unscheduled = !dayRow && !resolveBreakDurationMinsForUser(u);
-        const depleted = !overEnded && (dayRow?.status === 'ended' || dayRow?.status === 'paused') && mins <= 0;
+        const depleted = !overEnded && (dayRow?.status === 'ended' || dayRow?.status === 'paused') && remSec <= 0;
         const stopped = !overEnded && !depleted && !unscheduled
           && (dayRow?.status === 'ended' || dayRow?.status === 'paused')
-          && mins > 0;
+          && remSec > 0;
         const busy = !overEnded && !depleted && !unscheduled && !!(state.staffBreaks || []).some(b =>
           b.status === 'active' && b.user_id !== u.id && b.branch_id === u.branch_id
         );
