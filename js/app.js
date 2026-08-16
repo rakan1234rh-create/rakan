@@ -35119,7 +35119,7 @@
           if (!u) return;
           const view = getBreakRosterRowView(u);
           el.textContent = view.minsLabel;
-          el.classList.toggle('rd-break-roster__mins--zero', view.unscheduled || (view.depleted && view.minsLabel === '0 د'));
+          el.classList.toggle('rd-break-roster__mins--zero', view.unscheduled || (view.depleted && (view.minsLabel === '0 د' || view.minsLabel === '00:00')));
           el.classList.toggle('rd-break-roster__mins--over', view.overEnded);
           el.classList.toggle('rd-break-roster__mins--busy', view.busy);
           const row = el.closest('[data-break-roster-row]');
@@ -35393,16 +35393,16 @@
           ? getBreakSessionUsedLabel(dayRow)
           : '—';
         let statusLbl = 'متاح';
-        let minsLabel = `${mins} د متبقٍ`;
+        let minsLabel = formatBreakClock(remSec);
         if (overEnded) {
           statusLbl = 'انتهى مع تجاوز';
-          minsLabel = `+${Math.max(1, Math.ceil(overSec / 60))} د`;
+          minsLabel = formatBreakOverageClock(overSec);
         } else if (unscheduled) {
           statusLbl = 'غير مجدول اليوم';
           minsLabel = '—';
         } else if (depleted) {
           statusLbl = 'اكتملت مدة اليوم';
-          minsLabel = usedLbl && usedLbl !== '—' ? usedLbl : '0 د';
+          minsLabel = usedLbl && usedLbl !== '—' ? usedLbl : '00:00';
         } else if (stopped) {
           statusLbl = 'متوقف';
         } else if (busy) {
@@ -35447,7 +35447,7 @@
                 <div class="rd-list__title">${Sec.escapeHTML(u.name || '—')}${me ? ' <span class="rd-break-me-tag">أنت</span>' : ''}</div>
                 <div class="rd-list__sub">${Sec.escapeHTML(branch?.name || '—')} · <span data-break-roster-status class="rd-break-status${view.overEnded ? ' rd-break-status--over' : ''}${view.busy ? ' rd-break-status--busy' : ''}${view.stopped ? ' rd-break-status--paused' : ''}">${Sec.escapeHTML(view.statusLbl)}</span></div>
               </div>
-              <div class="rd-break-roster__mins${view.unscheduled || (view.depleted && view.minsLabel === '0 د') ? ' rd-break-roster__mins--zero' : ''}${view.overEnded ? ' rd-break-roster__mins--over' : ''}${view.busy ? ' rd-break-roster__mins--busy' : ''}"
+              <div class="rd-break-roster__mins${view.unscheduled || (view.depleted && (view.minsLabel === '0 د' || view.minsLabel === '00:00')) ? ' rd-break-roster__mins--zero' : ''}${view.overEnded ? ' rd-break-roster__mins--over' : ''}${view.busy ? ' rd-break-roster__mins--busy' : ''}"
                 data-break-roster-user="${Sec.escapeHTML(u.id)}" data-break-roster-over="${view.overEnded ? '1' : '0'}" dir="ltr">${Sec.escapeHTML(view.minsLabel)}</div>
             </div>`;
         }).join('');
