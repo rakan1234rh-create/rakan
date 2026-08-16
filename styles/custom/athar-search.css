@@ -20,10 +20,13 @@ html.athar-staging-redesign.mr-desktop-ui #tab-compliance .cmp-neo-search-combo 
   height: 38px !important;
   min-height: 38px !important;
   max-height: 38px !important;
-  padding: 0 12px !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 10px !important;
-  background: var(--surface, var(--searchFill, #fff)) !important;
+  margin: 3px 0 !important;
+  padding: 0 14px !important;
+  border: 1px solid color-mix(in srgb, var(--text) 42%, transparent) !important;
+  border-radius: 999px !important;
+  background: var(--surface2, var(--surface, #1c1c1e)) !important;
+  outline: 1px solid color-mix(in srgb, var(--text) 42%, transparent) !important;
+  outline-offset: 3px !important;
   box-shadow: none !important;
   box-sizing: border-box !important;
 }
@@ -45,8 +48,8 @@ html.athar-staging-redesign.mr-desktop-ui #tab-compliance .cmp-neo-search-combo 
   content: "\f002" !important;
   font-family: "Font Awesome 6 Free" !important;
   font-weight: 900 !important;
-  color: var(--text3) !important;
-  font-size: 12px !important;
+  color: var(--text2) !important;
+  font-size: 11px !important;
   flex-shrink: 0 !important;
   line-height: 1 !important;
 }
@@ -64,7 +67,8 @@ html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .figma-search-wrap:focu
 html.athar-staging-redesign.mr-desktop-ui #tab-compliance .figma-search-wrap:focus-within,
 html.athar-staging-redesign.mr-desktop-ui #tab-compliance .cmp-neo-search:focus-within,
 html.athar-staging-redesign.mr-desktop-ui #tab-compliance .cmp-neo-search-combo .cmp-neo-search-combo__field:focus-within {
-  border-color: var(--gold) !important;
+  border-color: color-mix(in srgb, var(--text) 72%, transparent) !important;
+  outline-color: color-mix(in srgb, var(--text) 72%, transparent) !important;
   box-shadow: none !important;
 }
 
@@ -140,10 +144,13 @@ html.mr-mobile-ui #tab-complaints .rd-app-search {
   min-width: 0;
   max-width: none;
   height: 38px;
-  padding: 0 12px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--surface);
+  margin: 3px 0;
+  padding: 0 14px;
+  border: 1px solid color-mix(in srgb, var(--text) 42%, transparent);
+  border-radius: 999px;
+  background: var(--surface2, var(--surface));
+  outline: 1px solid color-mix(in srgb, var(--text) 42%, transparent);
+  outline-offset: 3px;
   box-sizing: border-box;
 }
 
@@ -160,7 +167,8 @@ html.mr-mobile-ui #tab-complaints .rd-app-search::before {
 
 html.athar-staging-redesign.mr-mobile-ui .rd-app-search:focus-within,
 html.mr-mobile-ui #tab-complaints .rd-app-search:focus-within {
-  border-color: var(--gold);
+  border-color: color-mix(in srgb, var(--text) 72%, transparent);
+  outline-color: color-mix(in srgb, var(--text) 72%, transparent);
 }
 
 html.athar-staging-redesign.mr-mobile-ui .rd-app-search .figma-search-btn,
