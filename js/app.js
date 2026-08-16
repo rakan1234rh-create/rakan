@@ -35117,34 +35117,20 @@
           const uid = el.getAttribute('data-break-roster-user');
           const u = state._userById?.get(uid) || state.users.find(x => x.id === uid);
           if (!u) return;
-          const remSec = getUserBreakRemainingSeconds(u);
-          const mins = Math.max(0, Math.ceil(remSec / 60));
-          const dayRow = state.staffBreakDayByUser?.[uid];
-          const overSec = dayRow?.status === 'ended' ? getStaffBreakOvertimeSeconds(dayRow) : 0;
-          const overEnded = overSec > 0;
-          const overMins = overEnded ? Math.max(1, Math.ceil(overSec / 60)) : 0;
-          const unscheduled = !dayRow && !resolveBreakDurationMinsForUser(u);
-          const depleted = !overEnded && (dayRow?.status === 'ended' || mins <= 0);
-          const busy = !overEnded && !depleted && !unscheduled && !!(state.staffBreaks || []).some(b =>
-            b.status === 'active' && b.user_id !== u.id && b.branch_id === u.branch_id
-          );
-          if (overEnded) el.textContent = `+${overMins} د`;
-          else if (unscheduled) el.textContent = '—';
-          else if (depleted) el.textContent = '0 د';
-          else el.textContent = `${mins} د متبقٍ`;
-          el.classList.toggle('rd-break-roster__mins--zero', depleted || unscheduled);
-          el.classList.toggle('rd-break-roster__mins--over', overEnded);
-          el.classList.toggle('rd-break-roster__mins--busy', busy);
+          const view = getBreakRosterRowView(u);
+          el.textContent = view.minsLabel;
+          el.classList.toggle('rd-break-roster__mins--zero', view.unscheduled || (view.depleted && view.minsLabel === '0 د'));
+          el.classList.toggle('rd-break-roster__mins--over', view.overEnded);
+          el.classList.toggle('rd-break-roster__mins--busy', view.busy);
           const row = el.closest('[data-break-roster-row]');
           if (row) {
-            row.classList.toggle('rd-break-roster-row--over', overEnded);
+            row.classList.toggle('rd-break-roster-row--over', view.overEnded);
             const st = row.querySelector('[data-break-roster-status]');
             if (st) {
-              st.textContent = overEnded
-                ? 'انتهى مع تجاوز'
-                : (unscheduled ? 'غير مجدول اليوم' : (depleted ? 'اكتملت مدة اليوم' : (busy ? 'الفرع مشغول' : 'متاح')));
-              st.classList.toggle('rd-break-status--over', overEnded);
-              st.classList.toggle('rd-break-status--busy', busy);
+              st.textContent = view.statusLbl;
+              st.classList.toggle('rd-break-status--over', view.overEnded);
+              st.classList.toggle('rd-break-status--busy', view.busy);
+              st.classList.toggle('rd-break-status--paused', view.stopped);
             }
           }
         });
@@ -35389,6 +35375,42 @@
         return 0;
       }
 
+      function getBreakRosterRowView(u) {
+        const remSec = getUserBreakRemainingSeconds(u);
+        const mins = Math.max(0, Math.ceil(remSec / 60));
+        const dayRow = state.staffBreakDayByUser?.[u.id];
+        const overSec = dayRow?.status === 'ended' ? getStaffBreakOvertimeSeconds(dayRow) : 0;
+        const overEnded = overSec > 0 && Number(dayRow?.remaining_seconds || 0) <= 0;
+        const unscheduled = !dayRow && !resolveBreakDurationMinsForUser(u);
+        const depleted = !overEnded && (dayRow?.status === 'ended' || dayRow?.status === 'paused') && mins <= 0;
+        const stopped = !overEnded && !depleted && !unscheduled
+          && (dayRow?.status === 'ended' || dayRow?.status === 'paused')
+          && mins > 0;
+        const busy = !overEnded && !depleted && !unscheduled && !!(state.staffBreaks || []).some(b =>
+          b.status === 'active' && b.user_id !== u.id && b.branch_id === u.branch_id
+        );
+        const usedLbl = dayRow && typeof getBreakSessionUsedLabel === 'function'
+          ? getBreakSessionUsedLabel(dayRow)
+          : '—';
+        let statusLbl = 'متاح';
+        let minsLabel = `${mins} د متبقٍ`;
+        if (overEnded) {
+          statusLbl = 'انتهى مع تجاوز';
+          minsLabel = `+${Math.max(1, Math.ceil(overSec / 60))} د`;
+        } else if (unscheduled) {
+          statusLbl = 'غير مجدول اليوم';
+          minsLabel = '—';
+        } else if (depleted) {
+          statusLbl = 'اكتملت مدة اليوم';
+          minsLabel = usedLbl && usedLbl !== '—' ? usedLbl : '0 د';
+        } else if (stopped) {
+          statusLbl = 'متوقف';
+        } else if (busy) {
+          statusLbl = 'الفرع مشغول';
+        }
+        return { mins, dayRow, overEnded, unscheduled, depleted, stopped, busy, statusLbl, minsLabel };
+      }
+
       function renderStaffBreakRosterHtml() {
         // «السجل»: كل من ليس في بريك نشط (بعد الإيقاف ينزل هنا)
         const liveIds = new Set(
@@ -35397,18 +35419,12 @@
             .map(b => b.user_id)
         );
         const users = getBreakRosterUsers().filter(u => !liveIds.has(u.id)).filter(u => {
-          const remSec = getUserBreakRemainingSeconds(u);
-          const mins = Math.max(0, Math.ceil(remSec / 60));
-          const dayRow = state.staffBreakDayByUser?.[u.id];
-          const overSec = dayRow?.status === 'ended' ? getStaffBreakOvertimeSeconds(dayRow) : 0;
-          const overEnded = overSec > 0 && Number(dayRow?.remaining_seconds || 0) <= 0;
-          const unscheduled = !dayRow && !resolveBreakDurationMinsForUser(u);
-          const depleted = !overEnded && (dayRow?.status === 'ended' || dayRow?.status === 'paused') && mins <= 0;
+          const view = getBreakRosterRowView(u);
           const filter = getBreakStatusFilter();
           if (filter === 'all') return true;
           if (filter === 'active' || filter === 'overage') return false;
-          if (filter === 'paused') return dayRow?.status === 'paused' || (dayRow?.status === 'ended' && mins > 0);
-          if (filter === 'ended') return overEnded || depleted || unscheduled;
+          if (filter === 'paused') return view.stopped;
+          if (filter === 'ended') return view.overEnded || view.depleted || view.unscheduled;
           return true;
         });
         if (!users.length) {
@@ -35416,32 +35432,10 @@
         }
         const canHist = canViewStaffBreakHistory();
         const items = users.map(u => {
-          const remSec = getUserBreakRemainingSeconds(u);
-          const mins = Math.max(0, Math.ceil(remSec / 60));
-          const dayRow = state.staffBreakDayByUser?.[u.id];
-          const overSec = dayRow?.status === 'ended' ? getStaffBreakOvertimeSeconds(dayRow) : 0;
-          const overEnded = overSec > 0 && Number(dayRow?.remaining_seconds || 0) <= 0;
-          const unscheduled = !dayRow && !resolveBreakDurationMinsForUser(u);
-          const depleted = !overEnded && ((dayRow?.status === 'ended' || dayRow?.status === 'paused') && mins <= 0);
-          const stopped = !overEnded && !depleted && !unscheduled
-            && (dayRow?.status === 'ended' || dayRow?.status === 'paused')
-            && mins > 0;
-          const busy = !overEnded && !depleted && !unscheduled && !!(state.staffBreaks || []).some(b =>
-            b.status === 'active' && b.user_id !== u.id && b.branch_id === u.branch_id
-          );
-          const statusLbl = overEnded
-            ? 'انتهى مع تجاوز'
-            : (unscheduled
-              ? 'غير مجدول اليوم'
-              : (depleted
-                ? 'اكتملت مدة اليوم'
-                : (stopped ? 'متوقف' : (busy ? 'الفرع مشغول' : 'متاح'))));
-          const minsLabel = overEnded
-            ? `+${Math.max(1, Math.ceil(overSec / 60))} د`
-            : (unscheduled ? '—' : (depleted ? '0 د' : `${mins} د متبقٍ`));
+          const view = getBreakRosterRowView(u);
           const branch = state._branchById?.get(u.branch_id) || state.branches.find(b => b.id === u.branch_id);
           const me = u.id === state.currentUser?.id;
-          const rowTone = overEnded ? ' rd-break-roster-row--over' : '';
+          const rowTone = view.overEnded ? ' rd-break-roster-row--over' : '';
           const clickAttr = canHist
             ? ` role="button" tabindex="0" onclick="openStaffBreakHistory('${Sec.escapeHTML(u.id)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openStaffBreakHistory('${Sec.escapeHTML(u.id)}')}"`
             : '';
@@ -35451,10 +35445,10 @@
               <div class="rd-break-row__av" aria-hidden="true">${Sec.escapeHTML((u.name || 'م').trim().charAt(0) || 'م')}</div>
               <div class="rd-list__main">
                 <div class="rd-list__title">${Sec.escapeHTML(u.name || '—')}${me ? ' <span class="rd-break-me-tag">أنت</span>' : ''}</div>
-                <div class="rd-list__sub">${Sec.escapeHTML(branch?.name || '—')} · <span data-break-roster-status class="rd-break-status${overEnded ? ' rd-break-status--over' : ''}${busy ? ' rd-break-status--busy' : ''}${stopped ? ' rd-break-status--paused' : ''}">${Sec.escapeHTML(statusLbl)}</span></div>
+                <div class="rd-list__sub">${Sec.escapeHTML(branch?.name || '—')} · <span data-break-roster-status class="rd-break-status${view.overEnded ? ' rd-break-status--over' : ''}${view.busy ? ' rd-break-status--busy' : ''}${view.stopped ? ' rd-break-status--paused' : ''}">${Sec.escapeHTML(view.statusLbl)}</span></div>
               </div>
-              <div class="rd-break-roster__mins${depleted || unscheduled ? ' rd-break-roster__mins--zero' : ''}${overEnded ? ' rd-break-roster__mins--over' : ''}${busy ? ' rd-break-roster__mins--busy' : ''}"
-                data-break-roster-user="${Sec.escapeHTML(u.id)}" data-break-roster-over="${overEnded ? '1' : '0'}" dir="ltr">${Sec.escapeHTML(minsLabel)}</div>
+              <div class="rd-break-roster__mins${view.unscheduled || (view.depleted && view.minsLabel === '0 د') ? ' rd-break-roster__mins--zero' : ''}${view.overEnded ? ' rd-break-roster__mins--over' : ''}${view.busy ? ' rd-break-roster__mins--busy' : ''}"
+                data-break-roster-user="${Sec.escapeHTML(u.id)}" data-break-roster-over="${view.overEnded ? '1' : '0'}" dir="ltr">${Sec.escapeHTML(view.minsLabel)}</div>
             </div>`;
         }).join('');
         return `<div class="rd-list rd-break-list">${items}</div>`;
