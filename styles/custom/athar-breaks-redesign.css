@@ -348,6 +348,7 @@ html.athar-staging-redesign.mr-desktop-ui #rdBreaks:not([hidden]) {
   color: var(--text2);
   flex-shrink: 0;
   font-variant-numeric: tabular-nums;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 .rd-break-roster__mins--zero {
   color: var(--text3) !important;
@@ -1368,10 +1369,11 @@ html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-
 }
 
 html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-roster__mins {
-  font-size: 12.5px !important;
+  font-size: 13px !important;
   font-weight: 700 !important;
   color: var(--text2) !important;
   unicode-bidi: isolate !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-roster__mins--busy {
