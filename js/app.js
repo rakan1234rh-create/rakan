@@ -25211,7 +25211,9 @@
           || '';
         const empRaw = item.empNumber || emp?.employee_number || '';
         const empNum = empRaw && typeof padEmpNum === 'function' ? padEmpNum(empRaw) : String(empRaw || '');
-        const initial = String(item.name || '؟').trim().charAt(0) || '؟';
+        const jobTitle = emp && typeof getStaffJobTitle === 'function'
+          ? getStaffJobTitle(emp)
+          : '';
         const meta = [];
         if (empNum && empNum !== '-') {
           meta.push(`<span class="rd-cmp-emp-hd__num" dir="ltr">${Sec.escapeHTML(empNum)}</span>`);
@@ -25221,9 +25223,9 @@
         }
         return `
           <div class="rd-cmp-emp-hd">
-            <span class="rd-cmp-emp-hd__av" aria-hidden="true">${Sec.escapeHTML(initial)}</span>
             <div class="rd-cmp-emp-hd__body">
               <div class="rd-cmp-emp-hd__name">${Sec.escapeHTML(item.name || '')}</div>
+              ${jobTitle && jobTitle !== '—' ? `<div class="rd-cmp-emp-hd__job">${Sec.escapeHTML(jobTitle)}</div>` : ''}
               ${meta.length ? `<div class="rd-cmp-emp-hd__meta">${meta.join('<span class="rd-cmp-emp-hd__sep" aria-hidden="true">·</span>')}</div>` : ''}
             </div>
           </div>`;

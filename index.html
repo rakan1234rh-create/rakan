@@ -775,7 +775,7 @@
   <link rel="stylesheet" href="styles/custom/athar-workflow-redesign.css?v=rp1" id="athar-workflow-redesign">
   <link rel="stylesheet" href="styles/custom/athar-ticket-detail-redesign.css?v=rp1" id="athar-ticket-detail-redesign">
   <link rel="stylesheet" href="styles/custom/athar-reports-redesign.css?v=rp5" id="athar-reports-redesign">
-  <link rel="stylesheet" href="styles/custom/athar-compliance-redesign.css?v=cm2" id="athar-compliance-redesign">
+  <link rel="stylesheet" href="styles/custom/athar-compliance-redesign.css?v=cm3" id="athar-compliance-redesign">
   <link rel="stylesheet" href="styles/custom/athar-violations-redesign.css?v=vl1" id="athar-violations-redesign">
   <link rel="stylesheet" href="styles/custom/athar-locations-redesign.css?v=loc1" id="athar-locations-redesign">
   <link rel="stylesheet" href="styles/custom/athar-users-redesign.css?v=usr2" id="athar-users-redesign">
@@ -2301,6 +2301,20 @@
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px), screen and (hover: hover) and (pointer: fine)">
   <link rel="stylesheet" href="styles/desktop/reports-list-shell.css" id="platform-reports-list-shell-link" media="screen and (min-width: 993px), screen and (hover: hover) and (pointer: fine)">
   <link rel="stylesheet" href="styles/custom/athar-search.css?v=sr4" id="athar-search">
+  <style id="athar-cmp-emp-detail-clear">
+    html.mr-desktop-ui #appWrap #cmpDetailModal.modal.open.cmp-detail--rd-emp,
+    html.athar-staging-redesign.mr-desktop-ui #cmpDetailModal.modal.open.cmp-detail--rd-emp {
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+      filter: none !important;
+    }
+    html.mr-desktop-ui #appWrap #cmpDetailModal.cmp-detail--rd-emp .modal-card,
+    html.mr-desktop-ui #appWrap #cmpDetailModal.cmp-detail--rd-emp .modal-card * {
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+      filter: none !important;
+    }
+  </style>
   <style id="mr-topbar-dark-fix" media="screen and (min-width: 993px), screen and (hover: hover) and (pointer: fine)">
     html[data-theme="dark"].mr-desktop-ui #appWrap .topbar.unified-banner,
     html[data-theme="dark"].mr-desktop-ui .topbar.unified-banner {
@@ -4652,7 +4666,7 @@
   </div><!-- /#appWrap -->
 
     <div id="rdCmplOverlayHost"></div>
-    <script src="js/app.js?v=cm2"></script>
+    <script src="js/app.js?v=cm3"></script>
         <style>
       @media (max-width: 992px) {
         /* ── workflow: منع التمدد الأفقي ── */
