@@ -34978,7 +34978,7 @@
 
       function paintStaffBreakCountdownOnly() {
         const host = document.getElementById('rdBreaksRingHost') || document.getElementById('breaksRingHost');
-        if (!host) return;
+        if (host) {
         const desk = !!(host.closest && host.closest('.rd-breaks-page--desk'));
         const open = getMyOpenStaffBreak();
         const active = open?.status === 'active' ? open : null;
@@ -35088,6 +35088,7 @@
             icoEl.style.fontSize = '16px';
             icoEl.style.marginBottom = '4px';
           }
+        }
         }
         document.querySelectorAll('[data-break-live-row]').forEach(rowEl => {
           const id = rowEl.getAttribute('data-break-live-row');
