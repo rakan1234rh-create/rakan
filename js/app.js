@@ -34493,10 +34493,17 @@
       }
 
       function ensureStaffBreakTicker() {
-        stopStaffBreakTicker();
         const tab = document.getElementById('tab-breaks');
-        if (!tab?.classList.contains('active')) return;
-        state._staffBreakSchedulePollAt = 0;
+        if (!tab?.classList.contains('active')) {
+          stopStaffBreakTicker();
+          return;
+        }
+        // Keep the existing 1s interval. Restarting it reset the 12s poll clock
+        // and the first tick reloaded every session, overwriting a just-stopped leftover.
+        if (state._staffBreakTicker) return;
+        if (!state._staffBreakSchedulePollAt) {
+          state._staffBreakSchedulePollAt = Date.now();
+        }
         state._staffBreakTicker = setInterval(() => {
           try {
             // KSA midnight: reload so daily logs / remaining minutes reset
@@ -34692,9 +34699,7 @@
         state.staffBreakDayRows = list.sort(
           (a, b) => new Date(b.started_at || b.updated_at || 0) - new Date(a.started_at || a.updated_at || 0)
         );
-        if (next.user_id) {
-          state.staffBreakDayByUser = { ...(state.staffBreakDayByUser || {}), [next.user_id]: next };
-        }
+        rebuildStaffBreakDayMap(state.staffBreakDayRows);
       }
 
       function getBreakRosterUsers() {
@@ -34716,15 +34721,23 @@
           .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'ar'));
       }
 
+      function staffBreakRowRecencyMs(row) {
+        if (!row) return 0;
+        const t = Date.parse(row.updated_at || row.ended_at || row.paused_at || row.started_at || row.created_at || 0);
+        return Number.isFinite(t) ? t : 0;
+      }
+
       function rebuildStaffBreakDayMap(rows) {
         const map = {};
-        (rows || []).forEach((row) => {
-          if (!row?.user_id) return;
-          const prev = map[row.user_id];
-          const rank = { active: 3, paused: 2, ended: 1 };
-          if (!prev || (rank[row.status] || 0) >= (rank[prev.status] || 0)) {
-            map[row.user_id] = row;
-          }
+        const rank = { active: 3, paused: 2, ended: 1 };
+        (rows || []).slice().sort((a, b) => {
+          const ra = rank[a?.status] || 0;
+          const rb = rank[b?.status] || 0;
+          if (ra !== rb) return rb - ra;
+          return staffBreakRowRecencyMs(b) - staffBreakRowRecencyMs(a);
+        }).forEach((row) => {
+          if (!row?.user_id || map[row.user_id]) return;
+          map[row.user_id] = row;
         });
         state.staffBreakDayByUser = map;
       }
@@ -34822,13 +34835,6 @@
             const rowDay = row?.day_key ? String(row.day_key).slice(0, 10) : '';
             const isToday = !rowDay || rowDay === todayKey;
 
-            if (row?.user_id && isToday) {
-              const map = { ...(state.staffBreakDayByUser || {}) };
-              if (payload.eventType === 'DELETE') delete map[row.user_id];
-              else if (payload.new) map[row.user_id] = enrichStaffBreak(payload.new);
-              state.staffBreakDayByUser = map;
-            }
-
             // Keep day log + open list scoped to today's KSA day only
             let dayRows = [...(state.staffBreakDayRows || [])];
             if (payload.eventType === 'DELETE' && row?.id) {
@@ -34852,6 +34858,7 @@
                 uniq.push(b);
               });
             state.staffBreakDayRows = uniq;
+            rebuildStaffBreakDayMap(uniq);
             state.staffBreaks = uniq
               .filter(b => b.status === 'active')
               .map(enrichStaffBreak);
