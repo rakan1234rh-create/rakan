@@ -1,5 +1,31 @@
 /* ATHAR — shared search field chrome (look only; page filter logic stays local) */
 
+/* Outer combo is layout only — hide the pill shell behind the inner field */
+html.athar-staging-redesign.mr-desktop-ui .cmp-neo-search-combo,
+html.athar-staging-redesign.mr-desktop-ui #appWrap .cmp-neo-search-combo,
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rb-search-combo,
+html.athar-staging-redesign.mr-desktop-ui #tab-locations #rbSearchCombo,
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .cmp-neo-search-combo {
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+  overflow: visible !important;
+  min-height: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .cmp-neo-search-combo:focus-within,
+html.athar-staging-redesign.mr-desktop-ui #appWrap .cmp-neo-search-combo:focus-within,
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rb-search-combo:focus-within,
+html.athar-staging-redesign.mr-desktop-ui #tab-locations #rbSearchCombo:focus-within,
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .cmp-neo-search-combo:focus-within {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
 html.athar-staging-redesign.mr-desktop-ui .figma-search-wrap,
 html.athar-staging-redesign.mr-desktop-ui #appWrap .figma-search-wrap,
 html.athar-staging-redesign.mr-desktop-ui .rd-app-search,
