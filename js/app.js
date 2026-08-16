@@ -34932,12 +34932,70 @@
         if (typeof renderStaffBreaksPage === 'function') renderStaffBreaksPage({ soft: true });
       }
 
+      function getBreakSearchQuery() {
+        return String(state._breakRosterSearch || '').trim().toLowerCase();
+      }
+
+      function breakRecordMatchesSearch({ name, employeeNumber, branchName }) {
+        const q = getBreakSearchQuery();
+        if (!q) return true;
+        const hayName = String(name || '').toLowerCase();
+        const hayBranch = String(branchName || '').toLowerCase();
+        const empRaw = String(employeeNumber || '').toLowerCase();
+        const empPad = typeof padEmpNum === 'function' ? padEmpNum(employeeNumber) : '';
+        const empPadHay = empPad && empPad !== '-' ? String(empPad).toLowerCase() : '';
+        if (hayName.includes(q) || hayBranch.includes(q) || empRaw.includes(q) || empPadHay.includes(q)) return true;
+        const qDigits = q.replace(/\D/g, '');
+        const empDigits = empRaw.replace(/\D/g, '');
+        return !!(qDigits && empDigits && empDigits.includes(qDigits));
+      }
+
+      function staffBreakLiveMatchesSearch(b) {
+        const u = b?._user || state._userById?.get(b?.user_id) || state.users.find(x => x.id === b?.user_id);
+        return breakRecordMatchesSearch({
+          name: b?._userName || u?.name,
+          employeeNumber: u?.employee_number,
+          branchName: b?._branchName
+        });
+      }
+
+      function staffBreakUserMatchesSearch(u) {
+        const branch = u?.branch_id
+          ? (state._branchById?.get(u.branch_id) || state.branches.find(b => b.id === u.branch_id))
+          : null;
+        return breakRecordMatchesSearch({
+          name: u?.name,
+          employeeNumber: u?.employee_number,
+          branchName: branch?.name
+        });
+      }
+
+      function refreshBreaksFromSearch(el) {
+        state._breakRosterSearch = el && el.value != null ? el.value : (state._breakRosterSearch || '');
+        const id = 'rdBreaksSearch';
+        const start = el && typeof el.selectionStart === 'number' ? el.selectionStart : null;
+        const end = el && typeof el.selectionEnd === 'number' ? el.selectionEnd : start;
+        const restore = () => {
+          const next = document.getElementById(id);
+          if (!next) return;
+          next.focus();
+          if (start == null) return;
+          try { next.setSelectionRange(start, end); } catch (_) { /* noop */ }
+        };
+        const ret = typeof renderStaffBreaksPage === 'function'
+          ? renderStaffBreaksPage({ soft: true })
+          : null;
+        if (ret && typeof ret.then === 'function') ret.then(restore);
+        else restore();
+      }
+
       function getBreakDeskShowCard() {
         return canTakeStaffBreak();
       }
 
       function renderBreaksDeskToolbarHtml() {
         const filter = getBreakStatusFilter();
+        const q = Sec.escapeHTML(state._breakRosterSearch || '');
         const filters = [
           { key: 'all', label: 'الكل' },
           { key: 'active', label: 'في البريك الآن' },
@@ -34950,8 +35008,12 @@
         }).join('');
         return `
           <div class="rd-breaks-toolbar">
+            <div class="rd-breaks-search">
+              <input type="search" class="rd-breaks-search__input" id="rdBreaksSearch" value="${q}"
+                placeholder="بحث برقم الموظف، الاسم، أو الفرع..." autocomplete="off" inputmode="search"
+                oninput="refreshBreaksFromSearch(this)" aria-label="بحث برقم الموظف أو الاسم أو الفرع">
+            </div>
             <div class="rd-breaks-toolbar__filters">
-              <span class="rd-breaks-toolbar__lbl">تصفية القوائم:</span>
               ${filters}
             </div>
           </div>`;
@@ -35345,8 +35407,10 @@
           return breakRowMatchesFilter(kind);
         });
         if (getBreakStatusFilter() === 'ended' || getBreakStatusFilter() === 'paused') rows = [];
+        rows = rows.filter(staffBreakLiveMatchesSearch);
         if (!rows.length) {
-          return '<div class="rd-break-empty-panel">لا يوجد أحد في بريك حالياً</div>';
+          const emptyLbl = getBreakSearchQuery() ? 'لا توجد نتائج مطابقة' : 'لا يوجد أحد في بريك حالياً';
+          return `<div class="rd-break-empty-panel">${emptyLbl}</div>`;
         }
         const canHist = canViewStaffBreakHistory();
         const items = rows.map(b => {
@@ -35426,6 +35490,7 @@
             .map(b => b.user_id)
         );
         const users = getBreakRosterUsers().filter(u => !liveIds.has(u.id)).filter(u => {
+          if (!staffBreakUserMatchesSearch(u)) return false;
           const view = getBreakRosterRowView(u);
           const filter = getBreakStatusFilter();
           if (filter === 'all') return true;
@@ -36062,6 +36127,7 @@
       window.endStaffBreakFromUi = endStaffBreakFromUi;
       window.submitBreakOvertimeReason = submitBreakOvertimeReason;
       window.setBreakStatusFilter = setBreakStatusFilter;
+      window.refreshBreaksFromSearch = refreshBreaksFromSearch;
       window.setBreakSchScope = setBreakSchScope;
       window.setBreakSchDay = setBreakSchDay;
       window.paintBreakScheduleWeekSummary = paintBreakScheduleWeekSummary;
