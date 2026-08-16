@@ -206,16 +206,23 @@ html.mr-mobile-ui #tab-complaints .cp-mob-filters {
   width: 100%;
   box-sizing: border-box;
 }
-html.mr-mobile-ui #tab-complaints .cp-mob-filters .rd-cmpl-search {
+html.mr-mobile-ui #tab-complaints .cp-mob-filters .rd-app-search {
   flex: 1 1 100%;
   width: 100%;
   min-width: 0;
   max-width: none;
-  height: 38px;
-  padding: 0 12px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--surface);
+}
+
+html.mr-mobile-ui #tab-complaints .cp-mob-filters .rd-cmpl-search {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+  max-width: none;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   color: var(--text);
   font-family: inherit;
   font-size: 12.5px;
@@ -1236,19 +1243,25 @@ html.athar-staging-redesign.mr-desktop-ui .rd-cmpl-filters {
   flex-wrap: wrap !important;
 }
 
-html.athar-staging-redesign.mr-desktop-ui .rd-cmpl-search {
+html.athar-staging-redesign.mr-desktop-ui .rd-cmpl-filters .rd-app-search {
   flex: 1 1 200px !important;
   min-width: 180px !important;
   max-width: 260px !important;
-  height: 38px !important;
-  padding: 0 12px !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 10px !important;
-  background: var(--surface) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-cmpl-search {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  height: 100% !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
   color: var(--text) !important;
   font-family: inherit !important;
   font-size: 12.5px !important;
-  box-sizing: border-box !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui .rd-cmpl-date-btn {

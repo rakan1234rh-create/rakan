@@ -25931,7 +25931,7 @@
                 <p class="rd-cmp-hd__eye">COMPLIANCE OVERVIEW</p>
               </header>
               <div class="rd-cmp-toolbar">
-                <div class="figma-search-wrap rd-cmp-search">
+                <div class="figma-search-wrap rd-cmp-search rd-app-search">
                   <input type="text" class="figma-search-input" id="cmp-search"
                     value="${Sec.escapeHTML(cmpSearchVal)}"
                     placeholder="${Sec.escapeHTML(cmpSearchPh || 'ابحث باسم المنطقة أو المدير...')}"
@@ -25987,15 +25987,14 @@
             <div class="cmp-neo-toolbar toolbar wf-toolbar" style="display:flex !important;flex-direction:row !important;align-items:center !important;gap:8px !important;width:100% !important;box-sizing:border-box !important">
               <div class="cmp-neo-search-combo${backNav ? ' has-back' : ''}" style="flex:1 1 auto !important;min-width:0 !important;display:flex !important;align-items:center !important;gap:8px !important">
                 ${backNav || ''}
-                <div class="figma-search-wrap wf-search cmp-neo-search cmp-neo-search-combo__field" style="flex:1 1 auto !important;min-width:0 !important;width:100% !important;height:42px !important;min-height:42px !important;border-radius:12px !important;padding:0 12px !important;display:flex !important;align-items:center !important;gap:8px !important;box-sizing:border-box !important">
-                  <input type="text" class="figma-search-input" id="cmp-search"
+                <div class="figma-search-wrap wf-search cmp-neo-search cmp-neo-search-combo__field rd-app-search" style="flex:1 1 auto;min-width:0;width:100%">
+                  <input type="text" class="figma-search-input rd-app-search__input" id="cmp-search"
                     value="${Sec.escapeHTML(cmpSearchVal)}"
                     placeholder="${Sec.escapeHTML(cmpSearchPh)}"
                     oninput="filterCmpSearch()"
                     autocomplete="off"
-                    enterkeyhint="search"
-                    style="flex:1 1 auto !important;min-width:0 !important;height:42px !important;font-size:14px !important;background:transparent !important;border:none !important;padding:0 !important">
-                  <button type="button" class="figma-search-btn" onclick="filterCmpSearch()" aria-label="بحث" style="width:32px !important;height:32px !important;flex-shrink:0 !important;display:flex !important;align-items:center !important;justify-content:center !important">
+                    enterkeyhint="search">
+                  <button type="button" class="figma-search-btn" onclick="filterCmpSearch()" aria-label="بحث">
                     <i class="fas fa-magnifying-glass"></i>
                   </button>
                 </div>
@@ -35008,8 +35007,8 @@
         }).join('');
         return `
           <div class="rd-breaks-toolbar">
-            <div class="rd-breaks-search">
-              <input type="search" class="rd-breaks-search__input" id="rdBreaksSearch" value="${q}"
+            <div class="rd-breaks-search rd-app-search">
+              <input type="search" class="rd-breaks-search__input rd-app-search__input" id="rdBreaksSearch" value="${q}"
                 placeholder="بحث برقم الموظف، الاسم، أو الفرع..." autocomplete="off" inputmode="search"
                 oninput="refreshBreaksFromSearch(this)" aria-label="بحث برقم الموظف أو الاسم أو الفرع">
             </div>
@@ -37290,7 +37289,9 @@
         const searchId = p === 'cp' ? 'cpCmplSearch' : 'rdCmplSearch';
         const btnId = p === 'cp' ? 'cpCmplDateBtn' : 'rdCmplDateBtn';
         const q = Sec.escapeHTML(state.complaintSearch || '');
-        return `<input type="search" class="rd-cmpl-search" id="${searchId}" value="${q}" placeholder="ابحث برقم الشكوى..." autocomplete="off" inputmode="search" oninput="refreshComplaintListFromQuery(this)" aria-label="بحث برقم الشكوى">
+        return `<div class="rd-app-search">
+          <input type="search" class="rd-cmpl-search rd-app-search__input" id="${searchId}" value="${q}" placeholder="ابحث برقم الشكوى..." autocomplete="off" inputmode="search" oninput="refreshComplaintListFromQuery(this)" aria-label="بحث برقم الشكوى">
+        </div>
           <button type="button" class="rd-cmpl-date-btn" id="${btnId}" onclick="toggleCmplDatePicker(event)" aria-label="اختر الفترة">
             <i class="fas fa-calendar" aria-hidden="true"></i>
             <span class="cmpl-date-label">اختر الفترة</span>
