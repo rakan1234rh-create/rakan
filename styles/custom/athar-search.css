@@ -1,0 +1,187 @@
+/* ATHAR — shared search field chrome (look only; page filter logic stays local) */
+
+html.athar-staging-redesign.mr-desktop-ui .figma-search-wrap,
+html.athar-staging-redesign.mr-desktop-ui .rd-app-search,
+html.athar-staging-redesign.mr-desktop-ui .rd-breaks-search,
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-drill-search,
+html.athar-staging-redesign.mr-desktop-ui #tab-workflow .wf-search,
+html.athar-staging-redesign.mr-desktop-ui #tab-reports .wf-search,
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-filters-toolbar .figma-search-wrap,
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-filters-toolbar .wf-search,
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .wf-search,
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rb-search-combo .figma-search-wrap,
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .figma-search-wrap,
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .figma-search-wrap,
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .cmp-neo-search,
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .cmp-neo-search-combo .cmp-neo-search-combo__field {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  max-height: 38px !important;
+  padding: 0 12px !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 10px !important;
+  background: var(--surface, var(--searchFill, #fff)) !important;
+  box-shadow: none !important;
+  box-sizing: border-box !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .figma-search-wrap::before,
+html.athar-staging-redesign.mr-desktop-ui .rd-app-search::before,
+html.athar-staging-redesign.mr-desktop-ui .rd-breaks-search::before,
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-drill-search::before,
+html.athar-staging-redesign.mr-desktop-ui #tab-workflow .wf-search::before,
+html.athar-staging-redesign.mr-desktop-ui #tab-reports .wf-search::before,
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-filters-toolbar .figma-search-wrap::before,
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-filters-toolbar .wf-search::before,
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .wf-search::before,
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rb-search-combo .figma-search-wrap::before,
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .figma-search-wrap::before,
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .figma-search-wrap::before,
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .cmp-neo-search::before,
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .cmp-neo-search-combo .cmp-neo-search-combo__field::before {
+  content: "\f002" !important;
+  font-family: "Font Awesome 6 Free" !important;
+  font-weight: 900 !important;
+  color: var(--text3) !important;
+  font-size: 12px !important;
+  flex-shrink: 0 !important;
+  line-height: 1 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .figma-search-wrap:focus-within,
+html.athar-staging-redesign.mr-desktop-ui .rd-app-search:focus-within,
+html.athar-staging-redesign.mr-desktop-ui .rd-breaks-search:focus-within,
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-drill-search:focus-within,
+html.athar-staging-redesign.mr-desktop-ui #tab-workflow .wf-search:focus-within,
+html.athar-staging-redesign.mr-desktop-ui #tab-reports .wf-search:focus-within,
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-filters-toolbar .figma-search-wrap:focus-within,
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .wf-search:focus-within,
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .rb-search-combo .figma-search-wrap:focus-within,
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .figma-search-wrap:focus-within,
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .figma-search-wrap:focus-within,
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .cmp-neo-search:focus-within,
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .cmp-neo-search-combo .cmp-neo-search-combo__field:focus-within {
+  border-color: var(--gold) !important;
+  box-shadow: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .figma-search-wrap .figma-search-btn,
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-drill-search .figma-search-btn,
+html.athar-staging-redesign.mr-desktop-ui #tab-workflow .wf-search .figma-search-btn,
+html.athar-staging-redesign.mr-desktop-ui #tab-reports .wf-search .figma-search-btn,
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .figma-search-btn,
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .figma-search-btn,
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .figma-search-btn,
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .figma-search-btn {
+  display: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .figma-search-wrap .figma-search-input,
+html.athar-staging-redesign.mr-desktop-ui .rd-app-search__input,
+html.athar-staging-redesign.mr-desktop-ui .rd-breaks-search__input,
+html.athar-staging-redesign.mr-desktop-ui .rd-app-search .rd-cmpl-search,
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-drill-search .figma-search-input,
+html.athar-staging-redesign.mr-desktop-ui #tab-workflow .wf-search .figma-search-input,
+html.athar-staging-redesign.mr-desktop-ui #tab-reports .wf-search .figma-search-input,
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-filters-toolbar .figma-search-input,
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .wf-search .figma-search-input,
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .figma-search-input,
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .figma-search-input {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  width: auto !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  border: 0 !important;
+  outline: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  font-family: inherit !important;
+  font-size: 12.5px !important;
+  line-height: 1.2 !important;
+  color: var(--text) !important;
+  text-align: start !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .figma-search-wrap .figma-search-input::placeholder,
+html.athar-staging-redesign.mr-desktop-ui .rd-app-search__input::placeholder,
+html.athar-staging-redesign.mr-desktop-ui .rd-breaks-search__input::placeholder,
+html.athar-staging-redesign.mr-desktop-ui .rd-app-search .rd-cmpl-search::placeholder,
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-drill-search .figma-search-input::placeholder,
+html.athar-staging-redesign.mr-desktop-ui #tab-workflow .wf-search .figma-search-input::placeholder,
+html.athar-staging-redesign.mr-desktop-ui #tab-reports .wf-search .figma-search-input::placeholder,
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-filters-toolbar .figma-search-input::placeholder,
+html.athar-staging-redesign.mr-desktop-ui #tab-locations .wf-search .figma-search-input::placeholder,
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .figma-search-input::placeholder,
+html.athar-staging-redesign.mr-desktop-ui #tab-compliance .figma-search-input::placeholder {
+  color: var(--text3) !important;
+  font-size: 12.5px !important;
+  opacity: 1 !important;
+  letter-spacing: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-cmpl-filters .rd-app-search {
+  flex: 1 1 200px !important;
+  min-width: 180px !important;
+  max-width: 260px !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui .rd-app-search,
+html.mr-mobile-ui #tab-complaints .rd-app-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 100%;
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  box-sizing: border-box;
+}
+
+html.athar-staging-redesign.mr-mobile-ui .rd-app-search::before,
+html.mr-mobile-ui #tab-complaints .rd-app-search::before {
+  content: "\f002";
+  font-family: "Font Awesome 6 Free";
+  font-weight: 900;
+  color: var(--text3);
+  font-size: 12px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+html.athar-staging-redesign.mr-mobile-ui .rd-app-search:focus-within,
+html.mr-mobile-ui #tab-complaints .rd-app-search:focus-within {
+  border-color: var(--gold);
+}
+
+html.athar-staging-redesign.mr-mobile-ui .rd-app-search .figma-search-btn,
+html.mr-mobile-ui .rd-app-search .figma-search-btn {
+  display: none;
+}
+
+html.athar-staging-redesign.mr-mobile-ui .rd-app-search__input,
+html.athar-staging-redesign.mr-mobile-ui .rd-app-search .rd-cmpl-search,
+html.athar-staging-redesign.mr-mobile-ui .rd-app-search .figma-search-input,
+html.mr-mobile-ui #tab-complaints .rd-app-search .rd-cmpl-search,
+html.mr-mobile-ui .rd-app-search .figma-search-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  outline: none;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: 12.5px;
+  color: var(--text);
+}
