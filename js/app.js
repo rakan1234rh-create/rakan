@@ -8033,6 +8033,12 @@
           && document.documentElement.classList.contains('mr-mobile-ui');
       }
 
+      /** التذاكر على الجوال فقط — قائمة البطاقات والشرائح */
+      function isTicketsAtharMobileUi() {
+        return document.documentElement.classList.contains('athar-staging-redesign')
+          && document.documentElement.classList.contains('mr-mobile-ui');
+      }
+
       /** بريكات: Athar على سطح المكتب، وعلى الجوال أيضاً لأنها صفحة جديدة بلا كلاسيك إنتاج */
       function isStaffBreaksAtharUi() {
         return document.documentElement.classList.contains('athar-staging-redesign');
@@ -19276,7 +19282,8 @@
         const host = document.getElementById('rdWfChips');
         if (!host) return;
         const useRd = (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi())
-          || (typeof isAtharDesktopRedesignUi === 'function' && isAtharDesktopRedesignUi());
+          || (typeof isAtharDesktopRedesignUi === 'function' && isAtharDesktopRedesignUi())
+          || (typeof isTicketsAtharMobileUi === 'function' && isTicketsAtharMobileUi());
         if (!useRd) {
           host.hidden = true;
           host.innerHTML = '';
@@ -19328,7 +19335,8 @@
         let visible = getVisibleViolations().filter(isTicketWorkflowOpen);
 
         const useRdChips = (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi())
-          || (typeof isAtharDesktopRedesignUi === 'function' && isAtharDesktopRedesignUi());
+          || (typeof isAtharDesktopRedesignUi === 'function' && isAtharDesktopRedesignUi())
+          || (typeof isTicketsAtharMobileUi === 'function' && isTicketsAtharMobileUi());
         if (useRdChips) {
           syncRdWfChips(visible);
           const chip = state._rdWfChip || 'all';
@@ -19405,7 +19413,13 @@
       function seedWfMobTicketsHeadIfNeeded() {
         if (typeof isDesktopUi === 'function' ? isDesktopUi() : !(typeof isMobileViewport === 'function' && isMobileViewport())) return;
         const mobHead = document.getElementById('wfMobTicketsHead');
-        if (!mobHead || mobHead.querySelector('.wf-tickets-table--mob-head')) return;
+        if (!mobHead) return;
+        if (typeof isTicketsAtharMobileUi === 'function' && isTicketsAtharMobileUi()) {
+          mobHead.innerHTML = '';
+          mobHead.setAttribute('aria-hidden', 'true');
+          return;
+        }
+        if (mobHead.querySelector('.wf-tickets-table--mob-head')) return;
         mobHead.innerHTML = buildMobTicketsHeadHtml({ wfMob: true, rpMob: false });
         mobHead.setAttribute('aria-hidden', 'false');
       }
@@ -19451,7 +19465,7 @@
 
         if (!tickets.length) {
           if (mobHead) {
-            if (isAppDataPending() && wfMob && !(typeof isAtharRedesignUi === 'function' && isAtharRedesignUi())) {
+            if (isAppDataPending() && wfMob && !(typeof isTicketsAtharMobileUi === 'function' && isTicketsAtharMobileUi())) {
               seedWfMobTicketsHeadIfNeeded();
             } else {
               mobHead.innerHTML = '';
@@ -19462,10 +19476,10 @@
             ? dataLoadingEmptyHTML(isReportsList ? 'جاري تحميل التقارير…' : 'جاري تحميل التذاكر…')
             : (isReportsList
               ? '<div class="empty"><i class="fas fa-inbox"></i><p>لا توجد بيانات في الفترة المحددة</p></div>'
-              : ((isAtharRedesignUi() || isAtharDesktopScreenUi())
+              : ((isTicketsAtharMobileUi() || isAtharDesktopScreenUi())
                 ? '<div class="rd-ticket-empty"><i class="fas fa-inbox"></i><p>لا توجد تذاكر مطابقة</p></div>'
                 : '<div class="empty"><i class="fas fa-inbox"></i><p>لا توجد تذاكر مطابقة</p></div>'));
-          if ((isAtharRedesignUi() || isAtharDesktopScreenUi()) && !isReportsList) {
+          if ((isTicketsAtharMobileUi() || isAtharDesktopScreenUi()) && !isReportsList) {
             resetTicketListChildren(list, true);
             list.classList.remove('wf-mob-measuring', 'rp-mob-measuring');
             list.classList.add('wf-mob-cols-ready');
@@ -19480,7 +19494,7 @@
           return;
         }
 
-        if (mobSplit && isAtharRedesignUi()) {
+        if (wfMob && typeof isTicketsAtharMobileUi === 'function' && isTicketsAtharMobileUi()) {
           if (mobHead) {
             mobHead.innerHTML = '';
             mobHead.setAttribute('aria-hidden', 'true');
