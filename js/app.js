@@ -8023,8 +8023,14 @@
       }
 
       function isAtharRedesignUi() {
-        // Mobile redesign not enabled on production yet
+        // Mobile redesign not enabled globally on production yet
         return false;
+      }
+
+      /** الرئيسية على الجوال فقط — لا يفعّل باقي صفحات إعادة التصميم */
+      function isHomeAtharMobileUi() {
+        return document.documentElement.classList.contains('athar-staging-redesign')
+          && document.documentElement.classList.contains('mr-mobile-ui');
       }
 
       /** بريكات: Athar على سطح المكتب، وعلى الجوال أيضاً لأنها صفحة جديدة بلا كلاسيك إنتاج */
@@ -11828,8 +11834,166 @@
         host.hidden = false;
       }
 
+      function renderDashboardRedesign(visible, allVisible, monthFromIso, nextFromIso, ksaNowParts) {
+        const host = document.getElementById('rdDash');
+        if (!host) return;
+        const me = state.currentUser;
+        const monthLbl = formatDashMonthYear(ksaNowParts.year, ksaNowParts.month);
+        const greetingDate = document.getElementById('dash-date-kicker')?.textContent || '—';
+        const greetingName = me?.name || '—';
+        const greetingSub = getDashWelcomeSubtitle(me?.role, monthLbl);
+
+        const streakDays = getRdCleanStreakDays(me);
+        const bestKey = 'athar_rd_best_streak_' + (me?.id || 'x');
+        let personalBest = Number(localStorage.getItem(bestKey) || 0);
+        if (!Number.isFinite(personalBest) || personalBest < streakDays) {
+          personalBest = streakDays;
+          try { localStorage.setItem(bestKey, String(personalBest)); } catch (_) { /* noop */ }
+        }
+        const CIRC = 339.292;
+        const streakPct = personalBest > 0 ? Math.min(100, Math.round((streakDays / personalBest) * 100)) : (streakDays > 0 ? 100 : 0);
+        const streakOffset = CIRC - (CIRC * streakPct) / 100;
+        const branchRankLabel = getRdBranchRankLabel(me);
+        const streakBadge = streakDays >= 30 ? 'بطل الالتزام لهذا الشهر' : (streakDays >= 10 ? 'منضبط هذا الشهر' : 'ابدأ سلسلة انضباطك');
+
+        let responseScore = 100;
+        let autoCount = 0;
+        try {
+          if (me && (me.role === 'employee' || me.role === 'branch_manager')) {
+            const rd = calcResponseRate(me.id, 'employee');
+            responseScore = rd.score;
+            autoCount = rd.autoCount;
+          }
+        } catch (_) { /* noop */ }
+        const responsePct = Math.min(100, Math.abs(responseScore));
+        const responseColor = rdClassifyScore(responseScore);
+        const responseStatus = responseScore < 0 ? 'تنبيه' : (responseScore >= 75 ? 'جيد' : 'تحذير');
+
+        const total = visible.length;
+        const pending = visible.filter(v => isTicketWorkflowOpen(v)).length;
+        const closed = visible.filter(v => v.state === 'closed').length;
+        const autoFwd = visible.filter(v => v.auto_forwarded_emp || v.auto_forwarded_sup).length;
+
+        const recent = sortNotifsNewestFirst(visible.map(v => ({
+          ...v,
+          time: v.updated_at || v.created_at
+        }))).slice(0, 5);
+
+        const statusItems = [
+          { key: 'emp', label: 'بانتظار الموظف', icon: 'fa-user', colorKey: 'warning' },
+          { key: 'sup', label: 'بانتظار المشرف', icon: 'fa-user-shield', colorKey: 'info' },
+          { key: 'aud', label: 'بانتظار التدقيق', icon: 'fa-magnifying-glass', colorKey: 'purple' },
+          { key: 'mgt', label: 'بانتظار الإدارة', icon: 'fa-bolt', colorKey: 'danger' },
+          { key: 'hr', label: 'بانتظار الموارد البشرية', icon: 'fa-id-badge', colorKey: 'gold' },
+          { key: 'closed', label: 'مغلقة', icon: 'fa-check', colorKey: 'success' },
+          { key: 'Warning_Issued', label: 'تنبيه إداري صادر', icon: 'fa-bell', colorKey: 'text3' }
+        ].map(s => {
+          const count = visible.filter(v => v.state === s.key).length;
+          const colorVar = s.colorKey === 'gold' ? 'var(--gold)'
+            : s.colorKey === 'text3' ? 'var(--text3)'
+            : s.colorKey === 'purple' ? 'var(--purple)'
+            : `var(--${s.colorKey === 'info' ? 'info' : s.colorKey})`;
+          return { ...s, count, colorVar };
+        });
+
+        const recentHtml = recent.length
+          ? recent.map(t => {
+              const name = t._empName || '—';
+              const initial = name.trim().charAt(0) || '—';
+              const colorVar = (t.auto_forwarded_emp || t.auto_forwarded_sup) ? 'var(--danger)'
+                : (t.state === 'closed' ? 'var(--success)' : 'var(--warning)');
+              return `
+                <button type="button" class="rd-list__row" onclick="openTicket('${t.id}')">
+                  <div class="rd-av">${Sec.escapeHTML(initial)}</div>
+                  <div class="rd-home-activity__copy">
+                    <div class="rd-list__name">${Sec.escapeHTML(name)}</div>
+                    <div class="rd-list__sub">${Sec.escapeHTML(t.violation_type || '—')}</div>
+                  </div>
+                  <div class="rd-list__meta">
+                    <div class="rd-dot" style="background:${colorVar}"></div>
+                    <div class="rd-list__time">${Sec.escapeHTML(formatRelativeAr(t.created_at))}</div>
+                  </div>
+                </button>`;
+            }).join('')
+          : '<div class="rd-list__row rd-list__row--empty"><div class="rd-list__sub">لا توجد تذاكر بعد</div></div>';
+
+        host.innerHTML = `
+          <div class="rd-screen">
+            <div class="rd-greet">
+              <div class="rd-greet__date">${Sec.escapeHTML(greetingDate)}</div>
+              <div class="rd-greet__name">مرحباً، ${Sec.escapeHTML(greetingName)}</div>
+              <div class="rd-greet__sub">${Sec.escapeHTML(greetingSub)}</div>
+            </div>
+            <div class="rd-streak">
+              <div class="rd-streak__badge"><i class="fas fa-medal" aria-hidden="true"></i>${Sec.escapeHTML(streakBadge)}</div>
+              <div class="rd-streak__ring">
+                <svg width="136" height="136" viewBox="0 0 132 132" aria-hidden="true">
+                  <circle cx="66" cy="66" r="54" fill="none" stroke="var(--border)" stroke-width="10"></circle>
+                  <circle cx="66" cy="66" r="54" fill="none" stroke="var(--success)" stroke-width="10" stroke-linecap="round" stroke-dasharray="${CIRC}" stroke-dashoffset="${streakOffset}"></circle>
+                </svg>
+                <div class="rd-streak__center">
+                  <i class="fas fa-fire" aria-hidden="true"></i>
+                  <span class="rd-streak__days">${streakDays}</span>
+                  <span class="rd-streak__lbl">يوم بدون مخالفات</span>
+                </div>
+              </div>
+            </div>
+            <div class="rd-mini-grid">
+              <div class="rd-mini">
+                <div class="rd-mini__val" style="color:var(--gold)">${personalBest}</div>
+                <div class="rd-mini__lbl">أفضل رقم لك</div>
+              </div>
+              <div class="rd-mini">
+                <div class="rd-mini__val" style="color:var(--success)">${Sec.escapeHTML(branchRankLabel)}</div>
+                <div class="rd-mini__lbl">ترتيب فرعك بالالتزام</div>
+              </div>
+            </div>
+            <div class="rd-metric">
+              <div class="rd-metric__top">
+                <span class="rd-metric__label">الاستجابة</span>
+                <span class="rd-metric__val" style="color:${responseColor}">${responseScore} · ${responseStatus}</span>
+              </div>
+              <div class="rd-metric__bar"><div class="rd-metric__fill" style="width:${responsePct}%;background:${responseColor}"></div></div>
+              <div class="rd-metric__sub">${autoCount} تمريرات تلقائية</div>
+            </div>
+            <div class="rd-stat-grid">
+              <div class="rd-stat"><div class="rd-stat__row"><span class="rd-stat__val">${autoFwd}</span><span class="rd-stat__ico" style="color:var(--warning)"><i class="fas fa-clock" aria-hidden="true"></i></span></div><div class="rd-stat__lbl">مخالفات تم تمريرها تلقائيا</div></div>
+              <div class="rd-stat"><div class="rd-stat__row"><span class="rd-stat__val">${pending}</span><span class="rd-stat__ico" style="color:var(--info)"><i class="fas fa-spinner" aria-hidden="true"></i></span></div><div class="rd-stat__lbl">قيد المعالجة</div></div>
+              <div class="rd-stat"><div class="rd-stat__row"><span class="rd-stat__val">${closed}</span><span class="rd-stat__ico" style="color:var(--success)"><i class="fas fa-check-double" aria-hidden="true"></i></span></div><div class="rd-stat__lbl">مغلقة</div></div>
+              <div class="rd-stat"><div class="rd-stat__row"><span class="rd-stat__val">${total}</span><span class="rd-stat__ico" style="color:var(--gold)"><i class="fas fa-chart-simple" aria-hidden="true"></i></span></div><div class="rd-stat__lbl">الإجمالي هذا الشهر</div></div>
+            </div>
+            <div class="rd-sec">
+              <div class="rd-sec__head">
+                <span class="rd-sec__title">آخر النشاطات</span>
+                <button type="button" class="rd-sec__link" onclick="dashGoTab('workflow')">عرض الكل</button>
+              </div>
+              <div class="rd-list">${recentHtml}</div>
+            </div>
+            <div class="rd-sec">
+              <div class="rd-sec__head"><span class="rd-sec__title">توزيع الحالات</span></div>
+              <div class="rd-list">
+                ${statusItems.map(s => `
+                  <button type="button" class="rd-list__row" onclick="dashFunnelNavigate('${s.key}')">
+                    <div class="rd-dist-ico" style="color:${s.colorVar}"><i class="fas ${s.icon}" aria-hidden="true"></i></div>
+                    <div class="rd-dist-label">${Sec.escapeHTML(s.label)}</div>
+                    <div class="rd-dist-count" style="color:${s.colorVar}">${s.count}</div>
+                  </button>`).join('')}
+              </div>
+            </div>
+          </div>`;
+        host.hidden = false;
+      }
+
       function renderDashboard() {
         if (isAppDataPending()) {
+          if (typeof isHomeAtharMobileUi === 'function' && isHomeAtharMobileUi()) {
+            const host = document.getElementById('rdDash');
+            if (host) {
+              host.hidden = false;
+              host.innerHTML = '<div class="rd-screen"><div class="rd-home-loading">جاري تحميل الإحصائيات…</div></div>';
+            }
+            return;
+          }
           renderDashboardMobLite();
           return;
         }
@@ -11879,6 +12043,18 @@
           const playEntryDesk = !!state._dashHandPlayEntryWave;
           state._dashHandPlayEntryWave = false;
           try { if (typeof renderDashWelcomeHand === 'function') renderDashWelcomeHand(playEntryDesk); } catch (_) { /* noop */ }
+          updatePendingBadge();
+          return;
+        }
+        if (typeof isHomeAtharMobileUi === 'function' && isHomeAtharMobileUi()) {
+          try {
+            renderDashboardRedesign(visible, allVisible, monthFromIso, nextFromIso, ksaNowParts);
+          } catch (e) {
+            if (typeof isMirsadDebugLog === 'function' && isMirsadDebugLog()) console.warn('[rdDashMob]', e);
+          }
+          const playEntryMob = !!state._dashHandPlayEntryWave;
+          state._dashHandPlayEntryWave = false;
+          try { if (typeof renderDashWelcomeHand === 'function') renderDashWelcomeHand(playEntryMob); } catch (_) { /* noop */ }
           updatePendingBadge();
           return;
         }
