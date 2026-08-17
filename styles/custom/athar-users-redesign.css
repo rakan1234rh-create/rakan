@@ -49,29 +49,43 @@ html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-io-group--desk
 /* ── desktop toolbar + host ── */
 
 html.athar-staging-redesign.mr-desktop-ui #tab-departments.tab-content.active {
-  display: block !important;
-  width: 100% !important;
-  max-width: 100% !important;
-}
-
-html.athar-staging-redesign.mr-desktop-ui #tab-departments.tab-content.active {
   display: flex !important;
   flex-direction: column !important;
+  flex: 1 1 0% !important;
+  width: 100% !important;
+  max-width: 100% !important;
   min-height: 0 !important;
+  overflow: hidden !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #tab-departments .wf-panel {
   display: flex !important;
   flex-direction: column !important;
-  flex: 1 1 auto !important;
+  flex: 1 1 0% !important;
   min-height: 0 !important;
+  overflow: hidden !important;
 }
 
-html.athar-staging-redesign.mr-desktop-ui #tab-departments #usersDeskHost,
+html.athar-staging-redesign.mr-desktop-ui #tab-departments #usersDeskHost {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  visibility: visible !important;
+}
+
 html.athar-staging-redesign.mr-desktop-ui #tab-departments #usersList {
   display: block !important;
   visibility: visible !important;
-  min-height: 80px !important;
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-controls {
+  flex-shrink: 0 !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-toolbar,
@@ -80,6 +94,7 @@ html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-filters-toolba
   flex-wrap: wrap !important;
   gap: 10px !important;
   align-items: center !important;
+  flex-shrink: 0 !important;
   margin: 0 0 14px !important;
 }
 
@@ -143,7 +158,6 @@ html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-filters-toolba
 
 /* ── users desktop table ── */
 
-/* ΓöÇΓöÇ Users desktop table ΓöÇΓöÇ */
 html.athar-staging-redesign.mr-desktop-ui #tab-departments #usersDeskHost.wf-desk-tickets-host,
 html.athar-staging-redesign.mr-desktop-ui #tab-departments .mr-users-list-wrap.wf-table-wrap,
 html.athar-staging-redesign.mr-desktop-ui #tab-departments #usersList.rd-usr-desk {
@@ -154,7 +168,23 @@ html.athar-staging-redesign.mr-desktop-ui #tab-departments #usersList.rd-usr-des
   box-shadow: none !important;
   outline: none !important;
   padding: 0 !important;
-  overflow: visible !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .mr-users-list-wrap.wf-table-wrap {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow: hidden !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-departments #usersList.rd-usr-desk {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #tab-departments .rd-desk-table--users {
