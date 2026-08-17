@@ -1289,7 +1289,7 @@
         }
         if (list) appendTicketListHtml(list, dataLoadingEmptyHTML('جاري تحميل التقارير…'), true);
         const rd = document.getElementById('rdReports');
-        if (rd && ((typeof isAtharRedesignUi === 'function' && isAtharRedesignUi()) || isAtharDesktopScreenUi())) {
+        if (rd && typeof isReportsAtharUi === 'function' && isReportsAtharUi()) {
           rd.hidden = false;
           rd.innerHTML = `<div class="rd-rp-metric"><div class="rd-rp-metric__label">جاري تحميل التقارير…</div></div>`;
         }
@@ -8037,6 +8037,18 @@
       function isTicketsAtharMobileUi() {
         return document.documentElement.classList.contains('athar-staging-redesign')
           && document.documentElement.classList.contains('mr-mobile-ui');
+      }
+
+      /** التقارير على الجوال فقط — بطاقات المقاييس والروابط السريعة */
+      function isReportsAtharMobileUi() {
+        return document.documentElement.classList.contains('athar-staging-redesign')
+          && document.documentElement.classList.contains('mr-mobile-ui');
+      }
+
+      function isReportsAtharUi() {
+        return (typeof isReportsAtharMobileUi === 'function' && isReportsAtharMobileUi())
+          || (typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi())
+          || (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi());
       }
 
       /** بريكات: Athar على سطح المكتب، وعلى الجوال أيضاً لأنها صفحة جديدة بلا كلاسيك إنتاج */
@@ -28192,7 +28204,7 @@
         const host = document.getElementById('rdReports');
         if (!host) return;
         const desk = isAtharDesktopScreenUi();
-        if (!isAtharRedesignUi() && !desk) {
+        if (typeof isReportsAtharUi !== 'function' || !isReportsAtharUi()) {
           host.hidden = true;
           host.innerHTML = '';
           return;
@@ -28596,8 +28608,7 @@
           return;
         }
 
-        if ((typeof isAtharRedesignUi === 'function' && isAtharRedesignUi())
-          || (typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi())) {
+        if (typeof isReportsAtharUi === 'function' && isReportsAtharUi()) {
           try {
             renderReportsRedesign();
           } catch (e) {
