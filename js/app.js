@@ -1465,7 +1465,7 @@
       const TICKET_DETAIL_EXTRA_SELECT = [
         'attachments', 'logs',
         'employee_reply', 'supervisor_reply', 'audit_reply', 'management_reply', 'hr_reply',
-        'source_role', 'updated_at',
+        'source_role', 'updated_at', 'state', 'status_text',
         'auto_forwarded_emp', 'auto_forwarded_sup',
         'emp_forward_after', 'sup_forward_after',
       ].join(',');
@@ -1508,6 +1508,7 @@
         t._regionName = region?.name || '-';
         t.logs = parseDbJsonArray(t.logs);
         if (t.attachments != null) t.attachments = parseDbJsonArray(t.attachments);
+        t._supStartTime = resolveSupStartTime(t);
         return t;
       }
 
@@ -10310,6 +10311,24 @@
 
       function isDbTruthy(val) {
         return val === true || val === 1 || val === 'true' || val === 't';
+      }
+
+      /** من تنتظر التذكرة ردّه للعدّاد — لا تعتمد على state وحدها بعد التمرير التلقائي */
+      function getTicketSlaWaitTarget(t) {
+        if (!t) return null;
+        const status = String(t.status_text || '');
+        const autoEmp = isDbTruthy(t.auto_forwarded_emp);
+        const autoSup = isDbTruthy(t.auto_forwarded_sup);
+        if (autoSup || /بانتظار التدقيق|بانتظار القرار|بانتظار الموارد|مغلقة|تنبيه/.test(status)) {
+          return null;
+        }
+        if (autoEmp || t.state === 'sup' || /بانتظار رد المشرف/.test(status)) {
+          return 'sup';
+        }
+        if (t.state === 'emp' || /بانتظار رد الموظف/.test(status)) {
+          return 'emp';
+        }
+        return null;
       }
 
       function isTicketAutoForwarded(t) {
@@ -20769,12 +20788,12 @@
 
         // بانر إذا التذكرة مررت تلقائياً من النظام
         let overdueBanner = '';
-        if (t.auto_forwarded_emp || t.auto_forwarded_sup) {
+        if (isDbTruthy(t.auto_forwarded_emp) || isDbTruthy(t.auto_forwarded_sup)) {
           const reasonItems = [];
-          if (t.auto_forwarded_emp) {
+          if (isDbTruthy(t.auto_forwarded_emp)) {
             reasonItems.push(`<li class="overdue-banner__reason-item"><span class="overdue-banner__reason-icon" aria-hidden="true"><i class="fas fa-user"></i></span><span>عدم رد الموظف خلال 24 ساعة</span></li>`);
           }
-          if (t.auto_forwarded_sup) {
+          if (isDbTruthy(t.auto_forwarded_sup)) {
             reasonItems.push(`<li class="overdue-banner__reason-item"><span class="overdue-banner__reason-icon" aria-hidden="true"><i class="fas fa-user-tie"></i></span><span>عدم رد المشرف خلال 48 ساعة</span></li>`);
           }
           overdueBanner = `
@@ -20790,22 +20809,26 @@
         // ─── عدّاد التمرير التلقائي ───
         let countdownBlock = '';
         const me = state.currentUser;
-        const role = me?.role;
-
-        // إظهار العداد لمن يهمه الأمر فقط
-        const isEmp = role === 'employee' || role === 'observer' || role === 'branch_manager';
-        const isSup = role === 'supervisor';
-        const isHigher = ['auditor', 'manager', 'admin'].includes(role);
-
-        const showForEmp = t.state === 'emp' && !t.auto_forwarded_emp && (t.emp_forward_after || t.created_at) && (isEmp || isHigher);
-        const showForSup = t.state === 'sup' && !t.auto_forwarded_sup && (t.sup_forward_after || t._supStartTime) && (isSup || isHigher);
+        const role = typeof normalizeUserRole === 'function'
+          ? normalizeUserRole(me?.role)
+          : me?.role;
+        const slaTarget = typeof getTicketSlaWaitTarget === 'function' ? getTicketSlaWaitTarget(t) : null;
+        const isWatcher = role === 'observer' || role === 'branch_manager'
+          || ['auditor', 'manager', 'admin'].includes(role);
+        const showForEmp = slaTarget === 'emp'
+          && (t.emp_forward_after || t.created_at)
+          && (role === 'employee' || isWatcher);
+        const supStart = t._supStartTime || (typeof resolveSupStartTime === 'function' ? resolveSupStartTime(t) : null);
+        const showForSup = slaTarget === 'sup'
+          && (t.sup_forward_after || supStart)
+          && (role === 'supervisor' || isWatcher);
 
         if (showForEmp || showForSup) {
           const limitH = showForEmp ? 24 : 48;
           const deadlineISO = showForEmp
             ? (t.emp_forward_after || null)
             : (t.sup_forward_after || null);
-          const startISO = showForEmp ? t.created_at : t._supStartTime;
+          const startISO = showForEmp ? t.created_at : supStart;
           const targetWho = showForEmp ? 'الموظف' : 'المشرف';
           const targetIcon = showForEmp ? 'fa-user' : 'fa-user-tie';
 
@@ -32625,6 +32648,7 @@
 
           const updatePayload = {
             state: newState,
+            status_text: STATE_LABELS[newState] || newState,
             logs: newLogs,
             [flagCol]: true
           };
@@ -32653,6 +32677,7 @@
             ok: true,
             patch: {
               state: newState,
+              status_text: STATE_LABELS[newState] || newState,
               logs: newLogs,
               [flagCol]: true,
               ...(direction === 'emp_to_sup' ? { emp_forward_after: null } : { sup_forward_after: null }),
