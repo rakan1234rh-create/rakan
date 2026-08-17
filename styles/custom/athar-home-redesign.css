@@ -44,6 +44,7 @@ html[data-theme="light"] {
   --mr-red: #ff3b30;
   --mr-blue: #007aff;
   --mr-purple: #af52de;
+  --purple: #af52de;
   --success: #34c759;
   --warning: #ff9500;
   --info: #007aff;
@@ -104,6 +105,7 @@ html[data-theme="dark"],
   --mr-red: #ff453a;
   --mr-blue: #0a84ff;
   --mr-purple: #bf5af2;
+  --purple: #bf5af2;
   --success: #30d158;
   --warning: #ff9f0a;
   --info: #0a84ff;
@@ -150,10 +152,13 @@ html.athar-staging-redesign #appWrap {
   transition: background 0.3s ease, color 0.3s ease;
 }
 
-/* Show redesign dashboard host on desktop; hide classic dash */
+/* Show redesign dashboard host; hide classic dash */
 html:not(.athar-staging-redesign) #rdDash { display: none !important; }
-html.athar-staging-redesign.mr-mobile-ui #rdDash { display: none !important; }
+html.athar-staging-redesign.mr-mobile-ui #rdDash { display: block !important; }
 html.athar-staging-redesign.mr-desktop-ui #rdDash { display: block !important; }
+html.athar-staging-redesign.mr-mobile-ui .mk-dash--classic,
+html.athar-staging-redesign.mr-mobile-ui #personalIndicators,
+html.athar-staging-redesign.mr-mobile-ui #branchStaffPanel,
 html.athar-staging-redesign.mr-desktop-ui .mk-dash--classic,
 html.athar-staging-redesign.mr-desktop-ui #personalIndicators,
 html.athar-staging-redesign.mr-desktop-ui #branchStaffPanel {
@@ -1017,5 +1022,322 @@ html.athar-staging-redesign.mr-desktop-ui:has(#tab-settings.active) #pageTitleBa
   html.athar-staging-redesign.mr-desktop-ui .rd-desk-stats {
     grid-template-columns: repeat(2, 1fr);
   }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ATHAR mobile home — dashboard only (#rdDash)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.athar-staging-redesign.mr-mobile-ui .content:has(#tab-dashboard.active),
+html.athar-staging-redesign.mr-mobile-ui .main:has(#tab-dashboard.active) .content {
+  padding: 8px 16px calc(var(--mr-mob-bottom-nav-h, 56px) + 20px) !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-dashboard.tab-content.active {
+  padding: 0 !important;
+  overflow: visible !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #rdDash {
+  width: 100%;
+  max-width: 100%;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-screen {
+  animation: atharRdScreenIn .32s ease;
+  padding-bottom: 8px;
+}
+html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-greet { margin-bottom: 16px; }
+html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-greet__date { font-size: 12.5px; color: var(--text2); }
+html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-greet__name {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  margin-top: 4px;
+}
+html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-greet__sub {
+  font-size: 13px;
+  color: var(--text2);
+  margin-top: 4px;
+  line-height: 1.6;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-streak {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  padding: 22px 18px 18px;
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  animation: atharRdCardIn .4s ease both;
+}
+html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-streak__badge {
+  position: absolute;
+  top: 14px;
+  inset-inline-start: 14px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--goldSoft);
+  color: var(--gold);
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 700;
+}
+html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-streak__ring {
+  position: relative;
+  width: 136px;
+  height: 136px;
+  margin-top: 22px;
+}
+html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-streak__ring svg {
+  transform: rotate(-90deg);
+  position: absolute;
+  inset: 0;
+}
+html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-streak__center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-streak__center i {
+  font-size: 14px;
+  color: var(--success);
+  margin-bottom: 3px;
+}
+html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-streak__days {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1;
+}
+html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-streak__lbl {
+  font-size: 10.5px;
+  color: var(--text3);
+  margin-top: 3px;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-mini-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-mini {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 13px;
+  text-align: center;
+  animation: atharRdCardIn .4s ease both;
+}
+html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-mini__val { font-size: 19px; font-weight: 700; }
+html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-mini__lbl {
+  font-size: 10.5px;
+  color: var(--text2);
+  margin-top: 4px;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-metric {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 16px;
+  margin-bottom: 14px;
+  animation: atharRdCardIn .4s ease both;
+}
+html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-metric__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 7px;
+}
+html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-metric__label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text);
+}
+html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-metric__val { font-size: 12px; font-weight: 700; }
+html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-metric__bar {
+  height: 7px;
+  border-radius: 999px;
+  background: var(--surface2);
+  overflow: hidden;
+}
+html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-metric__fill { height: 100%; border-radius: 999px; }
+html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-metric__sub {
+  font-size: 10.5px;
+  color: var(--text3);
+  margin-top: 6px;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-stat {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 13px 14px;
+  animation: atharRdCardIn .4s ease both;
+}
+html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-stat__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-stat__val {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+}
+html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-stat__ico {
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  background: var(--surface2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+}
+html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-stat__lbl {
+  font-size: 11.5px;
+  color: var(--text2);
+  margin-top: 6px;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-sec { margin-bottom: 18px; }
+html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-sec__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-sec__title {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--text);
+}
+html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-sec__link {
+  font-size: 11.5px;
+  color: var(--gold);
+  font-weight: 600;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-list {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  overflow: hidden;
+}
+html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-list__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  width: 100%;
+  background: transparent;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  text-align: start;
+  color: inherit;
+  font-family: inherit;
+  cursor: pointer;
+}
+html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-list__row:last-child { border-bottom: none; }
+html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-list__row--empty { cursor: default; }
+html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-home-activity__copy {
+  flex: 1;
+  min-width: 0;
+}
+html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-av {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--surface2);
+  color: var(--text2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-list__name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-list__sub {
+  font-size: 11.5px;
+  color: var(--text3);
+  margin-top: 2px;
+}
+html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-list__meta {
+  text-align: start;
+  flex-shrink: 0;
+}
+html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-inline-start: auto;
+}
+html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-list__time {
+  font-size: 10px;
+  color: var(--text3);
+  margin-top: 6px;
+  white-space: nowrap;
+}
+html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-dist-ico {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: var(--surface2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 12px;
+}
+html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-dist-label {
+  flex: 1;
+  font-size: 12.5px;
+  color: var(--text);
+  font-weight: 500;
+}
+html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-dist-count {
+  font-size: 14px;
+  font-weight: 700;
+}
+html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-home-loading {
+  text-align: center;
+  padding: 36px 16px;
+  color: var(--text3);
+  font-size: 13px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
 }
 
