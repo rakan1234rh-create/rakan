@@ -1027,3 +1027,128 @@ html.athar-staging-redesign.mr-desktop-ui #cmpDetailModal.cmp-detail--rd-emp .rd
     grid-template-columns: 1.5fr 1fr 90px !important;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ATHAR mobile compliance — board, cards, and employee sheet (#tab-compliance)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.athar-staging-redesign.mr-mobile-ui .content:has(#tab-compliance.active),
+html.athar-staging-redesign.mr-mobile-ui .main:has(#tab-compliance.active) .content {
+  padding: 8px 16px calc(var(--mr-mob-bottom-nav-h, 56px) + 20px) !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-compliance.tab-content.active {
+  padding: 0 !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-compliance .cmp-neo-board,
+html.athar-staging-redesign.mr-mobile-ui #tab-compliance .rd-cmp-board {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  animation: none;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-compliance .cmp-neo-btn--pdf-export,
+html.athar-staging-redesign.mr-mobile-ui #tab-compliance #cmpActiveFiltersBar,
+html.athar-staging-redesign.mr-mobile-ui #tab-compliance .cmp-neo-search-meta,
+html.athar-staging-redesign.mr-mobile-ui #tab-compliance .cmp-tabs-wrapper,
+html.athar-staging-redesign.mr-mobile-ui #tab-compliance .cmp-legacy-dashboard {
+  display: none !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui body.cmp-detail-open #cmpDetailModal.modal.open::before {
+  background: rgba(0, 0, 0, 0.45) !important;
+  bottom: var(--mob-chrome-bottom, var(--mr-mob-bottom-nav-h, calc(56px + env(safe-area-inset-bottom, 0px)))) !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui body.cmp-detail-open #cmpDetailModal .modal-card.cmp-detail-card {
+  bottom: var(--mob-chrome-bottom, var(--mr-mob-bottom-nav-h, calc(56px + env(safe-area-inset-bottom, 0px)))) !important;
+  top: auto !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: min(
+    88dvh,
+    calc(
+      100dvh
+      - var(--unified-topbar-h, 76px)
+      - var(--mob-chrome-bottom, var(--mr-mob-bottom-nav-h, calc(56px + env(safe-area-inset-bottom, 0px))))
+      - 8px
+    )
+  ) !important;
+  max-height: min(
+    88dvh,
+    calc(
+      100dvh
+      - var(--unified-topbar-h, 76px)
+      - var(--mob-chrome-bottom, var(--mr-mob-bottom-nav-h, calc(56px + env(safe-area-inset-bottom, 0px))))
+      - 8px
+    )
+  ) !important;
+  animation: none !important;
+  transition: transform 0.36s cubic-bezier(0.32, 0.72, 0, 1) !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #cmpDetailModal.modal.sheet-dragging .modal-card.cmp-detail-card {
+  transition: none !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #cmpDetailModal.modal.sheet-closing {
+  opacity: 1 !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #cmpDetailModal.modal.sheet-closing::before {
+  opacity: 0 !important;
+  transition: opacity 0.28s ease !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #cmpDetailModal .modal-card.cmp-detail-card--rd-emp {
+  border-radius: 26px 26px 0 0 !important;
+  background: var(--bg) !important;
+  border: none !important;
+  box-shadow: none !important;
+  overflow: hidden !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #cmpDetailModal .cmp-detail-card--rd-emp .cmp-sheet-drag-zone {
+  background: var(--bg) !important;
+  border-bottom: none !important;
+  border-radius: 26px 26px 0 0;
+  touch-action: none !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #cmpDetailModal .cmp-detail-card--rd-emp .cmp-sheet-grabber-wrap {
+  display: flex !important;
+  justify-content: center;
+  align-items: center;
+  min-height: 28px !important;
+  padding: 10px 0 8px !important;
+  background: transparent !important;
+  touch-action: none !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #cmpDetailModal .cmp-detail-card--rd-emp .cmp-sheet-grabber {
+  width: 36px !important;
+  height: 4px !important;
+  border-radius: 999px !important;
+  background: var(--border) !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #cmpDetailModal .cmp-detail-card--rd-emp .cmp-detail-modal-header {
+  padding: 0 18px 0 !important;
+  border-bottom: none !important;
+  background: transparent !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #cmpDetailModal .cmp-detail-card--rd-emp .modal-body {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-y !important;
+  padding: 0 18px 24px !important;
+  background: var(--bg) !important;
+  display: block !important;
+}

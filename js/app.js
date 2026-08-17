@@ -8063,6 +8063,18 @@
           || (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi());
       }
 
+      /** الامتثال على الجوال فقط — بطاقات المناطق والفروع والموظفين */
+      function isComplianceAtharMobileUi() {
+        return document.documentElement.classList.contains('athar-staging-redesign')
+          && document.documentElement.classList.contains('mr-mobile-ui');
+      }
+
+      function isComplianceAtharUi() {
+        return (typeof isComplianceAtharMobileUi === 'function' && isComplianceAtharMobileUi())
+          || (typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi())
+          || (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi());
+      }
+
       /** بريكات: Athar على سطح المكتب، وعلى الجوال أيضاً لأنها صفحة جديدة بلا كلاسيك إنتاج */
       function isStaffBreaksAtharUi() {
         return document.documentElement.classList.contains('athar-staging-redesign');
@@ -24300,7 +24312,7 @@
       }
 
       function buildCmpDetailHeroHTML(item) {
-        if (((typeof isAtharRedesignUi === 'function' && isAtharRedesignUi()) || isAtharDesktopScreenUi()) && item.type === 'employee') {
+        if ((typeof isComplianceAtharUi === 'function' && isComplianceAtharUi()) && item.type === 'employee') {
           return buildRdCmpEmpDetailHeroHTML(item);
         }
         const score = item.score;
@@ -24353,7 +24365,7 @@
       }
 
       function buildCmpDetailHTML(item, viols, scoringViols) {
-        if (((typeof isAtharRedesignUi === 'function' && isAtharRedesignUi()) || isAtharDesktopScreenUi()) && item.type === 'employee') {
+        if ((typeof isComplianceAtharUi === 'function' && isComplianceAtharUi()) && item.type === 'employee') {
           return buildRdCmpEmpDetailHTML(item, viols, scoringViols);
         }
         const score = item.score;
@@ -25702,7 +25714,7 @@
 
       function cmpNeoExtremesBarHTML(extremes, view) {
         if (!extremes) return '';
-        if ((typeof isAtharRedesignUi === 'function' && isAtharRedesignUi()) || isAtharDesktopScreenUi()) {
+        if (typeof isComplianceAtharUi === 'function' && isComplianceAtharUi()) {
           return rdCmpHiLoHTML(extremes, view);
         }
         const labels = view === 'branches'
@@ -25752,7 +25764,7 @@
         const statB = view === 'employees' ? 'النقاط' : 'الموظفون';
         const rankCls = card.rank === 'top' ? ' cmp-neo-card--top' : (card.rank === 'bottom' ? ' cmp-neo-card--bottom' : '');
 
-        if ((typeof isAtharRedesignUi === 'function' && isAtharRedesignUi()) || isAtharDesktopScreenUi()) {
+        if (typeof isComplianceAtharUi === 'function' && isComplianceAtharUi()) {
           if (view === 'regions') return rdCmpRegionCardHTML(card);
           if (view === 'branches') return rdCmpBranchCardHTML(card);
           return rdCmpRegionCardHTML(card);
@@ -25977,8 +25989,7 @@
         let titleContext = '';
         let subtitle = 'نظرة عامة على أداء كل المناطق';
         let backNav = '';
-        const rdCmp = (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi())
-          || isAtharDesktopScreenUi();
+        const rdCmp = typeof isComplianceAtharUi === 'function' && isComplianceAtharUi();
 
         if (view === 'branches') {
           const region = state.regions.find(r => r.id === state._cmpDrill.regionId);
@@ -26884,7 +26895,7 @@
         // ─── تحديث Modal ───
         const cmpModal = document.getElementById('cmpDetailModal');
         const cmpCard = cmpModal?.querySelector('.modal-card.cmp-detail-card');
-        const rdEmp = ((typeof isAtharRedesignUi === 'function' && isAtharRedesignUi()) || isAtharDesktopScreenUi()) && type === 'employee';
+        const rdEmp = (typeof isComplianceAtharUi === 'function' && isComplianceAtharUi()) && type === 'employee';
         cmpModal?.classList.toggle('cmp-detail--rd-emp', !!rdEmp);
         cmpCard?.classList.toggle('cmp-detail-card--rd-emp', !!rdEmp);
 
