@@ -835,3 +835,62 @@ html.athar-staging-redesign.mr-desktop-ui .rd-rp-mc-bar__pct {
   margin-bottom: 4px !important;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   ATHAR mobile reports — metrics, bars, and quick links (#rdReports)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.athar-staging-redesign.mr-mobile-ui .content:has(#tab-reports.active),
+html.athar-staging-redesign.mr-mobile-ui .main:has(#tab-reports.active) .content {
+  padding: 8px 16px calc(var(--mr-mob-bottom-nav-h, 56px) + 20px) !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-reports.tab-content.active {
+  padding: 0 !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-reports .panel.wf-panel {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-reports .wf-panel-banner {
+  padding: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  display: block !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-reports .wf-panel-intro {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-reports .wf-panel-title {
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  color: var(--text) !important;
+  margin: 0 0 14px !important;
+  line-height: 1.3 !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-reports .wf-panel-sub,
+html.athar-staging-redesign.mr-mobile-ui #tab-reports #rpClassicChrome,
+html.athar-staging-redesign.mr-mobile-ui #tab-reports #reportList {
+  display: none !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #rdReports:not([hidden]) {
+  display: block !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #rdReports[hidden] {
+  display: none !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #rdReports.rd-reports {
+  animation: none;
+}
+
