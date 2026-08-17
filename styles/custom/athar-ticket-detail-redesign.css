@@ -653,6 +653,7 @@ html.athar-staging-redesign.mr-mobile-ui body.ticket-sheet-open #ticketModal .td
   max-height: none !important;
   min-height: 0 !important;
   padding: 0 18px 24px !important;
+  overflow: hidden !important;
   animation: none !important;
   transition: transform 0.36s cubic-bezier(0.32, 0.72, 0, 1) !important;
 }
@@ -670,28 +671,43 @@ html.athar-staging-redesign.mr-mobile-ui body.ticket-sheet-open #ticketModal .td
   flex: 1 1 0 !important;
   min-height: 0 !important;
   overflow-y: auto !important;
-  scrollbar-width: none !important;
-  -ms-overflow-style: none !important;
   scrollbar-gutter: auto !important;
 }
-html.athar-staging-redesign.mr-mobile-ui body.ticket-sheet-open #ticketModal .td-content-area::-webkit-scrollbar,
-html.athar-staging-redesign.mr-mobile-ui #ticketModal .td-content-area::-webkit-scrollbar,
-html.athar-staging-redesign.mr-mobile-ui body.ticket-sheet-open #ticketModal .td-pane::-webkit-scrollbar {
+/* Modal is moved onto body (outside #appWrap), so #appWrap * scrollbar hide does not apply.
+   Also override global ::-webkit-scrollbar-thumb (6px) which can still paint a track. */
+html.athar-staging-redesign.mr-mobile-ui #ticketModal,
+html.athar-staging-redesign.mr-mobile-ui #ticketModal * {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #ticketModal::-webkit-scrollbar,
+html.athar-staging-redesign.mr-mobile-ui #ticketModal *::-webkit-scrollbar,
+html.athar-staging-redesign.mr-mobile-ui #ticketModal::-webkit-scrollbar-track,
+html.athar-staging-redesign.mr-mobile-ui #ticketModal *::-webkit-scrollbar-track,
+html.athar-staging-redesign.mr-mobile-ui #ticketModal::-webkit-scrollbar-thumb,
+html.athar-staging-redesign.mr-mobile-ui #ticketModal *::-webkit-scrollbar-thumb,
+html.athar-staging-redesign.mr-mobile-ui #ticketModal::-webkit-scrollbar-corner,
+html.athar-staging-redesign.mr-mobile-ui #ticketModal *::-webkit-scrollbar-corner {
   display: none !important;
   width: 0 !important;
   height: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 html.athar-staging-redesign.mr-mobile-ui body.ticket-sheet-open #appWrap .main,
-html.athar-staging-redesign.mr-mobile-ui body.ticket-sheet-open .main,
-html.athar-staging-redesign.mr-mobile-ui body.ticket-sheet-open #ticketModal .td-pane {
+html.athar-staging-redesign.mr-mobile-ui body.ticket-sheet-open .main {
   scrollbar-width: none !important;
   -ms-overflow-style: none !important;
 }
 html.athar-staging-redesign.mr-mobile-ui body.ticket-sheet-open #appWrap .main::-webkit-scrollbar,
-html.athar-staging-redesign.mr-mobile-ui body.ticket-sheet-open .main::-webkit-scrollbar {
+html.athar-staging-redesign.mr-mobile-ui body.ticket-sheet-open .main::-webkit-scrollbar,
+html.athar-staging-redesign.mr-mobile-ui body.ticket-sheet-open #appWrap .main::-webkit-scrollbar-thumb,
+html.athar-staging-redesign.mr-mobile-ui body.ticket-sheet-open .main::-webkit-scrollbar-thumb {
   display: none !important;
   width: 0 !important;
   height: 0 !important;
+  background: transparent !important;
 }
 html.athar-staging-redesign.mr-mobile-ui #ticketModal .td-sheet-drag-zone {
   flex-shrink: 0 !important;
