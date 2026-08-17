@@ -8039,6 +8039,18 @@
           && document.documentElement.classList.contains('mr-mobile-ui');
       }
 
+      /** تفاصيل المخالفة على الجوال فقط */
+      function isTicketDetailAtharMobileUi() {
+        return document.documentElement.classList.contains('athar-staging-redesign')
+          && document.documentElement.classList.contains('mr-mobile-ui');
+      }
+
+      function isTicketDetailAtharUi() {
+        return (typeof isTicketDetailAtharMobileUi === 'function' && isTicketDetailAtharMobileUi())
+          || (typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi())
+          || (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi());
+      }
+
       /** التقارير على الجوال فقط — بطاقات المقاييس والروابط السريعة */
       function isReportsAtharMobileUi() {
         return document.documentElement.classList.contains('athar-staging-redesign')
@@ -20620,8 +20632,7 @@
       function syncRdTicketDetailHeader(t) {
         const rdHd = document.getElementById('rdTdHd');
         if (!rdHd) return;
-        const useRd = (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi())
-          || isAtharDesktopScreenUi();
+        const useRd = typeof isTicketDetailAtharUi === 'function' && isTicketDetailAtharUi();
         rdHd.hidden = !useRd;
         if (!useRd || !t) return;
         const nameEl = document.getElementById('rd-td-name');
@@ -20816,8 +20827,7 @@
       </div>`;
         }
 
-        const useRdInfo = (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi())
-          || (typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi());
+        const useRdInfo = typeof isTicketDetailAtharUi === 'function' && isTicketDetailAtharUi();
         const deskTd = typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi();
         const rows = [
           ...((useRdInfo && !deskTd) ? [] : [['رقم التذكرة', shortTicketNum(t.ticket_number)]]),
@@ -20834,7 +20844,8 @@
 
         // الراصد - يظهر فقط لمن يحق له (بعد وقت المخالفة)
         if (!hideObs && t.observer_id) {
-          rows.splice(8, 0, ['الراصد', t._obsName]);
+          const obsAt = (useRdInfo && !deskTd) ? 7 : 8;
+          rows.splice(obsAt, 0, ['الراصد', t._obsName]);
         }
 
         const infoRowsHtml = rows.map(([label, value]) => {
@@ -20948,8 +20959,7 @@
         const c = document.getElementById('tdInlineAttachments');
         if (!c) return;
 
-        const rdAtt = (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi())
-          || isAtharDesktopScreenUi();
+        const rdAtt = typeof isTicketDetailAtharUi === 'function' && isTicketDetailAtharUi();
         if (!ticketDetailExtrasReady(t)) {
           c.innerHTML = rdAtt
             ? `<div class="td-att-section-head"><i class="fas fa-paperclip" aria-hidden="true"></i><span>المرفقات (…)</span></div>`
@@ -22198,7 +22208,7 @@
         const wfState = terminal ? t.state : getEffectiveWorkflowState(t.state);
         const liveCurrentOrder = terminal ? 99 : (orderMap[wfState] || 1);
 
-        if ((typeof isAtharRedesignUi === 'function' && isAtharRedesignUi()) || isAtharDesktopScreenUi()) {
+        if (typeof isTicketDetailAtharUi === 'function' && isTicketDetailAtharUi()) {
           const rows = visibleSteps.map((s, i) => {
             const { status, icon } = resolveWfStepVisual(t, s, orderMap, liveCurrentOrder);
             const hasLine = i < visibleSteps.length - 1;
@@ -22292,7 +22302,7 @@
           return;
         }
         const hideObs = shouldHideObserverName();
-        if ((typeof isAtharRedesignUi === 'function' && isAtharRedesignUi()) || isAtharDesktopScreenUi()) {
+        if (typeof isTicketDetailAtharUi === 'function' && isTicketDetailAtharUi()) {
           c.innerHTML = logs.map(l => {
             const actor = formatLogActorForDisplay(l, t, hideObs);
             const author = actor.masked
