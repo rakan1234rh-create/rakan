@@ -670,6 +670,7 @@ html.athar-staging-redesign.mr-mobile-ui #ticketModal.modal.sheet-closing::befor
 html.athar-staging-redesign.mr-mobile-ui body.ticket-sheet-open #ticketModal .td-content-area {
   flex: 1 1 0 !important;
   min-height: 0 !important;
+  overflow-x: hidden !important;
   overflow-y: auto !important;
   scrollbar-gutter: auto !important;
 }
@@ -695,8 +696,13 @@ html.athar-staging-redesign.mr-mobile-ui #ticketModal *::-webkit-scrollbar-corne
   border: none !important;
   box-shadow: none !important;
 }
+html.athar-staging-redesign.mr-mobile-ui:has(body.ticket-sheet-open),
+html.athar-staging-redesign.mr-mobile-ui body.ticket-sheet-open {
+  overflow: hidden !important;
+}
 html.athar-staging-redesign.mr-mobile-ui body.ticket-sheet-open #appWrap .main,
 html.athar-staging-redesign.mr-mobile-ui body.ticket-sheet-open .main {
+  overflow: hidden !important;
   scrollbar-width: none !important;
   -ms-overflow-style: none !important;
 }
@@ -790,8 +796,17 @@ html.athar-staging-redesign.mr-mobile-ui #ticketModal .td-tab.td-tab--needs-acti
 }
 
 html.athar-staging-redesign.mr-mobile-ui #ticketModal .td-content-area {
-  padding: 0 !important;
+  padding-block: 0 !important;
+  padding-inline: 0 !important;
   background: transparent !important;
+}
+html.athar-staging-redesign.mr-mobile-ui body.ticket-sheet-open #ticketModal .td-content-area {
+  box-sizing: border-box !important;
+  /* Push the classic/WebKit bar past the sheet; overflow:hidden on .td-mob-sheet clips it. */
+  margin-inline: -40px !important;
+  padding-inline: 40px !important;
+  width: auto !important;
+  max-width: none !important;
 }
 html.athar-staging-redesign.mr-mobile-ui #ticketModal #tdp-workflow.td-pane,
 html.athar-staging-redesign.mr-mobile-ui #ticketModal #tdp-logs.td-pane {
