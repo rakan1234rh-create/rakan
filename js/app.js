@@ -3050,6 +3050,21 @@
         }
       }
 
+      function ksaFormatClock(dateInput) {
+        if (!dateInput) return '';
+        try {
+          const d = dateInput instanceof Date ? dateInput : new Date(dateInput);
+          if (isNaN(d.getTime())) return '';
+          const p = ksaFormatParts(d);
+          if (!p) return '';
+          const h12 = p.hour % 12 || 12;
+          const ampm = p.hour >= 12 ? 'م' : 'ص';
+          return `${h12}:${ksaPad(p.minute)} ${ampm}`;
+        } catch {
+          return '';
+        }
+      }
+
       function ksaIsoInMonth(iso, year, month0) {
         if (!iso || iso.length < 7) return false;
         const y = +iso.slice(0, 4);
@@ -20676,18 +20691,8 @@
       function syncRdTicketCountdownPlacement() {
         const host = document.getElementById('rdTdCountdownHost');
         if (!host) return;
-        if (!isAtharDesktopScreenUi()) {
-          host.innerHTML = '';
-          host.hidden = true;
-          return;
-        }
-        const cardInInfo = document.querySelector('#tdInfo .countdown-card');
-        if (cardInInfo) {
-          host.innerHTML = '';
-          host.appendChild(cardInInfo);
-        }
-        const card = host.querySelector('.countdown-card');
-        host.hidden = !card;
+        host.innerHTML = '';
+        host.hidden = true;
       }
 
       function renderTicketDetailUI(t) {
@@ -20772,58 +20777,6 @@
         const c = document.getElementById('tdInfo');
         const hideObs = shouldHideObserverName();
 
-        // ─── عدّاد التمرير التلقائي ───
-        let countdownBlock = '';
-        const me = state.currentUser;
-        const role = me?.role;
-
-        // إظهار العداد لمن يهمه الأمر فقط
-        const isEmp = role === 'employee' || role === 'observer' || role === 'branch_manager';
-        const isSup = role === 'supervisor';
-        const isHigher = ['auditor', 'manager', 'admin'].includes(role);
-
-        const showForEmp = t.state === 'emp' && !t.auto_forwarded_emp && (t.emp_forward_after || t.created_at) && (isEmp || isHigher);
-        const showForSup = t.state === 'sup' && !t.auto_forwarded_sup && (t.sup_forward_after || t._supStartTime) && (isSup || isHigher);
-
-        if (showForEmp || showForSup) {
-          const limitH = showForEmp ? 24 : 48;
-          const deadlineISO = showForEmp
-            ? (t.emp_forward_after || null)
-            : (t.sup_forward_after || null);
-          const startISO = showForEmp ? t.created_at : t._supStartTime;
-          const targetWho = showForEmp ? 'الموظف' : 'المشرف';
-          const targetIcon = showForEmp ? 'fa-user' : 'fa-user-tie';
-
-          countdownBlock = `
-      <div class="countdown-card" data-start="${Sec.escapeHTML(String(startISO || ''))}" data-deadline="${Sec.escapeHTML(String(deadlineISO || ''))}" data-limit="${limitH}" data-target="${targetWho}">
-        <div class="countdown-head">
-          <div class="countdown-meta">
-            <div class="countdown-icon-wrap" aria-hidden="true">
-              <i class="fas ${targetIcon}"></i>
-            </div>
-            <div class="countdown-titles">
-              <strong>الوقت المتبقي لرد ${targetWho}</strong>
-              <span class="countdown-sub">معالجة التذكرة قبل انتهاء المهلة لتجنب التمرير التلقائي</span>
-            </div>
-          </div>
-          <div class="countdown-clock-wrapper">
-            <div class="countdown-clock" role="timer" aria-live="polite">
-              <span class="cd-num" id="cd-hours">--</span><span class="cd-sep">:</span>
-              <span class="cd-num" id="cd-mins">--</span><span class="cd-sep">:</span>
-              <span class="cd-num" id="cd-secs">--</span>
-            </div>
-            <div class="countdown-deadline" id="cd-deadline">
-              <i class="fas fa-hourglass-half" aria-hidden="true"></i>
-              <span>--</span>
-            </div>
-          </div>
-        </div>
-        <div class="countdown-progress" aria-hidden="true">
-          <div class="countdown-progress-bar" id="cd-bar"></div>
-        </div>
-      </div>`;
-        }
-
         const useRdInfo = typeof isTicketDetailAtharUi === 'function' && isTicketDetailAtharUi();
         const deskTd = typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi();
         const rows = [
@@ -20855,15 +20808,12 @@
       </div>
     `;
         }).join('');
-        c.innerHTML = countdownBlock + `<div class="td-info-rows">${infoRowsHtml}</div>`;
+        c.innerHTML = `<div class="td-info-rows">${infoRowsHtml}</div>`;
 
         // المرفقات داخل نفس الفيو
         buildInlineAttachments(t);
 
         syncRdTicketCountdownPlacement();
-
-        // تشغيل العدّاد إن وجد
-        startTicketCountdown();
       }
 
       // ───────────────────────────────────────────────────────────────────────────
@@ -20876,7 +20826,7 @@
           state._countdownTimer = null;
         }
 
-        const card = document.querySelector('.countdown-card');
+        const card = document.querySelector('#wfStepsContainer .countdown-card, .countdown-card');
         if (!card) return;
 
         const startISO = card.getAttribute('data-start');
@@ -20890,22 +20840,22 @@
         if (isNaN(deadlineMs)) return;
 
         // عرض موعد الانتهاء (مرة واحدة)
-        const deadlineEl = card.querySelector('#cd-deadline span');
+        const deadlineEl = card.querySelector('#cd-deadline span, .cd-deadline-text');
         if (deadlineEl) {
           deadlineEl.textContent = 'سيتم تمرير المخالفة في: ' + formatDateTime(new Date(deadlineMs).toISOString());
         }
 
         const tick = () => {
           const remainingMs = deadlineMs - Date.now();
-          const hoursEl = card.querySelector('#cd-hours');
-          const minsEl = card.querySelector('#cd-mins');
-          const secsEl = card.querySelector('#cd-secs');
-          const barEl = card.querySelector('#cd-bar');
+          const hoursEl = card.querySelector('#cd-hours, .cd-hours');
+          const minsEl = card.querySelector('#cd-mins, .cd-mins');
+          const secsEl = card.querySelector('#cd-secs, .cd-secs');
+          const barEl = card.querySelector('#cd-bar, .cd-bar');
 
           if (remainingMs <= 0) {
-            hoursEl.textContent = '00';
-            minsEl.textContent = '00';
-            secsEl.textContent = '00';
+            if (hoursEl) hoursEl.textContent = '00';
+            if (minsEl) minsEl.textContent = '00';
+            if (secsEl) secsEl.textContent = '00';
             card.classList.remove('cd-ok', 'cd-warn');
             card.classList.add('cd-danger', 'cd-expired');
             if (barEl) barEl.style.width = '100%';
@@ -20927,9 +20877,9 @@
           const mins = Math.floor((totalSecs % 3600) / 60);
           const secs = totalSecs % 60;
 
-          hoursEl.textContent = String(hours).padStart(2, '0');
-          minsEl.textContent = String(mins).padStart(2, '0');
-          secsEl.textContent = String(secs).padStart(2, '0');
+          if (hoursEl) hoursEl.textContent = String(hours).padStart(2, '0');
+          if (minsEl) minsEl.textContent = String(mins).padStart(2, '0');
+          if (secsEl) secsEl.textContent = String(secs).padStart(2, '0');
 
           // شريط التقدم (يمتلئ مع مرور الوقت)
           const totalLimitMs = limitH * 3600 * 1000;
@@ -22178,6 +22128,52 @@
         return { status: 'pending', icon: step.icon };
       }
 
+      function findWfLogDate(t, testFn) {
+        const logs = parseDbJsonArray(t?.logs);
+        for (let i = 0; i < logs.length; i++) {
+          if (testFn(logs[i])) return logs[i].date || null;
+        }
+        return null;
+      }
+
+      function getWfStepAtIso(t, code) {
+        if (!t) return null;
+        if (code === 'obs' || code === 'emp') return t.created_at || null;
+        if (code === 'sup') return resolveSupStartTime(t);
+        if (code === 'aud') {
+          return findWfLogDate(t, l => /التدقيق|بانتظار التدقيق|بانتظار رد المدقق|تمرير.*المدقق/i.test(String(l?.action || '')));
+        }
+        if (code === 'mgt') {
+          return findWfLogDate(t, l => /قرار إداري|بانتظار الإدارة|بانتظار رد المدير|المدير(?! الفرع)/i.test(String(l?.action || '')));
+        }
+        if (code === 'hr') {
+          return findWfLogDate(t, l => /الموارد البشرية|بانتظار الموارد/i.test(String(l?.action || '')));
+        }
+        return null;
+      }
+
+      function getWfStepSlaMeta(t, code) {
+        if (!t) return null;
+        if (code === 'emp' && t.state === 'emp' && !isDbTruthy(t.auto_forwarded_emp) && (t.emp_forward_after || t.created_at)) {
+          return { limitH: 24, startISO: t.created_at || '', deadlineISO: t.emp_forward_after || '' };
+        }
+        if (code === 'sup' && t.state === 'sup' && !isDbTruthy(t.auto_forwarded_sup) && (t.sup_forward_after || t._supStartTime)) {
+          return { limitH: 48, startISO: t._supStartTime || '', deadlineISO: t.sup_forward_after || '' };
+        }
+        return null;
+      }
+
+      function renderWfStepTimeHtml(t, step, status) {
+        const sla = (status === 'active') ? getWfStepSlaMeta(t, step.code) : null;
+        if (sla) {
+          return `<div class="rd-td-step__time rd-td-step__time--live countdown-card" data-start="${Sec.escapeHTML(String(sla.startISO || ''))}" data-deadline="${Sec.escapeHTML(String(sla.deadlineISO || ''))}" data-limit="${sla.limitH}" role="timer" aria-live="polite"><span class="cd-num cd-hours">--</span><span class="cd-sep">:</span><span class="cd-num cd-mins">--</span><span class="cd-sep">:</span><span class="cd-num cd-secs">--</span></div>`;
+        }
+        if (status === 'pending') return '';
+        const clock = ksaFormatClock(getWfStepAtIso(t, step.code));
+        if (!clock) return '';
+        return `<div class="rd-td-step__time">${Sec.escapeHTML(clock)}</div>`;
+      }
+
       function buildWfSteps(t) {
         const c = document.getElementById('wfStepsContainer');
         if (!c || !t) return;
@@ -22209,6 +22205,7 @@
           const rows = visibleSteps.map((s, i) => {
             const { status, icon } = resolveWfStepVisual(t, s, orderMap, liveCurrentOrder);
             const hasLine = i < visibleSteps.length - 1;
+            const timeHtml = renderWfStepTimeHtml(t, s, status);
             return `
               <div class="rd-td-step rd-td-step--${status}">
                 <div class="rd-td-step__rail">
@@ -22216,7 +22213,10 @@
                   ${hasLine ? '<div class="rd-td-step__line" aria-hidden="true"></div>' : ''}
                 </div>
                 <div class="rd-td-step__body">
-                  <div class="rd-td-step__label">${Sec.escapeHTML(s.label)}</div>
+                  <div class="rd-td-step__head">
+                    <div class="rd-td-step__label">${Sec.escapeHTML(s.label)}</div>
+                    ${timeHtml}
+                  </div>
                   <div class="rd-td-step__sub">${Sec.escapeHTML(s.sub)}</div>
                 </div>
               </div>`;
@@ -22224,6 +22224,7 @@
           c.innerHTML = `
             <div class="rd-td-wf-title">سير العمل المعياري</div>
             <div class="rd-td-wf">${rows}</div>`;
+          startTicketCountdown();
           return;
         }
 
@@ -22236,6 +22237,7 @@
           const iconHtml = status === 'active'
             ? ''
             : `<i class="fas ${icon}"></i>`;
+          const timeHtml = renderWfStepTimeHtml(t, s, status);
 
           return `
                 <div class="${cls}">
@@ -22243,7 +22245,10 @@
                     <div class="wf-step-circle">${iconHtml}</div>
                   </div>
                   <div class="wf-step-content">
-                    <div class="wf-step-label">${s.label}</div>
+                    <div class="rd-td-step__head">
+                      <div class="wf-step-label">${s.label}</div>
+                      ${timeHtml}
+                    </div>
                     <div class="wf-step-sub">${s.sub}</div>
                   </div>
                 </div>`;
@@ -22270,6 +22275,7 @@
             bindWfStepsRailObserver(c);
           });
         });
+        startTicketCountdown();
       }
 
       function ensureResponseFormFirst() {
