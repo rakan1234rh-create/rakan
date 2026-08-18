@@ -990,12 +990,56 @@ html.athar-staging-redesign.mr-mobile-ui #ticketModal #tdInlineAttachments .att-
 .rd-td-step__body {
   padding-bottom: 22px;
   min-width: 0;
+  flex: 1;
+}
+.rd-td-step__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
 }
 .rd-td-step__label {
   font-size: 12.5px;
   font-weight: 700;
   color: var(--text);
   padding-top: 6px;
+  min-width: 0;
+}
+.rd-td-step__time {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text3);
+  direction: ltr;
+  unicode-bidi: isolate;
+  padding-top: 6px;
+  white-space: nowrap;
+}
+.rd-td-step__time--live,
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .rd-td-step__time.countdown-card,
+html.athar-staging-redesign.mr-desktop-ui #ticketModal .rd-td-step__time.countdown-card {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  margin: 0 !important;
+  padding: 6px 0 0 !important;
+  box-shadow: none !important;
+  color: var(--gold);
+}
+.rd-td-step__time--live.cd-warn {
+  color: var(--warning, #f5a524);
+}
+.rd-td-step__time--live.cd-danger {
+  color: var(--danger);
+}
+.rd-td-step__time--live .cd-sep {
+  opacity: 0.45;
+  margin: 0 1px;
+}
+html.athar-staging-redesign.mr-desktop-ui #ticketModal .rd-td-countdown-host,
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .rd-td-countdown-host {
+  display: none !important;
 }
 .rd-td-step__sub {
   font-size: 11px;
