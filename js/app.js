@@ -20772,26 +20772,6 @@
         const c = document.getElementById('tdInfo');
         const hideObs = shouldHideObserverName();
 
-        // بانر إذا التذكرة مررت تلقائياً من النظام
-        let overdueBanner = '';
-        if (t.auto_forwarded_emp || t.auto_forwarded_sup) {
-          const reasonItems = [];
-          if (t.auto_forwarded_emp) {
-            reasonItems.push(`<li class="overdue-banner__reason-item"><span class="overdue-banner__reason-icon" aria-hidden="true"><i class="fas fa-user"></i></span><span>عدم رد الموظف خلال 24 ساعة</span></li>`);
-          }
-          if (t.auto_forwarded_sup) {
-            reasonItems.push(`<li class="overdue-banner__reason-item"><span class="overdue-banner__reason-icon" aria-hidden="true"><i class="fas fa-user-tie"></i></span><span>عدم رد المشرف خلال 48 ساعة</span></li>`);
-          }
-          overdueBanner = `
-      <div class="overdue-banner">
-        <div class="overdue-banner__head">
-          <i class="fas fa-robot" aria-hidden="true"></i>
-          <strong>تمرير تلقائي بواسطة النظام</strong>
-        </div>
-        <ul class="overdue-banner__reasons">${reasonItems.join('')}</ul>
-      </div>`;
-        }
-
         // ─── عدّاد التمرير التلقائي ───
         let countdownBlock = '';
         const me = state.currentUser;
@@ -20875,7 +20855,7 @@
       </div>
     `;
         }).join('');
-        c.innerHTML = overdueBanner + countdownBlock + `<div class="td-info-rows">${infoRowsHtml}</div>`;
+        c.innerHTML = countdownBlock + `<div class="td-info-rows">${infoRowsHtml}</div>`;
 
         // المرفقات داخل نفس الفيو
         buildInlineAttachments(t);
