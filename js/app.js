@@ -5852,7 +5852,7 @@
         { id: 'tab_dashboard', label: 'لوحة القيادة', group: 'التنقل', roles: ['admin', 'manager', 'auditor', 'supervisor', 'employee', 'branch_manager', 'observer', 'hr'] },
         { id: 'tab_newTicket', label: 'رصد مخالفة جديدة', group: 'التنقل', roles: ['admin', 'observer', 'supervisor'] },
         { id: 'tab_workflow', label: 'معالجة التذاكر', group: 'التنقل', roles: ['admin', 'manager', 'auditor', 'supervisor', 'employee', 'branch_manager', 'observer', 'hr'] },
-        { id: 'tab_breaks', label: 'بريكات الموظفين', group: 'التنقل', roles: ['admin', 'manager', 'supervisor', 'branch_manager', 'observer', 'employee'] },
+        { id: 'tab_breaks', label: 'بريكات الموظفين', group: 'التنقل', roles: ['admin', 'manager', 'auditor', 'supervisor', 'branch_manager', 'observer', 'employee'] },
         { id: 'tab_complaints', label: 'الشكاوى والاقتراحات', group: 'التنقل', roles: ['admin', 'supervisor', 'branch_manager', 'observer', 'employee'] },
         { id: 'tab_reports', label: 'التقارير', group: 'التنقل', roles: ['admin', 'manager', 'auditor', 'hr'] },
         { id: 'tab_compliance', label: 'مؤشرات الامتثال', group: 'التنقل', roles: ['admin', 'manager', 'auditor', 'supervisor', 'branch_manager'] },
@@ -6351,9 +6351,11 @@
             if (typeof raw[role][p.id] === 'boolean') out[role][p.id] = raw[role][p.id];
           }
         }
-        // Old saved matrices still deny tab_breaks for manager; drop that so the new default applies.
+        // Old saved matrices still deny tab_breaks for manager/auditor; drop that so the new default applies.
         if (out.manager && out.manager.tab_breaks === false) delete out.manager.tab_breaks;
         if (out.manager && !Object.keys(out.manager).length) delete out.manager;
+        if (out.auditor && out.auditor.tab_breaks === false) delete out.auditor.tab_breaks;
+        if (out.auditor && !Object.keys(out.auditor).length) delete out.auditor;
         return Object.keys(out).length ? out : null;
       }
 
@@ -34720,7 +34722,7 @@
 
       function canViewStaffBreakHistory() {
         const role = normalizeUserRole(state.currentUser?.role);
-        return role === 'admin' || role === 'manager' || role === 'supervisor' || role === 'branch_manager' || role === 'observer';
+        return role === 'admin' || role === 'manager' || role === 'auditor' || role === 'supervisor' || role === 'branch_manager' || role === 'observer';
       }
 
       function stopStaffBreakTicker() {
@@ -34947,7 +34949,7 @@
         let list = [];
         if (role === 'employee' || role === 'branch_manager') {
           list = getBranchStaff(me.branch_id);
-        } else if (role === 'supervisor' || role === 'admin' || role === 'manager') {
+        } else if (role === 'supervisor' || role === 'admin' || role === 'manager' || role === 'auditor') {
           const bids = new Set(getSupervisedBranchesForBreaks().map(b => b.id));
           list = state.users.filter(u => isBranchStaffMember(u) && bids.has(u.branch_id));
         } else if (role === 'observer') {
@@ -35140,13 +35142,13 @@
       function getSupervisedRegionsForBreaks() {
         const me = state.currentUser;
         if (!me) return [];
-        if (normalizeUserRole(me.role) === 'admin' || normalizeUserRole(me.role) === 'manager') return state.regions.slice();
+        if (normalizeUserRole(me.role) === 'admin' || normalizeUserRole(me.role) === 'manager' || normalizeUserRole(me.role) === 'auditor') return state.regions.slice();
         return state.regions.filter(r => r.supervisor_id === me.id);
       }
 
       function getSupervisedBranchesForBreaks() {
         const regions = getSupervisedRegionsForBreaks();
-        if (normalizeUserRole(state.currentUser?.role) === 'admin' || normalizeUserRole(state.currentUser?.role) === 'manager') return state.branches.slice();
+        if (normalizeUserRole(state.currentUser?.role) === 'admin' || normalizeUserRole(state.currentUser?.role) === 'manager' || normalizeUserRole(state.currentUser?.role) === 'auditor') return state.branches.slice();
         const ids = new Set(regions.map(r => r.id));
         return state.branches.filter(b => ids.has(b.region_id));
       }
