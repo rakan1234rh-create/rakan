@@ -195,16 +195,9 @@ html.mr-mobile-ui #tab-complaints .cp-mob-stat__lbl {
   margin-top: 4px;
   line-height: 1.2;
 }
+html.athar-staging-redesign.mr-mobile-ui #tab-complaints .cp-mob-filters,
 html.mr-mobile-ui #tab-complaints .cp-mob-filters {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-  margin: 0 0 8px !important;
-  overflow-x: auto;
-  padding-bottom: 2px;
-  width: 100%;
-  box-sizing: border-box;
+  display: none !important;
 }
 html.mr-mobile-ui #tab-complaints .cp-mob-filters .rd-app-search {
   flex: 1 1 100%;
