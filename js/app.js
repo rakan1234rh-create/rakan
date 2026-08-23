@@ -36727,25 +36727,22 @@
           const st = rdCmplStatusMeta(r.status, r.kind, r.decision);
           const kindLbl = r.kind === 'suggestion' ? 'اقتراح' : 'شكوى';
           const icon = r.categoryIcon || (r.kind === 'suggestion' ? 'fa-lightbulb' : 'fa-triangle-exclamation');
-          const title = `${kindLbl} ${r.category || 'عام'}`.trim();
           return `
             <article class="rd-cmpl-card" style="animation-delay:${Math.min(0.3, i * 0.04)}s" onclick="rdOpenComplaintDetail('${Sec.escapeHTML(r.id)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();rdOpenComplaintDetail('${Sec.escapeHTML(r.id)}')}" role="button" tabindex="0">
               <div class="rd-cmpl-card__top">
                 <div class="rd-cmpl-card__who">
                   <div class="rd-cmpl-card__icon" style="--tone:${tone}"><i class="fas ${Sec.escapeHTML(icon)}" aria-hidden="true"></i></div>
                   <div class="rd-cmpl-card__meta-wrap">
+                    <span class="rd-cmpl-card__num">${Sec.escapeHTML(rdCmplNumber(r.id))}</span>
                     <div class="rd-cmpl-card__title-row">
-                      <span class="rd-cmpl-card__cat">${Sec.escapeHTML(title)}</span>
+                      <span class="rd-cmpl-card__kind" style="--tone:${tone}">${Sec.escapeHTML(kindLbl)}</span>
+                      <span class="rd-cmpl-card__cat">${Sec.escapeHTML(r.category || 'عام')}</span>
                     </div>
                     <div class="rd-cmpl-card__sub">${Sec.escapeHTML(rdCmplDisplayName(r))} · ${Sec.escapeHTML(r.time || r.createdAt || '')}</div>
                   </div>
                 </div>
-                <div class="rd-cmpl-card__corner">
-                  <span class="rd-cmpl-card__num">${Sec.escapeHTML(rdCmplNumber(r.id))}</span>
-                  <span class="rd-cmpl-card__status" style="--tone:${st.color}">${Sec.escapeHTML(st.label)}</span>
-                </div>
+                <span class="rd-cmpl-card__status" style="--tone:${st.color}">${Sec.escapeHTML(st.label)}</span>
               </div>
-              ${Number(r.attachCount) > 0 ? `<div class="rd-cmpl-card__atts"><i class="fas fa-paperclip" aria-hidden="true"></i>${Number(r.attachCount)} مرفق</div>` : ''}
             </article>`;
         }).join('');
 
@@ -37565,7 +37562,6 @@
         const statusColor = statusMeta.color;
         const icon = complaintCategoryIcon(c);
         const time = formatRelativeAr(c.created_at) || '';
-        const attCount = getComplaintFileAttachments(c).length;
         return `
           <div class="cp-card" role="button" tabindex="0"
             onclick="openComplaintDetail('${Sec.escapeHTML(c.id)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openComplaintDetail('${Sec.escapeHTML(c.id)}')}">
@@ -37573,13 +37569,12 @@
               <div class="cp-card__who">
                 <div class="cp-card__icon" style="--tone:${kindColor}"><i class="fas ${icon}" aria-hidden="true"></i></div>
                 <div style="min-width:0">
-                  <div class="cp-card__cat">${Sec.escapeHTML(`${kindLabel} ${c.category || ''}`.trim())}</div>
+                  <div class="cp-card__num">${Sec.escapeHTML(c.complaint_number || '')}</div>
+                  <div class="cp-card__cat"><span class="cp-card__kind" style="--tone:${kindColor}">${Sec.escapeHTML(kindLabel)}</span> ${Sec.escapeHTML(c.category || '')}</div>
                   <div class="cp-card__meta">${Sec.escapeHTML(time)}</div>
                 </div>
               </div>
-              <span class="cp-card__num">${Sec.escapeHTML(c.complaint_number || '')}</span>
             </div>
-            ${attCount > 0 ? `<div class="cp-card__atts"><i class="fas fa-paperclip" aria-hidden="true"></i>${attCount} مرفق</div>` : ''}
             <div class="cp-card__status" style="--tone:${statusColor}">${Sec.escapeHTML(statusLabel)}</div>
           </div>`;
       }

@@ -1455,6 +1455,12 @@ html.athar-staging-redesign.mr-desktop-ui .rd-cmpl-card__icon {
   font-size: 13px !important;
 }
 
+html.athar-staging-redesign.mr-desktop-ui .rd-cmpl-card__meta-wrap {
+  display: flex !important;
+  flex-direction: column !important;
+  min-width: 0 !important;
+}
+
 html.athar-staging-redesign.mr-desktop-ui .rd-cmpl-card__title-row {
   display: flex !important;
   align-items: center !important;
@@ -1477,18 +1483,13 @@ html.athar-staging-redesign.mr-desktop-ui .rd-cmpl-card__kind {
   border-radius: 999px !important;
 }
 
-html.athar-staging-redesign.mr-desktop-ui .rd-cmpl-card__corner {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: flex-end !important;
-  gap: 8px !important;
-  flex-shrink: 0 !important;
-}
 html.athar-staging-redesign.mr-desktop-ui .rd-cmpl-card__num {
+  order: -1;
   font-size: 11px !important;
   font-weight: 700 !important;
   color: var(--text3) !important;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
+  margin-bottom: 4px !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui .rd-cmpl-card__sub {
@@ -1716,8 +1717,8 @@ html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-att-card {
   min-height: 52px !important;
   border-radius: 10px !important;
 }
-html.athar-staging-redesign.mr-desktop-ui .rd-cmpl-card__atts {
-  margin-top: 10px !important;
+html.athar-staging-redesign.mr-desktop-ui .rd-cmpl-list .rd-cmpl-card__atts {
+  display: none !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-panel--detail .rd-cmpl-panel__compose {
