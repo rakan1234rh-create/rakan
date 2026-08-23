@@ -997,6 +997,7 @@ html.athar-staging-redesign.mr-mobile-ui #ticketModal #tdInlineAttachments .att-
   align-items: baseline;
   justify-content: space-between;
   gap: 10px;
+  flex-wrap: nowrap;
 }
 .rd-td-step__label {
   font-size: 12.5px;
@@ -1019,6 +1020,11 @@ html.athar-staging-redesign.mr-mobile-ui #ticketModal #tdInlineAttachments .att-
 .rd-td-step__time--live,
 html.athar-staging-redesign.mr-mobile-ui #ticketModal .rd-td-step__time.countdown-card,
 html.athar-staging-redesign.mr-desktop-ui #ticketModal .rd-td-step__time.countdown-card {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: baseline !important;
+  gap: 0 !important;
   background: transparent !important;
   border: none !important;
   border-radius: 0 !important;
@@ -1026,12 +1032,22 @@ html.athar-staging-redesign.mr-desktop-ui #ticketModal .rd-td-step__time.countdo
   padding: 6px 0 0 !important;
   box-shadow: none !important;
   color: var(--gold);
+  overflow: visible !important;
+  width: auto !important;
+  max-width: none !important;
 }
 .rd-td-step__time--live.cd-warn {
   color: var(--warning, #f5a524);
 }
 .rd-td-step__time--live.cd-danger {
   color: var(--danger);
+}
+.rd-td-step__time--live .cd-num,
+.rd-td-step__time--live .cd-sep,
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .rd-td-step__time .cd-num,
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .rd-td-step__time .cd-sep {
+  display: inline-block !important;
+  vertical-align: baseline !important;
 }
 .rd-td-step__time--live .cd-sep {
   opacity: 0.45;
