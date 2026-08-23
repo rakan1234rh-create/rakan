@@ -11,7 +11,7 @@ const iconsDir = join(root, 'icons');
 const fontsDir = join(iconsDir, 'fonts');
 const BLEED_BG = '#000000';
 const VIEW = 842;
-const ICON_CACHE_VER = '393';
+const ICON_CACHE_VER = '406';
 
 const FONT_SOURCES = [
   {
@@ -78,7 +78,7 @@ function buildSvg(contentScale) {
 }
 
 const svgAny = buildSvg(1);
-const svgMask = buildSvg(0.92);
+const svgMask = buildSvg(0.78);
 
 writeFileSync(join(iconsDir, 'athar-homescreen-fullbleed.svg'), svgAny);
 writeFileSync(join(iconsDir, 'athar-homescreen-maskable.svg'), svgMask);
