@@ -30849,7 +30849,7 @@
       async function showPushWelcomeNotification() {
         const title = 'مرحباً بك في أثر ✨';
         const body = 'تم تفعيل إشعاراتك بنجاح سنبقيك على اطلاع فوري بكافة التحديثات والمستجدات لضمان سير العمل بكل كفاءة وسهولة';
-        const icon = './icons/athar-pwa-192-v393.png';
+        const icon = './icons/athar-pwa-192-v406.png';
         const opts = {
           body,
           icon,
