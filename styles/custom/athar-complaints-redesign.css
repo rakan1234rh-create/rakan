@@ -1483,14 +1483,6 @@ html.athar-staging-redesign.mr-desktop-ui .rd-cmpl-card__kind {
   border-radius: 999px !important;
 }
 
-html.athar-staging-redesign.mr-desktop-ui .rd-cmpl-card__corner {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: flex-end !important;
-  gap: 8px !important;
-  flex-shrink: 0 !important;
-  text-align: end !important;
-}
 html.athar-staging-redesign.mr-desktop-ui .rd-cmpl-card__num {
   font-size: 13px !important;
   font-weight: 800 !important;
@@ -1498,6 +1490,7 @@ html.athar-staging-redesign.mr-desktop-ui .rd-cmpl-card__num {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
   letter-spacing: 0.02em !important;
   line-height: 1 !important;
+  margin-bottom: 4px !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui .rd-cmpl-card__sub {
