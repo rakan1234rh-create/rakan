@@ -36733,7 +36733,6 @@
                 <div class="rd-cmpl-card__who">
                   <div class="rd-cmpl-card__icon" style="--tone:${tone}"><i class="fas ${Sec.escapeHTML(icon)}" aria-hidden="true"></i></div>
                   <div class="rd-cmpl-card__meta-wrap">
-                    <span class="rd-cmpl-card__num">${Sec.escapeHTML(rdCmplNumber(r.id))}</span>
                     <div class="rd-cmpl-card__title-row">
                       <span class="rd-cmpl-card__kind" style="--tone:${tone}">${Sec.escapeHTML(kindLbl)}</span>
                       <span class="rd-cmpl-card__cat">${Sec.escapeHTML(r.category || 'عام')}</span>
@@ -36741,7 +36740,10 @@
                     <div class="rd-cmpl-card__sub">${Sec.escapeHTML(rdCmplDisplayName(r))} · ${Sec.escapeHTML(r.time || r.createdAt || '')}</div>
                   </div>
                 </div>
-                <span class="rd-cmpl-card__status" style="--tone:${st.color}">${Sec.escapeHTML(st.label)}</span>
+                <div class="rd-cmpl-card__corner">
+                  <span class="rd-cmpl-card__num">${Sec.escapeHTML(rdCmplNumber(r.id))}</span>
+                  <span class="rd-cmpl-card__status" style="--tone:${st.color}">${Sec.escapeHTML(st.label)}</span>
+                </div>
               </div>
             </article>`;
         }).join('');
@@ -37569,13 +37571,14 @@
               <div class="cp-card__who">
                 <div class="cp-card__icon" style="--tone:${kindColor}"><i class="fas ${icon}" aria-hidden="true"></i></div>
                 <div style="min-width:0">
-                  <div class="cp-card__num">${Sec.escapeHTML(c.complaint_number || '')}</div>
                   <div class="cp-card__cat"><span class="cp-card__kind" style="--tone:${kindColor}">${Sec.escapeHTML(kindLabel)}</span> ${Sec.escapeHTML(c.category || '')}</div>
                   <div class="cp-card__meta">${Sec.escapeHTML(time)}</div>
                 </div>
               </div>
-            </div>
-            <div class="cp-card__status" style="--tone:${statusColor}">${Sec.escapeHTML(statusLabel)}</div>
+              <div class="cp-card__corner">
+                <div class="cp-card__num">${Sec.escapeHTML(c.complaint_number || '')}</div>
+                <div class="cp-card__status" style="--tone:${statusColor}">${Sec.escapeHTML(statusLabel)}</div>
+              </div>
           </div>`;
       }
 
