@@ -2567,6 +2567,8 @@
         if (typeof syncMobBottomNavHeight === 'function') syncMobBottomNavHeight();
         mountNewComplaintModalForMob();
         if (typeof syncMobViewportLayout === 'function') syncMobViewportLayout();
+        const topBar = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--unified-topbar-h'), 10) || 76;
+        document.documentElement.style.setProperty('--ticket-sheet-top', `${topBar}px`);
         modal.classList.remove('sheet-ready', 'sheet-closing', 'sheet-dragging');
         modal.classList.add('open');
         document.body.classList.add('modal-open', 'cp-new-sheet-open');

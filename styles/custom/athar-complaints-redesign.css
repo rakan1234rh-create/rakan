@@ -809,10 +809,10 @@ html.mr-mobile-ui #tab-complaints .cp-card__status {
 
 /* Complaint detail — mobile bottom sheet (same pattern as violation detail) */
 html.mr-mobile-ui #complaintDetailModal.modal {
-  z-index: 2400 !important;
+  z-index: 3200 !important;
   display: none;
   padding: 0 !important;
-  padding-bottom: var(--viol-sheet-bottom, var(--mr-mob-bottom-nav-h, 56px)) !important;
+  padding-bottom: 0 !important;
   box-sizing: border-box;
   background: transparent !important;
   pointer-events: none;
@@ -825,7 +825,7 @@ html.mr-mobile-ui #complaintDetailModal.modal.open::before {
   top: 0;
   left: 0;
   right: 0;
-  bottom: var(--viol-sheet-bottom, var(--mr-mob-bottom-nav-h, 56px));
+  bottom: 0;
   background: color-mix(in srgb, var(--mr-primary, #111) 42%, transparent);
   pointer-events: none;
   z-index: 0;
@@ -834,7 +834,7 @@ html.mr-mobile-ui #complaintDetailModal.modal.open::before {
   background: rgba(0, 0, 0, 0.62);
 }
 html.mr-mobile-ui #appWrap > .app-shell > #complaintDetailModal.modal {
-  z-index: 2400 !important;
+  z-index: 3200 !important;
 }
 html.mr-mobile-ui #complaintDetailModal.modal.open {
   display: block !important;
@@ -846,23 +846,20 @@ html.mr-mobile-ui #complaintDetailModal.modal.sheet-closing {
 }
 html.mr-mobile-ui #complaintDetailModal .cp-paper-sheet {
   position: fixed !important;
+  top: var(--ticket-sheet-top, var(--unified-topbar-h, calc(56px + env(safe-area-inset-top, 0px)))) !important;
   left: 0 !important;
   right: 0 !important;
-  bottom: var(--mob-chrome-bottom, var(--viol-sheet-bottom, var(--mr-mob-bottom-nav-h, calc(56px + env(safe-area-inset-bottom, 0px))))) !important;
+  bottom: 0 !important;
   pointer-events: auto;
   z-index: 1;
   width: 100% !important;
   max-width: 100% !important;
-  max-height: min(
-    82dvh,
-    calc(
-      100dvh - var(--unified-topbar-h, 76px) - var(--mob-chrome-bottom, var(--viol-sheet-bottom, var(--mr-mob-bottom-nav-h, 56px))) - 8px
-    )
-  ) !important;
+  max-height: none !important;
   height: auto !important;
+  min-height: 0 !important;
   margin: 0 !important;
-  border-radius: 16px 16px 0 0 !important;
-  border-bottom: none !important;
+  border-radius: 26px 26px 0 0 !important;
+  border: none !important;
   background: var(--mr-surface, var(--surface)) !important;
   color: var(--mr-text, var(--text));
   display: flex !important;
@@ -982,34 +979,38 @@ html.mr-mobile-ui #complaintDetailModal .modal-body.cp-paper-sheet-body {
   display: none;
 }
 
-/* New complaint — mobile bottom sheet */
+/* New complaint — mobile bottom sheet (covers bottom nav) */
+html.athar-staging-redesign.mr-mobile-ui #newComplaintModal.modal,
 html.mr-mobile-ui #newComplaintModal.modal {
-  z-index: 2400 !important;
+  z-index: 3200 !important;
   display: none;
   padding: 0 !important;
-  padding-bottom: var(--viol-sheet-bottom, var(--mr-mob-bottom-nav-h, 56px)) !important;
+  padding-bottom: 0 !important;
   box-sizing: border-box;
   background: transparent !important;
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.28s ease;
 }
+html.athar-staging-redesign.mr-mobile-ui #newComplaintModal.modal.open::before,
 html.mr-mobile-ui #newComplaintModal.modal.open::before {
   content: '';
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  bottom: var(--viol-sheet-bottom, var(--mr-mob-bottom-nav-h, 56px));
+  bottom: 0;
   background: color-mix(in srgb, var(--mr-primary, #111) 42%, transparent);
   pointer-events: none;
   z-index: 0;
 }
+[data-theme="dark"] html.athar-staging-redesign.mr-mobile-ui #newComplaintModal.modal.open::before,
 [data-theme="dark"] html.mr-mobile-ui #newComplaintModal.modal.open::before {
   background: rgba(0, 0, 0, 0.62);
 }
+html.athar-staging-redesign.mr-mobile-ui #appWrap > .app-shell > #newComplaintModal.modal,
 html.mr-mobile-ui #appWrap > .app-shell > #newComplaintModal.modal {
-  z-index: 2400 !important;
+  z-index: 3200 !important;
 }
 html.mr-mobile-ui #newComplaintModal.modal.open {
   display: block !important;
@@ -1019,35 +1020,39 @@ html.mr-mobile-ui #newComplaintModal.modal.open {
 html.mr-mobile-ui #newComplaintModal.modal.sheet-closing {
   opacity: 0;
 }
+html.athar-staging-redesign.mr-mobile-ui body.cp-new-sheet-open #newComplaintModal.modal.open::before,
+html.mr-mobile-ui body.cp-new-sheet-open #newComplaintModal.modal.open::before {
+  bottom: 0 !important;
+  background: rgba(0, 0, 0, 0.45) !important;
+  opacity: 1 !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #newComplaintModal .cp-new-sheet,
 html.mr-mobile-ui #newComplaintModal .cp-new-sheet {
   position: fixed !important;
+  top: var(--ticket-sheet-top, var(--unified-topbar-h, calc(56px + env(safe-area-inset-top, 0px)))) !important;
   left: 0 !important;
   right: 0 !important;
-  bottom: var(--mob-chrome-bottom, var(--viol-sheet-bottom, var(--mr-mob-bottom-nav-h, calc(56px + env(safe-area-inset-bottom, 0px))))) !important;
+  bottom: 0 !important;
   pointer-events: auto;
   z-index: 1;
   width: 100% !important;
   max-width: 100% !important;
-  max-height: min(
-    88dvh,
-    calc(
-      100dvh - var(--unified-topbar-h, 76px) - var(--mob-chrome-bottom, var(--viol-sheet-bottom, var(--mr-mob-bottom-nav-h, 56px))) - 8px
-    )
-  ) !important;
+  max-height: none !important;
   height: auto !important;
+  min-height: 0 !important;
   margin: 0 !important;
-  border-radius: 16px 16px 0 0 !important;
-  border-bottom: none !important;
-  background: var(--mr-surface, var(--surface)) !important;
+  border-radius: 26px 26px 0 0 !important;
+  border: none !important;
+  background: var(--bg, var(--mr-surface, var(--surface))) !important;
   color: var(--mr-text, var(--text));
   display: flex !important;
   flex-direction: column !important;
   overflow: hidden !important;
   box-sizing: border-box;
   transform: translateY(100%);
-  transition: transform 0.36s cubic-bezier(0.32, 0.72, 0, 1), bottom 0.22s ease, max-height 0.22s ease;
+  transition: transform 0.36s cubic-bezier(0.32, 0.72, 0, 1) !important;
   will-change: transform;
-  box-shadow: none;
+  box-shadow: none !important;
 }
 html.mr-mobile-ui #newComplaintModal.modal.sheet-ready .cp-new-sheet {
   transform: translateY(0);
@@ -1107,6 +1112,19 @@ html.mr-mobile-ui #newComplaintModal .cp-new-sheet-foot {
 }
 html.mr-mobile-ui #newComplaintModal .cp-new-sheet-foot .btn-primary {
   flex: 1;
+}
+html.athar-staging-redesign.mr-mobile-ui #newComplaintModal #cpDescText.form-input,
+html.mr-mobile-ui #newComplaintModal #cpDescText.form-input,
+html.athar-staging-redesign.mr-mobile-ui #newComplaintModal textarea.form-input,
+html.mr-mobile-ui #newComplaintModal textarea.form-input {
+  border-radius: 14px !important;
+  min-height: 120px !important;
+  padding: 12px 14px !important;
+  line-height: 1.55 !important;
+  resize: vertical !important;
+  display: block !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
 }
 
 
