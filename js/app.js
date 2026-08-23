@@ -36727,15 +36727,6 @@
           const st = rdCmplStatusMeta(r.status, r.kind, r.decision);
           const kindLbl = r.kind === 'suggestion' ? 'اقتراح' : 'شكوى';
           const icon = r.categoryIcon || (r.kind === 'suggestion' ? 'fa-lightbulb' : 'fa-triangle-exclamation');
-          const reply = (Array.isArray(r.thread) && r.thread.length) ? r.thread[r.thread.length - 1] : null;
-          const replyHtml = (reply && reply.isAdmin) ? `
-            <div class="rd-cmpl-card__reply">
-              <div class="rd-cmpl-card__reply-av"><i class="fas fa-headset" aria-hidden="true"></i></div>
-              <div class="rd-cmpl-card__reply-body">
-                <div class="rd-cmpl-card__reply-title">رد الإدارة</div>
-                <div class="rd-cmpl-card__reply-text">${Sec.escapeHTML(reply.text || '')}</div>
-              </div>
-            </div>` : '';
           return `
             <article class="rd-cmpl-card" style="animation-delay:${Math.min(0.3, i * 0.04)}s" onclick="rdOpenComplaintDetail('${Sec.escapeHTML(r.id)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();rdOpenComplaintDetail('${Sec.escapeHTML(r.id)}')}" role="button" tabindex="0">
               <div class="rd-cmpl-card__top">
@@ -36752,9 +36743,7 @@
                 </div>
                 <span class="rd-cmpl-card__status" style="--tone:${st.color}">${Sec.escapeHTML(st.label)}</span>
               </div>
-              <div class="rd-cmpl-card__body">${Sec.escapeHTML(r.description || r.desc || '')}</div>
               ${Number(r.attachCount) > 0 ? `<div class="rd-cmpl-card__atts"><i class="fas fa-paperclip" aria-hidden="true"></i>${Number(r.attachCount)} مرفق</div>` : ''}
-              ${replyHtml}
             </article>`;
         }).join('');
 
@@ -37588,7 +37577,6 @@
               </div>
               <span class="cp-card__kind" style="--tone:${kindColor}">${Sec.escapeHTML(kindLabel)}</span>
             </div>
-            <div class="cp-card__body">${Sec.escapeHTML(c.description)}</div>
             ${attCount > 0 ? `<div class="cp-card__atts"><i class="fas fa-paperclip" aria-hidden="true"></i>${attCount} مرفق</div>` : ''}
             <div class="cp-card__status" style="--tone:${statusColor}">${Sec.escapeHTML(statusLabel)}</div>
           </div>`;
