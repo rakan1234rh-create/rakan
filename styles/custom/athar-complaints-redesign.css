@@ -1143,9 +1143,89 @@ html.athar-staging-redesign.mr-desktop-ui .rd-cmpl-panel.rd-side--quiet {
 }
 
 /* --- Desktop Complaints board --- */
-/* Complaints board */
+html.athar-staging-redesign.mr-desktop-ui .main:has(#tab-complaints.active),
+html.athar-staging-redesign.mr-desktop-ui #appWrap .main:has(#tab-complaints.active) {
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .content:has(#tab-complaints.active),
+html.athar-staging-redesign.mr-desktop-ui .main:has(#tab-complaints.active) .content {
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  padding: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-complaints.tab-content.active {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 0% !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  padding: 18px 24px 12px !important;
+  box-sizing: border-box !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-complaints .rd-complaints-desk-panel {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 20px !important;
+  box-shadow: none !important;
+  padding: 20px 22px 12px !important;
+  margin: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-complaints .rd-complaints-desk-panel[hidden] {
+  display: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #rdComplaintsHost.rd-complaints-host {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
 html.athar-staging-redesign.mr-desktop-ui .rd-cmpl-board {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  height: 100% !important;
   animation: atharRdFadeUp .3s ease;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-cmpl-head,
+html.athar-staging-redesign.mr-desktop-ui .rd-cmpl-metrics,
+html.athar-staging-redesign.mr-desktop-ui .rd-cmpl-filters {
+  flex-shrink: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-cmpl-list {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  padding: 0 2px 8px !important;
+  overscroll-behavior: contain;
 }
 
 html.athar-staging-redesign.mr-desktop-ui .rd-cmpl-intro {
