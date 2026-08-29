@@ -8029,8 +8029,9 @@
       }
 
       function isAtharRedesignUi() {
-        // Mobile redesign not enabled globally on production yet
-        return false;
+        return document.documentElement.classList.contains('athar-staging-redesign')
+          && typeof isMobileViewport === 'function'
+          && isMobileViewport();
       }
 
       /** الرئيسية على الجوال فقط — لا يفعّل باقي صفحات إعادة التصميم */

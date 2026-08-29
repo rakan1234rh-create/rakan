@@ -1032,22 +1032,112 @@ html.athar-staging-redesign.mr-desktop-ui #cmpDetailModal.cmp-detail--rd-emp .rd
    ATHAR mobile compliance — board, cards, and employee sheet (#tab-compliance)
    ═══════════════════════════════════════════════════════════════════════════ */
 
-html.athar-staging-redesign.mr-mobile-ui .content:has(#tab-compliance.active),
-html.athar-staging-redesign.mr-mobile-ui .main:has(#tab-compliance.active) .content {
-  padding: 8px 16px calc(var(--mr-mob-bottom-nav-h, 56px) + 20px) !important;
-}
-
-html.athar-staging-redesign.mr-mobile-ui #tab-compliance.tab-content.active {
+html.athar-staging-redesign.mr-mobile-ui #tab-compliance.tab-content.active,
+html.athar-staging-redesign.mr-mobile-ui.mr-cmp-tab-active #tab-compliance.tab-content.active {
   padding: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  background: transparent !important;
 }
 
-html.athar-staging-redesign.mr-mobile-ui #tab-compliance .cmp-neo-board,
-html.athar-staging-redesign.mr-mobile-ui #tab-compliance .rd-cmp-board {
+html.athar-staging-redesign.mr-mobile-ui #tab-compliance:not(.active),
+html.athar-staging-redesign.mr-mobile-ui #tab-compliance[hidden] {
+  display: none !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-compliance > .panel,
+html.athar-staging-redesign.mr-mobile-ui #tab-compliance .wf-panel {
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
   padding: 0 !important;
-  animation: none;
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-compliance #cmpBoard {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  background: transparent !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-compliance .cmp-neo-board,
+html.athar-staging-redesign.mr-mobile-ui #tab-compliance .rd-cmp-board {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
+  height: auto !important;
+  overflow-y: scroll !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
+  touch-action: pan-y !important;
+  overscroll-behavior-y: contain;
+  padding: 8px 16px calc(var(--mr-mob-bottom-nav-h, calc(56px + env(safe-area-inset-bottom, 0px))) + 24px) 16px !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  margin: 0 !important;
+  animation: none !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-compliance .rd-cmp-board > * {
+  flex-shrink: 0 !important;
+  touch-action: pan-y !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-compliance .rd-cmp-table {
+  display: block !important;
+  flex: none !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow: visible !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-compliance .rd-cmp-thead {
+  display: none !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-compliance .rd-cmp-list,
+html.athar-staging-redesign.mr-mobile-ui #tab-compliance .cmp-neo-grid,
+html.athar-staging-redesign.mr-mobile-ui #tab-compliance .mk-cmp-grid--emp,
+html.athar-staging-redesign.mr-mobile-ui #tab-compliance .cmp-neo-pending-wrap {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+  flex: none !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow: visible !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-compliance .rd-cmp-list > *,
+html.athar-staging-redesign.mr-mobile-ui #tab-compliance .cmp-neo-grid > *,
+html.athar-staging-redesign.mr-mobile-ui #tab-compliance .mk-cmp-grid--emp > * {
+  flex: 0 0 auto !important;
+  touch-action: pan-y !important;
 }
 
 html.athar-staging-redesign.mr-mobile-ui #tab-compliance .cmp-neo-btn--pdf-export,
