@@ -1032,7 +1032,6 @@ html.athar-staging-redesign.mr-desktop-ui #cmpDetailModal.cmp-detail--rd-emp .rd
    ATHAR mobile compliance — board, cards, and employee sheet (#tab-compliance)
    ═══════════════════════════════════════════════════════════════════════════ */
 
-html.athar-staging-redesign.mr-mobile-ui #tab-compliance,
 html.athar-staging-redesign.mr-mobile-ui #tab-compliance.tab-content.active,
 html.athar-staging-redesign.mr-mobile-ui.mr-cmp-tab-active #tab-compliance.tab-content.active {
   padding: 0 !important;
@@ -1042,6 +1041,11 @@ html.athar-staging-redesign.mr-mobile-ui.mr-cmp-tab-active #tab-compliance.tab-c
   min-height: 0 !important;
   overflow: hidden !important;
   background: transparent !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-compliance:not(.active),
+html.athar-staging-redesign.mr-mobile-ui #tab-compliance[hidden] {
+  display: none !important;
 }
 
 html.athar-staging-redesign.mr-mobile-ui #tab-compliance > .panel,
