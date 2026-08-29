@@ -38063,13 +38063,15 @@
                 <span class="cp-detail__who" style="display:inline-flex;align-items:center;gap:6px"><i class="fas ${whoIc}" style="font-size:10px" aria-hidden="true"></i>${Sec.escapeHTML(whoName)} <span class="cp-detail__muted">· ${Sec.escapeHTML(time)}</span></span>
                 <span class="cp-detail__status" style="--tone:${statusColor}">${Sec.escapeHTML(statusLabel)}</span>
               </div>
+            </div>
+            <div class="cp-detail__scroll-area">
               <div class="cp-detail__desc${mobAttPair.first ? ' has-inline-att' : ''}">
                 <div class="rd-cmpl-desc-text">${Sec.escapeHTML(c.description)}</div>
                 ${mobAttPair.first}
               </div>
               ${mobAttPair.rest}
+              <div class="cp-detail__thread">${renderComplaintThreadHtml(c) || '<div class="cp-detail__thread-empty">لا توجد ردود بعد</div>'}</div>
             </div>
-            <div class="cp-detail__thread">${renderComplaintThreadHtml(c) || '<div class="cp-detail__thread-empty">لا توجد ردود بعد</div>'}</div>
             ${(c.employee_id === state.currentUser?.id || canManageComplaints()) ? (
               isResolved
                 ? `<div class="cp-detail__compose is-locked">

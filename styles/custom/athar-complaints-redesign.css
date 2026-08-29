@@ -458,11 +458,12 @@ html.mr-mobile-ui #tab-complaints .cp-card__status {
   inset-inline-start: 21px;
 }
 
-/* Mobile complaint detail: full-bleed scrollable content */
+/* Mobile complaint detail: sticky header & sticky footer + scrollable middle */
 #complaintDetailModal .modal-card.cp-paper-sheet {
   display: flex;
   flex-direction: column;
   max-height: none;
+  height: 100%;
 }
 #complaintDetailModal .cp-paper-sheet-head {
   flex: 0 0 auto;
@@ -488,25 +489,32 @@ html.mr-mobile-ui #tab-complaints .cp-card__status {
   flex-shrink: 0;
 }
 #complaintDetailModal .modal-body.cp-paper-sheet-body {
-  flex: 1 1 auto;
+  flex: 1 1 0;
   min-height: 0;
   height: auto;
-  display: block;
-  overflow-x: hidden;
-  overflow-y: auto;
-  padding: 14px 16px 12px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
 }
 #complaintDetailModal #cpDetailBody,
 #complaintDetailModal .cp-detail {
-  display: block;
+  display: flex;
+  flex-direction: column;
   width: 100%;
+  height: 100%;
+  flex: 1 1 0;
   min-height: 0;
-  height: auto;
+  overflow: hidden;
 }
 #complaintDetailModal .cp-detail__basics {
-  display: block;
+  flex: 0 0 auto;
   width: 100%;
-  margin-bottom: 12px;
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--mr-surface, var(--surface));
+  z-index: 2;
+  box-sizing: border-box;
 }
 #complaintDetailModal .cp-detail__top {
   margin-bottom: 10px;
@@ -541,7 +549,7 @@ html.mr-mobile-ui #tab-complaints .cp-card__status {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  margin-bottom: 12px;
+  margin-bottom: 0;
 }
 #complaintDetailModal .cp-detail__who {
   font-size: 11.5px;
@@ -561,6 +569,17 @@ html.mr-mobile-ui #tab-complaints .cp-card__status {
   color: var(--tone, var(--warning));
   background: color-mix(in srgb, var(--tone, var(--warning)) 14%, transparent);
 }
+#complaintDetailModal .cp-detail__scroll-area {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+}
 #complaintDetailModal .cp-detail__desc {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -569,7 +588,7 @@ html.mr-mobile-ui #tab-complaints .cp-card__status {
   font-size: 12.5px;
   color: var(--text2);
   line-height: 1.8;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
   height: auto !important;
   max-height: none !important;
   overflow: visible !important;
@@ -749,8 +768,11 @@ html.mr-mobile-ui #tab-complaints .cp-card__status {
 }
 #complaintDetailModal .cp-detail__compose {
   flex: 0 0 auto;
-  padding-top: 10px;
+  padding: 12px 16px calc(14px + env(safe-area-inset-bottom, 0px));
   border-top: 1px solid var(--border);
+  background: var(--mr-surface, var(--surface));
+  z-index: 2;
+  box-sizing: border-box;
 }
 #complaintDetailModal .cp-detail__resolved-banner {
   display: flex;
@@ -957,15 +979,13 @@ html.mr-mobile-ui #complaintDetailModal .cp-paper-sheet-head__row h3 {
   width: 100%;
 }
 html.mr-mobile-ui #complaintDetailModal .modal-body.cp-paper-sheet-body {
-  flex: 1 1 auto;
+  flex: 1 1 0;
   min-height: 0;
   height: auto;
-  overflow-x: hidden;
-  overflow-y: auto;
-  display: block;
-  -webkit-overflow-scrolling: touch;
-  touch-action: pan-y;
-  padding: 12px 16px calc(18px + env(safe-area-inset-bottom, 0px));
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
 }
 
 #newComplaintModal .modal-card.cp-new-sheet {
