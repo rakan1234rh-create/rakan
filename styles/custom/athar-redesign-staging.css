@@ -670,11 +670,11 @@ html.mr-mobile-ui #tab-complaints .cp-card__status {
   inset-inline-start: 21px;
 }
 
-/* Mobile complaint detail: sticky basics, scrollable thread */
+/* Mobile complaint detail: full-bleed scrollable content */
 #complaintDetailModal .modal-card.cp-paper-sheet {
   display: flex;
   flex-direction: column;
-  max-height: min(92vh, 820px);
+  max-height: none;
 }
 #complaintDetailModal .cp-paper-sheet-head {
   flex: 0 0 auto;
@@ -702,21 +702,23 @@ html.mr-mobile-ui #tab-complaints .cp-card__status {
 #complaintDetailModal .modal-body.cp-paper-sheet-body {
   flex: 1 1 auto;
   min-height: 0;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+  height: auto;
+  display: block;
+  overflow-x: hidden;
+  overflow-y: auto;
   padding: 14px 16px 12px;
 }
 #complaintDetailModal #cpDetailBody,
 #complaintDetailModal .cp-detail {
-  flex: 1 1 auto;
+  display: block;
+  width: 100%;
   min-height: 0;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
+  height: auto;
 }
 #complaintDetailModal .cp-detail__basics {
-  flex: 0 0 auto;
+  display: block;
+  width: 100%;
+  margin-bottom: 12px;
 }
 #complaintDetailModal .cp-detail__top {
   margin-bottom: 10px;
@@ -780,14 +782,14 @@ html.mr-mobile-ui #tab-complaints .cp-card__status {
   color: var(--text2);
   line-height: 1.8;
   margin-bottom: 10px;
-  max-height: 120px;
-  overflow-y: auto;
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
 }
 #complaintDetailModal .cp-detail__thread {
-  flex: 1 1 auto;
+  flex: 0 0 auto;
   min-height: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
+  overflow: visible;
   margin: 0;
   padding: 2px 0 10px;
 }
@@ -876,10 +878,19 @@ html.mr-mobile-ui #tab-complaints .cp-card__status {
 
 /* Complaint detail — mobile bottom sheet (same pattern as violation detail) */
 html.mr-mobile-ui #complaintDetailModal.modal {
-  z-index: 2400 !important;
+  z-index: 3500 !important;
   display: none;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
   padding: 0 !important;
-  padding-bottom: var(--viol-sheet-bottom, var(--mr-mob-bottom-nav-h, 56px)) !important;
+  padding-bottom: 0 !important;
+  margin: 0 !important;
   box-sizing: border-box;
   background: transparent !important;
   pointer-events: none;
@@ -892,7 +903,7 @@ html.mr-mobile-ui #complaintDetailModal.modal.open::before {
   top: 0;
   left: 0;
   right: 0;
-  bottom: var(--viol-sheet-bottom, var(--mr-mob-bottom-nav-h, 56px));
+  bottom: 0;
   background: color-mix(in srgb, var(--mr-primary, #111) 42%, transparent);
   pointer-events: none;
   z-index: 0;
@@ -901,7 +912,7 @@ html.mr-mobile-ui #complaintDetailModal.modal.open::before {
   background: rgba(0, 0, 0, 0.62);
 }
 html.mr-mobile-ui #appWrap > .app-shell > #complaintDetailModal.modal {
-  z-index: 2400 !important;
+  z-index: 3500 !important;
 }
 html.mr-mobile-ui #complaintDetailModal.modal.open {
   display: block !important;
@@ -913,33 +924,31 @@ html.mr-mobile-ui #complaintDetailModal.modal.sheet-closing {
 }
 html.mr-mobile-ui #complaintDetailModal .cp-paper-sheet {
   position: fixed !important;
+  top: var(--ticket-sheet-top, var(--unified-topbar-h, calc(56px + env(safe-area-inset-top, 0px)))) !important;
   left: 0 !important;
   right: 0 !important;
-  bottom: var(--mob-chrome-bottom, var(--viol-sheet-bottom, var(--mr-mob-bottom-nav-h, calc(56px + env(safe-area-inset-bottom, 0px))))) !important;
+  bottom: 0 !important;
   pointer-events: auto;
   z-index: 1;
   width: 100% !important;
   max-width: 100% !important;
-  max-height: min(
-    82dvh,
-    calc(
-      100dvh - var(--unified-topbar-h, 76px) - var(--mob-chrome-bottom, var(--viol-sheet-bottom, var(--mr-mob-bottom-nav-h, 56px))) - 8px
-    )
-  ) !important;
+  max-height: none !important;
   height: auto !important;
+  min-height: 0 !important;
   margin: 0 !important;
-  border-radius: 16px 16px 0 0 !important;
-  border-bottom: none !important;
+  border-radius: 26px 26px 0 0 !important;
+  border: none !important;
   background: var(--mr-surface, var(--surface)) !important;
   color: var(--mr-text, var(--text));
   display: flex !important;
   flex-direction: column !important;
   overflow: hidden !important;
   box-sizing: border-box;
+  padding-bottom: 0 !important;
   transform: translateY(100%);
   transition: transform 0.36s cubic-bezier(0.32, 0.72, 0, 1), bottom 0.22s ease, max-height 0.22s ease;
   will-change: transform;
-  box-shadow: none;
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.18);
 }
 html.mr-mobile-ui #complaintDetailModal.modal.sheet-ready .cp-paper-sheet {
   transform: translateY(0);
@@ -976,12 +985,13 @@ html.mr-mobile-ui #complaintDetailModal .cp-paper-sheet-head__row h3 {
 html.mr-mobile-ui #complaintDetailModal .modal-body.cp-paper-sheet-body {
   flex: 1 1 auto;
   min-height: 0;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
+  height: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  display: block;
   -webkit-overflow-scrolling: touch;
   touch-action: pan-y;
-  padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+  padding: 12px 16px calc(18px + env(safe-area-inset-bottom, 0px));
 }
 
 html.mr-mobile-ui #tab-breaks {
