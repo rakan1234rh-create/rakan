@@ -427,7 +427,122 @@ html.athar-staging-redesign.mr-desktop-ui .rd-desk-act--danger {
   color: var(--danger) !important;
 }
 
-/* ── optional mobile rd-usr cards (inactive until mobile redesign) ── */
+/* ── mobile shell + rd-usr cards ── */
+
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .panel.wf-panel {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .wf-panel-banner {
+  padding: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .wf-panel-title {
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  color: var(--text) !important;
+  margin: 0 !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .wf-panel-sub {
+  font-size: 10.5px !important;
+  color: var(--text3) !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  margin: 3px 0 16px !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-io-group--desk {
+  display: none !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-controls,
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-filters-row,
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-toolbar {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 0 12px !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-toolbar {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  gap: 8px !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-toolbar .figma-search-wrap {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  height: 40px !important;
+  background: var(--searchFill) !important;
+  padding: 0 14px !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-toolbar .figma-search-input {
+  font-size: 11.5px !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-toolbar .figma-search-input::placeholder {
+  color: var(--text3) !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-io-mob-wrap {
+  flex: 0 0 auto !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-io-more-btn {
+  width: 46px !important;
+  min-width: 46px !important;
+  height: 41px !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-io-more-btn span {
+  display: none !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-io-more-btn i {
+  font-size: 13px !important;
+  margin: 0 !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .user-role-dd {
+  flex: 0 0 auto !important;
+  max-width: 42% !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .wf-status-trigger {
+  height: 41px !important;
+  min-height: 41px !important;
+  border-radius: 12px !important;
+  padding: 0 12px !important;
+  gap: 6px !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .wf-status-trigger__ico {
+  display: none !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-meta-row {
+  margin: 0 0 10px !important;
+  padding: 0 !important;
+  border: none !important;
+  background: transparent !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .wf-count {
+  font-size: 12px !important;
+  color: var(--text2) !important;
+  margin: 0 !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-departments #usersDeskHost,
+html.athar-staging-redesign.mr-mobile-ui #tab-departments #usersDeskHost .mr-users-list-wrap {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-departments #usersList.rd-usr-list,
+html.athar-staging-redesign.mr-mobile-ui #tab-departments #usersList.users-grid--mob-list {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+  background: transparent !important;
+}
 
 .rd-usr {
   position: relative;
