@@ -2393,16 +2393,8 @@
 
       function mountComplaintDetailModalForMob() {
         const modal = document.getElementById('complaintDetailModal');
-        const shell = document.querySelector('#appWrap > .app-shell');
-        const nav = document.getElementById('mobileBottomNav');
-        if (!modal || !shell) return;
-        if (isViolDetailMobSheet() && nav) {
-          if (modal.parentNode !== shell || modal.nextElementSibling !== nav) {
-            shell.insertBefore(modal, nav);
-          }
-        } else if (modal.parentNode !== document.body) {
-          document.body.appendChild(modal);
-        }
+        if (!modal) return;
+        if (modal.parentNode !== document.body) document.body.appendChild(modal);
       }
 
       function releaseComplaintDetailModalFromShell() {
@@ -2541,16 +2533,8 @@
 
       function mountNewComplaintModalForMob() {
         const modal = document.getElementById('newComplaintModal');
-        const shell = document.querySelector('#appWrap > .app-shell');
-        const nav = document.getElementById('mobileBottomNav');
-        if (!modal || !shell) return;
-        if (isViolDetailMobSheet() && nav) {
-          if (modal.parentNode !== shell || modal.nextElementSibling !== nav) {
-            shell.insertBefore(modal, nav);
-          }
-        } else if (modal.parentNode !== document.body) {
-          document.body.appendChild(modal);
-        }
+        if (!modal) return;
+        if (modal.parentNode !== document.body) document.body.appendChild(modal);
       }
 
       function releaseNewComplaintModalFromShell() {
@@ -36764,7 +36748,6 @@
           const icon = r.categoryIcon || (r.kind === 'suggestion' ? 'fa-lightbulb' : 'fa-triangle-exclamation');
           return `
             <article class="rd-cmpl-card" style="animation-delay:${Math.min(0.3, i * 0.04)}s" onclick="rdOpenComplaintDetail('${Sec.escapeHTML(r.id)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();rdOpenComplaintDetail('${Sec.escapeHTML(r.id)}')}" role="button" tabindex="0">
-              <span class="rd-cmpl-card__num">${Sec.escapeHTML(rdCmplNumber(r.id))}</span>
               <div class="rd-cmpl-card__top">
                 <div class="rd-cmpl-card__who">
                   <div class="rd-cmpl-card__icon" style="--tone:${tone}"><i class="fas ${Sec.escapeHTML(icon)}" aria-hidden="true"></i></div>
@@ -36776,7 +36759,10 @@
                     <div class="rd-cmpl-card__sub">${Sec.escapeHTML(rdCmplDisplayName(r))} · ${Sec.escapeHTML(r.time || r.createdAt || '')}</div>
                   </div>
                 </div>
-                <span class="rd-cmpl-card__status" style="--tone:${st.color}">${Sec.escapeHTML(st.label)}</span>
+                <div class="rd-cmpl-card__corner">
+                  <span class="rd-cmpl-card__num">${Sec.escapeHTML(rdCmplNumber(r.id))}</span>
+                  <span class="rd-cmpl-card__status" style="--tone:${st.color}">${Sec.escapeHTML(st.label)}</span>
+                </div>
               </div>
             </article>`;
         }).join('');
@@ -36894,7 +36880,7 @@
                   <div class="rd-cmpl-resolved-banner${active.decision === 'rejected' ? ' is-rejected' : ''}">${complaintClosedBannerText(active.kind, active.decision)}</div>
                 </div>`
             : `<div class="rd-cmpl-panel__compose">
-                  <textarea class="rd-cmpl-textarea" id="rdCmplReplyInput" placeholder="اكتب ردك هنا..." rows="4">${Sec.escapeHTML(state._rdCmplReply || '')}</textarea>
+                  <textarea class="rd-cmpl-textarea" id="rdCmplReplyInput" placeholder="اكتب ردك هنا..." rows="1" oninput="autoExpandComplaintReplyText(this)">${Sec.escapeHTML(state._rdCmplReply || '')}</textarea>
                   <input type="file" id="cprAttachInput" accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx" multiple hidden onchange="handleFiles(event,'cpr')">
                   <div id="cprFileArea" class="file-list rd-cmpl-reply-files"></div>
                   <div class="rd-cmpl-panel__actions">
@@ -37015,7 +37001,9 @@
         if (replyInput) {
           replyInput.addEventListener('input', (e) => {
             state._rdCmplReply = e.target.value;
+            autoExpandComplaintReplyText(e.target);
           });
+          autoExpandComplaintReplyText(replyInput);
         }
         if (typeof paintComplaintReplyAttachFileList === 'function') paintComplaintReplyAttachFileList();
         if (typeof syncAttachmentSubmitButtons === 'function') syncAttachmentSubmitButtons('cpr');
@@ -37600,7 +37588,6 @@
         return `
           <div class="cp-card" role="button" tabindex="0"
             onclick="openComplaintDetail('${Sec.escapeHTML(c.id)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openComplaintDetail('${Sec.escapeHTML(c.id)}')}">
-            <div class="cp-card__num">${Sec.escapeHTML(c.complaint_number || '')}</div>
             <div class="cp-card__top">
               <div class="cp-card__who">
                 <div class="cp-card__icon" style="--tone:${kindColor}"><i class="fas ${icon}" aria-hidden="true"></i></div>
@@ -37609,7 +37596,10 @@
                   <div class="cp-card__meta">${Sec.escapeHTML(time)}</div>
                 </div>
               </div>
-              <div class="cp-card__status" style="--tone:${statusColor}">${Sec.escapeHTML(statusLabel)}</div>
+              <div class="cp-card__corner">
+                <div class="cp-card__num">${Sec.escapeHTML(c.complaint_number || '')}</div>
+                <div class="cp-card__status" style="--tone:${statusColor}">${Sec.escapeHTML(statusLabel)}</div>
+              </div>
             </div>
           </div>`;
       }
@@ -38012,6 +38002,22 @@
           `</div>`;
       }
 
+      function autoExpandComplaintReplyText(textarea) {
+        if (!textarea) return;
+        textarea.style.height = 'auto';
+        const minH = 40;
+        const maxH = 140;
+        const scrollH = textarea.scrollHeight;
+        if (scrollH > maxH) {
+          textarea.style.height = maxH + 'px';
+          textarea.style.overflowY = 'auto';
+        } else {
+          textarea.style.height = Math.max(minH, scrollH) + 'px';
+          textarea.style.overflowY = 'hidden';
+        }
+      }
+      window.autoExpandComplaintReplyText = autoExpandComplaintReplyText;
+
       function renderComplaintDetailModal() {
         const c = getComplaintById(state.activeComplaintId);
         const host = document.getElementById('cpDetailBody');
@@ -38069,7 +38075,7 @@
               <div class="cp-detail__resolved-banner${decision === 'rejected' ? ' is-rejected' : ''}">${complaintClosedBannerText(c.kind, decision)}</div>
             </div>`
                 : `<div class="cp-detail__compose">
-              <textarea id="cpReplyText" class="cp-detail__reply" placeholder="اكتب ردك هنا..."></textarea>
+              <textarea id="cpReplyText" class="cp-detail__reply" placeholder="اكتب ردك هنا..." rows="1" oninput="autoExpandComplaintReplyText(this)"></textarea>
               <input type="file" id="cprAttachInput" accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx" multiple hidden onchange="handleFiles(event,'cpr')">
               <div id="cprFileArea" class="file-list cp-mob-file-list cp-detail__reply-files"></div>
               <div class="cp-detail__actions">
@@ -38086,6 +38092,8 @@
         `;
         if (typeof paintComplaintReplyAttachFileList === 'function') paintComplaintReplyAttachFileList();
         if (typeof syncAttachmentSubmitButtons === 'function') syncAttachmentSubmitButtons('cpr');
+        const replyTextEl = document.getElementById('cpReplyText');
+        if (replyTextEl) autoExpandComplaintReplyText(replyTextEl);
         if (typeof loadAllCloudflareImages === 'function') {
           setTimeout(() => loadAllCloudflareImages({
             root: document.getElementById('complaintDetailModal') || host,
