@@ -8121,6 +8121,18 @@
           || (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi());
       }
 
+      /** المستخدمين على الجوال فقط — بطاقات المستخدمين المنظمة */
+      function isUsersAtharMobileUi() {
+        return document.documentElement.classList.contains('athar-staging-redesign')
+          && document.documentElement.classList.contains('mr-mobile-ui');
+      }
+
+      function isUsersAtharUi() {
+        return (typeof isUsersAtharMobileUi === 'function' && isUsersAtharMobileUi())
+          || (typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi())
+          || (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi());
+      }
+
       /** بريكات: Athar على سطح المكتب، وعلى الجوال أيضاً لأنها صفحة جديدة بلا كلاسيك إنتاج */
       function isStaffBreaksAtharUi() {
         return document.documentElement.classList.contains('athar-staging-redesign');
@@ -14048,7 +14060,7 @@
 
         const countEl = document.getElementById('users-count');
         const usersMob = isMobileViewport();
-        const rdMob = typeof isAtharRedesignUi === 'function' && isAtharRedesignUi();
+        const rdMob = typeof isUsersAtharMobileUi === 'function' && isUsersAtharMobileUi();
         const rdDesk = isAtharDesktopScreenUi();
         const rd = rdMob || rdDesk;
         const subEl = document.querySelector('#tab-departments .wf-panel-sub');
