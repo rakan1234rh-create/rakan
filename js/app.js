@@ -8109,6 +8109,18 @@
           || (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi());
       }
 
+      /** المناطق والفروع على الجوال فقط — بطاقات المناطق، الفروع والموظفين */
+      function isLocationsAtharMobileUi() {
+        return document.documentElement.classList.contains('athar-staging-redesign')
+          && document.documentElement.classList.contains('mr-mobile-ui');
+      }
+
+      function isLocationsAtharUi() {
+        return (typeof isLocationsAtharMobileUi === 'function' && isLocationsAtharMobileUi())
+          || (typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi())
+          || (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi());
+      }
+
       /** بريكات: Athar على سطح المكتب، وعلى الجوال أيضاً لأنها صفحة جديدة بلا كلاسيك إنتاج */
       function isStaffBreaksAtharUi() {
         return document.documentElement.classList.contains('athar-staging-redesign');
@@ -12825,7 +12837,7 @@
 
         if (isAppDataPending()) {
           setRegionsResultCount(0);
-          container.innerHTML = (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi()) || isAtharDesktopScreenUi()
+          container.innerHTML = typeof isLocationsAtharUi === 'function' && isLocationsAtharUi()
             ? '<div class="rd-loc-board"><div class="rd-ticket-empty"><i class="fas fa-spinner fa-spin"></i><p>جاري تحميل المناطق والفروع…</p></div></div>'
             : dataLoadingEmptyHTML('جاري تحميل المناطق والفروع…');
           return;
@@ -12880,7 +12892,7 @@
         }
         const visibleRegions = visibleAll.filter(regionMatchesSearch);
 
-        if ((typeof isAtharRedesignUi === 'function' && isAtharRedesignUi()) || isAtharDesktopScreenUi()) {
+        if ((typeof isLocationsAtharUi === 'function' && isLocationsAtharUi()) || isAtharDesktopScreenUi()) {
           renderRegionsRedesign({
             container,
             visibleAll,
