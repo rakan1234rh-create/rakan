@@ -8097,6 +8097,18 @@
           || (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi());
       }
 
+      /** أنواع المخالفات على الجوال فقط — دليل المخالفات المصنّف وورقة التفاصيل */
+      function isViolationsAtharMobileUi() {
+        return document.documentElement.classList.contains('athar-staging-redesign')
+          && document.documentElement.classList.contains('mr-mobile-ui');
+      }
+
+      function isViolationsAtharUi() {
+        return (typeof isViolationsAtharMobileUi === 'function' && isViolationsAtharMobileUi())
+          || (typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi())
+          || (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi());
+      }
+
       /** بريكات: Athar على سطح المكتب، وعلى الجوال أيضاً لأنها صفحة جديدة بلا كلاسيك إنتاج */
       function isStaffBreaksAtharUi() {
         return document.documentElement.classList.contains('athar-staging-redesign');
@@ -14634,8 +14646,7 @@
         const titleEl = document.querySelector('#tab-violations .wf-panel-title');
         const canManage = canManageViolationTypes();
         const violMob = isMobileViewport();
-        const rd = (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi())
-          || isAtharDesktopScreenUi();
+        const rd = typeof isViolationsAtharUi === 'function' && isViolationsAtharUi();
         if (titleEl) titleEl.textContent = rd ? 'دليل المخالفات' : 'أنواع المخالفات';
         grid.className = rd
           ? (isAtharDesktopScreenUi()
