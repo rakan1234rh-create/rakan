@@ -11,8 +11,14 @@
     .mk-btn { display:inline-flex; align-items:center; gap:8px; padding:9px 18px; min-height:38px; background:var(--mr-surface); color:var(--mr-primary); border:1px solid var(--mr-primary-soft); border-radius:999px; font-family:var(--font); font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap; transition:background .18s, color .18s, border-color .18s, box-shadow .18s; }
     .mk-btn:hover { background:var(--mr-primary-softer); }
     .mk-btn--sm { padding:7px 14px; min-height:32px; font-size:12px; }
-    .mk-btn--primary { background:var(--mr-primary); color:#fff; border-color:var(--mr-primary); box-shadow:0 6px 16px rgba(15,18,36,0.28); }
-    .mk-btn--primary:hover { background:var(--mr-primary-hover); color:#fff; border-color:var(--mr-primary-hover); }
+    .mk-btn--primary { background:var(--mr-primary); color:var(--mr-primary-text, #fff); border-color:var(--mr-primary); box-shadow:0 6px 16px rgba(15,18,36,0.28); }
+    .mk-btn--primary:hover { background:var(--mr-primary-hover); color:var(--mr-primary-text, #fff); border-color:var(--mr-primary-hover); }
+    [data-theme="dark"] .mk-btn--primary,
+    html[data-theme="dark"] .mk-btn--primary { background:#ffffff !important; color:#000000 !important; border-color:#ffffff !important; }
+    [data-theme="dark"] .mk-btn--primary:hover,
+    html[data-theme="dark"] .mk-btn--primary:hover { background:#f2f2f2 !important; color:#000000 !important; border-color:#f2f2f2 !important; }
+    [data-theme="dark"] .mk-btn--primary i,
+    html[data-theme="dark"] .mk-btn--primary i { color:#000000 !important; }
     .mk-btn--ghost { background:transparent; border-color:transparent; color:var(--mk-text-2); }
     .mk-btn--ghost:hover { background:var(--mr-primary-softer); color:var(--mr-primary); }
 
