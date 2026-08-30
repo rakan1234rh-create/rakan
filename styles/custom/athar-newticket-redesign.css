@@ -153,9 +153,37 @@ html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .rd-nt-chev {
 
 html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .mk-btn.mk-btn--primary,
 html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .mk-btn[onclick*="submit"],
-html.athar-staging-redesign.mr-desktop-ui #tab-newTicket button.mk-btn--primary {
+html.athar-staging-redesign.mr-desktop-ui #tab-newTicket button.mk-btn--primary,
+html.athar-staging-redesign #tab-newTicket #submitTicketBtn,
+#tab-newTicket #submitTicketBtn {
   flex: 1 !important;
   order: -1 !important;
+  background: var(--gold, var(--mr-primary)) !important;
+  color: var(--onGold, var(--mr-primary-text, #fff)) !important;
+  border: 1px solid var(--gold, var(--mr-primary)) !important;
+}
+
+html.athar-staging-redesign #tab-newTicket #submitTicketBtn i,
+#tab-newTicket #submitTicketBtn i {
+  color: inherit !important;
+}
+
+[data-theme="dark"] html.athar-staging-redesign #tab-newTicket #submitTicketBtn,
+[data-theme="dark"] #tab-newTicket #submitTicketBtn,
+html[data-theme="dark"] #tab-newTicket #submitTicketBtn,
+[data-theme="dark"] html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .mk-btn.mk-btn--primary,
+[data-theme="dark"] html.athar-staging-redesign.mr-desktop-ui #tab-newTicket button.mk-btn--primary {
+  background: #ffffff !important;
+  color: #000000 !important;
+  border-color: #ffffff !important;
+}
+
+[data-theme="dark"] html.athar-staging-redesign #tab-newTicket #submitTicketBtn i,
+[data-theme="dark"] #tab-newTicket #submitTicketBtn i,
+html[data-theme="dark"] #tab-newTicket #submitTicketBtn i,
+[data-theme="dark"] html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .mk-btn.mk-btn--primary i,
+[data-theme="dark"] html.athar-staging-redesign.mr-desktop-ui #tab-newTicket button.mk-btn--primary i {
+  color: #000000 !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #tab-newTicket .rd-nt-summary[hidden] {
