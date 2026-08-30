@@ -2100,8 +2100,15 @@
     #tab-newTicket .ntp-opt.selected,
     #tab-broadcasts .ntp-opt.selected {
       background: var(--mr-primary);
-      color: #fff;
+      color: var(--mr-primary-text, #fff);
       border-radius: 10px;
+    }
+
+    [data-theme="dark"] #tab-newTicket .ntp-opt.selected,
+    [data-theme="dark"] #tab-broadcasts .ntp-opt.selected,
+    html[data-theme="dark"] .ntp-opt.selected {
+      background: #ffffff !important;
+      color: #000000 !important;
     }
 
     #tab-newTicket .ntp-footer,
@@ -4708,7 +4715,7 @@
   </div><!-- /#appWrap -->
 
     <div id="rdCmplOverlayHost"></div>
-    <script src="js/app.js?v=cmpl39"></script>
+    <script src="js/app.js?v=tp2"></script>
         <style>
       @media (max-width: 992px) {
         /* ── workflow: منع التمدد الأفقي ── */
