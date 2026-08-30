@@ -64,7 +64,7 @@
       }
 
       function getPasswordResetRedirectUrl() {
-        return `${getAppBaseUrl()}/index.html#reset-password`;
+        return `${getAppBaseUrl()}/#reset-password`;
       }
 
       function formatPasswordResetWaitSeconds(seconds) {
