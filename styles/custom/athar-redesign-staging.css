@@ -3216,6 +3216,21 @@ html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .mk-btn--primary {
   font-size: 14px !important;
   font-weight: 700 !important;
 }
+html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .mk-btn--primary i {
+  color: inherit !important;
+}
+[data-theme="dark"] html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .mk-btn--primary,
+[data-theme="dark"] html.athar-staging-redesign.mr-mobile-ui #tab-newTicket #submitTicketBtn,
+html[data-theme="dark"] #tab-newTicket #submitTicketBtn {
+  background: #ffffff !important;
+  color: #000000 !important;
+  border-color: #ffffff !important;
+}
+[data-theme="dark"] html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .mk-btn--primary i,
+[data-theme="dark"] html.athar-staging-redesign.mr-mobile-ui #tab-newTicket #submitTicketBtn i,
+html[data-theme="dark"] #tab-newTicket #submitTicketBtn i {
+  color: #000000 !important;
+}
 html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .mk-btn:not(.mk-btn--primary) {
   background: transparent !important;
   border: 1px solid var(--border) !important;

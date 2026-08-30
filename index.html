@@ -1072,7 +1072,25 @@
     #appWrap .mk-btn--primary {
       background: var(--mr-primary);
       border-color: var(--mr-primary);
-      color: #fff;
+      color: var(--mr-primary-text, #fff);
+    }
+
+    [data-theme="dark"] #appWrap .btn-primary,
+    [data-theme="dark"] #appWrap .mk-btn--primary,
+    [data-theme="dark"] #appWrap #submitTicketBtn,
+    [data-theme="dark"] #submitTicketBtn,
+    html[data-theme="dark"] #submitTicketBtn {
+      background: #ffffff !important;
+      border-color: #ffffff !important;
+      color: #000000 !important;
+    }
+
+    [data-theme="dark"] #appWrap .btn-primary i,
+    [data-theme="dark"] #appWrap .mk-btn--primary i,
+    [data-theme="dark"] #appWrap #submitTicketBtn i,
+    [data-theme="dark"] #submitTicketBtn i,
+    html[data-theme="dark"] #submitTicketBtn i {
+      color: #000000 !important;
     }
 
     :root:not([data-theme="dark"]) #appWrap .rp-tool-btn-primary {
