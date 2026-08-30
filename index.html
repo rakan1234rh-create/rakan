@@ -43,13 +43,17 @@
     if (/^localhost$|^127\.0\.0\.1$/.test(location.hostname)) return;
 
     try {
-      if (window.history && window.history.replaceState && location.search) {
-        var params = new URLSearchParams(location.search);
+      if (window.history && window.history.replaceState) {
+        var cleanPath = location.pathname.replace(/index\.html$/i, '');
+        if (!cleanPath) cleanPath = '/';
+        var params = new URLSearchParams(location.search || '');
         if (params.has('athar') || params.has('_')) {
           params.delete('athar');
           params.delete('_');
-          var cleanSearch = params.toString();
-          var cleanUrl = location.pathname + (cleanSearch ? '?' + cleanSearch : '') + location.hash;
+        }
+        var cleanSearch = params.toString();
+        var cleanUrl = cleanPath + (cleanSearch ? '?' + cleanSearch : '') + location.hash;
+        if (cleanUrl !== (location.pathname + location.search + location.hash)) {
           window.history.replaceState(null, document.title, cleanUrl);
         }
       }
@@ -58,8 +62,9 @@
     var KEY = 'athar_deploy_build';
     function reloadForBuild(build) {
       try { localStorage.setItem(KEY, build); } catch (_) {}
-      var base = location.pathname.replace(/[^/]*$/, '');
-      location.replace(base + 'index.html?athar=' + encodeURIComponent(build) + '&_=' + Date.now());
+      var cleanBase = location.pathname.replace(/index\.html$/i, '').replace(/[^/]*$/, '');
+      if (!cleanBase) cleanBase = '/';
+      location.replace(cleanBase + '?athar=' + encodeURIComponent(build) + '&_=' + Date.now());
     }
     function checkUpdate() {
       var bakedEl = document.querySelector('meta[name="athar-build"]');
@@ -795,7 +800,7 @@
   <link rel="stylesheet" href="styles/custom/athar-users-redesign.css?v=usr5" id="athar-users-redesign">
   <link rel="stylesheet" href="styles/custom/athar-breaks-redesign.css?v=brk8" id="athar-breaks-redesign">
   <link rel="stylesheet" href="styles/custom/athar-redesign-staging.css?v=mob-ui3" id="athar-redesign-staging">
-  <link rel="stylesheet" href="styles/custom/athar-complaints-redesign.css?v=cmpl38" id="athar-complaints-redesign">
+  <link rel="stylesheet" href="styles/custom/athar-complaints-redesign.css?v=cmpl39" id="athar-complaints-redesign">
 
   <link rel="stylesheet" href="styles/custom/design-kit.css" id="mk-design-kit">
   <!-- Mirsad tokens + kit: مضمّنة في index.html — لا روابط design-system (تجنّب 404 عند file://) -->
@@ -4685,7 +4690,7 @@
   </div><!-- /#appWrap -->
 
     <div id="rdCmplOverlayHost"></div>
-    <script src="js/app.js?v=cmpl38"></script>
+    <script src="js/app.js?v=cmpl39"></script>
         <style>
       @media (max-width: 992px) {
         /* ── workflow: منع التمدد الأفقي ── */
