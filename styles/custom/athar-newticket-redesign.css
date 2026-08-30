@@ -676,6 +676,19 @@ html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .ntp-opt {
   font-size: 12px !important;
   padding: 6px 2px !important;
 }
+html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .ntp-opt.selected,
+html.athar-staging-redesign #tab-newTicket .ntp-opt.selected,
+.ntp-opt.selected {
+  background: var(--mr-primary) !important;
+  color: var(--mr-primary-text, #fff) !important;
+}
+[data-theme="dark"] html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .ntp-opt.selected,
+[data-theme="dark"] html.athar-staging-redesign #tab-newTicket .ntp-opt.selected,
+[data-theme="dark"] .ntp-opt.selected,
+html[data-theme="dark"] .ntp-opt.selected {
+  background: #ffffff !important;
+  color: #000000 !important;
+}
 html.athar-staging-redesign.mr-mobile-ui #tab-newTicket .mk-dt-control {
   background: var(--surface) !important;
   border: 1px solid var(--border) !important;

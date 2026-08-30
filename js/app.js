@@ -15482,7 +15482,7 @@
         }
       }
 
-      function prepareNewTicket() {
+      function prepareNewTicket(forceReset = false) {
         // ملء قائمة أنواع المخالفات
         const sel = document.getElementById('nt-type');
         if (sel) {
@@ -15492,17 +15492,34 @@
         // تعيين التاريخ والوقت الحاليين
         const dateF = document.getElementById('nt-date');
         if (dateF) {
-          const n = ksaTodayCalendar();
-          dateF.value = ntDpIsoFromDate(n);
-          ntDpState.selected = n;
-          ksaInitViewState(ntDpState);
+          if (forceReset || !dateF.value) {
+            const n = ksaTodayCalendar();
+            dateF.value = ntDpIsoFromDate(n);
+            ntDpState.selected = n;
+            ksaInitViewState(ntDpState);
+          } else {
+            const parsed = ntDpParseIso(dateF.value);
+            if (parsed) {
+              ntDpState.selected = parsed;
+              ntDpState.viewYear = parsed.getFullYear();
+              ntDpState.viewMonth = parsed.getMonth();
+            }
+          }
         }
         const timeF = document.getElementById('nt-time');
         if (timeF) {
-          const p = ksaFormatParts();
-          ntTpState.hour = p.hour;
-          ntTpState.minute = p.minute;
-          timeF.value = ntTpFormatValue(ntTpState.hour, ntTpState.minute);
+          if (forceReset || !timeF.value) {
+            const p = ksaFormatParts();
+            ntTpState.hour = p.hour;
+            ntTpState.minute = p.minute;
+            timeF.value = ntTpFormatValue(ntTpState.hour, ntTpState.minute);
+          } else {
+            const parsed = ntTpParseValue(timeF.value);
+            if (parsed) {
+              ntTpState.hour = parsed.hour;
+              ntTpState.minute = parsed.minute;
+            }
+          }
         }
         syncNtDateDisplay();
         syncNtTimeDisplay();
@@ -15883,7 +15900,7 @@
         state.ntPickedEmployee = null;
         state.ntPickedViolationType = null;
         state.uploadedFiles.nt = [];
-        prepareNewTicket();
+        prepareNewTicket(true);
         syncAttachmentSubmitButtons('nt');
       
         try { syncRdNewTicketChrome(); } catch (_) { /* noop */ }
