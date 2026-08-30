@@ -781,7 +781,7 @@
   <link rel="stylesheet" href="styles/custom/athar-users-redesign.css?v=usr5" id="athar-users-redesign">
   <link rel="stylesheet" href="styles/custom/athar-breaks-redesign.css?v=brk8" id="athar-breaks-redesign">
   <link rel="stylesheet" href="styles/custom/athar-redesign-staging.css?v=mob-ui3" id="athar-redesign-staging">
-  <link rel="stylesheet" href="styles/custom/athar-complaints-redesign.css?v=cmpl33" id="athar-complaints-redesign">
+  <link rel="stylesheet" href="styles/custom/athar-complaints-redesign.css?v=cmpl34" id="athar-complaints-redesign">
 
   <link rel="stylesheet" href="styles/custom/design-kit.css" id="mk-design-kit">
   <!-- Mirsad tokens + kit: مضمّنة في index.html — لا روابط design-system (تجنّب 404 عند file://) -->
@@ -4199,7 +4199,10 @@
           <div class="viol-sheet-grabber-wrap cp-sheet-grabber-wrap" aria-hidden="true"><span class="viol-sheet-grabber"></span></div>
           <div class="cp-paper-sheet-head__row">
             <h3 id="complaintDetailTitle">تفاصيل الشكوى</h3>
-            <button type="button" class="btn btn-ghost cp-detail-close-btn" onclick="closeComplaintDetail()" aria-label="إغلاق"><i class="fas fa-times"></i></button>
+            <div style="display:flex;align-items:center;gap:6px">
+              <button type="button" class="btn btn-ghost cp-detail-print-btn" onclick="exportSingleComplaintPDF(state.activeComplaintId)" aria-label="طباعة وتصدير PDF" title="طباعة وتصدير PDF"><i class="fas fa-print"></i></button>
+              <button type="button" class="btn btn-ghost cp-detail-close-btn" onclick="closeComplaintDetail()" aria-label="إغلاق"><i class="fas fa-times"></i></button>
+            </div>
           </div>
         </div>
         <div class="modal-body cp-paper-sheet-body">
@@ -4668,7 +4671,7 @@
   </div><!-- /#appWrap -->
 
     <div id="rdCmplOverlayHost"></div>
-    <script src="js/app.js?v=cmpl33"></script>
+    <script src="js/app.js?v=cmpl34"></script>
         <style>
       @media (max-width: 992px) {
         /* ── workflow: منع التمدد الأفقي ── */

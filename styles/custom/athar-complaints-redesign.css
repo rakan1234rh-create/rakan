@@ -2227,3 +2227,44 @@ html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-thread-tex
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 }
+
+html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-panel__print-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 8px !important;
+  border: 1px solid var(--border) !important;
+  background: var(--surface) !important;
+  color: var(--text2) !important;
+  cursor: pointer !important;
+  font-size: 13px !important;
+  transition: all 0.15s ease !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-panel__print-btn:hover {
+  background: var(--surface2) !important;
+  color: var(--gold, var(--primary)) !important;
+  border-color: var(--gold, var(--primary)) !important;
+}
+
+.cp-detail-print-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 10px !important;
+  border: 1px solid var(--border) !important;
+  background: var(--surface) !important;
+  color: var(--text2) !important;
+  cursor: pointer !important;
+  font-size: 14px !important;
+}
+
+.cp-detail-print-btn:hover {
+  background: var(--surface2) !important;
+  color: var(--gold, var(--primary)) !important;
+}
+

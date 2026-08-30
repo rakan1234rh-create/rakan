@@ -27563,7 +27563,50 @@
       margin-top: 20px; padding-top: 10px; border-top: 1px solid #cbd5e1;
       font-size: 10px; color: #64748b; display: flex; justify-content: space-between;
     }
-    .cmpl-pdf-desc { text-align: right !important; font-size: 10px; line-height: 1.45; word-break: break-word; }
+    .cmpl-pdf-desc { text-align: right !important; font-size: 10px; line-height: 1.45; word-break: break-word; white-space: pre-wrap; }
+    .cmpl-pdf-card {
+      border: 1px solid #cbd5e1; border-radius: 12px; padding: 14px 16px; background: #fff;
+      margin-bottom: 18px; page-break-inside: avoid;
+    }
+    .cmpl-pdf-card__head {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      padding-bottom: 10px; border-bottom: 1px solid #e2e8f0; margin-bottom: 12px;
+    }
+    .cmpl-pdf-card__title {
+      font-size: 13.5px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px;
+    }
+    .cmpl-pdf-card__meta-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px 10px; background: #f8fafc;
+      border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 12px; margin-bottom: 12px; font-size: 11px;
+    }
+    .cmpl-pdf-card__meta-item strong { display: block; font-size: 9.5px; color: #64748b; margin-bottom: 2px; }
+    .cmpl-pdf-card__meta-item span { font-weight: 600; color: #0f172a; }
+    .cmpl-pdf-section-hdr {
+      font-size: 11.5px; font-weight: 700; color: #1e293b; margin: 10px 0 6px;
+    }
+    .cmpl-pdf-desc-box {
+      background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px;
+      font-size: 11px; line-height: 1.7; color: #1e293b; white-space: pre-wrap; word-break: break-word; margin-bottom: 12px;
+    }
+    .cmpl-pdf-thread { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
+    .cmpl-pdf-msg {
+      border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 12px; background: #fff;
+    }
+    .cmpl-pdf-msg--admin { background: #fefce8; border-color: #fef08a; }
+    .cmpl-pdf-msg__head {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; font-size: 10.5px;
+    }
+    .cmpl-pdf-msg__author { font-weight: 700; color: #0f172a; }
+    .cmpl-pdf-msg--admin .cmpl-pdf-msg__author { color: #854d0e; }
+    .cmpl-pdf-msg__time { font-size: 9.5px; color: #64748b; }
+    .cmpl-pdf-msg__text {
+      font-size: 10.5px; line-height: 1.6; color: #334155; white-space: pre-wrap; word-break: break-word;
+    }
+    .cmpl-pdf-empty-thread { font-size: 10.5px; color: #64748b; font-style: italic; padding: 4px 0; }
+    .cmpl-pdf-att-tag {
+      display: inline-block; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 6px;
+      padding: 2px 7px; margin-inline-end: 6px; margin-bottom: 4px; font-size: 10px; color: #475569;
+    }
       `;
 
       function cmpPdfScoreClass(score) {
@@ -36904,7 +36947,10 @@
                       <span class="rd-cmpl-card__kind" style="--tone:${tone}">${Sec.escapeHTML(kindLbl)}</span>
                       <span class="rd-cmpl-card__num">${Sec.escapeHTML(rdCmplNumber(active.id))}</span>
                     </div>
-                    <button type="button" class="rd-cmpl-panel__close" onclick="rdCloseComplaintDetail()" aria-label="إغلاق"><i class="fas fa-xmark"></i></button>
+                    <div class="rd-cmpl-panel__head-actions" style="display:flex;align-items:center;gap:6px">
+                      <button type="button" class="rd-cmpl-panel__print-btn" onclick="exportSingleComplaintPDF('${Sec.escapeHTML(active.id)}')" aria-label="طباعة وتصدير PDF" title="طباعة وتصدير PDF"><i class="fas fa-print"></i></button>
+                      <button type="button" class="rd-cmpl-panel__close" onclick="rdCloseComplaintDetail()" aria-label="إغلاق"><i class="fas fa-xmark"></i></button>
+                    </div>
                   </div>
                   <div class="rd-cmpl-panel__subrow">
                     <span class="rd-cmpl-panel__who"><i class="fas ${active.isAnonymous ? 'fa-user-secret' : 'fa-user'} rd-cmpl-thread-author-ic" aria-hidden="true"></i>${Sec.escapeHTML(rdCmplDisplayName(active))} <span class="rd-desk-muted">· ${Sec.escapeHTML(active.time || '')}</span></span>
@@ -37436,8 +37482,7 @@
         ];
         const tableRows = list.map((r, i) => {
           const kindLbl = r.kind === 'suggestion' ? 'اقتراح' : 'شكوى';
-          const desc = String(r.description || r.desc || '').replace(/\s+/g, ' ').trim();
-          const clip = desc.length > 160 ? `${desc.slice(0, 159)}…` : desc;
+          const desc = String(r.description || r.desc || '').trim();
           const num = r.complaintNumber || (typeof rdCmplNumber === 'function' ? rdCmplNumber(r.id) : '');
           return `<tr>
             <td>${i + 1}</td>
@@ -37448,14 +37493,82 @@
             <td>${Sec.escapeHTML(complaintPdfBranchName(r))}</td>
             <td>${Sec.escapeHTML(complaintPdfWhen(r))}</td>
             <td>${cmplPdfStatusBadge(r)}</td>
-            <td class="cmpl-pdf-desc">${Sec.escapeHTML(clip || '—')}</td>
+            <td class="cmpl-pdf-desc">${Sec.escapeHTML(desc || '—')}</td>
           </tr>`;
         }).join('');
+
+        const detailCards = list.map((r, i) => {
+          const kindLbl = r.kind === 'suggestion' ? 'اقتراح' : 'شكوى';
+          const num = r.complaintNumber || (typeof rdCmplNumber === 'function' ? rdCmplNumber(r.id) : '');
+          const desc = String(r.description || r.desc || 'لا يوجد وصف مسجل').trim();
+          const who = (typeof rdCmplDisplayName === 'function' && rdCmplDisplayName(r)) || '—';
+          const branch = complaintPdfBranchName(r);
+          const when = complaintPdfWhen(r);
+          const statusBadge = cmplPdfStatusBadge(r);
+
+          const rawRow = r._raw || r;
+          const fileAtts = typeof getComplaintFileAttachments === 'function' ? getComplaintFileAttachments(rawRow) : [];
+          const attsHtml = fileAtts.length ? `
+            <div class="cmpl-pdf-section-hdr">المرفقات (${fileAtts.length}):</div>
+            <div style="margin-bottom:10px">
+              ${fileAtts.map((a, ai) => `<span class="cmpl-pdf-att-tag">📎 ${Sec.escapeHTML(a.name || a.filename || ('مرفق ' + (ai + 1)))}</span>`).join('')}
+            </div>` : '';
+
+          const threadList = Array.isArray(r.thread) && r.thread.length
+            ? r.thread
+            : (rawRow.logs ? visibleComplaintLogs(rawRow.logs, r.kind).map((m) => ({
+                author: (r.isAnonymous && !m.is_admin) ? 'مجهول' : (m.author || (m.is_admin ? 'الإدارة' : 'الموظف')),
+                text: m.text || '',
+                time: (typeof formatRelativeAr === 'function' ? formatRelativeAr(m.at) : '') || (m.at ? String(m.at).slice(0, 16) : ''),
+                isAdmin: !!m.is_admin,
+                attachments: normalizeComplaintAttachmentList(m.attachments)
+              })) : []);
+
+          const threadHtml = threadList.length ? threadList.map((m) => {
+            const mAtts = Array.isArray(m.attachments) ? m.attachments : [];
+            const mAttsHtml = mAtts.length ? `
+              <div style="margin-top:4px">
+                ${mAtts.map((a, ai) => `<span class="cmpl-pdf-att-tag">📎 ${Sec.escapeHTML(a.name || a.filename || ('مرفق ' + (ai + 1)))}</span>`).join('')}
+              </div>` : '';
+            return `
+            <div class="cmpl-pdf-msg ${m.isAdmin ? 'cmpl-pdf-msg--admin' : ''}">
+              <div class="cmpl-pdf-msg__head">
+                <span class="cmpl-pdf-msg__author">${Sec.escapeHTML(m.author || (m.isAdmin ? 'الإدارة' : 'المستخدم'))}${m.isAdmin ? ' (الإدارة)' : ''}</span>
+                <span class="cmpl-pdf-msg__time">${Sec.escapeHTML(m.time || '')}</span>
+              </div>
+              <div class="cmpl-pdf-msg__text">${Sec.escapeHTML(m.text || '')}</div>
+              ${mAttsHtml}
+            </div>`;
+          }).join('') : '<div class="cmpl-pdf-empty-thread">لا توجد ردود مسجلة بعد على هذه الشكوى</div>';
+
+          return `
+          <div class="cmpl-pdf-card">
+            <div class="cmpl-pdf-card__head">
+              <div class="cmpl-pdf-card__title">
+                <span>#${i + 1} — ${Sec.escapeHTML(num || '—')}</span>
+                <span style="font-size:11px;font-weight:600;color:#64748b">(${Sec.escapeHTML(kindLbl)} · ${Sec.escapeHTML(r.category || 'عام')})</span>
+              </div>
+              <div>${statusBadge}</div>
+            </div>
+            <div class="cmpl-pdf-card__meta-grid">
+              <div class="cmpl-pdf-card__meta-item"><strong>المقدّم</strong><span>${Sec.escapeHTML(who)}</span></div>
+              <div class="cmpl-pdf-card__meta-item"><strong>الفرع</strong><span>${Sec.escapeHTML(branch)}</span></div>
+              <div class="cmpl-pdf-card__meta-item"><strong>تاريخ الرفع</strong><span>${Sec.escapeHTML(when)}</span></div>
+              <div class="cmpl-pdf-card__meta-item"><strong>عدد الردود</strong><span>${threadList.length}</span></div>
+            </div>
+            <div class="cmpl-pdf-section-hdr">نص ${Sec.escapeHTML(kindLbl)} بالكامل:</div>
+            <div class="cmpl-pdf-desc-box">${Sec.escapeHTML(desc)}</div>
+            ${attsHtml}
+            <div class="cmpl-pdf-section-hdr">سجل المحادثات والردود (${threadList.length}):</div>
+            <div class="cmpl-pdf-thread">${threadHtml}</div>
+          </div>`;
+        }).join('');
+
         return `
         <div class="cmp-pdf-page">
           <div class="cmp-pdf-hero">
             <h1>تقرير الشكاوى والاقتراحات</h1>
-            <p>ATHAR · النتائج حسب عوامل التصفية الحالية</p>
+            <p>ATHAR · النتائج والتفاصيل الكاملة للمحادثات</p>
           </div>
           <div class="cmp-pdf-meta">
             <div class="cmp-pdf-meta-item"><strong>تاريخ التصدير</strong><span>${Sec.escapeHTML(exportedAt)}</span></div>
@@ -37472,14 +37585,9 @@
             <div class="cmp-pdf-panel"><h2>توزيع النوع</h2>${cmplPdfBarRows(kindBuckets)}</div>
             <div class="cmp-pdf-panel"><h2>توزيع الحالة</h2>${cmplPdfBarRows(statusBuckets)}</div>
           </div>
-          <h3 class="cmp-pdf-section-title">سجل التفاصيل (${n})</h3>
-          <table class="cmp-pdf-table">
-            <thead><tr>
-              <th>#</th><th>الرقم</th><th>النوع</th><th>التصنيف</th><th>المقدّم</th><th>الفرع</th><th>التاريخ</th><th>الحالة</th><th>الوصف</th>
-            </tr></thead>
-            <tbody>${tableRows || '<tr><td colspan="9">لا توجد سجلات</td></tr>'}</tbody>
-          </table>
-          <div class="cmp-pdf-foot"><span>ATHAR</span><span>${n} سجل · للاستخدام الداخلي</span></div>
+          <h3 class="cmp-pdf-section-title">سجل التفاصيل والمحادثات (${n})</h3>
+          ${detailCards || '<p style="color:#64748b;text-align:center;padding:16px 0">لا توجد سجلات</p>'}
+          <div class="cmp-pdf-foot"><span>ATHAR</span><span>${n} سجل · تقرير تفصيلي كامل</span></div>
         </div>`;
       }
 
@@ -37491,6 +37599,26 @@
           showToast('اختر «حفظ كـ PDF» من نافذة الطباعة', 'info');
         } catch (err) {
           if (isMirsadDebugLog()) console.warn('[complaints pdf]', err);
+          showToast('تعذّر تصدير PDF', 'error');
+        }
+      }
+
+      function exportSingleComplaintPDF(id) {
+        const targetId = id || state._rdCmplDetailId || state.activeComplaintId;
+        if (!targetId) return showToast('تعذّر تحديد الشكوى', 'error');
+        const list = getRdComplaints();
+        let row = list.find((c) => String(c.id) === String(targetId));
+        if (!row) {
+          const raw = (state.complaints || []).find((c) => String(c.id) === String(targetId));
+          if (raw) row = mapComplaintToDesk(raw);
+        }
+        if (!row) return showToast('الشكوى غير موجودة', 'error');
+        const num = row.complaintNumber || (typeof rdCmplNumber === 'function' ? rdCmplNumber(row.id) : '');
+        try {
+          printCmpPdfReport(buildCmplPdfReportBody([row]), 'تقرير شكوى — ' + (num || row.id));
+          showToast('اختر «حفظ كـ PDF» من نافذة الطباعة', 'info');
+        } catch (err) {
+          if (isMirsadDebugLog()) console.warn('[complaint pdf]', err);
           showToast('تعذّر تصدير PDF', 'error');
         }
       }
@@ -38259,6 +38387,7 @@
       window.setComplaintTypeFilter = setComplaintTypeFilter;
       window.refreshComplaintListFromQuery = refreshComplaintListFromQuery;
       window.exportComplaintsPDF = exportComplaintsPDF;
+      window.exportSingleComplaintPDF = exportSingleComplaintPDF;
       window.openNewComplaintModal = openNewComplaintModal;
       window.closeNewComplaintModal = closeNewComplaintModal;
       window.closeNewComplaintSheet = closeNewComplaintSheet;
