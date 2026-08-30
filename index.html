@@ -790,7 +790,7 @@
   </style>
   <link rel="stylesheet" href="styles/custom/main.css">
   <link rel="stylesheet" href="styles/custom/athar-home-redesign.css?v=rp2" id="athar-home-redesign">
-  <link rel="stylesheet" href="styles/custom/athar-newticket-redesign.css?v=rp1" id="athar-newticket-redesign">
+  <link rel="stylesheet" href="styles/custom/athar-newticket-redesign.css?v=rp2" id="athar-newticket-redesign">
   <link rel="stylesheet" href="styles/custom/athar-workflow-redesign.css?v=wf2" id="athar-workflow-redesign">
   <link rel="stylesheet" href="styles/custom/athar-ticket-detail-redesign.css?v=td7" id="athar-ticket-detail-redesign">
   <link rel="stylesheet" href="styles/custom/athar-reports-redesign.css?v=rp6" id="athar-reports-redesign">
@@ -799,7 +799,7 @@
   <link rel="stylesheet" href="styles/custom/athar-locations-redesign.css?v=loc2" id="athar-locations-redesign">
   <link rel="stylesheet" href="styles/custom/athar-users-redesign.css?v=usr5" id="athar-users-redesign">
   <link rel="stylesheet" href="styles/custom/athar-breaks-redesign.css?v=brk8" id="athar-breaks-redesign">
-  <link rel="stylesheet" href="styles/custom/athar-redesign-staging.css?v=mob-ui3" id="athar-redesign-staging">
+  <link rel="stylesheet" href="styles/custom/athar-redesign-staging.css?v=mob-ui4" id="athar-redesign-staging">
   <link rel="stylesheet" href="styles/custom/athar-complaints-redesign.css?v=cmpl39" id="athar-complaints-redesign">
 
   <link rel="stylesheet" href="styles/custom/design-kit.css" id="mk-design-kit">
@@ -2082,8 +2082,15 @@
     #tab-newTicket .ntp-opt.selected,
     #tab-broadcasts .ntp-opt.selected {
       background: var(--mr-primary);
-      color: #fff;
+      color: var(--mr-primary-text, #fff);
       border-radius: 10px;
+    }
+
+    [data-theme="dark"] #tab-newTicket .ntp-opt.selected,
+    [data-theme="dark"] #tab-broadcasts .ntp-opt.selected,
+    html[data-theme="dark"] .ntp-opt.selected {
+      background: #ffffff !important;
+      color: #000000 !important;
     }
 
     #tab-newTicket .ntp-footer,
@@ -4690,7 +4697,7 @@
   </div><!-- /#appWrap -->
 
     <div id="rdCmplOverlayHost"></div>
-    <script src="js/app.js?v=cmpl39"></script>
+    <script src="js/app.js?v=tp2"></script>
         <style>
       @media (max-width: 992px) {
         /* ── workflow: منع التمدد الأفقي ── */
