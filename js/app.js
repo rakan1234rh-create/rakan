@@ -37429,6 +37429,9 @@
       }
 
       function complaintPdfBranchName(row) {
+        if (typeof complaintIsAnonymous === 'function' && complaintIsAnonymous(row)) {
+          return 'مجهول';
+        }
         const bid = row?._raw?.branch_id || row?.branch_id;
         const b = (state.branches || []).find((x) => String(x.id) === String(bid));
         return (b && b.name) || '—';
@@ -37460,42 +37463,24 @@
           </div>`).join('');
       }
 
-      function buildCmplPdfReportBody(rows) {
+      function buildCmplPdfReportBody(rows, customTitle) {
         const list = Array.isArray(rows) ? rows : [];
         const n = list.length;
         const exportedAt = new Date().toLocaleString('ar-SA', { timeZone: 'Asia/Riyadh' });
         const exporter = (typeof rdCmplCurrentUserName === 'function' && rdCmplCurrentUserName()) || '—';
         const onlyC = list.filter((r) => r.kind === 'complaint').length;
         const onlyS = list.filter((r) => r.kind === 'suggestion').length;
-        const pending = list.filter((r) => r.status === 'pending').length;
-        const closedOk = list.filter((r) => r.status === 'resolved' && r.decision !== 'rejected').length;
-        const rejected = list.filter((r) => r.status === 'rejected' || r.decision === 'rejected').length;
-        const pct = (count) => (n ? Math.round((count / n) * 1000) / 10 : 0);
-        const kindBuckets = [
-          { label: 'شكاوى', color: '#ef4444', count: onlyC, pct: pct(onlyC) },
-          { label: 'اقتراحات', color: '#3b82f6', count: onlyS, pct: pct(onlyS) }
-        ];
-        const statusBuckets = [
-          { label: 'قيد المراجعة', color: '#f59e0b', count: pending, pct: pct(pending) },
-          { label: 'تم الحل', color: '#22c55e', count: closedOk, pct: pct(closedOk) },
-          { label: 'مرفوض', color: '#ef4444', count: rejected, pct: pct(rejected) }
-        ];
-        const tableRows = list.map((r, i) => {
-          const kindLbl = r.kind === 'suggestion' ? 'اقتراح' : 'شكوى';
-          const desc = String(r.description || r.desc || '').trim();
-          const num = r.complaintNumber || (typeof rdCmplNumber === 'function' ? rdCmplNumber(r.id) : '');
-          return `<tr>
-            <td>${i + 1}</td>
-            <td>${Sec.escapeHTML(num || '—')}</td>
-            <td>${Sec.escapeHTML(kindLbl)}</td>
-            <td>${Sec.escapeHTML(r.category || 'عام')}</td>
-            <td>${Sec.escapeHTML((typeof rdCmplDisplayName === 'function' && rdCmplDisplayName(r)) || '—')}</td>
-            <td>${Sec.escapeHTML(complaintPdfBranchName(r))}</td>
-            <td>${Sec.escapeHTML(complaintPdfWhen(r))}</td>
-            <td>${cmplPdfStatusBadge(r)}</td>
-            <td class="cmpl-pdf-desc">${Sec.escapeHTML(desc || '—')}</td>
-          </tr>`;
-        }).join('');
+
+        let dynamicTitle = customTitle;
+        if (!dynamicTitle) {
+          if (onlyC > 0 && onlyS === 0) {
+            dynamicTitle = n === 1 ? 'تقرير شكوى' : 'تقرير الشكاوى';
+          } else if (onlyS > 0 && onlyC === 0) {
+            dynamicTitle = n === 1 ? 'تقرير اقتراح' : 'تقرير الاقتراحات';
+          } else {
+            dynamicTitle = 'تقرير الشكاوى والاقتراحات';
+          }
+        }
 
         const detailCards = list.map((r, i) => {
           const kindLbl = r.kind === 'suggestion' ? 'اقتراح' : 'شكوى';
@@ -37567,7 +37552,7 @@
         return `
         <div class="cmp-pdf-page">
           <div class="cmp-pdf-hero">
-            <h1>تقرير الشكاوى والاقتراحات</h1>
+            <h1>${Sec.escapeHTML(dynamicTitle)}</h1>
             <p>ATHAR · النتائج والتفاصيل الكاملة للمحادثات</p>
           </div>
           <div class="cmp-pdf-meta">
@@ -37575,17 +37560,6 @@
             <div class="cmp-pdf-meta-item"><strong>نطاق التصفية</strong><span>${Sec.escapeHTML(complaintPdfScopeLabel())}</span></div>
             <div class="cmp-pdf-meta-item"><strong>أُعدّ بواسطة</strong><span>${Sec.escapeHTML(exporter)}</span></div>
           </div>
-          <div class="cmp-pdf-kpis">
-            <div class="cmp-pdf-kpi cmp-pdf-kpi--accent"><div class="cmp-pdf-kpi__val">${n}</div><div class="cmp-pdf-kpi__lbl">سجلات مفلترة</div></div>
-            <div class="cmp-pdf-kpi cmp-pdf-kpi--danger"><div class="cmp-pdf-kpi__val">${onlyC}</div><div class="cmp-pdf-kpi__lbl">شكاوى</div></div>
-            <div class="cmp-pdf-kpi"><div class="cmp-pdf-kpi__val">${onlyS}</div><div class="cmp-pdf-kpi__lbl">اقتراحات</div></div>
-            <div class="cmp-pdf-kpi cmp-pdf-kpi--warn"><div class="cmp-pdf-kpi__val">${pending}</div><div class="cmp-pdf-kpi__lbl">قيد المراجعة</div></div>
-          </div>
-          <div class="cmp-pdf-grid-2">
-            <div class="cmp-pdf-panel"><h2>توزيع النوع</h2>${cmplPdfBarRows(kindBuckets)}</div>
-            <div class="cmp-pdf-panel"><h2>توزيع الحالة</h2>${cmplPdfBarRows(statusBuckets)}</div>
-          </div>
-          <h3 class="cmp-pdf-section-title">سجل التفاصيل والمحادثات (${n})</h3>
           ${detailCards || '<p style="color:#64748b;text-align:center;padding:16px 0">لا توجد سجلات</p>'}
           <div class="cmp-pdf-foot"><span>ATHAR</span><span>${n} سجل · تقرير تفصيلي كامل</span></div>
         </div>`;
@@ -37595,7 +37569,12 @@
         const rows = getFilteredComplaintsDesk();
         if (!rows.length) return showToast('لا توجد بيانات للتصدير في التصفية الحالية', 'warning');
         try {
-          printCmpPdfReport(buildCmplPdfReportBody(rows), 'تقرير الشكاوى والاقتراحات');
+          const onlyC = rows.filter((r) => r.kind === 'complaint').length;
+          const onlyS = rows.filter((r) => r.kind === 'suggestion').length;
+          let reportTitle = 'تقرير الشكاوى والاقتراحات';
+          if (onlyC > 0 && onlyS === 0) reportTitle = rows.length === 1 ? 'تقرير شكوى' : 'تقرير الشكاوى';
+          else if (onlyS > 0 && onlyC === 0) reportTitle = rows.length === 1 ? 'تقرير اقتراح' : 'تقرير الاقتراحات';
+          printCmpPdfReport(buildCmplPdfReportBody(rows, reportTitle), reportTitle);
           showToast('اختر «حفظ كـ PDF» من نافذة الطباعة', 'info');
         } catch (err) {
           if (isMirsadDebugLog()) console.warn('[complaints pdf]', err);
@@ -37614,8 +37593,10 @@
         }
         if (!row) return showToast('الشكوى غير موجودة', 'error');
         const num = row.complaintNumber || (typeof rdCmplNumber === 'function' ? rdCmplNumber(row.id) : '');
+        const kindWord = row.kind === 'suggestion' ? 'اقتراح' : 'شكوى';
+        const docTitle = `تقرير ${kindWord} — ${num || row.id}`;
         try {
-          printCmpPdfReport(buildCmplPdfReportBody([row]), 'تقرير شكوى — ' + (num || row.id));
+          printCmpPdfReport(buildCmplPdfReportBody([row], `تقرير ${kindWord}`), docTitle);
           showToast('اختر «حفظ كـ PDF» من نافذة الطباعة', 'info');
         } catch (err) {
           if (isMirsadDebugLog()) console.warn('[complaint pdf]', err);
