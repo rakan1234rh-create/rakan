@@ -27482,13 +27482,15 @@
     }
     .cmp-pdf-page { page-break-after: always; }
     .cmp-pdf-page:last-child { page-break-after: auto; }
+    .cmp-pdf-page > .cmpl-pdf-card:first-of-type { margin-top: 0; }
     .cmp-pdf-hero {
       padding: 18px 20px; border-radius: 14px; margin-bottom: 18px;
       background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 55%, #334155 100%);
       color: #fff;
+      text-align: center;
     }
-    .cmp-pdf-hero h1 { margin: 0 0 6px; font-size: 22px; font-weight: 700; }
-    .cmp-pdf-hero p { margin: 0; font-size: 12px; opacity: 0.92; }
+    .cmp-pdf-hero h1 { margin: 0 0 6px; font-size: 22px; font-weight: 700; text-align: center; }
+    .cmp-pdf-hero p { margin: 0; font-size: 12px; opacity: 0.92; text-align: center; }
     .cmp-pdf-meta {
       display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 18px;
     }
@@ -27799,9 +27801,8 @@
       }
 
       function buildCmpPrintDocumentHtml(bodyHtml, title) {
-        const docTitle = title || 'تقرير مؤشرات الامتثال';
         return `<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="UTF-8">
-          <title>${Sec.escapeHTML(docTitle)}</title>
+          <title></title>
           <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700;800&display=swap" rel="stylesheet">
           <style>${CMP_PDF_DOC_STYLES}</style></head><body>${bodyHtml}</body></html>`;
       }
