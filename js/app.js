@@ -27568,11 +27568,12 @@
     .cmpl-pdf-desc { text-align: right !important; font-size: 10px; line-height: 1.45; word-break: break-word; white-space: pre-wrap; }
     .cmpl-pdf-card {
       border: 1px solid #cbd5e1; border-radius: 12px; padding: 14px 16px; background: #fff;
-      margin-bottom: 18px; page-break-inside: avoid;
+      margin-bottom: 18px;
     }
     .cmpl-pdf-card__head {
       display: flex; align-items: center; justify-content: space-between; gap: 10px;
       padding-bottom: 10px; border-bottom: 1px solid #e2e8f0; margin-bottom: 12px;
+      page-break-inside: avoid;
     }
     .cmpl-pdf-card__title {
       font-size: 13.5px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px;
@@ -27580,11 +27581,13 @@
     .cmpl-pdf-card__meta-grid {
       display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px 10px; background: #f8fafc;
       border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 12px; margin-bottom: 12px; font-size: 11px;
+      page-break-inside: avoid;
     }
     .cmpl-pdf-card__meta-item strong { display: block; font-size: 9.5px; color: #64748b; margin-bottom: 2px; }
     .cmpl-pdf-card__meta-item span { font-weight: 600; color: #0f172a; }
     .cmpl-pdf-section-hdr {
       font-size: 11.5px; font-weight: 700; color: #1e293b; margin: 10px 0 6px;
+      page-break-after: avoid;
     }
     .cmpl-pdf-desc-box {
       background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px;
@@ -27593,6 +27596,7 @@
     .cmpl-pdf-thread { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
     .cmpl-pdf-msg {
       border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 12px; background: #fff;
+      page-break-inside: avoid;
     }
     .cmpl-pdf-msg--admin { background: #fefce8; border-color: #fef08a; }
     .cmpl-pdf-msg__head {
