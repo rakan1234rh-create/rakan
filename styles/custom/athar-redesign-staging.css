@@ -4981,6 +4981,15 @@ html.athar-staging-redesign.mr-desktop-ui[data-theme="dark"] #sidebar .nav-item:
   transform: none !important;
 }
 
+html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item.active .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui #sidebar:not(:hover) .nav-item.active .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui #sidebar:hover .nav-item.active .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui[data-theme="dark"] #sidebar .nav-item.active .nav-icon-wrap,
+html.athar-staging-redesign.mr-desktop-ui[data-theme="dark"] #sidebar:hover .nav-item.active .nav-icon-wrap {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
 html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-icon-wrap i,
 html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item i,
 html.athar-staging-redesign.mr-desktop-ui #sidebar:hover .nav-item i,
