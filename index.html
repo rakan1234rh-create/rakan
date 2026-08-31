@@ -2347,6 +2347,30 @@
   </style>
   <!-- واجهة سطح المكتب: تبقى حتى مع نافذة ضيقة (ماوس) — لا تتحول لواجهة الجوال -->
   <link rel="stylesheet" href="styles/desktop/shell.css" id="desktop-ui-shell-lock-link" media="screen and (min-width: 993px), screen and (hover: hover) and (pointer: fine)">
+  <style id="athar-sidebar-active-icon-fix" media="screen and (min-width: 993px), screen and (hover: hover) and (pointer: fine)">
+    /* shell.css loads after athar-redesign — kill collapsed-rail active black icon box */
+    html.athar-staging-redesign.mr-desktop-ui #sidebar:not(:hover):not(.sidebar-rail-hover):not(.sidebar-rail-open):not(.sidebar-rail-expanded):not([data-rail-hover="1"]):not([data-rail-expanded="1"]) .nav-item.active .nav-icon-wrap,
+    html.athar-staging-redesign.mr-desktop-ui #sidebar:hover .nav-item.active .nav-icon-wrap,
+    html.athar-staging-redesign.mr-desktop-ui #sidebar.sidebar-rail-hover .nav-item.active .nav-icon-wrap,
+    html.athar-staging-redesign.mr-desktop-ui #sidebar.sidebar-rail-open .nav-item.active .nav-icon-wrap,
+    html.athar-staging-redesign.mr-desktop-ui #sidebar.sidebar-rail-expanded .nav-item.active .nav-icon-wrap,
+    html.athar-staging-redesign.mr-desktop-ui #sidebar[data-rail-hover="1"] .nav-item.active .nav-icon-wrap,
+    html.athar-staging-redesign.mr-desktop-ui #sidebar[data-rail-expanded="1"] .nav-item.active .nav-icon-wrap,
+    html.athar-staging-redesign #appWrap .nav-item.active .nav-icon-wrap,
+    html.athar-staging-redesign.mr-desktop-ui #appWrap .nav-item.active .nav-icon-wrap {
+      background: transparent !important;
+      box-shadow: none !important;
+      color: var(--gold, #c9a227) !important;
+    }
+
+    html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item.active .nav-icon-wrap i,
+    html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item.active .nav-icon-wrap i::before,
+    html.athar-staging-redesign.mr-desktop-ui #sidebar:not(:hover):not(.sidebar-rail-hover):not(.sidebar-rail-open):not(.sidebar-rail-expanded):not([data-rail-hover="1"]):not([data-rail-expanded="1"]) .nav-item.active .nav-icon-wrap i,
+    html.athar-staging-redesign.mr-desktop-ui #sidebar:not(:hover):not(.sidebar-rail-hover):not(.sidebar-rail-open):not(.sidebar-rail-expanded):not([data-rail-hover="1"]):not([data-rail-expanded="1"]) .nav-item.active .nav-icon-wrap i::before {
+      color: var(--gold, #c9a227) !important;
+      -webkit-text-fill-color: var(--gold, #c9a227) !important;
+    }
+  </style>
   <link rel="stylesheet" href="styles/desktop/viewport-baseline.css" id="platform-viewport-baseline-link" media="screen and (min-width: 993px), screen and (hover: hover) and (pointer: fine)">
   <link rel="stylesheet" href="styles/desktop/compliance-shell.css" id="platform-compliance-shell-link" media="screen and (min-width: 993px), screen and (hover: hover) and (pointer: fine)">
   <link rel="stylesheet" href="styles/desktop/dashboard-shell.css" id="platform-dashboard-shell-link" media="screen and (min-width: 993px), screen and (hover: hover) and (pointer: fine)">
