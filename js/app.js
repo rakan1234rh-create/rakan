@@ -4569,6 +4569,8 @@
 
         try { await atharSignOut(); } catch (_) { }
 
+        try { syncRdSideFoot(); } catch (_) { /* noop */ }
+
         openLoginPortal();
         showLoginForm();
         showToast('تم تسجيل الخروج. سجّل الدخول للمتابعة.', 'info');
@@ -8181,8 +8183,14 @@
         const avEl = document.getElementById('rdSideAv');
         if (!nameEl && !emailEl && !avEl) return;
         const u = state.currentUser;
-        const name = (u && (u.name || u.fullName)) || 'مستخدم';
-        const email = (u && (u.email || u.username)) || '';
+        if (!u) {
+          if (nameEl) nameEl.textContent = '—';
+          if (emailEl) emailEl.textContent = '—';
+          if (avEl) avEl.textContent = 'م';
+          return;
+        }
+        const name = u.name || u.fullName || 'مستخدم';
+        const email = u.email || u.username || '';
         const initial = String(name).trim().charAt(0) || 'م';
         if (nameEl) nameEl.textContent = name;
         if (emailEl) emailEl.textContent = email || '—';
@@ -9034,6 +9042,8 @@
           chip.style.display = u.auth_uid ? '' : 'none';
           if (roleKey) chip.dataset.role = roleKey;
         }
+
+        try { syncRdSideFoot(); } catch (_) { /* noop */ }
 
         if (isProfilePageOpen()) renderProfilePage();
       }
