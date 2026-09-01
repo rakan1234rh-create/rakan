@@ -1650,23 +1650,34 @@ html.athar-staging-redesign.mr-mobile-ui {
 }
 
 /* Mobile home — keep distribution cards above fixed bottom nav on iPhone */
-html.athar-staging-redesign.mr-mobile-ui #appWrap .main:has(#tab-dashboard.active) {
-  padding-bottom: calc(var(--mr-mob-bottom-nav-h, calc(63px + env(safe-area-inset-bottom, 0px))) + 28px) !important;
-  scroll-padding-bottom: calc(var(--mr-mob-bottom-nav-h, calc(63px + env(safe-area-inset-bottom, 0px))) + 28px);
-}
-
-html.athar-staging-redesign.mr-mobile-ui .content:has(#tab-dashboard.active),
-html.athar-staging-redesign.mr-mobile-ui .main:has(#tab-dashboard.active) .content {
+html.athar-staging-redesign.mr-mobile-ui:not(.mr-notif-page-active) #appWrap .content:has(#tab-dashboard.active) {
+  height: auto !important;
+  flex: 0 0 auto !important;
+  display: block !important;
   padding: 8px 16px 0 !important;
 }
 
+html.athar-staging-redesign.mr-mobile-ui #appWrap .main:has(#tab-dashboard.active) {
+  padding-bottom: calc(var(--mr-mob-bottom-nav-h, calc(63px + env(safe-area-inset-bottom, 0px))) + 20px) !important;
+  scroll-padding-bottom: calc(var(--mr-mob-bottom-nav-h, calc(63px + env(safe-area-inset-bottom, 0px))) + 56px);
+}
+
 html.athar-staging-redesign.mr-mobile-ui #tab-dashboard.tab-content.active {
-  padding: 0 0 calc(var(--mr-mob-bottom-nav-h, calc(63px + env(safe-area-inset-bottom, 0px))) + 24px) 0 !important;
+  padding: 0 !important;
   overflow: visible !important;
 }
 
 html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-screen {
-  padding-bottom: 12px !important;
+  padding-bottom: 0 !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-screen::after {
+  content: '';
+  display: block;
+  width: 100%;
+  height: calc(var(--mr-mob-bottom-nav-h, calc(63px + env(safe-area-inset-bottom, 0px))) + 48px);
+  flex-shrink: 0;
+  pointer-events: none;
 }
 
 /* Ensure mockup semantic vars exist even if main.css aliases differ */
