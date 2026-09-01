@@ -3030,7 +3030,7 @@
           const p = ksaFormatParts(d);
           const h12 = p.hour % 12 || 12;
           const ampm = p.hour >= 12 ? 'م' : 'ص';
-          return `${p.year}-${ksaPad(p.month + 1)}-${ksaPad(p.day)} ${ampm} ${h12}:${ksaPad(p.minute)}`;
+          return `${p.year}-${ksaPad(p.month + 1)}-${ksaPad(p.day)} ${h12}:${ksaPad(p.minute)} ${ampm}`;
         } catch {
           return String(dateInput);
         }
@@ -3045,7 +3045,7 @@
           if (!p) return '';
           const h12 = p.hour % 12 || 12;
           const ampm = p.hour >= 12 ? 'م' : 'ص';
-          return `${ampm} ${h12}:${ksaPad(p.minute)}`;
+          return `${h12}:${ksaPad(p.minute)} ${ampm}`;
         } catch {
           return '';
         }
@@ -3271,11 +3271,11 @@
           if (isNaN(h)) return timeStr;
           const ampm = h >= 12 ? 'م' : 'ص';
           const h12 = h % 12 || 12;
-          return `${ampm} ${h12}:${m}`;
+          return `${h12}:${m} ${ampm}`;
         } catch { return timeStr; }
       }
 
-      /** وقت الجوال وسطح المكتب: ص/م على الجهة الأخرى من الساعة */
+      /** وقت الجوال وسطح المكتب: ص/م بعد الساعة داخل كتلة LTR */
       function formatMobTicketTimeHtml(timeStr) {
         if (!timeStr) return '-';
         try {
@@ -3286,13 +3286,13 @@
           if (isNaN(h)) return Sec.escapeHTML(timeStr);
           const ampm = h >= 12 ? 'م' : 'ص';
           const h12 = h % 12 || 12;
-          return `<span class="wf-time"><span class="wf-time-ampm">${Sec.escapeHTML(ampm)}</span><span class="wf-time-hm" dir="ltr">${Sec.escapeHTML(h12 + ':' + m)}</span></span>`;
+          return `<span class="wf-time" dir="ltr">${Sec.escapeHTML(h12 + ':' + m + ' ' + ampm)}</span>`;
         } catch {
           return Sec.escapeHTML(timeStr);
         }
       }
 
-      /** 12 ساعة مع HTML — ص/م قبل الساعة (مناسب لـ RTL) */
+      /** 12 ساعة مع HTML — ص/م بعد الساعة (10:49 ص) */
       function formatTime12Html(timeStr) {
         if (!timeStr) return '-';
         try {
@@ -3303,13 +3303,13 @@
           if (isNaN(h)) return Sec.escapeHTML(timeStr);
           const ampm = h >= 12 ? 'م' : 'ص';
           const h12 = h % 12 || 12;
-          return `<span class="td-time"><span class="td-time-ampm">${Sec.escapeHTML(ampm)}</span><span class="td-time-hm" dir="ltr">${Sec.escapeHTML(h12 + ':' + m)}</span></span>`;
+          return `<span class="td-time" dir="ltr">${Sec.escapeHTML(h12 + ':' + m + ' ' + ampm)}</span>`;
         } catch {
           return Sec.escapeHTML(timeStr);
         }
       }
 
-      /** تاريخ ووقت مع HTML — ص/م قبل الساعة */
+      /** تاريخ ووقت مع HTML — ص/م بعد الساعة */
       function formatDateTimeHtml(s) {
         if (!s) return '-';
         try {
@@ -3319,7 +3319,7 @@
           const h12 = p.hour % 12 || 12;
           const ampm = p.hour >= 12 ? 'م' : 'ص';
           const date = `${p.year}-${ksaPad(p.month + 1)}-${ksaPad(p.day)}`;
-          return `<span class="td-time"><span class="td-time-date" dir="ltr">${Sec.escapeHTML(date)}</span> <span class="td-time-ampm">${Sec.escapeHTML(ampm)}</span><span class="td-time-hm" dir="ltr">${Sec.escapeHTML(h12 + ':' + ksaPad(p.minute))}</span></span>`;
+          return `<span class="td-time" dir="ltr">${Sec.escapeHTML(date + ' ' + h12 + ':' + ksaPad(p.minute) + ' ' + ampm)}</span>`;
         } catch {
           return Sec.escapeHTML(String(s));
         }
@@ -3336,7 +3336,7 @@
           if (isNaN(h)) return timeStr;
           const ampm = h >= 12 ? 'م' : 'ص';
           const h12 = h % 12 || 12;
-          return `${ampm} ${h12}:${m}`;
+          return `${h12}:${m} ${ampm}`;
         } catch { return timeStr; }
       }
 
@@ -20863,9 +20863,8 @@
         const hideObs = shouldHideObserverName();
 
         const useRdInfo = typeof isTicketDetailAtharUi === 'function' && isTicketDetailAtharUi();
-        const deskTd = typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi();
         const rows = [
-          ...((useRdInfo && !deskTd) ? [] : [['رقم التذكرة', shortTicketNum(t.ticket_number)]]),
+          ...(useRdInfo ? [] : [['رقم التذكرة', shortTicketNum(t.ticket_number)]]),
           ['الحالة', t.status_text || STATE_LABELS[t.state]],
           ['الموظف', `${t._empName} (${t._empNumber || '-'})`],
           ['الفرع', t._branchName],
@@ -20879,7 +20878,7 @@
 
         // الراصد - يظهر فقط لمن يحق له (بعد وقت المخالفة)
         if (!hideObs && t.observer_id) {
-          const obsAt = (useRdInfo && !deskTd) ? 7 : 8;
+          const obsAt = useRdInfo ? 7 : 8;
           rows.splice(obsAt, 0, ['الراصد', t._obsName]);
         }
 

@@ -3394,11 +3394,6 @@ html.athar-staging-redesign.mr-mobile-ui #ticketModal .rd-td-hd__type {
   display: none !important;
 }
 
-html.athar-staging-redesign.mr-desktop-ui #ticketModal .rd-td-hd__toolbar,
-html.athar-staging-redesign.mr-desktop-ui #ticketModal .rd-td-hd__print {
-  display: none !important;
-}
-
 /* Segmented tabs */
 html.athar-staging-redesign.mr-mobile-ui #ticketModal .td-tabs {
   display: flex !important;
