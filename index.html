@@ -792,7 +792,7 @@
   <link rel="stylesheet" href="styles/custom/athar-home-redesign.css?v=rp4" id="athar-home-redesign">
   <link rel="stylesheet" href="styles/custom/athar-newticket-redesign.css?v=rp3" id="athar-newticket-redesign">
   <link rel="stylesheet" href="styles/custom/athar-workflow-redesign.css?v=wf2" id="athar-workflow-redesign">
-  <link rel="stylesheet" href="styles/custom/athar-ticket-detail-redesign.css?v=td7" id="athar-ticket-detail-redesign">
+  <link rel="stylesheet" href="styles/custom/athar-ticket-detail-redesign.css?v=td8" id="athar-ticket-detail-redesign">
   <link rel="stylesheet" href="styles/custom/athar-reports-redesign.css?v=rp6" id="athar-reports-redesign">
   <link rel="stylesheet" href="styles/custom/athar-compliance-redesign.css?v=cm7" id="athar-compliance-redesign">
   <link rel="stylesheet" href="styles/custom/athar-violations-redesign.css?v=vl2" id="athar-violations-redesign">
@@ -4449,7 +4449,15 @@
               <h3 id="td-id">-</h3>
               <span class="badge" id="td-badge">-</span>
             </div>
-                        <div class="rd-td-hd" id="rdTdHd" hidden>
+            <div class="rd-td-hd" id="rdTdHd" hidden>
+              <div class="rd-td-hd__toolbar">
+                <div class="rd-td-hd__id" id="rd-td-num">#—</div>
+                <button type="button" class="ui-btn ui-btn--default ui-btn--sm td-print-btn rd-td-hd__print" onclick="printTicketDetail()"
+                  title="طباعة تقرير المخالفة" aria-label="طباعة تقرير المخالفة">
+                  <i class="fas fa-print" aria-hidden="true"></i>
+                  <span>طباعة</span>
+                </button>
+              </div>
               <div class="rd-td-hd__main">
                 <div class="rd-td-hd__name" id="rd-td-name">—</div>
                 <div class="rd-td-hd__type" id="rd-td-type">—</div>
@@ -4457,9 +4465,8 @@
               <div class="rd-td-hd__side">
                 <span class="rd-td-hd__badge" id="rd-td-badge">—</span>
               </div>
-              <div class="rd-td-hd__id" id="rd-td-num">#—</div>
             </div>
-<div class="td-header-actions">
+            <div class="td-header-actions">
               <button type="button" class="ui-btn ui-btn--default ui-btn--sm td-print-btn" onclick="printTicketDetail()"
                 title="طباعة تقرير المخالفة" aria-label="طباعة تقرير المخالفة">
                 <i class="fas fa-print" aria-hidden="true"></i>
@@ -4745,7 +4752,7 @@
   </div><!-- /#appWrap -->
 
     <div id="rdCmplOverlayHost"></div>
-    <script src="js/app.js?v=tp4"></script>
+    <script src="js/app.js?v=tp6"></script>
         <style>
       @media (max-width: 992px) {
         /* ── workflow: منع التمدد الأفقي ── */

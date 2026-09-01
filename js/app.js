@@ -3030,7 +3030,7 @@
           const p = ksaFormatParts(d);
           const h12 = p.hour % 12 || 12;
           const ampm = p.hour >= 12 ? 'م' : 'ص';
-          return `${p.year}-${ksaPad(p.month + 1)}-${ksaPad(p.day)} ${h12}:${ksaPad(p.minute)} ${ampm}`;
+          return `${p.year}-${ksaPad(p.month + 1)}-${ksaPad(p.day)} ${ampm} ${h12}:${ksaPad(p.minute)}`;
         } catch {
           return String(dateInput);
         }
@@ -3045,7 +3045,7 @@
           if (!p) return '';
           const h12 = p.hour % 12 || 12;
           const ampm = p.hour >= 12 ? 'م' : 'ص';
-          return `${h12}:${ksaPad(p.minute)} ${ampm}`;
+          return `${ampm} ${h12}:${ksaPad(p.minute)}`;
         } catch {
           return '';
         }
@@ -3286,9 +3286,42 @@
           if (isNaN(h)) return Sec.escapeHTML(timeStr);
           const ampm = h >= 12 ? 'م' : 'ص';
           const h12 = h % 12 || 12;
-          return `<span class="wf-time-hm" dir="ltr">${Sec.escapeHTML(h12 + ':' + m)}</span><span class="wf-time-ampm">${Sec.escapeHTML(ampm)}</span>`;
+          return `<span class="wf-time"><span class="wf-time-ampm">${Sec.escapeHTML(ampm)}</span><span class="wf-time-hm" dir="ltr">${Sec.escapeHTML(h12 + ':' + m)}</span></span>`;
         } catch {
           return Sec.escapeHTML(timeStr);
+        }
+      }
+
+      /** 12 ساعة مع HTML — ص/م قبل الساعة (مناسب لـ RTL) */
+      function formatTime12Html(timeStr) {
+        if (!timeStr) return '-';
+        try {
+          const parts = String(timeStr).split(':');
+          if (parts.length < 2) return Sec.escapeHTML(timeStr);
+          const h = parseInt(parts[0], 10);
+          const m = String(parts[1] || '0').padStart(2, '0').slice(0, 2);
+          if (isNaN(h)) return Sec.escapeHTML(timeStr);
+          const ampm = h >= 12 ? 'م' : 'ص';
+          const h12 = h % 12 || 12;
+          return `<span class="td-time"><span class="td-time-ampm">${Sec.escapeHTML(ampm)}</span><span class="td-time-hm" dir="ltr">${Sec.escapeHTML(h12 + ':' + m)}</span></span>`;
+        } catch {
+          return Sec.escapeHTML(timeStr);
+        }
+      }
+
+      /** تاريخ ووقت مع HTML — ص/م قبل الساعة */
+      function formatDateTimeHtml(s) {
+        if (!s) return '-';
+        try {
+          const d = s instanceof Date ? s : new Date(s);
+          if (isNaN(d.getTime())) return Sec.escapeHTML(String(s));
+          const p = ksaFormatParts(d);
+          const h12 = p.hour % 12 || 12;
+          const ampm = p.hour >= 12 ? 'م' : 'ص';
+          const date = `${p.year}-${ksaPad(p.month + 1)}-${ksaPad(p.day)}`;
+          return `<span class="td-time"><span class="td-time-date" dir="ltr">${Sec.escapeHTML(date)}</span> <span class="td-time-ampm">${Sec.escapeHTML(ampm)}</span><span class="td-time-hm" dir="ltr">${Sec.escapeHTML(h12 + ':' + ksaPad(p.minute))}</span></span>`;
+        } catch {
+          return Sec.escapeHTML(String(s));
         }
       }
 
@@ -20735,7 +20768,7 @@
         }
         if (numEl) {
           const num = shortTicketNum(t.ticket_number) || t.id || '—';
-          numEl.textContent = '#' + num;
+          numEl.textContent = 'تذكرة #' + num;
           numEl.hidden = false;
         }
       }
@@ -20839,8 +20872,8 @@
           ['المشرف المسؤول', t._supName],
           ['نوع المخالفة', t.violation_type],
           ['تاريخ المخالفة', t.violation_date],
-          ['وقت المخالفة', formatTime12(t.violation_time)],
-          ['تاريخ الإنشاء', formatDateTime(t.created_at)],
+          ['وقت المخالفة', formatTime12Html(t.violation_time), true],
+          ['تاريخ الإنشاء', formatDateTimeHtml(t.created_at), true],
           ['الوصف', t.description]
         ];
 
@@ -20850,13 +20883,16 @@
           rows.splice(obsAt, 0, ['الراصد', t._obsName]);
         }
 
-        const infoRowsHtml = rows.map(([label, value]) => {
+        const infoRowsHtml = rows.map((row) => {
+          const label = row[0];
+          const value = row[1];
+          const isHtml = row[2] === true;
           const v = value || '-';
-          const isNoReply = typeof v === 'string' && v.includes('لم يتم تقديم رد');
+          const isNoReply = !isHtml && typeof v === 'string' && v.includes('لم يتم تقديم رد');
           return `
       <div class="info-row">
         <div class="info-label">${Sec.escapeHTML(label)}</div>
-        <div class="info-value ${isNoReply ? 'no-reply' : ''}">${Sec.escapeHTML(v)}</div>
+        <div class="info-value ${isNoReply ? 'no-reply' : ''}">${isHtml ? v : Sec.escapeHTML(v)}</div>
       </div>
     `;
         }).join('');

@@ -3332,10 +3332,31 @@ html.athar-staging-redesign.mr-mobile-ui #ticketModal .td-header-actions {
 }
 html.athar-staging-redesign.mr-mobile-ui #ticketModal #rdTdHd {
   display: flex !important;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 10px !important;
+  margin-bottom: 14px !important;
 }
 html.athar-staging-redesign.mr-mobile-ui #ticketModal #rdTdHd[hidden] {
+  display: none !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .rd-td-hd__toolbar {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .rd-td-hd__id {
+  display: block !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: var(--text2) !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .rd-td-hd__print {
+  flex-shrink: 0 !important;
+  transform: none !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .rd-td-hd__type {
   display: none !important;
 }
 .rd-td-hd__main { flex: 1; min-width: 0; }
@@ -3370,6 +3391,11 @@ html.athar-staging-redesign.mr-mobile-ui #ticketModal #rdTdHd[hidden] {
   color: var(--text2);
 }
 .rd-td-hd__id {
+  display: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #ticketModal .rd-td-hd__toolbar,
+html.athar-staging-redesign.mr-desktop-ui #ticketModal .rd-td-hd__print {
   display: none !important;
 }
 
