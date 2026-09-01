@@ -92,14 +92,10 @@ html.athar-staging-redesign.mr-desktop-ui #ticketModal .modal-header {
 }
 
 html.athar-staging-redesign.mr-desktop-ui #ticketModal #rdTdHd {
-  display: grid !important;
-  grid-template-columns: 1fr auto;
-  grid-template-areas:
-    "main id"
-    "meta meta";
-  align-items: start;
-  column-gap: 12px;
-  row-gap: 0;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 10px !important;
   margin-bottom: 18px !important;
 }
 
@@ -112,14 +108,41 @@ html.athar-staging-redesign.mr-desktop-ui #ticketModal .rd-td-hd__close {
   display: none !important;
 }
 
+html.athar-staging-redesign.mr-desktop-ui #ticketModal .rd-td-hd__toolbar {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #ticketModal .rd-td-hd__id {
+  display: block !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+  color: var(--text2) !important;
+  min-width: 0 !important;
+  white-space: nowrap !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #ticketModal .rd-td-hd__print {
+  flex-shrink: 0 !important;
+  transform: none !important;
+  padding: 7px 12px !important;
+  min-height: 34px !important;
+  border-radius: 10px !important;
+  font-size: 11.5px !important;
+  gap: 6px !important;
+}
+
 html.athar-staging-redesign.mr-desktop-ui #ticketModal .rd-td-hd__main {
-  grid-area: main;
-  min-width: 0;
+  min-width: 0 !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #ticketModal .rd-td-hd__name {
-  font-size: 14.5px !important;
+  font-size: 16px !important;
   font-weight: 700 !important;
+  line-height: 1.35 !important;
   color: var(--text) !important;
 }
 
@@ -127,27 +150,11 @@ html.athar-staging-redesign.mr-desktop-ui #ticketModal .rd-td-hd__type {
   display: none !important;
 }
 
-html.athar-staging-redesign.mr-desktop-ui #ticketModal .rd-td-hd__id {
-  grid-area: id;
-  display: block !important;
-  align-self: center !important;
-  justify-self: start !important;
-  margin: 0 !important;
-  font-size: 18px !important;
-  font-weight: 700 !important;
-  line-height: 1.2 !important;
-  color: var(--text2) !important;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
-  letter-spacing: 0.02em !important;
-}
-
 html.athar-staging-redesign.mr-desktop-ui #ticketModal .rd-td-hd__side {
-  grid-area: meta;
   display: flex !important;
-  align-items: center !important;
-  gap: 8px !important;
-  margin-top: 10px !important;
+  align-items: flex-start !important;
   text-align: start !important;
+  margin-top: 0 !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #ticketModal .rd-td-hd__badge {
@@ -156,6 +163,13 @@ html.athar-staging-redesign.mr-desktop-ui #ticketModal .rd-td-hd__badge {
   border-radius: 999px !important;
   font-size: 10.5px !important;
   font-weight: 700 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #ticketModal .info-value .td-time,
+html.athar-staging-redesign.mr-desktop-ui #ticketModal .info-value .wf-time {
+  display: inline-block !important;
+  font-variant-numeric: tabular-nums !important;
+  unicode-bidi: isolate !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #ticketModal .td-tabs {
@@ -751,11 +765,70 @@ html.athar-staging-redesign.mr-mobile-ui #ticketModal .td-header-actions {
 }
 html.athar-staging-redesign.mr-mobile-ui #ticketModal #rdTdHd {
   display: flex !important;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 10px !important;
+  margin-bottom: 14px !important;
 }
 html.athar-staging-redesign.mr-mobile-ui #ticketModal #rdTdHd[hidden] {
   display: none !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .rd-td-hd__toolbar {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .rd-td-hd__id {
+  display: block !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: var(--text2) !important;
+  line-height: 1.2 !important;
+  min-width: 0 !important;
+  white-space: nowrap !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .rd-td-hd__print {
+  flex-shrink: 0 !important;
+  transform: none !important;
+  padding: 7px 11px !important;
+  min-height: 34px !important;
+  border-radius: 10px !important;
+  font-size: 11.5px !important;
+  gap: 6px !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .rd-td-hd__print span {
+  display: inline !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .rd-td-hd__main {
+  min-width: 0 !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .rd-td-hd__name {
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  line-height: 1.35 !important;
+  color: var(--text) !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .rd-td-hd__type {
+  display: none !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .rd-td-hd__side {
+  display: flex !important;
+  align-items: flex-start !important;
+  text-align: start !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .rd-td-hd__badge {
+  display: inline-flex !important;
+  padding: 5px 11px !important;
+  border-radius: 999px !important;
+  font-size: 10.5px !important;
+  font-weight: 700 !important;
+}
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .info-value .td-time,
+html.athar-staging-redesign.mr-mobile-ui #ticketModal .info-value .wf-time {
+  display: inline-block !important;
+  font-variant-numeric: tabular-nums !important;
+  unicode-bidi: isolate !important;
 }
 
 html.athar-staging-redesign.mr-mobile-ui #ticketModal .td-tabs {
