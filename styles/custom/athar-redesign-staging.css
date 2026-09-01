@@ -1646,6 +1646,27 @@ html.athar-staging-redesign.mr-mobile-ui .content:has(#tab-breaks.active) {
 /* Ensure content offset matches the compact topbar before JS measures it */
 html.athar-staging-redesign.mr-mobile-ui {
   --unified-topbar-h: calc(56px + var(--mr-safe-top, env(safe-area-inset-top, 0px)));
+  --mr-mob-bottom-nav-h: calc(63px + env(safe-area-inset-bottom, 0px));
+}
+
+/* Mobile home — keep distribution cards above fixed bottom nav on iPhone */
+html.athar-staging-redesign.mr-mobile-ui #appWrap .main:has(#tab-dashboard.active) {
+  padding-bottom: calc(var(--mr-mob-bottom-nav-h, calc(63px + env(safe-area-inset-bottom, 0px))) + 28px) !important;
+  scroll-padding-bottom: calc(var(--mr-mob-bottom-nav-h, calc(63px + env(safe-area-inset-bottom, 0px))) + 28px);
+}
+
+html.athar-staging-redesign.mr-mobile-ui .content:has(#tab-dashboard.active),
+html.athar-staging-redesign.mr-mobile-ui .main:has(#tab-dashboard.active) .content {
+  padding: 8px 16px 0 !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-dashboard.tab-content.active {
+  padding: 0 0 calc(var(--mr-mob-bottom-nav-h, calc(63px + env(safe-area-inset-bottom, 0px))) + 24px) 0 !important;
+  overflow: visible !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-screen {
+  padding-bottom: 12px !important;
 }
 
 /* Ensure mockup semantic vars exist even if main.css aliases differ */
