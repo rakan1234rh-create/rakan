@@ -1039,11 +1039,16 @@ html.athar-staging-redesign.mr-desktop-ui:has(#tab-settings.active) #pageTitleBa
 
 html.athar-staging-redesign.mr-mobile-ui .content:has(#tab-dashboard.active),
 html.athar-staging-redesign.mr-mobile-ui .main:has(#tab-dashboard.active) .content {
-  padding: 8px 16px calc(var(--mr-mob-bottom-nav-h, 56px) + 20px) !important;
+  padding: 8px 16px 0 !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #appWrap .main:has(#tab-dashboard.active) {
+  padding-bottom: calc(var(--mr-mob-bottom-nav-h, calc(63px + env(safe-area-inset-bottom, 0px))) + 28px) !important;
+  scroll-padding-bottom: calc(var(--mr-mob-bottom-nav-h, calc(63px + env(safe-area-inset-bottom, 0px))) + 28px);
 }
 
 html.athar-staging-redesign.mr-mobile-ui #tab-dashboard.tab-content.active {
-  padding: 0 !important;
+  padding: 0 0 calc(var(--mr-mob-bottom-nav-h, calc(63px + env(safe-area-inset-bottom, 0px))) + 24px) 0 !important;
   overflow: visible !important;
 }
 
@@ -1054,7 +1059,7 @@ html.athar-staging-redesign.mr-mobile-ui #rdDash {
 
 html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-screen {
   animation: atharRdScreenIn .32s ease;
-  padding-bottom: 8px;
+  padding-bottom: 12px;
 }
 html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-greet { margin-bottom: 16px; }
 html.athar-staging-redesign.mr-mobile-ui #rdDash .rd-greet__date { font-size: 12.5px; color: var(--text2); }

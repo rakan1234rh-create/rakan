@@ -12077,6 +12077,9 @@
             </div>
           </div>`;
         host.hidden = false;
+        if (typeof syncMobBottomNavHeight === 'function') {
+          requestAnimationFrame(syncMobBottomNavHeight);
+        }
       }
 
       function renderDashboard() {
