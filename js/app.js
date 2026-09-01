@@ -7367,7 +7367,8 @@
       function syncMobBottomNavHeight() {
         const nav = document.getElementById('mobileBottomNav');
         if (!nav || window.innerWidth > 992) return;
-        const h = Math.ceil(nav.offsetHeight || nav.getBoundingClientRect().height);
+        const rect = nav.getBoundingClientRect();
+        const h = Math.ceil(rect.height || nav.offsetHeight || 0);
         if (h > 0) {
           document.documentElement.style.setProperty('--mr-mob-bottom-nav-h', h + 'px');
         }
@@ -12078,7 +12079,10 @@
           </div>`;
         host.hidden = false;
         if (typeof syncMobBottomNavHeight === 'function') {
-          requestAnimationFrame(syncMobBottomNavHeight);
+          requestAnimationFrame(() => {
+            syncMobBottomNavHeight();
+            requestAnimationFrame(syncMobBottomNavHeight);
+          });
         }
       }
 
