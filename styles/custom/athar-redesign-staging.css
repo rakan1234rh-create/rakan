@@ -5440,9 +5440,14 @@ html.athar-staging-redesign.mr-desktop-ui #tab-departments.tab-content.active {
 
 /* Desktop dashboard layout (2-column) */
 .rd-desk-dash { animation: atharRdScreenIn .3s ease; }
-.rd-desk-dash__greet { margin-bottom: 18px; }
-.rd-desk-dash__date { font-size: 12.5px; color: var(--text2); }
-.rd-desk-dash__name { font-size: 22px; font-weight: 700; color: var(--text); margin-top: 4px; }
+.rd-desk-dash__hero {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.rd-desk-dash__greet { margin-bottom: 0; }
+.rd-desk-dash__name { font-size: 20px; font-weight: 700; color: var(--text); line-height: 1.35; }
+.rd-desk-dash__date { font-size: 12.5px; color: var(--text2); margin-top: 4px; }
 .rd-desk-dash__sub { font-size: 13px; color: var(--text2); margin-top: 4px; line-height: 1.6; }
 .rd-desk-dash__grid {
   display: grid;
