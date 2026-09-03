@@ -831,7 +831,7 @@ html.athar-staging-redesign.mr-desktop-ui #tab-departments.tab-content.active {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 20px;
-  padding: 56px 28px 24px;
+  padding: 44px 28px 24px;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -858,7 +858,7 @@ html.athar-staging-redesign.mr-desktop-ui #tab-departments.tab-content.active {
   width: 118px;
   height: 118px;
   flex-shrink: 0;
-  margin-top: 10px;
+  margin-top: 4px;
 }
 .rd-desk-streak__ring svg {
   transform: rotate(-90deg);
