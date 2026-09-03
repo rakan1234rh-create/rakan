@@ -3463,7 +3463,6 @@
           dateEl.textContent = clock.dateLine;
           if (ksaClockReady() && document.getElementById('tab-dashboard')?.classList.contains('active')) {
             updateDashDateKicker();
-            try { applyRdTopTitlesForTab('dashboard'); } catch (_) { /* noop */ }
           }
         };
         update();
@@ -8244,21 +8243,7 @@
         }
       }
 
-      function getRdDesktopGreetingMeta() {
-        const name = String(state.currentUser?.name || state.currentUser?.fullName || 'مستخدم').trim() || 'مستخدم';
-        return {
-          title: 'مرحباً، ' + name,
-          sub: formatDashHeroDate(null)
-        };
-      }
-
       function applyRdTopTitlesForTab(tab) {
-        const isDesk = document.documentElement.classList.contains('mr-desktop-ui');
-        if (isDesk && tab === 'dashboard') {
-          const g = getRdDesktopGreetingMeta();
-          syncRdTopTitles(g.title, g.sub);
-          return;
-        }
         const meta = TAB_TITLES[tab] || { title: tab, sub: '' };
         syncRdTopTitles(meta.title, meta.sub);
       }
@@ -8272,11 +8257,6 @@
         try { syncRdWfChips(); } catch (_) { /* noop */ }
         try { syncRdWfSearchChrome(); } catch (_) { /* noop */ }
         try { syncRdSideFoot(); } catch (_) { /* noop */ }
-        try {
-          if (document.getElementById('tab-dashboard')?.classList.contains('active')) {
-            applyRdTopTitlesForTab('dashboard');
-          }
-        } catch (_) { /* noop */ }
       }
 
       function applyDesktopSidebarRailSize(sb, expanded) {
@@ -11837,6 +11817,8 @@
         const host = document.getElementById('rdDash');
         if (!host) return;
         const me = state.currentUser;
+        const greetingName = String(me?.name || me?.fullName || 'مستخدم').trim() || 'مستخدم';
+        const greetingDate = formatDashHeroDate(null);
 
         const streakDays = getRdCleanStreakDays(me);
         const bestKey = 'athar_rd_best_streak_' + (me?.id || 'x');
@@ -11921,6 +11903,11 @@
           <div class="rd-desk-dash">
             <div class="rd-desk-dash__grid">
               <div class="rd-desk-dash__main">
+                <div class="rd-desk-dash__hero">
+                <div class="rd-desk-dash__greet">
+                  <div class="rd-desk-dash__name">مرحباً، ${Sec.escapeHTML(greetingName)}</div>
+                  <div class="rd-desk-dash__date">${Sec.escapeHTML(greetingDate)}</div>
+                </div>
                 <div class="rd-desk-streak">
                   <div class="rd-desk-streak__badge"><i class="fas fa-medal" aria-hidden="true"></i>${Sec.escapeHTML(streakBadge)}</div>
                   <div class="rd-desk-streak__ring">
@@ -11944,6 +11931,7 @@
                       <div class="rd-desk-mini__lbl">ترتيب فرعك</div>
                     </div>
                   </div>
+                </div>
                 </div>
                 <div class="rd-desk-stats">
                   ${stats.map(s => `
