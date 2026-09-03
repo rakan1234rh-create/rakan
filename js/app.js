@@ -8198,17 +8198,28 @@
       }
 
       function getRdBranchRankLabel(me) {
-        if (!me?.branch_id) return '—';
-        const branchEmps = (typeof getBranchStaff === 'function'
-          ? getBranchStaff(me.branch_id)
-          : (state.users || []).filter(u => u.branch_id === me.branch_id && u.role === 'employee'));
-        if (!branchEmps.length) return '—';
-        const ranked = branchEmps
-          .map(e => ({ id: e.id, score: calcEmpScore(e.id, state.violations || []).score }))
-          .sort((a, b) => b.score - a.score);
-        const idx = ranked.findIndex(r => r.id === me.id);
+        const myBranchId = me?.branch_id != null ? String(me.branch_id) : '';
+        if (!myBranchId) return '—';
+        const branches = (state.branches || []).filter(b => b && b.id != null);
+        if (!branches.length) return '—';
+        const viols = state.violations || [];
+        const ranked = branches
+          .map(b => {
+            const id = String(b.id);
+            let score = 0;
+            try {
+              score = typeof calcBranchSafety === 'function'
+                ? Number(calcBranchSafety(id, viols).score) || 0
+                : 0;
+            } catch (_) {
+              score = 0;
+            }
+            return { id, score };
+          })
+          .sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
+        const idx = ranked.findIndex(r => r.id === myBranchId);
         if (idx < 0) return '—';
-        return 'المركز ' + (idx + 1) + ' من ' + ranked.length;
+        return (idx + 1) + ' / ' + ranked.length;
       }
 
       function syncRdSideFoot() {
