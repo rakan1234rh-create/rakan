@@ -11901,38 +11901,46 @@
 
         host.innerHTML = `
           <div class="rd-desk-dash">
+            <div class="rd-desk-dash__greet">
+              <div class="rd-desk-dash__name">مرحباً، ${Sec.escapeHTML(greetingName)}</div>
+              <div class="rd-desk-dash__date">${Sec.escapeHTML(greetingDate)}</div>
+            </div>
+            <div class="rd-desk-dash__pair">
+              <div class="rd-desk-streak">
+                <div class="rd-desk-streak__badge"><i class="fas fa-medal" aria-hidden="true"></i>${Sec.escapeHTML(streakBadge)}</div>
+                <div class="rd-desk-streak__ring">
+                  <svg width="118" height="118" viewBox="0 0 132 132" aria-hidden="true">
+                    <circle cx="66" cy="66" r="54" fill="none" stroke="var(--border)" stroke-width="10"></circle>
+                    <circle cx="66" cy="66" r="54" fill="none" stroke="var(--success)" stroke-width="10" stroke-linecap="round" stroke-dasharray="${CIRC}" stroke-dashoffset="${streakOffset}"></circle>
+                  </svg>
+                  <div class="rd-desk-streak__center">
+                    <i class="fas fa-fire" aria-hidden="true"></i>
+                    <span class="rd-desk-streak__days">${streakDays}</span>
+                    <span class="rd-desk-streak__lbl">يوم بدون مخالفات</span>
+                  </div>
+                </div>
+                <div class="rd-desk-streak__minis">
+                  <div class="rd-desk-mini">
+                    <div class="rd-desk-mini__val" style="color:var(--gold)">${personalBest}</div>
+                    <div class="rd-desk-mini__lbl">أفضل رقم لك</div>
+                  </div>
+                  <div class="rd-desk-mini">
+                    <div class="rd-desk-mini__val" style="color:var(--success)">${Sec.escapeHTML(branchRankLabel)}</div>
+                    <div class="rd-desk-mini__lbl">ترتيب فرعك</div>
+                  </div>
+                </div>
+              </div>
+              <div class="rd-desk-metric">
+                <div class="rd-desk-metric__top">
+                  <span class="rd-desk-metric__label">الاستجابة</span>
+                  <span class="rd-desk-metric__val" style="color:${responseColor}">${responseScore} · ${responseStatus}</span>
+                </div>
+                <div class="rd-desk-metric__bar"><div class="rd-desk-metric__fill" style="width:${responsePct}%;background:${responseColor}"></div></div>
+                <div class="rd-desk-metric__sub">${autoCount} تمريرات تلقائية</div>
+              </div>
+            </div>
             <div class="rd-desk-dash__grid">
               <div class="rd-desk-dash__main">
-                <div class="rd-desk-dash__hero">
-                <div class="rd-desk-dash__greet">
-                  <div class="rd-desk-dash__name">مرحباً، ${Sec.escapeHTML(greetingName)}</div>
-                  <div class="rd-desk-dash__date">${Sec.escapeHTML(greetingDate)}</div>
-                </div>
-                <div class="rd-desk-streak">
-                  <div class="rd-desk-streak__badge"><i class="fas fa-medal" aria-hidden="true"></i>${Sec.escapeHTML(streakBadge)}</div>
-                  <div class="rd-desk-streak__ring">
-                    <svg width="118" height="118" viewBox="0 0 132 132" aria-hidden="true">
-                      <circle cx="66" cy="66" r="54" fill="none" stroke="var(--border)" stroke-width="10"></circle>
-                      <circle cx="66" cy="66" r="54" fill="none" stroke="var(--success)" stroke-width="10" stroke-linecap="round" stroke-dasharray="${CIRC}" stroke-dashoffset="${streakOffset}"></circle>
-                    </svg>
-                    <div class="rd-desk-streak__center">
-                      <i class="fas fa-fire" aria-hidden="true"></i>
-                      <span class="rd-desk-streak__days">${streakDays}</span>
-                      <span class="rd-desk-streak__lbl">يوم بدون مخالفات</span>
-                    </div>
-                  </div>
-                  <div class="rd-desk-streak__minis">
-                    <div class="rd-desk-mini">
-                      <div class="rd-desk-mini__val" style="color:var(--gold)">${personalBest}</div>
-                      <div class="rd-desk-mini__lbl">أفضل رقم لك</div>
-                    </div>
-                    <div class="rd-desk-mini">
-                      <div class="rd-desk-mini__val" style="color:var(--success)">${Sec.escapeHTML(branchRankLabel)}</div>
-                      <div class="rd-desk-mini__lbl">ترتيب فرعك</div>
-                    </div>
-                  </div>
-                </div>
-                </div>
                 <div class="rd-desk-stats">
                   ${stats.map(s => `
                     <div class="rd-desk-stat" style="animation-delay:${s.delay}s">
@@ -11952,14 +11960,6 @@
                 </div>
               </div>
               <div class="rd-desk-dash__side">
-                <div class="rd-desk-metric">
-                  <div class="rd-desk-metric__top">
-                    <span class="rd-desk-metric__label">الاستجابة</span>
-                    <span class="rd-desk-metric__val" style="color:${responseColor}">${responseScore} · ${responseStatus}</span>
-                  </div>
-                  <div class="rd-desk-metric__bar"><div class="rd-desk-metric__fill" style="width:${responsePct}%;background:${responseColor}"></div></div>
-                  <div class="rd-desk-metric__sub">${autoCount} تمريرات تلقائية</div>
-                </div>
                 <div class="rd-desk-sec">
                   <div class="rd-desk-sec__head"><span class="rd-desk-sec__title">توزيع الحالات</span></div>
                   <div class="rd-desk-dist">
