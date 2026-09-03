@@ -795,8 +795,8 @@ html.mr-mobile-ui #tab-complaints .cp-card__status {
 #complaintDetailModal .cp-detail__reply {
   width: 100%;
   min-height: 40px;
-  height: 40px;
-  max-height: 140px;
+  height: auto;
+  max-height: 280px;
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 10px 12px;
@@ -809,7 +809,6 @@ html.mr-mobile-ui #tab-complaints .cp-card__status {
   overflow-y: hidden;
   margin-bottom: 10px;
   box-sizing: border-box;
-  transition: height 0.1s ease;
 }
 #complaintDetailModal .cp-detail__actions {
   display: flex;
@@ -1929,8 +1928,8 @@ html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-textarea {
 
 html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-panel--detail .rd-cmpl-textarea {
   min-height: 42px !important;
-  height: 42px !important;
-  max-height: 160px !important;
+  height: auto !important;
+  max-height: 280px !important;
   background: var(--surface) !important;
   margin-bottom: 10px !important;
   resize: none !important;
@@ -1938,7 +1937,6 @@ html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-panel--det
   padding: 10px 14px !important;
   font-size: 13px !important;
   line-height: 1.45 !important;
-  transition: height 0.1s ease;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #rdCmplOverlayHost .rd-cmpl-attach {
