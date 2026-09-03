@@ -38188,16 +38188,16 @@
 
       function autoExpandComplaintReplyText(textarea) {
         if (!textarea) return;
-        textarea.style.height = 'auto';
+        textarea.style.setProperty('height', 'auto');
         const minH = 40;
-        const maxH = 140;
-        const scrollH = textarea.scrollHeight;
+        const maxH = 280;
+        const scrollH = textarea.scrollHeight || minH;
         if (scrollH > maxH) {
-          textarea.style.height = maxH + 'px';
-          textarea.style.overflowY = 'auto';
+          textarea.style.setProperty('height', maxH + 'px', 'important');
+          textarea.style.setProperty('overflow-y', 'auto', 'important');
         } else {
-          textarea.style.height = Math.max(minH, scrollH) + 'px';
-          textarea.style.overflowY = 'hidden';
+          textarea.style.setProperty('height', Math.max(minH, scrollH) + 'px', 'important');
+          textarea.style.setProperty('overflow-y', 'hidden', 'important');
         }
       }
       window.autoExpandComplaintReplyText = autoExpandComplaintReplyText;
