@@ -3463,6 +3463,7 @@
           dateEl.textContent = clock.dateLine;
           if (ksaClockReady() && document.getElementById('tab-dashboard')?.classList.contains('active')) {
             updateDashDateKicker();
+            try { applyRdTopTitlesForTab('dashboard'); } catch (_) { /* noop */ }
           }
         };
         update();
@@ -8243,6 +8244,25 @@
         }
       }
 
+      function getRdDesktopGreetingMeta() {
+        const name = String(state.currentUser?.name || state.currentUser?.fullName || 'مستخدم').trim() || 'مستخدم';
+        return {
+          title: 'مرحباً، ' + name,
+          sub: formatDashHeroDate(null)
+        };
+      }
+
+      function applyRdTopTitlesForTab(tab) {
+        const isDesk = document.documentElement.classList.contains('mr-desktop-ui');
+        if (isDesk && tab === 'dashboard') {
+          const g = getRdDesktopGreetingMeta();
+          syncRdTopTitles(g.title, g.sub);
+          return;
+        }
+        const meta = TAB_TITLES[tab] || { title: tab, sub: '' };
+        syncRdTopTitles(meta.title, meta.sub);
+      }
+
       function syncRdChromeUi() {
         const theme = document.documentElement.getAttribute('data-theme') || 'light';
         const sideTheme = document.getElementById('rdSideThemeIcon');
@@ -8252,6 +8272,11 @@
         try { syncRdWfChips(); } catch (_) { /* noop */ }
         try { syncRdWfSearchChrome(); } catch (_) { /* noop */ }
         try { syncRdSideFoot(); } catch (_) { /* noop */ }
+        try {
+          if (document.getElementById('tab-dashboard')?.classList.contains('active')) {
+            applyRdTopTitlesForTab('dashboard');
+          }
+        } catch (_) { /* noop */ }
       }
 
       function applyDesktopSidebarRailSize(sb, expanded) {
@@ -8768,7 +8793,7 @@
         const ps = document.getElementById('pageSubtitle');
         if (pt) pt.textContent = meta.title;
         if (ps) ps.textContent = meta.sub;
-        try { syncRdTopTitles(meta.title, meta.sub); } catch (_) { /* noop */ }
+        try { applyRdTopTitlesForTab(tab); } catch (_) { /* noop */ }
 
         const titleBar = document.getElementById('pageTitleBar');
         if (titleBar) {
@@ -8902,6 +8927,7 @@
         const meta = TAB_TITLES[tab] || { title: tab, sub: '' };
         document.getElementById('pageTitle').textContent = meta.title;
         document.getElementById('pageSubtitle').textContent = meta.sub;
+        try { applyRdTopTitlesForTab(tab); } catch (_) { /* noop */ }
 
         // إظهار/إخفاء بنر اسم القسم
         const titleBar = document.getElementById('pageTitleBar');
