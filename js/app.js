@@ -8222,6 +8222,42 @@
         return (idx + 1) + ' / ' + ranked.length;
       }
 
+      /** ترتيبك بالالتزام بين الموظفين (ومديري الفروع) حسب درجة الالتزام */
+      function getRdEmpCommitmentRankLabel(me) {
+        if (!me?.id) return '—';
+        const meId = String(me.id);
+        const role = normalizeUserRole(me.role);
+        const isStaffRole = role === 'employee' || role === 'branch_manager';
+        if (!isStaffRole) return '—';
+
+        let pool = (state.users || []).filter(u => {
+          if (typeof isBranchStaffMember === 'function') return isBranchStaffMember(u);
+          if (!u || u.is_active === false) return false;
+          const r = normalizeUserRole(u.role);
+          return r === 'employee' || r === 'branch_manager';
+        });
+        if (!pool.some(u => String(u.id) === meId)) pool = [...pool, me];
+        if (!pool.length) return '—';
+
+        const viols = state.violations || [];
+        const ranked = pool
+          .map(u => {
+            let score = 0;
+            try {
+              score = typeof calcEmpScore === 'function'
+                ? Number(calcEmpScore(u.id, viols).score) || 0
+                : 0;
+            } catch (_) {
+              score = 0;
+            }
+            return { id: String(u.id), score };
+          })
+          .sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
+        const idx = ranked.findIndex(r => r.id === meId);
+        if (idx < 0) return '—';
+        return (idx + 1) + ' / ' + ranked.length;
+      }
+
       function syncRdSideFoot() {
         const nameEl = document.getElementById('rdSideName');
         const emailEl = document.getElementById('rdSideEmail');
@@ -11842,6 +11878,7 @@
         const streakPct = personalBest > 0 ? Math.min(100, Math.round((streakDays / personalBest) * 100)) : (streakDays > 0 ? 100 : 0);
         const streakOffset = CIRC - (CIRC * streakPct) / 100;
         const branchRankLabel = getRdBranchRankLabel(me);
+        const empRankLabel = getRdEmpCommitmentRankLabel(me);
         const streakBadge = streakDays >= 30 ? 'بطل الالتزام لهذا الشهر' : (streakDays >= 10 ? 'منضبط هذا الشهر' : 'ابدأ سلسلة انضباطك');
 
         let responseScore = 100;
@@ -11932,8 +11969,8 @@
                 </div>
                 <div class="rd-desk-streak__minis">
                   <div class="rd-desk-mini">
-                    <div class="rd-desk-mini__val" style="color:var(--gold)">${personalBest}</div>
-                    <div class="rd-desk-mini__lbl">أفضل رقم لك</div>
+                    <div class="rd-desk-mini__val" style="color:var(--gold)">${Sec.escapeHTML(empRankLabel)}</div>
+                    <div class="rd-desk-mini__lbl">ترتيبك بالالتزام</div>
                   </div>
                   <div class="rd-desk-mini">
                     <div class="rd-desk-mini__val" style="color:var(--success)">${Sec.escapeHTML(branchRankLabel)}</div>
@@ -12008,6 +12045,7 @@
         const streakPct = personalBest > 0 ? Math.min(100, Math.round((streakDays / personalBest) * 100)) : (streakDays > 0 ? 100 : 0);
         const streakOffset = CIRC - (CIRC * streakPct) / 100;
         const branchRankLabel = getRdBranchRankLabel(me);
+        const empRankLabel = getRdEmpCommitmentRankLabel(me);
         const streakBadge = streakDays >= 30 ? 'بطل الالتزام لهذا الشهر' : (streakDays >= 10 ? 'منضبط هذا الشهر' : 'ابدأ سلسلة انضباطك');
 
         let responseScore = 100;
@@ -12094,8 +12132,8 @@
             </div>
             <div class="rd-mini-grid">
               <div class="rd-mini">
-                <div class="rd-mini__val" style="color:var(--gold)">${personalBest}</div>
-                <div class="rd-mini__lbl">أفضل رقم لك</div>
+                <div class="rd-mini__val" style="color:var(--gold)">${Sec.escapeHTML(empRankLabel)}</div>
+                <div class="rd-mini__lbl">ترتيبك بالالتزام بين الموظفين</div>
               </div>
               <div class="rd-mini">
                 <div class="rd-mini__val" style="color:var(--success)">${Sec.escapeHTML(branchRankLabel)}</div>
