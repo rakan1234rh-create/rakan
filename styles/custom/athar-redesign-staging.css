@@ -1579,10 +1579,14 @@ html.athar-staging-redesign.mr-mobile-ui .mob-nav-badge {
   height: 14px !important; font-size: 8px !important; padding: 0 3px !important;
 }
 
-/* Topbar theme btn + avatar circle */
-html.athar-staging-redesign.mr-mobile-ui #rdThemeBtn { display: inline-flex !important; }
-html:not(.athar-staging-redesign) #rdThemeBtn,
-html.athar-staging-redesign.mr-desktop-ui #rdThemeBtn { display: none !important; }
+/* Topbar theme btn removed — theme lives in profile only */
+#rdThemeBtn,
+#rdSideThemeBtn,
+html.athar-staging-redesign.mr-mobile-ui #rdThemeBtn,
+html.athar-staging-redesign.mr-desktop-ui #rdThemeBtn,
+html:not(.athar-staging-redesign) #rdThemeBtn {
+  display: none !important;
+}
 
 /* Redesign mobile: hide ATHAR wordmark; user avatar takes the brand slot */
 html.athar-staging-redesign.mr-mobile-ui #brandArea {
@@ -5132,14 +5136,9 @@ html.athar-staging-redesign.mr-desktop-ui #sidebar:not(:hover):not(.sidebar-rail
   gap: 10px !important;
 }
 
-/* Keep theme control in layout (opacity only) so footer height never jumps */
+/* Theme control removed from sidebar chrome — lives in profile only */
 html.athar-staging-redesign.mr-desktop-ui #sidebar:not(:hover):not(.sidebar-rail-hover):not(.sidebar-rail-open):not(.sidebar-rail-expanded):not([data-rail-hover="1"]):not([data-rail-expanded="1"]) .rd-side-foot__theme {
-  display: inline-flex !important;
-  opacity: 0 !important;
-  visibility: hidden !important;
-  pointer-events: none !important;
-  width: 32px !important;
-  min-width: 32px !important;
+  display: none !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #sidebar .rd-side-foot__user {
@@ -5214,23 +5213,13 @@ html.athar-staging-redesign.mr-desktop-ui #sidebar .rd-side-foot__email {
   text-overflow: ellipsis !important;
 }
 
-html.athar-staging-redesign.mr-desktop-ui #sidebar .rd-side-foot__theme {
-  width: 32px !important;
-  height: 32px !important;
-  border-radius: 9px !important;
-  border: 1px solid var(--border) !important;
-  background: var(--surface2) !important;
-  color: var(--text2) !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  cursor: pointer !important;
-  flex-shrink: 0 !important;
-  padding: 0 !important;
+html.athar-staging-redesign.mr-desktop-ui #sidebar .rd-side-foot__theme,
+html.athar-staging-redesign.mr-desktop-ui #rdSideThemeBtn {
+  display: none !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #sidebar .rd-side-foot__theme i {
-  font-size: 12px !important;
+  display: none !important;
 }
 
 /* Topbar: brand logo + titles + bell — divider aligns with sidebar rail edge */
