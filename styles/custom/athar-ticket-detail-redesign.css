@@ -800,6 +800,16 @@ html.athar-staging-redesign.mr-mobile-ui #ticketModal .rd-td-hd__print {
 html.athar-staging-redesign.mr-mobile-ui #ticketModal .rd-td-hd__print span {
   display: inline !important;
 }
+
+[data-theme="dark"] html.athar-staging-redesign #ticketModal .rd-td-hd__print,
+html[data-theme="dark"].athar-staging-redesign #ticketModal .rd-td-hd__print {
+  color: #111 !important;
+}
+
+[data-theme="dark"] html.athar-staging-redesign #ticketModal .rd-td-hd__print i,
+html[data-theme="dark"].athar-staging-redesign #ticketModal .rd-td-hd__print i {
+  color: #111 !important;
+}
 html.athar-staging-redesign.mr-mobile-ui #ticketModal .rd-td-hd__main {
   min-width: 0 !important;
 }
