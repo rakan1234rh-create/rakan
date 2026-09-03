@@ -5422,7 +5422,7 @@ html.athar-staging-redesign.mr-desktop-ui #appWrap .main .content {
 }
 
 html.athar-staging-redesign.mr-desktop-ui #appWrap .main .content:has(#tab-dashboard.active) {
-  padding-top: 44px !important;
+  padding-top: 36px !important;
 }
 
 /* Keep users page scrollable under redesign (users-shell may set overflow:hidden) */
@@ -5445,9 +5445,9 @@ html.athar-staging-redesign.mr-desktop-ui #tab-departments.tab-content.active {
 /* Desktop dashboard layout (2-column) */
 .rd-desk-dash {
   animation: atharRdScreenIn .3s ease;
-  padding-top: 12px;
+  padding-top: 4px;
 }
-.rd-desk-dash__greet { margin-bottom: 16px; }
+.rd-desk-dash__greet { margin-bottom: 14px; }
 .rd-desk-dash__name { font-size: 20px; font-weight: 700; color: var(--text); line-height: 1.35; }
 .rd-desk-dash__date { font-size: 12.5px; color: var(--text2); margin-top: 4px; }
 .rd-desk-dash__sub { font-size: 13px; color: var(--text2); margin-top: 4px; line-height: 1.6; }
@@ -5455,18 +5455,9 @@ html.athar-staging-redesign.mr-desktop-ui #tab-departments.tab-content.active {
   display: grid;
   grid-template-columns: 2.1fr 1fr;
   gap: 24px;
-  align-items: stretch;
+  align-items: end;
   margin-bottom: 20px;
 }
-.rd-desk-dash__pair .rd-desk-metric {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  min-height: 100%;
-  box-sizing: border-box;
-  padding: 24px 22px;
-}
-.rd-desk-dash__pair .rd-desk-metric__bar { height: 10px; }
 .rd-desk-dash__grid {
   display: grid;
   grid-template-columns: 2.1fr 1fr;
