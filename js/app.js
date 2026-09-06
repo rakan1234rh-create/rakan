@@ -473,8 +473,12 @@
 
       function isStandalonePwaShell() {
         try {
+          const ua = navigator.userAgent || '';
+          const isiOS = /iPhone|iPad|iPod/i.test(ua)
+            || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+          // iOS: الأيقونات اللي تفتح مع Safari ترجع standalone=false
+          if (isiOS) return window.navigator.standalone === true;
           return !!(
-            window.navigator.standalone ||
             window.matchMedia('(display-mode: standalone)').matches ||
             window.matchMedia('(display-mode: fullscreen)').matches
           );
@@ -3821,11 +3825,18 @@
       }
 
       function isLoginStandalonePwa() {
-        return !!(
-          window.navigator.standalone ||
-          window.matchMedia('(display-mode: standalone)').matches ||
-          window.matchMedia('(display-mode: fullscreen)').matches
-        );
+        try {
+          const ua = navigator.userAgent || '';
+          const isiOS = /iPhone|iPad|iPod/i.test(ua)
+            || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+          if (isiOS) return window.navigator.standalone === true;
+          return !!(
+            window.matchMedia('(display-mode: standalone)').matches ||
+            window.matchMedia('(display-mode: fullscreen)').matches
+          );
+        } catch (_) {
+          return false;
+        }
       }
 
       function syncLoginStandalonePwaClass() {

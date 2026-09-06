@@ -109,7 +109,7 @@
       if (location.protocol === 'file:') return;
       var link = document.createElement('link');
       link.rel = 'manifest';
-      link.href = 'manifest.webmanifest?v=407';
+      link.href = 'manifest.webmanifest?v=409';
       document.head.appendChild(link);
     })();
   </script>
@@ -294,10 +294,20 @@
     var ATHAR_PWA_MARK_KEY = 'athar_pwa_home_gen';
     var ATHAR_PWA_START_TOKEN = '272';
 
+    function isIosDevice() {
+      try {
+        var ua = navigator.userAgent || '';
+        return /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      } catch (_) {
+        return false;
+      }
+    }
+
     function isStandalone() {
       try {
+        // iOS: فقط الأيقونة المضافة صح (بدون شارة Safari / بدون شريط المتصفح)
+        if (isIosDevice()) return window.navigator.standalone === true;
         return !!(
-          window.navigator.standalone ||
           window.matchMedia('(display-mode: standalone)').matches ||
           window.matchMedia('(display-mode: fullscreen)').matches ||
           (document.referrer && document.referrer.indexOf('android-app://') === 0)
@@ -386,7 +396,9 @@
       if (on) {
         lockAppShell();
         if (lead) {
-          lead.textContent = 'المنصة على الجوال تعمل كتطبيق فقط. افتحها من أيقونة الشاشة الرئيسية بعد الإضافة — وليس من تبويب المتصفح.';
+          lead.textContent = isIosDevice()
+            ? 'الأيقونات القديمة أو اللي تفتح مع علامة Safari غير مقبولة. احذفها، ثم أضف ATHAR من جديد عبر Safari وافتح الأيقونة الجديدة فقط.'
+            : 'المنصة على الجوال تعمل كتطبيق فقط. افتحها من أيقونة الشاشة الرئيسية بعد الإضافة — وليس من تبويب المتصفح.';
         }
       }
       if (!gate) return on;
@@ -441,7 +453,7 @@
             return;
           }
           applyGate();
-          recheck.textContent = 'ما زلت داخل المتصفح — أضف المنصة ثم افتحها من الشاشة الرئيسية';
+          recheck.textContent = 'ما زالت الأيقونة تفتح عبر Safari — احذفها وأضف من Safari ثم افتح الأيقونة الجديدة';
         });
       }
       var installBtn = document.getElementById('atharPwaInstallBtn');
@@ -2906,10 +2918,10 @@
       <img class="athar-pwa-gate__logo" src="icons/athar-logo-v403-white.png" alt="ATHAR" width="88" height="88" decoding="async">
       <h1 class="athar-pwa-gate__title" id="atharPwaGateTitle">ثبّت ATHAR على الشاشة الرئيسية</h1>
       <p class="athar-pwa-gate__lead" id="atharPwaGateLead">
-        المنصة على الجوال تعمل كتطبيق فقط. افتحها من أيقونة الشاشة الرئيسية بعد الإضافة — وليس من تبويب المتصفح.
+        الأيقونات القديمة أو اللي تفتح مع علامة Safari غير مقبولة. احذفها، ثم أضف ATHAR من جديد عبر Safari وافتح الأيقونة الجديدة فقط.
       </p>
       <p class="athar-pwa-gate__hint" style="margin-top:-6px">
-        احذف أي أيقونة قديمة إن وُجدت، ثم أضف من الرابط الحالي وافتح الأيقونة الجديدة من الشاشة الرئيسية.
+        بعد الإضافة الصحيحة ما يظهر شريط Safari ولا علامة المتصفح على الأيقونة.
       </p>
 
       <div class="athar-pwa-gate__card" id="atharPwaGateIos" hidden>
@@ -5102,7 +5114,7 @@
   </div><!-- /#appWrap -->
 
     <div id="rdCmplOverlayHost"></div>
-    <script src="js/app.js?v=tp19"></script>
+    <script src="js/app.js?v=tp20"></script>
         <style>
       @media (max-width: 992px) {
         /* ── workflow: منع التمدد الأفقي ── */
