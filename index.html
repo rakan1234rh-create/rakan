@@ -109,7 +109,7 @@
       if (location.protocol === 'file:') return;
       var link = document.createElement('link');
       link.rel = 'manifest';
-      link.href = 'manifest.webmanifest?v=409';
+      link.href = 'manifest.webmanifest?v=410';
       document.head.appendChild(link);
     })();
   </script>
@@ -290,9 +290,9 @@
   </style>
   <script id="athar-pwa-gate-early">(function () {
     var root = document.documentElement;
-    var ATHAR_PWA_GEN = 'home2';
+    var ATHAR_PWA_GEN = 'home3';
     var ATHAR_PWA_MARK_KEY = 'athar_pwa_home_gen';
-    var ATHAR_PWA_START_TOKEN = '272';
+    var ATHAR_PWA_START_TOKEN = '275';
 
     function isIosDevice() {
       try {
@@ -305,7 +305,6 @@
 
     function isStandalone() {
       try {
-        // iOS: فقط الأيقونة المضافة صح (بدون شارة Safari / بدون شريط المتصفح)
         if (isIosDevice()) return window.navigator.standalone === true;
         return !!(
           window.matchMedia('(display-mode: standalone)').matches ||
@@ -344,16 +343,61 @@
       try { localStorage.setItem(ATHAR_PWA_MARK_KEY, ATHAR_PWA_GEN); } catch (_) {}
     }
 
+    function hasInstallMark() {
+      try { return localStorage.getItem(ATHAR_PWA_MARK_KEY) === ATHAR_PWA_GEN; } catch (_) { return false; }
+    }
+
+    function urlHasStartToken() {
+      try {
+        var q = new URLSearchParams(window.location.search || '');
+        return q.get('athar') === ATHAR_PWA_START_TOKEN || q.get('pwa_home') === '1';
+      } catch (_) {
+        return false;
+      }
+    }
+
+    function ensureStartTokenInUrl() {
+      if (isStandalone()) return;
+      if (urlHasStartToken()) return;
+      try {
+        var url = new URL(window.location.href);
+        url.searchParams.set('athar', ATHAR_PWA_START_TOKEN);
+        history.replaceState(null, '', url.pathname + url.search + url.hash);
+      } catch (_) {}
+    }
+
+    function installUrlText() {
+      try {
+        var url = new URL(window.location.href);
+        url.searchParams.set('athar', ATHAR_PWA_START_TOKEN);
+        return url.origin + url.pathname + '?athar=' + ATHAR_PWA_START_TOKEN;
+      } catch (_) {
+        return window.location.href;
+      }
+    }
+
     function needsGate() {
       if (!isMobileClient()) return false;
       if (isRecoveryPath()) return false;
       try {
         if (/(?:^|[?&])allow_browser=1(?:&|$)/.test(window.location.search || '')) return false;
       } catch (_) {}
-      // أي تبويب متصفح = مقفول. أي أيقونة مضافة تفتح كتطبيق (standalone) = مسموح
-      if (!isStandalone()) return true;
-      stampFreshHomeInstall();
-      return false;
+
+      // متصفح / أيقونة بعلامة Safari = مقفول دائماً
+      if (!isStandalone()) {
+        ensureStartTokenInUrl();
+        return true;
+      }
+
+      // تطبيق مثبت: يُسمح فقط برابط التثبيت الجديد أو بعد ختمه منه
+      if (urlHasStartToken()) {
+        stampFreshHomeInstall();
+        return false;
+      }
+      if (hasInstallMark()) return false;
+
+      // أيقونة قديمة (حتى لو standalone) بدون معامل الرابط الجديد
+      return true;
     }
 
     function detectPlatform() {
@@ -393,13 +437,16 @@
       window.__ATHAR_PWA_GATE_ACTIVE__ = on;
       var gate = document.getElementById('atharPwaGate');
       var lead = document.getElementById('atharPwaGateLead');
+      var linkEl = document.getElementById('atharPwaGateLink');
       if (on) {
         lockAppShell();
+        ensureStartTokenInUrl();
         if (lead) {
-          lead.textContent = isIosDevice()
-            ? 'الأيقونات القديمة أو اللي تفتح مع علامة Safari غير مقبولة. احذفها، ثم أضف ATHAR من جديد عبر Safari وافتح الأيقونة الجديدة فقط.'
-            : 'المنصة على الجوال تعمل كتطبيق فقط. افتحها من أيقونة الشاشة الرئيسية بعد الإضافة — وليس من تبويب المتصفح.';
+          lead.textContent = !isStandalone()
+            ? 'هذه الأيقونة/الجلسة تفتح عبر Safari أو المتصفح وغير مقبولة. احذف الأيقونة القديمة، ثم أضف من الرابط أدناه عبر Safari وافتح الأيقونة الجديدة فقط.'
+            : 'أيقونة قديمة من الرابط السابق. احذفها، افتح الرابط أدناه في Safari، أضف إلى الشاشة الرئيسية، ثم افتح الأيقونة الجديدة.';
         }
+        if (linkEl) linkEl.textContent = installUrlText();
       }
       if (!gate) return on;
       if (!on) {
@@ -435,7 +482,7 @@
     var enforceCount = 0;
     var enforceTimer = setInterval(function () {
       applyGate();
-      if (++enforceCount >= 40) clearInterval(enforceTimer);
+      if (++enforceCount >= 60) clearInterval(enforceTimer);
     }, 250);
     document.addEventListener('visibilitychange', function () {
       if (!document.hidden) applyGate();
@@ -447,13 +494,32 @@
       var recheck = document.getElementById('atharPwaRecheckBtn');
       if (recheck) {
         recheck.addEventListener('click', function () {
-          if (isStandalone()) {
-            stampFreshHomeInstall();
+          applyGate();
+          if (!needsGate()) {
             window.location.reload();
             return;
           }
-          applyGate();
-          recheck.textContent = 'ما زالت الأيقونة تفتح عبر Safari — احذفها وأضف من Safari ثم افتح الأيقونة الجديدة';
+          if (isStandalone()) {
+            recheck.textContent = 'أيقونة قديمة — احذفها وافتح الرابط في Safari ثم أضف من جديد';
+            return;
+          }
+          recheck.textContent = 'ما زالت تفتح عبر Safari — احذف الأيقونة وأضف من الرابط الظاهر أعلاه';
+        });
+      }
+      var copyBtn = document.getElementById('atharPwaCopyLinkBtn');
+      if (copyBtn) {
+        copyBtn.addEventListener('click', async function () {
+          var text = installUrlText();
+          try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              await navigator.clipboard.writeText(text);
+            } else {
+              window.prompt('انسخ الرابط:', text);
+            }
+            copyBtn.textContent = 'تم نسخ الرابط';
+          } catch (_) {
+            window.prompt('انسخ الرابط:', text);
+          }
         });
       }
       var installBtn = document.getElementById('atharPwaInstallBtn');
@@ -2918,8 +2984,12 @@
       <img class="athar-pwa-gate__logo" src="icons/athar-logo-v403-white.png" alt="ATHAR" width="88" height="88" decoding="async">
       <h1 class="athar-pwa-gate__title" id="atharPwaGateTitle">ثبّت ATHAR على الشاشة الرئيسية</h1>
       <p class="athar-pwa-gate__lead" id="atharPwaGateLead">
-        الأيقونات القديمة أو اللي تفتح مع علامة Safari غير مقبولة. احذفها، ثم أضف ATHAR من جديد عبر Safari وافتح الأيقونة الجديدة فقط.
+        الأيقونات القديمة أو اللي تفتح مع علامة Safari غير مقبولة. احذفها، ثم أضف ATHAR من الرابط أدناه عبر Safari وافتح الأيقونة الجديدة فقط.
       </p>
+      <div class="athar-pwa-gate__card" style="text-align:center">
+        <div style="font-size:12px;color:rgba(245,245,247,.6);margin-bottom:8px">أضف من هذا الرابط فقط</div>
+        <code id="atharPwaGateLink" dir="ltr" style="display:block;font-size:12px;line-height:1.5;word-break:break-all;color:#fff">https://vms-v2.aromaticfamilies.com/?athar=275</code>
+      </div>
       <p class="athar-pwa-gate__hint" style="margin-top:-6px">
         بعد الإضافة الصحيحة ما يظهر شريط Safari ولا علامة المتصفح على الأيقونة.
       </p>
@@ -2927,10 +2997,10 @@
       <div class="athar-pwa-gate__card" id="atharPwaGateIos" hidden>
         <h2><i class="fab fa-apple" aria-hidden="true"></i> آيفون / آيباد</h2>
         <ol>
-          <li>افتح الرابط في <strong>Safari</strong> (مهم).</li>
+          <li>افتح الرابط أعلاه في <strong>Safari</strong> (مهم).</li>
           <li>اضغط زر <strong>المشاركة</strong> أسفل الشاشة.</li>
           <li>اختر <strong>إضافة إلى الشاشة الرئيسية</strong>.</li>
-          <li>أكد الإضافة، ثم افتح أيقونة <strong>ATHAR</strong> من الشاشة الرئيسية.</li>
+          <li>أكد الإضافة، ثم افتح أيقونة <strong>ATHAR</strong> الجديدة من الشاشة الرئيسية.</li>
         </ol>
         <p class="athar-pwa-gate__hint">Chrome أو التطبيقات الأخرى على iOS لا تثبّت التطبيق بشكل كامل — استخدم Safari.</p>
       </div>
@@ -2938,13 +3008,16 @@
       <div class="athar-pwa-gate__card" id="atharPwaGateAndroid" hidden>
         <h2><i class="fab fa-android" aria-hidden="true"></i> أندرويد</h2>
         <ol>
-          <li>في <strong>Chrome</strong> اضغط قائمة <strong>⋮</strong> أعلى اليسار أو اليمين.</li>
-          <li>اختر <strong>تثبيت التطبيق</strong> أو <strong>إضافة إلى الشاشة الرئيسية</strong>.</li>
-          <li>أكد التثبيت، ثم افتح <strong>ATHAR</strong> من الشاشة الرئيسية أو درج التطبيقات.</li>
+          <li>افتح الرابط أعلاه في <strong>Chrome</strong>.</li>
+          <li>اضغط قائمة <strong>⋮</strong> ثم <strong>تثبيت التطبيق</strong> أو <strong>إضافة إلى الشاشة الرئيسية</strong>.</li>
+          <li>افتح <strong>ATHAR</strong> من الشاشة الرئيسية أو درج التطبيقات.</li>
         </ol>
       </div>
 
       <div class="athar-pwa-gate__actions">
+        <button type="button" class="athar-pwa-gate__btn athar-pwa-gate__btn--primary" id="atharPwaCopyLinkBtn">
+          نسخ رابط الإضافة
+        </button>
         <button type="button" class="athar-pwa-gate__btn athar-pwa-gate__btn--primary" id="atharPwaInstallBtn" hidden>
           تثبيت التطبيق الآن
         </button>
@@ -5114,7 +5187,7 @@
   </div><!-- /#appWrap -->
 
     <div id="rdCmplOverlayHost"></div>
-    <script src="js/app.js?v=tp20"></script>
+    <script src="js/app.js?v=tp21"></script>
         <style>
       @media (max-width: 992px) {
         /* ── workflow: منع التمدد الأفقي ── */
