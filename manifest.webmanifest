@@ -1,9 +1,9 @@
 {
-  "id": "athar-pwa-v275",
+  "id": "athar-pwa-v412",
   "name": "ATHAR",
   "short_name": "ATHAR",
   "description": "ATHAR",
-  "start_url": "./index.html?athar=275",
+  "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
