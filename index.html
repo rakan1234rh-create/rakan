@@ -334,30 +334,15 @@
       try { localStorage.setItem(ATHAR_PWA_MARK_KEY, ATHAR_PWA_GEN); } catch (_) {}
     }
 
-    function hasFreshHomeInstall() {
-      try {
-        if (localStorage.getItem(ATHAR_PWA_MARK_KEY) === ATHAR_PWA_GEN) return true;
-      } catch (_) {}
-      try {
-        var q = new URLSearchParams(window.location.search || '');
-        if (q.get('athar') === ATHAR_PWA_START_TOKEN || q.get('pwa_home') === '1') {
-          stampFreshHomeInstall();
-          return true;
-        }
-      } catch (_) {}
-      return false;
-    }
-
     function needsGate() {
       if (!isMobileClient()) return false;
       if (isRecoveryPath()) return false;
       try {
         if (/(?:^|[?&])allow_browser=1(?:&|$)/.test(window.location.search || '')) return false;
       } catch (_) {}
-      // أي تبويب متصفح / اختصار قديم يفتح داخل Safari أو Chrome = مقفول
+      // أي تبويب متصفح = مقفول. أي أيقونة مضافة تفتح كتطبيق (standalone) = مسموح
       if (!isStandalone()) return true;
-      // أيقونة قديمة بدون بصمة التثبيت الجديدة = لازم إعادة إضافة
-      if (!hasFreshHomeInstall()) return true;
+      stampFreshHomeInstall();
       return false;
     }
 
@@ -401,9 +386,7 @@
       if (on) {
         lockAppShell();
         if (lead) {
-          lead.textContent = isStandalone()
-            ? 'الأيقونة القديمة لم تعد صالحة بعد تحديث الرابط. احذفها من الشاشة الرئيسية، ثم أضف ATHAR من جديد من الرابط الحالي.'
-            : 'المنصة على الجوال تعمل كتطبيق فقط. افتحها من أيقونة الشاشة الرئيسية بعد الإضافة — وليس من تبويب المتصفح.';
+          lead.textContent = 'المنصة على الجوال تعمل كتطبيق فقط. افتحها من أيقونة الشاشة الرئيسية بعد الإضافة — وليس من تبويب المتصفح.';
         }
       }
       if (!gate) return on;
@@ -453,18 +436,8 @@
       if (recheck) {
         recheck.addEventListener('click', function () {
           if (isStandalone()) {
-            try {
-              var q = new URLSearchParams(window.location.search || '');
-              if (q.get('athar') === ATHAR_PWA_START_TOKEN || q.get('pwa_home') === '1') {
-                stampFreshHomeInstall();
-              }
-            } catch (_) {}
-            if (!needsGate()) {
-              window.location.reload();
-              return;
-            }
-            applyGate();
-            recheck.textContent = 'هذه أيقونة قديمة — احذفها وأضف المنصة من الرابط الحالي ثم افتح الأيقونة الجديدة';
+            stampFreshHomeInstall();
+            window.location.reload();
             return;
           }
           applyGate();
@@ -2936,7 +2909,7 @@
         المنصة على الجوال تعمل كتطبيق فقط. افتحها من أيقونة الشاشة الرئيسية بعد الإضافة — وليس من تبويب المتصفح.
       </p>
       <p class="athar-pwa-gate__hint" style="margin-top:-6px">
-        إذا كانت لديك أيقونة قديمة: احذفها أولاً، ثم أضف المنصة من الرابط الحالي من جديد.
+        احذف أي أيقونة قديمة إن وُجدت، ثم أضف من الرابط الحالي وافتح الأيقونة الجديدة من الشاشة الرئيسية.
       </p>
 
       <div class="athar-pwa-gate__card" id="atharPwaGateIos" hidden>
