@@ -4012,6 +4012,7 @@
 
       function shouldSkipAtharWelcomeSplash() {
         try {
+          if (window.__ATHAR_PWA_GATE_ACTIVE__ || document.documentElement.classList.contains('athar-pwa-gate-active')) return true;
           if (sessionStorage.getItem(ATHAR_WELCOME_SEEN_KEY) === '1') return true;
           if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return true;
           const hash = window.location.hash || '';
@@ -33214,6 +33215,17 @@
 
       document.addEventListener('DOMContentLoaded', async () => {
         try {
+          if (typeof window.__ATHAR_APPLY_PWA_GATE__ === 'function') {
+            window.__ATHAR_APPLY_PWA_GATE__();
+          }
+          if (window.__ATHAR_PWA_GATE_ACTIVE__ || document.documentElement.classList.contains('athar-pwa-gate-active')) {
+            try {
+              document.getElementById('loginScreen')?.setAttribute('hidden', '');
+              document.getElementById('appWrap') && (document.getElementById('appWrap').style.display = 'none');
+              document.getElementById('atharWelcomeSplash')?.setAttribute('hidden', '');
+            } catch (_) { /* noop */ }
+            return;
+          }
           loadTheme();
           if (typeof initPwaSessionPersistence === 'function') initPwaSessionPersistence();
           if (typeof initSidebarMobileControls === 'function') initSidebarMobileControls();

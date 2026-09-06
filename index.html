@@ -166,6 +166,224 @@
     applyLoginBleedEarly();
     document.addEventListener('DOMContentLoaded', applyLoginBleedEarly, { once: true });
   })();</script>
+  <style id="athar-pwa-gate-css">
+    #atharPwaGate {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 2147483000;
+      align-items: stretch;
+      justify-content: center;
+      padding: max(16px, env(safe-area-inset-top, 0px)) 18px max(20px, env(safe-area-inset-bottom, 0px));
+      box-sizing: border-box;
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+      background:
+        radial-gradient(120% 80% at 50% -10%, rgba(52, 199, 89, 0.18), transparent 55%),
+        linear-gradient(180deg, #111114 0%, #1c1c21 42%, #121216 100%);
+      color: #f5f5f7;
+      font-family: "IBM Plex Sans Arabic", system-ui, sans-serif;
+    }
+    html.athar-pwa-gate-active #atharPwaGate { display: flex !important; }
+    html.athar-pwa-gate-active #atharWelcomeSplash,
+    html.athar-pwa-gate-active #loginTransition,
+    html.athar-pwa-gate-active #loginScreen,
+    html.athar-pwa-gate-active #appWrap {
+      display: none !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+    }
+    html.athar-pwa-gate-active,
+    html.athar-pwa-gate-active body {
+      background: #121216 !important;
+      overflow: hidden !important;
+      height: 100% !important;
+    }
+    .athar-pwa-gate {
+      width: min(440px, 100%);
+      margin: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      text-align: center;
+    }
+    .athar-pwa-gate__logo {
+      width: 88px;
+      height: 88px;
+      margin: 8px auto 0;
+      object-fit: contain;
+      filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.35));
+    }
+    .athar-pwa-gate__title {
+      margin: 0;
+      font-size: 1.35rem;
+      font-weight: 700;
+      line-height: 1.45;
+      letter-spacing: -0.02em;
+    }
+    .athar-pwa-gate__lead {
+      margin: 0;
+      color: rgba(245, 245, 247, 0.72);
+      font-size: 0.95rem;
+      line-height: 1.7;
+    }
+    .athar-pwa-gate__card {
+      text-align: right;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 18px;
+      padding: 16px 16px 14px;
+    }
+    .athar-pwa-gate__card[hidden] { display: none !important; }
+    .athar-pwa-gate__card h2 {
+      margin: 0 0 10px;
+      font-size: 1rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .athar-pwa-gate__card ol {
+      margin: 0;
+      padding: 0 1.2rem 0 0;
+      color: rgba(245, 245, 247, 0.88);
+      font-size: 0.92rem;
+      line-height: 1.75;
+    }
+    .athar-pwa-gate__card li + li { margin-top: 6px; }
+    .athar-pwa-gate__card kbd,
+    .athar-pwa-gate__card strong {
+      color: #fff;
+      font-weight: 700;
+    }
+    .athar-pwa-gate__hint {
+      margin: 12px 0 0;
+      font-size: 0.82rem;
+      color: rgba(245, 245, 247, 0.58);
+      line-height: 1.6;
+    }
+    .athar-pwa-gate__actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .athar-pwa-gate__btn {
+      appearance: none;
+      border: 0;
+      border-radius: 14px;
+      padding: 14px 16px;
+      font: inherit;
+      font-weight: 700;
+      font-size: 0.95rem;
+      cursor: pointer;
+    }
+    .athar-pwa-gate__btn--primary {
+      background: #34c759;
+      color: #06240f;
+    }
+    .athar-pwa-gate__btn--primary[hidden] { display: none !important; }
+    .athar-pwa-gate__btn--ghost {
+      background: rgba(255, 255, 255, 0.08);
+      color: #f5f5f7;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+  </style>
+  <script id="athar-pwa-gate-early">(function () {
+    var root = document.documentElement;
+    function isStandalone() {
+      try {
+        return !!(
+          window.navigator.standalone ||
+          window.matchMedia('(display-mode: standalone)').matches ||
+          window.matchMedia('(display-mode: fullscreen)').matches ||
+          (document.referrer && document.referrer.indexOf('android-app://') === 0)
+        );
+      } catch (_) {
+        return false;
+      }
+    }
+    function isRecoveryPath() {
+      try {
+        var hash = String(window.location.hash || '');
+        var search = String(window.location.search || '');
+        return /type=recovery|reset-password|access_token|refresh_token/i.test(hash + search);
+      } catch (_) {
+        return false;
+      }
+    }
+    function needsGate() {
+      if (!root.classList.contains('mr-mobile-ui')) return false;
+      if (isStandalone()) return false;
+      if (isRecoveryPath()) return false;
+      try {
+        if (/(?:^|[?&])allow_browser=1(?:&|$)/.test(window.location.search || '')) return false;
+      } catch (_) {}
+      return true;
+    }
+    function detectPlatform() {
+      var ua = navigator.userAgent || '';
+      var isiOS = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      var isAndroid = /Android/i.test(ua);
+      return { ios: isiOS, android: isAndroid };
+    }
+    function applyGate() {
+      var on = needsGate();
+      root.classList.toggle('athar-pwa-gate-active', on);
+      window.__ATHAR_PWA_GATE_ACTIVE__ = on;
+      var gate = document.getElementById('atharPwaGate');
+      if (!gate) return on;
+      if (!on) {
+        gate.hidden = true;
+        gate.setAttribute('aria-hidden', 'true');
+        return false;
+      }
+      gate.hidden = false;
+      gate.setAttribute('aria-hidden', 'false');
+      var plat = detectPlatform();
+      var iosCard = document.getElementById('atharPwaGateIos');
+      var andCard = document.getElementById('atharPwaGateAndroid');
+      if (iosCard) iosCard.hidden = !(plat.ios || (!plat.ios && !plat.android));
+      if (andCard) andCard.hidden = !(plat.android || (!plat.ios && !plat.android));
+      return true;
+    }
+    window.__ATHAR_IS_STANDALONE_PWA__ = isStandalone;
+    window.__ATHAR_NEEDS_PWA_GATE__ = needsGate;
+    window.__ATHAR_APPLY_PWA_GATE__ = applyGate;
+    window.__ATHAR_PWA_DEFERRED_PROMPT__ = null;
+    window.addEventListener('beforeinstallprompt', function (e) {
+      e.preventDefault();
+      window.__ATHAR_PWA_DEFERRED_PROMPT__ = e;
+      var btn = document.getElementById('atharPwaInstallBtn');
+      if (btn && root.classList.contains('athar-pwa-gate-active')) btn.hidden = false;
+    });
+    applyGate();
+    document.addEventListener('DOMContentLoaded', function () {
+      applyGate();
+      var recheck = document.getElementById('atharPwaRecheckBtn');
+      if (recheck) {
+        recheck.addEventListener('click', function () {
+          if (isStandalone()) {
+            window.location.reload();
+            return;
+          }
+          applyGate();
+          recheck.textContent = 'ما زلت داخل المتصفح — أضف المنصة ثم افتحها من الشاشة الرئيسية';
+        });
+      }
+      var installBtn = document.getElementById('atharPwaInstallBtn');
+      if (installBtn) {
+        if (window.__ATHAR_PWA_DEFERRED_PROMPT__) installBtn.hidden = false;
+        installBtn.addEventListener('click', async function () {
+          var promptEvent = window.__ATHAR_PWA_DEFERRED_PROMPT__;
+          if (!promptEvent) return;
+          promptEvent.prompt();
+          try { await promptEvent.userChoice; } catch (_) {}
+          window.__ATHAR_PWA_DEFERRED_PROMPT__ = null;
+          installBtn.hidden = true;
+        });
+      }
+    });
+  })();</script>
   
   <style id="mr-ui-shell-early-lock">
     html.mr-mobile-ui #appWrap #sidebar,
@@ -2609,6 +2827,45 @@
     </div>
   </div>
 
+  <div id="atharPwaGate" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="atharPwaGateTitle">
+    <div class="athar-pwa-gate">
+      <img class="athar-pwa-gate__logo" src="icons/athar-logo-v403-white.png" alt="ATHAR" width="88" height="88" decoding="async">
+      <h1 class="athar-pwa-gate__title" id="atharPwaGateTitle">ثبّت ATHAR على الشاشة الرئيسية</h1>
+      <p class="athar-pwa-gate__lead">
+        المنصة على الجوال تعمل كتطبيق فقط. افتحها من أيقونة الشاشة الرئيسية بعد الإضافة — وليس من تبويب المتصفح.
+      </p>
+
+      <div class="athar-pwa-gate__card" id="atharPwaGateIos" hidden>
+        <h2><i class="fab fa-apple" aria-hidden="true"></i> آيفون / آيباد</h2>
+        <ol>
+          <li>افتح الرابط في <strong>Safari</strong> (مهم).</li>
+          <li>اضغط زر <strong>المشاركة</strong> أسفل الشاشة.</li>
+          <li>اختر <strong>إضافة إلى الشاشة الرئيسية</strong>.</li>
+          <li>أكد الإضافة، ثم افتح أيقونة <strong>ATHAR</strong> من الشاشة الرئيسية.</li>
+        </ol>
+        <p class="athar-pwa-gate__hint">Chrome أو التطبيقات الأخرى على iOS لا تثبّت التطبيق بشكل كامل — استخدم Safari.</p>
+      </div>
+
+      <div class="athar-pwa-gate__card" id="atharPwaGateAndroid" hidden>
+        <h2><i class="fab fa-android" aria-hidden="true"></i> أندرويد</h2>
+        <ol>
+          <li>في <strong>Chrome</strong> اضغط قائمة <strong>⋮</strong> أعلى اليسار أو اليمين.</li>
+          <li>اختر <strong>تثبيت التطبيق</strong> أو <strong>إضافة إلى الشاشة الرئيسية</strong>.</li>
+          <li>أكد التثبيت، ثم افتح <strong>ATHAR</strong> من الشاشة الرئيسية أو درج التطبيقات.</li>
+        </ol>
+      </div>
+
+      <div class="athar-pwa-gate__actions">
+        <button type="button" class="athar-pwa-gate__btn athar-pwa-gate__btn--primary" id="atharPwaInstallBtn" hidden>
+          تثبيت التطبيق الآن
+        </button>
+        <button type="button" class="athar-pwa-gate__btn athar-pwa-gate__btn--ghost" id="atharPwaRecheckBtn">
+          فتحت من الشاشة الرئيسية؟ أعد المحاولة
+        </button>
+      </div>
+    </div>
+  </div>
+
   <div id="atharWelcomeSplash" aria-hidden="true" hidden>
     <div class="aws-logo-frame">
       <div class="aws-logo-shine-wrap">
@@ -4768,7 +5025,7 @@
   </div><!-- /#appWrap -->
 
     <div id="rdCmplOverlayHost"></div>
-    <script src="js/app.js?v=tp17"></script>
+    <script src="js/app.js?v=tp18"></script>
         <style>
       @media (max-width: 992px) {
         /* ── workflow: منع التمدد الأفقي ── */
