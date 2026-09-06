@@ -109,7 +109,7 @@
       if (location.protocol === 'file:') return;
       var link = document.createElement('link');
       link.rel = 'manifest';
-      link.href = 'manifest.webmanifest?v=411';
+      link.href = 'manifest.webmanifest?v=412';
       document.head.appendChild(link);
     })();
   </script>
@@ -290,11 +290,6 @@
   </style>
   <script id="athar-pwa-gate-early">(function () {
     var root = document.documentElement;
-    var ATHAR_PWA_GEN = 'home3';
-    var ATHAR_PWA_MARK_KEY = 'athar_pwa_home_gen';
-    var ATHAR_PWA_START_TOKEN = '275';
-    var ATHAR_PWA_EXPECT_KEY = 'athar_pwa_expect_install';
-    var ATHAR_PWA_EXPECT_MS = 2 * 60 * 60 * 1000;
 
     function isIosDevice() {
       try {
@@ -305,6 +300,7 @@
       }
     }
 
+    // iOS: فقط navigator.standalone — أيقونة بعلامة Safari = متصفح = مقفولة
     function isStandalone() {
       try {
         if (isIosDevice()) return window.navigator.standalone === true;
@@ -341,87 +337,23 @@
       }
     }
 
-    function stampFreshHomeInstall() {
-      try {
-        localStorage.setItem(ATHAR_PWA_MARK_KEY, ATHAR_PWA_GEN);
-        localStorage.removeItem(ATHAR_PWA_EXPECT_KEY);
-      } catch (_) {}
-    }
-
-    function hasInstallMark() {
-      try { return localStorage.getItem(ATHAR_PWA_MARK_KEY) === ATHAR_PWA_GEN; } catch (_) { return false; }
-    }
-
-    function markExpectInstall() {
-      try { localStorage.setItem(ATHAR_PWA_EXPECT_KEY, String(Date.now())); } catch (_) {}
-    }
-
-    function hasFreshExpect() {
-      try {
-        var raw = localStorage.getItem(ATHAR_PWA_EXPECT_KEY);
-        var t = parseInt(raw || '', 10);
-        if (!t || !isFinite(t)) return false;
-        return (Date.now() - t) >= 0 && (Date.now() - t) <= ATHAR_PWA_EXPECT_MS;
-      } catch (_) {
-        return false;
-      }
-    }
-
-    function urlHasStartToken() {
-      try {
-        var q = new URLSearchParams(window.location.search || '');
-        return q.get('athar') === ATHAR_PWA_START_TOKEN || q.get('pwa_home') === '1';
-      } catch (_) {
-        return false;
-      }
-    }
-
-    function ensureStartTokenInUrl() {
-      // Hard navigation so Safari "Add to Home Screen" captures ?athar=275
-      if (isStandalone()) return;
-      if (urlHasStartToken()) return;
-      try {
-        var url = new URL(window.location.href);
-        url.searchParams.set('athar', ATHAR_PWA_START_TOKEN);
-        window.location.replace(url.pathname + url.search + url.hash);
-      } catch (_) {}
-    }
-
     function installUrlText() {
       try {
         var url = new URL(window.location.href);
-        return url.origin + url.pathname + '?athar=' + ATHAR_PWA_START_TOKEN;
+        return url.origin + url.pathname;
       } catch (_) {
         return window.location.href;
       }
     }
 
+    // الكل مقفول على الموبايل إلا بعد إضافة جديدة تفتح كتطبيق (standalone)
     function needsGate() {
       if (!isMobileClient()) return false;
       if (isRecoveryPath()) return false;
       try {
         if (/(?:^|[?&])allow_browser=1(?:&|$)/.test(window.location.search || '')) return false;
       } catch (_) {}
-
-      // متصفح / أيقونة بعلامة Safari = مقفول دائماً
-      if (!isStandalone()) {
-        ensureStartTokenInUrl();
-        return true;
-      }
-
-      // تطبيق مثبت: رابط التثبيت، أو ختم سابق، أو توقع إضافة خلال ساعتين
-      if (urlHasStartToken()) {
-        stampFreshHomeInstall();
-        return false;
-      }
-      if (hasInstallMark()) return false;
-      if (hasFreshExpect()) {
-        stampFreshHomeInstall();
-        return false;
-      }
-
-      // أيقونة قديمة بدون معامل/ختم/توقع
-      return true;
+      return !isStandalone();
     }
 
     function detectPlatform() {
@@ -464,20 +396,11 @@
       var linkEl = document.getElementById('atharPwaGateLink');
       if (on) {
         lockAppShell();
-        ensureStartTokenInUrl();
         if (lead) {
-          lead.textContent = !isStandalone()
-            ? 'هذه الأيقونة/الجلسة تفتح عبر Safari أو المتصفح وغير مقبولة. احذف الأيقونات القديمة، أضف من الرابط أدناه عبر Safari، ثم اضغط «تفعيل الأيقونة الجديدة» وافتح الأيقونة من الشاشة الرئيسية.'
-            : 'هذه الأيقونة لم تُفعَّل بعد. إن أضفتها للتو من الرابط الجديد اضغط «تفعيل الأيقونة الجديدة». وإلا احذفها وأضف من الرابط أدناه عبر Safari.';
+          lead.textContent =
+            'الكل مقفول على الموبايل إلا بعد إضافة ATHAR من جديد إلى الشاشة الرئيسية. احذف أي أيقونة قديمة، ثم أضف من الرابط وافتح الأيقونة الجديدة فقط (بدون شريط Safari أو علامة المتصفح).';
         }
         if (linkEl) linkEl.textContent = installUrlText();
-        var unlockBtn = document.getElementById('atharPwaUnlockBtn');
-        if (unlockBtn) {
-          unlockBtn.hidden = false;
-          unlockBtn.textContent = isStandalone()
-            ? 'تفعيل الأيقونة الجديدة'
-            : 'أضفت الأيقونة — جاهز للتفعيل';
-        }
       }
       if (!gate) return on;
       if (!on) {
@@ -499,7 +422,6 @@
     window.__ATHAR_IS_STANDALONE_PWA__ = isStandalone;
     window.__ATHAR_NEEDS_PWA_GATE__ = needsGate;
     window.__ATHAR_APPLY_PWA_GATE__ = applyGate;
-    window.__ATHAR_STAMP_PWA_HOME__ = stampFreshHomeInstall;
     window.__ATHAR_PWA_DEFERRED_PROMPT__ = null;
 
     window.addEventListener('beforeinstallprompt', function (e) {
@@ -530,17 +452,12 @@
             window.location.reload();
             return;
           }
-          if (isStandalone()) {
-            recheck.textContent = 'أيقونة قديمة — احذفها وافتح الرابط في Safari ثم أضف من جديد';
-            return;
-          }
-          recheck.textContent = 'ما زالت تفتح عبر Safari — احذف الأيقونة وأضف من الرابط الظاهر أعلاه';
+          recheck.textContent = 'ما زالت تفتح عبر المتصفح — احذف الأيقونة وأضف من جديد عبر Safari ثم افتح الأيقونة الجديدة';
         });
       }
       var copyBtn = document.getElementById('atharPwaCopyLinkBtn');
       if (copyBtn) {
         copyBtn.addEventListener('click', async function () {
-          markExpectInstall();
           var text = installUrlText();
           try {
             if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -548,24 +465,10 @@
             } else {
               window.prompt('انسخ الرابط:', text);
             }
-            copyBtn.textContent = 'تم نسخ الرابط — أضف ثم افتح الأيقونة';
+            copyBtn.textContent = 'تم نسخ الرابط';
           } catch (_) {
             window.prompt('انسخ الرابط:', text);
           }
-        });
-      }
-      var unlockBtn = document.getElementById('atharPwaUnlockBtn');
-      if (unlockBtn) {
-        unlockBtn.addEventListener('click', function () {
-          if (isStandalone()) {
-            stampFreshHomeInstall();
-            window.location.reload();
-            return;
-          }
-          markExpectInstall();
-          unlockBtn.textContent = 'تم — افتح الأيقونة الجديدة الآن';
-          var recheck = document.getElementById('atharPwaRecheckBtn');
-          if (recheck) recheck.textContent = 'فتحت الأيقونة؟ أعد المحاولة';
         });
       }
       var installBtn = document.getElementById('atharPwaInstallBtn');
@@ -3030,23 +2933,23 @@
       <img class="athar-pwa-gate__logo" src="icons/athar-logo-v403-white.png" alt="ATHAR" width="88" height="88" decoding="async">
       <h1 class="athar-pwa-gate__title" id="atharPwaGateTitle">ثبّت ATHAR على الشاشة الرئيسية</h1>
       <p class="athar-pwa-gate__lead" id="atharPwaGateLead">
-        الأيقونات القديمة أو اللي تفتح مع علامة Safari غير مقبولة. احذفها، أضف من الرابط أدناه عبر Safari، ثم فعّل الأيقونة الجديدة.
+        الكل مقفول على الموبايل إلا بعد إضافة ATHAR من جديد إلى الشاشة الرئيسية. احذف أي أيقونة قديمة، ثم أضف وافتح الأيقونة الجديدة فقط.
       </p>
       <div class="athar-pwa-gate__card" style="text-align:center">
-        <div style="font-size:12px;color:rgba(245,245,247,.6);margin-bottom:8px">أضف من هذا الرابط فقط</div>
-        <code id="atharPwaGateLink" dir="ltr" style="display:block;font-size:12px;line-height:1.5;word-break:break-all;color:#fff">https://vms-v2.aromaticfamilies.com/?athar=275</code>
+        <div style="font-size:12px;color:rgba(245,245,247,.6);margin-bottom:8px">الرابط</div>
+        <code id="atharPwaGateLink" dir="ltr" style="display:block;font-size:12px;line-height:1.5;word-break:break-all;color:#fff">https://vms-v2.aromaticfamilies.com/</code>
       </div>
       <p class="athar-pwa-gate__hint" style="margin-top:-6px">
-        بعد الإضافة الصحيحة ما يظهر شريط Safari ولا علامة المتصفح على الأيقونة. إن فُتحت الأيقونة الجديدة وما زال القفل ظاهرًا اضغط «تفعيل الأيقونة الجديدة».
+        الإضافة الصحيحة تفتح بدون شريط Safari وبدون علامة المتصفح على الأيقونة.
       </p>
 
       <div class="athar-pwa-gate__card" id="atharPwaGateIos" hidden>
         <h2><i class="fab fa-apple" aria-hidden="true"></i> آيفون / آيباد</h2>
         <ol>
-          <li>افتح الرابط أعلاه في <strong>Safari</strong> (مهم).</li>
+          <li>افتح الرابط في <strong>Safari</strong> (مهم).</li>
           <li>اضغط زر <strong>المشاركة</strong> أسفل الشاشة.</li>
           <li>اختر <strong>إضافة إلى الشاشة الرئيسية</strong>.</li>
-          <li>أكد الإضافة، ثم افتح أيقونة <strong>ATHAR</strong> الجديدة من الشاشة الرئيسية.</li>
+          <li>احذف الأيقونات القديمة، ثم افتح أيقونة <strong>ATHAR</strong> الجديدة فقط.</li>
         </ol>
         <p class="athar-pwa-gate__hint">Chrome أو التطبيقات الأخرى على iOS لا تثبّت التطبيق بشكل كامل — استخدم Safari.</p>
       </div>
@@ -3054,7 +2957,7 @@
       <div class="athar-pwa-gate__card" id="atharPwaGateAndroid" hidden>
         <h2><i class="fab fa-android" aria-hidden="true"></i> أندرويد</h2>
         <ol>
-          <li>افتح الرابط أعلاه في <strong>Chrome</strong>.</li>
+          <li>افتح الرابط في <strong>Chrome</strong>.</li>
           <li>اضغط قائمة <strong>⋮</strong> ثم <strong>تثبيت التطبيق</strong> أو <strong>إضافة إلى الشاشة الرئيسية</strong>.</li>
           <li>افتح <strong>ATHAR</strong> من الشاشة الرئيسية أو درج التطبيقات.</li>
         </ol>
@@ -3062,10 +2965,7 @@
 
       <div class="athar-pwa-gate__actions">
         <button type="button" class="athar-pwa-gate__btn athar-pwa-gate__btn--primary" id="atharPwaCopyLinkBtn">
-          نسخ رابط الإضافة
-        </button>
-        <button type="button" class="athar-pwa-gate__btn athar-pwa-gate__btn--primary" id="atharPwaUnlockBtn">
-          أضفت الأيقونة — جاهز للتفعيل
+          نسخ الرابط
         </button>
         <button type="button" class="athar-pwa-gate__btn athar-pwa-gate__btn--primary" id="atharPwaInstallBtn" hidden>
           تثبيت التطبيق الآن
