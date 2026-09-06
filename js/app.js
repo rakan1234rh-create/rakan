@@ -3963,6 +3963,14 @@
       }
 
       function closeLoginPortal() {
+        if (typeof window.__ATHAR_APPLY_PWA_GATE__ === 'function') window.__ATHAR_APPLY_PWA_GATE__();
+        if (window.__ATHAR_PWA_GATE_ACTIVE__ || (typeof window.__ATHAR_NEEDS_PWA_GATE__ === 'function' && window.__ATHAR_NEEDS_PWA_GATE__())) {
+          try {
+            document.getElementById('appWrap')?.style.setProperty('display', 'none', 'important');
+            document.getElementById('loginScreen')?.setAttribute('hidden', '');
+          } catch (_) { /* noop */ }
+          return;
+        }
         const ls = document.getElementById('loginScreen');
         const app = document.getElementById('appWrap');
         if (ls) {
@@ -4397,6 +4405,14 @@
       // ───────────────────────────────────────────────────────────────────────────
       async function onUserAuthenticated(profile) {
         try {
+          if (typeof window.__ATHAR_APPLY_PWA_GATE__ === 'function') window.__ATHAR_APPLY_PWA_GATE__();
+          if (window.__ATHAR_PWA_GATE_ACTIVE__ || (typeof window.__ATHAR_NEEDS_PWA_GATE__ === 'function' && window.__ATHAR_NEEDS_PWA_GATE__())) {
+            try {
+              document.getElementById('appWrap')?.style.setProperty('display', 'none', 'important');
+              document.getElementById('loginScreen')?.setAttribute('hidden', '');
+            } catch (_) { /* noop */ }
+            return;
+          }
           state._dataLoading = true;
           state._dataReady = false;
           invalidateR2BackendResolution();
@@ -4863,6 +4879,14 @@
       }
 
       async function checkExistingSession() {
+        if (typeof window.__ATHAR_APPLY_PWA_GATE__ === 'function') window.__ATHAR_APPLY_PWA_GATE__();
+        if (window.__ATHAR_PWA_GATE_ACTIVE__ || (typeof window.__ATHAR_NEEDS_PWA_GATE__ === 'function' && window.__ATHAR_NEEDS_PWA_GATE__())) {
+          try {
+            document.getElementById('appWrap')?.style.setProperty('display', 'none', 'important');
+            document.getElementById('loginScreen')?.setAttribute('hidden', '');
+          } catch (_) { /* noop */ }
+          return;
+        }
         armSessionRestoreGuard();
         const hash = window.location.hash;
         if (hash.includes('access_token') || hash.includes('type=recovery')) {
