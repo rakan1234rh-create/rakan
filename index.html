@@ -109,7 +109,7 @@
       if (location.protocol === 'file:') return;
       var link = document.createElement('link');
       link.rel = 'manifest';
-      link.href = 'manifest.webmanifest?v=406';
+      link.href = 'manifest.webmanifest?v=407';
       document.head.appendChild(link);
     })();
   </script>
@@ -290,6 +290,10 @@
   </style>
   <script id="athar-pwa-gate-early">(function () {
     var root = document.documentElement;
+    var ATHAR_PWA_GEN = 'home2';
+    var ATHAR_PWA_MARK_KEY = 'athar_pwa_home_gen';
+    var ATHAR_PWA_START_TOKEN = '272';
+
     function isStandalone() {
       try {
         return !!(
@@ -302,6 +306,20 @@
         return false;
       }
     }
+
+    function isMobileClient() {
+      if (root.classList.contains('mr-mobile-ui')) return true;
+      try {
+        var ua = navigator.userAgent || '';
+        if (/iPhone|iPad|iPod|Android/i.test(ua)) return true;
+        if (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) return true;
+        var coarse = window.matchMedia('(pointer: coarse)').matches;
+        var realDesk = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+        if (coarse && !realDesk) return true;
+      } catch (_) {}
+      return false;
+    }
+
     function isRecoveryPath() {
       try {
         var hash = String(window.location.hash || '');
@@ -311,26 +329,83 @@
         return false;
       }
     }
+
+    function stampFreshHomeInstall() {
+      try { localStorage.setItem(ATHAR_PWA_MARK_KEY, ATHAR_PWA_GEN); } catch (_) {}
+    }
+
+    function hasFreshHomeInstall() {
+      try {
+        if (localStorage.getItem(ATHAR_PWA_MARK_KEY) === ATHAR_PWA_GEN) return true;
+      } catch (_) {}
+      try {
+        var q = new URLSearchParams(window.location.search || '');
+        if (q.get('athar') === ATHAR_PWA_START_TOKEN || q.get('pwa_home') === '1') {
+          stampFreshHomeInstall();
+          return true;
+        }
+      } catch (_) {}
+      return false;
+    }
+
     function needsGate() {
-      if (!root.classList.contains('mr-mobile-ui')) return false;
-      if (isStandalone()) return false;
+      if (!isMobileClient()) return false;
       if (isRecoveryPath()) return false;
       try {
         if (/(?:^|[?&])allow_browser=1(?:&|$)/.test(window.location.search || '')) return false;
       } catch (_) {}
-      return true;
+      // أي تبويب متصفح / اختصار قديم يفتح داخل Safari أو Chrome = مقفول
+      if (!isStandalone()) return true;
+      // أيقونة قديمة بدون بصمة التثبيت الجديدة = لازم إعادة إضافة
+      if (!hasFreshHomeInstall()) return true;
+      return false;
     }
+
     function detectPlatform() {
       var ua = navigator.userAgent || '';
       var isiOS = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
       var isAndroid = /Android/i.test(ua);
       return { ios: isiOS, android: isAndroid };
     }
+
+    function lockAppShell() {
+      try {
+        var app = document.getElementById('appWrap');
+        if (app) {
+          app.style.setProperty('display', 'none', 'important');
+          app.setAttribute('hidden', '');
+          app.setAttribute('aria-hidden', 'true');
+        }
+        var ls = document.getElementById('loginScreen');
+        if (ls) {
+          ls.classList.add('hidden');
+          ls.setAttribute('hidden', '');
+          ls.setAttribute('aria-hidden', 'true');
+        }
+        var splash = document.getElementById('atharWelcomeSplash');
+        if (splash) {
+          splash.setAttribute('hidden', '');
+          splash.setAttribute('aria-hidden', 'true');
+        }
+        var lt = document.getElementById('loginTransition');
+        if (lt) lt.classList.remove('is-visible');
+      } catch (_) {}
+    }
+
     function applyGate() {
       var on = needsGate();
       root.classList.toggle('athar-pwa-gate-active', on);
       window.__ATHAR_PWA_GATE_ACTIVE__ = on;
       var gate = document.getElementById('atharPwaGate');
+      var lead = document.getElementById('atharPwaGateLead');
+      if (on) {
+        lockAppShell();
+        if (lead) {
+          lead.textContent = isStandalone()
+            ? 'الأيقونة القديمة لم تعد صالحة بعد تحديث الرابط. احذفها من الشاشة الرئيسية، ثم أضف ATHAR من جديد من الرابط الحالي.'
+            : 'المنصة على الجوال تعمل كتطبيق فقط. افتحها من أيقونة الشاشة الرئيسية بعد الإضافة — وليس من تبويب المتصفح.';
+        }
+      }
       if (!gate) return on;
       if (!on) {
         gate.hidden = true;
@@ -338,6 +413,7 @@
         return false;
       }
       gate.hidden = false;
+      gate.removeAttribute('hidden');
       gate.setAttribute('aria-hidden', 'false');
       var plat = detectPlatform();
       var iosCard = document.getElementById('atharPwaGateIos');
@@ -346,24 +422,49 @@
       if (andCard) andCard.hidden = !(plat.android || (!plat.ios && !plat.android));
       return true;
     }
+
     window.__ATHAR_IS_STANDALONE_PWA__ = isStandalone;
     window.__ATHAR_NEEDS_PWA_GATE__ = needsGate;
     window.__ATHAR_APPLY_PWA_GATE__ = applyGate;
+    window.__ATHAR_STAMP_PWA_HOME__ = stampFreshHomeInstall;
     window.__ATHAR_PWA_DEFERRED_PROMPT__ = null;
+
     window.addEventListener('beforeinstallprompt', function (e) {
       e.preventDefault();
       window.__ATHAR_PWA_DEFERRED_PROMPT__ = e;
       var btn = document.getElementById('atharPwaInstallBtn');
       if (btn && root.classList.contains('athar-pwa-gate-active')) btn.hidden = false;
     });
+
     applyGate();
+    var enforceCount = 0;
+    var enforceTimer = setInterval(function () {
+      applyGate();
+      if (++enforceCount >= 40) clearInterval(enforceTimer);
+    }, 250);
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden) applyGate();
+    });
+    window.addEventListener('pageshow', function () { applyGate(); });
+
     document.addEventListener('DOMContentLoaded', function () {
       applyGate();
       var recheck = document.getElementById('atharPwaRecheckBtn');
       if (recheck) {
         recheck.addEventListener('click', function () {
           if (isStandalone()) {
-            window.location.reload();
+            try {
+              var q = new URLSearchParams(window.location.search || '');
+              if (q.get('athar') === ATHAR_PWA_START_TOKEN || q.get('pwa_home') === '1') {
+                stampFreshHomeInstall();
+              }
+            } catch (_) {}
+            if (!needsGate()) {
+              window.location.reload();
+              return;
+            }
+            applyGate();
+            recheck.textContent = 'هذه أيقونة قديمة — احذفها وأضف المنصة من الرابط الحالي ثم افتح الأيقونة الجديدة';
             return;
           }
           applyGate();
@@ -2831,8 +2932,11 @@
     <div class="athar-pwa-gate">
       <img class="athar-pwa-gate__logo" src="icons/athar-logo-v403-white.png" alt="ATHAR" width="88" height="88" decoding="async">
       <h1 class="athar-pwa-gate__title" id="atharPwaGateTitle">ثبّت ATHAR على الشاشة الرئيسية</h1>
-      <p class="athar-pwa-gate__lead">
+      <p class="athar-pwa-gate__lead" id="atharPwaGateLead">
         المنصة على الجوال تعمل كتطبيق فقط. افتحها من أيقونة الشاشة الرئيسية بعد الإضافة — وليس من تبويب المتصفح.
+      </p>
+      <p class="athar-pwa-gate__hint" style="margin-top:-6px">
+        إذا كانت لديك أيقونة قديمة: احذفها أولاً، ثم أضف المنصة من الرابط الحالي من جديد.
       </p>
 
       <div class="athar-pwa-gate__card" id="atharPwaGateIos" hidden>
@@ -5025,7 +5129,7 @@
   </div><!-- /#appWrap -->
 
     <div id="rdCmplOverlayHost"></div>
-    <script src="js/app.js?v=tp18"></script>
+    <script src="js/app.js?v=tp19"></script>
         <style>
       @media (max-width: 992px) {
         /* ── workflow: منع التمدد الأفقي ── */
