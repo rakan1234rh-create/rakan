@@ -312,7 +312,7 @@ html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--tickets {
 html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--tickets .rd-desk-table__head,
 html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--tickets .rd-desk-ticket-row {
   display: grid !important;
-  grid-template-columns: 90px 2fr 1.6fr 1.3fr 90px 90px !important;
+  grid-template-columns: 90px 2fr 1.6fr 1.3fr 90px 156px !important;
   gap: 12px !important;
   align-items: center !important;
 }
@@ -417,6 +417,8 @@ html.athar-staging-redesign.mr-desktop-ui .rd-desk-ticket-row .rd-desk-ticket-ti
   color: var(--text3) !important;
   text-align: left !important;
   justify-self: stretch !important;
+  white-space: nowrap !important;
+  font-variant-numeric: tabular-nums !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #tab-workflow .rd-ticket-empty {
@@ -584,8 +586,10 @@ html.athar-staging-redesign.mr-mobile-ui #tab-workflow .rd-ticket__id {
 }
 
 html.athar-staging-redesign.mr-mobile-ui #tab-workflow .rd-ticket__time {
-  font-size: 10.5px;
+  font-size: 11px;
   color: var(--text3);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 html.athar-staging-redesign.mr-mobile-ui #tab-workflow .rd-ticket__body {
