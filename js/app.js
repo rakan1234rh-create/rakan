@@ -11195,7 +11195,7 @@
         return ksaLocaleDateAr(iso);
       }
 
-      /** تاريخ ووقت رقمي للتذاكر — ص/م قبل الساعة: 2026-09-07 ص 9:30 */
+      /** تاريخ ووقت رقمي للتذاكر — AM/PM قبل الساعة: 2026-09-07 AM 9:30 */
       function formatTicketClockAmFirst(timeStr) {
         if (!timeStr) return '';
         try {
@@ -11204,7 +11204,7 @@
           const h = parseInt(parts[0], 10);
           const m = String(parts[1] || '0').padStart(2, '0').slice(0, 2);
           if (isNaN(h)) return '';
-          const ampm = h >= 12 ? 'م' : 'ص';
+          const ampm = h >= 12 ? 'PM' : 'AM';
           const h12 = h % 12 || 12;
           return `${ampm} ${h12}:${m}`;
         } catch {
@@ -11228,7 +11228,7 @@
               const p = ksaFormatParts(d);
               if (p) {
                 const h12 = p.hour % 12 || 12;
-                const ampm = p.hour >= 12 ? 'م' : 'ص';
+                const ampm = p.hour >= 12 ? 'PM' : 'AM';
                 return `${p.year}-${ksaPad(p.month + 1)}-${ksaPad(p.day)} ${ampm} ${h12}:${ksaPad(p.minute)}`;
               }
             }
@@ -19858,8 +19858,8 @@
                 <span class="rd-desk-user" role="cell"><span class="rd-desk-user__name">${Sec.escapeHTML(empName)}</span></span>
                 <span class="rd-desk-muted rd-desk-clip" role="cell">${Sec.escapeHTML(violName)}</span>
                 <span role="cell"><span class="rd-desk-ticket-badge" style="color:${tone.color};background:${tone.soft}">${Sec.escapeHTML(statusText)}</span></span>
-                <span class="rd-desk-ticket-pts" role="cell" style="color:${tone.color}">−${pts}</span>
                 <span class="rd-desk-ticket-time" role="cell" dir="ltr">${Sec.escapeHTML(when)}</span>
+                <span class="rd-desk-ticket-pts" role="cell" style="color:${tone.color}">−${pts}</span>
               </button>`;
           }).join('');
           const sortBtn = (key, label) => {
@@ -19874,8 +19874,8 @@
                 ${sortBtn('name', 'الموظف')}
                 <span role="columnheader">النوع</span>
                 <span role="columnheader">الحالة</span>
-                ${sortBtn('points', 'النقاط')}
                 <span class="rd-desk-head-time" role="columnheader">التاريخ والوقت</span>
+                ${sortBtn('points', 'النقاط')}
               </div>
               ${rows || '<div class="rd-ticket-empty"><i class="fas fa-inbox"></i><p>لا توجد تذاكر مطابقة</p></div>'}
             </div>`;
