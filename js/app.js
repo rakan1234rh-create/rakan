@@ -7953,6 +7953,26 @@
         return true;
       }
 
+      function isTicketTerminal(t) {
+        if (!t) return false;
+        if (t.state === 'closed' || t.state === 'Warning_Issued') return true;
+        const st = String(t.status_text || '');
+        return st.includes('معتمد') || st.includes('ملغ');
+      }
+
+      /** قائمة التذاكر: كل المخالفات الظاهرة للمستخدم بما فيها المغلقة */
+      function getTicketsListViolations() {
+        if (!state.currentUser) return [];
+        const loaded = (state.violations || []).filter(v => v && v.state !== 'uploading');
+        if (canViewAllTickets()) return loaded;
+        const role = normalizeUserRole(state.currentUser.role);
+        const scoped = getVisibleViolations().filter(v => v && v.state !== 'uploading');
+        if (role !== 'manager' && role !== 'auditor' && role !== 'hr') return scoped;
+        const seen = new Set(scoped.map(v => v.id));
+        const terminal = loaded.filter(v => isTicketTerminal(v) && !seen.has(v.id));
+        return scoped.concat(terminal);
+      }
+
       /** تجاوزت المدة أو مُرّرت تلقائياً — نفس منطق بطاقة لوحة القيادة */
       function dashIsOverdueTicket(v) {
         if (!v) return false;
@@ -19645,9 +19665,10 @@
           host.innerHTML = '';
           return;
         }
-        const open = Array.isArray(openTickets)
+        const listed = Array.isArray(openTickets)
           ? openTickets
-          : getVisibleViolations().filter(isTicketWorkflowOpen);
+          : getTicketsListViolations();
+        const open = listed.filter(isTicketWorkflowOpen);
         let chip = state._rdWfChip || 'all';
         const showTeam = isBranchManagerTeamChipUser();
         if (chip === 'team' && !showTeam) {
@@ -19655,9 +19676,9 @@
           state._rdWfChip = 'all';
         }
         const mineN = open.filter(canActOnTicket).length;
-        const teamN = showTeam ? open.filter(isBranchTeamTicket).length : 0;
+        const teamN = showTeam ? listed.filter(isBranchTeamTicket).length : 0;
         const chips = [
-          { id: 'all', label: 'الكل', count: open.length },
+          { id: 'all', label: 'الكل', count: listed.length },
           { id: 'mine', label: 'بانتظار ردي', count: mineN },
           { id: 'sent', label: 'مُرسلة', count: Math.max(0, open.length - mineN) },
         ];
@@ -19688,7 +19709,7 @@
       }
 
       function filterTickets() {
-        let visible = getVisibleViolations().filter(isTicketWorkflowOpen);
+        let visible = getTicketsListViolations();
 
         const useRdChips = (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi())
           || (typeof isAtharDesktopRedesignUi === 'function' && isAtharDesktopRedesignUi())
@@ -19696,8 +19717,8 @@
         if (useRdChips) {
           syncRdWfChips(visible);
           const chip = state._rdWfChip || 'all';
-          if (chip === 'mine') visible = visible.filter(canActOnTicket);
-          else if (chip === 'sent') visible = visible.filter(t => !canActOnTicket(t));
+          if (chip === 'mine') visible = visible.filter(t => isTicketWorkflowOpen(t) && canActOnTicket(t));
+          else if (chip === 'sent') visible = visible.filter(t => isTicketWorkflowOpen(t) && !canActOnTicket(t));
           else if (chip === 'team') visible = visible.filter(isBranchTeamTicket);
           if (isAtharDesktopScreenUi()) {
             const search = (document.getElementById('wf-search')?.value || '').toLowerCase().trim();
