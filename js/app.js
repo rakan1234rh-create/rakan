@@ -5125,6 +5125,7 @@
           state._dataLoading = false;
           state._dataReady = true;
           state._wfViolationsScope = canViewAllTickets();
+          closeRetiredHrQueue().catch(() => {});
           try { loadStaffBreaksData(); } catch (_) { /* noop */ }
           try { loadComplaintsData(); } catch (_) { /* noop */ }
           setConnStatus('connected');
@@ -7572,6 +7573,8 @@
 
       /** هل مرحلة معالجة مُلغاة من إعدادات المنصة (تبديل عام في صلاحيات المنصة) */
       function isWorkflowStageSkipped(stage) {
+        // مرحلة الموارد البشرية ملغاة: الإغلاق يتم فور انتهاء الإدارة
+        if (stage === 'hr') return true;
         const permId = WORKFLOW_STAGE_SKIP_PERM[stage];
         if (!permId) return false;
         const liveGlobal = document.querySelector(`#settingsPermMatrix [data-perm-skip-global="${permId}"]`);
@@ -7586,10 +7589,67 @@
         let guard = 0;
         while (WORKFLOW_STAGE_SKIP_PERM[s] && isWorkflowStageSkipped(s) && guard++ < 8) {
           const next = getNextWorkflowState(s);
-          if (!next || next === s) break;
+          if (!next || next === s) {
+            if (s === 'hr') return 'closed';
+            break;
+          }
           s = next;
         }
+        if (s === 'hr' && isWorkflowStageSkipped('hr')) return 'closed';
         return s;
+      }
+
+      let _hrQueueCloseStarted = false;
+      /** إغلاق التذاكر العالقة عند الموارد البشرية بعد إلغاء المرحلة */
+      async function closeRetiredHrQueue() {
+        if (_hrQueueCloseStarted) return;
+        if (!state.currentUser || typeof sb === 'undefined' || !sb) return;
+        const role = normalizeUserRole(state.currentUser.role);
+        if (role !== 'admin' && !canViewAllTickets() && !hasPermission('act_as_hr')) return;
+        _hrQueueCloseStarted = true;
+        let changed = false;
+        for (const v of state.violations || []) {
+          if (!v || v.state !== 'hr') continue;
+          v.state = 'closed';
+          v.status_text = 'معتمدة نهائياً';
+          changed = true;
+        }
+        try {
+          const { data, error } = await sb.from('violations').select('id').eq('state', 'hr').limit(500);
+          if (error) throw error;
+          const rows = Array.isArray(data) ? data : [];
+          const logEntry = {
+            date: getNow(),
+            user: 'النظام',
+            role: 'النظام',
+            action: 'إغلاق تلقائي',
+            note: 'أُغلقت المخالفة بعد إلغاء مرحلة الموارد البشرية'
+          };
+          for (const row of rows) {
+            const { data: rpcData, error: rpcErr } = await sb.rpc('append_violation_log_with_guard', {
+              p_violation_id: row.id,
+              p_expected_state: 'hr',
+              p_log_entry: logEntry,
+              p_new_state: 'closed',
+              p_status_text: 'معتمدة نهائياً'
+            });
+            if (rpcErr || !rpcData?.ok) continue;
+            const local = (state.violations || []).find(v => v.id === row.id);
+            if (local) {
+              local.state = 'closed';
+              local.status_text = 'معتمدة نهائياً';
+              if (rpcData.logs) local.logs = rpcData.logs;
+              changed = true;
+            }
+          }
+        } catch (e) {
+          _hrQueueCloseStarted = false;
+          if (isMirsadDebugLog()) console.warn('[workflow] close HR queue failed', e);
+        }
+        if (changed) {
+          invalidateEmpScoreCache();
+          try { wfRefreshAfterPermissionChange(); } catch (_) {}
+        }
       }
 
       function violationEffectiveState(v) {
