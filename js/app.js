@@ -11195,19 +11195,44 @@
         return ksaLocaleDateAr(iso);
       }
 
-      /** تاريخ ووقت رقمي للتذاكر — YYYY-MM-DD مع الساعة (توقيت الرياض) */
+      /** تاريخ ووقت رقمي للتذاكر — ص/م قبل الساعة: 2026-09-07 ص 9:30 */
+      function formatTicketClockAmFirst(timeStr) {
+        if (!timeStr) return '';
+        try {
+          const parts = String(timeStr).split(':');
+          if (parts.length < 2) return '';
+          const h = parseInt(parts[0], 10);
+          const m = String(parts[1] || '0').padStart(2, '0').slice(0, 2);
+          if (isNaN(h)) return '';
+          const ampm = h >= 12 ? 'م' : 'ص';
+          const h12 = h % 12 || 12;
+          return `${ampm} ${h12}:${m}`;
+        } catch {
+          return '';
+        }
+      }
+
       function formatTicketDigitalDateTime(t) {
         const vd = String(t?.violation_date || '').trim().slice(0, 10);
         const vt = String(t?.violation_time || '').trim();
         const dateOk = /^\d{4}-\d{2}-\d{2}$/.test(vd);
         if (dateOk && vt) {
-          const clock = formatTime12(vt);
-          if (clock && clock !== '-') return `${vd} ${clock}`;
+          const clock = formatTicketClockAmFirst(vt);
+          if (clock) return `${vd} ${clock}`;
         }
         const iso = t?.created_at || t?.updated_at;
         if (iso) {
-          const formatted = formatDateTime(iso);
-          if (formatted && formatted !== '-') return formatted;
+          try {
+            const d = new Date(iso);
+            if (!isNaN(d.getTime())) {
+              const p = ksaFormatParts(d);
+              if (p) {
+                const h12 = p.hour % 12 || 12;
+                const ampm = p.hour >= 12 ? 'م' : 'ص';
+                return `${p.year}-${ksaPad(p.month + 1)}-${ksaPad(p.day)} ${ampm} ${h12}:${ksaPad(p.minute)}`;
+              }
+            }
+          } catch (_) {}
         }
         return dateOk ? vd : '—';
       }
