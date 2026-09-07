@@ -19864,6 +19864,7 @@
                 <span class="rd-desk-ticket-date" role="cell" dir="ltr">${Sec.escapeHTML(when.date)}</span>
                 <span class="rd-desk-ticket-time" role="cell" dir="ltr">${Sec.escapeHTML(when.time)}</span>
               </button>`;
+          }).join('');
           const sortBtn = (key, label) => {
             const active = state._rdWfSortKey === key;
             return `<button type="button" class="rd-desk-sort${active ? ' is-active' : ''}" role="columnheader"
