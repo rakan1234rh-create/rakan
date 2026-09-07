@@ -11212,13 +11212,12 @@
         }
       }
 
-      function formatTicketDigitalDateTime(t) {
+      function ticketDateTimeParts(t) {
         const vd = String(t?.violation_date || '').trim().slice(0, 10);
         const vt = String(t?.violation_time || '').trim();
         const dateOk = /^\d{4}-\d{2}-\d{2}$/.test(vd);
-        if (dateOk && vt) {
-          const clock = formatTicketClockAmFirst(vt);
-          if (clock) return `${vd} ${clock}`;
+        if (dateOk) {
+          return { date: vd, time: formatTicketClockAmFirst(vt) || '—' };
         }
         const iso = t?.created_at || t?.updated_at;
         if (iso) {
@@ -11229,12 +11228,23 @@
               if (p) {
                 const h12 = p.hour % 12 || 12;
                 const ampm = p.hour >= 12 ? 'PM' : 'AM';
-                return `${p.year}-${ksaPad(p.month + 1)}-${ksaPad(p.day)} ${ampm} ${h12}:${ksaPad(p.minute)}`;
+                return {
+                  date: `${p.year}-${ksaPad(p.month + 1)}-${ksaPad(p.day)}`,
+                  time: `${ampm} ${h12}:${ksaPad(p.minute)}`
+                };
               }
             }
           } catch (_) {}
         }
-        return dateOk ? vd : '—';
+        return { date: '—', time: '—' };
+      }
+
+      function formatTicketDigitalDateTime(t) {
+        const parts = ticketDateTimeParts(t);
+        if (parts.date === '—' && parts.time === '—') return '—';
+        if (parts.time === '—') return parts.date;
+        if (parts.date === '—') return parts.time;
+        return `${parts.date} ${parts.time}`;
       }
 
       function sortNotifsNewestFirst(notifs) {
@@ -19837,19 +19847,12 @@
             if (t.state === 'sup' || t.state === 'aud') return { color: 'var(--info)', soft: 'color-mix(in srgb, var(--info) 18%, transparent)' };
             return { color: 'var(--warning)', soft: 'color-mix(in srgb, var(--warning) 18%, transparent)' };
           };
-          const pointsFor = (t) => {
-            const types = state.violationTypes || [];
-            const vt = (t.violation_type_id && types.find(x => x.id === t.violation_type_id))
-              || types.find(x => x.name === t.violation_type);
-            return Number(vt?.weight ?? vt?.points ?? 0) || 0;
-          };
           const rows = tickets.map((t, i) => {
             const empName = (t._empName || '').trim() || '—';
             const violName = (t.violation_type || '').trim() || '—';
             const statusText = (t.status_text || STATE_LABELS[t.state] || '').trim() || '—';
             const tone = (typeof rdTicketStatusTone === 'function' ? rdTicketStatusTone(t) : null) || toneFor(t);
-            const pts = pointsFor(t);
-            const when = formatTicketDigitalDateTime(t);
+            const when = ticketDateTimeParts(t);
             const delay = Math.min(0.3, i * 0.035);
             return `
               <button type="button" class="rd-desk-table__row rd-desk-ticket-row" style="animation-delay:${delay}s"
@@ -19858,10 +19861,9 @@
                 <span class="rd-desk-user" role="cell"><span class="rd-desk-user__name">${Sec.escapeHTML(empName)}</span></span>
                 <span class="rd-desk-muted rd-desk-clip" role="cell">${Sec.escapeHTML(violName)}</span>
                 <span role="cell"><span class="rd-desk-ticket-badge" style="color:${tone.color};background:${tone.soft}">${Sec.escapeHTML(statusText)}</span></span>
-                <span class="rd-desk-ticket-time" role="cell" dir="ltr">${Sec.escapeHTML(when)}</span>
-                <span class="rd-desk-ticket-pts" role="cell" style="color:${tone.color}">−${pts}</span>
+                <span class="rd-desk-ticket-date" role="cell" dir="ltr">${Sec.escapeHTML(when.date)}</span>
+                <span class="rd-desk-ticket-time" role="cell" dir="ltr">${Sec.escapeHTML(when.time)}</span>
               </button>`;
-          }).join('');
           const sortBtn = (key, label) => {
             const active = state._rdWfSortKey === key;
             return `<button type="button" class="rd-desk-sort${active ? ' is-active' : ''}" role="columnheader"
@@ -19874,8 +19876,8 @@
                 ${sortBtn('name', 'الموظف')}
                 <span role="columnheader">النوع</span>
                 <span role="columnheader">الحالة</span>
-                <span class="rd-desk-head-time" role="columnheader">التاريخ والوقت</span>
-                ${sortBtn('points', 'النقاط')}
+                <span class="rd-desk-head-date" role="columnheader">التاريخ</span>
+                <span class="rd-desk-head-time" role="columnheader">الوقت</span>
               </div>
               ${rows || '<div class="rd-ticket-empty"><i class="fas fa-inbox"></i><p>لا توجد تذاكر مطابقة</p></div>'}
             </div>`;

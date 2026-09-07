@@ -312,7 +312,7 @@ html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--tickets {
 html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--tickets .rd-desk-table__head,
 html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--tickets .rd-desk-ticket-row {
   display: grid !important;
-  grid-template-columns: 90px 2fr 1.6fr 1.3fr 168px 72px !important;
+  grid-template-columns: 90px 2fr 1.6fr 1.3fr 108px 96px !important;
   gap: 12px !important;
   align-items: center !important;
 }
@@ -354,6 +354,7 @@ html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--tickets .rd-desk-sort.
   color: var(--text2) !important;
 }
 
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--tickets .rd-desk-head-date,
 html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--tickets .rd-desk-head-time {
   text-align: start !important;
   justify-self: stretch !important;
@@ -412,6 +413,7 @@ html.athar-staging-redesign.mr-desktop-ui .rd-desk-ticket-pts {
   font-weight: 700 !important;
 }
 
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-ticket-row .rd-desk-ticket-date,
 html.athar-staging-redesign.mr-desktop-ui .rd-desk-ticket-row .rd-desk-ticket-time {
   font-size: 11px !important;
   color: var(--text3) !important;
