@@ -11195,6 +11195,23 @@
         return ksaLocaleDateAr(iso);
       }
 
+      /** تاريخ ووقت رقمي للتذاكر — YYYY-MM-DD مع الساعة (توقيت الرياض) */
+      function formatTicketDigitalDateTime(t) {
+        const vd = String(t?.violation_date || '').trim().slice(0, 10);
+        const vt = String(t?.violation_time || '').trim();
+        const dateOk = /^\d{4}-\d{2}-\d{2}$/.test(vd);
+        if (dateOk && vt) {
+          const clock = formatTime12(vt);
+          if (clock && clock !== '-') return `${vd} ${clock}`;
+        }
+        const iso = t?.created_at || t?.updated_at;
+        if (iso) {
+          const formatted = formatDateTime(iso);
+          if (formatted && formatted !== '-') return formatted;
+        }
+        return dateOk ? vd : '—';
+      }
+
       function sortNotifsNewestFirst(notifs) {
         return [...notifs].sort((a, b) => {
           const ta = a?.time ? new Date(a.time).getTime() : 0;
@@ -19757,13 +19774,13 @@
             const statusText = (t.status_text || STATE_LABELS[t.state] || '').trim();
             const tone = toneFor(t);
             const delay = (i * 0.045).toFixed(3);
-            const rel = formatRelativeAr(t.created_at || t.updated_at);
+            const when = formatTicketDigitalDateTime(t);
             return `
               <button type="button" class="rd-ticket" style="animation-delay:${delay}s"
                 ontouchstart="prefetchTicketDetail('${t.id}')" onclick="openTicket('${t.id}')">
                 <div class="rd-ticket__top">
                   <span class="rd-ticket__id">#${Sec.escapeHTML(shortTicketNum(t.ticket_number))}</span>
-                  <span class="rd-ticket__time">${Sec.escapeHTML(rel)}</span>
+                  <span class="rd-ticket__time" dir="ltr">${Sec.escapeHTML(when)}</span>
                 </div>
                 <div class="rd-ticket__body">
                   <div class="rd-ticket__av">${Sec.escapeHTML(initial)}</div>
@@ -19807,7 +19824,7 @@
             const statusText = (t.status_text || STATE_LABELS[t.state] || '').trim() || '—';
             const tone = (typeof rdTicketStatusTone === 'function' ? rdTicketStatusTone(t) : null) || toneFor(t);
             const pts = pointsFor(t);
-            const rel = formatRelativeAr(t.created_at || t.updated_at);
+            const when = formatTicketDigitalDateTime(t);
             const delay = Math.min(0.3, i * 0.035);
             return `
               <button type="button" class="rd-desk-table__row rd-desk-ticket-row" style="animation-delay:${delay}s"
@@ -19817,7 +19834,7 @@
                 <span class="rd-desk-muted rd-desk-clip" role="cell">${Sec.escapeHTML(violName)}</span>
                 <span role="cell"><span class="rd-desk-ticket-badge" style="color:${tone.color};background:${tone.soft}">${Sec.escapeHTML(statusText)}</span></span>
                 <span class="rd-desk-ticket-pts" role="cell" style="color:${tone.color}">−${pts}</span>
-                <span class="rd-desk-ticket-time" role="cell">${Sec.escapeHTML(rel)}</span>
+                <span class="rd-desk-ticket-time" role="cell" dir="ltr">${Sec.escapeHTML(when)}</span>
               </button>`;
           }).join('');
           const sortBtn = (key, label) => {
@@ -19833,7 +19850,7 @@
                 <span role="columnheader">النوع</span>
                 <span role="columnheader">الحالة</span>
                 ${sortBtn('points', 'النقاط')}
-                <span class="rd-desk-head-time" role="columnheader">الوقت</span>
+                <span class="rd-desk-head-time" role="columnheader">التاريخ والوقت</span>
               </div>
               ${rows || '<div class="rd-ticket-empty"><i class="fas fa-inbox"></i><p>لا توجد تذاكر مطابقة</p></div>'}
             </div>`;
