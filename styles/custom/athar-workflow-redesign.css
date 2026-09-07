@@ -356,8 +356,10 @@ html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--tickets .rd-desk-sort.
 
 html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--tickets .rd-desk-head-date,
 html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--tickets .rd-desk-head-time {
-  text-align: start !important;
+  direction: ltr !important;
+  text-align: left !important;
   justify-self: stretch !important;
+  align-self: center !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui .rd-desk-ticket-row {
@@ -417,7 +419,8 @@ html.athar-staging-redesign.mr-desktop-ui .rd-desk-ticket-row .rd-desk-ticket-da
 html.athar-staging-redesign.mr-desktop-ui .rd-desk-ticket-row .rd-desk-ticket-time {
   font-size: 11px !important;
   color: var(--text3) !important;
-  text-align: start !important;
+  direction: ltr !important;
+  text-align: left !important;
   justify-self: stretch !important;
   white-space: nowrap !important;
   font-variant-numeric: tabular-nums !important;

@@ -19877,8 +19877,8 @@
                 ${sortBtn('name', 'الموظف')}
                 <span role="columnheader">النوع</span>
                 <span role="columnheader">الحالة</span>
-                <span class="rd-desk-head-date" role="columnheader">التاريخ</span>
-                <span class="rd-desk-head-time" role="columnheader">الوقت</span>
+                <span class="rd-desk-head-date" role="columnheader" dir="ltr">التاريخ</span>
+                <span class="rd-desk-head-time" role="columnheader" dir="ltr">الوقت</span>
               </div>
               ${rows || '<div class="rd-ticket-empty"><i class="fas fa-inbox"></i><p>لا توجد تذاكر مطابقة</p></div>'}
             </div>`;
