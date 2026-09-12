@@ -220,13 +220,14 @@ async function dispatchNotificationTemplates(
   if (!templates.length) return { sent: 0, reason: 'no templates' };
 
   let totalSent = 0;
+  let emailsSent = 0;
   const allErrors: string[] = [];
   const recipientCount = new Set<string>();
   const tagPrefix = opts.tagPrefix || 'vnotif';
 
   const templateResults = await Promise.all(templates.map(async (tpl) => {
     const userIds = await resolveRecipientIds(supabase, record, tpl.recipientRole);
-    if (!userIds.size) return { sent: 0, errors: [] as string[] };
+    if (!userIds.size) return { sent: 0, emailsSent: 0, errors: [] as string[] };
 
     const eventKey = `${tpl.eventKeySuffix}_${record.id}`;
     await Promise.all(Array.from(userIds).map((uid) => {
@@ -244,6 +245,7 @@ async function dispatchNotificationTemplates(
       });
     }));
 
+    let tplEmailsSent = 0;
     // Immediate Email Logic
     if (tpl.sendEmail) {
       const { data: users } = await supabase
@@ -257,8 +259,10 @@ async function dispatchNotificationTemplates(
           if (u.email) {
             try {
               await sendImmediateEmail(supabase, u.email, tpl.title, tpl.message, record);
+              tplEmailsSent += 1;
             } catch (err) {
-              allErrors.push(`Email failed to ${u.email}: ${err.message}`);
+              const msg = err instanceof Error ? err.message : String(err);
+              allErrors.push(`Email failed to ${u.email}: ${msg}`);
             }
           }
         }
@@ -278,16 +282,18 @@ async function dispatchNotificationTemplates(
     const errors: string[] = [];
     if (pushResult.error) errors.push(String(pushResult.error));
     if (pushResult.errors?.length) errors.push(...pushResult.errors);
-    return { sent: pushResult.sent || 0, errors };
+    return { sent: pushResult.sent || 0, emailsSent: tplEmailsSent, errors };
   }));
 
   for (const result of templateResults) {
     totalSent += result.sent;
+    emailsSent += result.emailsSent || 0;
     if (result.errors.length) allErrors.push(...result.errors);
   }
 
   return {
     sent: totalSent,
+    emailsSent,
     recipients: recipientCount.size,
     errors: allErrors.length ? allErrors.slice(0, 5) : undefined,
   };
@@ -399,8 +405,9 @@ async function sendImmediateEmail(
   const text = `${title}: ${body}. رقم المخالفة: ${record.ticket_number || record.id}`;
 
   const isApple = APPLE_DOMAINS.has(to.split('@').pop()?.toLowerCase() ?? '');
-  
-  if (isApple && BREVO_API_KEY) {
+
+  const sendViaBrevo = async () => {
+    if (!BREVO_API_KEY) throw new Error('Brevo is not configured');
     const resp = await fetch('https://api.brevo.com/v3/smtp/email', {
       method: 'POST',
       headers: { 'api-key': BREVO_API_KEY, 'content-type': 'application/json' },
@@ -416,22 +423,78 @@ async function sendImmediateEmail(
       const err = await resp.text();
       throw new Error(`Brevo failed: ${err}`);
     }
-  } else if (resend) {
-    const { error } = await resend.emails.send({ 
-      from: FULL_SENDER, 
-      to: [to], 
-      subject, 
-      html, 
+  };
+
+  const sendViaResend = async () => {
+    if (!resend) throw new Error('Resend is not configured');
+    const { error } = await resend.emails.send({
+      from: FULL_SENDER,
+      to: [to],
+      subject,
+      html,
       text,
       headers: {
         'List-Unsubscribe': `<${unsubscribeUrl}>`,
         'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-      }
+      },
     });
     if (error) throw new Error(`Resend failed: ${error.message}`);
+  };
+
+  const sendViaSesSmtp = async () => {
+    const host = (Deno.env.get('SES_SMTP_HOST') || '').trim();
+    const user = (Deno.env.get('SES_SMTP_USERNAME') || '').trim();
+    const pass = (Deno.env.get('SES_SMTP_PASSWORD') || '').trim();
+    const port = Number(Deno.env.get('SES_SMTP_PORT') || 587);
+    if (!host || !user || !pass) throw new Error('SES SMTP is not configured');
+    const nodemailer = await import('npm:nodemailer@6.9.16');
+    const transporter = nodemailer.createTransport({
+      host,
+      port: Number.isFinite(port) ? port : 587,
+      secure: port === 465,
+      auth: { user, pass },
+    });
+    await transporter.sendMail({
+      from: FULL_SENDER,
+      to,
+      subject,
+      html,
+      text,
+      headers: {
+        'List-Unsubscribe': `<${unsubscribeUrl}>`,
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+      },
+    });
+  };
+
+  // Prefer SES for aromaticfamilies.com (verified there); then Resend; then Brevo.
+  const senderDomain = (SENDER_EMAIL.split('@')[1] || '').toLowerCase();
+  const preferSes = senderDomain.endsWith('aromaticfamilies.com');
+  const providers: Array<{ name: string; run: () => Promise<void> }> = [];
+  if (preferSes) {
+    providers.push({ name: 'ses', run: sendViaSesSmtp });
+    providers.push({ name: 'resend', run: sendViaResend });
+    providers.push({ name: 'brevo', run: sendViaBrevo });
+  } else if (isApple) {
+    providers.push({ name: 'brevo', run: sendViaBrevo });
+    providers.push({ name: 'ses', run: sendViaSesSmtp });
+    providers.push({ name: 'resend', run: sendViaResend });
   } else {
-    throw new Error('No email provider configured.');
+    providers.push({ name: 'resend', run: sendViaResend });
+    providers.push({ name: 'ses', run: sendViaSesSmtp });
+    providers.push({ name: 'brevo', run: sendViaBrevo });
   }
+
+  const errors: string[] = [];
+  for (const provider of providers) {
+    try {
+      await provider.run();
+      return { ok: true as const, provider: provider.name };
+    } catch (err) {
+      errors.push(`${provider.name}: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+  throw new Error(errors.join(' | ') || 'No email provider configured.');
 }
 
 async function sendPushToUserIds(
@@ -859,6 +922,30 @@ async function dispatchBroadcastPush(
   };
 }
 
+function isPushDegradedOnly(result: { sent?: number; errors?: string[] | undefined }) {
+  if ((result.sent || 0) > 0) return false;
+  const errs = result.errors || [];
+  if (!errs.length) return false;
+  return errs.every((e) =>
+    /VAPID|push_subscriptions|no push|فعّل التنبيه/i.test(String(e || ''))
+  );
+}
+
+function notificationDeliveryOk(result: {
+  sent?: number;
+  emailsSent?: number;
+  errors?: string[] | undefined;
+  error?: string;
+}) {
+  if ((result.emailsSent || 0) > 0) return true;
+  if ((result.sent || 0) > 0) return true;
+  const errs = [...(result.errors || [])];
+  if (result.error) errs.push(String(result.error));
+  if (!errs.length) return true;
+  if (errs.some((e) => /Email failed/i.test(String(e || '')))) return false;
+  return isPushDegradedOnly({ sent: result.sent, errors: errs });
+}
+
 Deno.serve(async (req) => {
   _activeCors = buildCorsHeaders(req);
 
@@ -881,7 +968,7 @@ Deno.serve(async (req) => {
     return json({
       ok: true,
       service: 'violation-push',
-      version: '2026-07-parallel-push-v1',
+      version: '2026-09-email-ses-fallback-v3',
       autoForwardCron: AUTO_FORWARD_CRON_VERSION,
       vapidConfigured: !!(vapidPublic && vapidPrivate),
       vapidValid,
@@ -980,7 +1067,7 @@ Deno.serve(async (req) => {
         isAutoForward: payload.isAutoForward === true,
         dedupeKey: payload.dedupeKey != null ? String(payload.dedupeKey) : undefined,
       });
-      if (result.error && !result.sent) {
+      if (!notificationDeliveryOk(result)) {
         return json({ ok: false, ...result }, 500);
       }
       return json({ ok: true, ...result });
@@ -990,27 +1077,32 @@ Deno.serve(async (req) => {
   }
 
   if (payload.notify === true) {
-    const userId = await resolveUserIdFromJwt(req);
-    if (!userId) return json({ error: 'يجب تسجيل الدخول لإرسال التنبيه' }, 401);
-    const record = extractRecord(payload);
-    if (!record?.id) return json({ error: 'missing violation record in payload' }, 400);
-    {
-      const canSee = await userCanSeeViolation(req, String(record.id));
-      if (canSee === false) return json({ error: 'غير مصرح بإرسال تنبيه لهذه التذكرة' }, 403);
+    try {
+      const serviceInternal = await isServiceRoleAuth(req);
+      const userId = serviceInternal ? null : await resolveUserIdFromJwt(req);
+      if (!userId && !serviceInternal) return json({ error: 'يجب تسجيل الدخول لإرسال التنبيه' }, 401);
+      const record = extractRecord(payload);
+      if (!record?.id) return json({ error: 'missing violation record in payload' }, 400);
+      if (userId && !serviceInternal) {
+        const canSee = await userCanSeeViolation(req, String(record.id));
+        if (canSee === false) return json({ error: 'غير مصرح بإرسال تنبيه لهذه التذكرة' }, 403);
+      }
+      const { data: row, error: rowErr } = await supabase
+        .from('violations')
+        .select('id, ticket_number, violation_type, employee_id, branch_id, state, status_text, auto_forwarded_emp, auto_forwarded_sup')
+        .eq('id', record.id)
+        .maybeSingle();
+      if (rowErr) return json({ error: rowErr.message }, 500);
+      if (!row) return json({ error: 'violation not found' }, 404);
+      const merged: ViolationRow = { ...row, ...record, id: row.id };
+      const result = await dispatchViolationInsertPush(supabase, merged);
+      if (!notificationDeliveryOk(result)) {
+        return json({ ok: false, ...result }, 500);
+      }
+      return json({ ok: true, ...result });
+    } catch (err) {
+      return json({ ok: false, error: String(err) }, 500);
     }
-    const { data: row, error: rowErr } = await supabase
-      .from('violations')
-      .select('id, ticket_number, violation_type, employee_id, branch_id, state')
-      .eq('id', record.id)
-      .maybeSingle();
-    if (rowErr) return json({ error: rowErr.message }, 500);
-    if (!row) return json({ error: 'violation not found' }, 404);
-    const merged: ViolationRow = { ...row, ...record, id: row.id };
-    const result = await dispatchViolationInsertPush(supabase, merged);
-    if (result.errors?.length && !result.sent) {
-      return json({ ok: false, ...result }, 500);
-    }
-    return json({ ok: true, ...result });
   }
 
   if (payload.broadcast === true) {
@@ -1018,6 +1110,48 @@ Deno.serve(async (req) => {
     if (!admin) return json({ error: 'مدير النظام فقط يمكنه إرسال النشرات' }, 403);
     const result = await dispatchBroadcastPush(supabase, admin.id, payload);
     return json(result.body, result.status);
+  }
+
+  // Legacy DB webhook (athar_violation_push_notify): { type, table, schema, record }
+  // Must keep working so INSERT still sends email/push even if trigger body was not updated.
+  {
+    const op = String(payload.type || '').toUpperCase();
+    const table = String(payload.table || '');
+    const record = extractRecord(payload);
+    if (record?.id && table === 'violations' && (op === 'INSERT' || op === 'UPDATE')) {
+      const serviceInternal = await isServiceRoleAuth(req);
+      if (!serviceInternal) return json({ error: 'unauthorized webhook' }, 401);
+      try {
+        const { data: row, error: rowErr } = await supabase
+          .from('violations')
+          .select('id, ticket_number, violation_type, employee_id, branch_id, state, status_text, auto_forwarded_emp, auto_forwarded_sup')
+          .eq('id', record.id)
+          .maybeSingle();
+        if (rowErr) return json({ error: rowErr.message }, 500);
+        if (!row) return json({ error: 'violation not found' }, 404);
+        const merged: ViolationRow = { ...row, ...record, id: row.id };
+        if (op === 'INSERT') {
+          const result = await dispatchViolationInsertPush(supabase, merged);
+          if (!notificationDeliveryOk(result)) {
+            return json({ ok: false, source: 'legacy-webhook', ...result }, 500);
+          }
+          return json({ ok: true, source: 'legacy-webhook', ...result });
+        }
+        const oldRec = payload.old_record && typeof payload.old_record === 'object'
+          ? payload.old_record as ViolationRow
+          : null;
+        const previousState = oldRec?.state != null ? String(oldRec.state) : null;
+        const result = await dispatchViolationStatePush(supabase, merged, previousState, {
+          dedupeKey: `webhook:${merged.id}:${previousState || 'none'}:${merged.state}`,
+        });
+        if (!notificationDeliveryOk(result)) {
+          return json({ ok: false, source: 'legacy-webhook', ...result }, 500);
+        }
+        return json({ ok: true, source: 'legacy-webhook', ...result });
+      } catch (err) {
+        return json({ ok: false, source: 'legacy-webhook', error: String(err) }, 500);
+      }
+    }
   }
 
   return json({ error: 'استخدم test:true أو notify:true أو notifyState:true أو autoForwardCron:true أو broadcast:true' }, 400);
