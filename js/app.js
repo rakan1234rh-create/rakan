@@ -8379,9 +8379,11 @@
         return r === 'admin' || r === 'manager' || r === 'observer' || r === 'hr';
       }
 
-      /** معدل مخالفات الشهر الحالي مقارنة بالشهر الماضي لمربع لوحة القيادة */
-      function getRdMonthlyViolationsMetric(allVisible, ksaNowParts) {
+      /** معدل مخالفات الشهر الحالي مقارنة بالشهر الماضي لمربع لوحة القيادة.
+       * للراصد: الأعلى أخضر والأقل أحمر (نشاط رصد). لباقي الأدوار: العكس (انخفاض المخالفات إيجابي). */
+      function getRdMonthlyViolationsMetric(allVisible, ksaNowParts, opts = {}) {
         const parts = ksaNowParts || ksaFormatParts();
+        const invertColors = !!opts.invertColors;
         if (!parts) {
           return {
             thisCount: 0,
@@ -8391,6 +8393,8 @@
             color: 'var(--text2)',
             status: '—',
             trend: '—',
+            tone: 'flat',
+            colorTone: 'flat',
             sparkValues: []
           };
         }
@@ -8414,14 +8418,17 @@
         let color = 'var(--text2)';
         let status = 'ثابت';
         let tone = 'flat';
+        let colorTone = 'flat';
         if (delta < 0) {
-          color = 'var(--success)';
           status = 'أقل من الماضي';
           tone = 'down';
+          color = invertColors ? 'var(--danger)' : 'var(--success)';
+          colorTone = invertColors ? 'up' : 'down';
         } else if (delta > 0) {
-          color = 'var(--danger)';
           status = 'أكثر من الماضي';
           tone = 'up';
+          color = invertColors ? 'var(--success)' : 'var(--danger)';
+          colorTone = invertColors ? 'down' : 'up';
         } else {
           status = 'مثل الماضي';
         }
@@ -8436,7 +8443,7 @@
         const sparkValues = typeof dashBucketizeMonth === 'function'
           ? dashBucketizeMonth(allVisible || [], cur.fromIso, next.fromIso)
           : [];
-        return { thisCount, prevCount, delta, pct, color, status, tone, trend, sparkValues };
+        return { thisCount, prevCount, delta, pct, color, status, tone, colorTone, trend, sparkValues };
       }
 
       function buildRdMetricSparkSvg(values, opts = {}) {
@@ -8490,11 +8497,12 @@
       function buildRdDashMetricCardHtml(opts = {}) {
         const desk = !!opts.desk;
         const tone = opts.tone || 'flat';
+        const colorTone = opts.colorTone || tone;
         const wrapCls = desk
-          ? `rd-desk-metric rd-desk-metric--spark rd-desk-metric--${tone}`
-          : `rd-metric rd-metric--spark rd-metric--${tone}`;
+          ? `rd-desk-metric rd-desk-metric--spark rd-desk-metric--${colorTone}`
+          : `rd-metric rd-metric--spark rd-metric--${colorTone}`;
         const spark = buildRdMetricSparkSvg(opts.sparkValues || [], {
-          tone,
+          tone: colorTone,
           gradId: opts.gradId || (desk ? 'rdDeskMetricSparkGrad' : 'rdMobMetricSparkGrad')
         });
 
@@ -8502,7 +8510,7 @@
           const delta = Number(opts.delta) || 0;
           const deltaAbs = Math.abs(delta);
           const deltaText = delta === 0 ? '0' : (delta > 0 ? `+${deltaAbs}` : `−${deltaAbs}`);
-          const deltaCls = tone === 'up' ? 'is-up' : (tone === 'down' ? 'is-down' : 'is-flat');
+          const deltaCls = colorTone === 'up' ? 'is-up' : (colorTone === 'down' ? 'is-down' : 'is-flat');
           const pillIcon = tone === 'up'
             ? '<i class="fas fa-arrow-trend-up" aria-hidden="true"></i>'
             : (tone === 'down'
@@ -8512,7 +8520,7 @@
             <div class="${wrapCls} rd-metric-pro">
               <div class="rd-metric-pro__head">
                 <div class="rd-metric-pro__title">${Sec.escapeHTML(opts.label || 'معدل المخالفات')}</div>
-                <span class="rd-metric-pro__pill rd-metric-pro__pill--${tone}">${pillIcon}<span>${Sec.escapeHTML(opts.status || '')}</span></span>
+                <span class="rd-metric-pro__pill rd-metric-pro__pill--${colorTone}">${pillIcon}<span>${Sec.escapeHTML(opts.status || '')}</span></span>
               </div>
               <div class="rd-metric-pro__hero">
                 <div class="rd-metric-pro__num" style="color:${opts.color || 'var(--text)'}">${Sec.escapeHTML(String(opts.thisCount ?? '0'))}</div>
@@ -12235,7 +12243,9 @@
 
         let metricHtml = '';
         if (usesDashMonthlyViolationsMetric(me?.role)) {
-          const m = getRdMonthlyViolationsMetric(allVisible, ksaNowParts);
+          const m = getRdMonthlyViolationsMetric(allVisible, ksaNowParts, {
+            invertColors: normalizeUserRole(me?.role) === 'observer'
+          });
           metricHtml = buildRdDashMetricCardHtml({
             desk: true,
             kind: 'monthly',
@@ -12246,6 +12256,7 @@
             status: m.status,
             color: m.color,
             tone: m.tone,
+            colorTone: m.colorTone,
             sparkValues: m.sparkValues,
             gradId: 'rdDeskMonthViolSpark'
           });
@@ -12429,7 +12440,9 @@
 
         let metricHtml = '';
         if (usesDashMonthlyViolationsMetric(me?.role)) {
-          const m = getRdMonthlyViolationsMetric(allVisible, ksaNowParts);
+          const m = getRdMonthlyViolationsMetric(allVisible, ksaNowParts, {
+            invertColors: normalizeUserRole(me?.role) === 'observer'
+          });
           metricHtml = buildRdDashMetricCardHtml({
             desk: false,
             kind: 'monthly',
@@ -12440,6 +12453,7 @@
             status: m.status,
             color: m.color,
             tone: m.tone,
+            colorTone: m.colorTone,
             sparkValues: m.sparkValues,
             gradId: 'rdMobMonthViolSpark'
           });
