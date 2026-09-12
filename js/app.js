@@ -16441,14 +16441,14 @@
       function buildViolationWhatsAppText(ticketNumber, violationType, employeeName) {
         const ticket = shortTicketNum(ticketNumber);
         const vType = String(violationType || '—').trim() || '—';
-        const who = String(employeeName || '').trim();
-        const greet = who ? `مرحباً ${who.split(/\s+/)[0]}،` : 'مرحباً،';
+        const who = String(employeeName || '').trim().replace(/\s+/g, ' ');
+        const greet = who ? `مرحباً ${who}،` : 'مرحباً،';
         return [
           greet,
           `تم تسجيل مخالفة بحقكم برقم (${ticket}).`,
           `نوع المخالفة: ${vType}.`,
           'يرجى تقديم الإفادة عبر تطبيق أثر خلال 24 ساعة.',
-          'https://athar-app.online'
+          'هذه رسالة تلقائية من نظام أثر.'
         ].join('\n');
       }
 
@@ -16686,7 +16686,7 @@
               phone: empPhone,
               ticketNumber: officialNumber,
               violationType: type,
-              employeeName: emp.name,
+              employeeName: emp.name || emp.fullName || '',
               placeholderWin: waPlaceholderWin
             });
           } else if (waPlaceholderWin && !waPlaceholderWin.closed) {
