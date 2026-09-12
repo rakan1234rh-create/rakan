@@ -8374,6 +8374,77 @@
         return (idx + 1) + ' / ' + ranked.length;
       }
 
+      function usesDashMonthlyViolationsMetric(role) {
+        const r = normalizeUserRole(role);
+        return r === 'admin' || r === 'manager' || r === 'observer' || r === 'hr';
+      }
+
+      /** معدل مخالفات الشهر الحالي مقارنة بالشهر الماضي لمربع لوحة القيادة */
+      function getRdMonthlyViolationsMetric(allVisible, ksaNowParts) {
+        const parts = ksaNowParts || ksaFormatParts();
+        if (!parts) {
+          return {
+            thisCount: 0,
+            prevCount: 0,
+            delta: 0,
+            pct: 0,
+            color: 'var(--text2)',
+            status: '—',
+            trend: '—'
+          };
+        }
+        const cur = ksaMonthRange(parts.year, parts.month);
+        const nextShift = ksaShiftMonth(parts.year, parts.month, 1);
+        const next = ksaMonthRange(nextShift.year, nextShift.month);
+        const prevShift = ksaShiftMonth(parts.year, parts.month, -1);
+        const prev = ksaMonthRange(prevShift.year, prevShift.month);
+        const countIn = (fromIso, nextIso) => (allVisible || []).filter(v => {
+          if (!v || v.state === 'uploading') return false;
+          const iso = typeof dashViolationIsoDate === 'function'
+            ? dashViolationIsoDate(v)
+            : String(v.violation_date || v.created_at || '').slice(0, 10);
+          return iso && iso >= fromIso && iso < nextIso;
+        }).length;
+        const thisCount = countIn(cur.fromIso, next.fromIso);
+        const prevCount = countIn(prev.fromIso, cur.fromIso);
+        const delta = thisCount - prevCount;
+        const maxBase = Math.max(thisCount, prevCount, 1);
+        const pct = Math.min(100, Math.round((thisCount / maxBase) * 100));
+        let color = 'var(--text2)';
+        let status = 'ثابت';
+        if (delta < 0) {
+          color = 'var(--success)';
+          status = 'انخفاض';
+        } else if (delta > 0) {
+          color = 'var(--danger)';
+          status = 'ارتفاع';
+        }
+        const trend = typeof rdTrendText === 'function'
+          ? rdTrendText(delta, 'count')
+          : (delta === 0 ? 'بدون تغيّر ملحوظ' : `${delta > 0 ? '+' : ''}${delta} عن الشهر الماضي`);
+        return { thisCount, prevCount, delta, pct, color, status, trend };
+      }
+
+      function buildRdDashMetricCardHtml(opts = {}) {
+        const desk = !!opts.desk;
+        const topCls = desk ? 'rd-desk-metric__top' : 'rd-metric__top';
+        const labelCls = desk ? 'rd-desk-metric__label' : 'rd-metric__label';
+        const valCls = desk ? 'rd-desk-metric__val' : 'rd-metric__val';
+        const barCls = desk ? 'rd-desk-metric__bar' : 'rd-metric__bar';
+        const fillCls = desk ? 'rd-desk-metric__fill' : 'rd-metric__fill';
+        const subCls = desk ? 'rd-desk-metric__sub' : 'rd-metric__sub';
+        const wrapCls = desk ? 'rd-desk-metric' : 'rd-metric';
+        return `
+          <div class="${wrapCls}">
+            <div class="${topCls}">
+              <span class="${labelCls}">${Sec.escapeHTML(opts.label || '')}</span>
+              <span class="${valCls}" style="color:${opts.color || 'var(--text2)'}">${Sec.escapeHTML(String(opts.value || ''))}</span>
+            </div>
+            <div class="${barCls}"><div class="${fillCls}" style="width:${Math.max(0, Math.min(100, Number(opts.pct) || 0))}%;background:${opts.color || 'var(--text2)'}"></div></div>
+            <div class="${subCls}">${Sec.escapeHTML(opts.sub || '')}</div>
+          </div>`;
+      }
+
       function syncRdSideFoot() {
         const nameEl = document.getElementById('rdSideName');
         const emailEl = document.getElementById('rdSideEmail');
@@ -12049,18 +12120,39 @@
         const empRankLabel = getRdEmpCommitmentRankLabel(me);
         const streakBadge = streakDays >= 30 ? 'بطل الالتزام لهذا الشهر' : (streakDays >= 10 ? 'منضبط هذا الشهر' : 'ابدأ سلسلة انضباطك');
 
-        let responseScore = 100;
-        let autoCount = 0;
-        try {
-          if (me && (me.role === 'employee' || me.role === 'branch_manager')) {
-            const rd = calcResponseRate(me.id, 'employee');
-            responseScore = rd.score;
-            autoCount = rd.autoCount;
-          }
-        } catch (_) { /* noop */ }
-        const responsePct = Math.min(100, Math.abs(responseScore));
-        const responseColor = rdClassifyScore(responseScore);
-        const responseStatus = responseScore < 0 ? 'تنبيه' : (responseScore >= 75 ? 'جيد' : 'تحذير');
+        let metricHtml = '';
+        if (usesDashMonthlyViolationsMetric(me?.role)) {
+          const m = getRdMonthlyViolationsMetric(allVisible, ksaNowParts);
+          metricHtml = buildRdDashMetricCardHtml({
+            desk: true,
+            label: 'معدل المخالفات',
+            value: `${m.thisCount} · ${m.status}`,
+            color: m.color,
+            pct: m.pct,
+            sub: `${m.trend} · الشهر الماضي ${m.prevCount}`
+          });
+        } else {
+          let responseScore = 100;
+          let autoCount = 0;
+          try {
+            if (me && (me.role === 'employee' || me.role === 'branch_manager')) {
+              const rd = calcResponseRate(me.id, 'employee');
+              responseScore = rd.score;
+              autoCount = rd.autoCount;
+            }
+          } catch (_) { /* noop */ }
+          const responsePct = Math.min(100, Math.abs(responseScore));
+          const responseColor = rdClassifyScore(responseScore);
+          const responseStatus = responseScore < 0 ? 'تنبيه' : (responseScore >= 75 ? 'جيد' : 'تحذير');
+          metricHtml = buildRdDashMetricCardHtml({
+            desk: true,
+            label: 'الاستجابة',
+            value: `${responseScore} · ${responseStatus}`,
+            color: responseColor,
+            pct: responsePct,
+            sub: `${autoCount} تمريرات تلقائية`
+          });
+        }
 
         const total = visible.length;
         const pending = visible.filter(v => isTicketWorkflowOpen(v)).length;
@@ -12146,14 +12238,7 @@
                   </div>
                 </div>
               </div>
-              <div class="rd-desk-metric">
-                <div class="rd-desk-metric__top">
-                  <span class="rd-desk-metric__label">الاستجابة</span>
-                  <span class="rd-desk-metric__val" style="color:${responseColor}">${responseScore} · ${responseStatus}</span>
-                </div>
-                <div class="rd-desk-metric__bar"><div class="rd-desk-metric__fill" style="width:${responsePct}%;background:${responseColor}"></div></div>
-                <div class="rd-desk-metric__sub">${autoCount} تمريرات تلقائية</div>
-              </div>
+              ${metricHtml}
             </div>
             <div class="rd-desk-dash__grid">
               <div class="rd-desk-dash__main">
@@ -12216,18 +12301,39 @@
         const empRankLabel = getRdEmpCommitmentRankLabel(me);
         const streakBadge = streakDays >= 30 ? 'بطل الالتزام لهذا الشهر' : (streakDays >= 10 ? 'منضبط هذا الشهر' : 'ابدأ سلسلة انضباطك');
 
-        let responseScore = 100;
-        let autoCount = 0;
-        try {
-          if (me && (me.role === 'employee' || me.role === 'branch_manager')) {
-            const rd = calcResponseRate(me.id, 'employee');
-            responseScore = rd.score;
-            autoCount = rd.autoCount;
-          }
-        } catch (_) { /* noop */ }
-        const responsePct = Math.min(100, Math.abs(responseScore));
-        const responseColor = rdClassifyScore(responseScore);
-        const responseStatus = responseScore < 0 ? 'تنبيه' : (responseScore >= 75 ? 'جيد' : 'تحذير');
+        let metricHtml = '';
+        if (usesDashMonthlyViolationsMetric(me?.role)) {
+          const m = getRdMonthlyViolationsMetric(allVisible, ksaNowParts);
+          metricHtml = buildRdDashMetricCardHtml({
+            desk: false,
+            label: 'معدل المخالفات',
+            value: `${m.thisCount} · ${m.status}`,
+            color: m.color,
+            pct: m.pct,
+            sub: `${m.trend} · الشهر الماضي ${m.prevCount}`
+          });
+        } else {
+          let responseScore = 100;
+          let autoCount = 0;
+          try {
+            if (me && (me.role === 'employee' || me.role === 'branch_manager')) {
+              const rd = calcResponseRate(me.id, 'employee');
+              responseScore = rd.score;
+              autoCount = rd.autoCount;
+            }
+          } catch (_) { /* noop */ }
+          const responsePct = Math.min(100, Math.abs(responseScore));
+          const responseColor = rdClassifyScore(responseScore);
+          const responseStatus = responseScore < 0 ? 'تنبيه' : (responseScore >= 75 ? 'جيد' : 'تحذير');
+          metricHtml = buildRdDashMetricCardHtml({
+            desk: false,
+            label: 'الاستجابة',
+            value: `${responseScore} · ${responseStatus}`,
+            color: responseColor,
+            pct: responsePct,
+            sub: `${autoCount} تمريرات تلقائية`
+          });
+        }
 
         const total = visible.length;
         const pending = visible.filter(v => isTicketWorkflowOpen(v)).length;
@@ -12308,14 +12414,7 @@
                 <div class="rd-mini__lbl">ترتيب فرعك بالالتزام</div>
               </div>
             </div>
-            <div class="rd-metric">
-              <div class="rd-metric__top">
-                <span class="rd-metric__label">الاستجابة</span>
-                <span class="rd-metric__val" style="color:${responseColor}">${responseScore} · ${responseStatus}</span>
-              </div>
-              <div class="rd-metric__bar"><div class="rd-metric__fill" style="width:${responsePct}%;background:${responseColor}"></div></div>
-              <div class="rd-metric__sub">${autoCount} تمريرات تلقائية</div>
-            </div>
+            ${metricHtml}
             <div class="rd-stat-grid">
               <div class="rd-stat"><div class="rd-stat__row"><span class="rd-stat__val">${autoFwd}</span><span class="rd-stat__ico" style="color:var(--warning)"><i class="fas fa-clock" aria-hidden="true"></i></span></div><div class="rd-stat__lbl">مخالفات تم تمريرها تلقائيا</div></div>
               <div class="rd-stat"><div class="rd-stat__row"><span class="rd-stat__val">${pending}</span><span class="rd-stat__ico" style="color:var(--info)"><i class="fas fa-spinner" aria-hidden="true"></i></span></div><div class="rd-stat__lbl">قيد المعالجة</div></div>
