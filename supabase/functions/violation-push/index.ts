@@ -1043,6 +1043,38 @@ Deno.serve(async (req) => {
     return json({ ok: true, ...result });
   }
 
+  // Service-role only: resend the employee violation email copy to an arbitrary inbox for delivery QA.
+  if (payload.testEmail === true) {
+    if (!await isServiceRoleAuth(req)) return json({ error: 'unauthorized' }, 401);
+    const to = String(payload.to || '').trim().toLowerCase();
+    if (!to || !to.includes('@')) return json({ error: 'missing to email' }, 400);
+    const record = extractRecord(payload);
+    if (!record?.id) return json({ error: 'missing violation record in payload' }, 400);
+    try {
+      const { data: row, error: rowErr } = await supabase
+        .from('violations')
+        .select('id, ticket_number, violation_type, employee_id, branch_id, state, status_text, auto_forwarded_emp, auto_forwarded_sup')
+        .eq('id', record.id)
+        .maybeSingle();
+      if (rowErr) return json({ error: rowErr.message }, 500);
+      if (!row) return json({ error: 'violation not found' }, 404);
+      const merged: ViolationRow = { ...row, ...record, id: row.id };
+      const employeeName = await getEmployeeName(supabase, merged.employee_id);
+      const templates = buildNewViolationTemplates(merged, employeeName);
+      const tpl = templates.find((t) => t.sendEmail) || templates[0];
+      if (!tpl) return json({ error: 'no email template' }, 500);
+      const sent = await sendImmediateEmail(supabase, to, tpl.title, tpl.message, merged);
+      return json({
+        ok: true,
+        to,
+        ticket: merged.ticket_number || merged.id,
+        provider: sent?.provider || null,
+      });
+    } catch (err) {
+      return json({ ok: false, error: String(err) }, 500);
+    }
+  }
+
   if (payload.notifyState === true) {
     try {
       const serviceInternal = await isServiceRoleAuth(req);
