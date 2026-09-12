@@ -16425,6 +16425,75 @@
         try { syncRdNewTicketChrome(); } catch (_) { /* noop */ }
       }
 
+      /** جوال محلي → رقم واتساب دولي بدون + (مثال: 05XXXXXXXX → 9665XXXXXXXX) */
+      function phoneToWhatsAppDigits(phone) {
+        const n = Sec.normalizePhone(phone);
+        if (!n) return '';
+        if (/^05\d{8}$/.test(n)) return '966' + n.slice(1);
+        if (/^9665\d{8}$/.test(n)) return n;
+        const digits = String(phone || '').replace(/\D/g, '');
+        if (/^05\d{8}$/.test(digits)) return '966' + digits.slice(1);
+        if (/^5\d{8}$/.test(digits)) return '966' + digits;
+        if (/^9665\d{8}$/.test(digits)) return digits;
+        return '';
+      }
+
+      function buildViolationWhatsAppText(ticketNumber, violationType, employeeName) {
+        const ticket = shortTicketNum(ticketNumber);
+        const vType = String(violationType || '—').trim() || '—';
+        const who = String(employeeName || '').trim();
+        const greet = who ? `مرحباً ${who.split(/\s+/)[0]}،` : 'مرحباً،';
+        return [
+          greet,
+          `تم تسجيل مخالفة بحقكم برقم (${ticket}).`,
+          `نوع المخالفة: ${vType}.`,
+          'يرجى تقديم الإفادة عبر تطبيق أثر خلال 24 ساعة.',
+          'https://athar-app.online'
+        ].join('\n');
+      }
+
+      function buildViolationWhatsAppUrl(phone, ticketNumber, violationType, employeeName) {
+        const digits = phoneToWhatsAppDigits(phone);
+        if (!digits) return '';
+        const text = buildViolationWhatsAppText(ticketNumber, violationType, employeeName);
+        return `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
+      }
+
+      /** يفتح واتساب بعد الرصد — نافذة مبكرة تتجاوز حظر النوافذ المنبثقة بعد الانتظار */
+      function openWhatsAppAfterViolation(opts = {}) {
+        const url = buildViolationWhatsAppUrl(
+          opts.phone,
+          opts.ticketNumber,
+          opts.violationType,
+          opts.employeeName
+        );
+        if (!url) {
+          if (opts.placeholderWin && !opts.placeholderWin.closed) {
+            try { opts.placeholderWin.close(); } catch (_) { /* noop */ }
+          }
+          showToast('لا يوجد جوال محفوظ للموظف — تعذّر فتح واتساب', 'warning');
+          return false;
+        }
+        try {
+          if (opts.placeholderWin && !opts.placeholderWin.closed) {
+            opts.placeholderWin.location.href = url;
+            return true;
+          }
+        } catch (_) { /* noop */ }
+        const w = window.open(url, '_blank', 'noopener,noreferrer');
+        if (!w) {
+          // احتياطي: تحويل نفس الصفحة إن حُظر الـ popup
+          try {
+            window.location.href = url;
+            return true;
+          } catch (_) {
+            showToast('تعذّر فتح واتساب — اسمح بالنوافذ المنبثقة', 'warning');
+            return false;
+          }
+        }
+        return true;
+      }
+
       async function submitNewTicket() {
         if (!hasPermission('tab_newTicket')) {
           showToast('لا تملك صلاحية رصد مخالفة جديدة.', 'warning');
@@ -16467,6 +16536,17 @@
         const emp = state.users.find(u => u.employee_number === empNum && isViolationSubjectUser(u));
         if (!emp) return showToast('الرقم الوظيفي غير موجود أو لا يمكن رصد مخالفة على هذا الدور', 'error');
         if (!emp.branch_id) return showToast('الموظف غير مرتبط بفرع', 'error');
+
+        // افتح نافذة فارغة أثناء إيماءة المستخدم حتى لا يمنع المتصفح واتساب بعد الرفع
+        let waPlaceholderWin = null;
+        const empPhone = String(emp.phone || '').trim();
+        if (empPhone && phoneToWhatsAppDigits(empPhone)) {
+          try {
+            waPlaceholderWin = window.open('about:blank', '_blank');
+          } catch (_) {
+            waPlaceholderWin = null;
+          }
+        }
 
         const branch = state.branches.find(b => b.id === emp.branch_id);
         // المشرف يأتي من المنطقة (مو الفرع) — كل فروع المنطقة تشترك بنفس المشرف
@@ -16601,9 +16681,23 @@
           renderNotifications();
           showToast('تم إصدار التذكرة ' + shortTicketNum(officialNumber) + ' بنجاح ✓', 'success');
           notifyViolationPushAfterInsert(ticketData);
+          if (empPhone) {
+            openWhatsAppAfterViolation({
+              phone: empPhone,
+              ticketNumber: officialNumber,
+              violationType: type,
+              employeeName: emp.name,
+              placeholderWin: waPlaceholderWin
+            });
+          } else if (waPlaceholderWin && !waPlaceholderWin.closed) {
+            try { waPlaceholderWin.close(); } catch (_) { /* noop */ }
+          }
           goTab('workflow', document.querySelector('[onclick*=workflow]'));
           
         } catch (err) {
+          if (waPlaceholderWin && !waPlaceholderWin.closed) {
+            try { waPlaceholderWin.close(); } catch (_) { /* noop */ }
+          }
           if (isMirsadDebugLog()) console.error('[Sync] Critical Error:', err);
           showToast(err.message, 'error');
         } finally {
