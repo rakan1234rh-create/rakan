@@ -5686,6 +5686,126 @@ html.athar-staging-redesign.mr-desktop-ui #tab-departments.tab-content.active {
 .rd-metric-badge--down { color: var(--success) !important; }
 .rd-metric-badge--flat { color: var(--text2) !important; }
 
+.rd-metric-pro {
+  gap: 12px;
+  min-height: 220px !important;
+  padding: 18px 18px 14px !important;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 92%, #fff) 0%, var(--surface) 100%) !important;
+  box-shadow: 0 10px 28px color-mix(in srgb, #0f172a 6%, transparent);
+}
+.rd-metric-pro__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.rd-metric-pro__title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+.rd-metric-pro__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+.rd-metric-pro__pill i { font-size: 10px; }
+.rd-metric-pro__pill--down {
+  color: #166534;
+  background: color-mix(in srgb, #22c55e 16%, transparent);
+}
+.rd-metric-pro__pill--up {
+  color: #991b1b;
+  background: color-mix(in srgb, #ef4444 16%, transparent);
+}
+.rd-metric-pro__pill--flat {
+  color: var(--text2);
+  background: var(--surface2);
+}
+.rd-metric-pro__hero {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  margin-top: 2px;
+}
+.rd-metric-pro__num {
+  font-size: 42px;
+  font-weight: 800;
+  line-height: 0.92;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+.rd-metric-pro__unit {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding-bottom: 4px;
+}
+.rd-metric-pro__unit strong {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+.rd-metric-pro__unit span {
+  font-size: 11px;
+  color: var(--text3);
+}
+.rd-metric-pro__chart {
+  margin: 2px 0 0;
+}
+.rd-metric-pro__chart .rd-metric-spark {
+  display: block;
+  width: 100%;
+  height: 78px;
+}
+.rd-metric-pro__compare {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  margin-top: 2px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.rd-metric-pro__cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  text-align: center;
+}
+.rd-metric-pro__cell--mid {
+  border-inline: 1px solid var(--border);
+  padding-inline: 6px;
+}
+.rd-metric-pro__cell-lbl {
+  font-size: 10.5px;
+  color: var(--text3);
+  font-weight: 600;
+}
+.rd-metric-pro__cell-val {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.rd-metric-pro__cell-val.is-down { color: var(--success); }
+.rd-metric-pro__cell-val.is-up { color: var(--danger); }
+.rd-metric-pro__cell-val.is-flat { color: var(--text2); }
+.rd-desk-metric--down .rd-metric-pro__num,
+.rd-metric--down .rd-metric-pro__num { color: var(--success); }
+.rd-desk-metric--up .rd-metric-pro__num,
+.rd-metric--up .rd-metric-pro__num { color: var(--danger); }
+.rd-desk-metric--flat .rd-metric-pro__num,
+.rd-metric--flat .rd-metric-pro__num { color: var(--text); }
+
 .rd-desk-dist__row { padding: 11px 14px; }
 .rd-desk-dist__ico {
   width: 30px;

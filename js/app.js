@@ -8443,15 +8443,15 @@
         const src = Array.isArray(values) && values.length ? values.slice() : [0, 0];
         while (src.length < 2) src.push(0);
         const w = 320;
-        const h = 72;
-        const padX = 6;
-        const padY = 10;
+        const h = 78;
+        const padX = 8;
+        const padY = 14;
         const peak = Math.max(0, ...src);
         const scaleMax = Math.max(peak, 4);
         const pts = src.map((v, i) => {
           const x = padX + (i / (src.length - 1)) * (w - padX * 2);
           const t = Math.min(1, Math.max(0, v) / scaleMax);
-          const y = (h - padY) - Math.sqrt(t) * (h - padY * 2 - 6);
+          const y = (h - padY) - Math.sqrt(t) * (h - padY * 2 - 4);
           return [x, y];
         });
         const line = (() => {
@@ -8466,53 +8466,87 @@
           return d;
         })();
         const last = pts[pts.length - 1];
-        const area = `${line} L${last[0]},${h - 2} L${pts[0][0]},${h - 2} Z`;
+        const area = `${line} L${last[0]},${h - 1} L${pts[0][0]},${h - 1} Z`;
         const warn = opts.tone === 'up';
         const good = opts.tone === 'down';
+        const stroke = warn ? '#dc2626' : (good ? '#16a34a' : '#334155');
         const tipColor = warn ? '#ef4444' : (good ? '#22c55e' : '#64748b');
-        const tipIcon = warn
-          ? `<g transform="translate(${(last[0] - 7).toFixed(1)},${(last[1] - 22).toFixed(1)})">
-              <path d="M7 1 L13 12 H1 Z" fill="#ef4444"></path>
-              <rect x="6.2" y="5" width="1.6" height="4" rx="0.6" fill="#fff"></rect>
-              <circle cx="7" cy="11" r="0.9" fill="#fff"></circle>
-            </g>`
-          : (good
-            ? `<g transform="translate(${(last[0] - 8).toFixed(1)},${(last[1] - 20).toFixed(1)})">
-                <circle cx="8" cy="8" r="7.5" fill="#22c55e"></circle>
-                <path d="M4.5 8.2 L7 10.6 L11.6 5.6" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
-              </g>`
-            : '');
+        const fillTop = warn ? '#ef4444' : (good ? '#22c55e' : '#64748b');
+        const gid = Sec.escapeHTML(opts.gradId || 'rdMetricSparkGrad');
         return `
-          <svg class="rd-metric-spark" viewBox="0 0 ${w} ${h}" width="100%" height="72" preserveAspectRatio="none" aria-hidden="true">
+          <svg class="rd-metric-spark" viewBox="0 0 ${w} ${h}" width="100%" height="78" preserveAspectRatio="none" aria-hidden="true">
             <defs>
-              <linearGradient id="${Sec.escapeHTML(opts.gradId || 'rdMetricSparkGrad')}" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#94a3b8" stop-opacity="0.28"></stop>
-                <stop offset="100%" stop-color="#94a3b8" stop-opacity="0.02"></stop>
+              <linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="${fillTop}" stop-opacity="0.22"></stop>
+                <stop offset="100%" stop-color="${fillTop}" stop-opacity="0.02"></stop>
               </linearGradient>
             </defs>
-            <path d="${area}" fill="url(#${Sec.escapeHTML(opts.gradId || 'rdMetricSparkGrad')})"></path>
-            <path d="${line}" fill="none" stroke="#0f172a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
-            <circle cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="3.4" fill="${tipColor}"></circle>
-            ${tipIcon}
+            <path d="${area}" fill="url(#${gid})"></path>
+            <path d="${line}" fill="none" stroke="${stroke}" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"></path>
+            <circle cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="4" fill="#fff" stroke="${tipColor}" stroke-width="2.2"></circle>
           </svg>`;
       }
 
       function buildRdDashMetricCardHtml(opts = {}) {
         const desk = !!opts.desk;
-        const wrapCls = desk ? 'rd-desk-metric rd-desk-metric--spark' : 'rd-metric rd-metric--spark';
+        const tone = opts.tone || 'flat';
+        const wrapCls = desk
+          ? `rd-desk-metric rd-desk-metric--spark rd-desk-metric--${tone}`
+          : `rd-metric rd-metric--spark rd-metric--${tone}`;
+        const spark = buildRdMetricSparkSvg(opts.sparkValues || [], {
+          tone,
+          gradId: opts.gradId || (desk ? 'rdDeskMetricSparkGrad' : 'rdMobMetricSparkGrad')
+        });
+
+        if (opts.kind === 'monthly') {
+          const delta = Number(opts.delta) || 0;
+          const deltaAbs = Math.abs(delta);
+          const deltaText = delta === 0 ? '0' : (delta > 0 ? `+${deltaAbs}` : `−${deltaAbs}`);
+          const deltaCls = tone === 'up' ? 'is-up' : (tone === 'down' ? 'is-down' : 'is-flat');
+          const pillIcon = tone === 'up'
+            ? '<i class="fas fa-arrow-trend-up" aria-hidden="true"></i>'
+            : (tone === 'down'
+              ? '<i class="fas fa-arrow-trend-down" aria-hidden="true"></i>'
+              : '<i class="fas fa-minus" aria-hidden="true"></i>');
+          return `
+            <div class="${wrapCls} rd-metric-pro">
+              <div class="rd-metric-pro__head">
+                <div class="rd-metric-pro__title">${Sec.escapeHTML(opts.label || 'معدل المخالفات')}</div>
+                <span class="rd-metric-pro__pill rd-metric-pro__pill--${tone}">${pillIcon}<span>${Sec.escapeHTML(opts.status || '')}</span></span>
+              </div>
+              <div class="rd-metric-pro__hero">
+                <div class="rd-metric-pro__num" style="color:${opts.color || 'var(--text)'}">${Sec.escapeHTML(String(opts.thisCount ?? '0'))}</div>
+                <div class="rd-metric-pro__unit">
+                  <strong>مخالفة</strong>
+                  <span>خلال هذا الشهر</span>
+                </div>
+              </div>
+              <div class="rd-metric-pro__chart">${spark}</div>
+              <div class="rd-metric-pro__compare">
+                <div class="rd-metric-pro__cell">
+                  <span class="rd-metric-pro__cell-lbl">الشهر الماضي</span>
+                  <strong class="rd-metric-pro__cell-val">${Sec.escapeHTML(String(opts.prevCount ?? '0'))}</strong>
+                </div>
+                <div class="rd-metric-pro__cell rd-metric-pro__cell--mid">
+                  <span class="rd-metric-pro__cell-lbl">الفرق</span>
+                  <strong class="rd-metric-pro__cell-val ${deltaCls}">${deltaText}</strong>
+                </div>
+                <div class="rd-metric-pro__cell">
+                  <span class="rd-metric-pro__cell-lbl">هذا الشهر</span>
+                  <strong class="rd-metric-pro__cell-val">${Sec.escapeHTML(String(opts.thisCount ?? '0'))}</strong>
+                </div>
+              </div>
+            </div>`;
+        }
+
+        const icon = tone === 'up'
+          ? '<i class="fas fa-triangle-exclamation" aria-hidden="true"></i>'
+          : '<i class="fas fa-circle-check" aria-hidden="true"></i>';
         const topCls = desk ? 'rd-desk-metric__top' : 'rd-metric__top';
         const labelCls = desk ? 'rd-desk-metric__label' : 'rd-metric__label';
         const valCls = desk ? 'rd-desk-metric__val' : 'rd-metric__val';
         const chartCls = desk ? 'rd-desk-metric__chart' : 'rd-metric__chart';
         const subCls = desk ? 'rd-desk-metric__sub' : 'rd-metric__sub';
-        const tone = opts.tone || 'flat';
-        const icon = tone === 'up'
-          ? '<i class="fas fa-triangle-exclamation" aria-hidden="true"></i>'
-          : '<i class="fas fa-circle-check" aria-hidden="true"></i>';
-        const spark = buildRdMetricSparkSvg(opts.sparkValues || [], {
-          tone,
-          gradId: opts.gradId || (desk ? 'rdDeskMetricSparkGrad' : 'rdMobMetricSparkGrad')
-        });
         return `
           <div class="${wrapCls}">
             <div class="${topCls}">
@@ -12204,13 +12238,16 @@
           const m = getRdMonthlyViolationsMetric(allVisible, ksaNowParts);
           metricHtml = buildRdDashMetricCardHtml({
             desk: true,
+            kind: 'monthly',
             label: 'معدل المخالفات',
-            value: `${m.thisCount} مخالفة · ${m.status}`,
+            thisCount: m.thisCount,
+            prevCount: m.prevCount,
+            delta: m.delta,
+            status: m.status,
             color: m.color,
             tone: m.tone,
             sparkValues: m.sparkValues,
-            gradId: 'rdDeskMonthViolSpark',
-            sub: m.trend
+            gradId: 'rdDeskMonthViolSpark'
           });
         } else {
           let responseScore = 100;
@@ -12395,13 +12432,16 @@
           const m = getRdMonthlyViolationsMetric(allVisible, ksaNowParts);
           metricHtml = buildRdDashMetricCardHtml({
             desk: false,
+            kind: 'monthly',
             label: 'معدل المخالفات',
-            value: `${m.thisCount} مخالفة · ${m.status}`,
+            thisCount: m.thisCount,
+            prevCount: m.prevCount,
+            delta: m.delta,
+            status: m.status,
             color: m.color,
             tone: m.tone,
             sparkValues: m.sparkValues,
-            gradId: 'rdMobMonthViolSpark',
-            sub: m.trend
+            gradId: 'rdMobMonthViolSpark'
           });
         } else {
           let responseScore = 100;
