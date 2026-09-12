@@ -363,6 +363,7 @@ async function sendImmediateEmail(
   title: string,
   body: string,
   record: ViolationRow,
+  opts: { preferProvider?: string; useConfiguredSender?: boolean } = {},
 ) {
   const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? '';
   const BREVO_API_KEY = Deno.env.get('BREVO_API_KEY') ?? '';
@@ -383,12 +384,15 @@ async function sendImmediateEmail(
     return { name: 'منصة أثر', email: raw };
   };
 
-  /** aromaticfamilies.com SPF is Outlook-only (-all); SES/Resend would fail auth → spam. */
+  /** aromaticfamilies.com SPF is Outlook-only (-all); SES/Resend often fail auth → spam.
+   * Keep configured sender when caller asks (QA) or provider is Brevo. */
   const alignSenderForProvider = (provider: 'ses' | 'resend' | 'brevo') => {
     const parsed = parseSender(SENDER_EMAIL_RAW);
     const domain = (parsed.email.split('@')[1] || '').toLowerCase();
+    const keepConfigured = !!opts.useConfiguredSender || provider === 'brevo';
     if (
-      (provider === 'ses' || provider === 'resend')
+      !keepConfigured
+      && (provider === 'ses' || provider === 'resend')
       && (domain === 'aromaticfamilies.com' || domain.endsWith('.aromaticfamilies.com'))
     ) {
       return {
@@ -566,15 +570,25 @@ async function sendImmediateEmail(
   };
 
   // Prefer SES when available; athar-app.online is SPF-aligned with amazonses.com.
+  // Optional preferProvider lets QA force resend|ses|brevo.
   const providers: Array<{ name: string; run: () => Promise<void> }> = [];
-  if (isApple) {
-    providers.push({ name: 'brevo', run: sendViaBrevo });
-    providers.push({ name: 'ses', run: sendViaSesSmtp });
-    providers.push({ name: 'resend', run: sendViaResend });
-  } else {
-    providers.push({ name: 'ses', run: sendViaSesSmtp });
-    providers.push({ name: 'resend', run: sendViaResend });
-    providers.push({ name: 'brevo', run: sendViaBrevo });
+  const prefer = String(opts.preferProvider || '').toLowerCase();
+  const ordered = (() => {
+    // Exclusive provider when explicitly forced (QA / diagnostics).
+    if (prefer === 'resend') return ['resend'] as const;
+    if (prefer === 'brevo') return ['brevo'] as const;
+    if (prefer === 'ses') return ['ses'] as const;
+    if (isApple) return ['brevo', 'ses', 'resend'] as const;
+    // Default: Resend first for athar-app.online deliverability to Gmail/Hotmail.
+    return ['resend', 'ses', 'brevo'] as const;
+  })();
+  const runners: Record<string, () => Promise<void>> = {
+    ses: sendViaSesSmtp,
+    resend: sendViaResend,
+    brevo: sendViaBrevo,
+  };
+  for (const name of ordered) {
+    providers.push({ name, run: runners[name] });
   }
 
   const errors: string[] = [];
@@ -1142,6 +1156,7 @@ Deno.serve(async (req) => {
     if (!to || !to.includes('@')) return json({ error: 'missing to email' }, 400);
     const record = extractRecord(payload);
     if (!record?.id) return json({ error: 'missing violation record in payload' }, 400);
+    const prefer = String(payload.provider || '').trim().toLowerCase();
     try {
       const { data: row, error: rowErr } = await supabase
         .from('violations')
@@ -1155,12 +1170,16 @@ Deno.serve(async (req) => {
       const templates = buildNewViolationTemplates(merged, employeeName);
       const tpl = templates.find((t) => t.sendEmail) || templates[0];
       if (!tpl) return json({ error: 'no email template' }, 500);
-      const sent = await sendImmediateEmail(supabase, to, tpl.title, tpl.message, merged);
+      const sent = await sendImmediateEmail(supabase, to, tpl.title, tpl.message, merged, {
+        preferProvider: prefer || undefined,
+        useConfiguredSender: payload.useConfiguredSender === true,
+      });
       return json({
         ok: true,
         to,
         ticket: merged.ticket_number || merged.id,
         provider: sent?.provider || null,
+        fromHint: payload.useConfiguredSender === true ? 'configured-sender' : 'aligned-sender',
       });
     } catch (err) {
       return json({ ok: false, error: String(err) }, 500);
