@@ -8423,9 +8423,14 @@
           status = 'ارتفاع';
           tone = 'up';
         }
-        const trend = typeof rdTrendText === 'function'
-          ? rdTrendText(delta, 'count')
-          : (delta === 0 ? 'بدون تغيّر ملحوظ' : `${delta > 0 ? '+' : ''}${delta} عن الشهر الماضي`);
+        let trend = 'نفس عدد مخالفات الشهر الماضي';
+        if (delta < 0) {
+          trend = `هذا الشهر أقل بـ ${Math.abs(delta)} مخالفة عن الشهر الماضي (كان ${prevCount})`;
+        } else if (delta > 0) {
+          trend = `هذا الشهر أكثر بـ ${delta} مخالفة عن الشهر الماضي (كان ${prevCount})`;
+        } else if (prevCount > 0) {
+          trend = `نفس عدد مخالفات الشهر الماضي (${prevCount})`;
+        }
         const sparkValues = typeof dashBucketizeMonth === 'function'
           ? dashBucketizeMonth(allVisible || [], cur.fromIso, next.fromIso)
           : [];
@@ -12203,7 +12208,7 @@
             tone: m.tone,
             sparkValues: m.sparkValues,
             gradId: 'rdDeskMonthViolSpark',
-            sub: `${m.trend} · الشهر الماضي ${m.prevCount}`
+            sub: m.trend
           });
         } else {
           let responseScore = 100;
@@ -12394,7 +12399,7 @@
             tone: m.tone,
             sparkValues: m.sparkValues,
             gradId: 'rdMobMonthViolSpark',
-            sub: `${m.trend} · الشهر الماضي ${m.prevCount}`
+            sub: m.trend
           });
         } else {
           let responseScore = 100;
