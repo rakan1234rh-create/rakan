@@ -384,15 +384,25 @@ async function sendImmediateEmail(
     return { name: 'منصة أثر', email: raw };
   };
 
-  /** aromaticfamilies.com SPF is Outlook-only (-all); SES/Resend often fail auth → spam.
-   * Keep configured sender when caller asks (QA) or provider is Brevo. */
-  const alignSenderForProvider = (provider: 'ses' | 'resend' | 'brevo') => {
+  const alignSenderForProvider = (provider: 'ses' | 'resend' | 'brevo' | 'org') => {
     const parsed = parseSender(SENDER_EMAIL_RAW);
     const domain = (parsed.email.split('@')[1] || '').toLowerCase();
-    const keepConfigured = !!opts.useConfiguredSender || provider === 'brevo';
+    const keepConfigured = !!opts.useConfiguredSender || provider === 'brevo' || provider === 'org';
     if (
       !keepConfigured
-      && (provider === 'ses' || provider === 'resend')
+      && provider === 'resend'
+      && (domain === 'aromaticfamilies.com' || domain.endsWith('.aromaticfamilies.com') || domain === 'athar-app.online')
+    ) {
+      // Resend account does not have custom domains verified yet — use Resend's tested sender.
+      return {
+        name: 'منصة أثر',
+        email: 'onboarding@resend.dev',
+        full: 'منصة أثر <onboarding@resend.dev>',
+      };
+    }
+    if (
+      !keepConfigured
+      && provider === 'ses'
       && (domain === 'aromaticfamilies.com' || domain.endsWith('.aromaticfamilies.com'))
     ) {
       return {
@@ -555,6 +565,7 @@ async function sendImmediateEmail(
       secure: port === 465,
       auth: { user, pass },
     });
+    const fromDomain = (sender.email.split('@')[1] || 'athar-app.online').toLowerCase();
     await transporter.sendMail({
       from: sender.full,
       to,
@@ -564,25 +575,72 @@ async function sendImmediateEmail(
       replyTo: Deno.env.get('REPLY_TO_EMAIL') || undefined,
       headers: {
         ...commonHeaders,
-        'Message-ID': `<${deliveryRef}@athar-app.online>`,
+        'Message-ID': `<${deliveryRef}@${fromDomain}>`,
       },
     });
   };
 
-  // Prefer SES when available; athar-app.online is SPF-aligned with amazonses.com.
-  // Optional preferProvider lets QA force resend|ses|brevo.
+  /** Microsoft 365 / org SMTP — SPF for aromaticfamilies.com allows Outlook only. */
+  const sendViaOrgSmtp = async () => {
+    const host = (
+      Deno.env.get('SMTP_HOST')
+      || Deno.env.get('SMTP_ENDPOINT')
+      || ''
+    ).trim();
+    const user = (
+      Deno.env.get('SMTP_USERNAME')
+      || Deno.env.get('SMTP_USER')
+      || ''
+    ).trim();
+    const pass = (Deno.env.get('SMTP_PASSWORD') || '').trim();
+    const port = Number(Deno.env.get('SMTP_PORT') || 587);
+    if (!host || !user || !pass) throw new Error('Org SMTP is not configured');
+
+    const smtpFromRaw = (Deno.env.get('SMTP_FROM') || Deno.env.get('SENDER_EMAIL') || SENDER_EMAIL_RAW).trim();
+    const parsed = parseSender(smtpFromRaw);
+    const sender = {
+      name: parsed.name || 'منصة أثر',
+      email: parsed.email,
+      full: `${parsed.name || 'منصة أثر'} <${parsed.email}>`,
+    };
+    const nodemailer = await import('npm:nodemailer@6.9.16');
+    const transporter = nodemailer.createTransport({
+      host,
+      port: Number.isFinite(port) ? port : 587,
+      secure: port === 465,
+      requireTLS: port === 587,
+      auth: { user, pass },
+    });
+    const fromDomain = (sender.email.split('@')[1] || 'aromaticfamilies.com').toLowerCase();
+    await transporter.sendMail({
+      from: sender.full,
+      to,
+      subject,
+      html,
+      text,
+      replyTo: Deno.env.get('REPLY_TO_EMAIL') || sender.email,
+      headers: {
+        ...commonHeaders,
+        'Message-ID': `<${deliveryRef}@${fromDomain}>`,
+      },
+    });
+  };
+
+  // Optional preferProvider lets QA force org|resend|ses|brevo.
   const providers: Array<{ name: string; run: () => Promise<void> }> = [];
   const prefer = String(opts.preferProvider || '').toLowerCase();
   const ordered = (() => {
     // Exclusive provider when explicitly forced (QA / diagnostics).
+    if (prefer === 'org' || prefer === 'smtp') return ['org'] as const;
     if (prefer === 'resend') return ['resend'] as const;
     if (prefer === 'brevo') return ['brevo'] as const;
     if (prefer === 'ses') return ['ses'] as const;
-    if (isApple) return ['brevo', 'ses', 'resend'] as const;
-    // Default: Resend first for athar-app.online deliverability to Gmail/Hotmail.
-    return ['resend', 'ses', 'brevo'] as const;
+    if (isApple) return ['org', 'resend', 'brevo', 'ses'] as const;
+    // Resend onboarding sender delivers; org SMTP when M365 creds work; SES last (SPF risk on aromaticfamilies).
+    return ['resend', 'org', 'ses', 'brevo'] as const;
   })();
   const runners: Record<string, () => Promise<void>> = {
+    org: sendViaOrgSmtp,
     ses: sendViaSesSmtp,
     resend: sendViaResend,
     brevo: sendViaBrevo,
@@ -1074,7 +1132,7 @@ Deno.serve(async (req) => {
     return json({
       ok: true,
       service: 'violation-push',
-      version: '2026-09-email-deliverability-v4',
+      version: '2026-09-email-org-smtp-v5',
       autoForwardCron: AUTO_FORWARD_CRON_VERSION,
       vapidConfigured: !!(vapidPublic && vapidPrivate),
       vapidValid,
