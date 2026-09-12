@@ -5643,13 +5643,19 @@ html.athar-staging-redesign.mr-desktop-ui #tab-departments.tab-content.active {
   border-radius: 16px;
   padding: 18px;
 }
+.rd-desk-metric--spark {
+  display: flex;
+  flex-direction: column;
+  min-height: 168px;
+}
 .rd-desk-metric__top {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 8px;
+  gap: 10px;
+  margin-bottom: 10px;
 }
-.rd-desk-metric__label { font-size: 12.5px; font-weight: 600; color: var(--text); }
+.rd-desk-metric__label { font-size: 13px; font-weight: 700; color: var(--text); }
 .rd-desk-metric__val { font-size: 12px; font-weight: 700; }
 .rd-desk-metric__bar {
   height: 7px;
@@ -5658,7 +5664,27 @@ html.athar-staging-redesign.mr-desktop-ui #tab-departments.tab-content.active {
   overflow: hidden;
 }
 .rd-desk-metric__fill { height: 100%; border-radius: 999px; }
-.rd-desk-metric__sub { font-size: 11px; color: var(--text3); margin-top: 7px; }
+.rd-desk-metric__chart {
+  flex: 1;
+  min-height: 72px;
+  margin: 2px 0 4px;
+}
+.rd-desk-metric__chart .rd-metric-spark {
+  display: block;
+  width: 100%;
+  height: 72px;
+}
+.rd-desk-metric__sub { font-size: 11px; color: var(--text3); margin-top: 4px; }
+.rd-metric-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.rd-metric-badge i { font-size: 12px; }
+.rd-metric-badge--up { color: var(--danger) !important; }
+.rd-metric-badge--down { color: var(--success) !important; }
+.rd-metric-badge--flat { color: var(--text2) !important; }
 
 .rd-desk-dist__row { padding: 11px 14px; }
 .rd-desk-dist__ico {

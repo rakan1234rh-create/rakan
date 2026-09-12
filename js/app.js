@@ -8390,7 +8390,8 @@
             pct: 0,
             color: 'var(--text2)',
             status: '—',
-            trend: '—'
+            trend: '—',
+            sparkValues: []
           };
         }
         const cur = ksaMonthRange(parts.year, parts.month);
@@ -8412,35 +8413,106 @@
         const pct = Math.min(100, Math.round((thisCount / maxBase) * 100));
         let color = 'var(--text2)';
         let status = 'ثابت';
+        let tone = 'flat';
         if (delta < 0) {
           color = 'var(--success)';
           status = 'انخفاض';
+          tone = 'down';
         } else if (delta > 0) {
           color = 'var(--danger)';
           status = 'ارتفاع';
+          tone = 'up';
         }
         const trend = typeof rdTrendText === 'function'
           ? rdTrendText(delta, 'count')
           : (delta === 0 ? 'بدون تغيّر ملحوظ' : `${delta > 0 ? '+' : ''}${delta} عن الشهر الماضي`);
-        return { thisCount, prevCount, delta, pct, color, status, trend };
+        const sparkValues = typeof dashBucketizeMonth === 'function'
+          ? dashBucketizeMonth(allVisible || [], cur.fromIso, next.fromIso)
+          : [];
+        return { thisCount, prevCount, delta, pct, color, status, tone, trend, sparkValues };
+      }
+
+      function buildRdMetricSparkSvg(values, opts = {}) {
+        const src = Array.isArray(values) && values.length ? values.slice() : [0, 0];
+        while (src.length < 2) src.push(0);
+        const w = 320;
+        const h = 72;
+        const padX = 6;
+        const padY = 10;
+        const peak = Math.max(0, ...src);
+        const scaleMax = Math.max(peak, 4);
+        const pts = src.map((v, i) => {
+          const x = padX + (i / (src.length - 1)) * (w - padX * 2);
+          const t = Math.min(1, Math.max(0, v) / scaleMax);
+          const y = (h - padY) - Math.sqrt(t) * (h - padY * 2 - 6);
+          return [x, y];
+        });
+        const line = (() => {
+          if (pts.length === 1) return `M${pts[0][0]},${pts[0][1]}`;
+          let d = `M${pts[0][0]},${pts[0][1]}`;
+          for (let i = 1; i < pts.length; i++) {
+            const [x1, y1] = pts[i];
+            const [xp, yp] = pts[i - 1];
+            const cx = (xp + x1) / 2;
+            d += ` C${cx},${yp} ${cx},${y1} ${x1},${y1}`;
+          }
+          return d;
+        })();
+        const last = pts[pts.length - 1];
+        const area = `${line} L${last[0]},${h - 2} L${pts[0][0]},${h - 2} Z`;
+        const warn = opts.tone === 'up';
+        const good = opts.tone === 'down';
+        const tipColor = warn ? '#ef4444' : (good ? '#22c55e' : '#64748b');
+        const tipIcon = warn
+          ? `<g transform="translate(${(last[0] - 7).toFixed(1)},${(last[1] - 22).toFixed(1)})">
+              <path d="M7 1 L13 12 H1 Z" fill="#ef4444"></path>
+              <rect x="6.2" y="5" width="1.6" height="4" rx="0.6" fill="#fff"></rect>
+              <circle cx="7" cy="11" r="0.9" fill="#fff"></circle>
+            </g>`
+          : (good
+            ? `<g transform="translate(${(last[0] - 8).toFixed(1)},${(last[1] - 20).toFixed(1)})">
+                <circle cx="8" cy="8" r="7.5" fill="#22c55e"></circle>
+                <path d="M4.5 8.2 L7 10.6 L11.6 5.6" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+              </g>`
+            : '');
+        return `
+          <svg class="rd-metric-spark" viewBox="0 0 ${w} ${h}" width="100%" height="72" preserveAspectRatio="none" aria-hidden="true">
+            <defs>
+              <linearGradient id="${Sec.escapeHTML(opts.gradId || 'rdMetricSparkGrad')}" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#94a3b8" stop-opacity="0.28"></stop>
+                <stop offset="100%" stop-color="#94a3b8" stop-opacity="0.02"></stop>
+              </linearGradient>
+            </defs>
+            <path d="${area}" fill="url(#${Sec.escapeHTML(opts.gradId || 'rdMetricSparkGrad')})"></path>
+            <path d="${line}" fill="none" stroke="#0f172a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+            <circle cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="3.4" fill="${tipColor}"></circle>
+            ${tipIcon}
+          </svg>`;
       }
 
       function buildRdDashMetricCardHtml(opts = {}) {
         const desk = !!opts.desk;
+        const wrapCls = desk ? 'rd-desk-metric rd-desk-metric--spark' : 'rd-metric rd-metric--spark';
         const topCls = desk ? 'rd-desk-metric__top' : 'rd-metric__top';
         const labelCls = desk ? 'rd-desk-metric__label' : 'rd-metric__label';
         const valCls = desk ? 'rd-desk-metric__val' : 'rd-metric__val';
-        const barCls = desk ? 'rd-desk-metric__bar' : 'rd-metric__bar';
-        const fillCls = desk ? 'rd-desk-metric__fill' : 'rd-metric__fill';
+        const chartCls = desk ? 'rd-desk-metric__chart' : 'rd-metric__chart';
         const subCls = desk ? 'rd-desk-metric__sub' : 'rd-metric__sub';
-        const wrapCls = desk ? 'rd-desk-metric' : 'rd-metric';
+        const tone = opts.tone || 'flat';
+        const icon = tone === 'up'
+          ? '<i class="fas fa-triangle-exclamation" aria-hidden="true"></i>'
+          : '<i class="fas fa-circle-check" aria-hidden="true"></i>';
+        const spark = buildRdMetricSparkSvg(opts.sparkValues || [], {
+          tone,
+          gradId: opts.gradId || (desk ? 'rdDeskMetricSparkGrad' : 'rdMobMetricSparkGrad')
+        });
         return `
           <div class="${wrapCls}">
             <div class="${topCls}">
               <span class="${labelCls}">${Sec.escapeHTML(opts.label || '')}</span>
-              <span class="${valCls}" style="color:${opts.color || 'var(--text2)'}">${Sec.escapeHTML(String(opts.value || ''))}</span>
+              <span class="${valCls} rd-metric-badge rd-metric-badge--${tone}" style="color:${opts.color || 'var(--text2)'}">${icon}<span>${Sec.escapeHTML(String(opts.value || ''))}</span></span>
             </div>
-            <div class="${barCls}"><div class="${fillCls}" style="width:${Math.max(0, Math.min(100, Number(opts.pct) || 0))}%;background:${opts.color || 'var(--text2)'}"></div></div>
+            <div class="${chartCls}">${spark}</div>
             <div class="${subCls}">${Sec.escapeHTML(opts.sub || '')}</div>
           </div>`;
       }
@@ -12126,9 +12198,11 @@
           metricHtml = buildRdDashMetricCardHtml({
             desk: true,
             label: 'معدل المخالفات',
-            value: `${m.thisCount} · ${m.status}`,
+            value: `${m.thisCount} - ${m.status}`,
             color: m.color,
-            pct: m.pct,
+            tone: m.tone,
+            sparkValues: m.sparkValues,
+            gradId: 'rdDeskMonthViolSpark',
             sub: `${m.trend} · الشهر الماضي ${m.prevCount}`
           });
         } else {
@@ -12141,15 +12215,23 @@
               autoCount = rd.autoCount;
             }
           } catch (_) { /* noop */ }
-          const responsePct = Math.min(100, Math.abs(responseScore));
           const responseColor = rdClassifyScore(responseScore);
           const responseStatus = responseScore < 0 ? 'تنبيه' : (responseScore >= 75 ? 'جيد' : 'تحذير');
+          const responseTone = responseScore < 0 ? 'up' : (responseScore >= 75 ? 'down' : 'flat');
+          const cur = ksaMonthRange(ksaNowParts.year, ksaNowParts.month);
+          const nextShift = ksaShiftMonth(ksaNowParts.year, ksaNowParts.month, 1);
+          const next = ksaMonthRange(nextShift.year, nextShift.month);
+          const sparkValues = typeof dashBucketizeMonth === 'function'
+            ? dashBucketizeMonth(allVisible || [], cur.fromIso, next.fromIso, v => !!(v.auto_forwarded_emp || v.auto_forwarded_sup))
+            : [];
           metricHtml = buildRdDashMetricCardHtml({
             desk: true,
             label: 'الاستجابة',
-            value: `${responseScore} · ${responseStatus}`,
+            value: `${responseScore} - ${responseStatus}`,
             color: responseColor,
-            pct: responsePct,
+            tone: responseTone,
+            sparkValues,
+            gradId: 'rdDeskResponseSpark',
             sub: `${autoCount} تمريرات تلقائية`
           });
         }
@@ -12307,9 +12389,11 @@
           metricHtml = buildRdDashMetricCardHtml({
             desk: false,
             label: 'معدل المخالفات',
-            value: `${m.thisCount} · ${m.status}`,
+            value: `${m.thisCount} - ${m.status}`,
             color: m.color,
-            pct: m.pct,
+            tone: m.tone,
+            sparkValues: m.sparkValues,
+            gradId: 'rdMobMonthViolSpark',
             sub: `${m.trend} · الشهر الماضي ${m.prevCount}`
           });
         } else {
@@ -12322,15 +12406,23 @@
               autoCount = rd.autoCount;
             }
           } catch (_) { /* noop */ }
-          const responsePct = Math.min(100, Math.abs(responseScore));
           const responseColor = rdClassifyScore(responseScore);
           const responseStatus = responseScore < 0 ? 'تنبيه' : (responseScore >= 75 ? 'جيد' : 'تحذير');
+          const responseTone = responseScore < 0 ? 'up' : (responseScore >= 75 ? 'down' : 'flat');
+          const cur = ksaMonthRange(ksaNowParts.year, ksaNowParts.month);
+          const nextShift = ksaShiftMonth(ksaNowParts.year, ksaNowParts.month, 1);
+          const next = ksaMonthRange(nextShift.year, nextShift.month);
+          const sparkValues = typeof dashBucketizeMonth === 'function'
+            ? dashBucketizeMonth(allVisible || [], cur.fromIso, next.fromIso, v => !!(v.auto_forwarded_emp || v.auto_forwarded_sup))
+            : [];
           metricHtml = buildRdDashMetricCardHtml({
             desk: false,
             label: 'الاستجابة',
-            value: `${responseScore} · ${responseStatus}`,
+            value: `${responseScore} - ${responseStatus}`,
             color: responseColor,
-            pct: responsePct,
+            tone: responseTone,
+            sparkValues,
+            gradId: 'rdMobResponseSpark',
             sub: `${autoCount} تمريرات تلقائية`
           });
         }
