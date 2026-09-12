@@ -366,57 +366,155 @@ async function sendImmediateEmail(
 ) {
   const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? '';
   const BREVO_API_KEY = Deno.env.get('BREVO_API_KEY') ?? '';
-  const SENDER_EMAIL_RAW = Deno.env.get('SENDER_EMAIL') ?? 'no-reply@athar-app.online';
-  const FULL_SENDER = SENDER_EMAIL_RAW.includes('<') ? SENDER_EMAIL_RAW : `ATHAR <${SENDER_EMAIL_RAW}>`;
-  const SENDER_EMAIL = SENDER_EMAIL_RAW.includes('<') ? SENDER_EMAIL_RAW.match(/<(.+)>|$/)?.[1] || SENDER_EMAIL_RAW : SENDER_EMAIL_RAW;
-  const SENDER_NAME = SENDER_EMAIL_RAW.includes('<') ? SENDER_EMAIL_RAW.split('<')[0].trim() : 'ATHAR';
+  const SENDER_EMAIL_RAW = (
+    Deno.env.get('VIOLATION_SENDER_EMAIL')
+    || Deno.env.get('SENDER_EMAIL')
+    || 'منصة أثر <noreply@athar-app.online>'
+  ).trim();
+
+  const parseSender = (raw: string) => {
+    const m = raw.match(/^(.*)<([^>]+)>\s*$/);
+    if (m) {
+      return {
+        name: (m[1] || 'منصة أثر').trim() || 'منصة أثر',
+        email: m[2].trim(),
+      };
+    }
+    return { name: 'منصة أثر', email: raw };
+  };
+
+  /** aromaticfamilies.com SPF is Outlook-only (-all); SES/Resend would fail auth → spam. */
+  const alignSenderForProvider = (provider: 'ses' | 'resend' | 'brevo') => {
+    const parsed = parseSender(SENDER_EMAIL_RAW);
+    const domain = (parsed.email.split('@')[1] || '').toLowerCase();
+    if (
+      (provider === 'ses' || provider === 'resend')
+      && (domain === 'aromaticfamilies.com' || domain.endsWith('.aromaticfamilies.com'))
+    ) {
+      return {
+        name: 'منصة أثر',
+        email: 'noreply@athar-app.online',
+        full: 'منصة أثر <noreply@athar-app.online>',
+      };
+    }
+    return {
+      name: parsed.name,
+      email: parsed.email,
+      full: `${parsed.name} <${parsed.email}>`,
+    };
+  };
 
   const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null;
   const APPLE_DOMAINS = new Set(['icloud.com', 'me.com', 'mac.com']);
 
-  // Format ticket number to show only the last part (e.g., V-2026-0356 -> 0356)
   const rawTicket = String(record.ticket_number || record.id);
   const formattedTicket = rawTicket.includes('-') ? rawTicket.split('-').pop() : rawTicket;
+  const deliveryRef = crypto.randomUUID();
 
-  const subject = `${title} - رقم (${formattedTicket})`;
+  // Transactional subject — avoid spammy alarm wording / excessive punctuation
+  const subject = `تنبيه من منصة أثر · مخالفة رقم ${formattedTicket}`;
   const { data: userData } = await supabase.from('users').select('name').eq('email', to).maybeSingle();
-  const userName = userData?.name || '';
-  const greeting = userName ? `مرحباً ${userName.split(' ')[0]}،` : 'مرحباً،';
+  const userName = String(userData?.name || '').trim();
+  const greeting = userName ? `مرحباً ${userName.split(/\s+/)[0]}،` : 'مرحباً،';
 
-  const unsubscribeUrl = `https://athar-app.online/settings?unsubscribe=${encodeURIComponent(to)}`;
-  const html = `
-    <div dir="rtl" style="font-family: sans-serif; line-height: 1.6; color: #333;">
-      <h2 style="color: #d9534f;">${title}</h2>
-      <p><strong>${greeting}</strong></p>
-      <p>${body}</p>
-      <div style="background: #f4f4f4; padding: 15px; border-radius: 8px; margin-top: 20px;">
-        <p><strong>رقم المخالفة:</strong> ${formattedTicket}</p>
-        <p><strong>نوع المخالفة:</strong> ${record.violation_type || '—'}</p>
-      </div>
-      <p style="margin-top: 20px;">يرجى مراجعة التفاصيل عبر تطبيق أثر</p>
-      <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
-      <p style="font-size: 11px; color: #999; text-align: center;">
-        رسالة تلقائية من منصة أثر يرجى عدم الرد على هذا البريد.
-        <br>
-        <a href="${unsubscribeUrl}" style="color: #999; text-decoration: underline;">إلغاء الاشتراك من هذه التنبيهات</a>
-      </p>
-    </div>
-  `;
-  const text = `${title}: ${body}. رقم المخالفة: ${record.ticket_number || record.id}`;
+  const appUrl = 'https://athar-app.online';
+  const unsubscribeUrl = `${appUrl}/settings?unsubscribe=${encodeURIComponent(to)}`;
+  const vType = String(record.violation_type || '—').trim() || '—';
+
+  const html = `<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>${subject}</title>
+</head>
+<body style="margin:0;padding:0;background:#f5f6f8;font-family:Tahoma,'Segoe UI',Arial,sans-serif;color:#1f2937;">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">
+    تم تسجيل مخالفة برقم ${formattedTicket}. يرجى مراجعة التفاصيل عبر منصة أثر.
+  </div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f6f8;padding:24px 12px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;">
+          <tr>
+            <td style="padding:20px 24px 8px;font-size:13px;font-weight:700;color:#0f766e;letter-spacing:0.02em;">منصة أثر</td>
+          </tr>
+          <tr>
+            <td style="padding:4px 24px 0;font-size:20px;font-weight:700;line-height:1.4;color:#111827;">${title}</td>
+          </tr>
+          <tr>
+            <td style="padding:16px 24px 0;font-size:15px;line-height:1.7;color:#374151;">
+              <p style="margin:0 0 12px;">${greeting}</p>
+              <p style="margin:0;">${body}</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:18px 24px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;">
+                <tr>
+                  <td style="padding:14px 16px;font-size:14px;line-height:1.7;color:#334155;">
+                    <div><strong>رقم المخالفة:</strong> ${formattedTicket}</div>
+                    <div><strong>نوع المخالفة:</strong> ${vType}</div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:0 24px 22px;">
+              <a href="${appUrl}" style="display:inline-block;background:#0f766e;color:#ffffff;text-decoration:none;font-size:14px;font-weight:700;padding:12px 18px;border-radius:10px;">فتح منصة أثر</a>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:0 24px 20px;font-size:12px;line-height:1.6;color:#6b7280;border-top:1px solid #eef2f7;">
+              <p style="margin:16px 0 0;">رسالة تشغيلية تلقائية من منصة أثر. إذا وصلتك بالخطأ يمكن تجاهلها.</p>
+              <p style="margin:8px 0 0;"><a href="${unsubscribeUrl}" style="color:#6b7280;">إدارة تنبيهات البريد</a></p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+  <!-- athar-delivery:${deliveryRef} -->
+</body>
+</html>`;
+
+  const text = [
+    'منصة أثر',
+    title,
+    '',
+    greeting,
+    body,
+    '',
+    `رقم المخالفة: ${formattedTicket}`,
+    `نوع المخالفة: ${vType}`,
+    '',
+    `فتح المنصة: ${appUrl}`,
+    `إدارة التنبيهات: ${unsubscribeUrl}`,
+  ].join('\n');
+
+  const commonHeaders: Record<string, string> = {
+    'List-Unsubscribe': `<${unsubscribeUrl}>`,
+    'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+    'X-Entity-Ref-ID': deliveryRef,
+    'X-ATHAR-Delivery': deliveryRef,
+  };
 
   const isApple = APPLE_DOMAINS.has(to.split('@').pop()?.toLowerCase() ?? '');
 
   const sendViaBrevo = async () => {
     if (!BREVO_API_KEY) throw new Error('Brevo is not configured');
+    const sender = alignSenderForProvider('brevo');
     const resp = await fetch('https://api.brevo.com/v3/smtp/email', {
       method: 'POST',
       headers: { 'api-key': BREVO_API_KEY, 'content-type': 'application/json' },
       body: JSON.stringify({
-        sender: { name: SENDER_NAME, email: SENDER_EMAIL },
+        sender: { name: sender.name, email: sender.email },
         to: [{ email: to }],
         subject,
         htmlContent: html,
         textContent: text,
+        headers: commonHeaders,
       }),
     });
     if (!resp.ok) {
@@ -427,16 +525,14 @@ async function sendImmediateEmail(
 
   const sendViaResend = async () => {
     if (!resend) throw new Error('Resend is not configured');
+    const sender = alignSenderForProvider('resend');
     const { error } = await resend.emails.send({
-      from: FULL_SENDER,
+      from: sender.full,
       to: [to],
       subject,
       html,
       text,
-      headers: {
-        'List-Unsubscribe': `<${unsubscribeUrl}>`,
-        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-      },
+      headers: commonHeaders,
     });
     if (error) throw new Error(`Resend failed: ${error.message}`);
   };
@@ -447,6 +543,7 @@ async function sendImmediateEmail(
     const pass = (Deno.env.get('SES_SMTP_PASSWORD') || '').trim();
     const port = Number(Deno.env.get('SES_SMTP_PORT') || 587);
     if (!host || !user || !pass) throw new Error('SES SMTP is not configured');
+    const sender = alignSenderForProvider('ses');
     const nodemailer = await import('npm:nodemailer@6.9.16');
     const transporter = nodemailer.createTransport({
       host,
@@ -455,33 +552,28 @@ async function sendImmediateEmail(
       auth: { user, pass },
     });
     await transporter.sendMail({
-      from: FULL_SENDER,
+      from: sender.full,
       to,
       subject,
       html,
       text,
+      replyTo: Deno.env.get('REPLY_TO_EMAIL') || undefined,
       headers: {
-        'List-Unsubscribe': `<${unsubscribeUrl}>`,
-        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+        ...commonHeaders,
+        'Message-ID': `<${deliveryRef}@athar-app.online>`,
       },
     });
   };
 
-  // Prefer SES for aromaticfamilies.com (verified there); then Resend; then Brevo.
-  const senderDomain = (SENDER_EMAIL.split('@')[1] || '').toLowerCase();
-  const preferSes = senderDomain.endsWith('aromaticfamilies.com');
+  // Prefer SES when available; athar-app.online is SPF-aligned with amazonses.com.
   const providers: Array<{ name: string; run: () => Promise<void> }> = [];
-  if (preferSes) {
-    providers.push({ name: 'ses', run: sendViaSesSmtp });
-    providers.push({ name: 'resend', run: sendViaResend });
-    providers.push({ name: 'brevo', run: sendViaBrevo });
-  } else if (isApple) {
+  if (isApple) {
     providers.push({ name: 'brevo', run: sendViaBrevo });
     providers.push({ name: 'ses', run: sendViaSesSmtp });
     providers.push({ name: 'resend', run: sendViaResend });
   } else {
-    providers.push({ name: 'resend', run: sendViaResend });
     providers.push({ name: 'ses', run: sendViaSesSmtp });
+    providers.push({ name: 'resend', run: sendViaResend });
     providers.push({ name: 'brevo', run: sendViaBrevo });
   }
 
@@ -968,7 +1060,7 @@ Deno.serve(async (req) => {
     return json({
       ok: true,
       service: 'violation-push',
-      version: '2026-09-email-ses-fallback-v3',
+      version: '2026-09-email-deliverability-v4',
       autoForwardCron: AUTO_FORWARD_CRON_VERSION,
       vapidConfigured: !!(vapidPublic && vapidPrivate),
       vapidValid,
