@@ -8416,12 +8416,14 @@
         let tone = 'flat';
         if (delta < 0) {
           color = 'var(--success)';
-          status = 'انخفاض';
+          status = 'أقل من الماضي';
           tone = 'down';
         } else if (delta > 0) {
           color = 'var(--danger)';
-          status = 'ارتفاع';
+          status = 'أكثر من الماضي';
           tone = 'up';
+        } else {
+          status = 'مثل الماضي';
         }
         let trend = 'نفس عدد مخالفات الشهر الماضي';
         if (delta < 0) {
@@ -12203,7 +12205,7 @@
           metricHtml = buildRdDashMetricCardHtml({
             desk: true,
             label: 'معدل المخالفات',
-            value: `${m.thisCount} - ${m.status}`,
+            value: `${m.thisCount} مخالفة · ${m.status}`,
             color: m.color,
             tone: m.tone,
             sparkValues: m.sparkValues,
@@ -12394,7 +12396,7 @@
           metricHtml = buildRdDashMetricCardHtml({
             desk: false,
             label: 'معدل المخالفات',
-            value: `${m.thisCount} - ${m.status}`,
+            value: `${m.thisCount} مخالفة · ${m.status}`,
             color: m.color,
             tone: m.tone,
             sparkValues: m.sparkValues,
