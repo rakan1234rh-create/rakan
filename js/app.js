@@ -37316,16 +37316,6 @@
         return Number(m[1]) * 60 + Number(m[2]);
       }
 
-      function attFormatClock12(hm) {
-        const mins = attHmToMinutes(hm);
-        if (mins == null) return '—';
-        const h24 = Math.floor(mins / 60);
-        const m = mins % 60;
-        const ampm = h24 >= 12 ? 'م' : 'ص';
-        const h12 = h24 % 12 || 12;
-        return `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
-      }
-
       function attFormatDurationLabel(totalMins) {
         if (totalMins == null || totalMins < 0) return '—';
         const h = Math.floor(totalMins / 60);
