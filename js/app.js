@@ -37310,10 +37310,21 @@
       }
 
       function attHmToMinutes(hm) {
-        const n = attNormalizeTypedTime(hm) || String(hm || '').slice(0, 5);
-        const m = String(n).match(/^(\d{2}):(\d{2})$/);
+        const n = attNormalizeTypedTime(hm);
+        const m = String(n || '').match(/^(\d{2}):(\d{2})$/);
         if (!m) return null;
         return Number(m[1]) * 60 + Number(m[2]);
+      }
+
+      function attFormatDisplayTime(tOrHm) {
+        const hm = attNormalizeTypedTime(tOrHm) || attNormalizeTypedTime(attTimeToInput(tOrHm));
+        if (!hm) return '';
+        const mins = attHmToMinutes(hm);
+        if (mins == null) return '';
+        const h24 = Math.floor(mins / 60);
+        const m = mins % 60;
+        const h12 = h24 % 12 || 12;
+        return `${h12}:${String(m).padStart(2, '0')} ${h24 >= 12 ? 'م' : 'ص'}`;
       }
 
       function attFormatDurationLabel(totalMins) {
@@ -37776,25 +37787,60 @@
       }
 
       function attNormalizeTypedTime(raw) {
-        const s = String(raw || '').trim();
+        let s = String(raw || '').trim();
         if (!s) return '';
-        const m = s.match(/^(\d{1,2})\s*[:.٫]\s*(\d{1,2})$/);
+        s = s.replace(/[٠-٩]/g, d => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)));
+        s = s.replace(/[۰-۹]/g, d => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d)));
+        const m = s.match(/^(\d{1,2})\s*[:：]\s*(\d{1,2})\s*(ص|م|صباحاً|صباحًا|مساءً|مساءاً|am|pm)?$/i);
         if (!m) return '';
-        const h = Number(m[1]);
+        let h = Number(m[1]);
         const min = Number(m[2]);
-        if (!Number.isFinite(h) || !Number.isFinite(min) || h > 23 || min > 59) return '';
+        if (!Number.isFinite(h) || !Number.isFinite(min) || min > 59) return '';
+        const mer = String(m[3] || '').trim().toLowerCase();
+        if (mer) {
+          if (h < 1 || h > 12) return '';
+          const isPm = mer === 'م' || mer === 'مساءً' || mer === 'مساءاً' || mer === 'pm';
+          if (isPm) h = h === 12 ? 12 : h + 12;
+          else h = h === 12 ? 0 : h;
+        } else if (h > 23) {
+          return '';
+        }
         return `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
       }
 
-      function renderAttTimeControlHtml(field, value, editable, present) {
-        const disabled = !editable || !present;
-        const v = attTimeToInput(value);
-        return `<div class="rd-att-time-wrap">
-          <i class="fas fa-clock rd-att-time-wrap__ico" aria-hidden="true"></i>
-          <input type="text" class="form-input rd-att-time-input" data-att-field="${field}"
-            inputmode="numeric" autocomplete="off" maxlength="5" placeholder="--:--"
-            value="${Sec.escapeHTML(v)}" ${disabled ? 'disabled' : ''}
-            onchange="onAttendanceTimeTyped(this)" onblur="onAttendanceTimeTyped(this)">
+      function renderAttTimeControlHtml(field, value, editable, present, opts = {}) {
+        const label = field === 'check_in' ? 'وقت الحضور' : 'وقت الانصراف';
+        if (!present) {
+          return `<span class="rd-att-pill rd-att-pill--empty">لا يوجد سجل</span>`;
+        }
+        const hm24 = attTimeToInput(value);
+        const display = attFormatDisplayTime(hm24);
+        const lateHtml = opts.late ? '<span class="rd-att-pill rd-att-pill--late">حضور متأخر</span>' : '';
+        if (!hm24) {
+          if (!editable) {
+            return `<span class="rd-att-pill rd-att-pill--empty">لا يوجد سجل</span>`;
+          }
+          return `<div class="rd-att-time-cell" data-att-time-cell>
+            <button type="button" class="rd-att-pill rd-att-pill--empty rd-att-pill--action"
+              onclick="onAttendanceEmptyTimeClick(this)" aria-label="تعبئة ${label}">لا يوجد سجل</button>
+            <div class="rd-att-time-wrap" hidden>
+              <i class="fas fa-clock rd-att-time-wrap__ico" aria-hidden="true"></i>
+              <input type="text" class="form-input rd-att-time-input" data-att-field="${field}"
+                inputmode="text" autocomplete="off" maxlength="10" placeholder="--:-- ص"
+                value=""
+                onchange="onAttendanceTimeTyped(this)" onblur="onAttendanceTimeTyped(this)">
+            </div>
+          </div>`;
+        }
+        return `<div class="rd-att-time-cell">
+          <div class="rd-att-time-wrap">
+            <i class="fas fa-clock rd-att-time-wrap__ico" aria-hidden="true"></i>
+            <input type="text" class="form-input rd-att-time-input" data-att-field="${field}"
+              inputmode="text" autocomplete="off" maxlength="10" placeholder="--:-- ص"
+              value="${Sec.escapeHTML(display)}" ${editable ? '' : 'disabled'}
+              onchange="onAttendanceTimeTyped(this)" onblur="onAttendanceTimeTyped(this)">
+          </div>
+          ${lateHtml}
         </div>`;
       }
 
@@ -37869,14 +37915,10 @@
               </div>
             </td>
             <td class="rd-att-td rd-att-td--time">
-              ${present
-                ? `${renderAttTimeControlHtml('check_in', rec?.check_in_time, editable, true)}${metrics.late ? '<span class="rd-att-pill rd-att-pill--late">حضور متأخر</span>' : (metrics.noIn ? '<span class="rd-att-pill rd-att-pill--empty">لا يوجد سجل</span>' : '')}`
-                : `<span class="rd-att-pill rd-att-pill--empty">لا يوجد سجل</span>`}
+              ${renderAttTimeControlHtml('check_in', rec?.check_in_time, editable, present, { late: metrics.late })}
             </td>
             <td class="rd-att-td rd-att-td--time">
-              ${present
-                ? `${renderAttTimeControlHtml('check_out', rec?.check_out_time, editable, true)}${metrics.noOut ? '<span class="rd-att-pill rd-att-pill--empty">لا يوجد سجل</span>' : ''}`
-                : `<span class="rd-att-pill rd-att-pill--empty">لا يوجد سجل</span>`}
+              ${renderAttTimeControlHtml('check_out', rec?.check_out_time, editable, present)}
             </td>
             <td class="rd-att-td rd-att-td--dur">${Sec.escapeHTML(attFormatDurationLabel(metrics.worked))}</td>
             <td class="rd-att-td rd-att-td--diff"><span class="rd-att-diff rd-att-diff--${diff.tone}">${Sec.escapeHTML(diff.text)}</span></td>
@@ -38065,18 +38107,40 @@
         });
       }
 
+      function onAttendanceEmptyTimeClick(btn) {
+        const cell = btn?.closest('[data-att-time-cell]');
+        if (!cell) return;
+        const wrap = cell.querySelector('.rd-att-time-wrap');
+        const inp = cell.querySelector('.rd-att-time-input');
+        if (!wrap || !inp || inp.disabled) return;
+        btn.hidden = true;
+        wrap.hidden = false;
+        requestAnimationFrame(() => {
+          inp.focus();
+          if (typeof inp.select === 'function') inp.select();
+        });
+      }
+
       function onAttendanceTimeTyped(el) {
         if (!el) return;
         const raw = el.value;
+        const cell = el.closest('[data-att-time-cell]');
+        const emptyBtn = cell?.querySelector('.rd-att-pill--action');
+        const wrap = cell?.querySelector('.rd-att-time-wrap');
         if (!String(raw || '').trim()) {
           el.value = '';
+          if (emptyBtn && wrap) {
+            wrap.hidden = true;
+            emptyBtn.hidden = false;
+            return;
+          }
         } else {
           const normalized = attNormalizeTypedTime(raw);
           if (!normalized) {
-            showToast('صيغة الوقت: ساعة:دقيقة مثل 09:30', 'warning');
+            showToast('صيغة الوقت: مثل 9:30 ص أو 5:15 م', 'warning');
             return;
           }
-          el.value = normalized;
+          el.value = attFormatDisplayTime(normalized);
         }
         const row = el.closest('.rd-att-tr');
         const userId = row?.getAttribute('data-user-id');
@@ -38130,6 +38194,7 @@
       window.onAttendanceDateChange = onAttendanceDateChange;
       window.onAttendanceRowChange = onAttendanceRowChange;
       window.onAttendanceTimeTyped = onAttendanceTimeTyped;
+      window.onAttendanceEmptyTimeClick = onAttendanceEmptyTimeClick;
       window.attendanceShiftDate = attendanceShiftDate;
       window.onAttendanceSearchInput = onAttendanceSearchInput;
       window.toggleAttDatePicker = toggleAttDatePicker;
