@@ -1261,7 +1261,8 @@
         _attSelectedDeptId: null,
         _attSelectedBranchId: null,
         _attWorkDate: null,
-        _attSavingUserId: null
+        _attSavingUserId: null,
+        _attSearch: ''
       };
 
       /** مستخدم محلي عند عدم وجود جلسة Supabase (بعد إزالة شاشة الدخول) */
@@ -37190,6 +37191,13 @@
         { id: 'excuse', label: 'عذر' }
       ];
 
+      const ATT_DEFAULT_SHIFT = { start: '09:00', end: '17:00', minutes: 8 * 60 };
+      const ATT_AR_WEEKDAYS = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+      const ATT_AR_MONTHS = [
+        'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+        'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
+      ];
+
       const ATTENDANCE_DEPT_ICONS = {
         galleries: 'fa-store',
         admin: 'fa-building',
@@ -37240,10 +37248,148 @@
         return `${parts[0]}/${parts[1]}/${parts[2]}`;
       }
 
+      function formatAttendanceDateLong(iso) {
+        const parts = String(iso || '').split('-').map(Number);
+        if (parts.length < 3 || !parts[0]) return formatAttendanceDateDisplay(iso);
+        const [y, m, d] = parts;
+        const dt = typeof ksaCalendarDate === 'function'
+          ? ksaCalendarDate(y, m - 1, d)
+          : new Date(y, m - 1, d);
+        const weekday = ATT_AR_WEEKDAYS[dt.getDay()] || '';
+        const monthName = ATT_AR_MONTHS[(m || 1) - 1] || '';
+        return `${weekday} ${d} ${monthName}، ${y}`;
+      }
+
       function syncAttendanceDateDisplay() {
         const iso = getAttendanceWorkDate();
+        const heading = document.getElementById('attDateHeading');
+        if (heading) heading.textContent = formatAttendanceDateLong(iso);
         const el = document.getElementById('attDateDisplay');
         if (el) el.textContent = formatAttendanceDateDisplay(iso);
+      }
+
+      function attendanceShiftDate(deltaDays) {
+        const iso = getAttendanceWorkDate();
+        const parts = String(iso).split('-').map(Number);
+        if (parts.length < 3) return;
+        let dt = typeof ksaCalendarDate === 'function'
+          ? ksaCalendarDate(parts[0], parts[1] - 1, parts[2])
+          : new Date(parts[0], parts[1] - 1, parts[2]);
+        dt = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate() + Number(deltaDays || 0));
+        const next = typeof ksaCalendarToIso === 'function'
+          ? ksaCalendarToIso(dt)
+          : [
+            dt.getFullYear(),
+            String(dt.getMonth() + 1).padStart(2, '0'),
+            String(dt.getDate()).padStart(2, '0')
+          ].join('-');
+        const input = document.getElementById('attWorkDate');
+        if (input) input.value = next;
+        state._attWorkDate = next;
+        syncAttendanceDateDisplay();
+        onAttendanceDateChange();
+      }
+
+      function onAttendanceSearchInput() {
+        const inp = document.getElementById('attSearchInput');
+        state._attSearch = String(inp?.value || '').trim();
+        const selected = (state.attendanceDepartments || []).find(d => d.id === state._attSelectedDeptId);
+        if (!selected) return;
+        if (selected.slug === 'galleries' && !state._attSelectedBranchId) return;
+        paintAttendanceHost(renderAttendanceRosterHtml(selected, state._attSelectedBranchId || null));
+      }
+
+      function syncAttendanceSearchVisibility(show) {
+        const wrap = document.getElementById('attSearchWrap');
+        if (wrap) wrap.hidden = !show;
+        if (!show) {
+          state._attSearch = '';
+          const inp = document.getElementById('attSearchInput');
+          if (inp) inp.value = '';
+        }
+      }
+
+      function attHmToMinutes(hm) {
+        const n = attNormalizeTypedTime(hm) || String(hm || '').slice(0, 5);
+        const m = String(n).match(/^(\d{2}):(\d{2})$/);
+        if (!m) return null;
+        return Number(m[1]) * 60 + Number(m[2]);
+      }
+
+      function attFormatClock12(hm) {
+        const mins = attHmToMinutes(hm);
+        if (mins == null) return '—';
+        const h24 = Math.floor(mins / 60);
+        const m = mins % 60;
+        const ampm = h24 >= 12 ? 'م' : 'ص';
+        const h12 = h24 % 12 || 12;
+        return `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
+      }
+
+      function attFormatDurationLabel(totalMins) {
+        if (totalMins == null || totalMins < 0) return '—';
+        const h = Math.floor(totalMins / 60);
+        const m = totalMins % 60;
+        if (h && m) return `${h} ساعات و ${m} دقيقة`;
+        if (h) return h === 1 ? 'ساعة' : `${h} ساعات`;
+        return `${m} دقيقة`;
+      }
+
+      function attFormatDiffLabel(diffMins) {
+        if (diffMins == null) return { text: '—', tone: 'muted' };
+        if (diffMins === 0) return { text: '0 دقيقة', tone: 'muted' };
+        const abs = Math.abs(diffMins);
+        const body = abs >= 60
+          ? attFormatDurationLabel(abs)
+          : `${abs} دقيقة`;
+        if (diffMins > 0) return { text: `+${body}`, tone: 'pos' };
+        return { text: `-${body}`, tone: 'neg' };
+      }
+
+      function attStatusBadgeClass(status) {
+        switch (status) {
+          case 'present': return 'rd-att-pill--present';
+          case 'day_off': return 'rd-att-pill--off';
+          case 'off': return 'rd-att-pill--off';
+          case 'sick': return 'rd-att-pill--sick';
+          case 'permission': return 'rd-att-pill--perm';
+          case 'excuse': return 'rd-att-pill--perm';
+          default: return 'rd-att-pill--unset';
+        }
+      }
+
+      function attStatusLabel(status) {
+        return ATTENDANCE_STATUS_OPTS.find(o => o.id === status)?.label || 'غير محدد';
+      }
+
+      function getAttendanceWorkMetrics(rec, status) {
+        const st = status || rec?.status || 'unset';
+        if (st !== 'present') {
+          return {
+            worked: null,
+            diff: null,
+            late: false,
+            noIn: true,
+            noOut: true
+          };
+        }
+        const inHm = attTimeToInput(rec?.check_in_time);
+        const outHm = attTimeToInput(rec?.check_out_time);
+        const inMins = attHmToMinutes(inHm);
+        const outMins = attHmToMinutes(outHm);
+        const startMins = attHmToMinutes(ATT_DEFAULT_SHIFT.start);
+        const worked = (inMins != null && outMins != null && outMins >= inMins)
+          ? (outMins - inMins)
+          : null;
+        const diff = worked == null ? null : (worked - ATT_DEFAULT_SHIFT.minutes);
+        const late = inMins != null && startMins != null && inMins > startMins;
+        return {
+          worked,
+          diff,
+          late,
+          noIn: !inHm,
+          noOut: !outHm
+        };
       }
 
       function getAttendanceWorkDate() {
@@ -37663,24 +37809,47 @@
       }
 
       function renderAttendanceRosterHtml(dept, branchId) {
-        const users = getAttendanceDeptUsers(dept, branchId);
+        const allUsers = getAttendanceDeptUsers(dept, branchId);
+        const q = String(state._attSearch || '').trim().toLowerCase();
+        const users = !q
+          ? allUsers
+          : allUsers.filter(u => {
+            const name = String(u.name || '').toLowerCase();
+            const num = String(u.employee_number || '').toLowerCase();
+            const role = String(ROLE_LABELS[normalizeUserRole(u.role)] || '').toLowerCase();
+            return name.includes(q) || num.includes(q) || role.includes(q);
+          });
         const canAny = canMarkAttendance();
-        const dateLabel = getAttendanceWorkDate();
         const branchGroup = (dept?.slug === 'galleries' && branchId)
           ? getAttendanceBranchGroups(dept).find(g => g.id === branchId)
           : null;
         const title = branchGroup
           ? `${dept.name} · ${branchGroup.name}`
           : dept.name;
-        if (!users.length) {
+
+        let presentN = 0;
+        let unsetN = 0;
+        let absentN = 0;
+        let leaveN = 0;
+        for (const u of allUsers) {
+          const st = getAttendanceRecordForUser(u.id)?.status || 'unset';
+          if (st === 'present') presentN += 1;
+          else if (st === 'unset') unsetN += 1;
+          else if (st === 'off') absentN += 1;
+          else leaveN += 1;
+        }
+
+        if (!allUsers.length) {
           return `<div class="rd-att-roster">
             <div class="rd-att-roster__head">
               <h3 class="rd-att-roster__title">${Sec.escapeHTML(title)}</h3>
-              <p class="rd-att-roster__sub">لا يوجد موظفون في هذا الفريق · ${Sec.escapeHTML(dateLabel)}</p>
             </div>
             <div class="rd-att-empty"><i class="fas fa-user-slash" aria-hidden="true"></i><p>${dept.slug === 'galleries' ? 'لا يوجد موظفون لهذا الفرع.' : 'اربط الموظفين بالقسم من إدارة المستخدمين.'}</p></div>
           </div>`;
         }
+
+        const scheduleChip = `${attFormatClock12(ATT_DEFAULT_SHIFT.start)} - ${attFormatClock12(ATT_DEFAULT_SHIFT.end)} · ${attFormatDurationLabel(ATT_DEFAULT_SHIFT.minutes)}`;
+
         const rows = users.map((u, i) => {
           const rec = getAttendanceRecordForUser(u.id);
           const status = rec?.status || 'unset';
@@ -37688,44 +37857,80 @@
           const present = status === 'present';
           const disabled = editable ? '' : 'disabled';
           const av = (u.name || '?').trim().charAt(0);
-          const roleLbl = ROLE_LABELS[normalizeUserRole(u.role)] || getStaffJobTitle(u) || '';
-          return `<div class="rd-att-row" data-user-id="${u.id}" style="--rd-att-i:${i}">
-            <div class="rd-att-row__who">
-              <span class="rd-att-row__av" aria-hidden="true">${Sec.escapeHTML(av)}</span>
-              <div class="rd-att-row__meta">
-                <div class="rd-att-row__name">${Sec.escapeHTML(u.name || '—')}</div>
-                <div class="rd-att-row__num">${Sec.escapeHTML(padEmpNum(u.employee_number) || '—')}${roleLbl ? ` · ${Sec.escapeHTML(roleLbl)}` : ''}</div>
+          const roleLbl = getStaffJobTitle(u) || ROLE_LABELS[normalizeUserRole(u.role)] || '';
+          const metrics = getAttendanceWorkMetrics(rec, status);
+          const diff = attFormatDiffLabel(metrics.diff);
+          const statusLbl = attStatusLabel(status);
+          return `<tr class="rd-att-tr" data-user-id="${u.id}" style="--rd-att-i:${i}">
+            <td class="rd-att-td rd-att-td--emp">
+              <div class="rd-att-emp">
+                <span class="rd-att-emp__av" aria-hidden="true">${Sec.escapeHTML(av)}</span>
+                <div class="rd-att-emp__meta">
+                  <div class="rd-att-emp__name">${Sec.escapeHTML(u.name || '—')}</div>
+                  <div class="rd-att-emp__sub">${Sec.escapeHTML(roleLbl || '—')}</div>
+                  <div class="rd-att-emp__num">${Sec.escapeHTML(padEmpNum(u.employee_number) || '—')}</div>
+                </div>
               </div>
-            </div>
-            <div class="rd-att-row__fields">
-              <label class="rd-att-field">
-                <span>الحالة</span>
-                <select class="form-select rd-att-status" data-att-field="status" ${disabled} onchange="onAttendanceRowChange('${u.id}')">
+            </td>
+            <td class="rd-att-td rd-att-td--status">
+              <div class="rd-att-status-cell">
+                <span class="rd-att-pill ${attStatusBadgeClass(status)}">${Sec.escapeHTML(statusLbl)}</span>
+                <select class="form-select rd-att-status" data-att-field="status" ${disabled} onchange="onAttendanceRowChange('${u.id}')" aria-label="حالة ${Sec.escapeHTML(u.name || '')}">
                   ${renderAttendanceStatusOptions(status)}
                 </select>
-              </label>
-              <label class="rd-att-field rd-att-field--time${present ? '' : ' is-dim'}">
-                <span>حضور</span>
-                ${renderAttTimeControlHtml('check_in', rec?.check_in_time, editable, present)}
-              </label>
-              <label class="rd-att-field rd-att-field--time${present ? '' : ' is-dim'}">
-                <span>انصراف</span>
-                ${renderAttTimeControlHtml('check_out', rec?.check_out_time, editable, present)}
-              </label>
-              <label class="rd-att-field rd-att-field--note">
-                <span>ملاحظة</span>
-                <input type="text" class="form-input rd-att-note" data-att-field="note" maxlength="200" value="${Sec.escapeHTML(rec?.note || '')}" placeholder="اختياري" ${disabled} onchange="onAttendanceRowChange('${u.id}')">
-              </label>
-            </div>
-            <div class="rd-att-row__status" data-att-save-state>${editable ? '' : '<span class="rd-att-badge">عرض فقط</span>'}</div>
-          </div>`;
+              </div>
+            </td>
+            <td class="rd-att-td rd-att-td--sched">
+              <div class="rd-att-sched">${Sec.escapeHTML(scheduleChip)}</div>
+            </td>
+            <td class="rd-att-td rd-att-td--time">
+              ${present
+                ? `${renderAttTimeControlHtml('check_in', rec?.check_in_time, editable, true)}${metrics.late ? '<span class="rd-att-pill rd-att-pill--late">حضور متأخر</span>' : (metrics.noIn ? '<span class="rd-att-pill rd-att-pill--empty">لا يوجد سجل</span>' : '')}`
+                : `<span class="rd-att-pill rd-att-pill--empty">لا يوجد سجل</span>`}
+            </td>
+            <td class="rd-att-td rd-att-td--time">
+              ${present
+                ? `${renderAttTimeControlHtml('check_out', rec?.check_out_time, editable, true)}${metrics.noOut ? '<span class="rd-att-pill rd-att-pill--empty">لا يوجد سجل</span>' : ''}`
+                : `<span class="rd-att-pill rd-att-pill--empty">لا يوجد سجل</span>`}
+            </td>
+            <td class="rd-att-td rd-att-td--dur">${Sec.escapeHTML(attFormatDurationLabel(metrics.worked))}</td>
+            <td class="rd-att-td rd-att-td--diff"><span class="rd-att-diff rd-att-diff--${diff.tone}">${Sec.escapeHTML(diff.text)}</span></td>
+            <td class="rd-att-td rd-att-td--save" data-att-save-state>${editable ? '' : '<span class="rd-att-badge">عرض فقط</span>'}</td>
+          </tr>`;
         }).join('');
-        return `<div class="rd-att-roster">
+
+        return `<div class="rd-att-roster rd-att-roster--table">
           <div class="rd-att-roster__head">
-            <h3 class="rd-att-roster__title">${Sec.escapeHTML(title)}</h3>
-            <p class="rd-att-roster__sub">${users.length} في الفريق · ${Sec.escapeHTML(dateLabel)}${canAny ? '' : ' · عرض فقط'}</p>
+            <div>
+              <h3 class="rd-att-roster__title">${Sec.escapeHTML(title)}</h3>
+              <p class="rd-att-roster__sub">${allUsers.length} موظف${canAny ? '' : ' · عرض فقط'}${q ? ` · نتائج البحث: ${users.length}` : ''}</p>
+            </div>
           </div>
-          <div class="rd-att-rows">${rows}</div>
+          <div class="rd-att-table-wrap">
+            <table class="rd-att-table">
+              <thead>
+                <tr>
+                  <th>الموظفون (${allUsers.length})</th>
+                  <th>الحالة</th>
+                  <th>الجدول</th>
+                  <th>الحضور</th>
+                  <th>الانصراف</th>
+                  <th>مدة العمل</th>
+                  <th>الفرق</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rows || `<tr><td colspan="8"><div class="rd-att-empty rd-att-empty--inline"><p>لا نتائج لهذا البحث.</p></div></td></tr>`}
+              </tbody>
+            </table>
+          </div>
+          <div class="rd-att-table-foot" aria-label="ملخص الحضور">
+            <span><strong>${presentN}</strong> حاضر</span>
+            <span><strong>${unsetN}</strong> دون تسجيل</span>
+            <span><strong>${leaveN}</strong> إجازة / عذر</span>
+            <span><strong>${absentN}</strong> أوف</span>
+          </div>
         </div>`;
       }
 
@@ -37788,6 +37993,7 @@
 
           if (selected) {
             if (selected.slug === 'galleries' && !state._attSelectedBranchId) {
+              syncAttendanceSearchVisibility(false);
               paintAttendanceHost(renderAttendanceBranchCardsHtml(selected));
             } else {
               try {
@@ -37796,14 +38002,21 @@
                 showToast('تعذّر تحميل سجلات الحضور: ' + (e.message || e), 'error');
                 state.attendanceRecords = [];
               }
+              syncAttendanceSearchVisibility(true);
+              const searchInp = document.getElementById('attSearchInput');
+              if (searchInp && searchInp.value !== (state._attSearch || '')) {
+                searchInp.value = state._attSearch || '';
+              }
               paintAttendanceHost(renderAttendanceRosterHtml(selected, state._attSelectedBranchId || null));
             }
           } else {
             state._attSelectedDeptId = null;
             state._attSelectedBranchId = null;
+            syncAttendanceSearchVisibility(false);
             paintAttendanceHost(renderAttendanceDeptCardsHtml(depts));
           }
           syncAttendanceBackBtn();
+          syncAttendanceDateDisplay();
         } finally {
           if (softPaint || settleAfterLoad) endRdSoftPaint();
         }
@@ -37850,7 +38063,7 @@
       }
 
       function readAttendanceRowValues(userId) {
-        const row = document.querySelector(`.rd-att-row[data-user-id="${userId}"]`);
+        const row = document.querySelector(`.rd-att-tr[data-user-id="${userId}"]`);
         if (!row) return null;
         const status = row.querySelector('[data-att-field="status"]')?.value || 'unset';
         const checkIn = row.querySelector('[data-att-field="check_in"]')?.value || '';
@@ -37862,7 +38075,6 @@
       function syncAttendanceRowTimeFields(row, status) {
         if (!row) return;
         const present = status === 'present';
-        row.querySelectorAll('.rd-att-field--time').forEach(el => el.classList.toggle('is-dim', !present));
         const canEdit = !row.querySelector('[data-att-field="status"]')?.disabled;
         row.querySelectorAll('.rd-att-time-input').forEach(inp => {
           inp.disabled = !canEdit || !present;
@@ -37882,7 +38094,7 @@
           }
           el.value = normalized;
         }
-        const row = el.closest('.rd-att-row');
+        const row = el.closest('.rd-att-tr');
         const userId = row?.getAttribute('data-user-id');
         if (userId) onAttendanceRowChange(userId);
       }
@@ -37916,11 +38128,7 @@
             if (idx >= 0) state.attendanceRecords[idx] = row;
             else state.attendanceRecords = [...(state.attendanceRecords || []), row];
           }
-          if (saveEl) saveEl.innerHTML = '<span class="rd-att-saved"><i class="fas fa-check" aria-hidden="true"></i></span>';
-          setTimeout(() => {
-            const el = document.querySelector(`.rd-att-row[data-user-id="${userId}"] [data-att-save-state]`);
-            if (el && !el.querySelector('.fa-spinner')) el.innerHTML = '';
-          }, 1200);
+          await renderAttendancePage({ soft: true });
         } catch (e) {
           if (saveEl) saveEl.innerHTML = '';
           showToast('فشل حفظ الحضور: ' + (e.message || e), 'error');
@@ -37937,13 +38145,15 @@
       window.attendanceOpenBranch = attendanceOpenBranch;
       window.onAttendanceDateChange = onAttendanceDateChange;
       window.onAttendanceRowChange = onAttendanceRowChange;
+      window.onAttendanceTimeTyped = onAttendanceTimeTyped;
+      window.attendanceShiftDate = attendanceShiftDate;
+      window.onAttendanceSearchInput = onAttendanceSearchInput;
       window.toggleAttDatePicker = toggleAttDatePicker;
       window.attDpToggleMonthYear = attDpToggleMonthYear;
       window.attDpPickMonth = attDpPickMonth;
       window.attDpChangeMonth = attDpChangeMonth;
       window.attDpPickDay = attDpPickDay;
       window.attDpSelectToday = attDpSelectToday;
-      window.onAttendanceTimeTyped = onAttendanceTimeTyped;
 
 
       // ============================================================================
