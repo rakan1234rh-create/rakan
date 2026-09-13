@@ -1255,7 +1255,12 @@
         complaintKind: 'complaint',
         complaintCategory: '',
         complaintAnonymous: false,
-        _complaintsChannel: null
+        _complaintsChannel: null,
+        attendanceDepartments: [],
+        attendanceRecords: [],
+        _attSelectedDeptId: null,
+        _attWorkDate: null,
+        _attSavingUserId: null
       };
 
       /** مستخدم محلي عند عدم وجود جلسة Supabase (بعد إزالة شاشة الدخول) */
@@ -1454,7 +1459,7 @@
       }
 
       /** أعمدة موجودة فعلاً في جدول users — لا تضف region_id أو supervisor_id (غير موجودين في Supabase) */
-      const MOB_USER_SELECT = 'id,name,role,branch_id,employee_number,auth_uid,is_active,email,phone,job_title,avatar_key,push_subscriptions(id)';
+      const MOB_USER_SELECT = 'id,name,role,branch_id,department_id,employee_number,auth_uid,is_active,email,phone,job_title,avatar_key,push_subscriptions(id)';
       const MOB_LOAD_TIMEOUT_MS = 28000;
       /** قائمة التذاكر — بدون logs/attachments (تُجلب عند فتح التذكرة) */
       const VIOLATION_LIST_SELECT = [
@@ -5084,6 +5089,30 @@
           state.branches = branches || [];
           state.users = users || [];
           rebuildLookupMaps();
+          if (state.currentUser?.id) {
+            const me = state.users.find(u => u.id === state.currentUser.id);
+            if (me && Object.prototype.hasOwnProperty.call(me, 'department_id')) {
+              state.currentUser.department_id = me.department_id;
+            }
+          }
+          if (!mobLoad) {
+            try {
+              const { data: depts, error: dErr } = await sb
+                .from('departments')
+                .select('id,name,slug,sort_order,is_active')
+                .eq('is_active', true)
+                .order('sort_order');
+              if (dErr) {
+                if (isMirsadDebugLog()) console.warn('[DataLoad] departments:', dErr);
+                state.attendanceDepartments = state.attendanceDepartments || [];
+              } else {
+                state.attendanceDepartments = depts || [];
+              }
+            } catch (deptErr) {
+              if (isMirsadDebugLog()) console.warn('[DataLoad] departments:', deptErr);
+              state.attendanceDepartments = state.attendanceDepartments || [];
+            }
+          }
           const enrichRow = mobLoad ? enrichViolationLite : enrichViolation;
           state.violations = (violations || []).map(enrichRow);
           state.violationTypes = vTypes || [];
@@ -5215,6 +5244,9 @@
         else state.users.push(row);
         sortUsersLocal();
         rebuildLookupMaps();
+        if (state.currentUser?.id === row.id) {
+          state.currentUser = { ...state.currentUser, ...row };
+        }
       }
 
       function patchViolationsBranchForEmployee(employeeId, branchId) {
@@ -5926,6 +5958,7 @@
         { id: 'tab_newTicket', label: 'رصد مخالفة جديدة', group: 'التنقل', roles: ['admin', 'observer', 'supervisor'] },
         { id: 'tab_workflow', label: 'معالجة التذاكر', group: 'التنقل', roles: ['admin', 'manager', 'auditor', 'supervisor', 'employee', 'branch_manager', 'observer', 'hr'] },
         { id: 'tab_breaks', label: 'بريكات الموظفين', group: 'التنقل', roles: ['admin', 'manager', 'auditor', 'supervisor', 'branch_manager', 'observer', 'employee'] },
+        { id: 'tab_attendance', label: 'الحضور والانصراف', group: 'التنقل', roles: ['admin', 'employee'] },
         { id: 'tab_complaints', label: 'الشكاوى والاقتراحات', group: 'التنقل', roles: ['admin', 'supervisor', 'branch_manager', 'observer', 'employee'] },
         { id: 'tab_reports', label: 'التقارير', group: 'التنقل', roles: ['admin', 'manager', 'auditor', 'hr'] },
         { id: 'tab_compliance', label: 'مؤشرات الامتثال', group: 'التنقل', roles: ['admin', 'manager', 'auditor', 'supervisor', 'branch_manager'] },
@@ -5951,6 +5984,7 @@
         { id: 'manage_regions', label: 'إضافة/تعديل المناطق والفروع', group: 'إجراءات إدارية', roles: ['admin'] },
         { id: 'delete_regions', label: 'حذف المناطق والفروع', group: 'إجراءات إدارية', roles: ['admin'] },
         { id: 'manage_break_schedules', label: 'تعديل مدد البريك (منطقة/فرع/موظف)', group: 'إجراءات إدارية', roles: ['admin'] },
+        { id: 'mark_attendance', label: 'تسجيل حضور وانصراف الموظفين', group: 'إجراءات إدارية', roles: ['admin', 'employee'] },
         { id: 'manage_complaints', label: 'إدارة الشكاوى والاقتراحات (الرد والإغلاق)', group: 'إجراءات إدارية', roles: ['admin'] },
         { id: 'manage_violation_types', label: 'إدارة أنواع المخالفات', group: 'إجراءات إدارية', roles: ['admin'] },
         { id: 'manage_users', label: 'إضافة/تعديل/تعطيل المستخدمين', group: 'إجراءات إدارية', roles: ['admin'] },
@@ -5969,6 +6003,7 @@
         newTicket: 'tab_newTicket',
         workflow: 'tab_workflow',
         breaks: 'tab_breaks',
+        attendance: 'tab_attendance',
         complaints: 'tab_complaints',
         reports: 'tab_reports',
         compliance: 'tab_compliance',
@@ -6210,7 +6245,7 @@
           return ['tab_locations', 'tab_departments', 'tab_settings', 'tab_broadcasts'].some(p => hasPermission(p));
         }
         if (permId === 'section_main') {
-          return ['tab_dashboard', 'tab_newTicket', 'tab_workflow', 'tab_breaks', 'tab_complaints', 'tab_reports', 'tab_compliance', 'tab_violations'].some(p => hasPermission(p));
+          return ['tab_dashboard', 'tab_newTicket', 'tab_workflow', 'tab_breaks', 'tab_attendance', 'tab_complaints', 'tab_reports', 'tab_compliance', 'tab_violations'].some(p => hasPermission(p));
         }
         if (role === 'admin') return true;
         const uid = state.currentUser.id;
@@ -7256,6 +7291,7 @@
           else if (tab === 'compliance' && typeof renderCompliance === 'function') renderCompliance();
           else if (tab === 'violations' && typeof renderViolTypes === 'function') renderViolTypes();
           else if (tab === 'breaks' && typeof renderStaffBreaksPage === 'function') renderStaffBreaksPage({ soft: true });
+          else if (tab === 'attendance' && typeof renderAttendancePage === 'function') renderAttendancePage({ soft: true });
           else if (tab === 'complaints') {
             if (typeof isMobileViewport === 'function' && isMobileViewport()) {
               if (typeof renderComplaintsPage === 'function') renderComplaintsPage();
@@ -7273,7 +7309,7 @@
         }
       }
 
-      const MR_NAV_TAB_ORDER = ['dashboard', 'workflow', 'newTicket', 'breaks', 'complaints', 'reports', 'compliance', 'violations', 'locations', 'departments', 'settings', 'broadcasts'];
+      const MR_NAV_TAB_ORDER = ['dashboard', 'workflow', 'newTicket', 'breaks', 'attendance', 'complaints', 'reports', 'compliance', 'violations', 'locations', 'departments', 'settings', 'broadcasts'];
 
       function hasAnyNavTabPermission() {
         return MR_NAV_TAB_ORDER.some(tab => {
@@ -8123,6 +8159,7 @@
         newTicket: { title: 'رصد مخالفة جديدة', sub: 'سجّل مخالفة بأكبر قدر من التفاصيل' },
         workflow: { title: 'التذاكر', sub: 'إدارة ومتابعة تذاكر المخالفات' },
         breaks: { title: 'بريكات الموظفين', sub: '' },
+        attendance: { title: 'الحضور والانصراف', sub: 'تسجيل دوام الموظفين حسب القسم' },
         complaints: { title: 'الشكاوى والاقتراحات', sub: 'ارفع شكواك أو اقتراحك وتابع الرد عليها' },
         reports: { title: 'التقارير', sub: 'مؤشرات الأداء والاتجاهات' },
         compliance: { title: 'لوحة مؤشرات الامتثال', sub: 'compliance dashboard' },
@@ -9340,6 +9377,20 @@
           if (tab === 'departments') renderUsers();
           if (tab === 'violations') renderViolTypes();
           if (tab === 'breaks') renderStaffBreaksPage();
+          if (tab === 'attendance') {
+            if (typeof isMobileViewport === 'function' && isMobileViewport()) {
+              const desk = document.querySelector('.rd-attendance-panel');
+              const mob = document.querySelector('.rd-attendance-mobile-block');
+              if (desk) desk.hidden = true;
+              if (mob) mob.hidden = false;
+            } else if (typeof renderAttendancePage === 'function') {
+              const desk = document.querySelector('.rd-attendance-panel');
+              const mob = document.querySelector('.rd-attendance-mobile-block');
+              if (desk) desk.hidden = false;
+              if (mob) mob.hidden = true;
+              renderAttendancePage();
+            }
+          }
           if (tab === 'complaints') {
             try {
               const deskPanel = document.querySelector('.rd-complaints-desk-panel');
@@ -14646,6 +14697,7 @@
         document.getElementById('userModalTitle').textContent = 'إضافة مستخدم';
 
         populateBranchSelect();
+        populateDepartmentSelect();
         onRoleChange();
 
         // إظهار حقل كلمة المرور
@@ -14671,6 +14723,7 @@
         document.getElementById('userModalTitle').textContent = 'تعديل المستخدم';
 
         populateBranchSelect(u.branch_id);
+        populateDepartmentSelect(u.department_id);
         onRoleChange();
 
         // عند التعديل: إخفاء كلمة المرور، السماح بتعديل الرقم الوظيفي والإيميل
@@ -14704,6 +14757,16 @@
           ).join('');
       }
 
+      function populateDepartmentSelect(selectedId) {
+        const sel = document.getElementById('um-department');
+        if (!sel) return;
+        const depts = (state.attendanceDepartments || []).filter(d => d && d.is_active !== false);
+        sel.innerHTML = '<option value="">-- بدون قسم --</option>' +
+          depts.map(d =>
+            `<option value="${d.id}" ${d.id === selectedId ? 'selected' : ''}>${Sec.escapeHTML(d.name)}</option>`
+          ).join('');
+      }
+
       async function saveUser() {
         if (!canManageUsers()) { showToast('لا تملك صلاحية إدارة المستخدمين.', 'warning'); return; }
         const editId = document.getElementById('um-editId').value;  // UUID أو فارغ
@@ -14713,6 +14776,7 @@
         const phone = Sec.normalizePhone(document.getElementById('um-phone').value);
         const role = document.getElementById('um-role').value;
         const branchId = document.getElementById('um-branch').value || null;
+        const departmentId = document.getElementById('um-department')?.value || null;
         const password = document.getElementById('um-password').value;
 
         // Validations
@@ -14753,6 +14817,7 @@
               phone: phone || null,
               role,
               branch_id: needsBranch ? branchId : null,
+              department_id: departmentId || null,
               job_title: staffJobTitleForRole(role)
             };
 
@@ -14805,6 +14870,7 @@
               phone: phone || null,
               role,
               branch_id: needsBranch ? branchId : null,
+              department_id: departmentId || null,
               job_title: staffJobTitleForRole(role)
             };
             const { data: newUser, error } = await sb.from('users').insert(insertPayload).select(USER_ROW_SELECT).single();
@@ -37083,6 +37149,379 @@
       window.syncBreakScheduleScopeFields = syncBreakScheduleScopeFields;
       window.syncBreakScheduleFormFields = syncBreakScheduleFormFields;
       window.openStaffBreakHistory = openStaffBreakHistory;
+
+
+      // ============================================================================
+      // ATTENDANCE / DEPARTMENTS DESKTOP
+      // ============================================================================
+
+      const ATTENDANCE_STATUS_OPTS = [
+        { id: 'unset', label: 'غير محدد' },
+        { id: 'present', label: 'حاضر' },
+        { id: 'day_off', label: 'يوم إجازة' },
+        { id: 'off', label: 'أوف' },
+        { id: 'sick', label: 'مرضية' },
+        { id: 'permission', label: 'استئذان' },
+        { id: 'excuse', label: 'عذر' }
+      ];
+
+      const ATTENDANCE_DEPT_ICONS = {
+        galleries: 'fa-store',
+        admin: 'fa-building',
+        packing: 'fa-box'
+      };
+
+      function canMarkAttendance() {
+        return hasPermission('mark_attendance');
+      }
+
+      function canViewAttendanceTab() {
+        return hasPermission('tab_attendance');
+      }
+
+      function getAttendanceTodayKey() {
+        if (typeof getStaffBreakTodayKey === 'function') return getStaffBreakTodayKey();
+        try {
+          return new Intl.DateTimeFormat('en-CA', { timeZone: APP_TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+        } catch (_) {
+          return new Date().toISOString().slice(0, 10);
+        }
+      }
+
+      function getAttendanceWorkDate() {
+        const input = document.getElementById('attWorkDate');
+        const v = input?.value || state._attWorkDate || getAttendanceTodayKey();
+        state._attWorkDate = v;
+        return v;
+      }
+
+      function ensureAttendanceDateInput() {
+        const input = document.getElementById('attWorkDate');
+        if (!input) return getAttendanceTodayKey();
+        if (!input.value) input.value = state._attWorkDate || getAttendanceTodayKey();
+        state._attWorkDate = input.value;
+        return input.value;
+      }
+
+      function attTimeToInput(t) {
+        if (!t) return '';
+        const s = String(t);
+        return s.length >= 5 ? s.slice(0, 5) : s;
+      }
+
+      function attInputToRpcTime(v) {
+        const s = String(v || '').trim();
+        if (!s) return null;
+        if (/^\d{2}:\d{2}$/.test(s)) return `${s}:00`;
+        if (/^\d{2}:\d{2}:\d{2}/.test(s)) return s.slice(0, 8);
+        return null;
+      }
+
+      async function ensureAttendanceDepartmentsLoaded() {
+        if ((state.attendanceDepartments || []).length) return state.attendanceDepartments;
+        try {
+          const { data, error } = await sb
+            .from('departments')
+            .select('id,name,slug,sort_order,is_active')
+            .eq('is_active', true)
+            .order('sort_order');
+          if (error) throw error;
+          state.attendanceDepartments = data || [];
+        } catch (e) {
+          if (isMirsadDebugLog()) console.warn('[attendance] departments', e);
+          state.attendanceDepartments = state.attendanceDepartments || [];
+        }
+        return state.attendanceDepartments;
+      }
+
+      function getVisibleAttendanceDepartments() {
+        const all = (state.attendanceDepartments || []).filter(d => d && d.is_active !== false);
+        const role = normalizeUserRole(state.currentUser?.role);
+        if (role === 'admin') return all;
+        const myDept = state.currentUser?.department_id;
+        if (!myDept) return [];
+        return all.filter(d => d.id === myDept);
+      }
+
+      function getAttendanceDeptUsers(deptId) {
+        return (state.users || [])
+          .filter(u => u && u.department_id === deptId && u.is_active !== false)
+          .slice()
+          .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'ar'));
+      }
+
+      function getAttendanceRecordForUser(userId) {
+        return (state.attendanceRecords || []).find(r => r.user_id === userId) || null;
+      }
+
+      function canMarkUserAttendance(targetUser) {
+        if (!canMarkAttendance() || !targetUser) return false;
+        const role = normalizeUserRole(state.currentUser?.role);
+        if (role === 'admin') return true;
+        const myDept = state.currentUser?.department_id;
+        if (!myDept) return false;
+        return targetUser.department_id === myDept;
+      }
+
+      async function loadAttendanceRecordsForDept(deptId, workDate) {
+        if (!deptId || !workDate) {
+          state.attendanceRecords = [];
+          return [];
+        }
+        const { data, error } = await sb
+          .from('attendance_records')
+          .select('id,user_id,department_id,work_date,status,check_in_time,check_out_time,note,marked_by,updated_at')
+          .eq('work_date', workDate)
+          .eq('department_id', deptId);
+        if (error) throw error;
+        state.attendanceRecords = data || [];
+        return state.attendanceRecords;
+      }
+
+      function renderAttendanceDeptCardsHtml(depts) {
+        if (!depts.length) {
+          const role = normalizeUserRole(state.currentUser?.role);
+          const hint = role === 'admin'
+            ? 'لا توجد أقسام حضورية بعد.'
+            : 'لم يُعيَّن لك قسم حضور. اطلب من مدير النظام ربط حسابك بقسم من إدارة المستخدمين.';
+          return `<div class="rd-att-empty"><i class="fas fa-building" aria-hidden="true"></i><p>${Sec.escapeHTML(hint)}</p></div>`;
+        }
+        return `<div class="rd-att-depts" role="list">${depts.map((d, i) => {
+          const count = getAttendanceDeptUsers(d.id).length;
+          const icon = ATTENDANCE_DEPT_ICONS[d.slug] || 'fa-users';
+          return `<button type="button" class="rd-att-dept-card" role="listitem" style="--rd-att-i:${i}" onclick="attendanceOpenDepartment('${d.id}')">
+            <span class="rd-att-dept-card__ico" aria-hidden="true"><i class="fas ${icon}"></i></span>
+            <span class="rd-att-dept-card__body">
+              <span class="rd-att-dept-card__name">${Sec.escapeHTML(d.name)}</span>
+              <span class="rd-att-dept-card__meta">${count} موظف</span>
+            </span>
+            <span class="rd-att-dept-card__chev" aria-hidden="true"><i class="fas fa-chevron-left"></i></span>
+          </button>`;
+        }).join('')}</div>`;
+      }
+
+      function renderAttendanceStatusOptions(selected) {
+        return ATTENDANCE_STATUS_OPTS.map(o =>
+          `<option value="${o.id}" ${o.id === selected ? 'selected' : ''}>${Sec.escapeHTML(o.label)}</option>`
+        ).join('');
+      }
+
+      function renderAttendanceRosterHtml(dept) {
+        const users = getAttendanceDeptUsers(dept.id);
+        const canAny = canMarkAttendance();
+        const dateLabel = getAttendanceWorkDate();
+        if (!users.length) {
+          return `<div class="rd-att-roster">
+            <div class="rd-att-roster__head">
+              <h3 class="rd-att-roster__title">${Sec.escapeHTML(dept.name)}</h3>
+              <p class="rd-att-roster__sub">لا يوجد موظفون مرتبطون بهذا القسم · ${Sec.escapeHTML(dateLabel)}</p>
+            </div>
+            <div class="rd-att-empty"><i class="fas fa-user-slash" aria-hidden="true"></i><p>اربط الموظفين بالقسم من إدارة المستخدمين.</p></div>
+          </div>`;
+        }
+        const rows = users.map((u, i) => {
+          const rec = getAttendanceRecordForUser(u.id);
+          const status = rec?.status || 'unset';
+          const editable = canMarkUserAttendance(u);
+          const present = status === 'present';
+          const disabled = editable ? '' : 'disabled';
+          const av = (u.name || '?').trim().charAt(0);
+          return `<div class="rd-att-row" data-user-id="${u.id}" style="--rd-att-i:${i}">
+            <div class="rd-att-row__who">
+              <span class="rd-att-row__av" aria-hidden="true">${Sec.escapeHTML(av)}</span>
+              <div class="rd-att-row__meta">
+                <div class="rd-att-row__name">${Sec.escapeHTML(u.name || '—')}</div>
+                <div class="rd-att-row__num">${Sec.escapeHTML(padEmpNum(u.employee_number) || '—')}</div>
+              </div>
+            </div>
+            <div class="rd-att-row__fields">
+              <label class="rd-att-field">
+                <span>الحالة</span>
+                <select class="form-select rd-att-status" data-att-field="status" ${disabled} onchange="onAttendanceRowChange('${u.id}')">
+                  ${renderAttendanceStatusOptions(status)}
+                </select>
+              </label>
+              <label class="rd-att-field rd-att-field--time${present ? '' : ' is-dim'}">
+                <span>حضور</span>
+                <input type="time" class="form-input rd-att-in" data-att-field="check_in" value="${attTimeToInput(rec?.check_in_time)}" ${disabled || !present ? 'disabled' : ''} onchange="onAttendanceRowChange('${u.id}')">
+              </label>
+              <label class="rd-att-field rd-att-field--time${present ? '' : ' is-dim'}">
+                <span>انصراف</span>
+                <input type="time" class="form-input rd-att-out" data-att-field="check_out" value="${attTimeToInput(rec?.check_out_time)}" ${disabled || !present ? 'disabled' : ''} onchange="onAttendanceRowChange('${u.id}')">
+              </label>
+              <label class="rd-att-field rd-att-field--note">
+                <span>ملاحظة</span>
+                <input type="text" class="form-input rd-att-note" data-att-field="note" maxlength="200" value="${Sec.escapeHTML(rec?.note || '')}" placeholder="اختياري" ${disabled} onchange="onAttendanceRowChange('${u.id}')">
+              </label>
+            </div>
+            <div class="rd-att-row__status" data-att-save-state>${editable ? (canAny ? '' : '') : '<span class="rd-att-badge">عرض فقط</span>'}</div>
+          </div>`;
+        }).join('');
+        return `<div class="rd-att-roster">
+          <div class="rd-att-roster__head">
+            <h3 class="rd-att-roster__title">${Sec.escapeHTML(dept.name)}</h3>
+            <p class="rd-att-roster__sub">${users.length} موظف · ${Sec.escapeHTML(dateLabel)}${canAny ? '' : ' · عرض فقط'}</p>
+          </div>
+          <div class="rd-att-rows">${rows}</div>
+        </div>`;
+      }
+
+      function paintAttendanceHost(html) {
+        const host = document.getElementById('rdAttendanceHost');
+        if (!host) return;
+        host.innerHTML = html;
+      }
+
+      function syncAttendanceBackBtn() {
+        const btn = document.getElementById('attBackBtn');
+        if (!btn) return;
+        btn.hidden = !state._attSelectedDeptId;
+      }
+
+      async function renderAttendancePage(opts = {}) {
+        if (!canViewAttendanceTab()) return;
+        const softPaint = !!opts.soft;
+        let settleAfterLoad = false;
+        if (softPaint && typeof beginRdSoftPaint === 'function') beginRdSoftPaint();
+        try {
+          const desk = document.querySelector('.rd-attendance-panel');
+          const mob = document.querySelector('.rd-attendance-mobile-block');
+          if (typeof isMobileViewport === 'function' && isMobileViewport()) {
+            if (desk) desk.hidden = true;
+            if (mob) mob.hidden = false;
+            return;
+          }
+          if (desk) desk.hidden = false;
+          if (mob) mob.hidden = true;
+
+          ensureAttendanceDateInput();
+          if (!opts.soft) {
+            const host = document.getElementById('rdAttendanceHost');
+            if (host && (!host.innerHTML.trim() || isAppDataPending())) {
+              host.innerHTML = dataLoadingEmptyHTML('جاري تحميل الحضور…');
+            }
+            await ensureAttendanceDepartmentsLoaded();
+            if (typeof beginRdSoftPaint === 'function') beginRdSoftPaint();
+            settleAfterLoad = true;
+          } else {
+            await ensureAttendanceDepartmentsLoaded();
+          }
+
+          const depts = getVisibleAttendanceDepartments();
+          if (!state._attSelectedDeptId && depts.length === 1) {
+            state._attSelectedDeptId = depts[0].id;
+          }
+
+          const selected = state._attSelectedDeptId
+            ? depts.find(d => d.id === state._attSelectedDeptId) || (state.attendanceDepartments || []).find(d => d.id === state._attSelectedDeptId)
+            : null;
+
+          if (selected) {
+            try {
+              await loadAttendanceRecordsForDept(selected.id, getAttendanceWorkDate());
+            } catch (e) {
+              showToast('تعذّر تحميل سجلات الحضور: ' + (e.message || e), 'error');
+              state.attendanceRecords = [];
+            }
+            paintAttendanceHost(renderAttendanceRosterHtml(selected));
+          } else {
+            state._attSelectedDeptId = null;
+            paintAttendanceHost(renderAttendanceDeptCardsHtml(depts));
+          }
+          syncAttendanceBackBtn();
+        } finally {
+          if (softPaint || settleAfterLoad) endRdSoftPaint();
+        }
+      }
+
+      function attendanceGoDepartments() {
+        state._attSelectedDeptId = null;
+        syncAttendanceBackBtn();
+        renderAttendancePage({ soft: true });
+      }
+
+      async function attendanceOpenDepartment(deptId) {
+        if (!deptId) return;
+        state._attSelectedDeptId = deptId;
+        syncAttendanceBackBtn();
+        await renderAttendancePage({ soft: true });
+      }
+
+      function onAttendanceDateChange() {
+        const input = document.getElementById('attWorkDate');
+        state._attWorkDate = input?.value || getAttendanceTodayKey();
+        renderAttendancePage({ soft: true });
+      }
+
+      function readAttendanceRowValues(userId) {
+        const row = document.querySelector(`.rd-att-row[data-user-id="${userId}"]`);
+        if (!row) return null;
+        const status = row.querySelector('[data-att-field="status"]')?.value || 'unset';
+        const checkIn = row.querySelector('[data-att-field="check_in"]')?.value || '';
+        const checkOut = row.querySelector('[data-att-field="check_out"]')?.value || '';
+        const note = row.querySelector('[data-att-field="note"]')?.value || '';
+        return { status, checkIn, checkOut, note, row };
+      }
+
+      function syncAttendanceRowTimeFields(row, status) {
+        if (!row) return;
+        const present = status === 'present';
+        row.querySelectorAll('.rd-att-field--time').forEach(el => el.classList.toggle('is-dim', !present));
+        const inEl = row.querySelector('[data-att-field="check_in"]');
+        const outEl = row.querySelector('[data-att-field="check_out"]');
+        const canEdit = !row.querySelector('[data-att-field="status"]')?.disabled;
+        if (inEl) inEl.disabled = !canEdit || !present;
+        if (outEl) outEl.disabled = !canEdit || !present;
+      }
+
+      async function onAttendanceRowChange(userId) {
+        const target = (state.users || []).find(u => u.id === userId);
+        if (!canMarkUserAttendance(target)) {
+          showToast('لا تملك صلاحية تسجيل حضور هذا الموظف', 'warning');
+          return;
+        }
+        const vals = readAttendanceRowValues(userId);
+        if (!vals) return;
+        syncAttendanceRowTimeFields(vals.row, vals.status);
+
+        const saveEl = vals.row.querySelector('[data-att-save-state]');
+        if (saveEl) saveEl.innerHTML = '<span class="rd-att-saving"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i></span>';
+        state._attSavingUserId = userId;
+        try {
+          const { data, error } = await sb.rpc('upsert_attendance_record', {
+            p_user_id: userId,
+            p_work_date: getAttendanceWorkDate(),
+            p_status: vals.status,
+            p_check_in_time: vals.status === 'present' ? attInputToRpcTime(vals.checkIn) : null,
+            p_check_out_time: vals.status === 'present' ? attInputToRpcTime(vals.checkOut) : null,
+            p_note: vals.note || null
+          });
+          if (error) throw error;
+          const row = data;
+          if (row) {
+            const idx = (state.attendanceRecords || []).findIndex(r => r.user_id === userId);
+            if (idx >= 0) state.attendanceRecords[idx] = row;
+            else state.attendanceRecords = [...(state.attendanceRecords || []), row];
+          }
+          if (saveEl) saveEl.innerHTML = '<span class="rd-att-saved"><i class="fas fa-check" aria-hidden="true"></i></span>';
+          setTimeout(() => {
+            const el = document.querySelector(`.rd-att-row[data-user-id="${userId}"] [data-att-save-state]`);
+            if (el && !el.querySelector('.fa-spinner')) el.innerHTML = '';
+          }, 1200);
+        } catch (e) {
+          if (saveEl) saveEl.innerHTML = '';
+          showToast('فشل حفظ الحضور: ' + (e.message || e), 'error');
+          await renderAttendancePage({ soft: true });
+        } finally {
+          if (state._attSavingUserId === userId) state._attSavingUserId = null;
+        }
+      }
+
+      window.renderAttendancePage = renderAttendancePage;
+      window.attendanceGoDepartments = attendanceGoDepartments;
+      window.attendanceOpenDepartment = attendanceOpenDepartment;
+      window.onAttendanceDateChange = onAttendanceDateChange;
+      window.onAttendanceRowChange = onAttendanceRowChange;
 
 
       // ============================================================================
