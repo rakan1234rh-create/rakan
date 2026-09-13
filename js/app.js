@@ -8998,6 +8998,7 @@
         }
         if (typeof closeNtDatePicker === 'function') closeNtDatePicker();
         if (typeof closeNtTimePicker === 'function') closeNtTimePicker();
+        if (typeof closeAttDatePicker === 'function') closeAttDatePicker();
 
         const attViewer = document.getElementById('attViewer');
         if (attViewer?.classList.contains('open') && typeof closeAttViewer === 'function') {
@@ -16164,6 +16165,14 @@
           e.target !== ntDateBtn &&
           !ntDateBtn?.contains(e.target)) {
           closeNtDatePicker();
+        }
+        const attPopup = document.getElementById('attDatePickerPopup');
+        const attDateBtn = document.getElementById('attDateBtn');
+        if (attPopup?.classList.contains('open') &&
+          !attPopup.contains(e.target) &&
+          e.target !== attDateBtn &&
+          !attDateBtn?.contains(e.target)) {
+          closeAttDatePicker();
         }
         const ntTimePopup = document.getElementById('ntTimePickerPopup');
         const ntTimeBtn = document.getElementById('nt-timeBtn');
@@ -37220,6 +37229,23 @@
         }
       }
 
+      function formatAttendanceDateDisplay(iso) {
+        if (!iso) return '—';
+        if (typeof formatNtDateDisplay === 'function') {
+          const formatted = formatNtDateDisplay(iso);
+          if (formatted) return formatted;
+        }
+        const parts = String(iso).split('-');
+        if (parts.length < 3) return iso;
+        return `${parts[0]}/${parts[1]}/${parts[2]}`;
+      }
+
+      function syncAttendanceDateDisplay() {
+        const iso = getAttendanceWorkDate();
+        const el = document.getElementById('attDateDisplay');
+        if (el) el.textContent = formatAttendanceDateDisplay(iso);
+      }
+
       function getAttendanceWorkDate() {
         const input = document.getElementById('attWorkDate');
         const v = input?.value || state._attWorkDate || getAttendanceTodayKey();
@@ -37232,7 +37258,158 @@
         if (!input) return getAttendanceTodayKey();
         if (!input.value) input.value = state._attWorkDate || getAttendanceTodayKey();
         state._attWorkDate = input.value;
+        syncAttendanceDateDisplay();
         return input.value;
+      }
+
+      const attDpState = {
+        viewYear: 0,
+        viewMonth: 0,
+        pickerView: 'days',
+        selected: null
+      };
+
+      function closeAttDatePicker() {
+        const popup = document.getElementById('attDatePickerPopup');
+        const btn = document.getElementById('attDateBtn');
+        popup?.classList.remove('open');
+        btn?.classList.remove('is-open');
+        btn?.setAttribute('aria-expanded', 'false');
+      }
+
+      function renderAttDatePicker() {
+        const label = document.getElementById('attDpMonthLabel');
+        const grid = document.getElementById('attDpDays');
+        const popup = document.getElementById('attDatePickerPopup');
+        if (!label || !grid) return;
+        const months = (typeof NT_DP_MONTHS !== 'undefined' && NT_DP_MONTHS) || [
+          'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+          'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
+        ];
+
+        if (attDpState.pickerView === 'months') {
+          label.textContent = String(attDpState.viewYear);
+          grid.innerHTML = typeof dpBuildMonthGridHtml === 'function'
+            ? dpBuildMonthGridHtml(months, attDpState.viewMonth, 'attDpPickMonth')
+            : '';
+          grid.classList.add('dp-mode-pick');
+          return;
+        }
+
+        grid.classList.remove('dp-mode-pick');
+        label.textContent = `${months[attDpState.viewMonth]} ${attDpState.viewYear}`;
+
+        const today = typeof ksaTodayCalendar === 'function' ? ksaTodayCalendar() : new Date();
+        const firstDay = typeof ksaCalendarDate === 'function'
+          ? ksaCalendarDate(attDpState.viewYear, attDpState.viewMonth, 1)
+          : new Date(attDpState.viewYear, attDpState.viewMonth, 1);
+        const totalDays = typeof ksaDaysInCalendarMonth === 'function'
+          ? ksaDaysInCalendarMonth(attDpState.viewYear, attDpState.viewMonth)
+          : new Date(attDpState.viewYear, attDpState.viewMonth + 1, 0).getDate();
+        const startDayOfWeek = firstDay.getDay();
+        const prevLastDay = typeof ksaDaysInCalendarMonth === 'function'
+          ? ksaDaysInCalendarMonth(
+            attDpState.viewMonth === 0 ? attDpState.viewYear - 1 : attDpState.viewYear,
+            attDpState.viewMonth === 0 ? 11 : attDpState.viewMonth - 1
+          )
+          : new Date(attDpState.viewYear, attDpState.viewMonth, 0).getDate();
+
+        let html = '';
+        for (let i = startDayOfWeek; i > 0; i--) {
+          html += `<button type="button" class="dp-day other-month" disabled>${prevLastDay - i + 1}</button>`;
+        }
+        for (let day = 1; day <= totalDays; day++) {
+          const date = typeof ksaCalendarDate === 'function'
+            ? ksaCalendarDate(attDpState.viewYear, attDpState.viewMonth, day)
+            : new Date(attDpState.viewYear, attDpState.viewMonth, day);
+          const classes = ['dp-day'];
+          const sameDay = typeof ksaSameCalendarDay === 'function'
+            ? (a, b) => ksaSameCalendarDay(a, b)
+            : (a, b) => a && b && a.toDateString() === b.toDateString();
+          if (sameDay(date, today)) classes.push('today');
+          if (attDpState.selected && sameDay(date, attDpState.selected)) classes.push('start', 'end');
+          const iso = typeof ksaCalendarToIso === 'function' ? ksaCalendarToIso(date) : [
+            date.getFullYear(),
+            String(date.getMonth() + 1).padStart(2, '0'),
+            String(date.getDate()).padStart(2, '0')
+          ].join('-');
+          html += `<button type="button" class="${classes.join(' ')}" data-iso="${iso}" onclick="attDpPickDay('${iso}')">${day}</button>`;
+        }
+        const totalCells = startDayOfWeek + totalDays;
+        const remaining = (7 - (totalCells % 7)) % 7;
+        for (let i = 1; i <= remaining; i++) {
+          html += `<button type="button" class="dp-day other-month" disabled>${i}</button>`;
+        }
+        grid.innerHTML = html;
+        if (typeof dpPickerSyncChrome === 'function') dpPickerSyncChrome(popup, attDpState.pickerView);
+      }
+
+      function toggleAttDatePicker(e) {
+        if (e) e.stopPropagation();
+        const popup = document.getElementById('attDatePickerPopup');
+        const btn = document.getElementById('attDateBtn');
+        if (!popup || !btn) return;
+        if (popup.classList.contains('open')) {
+          closeAttDatePicker();
+          return;
+        }
+        ensureAttendanceDateInput();
+        const iso = getAttendanceWorkDate();
+        attDpState.selected = typeof ksaDateFromIso === 'function' ? ksaDateFromIso(iso) : new Date(iso + 'T12:00:00');
+        if (attDpState.selected && !Number.isNaN(attDpState.selected.getTime())) {
+          attDpState.viewYear = attDpState.selected.getFullYear();
+          attDpState.viewMonth = attDpState.selected.getMonth();
+        } else if (typeof ksaInitViewState === 'function') {
+          ksaInitViewState(attDpState);
+        }
+        attDpState.pickerView = 'days';
+        renderAttDatePicker();
+        popup.classList.add('open');
+        btn.classList.add('is-open');
+        btn.setAttribute('aria-expanded', 'true');
+      }
+
+      function attDpToggleMonthYear() {
+        const popup = document.getElementById('attDatePickerPopup');
+        attDpState.pickerView = attDpState.pickerView === 'months' ? 'days' : 'months';
+        renderAttDatePicker();
+        if (typeof dpPickerSyncChrome === 'function') dpPickerSyncChrome(popup, attDpState.pickerView);
+      }
+
+      function attDpPickMonth(monthIndex) {
+        attDpState.viewMonth = monthIndex;
+        attDpState.pickerView = 'days';
+        renderAttDatePicker();
+      }
+
+      function attDpChangeMonth(dir) {
+        if (attDpState.pickerView === 'months') {
+          attDpState.viewYear += dir;
+        } else {
+          attDpState.viewMonth += dir;
+          if (attDpState.viewMonth > 11) {
+            attDpState.viewMonth = 0;
+            attDpState.viewYear++;
+          } else if (attDpState.viewMonth < 0) {
+            attDpState.viewMonth = 11;
+            attDpState.viewYear--;
+          }
+        }
+        renderAttDatePicker();
+      }
+
+      function attDpPickDay(iso) {
+        const input = document.getElementById('attWorkDate');
+        if (input) input.value = iso;
+        state._attWorkDate = iso;
+        attDpState.selected = typeof ksaDateFromIso === 'function' ? ksaDateFromIso(iso) : new Date(iso + 'T12:00:00');
+        syncAttendanceDateDisplay();
+        closeAttDatePicker();
+        onAttendanceDateChange();
+      }
+
+      function attDpSelectToday() {
+        attDpPickDay(getAttendanceTodayKey());
       }
 
       function attTimeToInput(t) {
@@ -37644,6 +37821,7 @@
       function onAttendanceDateChange() {
         const input = document.getElementById('attWorkDate');
         state._attWorkDate = input?.value || getAttendanceTodayKey();
+        syncAttendanceDateDisplay();
         renderAttendancePage({ soft: true });
       }
 
@@ -37718,6 +37896,12 @@
       window.attendanceOpenBranch = attendanceOpenBranch;
       window.onAttendanceDateChange = onAttendanceDateChange;
       window.onAttendanceRowChange = onAttendanceRowChange;
+      window.toggleAttDatePicker = toggleAttDatePicker;
+      window.attDpToggleMonthYear = attDpToggleMonthYear;
+      window.attDpPickMonth = attDpPickMonth;
+      window.attDpChangeMonth = attDpChangeMonth;
+      window.attDpPickDay = attDpPickDay;
+      window.attDpSelectToday = attDpSelectToday;
 
 
       // ============================================================================

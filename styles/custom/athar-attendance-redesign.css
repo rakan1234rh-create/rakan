@@ -19,21 +19,48 @@ html.athar-staging-redesign.mr-desktop-ui #tab-attendance .rd-attendance-panel.w
   gap: 10px;
 }
 
-.rd-attendance-date {
+.rd-attendance-date-wrap {
+  position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  color: var(--text2);
 }
 
-.rd-attendance-date input[type="date"] {
+.rd-att-date-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 8px 14px;
+  border-radius: 999px;
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text);
-  border-radius: 10px;
-  padding: 8px 10px;
   font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--text) 4%, transparent);
+  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.rd-att-date-btn i {
+  color: var(--primary, #1a6b4a);
+  font-size: 13px;
+}
+
+.rd-att-date-btn:hover,
+.rd-att-date-btn.is-open {
+  border-color: color-mix(in srgb, var(--primary, #1a6b4a) 45%, var(--border));
+  background: color-mix(in srgb, var(--primary, #1a6b4a) 6%, var(--surface));
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--text) 6%, transparent);
+}
+
+#attDatePickerPopup.att-date-picker {
+  position: absolute;
+  top: calc(100% + 8px);
+  inset-inline-start: 0;
+  z-index: 80;
+  min-width: 280px;
 }
 
 .rd-attendance-host {
