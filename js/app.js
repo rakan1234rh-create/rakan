@@ -37316,16 +37316,6 @@
         return Number(m[1]) * 60 + Number(m[2]);
       }
 
-      function attFormatClock12(hm) {
-        const mins = attHmToMinutes(hm);
-        if (mins == null) return '—';
-        const h24 = Math.floor(mins / 60);
-        const m = mins % 60;
-        const ampm = h24 >= 12 ? 'م' : 'ص';
-        const h12 = h24 % 12 || 12;
-        return `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
-      }
-
       function attFormatDurationLabel(totalMins) {
         if (totalMins == null || totalMins < 0) return '—';
         const h = Math.floor(totalMins / 60);
@@ -37848,8 +37838,6 @@
           </div>`;
         }
 
-        const scheduleChip = `${attFormatClock12(ATT_DEFAULT_SHIFT.start)} - ${attFormatClock12(ATT_DEFAULT_SHIFT.end)} · ${attFormatDurationLabel(ATT_DEFAULT_SHIFT.minutes)}`;
-
         const rows = users.map((u, i) => {
           const rec = getAttendanceRecordForUser(u.id);
           const status = rec?.status || 'unset';
@@ -37880,9 +37868,6 @@
                 </select>
               </div>
             </td>
-            <td class="rd-att-td rd-att-td--sched">
-              <div class="rd-att-sched">${Sec.escapeHTML(scheduleChip)}</div>
-            </td>
             <td class="rd-att-td rd-att-td--time">
               ${present
                 ? `${renderAttTimeControlHtml('check_in', rec?.check_in_time, editable, true)}${metrics.late ? '<span class="rd-att-pill rd-att-pill--late">حضور متأخر</span>' : (metrics.noIn ? '<span class="rd-att-pill rd-att-pill--empty">لا يوجد سجل</span>' : '')}`
@@ -37912,7 +37897,6 @@
                 <tr>
                   <th>الموظفون (${allUsers.length})</th>
                   <th>الحالة</th>
-                  <th>الجدول</th>
                   <th>الحضور</th>
                   <th>الانصراف</th>
                   <th>مدة العمل</th>
@@ -37921,7 +37905,7 @@
                 </tr>
               </thead>
               <tbody>
-                ${rows || `<tr><td colspan="8"><div class="rd-att-empty rd-att-empty--inline"><p>لا نتائج لهذا البحث.</p></div></td></tr>`}
+                ${rows || `<tr><td colspan="7"><div class="rd-att-empty rd-att-empty--inline"><p>لا نتائج لهذا البحث.</p></div></td></tr>`}
               </tbody>
             </table>
           </div>
