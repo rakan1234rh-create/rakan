@@ -1118,7 +1118,7 @@
   <link rel="stylesheet" href="styles/custom/athar-locations-redesign.css?v=loc2" id="athar-locations-redesign">
   <link rel="stylesheet" href="styles/custom/athar-users-redesign.css?v=usr5" id="athar-users-redesign">
   <link rel="stylesheet" href="styles/custom/athar-breaks-redesign.css?v=brk8" id="athar-breaks-redesign">
-  <link rel="stylesheet" href="styles/custom/athar-attendance-redesign.css?v=att11" id="athar-attendance-redesign">
+  <link rel="stylesheet" href="styles/custom/athar-attendance-redesign.css?v=att12" id="athar-attendance-redesign">
   <link rel="stylesheet" href="styles/custom/athar-redesign-staging.css?v=mob-ui20" id="athar-redesign-staging">
   <link rel="stylesheet" href="styles/custom/athar-complaints-redesign.css?v=cmpl41" id="athar-complaints-redesign">
 
@@ -3764,11 +3764,6 @@
                     <div class="rd-att-date-heading" id="attDateHeading" aria-live="polite">—</div>
                   </div>
                   <div class="rd-att-toolbar__trail">
-                    <label class="rd-att-search" id="attSearchWrap" hidden>
-                      <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
-                      <input type="search" id="attSearchInput" placeholder="بحث" autocomplete="off"
-                        oninput="onAttendanceSearchInput()">
-                    </label>
                     <div class="rd-attendance-date-wrap rd-att-date-nav">
                       <button type="button" class="rd-att-date-nav__btn" onclick="attendanceShiftDate(-1)" aria-label="اليوم السابق">
                         <i class="fas fa-chevron-right" aria-hidden="true"></i>
@@ -3808,6 +3803,11 @@
                         </div>
                       </div>
                     </div>
+                    <label class="rd-att-search" id="attSearchWrap" hidden>
+                      <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
+                      <input type="search" id="attSearchInput" placeholder="بحث" autocomplete="off"
+                        oninput="onAttendanceSearchInput()">
+                    </label>
                   </div>
                 </div>
               </div>
