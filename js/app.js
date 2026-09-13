@@ -14746,6 +14746,12 @@
         } else {
           branchGroup.style.display = 'none';
         }
+        // المعارض تلقائياً لأخصائي المبيعات / المشرف / مدير الفرع
+        if (typeof isGalleriesAttendanceRole === 'function' && isGalleriesAttendanceRole(role)) {
+          const galleries = (state.attendanceDepartments || []).find(d => d && d.slug === 'galleries');
+          const sel = document.getElementById('um-department');
+          if (sel && galleries?.id) sel.value = galleries.id;
+        }
       }
 
       function populateBranchSelect(selectedId) {
@@ -14767,6 +14773,15 @@
           ).join('');
       }
 
+      function resolveDepartmentIdForSave(role, selectedDepartmentId) {
+        if (selectedDepartmentId) return selectedDepartmentId;
+        if (typeof isGalleriesAttendanceRole === 'function' && isGalleriesAttendanceRole(role)) {
+          const galleries = (state.attendanceDepartments || []).find(d => d.slug === 'galleries');
+          return galleries?.id || null;
+        }
+        return null;
+      }
+
       async function saveUser() {
         if (!canManageUsers()) { showToast('لا تملك صلاحية إدارة المستخدمين.', 'warning'); return; }
         const editId = document.getElementById('um-editId').value;  // UUID أو فارغ
@@ -14776,7 +14791,7 @@
         const phone = Sec.normalizePhone(document.getElementById('um-phone').value);
         const role = document.getElementById('um-role').value;
         const branchId = document.getElementById('um-branch').value || null;
-        const departmentId = document.getElementById('um-department')?.value || null;
+        const departmentId = resolveDepartmentIdForSave(role, document.getElementById('um-department')?.value || null);
         const password = document.getElementById('um-password').value;
 
         // Validations
@@ -37171,12 +37186,28 @@
         packing: 'fa-box'
       };
 
+      /** المعارض = موظفو الفروع في المنصة: أخصائي مبيعات / مشرف / مدير فرع */
+      const GALLERIES_ATTENDANCE_ROLES = ['employee', 'supervisor', 'branch_manager'];
+
       function canMarkAttendance() {
         return hasPermission('mark_attendance');
       }
 
       function canViewAttendanceTab() {
         return hasPermission('tab_attendance');
+      }
+
+      function isGalleriesAttendanceRole(role) {
+        return GALLERIES_ATTENDANCE_ROLES.includes(normalizeUserRole(role));
+      }
+
+      function isGalleriesAttendanceMember(u) {
+        if (!u || u.is_active === false) return false;
+        return isGalleriesAttendanceRole(u.role);
+      }
+
+      function getAttendanceDepartmentBySlug(slug) {
+        return (state.attendanceDepartments || []).find(d => d && d.slug === slug) || null;
       }
 
       function getAttendanceTodayKey() {
@@ -37234,18 +37265,38 @@
         return state.attendanceDepartments;
       }
 
+      function resolveEffectiveAttendanceDepartmentId(u) {
+        if (!u) return null;
+        if (u.department_id) return u.department_id;
+        if (isGalleriesAttendanceMember(u)) {
+          return getAttendanceDepartmentBySlug('galleries')?.id || null;
+        }
+        return null;
+      }
+
       function getVisibleAttendanceDepartments() {
         const all = (state.attendanceDepartments || []).filter(d => d && d.is_active !== false);
         const role = normalizeUserRole(state.currentUser?.role);
         if (role === 'admin') return all;
-        const myDept = state.currentUser?.department_id;
+        if (isGalleriesAttendanceMember(state.currentUser)) {
+          const galleries = all.filter(d => d.slug === 'galleries');
+          if (galleries.length) return galleries;
+        }
+        const myDept = resolveEffectiveAttendanceDepartmentId(state.currentUser);
         if (!myDept) return [];
         return all.filter(d => d.id === myDept);
       }
 
-      function getAttendanceDeptUsers(deptId) {
-        return (state.users || [])
-          .filter(u => u && u.department_id === deptId && u.is_active !== false)
+      function getAttendanceDeptUsers(dept) {
+        const deptId = typeof dept === 'string' ? dept : dept?.id;
+        const slug = typeof dept === 'object' && dept ? dept.slug : (state.attendanceDepartments || []).find(d => d.id === deptId)?.slug;
+        let list;
+        if (slug === 'galleries') {
+          list = (state.users || []).filter(u => isGalleriesAttendanceMember(u));
+        } else {
+          list = (state.users || []).filter(u => u && u.department_id === deptId && u.is_active !== false);
+        }
+        return list
           .slice()
           .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'ar'));
       }
@@ -37258,21 +37309,36 @@
         if (!canMarkAttendance() || !targetUser) return false;
         const role = normalizeUserRole(state.currentUser?.role);
         if (role === 'admin') return true;
-        const myDept = state.currentUser?.department_id;
-        if (!myDept) return false;
-        return targetUser.department_id === myDept;
+        if (isGalleriesAttendanceMember(state.currentUser) && isGalleriesAttendanceMember(targetUser)) return true;
+        const myDept = resolveEffectiveAttendanceDepartmentId(state.currentUser);
+        const targetDept = resolveEffectiveAttendanceDepartmentId(targetUser);
+        if (!myDept || !targetDept) return false;
+        return myDept === targetDept;
       }
 
-      async function loadAttendanceRecordsForDept(deptId, workDate) {
+      async function loadAttendanceRecordsForDept(dept, workDate) {
+        const deptId = typeof dept === 'string' ? dept : dept?.id;
+        const slug = typeof dept === 'object' && dept ? dept.slug : (state.attendanceDepartments || []).find(d => d.id === deptId)?.slug;
         if (!deptId || !workDate) {
           state.attendanceRecords = [];
           return [];
         }
-        const { data, error } = await sb
+        let query = sb
           .from('attendance_records')
           .select('id,user_id,department_id,work_date,status,check_in_time,check_out_time,note,marked_by,updated_at')
-          .eq('work_date', workDate)
-          .eq('department_id', deptId);
+          .eq('work_date', workDate);
+        if (slug === 'galleries') {
+          const ids = getAttendanceDeptUsers(dept).map(u => u.id).filter(Boolean);
+          if (!ids.length) {
+            state.attendanceRecords = [];
+            return [];
+          }
+          // Chunk if needed — PostgREST .in has URL limits; typical branch staff count is fine
+          query = query.in('user_id', ids);
+        } else {
+          query = query.eq('department_id', deptId);
+        }
+        const { data, error } = await query;
         if (error) throw error;
         state.attendanceRecords = data || [];
         return state.attendanceRecords;
@@ -37287,13 +37353,16 @@
           return `<div class="rd-att-empty"><i class="fas fa-building" aria-hidden="true"></i><p>${Sec.escapeHTML(hint)}</p></div>`;
         }
         return `<div class="rd-att-depts" role="list">${depts.map((d, i) => {
-          const count = getAttendanceDeptUsers(d.id).length;
+          const count = getAttendanceDeptUsers(d).length;
           const icon = ATTENDANCE_DEPT_ICONS[d.slug] || 'fa-users';
+          const sub = d.slug === 'galleries'
+            ? `${count} · مدراء فروع ومشرفين وأخصائيي مبيعات`
+            : `${count} موظف`;
           return `<button type="button" class="rd-att-dept-card" role="listitem" style="--rd-att-i:${i}" onclick="attendanceOpenDepartment('${d.id}')">
             <span class="rd-att-dept-card__ico" aria-hidden="true"><i class="fas ${icon}"></i></span>
             <span class="rd-att-dept-card__body">
               <span class="rd-att-dept-card__name">${Sec.escapeHTML(d.name)}</span>
-              <span class="rd-att-dept-card__meta">${count} موظف</span>
+              <span class="rd-att-dept-card__meta">${Sec.escapeHTML(sub)}</span>
             </span>
             <span class="rd-att-dept-card__chev" aria-hidden="true"><i class="fas fa-chevron-left"></i></span>
           </button>`;
@@ -37307,7 +37376,7 @@
       }
 
       function renderAttendanceRosterHtml(dept) {
-        const users = getAttendanceDeptUsers(dept.id);
+        const users = getAttendanceDeptUsers(dept);
         const canAny = canMarkAttendance();
         const dateLabel = getAttendanceWorkDate();
         if (!users.length) {
@@ -37316,7 +37385,7 @@
               <h3 class="rd-att-roster__title">${Sec.escapeHTML(dept.name)}</h3>
               <p class="rd-att-roster__sub">لا يوجد موظفون مرتبطون بهذا القسم · ${Sec.escapeHTML(dateLabel)}</p>
             </div>
-            <div class="rd-att-empty"><i class="fas fa-user-slash" aria-hidden="true"></i><p>اربط الموظفين بالقسم من إدارة المستخدمين.</p></div>
+            <div class="rd-att-empty"><i class="fas fa-user-slash" aria-hidden="true"></i><p>${dept.slug === 'galleries' ? 'لا يوجد مدراء فروع أو مشرفين أو أخصائيي مبيعات نشطون.' : 'اربط الموظفين بالقسم من إدارة المستخدمين.'}</p></div>
           </div>`;
         }
         const rows = users.map((u, i) => {
@@ -37418,7 +37487,7 @@
 
           if (selected) {
             try {
-              await loadAttendanceRecordsForDept(selected.id, getAttendanceWorkDate());
+              await loadAttendanceRecordsForDept(selected, getAttendanceWorkDate());
             } catch (e) {
               showToast('تعذّر تحميل سجلات الحضور: ' + (e.message || e), 'error');
               state.attendanceRecords = [];
