@@ -361,6 +361,110 @@ html.athar-staging-redesign.mr-desktop-ui #tab-attendance .rd-attendance-panel.w
   opacity: 0.55;
 }
 
+.rd-att-time-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.rd-att-time-cell.is-editing > [data-att-time-chip],
+.rd-att-time-cell:not(.is-editing) > [data-att-time-editor],
+.rd-att-time-cell [data-att-time-chip][hidden],
+.rd-att-time-cell [data-att-time-editor][hidden] {
+  display: none !important;
+}
+
+.rd-att-time-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 34px;
+  min-width: 108px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+button.rd-att-time-chip:hover {
+  border-color: color-mix(in srgb, var(--primary, #1a6b4a) 40%, var(--border));
+  background: color-mix(in srgb, var(--primary, #1a6b4a) 6%, var(--surface));
+}
+
+.rd-att-time-chip--empty,
+.rd-att-time-chip--muted {
+  color: var(--text3);
+  font-weight: 600;
+  background: color-mix(in srgb, var(--text) 3%, var(--surface));
+}
+
+.rd-att-time-chip--muted {
+  cursor: default;
+}
+
+.rd-att-time-chip__hm {
+  direction: ltr;
+  unicode-bidi: isolate;
+  font-variant-numeric: tabular-nums;
+}
+
+.rd-att-time-chip__mer {
+  color: var(--primary, #1a6b4a);
+  font-weight: 800;
+}
+
+.rd-att-time-editor__box {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 34px;
+  padding: 3px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--primary, #1a6b4a) 35%, var(--border));
+  background: var(--surface);
+  direction: ltr;
+}
+
+.rd-att-time-hm {
+  width: 58px;
+  min-height: 28px;
+  border: 0;
+  background: transparent;
+  text-align: center;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  outline: none;
+}
+
+.rd-att-mer {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 0;
+  background: transparent;
+  color: var(--text3);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.rd-att-mer.is-on {
+  background: var(--primary, #1a6b4a);
+  color: #fff;
+}
+
 .rd-att-field.is-dim {
   opacity: 0.45;
 }
@@ -436,36 +540,12 @@ html.athar-staging-redesign.mr-desktop-ui #tab-attendance .rd-attendance-panel.w
 }
 
 .rd-att-td--time {
-  min-width: 132px;
-}
-
-.rd-att-time-cell {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
-}
-
-.rd-att-td--time .rd-att-time-wrap {
-  margin-bottom: 0;
-  min-width: 118px;
+  min-width: 148px;
+  white-space: nowrap;
 }
 
 .rd-att-td--time .rd-att-pill {
   display: inline-flex;
-  margin-top: 0;
-}
-
-.rd-att-pill--action {
-  cursor: pointer;
-  background: var(--surface);
-  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
-}
-
-.rd-att-pill--action:hover {
-  border-color: color-mix(in srgb, var(--primary, #1a6b4a) 40%, var(--border));
-  background: color-mix(in srgb, var(--primary, #1a6b4a) 6%, var(--surface));
-  color: var(--primary, #1a6b4a);
 }
 
 .rd-att-td--save {

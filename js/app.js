@@ -37319,12 +37319,27 @@
       function attFormatDisplayTime(tOrHm) {
         const hm = attNormalizeTypedTime(tOrHm) || attNormalizeTypedTime(attTimeToInput(tOrHm));
         if (!hm) return '';
-        const mins = attHmToMinutes(hm);
-        if (mins == null) return '';
+        const parts = attPartsFromHm24(hm);
+        return parts.hm ? `${parts.hm} ${parts.mer}` : '';
+      }
+
+      function attPartsFromHm24(hm24) {
+        const mins = attHmToMinutes(hm24);
+        if (mins == null) return { hm: '', mer: 'ص' };
         const h24 = Math.floor(mins / 60);
         const m = mins % 60;
-        const h12 = h24 % 12 || 12;
-        return `${h12}:${String(m).padStart(2, '0')} ${h24 >= 12 ? 'م' : 'ص'}`;
+        return {
+          hm: `${h24 % 12 || 12}:${String(m).padStart(2, '0')}`,
+          mer: h24 >= 12 ? 'م' : 'ص'
+        };
+      }
+
+      function attFormatHmDigits(raw) {
+        const digits = String(raw || '').replace(/\D/g, '').slice(0, 4);
+        if (!digits) return '';
+        if (digits.length <= 2) return digits;
+        if (digits.length === 3) return `${digits[0]}:${digits.slice(1)}`;
+        return `${digits.slice(0, 2)}:${digits.slice(2)}`;
       }
 
       function attFormatDurationLabel(totalMins) {
@@ -37810,36 +37825,43 @@
 
       function renderAttTimeControlHtml(field, value, editable, present, opts = {}) {
         const label = field === 'check_in' ? 'وقت الحضور' : 'وقت الانصراف';
+        const lateHtml = opts.late ? '<span class="rd-att-pill rd-att-pill--late">حضور متأخر</span>' : '';
         if (!present) {
-          return `<span class="rd-att-pill rd-att-pill--empty">لا يوجد سجل</span>`;
+          return `<span class="rd-att-time-chip rd-att-time-chip--muted">لا يوجد سجل</span>`;
         }
         const hm24 = attTimeToInput(value);
-        const display = attFormatDisplayTime(hm24);
-        const lateHtml = opts.late ? '<span class="rd-att-pill rd-att-pill--late">حضور متأخر</span>' : '';
-        if (!hm24) {
-          if (!editable) {
-            return `<span class="rd-att-pill rd-att-pill--empty">لا يوجد سجل</span>`;
-          }
-          return `<div class="rd-att-time-cell" data-att-time-cell>
-            <button type="button" class="rd-att-pill rd-att-pill--empty rd-att-pill--action"
-              onclick="onAttendanceEmptyTimeClick(this)" aria-label="تعبئة ${label}">لا يوجد سجل</button>
-            <div class="rd-att-time-wrap" hidden>
-              <i class="fas fa-clock rd-att-time-wrap__ico" aria-hidden="true"></i>
-              <input type="text" class="form-input rd-att-time-input" data-att-field="${field}"
-                inputmode="text" autocomplete="off" maxlength="10" placeholder="--:-- ص"
-                value=""
-                onchange="onAttendanceTimeTyped(this)" onblur="onAttendanceTimeTyped(this)">
-            </div>
+        const parts = attPartsFromHm24(hm24);
+        if (!editable) {
+          if (!hm24) return `<span class="rd-att-time-chip rd-att-time-chip--muted">لا يوجد سجل</span>`;
+          return `<div class="rd-att-time-cell">
+            <span class="rd-att-time-chip">
+              <span class="rd-att-time-chip__hm" dir="ltr">${Sec.escapeHTML(parts.hm)}</span>
+              <span class="rd-att-time-chip__mer">${parts.mer}</span>
+            </span>
+            ${lateHtml}
           </div>`;
         }
-        return `<div class="rd-att-time-cell">
-          <div class="rd-att-time-wrap">
-            <i class="fas fa-clock rd-att-time-wrap__ico" aria-hidden="true"></i>
-            <input type="text" class="form-input rd-att-time-input" data-att-field="${field}"
-              inputmode="text" autocomplete="off" maxlength="10" placeholder="--:-- ص"
-              value="${Sec.escapeHTML(display)}" ${editable ? '' : 'disabled'}
-              onchange="onAttendanceTimeTyped(this)" onblur="onAttendanceTimeTyped(this)">
+        const empty = !hm24;
+        const chipInner = empty
+          ? 'لا يوجد سجل'
+          : `<span class="rd-att-time-chip__hm" dir="ltr">${Sec.escapeHTML(parts.hm)}</span><span class="rd-att-time-chip__mer">${parts.mer}</span>`;
+        return `<div class="rd-att-time-cell" data-att-time-cell data-att-empty="${empty ? '1' : '0'}">
+          <button type="button" class="rd-att-time-chip${empty ? ' rd-att-time-chip--empty' : ''}"
+            data-att-time-chip onclick="onAttendanceTimeChipClick(this)" aria-label="${label}">
+            ${chipInner}
+          </button>
+          <div class="rd-att-time-editor" data-att-time-editor hidden>
+            <div class="rd-att-time-editor__box" dir="ltr">
+              <input type="text" class="rd-att-time-hm" data-att-hm inputmode="numeric" maxlength="5"
+                autocomplete="off" placeholder="--:--" value="${empty ? '' : Sec.escapeHTML(parts.hm)}"
+                oninput="onAttendanceHmInput(this)" onblur="onAttendanceTimeEditorBlur(this)">
+              <button type="button" class="rd-att-mer${parts.mer === 'ص' ? ' is-on' : ''}" data-att-mer="ص"
+                onclick="onAttendanceMerPick(this)" aria-label="صباحًا">ص</button>
+              <button type="button" class="rd-att-mer${parts.mer === 'م' ? ' is-on' : ''}" data-att-mer="م"
+                onclick="onAttendanceMerPick(this)" aria-label="مساءً">م</button>
+            </div>
           </div>
+          <input type="hidden" data-att-field="${field}" value="${Sec.escapeHTML(hm24 || '')}">
           ${lateHtml}
         </div>`;
       }
@@ -38102,49 +38124,112 @@
         if (!row) return;
         const present = status === 'present';
         const canEdit = !row.querySelector('[data-att-field="status"]')?.disabled;
-        row.querySelectorAll('.rd-att-time-input').forEach(inp => {
-          inp.disabled = !canEdit || !present;
+        row.querySelectorAll('[data-att-time-chip], .rd-att-time-hm, .rd-att-mer').forEach(el => {
+          if ('disabled' in el) el.disabled = !canEdit || !present;
         });
+      }
+
+      function openAttendanceTimeEditor(cell) {
+        if (!cell) return;
+        cell.classList.add('is-editing');
+        const chip = cell.querySelector('[data-att-time-chip]');
+        const editor = cell.querySelector('[data-att-time-editor]');
+        if (chip) chip.hidden = true;
+        if (editor) editor.hidden = false;
+        const hm = cell.querySelector('[data-att-hm]');
+        requestAnimationFrame(() => {
+          hm?.focus();
+          if (typeof hm?.select === 'function') hm.select();
+        });
+      }
+
+      function refreshAttendanceTimeChip(cell) {
+        if (!cell) return;
+        const chip = cell.querySelector('[data-att-time-chip]');
+        const hidden = cell.querySelector('[data-att-field]');
+        const editor = cell.querySelector('[data-att-time-editor]');
+        if (editor) editor.hidden = true;
+        cell.classList.remove('is-editing');
+        if (!chip) return;
+        chip.hidden = false;
+        const val = hidden?.value || '';
+        if (!val) {
+          cell.setAttribute('data-att-empty', '1');
+          chip.classList.add('rd-att-time-chip--empty');
+          chip.textContent = 'لا يوجد سجل';
+          return;
+        }
+        const parts = attPartsFromHm24(val);
+        cell.setAttribute('data-att-empty', '0');
+        chip.classList.remove('rd-att-time-chip--empty');
+        chip.innerHTML = `<span class="rd-att-time-chip__hm" dir="ltr">${Sec.escapeHTML(parts.hm)}</span><span class="rd-att-time-chip__mer">${parts.mer}</span>`;
+      }
+
+      function onAttendanceTimeChipClick(btn) {
+        openAttendanceTimeEditor(btn?.closest('[data-att-time-cell]'));
+      }
+
+      function onAttendanceHmInput(el) {
+        if (!el) return;
+        el.value = attFormatHmDigits(el.value);
+      }
+
+      function onAttendanceMerPick(btn) {
+        const cell = btn?.closest('[data-att-time-cell]');
+        if (!cell) return;
+        cell.querySelectorAll('.rd-att-mer').forEach(b => b.classList.toggle('is-on', b === btn));
+        cell.querySelector('[data-att-hm]')?.focus();
+      }
+
+      function onAttendanceTimeEditorBlur(el) {
+        const cell = el?.closest('[data-att-time-cell]');
+        if (!cell) return;
+        setTimeout(() => {
+          if (cell.contains(document.activeElement)) return;
+          commitAttendanceTimeCell(cell);
+        }, 140);
+      }
+
+      function commitAttendanceTimeCell(cell) {
+        if (!cell || cell.dataset.attCommitting === '1') return;
+        const hmEl = cell.querySelector('[data-att-hm]');
+        const merEl = cell.querySelector('.rd-att-mer.is-on') || cell.querySelector('[data-att-mer="ص"]');
+        const mer = merEl?.getAttribute('data-att-mer') || 'ص';
+        const hidden = cell.querySelector('[data-att-field]');
+        const rawHm = String(hmEl?.value || '').trim();
+        const wasEmpty = cell.getAttribute('data-att-empty') === '1';
+        const prev = hidden?.value || '';
+
+        if (!rawHm) {
+          if (hidden) hidden.value = '';
+          refreshAttendanceTimeChip(cell);
+          if (wasEmpty && !prev) return;
+          const userId = cell.closest('.rd-att-tr')?.getAttribute('data-user-id');
+          if (userId) onAttendanceRowChange(userId);
+          return;
+        }
+
+        const normalized = attNormalizeTypedTime(`${rawHm} ${mer}`);
+        if (!normalized) {
+          showToast('أدخل الوقت مثل 9:30 ثم اختر ص أو م', 'warning');
+          openAttendanceTimeEditor(cell);
+          return;
+        }
+        if (hidden) hidden.value = normalized;
+        const parts = attPartsFromHm24(normalized);
+        if (hmEl) hmEl.value = parts.hm;
+        refreshAttendanceTimeChip(cell);
+        if (normalized === prev) return;
+        const userId = cell.closest('.rd-att-tr')?.getAttribute('data-user-id');
+        if (userId) onAttendanceRowChange(userId);
       }
 
       function onAttendanceEmptyTimeClick(btn) {
-        const cell = btn?.closest('[data-att-time-cell]');
-        if (!cell) return;
-        const wrap = cell.querySelector('.rd-att-time-wrap');
-        const inp = cell.querySelector('.rd-att-time-input');
-        if (!wrap || !inp || inp.disabled) return;
-        btn.hidden = true;
-        wrap.hidden = false;
-        requestAnimationFrame(() => {
-          inp.focus();
-          if (typeof inp.select === 'function') inp.select();
-        });
+        onAttendanceTimeChipClick(btn);
       }
 
-      function onAttendanceTimeTyped(el) {
-        if (!el) return;
-        const raw = el.value;
-        const cell = el.closest('[data-att-time-cell]');
-        const emptyBtn = cell?.querySelector('.rd-att-pill--action');
-        const wrap = cell?.querySelector('.rd-att-time-wrap');
-        if (!String(raw || '').trim()) {
-          el.value = '';
-          if (emptyBtn && wrap) {
-            wrap.hidden = true;
-            emptyBtn.hidden = false;
-            return;
-          }
-        } else {
-          const normalized = attNormalizeTypedTime(raw);
-          if (!normalized) {
-            showToast('صيغة الوقت: مثل 9:30 ص أو 5:15 م', 'warning');
-            return;
-          }
-          el.value = attFormatDisplayTime(normalized);
-        }
-        const row = el.closest('.rd-att-tr');
-        const userId = row?.getAttribute('data-user-id');
-        if (userId) onAttendanceRowChange(userId);
+      function onAttendanceTimeTyped() {
+        /* legacy no-op: time cells use chip + ص/م editor */
       }
 
       async function onAttendanceRowChange(userId) {
@@ -38195,6 +38280,10 @@
       window.onAttendanceRowChange = onAttendanceRowChange;
       window.onAttendanceTimeTyped = onAttendanceTimeTyped;
       window.onAttendanceEmptyTimeClick = onAttendanceEmptyTimeClick;
+      window.onAttendanceTimeChipClick = onAttendanceTimeChipClick;
+      window.onAttendanceHmInput = onAttendanceHmInput;
+      window.onAttendanceMerPick = onAttendanceMerPick;
+      window.onAttendanceTimeEditorBlur = onAttendanceTimeEditorBlur;
       window.attendanceShiftDate = attendanceShiftDate;
       window.onAttendanceSearchInput = onAttendanceSearchInput;
       window.toggleAttDatePicker = toggleAttDatePicker;
