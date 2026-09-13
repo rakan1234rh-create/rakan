@@ -47,6 +47,14 @@ html.athar-staging-redesign.mr-desktop-ui #tab-attendance .rd-attendance-panel.w
   gap: 14px;
 }
 
+.rd-att-branches {
+  margin-top: 4px;
+}
+
+.rd-att-branch-card .rd-att-dept-card__ico {
+  background: color-mix(in srgb, var(--primary, #1a6b4a) 8%, var(--surface));
+}
+
 .rd-att-dept-card {
   display: flex;
   align-items: center;
