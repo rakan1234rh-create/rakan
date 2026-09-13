@@ -239,9 +239,10 @@ html.athar-staging-redesign.mr-desktop-ui #tab-attendance .rd-attendance-panel.w
   min-width: 0;
 }
 
-.rd-att-field--time .form-input,
-.rd-att-field--time input[type="time"] {
-  display: none;
+.rd-att-field .form-select,
+.rd-att-field .form-input {
+  font-size: 13px;
+  min-height: 38px;
 }
 
 .rd-att-time-wrap {
@@ -249,149 +250,29 @@ html.athar-staging-redesign.mr-desktop-ui #tab-attendance .rd-attendance-panel.w
   width: 100%;
 }
 
-.rd-att-time-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+.rd-att-time-wrap__ico {
+  position: absolute;
+  inset-inline-start: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--primary, #1a6b4a);
+  font-size: 12px;
+  pointer-events: none;
+}
+
+.rd-att-time-input {
   width: 100%;
   min-height: 38px;
-  padding: 8px 12px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--text);
-  font: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: border-color 0.15s ease, background 0.15s ease;
-}
-
-.rd-att-time-btn i {
-  color: var(--primary, #1a6b4a);
-  font-size: 12px;
-}
-
-.rd-att-time-btn.is-empty .rd-att-time-btn__text {
-  color: var(--text3);
-  font-weight: 500;
-}
-
-.rd-att-time-btn:hover:not(:disabled),
-.rd-att-time-btn.is-open {
-  border-color: color-mix(in srgb, var(--primary, #1a6b4a) 45%, var(--border));
-  background: color-mix(in srgb, var(--primary, #1a6b4a) 6%, var(--surface));
-}
-
-.rd-att-time-btn:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-
-#attTimePickerPopup.att-time-picker {
-  display: none;
-  width: 260px;
-  padding: 12px;
-  border-radius: 16px;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  box-shadow: 0 16px 40px color-mix(in srgb, var(--text) 14%, transparent);
-}
-
-#attTimePickerPopup.att-time-picker.open {
-  display: block;
-}
-
-#attTimePickerPopup .ntp-cols {
-  display: flex;
-  flex-direction: row;
-  direction: ltr;
-  gap: 8px;
-}
-
-#attTimePickerPopup .ntp-col {
-  flex: 1;
-  min-width: 0;
-}
-
-#attTimePickerPopup .ntp-col--ampm {
-  flex: 0 0 42px;
-}
-
-#attTimePickerPopup .ntp-col-hd {
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--text3);
+  padding-inline-start: 34px !important;
+  border-radius: 999px !important;
   text-align: center;
-  margin-bottom: 6px;
-}
-
-#attTimePickerPopup .ntp-scroll {
-  max-height: 168px;
-  overflow-y: auto;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--bg, var(--surface2, #f7f7f7));
-  scrollbar-width: thin;
-}
-
-#attTimePickerPopup .ntp-scroll--ampm {
-  max-height: 88px;
-}
-
-#attTimePickerPopup #attTpMinutes {
-  direction: rtl;
-}
-
-#attTimePickerPopup #attTpMinutes .ntp-opt {
-  direction: ltr;
-}
-
-#attTimePickerPopup .ntp-opt {
-  display: block;
-  width: 100%;
-  border: 0;
-  background: transparent;
-  padding: 7px 4px;
-  font-size: 13px;
-  font-weight: 600;
   font-variant-numeric: tabular-nums;
-  color: var(--text);
-  cursor: pointer;
-  text-align: center;
-  font-family: inherit;
+  font-weight: 600;
 }
 
-#attTimePickerPopup .ntp-opt:hover {
-  background: color-mix(in srgb, var(--primary, #1a6b4a) 10%, transparent);
-  border-radius: 8px;
+.rd-att-time-input:disabled {
+  opacity: 0.55;
 }
-
-#attTimePickerPopup .ntp-opt.selected {
-  background: var(--primary, #1a6b4a);
-  color: #fff;
-  border-radius: 10px;
-}
-
-#attTimePickerPopup .ntp-footer {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  margin-top: 10px;
-}
-
-#attTimePickerPopup .ntp-footer button {
-  border: 0;
-  background: transparent;
-  color: var(--primary, #1a6b4a);
-  font: inherit;
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-  padding: 4px 6px;
-}
-
 
 .rd-att-field.is-dim {
   opacity: 0.45;

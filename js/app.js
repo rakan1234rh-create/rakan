@@ -8999,7 +8999,6 @@
         if (typeof closeNtDatePicker === 'function') closeNtDatePicker();
         if (typeof closeNtTimePicker === 'function') closeNtTimePicker();
         if (typeof closeAttDatePicker === 'function') closeAttDatePicker();
-        if (typeof closeAttTimePicker === 'function') closeAttTimePicker();
 
         const attViewer = document.getElementById('attViewer');
         if (attViewer?.classList.contains('open') && typeof closeAttViewer === 'function') {
@@ -16174,12 +16173,6 @@
           e.target !== attDateBtn &&
           !attDateBtn?.contains(e.target)) {
           closeAttDatePicker();
-        }
-        const attTimePopup = document.getElementById('attTimePickerPopup');
-        if (attTimePopup?.classList.contains('open') &&
-          !attTimePopup.contains(e.target) &&
-          !e.target?.closest?.('.rd-att-time-btn')) {
-          closeAttTimePicker();
         }
         const ntTimePopup = document.getElementById('ntTimePickerPopup');
         const ntTimeBtn = document.getElementById('nt-timeBtn');
@@ -37360,7 +37353,6 @@
           closeAttDatePicker();
           return;
         }
-        if (typeof closeAttTimePicker === 'function') closeAttTimePicker();
         ensureAttendanceDateInput();
         const iso = getAttendanceWorkDate();
         attDpState.selected = typeof ksaDateFromIso === 'function' ? ksaDateFromIso(iso) : new Date(iso + 'T12:00:00');
@@ -37427,10 +37419,10 @@
       }
 
       function attInputToRpcTime(v) {
-        const s = String(v || '').trim();
-        if (!s) return null;
-        if (/^\d{2}:\d{2}$/.test(s)) return `${s}:00`;
-        if (/^\d{2}:\d{2}:\d{2}/.test(s)) return s.slice(0, 8);
+        const normalized = attNormalizeTypedTime(v) || String(v || '').trim();
+        if (!normalized) return null;
+        if (/^\d{2}:\d{2}$/.test(normalized)) return `${normalized}:00`;
+        if (/^\d{2}:\d{2}:\d{2}/.test(normalized)) return normalized.slice(0, 8);
         return null;
       }
 
@@ -37647,26 +37639,26 @@
         ).join('');
       }
 
-      function formatAttTimeDisplay(val) {
-        const parsed = typeof ntTpParseValue === 'function' ? ntTpParseValue(val) : null;
-        if (!parsed) return '--:--';
-        const ampm = parsed.hour >= 12 ? 'م' : 'ص';
-        const h12 = parsed.hour % 12 || 12;
-        return `${String(h12).padStart(2, '0')}:${String(parsed.minute).padStart(2, '0')} ${ampm}`;
+      function attNormalizeTypedTime(raw) {
+        const s = String(raw || '').trim();
+        if (!s) return '';
+        const m = s.match(/^(\d{1,2})\s*[:.٫]\s*(\d{1,2})$/);
+        if (!m) return '';
+        const h = Number(m[1]);
+        const min = Number(m[2]);
+        if (!Number.isFinite(h) || !Number.isFinite(min) || h > 23 || min > 59) return '';
+        return `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
       }
 
-      function renderAttTimeControlHtml(userId, field, value, editable, present) {
+      function renderAttTimeControlHtml(field, value, editable, present) {
         const disabled = !editable || !present;
-        const display = formatAttTimeDisplay(value);
-        const empty = !value;
+        const v = attTimeToInput(value);
         return `<div class="rd-att-time-wrap">
-          <button type="button" class="rd-att-time-btn${empty ? ' is-empty' : ''}" data-att-time-btn="${field}"
-            ${disabled ? 'disabled' : ''} aria-haspopup="dialog" aria-expanded="false"
-            onclick="toggleAttRowTimePicker('${userId}','${field}',event)">
-            <i class="fas fa-clock" aria-hidden="true"></i>
-            <span class="rd-att-time-btn__text">${Sec.escapeHTML(display)}</span>
-          </button>
-          <input type="hidden" data-att-field="${field}" value="${Sec.escapeHTML(value || '')}">
+          <i class="fas fa-clock rd-att-time-wrap__ico" aria-hidden="true"></i>
+          <input type="text" class="form-input rd-att-time-input" data-att-field="${field}"
+            inputmode="numeric" autocomplete="off" maxlength="5" placeholder="--:--"
+            value="${Sec.escapeHTML(v)}" ${disabled ? 'disabled' : ''}
+            onchange="onAttendanceTimeTyped(this)" onblur="onAttendanceTimeTyped(this)">
         </div>`;
       }
 
@@ -37714,11 +37706,11 @@
               </label>
               <label class="rd-att-field rd-att-field--time${present ? '' : ' is-dim'}">
                 <span>حضور</span>
-                ${renderAttTimeControlHtml(u.id, 'check_in', attTimeToInput(rec?.check_in_time), editable, present)}
+                ${renderAttTimeControlHtml('check_in', rec?.check_in_time, editable, present)}
               </label>
               <label class="rd-att-field rd-att-field--time${present ? '' : ' is-dim'}">
                 <span>انصراف</span>
-                ${renderAttTimeControlHtml(u.id, 'check_out', attTimeToInput(rec?.check_out_time), editable, present)}
+                ${renderAttTimeControlHtml('check_out', rec?.check_out_time, editable, present)}
               </label>
               <label class="rd-att-field rd-att-field--note">
                 <span>ملاحظة</span>
@@ -37739,7 +37731,6 @@
 
       function paintAttendanceHost(html) {
         if (typeof closeAttDatePicker === 'function') closeAttDatePicker();
-        closeAttTimePicker();
         const host = document.getElementById('rdAttendanceHost');
         if (!host) return;
         host.innerHTML = html;
@@ -37873,171 +37864,27 @@
         const present = status === 'present';
         row.querySelectorAll('.rd-att-field--time').forEach(el => el.classList.toggle('is-dim', !present));
         const canEdit = !row.querySelector('[data-att-field="status"]')?.disabled;
-        row.querySelectorAll('[data-att-time-btn]').forEach(btn => {
-          btn.disabled = !canEdit || !present;
+        row.querySelectorAll('.rd-att-time-input').forEach(inp => {
+          inp.disabled = !canEdit || !present;
         });
       }
 
-      const attTpState = { hour: 9, minute: 0, userId: null, field: null };
-
-      function closeAttTimePicker() {
-        const popup = document.getElementById('attTimePickerPopup');
-        if (popup) {
-          popup.classList.remove('open');
-          popup.hidden = true;
-        }
-        document.querySelectorAll('.rd-att-time-btn.is-open').forEach(btn => {
-          btn.classList.remove('is-open');
-          btn.setAttribute('aria-expanded', 'false');
-        });
-        attTpState.userId = null;
-        attTpState.field = null;
-      }
-
-      function renderAttTimePicker() {
-        renderMkTp12Picker(
-          document.getElementById('attTpHours'),
-          document.getElementById('attTpAmPm'),
-          document.getElementById('attTpMinutes'),
-          attTpState,
-          'attTpSelectHour12',
-          'attTpSelectAmPm',
-          'attTpSelectMinute'
-        );
-      }
-
-      function positionAttTimePicker(anchorBtn) {
-        const popup = document.getElementById('attTimePickerPopup');
-        if (!popup || !anchorBtn) return;
-        const rect = anchorBtn.getBoundingClientRect();
-        const width = 260;
-        const left = Math.min(Math.max(8, rect.right - width), window.innerWidth - width - 8);
-        let top = rect.bottom + 8;
-        popup.hidden = false;
-        popup.classList.add('open');
-        const h = popup.offsetHeight || 240;
-        if (top + h > window.innerHeight - 8) {
-          top = Math.max(8, rect.top - h - 8);
-        }
-        popup.style.position = 'fixed';
-        popup.style.top = `${Math.round(top)}px`;
-        popup.style.left = `${Math.round(left)}px`;
-        popup.style.right = 'auto';
-        popup.style.zIndex = '1200';
-      }
-
-      function syncAttRowTimeButton(userId, field) {
-        const row = document.querySelector(`.rd-att-row[data-user-id="${userId}"]`);
-        if (!row) return;
-        const inp = row.querySelector(`[data-att-field="${field}"]`);
-        const btn = row.querySelector(`[data-att-time-btn="${field}"]`);
-        const text = btn?.querySelector('.rd-att-time-btn__text');
-        const val = inp?.value || '';
-        if (text) text.textContent = formatAttTimeDisplay(val);
-        btn?.classList.toggle('is-empty', !val);
-      }
-
-      function attTpWriteCurrent() {
-        if (!attTpState.userId || !attTpState.field) return;
-        const row = document.querySelector(`.rd-att-row[data-user-id="${attTpState.userId}"]`);
-        const inp = row?.querySelector(`[data-att-field="${attTpState.field}"]`);
-        if (!inp) return;
-        inp.value = ntTpFormatValue(attTpState.hour, attTpState.minute);
-        syncAttRowTimeButton(attTpState.userId, attTpState.field);
-      }
-
-      function toggleAttRowTimePicker(userId, field, e) {
-        if (e) e.stopPropagation();
-        const btn = e?.currentTarget || document.querySelector(`.rd-att-row[data-user-id="${userId}"] [data-att-time-btn="${field}"]`);
-        if (!btn || btn.disabled) return;
-        const popup = document.getElementById('attTimePickerPopup');
-        if (!popup) return;
-
-        const sameOpen = popup.classList.contains('open')
-          && attTpState.userId === userId
-          && attTpState.field === field;
-        if (sameOpen) {
-          closeAttTimePicker();
-          return;
-        }
-
-        if (typeof closeAttDatePicker === 'function') closeAttDatePicker();
-        closeAttTimePicker();
-
-        const row = document.querySelector(`.rd-att-row[data-user-id="${userId}"]`);
-        const inp = row?.querySelector(`[data-att-field="${field}"]`);
-        const parsed = ntTpParseValue(inp?.value || '');
-        if (parsed) {
-          attTpState.hour = parsed.hour;
-          attTpState.minute = parsed.minute;
-        } else if (typeof ksaFormatParts === 'function') {
-          const p = ksaFormatParts();
-          attTpState.hour = p?.hour ?? 9;
-          attTpState.minute = p?.minute ?? 0;
+      function onAttendanceTimeTyped(el) {
+        if (!el) return;
+        const raw = el.value;
+        if (!String(raw || '').trim()) {
+          el.value = '';
         } else {
-          attTpState.hour = 9;
-          attTpState.minute = 0;
+          const normalized = attNormalizeTypedTime(raw);
+          if (!normalized) {
+            showToast('صيغة الوقت: ساعة:دقيقة مثل 09:30', 'warning');
+            return;
+          }
+          el.value = normalized;
         }
-        attTpState.userId = userId;
-        attTpState.field = field;
-        renderAttTimePicker();
-        positionAttTimePicker(btn);
-        btn.classList.add('is-open');
-        btn.setAttribute('aria-expanded', 'true');
-      }
-
-      function attTpSelectHour12(h12, ev) {
-        if (ev) ev.stopPropagation();
-        attTpState.hour = mkTpTo24Hour(h12, mkTpIsPmFrom24(attTpState.hour));
-        attTpWriteCurrent();
-        renderAttTimePicker();
-      }
-
-      function attTpSelectAmPm(isPm, ev) {
-        if (ev) ev.stopPropagation();
-        attTpState.hour = mkTpTo24Hour(mkTpHour12From24(attTpState.hour), !!isPm);
-        attTpWriteCurrent();
-        renderAttTimePicker();
-      }
-
-      function attTpSelectMinute(m, ev) {
-        if (ev) ev.stopPropagation();
-        attTpState.minute = m;
-        const userId = attTpState.userId;
-        attTpWriteCurrent();
-        closeAttTimePicker();
+        const row = el.closest('.rd-att-row');
+        const userId = row?.getAttribute('data-user-id');
         if (userId) onAttendanceRowChange(userId);
-      }
-
-      function attTpSelectNow() {
-        if (typeof ksaFormatParts === 'function') {
-          const p = ksaFormatParts();
-          attTpState.hour = p?.hour ?? attTpState.hour;
-          attTpState.minute = p?.minute ?? attTpState.minute;
-        } else {
-          const now = new Date();
-          attTpState.hour = now.getHours();
-          attTpState.minute = now.getMinutes();
-        }
-        const userId = attTpState.userId;
-        attTpWriteCurrent();
-        closeAttTimePicker();
-        if (userId) onAttendanceRowChange(userId);
-      }
-
-      function attTpClear() {
-        if (!attTpState.userId || !attTpState.field) {
-          closeAttTimePicker();
-          return;
-        }
-        const userId = attTpState.userId;
-        const field = attTpState.field;
-        const row = document.querySelector(`.rd-att-row[data-user-id="${userId}"]`);
-        const inp = row?.querySelector(`[data-att-field="${field}"]`);
-        if (inp) inp.value = '';
-        syncAttRowTimeButton(userId, field);
-        closeAttTimePicker();
-        onAttendanceRowChange(userId);
       }
 
       async function onAttendanceRowChange(userId) {
@@ -38096,12 +37943,7 @@
       window.attDpChangeMonth = attDpChangeMonth;
       window.attDpPickDay = attDpPickDay;
       window.attDpSelectToday = attDpSelectToday;
-      window.toggleAttRowTimePicker = toggleAttRowTimePicker;
-      window.attTpSelectHour12 = attTpSelectHour12;
-      window.attTpSelectAmPm = attTpSelectAmPm;
-      window.attTpSelectMinute = attTpSelectMinute;
-      window.attTpSelectNow = attTpSelectNow;
-      window.attTpClear = attTpClear;
+      window.onAttendanceTimeTyped = onAttendanceTimeTyped;
 
 
       // ============================================================================
