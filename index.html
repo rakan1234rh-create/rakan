@@ -1118,7 +1118,7 @@
   <link rel="stylesheet" href="styles/custom/athar-locations-redesign.css?v=loc2" id="athar-locations-redesign">
   <link rel="stylesheet" href="styles/custom/athar-users-redesign.css?v=usr5" id="athar-users-redesign">
   <link rel="stylesheet" href="styles/custom/athar-breaks-redesign.css?v=brk8" id="athar-breaks-redesign">
-  <link rel="stylesheet" href="styles/custom/athar-attendance-redesign.css?v=att5" id="athar-attendance-redesign">
+  <link rel="stylesheet" href="styles/custom/athar-attendance-redesign.css?v=att6" id="athar-attendance-redesign">
   <link rel="stylesheet" href="styles/custom/athar-redesign-staging.css?v=mob-ui20" id="athar-redesign-staging">
   <link rel="stylesheet" href="styles/custom/athar-complaints-redesign.css?v=cmpl41" id="athar-complaints-redesign">
 
@@ -3797,6 +3797,27 @@
                 </div>
               </div>
               <div id="rdAttendanceHost" class="rd-attendance-host" aria-live="polite"></div>
+              <div class="nt-time-picker att-time-picker" id="attTimePickerPopup" role="dialog"
+                aria-label="اختيار الوقت" hidden onclick="event.stopPropagation()">
+                <div class="ntp-cols">
+                  <div class="ntp-col">
+                    <div class="ntp-col-hd">ساعة</div>
+                    <div class="ntp-scroll" id="attTpHours"></div>
+                  </div>
+                  <div class="ntp-col ntp-col--ampm">
+                    <div class="ntp-col-hd">فترة</div>
+                    <div class="ntp-scroll ntp-scroll--ampm" id="attTpAmPm"></div>
+                  </div>
+                  <div class="ntp-col">
+                    <div class="ntp-col-hd">دقيقة</div>
+                    <div class="ntp-scroll" id="attTpMinutes"></div>
+                  </div>
+                </div>
+                <div class="ntp-footer">
+                  <button type="button" onclick="attTpSelectNow()">الآن</button>
+                  <button type="button" onclick="attTpClear()">مسح</button>
+                </div>
+              </div>
             </div>
             <div class="rd-attendance-mobile-block" hidden>
               <div class="panel">
@@ -5200,7 +5221,7 @@
   </div><!-- /#appWrap -->
 
     <div id="rdCmplOverlayHost"></div>
-    <script src="js/app.js?v=tp40"></script>
+    <script src="js/app.js?v=tp41"></script>
         <style>
       @media (max-width: 992px) {
         /* ── workflow: منع التمدد الأفقي ── */
