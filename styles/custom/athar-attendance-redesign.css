@@ -510,19 +510,6 @@ html.athar-staging-redesign.mr-desktop-ui #tab-attendance .rd-attendance-panel.w
   cursor: default;
 }
 
-.rd-att-sched {
-  display: inline-flex;
-  align-items: center;
-  min-height: 32px;
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--text) 5%, var(--surface));
-  color: var(--text2);
-  font-size: 12px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
 .rd-att-pill {
   display: inline-flex;
   align-items: center;
