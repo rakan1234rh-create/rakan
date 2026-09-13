@@ -439,13 +439,33 @@ html.athar-staging-redesign.mr-desktop-ui #tab-attendance .rd-attendance-panel.w
   min-width: 132px;
 }
 
+.rd-att-time-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
 .rd-att-td--time .rd-att-time-wrap {
-  margin-bottom: 6px;
+  margin-bottom: 0;
+  min-width: 118px;
 }
 
 .rd-att-td--time .rd-att-pill {
   display: inline-flex;
-  margin-top: 2px;
+  margin-top: 0;
+}
+
+.rd-att-pill--action {
+  cursor: pointer;
+  background: var(--surface);
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.rd-att-pill--action:hover {
+  border-color: color-mix(in srgb, var(--primary, #1a6b4a) 40%, var(--border));
+  background: color-mix(in srgb, var(--primary, #1a6b4a) 6%, var(--surface));
+  color: var(--primary, #1a6b4a);
 }
 
 .rd-att-td--save {
