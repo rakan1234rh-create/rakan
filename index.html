@@ -1118,7 +1118,7 @@
   <link rel="stylesheet" href="styles/custom/athar-locations-redesign.css?v=loc2" id="athar-locations-redesign">
   <link rel="stylesheet" href="styles/custom/athar-users-redesign.css?v=usr5" id="athar-users-redesign">
   <link rel="stylesheet" href="styles/custom/athar-breaks-redesign.css?v=brk8" id="athar-breaks-redesign">
-  <link rel="stylesheet" href="styles/custom/athar-attendance-redesign.css?v=att7" id="athar-attendance-redesign">
+  <link rel="stylesheet" href="styles/custom/athar-attendance-redesign.css?v=att8" id="athar-attendance-redesign">
   <link rel="stylesheet" href="styles/custom/athar-redesign-staging.css?v=mob-ui20" id="athar-redesign-staging">
   <link rel="stylesheet" href="styles/custom/athar-complaints-redesign.css?v=cmpl41" id="athar-complaints-redesign">
 
@@ -3757,39 +3757,54 @@
                   <p class="wf-panel-sub">تسجيل دوام الموظفين حسب القسم</p>
                 </div>
                 <div class="toolbar wf-toolbar rd-attendance-toolbar">
-                  <button type="button" class="rp-tool-btn" id="attBackBtn" hidden onclick="attendanceGoBack()">
-                    <i class="fas fa-arrow-right"></i><span>الأقسام</span>
-                  </button>
-                  <div class="rd-attendance-date-wrap">
-                    <button type="button" class="rd-att-date-btn" id="attDateBtn"
-                      onclick="toggleAttDatePicker(event)" aria-haspopup="dialog" aria-expanded="false"
-                      aria-controls="attDatePickerPopup" aria-label="اختيار تاريخ الحضور">
-                      <i class="fas fa-calendar-day" aria-hidden="true"></i>
-                      <span id="attDateDisplay">—</span>
+                  <div class="rd-att-toolbar__lead">
+                    <button type="button" class="rp-tool-btn" id="attBackBtn" hidden onclick="attendanceGoBack()">
+                      <i class="fas fa-arrow-right"></i><span>الأقسام</span>
                     </button>
-                    <input type="hidden" id="attWorkDate" value="">
-                    <div class="date-picker-popup att-date-picker" id="attDatePickerPopup" role="dialog"
-                      aria-label="اختيار تاريخ الحضور" onclick="event.stopPropagation()">
-                      <div class="dp-popup-body">
-                        <div class="dp-header-fig">
-                          <button type="button" class="dp-month-trigger" onclick="attDpToggleMonthYear()"
-                            aria-expanded="false" aria-haspopup="listbox">
-                            <span class="dp-month-label" id="attDpMonthLabel">--</span>
-                            <span class="dp-month-chevron" aria-hidden="true"><i class="fas fa-chevron-down"></i></span>
-                          </button>
-                          <div class="dp-month-arrows">
-                            <button type="button" class="dp-icon-btn dp-icon-btn--nav" onclick="attDpChangeMonth(1)"
-                              aria-label="الشهر التالي"><i class="fas fa-chevron-left"></i></button>
-                            <button type="button" class="dp-icon-btn dp-icon-btn--nav" onclick="attDpChangeMonth(-1)"
-                              aria-label="الشهر السابق"><i class="fas fa-chevron-right"></i></button>
+                    <div class="rd-att-date-heading" id="attDateHeading" aria-live="polite">—</div>
+                  </div>
+                  <div class="rd-att-toolbar__trail">
+                    <label class="rd-att-search" id="attSearchWrap" hidden>
+                      <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
+                      <input type="search" id="attSearchInput" placeholder="بحث" autocomplete="off"
+                        oninput="onAttendanceSearchInput()">
+                    </label>
+                    <div class="rd-attendance-date-wrap rd-att-date-nav">
+                      <button type="button" class="rd-att-date-nav__btn" onclick="attendanceShiftDate(-1)" aria-label="اليوم السابق">
+                        <i class="fas fa-chevron-right" aria-hidden="true"></i>
+                      </button>
+                      <button type="button" class="rd-att-date-btn" id="attDateBtn"
+                        onclick="toggleAttDatePicker(event)" aria-haspopup="dialog" aria-expanded="false"
+                        aria-controls="attDatePickerPopup" aria-label="اختيار تاريخ الحضور">
+                        <i class="fas fa-calendar-day" aria-hidden="true"></i>
+                      </button>
+                      <button type="button" class="rd-att-date-nav__btn" onclick="attendanceShiftDate(1)" aria-label="اليوم التالي">
+                        <i class="fas fa-chevron-left" aria-hidden="true"></i>
+                      </button>
+                      <input type="hidden" id="attWorkDate" value="">
+                      <div class="date-picker-popup att-date-picker" id="attDatePickerPopup" role="dialog"
+                        aria-label="اختيار تاريخ الحضور" onclick="event.stopPropagation()">
+                        <div class="dp-popup-body">
+                          <div class="dp-header-fig">
+                            <button type="button" class="dp-month-trigger" onclick="attDpToggleMonthYear()"
+                              aria-expanded="false" aria-haspopup="listbox">
+                              <span class="dp-month-label" id="attDpMonthLabel">--</span>
+                              <span class="dp-month-chevron" aria-hidden="true"><i class="fas fa-chevron-down"></i></span>
+                            </button>
+                            <div class="dp-month-arrows">
+                              <button type="button" class="dp-icon-btn dp-icon-btn--nav" onclick="attDpChangeMonth(1)"
+                                aria-label="الشهر التالي"><i class="fas fa-chevron-left"></i></button>
+                              <button type="button" class="dp-icon-btn dp-icon-btn--nav" onclick="attDpChangeMonth(-1)"
+                                aria-label="الشهر السابق"><i class="fas fa-chevron-right"></i></button>
+                            </div>
                           </div>
-                        </div>
-                        <div class="dp-weekdays">
-                          <span>أ</span><span>إ</span><span>ث</span><span>ر</span><span>خ</span><span>ج</span><span>س</span>
-                        </div>
-                        <div class="dp-days" id="attDpDays"></div>
-                        <div class="dp-footer">
-                          <button type="button" class="dp-btn dp-btn-today" onclick="attDpSelectToday()">اليوم</button>
+                          <div class="dp-weekdays">
+                            <span>أ</span><span>إ</span><span>ث</span><span>ر</span><span>خ</span><span>ج</span><span>س</span>
+                          </div>
+                          <div class="dp-days" id="attDpDays"></div>
+                          <div class="dp-footer">
+                            <button type="button" class="dp-btn dp-btn-today" onclick="attDpSelectToday()">اليوم</button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -5200,7 +5215,7 @@
   </div><!-- /#appWrap -->
 
     <div id="rdCmplOverlayHost"></div>
-    <script src="js/app.js?v=tp42"></script>
+    <script src="js/app.js?v=tp43"></script>
         <style>
       @media (max-width: 992px) {
         /* ── workflow: منع التمدد الأفقي ── */
