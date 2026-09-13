@@ -1118,6 +1118,7 @@
   <link rel="stylesheet" href="styles/custom/athar-locations-redesign.css?v=loc2" id="athar-locations-redesign">
   <link rel="stylesheet" href="styles/custom/athar-users-redesign.css?v=usr5" id="athar-users-redesign">
   <link rel="stylesheet" href="styles/custom/athar-breaks-redesign.css?v=brk8" id="athar-breaks-redesign">
+  <link rel="stylesheet" href="styles/custom/athar-attendance-redesign.css?v=att1" id="athar-attendance-redesign">
   <link rel="stylesheet" href="styles/custom/athar-redesign-staging.css?v=mob-ui20" id="athar-redesign-staging">
   <link rel="stylesheet" href="styles/custom/athar-complaints-redesign.css?v=cmpl41" id="athar-complaints-redesign">
 
@@ -2800,6 +2801,7 @@
 
     html.mr-session-restore:not(.mr-boot-ready)[data-mr-restore-tab="workflow"] #tab-workflow,
     html.mr-session-restore:not(.mr-boot-ready)[data-mr-restore-tab="breaks"] #tab-breaks,
+    html.mr-session-restore:not(.mr-boot-ready)[data-mr-restore-tab="attendance"] #tab-attendance,
     html.mr-session-restore:not(.mr-boot-ready)[data-mr-restore-tab="complaints"] #tab-complaints,
     html.mr-session-restore:not(.mr-boot-ready)[data-mr-restore-tab="newTicket"] #tab-newTicket,
     html.mr-session-restore:not(.mr-boot-ready)[data-mr-restore-tab="reports"] #tab-reports,
@@ -3195,6 +3197,8 @@
               style="display:none">0</span></button>
           <button class="nav-item" onclick="goTab('breaks',this)" data-perm="tab_breaks"><span class="nav-icon-wrap"><i
               class="fas fa-mug-hot" aria-hidden="true"></i></span><span class="nav-item-label">بريكات الموظفين</span></button>
+          <button class="nav-item nav-item--desk-only" onclick="goTab('attendance',this)" data-perm="tab_attendance" data-desktop-only="1"><span class="nav-icon-wrap"><i
+              class="fas fa-user-check" aria-hidden="true"></i></span><span class="nav-item-label">الحضور والانصراف</span></button>
           <button class="nav-item" onclick="goTab('complaints',this)" data-perm="tab_complaints"><span class="nav-icon-wrap"><i
               class="fas fa-comment-dots" aria-hidden="true"></i></span><span class="nav-item-label">الشكاوى والاقتراحات</span></button>
           <button class="nav-item" onclick="goTab('reports',this)" data-perm="tab_reports"><span class="nav-icon-wrap"><i
@@ -3742,6 +3746,32 @@
               </div>
               <div id="rdBreaks" class="rd-breaks-host" hidden></div>
               <div id="breaksClassicHost" class="breaks-classic-host"></div>
+            </div>
+          </div>
+
+          <div class="tab-content" id="tab-attendance" hidden>
+            <div class="panel wf-panel rd-desk-panel rd-attendance-panel">
+              <div class="wf-panel-banner">
+                <div class="wf-panel-intro">
+                  <h2 class="wf-panel-title">الحضور والانصراف</h2>
+                  <p class="wf-panel-sub">تسجيل دوام الموظفين حسب القسم</p>
+                </div>
+                <div class="toolbar wf-toolbar rd-attendance-toolbar">
+                  <label class="rd-attendance-date">
+                    <span>التاريخ</span>
+                    <input type="date" id="attWorkDate" onchange="onAttendanceDateChange()">
+                  </label>
+                  <button type="button" class="rp-tool-btn" id="attBackBtn" hidden onclick="attendanceGoDepartments()">
+                    <i class="fas fa-arrow-right"></i><span>الأقسام</span>
+                  </button>
+                </div>
+              </div>
+              <div id="rdAttendanceHost" class="rd-attendance-host" aria-live="polite"></div>
+            </div>
+            <div class="rd-attendance-mobile-block" hidden>
+              <div class="panel">
+                <p>صفحة الحضور والانصراف متاحة على جهاز الكمبيوتر فقط.</p>
+              </div>
             </div>
           </div>
 
@@ -4337,7 +4367,7 @@
           <script>
             (function () {
               var KEY = 'mirsad_last_ui_tab';
-              var VALID = { dashboard: 1, workflow: 1, newTicket: 1, breaks: 1, complaints: 1, reports: 1, compliance: 1, violations: 1, locations: 1, departments: 1, settings: 1, profileAvatars: 1, broadcasts: 1 };
+              var VALID = { dashboard: 1, workflow: 1, newTicket: 1, breaks: 1, attendance: 1, complaints: 1, reports: 1, compliance: 1, violations: 1, locations: 1, departments: 1, settings: 1, profileAvatars: 1, broadcasts: 1 };
               var saved = 'dashboard';
               try {
                 var s = sessionStorage.getItem(KEY);
@@ -4744,6 +4774,10 @@
                   class="form-select">
                   <option value="">-- اختر الفرع --</option>
                 </select></div>
+              <div class="form-group" id="um-deptGroup"><label class="form-label">قسم الحضور</label><select id="um-department"
+                  class="form-select">
+                  <option value="">-- بدون قسم --</option>
+                </select></div>
               <div class="form-group" id="um-pwGroup"><label class="form-label">كلمة المرور <span
                     class="required-mark">*</span></label><input type="password" id="um-password" class="form-input"
                   minlength="8" placeholder="8 أحرف على الأقل">
@@ -5136,7 +5170,7 @@
   </div><!-- /#appWrap -->
 
     <div id="rdCmplOverlayHost"></div>
-    <script src="js/app.js?v=tp36"></script>
+    <script src="js/app.js?v=tp37"></script>
         <style>
       @media (max-width: 992px) {
         /* ── workflow: منع التمدد الأفقي ── */
