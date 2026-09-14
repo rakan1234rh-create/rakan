@@ -1118,7 +1118,7 @@
   <link rel="stylesheet" href="styles/custom/athar-locations-redesign.css?v=loc2" id="athar-locations-redesign">
   <link rel="stylesheet" href="styles/custom/athar-users-redesign.css?v=usr5" id="athar-users-redesign">
   <link rel="stylesheet" href="styles/custom/athar-breaks-redesign.css?v=brk8" id="athar-breaks-redesign">
-  <link rel="stylesheet" href="styles/custom/athar-attendance-redesign.css?v=att12" id="athar-attendance-redesign">
+  <link rel="stylesheet" href="styles/custom/athar-attendance-redesign.css?v=att13" id="athar-attendance-redesign">
   <link rel="stylesheet" href="styles/custom/athar-redesign-staging.css?v=mob-ui20" id="athar-redesign-staging">
   <link rel="stylesheet" href="styles/custom/athar-complaints-redesign.css?v=cmpl41" id="athar-complaints-redesign">
 
@@ -3761,6 +3761,9 @@
                     <button type="button" class="rp-tool-btn" id="attBackBtn" hidden onclick="attendanceGoBack()">
                       <i class="fas fa-arrow-right"></i><span>الأقسام</span>
                     </button>
+                    <button type="button" class="rp-tool-btn" id="attManageBtn" hidden onclick="openAttendanceDeptManager()">
+                      <i class="fas fa-screwdriver-wrench" aria-hidden="true"></i><span>إدارة الأقسام</span>
+                    </button>
                     <div class="rd-att-date-heading" id="attDateHeading" aria-live="polite">—</div>
                   </div>
                   <div class="rd-att-toolbar__trail">
@@ -4782,6 +4785,19 @@
             class="btn btn-primary" onclick="saveBranch()">حفظ</button></div>
       </div>
     </div>
+    <div class="modal" id="attDeptManageModal" role="dialog" aria-modal="true" aria-labelledby="attDeptManageTitle">
+      <div class="modal-card modal-lg rd-att-manage-card">
+        <div class="modal-header">
+          <h3 id="attDeptManageTitle">إدارة أقسام الحضور</h3>
+          <button type="button" class="btn btn-ghost" onclick="closeModal('attDeptManageModal')" aria-label="إغلاق">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div id="attDeptManageHost" class="rd-att-manage-host" aria-live="polite"></div>
+        </div>
+      </div>
+    </div>
     <div class="modal" id="userModal">
       <div class="modal-card modal-lg">
         <div class="modal-header">
@@ -5215,7 +5231,7 @@
   </div><!-- /#appWrap -->
 
     <div id="rdCmplOverlayHost"></div>
-    <script src="js/app.js?v=tp46"></script>
+    <script src="js/app.js?v=tp47"></script>
         <style>
       @media (max-width: 992px) {
         /* ── workflow: منع التمدد الأفقي ── */
