@@ -14692,16 +14692,25 @@
         requestAnimationFrame(() => syncUsersMobileScrollShell('departments'));
       }
 
-      function openUserModal() {
+      function openUserModal(opts = {}) {
         if (!canManageUsers()) { showToast('لا تملك صلاحية إدارة المستخدمين.', 'warning'); return; }
         document.getElementById('um-editId').value = '';
         ['um-empNumber', 'um-name', 'um-email', 'um-phone', 'um-password'].forEach(k => document.getElementById(k).value = '');
-        document.getElementById('um-role').value = 'employee';
+        const presetRole = opts.role || 'employee';
+        document.getElementById('um-role').value = presetRole;
         document.getElementById('userModalTitle').textContent = 'إضافة مستخدم';
 
-        populateBranchSelect();
-        populateDepartmentSelect();
+        populateBranchSelect(opts.branchId || null);
+        populateDepartmentSelect(opts.departmentId || null);
         onRoleChange();
+        if (opts.departmentId) {
+          const sel = document.getElementById('um-department');
+          if (sel) sel.value = opts.departmentId;
+        }
+        if (opts.branchId) {
+          const bsel = document.getElementById('um-branch');
+          if (bsel) bsel.value = opts.branchId;
+        }
 
         // إظهار حقل كلمة المرور
         document.getElementById('um-pwGroup').style.display = '';
@@ -14902,6 +14911,16 @@
 
           closeModal('userModal');
           renderUsers();
+          if (typeof renderAttendancePage === 'function') {
+            const attTab = document.getElementById('tab-attendance');
+            if (attTab && !attTab.hidden && attTab.classList.contains('active')) {
+              renderAttendancePage({ soft: true });
+            }
+          }
+          if (state._attReopenManageAfterUser) {
+            state._attReopenManageAfterUser = false;
+            if (typeof reopenAttendanceDeptManager === 'function') reopenAttendanceDeptManager();
+          }
         } catch (err) {
           if (isMirsadDebugLog()) console.error('[saveUser]', err);
           const msg = formatPostgrestError(err);
@@ -37588,8 +37607,8 @@
         return null;
       }
 
-      async function ensureAttendanceDepartmentsLoaded() {
-        if ((state.attendanceDepartments || []).length) return state.attendanceDepartments;
+      async function ensureAttendanceDepartmentsLoaded(force) {
+        if (!force && (state.attendanceDepartments || []).length) return state.attendanceDepartments;
         try {
           const { data, error } = await sb
             .from('departments')
@@ -38001,6 +38020,291 @@
         }
       }
 
+      function canManageAttendanceDepartments() {
+        return !!(typeof canManageUsers === 'function' && canManageUsers()
+          && normalizeUserRole(state.currentUser?.role) === 'admin');
+      }
+
+      function syncAttendanceManageBtn() {
+        const btn = document.getElementById('attManageBtn');
+        if (!btn) return;
+        btn.hidden = !canManageAttendanceDepartments();
+      }
+
+      function attDeptSlugFromName(name) {
+        const base = String(name || '')
+          .trim()
+          .toLowerCase()
+          .replace(/\s+/g, '-')
+          .replace(/[^a-z0-9\u0600-\u06ff-]+/g, '')
+          .replace(/-+/g, '-')
+          .replace(/^-|-$/g, '')
+          .slice(0, 40);
+        return base || `dept-${Date.now().toString(36)}`;
+      }
+
+      function openAttendanceDeptManager(view) {
+        if (!canManageAttendanceDepartments()) {
+          showToast('إدارة الأقسام متاحة لمدير النظام فقط', 'warning');
+          return;
+        }
+        state._attManageView = view || state._attManageView || { mode: 'list' };
+        paintAttDeptManage();
+        openModal('attDeptManageModal');
+      }
+
+      function reopenAttendanceDeptManager() {
+        if (!canManageAttendanceDepartments()) return;
+        if (!state._attManageView) state._attManageView = { mode: 'list' };
+        paintAttDeptManage();
+        openModal('attDeptManageModal');
+      }
+
+      function attendanceManageGoList() {
+        state._attManageView = { mode: 'list' };
+        paintAttDeptManage();
+      }
+
+      function attendanceManageOpenDept(deptId) {
+        state._attManageView = { mode: 'dept', deptId };
+        paintAttDeptManage();
+      }
+
+      function attendanceManageStartAddDept() {
+        state._attManageView = { mode: 'addDept' };
+        paintAttDeptManage();
+      }
+
+      function attendanceManageStartRenameDept(deptId) {
+        state._attManageView = { mode: 'renameDept', deptId };
+        paintAttDeptManage();
+      }
+
+      function attendanceManageAddUser(deptId, branchId) {
+        if (!canManageAttendanceDepartments()) return;
+        state._attReopenManageAfterUser = true;
+        closeModal('attDeptManageModal');
+        const dept = (state.attendanceDepartments || []).find(d => d.id === deptId);
+        const opts = { departmentId: deptId || null };
+        if (branchId && branchId !== '__none__') opts.branchId = branchId;
+        if (dept?.slug === 'galleries') opts.role = 'employee';
+        openUserModal(opts);
+      }
+
+      function attendanceManageEditUser(userId) {
+        if (!canManageAttendanceDepartments()) return;
+        state._attReopenManageAfterUser = true;
+        closeModal('attDeptManageModal');
+        editUser(userId);
+      }
+
+      function renderAttManageListHtml() {
+        const depts = (state.attendanceDepartments || []).slice().sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+        const rows = depts.map(d => {
+          const n = getAttendanceDeptUsers(d).length;
+          const branches = d.slug === 'galleries' ? getAttendanceBranchGroups(d).length : 0;
+          const meta = d.slug === 'galleries' ? `${n} موظف · ${branches} فرع` : `${n} موظف`;
+          return `<div class="rd-att-manage-row">
+            <div class="rd-att-manage-row__main">
+              <strong>${Sec.escapeHTML(d.name)}</strong>
+              <span class="rd-att-manage-row__meta">${Sec.escapeHTML(meta)}</span>
+            </div>
+            <div class="rd-att-manage-row__actions">
+              <button type="button" class="btn btn-ghost btn-sm" onclick="attendanceManageOpenDept('${d.id}')">الموظفون</button>
+              <button type="button" class="btn btn-ghost btn-sm" onclick="attendanceManageStartRenameDept('${d.id}')">إعادة تسمية</button>
+            </div>
+          </div>`;
+        }).join('');
+        return `<div class="rd-att-manage">
+          <div class="rd-att-manage__toolbar">
+            <p class="rd-att-manage__hint">أضف أقسامًا جديدة، أعد تسميتها، أو أضف موظفين داخل القسم أو الفرع.</p>
+            <button type="button" class="btn btn-primary" onclick="attendanceManageStartAddDept()">
+              <i class="fas fa-plus" aria-hidden="true"></i> إضافة قسم
+            </button>
+          </div>
+          <div class="rd-att-manage-list">${rows || '<div class="rd-att-empty rd-att-empty--inline"><p>لا توجد أقسام بعد.</p></div>'}</div>
+        </div>`;
+      }
+
+      function renderAttManageAddDeptHtml() {
+        return `<div class="rd-att-manage">
+          <button type="button" class="btn btn-ghost btn-sm rd-att-manage__back" onclick="attendanceManageGoList()">
+            <i class="fas fa-arrow-right" aria-hidden="true"></i> رجوع
+          </button>
+          <div class="form-group" style="margin-top:12px">
+            <label class="form-label" for="attManageDeptName">اسم القسم</label>
+            <input type="text" id="attManageDeptName" class="form-input" placeholder="مثال: المستودع" maxlength="80">
+          </div>
+          <div class="rd-att-manage__footer">
+            <button type="button" class="btn btn-primary" onclick="attendanceManageSaveNewDept()">حفظ القسم</button>
+          </div>
+        </div>`;
+      }
+
+      function renderAttManageRenameDeptHtml(dept) {
+        return `<div class="rd-att-manage">
+          <button type="button" class="btn btn-ghost btn-sm rd-att-manage__back" onclick="attendanceManageGoList()">
+            <i class="fas fa-arrow-right" aria-hidden="true"></i> رجوع
+          </button>
+          <div class="form-group" style="margin-top:12px">
+            <label class="form-label" for="attManageDeptRename">الاسم الجديد</label>
+            <input type="text" id="attManageDeptRename" class="form-input" value="${Sec.escapeHTML(dept.name || '')}" maxlength="80">
+          </div>
+          <div class="rd-att-manage__footer">
+            <button type="button" class="btn btn-primary" onclick="attendanceManageSaveRenameDept('${dept.id}')">حفظ الاسم</button>
+          </div>
+        </div>`;
+      }
+
+      function renderAttManageDeptHtml(dept) {
+        const isGalleries = dept.slug === 'galleries';
+        if (isGalleries) {
+          const groups = getAttendanceBranchGroups(dept);
+          const blocks = groups.map(g => {
+            const users = (g.users || []).slice().sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'ar'));
+            const userRows = users.map(u => {
+              const roleLbl = getStaffJobTitle(u) || ROLE_LABELS[normalizeUserRole(u.role)] || '';
+              return `<div class="rd-att-manage-user">
+                <div>
+                  <strong>${Sec.escapeHTML(u.name || '—')}</strong>
+                  <span class="rd-att-manage-row__meta">${Sec.escapeHTML(roleLbl)} · ${Sec.escapeHTML(padEmpNum(u.employee_number) || '—')}</span>
+                </div>
+                <button type="button" class="btn btn-ghost btn-sm" onclick="attendanceManageEditUser('${u.id}')">تعديل / إعادة تسمية</button>
+              </div>`;
+            }).join('');
+            return `<section class="rd-att-manage-branch">
+              <div class="rd-att-manage-branch__head">
+                <strong>${Sec.escapeHTML(g.name)}</strong>
+                <button type="button" class="btn btn-primary btn-sm" onclick="attendanceManageAddUser('${dept.id}','${g.id}')">
+                  <i class="fas fa-user-plus" aria-hidden="true"></i> إضافة موظف
+                </button>
+              </div>
+              <div class="rd-att-manage-users">${userRows || '<p class="rd-att-manage-row__meta">لا يوجد موظفون في هذا الفرع.</p>'}</div>
+            </section>`;
+          }).join('');
+          return `<div class="rd-att-manage">
+            <button type="button" class="btn btn-ghost btn-sm rd-att-manage__back" onclick="attendanceManageGoList()">
+              <i class="fas fa-arrow-right" aria-hidden="true"></i> رجوع
+            </button>
+            <div class="rd-att-manage__toolbar" style="margin-top:10px">
+              <p class="rd-att-manage__hint">موظفو المعارض يُجمَّعون حسب الفرع. أضف موظفًا داخل الفرع أو أعد تسمية الموجودين.</p>
+              <button type="button" class="btn btn-ghost btn-sm" onclick="attendanceManageStartRenameDept('${dept.id}')">إعادة تسمية القسم</button>
+            </div>
+            ${blocks || `<div class="rd-att-empty rd-att-empty--inline"><p>لا توجد فروع بموظفين بعد.</p><button type="button" class="btn btn-primary" onclick="attendanceManageAddUser('${dept.id}',null)">إضافة موظف للمعارض</button></div>`}
+          </div>`;
+        }
+
+        const users = getAttendanceDeptUsers(dept);
+        const userRows = users.map(u => {
+          const roleLbl = getStaffJobTitle(u) || ROLE_LABELS[normalizeUserRole(u.role)] || '';
+          return `<div class="rd-att-manage-user">
+            <div>
+              <strong>${Sec.escapeHTML(u.name || '—')}</strong>
+              <span class="rd-att-manage-row__meta">${Sec.escapeHTML(roleLbl)} · ${Sec.escapeHTML(padEmpNum(u.employee_number) || '—')}</span>
+            </div>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="attendanceManageEditUser('${u.id}')">تعديل / إعادة تسمية</button>
+          </div>`;
+        }).join('');
+        return `<div class="rd-att-manage">
+          <button type="button" class="btn btn-ghost btn-sm rd-att-manage__back" onclick="attendanceManageGoList()">
+            <i class="fas fa-arrow-right" aria-hidden="true"></i> رجوع
+          </button>
+          <div class="rd-att-manage__toolbar" style="margin-top:10px">
+            <p class="rd-att-manage__hint">موظفو قسم «${Sec.escapeHTML(dept.name)}».</p>
+            <div class="rd-att-manage-row__actions">
+              <button type="button" class="btn btn-ghost btn-sm" onclick="attendanceManageStartRenameDept('${dept.id}')">إعادة تسمية القسم</button>
+              <button type="button" class="btn btn-primary btn-sm" onclick="attendanceManageAddUser('${dept.id}',null)">
+                <i class="fas fa-user-plus" aria-hidden="true"></i> إضافة موظف
+              </button>
+            </div>
+          </div>
+          <div class="rd-att-manage-users">${userRows || '<p class="rd-att-manage-row__meta">لا يوجد موظفون في هذا القسم بعد.</p>'}</div>
+        </div>`;
+      }
+
+      function paintAttDeptManage() {
+        const host = document.getElementById('attDeptManageHost');
+        const title = document.getElementById('attDeptManageTitle');
+        if (!host) return;
+        const view = state._attManageView || { mode: 'list' };
+        if (view.mode === 'addDept') {
+          if (title) title.textContent = 'إضافة قسم';
+          host.innerHTML = renderAttManageAddDeptHtml();
+          return;
+        }
+        if (view.mode === 'renameDept') {
+          const dept = (state.attendanceDepartments || []).find(d => d.id === view.deptId);
+          if (!dept) {
+            state._attManageView = { mode: 'list' };
+            return paintAttDeptManage();
+          }
+          if (title) title.textContent = 'إعادة تسمية القسم';
+          host.innerHTML = renderAttManageRenameDeptHtml(dept);
+          return;
+        }
+        if (view.mode === 'dept') {
+          const dept = (state.attendanceDepartments || []).find(d => d.id === view.deptId);
+          if (!dept) {
+            state._attManageView = { mode: 'list' };
+            return paintAttDeptManage();
+          }
+          if (title) title.textContent = dept.name;
+          host.innerHTML = renderAttManageDeptHtml(dept);
+          return;
+        }
+        if (title) title.textContent = 'إدارة أقسام الحضور';
+        host.innerHTML = renderAttManageListHtml();
+      }
+
+      async function attendanceManageSaveNewDept() {
+        if (!canManageAttendanceDepartments()) return;
+        const name = Sec.sanitize(document.getElementById('attManageDeptName')?.value || '').trim();
+        if (!name) return showToast('أدخل اسم القسم', 'warning');
+        const slug = attDeptSlugFromName(name);
+        const maxOrder = (state.attendanceDepartments || []).reduce((m, d) => Math.max(m, Number(d.sort_order) || 0), 0);
+        try {
+          const { data, error } = await sb.from('departments').insert({
+            name,
+            slug,
+            sort_order: maxOrder + 10,
+            is_active: true
+          }).select('id,name,slug,sort_order,is_active').single();
+          if (error) throw error;
+          await ensureAttendanceDepartmentsLoaded(true);
+          if (data && !(state.attendanceDepartments || []).some(d => d.id === data.id)) {
+            state.attendanceDepartments = [...(state.attendanceDepartments || []), data];
+          }
+          showToast('تمت إضافة القسم ✓', 'success');
+          state._attManageView = { mode: 'dept', deptId: data.id };
+          paintAttDeptManage();
+          if (typeof renderAttendancePage === 'function') renderAttendancePage({ soft: true });
+        } catch (e) {
+          showToast('فشل إضافة القسم: ' + (e.message || e), 'error');
+        }
+      }
+
+      async function attendanceManageSaveRenameDept(deptId) {
+        if (!canManageAttendanceDepartments()) return;
+        const name = Sec.sanitize(document.getElementById('attManageDeptRename')?.value || '').trim();
+        if (!name) return showToast('أدخل الاسم الجديد', 'warning');
+        try {
+          const { data, error } = await sb.from('departments').update({
+            name,
+            updated_at: new Date().toISOString()
+          }).eq('id', deptId).select('id,name,slug,sort_order,is_active').single();
+          if (error) throw error;
+          await ensureAttendanceDepartmentsLoaded(true);
+          const idx = (state.attendanceDepartments || []).findIndex(d => d.id === deptId);
+          if (idx >= 0 && data) state.attendanceDepartments[idx] = data;
+          showToast('تم تحديث اسم القسم ✓', 'success');
+          state._attManageView = { mode: 'list' };
+          paintAttDeptManage();
+          if (typeof renderAttendancePage === 'function') renderAttendancePage({ soft: true });
+        } catch (e) {
+          showToast('فشل إعادة التسمية: ' + (e.message || e), 'error');
+        }
+      }
+
       async function renderAttendancePage(opts = {}) {
         if (!canViewAttendanceTab()) return;
         const softPaint = !!opts.soft;
@@ -38064,6 +38368,7 @@
             paintAttendanceHost(renderAttendanceDeptCardsHtml(depts));
           }
           syncAttendanceBackBtn();
+          syncAttendanceManageBtn();
           syncAttendanceDateDisplay();
         } finally {
           if (softPaint || settleAfterLoad) endRdSoftPaint();
@@ -38276,6 +38581,16 @@
       window.attendanceGoBack = attendanceGoBack;
       window.attendanceOpenDepartment = attendanceOpenDepartment;
       window.attendanceOpenBranch = attendanceOpenBranch;
+      window.openAttendanceDeptManager = openAttendanceDeptManager;
+      window.reopenAttendanceDeptManager = reopenAttendanceDeptManager;
+      window.attendanceManageGoList = attendanceManageGoList;
+      window.attendanceManageOpenDept = attendanceManageOpenDept;
+      window.attendanceManageStartAddDept = attendanceManageStartAddDept;
+      window.attendanceManageStartRenameDept = attendanceManageStartRenameDept;
+      window.attendanceManageAddUser = attendanceManageAddUser;
+      window.attendanceManageEditUser = attendanceManageEditUser;
+      window.attendanceManageSaveNewDept = attendanceManageSaveNewDept;
+      window.attendanceManageSaveRenameDept = attendanceManageSaveRenameDept;
       window.onAttendanceDateChange = onAttendanceDateChange;
       window.onAttendanceRowChange = onAttendanceRowChange;
       window.onAttendanceTimeTyped = onAttendanceTimeTyped;
