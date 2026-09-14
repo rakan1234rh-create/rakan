@@ -185,27 +185,6 @@ html.athar-staging-redesign.mr-mobile-ui #tab-locations #regionsList.rb-regions-
   color: var(--text);
   margin: 0 0 10px;
 }
-.rd-loc-list-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px 14px;
-  margin: 0 0 10px;
-}
-.rd-loc-list-head .rd-loc-list-title {
-  margin: 0;
-}
-.rd-loc-add-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 36px;
-  padding: 7px 14px;
-  border-radius: 999px;
-  font-size: 13px;
-  font-weight: 700;
-}
 .rd-loc-list {
   display: flex;
   flex-direction: column;
@@ -569,19 +548,6 @@ html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-list-title {
   font-weight: 700 !important;
   color: var(--text) !important;
   margin: 0 0 14px !important;
-}
-
-html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-list-head {
-  display: flex !important;
-  flex-wrap: wrap !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  gap: 10px 14px !important;
-  margin: 0 0 14px !important;
-}
-
-html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-list-head .rd-loc-list-title {
-  margin: 0 !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #tab-locations .rd-loc-desk-table {
