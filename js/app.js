@@ -13294,12 +13294,20 @@
           const rows = visibleBranches.length
             ? visibleBranches.map((br, i) => rdLocDeskBranchRowHTML(br, i)).join('')
             : '<div class="rd-ticket-empty"><i class="fas fa-store-slash"></i><p>لا توجد فروع مطابقة</p></div>';
+          const addBranchBtn = canManageRegions
+            ? `<button type="button" class="btn btn-primary rd-loc-add-btn" onclick="openBranchModal('${activeRegion.id}')">
+                <i class="fas fa-plus" aria-hidden="true"></i> إضافة فرع
+              </button>`
+            : '';
           container.innerHTML = `
             <div class="rd-loc-board rd-loc-board--desk">
               <button type="button" class="rd-loc-back" onclick="backRegionView()">
                 <i class="fas fa-arrow-right" aria-hidden="true"></i>كل المناطق
               </button>
-              <div class="rd-loc-list-title">فروع ${Sec.escapeHTML(activeRegion.name || '')}</div>
+              <div class="rd-loc-list-head">
+                <div class="rd-loc-list-title">فروع ${Sec.escapeHTML(activeRegion.name || '')}</div>
+                ${addBranchBtn}
+              </div>
               <div class="rd-loc-desk-table rd-loc-desk-table--branch">
                 <div class="rd-loc-desk-thead rd-loc-desk-thead--branch" role="row">
                   <span class="rd-loc-desk-cell rd-loc-desk-cell--who" role="columnheader">الفرع</span>
