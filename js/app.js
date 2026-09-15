@@ -13,12 +13,12 @@
       const SUPABASE_ANON = 'sb_publishable__nGAMUih_RNZ_6FMpwzDNw_116hvA7K';
 
       /** Web Push — المفتاح العام VAPID (الخاص في Supabase Secrets فقط) */
-      const ATHAR_VAPID_PUBLIC_KEY = 'BAAE2sxYeIGbYADV7uimLzIFB_en9SBWQ3a4-LBULuOIVm40YI7YfjXL2Fddttr1L1tHFkoaiPzmZankfUk_2jc';
+      const ATHAR_VAPID_PUBLIC_KEY = 'BAPcrCNwtNmP395lSHB2fgqJwGLIcrF6K4Bns0sYHOB8uvgdK0dPfyGL1D2TvNZI7W5sJgypUCAcoxK82yH3Tc4';
       const ATHAR_VAPID_STORAGE_KEY = 'athar_vapid_public_key';
       const ATHAR_WEB_PUSH_SYNC_KEY = 'athar_web_push_last_sync';
       const ATHAR_WEB_PUSH_USER_KEY = 'athar_web_push_last_user';
       const ATHAR_WEB_PUSH_OPEN_SYNC_MS = 15 * 60 * 1000;
-      const ATHAR_SW_URL = './sw.js?v=10';
+      const ATHAR_SW_URL = './sw.js?v=11';
 
       /** رابط النشر — روابط استعادة كلمة المرور من file:// أو localhost */
       const ATHAR_PUBLIC_ORIGIN = 'https://athar-app.online';
@@ -31809,7 +31809,10 @@
         if (!state.currentUser?.id) return true;
         const userId = String(state.currentUser.id);
         let lastUser = '';
+        let storedVapid = '';
         try { lastUser = localStorage.getItem(ATHAR_WEB_PUSH_USER_KEY) || ''; } catch (_) {}
+        try { storedVapid = localStorage.getItem(ATHAR_VAPID_STORAGE_KEY) || ''; } catch (_) {}
+        if (storedVapid !== ATHAR_VAPID_PUBLIC_KEY) return true;
         if (lastUser && lastUser !== userId) return true;
         try {
           const reg = await navigator.serviceWorker.getRegistration('./');
@@ -31871,7 +31874,7 @@
         try { stored = localStorage.getItem(ATHAR_VAPID_STORAGE_KEY) || ''; } catch (_) {}
         const mustRefresh = !!(
           opts.forceResubscribe
-          || (stored && stored !== ATHAR_VAPID_PUBLIC_KEY)
+          || stored !== ATHAR_VAPID_PUBLIC_KEY
         );
         if (mustRefresh) {
           const old = await reg.pushManager.getSubscription();
@@ -35633,7 +35636,8 @@
         const body = 'انتهت مدة البريك — يُرجى العودة وإيقاف الجلسة من التطبيق.';
         try {
           if ('serviceWorker' in navigator && Notification.permission === 'granted') {
-            const reg = await navigator.serviceWorker.getRegistration();
+            const reg = await navigator.serviceWorker.getRegistration('./')
+              || await navigator.serviceWorker.getRegistration();
             if (reg?.showNotification) {
               await reg.showNotification(title, {
                 body,
@@ -35641,6 +35645,7 @@
                 badge: './icons/athar-pwa-192-v406.png',
                 tag: 'break-expiry-local',
                 renotify: true,
+                requireInteraction: true,
                 dir: 'rtl',
                 lang: 'ar',
                 data: { url: './index.html?go=breaks' }
@@ -35652,6 +35657,46 @@
             new Notification(title, { body, tag: 'break-expiry-local', dir: 'rtl', lang: 'ar' });
           }
         } catch (_) { /* noop */ }
+      }
+
+      async function cancelScheduledBreakExpiryNotification() {
+        try {
+          const reg = await navigator.serviceWorker.getRegistration('./')
+            || await navigator.serviceWorker.getRegistration();
+          if (!reg?.getNotifications) return;
+          const list = await reg.getNotifications({ tag: 'break-expiry-scheduled' });
+          list.forEach((n) => { try { n.close(); } catch (_) { /* noop */ } });
+        } catch (_) { /* noop */ }
+      }
+
+      /** جدولة إشعار محلي لحظة انتهاء المدة (Chrome/Android) حتى لو أُغلقت المنصة */
+      async function scheduleBreakExpiryLocalNotification(brk) {
+        if (!brk?.id || Notification.permission !== 'granted') return;
+        const rem = getBreakRemainingSeconds(brk);
+        await cancelScheduledBreakExpiryNotification();
+        if (rem <= 0) {
+          await showLocalBreakExpiryNotification();
+          return;
+        }
+        const TriggerCtor = typeof TimestampTrigger !== 'undefined' ? TimestampTrigger : null;
+        if (!TriggerCtor) return;
+        try {
+          const reg = await getAtharSwRegistration();
+          if (!reg?.showNotification) return;
+          const when = Date.now() + Math.max(1, rem) * 1000;
+          await reg.showNotification('انتهت مدة البريك', {
+            body: 'انتهت مدة البريك — يُرجى العودة وإيقاف الجلسة من التطبيق.',
+            icon: './icons/athar-pwa-192-v406.png',
+            badge: './icons/athar-pwa-192-v406.png',
+            tag: 'break-expiry-scheduled',
+            renotify: true,
+            requireInteraction: true,
+            dir: 'rtl',
+            lang: 'ar',
+            showTrigger: new TriggerCtor(when),
+            data: { url: './index.html?go=breaks', breakId: brk.id }
+          });
+        } catch (_) { /* TimestampTrigger غير مدعوم على هذا الجهاز */ }
       }
 
       function maybeNotifyBreakExpiredLocally() {
@@ -35956,6 +36001,10 @@
           state._myBreakDurationMins = resolvedMins > 0 ? resolvedMins : null;
           state._staffBreakDayKey = todayKey;
           try { ensureStaffBreakTicker(); } catch (_) { /* noop */ }
+          try {
+            const mine = getMyActiveStaffBreak();
+            if (mine) scheduleBreakExpiryLocalNotification(mine);
+          } catch (_) { /* noop */ }
         } catch (e) {
           if (isMirsadDebugLog()) console.warn('[staff_breaks] load', e);
           state.staffBreaks = state.staffBreaks || [];
@@ -36981,6 +37030,11 @@
             const row = enrichStaffBreak(data.break);
             upsertStaffBreakDayRow(row);
             state.staffBreaks = [row, ...(state.staffBreaks || []).filter(b => b.id !== row.id && b.status === 'active')];
+            try { scheduleBreakExpiryLocalNotification(row); } catch (_) { /* noop */ }
+            try {
+              // تأكد من اشتراك Web Push بمفتاح VAPID الحالي قبل انتهاء المدة
+              syncAtharWebPushSubscription({ force: true }).catch(() => {});
+            } catch (_) { /* noop */ }
           }
           showToast(data.new_session || !data.resumed ? 'بدأت جلسة بريك جديدة' : 'بدأ البريك', 'success');
           await renderStaffBreaksPage({ soft: true });
@@ -37016,6 +37070,7 @@
             return;
           }
           closeModal('breakOvertimeModal');
+          try { await cancelScheduledBreakExpiryNotification(); } catch (_) { /* noop */ }
           if (data.break) {
             const row = enrichStaffBreak(data.break);
             upsertStaffBreakDayRow(row);

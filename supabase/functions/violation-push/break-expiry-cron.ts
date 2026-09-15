@@ -1,6 +1,6 @@
 /** Cron: إشعار Web Push عند انتهاء مدة البريك */
 
-export const BREAK_EXPIRY_CRON_VERSION = '2026-09-break-expiry-v1';
+export const BREAK_EXPIRY_CRON_VERSION = '2026-09-break-expiry-v2';
 
 type BreakRow = {
   id: string;
@@ -46,6 +46,7 @@ export async function runBreakExpiryCron(
   const due = (rows || []).filter((r) => isExpired(r as BreakRow));
   let notified = 0;
   let pushed = 0;
+  let deferred = 0;
   const results: Record<string, unknown>[] = [];
 
   for (const row of due) {
@@ -75,8 +76,28 @@ export async function runBreakExpiryCron(
       new Set([String(row.user_id)]),
       title,
       body,
-      { tagSuffix: `break_expiry_${row.id}`, kind: 'break_expiry', url: './index.html?go=breaks' },
+      {
+        tagSuffix: `break_expiry_${row.id}`,
+        kind: 'break_expiry',
+        url: './index.html?go=breaks',
+      },
     );
+
+    const pushSent = Number(push.sent) || 0;
+
+    // لا نختم إلا بعد إرسال Web Push فعلي — وإلا يُعاد كل دقيقة والمنصة مقفلة.
+    if (pushSent <= 0) {
+      deferred += 1;
+      results.push({
+        id: row.id,
+        user_id: row.user_id,
+        ok: false,
+        deferred: true,
+        pushSent: 0,
+        pushError: push.error || (push.errors?.length ? push.errors[0] : 'push not delivered'),
+      });
+      continue;
+    }
 
     const { error: markErr } = await supabase
       .from('staff_breaks')
@@ -91,12 +112,12 @@ export async function runBreakExpiryCron(
     }
 
     notified += 1;
-    pushed += push.sent || 0;
+    pushed += pushSent;
     results.push({
       id: row.id,
       user_id: row.user_id,
       ok: true,
-      pushSent: push.sent || 0,
+      pushSent,
       pushError: push.error || (push.errors?.length ? push.errors[0] : undefined),
     });
   }
@@ -107,6 +128,7 @@ export async function runBreakExpiryCron(
     due: due.length,
     notified,
     pushed,
+    deferred,
     results: results.slice(0, 30),
   };
 }
