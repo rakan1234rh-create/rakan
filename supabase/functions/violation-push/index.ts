@@ -15,6 +15,7 @@ import {
   type ViolationNotifTemplate,
 } from './violation-notification-copy.ts';
 import { runWeeklyDigest } from './violation-weekly-digest.ts';
+import { runBreakExpiryCron, BREAK_EXPIRY_CRON_VERSION } from './break-expiry-cron.ts';
 import { Resend } from 'npm:resend@4.0.0';
 
 function buildCorsHeaders(req: Request): Record<string, string> {
@@ -45,8 +46,9 @@ type TargetPayload = {
 type PushExtras = {
   ticketId?: string;
   broadcastId?: string;
-  kind?: BroadcastKind;
+  kind?: string;
   tagSuffix?: string;
+  url?: string;
 };
 
 type NotifUpsert = {
@@ -550,18 +552,19 @@ async function sendPushToUserIds(
       ? `broadcast_${kind}_${broadcastId}_${sub.user_id}`
       : (ticketId
         ? `ticket_${ticketId}${tagSuffix ? `_${tagSuffix}` : ''}_${sub.user_id}`
-        : `test_${sub.user_id}`);
-    const url = broadcastId
-      ? `./index.html?broadcast=${encodeURIComponent(broadcastId)}&bckind=${encodeURIComponent(kind)}`
-      : (ticketId
-        ? `./index.html?ticket=${encodeURIComponent(ticketId)}`
-        : './index.html');
+        : (tagSuffix ? `${tagSuffix}_${sub.user_id}` : `test_${sub.user_id}`));
+    const url = extras.url
+      || (broadcastId
+        ? `./index.html?broadcast=${encodeURIComponent(broadcastId)}&bckind=${encodeURIComponent(kind)}`
+        : (ticketId
+          ? `./index.html?ticket=${encodeURIComponent(ticketId)}`
+          : './index.html'));
     const pushPayload = JSON.stringify({
       title,
       body,
       ticketId,
       broadcastId,
-      kind: broadcastId ? kind : undefined,
+      kind: broadcastId ? kind : (extras.kind || undefined),
       tag,
       url,
     });
@@ -970,6 +973,7 @@ Deno.serve(async (req) => {
       service: 'violation-push',
       version: '2026-09-email-ses-fallback-v3',
       autoForwardCron: AUTO_FORWARD_CRON_VERSION,
+      breakExpiryCron: BREAK_EXPIRY_CRON_VERSION,
       vapidConfigured: !!(vapidPublic && vapidPrivate),
       vapidValid,
       vapidPublicKey: vapidPublic || null,
@@ -1025,6 +1029,20 @@ Deno.serve(async (req) => {
         return { ok: true };
       });
       return json({ ok: true, cron: AUTO_FORWARD_CRON_VERSION, ...result });
+    } catch (err) {
+      return json({ ok: false, error: String(err) }, 500);
+    }
+  }
+
+  if (payload.breakExpiryCron === true) {
+    if (!await isAuthorizedCron(req, payload)) {
+      return json({ error: 'unauthorized cron secret' }, 401);
+    }
+    try {
+      const result = await runBreakExpiryCron(supabase, (userIds, title, body, extras) =>
+        sendPushToUserIds(supabase, userIds, title, body, extras || {})
+      );
+      return json({ ok: true, cron: BREAK_EXPIRY_CRON_VERSION, ...result });
     } catch (err) {
       return json({ ok: false, error: String(err) }, 500);
     }
@@ -1154,5 +1172,5 @@ Deno.serve(async (req) => {
     }
   }
 
-  return json({ error: 'استخدم test:true أو notify:true أو notifyState:true أو autoForwardCron:true أو broadcast:true' }, 400);
+  return json({ error: 'استخدم test:true أو notify:true أو notifyState:true أو autoForwardCron:true أو breakExpiryCron:true أو broadcast:true' }, 400);
 });

@@ -4511,6 +4511,7 @@
 
             try { maybeOpenTicketFromPushUrl(); } catch (_) { /* noop */ }
             try { maybeOpenBroadcastFromPushUrl(); } catch (_) { /* noop */ }
+            try { maybeOpenBreaksFromPushUrl(); } catch (_) { /* noop */ }
 
             if (state._notifTimer) clearInterval(state._notifTimer);
             state._notifTimer = setInterval(() => {
@@ -31553,6 +31554,16 @@
         }, 500);
       }
 
+      function maybeOpenBreaksFromPushUrl() {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('go') !== 'breaks' || !state.currentUser) return;
+        setTimeout(() => {
+          try {
+            if (typeof goTab === 'function') goTab('breaks');
+          } catch (_) { /* noop */ }
+        }, 400);
+      }
+
       // ─── Web Push (تنبيهات خارج التطبيق) ───────────────────────────────────
       async function invokeViolationPush(body) {
         const { data: { session } } = await sb.auth.getSession();
@@ -35575,7 +35586,9 @@
 
       function ensureStaffBreakTicker() {
         const tab = document.getElementById('tab-breaks');
-        if (!tab?.classList.contains('active')) {
+        const hasActiveMine = !!getMyActiveStaffBreak();
+        // Keep ticking while my break is active (any tab) so we can fire expiry notify
+        if (!tab?.classList.contains('active') && !hasActiveMine) {
           stopStaffBreakTicker();
           return;
         }
@@ -35591,20 +35604,67 @@
             if (typeof maybeRollStaffBreaksDay === 'function') {
               maybeRollStaffBreaksDay();
             }
+            maybeNotifyBreakExpiredLocally();
             // Fallback if realtime schedule events were missed: refresh every 12s
             const now = Date.now();
+            const onBreaksTab = !!document.getElementById('tab-breaks')?.classList.contains('active');
             if (!state._staffBreakSchedulePollAt || now - state._staffBreakSchedulePollAt > 12000) {
               state._staffBreakSchedulePollAt = now;
               loadStaffBreaksData().then(() => {
-                try { paintStaffBreakCountdownOnly(); } catch (_) { /* noop */ }
+                try {
+                  if (onBreaksTab) paintStaffBreakCountdownOnly();
+                  maybeNotifyBreakExpiredLocally();
+                  if (!getMyActiveStaffBreak() && !onBreaksTab) stopStaffBreakTicker();
+                } catch (_) { /* noop */ }
               }).catch(() => { /* noop */ });
-            } else {
+            } else if (onBreaksTab) {
               // Keep idle duration badge aligned with latest in-memory schedules
               state._myBreakDurationMins = resolveBreakDurationMinsForUser(state.currentUser);
               paintStaffBreakCountdownOnly();
+            } else if (!getMyActiveStaffBreak()) {
+              stopStaffBreakTicker();
             }
           } catch (_) { /* noop */ }
         }, 1000);
+      }
+
+      async function showLocalBreakExpiryNotification() {
+        const title = 'انتهت مدة البريك';
+        const body = 'انتهت مدة البريك — يُرجى العودة وإيقاف الجلسة من التطبيق.';
+        try {
+          if ('serviceWorker' in navigator && Notification.permission === 'granted') {
+            const reg = await navigator.serviceWorker.getRegistration();
+            if (reg?.showNotification) {
+              await reg.showNotification(title, {
+                body,
+                icon: './icons/athar-pwa-192-v406.png',
+                badge: './icons/athar-pwa-192-v406.png',
+                tag: 'break-expiry-local',
+                renotify: true,
+                dir: 'rtl',
+                lang: 'ar',
+                data: { url: './index.html?go=breaks' }
+              });
+              return;
+            }
+          }
+          if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification(title, { body, tag: 'break-expiry-local', dir: 'rtl', lang: 'ar' });
+          }
+        } catch (_) { /* noop */ }
+      }
+
+      function maybeNotifyBreakExpiredLocally() {
+        const mine = getMyActiveStaffBreak();
+        if (!mine?.id) {
+          state._breakExpiryLocalNotifiedId = null;
+          return;
+        }
+        const rem = getBreakRemainingSeconds(mine);
+        if (rem > 0) return;
+        if (state._breakExpiryLocalNotifiedId === mine.id) return;
+        state._breakExpiryLocalNotifiedId = mine.id;
+        showLocalBreakExpiryNotification();
       }
 
       function maybeRollStaffBreaksDay() {
@@ -35895,6 +35955,7 @@
             : resolveBreakDurationMinsForUser(state.currentUser);
           state._myBreakDurationMins = resolvedMins > 0 ? resolvedMins : null;
           state._staffBreakDayKey = todayKey;
+          try { ensureStaffBreakTicker(); } catch (_) { /* noop */ }
         } catch (e) {
           if (isMirsadDebugLog()) console.warn('[staff_breaks] load', e);
           state.staffBreaks = state.staffBreaks || [];
@@ -35944,6 +36005,7 @@
               .filter(b => b.status === 'active')
               .map(enrichStaffBreak);
 
+            try { ensureStaffBreakTicker(); } catch (_) { /* noop */ }
             const tab = document.getElementById('tab-breaks');
             if (tab?.classList.contains('active')) renderStaffBreaksPage({ soft: true });
           })
