@@ -328,6 +328,28 @@ html.athar-staging-redesign.mr-desktop-ui #sidebar:not(:hover):not(.sidebar-rail
   transition: color 160ms ease !important;
 }
 
+/* RBAC: Athar nav uses display:flex !important — must beat it when a tab is denied,
+   otherwise hidden items still occupy 40px and push the only visible icon mid-rail. */
+html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item[data-role-hide],
+html.athar-staging-redesign.mr-desktop-ui #sidebar:hover .nav-item[data-role-hide],
+html.athar-staging-redesign.mr-desktop-ui #sidebar.sidebar-rail-hover .nav-item[data-role-hide],
+html.athar-staging-redesign.mr-desktop-ui #sidebar.sidebar-rail-open .nav-item[data-role-hide],
+html.athar-staging-redesign.mr-desktop-ui #sidebar.sidebar-rail-expanded .nav-item[data-role-hide],
+html.athar-staging-redesign.mr-desktop-ui #sidebar[data-rail-hover="1"] .nav-item[data-role-hide],
+html.athar-staging-redesign.mr-desktop-ui #sidebar[data-rail-expanded="1"] .nav-item[data-role-hide],
+html.athar-staging-redesign.mr-desktop-ui #sidebar:not(:hover):not(.sidebar-rail-hover):not(.sidebar-rail-open):not(.sidebar-rail-expanded):not([data-rail-hover="1"]):not([data-rail-expanded="1"]) .nav-item[data-role-hide] {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  max-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
+  border: 0 !important;
+}
+
 html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item:hover,
 html.athar-staging-redesign.mr-desktop-ui #sidebar .nav-item:hover:not(.active) {
   background: transparent !important;
