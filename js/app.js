@@ -36373,6 +36373,8 @@
             statusEl.classList.toggle('rd-break-status--over', over);
             statusEl.classList.toggle('rd-break-status--paused', false);
           }
+          const forceBtn = rowEl.querySelector('[data-break-admin-force]');
+          if (forceBtn) forceBtn.hidden = !over;
         });
         document.querySelectorAll('[data-break-roster-user]').forEach(el => {
           const uid = el.getAttribute('data-break-roster-user');
@@ -36590,6 +36592,10 @@
           .sort((a, b) => new Date(b.started_at || b.updated_at || 0) - new Date(a.started_at || a.updated_at || 0));
       }
 
+      function canAdminForceEndStaffBreak() {
+        return normalizeUserRole(state.currentUser?.role) === 'admin';
+      }
+
       function renderStaffBreaksListHtml() {
         let rows = getActiveStaffBreakLiveRows();
         rows = rows.filter(b => {
@@ -36605,6 +36611,7 @@
           return `<div class="rd-break-empty-panel">${emptyLbl}</div>`;
         }
         const canHist = canViewStaffBreakHistory();
+        const canForce = canAdminForceEndStaffBreak();
         const items = rows.map(b => {
           const rem = getBreakRemainingSeconds(b);
           const over = rem < 0;
@@ -36615,6 +36622,11 @@
             : '';
           const tone = over ? ' rd-break-row--over' : ' rd-break-row--active';
           const timeTxt = over ? formatBreakOverageClock(rem) : formatBreakClock(rem);
+          const forceBtn = canForce
+            ? `<button type="button" class="rd-break-force-end" data-break-admin-force="${Sec.escapeHTML(b.id)}" ${over ? '' : 'hidden'}
+                 onclick="event.stopPropagation(); adminForceEndStaffBreakFromUi('${Sec.escapeHTML(b.id)}')"
+                 title="إيقاف البريك المتجاوز">إيقاف</button>`
+            : '';
           return `
             <div class="rd-list__row rd-break-row rd-break-row--live${tone}${me ? ' rd-break-row--me' : ''}${canHist ? ' rd-break-row--clickable' : ''}"
               data-break-live-row="${Sec.escapeHTML(b.id)}" data-break-live-status="${Sec.escapeHTML(b.status)}" style="cursor:${canHist ? 'pointer' : 'default'}"${clickAttr}>
@@ -36624,6 +36636,7 @@
                 <div class="rd-list__sub">${Sec.escapeHTML(b._branchName || '—')} · <span data-break-row-status class="rd-break-status${over ? ' rd-break-status--over' : ''}">${Sec.escapeHTML(statusLbl)}</span></div>
               </div>
               <div class="rd-break-row__clock${over ? ' rd-break-row__clock--over' : ' rd-break-row__clock--active'}" data-break-row-clock="${Sec.escapeHTML(b.id)}" dir="ltr">${timeTxt}</div>
+              ${forceBtn}
             </div>`;
         }).join('');
         return `<div class="rd-list rd-break-list">${items}</div>`;
@@ -37091,6 +37104,45 @@
         }
       }
 
+      async function adminForceEndStaffBreakFromUi(breakId) {
+        if (!canAdminForceEndStaffBreak()) {
+          showToast('الإجراء لمدير النظام فقط', 'warning');
+          return;
+        }
+        const id = String(breakId || '').trim();
+        if (!id) return;
+        const brk = (state.staffBreaks || []).find(b => b.id === id && b.status === 'active');
+        if (!brk) {
+          showToast('لا يوجد بريك نشط', 'info');
+          await renderStaffBreaksPage({ soft: true });
+          return;
+        }
+        if (getBreakRemainingSeconds(brk) >= 0) {
+          showToast('يمكن الإيقاف الإداري فقط بعد تجاوز المدة', 'warning');
+          return;
+        }
+        const name = brk._userName || 'الموظف';
+        if (!window.confirm(`إيقاف بريك ${name} المتجاوز للمدة؟`)) return;
+        try {
+          const { data, error } = await sb.rpc('admin_force_end_staff_break', { p_break_id: id });
+          if (error) throw error;
+          if (!data?.ok) {
+            showToast(data?.error || 'تعذّر إيقاف البريك', 'error');
+            await renderStaffBreaksPage({ soft: true });
+            return;
+          }
+          if (data.break) {
+            const row = enrichStaffBreak(data.break);
+            upsertStaffBreakDayRow(row);
+          }
+          state.staffBreaks = (state.staffBreaks || []).filter(b => b.id !== id && b.status === 'active');
+          showToast(`تم إيقاف بريك ${name} من مدير النظام`, 'success');
+          await renderStaffBreaksPage({ soft: true });
+        } catch (e) {
+          showToast('فشل الإيقاف الإداري: ' + (e.message || e), 'error');
+        }
+      }
+
       function openBreakOvertimeModal(brk, overtimeSeconds) {
         const rem = overtimeSeconds != null
           ? Number(overtimeSeconds)
@@ -37323,6 +37375,7 @@
 
       window.startStaffBreakFromUi = startStaffBreakFromUi;
       window.endStaffBreakFromUi = endStaffBreakFromUi;
+      window.adminForceEndStaffBreakFromUi = adminForceEndStaffBreakFromUi;
       window.submitBreakOvertimeReason = submitBreakOvertimeReason;
       window.setBreakStatusFilter = setBreakStatusFilter;
       window.refreshBreaksFromSearch = refreshBreaksFromSearch;
