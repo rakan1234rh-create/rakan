@@ -6080,8 +6080,10 @@
       }
 
       function shouldApplyUserPermOverride(userId, permId, explicit, fromRole) {
+        // true في صف المستخدم = منح صلاحية ليست من الدور
         if (explicit === true && !fromRole) return true;
-        if (explicit === false && fromRole && isManualUserPermDeny(userId, permId)) return true;
+        // false في صف المستخدم = منع صريح حتى لو الدور يمنحها (السحابة مصدر الحقيقة)
+        if (explicit === false && fromRole) return true;
         return false;
       }
 
@@ -37654,10 +37656,16 @@
         return null;
       }
 
+      /** مشغّل مكتب الحضور: يرى/يسجّل كل الأقسام (مثل الأدمن على نطاق الصفحة فقط) */
+      function isAttendanceDeskOperator() {
+        const role = normalizeUserRole(state.currentUser?.role);
+        if (role === 'admin') return true;
+        return !!(canViewAttendanceTab() && canMarkAttendance() && typeof canManageUsers === 'function' && canManageUsers());
+      }
+
       function getVisibleAttendanceDepartments() {
         const all = (state.attendanceDepartments || []).filter(d => d && d.is_active !== false);
-        const role = normalizeUserRole(state.currentUser?.role);
-        if (role === 'admin') return all;
+        if (isAttendanceDeskOperator()) return all;
         if (isGalleriesAttendanceMember(state.currentUser)) {
           const galleries = all.filter(d => d.slug === 'galleries');
           if (galleries.length) return galleries;
@@ -37718,8 +37726,7 @@
 
       function canMarkUserAttendance(targetUser) {
         if (!canMarkAttendance() || !targetUser) return false;
-        const role = normalizeUserRole(state.currentUser?.role);
-        if (role === 'admin') return true;
+        if (isAttendanceDeskOperator()) return true;
         if (isGalleriesAttendanceMember(state.currentUser) && isGalleriesAttendanceMember(targetUser)) return true;
         const myDept = resolveEffectiveAttendanceDepartmentId(state.currentUser);
         const targetDept = resolveEffectiveAttendanceDepartmentId(targetUser);
@@ -38042,8 +38049,8 @@
       }
 
       function canManageAttendanceDepartments() {
-        return !!(typeof canManageUsers === 'function' && canManageUsers()
-          && normalizeUserRole(state.currentUser?.role) === 'admin');
+        // إدارة الأقسام من صفحة الحضور: أدمن أو من لديه manage_users (مشغّل المكتب)
+        return !!(typeof canManageUsers === 'function' && canManageUsers());
       }
 
       function syncAttendanceManageBtn() {
@@ -38066,7 +38073,7 @@
 
       function openAttendanceDeptManager(view) {
         if (!canManageAttendanceDepartments()) {
-          showToast('إدارة الأقسام متاحة لمدير النظام فقط', 'warning');
+          showToast('لا تملك صلاحية إدارة أقسام الحضور', 'warning');
           return;
         }
         state._attManageView = view || state._attManageView || { mode: 'list' };
