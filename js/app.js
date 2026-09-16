@@ -35800,6 +35800,10 @@
         if (open) return getBreakRemainingSeconds(open);
         const me = state.currentUser;
         const type = breakType === 'restroom' ? 'restroom' : 'regular';
+        // Restroom duration is per visit, not a once-per-day balance.
+        if (type === 'restroom') {
+          return Math.max(0, (resolveBreakDurationMinsForUser(me, type) || 0) * 60);
+        }
         const dayRow = me?.id ? getStaffBreakDayRowForType(me.id, type) : null;
         if (dayRow && (dayRow.status === 'ended' || dayRow.status === 'paused')) {
           return Math.max(0, Number(dayRow.remaining_seconds) || 0);
@@ -35811,6 +35815,8 @@
       /** خلصت مدة اليوم (بعد الإيقاف) ولا يوجد متبقي — يمنع بدء بريك جديد حتى يزيد المدير المدة */
       function isMyBreakAllowanceExhausted(breakType = 'regular') {
         if (getMyOpenStaffBreak()) return false;
+        // A completed restroom visit must not consume the next scheduled visit.
+        if (breakType === 'restroom') return false;
         const me = state.currentUser;
         if (!me?.id) return false;
         const dayRow = getStaffBreakDayRowForType(me.id, breakType);
