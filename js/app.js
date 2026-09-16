@@ -36675,6 +36675,7 @@
           const me = b.user_id === state.currentUser?.id;
           const typeLabel = getStaffBreakTypeLabel(b);
           const statusLbl = over ? `${typeLabel} — تجاوز المدة` : typeLabel;
+          const typeIcon = b.break_type === 'restroom' ? 'fa-restroom' : 'fa-mug-hot';
           const clickAttr = canHist
             ? ` role="button" tabindex="0" onclick="openStaffBreakHistory('${Sec.escapeHTML(b.user_id)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openStaffBreakHistory('${Sec.escapeHTML(b.user_id)}')}"`
             : '';
@@ -36688,7 +36689,9 @@
           return `
             <div class="rd-list__row rd-break-row rd-break-row--live${tone}${me ? ' rd-break-row--me' : ''}${canHist ? ' rd-break-row--clickable' : ''}"
               data-break-live-row="${Sec.escapeHTML(b.id)}" data-break-live-status="${Sec.escapeHTML(b.status)}" style="cursor:${canHist ? 'pointer' : 'default'}"${clickAttr}>
-              <div class="rd-break-row__av" aria-hidden="true">${Sec.escapeHTML((b._userName || 'م').trim().charAt(0) || 'م')}</div>
+              <div class="rd-break-row__av rd-break-row__av--type" aria-label="${Sec.escapeHTML(typeLabel)}" title="${Sec.escapeHTML(typeLabel)}">
+                <i class="fas ${typeIcon}" aria-hidden="true"></i>
+              </div>
               <div class="rd-list__main">
                 <div class="rd-list__title">${Sec.escapeHTML(b._userName || '—')}${me ? ' <span class="rd-break-me-tag">أنت</span>' : ''}</div>
                 <div class="rd-list__sub">${Sec.escapeHTML(b._branchName || '—')} · <span data-break-row-status class="rd-break-status${over ? ' rd-break-status--over' : ''}">${Sec.escapeHTML(statusLbl)}</span></div>
