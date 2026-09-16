@@ -11,7 +11,9 @@ self.addEventListener('push', (event) => {
     icon: './icons/athar-pwa-192-v406.png',
     badge: './icons/athar-pwa-192-v406.png',
     tag: payload.tag || payload.ticketId || 'athar-notif',
-    renotify: !!(payload.broadcastId || payload.kind === 'break_expiry'),
+    // Break expiry may replace an immediate in-app notification with the same
+    // tag; do not vibrate/sound again when that replacement arrives.
+    renotify: !!payload.broadcastId,
     requireInteraction: payload.kind === 'break_expiry',
     dir: 'rtl',
     lang: 'ar',
