@@ -35587,6 +35587,14 @@
         }
       }
 
+      function getReportableActiveBreakSignature() {
+        return (state.staffBreaks || [])
+          .filter(brk => brk?.status === 'active' && isStaffBreakReportableOvertime(brk))
+          .map(brk => brk.id)
+          .sort()
+          .join(',');
+      }
+
       function ensureStaffBreakTicker() {
         const tab = document.getElementById('tab-breaks');
         const hasActiveMine = !!getMyActiveStaffBreak();
@@ -35598,6 +35606,7 @@
         // Keep the existing 1s interval. Restarting it reset the 12s poll clock
         // and the first tick reloaded every session, overwriting a just-stopped leftover.
         if (state._staffBreakTicker) return;
+        state._staffBreakOvertimeFilterSignature = getReportableActiveBreakSignature();
         if (!state._staffBreakSchedulePollAt) {
           state._staffBreakSchedulePollAt = Date.now();
         }
@@ -35611,6 +35620,14 @@
             // Fallback if realtime schedule events were missed: refresh every 12s
             const now = Date.now();
             const onBreaksTab = !!document.getElementById('tab-breaks')?.classList.contains('active');
+            if (onBreaksTab) {
+              const signature = getReportableActiveBreakSignature();
+              if (signature !== state._staffBreakOvertimeFilterSignature) {
+                state._staffBreakOvertimeFilterSignature = signature;
+                renderStaffBreaksPage({ soft: true }).catch(() => {});
+                return;
+              }
+            }
             if (!state._staffBreakSchedulePollAt || now - state._staffBreakSchedulePollAt > 12000) {
               state._staffBreakSchedulePollAt = now;
               loadStaffBreaksData().then(() => {
@@ -36657,8 +36674,7 @@
         let rows = getActiveStaffBreakLiveRows();
         rows = rows.filter(b => {
           const rem = getBreakRemainingSeconds(b);
-          const over = rem < 0;
-          const kind = over ? 'overage' : 'active';
+          const kind = isStaffBreakReportableOvertime(b, rem) ? 'overage' : 'active';
           return breakRowMatchesFilter(kind);
         });
         if (getBreakStatusFilter() === 'ended' || getBreakStatusFilter() === 'paused') rows = [];
@@ -36712,6 +36728,14 @@
         return 0;
       }
 
+      function isStaffBreakReportableOvertime(brk, remainingSeconds) {
+        if (!brk || brk.break_type === 'restroom') return false;
+        const remaining = remainingSeconds == null
+          ? getBreakRemainingSeconds(brk)
+          : Number(remainingSeconds);
+        return Number.isFinite(remaining) && remaining < -BREAK_OVERTIME_REASON_AFTER_SEC;
+      }
+
       function getBreakRosterRowView(u) {
         const remSec = Math.max(0, Math.floor(Number(getUserBreakRemainingSeconds(u)) || 0));
         const mins = Math.max(0, Math.floor(remSec / 60));
@@ -36719,7 +36743,9 @@
         const isRestroom = dayRow?.break_type === 'restroom';
         const typeLabel = isRestroom ? 'بريك دورة المياه' : 'البريك';
         const overSec = dayRow?.status === 'ended' ? getStaffBreakOvertimeSeconds(dayRow) : 0;
-        const overEnded = overSec > 0 && Number(dayRow?.remaining_seconds || 0) <= 0;
+        const overEnded = !isRestroom
+          && overSec > BREAK_OVERTIME_REASON_AFTER_SEC
+          && Number(dayRow?.remaining_seconds || 0) <= 0;
         const unscheduled = !dayRow
           && !resolveBreakDurationMinsForUser(u, 'regular')
           && !resolveBreakDurationMinsForUser(u, 'restroom');
@@ -36785,13 +36811,18 @@
           const branch = state._branchById?.get(u.branch_id) || state.branches.find(b => b.id === u.branch_id);
           const me = u.id === state.currentUser?.id;
           const rowTone = view.overEnded ? ' rd-break-roster-row--over' : '';
+          const recordTypeLabel = view.dayRow ? getStaffBreakTypeLabel(view.dayRow) : '';
+          const recordTypeIcon = view.dayRow?.break_type === 'restroom' ? 'fa-restroom' : 'fa-mug-hot';
+          const avatarHtml = view.dayRow
+            ? `<div class="rd-break-row__av rd-break-row__av--type" aria-label="${Sec.escapeHTML(recordTypeLabel)}" title="${Sec.escapeHTML(recordTypeLabel)}"><i class="fas ${recordTypeIcon}" aria-hidden="true"></i></div>`
+            : `<div class="rd-break-row__av" aria-hidden="true">${Sec.escapeHTML((u.name || 'م').trim().charAt(0) || 'م')}</div>`;
           const clickAttr = canHist
             ? ` role="button" tabindex="0" onclick="openStaffBreakHistory('${Sec.escapeHTML(u.id)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openStaffBreakHistory('${Sec.escapeHTML(u.id)}')}"`
             : '';
           return `
             <div class="rd-list__row rd-break-roster-row${rowTone}${me ? ' rd-break-row--me' : ''}${canHist ? ' rd-break-row--clickable' : ''}"
               data-break-roster-row="${Sec.escapeHTML(u.id)}" style="cursor:${canHist ? 'pointer' : 'default'}"${clickAttr}>
-              <div class="rd-break-row__av" aria-hidden="true">${Sec.escapeHTML((u.name || 'م').trim().charAt(0) || 'م')}</div>
+              ${avatarHtml}
               <div class="rd-list__main">
                 <div class="rd-list__title">${Sec.escapeHTML(u.name || '—')}${me ? ' <span class="rd-break-me-tag">أنت</span>' : ''}</div>
                 <div class="rd-list__sub">${Sec.escapeHTML(branch?.name || '—')} · <span data-break-roster-status class="rd-break-status${view.overEnded ? ' rd-break-status--over' : ''}${view.busy ? ' rd-break-status--busy' : ''}${view.stopped ? ' rd-break-status--paused' : ''}">${Sec.escapeHTML(view.statusLbl)}</span></div>
