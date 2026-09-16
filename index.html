@@ -1117,7 +1117,7 @@
   <link rel="stylesheet" href="styles/custom/athar-violations-redesign.css?v=vl2" id="athar-violations-redesign">
   <link rel="stylesheet" href="styles/custom/athar-locations-redesign.css?v=loc4" id="athar-locations-redesign">
   <link rel="stylesheet" href="styles/custom/athar-users-redesign.css?v=usr5" id="athar-users-redesign">
-  <link rel="stylesheet" href="styles/custom/athar-breaks-redesign.css?v=brk9" id="athar-breaks-redesign">
+  <link rel="stylesheet" href="styles/custom/athar-breaks-redesign.css?v=brk10" id="athar-breaks-redesign">
   <link rel="stylesheet" href="styles/custom/athar-attendance-redesign.css?v=att13" id="athar-attendance-redesign">
   <link rel="stylesheet" href="styles/custom/athar-redesign-staging.css?v=mob-ui22" id="athar-redesign-staging">
   <link rel="stylesheet" href="styles/custom/athar-complaints-redesign.css?v=cmpl41" id="athar-complaints-redesign">
@@ -4601,6 +4601,35 @@
         </div>
       </div>
     </div>
+    <div class="modal" id="breakTypeModal" role="dialog" aria-modal="true" aria-labelledby="breakTypeTitle">
+      <div class="modal-card break-type-card">
+        <div class="modal-header">
+          <h3 id="breakTypeTitle">اختر نوع البريك</h3>
+          <button type="button" class="btn btn-ghost" onclick="closeModal('breakTypeModal')" aria-label="إغلاق"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="break-type-options">
+            <button type="button" class="break-type-option" id="breakTypeRegular" onclick="startStaffBreakFromUi('regular')">
+              <span class="break-type-option__icon"><i class="fas fa-mug-hot" aria-hidden="true"></i></span>
+              <span class="break-type-option__text">
+                <strong>بريك</strong>
+                <small id="breakTypeRegularMeta">حسب الجدولة</small>
+              </span>
+              <i class="fas fa-chevron-left" aria-hidden="true"></i>
+            </button>
+            <button type="button" class="break-type-option break-type-option--restroom" id="breakTypeRestroom" onclick="startStaffBreakFromUi('restroom')">
+              <span class="break-type-option__icon"><i class="fas fa-restroom" aria-hidden="true"></i></span>
+              <span class="break-type-option__text">
+                <strong>بريك دورة مياه</strong>
+                <small id="breakTypeRestroomMeta">حسب الجدولة</small>
+              </span>
+              <i class="fas fa-chevron-left" aria-hidden="true"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="modal" id="breakOvertimeModal" role="dialog" aria-modal="true" aria-labelledby="breakOtTitle">
       <div class="modal-card">
         <div class="modal-header">
@@ -4646,12 +4675,16 @@
       <div class="modal-card break-schedule-card">
         <div class="break-sch-hd break-sch-drag-zone">
           <span class="break-sch-grabber" aria-hidden="true"></span>
-          <h3 id="breakSchTitle">جدولة مدة البريك</h3>
+          <h3 id="breakSchTitle">جدولة مدد البريكات</h3>
           <button type="button" class="break-sch-hd__close" onclick="closeModal('breakScheduleModal')" aria-label="إغلاق">
             <i class="fas fa-xmark" aria-hidden="true"></i>
           </button>
         </div>
         <div class="break-sch-body">
+          <div class="break-sch-label">نوع البريك</div>
+          <div class="break-sch-chips" id="breakSchTypeChips" role="group" aria-label="نوع البريك"></div>
+          <input type="hidden" id="breakSchBreakType" value="regular">
+
           <div class="break-sch-label">النطاق</div>
           <div class="break-sch-chips" id="breakSchScopeChips" role="group" aria-label="النطاق"></div>
           <p class="break-sch-hint" id="breakSchGlobalNote">أولوية التطبيق من الأدق للأعم: موظف ← فرع ← منطقة ← عام.</p>
@@ -5231,7 +5264,7 @@
   </div><!-- /#appWrap -->
 
     <div id="rdCmplOverlayHost"></div>
-    <script src="js/app.js?v=breakfilter1"></script>
+    <script src="js/app.js?v=restroom1"></script>
         <style>
       @media (max-width: 992px) {
         /* ── workflow: منع التمدد الأفقي ── */
