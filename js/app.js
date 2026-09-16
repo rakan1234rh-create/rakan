@@ -18,7 +18,7 @@
       const ATHAR_WEB_PUSH_SYNC_KEY = 'athar_web_push_last_sync';
       const ATHAR_WEB_PUSH_USER_KEY = 'athar_web_push_last_user';
       const ATHAR_WEB_PUSH_OPEN_SYNC_MS = 15 * 60 * 1000;
-      const ATHAR_SW_URL = './sw.js?v=11';
+      const ATHAR_SW_URL = './sw.js?v=12';
 
       /** رابط النشر — روابط استعادة كلمة المرور من file:// أو localhost */
       const ATHAR_PUBLIC_ORIGIN = 'https://athar-app.online';
@@ -35648,11 +35648,18 @@
         }, 1000);
       }
 
+      function getBreakExpiryNotificationTag(brk) {
+        const breakId = String(brk?.id || 'unknown');
+        const userId = String(brk?.user_id || state.currentUser?.id || 'unknown');
+        return `break_expiry_${breakId}_${userId}`;
+      }
+
       async function showLocalBreakExpiryNotification(brk) {
         const title = brk?.break_type === 'restroom'
           ? 'انتهت مدة بريك دورة المياه'
           : 'انتهت مدة البريك';
         const body = `${title} — يُرجى العودة وإيقاف الجلسة من التطبيق.`;
+        const tag = getBreakExpiryNotificationTag(brk);
         try {
           if ('serviceWorker' in navigator && Notification.permission === 'granted') {
             const reg = await navigator.serviceWorker.getRegistration('./')
@@ -35662,8 +35669,8 @@
                 body,
                 icon: './icons/athar-pwa-192-v406.png',
                 badge: './icons/athar-pwa-192-v406.png',
-                tag: 'break-expiry-local',
-                renotify: true,
+                tag,
+                renotify: false,
                 requireInteraction: true,
                 dir: 'rtl',
                 lang: 'ar',
@@ -35673,7 +35680,7 @@
             }
           }
           if ('Notification' in window && Notification.permission === 'granted') {
-            new Notification(title, { body, tag: 'break-expiry-local', dir: 'rtl', lang: 'ar' });
+            new Notification(title, { body, tag, dir: 'rtl', lang: 'ar' });
           }
         } catch (_) { /* noop */ }
       }
@@ -35683,42 +35690,20 @@
           const reg = await navigator.serviceWorker.getRegistration('./')
             || await navigator.serviceWorker.getRegistration();
           if (!reg?.getNotifications) return;
-          const list = await reg.getNotifications({ tag: 'break-expiry-scheduled' });
-          list.forEach((n) => { try { n.close(); } catch (_) { /* noop */ } });
+          const list = await reg.getNotifications();
+          list
+            .filter(n => n.tag === 'break-expiry-scheduled' || n.tag === 'break-expiry-local')
+            .forEach((n) => { try { n.close(); } catch (_) { /* noop */ } });
         } catch (_) { /* noop */ }
       }
 
-      /** جدولة إشعار محلي لحظة انتهاء المدة (Chrome/Android) حتى لو أُغلقت المنصة */
+      /**
+       * Web Push من السيرفر هو المصدر الوحيد عند إغلاق المنصة.
+       * نحذف أي Trigger قديم كي لا يصل مع إشعار السيرفر والعداد ثلاث مرات.
+       */
       async function scheduleBreakExpiryLocalNotification(brk) {
-        if (!brk?.id || Notification.permission !== 'granted') return;
-        const rem = getBreakRemainingSeconds(brk);
+        if (!brk?.id) return;
         await cancelScheduledBreakExpiryNotification();
-        if (rem <= 0) {
-          await showLocalBreakExpiryNotification(brk);
-          return;
-        }
-        const TriggerCtor = typeof TimestampTrigger !== 'undefined' ? TimestampTrigger : null;
-        if (!TriggerCtor) return;
-        try {
-          const reg = await getAtharSwRegistration();
-          if (!reg?.showNotification) return;
-          const when = Date.now() + Math.max(1, rem) * 1000;
-          const title = brk.break_type === 'restroom'
-            ? 'انتهت مدة بريك دورة المياه'
-            : 'انتهت مدة البريك';
-          await reg.showNotification(title, {
-            body: `${title} — يُرجى العودة وإيقاف الجلسة من التطبيق.`,
-            icon: './icons/athar-pwa-192-v406.png',
-            badge: './icons/athar-pwa-192-v406.png',
-            tag: 'break-expiry-scheduled',
-            renotify: true,
-            requireInteraction: true,
-            dir: 'rtl',
-            lang: 'ar',
-            showTrigger: new TriggerCtor(when),
-            data: { url: './index.html?go=breaks', breakId: brk.id }
-          });
-        } catch (_) { /* TimestampTrigger غير مدعوم على هذا الجهاز */ }
       }
 
       function maybeNotifyBreakExpiredLocally() {
@@ -35730,6 +35715,14 @@
         const rem = getBreakRemainingSeconds(mine);
         if (rem > 0) return;
         if (state._breakExpiryLocalNotifiedId === mine.id) return;
+        const storageKey = `athar_break_expiry_local_${mine.id}`;
+        try {
+          if (localStorage.getItem(storageKey) === '1') {
+            state._breakExpiryLocalNotifiedId = mine.id;
+            return;
+          }
+          localStorage.setItem(storageKey, '1');
+        } catch (_) { /* noop */ }
         state._breakExpiryLocalNotifiedId = mine.id;
         showLocalBreakExpiryNotification(mine);
       }
