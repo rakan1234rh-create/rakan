@@ -36703,6 +36703,12 @@
           if (filter === 'paused') return view.stopped;
           if (filter === 'ended') return view.overEnded || view.depleted || view.unscheduled;
           return true;
+        }).sort((a, b) => {
+          const filter = getBreakStatusFilter();
+          if (filter !== 'paused') return 0;
+          const aRow = state.staffBreakDayByUser?.[a.id];
+          const bRow = state.staffBreakDayByUser?.[b.id];
+          return staffBreakRowRecencyMs(bRow) - staffBreakRowRecencyMs(aRow);
         });
         if (!users.length) {
           return '<div class="rd-break-empty-panel">لا توجد نتائج مطابقة</div>';
