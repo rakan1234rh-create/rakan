@@ -1,10 +1,11 @@
 /** Cron: إشعار Web Push عند انتهاء مدة البريك */
 
-export const BREAK_EXPIRY_CRON_VERSION = '2026-09-break-expiry-v2';
+export const BREAK_EXPIRY_CRON_VERSION = '2026-09-break-expiry-v3-types';
 
 type BreakRow = {
   id: string;
   user_id: string;
+  break_type?: string | null;
   started_at: string;
   planned_duration_minutes: number | null;
   remaining_seconds: number | null;
@@ -36,7 +37,7 @@ export async function runBreakExpiryCron(
 ) {
   const { data: rows, error } = await supabase
     .from('staff_breaks')
-    .select('id, user_id, started_at, planned_duration_minutes, remaining_seconds, expiry_notified_at')
+    .select('id, user_id, break_type, started_at, planned_duration_minutes, remaining_seconds, expiry_notified_at')
     .eq('status', 'active')
     .is('expiry_notified_at', null)
     .limit(200);
@@ -50,8 +51,9 @@ export async function runBreakExpiryCron(
   const results: Record<string, unknown>[] = [];
 
   for (const row of due) {
-    const title = 'انتهت مدة البريك';
-    const body = 'انتهت مدة البريك — يُرجى العودة وإيقاف الجلسة من التطبيق.';
+    const isRestroom = row.break_type === 'restroom';
+    const title = isRestroom ? 'انتهت مدة بريك دورة المياه' : 'انتهت مدة البريك';
+    const body = `${title} — يُرجى العودة وإيقاف الجلسة من التطبيق.`;
     const eventKey = `break_expiry_${row.id}`;
 
     try {

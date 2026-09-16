@@ -836,6 +836,60 @@ html.athar-staging-redesign.mr-desktop-ui #rdBreaks:not([hidden]) {
   color: var(--onGold);
   border-color: var(--gold);
 }
+
+.break-type-card {
+  width: min(430px, calc(100vw - 28px));
+}
+.break-type-options {
+  display: grid;
+  gap: 12px;
+}
+.break-type-option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface2);
+  color: var(--text);
+  font-family: inherit;
+  text-align: right;
+  cursor: pointer;
+}
+.break-type-option__icon {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--gold) 16%, transparent);
+  color: var(--gold);
+  font-size: 17px;
+}
+.break-type-option--restroom .break-type-option__icon {
+  background: color-mix(in srgb, var(--success) 14%, transparent);
+  color: var(--success);
+}
+.break-type-option__text {
+  min-width: 0;
+  flex: 1;
+  display: grid;
+  gap: 4px;
+}
+.break-type-option__text strong {
+  font-size: 14px;
+}
+.break-type-option__text small {
+  color: var(--text3);
+  font-size: 11px;
+}
+.break-type-option:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
 .break-sch-hint {
   font-size: 10px;
   color: var(--text3);
