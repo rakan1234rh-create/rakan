@@ -36222,7 +36222,8 @@
         const filter = getBreakStatusFilter();
         return {
           showLive: filter === 'all' || filter === 'active' || filter === 'overage',
-          showRoster: filter === 'all' || filter === 'paused' || filter === 'ended'
+          // جلسات التجاوز المنتهية تبقى في فلتر «تجاوز المدة» بعد الإيقاف
+          showRoster: filter === 'all' || filter === 'paused' || filter === 'overage' || filter === 'ended'
         };
       }
 
@@ -36699,13 +36700,14 @@
           const view = getBreakRosterRowView(u);
           const filter = getBreakStatusFilter();
           if (filter === 'all') return true;
-          if (filter === 'active' || filter === 'overage') return false;
+          if (filter === 'active') return false;
           if (filter === 'paused') return view.stopped;
-          if (filter === 'ended') return view.overEnded || view.depleted || view.unscheduled;
+          if (filter === 'overage') return view.overEnded;
+          if (filter === 'ended') return view.depleted || view.unscheduled;
           return true;
         }).sort((a, b) => {
           const filter = getBreakStatusFilter();
-          if (filter !== 'paused') return 0;
+          if (filter !== 'paused' && filter !== 'overage') return 0;
           const aRow = state.staffBreakDayByUser?.[a.id];
           const bRow = state.staffBreakDayByUser?.[b.id];
           return staffBreakRowRecencyMs(bRow) - staffBreakRowRecencyMs(aRow);
