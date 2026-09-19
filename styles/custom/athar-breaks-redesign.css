@@ -519,7 +519,7 @@ html.athar-staging-redesign.mr-desktop-ui #rdBreaks:not([hidden]) {
   filter: brightness(0.98);
 }
 
-/* Dual allowance meters: desktop only */
+/* Dual allowance meters: desktop only — thin modern pills */
 .rd-break-bars {
   display: none;
 }
@@ -527,51 +527,52 @@ html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 7px;
-  flex: 1 1 180px;
-  min-width: 140px;
-  max-width: 320px;
-  margin-inline: 8px 4px;
+  gap: 5px;
+  flex: 1 1 200px;
+  min-width: 150px;
+  max-width: 340px;
+  margin-inline: 10px 6px;
 }
 html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-bar {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
   min-width: 0;
 }
 html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-bar__ico {
-  width: 14px;
+  width: 12px;
   flex-shrink: 0;
-  font-size: 11px;
-  color: var(--text3);
+  font-size: 9px;
+  color: color-mix(in srgb, var(--text3) 72%, transparent);
   text-align: center;
+  opacity: 0.85;
 }
 html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-bar__track {
   flex: 1 1 auto;
   min-width: 0;
-  height: 10px;
+  height: 4px;
   border-radius: 999px;
-  background: #eceff3;
+  background: color-mix(in srgb, var(--border) 70%, #f4f5f7);
   overflow: hidden;
 }
 html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-bar__fill {
   height: 100%;
   width: 0;
   border-radius: 999px;
-  transition: width 0.35s ease;
+  transition: width 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
 html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-bar__fill--regular {
-  background: #3b5bdb;
+  background: #4c6ef5;
 }
 html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-bar__fill--restroom {
-  background: #f0b429;
+  background: #fab005;
 }
 html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-bar__fill--low {
-  background: #e03131;
+  background: #fa5252;
 }
 html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-bar__fill--empty,
 html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-bar__fill--over {
-  background: #e03131;
+  background: #fa5252;
 }
 html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-bar__fill--none {
   background: transparent;
