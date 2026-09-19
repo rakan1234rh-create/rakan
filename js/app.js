@@ -35800,10 +35800,6 @@
         if (open) return getBreakRemainingSeconds(open);
         const me = state.currentUser;
         const type = breakType === 'restroom' ? 'restroom' : 'regular';
-        // Restroom duration is per visit, not a once-per-day balance.
-        if (type === 'restroom') {
-          return Math.max(0, (resolveBreakDurationMinsForUser(me, type) || 0) * 60);
-        }
         const dayRow = me?.id ? getStaffBreakDayRowForType(me.id, type) : null;
         if (dayRow && (dayRow.status === 'ended' || dayRow.status === 'paused')) {
           return Math.max(0, Number(dayRow.remaining_seconds) || 0);
@@ -35812,18 +35808,25 @@
         return Math.max(0, (resolveBreakDurationMinsForUser(me, type) || 0) * 60);
       }
 
-      /** خلصت مدة اليوم (بعد الإيقاف) ولا يوجد متبقي — يمنع بدء بريك جديد حتى يزيد المدير المدة */
+      /** خلصت مدة اليوم أو حصل تجاوز — يمنع بدء بريك جديد من نفس النوع حتى لو بقي رصيد في جلسة أقدم */
       function isMyBreakAllowanceExhausted(breakType = 'regular') {
         if (getMyOpenStaffBreak()) return false;
-        // A completed restroom visit must not consume the next scheduled visit.
-        if (breakType === 'restroom') return false;
         const me = state.currentUser;
         if (!me?.id) return false;
-        const dayRow = getStaffBreakDayRowForType(me.id, breakType);
-        if (!dayRow) return false;
-        if (dayRow.status === 'ended' && Number(dayRow.remaining_seconds || 0) <= 0) return true;
-        if (dayRow.status === 'paused' && Number(dayRow.remaining_seconds || 0) <= 0) return true;
-        return false;
+        const type = breakType === 'restroom' ? 'restroom' : 'regular';
+        const rows = (state.staffBreakDayRows || []).filter((row) => {
+          if (!row || row.user_id !== me.id) return false;
+          const rowType = row.break_type === 'restroom' ? 'restroom' : 'regular';
+          return rowType === type;
+        });
+        const list = rows.length
+          ? rows
+          : [getStaffBreakDayRowForType(me.id, type)].filter(Boolean);
+        return list.some((row) => {
+          if (row.status !== 'ended' && row.status !== 'paused') return false;
+          return Number(row.remaining_seconds || 0) <= 0
+            || Number(row.overtime_seconds || 0) > 0;
+        });
       }
 
       /** لا يوجد بريك مجدول لهذا اليوم (لا يوجد نطاق فيه مدة ليوم الأسبوع الحالي) */
