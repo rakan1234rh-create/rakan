@@ -518,6 +518,70 @@ html.athar-staging-redesign.mr-desktop-ui #rdBreaks:not([hidden]) {
 .rd-break-row--clickable:active {
   filter: brightness(0.98);
 }
+
+/* Dual allowance meters: desktop only */
+.rd-break-bars {
+  display: none;
+}
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-bars {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 7px;
+  flex: 1 1 180px;
+  min-width: 140px;
+  max-width: 320px;
+  margin-inline: 8px 4px;
+}
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-bar__ico {
+  width: 14px;
+  flex-shrink: 0;
+  font-size: 11px;
+  color: var(--text3);
+  text-align: center;
+}
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-bar__track {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 10px;
+  border-radius: 999px;
+  background: #eceff3;
+  overflow: hidden;
+}
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-bar__fill {
+  height: 100%;
+  width: 0;
+  border-radius: 999px;
+  transition: width 0.35s ease;
+}
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-bar__fill--regular {
+  background: #3b5bdb;
+}
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-bar__fill--restroom {
+  background: #f0b429;
+}
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-bar__fill--low {
+  background: #e03131;
+}
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-bar__fill--empty,
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-bar__fill--over {
+  background: #e03131;
+}
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-bar__fill--none {
+  background: transparent;
+}
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-list__main {
+  flex: 0 1 240px;
+  min-width: 160px;
+  max-width: 280px;
+}
+
 .break-history-card .modal-header {
   align-items: flex-start;
   gap: 0;

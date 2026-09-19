@@ -36443,6 +36443,7 @@
           }
           const forceBtn = rowEl.querySelector('[data-break-admin-force]');
           if (forceBtn) forceBtn.hidden = !over;
+          paintStaffBreakDualBars(brk.user_id);
         });
         document.querySelectorAll('[data-break-roster-user]').forEach(el => {
           const uid = el.getAttribute('data-break-roster-user');
@@ -36464,6 +36465,7 @@
               st.classList.toggle('rd-break-status--paused', view.stopped);
             }
           }
+          paintStaffBreakDualBars(uid);
         });
       }
 
@@ -36650,6 +36652,99 @@
           </div>`;
       }
 
+      function getUserBreakTypeMeter(u, breakType = 'regular') {
+        const type = breakType === 'restroom' ? 'restroom' : 'regular';
+        const label = type === 'restroom' ? 'دورة مياه' : 'بريك';
+        const icon = type === 'restroom' ? 'fa-restroom' : 'fa-mug-hot';
+        if (!u?.id) {
+          return { type, label, icon, plannedSec: 0, remainingSec: 0, pct: 0, tone: 'none' };
+        }
+        const plannedMins = resolveBreakDurationMinsForUser(u, type);
+        if (!plannedMins) {
+          return { type, label, icon, plannedSec: 0, remainingSec: 0, pct: 0, tone: 'none' };
+        }
+        const plannedSec = Math.max(1, plannedMins * 60);
+        const active = (state.staffBreaks || []).find((b) =>
+          b.user_id === u.id
+          && b.status === 'active'
+          && (b.break_type === 'restroom' ? 'restroom' : 'regular') === type
+        );
+        let remainingSec;
+        if (active) {
+          remainingSec = getBreakRemainingSeconds(active);
+        } else {
+          const dayRow = getStaffBreakDayRowForType(u.id, type);
+          if (dayRow && (dayRow.status === 'ended' || dayRow.status === 'paused')) {
+            remainingSec = Number(dayRow.remaining_seconds);
+            if (!Number.isFinite(remainingSec)) remainingSec = 0;
+            const overSec = Number(dayRow.overtime_seconds);
+            if (Number.isFinite(overSec) && overSec > 0) {
+              remainingSec = Math.min(remainingSec, -overSec);
+            }
+          } else {
+            remainingSec = plannedSec;
+          }
+        }
+        const over = remainingSec < 0;
+        const pct = over
+          ? 0
+          : Math.max(0, Math.min(100, (remainingSec / plannedSec) * 100));
+        let tone = 'regular';
+        if (type === 'restroom') tone = 'restroom';
+        if (over) tone = 'over';
+        else if (remainingSec <= 0) tone = 'empty';
+        else if (pct <= 25) tone = 'low';
+        return {
+          type,
+          label,
+          icon,
+          plannedSec,
+          remainingSec,
+          pct,
+          tone
+        };
+      }
+
+      function renderStaffBreakDualBarsHtml(u) {
+        if (!u?.id) return '';
+        const meters = [getUserBreakTypeMeter(u, 'regular'), getUserBreakTypeMeter(u, 'restroom')];
+        return `
+          <div class="rd-break-bars" data-break-bars="${Sec.escapeHTML(u.id)}">
+            ${meters.map((m) => `
+              <div class="rd-break-bar" data-break-bar-type="${m.type}" title="${Sec.escapeHTML(m.label)}">
+                <i class="fas ${m.icon} rd-break-bar__ico" aria-hidden="true"></i>
+                <div class="rd-break-bar__track" role="progressbar"
+                  aria-label="${Sec.escapeHTML(m.label)}"
+                  aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(m.pct)}"
+                  data-break-bar-track>
+                  <div class="rd-break-bar__fill rd-break-bar__fill--${m.tone}"
+                    data-break-bar-fill style="width:${m.pct.toFixed(1)}%"></div>
+                </div>
+              </div>
+            `).join('')}
+          </div>`;
+      }
+
+      function paintStaffBreakDualBars(uid) {
+        if (!uid) return;
+        const u = state._userById?.get(uid) || state.users.find((x) => x.id === uid);
+        if (!u) return;
+        const host = document.querySelector(`[data-break-bars="${uid}"]`);
+        if (!host) return;
+        ['regular', 'restroom'].forEach((type) => {
+          const meter = getUserBreakTypeMeter(u, type);
+          const bar = host.querySelector(`[data-break-bar-type="${type}"]`);
+          if (!bar) return;
+          const fill = bar.querySelector('[data-break-bar-fill]');
+          const track = bar.querySelector('[data-break-bar-track]');
+          if (fill) {
+            fill.style.width = `${meter.pct.toFixed(1)}%`;
+            fill.className = `rd-break-bar__fill rd-break-bar__fill--${meter.tone}`;
+          }
+          if (track) track.setAttribute('aria-valuenow', String(Math.round(meter.pct)));
+        });
+      }
+
       function getActiveStaffBreakLiveRows() {
         const todayKey = getStaffBreakTodayKey();
         return (state.staffBreaks || [])
@@ -36691,6 +36786,10 @@
           const typeLabel = getStaffBreakTypeLabel(b);
           const statusLbl = over ? `${typeLabel} — تجاوز المدة` : typeLabel;
           const typeIcon = b.break_type === 'restroom' ? 'fa-restroom' : 'fa-mug-hot';
+          const user = b._user
+            || state._userById?.get(b.user_id)
+            || state.users.find((x) => x.id === b.user_id)
+            || { id: b.user_id, name: b._userName, branch_id: b.branch_id };
           const clickAttr = canHist
             ? ` role="button" tabindex="0" onclick="openStaffBreakHistory('${Sec.escapeHTML(b.user_id)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openStaffBreakHistory('${Sec.escapeHTML(b.user_id)}')}"`
             : '';
@@ -36711,6 +36810,7 @@
                 <div class="rd-list__title">${Sec.escapeHTML(b._userName || '—')}${me ? ' <span class="rd-break-me-tag">أنت</span>' : ''}</div>
                 <div class="rd-list__sub">${Sec.escapeHTML(b._branchName || '—')} · <span data-break-row-status class="rd-break-status${over ? ' rd-break-status--over' : ''}">${Sec.escapeHTML(statusLbl)}</span></div>
               </div>
+              ${renderStaffBreakDualBarsHtml(user)}
               <div class="rd-break-row__clock${over ? ' rd-break-row__clock--over' : ' rd-break-row__clock--active'}" data-break-row-clock="${Sec.escapeHTML(b.id)}" dir="ltr">${timeTxt}</div>
               ${forceBtn}
             </div>`;
@@ -36826,6 +36926,7 @@
                 <div class="rd-list__title">${Sec.escapeHTML(u.name || '—')}${me ? ' <span class="rd-break-me-tag">أنت</span>' : ''}</div>
                 <div class="rd-list__sub">${Sec.escapeHTML(branch?.name || '—')} · <span data-break-roster-status class="rd-break-status${view.overEnded ? ' rd-break-status--over' : ''}${view.busy ? ' rd-break-status--busy' : ''}${view.stopped ? ' rd-break-status--paused' : ''}">${Sec.escapeHTML(view.statusLbl)}</span></div>
               </div>
+              ${renderStaffBreakDualBarsHtml(u)}
               <div class="rd-break-roster__mins${view.unscheduled || (view.depleted && (view.minsLabel === '0 د' || view.minsLabel === '00:00')) ? ' rd-break-roster__mins--zero' : ''}${view.overEnded ? ' rd-break-roster__mins--over' : ''}${view.busy ? ' rd-break-roster__mins--busy' : ''}"
                 data-break-roster-user="${Sec.escapeHTML(u.id)}" data-break-roster-over="${view.overEnded ? '1' : '0'}" dir="ltr">${Sec.escapeHTML(view.minsLabel)}</div>
             </div>`;
