@@ -36708,11 +36708,15 @@
         };
       }
 
-      function renderStaffBreakDualBarsHtml(u) {
+      function renderStaffBreakDualBarsHtml(u, opts = {}) {
         if (!u?.id) return '';
-        const meters = [getUserBreakTypeMeter(u, 'regular'), getUserBreakTypeMeter(u, 'restroom')];
+        const onlyType = opts.onlyType === 'restroom'
+          ? 'restroom'
+          : (opts.onlyType === 'regular' ? 'regular' : null);
+        const types = onlyType ? [onlyType] : ['regular', 'restroom'];
+        const meters = types.map((type) => getUserBreakTypeMeter(u, type));
         return `
-          <div class="rd-break-bars" data-break-bars="${Sec.escapeHTML(u.id)}">
+          <div class="rd-break-bars${onlyType ? ' rd-break-bars--single' : ''}" data-break-bars="${Sec.escapeHTML(u.id)}"${onlyType ? ` data-break-bars-only="${onlyType}"` : ''}>
             ${meters.map((m) => `
               <div class="rd-break-bar" data-break-bar-type="${m.type}" title="${Sec.escapeHTML(m.label)}">
                 <i class="fas ${m.icon} rd-break-bar__ico" aria-hidden="true"></i>
@@ -36734,7 +36738,11 @@
         if (!u) return;
         const host = document.querySelector(`[data-break-bars="${uid}"]`);
         if (!host) return;
-        ['regular', 'restroom'].forEach((type) => {
+        const onlyType = host.getAttribute('data-break-bars-only');
+        const types = onlyType === 'restroom' || onlyType === 'regular'
+          ? [onlyType]
+          : ['regular', 'restroom'];
+        types.forEach((type) => {
           const meter = getUserBreakTypeMeter(u, type);
           const bar = host.querySelector(`[data-break-bar-type="${type}"]`);
           if (!bar) return;
@@ -36813,7 +36821,9 @@
                 <div class="rd-list__title">${Sec.escapeHTML(b._userName || '—')}${me ? ' <span class="rd-break-me-tag">أنت</span>' : ''}</div>
                 <div class="rd-list__sub">${Sec.escapeHTML(b._branchName || '—')} · <span data-break-row-status class="rd-break-status${over ? ' rd-break-status--over' : ''}">${Sec.escapeHTML(statusLbl)}</span></div>
               </div>
-              ${renderStaffBreakDualBarsHtml(user)}
+              ${renderStaffBreakDualBarsHtml(user, {
+                onlyType: b.break_type === 'restroom' ? 'restroom' : 'regular'
+              })}
               <div class="rd-break-row__clock${over ? ' rd-break-row__clock--over' : ' rd-break-row__clock--active'}" data-break-row-clock="${Sec.escapeHTML(b.id)}" dir="ltr">${timeTxt}</div>
               ${forceBtn}
             </div>`;
@@ -36929,7 +36939,11 @@
                 <div class="rd-list__title">${Sec.escapeHTML(u.name || '—')}${me ? ' <span class="rd-break-me-tag">أنت</span>' : ''}</div>
                 <div class="rd-list__sub">${Sec.escapeHTML(branch?.name || '—')} · <span data-break-roster-status class="rd-break-status${view.overEnded ? ' rd-break-status--over' : ''}${view.busy ? ' rd-break-status--busy' : ''}${view.stopped ? ' rd-break-status--paused' : ''}">${Sec.escapeHTML(view.statusLbl)}</span></div>
               </div>
-              ${renderStaffBreakDualBarsHtml(u)}
+              ${renderStaffBreakDualBarsHtml(u, {
+                onlyType: view.dayRow
+                  ? (view.dayRow.break_type === 'restroom' ? 'restroom' : 'regular')
+                  : null
+              })}
               <div class="rd-break-roster__mins${view.unscheduled || (view.depleted && (view.minsLabel === '0 د' || view.minsLabel === '00:00')) ? ' rd-break-roster__mins--zero' : ''}${view.overEnded ? ' rd-break-roster__mins--over' : ''}${view.busy ? ' rd-break-roster__mins--busy' : ''}"
                 data-break-roster-user="${Sec.escapeHTML(u.id)}" data-break-roster-over="${view.overEnded ? '1' : '0'}" dir="ltr">${Sec.escapeHTML(view.minsLabel)}</div>
             </div>`;
