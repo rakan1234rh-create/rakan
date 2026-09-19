@@ -36290,9 +36290,11 @@
       function getBreakListSectionsVisibility() {
         const filter = getBreakStatusFilter();
         return {
-          showLive: filter === 'all' || filter === 'active' || filter === 'overage',
+          // «الكل» قائمة موحّدة بلا عناوين أقسام
+          showUnifiedAll: filter === 'all',
+          showLive: filter === 'active' || filter === 'overage',
           // جلسات التجاوز المنتهية تبقى في فلتر «تجاوز المدة» بعد الإيقاف
-          showRoster: filter === 'all' || filter === 'paused' || filter === 'overage' || filter === 'ended'
+          showRoster: filter === 'paused' || filter === 'overage' || filter === 'ended'
         };
       }
 
@@ -36775,7 +36777,7 @@
         return normalizeUserRole(state.currentUser?.role) === 'admin';
       }
 
-      function renderStaffBreaksListHtml() {
+      function renderStaffBreaksListHtml(opts = {}) {
         let rows = getActiveStaffBreakLiveRows();
         rows = rows.filter(b => {
           const rem = getBreakRemainingSeconds(b);
@@ -36785,6 +36787,7 @@
         if (getBreakStatusFilter() === 'ended' || getBreakStatusFilter() === 'paused') rows = [];
         rows = rows.filter(staffBreakLiveMatchesSearch);
         if (!rows.length) {
+          if (opts.itemsOnly) return '';
           const emptyLbl = getBreakSearchQuery() ? 'لا توجد نتائج مطابقة' : 'لا يوجد أحد في بريك حالياً';
           return `<div class="rd-break-empty-panel">${emptyLbl}</div>`;
         }
@@ -36828,6 +36831,7 @@
               ${forceBtn}
             </div>`;
         }).join('');
+        if (opts.itemsOnly) return items;
         return `<div class="rd-list rd-break-list">${items}</div>`;
       }
 
@@ -36890,7 +36894,7 @@
         return { mins, dayRow, overEnded, unscheduled, depleted, stopped, busy, statusLbl, minsLabel };
       }
 
-      function renderStaffBreakRosterHtml() {
+      function renderStaffBreakRosterHtml(opts = {}) {
         // «السجل»: كل من ليس في بريك نشط (بعد الإيقاف ينزل هنا)
         const liveIds = new Set(
           (state.staffBreaks || [])
@@ -36915,6 +36919,7 @@
           return staffBreakRowRecencyMs(bRow) - staffBreakRowRecencyMs(aRow);
         });
         if (!users.length) {
+          if (opts.itemsOnly) return '';
           return '<div class="rd-break-empty-panel">لا توجد نتائج مطابقة</div>';
         }
         const canHist = canViewStaffBreakHistory();
@@ -36948,7 +36953,19 @@
                 data-break-roster-user="${Sec.escapeHTML(u.id)}" data-break-roster-over="${view.overEnded ? '1' : '0'}" dir="ltr">${Sec.escapeHTML(view.minsLabel)}</div>
             </div>`;
         }).join('');
+        if (opts.itemsOnly) return items;
         return `<div class="rd-list rd-break-list">${items}</div>`;
+      }
+
+      function renderStaffBreakAllUnifiedHtml() {
+        const items = `${renderStaffBreaksListHtml({ itemsOnly: true })}${renderStaffBreakRosterHtml({ itemsOnly: true })}`;
+        if (!items.trim()) {
+          const emptyLbl = getBreakSearchQuery() ? 'لا توجد نتائج مطابقة' : 'لا يوجد موظفون لعرضهم';
+          return `<div class="rd-break-empty-panel">${emptyLbl}</div>`;
+        }
+        return `<div class="rd-sec rd-break-list-sec rd-break-list-sec--all">
+          <div class="rd-list rd-break-list">${items}</div>
+        </div>`;
       }
 
       function formatBreakHistoryWhen(iso) {
@@ -37107,7 +37124,8 @@
       function renderStaffBreaksClassic() {
         const host = document.getElementById('breaksClassicHost');
         if (!host) return;
-        const { showLive, showRoster } = getBreakListSectionsVisibility();
+        const { showLive, showRoster, showUnifiedAll } = getBreakListSectionsVisibility();
+        const allSec = showUnifiedAll ? renderStaffBreakAllUnifiedHtml() : '';
         const liveSec = showLive
           ? `<div class="rd-sec rd-break-list-sec">
               <div class="rd-sec__head"><span class="rd-sec__title">في البريك</span></div>
@@ -37123,6 +37141,7 @@
         host.innerHTML = `
           <div class="breaks-full-page">
             <div id="breaksRingHost">${renderStaffBreakRingHtml()}</div>
+            ${allSec}
             ${liveSec}
             ${rosterSec}
             ${renderStaffBreakSchedulesHtml()}
@@ -37149,7 +37168,8 @@
               ${manageBtn}
             </div>`;
         const toolbarHtml = desk ? renderBreaksDeskToolbarHtml() : '';
-        const { showLive, showRoster } = getBreakListSectionsVisibility();
+        const { showLive, showRoster, showUnifiedAll } = getBreakListSectionsVisibility();
+        const allSec = showUnifiedAll ? renderStaffBreakAllUnifiedHtml() : '';
         const liveTitle = desk
           ? `<div class="rd-sec__head"><span class="rd-sec__title"><i class="fas fa-mug-hot" aria-hidden="true"></i>في البريك الآن</span></div>`
           : `<div class="rd-sec__head"><span class="rd-sec__title">في البريك</span></div>`;
@@ -37172,6 +37192,7 @@
             <div class="rd-breaks-page__body">
               ${renderStaffBreakRingHtml()}
               <div class="rd-breaks-page__lists">
+                ${allSec}
                 ${liveSec}
                 ${rosterSec}
               </div>
