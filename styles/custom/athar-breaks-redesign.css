@@ -575,6 +575,9 @@ html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-
 html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-bar__mins--warn {
   color: var(--danger);
 }
+html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-bar__mins--active {
+  color: var(--success);
+}
 html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-row:has(.rd-break-bars) > .rd-break-row__clock,
 html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-break-roster-row:has(.rd-break-bars) > .rd-break-roster__mins {
   display: none !important;
