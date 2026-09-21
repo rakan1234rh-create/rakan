@@ -35958,6 +35958,12 @@
         return Number.isFinite(t) ? t : 0;
       }
 
+      function staffBreakEndedRecencyMs(row) {
+        if (!row) return 0;
+        const t = Date.parse(row.ended_at || row.updated_at || row.paused_at || row.started_at || row.created_at || 0);
+        return Number.isFinite(t) ? t : 0;
+      }
+
       function rebuildStaffBreakDayMap(rows) {
         const map = {};
         const typeMap = {};
@@ -36924,10 +36930,13 @@
           return true;
         }).sort((a, b) => {
           const filter = getBreakStatusFilter();
-          if (filter !== 'paused' && filter !== 'overage') return 0;
+          if (filter !== 'paused' && filter !== 'overage' && filter !== 'ended') return 0;
           const aRow = state.staffBreakDayByUser?.[a.id];
           const bRow = state.staffBreakDayByUser?.[b.id];
-          return staffBreakRowRecencyMs(bRow) - staffBreakRowRecencyMs(aRow);
+          const recency = filter === 'ended'
+            ? staffBreakEndedRecencyMs
+            : staffBreakRowRecencyMs;
+          return recency(bRow) - recency(aRow);
         });
         if (!users.length) {
           if (opts.itemsOnly) return '';
