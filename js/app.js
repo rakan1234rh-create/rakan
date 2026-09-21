@@ -36662,11 +36662,11 @@
         const label = type === 'restroom' ? 'دورة مياه' : 'بريك';
         const icon = type === 'restroom' ? 'fa-restroom' : 'fa-mug-hot';
         if (!u?.id) {
-          return { type, label, icon, plannedSec: 0, remainingSec: 0, pct: 0, tone: 'none', timeLabel: '—' };
+          return { type, label, icon, plannedSec: 0, remainingSec: 0, pct: 0, tone: 'none', timeLabel: '—', active: false };
         }
         const plannedMins = resolveBreakDurationMinsForUser(u, type);
         if (!plannedMins) {
-          return { type, label, icon, plannedSec: 0, remainingSec: 0, pct: 0, tone: 'none', timeLabel: '—' };
+          return { type, label, icon, plannedSec: 0, remainingSec: 0, pct: 0, tone: 'none', timeLabel: '—', active: false };
         }
         const plannedSec = Math.max(1, plannedMins * 60);
         const active = (state.staffBreaks || []).find((b) =>
@@ -36710,20 +36710,23 @@
           remainingSec,
           pct,
           tone,
-          timeLabel
+          timeLabel,
+          active: !!active
         };
       }
 
       function renderStaffBreakDualBarsHtml(u, opts = {}) {
         if (!u?.id) return '';
-        const onlyType = opts.onlyType === 'restroom'
-          ? 'restroom'
-          : (opts.onlyType === 'regular' ? 'regular' : null);
-        const types = onlyType ? [onlyType] : ['regular', 'restroom'];
+        // Always show both lines (working + idle) so each type has its own minutes.
+        const types = ['regular', 'restroom'];
         const meters = types.map((type) => getUserBreakTypeMeter(u, type));
         return `
-          <div class="rd-break-bars${onlyType ? ' rd-break-bars--single' : ''}" data-break-bars="${Sec.escapeHTML(u.id)}"${onlyType ? ` data-break-bars-only="${onlyType}"` : ''}>
-            ${meters.map((m) => `
+          <div class="rd-break-bars" data-break-bars="${Sec.escapeHTML(u.id)}">
+            ${meters.map((m) => {
+              const minsTone = m.tone === 'over' || m.tone === 'low' || m.tone === 'empty'
+                ? ' rd-break-bar__mins--warn'
+                : (m.active ? ' rd-break-bar__mins--active' : '');
+              return `
               <div class="rd-break-bar" data-break-bar-type="${m.type}" title="${Sec.escapeHTML(m.label)}">
                 <i class="fas ${m.icon} rd-break-bar__ico" aria-hidden="true"></i>
                 <div class="rd-break-bar__track" role="progressbar"
@@ -36733,10 +36736,10 @@
                   <div class="rd-break-bar__fill rd-break-bar__fill--${m.tone}"
                     data-break-bar-fill style="width:${m.pct.toFixed(1)}%"></div>
                 </div>
-                <span class="rd-break-bar__mins${m.tone === 'over' || m.tone === 'low' || m.tone === 'empty' ? ' rd-break-bar__mins--warn' : ''}"
+                <span class="rd-break-bar__mins${minsTone}"
                   data-break-bar-mins dir="ltr">${Sec.escapeHTML(m.timeLabel)}</span>
-              </div>
-            `).join('')}
+              </div>`;
+            }).join('')}
           </div>`;
       }
 
@@ -36746,11 +36749,7 @@
         if (!u) return;
         const host = document.querySelector(`[data-break-bars="${uid}"]`);
         if (!host) return;
-        const onlyType = host.getAttribute('data-break-bars-only');
-        const types = onlyType === 'restroom' || onlyType === 'regular'
-          ? [onlyType]
-          : ['regular', 'restroom'];
-        types.forEach((type) => {
+        ['regular', 'restroom'].forEach((type) => {
           const meter = getUserBreakTypeMeter(u, type);
           const bar = host.querySelector(`[data-break-bar-type="${type}"]`);
           if (!bar) return;
@@ -36766,6 +36765,8 @@
             mins.textContent = meter.timeLabel;
             mins.classList.toggle('rd-break-bar__mins--warn',
               meter.tone === 'over' || meter.tone === 'low' || meter.tone === 'empty');
+            mins.classList.toggle('rd-break-bar__mins--active',
+              !!meter.active && meter.tone !== 'over' && meter.tone !== 'low' && meter.tone !== 'empty');
           }
         });
       }
@@ -36836,9 +36837,7 @@
                 <div class="rd-list__title">${Sec.escapeHTML(b._userName || '—')}${me ? ' <span class="rd-break-me-tag">أنت</span>' : ''}</div>
                 <div class="rd-list__sub">${Sec.escapeHTML(b._branchName || '—')} · <span data-break-row-status class="rd-break-status${over ? ' rd-break-status--over' : ''}">${Sec.escapeHTML(statusLbl)}</span></div>
               </div>
-              ${renderStaffBreakDualBarsHtml(user, {
-                onlyType: b.break_type === 'restroom' ? 'restroom' : 'regular'
-              })}
+              ${renderStaffBreakDualBarsHtml(user)}
               <div class="rd-break-row__clock${over ? ' rd-break-row__clock--over' : ' rd-break-row__clock--active'}" data-break-row-clock="${Sec.escapeHTML(b.id)}" dir="ltr">${timeTxt}</div>
               ${forceBtn}
             </div>`;
@@ -36956,11 +36955,7 @@
                 <div class="rd-list__title">${Sec.escapeHTML(u.name || '—')}${me ? ' <span class="rd-break-me-tag">أنت</span>' : ''}</div>
                 <div class="rd-list__sub">${Sec.escapeHTML(branch?.name || '—')} · <span data-break-roster-status class="rd-break-status${view.overEnded ? ' rd-break-status--over' : ''}${view.busy ? ' rd-break-status--busy' : ''}${view.stopped ? ' rd-break-status--paused' : ''}">${Sec.escapeHTML(view.statusLbl)}</span></div>
               </div>
-              ${renderStaffBreakDualBarsHtml(u, {
-                onlyType: view.dayRow
-                  ? (view.dayRow.break_type === 'restroom' ? 'restroom' : 'regular')
-                  : null
-              })}
+              ${renderStaffBreakDualBarsHtml(u)}
               <div class="rd-break-roster__mins${view.unscheduled || (view.depleted && (view.minsLabel === '0 د' || view.minsLabel === '00:00')) ? ' rd-break-roster__mins--zero' : ''}${view.overEnded ? ' rd-break-roster__mins--over' : ''}${view.busy ? ' rd-break-roster__mins--busy' : ''}"
                 data-break-roster-user="${Sec.escapeHTML(u.id)}" data-break-roster-over="${view.overEnded ? '1' : '0'}" dir="ltr">${Sec.escapeHTML(view.minsLabel)}</div>
             </div>`;
