@@ -36662,11 +36662,11 @@
         const label = type === 'restroom' ? 'دورة مياه' : 'بريك';
         const icon = type === 'restroom' ? 'fa-restroom' : 'fa-mug-hot';
         if (!u?.id) {
-          return { type, label, icon, plannedSec: 0, remainingSec: 0, pct: 0, tone: 'none' };
+          return { type, label, icon, plannedSec: 0, remainingSec: 0, pct: 0, tone: 'none', timeLabel: '—' };
         }
         const plannedMins = resolveBreakDurationMinsForUser(u, type);
         if (!plannedMins) {
-          return { type, label, icon, plannedSec: 0, remainingSec: 0, pct: 0, tone: 'none' };
+          return { type, label, icon, plannedSec: 0, remainingSec: 0, pct: 0, tone: 'none', timeLabel: '—' };
         }
         const plannedSec = Math.max(1, plannedMins * 60);
         const active = (state.staffBreaks || []).find((b) =>
@@ -36699,6 +36699,9 @@
         if (over) tone = 'over';
         else if (remainingSec <= 0) tone = 'empty';
         else if (pct <= 25) tone = 'low';
+        const timeLabel = over
+          ? formatBreakOverageClock(remainingSec)
+          : formatBreakClock(Math.max(0, remainingSec));
         return {
           type,
           label,
@@ -36706,7 +36709,8 @@
           plannedSec,
           remainingSec,
           pct,
-          tone
+          tone,
+          timeLabel
         };
       }
 
@@ -36729,6 +36733,8 @@
                   <div class="rd-break-bar__fill rd-break-bar__fill--${m.tone}"
                     data-break-bar-fill style="width:${m.pct.toFixed(1)}%"></div>
                 </div>
+                <span class="rd-break-bar__mins${m.tone === 'over' || m.tone === 'low' || m.tone === 'empty' ? ' rd-break-bar__mins--warn' : ''}"
+                  data-break-bar-mins dir="ltr">${Sec.escapeHTML(m.timeLabel)}</span>
               </div>
             `).join('')}
           </div>`;
@@ -36750,11 +36756,17 @@
           if (!bar) return;
           const fill = bar.querySelector('[data-break-bar-fill]');
           const track = bar.querySelector('[data-break-bar-track]');
+          const mins = bar.querySelector('[data-break-bar-mins]');
           if (fill) {
             fill.style.width = `${meter.pct.toFixed(1)}%`;
             fill.className = `rd-break-bar__fill rd-break-bar__fill--${meter.tone}`;
           }
           if (track) track.setAttribute('aria-valuenow', String(Math.round(meter.pct)));
+          if (mins) {
+            mins.textContent = meter.timeLabel;
+            mins.classList.toggle('rd-break-bar__mins--warn',
+              meter.tone === 'over' || meter.tone === 'low' || meter.tone === 'empty');
+          }
         });
       }
 
