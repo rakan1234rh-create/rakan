@@ -59,6 +59,10 @@ html.athar-staging-redesign.mr-desktop-ui #tab-attendance .rd-attendance-panel.w
   width: min(240px, 42vw);
 }
 
+.rd-att-search[hidden] {
+  display: none !important;
+}
+
 .rd-att-search > i {
   position: absolute;
   inset-inline-start: 12px;
