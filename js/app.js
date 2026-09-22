@@ -37843,12 +37843,32 @@
         onAttendanceDateChange();
       }
 
+      function attendanceSearchNeedle() {
+        return String(state._attSearch || '').trim().toLowerCase();
+      }
+
+      function attendanceMatchesSearch(parts) {
+        const q = attendanceSearchNeedle();
+        if (!q) return true;
+        return parts.some((part) => String(part || '').toLowerCase().includes(q));
+      }
+
       function onAttendanceSearchInput() {
         const inp = document.getElementById('attSearchInput');
         state._attSearch = String(inp?.value || '').trim();
-        const selected = (state.attendanceDepartments || []).find(d => d.id === state._attSelectedDeptId);
-        if (!selected) return;
-        if (selected.slug === 'galleries' && !state._attSelectedBranchId) return;
+        const depts = getVisibleAttendanceDepartments();
+        const selected = state._attSelectedDeptId
+          ? (depts.find(d => d.id === state._attSelectedDeptId)
+            || (state.attendanceDepartments || []).find(d => d.id === state._attSelectedDeptId))
+          : null;
+        if (!selected) {
+          paintAttendanceHost(renderAttendanceDeptCardsHtml(depts));
+          return;
+        }
+        if (selected.slug === 'galleries' && !state._attSelectedBranchId) {
+          paintAttendanceHost(renderAttendanceBranchCardsHtml(selected));
+          return;
+        }
         paintAttendanceHost(renderAttendanceRosterHtml(selected, state._attSelectedBranchId || null));
       }
 
@@ -38293,7 +38313,11 @@
             : 'لم يُعيَّن لك قسم حضور. اطلب من مدير النظام ربط حسابك بقسم من إدارة المستخدمين.';
           return `<div class="rd-att-empty"><i class="fas fa-building" aria-hidden="true"></i><p>${Sec.escapeHTML(hint)}</p></div>`;
         }
-        return `<div class="rd-att-depts" role="list">${depts.map((d, i) => {
+        const visible = depts.filter((d) => attendanceMatchesSearch([d.name, d.slug]));
+        if (!visible.length) {
+          return `<div class="rd-att-empty"><i class="fas fa-magnifying-glass" aria-hidden="true"></i><p>لا نتائج لهذا البحث.</p></div>`;
+        }
+        return `<div class="rd-att-depts" role="list">${visible.map((d, i) => {
           const users = getAttendanceDeptUsers(d);
           const icon = ATTENDANCE_DEPT_ICONS[d.slug] || 'fa-users';
           let sub;
@@ -38326,12 +38350,35 @@
             <div class="rd-att-empty"><i class="fas fa-store" aria-hidden="true"></i><p>لا يوجد مدراء فروع أو مشرفين أو أخصائيي مبيعات نشطون.</p></div>
           </div>`;
         }
+        const visible = groups.filter((g) => {
+          const userBits = (g.users || []).flatMap((u) => [
+            u.name,
+            u.employee_number,
+            typeof padEmpNum === 'function' ? padEmpNum(u.employee_number) : '',
+            ROLE_LABELS[normalizeUserRole(u.role)]
+          ]);
+          return attendanceMatchesSearch([
+            g.name,
+            g.regionName,
+            g.id === '__none__' ? 'بدون فرع' : g.id,
+            ...userBits
+          ]);
+        });
+        if (!visible.length) {
+          return `<div class="rd-att-roster">
+            <div class="rd-att-roster__head">
+              <h3 class="rd-att-roster__title">${Sec.escapeHTML(dept.name)}</h3>
+              <p class="rd-att-roster__sub">فرق الفروع · ${Sec.escapeHTML(dateLabel)}</p>
+            </div>
+            <div class="rd-att-empty"><i class="fas fa-magnifying-glass" aria-hidden="true"></i><p>لا نتائج لهذا البحث.</p></div>
+          </div>`;
+        }
         return `<div class="rd-att-roster">
           <div class="rd-att-roster__head">
             <h3 class="rd-att-roster__title">${Sec.escapeHTML(dept.name)}</h3>
-            <p class="rd-att-roster__sub">فرق الفروع · ${groups.length} فرع · ${Sec.escapeHTML(dateLabel)}</p>
+            <p class="rd-att-roster__sub">فرق الفروع · ${visible.length} فرع · ${Sec.escapeHTML(dateLabel)}</p>
           </div>
-          <div class="rd-att-depts rd-att-branches" role="list">${groups.map((g, i) => {
+          <div class="rd-att-depts rd-att-branches" role="list">${visible.map((g, i) => {
             const roleBits = [];
             const nEmp = g.users.filter(u => normalizeUserRole(u.role) === 'employee').length;
             const nSup = g.users.filter(u => normalizeUserRole(u.role) === 'supervisor').length;
@@ -38426,16 +38473,21 @@
 
       function renderAttendanceRosterHtml(dept, branchId) {
         const allUsers = getAttendanceDeptUsers(dept, branchId);
-        const q = String(state._attSearch || '').trim().toLowerCase();
-        const users = !q
-          ? allUsers
-          : allUsers.filter(u => {
-            const name = String(u.name || '').toLowerCase();
-            const num = String(u.employee_number || '').toLowerCase();
-            const role = String(ROLE_LABELS[normalizeUserRole(u.role)] || '').toLowerCase();
-            return name.includes(q) || num.includes(q) || role.includes(q);
-          });
+        const users = allUsers.filter((u) => {
+          const br = u.branch_id
+            ? (state._branchById?.get(u.branch_id) || (state.branches || []).find(b => b.id === u.branch_id))
+            : null;
+          return attendanceMatchesSearch([
+            u.name,
+            u.employee_number,
+            typeof padEmpNum === 'function' ? padEmpNum(u.employee_number) : u.employee_number,
+            ROLE_LABELS[normalizeUserRole(u.role)],
+            getStaffJobTitle?.(u),
+            br?.name
+          ]);
+        });
         const canAny = canMarkAttendance();
+        const q = attendanceSearchNeedle();
         const branchGroup = (dept?.slug === 'galleries' && branchId)
           ? getAttendanceBranchGroups(dept).find(g => g.id === branchId)
           : null;
@@ -38884,7 +38936,11 @@
 
           if (selected) {
             if (selected.slug === 'galleries' && !state._attSelectedBranchId) {
-              syncAttendanceSearchVisibility(false);
+              syncAttendanceSearchVisibility(true);
+              const searchInp = document.getElementById('attSearchInput');
+              if (searchInp && searchInp.value !== (state._attSearch || '')) {
+                searchInp.value = state._attSearch || '';
+              }
               paintAttendanceHost(renderAttendanceBranchCardsHtml(selected));
             } else {
               try {
@@ -38903,7 +38959,11 @@
           } else {
             state._attSelectedDeptId = null;
             state._attSelectedBranchId = null;
-            syncAttendanceSearchVisibility(false);
+            syncAttendanceSearchVisibility(true);
+            const searchInp = document.getElementById('attSearchInput');
+            if (searchInp && searchInp.value !== (state._attSearch || '')) {
+              searchInp.value = state._attSearch || '';
+            }
             paintAttendanceHost(renderAttendanceDeptCardsHtml(depts));
           }
           syncAttendanceBackBtn();
