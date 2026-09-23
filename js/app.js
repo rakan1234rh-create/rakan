@@ -12532,14 +12532,6 @@
         const branchRankLabel = getRdBranchRankLabel(me);
         const empRankLabel = getRdEmpCommitmentRankLabel(me);
         const streakBadge = streakDays >= 30 ? 'بطل الالتزام لهذا الشهر' : (streakDays >= 10 ? 'منضبط هذا الشهر' : 'ابدأ سلسلة انضباطك');
-        const streakCelebrate = streakDays >= 10;
-        const streakBadgeIcon = streakDays >= 30 ? 'fa-trophy' : 'fa-medal';
-        const papersHtml = streakCelebrate
-          ? `<div class="rd-papers" aria-hidden="true">${Array.from({ length: 28 }, (_, i) => {
-              const tone = i % 3 === 0 ? 'gold' : 'green';
-              return `<span class="rd-paper rd-paper--${tone}" style="--i:${i}"></span>`;
-            }).join('')}</div>`
-          : '';
 
         let metricHtml = '';
         if (usesDashMonthlyViolationsMetric(me?.role)) {
@@ -12623,29 +12615,21 @@
           : '<div class="rd-list__row rd-list__row--empty"><div class="rd-list__sub">لا توجد تذاكر بعد</div></div>';
 
         host.innerHTML = `
-          <div class="rd-screen${streakCelebrate ? ' rd-screen--celeb' : ''}">
-            ${papersHtml}
+          <div class="rd-screen">
             <div class="rd-greet">
               <div class="rd-greet__date">${Sec.escapeHTML(greetingDate)}</div>
               <div class="rd-greet__name">مرحباً، ${Sec.escapeHTML(greetingName)}</div>
               <div class="rd-greet__sub">${Sec.escapeHTML(greetingSub)}</div>
             </div>
-            <div class="rd-streak${streakCelebrate ? ' rd-streak--flag' : ''}">
-              ${streakCelebrate ? `
-              <div class="rd-streak__flag" aria-hidden="true">
-                <div class="rd-streak__flag-wave">
-                  <img src="icons/redesign/saudi-flag.svg" alt="" decoding="async">
-                </div>
-              </div>
-              <div class="rd-streak__flag-veil" aria-hidden="true"></div>` : ''}
-              <div class="rd-streak__badge"><i class="fas ${streakBadgeIcon}" aria-hidden="true"></i>${Sec.escapeHTML(streakBadge)}</div>
+            <div class="rd-streak">
+              <div class="rd-streak__badge"><i class="fas fa-medal" aria-hidden="true"></i>${Sec.escapeHTML(streakBadge)}</div>
               <div class="rd-streak__ring">
                 <svg width="136" height="136" viewBox="0 0 132 132" aria-hidden="true">
-                  <circle class="rd-streak__track" cx="66" cy="66" r="54" fill="none" stroke-width="10"></circle>
-                  <circle class="rd-streak__prog" cx="66" cy="66" r="54" fill="none" stroke-width="10" stroke-linecap="round" stroke-dasharray="${CIRC}" stroke-dashoffset="${streakOffset}"></circle>
+                  <circle cx="66" cy="66" r="54" fill="none" stroke="var(--border)" stroke-width="10"></circle>
+                  <circle cx="66" cy="66" r="54" fill="none" stroke="var(--success)" stroke-width="10" stroke-linecap="round" stroke-dasharray="${CIRC}" stroke-dashoffset="${streakOffset}"></circle>
                 </svg>
                 <div class="rd-streak__center">
-                  ${streakCelebrate ? '' : '<i class="fas fa-fire" aria-hidden="true"></i>'}
+                  <i class="fas fa-fire" aria-hidden="true"></i>
                   <span class="rd-streak__days">${streakDays}</span>
                   <span class="rd-streak__lbl">يوم بدون مخالفات</span>
                 </div>
@@ -12688,40 +12672,12 @@
             </div>
           </div>`;
         host.hidden = false;
-        if (streakCelebrate) playRdHomePapersFall(host, me?.id);
         if (typeof syncMobBottomNavHeight === 'function') {
           requestAnimationFrame(() => {
             syncMobBottomNavHeight();
             requestAnimationFrame(syncMobBottomNavHeight);
           });
         }
-      }
-
-      /** Falling papers once when employee first opens home this session. */
-      function playRdHomePapersFall(host, userId) {
-        if (!host) return;
-        const screen = host.querySelector('.rd-screen--celeb');
-        if (!screen || !screen.querySelector('.rd-papers')) return;
-        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-          screen.classList.add('rd-screen--papers-static');
-          return;
-        }
-        const key = 'athar_rd_papers_' + (userId || 'x');
-        let already = false;
-        try { already = sessionStorage.getItem(key) === '1'; } catch (_) { /* noop */ }
-        if (already) {
-          screen.classList.add('rd-screen--papers-static');
-          return;
-        }
-        try { sessionStorage.setItem(key, '1'); } catch (_) { /* noop */ }
-        // Restart fall even if dashboard re-rendered mid-session on first paint.
-        screen.classList.remove('rd-screen--papers-fall');
-        void screen.offsetWidth;
-        screen.classList.add('rd-screen--papers-fall');
-        window.setTimeout(() => {
-          screen.classList.remove('rd-screen--papers-fall');
-          screen.classList.add('rd-screen--papers-static');
-        }, 4200);
       }
 
       function renderDashboard() {
