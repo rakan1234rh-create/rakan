@@ -35624,7 +35624,9 @@
               const signature = getReportableActiveBreakSignature();
               if (signature !== state._staffBreakOvertimeFilterSignature) {
                 state._staffBreakOvertimeFilterSignature = signature;
-                renderStaffBreaksPage({ soft: true }).catch(() => {});
+                if (!isStaffBreakActionBusy()) {
+                  renderStaffBreaksPage({ soft: true }).catch(() => {});
+                }
                 return;
               }
             }
@@ -36131,7 +36133,10 @@
 
             try { ensureStaffBreakTicker(); } catch (_) { /* noop */ }
             const tab = document.getElementById('tab-breaks');
-            if (tab?.classList.contains('active')) renderStaffBreaksPage({ soft: true });
+            // Don't replace the ring mid-click — keeps busy UI stable until RPC finishes.
+            if (tab?.classList.contains('active') && !isStaffBreakActionBusy()) {
+              renderStaffBreaksPage({ soft: true });
+            }
           })
           .on('postgres_changes', { event: '*', schema: 'public', table: 'staff_break_schedules' }, () => {
             // Duration edits must refresh minutes for every connected employee immediately
@@ -36525,7 +36530,10 @@
                   ? `<i class="fas fa-hourglass-half"></i>${state._myBreakDurationMins} دقيقة`
                   : '<i class="fas fa-ban"></i>لا يوجد بريك اليوم')));
           let actionsHtml;
-          if (active) {
+          if (isStaffBreakActionBusy()) {
+            const busyLbl = getMyActiveStaffBreak() ? 'جاري الإيقاف…' : 'جاري البدء…';
+            actionsHtml = `<button type="button" class="btn btn-primary rd-break-btn rd-break-btn--busy" disabled aria-busy="true"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i>${busyLbl}</button>`;
+          } else if (active) {
             actionsHtml = `<button type="button" class="btn btn-primary rd-break-btn rd-break-btn--danger" onclick="endStaffBreakFromUi()">إيقاف البريك</button>`;
           } else if (isPaused) {
             actionsHtml = `<button type="button" class="btn btn-primary rd-break-btn rd-break-btn--success" onclick="startStaffBreakFromUi()">متابعة البريك</button>`;
@@ -36624,7 +36632,10 @@
         const def = defs[kind] || defs.ready;
 
         let actionsHtml = '';
-        if (def.actions === 'start') {
+        if (isStaffBreakActionBusy()) {
+          const busyLbl = (active || overtime) ? 'جاري الإيقاف…' : 'جاري البدء…';
+          actionsHtml = `<button type="button" class="rd-break-btn rd-break-btn--busy" disabled aria-busy="true"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i>${busyLbl}</button>`;
+        } else if (def.actions === 'start') {
           actionsHtml = `<button type="button" class="rd-break-btn rd-break-btn--gold" onclick="startStaffBreakFromUi()">بدء البريك</button>`;
         } else if (def.actions === 'stop') {
           actionsHtml = `<button type="button" class="rd-break-btn rd-break-btn--danger" onclick="endStaffBreakFromUi()">إيقاف البريك</button>`;
@@ -37264,22 +37275,81 @@
         }
       }
 
+      const STAFF_BREAK_RPC_TIMEOUT_MS = 12000;
+
+      function isStaffBreakActionBusy() {
+        return !!state._staffBreakActionInFlight;
+      }
+
+      function setStaffBreakActionBusy(busy, label) {
+        state._staffBreakActionInFlight = !!busy;
+        const busyLbl = label || 'جاري…';
+        document.querySelectorAll('#rdBreaksRingHost .rd-break-btn, .rd-break-actions .rd-break-btn').forEach((btn) => {
+          if (!btn) return;
+          if (busy) {
+            if (!btn.dataset.breakIdleHtml) btn.dataset.breakIdleHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.setAttribute('aria-busy', 'true');
+            btn.classList.add('rd-break-btn--busy');
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin" aria-hidden="true"></i>${Sec.escapeHTML(busyLbl)}`;
+          } else {
+            btn.classList.remove('rd-break-btn--busy');
+            btn.removeAttribute('aria-busy');
+            if (btn.dataset.breakIdleHtml != null) {
+              btn.innerHTML = btn.dataset.breakIdleHtml;
+              delete btn.dataset.breakIdleHtml;
+            }
+            if (btn.getAttribute('aria-disabled') !== 'true') btn.disabled = false;
+          }
+        });
+        ['breakTypeRegular', 'breakTypeRestroom'].forEach((id) => {
+          const btn = document.getElementById(id);
+          if (!btn) return;
+          const locked = btn.getAttribute('aria-disabled') === 'true';
+          btn.disabled = busy || locked;
+          btn.classList.toggle('is-busy', !!busy);
+          if (busy) btn.setAttribute('aria-busy', 'true');
+          else btn.removeAttribute('aria-busy');
+        });
+        const otBtn = document.querySelector('#breakOvertimeModal .btn-primary');
+        if (otBtn) {
+          otBtn.disabled = !!busy;
+          otBtn.setAttribute('aria-busy', busy ? 'true' : 'false');
+        }
+      }
+
+      async function staffBreakRpc(fnName, args) {
+        let timer;
+        const timeout = new Promise((_, reject) => {
+          timer = setTimeout(
+            () => reject(new Error('انتهت مهلة الشبكة — حاول مرة أخرى')),
+            STAFF_BREAK_RPC_TIMEOUT_MS
+          );
+        });
+        try {
+          return await Promise.race([sb.rpc(fnName, args), timeout]);
+        } finally {
+          clearTimeout(timer);
+        }
+      }
+
       function setBreakTypeOptionState(type, buttonId, metaId) {
         const button = document.getElementById(buttonId);
         const meta = document.getElementById(metaId);
         const mins = resolveBreakDurationMinsForUser(state.currentUser, type);
         const exhausted = isMyBreakAllowanceExhausted(type);
-        const disabled = !mins || exhausted;
+        const locked = !mins || exhausted;
+        const disabled = locked || isStaffBreakActionBusy();
         if (button) {
           button.disabled = disabled;
-          button.setAttribute('aria-disabled', disabled ? 'true' : 'false');
+          button.setAttribute('aria-disabled', locked ? 'true' : 'false');
         }
         if (meta) {
           meta.textContent = exhausted
             ? 'اكتملت مدة اليوم'
             : (mins ? `${mins} دقيقة اليوم` : 'غير مجدول اليوم');
         }
-        return !disabled;
+        return !locked;
       }
 
       function openBreakTypeModal() {
@@ -37293,17 +37363,27 @@
           showToast('لا توجد مدة بريك متاحة اليوم', 'warning');
           return;
         }
+        // Skip modal hop when only one type is available today.
+        if (regularAvailable && !restroomAvailable) {
+          startStaffBreakFromUi('regular');
+          return;
+        }
+        if (restroomAvailable && !regularAvailable) {
+          startStaffBreakFromUi('restroom');
+          return;
+        }
         openModal('breakTypeModal');
       }
 
       async function startStaffBreakFromUi(requestedType) {
+        if (isStaffBreakActionBusy()) return;
         if (!canTakeStaffBreak()) {
           showToast('دورك لا يسمح ببدء بريك', 'warning');
           return;
         }
         if (getMyActiveStaffBreak()) {
           showToast('لديك بريك نشط بالفعل', 'info');
-          await renderStaffBreaksPage();
+          await renderStaffBreaksPage({ soft: true });
           return;
         }
         const colleague = getActiveBreakColleagueInMyBranch();
@@ -37328,19 +37408,15 @@
           return;
         }
         closeModal('breakTypeModal');
+        setStaffBreakActionBusy(true, 'جاري البدء…');
         try {
-          const { data, error } = await sb.rpc('start_staff_break', {
+          const { data, error } = await staffBreakRpc('start_staff_break', {
             p_break_type: breakType
           });
           if (error) throw error;
           if (!data?.ok) {
             showToast(data?.error || 'تعذّر بدء البريك', 'error');
-            // Sync UI if server already has an open break the client missed
-            if (data?.break || /نشط|بريك/i.test(String(data?.error || ''))) {
-              await renderStaffBreaksPage();
-            } else if (data?.branch_busy || data?.exhausted) {
-              await renderStaffBreaksPage({ soft: true });
-            }
+            await renderStaffBreaksPage({ soft: true });
             return;
           }
           if (data.break) {
@@ -37362,13 +37438,17 @@
           await renderStaffBreaksPage({ soft: true });
         } catch (e) {
           showToast('فشل بدء البريك: ' + (e.message || e), 'error');
+        } finally {
+          setStaffBreakActionBusy(false);
         }
       }
 
       async function endStaffBreakFromUi(reasonFromModal) {
+        if (isStaffBreakActionBusy()) return;
         const mine = getMyActiveStaffBreak();
         if (!mine) {
           showToast('لا يوجد بريك نشط', 'info');
+          await renderStaffBreaksPage({ soft: true });
           return;
         }
         const remaining = getBreakRemainingSeconds(mine);
@@ -37377,8 +37457,9 @@
           openBreakOvertimeModal(mine);
           return;
         }
+        setStaffBreakActionBusy(true, 'جاري الإيقاف…');
         try {
-          const { data, error } = await sb.rpc('end_staff_break', {
+          const { data, error } = await staffBreakRpc('end_staff_break', {
             p_break_id: mine.id,
             p_overtime_reason: reasonFromModal || null
           });
@@ -37389,6 +37470,7 @@
           }
           if (!data?.ok) {
             showToast(data?.error || 'تعذّر إيقاف البريك', 'error');
+            await renderStaffBreaksPage({ soft: true });
             return;
           }
           closeModal('breakOvertimeModal');
@@ -37410,10 +37492,13 @@
           await renderStaffBreaksPage({ soft: true });
         } catch (e) {
           showToast('فشل إيقاف البريك: ' + (e.message || e), 'error');
+        } finally {
+          setStaffBreakActionBusy(false);
         }
       }
 
       async function adminForceEndStaffBreakFromUi(breakId) {
+        if (isStaffBreakActionBusy()) return;
         if (!canAdminForceEndStaffBreak()) {
           showToast('الإجراء لمدير النظام فقط', 'warning');
           return;
@@ -37432,8 +37517,9 @@
         }
         const name = brk._userName || 'الموظف';
         if (!window.confirm(`إيقاف بريك ${name} المتجاوز للمدة؟`)) return;
+        setStaffBreakActionBusy(true, 'جاري الإيقاف…');
         try {
-          const { data, error } = await sb.rpc('admin_force_end_staff_break', { p_break_id: id });
+          const { data, error } = await staffBreakRpc('admin_force_end_staff_break', { p_break_id: id });
           if (error) throw error;
           if (!data?.ok) {
             showToast(data?.error || 'تعذّر إيقاف البريك', 'error');
@@ -37449,6 +37535,8 @@
           await renderStaffBreaksPage({ soft: true });
         } catch (e) {
           showToast('فشل الإيقاف الإداري: ' + (e.message || e), 'error');
+        } finally {
+          setStaffBreakActionBusy(false);
         }
       }
 
