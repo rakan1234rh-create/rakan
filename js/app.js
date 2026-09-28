@@ -37901,6 +37901,71 @@
         return `${weekday} ${d} ${monthName}، ${y}`;
       }
 
+      /** مثل: الجمعة, 21 أغسطس 2026 */
+      function formatAttendanceDateReportLine(iso) {
+        const parts = String(iso || '').split('-').map(Number);
+        if (parts.length < 3 || !parts[0]) return formatAttendanceDateDisplay(iso);
+        const [y, m, d] = parts;
+        const dt = typeof ksaCalendarDate === 'function'
+          ? ksaCalendarDate(y, m - 1, d)
+          : new Date(y, m - 1, d);
+        const weekday = ATT_AR_WEEKDAYS[dt.getDay()] || '';
+        const monthName = ATT_AR_MONTHS[(m || 1) - 1] || '';
+        return `${weekday}, ${d} ${monthName} ${y}`;
+      }
+
+      /**
+       * دورة الحضور: من 21 الشهر إلى 20 الشهر التالي.
+       * مثال: 15 سبتمبر → 21 أغسطس … 20 سبتمبر
+       *         21 سبتمبر → 21 سبتمبر … 20 أكتوبر
+       */
+      function getAttendanceCycleRange(refIso) {
+        const iso = String(refIso || getAttendanceWorkDate() || getAttendanceTodayKey()).slice(0, 10);
+        const p = String(iso).split('-').map(Number);
+        if (p.length < 3 || !p[0]) return null;
+        let y = p[0];
+        let m0 = p[1] - 1;
+        const day = p[2];
+        let fromY = y;
+        let fromM0 = m0;
+        if (day < 21) {
+          fromM0 -= 1;
+          if (fromM0 < 0) {
+            fromM0 = 11;
+            fromY -= 1;
+          }
+        }
+        let toY = fromY;
+        let toM0 = fromM0 + 1;
+        if (toM0 > 11) {
+          toM0 = 0;
+          toY += 1;
+        }
+        const from = `${fromY}-${String(fromM0 + 1).padStart(2, '0')}-21`;
+        const to = `${toY}-${String(toM0 + 1).padStart(2, '0')}-20`;
+        return { from, to, fromLabel: formatAttendanceDateReportLine(from), toLabel: formatAttendanceDateReportLine(to) };
+      }
+
+      function eachAttendanceIsoInRange(fromIso, toIso) {
+        const out = [];
+        const startParts = String(fromIso || '').split('-').map(Number);
+        const endIso = String(toIso || '').slice(0, 10);
+        if (startParts.length < 3 || !startParts[0] || !endIso) return out;
+        let dt = typeof ksaCalendarDate === 'function'
+          ? ksaCalendarDate(startParts[0], startParts[1] - 1, startParts[2])
+          : new Date(startParts[0], startParts[1] - 1, startParts[2]);
+        let guard = 0;
+        while (guard++ < 62) {
+          const iso = typeof ksaCalendarToIso === 'function'
+            ? ksaCalendarToIso(dt)
+            : `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+          if (!iso || iso > endIso) break;
+          out.push(iso);
+          dt = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate() + 1);
+        }
+        return out;
+      }
+
       function syncAttendanceDateDisplay() {
         const iso = getAttendanceWorkDate();
         const heading = document.getElementById('attDateHeading');
@@ -38391,6 +38456,207 @@
         if (error) throw error;
         state.attendanceRecords = data || [];
         return state.attendanceRecords;
+      }
+
+      async function loadAttendanceRecordsForRange(dept, fromIso, toIso, branchId) {
+        const deptId = typeof dept === 'string' ? dept : dept?.id;
+        const slug = typeof dept === 'object' && dept
+          ? dept.slug
+          : (state.attendanceDepartments || []).find(d => d.id === deptId)?.slug;
+        if (!deptId || !fromIso || !toIso) return [];
+        const selectCols = 'id,user_id,department_id,work_date,status,check_in_time,check_out_time,note,marked_by,updated_at';
+        if (slug === 'galleries') {
+          const ids = getAttendanceDeptUsers(dept, branchId).map(u => u.id).filter(Boolean);
+          if (!ids.length) return [];
+          const chunkSize = 80;
+          const rows = [];
+          for (let i = 0; i < ids.length; i += chunkSize) {
+            const part = ids.slice(i, i + chunkSize);
+            const { data, error } = await sb
+              .from('attendance_records')
+              .select(selectCols)
+              .gte('work_date', fromIso)
+              .lte('work_date', toIso)
+              .in('user_id', part);
+            if (error) throw error;
+            if (data?.length) rows.push(...data);
+          }
+          return rows;
+        }
+        const { data, error } = await sb
+          .from('attendance_records')
+          .select(selectCols)
+          .eq('department_id', deptId)
+          .gte('work_date', fromIso)
+          .lte('work_date', toIso);
+        if (error) throw error;
+        return data || [];
+      }
+
+      function attFormatTimeForExport(value) {
+        const hm24 = typeof attTimeToInput === 'function' ? attTimeToInput(value) : String(value || '').slice(0, 5);
+        if (!hm24) return '';
+        if (typeof attPartsFromHm24 === 'function') {
+          const parts = attPartsFromHm24(hm24);
+          return `${parts.hm} ${parts.mer}`;
+        }
+        return hm24;
+      }
+
+      function buildAttendanceCycleExportRows(users, records, dateList, dept, branchId) {
+        const byUserDate = new Map();
+        for (const r of records || []) {
+          if (!r?.user_id || !r?.work_date) continue;
+          byUserDate.set(`${r.user_id}|${String(r.work_date).slice(0, 10)}`, r);
+        }
+        if (!state._branchById) {
+          try { rebuildLookupMaps(); } catch (_) { /* noop */ }
+        }
+        const branchGroup = (dept?.slug === 'galleries' && branchId)
+          ? getAttendanceBranchGroups(dept).find(g => g.id === branchId)
+          : null;
+        const headers = [
+          'الرقم الوظيفي',
+          'الاسم',
+          'الدور',
+          'القسم',
+          'الفرع',
+          'التاريخ',
+          'اليوم',
+          'الحالة',
+          'وقت الحضور',
+          'وقت الانصراف',
+          'ملاحظة'
+        ];
+        const rows = [];
+        for (const u of users) {
+          const br = u.branch_id
+            ? (state._branchById?.get(u.branch_id) || (state.branches || []).find(b => b.id === u.branch_id))
+            : null;
+          const empNo = typeof padEmpNum === 'function'
+            ? (padEmpNum(u.employee_number) || u.employee_number || '')
+            : (u.employee_number || '');
+          const roleLbl = ROLE_LABELS[normalizeUserRole(u.role)] || u.role || '';
+          const deptName = dept?.name || '';
+          const branchName = branchGroup?.name || br?.name || '';
+          for (const dayIso of dateList) {
+            const rec = byUserDate.get(`${u.id}|${dayIso}`);
+            const status = rec?.status || 'unset';
+            rows.push([
+              empNo,
+              u.name || '',
+              roleLbl,
+              deptName,
+              branchName,
+              dayIso,
+              formatAttendanceDateReportLine(dayIso),
+              attStatusLabel(status),
+              status === 'present' ? attFormatTimeForExport(rec?.check_in_time) : '',
+              status === 'present' ? attFormatTimeForExport(rec?.check_out_time) : '',
+              rec?.note || ''
+            ]);
+          }
+        }
+        return { headers, rows };
+      }
+
+      async function exportAttendanceCycleReport() {
+        if (!canViewAttendanceTab()) {
+          showToast('لا تملك صلاحية عرض الحضور', 'warning');
+          return;
+        }
+        const cycle = getAttendanceCycleRange(getAttendanceWorkDate());
+        if (!cycle) {
+          showToast('تعذّر تحديد دورة الحضور', 'error');
+          return;
+        }
+
+        let depts = [];
+        let branchId = state._attSelectedBranchId || null;
+        if (state._attSelectedDeptId) {
+          const d = (state.attendanceDepartments || []).find(x => x.id === state._attSelectedDeptId);
+          if (d) depts = [d];
+        }
+        if (!depts.length) {
+          depts = typeof getVisibleAttendanceDepartments === 'function'
+            ? getVisibleAttendanceDepartments()
+            : (state.attendanceDepartments || []);
+          branchId = null;
+        }
+        if (!depts.length) {
+          showToast('لا توجد أقسام للتصدير', 'warning');
+          return;
+        }
+
+        const ok = window.confirm(
+          `تنزيل تقرير الحضور للدورة:\n${cycle.fromLabel}\nإلى\n${cycle.toLabel}`
+        );
+        if (!ok) return;
+
+        const btn = document.getElementById('attCycleExportBtn');
+        const prevHtml = btn?.innerHTML;
+        if (btn) {
+          btn.disabled = true;
+          btn.innerHTML = '<i class="fas fa-spinner fa-spin" aria-hidden="true"></i><span>جاري التصدير…</span>';
+        }
+
+        try {
+          const dateList = eachAttendanceIsoInRange(cycle.from, cycle.to);
+          if (!dateList.length) {
+            showToast('لا توجد أيام في هذه الدورة', 'warning');
+            return;
+          }
+
+          const headers = [
+            'الرقم الوظيفي', 'الاسم', 'الدور', 'القسم', 'الفرع',
+            'التاريخ', 'اليوم', 'الحالة', 'وقت الحضور', 'وقت الانصراف', 'ملاحظة'
+          ];
+          const allRows = [];
+          for (const dept of depts) {
+            // For galleries at dept root (no branch), export all branches together
+            const users = getAttendanceDeptUsers(dept, branchId);
+            if (!users.length) continue;
+            const records = await loadAttendanceRecordsForRange(dept, cycle.from, cycle.to, branchId);
+            const built = buildAttendanceCycleExportRows(users, records, dateList, dept, branchId);
+            allRows.push(...built.rows);
+          }
+
+          if (!allRows.length) {
+            showToast('لا توجد بيانات للتصدير في هذه الدورة', 'warning');
+            return;
+          }
+
+          const XLSX = await ensureXlsxLib();
+          const meta = [
+            ['تقرير الحضور والانصراف — دورة 21 إلى 20'],
+            ['من', cycle.fromLabel],
+            ['إلى', cycle.toLabel],
+            ['تاريخ التصدير', formatAttendanceDateReportLine(getAttendanceTodayKey())],
+            []
+          ];
+          const sheetData = [
+            ...meta,
+            headers,
+            ...allRows.map(row => row.map(v => String(v ?? '').replace(/\r?\n+/g, ' ').trim()))
+          ];
+          const ws = XLSX.utils.aoa_to_sheet(sheetData);
+          ws['!cols'] = [
+            { wch: 14 }, { wch: 22 }, { wch: 14 }, { wch: 16 }, { wch: 16 },
+            { wch: 12 }, { wch: 26 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 24 }
+          ];
+          const wb = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(wb, ws, 'الحضور');
+          const fileName = `attendance-${cycle.from}_to_${cycle.to}.xlsx`;
+          XLSX.writeFile(wb, fileName, { cellStyles: true });
+          showToast('تم تنزيل تقرير دورة الحضور ✓', 'success');
+        } catch (e) {
+          showToast('تعذّر تنزيل التقرير: ' + (e.message || e), 'error');
+        } finally {
+          if (btn) {
+            btn.disabled = false;
+            if (prevHtml != null) btn.innerHTML = prevHtml;
+          }
+        }
       }
 
       function renderAttendanceDeptCardsHtml(depts) {
@@ -39294,6 +39560,7 @@
       window.attDpChangeMonth = attDpChangeMonth;
       window.attDpPickDay = attDpPickDay;
       window.attDpSelectToday = attDpSelectToday;
+      window.exportAttendanceCycleReport = exportAttendanceCycleReport;
 
 
       // ============================================================================
