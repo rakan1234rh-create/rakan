@@ -1118,7 +1118,7 @@
   <link rel="stylesheet" href="styles/custom/athar-locations-redesign.css?v=loc4" id="athar-locations-redesign">
   <link rel="stylesheet" href="styles/custom/athar-users-redesign.css?v=usr5" id="athar-users-redesign">
   <link rel="stylesheet" href="styles/custom/athar-breaks-redesign.css?v=brk16" id="athar-breaks-redesign">
-  <link rel="stylesheet" href="styles/custom/athar-attendance-redesign.css?v=att16" id="athar-attendance-redesign">
+  <link rel="stylesheet" href="styles/custom/athar-attendance-redesign.css?v=att17" id="athar-attendance-redesign">
   <link rel="stylesheet" href="styles/custom/athar-redesign-staging.css?v=mob-ui22" id="athar-redesign-staging">
   <link rel="stylesheet" href="styles/custom/athar-complaints-redesign.css?v=cmpl41" id="athar-complaints-redesign">
 
@@ -3754,7 +3754,9 @@
               <div class="wf-panel-banner">
                 <div class="wf-panel-intro">
                   <h2 class="wf-panel-title">الحضور والانصراف</h2>
-                  <p class="wf-panel-sub">تسجيل دوام الموظفين حسب القسم</p>
+                  <div class="rd-att-tabs" role="tablist" aria-label="أقسام الحضور">
+                    <button type="button" class="rd-att-tab is-on" role="tab" aria-selected="true">المتابعة</button>
+                  </div>
                 </div>
                 <div class="toolbar wf-toolbar rd-attendance-toolbar">
                   <div class="rd-att-toolbar__lead">
@@ -3767,38 +3769,21 @@
                     <div class="rd-att-date-heading" id="attDateHeading" aria-live="polite">—</div>
                   </div>
                   <div class="rd-att-toolbar__trail">
-                    <div class="rd-att-period" id="attPeriodWrap">
-                      <button type="button" class="rd-att-period__btn" id="attPeriodBtn"
-                        onclick="toggleAttPeriodMenu(event)" aria-haspopup="listbox" aria-expanded="false"
-                        aria-controls="attPeriodMenu">
-                        <span id="attPeriodBtnLabel">فترة الرواتب</span>
-                        <i class="fas fa-chevron-up" aria-hidden="true"></i>
-                      </button>
-                      <div class="rd-att-period__menu" id="attPeriodMenu" role="listbox" hidden>
-                        <button type="button" class="rd-att-period__opt" role="option" data-att-period="monthly"
-                          onclick="setAttReportPeriodMode('monthly')">شهري</button>
-                        <button type="button" class="rd-att-period__opt is-on" role="option" data-att-period="payroll"
-                          onclick="setAttReportPeriodMode('payroll')">
-                          <span>فترة الرواتب</span>
-                          <i class="fas fa-check" aria-hidden="true"></i>
-                        </button>
-                      </div>
-                    </div>
                     <div class="rd-attendance-date-wrap rd-att-date-nav">
-                      <button type="button" class="rd-att-date-nav__btn" onclick="attendanceShiftMonth(-1)" aria-label="الشهر السابق">
+                      <button type="button" class="rd-att-date-nav__btn" onclick="attendanceShiftDate(-1)" aria-label="اليوم السابق">
                         <i class="fas fa-chevron-right" aria-hidden="true"></i>
                       </button>
                       <button type="button" class="rd-att-date-btn" id="attDateBtn"
                         onclick="toggleAttDatePicker(event)" aria-haspopup="dialog" aria-expanded="false"
-                        aria-controls="attDatePickerPopup" aria-label="اختيار شهر الحضور">
+                        aria-controls="attDatePickerPopup" aria-label="اختيار تاريخ الحضور">
                         <i class="fas fa-calendar-day" aria-hidden="true"></i>
                       </button>
-                      <button type="button" class="rd-att-date-nav__btn" onclick="attendanceShiftMonth(1)" aria-label="الشهر التالي">
+                      <button type="button" class="rd-att-date-nav__btn" onclick="attendanceShiftDate(1)" aria-label="اليوم التالي">
                         <i class="fas fa-chevron-left" aria-hidden="true"></i>
                       </button>
                       <input type="hidden" id="attWorkDate" value="">
                       <div class="date-picker-popup att-date-picker" id="attDatePickerPopup" role="dialog"
-                        aria-label="اختيار شهر الحضور" onclick="event.stopPropagation()">
+                        aria-label="اختيار تاريخ الحضور" onclick="event.stopPropagation()">
                         <div class="dp-popup-body">
                           <div class="dp-header-fig">
                             <button type="button" class="dp-month-trigger" onclick="attDpToggleMonthYear()"
@@ -3823,16 +3808,40 @@
                         </div>
                       </div>
                     </div>
-                    <button type="button" class="rp-tool-btn rd-att-cycle-export" id="attCycleExportBtn"
-                      onclick="exportAttendanceCycleReport()" title="تنزيل تقرير الحضور للفترة المحددة">
-                      <i class="fas fa-file-excel" aria-hidden="true"></i>
-                      <span>تنزيل التقرير</span>
-                    </button>
                     <label class="rd-att-search" id="attSearchWrap" hidden>
                       <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
                       <input type="search" id="attSearchInput" placeholder="بحث" autocomplete="off"
                         oninput="onAttendanceSearchInput()">
                     </label>
+                    <div class="rd-att-filter" id="attFilterWrap">
+                      <button type="button" class="rp-tool-btn rd-att-filter__btn" id="attFilterBtn"
+                        onclick="toggleAttStatusFilterMenu(event)" aria-haspopup="listbox" aria-expanded="false">
+                        <i class="fas fa-filter" aria-hidden="true"></i><span>تصفية</span>
+                      </button>
+                      <div class="rd-att-filter__menu" id="attFilterMenu" role="listbox" hidden></div>
+                    </div>
+                    <div class="rd-att-period" id="attPeriodWrap">
+                      <button type="button" class="rd-att-period__btn" id="attPeriodBtn"
+                        onclick="toggleAttPeriodMenu(event)" aria-haspopup="listbox" aria-expanded="false"
+                        aria-controls="attPeriodMenu">
+                        <span id="attPeriodBtnLabel">فترة الرواتب</span>
+                        <i class="fas fa-chevron-up" aria-hidden="true"></i>
+                      </button>
+                      <div class="rd-att-period__menu" id="attPeriodMenu" role="listbox" hidden>
+                        <button type="button" class="rd-att-period__opt" role="option" data-att-period="monthly"
+                          onclick="setAttReportPeriodMode('monthly')">شهري</button>
+                        <button type="button" class="rd-att-period__opt is-on" role="option" data-att-period="payroll"
+                          onclick="setAttReportPeriodMode('payroll')">
+                          <span>فترة الرواتب</span>
+                          <i class="fas fa-check" aria-hidden="true"></i>
+                        </button>
+                      </div>
+                    </div>
+                    <button type="button" class="rp-tool-btn rd-att-cycle-export" id="attCycleExportBtn"
+                      onclick="exportAttendanceCycleReport()" title="تنزيل تقرير الحضور للفترة المحددة">
+                      <i class="fas fa-file-excel" aria-hidden="true"></i>
+                      <span>تنزيل</span>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -5286,7 +5295,7 @@
   </div><!-- /#appWrap -->
 
     <div id="rdCmplOverlayHost"></div>
-    <script src="js/app.js?v=attcyc3"></script>
+    <script src="js/app.js?v=attmon1"></script>
         <style>
       @media (max-width: 992px) {
         /* ── workflow: منع التمدد الأفقي ── */
