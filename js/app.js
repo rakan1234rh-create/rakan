@@ -38279,11 +38279,13 @@
             ? dpBuildMonthGridHtml(months, attDpState.viewMonth, 'attDpPickMonth')
             : '';
           grid.classList.add('dp-mode-pick');
+          if (typeof dpPickerSyncChrome === 'function') dpPickerSyncChrome(popup, 'months');
           return;
         }
 
         grid.classList.remove('dp-mode-pick');
         label.textContent = `${months[attDpState.viewMonth]} ${attDpState.viewYear}`;
+        if (typeof dpPickerSyncChrome === 'function') dpPickerSyncChrome(popup, 'days');
 
         const today = typeof ksaTodayCalendar === 'function' ? ksaTodayCalendar() : new Date();
         const firstDay = typeof ksaCalendarDate === 'function'
@@ -38327,7 +38329,6 @@
           html += `<button type="button" class="dp-day other-month" disabled>${i}</button>`;
         }
         grid.innerHTML = html;
-        if (typeof dpPickerSyncChrome === 'function') dpPickerSyncChrome(popup, attDpState.pickerView);
       }
 
       function toggleAttDatePicker(e) {
@@ -38340,6 +38341,9 @@
           return;
         }
         try { closeAttPeriodMenu(); } catch (_) { /* noop */ }
+        if (typeof dpWireMonthPickOnPopup === 'function') {
+          dpWireMonthPickOnPopup(popup, attDpPickMonth);
+        }
         ensureAttendanceDateInput();
         const iso = getAttendanceWorkDate();
         attDpState.selected = typeof ksaDateFromIso === 'function' ? ksaDateFromIso(iso) : new Date(iso + 'T12:00:00');
@@ -38349,7 +38353,8 @@
         } else if (typeof ksaInitViewState === 'function') {
           ksaInitViewState(attDpState);
         }
-        attDpState.pickerView = 'days';
+        // Open on month grid so report month is one tap away
+        attDpState.pickerView = 'months';
         renderAttDatePicker();
         popup.classList.add('open');
         btn.classList.add('is-open');
@@ -38364,9 +38369,16 @@
       }
 
       function attDpPickMonth(monthIndex) {
-        attDpState.viewMonth = monthIndex;
-        attDpState.pickerView = 'days';
-        renderAttDatePicker();
+        const idx = Number(monthIndex);
+        if (!Number.isFinite(idx) || idx < 0 || idx > 11) return;
+        attDpState.viewMonth = idx;
+        const y = attDpState.viewYear || new Date().getFullYear();
+        // Anchor day for the selected month (payroll named by month-end day 20)
+        const day = getAttReportPeriodMode() === 'monthly' ? 1 : 20;
+        const last = new Date(y, idx + 1, 0).getDate();
+        const d = Math.min(day, last);
+        const iso = `${y}-${String(idx + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        attDpPickDay(iso);
       }
 
       function attDpChangeMonth(dir) {
