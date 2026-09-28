@@ -125,6 +125,10 @@ html.athar-staging-redesign.mr-desktop-ui #tab-attendance .rd-attendance-panel.w
   justify-content: center;
 }
 
+.rd-att-cycle-export {
+  white-space: nowrap;
+}
+
 .rd-att-date-btn {
   display: inline-flex;
   align-items: center;
