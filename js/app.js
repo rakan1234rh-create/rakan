@@ -16218,6 +16218,10 @@
           !attDateBtn?.contains(e.target)) {
           closeAttDatePicker();
         }
+        const attPeriodWrap = document.getElementById('attPeriodWrap');
+        if (attPeriodWrap && !attPeriodWrap.contains(e.target) && typeof closeAttPeriodMenu === 'function') {
+          closeAttPeriodMenu();
+        }
         const ntTimePopup = document.getElementById('ntTimePickerPopup');
         const ntTimeBtn = document.getElementById('nt-timeBtn');
         if (ntTimePopup?.classList.contains('open') &&
@@ -37915,35 +37919,56 @@
       }
 
       /**
-       * دورة الحضور: من 21 الشهر إلى 20 الشهر التالي.
-       * مثال: 15 سبتمبر → 21 أغسطس … 20 سبتمبر
-       *         21 سبتمبر → 21 سبتمبر … 20 أكتوبر
+       * فترة التقرير حسب الوضع والشهر المختار (من تاريخ العمل):
+       * - فترة الرواتب: من 21 الشهر السابق → 20 الشهر المختار
+       * - شهري: من 1 → آخر يوم في الشهر المختار
+       * مثال (سبتمبر 2026 + رواتب): 21 أغسطس … 20 سبتمبر
        */
-      function getAttendanceCycleRange(refIso) {
+      function getAttReportPeriodMode() {
+        return state._attReportPeriodMode === 'monthly' ? 'monthly' : 'payroll';
+      }
+
+      function getAttendanceReportRange(refIso) {
         const iso = String(refIso || getAttendanceWorkDate() || getAttendanceTodayKey()).slice(0, 10);
         const p = String(iso).split('-').map(Number);
         if (p.length < 3 || !p[0]) return null;
-        let y = p[0];
-        let m0 = p[1] - 1;
-        const day = p[2];
-        let fromY = y;
-        let fromM0 = m0;
-        if (day < 21) {
-          fromM0 -= 1;
-          if (fromM0 < 0) {
-            fromM0 = 11;
-            fromY -= 1;
-          }
+        const y = p[0];
+        const m0 = p[1] - 1;
+        const mode = getAttReportPeriodMode();
+        if (mode === 'monthly') {
+          const last = new Date(y, m0 + 1, 0).getDate();
+          const from = `${y}-${String(m0 + 1).padStart(2, '0')}-01`;
+          const to = `${y}-${String(m0 + 1).padStart(2, '0')}-${String(last).padStart(2, '0')}`;
+          return {
+            mode,
+            from,
+            to,
+            fromLabel: formatAttendanceDateReportLine(from),
+            toLabel: formatAttendanceDateReportLine(to),
+            title: 'تقرير الحضور — شهري'
+          };
         }
-        let toY = fromY;
-        let toM0 = fromM0 + 1;
-        if (toM0 > 11) {
-          toM0 = 0;
-          toY += 1;
+        let fromY = y;
+        let fromM0 = m0 - 1;
+        if (fromM0 < 0) {
+          fromM0 = 11;
+          fromY -= 1;
         }
         const from = `${fromY}-${String(fromM0 + 1).padStart(2, '0')}-21`;
-        const to = `${toY}-${String(toM0 + 1).padStart(2, '0')}-20`;
-        return { from, to, fromLabel: formatAttendanceDateReportLine(from), toLabel: formatAttendanceDateReportLine(to) };
+        const to = `${y}-${String(m0 + 1).padStart(2, '0')}-20`;
+        return {
+          mode,
+          from,
+          to,
+          fromLabel: formatAttendanceDateReportLine(from),
+          toLabel: formatAttendanceDateReportLine(to),
+          title: 'تقرير الحضور — فترة الرواتب'
+        };
+      }
+
+      /** @deprecated use getAttendanceReportRange */
+      function getAttendanceCycleRange(refIso) {
+        return getAttendanceReportRange(refIso);
       }
 
       function eachAttendanceIsoInRange(fromIso, toIso) {
@@ -37966,12 +37991,85 @@
         return out;
       }
 
+      function syncAttPeriodMenuUi() {
+        const mode = getAttReportPeriodMode();
+        const label = document.getElementById('attPeriodBtnLabel');
+        if (label) label.textContent = mode === 'monthly' ? 'شهري' : 'فترة الرواتب';
+        document.querySelectorAll('#attPeriodMenu [data-att-period]').forEach((btn) => {
+          const on = btn.getAttribute('data-att-period') === mode;
+          btn.classList.toggle('is-on', on);
+          btn.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+      }
+
+      function closeAttPeriodMenu() {
+        const menu = document.getElementById('attPeriodMenu');
+        const btn = document.getElementById('attPeriodBtn');
+        if (menu) menu.hidden = true;
+        if (btn) {
+          btn.setAttribute('aria-expanded', 'false');
+          btn.classList.remove('is-open');
+        }
+      }
+
+      function toggleAttPeriodMenu(ev) {
+        if (ev) {
+          ev.preventDefault();
+          ev.stopPropagation();
+        }
+        const menu = document.getElementById('attPeriodMenu');
+        const btn = document.getElementById('attPeriodBtn');
+        if (!menu || !btn) return;
+        const open = menu.hidden;
+        if (open) {
+          try { closeAttDatePicker(); } catch (_) { /* noop */ }
+          menu.hidden = false;
+          btn.setAttribute('aria-expanded', 'true');
+          btn.classList.add('is-open');
+          syncAttPeriodMenuUi();
+        } else {
+          closeAttPeriodMenu();
+        }
+      }
+
+      function setAttReportPeriodMode(mode) {
+        state._attReportPeriodMode = mode === 'monthly' ? 'monthly' : 'payroll';
+        syncAttPeriodMenuUi();
+        closeAttPeriodMenu();
+        syncAttendanceDateDisplay();
+      }
+
       function syncAttendanceDateDisplay() {
-        const iso = getAttendanceWorkDate();
+        const range = getAttendanceReportRange(getAttendanceWorkDate());
         const heading = document.getElementById('attDateHeading');
-        if (heading) heading.textContent = formatAttendanceDateLong(iso);
+        if (heading) {
+          heading.textContent = range
+            ? `${range.fromLabel} — ${range.toLabel}`
+            : formatAttendanceDateLong(getAttendanceWorkDate());
+        }
         const el = document.getElementById('attDateDisplay');
-        if (el) el.textContent = formatAttendanceDateDisplay(iso);
+        if (el) el.textContent = range ? `${range.from} → ${range.to}` : formatAttendanceDateDisplay(getAttendanceWorkDate());
+        syncAttPeriodMenuUi();
+      }
+
+      function attendanceShiftMonth(deltaMonths) {
+        const iso = getAttendanceWorkDate();
+        const parts = String(iso).split('-').map(Number);
+        if (parts.length < 3) return;
+        let y = parts[0];
+        let m0 = parts[1] - 1 + Number(deltaMonths || 0);
+        while (m0 > 11) { m0 -= 12; y += 1; }
+        while (m0 < 0) { m0 += 12; y -= 1; }
+        // Anchor day inside the selected month (1st for monthly, 20th for payroll naming)
+        const day = getAttReportPeriodMode() === 'monthly' ? 1 : 20;
+        const last = new Date(y, m0 + 1, 0).getDate();
+        const d = Math.min(day, last);
+        const next = `${y}-${String(m0 + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const input = document.getElementById('attWorkDate');
+        if (input) input.value = next;
+        state._attWorkDate = next;
+        syncAttendanceDateDisplay();
+        onAttendanceDateChange();
       }
 
       function attendanceShiftDate(deltaDays) {
@@ -38241,6 +38339,7 @@
           closeAttDatePicker();
           return;
         }
+        try { closeAttPeriodMenu(); } catch (_) { /* noop */ }
         ensureAttendanceDateInput();
         const iso = getAttendanceWorkDate();
         attDpState.selected = typeof ksaDateFromIso === 'function' ? ksaDateFromIso(iso) : new Date(iso + 'T12:00:00');
@@ -38565,9 +38664,9 @@
           showToast('لا تملك صلاحية عرض الحضور', 'warning');
           return;
         }
-        const cycle = getAttendanceCycleRange(getAttendanceWorkDate());
+        const cycle = getAttendanceReportRange(getAttendanceWorkDate());
         if (!cycle) {
-          showToast('تعذّر تحديد دورة الحضور', 'error');
+          showToast('تعذّر تحديد فترة التقرير', 'error');
           return;
         }
 
@@ -38588,8 +38687,9 @@
           return;
         }
 
+        const modeLbl = cycle.mode === 'monthly' ? 'شهري' : 'فترة الرواتب';
         const ok = window.confirm(
-          `تنزيل تقرير الحضور للدورة:\n${cycle.fromLabel}\nإلى\n${cycle.toLabel}`
+          `تنزيل تقرير الحضور (${modeLbl}):\n${cycle.fromLabel}\nإلى\n${cycle.toLabel}`
         );
         if (!ok) return;
 
@@ -38603,17 +38703,12 @@
         try {
           const dateList = eachAttendanceIsoInRange(cycle.from, cycle.to);
           if (!dateList.length) {
-            showToast('لا توجد أيام في هذه الدورة', 'warning');
+            showToast('لا توجد أيام في هذه الفترة', 'warning');
             return;
           }
 
-          const headers = [
-            'الرقم الوظيفي', 'الاسم', 'الدور', 'القسم', 'الفرع',
-            'التاريخ', 'اليوم', 'الحالة', 'وقت الحضور', 'وقت الانصراف', 'ملاحظة'
-          ];
           const allRows = [];
           for (const dept of depts) {
-            // For galleries at dept root (no branch), export all branches together
             const users = getAttendanceDeptUsers(dept, branchId);
             if (!users.length) continue;
             const records = await loadAttendanceRecordsForRange(dept, cycle.from, cycle.to, branchId);
@@ -38622,17 +38717,22 @@
           }
 
           if (!allRows.length) {
-            showToast('لا توجد بيانات للتصدير في هذه الدورة', 'warning');
+            showToast('لا توجد بيانات للتصدير في هذه الفترة', 'warning');
             return;
           }
 
           const XLSX = await ensureXlsxLib();
           const meta = [
-            ['تقرير الحضور والانصراف — دورة 21 إلى 20'],
+            [cycle.title],
+            ['نوع الفترة', modeLbl],
             ['من', cycle.fromLabel],
             ['إلى', cycle.toLabel],
             ['تاريخ التصدير', formatAttendanceDateReportLine(getAttendanceTodayKey())],
             []
+          ];
+          const headers = [
+            'الرقم الوظيفي', 'الاسم', 'الدور', 'القسم', 'الفرع',
+            'التاريخ', 'اليوم', 'الحالة', 'وقت الحضور', 'وقت الانصراف', 'ملاحظة'
           ];
           const sheetData = [
             ...meta,
@@ -38646,9 +38746,9 @@
           ];
           const wb = XLSX.utils.book_new();
           XLSX.utils.book_append_sheet(wb, ws, 'الحضور');
-          const fileName = `attendance-${cycle.from}_to_${cycle.to}.xlsx`;
+          const fileName = `attendance-${cycle.mode}-${cycle.from}_to_${cycle.to}.xlsx`;
           XLSX.writeFile(wb, fileName, { cellStyles: true });
-          showToast('تم تنزيل تقرير دورة الحضور ✓', 'success');
+          showToast('تم تنزيل تقرير الحضور ✓', 'success');
         } catch (e) {
           showToast('تعذّر تنزيل التقرير: ' + (e.message || e), 'error');
         } finally {
@@ -39553,8 +39653,11 @@
       window.onAttendanceMerPick = onAttendanceMerPick;
       window.onAttendanceTimeEditorBlur = onAttendanceTimeEditorBlur;
       window.attendanceShiftDate = attendanceShiftDate;
+      window.attendanceShiftMonth = attendanceShiftMonth;
       window.onAttendanceSearchInput = onAttendanceSearchInput;
       window.toggleAttDatePicker = toggleAttDatePicker;
+      window.toggleAttPeriodMenu = toggleAttPeriodMenu;
+      window.setAttReportPeriodMode = setAttReportPeriodMode;
       window.attDpToggleMonthYear = attDpToggleMonthYear;
       window.attDpPickMonth = attDpPickMonth;
       window.attDpChangeMonth = attDpChangeMonth;
