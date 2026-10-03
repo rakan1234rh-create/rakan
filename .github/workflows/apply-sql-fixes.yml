@@ -47,7 +47,7 @@ jobs:
           SQL_FILES: ${{ steps.resolve.outputs.files }}
         run: |
           if [ -z "$SUPABASE_ACCESS_TOKEN" ]; then
-            echo "::error::SUPABASE_ACCESS_TOKEN missing — run SQL manually in Supabase SQL Editor"
+            echo "::error::SUPABASE_ACCESS_TOKEN missing ΓÇö run SQL manually in Supabase SQL Editor"
             exit 1
           fi
           if [ -z "$SQL_FILES" ]; then
