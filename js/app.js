@@ -5,12 +5,11 @@
       // ═══════════════════════════════════════════════════════════════════════════
       // 1. CONFIGURATION
       // ═══════════════════════════════════════════════════════════════════════════
-      const SUPABASE_URL = 'https://rizoafuxmqsddjfhbsmf.supabase.co';
+      const SUPABASE_URL = 'https://cmdkldxbocbpiptdodmp.supabase.co';
 
-      // 🔑 Publishable Key (آمن للاستخدام في المتصفح طالما RLS مفعّل)
-      // استبدل القيمة أدناه بالـ Publishable Key الجديد من:
-      // Supabase Dashboard → Settings → API Keys → Publishable and secret API keys
-      const SUPABASE_ANON = 'sb_publishable__nGAMUih_RNZ_6FMpwzDNw_116hvA7K';
+      // 🔑 Anon / Publishable Key (آمن للاستخدام في المتصفح طالما RLS مفعّل)
+      // Supabase Dashboard → Settings → API Keys
+      const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNtZGtsZHhib2NicGlwdGRvZG1wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEwMjE1MDgsImV4cCI6MjEwNjU5NzUwOH0.99UW9KaWjxP0Ufpr8crIDzt24xFdBa3YSFmCe5lwBv8';
 
       /** Web Push — المفتاح العام VAPID (الخاص في Supabase Secrets فقط) */
       const ATHAR_VAPID_PUBLIC_KEY = 'BAPcrCNwtNmP395lSHB2fgqJwGLIcrF6K4Bns0sYHOB8uvgdK0dPfyGL1D2TvNZI7W5sJgypUCAcoxK82yH3Tc4';
