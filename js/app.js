@@ -5,12 +5,11 @@
       // ═══════════════════════════════════════════════════════════════════════════
       // 1. CONFIGURATION
       // ═══════════════════════════════════════════════════════════════════════════
-      const SUPABASE_URL = 'https://rizoafuxmqsddjfhbsmf.supabase.co';
+      const SUPABASE_URL = 'https://cmdkldxbocbpiptdodmp.supabase.co';
 
-      // 🔑 Publishable Key (آمن للاستخدام في المتصفح طالما RLS مفعّل)
-      // استبدل القيمة أدناه بالـ Publishable Key الجديد من:
-      // Supabase Dashboard → Settings → API Keys → Publishable and secret API keys
-      const SUPABASE_ANON = 'sb_publishable__nGAMUih_RNZ_6FMpwzDNw_116hvA7K';
+      // 🔑 Anon / Publishable Key (آمن للاستخدام في المتصفح طالما RLS مفعّل)
+      // Supabase Dashboard → Settings → API Keys
+      const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNtZGtsZHhib2NicGlwdGRvZG1wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEwMjE1MDgsImV4cCI6MjEwNjU5NzUwOH0.99UW9KaWjxP0Ufpr8crIDzt24xFdBa3YSFmCe5lwBv8';
 
       /** Web Push — المفتاح العام VAPID (الخاص في Supabase Secrets فقط) */
       const ATHAR_VAPID_PUBLIC_KEY = 'BAPcrCNwtNmP395lSHB2fgqJwGLIcrF6K4Bns0sYHOB8uvgdK0dPfyGL1D2TvNZI7W5sJgypUCAcoxK82yH3Tc4';
@@ -16221,10 +16220,6 @@
         const attPeriodWrap = document.getElementById('attPeriodWrap');
         if (attPeriodWrap && !attPeriodWrap.contains(e.target) && typeof closeAttPeriodMenu === 'function') {
           closeAttPeriodMenu();
-        }
-        const attFilterWrap = document.getElementById('attFilterWrap');
-        if (attFilterWrap && !attFilterWrap.contains(e.target) && typeof closeAttStatusFilterMenu === 'function') {
-          closeAttStatusFilterMenu();
         }
         const ntTimePopup = document.getElementById('ntTimePickerPopup');
         const ntTimeBtn = document.getElementById('nt-timeBtn');
@@ -38027,7 +38022,6 @@
         const open = menu.hidden;
         if (open) {
           try { closeAttDatePicker(); } catch (_) { /* noop */ }
-          try { closeAttStatusFilterMenu(); } catch (_) { /* noop */ }
           menu.hidden = false;
           btn.setAttribute('aria-expanded', 'true');
           btn.classList.add('is-open');
@@ -38044,91 +38038,17 @@
         syncAttendanceDateDisplay();
       }
 
-      function getAttStatusFilter() {
-        const v = String(state._attStatusFilter || 'all');
-        return v === 'all' ? 'all' : v;
-      }
-
-      function closeAttStatusFilterMenu() {
-        const menu = document.getElementById('attFilterMenu');
-        const btn = document.getElementById('attFilterBtn');
-        if (menu) menu.hidden = true;
-        if (btn) {
-          btn.setAttribute('aria-expanded', 'false');
-          btn.classList.remove('is-open');
-        }
-      }
-
-      function syncAttStatusFilterMenuUi() {
-        const menu = document.getElementById('attFilterMenu');
-        const btn = document.getElementById('attFilterBtn');
-        if (!menu) return;
-        const cur = getAttStatusFilter();
-        const opts = [
-          { id: 'all', label: 'الكل' },
-          ...ATTENDANCE_STATUS_OPTS
-        ];
-        menu.innerHTML = opts.map((o) => {
-          const on = o.id === cur;
-          return `<button type="button" class="rd-att-filter__opt${on ? ' is-on' : ''}" role="option"
-            data-att-filter="${Sec.escapeHTML(o.id)}" onclick="setAttStatusFilter('${Sec.escapeHTML(o.id)}')"
-            aria-selected="${on ? 'true' : 'false'}">
-            <span>${Sec.escapeHTML(o.label)}</span>
-            ${on ? '<i class="fas fa-check" aria-hidden="true"></i>' : ''}
-          </button>`;
-        }).join('');
-        if (btn) {
-          const span = btn.querySelector('span');
-          if (span) {
-            const lbl = opts.find((o) => o.id === cur)?.label || 'تصفية';
-            span.textContent = cur === 'all' ? 'تصفية' : lbl;
-          }
-          btn.classList.toggle('is-filtered', cur !== 'all');
-        }
-      }
-
-      function toggleAttStatusFilterMenu(ev) {
-        if (ev) {
-          ev.preventDefault();
-          ev.stopPropagation();
-        }
-        const menu = document.getElementById('attFilterMenu');
-        const btn = document.getElementById('attFilterBtn');
-        if (!menu || !btn) return;
-        const open = menu.hidden;
-        if (open) {
-          try { closeAttDatePicker(); } catch (_) { /* noop */ }
-          try { closeAttPeriodMenu(); } catch (_) { /* noop */ }
-          syncAttStatusFilterMenuUi();
-          menu.hidden = false;
-          btn.setAttribute('aria-expanded', 'true');
-          btn.classList.add('is-open');
-        } else {
-          closeAttStatusFilterMenu();
-        }
-      }
-
-      function setAttStatusFilter(id) {
-        state._attStatusFilter = id === 'all' ? 'all' : String(id || 'all');
-        syncAttStatusFilterMenuUi();
-        closeAttStatusFilterMenu();
-        onAttendanceSearchInput();
-      }
-
-      function attendanceMatchesStatusFilter(status) {
-        const f = getAttStatusFilter();
-        if (f === 'all') return true;
-        return String(status || 'unset') === f;
-      }
-
       function syncAttendanceDateDisplay() {
-        const iso = getAttendanceWorkDate();
+        const range = getAttendanceReportRange(getAttendanceWorkDate());
         const heading = document.getElementById('attDateHeading');
-        if (heading) heading.textContent = formatAttendanceDateLong(iso);
+        if (heading) {
+          heading.textContent = range
+            ? `${range.fromLabel} — ${range.toLabel}`
+            : formatAttendanceDateLong(getAttendanceWorkDate());
+        }
         const el = document.getElementById('attDateDisplay');
-        if (el) el.textContent = formatAttendanceDateDisplay(iso);
+        if (el) el.textContent = range ? `${range.from} → ${range.to}` : formatAttendanceDateDisplay(getAttendanceWorkDate());
         syncAttPeriodMenuUi();
-        syncAttStatusFilterMenuUi();
       }
 
       function attendanceShiftMonth(deltaMonths) {
@@ -38224,48 +38144,6 @@
         if (!hm) return '';
         const parts = attPartsFromHm24(hm);
         return parts.hm ? `${parts.hm} ${parts.mer}` : '';
-      }
-
-      function attFormatDisplayTimeLong(tOrHm) {
-        const hm = attNormalizeTypedTime(tOrHm) || attNormalizeTypedTime(attTimeToInput(tOrHm));
-        if (!hm) return '';
-        const parts = attPartsFromHm24(hm);
-        if (!parts.hm) return '';
-        return `${parts.hm} ${parts.mer === 'م' ? 'مساءً' : 'صباحاً'}`;
-      }
-
-      function renderAttScheduleBlockHtml() {
-        const start = attFormatDisplayTimeLong(ATT_DEFAULT_SHIFT.start);
-        const end = attFormatDisplayTimeLong(ATT_DEFAULT_SHIFT.end);
-        return `<div class="rd-att-sched" aria-label="المجدول">
-          <span class="rd-att-sched__chip">${Sec.escapeHTML(start)}</span>
-          <span class="rd-att-sched__chip">${Sec.escapeHTML(end)}</span>
-        </div>`;
-      }
-
-      function getAttendanceBreakCountForUser(userId, workDate) {
-        const day = String(workDate || getAttendanceWorkDate() || '').slice(0, 10);
-        const uid = String(userId || '');
-        if (!uid || !day) return 0;
-        const rows = state.staffBreakDayRows || [];
-        let n = 0;
-        for (const row of rows) {
-          if (!row || String(row.user_id) !== uid) continue;
-          const rowDay = row.day_key
-            ? String(row.day_key).slice(0, 10)
-            : String(row.started_at || '').slice(0, 10);
-          if (rowDay && rowDay !== day) continue;
-          n += 1;
-        }
-        return n;
-      }
-
-      function renderAttBreaksCellHtml(userId) {
-        const n = getAttendanceBreakCountForUser(userId);
-        return `<span class="rd-att-breaks" title="الاستراحات">
-          <i class="fas fa-mug-hot" aria-hidden="true"></i>
-          <span>${n}</span>
-        </span>`;
       }
 
       function attPartsFromHm24(hm24) {
@@ -38474,9 +38352,8 @@
         } else if (typeof ksaInitViewState === 'function') {
           ksaInitViewState(attDpState);
         }
-        try { closeAttStatusFilterMenu(); } catch (_) { /* noop */ }
-        // Day monitoring: open the day grid for the selected month
-        attDpState.pickerView = 'days';
+        // Open on month grid so report month is one tap away
+        attDpState.pickerView = 'months';
         renderAttDatePicker();
         popup.classList.add('open');
         btn.classList.add('is-open');
@@ -38494,8 +38371,13 @@
         const idx = Number(monthIndex);
         if (!Number.isFinite(idx) || idx < 0 || idx > 11) return;
         attDpState.viewMonth = idx;
-        attDpState.pickerView = 'days';
-        renderAttDatePicker();
+        const y = attDpState.viewYear || new Date().getFullYear();
+        // Anchor day for the selected month (payroll named by month-end day 20)
+        const day = getAttReportPeriodMode() === 'monthly' ? 1 : 20;
+        const last = new Date(y, idx + 1, 0).getDate();
+        const d = Math.min(day, last);
+        const iso = `${y}-${String(idx + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        attDpPickDay(iso);
       }
 
       function attDpChangeMonth(dir) {
@@ -39057,8 +38939,6 @@
       function renderAttendanceRosterHtml(dept, branchId) {
         const allUsers = getAttendanceDeptUsers(dept, branchId);
         const users = allUsers.filter((u) => {
-          const status = getAttendanceRecordForUser(u.id)?.status || 'unset';
-          if (!attendanceMatchesStatusFilter(status)) return false;
           const br = u.branch_id
             ? (state._branchById?.get(u.branch_id) || (state.branches || []).find(b => b.id === u.branch_id))
             : null;
@@ -39073,7 +38953,6 @@
         });
         const canAny = canMarkAttendance();
         const q = attendanceSearchNeedle();
-        const statusFilter = getAttStatusFilter();
         const branchGroup = (dept?.slug === 'galleries' && branchId)
           ? getAttendanceBranchGroups(dept).find(g => g.id === branchId)
           : null;
@@ -39132,8 +39011,6 @@
                 </select>
               </div>
             </td>
-            <td class="rd-att-td rd-att-td--breaks">${renderAttBreaksCellHtml(u.id)}</td>
-            <td class="rd-att-td rd-att-td--sched">${renderAttScheduleBlockHtml()}</td>
             <td class="rd-att-td rd-att-td--time">
               ${renderAttTimeControlHtml('check_in', rec?.check_in_time, editable, present, { late: metrics.late })}
             </td>
@@ -39146,14 +39023,11 @@
           </tr>`;
         }).join('');
 
-        const filterNote = statusFilter !== 'all' ? ` · تصفية: ${users.length}` : '';
-        const searchNote = q ? ` · نتائج البحث: ${users.length}` : '';
-
         return `<div class="rd-att-roster rd-att-roster--table">
           <div class="rd-att-roster__head">
             <div>
               <h3 class="rd-att-roster__title">${Sec.escapeHTML(title)}</h3>
-              <p class="rd-att-roster__sub">${allUsers.length} موظف${canAny ? '' : ' · عرض فقط'}${searchNote}${statusFilter !== 'all' && !q ? filterNote : ''}</p>
+              <p class="rd-att-roster__sub">${allUsers.length} موظف${canAny ? '' : ' · عرض فقط'}${q ? ` · نتائج البحث: ${users.length}` : ''}</p>
             </div>
           </div>
           <div class="rd-att-table-wrap">
@@ -39162,8 +39036,6 @@
                 <tr>
                   <th>الموظفون (${allUsers.length})</th>
                   <th>الحالة</th>
-                  <th>الاستراحات</th>
-                  <th>المجدول</th>
                   <th>الحضور</th>
                   <th>الانصراف</th>
                   <th>مدة العمل</th>
@@ -39172,7 +39044,7 @@
                 </tr>
               </thead>
               <tbody>
-                ${rows || `<tr><td colspan="9"><div class="rd-att-empty rd-att-empty--inline"><p>لا نتائج لهذا البحث.</p></div></td></tr>`}
+                ${rows || `<tr><td colspan="7"><div class="rd-att-empty rd-att-empty--inline"><p>لا نتائج لهذا البحث.</p></div></td></tr>`}
               </tbody>
             </table>
           </div>
@@ -39797,9 +39669,6 @@
       window.toggleAttDatePicker = toggleAttDatePicker;
       window.toggleAttPeriodMenu = toggleAttPeriodMenu;
       window.setAttReportPeriodMode = setAttReportPeriodMode;
-      window.toggleAttStatusFilterMenu = toggleAttStatusFilterMenu;
-      window.setAttStatusFilter = setAttStatusFilter;
-      window.closeAttStatusFilterMenu = closeAttStatusFilterMenu;
       window.attDpToggleMonthYear = attDpToggleMonthYear;
       window.attDpPickMonth = attDpPickMonth;
       window.attDpChangeMonth = attDpChangeMonth;
