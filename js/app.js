@@ -1257,13 +1257,6 @@
         complaintCategory: '',
         complaintAnonymous: false,
         _complaintsChannel: null,
-        attendanceDepartments: [],
-        attendanceRecords: [],
-        _attSelectedDeptId: null,
-        _attSelectedBranchId: null,
-        _attWorkDate: null,
-        _attSavingUserId: null,
-        _attSearch: ''
       };
 
       /** مستخدم محلي عند عدم وجود جلسة Supabase (بعد إزالة شاشة الدخول) */
@@ -5111,24 +5104,6 @@
               state.currentUser.department_id = me.department_id;
             }
           }
-          if (!mobLoad) {
-            try {
-              const { data: depts, error: dErr } = await sb
-                .from('departments')
-                .select('id,name,slug,sort_order,is_active')
-                .eq('is_active', true)
-                .order('sort_order');
-              if (dErr) {
-                if (isMirsadDebugLog()) console.warn('[DataLoad] departments:', dErr);
-                state.attendanceDepartments = state.attendanceDepartments || [];
-              } else {
-                state.attendanceDepartments = depts || [];
-              }
-            } catch (deptErr) {
-              if (isMirsadDebugLog()) console.warn('[DataLoad] departments:', deptErr);
-              state.attendanceDepartments = state.attendanceDepartments || [];
-            }
-          }
           const enrichRow = mobLoad ? enrichViolationLite : enrichViolation;
           state.violations = (violations || []).map(enrichRow);
           state.violationTypes = vTypes || [];
@@ -5974,7 +5949,6 @@
         { id: 'tab_newTicket', label: 'رصد مخالفة جديدة', group: 'التنقل', roles: ['admin', 'observer', 'supervisor'] },
         { id: 'tab_workflow', label: 'معالجة التذاكر', group: 'التنقل', roles: ['admin', 'manager', 'auditor', 'supervisor', 'employee', 'branch_manager', 'observer', 'hr'] },
         { id: 'tab_breaks', label: 'بريكات الموظفين', group: 'التنقل', roles: ['admin', 'manager', 'auditor', 'supervisor', 'branch_manager', 'observer', 'employee'] },
-        { id: 'tab_attendance', label: 'الحضور والانصراف', group: 'التنقل', roles: ['admin', 'employee'] },
         { id: 'tab_complaints', label: 'الشكاوى والاقتراحات', group: 'التنقل', roles: ['admin', 'supervisor', 'branch_manager', 'observer', 'employee'] },
         { id: 'tab_reports', label: 'التقارير', group: 'التنقل', roles: ['admin', 'manager', 'auditor', 'hr'] },
         { id: 'tab_compliance', label: 'مؤشرات الامتثال', group: 'التنقل', roles: ['admin', 'manager', 'auditor', 'supervisor', 'branch_manager'] },
@@ -6000,7 +5974,6 @@
         { id: 'manage_regions', label: 'إضافة/تعديل المناطق والفروع', group: 'إجراءات إدارية', roles: ['admin'] },
         { id: 'delete_regions', label: 'حذف المناطق والفروع', group: 'إجراءات إدارية', roles: ['admin'] },
         { id: 'manage_break_schedules', label: 'تعديل مدد البريك (منطقة/فرع/موظف)', group: 'إجراءات إدارية', roles: ['admin'] },
-        { id: 'mark_attendance', label: 'تسجيل حضور وانصراف الموظفين', group: 'إجراءات إدارية', roles: ['admin', 'employee'] },
         { id: 'manage_complaints', label: 'إدارة الشكاوى والاقتراحات (الرد والإغلاق)', group: 'إجراءات إدارية', roles: ['admin'] },
         { id: 'manage_violation_types', label: 'إدارة أنواع المخالفات', group: 'إجراءات إدارية', roles: ['admin'] },
         { id: 'manage_users', label: 'إضافة/تعديل/تعطيل المستخدمين', group: 'إجراءات إدارية', roles: ['admin'] },
@@ -6019,7 +5992,6 @@
         newTicket: 'tab_newTicket',
         workflow: 'tab_workflow',
         breaks: 'tab_breaks',
-        attendance: 'tab_attendance',
         complaints: 'tab_complaints',
         reports: 'tab_reports',
         compliance: 'tab_compliance',
@@ -6263,7 +6235,7 @@
           return ['tab_locations', 'tab_departments', 'tab_settings', 'tab_broadcasts'].some(p => hasPermission(p));
         }
         if (permId === 'section_main') {
-          return ['tab_dashboard', 'tab_newTicket', 'tab_workflow', 'tab_breaks', 'tab_attendance', 'tab_complaints', 'tab_reports', 'tab_compliance', 'tab_violations'].some(p => hasPermission(p));
+          return ['tab_dashboard', 'tab_newTicket', 'tab_workflow', 'tab_breaks', 'tab_complaints', 'tab_reports', 'tab_compliance', 'tab_violations'].some(p => hasPermission(p));
         }
         if (role === 'admin') return true;
         const uid = state.currentUser.id;
@@ -7309,7 +7281,6 @@
           else if (tab === 'compliance' && typeof renderCompliance === 'function') renderCompliance();
           else if (tab === 'violations' && typeof renderViolTypes === 'function') renderViolTypes();
           else if (tab === 'breaks' && typeof renderStaffBreaksPage === 'function') renderStaffBreaksPage({ soft: true });
-          else if (tab === 'attendance' && typeof renderAttendancePage === 'function') renderAttendancePage({ soft: true });
           else if (tab === 'complaints') {
             if (typeof isMobileViewport === 'function' && isMobileViewport()) {
               if (typeof renderComplaintsPage === 'function') renderComplaintsPage();
@@ -7327,7 +7298,7 @@
         }
       }
 
-      const MR_NAV_TAB_ORDER = ['dashboard', 'workflow', 'newTicket', 'breaks', 'attendance', 'complaints', 'reports', 'compliance', 'violations', 'locations', 'departments', 'settings', 'broadcasts'];
+      const MR_NAV_TAB_ORDER = ['dashboard', 'workflow', 'newTicket', 'breaks', 'complaints', 'reports', 'compliance', 'violations', 'locations', 'departments', 'settings', 'broadcasts'];
 
       function hasAnyNavTabPermission() {
         return MR_NAV_TAB_ORDER.some(tab => {
@@ -8177,7 +8148,6 @@
         newTicket: { title: 'رصد مخالفة جديدة', sub: 'سجّل مخالفة بأكبر قدر من التفاصيل' },
         workflow: { title: 'التذاكر', sub: 'إدارة ومتابعة تذاكر المخالفات' },
         breaks: { title: 'بريكات الموظفين', sub: '' },
-        attendance: { title: 'الحضور والانصراف', sub: 'تسجيل دوام الموظفين حسب القسم' },
         complaints: { title: 'الشكاوى والاقتراحات', sub: 'ارفع شكواك أو اقتراحك وتابع الرد عليها' },
         reports: { title: 'التقارير', sub: 'مؤشرات الأداء والاتجاهات' },
         compliance: { title: 'لوحة مؤشرات الامتثال', sub: 'compliance dashboard' },
@@ -9070,7 +9040,6 @@
         }
         if (typeof closeNtDatePicker === 'function') closeNtDatePicker();
         if (typeof closeNtTimePicker === 'function') closeNtTimePicker();
-        if (typeof closeAttDatePicker === 'function') closeAttDatePicker();
 
         const attViewer = document.getElementById('attViewer');
         if (attViewer?.classList.contains('open') && typeof closeAttViewer === 'function') {
@@ -9451,20 +9420,6 @@
           if (tab === 'departments') renderUsers();
           if (tab === 'violations') renderViolTypes();
           if (tab === 'breaks') renderStaffBreaksPage();
-          if (tab === 'attendance') {
-            if (typeof isMobileViewport === 'function' && isMobileViewport()) {
-              const desk = document.querySelector('.rd-attendance-panel');
-              const mob = document.querySelector('.rd-attendance-mobile-block');
-              if (desk) desk.hidden = true;
-              if (mob) mob.hidden = false;
-            } else if (typeof renderAttendancePage === 'function') {
-              const desk = document.querySelector('.rd-attendance-panel');
-              const mob = document.querySelector('.rd-attendance-mobile-block');
-              if (desk) desk.hidden = false;
-              if (mob) mob.hidden = true;
-              renderAttendancePage();
-            }
-          }
           if (tab === 'complaints') {
             try {
               const deskPanel = document.querySelector('.rd-complaints-desk-panel');
@@ -14738,12 +14693,7 @@
         document.getElementById('userModalTitle').textContent = 'إضافة مستخدم';
 
         populateBranchSelect(opts.branchId || null);
-        populateDepartmentSelect(opts.departmentId || null);
         onRoleChange();
-        if (opts.departmentId) {
-          const sel = document.getElementById('um-department');
-          if (sel) sel.value = opts.departmentId;
-        }
         if (opts.branchId) {
           const bsel = document.getElementById('um-branch');
           if (bsel) bsel.value = opts.branchId;
@@ -14772,7 +14722,6 @@
         document.getElementById('userModalTitle').textContent = 'تعديل المستخدم';
 
         populateBranchSelect(u.branch_id);
-        populateDepartmentSelect(u.department_id);
         onRoleChange();
 
         // عند التعديل: إخفاء كلمة المرور، السماح بتعديل الرقم الوظيفي والإيميل
@@ -14795,12 +14744,6 @@
         } else {
           branchGroup.style.display = 'none';
         }
-        // المعارض تلقائياً لأخصائي المبيعات / المشرف / مدير الفرع
-        if (typeof isGalleriesAttendanceRole === 'function' && isGalleriesAttendanceRole(role)) {
-          const galleries = (state.attendanceDepartments || []).find(d => d && d.slug === 'galleries');
-          const sel = document.getElementById('um-department');
-          if (sel && galleries?.id) sel.value = galleries.id;
-        }
       }
 
       function populateBranchSelect(selectedId) {
@@ -14812,25 +14755,6 @@
           ).join('');
       }
 
-      function populateDepartmentSelect(selectedId) {
-        const sel = document.getElementById('um-department');
-        if (!sel) return;
-        const depts = (state.attendanceDepartments || []).filter(d => d && d.is_active !== false);
-        sel.innerHTML = '<option value="">-- بدون قسم --</option>' +
-          depts.map(d =>
-            `<option value="${d.id}" ${d.id === selectedId ? 'selected' : ''}>${Sec.escapeHTML(d.name)}</option>`
-          ).join('');
-      }
-
-      function resolveDepartmentIdForSave(role, selectedDepartmentId) {
-        if (selectedDepartmentId) return selectedDepartmentId;
-        if (typeof isGalleriesAttendanceRole === 'function' && isGalleriesAttendanceRole(role)) {
-          const galleries = (state.attendanceDepartments || []).find(d => d.slug === 'galleries');
-          return galleries?.id || null;
-        }
-        return null;
-      }
-
       async function saveUser() {
         if (!canManageUsers()) { showToast('لا تملك صلاحية إدارة المستخدمين.', 'warning'); return; }
         const editId = document.getElementById('um-editId').value;  // UUID أو فارغ
@@ -14840,7 +14764,6 @@
         const phone = Sec.normalizePhone(document.getElementById('um-phone').value);
         const role = document.getElementById('um-role').value;
         const branchId = document.getElementById('um-branch').value || null;
-        const departmentId = resolveDepartmentIdForSave(role, document.getElementById('um-department')?.value || null);
         const password = document.getElementById('um-password').value;
 
         // Validations
@@ -14881,7 +14804,6 @@
               phone: phone || null,
               role,
               branch_id: needsBranch ? branchId : null,
-              department_id: departmentId || null,
               job_title: staffJobTitleForRole(role)
             };
 
@@ -14934,7 +14856,6 @@
               phone: phone || null,
               role,
               branch_id: needsBranch ? branchId : null,
-              department_id: departmentId || null,
               job_title: staffJobTitleForRole(role)
             };
             const { data: newUser, error } = await sb.from('users').insert(insertPayload).select(USER_ROW_SELECT).single();
@@ -14948,16 +14869,6 @@
 
           closeModal('userModal');
           renderUsers();
-          if (typeof renderAttendancePage === 'function') {
-            const attTab = document.getElementById('tab-attendance');
-            if (attTab && !attTab.hidden && attTab.classList.contains('active')) {
-              renderAttendancePage({ soft: true });
-            }
-          }
-          if (state._attReopenManageAfterUser) {
-            state._attReopenManageAfterUser = false;
-            if (typeof reopenAttendanceDeptManager === 'function') reopenAttendanceDeptManager();
-          }
         } catch (err) {
           if (isMirsadDebugLog()) console.error('[saveUser]', err);
           const msg = formatPostgrestError(err);
@@ -16222,22 +16133,6 @@
           e.target !== ntDateBtn &&
           !ntDateBtn?.contains(e.target)) {
           closeNtDatePicker();
-        }
-        const attPopup = document.getElementById('attDatePickerPopup');
-        const attDateBtn = document.getElementById('attDateBtn');
-        if (attPopup?.classList.contains('open') &&
-          !attPopup.contains(e.target) &&
-          e.target !== attDateBtn &&
-          !attDateBtn?.contains(e.target)) {
-          closeAttDatePicker();
-        }
-        const attPeriodWrap = document.getElementById('attPeriodWrap');
-        if (attPeriodWrap && !attPeriodWrap.contains(e.target) && typeof closeAttPeriodMenu === 'function') {
-          closeAttPeriodMenu();
-        }
-        const attFilterWrap = document.getElementById('attFilterWrap');
-        if (attFilterWrap && !attFilterWrap.contains(e.target) && typeof closeAttStatusFilterMenu === 'function') {
-          closeAttStatusFilterMenu();
         }
         const ntTimePopup = document.getElementById('ntTimePickerPopup');
         const ntTimeBtn = document.getElementById('nt-timeBtn');
@@ -37423,6 +37318,26 @@
         }
       }
 
+      /** Sync ring/actions from current state without network — used after start/end RPC. */
+      function refreshStaffBreaksUiFast() {
+        try {
+          const useAthar = typeof isStaffBreaksAtharUi === 'function' && isStaffBreaksAtharUi();
+          if (useAthar) {
+            const classic = document.getElementById('breaksClassicHost');
+            if (classic) classic.hidden = true;
+            renderStaffBreaksRedesign();
+          } else {
+            const rd = document.getElementById('rdBreaks');
+            if (rd) { rd.hidden = true; rd.innerHTML = ''; }
+            const classic = document.getElementById('breaksClassicHost');
+            if (classic) classic.hidden = false;
+            renderStaffBreaksClassic();
+          }
+          paintStaffBreakCountdownOnly();
+          ensureStaffBreakTicker();
+        } catch (_) { /* noop */ }
+      }
+
       const STAFF_BREAK_RPC_TIMEOUT_MS = 12000;
 
       function isStaffBreakActionBusy() {
@@ -37531,13 +37446,13 @@
         }
         if (getMyActiveStaffBreak()) {
           showToast('لديك بريك نشط بالفعل', 'info');
-          await renderStaffBreaksPage({ soft: true });
+          refreshStaffBreaksUiFast();
           return;
         }
         const colleague = getActiveBreakColleagueInMyBranch();
         if (colleague) {
           showToast(`يوجد زميل في بريك حالياً (${colleague._userName || '—'}) — انتظر حتى يعود`, 'warning');
-          await renderStaffBreaksPage({ soft: true });
+          refreshStaffBreaksUiFast();
           return;
         }
         if (!requestedType) {
@@ -37548,7 +37463,7 @@
         const breakLabel = breakType === 'restroom' ? 'بريك دورة المياه' : 'البريك';
         if (isMyBreakAllowanceExhausted(breakType)) {
           showToast(`اكتملت مدة ${breakLabel} اليوم`, 'warning');
-          await renderStaffBreaksPage({ soft: true });
+          refreshStaffBreaksUiFast();
           return;
         }
         if (isMyBreakUnscheduledToday(breakType)) {
@@ -37564,7 +37479,7 @@
           if (error) throw error;
           if (!data?.ok) {
             showToast(data?.error || 'تعذّر بدء البريك', 'error');
-            await renderStaffBreaksPage({ soft: true });
+            refreshStaffBreaksUiFast();
             return;
           }
           if (data.break) {
@@ -37572,10 +37487,10 @@
             upsertStaffBreakDayRow(row);
             state.staffBreaks = [row, ...(state.staffBreaks || []).filter(b => b.id !== row.id && b.status === 'active')];
             try { scheduleBreakExpiryLocalNotification(row); } catch (_) { /* noop */ }
-            try {
-              // تأكد من اشتراك Web Push بمفتاح VAPID الحالي قبل انتهاء المدة
-              syncAtharWebPushSubscription({ force: true }).catch(() => {});
-            } catch (_) { /* noop */ }
+            // Defer push sync — do not compete with the start UI path
+            setTimeout(() => {
+              try { syncAtharWebPushSubscription({ force: false }).catch(() => {}); } catch (_) { /* noop */ }
+            }, 2500);
           }
           showToast(
             data.new_session || !data.resumed
@@ -37583,7 +37498,8 @@
               : `تمت متابعة ${breakLabel}`,
             'success'
           );
-          await renderStaffBreaksPage({ soft: true });
+          setStaffBreakActionBusy(false);
+          refreshStaffBreaksUiFast();
         } catch (e) {
           showToast('فشل بدء البريك: ' + (e.message || e), 'error');
         } finally {
@@ -37596,7 +37512,7 @@
         const mine = getMyActiveStaffBreak();
         if (!mine) {
           showToast('لا يوجد بريك نشط', 'info');
-          await renderStaffBreaksPage({ soft: true });
+          refreshStaffBreaksUiFast();
           return;
         }
         const remaining = getBreakRemainingSeconds(mine);
@@ -37618,11 +37534,11 @@
           }
           if (!data?.ok) {
             showToast(data?.error || 'تعذّر إيقاف البريك', 'error');
-            await renderStaffBreaksPage({ soft: true });
+            refreshStaffBreaksUiFast();
             return;
           }
           closeModal('breakOvertimeModal');
-          try { await cancelScheduledBreakExpiryNotification(); } catch (_) { /* noop */ }
+          try { cancelScheduledBreakExpiryNotification(); } catch (_) { /* noop */ }
           if (data.break) {
             const row = enrichStaffBreak(data.break);
             upsertStaffBreakDayRow(row);
@@ -37637,7 +37553,8 @@
             state.staffBreaks = (state.staffBreaks || []).filter(b => b.id !== mine.id);
             showToast('تم إيقاف البريك', 'success');
           }
-          await renderStaffBreaksPage({ soft: true });
+          setStaffBreakActionBusy(false);
+          refreshStaffBreaksUiFast();
         } catch (e) {
           showToast('فشل إيقاف البريك: ' + (e.message || e), 'error');
         } finally {
@@ -37656,7 +37573,7 @@
         const brk = (state.staffBreaks || []).find(b => b.id === id && b.status === 'active');
         if (!brk) {
           showToast('لا يوجد بريك نشط', 'info');
-          await renderStaffBreaksPage({ soft: true });
+          refreshStaffBreaksUiFast();
           return;
         }
         if (getBreakRemainingSeconds(brk) >= 0) {
@@ -37671,7 +37588,7 @@
           if (error) throw error;
           if (!data?.ok) {
             showToast(data?.error || 'تعذّر إيقاف البريك', 'error');
-            await renderStaffBreaksPage({ soft: true });
+            refreshStaffBreaksUiFast();
             return;
           }
           if (data.break) {
@@ -37680,7 +37597,8 @@
           }
           state.staffBreaks = (state.staffBreaks || []).filter(b => b.id !== id && b.status === 'active');
           showToast(`تم إيقاف بريك ${name} من مدير النظام`, 'success');
-          await renderStaffBreaksPage({ soft: true });
+          setStaffBreakActionBusy(false);
+          refreshStaffBreaksUiFast();
         } catch (e) {
           showToast('فشل الإيقاف الإداري: ' + (e.message || e), 'error');
         } finally {
@@ -37966,1986 +37884,8 @@
       window.openStaffBreakHistory = openStaffBreakHistory;
 
 
-      // ============================================================================
-      // ATTENDANCE / DEPARTMENTS DESKTOP
-      // ============================================================================
 
-      const ATTENDANCE_STATUS_OPTS = [
-        { id: 'unset', label: 'غير محدد' },
-        { id: 'present', label: 'حاضر' },
-        { id: 'day_off', label: 'يوم إجازة' },
-        { id: 'off', label: 'أوف' },
-        { id: 'sick', label: 'مرضية' },
-        { id: 'permission', label: 'استئذان' },
-        { id: 'excuse', label: 'عذر' }
-      ];
-
-      const ATT_DEFAULT_SHIFT = { start: '09:00', end: '17:00', minutes: 8 * 60 };
-      const ATT_AR_WEEKDAYS = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
-      const ATT_AR_MONTHS = [
-        'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
-        'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
-      ];
-
-      const ATTENDANCE_DEPT_ICONS = {
-        galleries: 'fa-store',
-        admin: 'fa-building',
-        packing: 'fa-box'
-      };
-
-      /** المعارض = موظفو الفروع في المنصة: أخصائي مبيعات / مشرف / مدير فرع */
-      const GALLERIES_ATTENDANCE_ROLES = ['employee', 'supervisor', 'branch_manager'];
-
-      function canMarkAttendance() {
-        return hasPermission('mark_attendance');
-      }
-
-      function canViewAttendanceTab() {
-        return hasPermission('tab_attendance');
-      }
-
-      function isGalleriesAttendanceRole(role) {
-        return GALLERIES_ATTENDANCE_ROLES.includes(normalizeUserRole(role));
-      }
-
-      function isGalleriesAttendanceMember(u) {
-        if (!u || u.is_active === false) return false;
-        return isGalleriesAttendanceRole(u.role);
-      }
-
-      function getAttendanceDepartmentBySlug(slug) {
-        return (state.attendanceDepartments || []).find(d => d && d.slug === slug) || null;
-      }
-
-      function getAttendanceTodayKey() {
-        if (typeof getStaffBreakTodayKey === 'function') return getStaffBreakTodayKey();
-        try {
-          return new Intl.DateTimeFormat('en-CA', { timeZone: APP_TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
-        } catch (_) {
-          return new Date().toISOString().slice(0, 10);
-        }
-      }
-
-      function formatAttendanceDateDisplay(iso) {
-        if (!iso) return '—';
-        if (typeof formatNtDateDisplay === 'function') {
-          const formatted = formatNtDateDisplay(iso);
-          if (formatted) return formatted;
-        }
-        const parts = String(iso).split('-');
-        if (parts.length < 3) return iso;
-        return `${parts[0]}/${parts[1]}/${parts[2]}`;
-      }
-
-      function formatAttendanceDateLong(iso) {
-        const parts = String(iso || '').split('-').map(Number);
-        if (parts.length < 3 || !parts[0]) return formatAttendanceDateDisplay(iso);
-        const [y, m, d] = parts;
-        const dt = typeof ksaCalendarDate === 'function'
-          ? ksaCalendarDate(y, m - 1, d)
-          : new Date(y, m - 1, d);
-        const weekday = ATT_AR_WEEKDAYS[dt.getDay()] || '';
-        const monthName = ATT_AR_MONTHS[(m || 1) - 1] || '';
-        return `${weekday} ${d} ${monthName}، ${y}`;
-      }
-
-      /** مثل: الجمعة, 21 أغسطس 2026 */
-      function formatAttendanceDateReportLine(iso) {
-        const parts = String(iso || '').split('-').map(Number);
-        if (parts.length < 3 || !parts[0]) return formatAttendanceDateDisplay(iso);
-        const [y, m, d] = parts;
-        const dt = typeof ksaCalendarDate === 'function'
-          ? ksaCalendarDate(y, m - 1, d)
-          : new Date(y, m - 1, d);
-        const weekday = ATT_AR_WEEKDAYS[dt.getDay()] || '';
-        const monthName = ATT_AR_MONTHS[(m || 1) - 1] || '';
-        return `${weekday}, ${d} ${monthName} ${y}`;
-      }
-
-      /**
-       * فترة التقرير حسب الوضع والشهر المختار (من تاريخ العمل):
-       * - فترة الرواتب: من 21 الشهر السابق → 20 الشهر المختار
-       * - شهري: من 1 → آخر يوم في الشهر المختار
-       * مثال (سبتمبر 2026 + رواتب): 21 أغسطس … 20 سبتمبر
-       */
-      function getAttReportPeriodMode() {
-        return state._attReportPeriodMode === 'monthly' ? 'monthly' : 'payroll';
-      }
-
-      function getAttendanceReportRange(refIso) {
-        const iso = String(refIso || getAttendanceWorkDate() || getAttendanceTodayKey()).slice(0, 10);
-        const p = String(iso).split('-').map(Number);
-        if (p.length < 3 || !p[0]) return null;
-        const y = p[0];
-        const m0 = p[1] - 1;
-        const mode = getAttReportPeriodMode();
-        if (mode === 'monthly') {
-          const last = new Date(y, m0 + 1, 0).getDate();
-          const from = `${y}-${String(m0 + 1).padStart(2, '0')}-01`;
-          const to = `${y}-${String(m0 + 1).padStart(2, '0')}-${String(last).padStart(2, '0')}`;
-          return {
-            mode,
-            from,
-            to,
-            fromLabel: formatAttendanceDateReportLine(from),
-            toLabel: formatAttendanceDateReportLine(to),
-            title: 'تقرير الحضور — شهري'
-          };
-        }
-        let fromY = y;
-        let fromM0 = m0 - 1;
-        if (fromM0 < 0) {
-          fromM0 = 11;
-          fromY -= 1;
-        }
-        const from = `${fromY}-${String(fromM0 + 1).padStart(2, '0')}-21`;
-        const to = `${y}-${String(m0 + 1).padStart(2, '0')}-20`;
-        return {
-          mode,
-          from,
-          to,
-          fromLabel: formatAttendanceDateReportLine(from),
-          toLabel: formatAttendanceDateReportLine(to),
-          title: 'تقرير الحضور — فترة الرواتب'
-        };
-      }
-
-      /** @deprecated use getAttendanceReportRange */
-      function getAttendanceCycleRange(refIso) {
-        return getAttendanceReportRange(refIso);
-      }
-
-      function eachAttendanceIsoInRange(fromIso, toIso) {
-        const out = [];
-        const startParts = String(fromIso || '').split('-').map(Number);
-        const endIso = String(toIso || '').slice(0, 10);
-        if (startParts.length < 3 || !startParts[0] || !endIso) return out;
-        let dt = typeof ksaCalendarDate === 'function'
-          ? ksaCalendarDate(startParts[0], startParts[1] - 1, startParts[2])
-          : new Date(startParts[0], startParts[1] - 1, startParts[2]);
-        let guard = 0;
-        while (guard++ < 62) {
-          const iso = typeof ksaCalendarToIso === 'function'
-            ? ksaCalendarToIso(dt)
-            : `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
-          if (!iso || iso > endIso) break;
-          out.push(iso);
-          dt = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate() + 1);
-        }
-        return out;
-      }
-
-      function syncAttPeriodMenuUi() {
-        const mode = getAttReportPeriodMode();
-        const label = document.getElementById('attPeriodBtnLabel');
-        if (label) label.textContent = mode === 'monthly' ? 'شهري' : 'فترة الرواتب';
-        document.querySelectorAll('#attPeriodMenu [data-att-period]').forEach((btn) => {
-          const on = btn.getAttribute('data-att-period') === mode;
-          btn.classList.toggle('is-on', on);
-          btn.setAttribute('aria-selected', on ? 'true' : 'false');
-        });
-      }
-
-      function closeAttPeriodMenu() {
-        const menu = document.getElementById('attPeriodMenu');
-        const btn = document.getElementById('attPeriodBtn');
-        if (menu) menu.hidden = true;
-        if (btn) {
-          btn.setAttribute('aria-expanded', 'false');
-          btn.classList.remove('is-open');
-        }
-      }
-
-      function toggleAttPeriodMenu(ev) {
-        if (ev) {
-          ev.preventDefault();
-          ev.stopPropagation();
-        }
-        const menu = document.getElementById('attPeriodMenu');
-        const btn = document.getElementById('attPeriodBtn');
-        if (!menu || !btn) return;
-        const open = menu.hidden;
-        if (open) {
-          try { closeAttDatePicker(); } catch (_) { /* noop */ }
-          try { closeAttStatusFilterMenu(); } catch (_) { /* noop */ }
-          menu.hidden = false;
-          btn.setAttribute('aria-expanded', 'true');
-          btn.classList.add('is-open');
-          syncAttPeriodMenuUi();
-        } else {
-          closeAttPeriodMenu();
-        }
-      }
-
-      function setAttReportPeriodMode(mode) {
-        state._attReportPeriodMode = mode === 'monthly' ? 'monthly' : 'payroll';
-        syncAttPeriodMenuUi();
-        closeAttPeriodMenu();
-        syncAttendanceDateDisplay();
-      }
-
-      function getAttStatusFilter() {
-        const v = String(state._attStatusFilter || 'all');
-        return v === 'all' ? 'all' : v;
-      }
-
-      function closeAttStatusFilterMenu() {
-        const menu = document.getElementById('attFilterMenu');
-        const btn = document.getElementById('attFilterBtn');
-        if (menu) menu.hidden = true;
-        if (btn) {
-          btn.setAttribute('aria-expanded', 'false');
-          btn.classList.remove('is-open');
-        }
-      }
-
-      function syncAttStatusFilterMenuUi() {
-        const menu = document.getElementById('attFilterMenu');
-        const btn = document.getElementById('attFilterBtn');
-        if (!menu) return;
-        const cur = getAttStatusFilter();
-        const opts = [
-          { id: 'all', label: 'الكل' },
-          ...ATTENDANCE_STATUS_OPTS
-        ];
-        menu.innerHTML = opts.map((o) => {
-          const on = o.id === cur;
-          return `<button type="button" class="rd-att-filter__opt${on ? ' is-on' : ''}" role="option"
-            data-att-filter="${Sec.escapeHTML(o.id)}" onclick="setAttStatusFilter('${Sec.escapeHTML(o.id)}')"
-            aria-selected="${on ? 'true' : 'false'}">
-            <span>${Sec.escapeHTML(o.label)}</span>
-            ${on ? '<i class="fas fa-check" aria-hidden="true"></i>' : ''}
-          </button>`;
-        }).join('');
-        if (btn) {
-          const span = btn.querySelector('span');
-          if (span) {
-            const lbl = opts.find((o) => o.id === cur)?.label || 'تصفية';
-            span.textContent = cur === 'all' ? 'تصفية' : lbl;
-          }
-          btn.classList.toggle('is-filtered', cur !== 'all');
-        }
-      }
-
-      function toggleAttStatusFilterMenu(ev) {
-        if (ev) {
-          ev.preventDefault();
-          ev.stopPropagation();
-        }
-        const menu = document.getElementById('attFilterMenu');
-        const btn = document.getElementById('attFilterBtn');
-        if (!menu || !btn) return;
-        const open = menu.hidden;
-        if (open) {
-          try { closeAttDatePicker(); } catch (_) { /* noop */ }
-          try { closeAttPeriodMenu(); } catch (_) { /* noop */ }
-          syncAttStatusFilterMenuUi();
-          menu.hidden = false;
-          btn.setAttribute('aria-expanded', 'true');
-          btn.classList.add('is-open');
-        } else {
-          closeAttStatusFilterMenu();
-        }
-      }
-
-      function setAttStatusFilter(id) {
-        state._attStatusFilter = id === 'all' ? 'all' : String(id || 'all');
-        syncAttStatusFilterMenuUi();
-        closeAttStatusFilterMenu();
-        onAttendanceSearchInput();
-      }
-
-      function attendanceMatchesStatusFilter(status) {
-        const f = getAttStatusFilter();
-        if (f === 'all') return true;
-        return String(status || 'unset') === f;
-      }
-
-      function syncAttendanceDateDisplay() {
-        const iso = getAttendanceWorkDate();
-        const heading = document.getElementById('attDateHeading');
-        if (heading) heading.textContent = formatAttendanceDateLong(iso);
-        const el = document.getElementById('attDateDisplay');
-        if (el) el.textContent = formatAttendanceDateDisplay(iso);
-        syncAttPeriodMenuUi();
-        syncAttStatusFilterMenuUi();
-      }
-
-      function attendanceShiftMonth(deltaMonths) {
-        const iso = getAttendanceWorkDate();
-        const parts = String(iso).split('-').map(Number);
-        if (parts.length < 3) return;
-        let y = parts[0];
-        let m0 = parts[1] - 1 + Number(deltaMonths || 0);
-        while (m0 > 11) { m0 -= 12; y += 1; }
-        while (m0 < 0) { m0 += 12; y -= 1; }
-        // Anchor day inside the selected month (1st for monthly, 20th for payroll naming)
-        const day = getAttReportPeriodMode() === 'monthly' ? 1 : 20;
-        const last = new Date(y, m0 + 1, 0).getDate();
-        const d = Math.min(day, last);
-        const next = `${y}-${String(m0 + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-        const input = document.getElementById('attWorkDate');
-        if (input) input.value = next;
-        state._attWorkDate = next;
-        syncAttendanceDateDisplay();
-        onAttendanceDateChange();
-      }
-
-      function attendanceShiftDate(deltaDays) {
-        const iso = getAttendanceWorkDate();
-        const parts = String(iso).split('-').map(Number);
-        if (parts.length < 3) return;
-        let dt = typeof ksaCalendarDate === 'function'
-          ? ksaCalendarDate(parts[0], parts[1] - 1, parts[2])
-          : new Date(parts[0], parts[1] - 1, parts[2]);
-        dt = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate() + Number(deltaDays || 0));
-        const next = typeof ksaCalendarToIso === 'function'
-          ? ksaCalendarToIso(dt)
-          : [
-            dt.getFullYear(),
-            String(dt.getMonth() + 1).padStart(2, '0'),
-            String(dt.getDate()).padStart(2, '0')
-          ].join('-');
-        const input = document.getElementById('attWorkDate');
-        if (input) input.value = next;
-        state._attWorkDate = next;
-        syncAttendanceDateDisplay();
-        onAttendanceDateChange();
-      }
-
-      function attendanceSearchNeedle() {
-        return String(state._attSearch || '').trim().toLowerCase();
-      }
-
-      function attendanceMatchesSearch(parts) {
-        const q = attendanceSearchNeedle();
-        if (!q) return true;
-        return parts.some((part) => String(part || '').toLowerCase().includes(q));
-      }
-
-      function onAttendanceSearchInput() {
-        const inp = document.getElementById('attSearchInput');
-        state._attSearch = String(inp?.value || '').trim();
-        const depts = getVisibleAttendanceDepartments();
-        const selected = state._attSelectedDeptId
-          ? (depts.find(d => d.id === state._attSelectedDeptId)
-            || (state.attendanceDepartments || []).find(d => d.id === state._attSelectedDeptId))
-          : null;
-        if (!selected) {
-          paintAttendanceHost(renderAttendanceDeptCardsHtml(depts));
-          return;
-        }
-        if (selected.slug === 'galleries' && !state._attSelectedBranchId) {
-          paintAttendanceHost(renderAttendanceBranchCardsHtml(selected));
-          return;
-        }
-        paintAttendanceHost(renderAttendanceRosterHtml(selected, state._attSelectedBranchId || null));
-      }
-
-      function syncAttendanceSearchVisibility(show) {
-        const wrap = document.getElementById('attSearchWrap');
-        if (wrap) wrap.hidden = !show;
-        if (!show) {
-          state._attSearch = '';
-          const inp = document.getElementById('attSearchInput');
-          if (inp) inp.value = '';
-        }
-      }
-
-      function attHmToMinutes(hm) {
-        const n = attNormalizeTypedTime(hm);
-        const m = String(n || '').match(/^(\d{2}):(\d{2})$/);
-        if (!m) return null;
-        return Number(m[1]) * 60 + Number(m[2]);
-      }
-
-      function attFormatDisplayTime(tOrHm) {
-        const hm = attNormalizeTypedTime(tOrHm) || attNormalizeTypedTime(attTimeToInput(tOrHm));
-        if (!hm) return '';
-        const parts = attPartsFromHm24(hm);
-        return parts.hm ? `${parts.hm} ${parts.mer}` : '';
-      }
-
-      function attFormatDisplayTimeLong(tOrHm) {
-        const hm = attNormalizeTypedTime(tOrHm) || attNormalizeTypedTime(attTimeToInput(tOrHm));
-        if (!hm) return '';
-        const parts = attPartsFromHm24(hm);
-        if (!parts.hm) return '';
-        return `${parts.hm} ${parts.mer === 'م' ? 'مساءً' : 'صباحاً'}`;
-      }
-
-      function renderAttScheduleBlockHtml() {
-        const start = attFormatDisplayTimeLong(ATT_DEFAULT_SHIFT.start);
-        const end = attFormatDisplayTimeLong(ATT_DEFAULT_SHIFT.end);
-        return `<div class="rd-att-sched" aria-label="المجدول">
-          <span class="rd-att-sched__chip">${Sec.escapeHTML(start)}</span>
-          <span class="rd-att-sched__chip">${Sec.escapeHTML(end)}</span>
-        </div>`;
-      }
-
-      function getAttendanceBreakCountForUser(userId, workDate) {
-        const day = String(workDate || getAttendanceWorkDate() || '').slice(0, 10);
-        const uid = String(userId || '');
-        if (!uid || !day) return 0;
-        const rows = state.staffBreakDayRows || [];
-        let n = 0;
-        for (const row of rows) {
-          if (!row || String(row.user_id) !== uid) continue;
-          const rowDay = row.day_key
-            ? String(row.day_key).slice(0, 10)
-            : String(row.started_at || '').slice(0, 10);
-          if (rowDay && rowDay !== day) continue;
-          n += 1;
-        }
-        return n;
-      }
-
-      function renderAttBreaksCellHtml(userId) {
-        const n = getAttendanceBreakCountForUser(userId);
-        return `<span class="rd-att-breaks" title="الاستراحات">
-          <i class="fas fa-mug-hot" aria-hidden="true"></i>
-          <span>${n}</span>
-        </span>`;
-      }
-
-      function attPartsFromHm24(hm24) {
-        const mins = attHmToMinutes(hm24);
-        if (mins == null) return { hm: '', mer: 'ص' };
-        const h24 = Math.floor(mins / 60);
-        const m = mins % 60;
-        return {
-          hm: `${h24 % 12 || 12}:${String(m).padStart(2, '0')}`,
-          mer: h24 >= 12 ? 'م' : 'ص'
-        };
-      }
-
-      function attFormatHmDigits(raw) {
-        const digits = String(raw || '').replace(/\D/g, '').slice(0, 4);
-        if (!digits) return '';
-        if (digits.length <= 2) return digits;
-        if (digits.length === 3) return `${digits[0]}:${digits.slice(1)}`;
-        return `${digits.slice(0, 2)}:${digits.slice(2)}`;
-      }
-
-      function attFormatDurationLabel(totalMins) {
-        if (totalMins == null || totalMins < 0) return '—';
-        const h = Math.floor(totalMins / 60);
-        const m = totalMins % 60;
-        if (h && m) return `${h} ساعات و ${m} دقيقة`;
-        if (h) return h === 1 ? 'ساعة' : `${h} ساعات`;
-        return `${m} دقيقة`;
-      }
-
-      function attFormatDiffLabel(diffMins) {
-        if (diffMins == null) return { text: '—', tone: 'muted' };
-        if (diffMins === 0) return { text: '0 دقيقة', tone: 'muted' };
-        const abs = Math.abs(diffMins);
-        const body = abs >= 60
-          ? attFormatDurationLabel(abs)
-          : `${abs} دقيقة`;
-        if (diffMins > 0) return { text: `+${body}`, tone: 'pos' };
-        return { text: `-${body}`, tone: 'neg' };
-      }
-
-      function attStatusBadgeClass(status) {
-        switch (status) {
-          case 'present': return 'rd-att-pill--present';
-          case 'day_off': return 'rd-att-pill--off';
-          case 'off': return 'rd-att-pill--off';
-          case 'sick': return 'rd-att-pill--sick';
-          case 'permission': return 'rd-att-pill--perm';
-          case 'excuse': return 'rd-att-pill--perm';
-          default: return 'rd-att-pill--unset';
-        }
-      }
-
-      function attStatusLabel(status) {
-        return ATTENDANCE_STATUS_OPTS.find(o => o.id === status)?.label || 'غير محدد';
-      }
-
-      function getAttendanceWorkMetrics(rec, status) {
-        const st = status || rec?.status || 'unset';
-        if (st !== 'present') {
-          return {
-            worked: null,
-            diff: null,
-            late: false,
-            noIn: true,
-            noOut: true
-          };
-        }
-        const inHm = attTimeToInput(rec?.check_in_time);
-        const outHm = attTimeToInput(rec?.check_out_time);
-        const inMins = attHmToMinutes(inHm);
-        const outMins = attHmToMinutes(outHm);
-        const startMins = attHmToMinutes(ATT_DEFAULT_SHIFT.start);
-        const worked = (inMins != null && outMins != null && outMins >= inMins)
-          ? (outMins - inMins)
-          : null;
-        const diff = worked == null ? null : (worked - ATT_DEFAULT_SHIFT.minutes);
-        const late = inMins != null && startMins != null && inMins > startMins;
-        return {
-          worked,
-          diff,
-          late,
-          noIn: !inHm,
-          noOut: !outHm
-        };
-      }
-
-      function getAttendanceWorkDate() {
-        const input = document.getElementById('attWorkDate');
-        const v = input?.value || state._attWorkDate || getAttendanceTodayKey();
-        state._attWorkDate = v;
-        return v;
-      }
-
-      function ensureAttendanceDateInput() {
-        const input = document.getElementById('attWorkDate');
-        if (!input) return getAttendanceTodayKey();
-        if (!input.value) input.value = state._attWorkDate || getAttendanceTodayKey();
-        state._attWorkDate = input.value;
-        syncAttendanceDateDisplay();
-        return input.value;
-      }
-
-      const attDpState = {
-        viewYear: 0,
-        viewMonth: 0,
-        pickerView: 'days',
-        selected: null
-      };
-
-      function closeAttDatePicker() {
-        const popup = document.getElementById('attDatePickerPopup');
-        const btn = document.getElementById('attDateBtn');
-        popup?.classList.remove('open');
-        btn?.classList.remove('is-open');
-        btn?.setAttribute('aria-expanded', 'false');
-      }
-
-      function renderAttDatePicker() {
-        const label = document.getElementById('attDpMonthLabel');
-        const grid = document.getElementById('attDpDays');
-        const popup = document.getElementById('attDatePickerPopup');
-        if (!label || !grid) return;
-        const months = (typeof NT_DP_MONTHS !== 'undefined' && NT_DP_MONTHS) || [
-          'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
-          'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
-        ];
-
-        if (attDpState.pickerView === 'months') {
-          label.textContent = String(attDpState.viewYear);
-          grid.innerHTML = typeof dpBuildMonthGridHtml === 'function'
-            ? dpBuildMonthGridHtml(months, attDpState.viewMonth, 'attDpPickMonth')
-            : '';
-          grid.classList.add('dp-mode-pick');
-          if (typeof dpPickerSyncChrome === 'function') dpPickerSyncChrome(popup, 'months');
-          return;
-        }
-
-        grid.classList.remove('dp-mode-pick');
-        label.textContent = `${months[attDpState.viewMonth]} ${attDpState.viewYear}`;
-        if (typeof dpPickerSyncChrome === 'function') dpPickerSyncChrome(popup, 'days');
-
-        const today = typeof ksaTodayCalendar === 'function' ? ksaTodayCalendar() : new Date();
-        const firstDay = typeof ksaCalendarDate === 'function'
-          ? ksaCalendarDate(attDpState.viewYear, attDpState.viewMonth, 1)
-          : new Date(attDpState.viewYear, attDpState.viewMonth, 1);
-        const totalDays = typeof ksaDaysInCalendarMonth === 'function'
-          ? ksaDaysInCalendarMonth(attDpState.viewYear, attDpState.viewMonth)
-          : new Date(attDpState.viewYear, attDpState.viewMonth + 1, 0).getDate();
-        const startDayOfWeek = firstDay.getDay();
-        const prevLastDay = typeof ksaDaysInCalendarMonth === 'function'
-          ? ksaDaysInCalendarMonth(
-            attDpState.viewMonth === 0 ? attDpState.viewYear - 1 : attDpState.viewYear,
-            attDpState.viewMonth === 0 ? 11 : attDpState.viewMonth - 1
-          )
-          : new Date(attDpState.viewYear, attDpState.viewMonth, 0).getDate();
-
-        let html = '';
-        for (let i = startDayOfWeek; i > 0; i--) {
-          html += `<button type="button" class="dp-day other-month" disabled>${prevLastDay - i + 1}</button>`;
-        }
-        for (let day = 1; day <= totalDays; day++) {
-          const date = typeof ksaCalendarDate === 'function'
-            ? ksaCalendarDate(attDpState.viewYear, attDpState.viewMonth, day)
-            : new Date(attDpState.viewYear, attDpState.viewMonth, day);
-          const classes = ['dp-day'];
-          const sameDay = typeof ksaSameCalendarDay === 'function'
-            ? (a, b) => ksaSameCalendarDay(a, b)
-            : (a, b) => a && b && a.toDateString() === b.toDateString();
-          if (sameDay(date, today)) classes.push('today');
-          if (attDpState.selected && sameDay(date, attDpState.selected)) classes.push('start', 'end');
-          const iso = typeof ksaCalendarToIso === 'function' ? ksaCalendarToIso(date) : [
-            date.getFullYear(),
-            String(date.getMonth() + 1).padStart(2, '0'),
-            String(date.getDate()).padStart(2, '0')
-          ].join('-');
-          html += `<button type="button" class="${classes.join(' ')}" data-iso="${iso}" onclick="attDpPickDay('${iso}')">${day}</button>`;
-        }
-        const totalCells = startDayOfWeek + totalDays;
-        const remaining = (7 - (totalCells % 7)) % 7;
-        for (let i = 1; i <= remaining; i++) {
-          html += `<button type="button" class="dp-day other-month" disabled>${i}</button>`;
-        }
-        grid.innerHTML = html;
-      }
-
-      function toggleAttDatePicker(e) {
-        if (e) e.stopPropagation();
-        const popup = document.getElementById('attDatePickerPopup');
-        const btn = document.getElementById('attDateBtn');
-        if (!popup || !btn) return;
-        if (popup.classList.contains('open')) {
-          closeAttDatePicker();
-          return;
-        }
-        try { closeAttPeriodMenu(); } catch (_) { /* noop */ }
-        if (typeof dpWireMonthPickOnPopup === 'function') {
-          dpWireMonthPickOnPopup(popup, attDpPickMonth);
-        }
-        ensureAttendanceDateInput();
-        const iso = getAttendanceWorkDate();
-        attDpState.selected = typeof ksaDateFromIso === 'function' ? ksaDateFromIso(iso) : new Date(iso + 'T12:00:00');
-        if (attDpState.selected && !Number.isNaN(attDpState.selected.getTime())) {
-          attDpState.viewYear = attDpState.selected.getFullYear();
-          attDpState.viewMonth = attDpState.selected.getMonth();
-        } else if (typeof ksaInitViewState === 'function') {
-          ksaInitViewState(attDpState);
-        }
-        try { closeAttStatusFilterMenu(); } catch (_) { /* noop */ }
-        // Day monitoring: open the day grid for the selected month
-        attDpState.pickerView = 'days';
-        renderAttDatePicker();
-        popup.classList.add('open');
-        btn.classList.add('is-open');
-        btn.setAttribute('aria-expanded', 'true');
-      }
-
-      function attDpToggleMonthYear() {
-        const popup = document.getElementById('attDatePickerPopup');
-        attDpState.pickerView = attDpState.pickerView === 'months' ? 'days' : 'months';
-        renderAttDatePicker();
-        if (typeof dpPickerSyncChrome === 'function') dpPickerSyncChrome(popup, attDpState.pickerView);
-      }
-
-      function attDpPickMonth(monthIndex) {
-        const idx = Number(monthIndex);
-        if (!Number.isFinite(idx) || idx < 0 || idx > 11) return;
-        attDpState.viewMonth = idx;
-        attDpState.pickerView = 'days';
-        renderAttDatePicker();
-      }
-
-      function attDpChangeMonth(dir) {
-        if (attDpState.pickerView === 'months') {
-          attDpState.viewYear += dir;
-        } else {
-          attDpState.viewMonth += dir;
-          if (attDpState.viewMonth > 11) {
-            attDpState.viewMonth = 0;
-            attDpState.viewYear++;
-          } else if (attDpState.viewMonth < 0) {
-            attDpState.viewMonth = 11;
-            attDpState.viewYear--;
-          }
-        }
-        renderAttDatePicker();
-      }
-
-      function attDpPickDay(iso) {
-        const input = document.getElementById('attWorkDate');
-        if (input) input.value = iso;
-        state._attWorkDate = iso;
-        attDpState.selected = typeof ksaDateFromIso === 'function' ? ksaDateFromIso(iso) : new Date(iso + 'T12:00:00');
-        syncAttendanceDateDisplay();
-        closeAttDatePicker();
-        onAttendanceDateChange();
-      }
-
-      function attDpSelectToday() {
-        attDpPickDay(getAttendanceTodayKey());
-      }
-
-      function attTimeToInput(t) {
-        if (!t) return '';
-        const s = String(t);
-        return s.length >= 5 ? s.slice(0, 5) : s;
-      }
-
-      function attInputToRpcTime(v) {
-        const normalized = attNormalizeTypedTime(v) || String(v || '').trim();
-        if (!normalized) return null;
-        if (/^\d{2}:\d{2}$/.test(normalized)) return `${normalized}:00`;
-        if (/^\d{2}:\d{2}:\d{2}/.test(normalized)) return normalized.slice(0, 8);
-        return null;
-      }
-
-      async function ensureAttendanceDepartmentsLoaded(force) {
-        if (!force && (state.attendanceDepartments || []).length) return state.attendanceDepartments;
-        try {
-          const { data, error } = await sb
-            .from('departments')
-            .select('id,name,slug,sort_order,is_active')
-            .eq('is_active', true)
-            .order('sort_order');
-          if (error) throw error;
-          state.attendanceDepartments = data || [];
-        } catch (e) {
-          if (isMirsadDebugLog()) console.warn('[attendance] departments', e);
-          state.attendanceDepartments = state.attendanceDepartments || [];
-        }
-        return state.attendanceDepartments;
-      }
-
-      function resolveEffectiveAttendanceDepartmentId(u) {
-        if (!u) return null;
-        if (u.department_id) return u.department_id;
-        if (isGalleriesAttendanceMember(u)) {
-          return getAttendanceDepartmentBySlug('galleries')?.id || null;
-        }
-        return null;
-      }
-
-      /** مشغّل مكتب الحضور: يرى/يسجّل كل الأقسام (مثل الأدمن على نطاق الصفحة فقط) */
-      function isAttendanceDeskOperator() {
-        const role = normalizeUserRole(state.currentUser?.role);
-        if (role === 'admin') return true;
-        return !!(canViewAttendanceTab() && canMarkAttendance() && typeof canManageUsers === 'function' && canManageUsers());
-      }
-
-      function getVisibleAttendanceDepartments() {
-        const all = (state.attendanceDepartments || []).filter(d => d && d.is_active !== false);
-        if (isAttendanceDeskOperator()) return all;
-        if (isGalleriesAttendanceMember(state.currentUser)) {
-          const galleries = all.filter(d => d.slug === 'galleries');
-          if (galleries.length) return galleries;
-        }
-        const myDept = resolveEffectiveAttendanceDepartmentId(state.currentUser);
-        if (!myDept) return [];
-        return all.filter(d => d.id === myDept);
-      }
-
-      function getAttendanceDeptUsers(dept, branchId) {
-        const deptId = typeof dept === 'string' ? dept : dept?.id;
-        const slug = typeof dept === 'object' && dept ? dept.slug : (state.attendanceDepartments || []).find(d => d.id === deptId)?.slug;
-        let list;
-        if (slug === 'galleries') {
-          list = (state.users || []).filter(u => isGalleriesAttendanceMember(u));
-          if (branchId === '__none__') {
-            list = list.filter(u => !u.branch_id);
-          } else if (branchId) {
-            list = list.filter(u => u.branch_id === branchId);
-          }
-        } else {
-          list = (state.users || []).filter(u => u && u.department_id === deptId && u.is_active !== false);
-        }
-        return list
-          .slice()
-          .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'ar'));
-      }
-
-      function getAttendanceBranchGroups(dept) {
-        const users = getAttendanceDeptUsers(dept);
-        if (!state._branchById) rebuildLookupMaps();
-        const map = new Map();
-        for (const u of users) {
-          const key = u.branch_id || '__none__';
-          if (!map.has(key)) {
-            const br = u.branch_id ? (state._branchById?.get(u.branch_id) || (state.branches || []).find(b => b.id === u.branch_id)) : null;
-            map.set(key, {
-              id: key,
-              name: br?.name || 'بدون فرع',
-              regionName: br?.region_id
-                ? ((state._regionById?.get(br.region_id) || (state.regions || []).find(r => r.id === br.region_id))?.name || '')
-                : '',
-              users: []
-            });
-          }
-          map.get(key).users.push(u);
-        }
-        return [...map.values()].sort((a, b) => {
-          if (a.id === '__none__') return 1;
-          if (b.id === '__none__') return -1;
-          return String(a.name || '').localeCompare(String(b.name || ''), 'ar');
-        });
-      }
-
-      function getAttendanceRecordForUser(userId) {
-        return (state.attendanceRecords || []).find(r => r.user_id === userId) || null;
-      }
-
-      function canMarkUserAttendance(targetUser) {
-        if (!canMarkAttendance() || !targetUser) return false;
-        if (isAttendanceDeskOperator()) return true;
-        if (isGalleriesAttendanceMember(state.currentUser) && isGalleriesAttendanceMember(targetUser)) return true;
-        const myDept = resolveEffectiveAttendanceDepartmentId(state.currentUser);
-        const targetDept = resolveEffectiveAttendanceDepartmentId(targetUser);
-        if (!myDept || !targetDept) return false;
-        return myDept === targetDept;
-      }
-
-      async function loadAttendanceRecordsForDept(dept, workDate, branchId) {
-        const deptId = typeof dept === 'string' ? dept : dept?.id;
-        const slug = typeof dept === 'object' && dept ? dept.slug : (state.attendanceDepartments || []).find(d => d.id === deptId)?.slug;
-        if (!deptId || !workDate) {
-          state.attendanceRecords = [];
-          return [];
-        }
-        let query = sb
-          .from('attendance_records')
-          .select('id,user_id,department_id,work_date,status,check_in_time,check_out_time,note,marked_by,updated_at')
-          .eq('work_date', workDate);
-        if (slug === 'galleries') {
-          const ids = getAttendanceDeptUsers(dept, branchId).map(u => u.id).filter(Boolean);
-          if (!ids.length) {
-            state.attendanceRecords = [];
-            return [];
-          }
-          // Chunk large rosters to avoid PostgREST URL limits
-          const chunkSize = 120;
-          const rows = [];
-          for (let i = 0; i < ids.length; i += chunkSize) {
-            const part = ids.slice(i, i + chunkSize);
-            const { data, error } = await sb
-              .from('attendance_records')
-              .select('id,user_id,department_id,work_date,status,check_in_time,check_out_time,note,marked_by,updated_at')
-              .eq('work_date', workDate)
-              .in('user_id', part);
-            if (error) throw error;
-            if (data?.length) rows.push(...data);
-          }
-          state.attendanceRecords = rows;
-          return rows;
-        }
-        query = query.eq('department_id', deptId);
-        const { data, error } = await query;
-        if (error) throw error;
-        state.attendanceRecords = data || [];
-        return state.attendanceRecords;
-      }
-
-      async function loadAttendanceRecordsForRange(dept, fromIso, toIso, branchId) {
-        const deptId = typeof dept === 'string' ? dept : dept?.id;
-        const slug = typeof dept === 'object' && dept
-          ? dept.slug
-          : (state.attendanceDepartments || []).find(d => d.id === deptId)?.slug;
-        if (!deptId || !fromIso || !toIso) return [];
-        const selectCols = 'id,user_id,department_id,work_date,status,check_in_time,check_out_time,note,marked_by,updated_at';
-        if (slug === 'galleries') {
-          const ids = getAttendanceDeptUsers(dept, branchId).map(u => u.id).filter(Boolean);
-          if (!ids.length) return [];
-          const chunkSize = 80;
-          const rows = [];
-          for (let i = 0; i < ids.length; i += chunkSize) {
-            const part = ids.slice(i, i + chunkSize);
-            const { data, error } = await sb
-              .from('attendance_records')
-              .select(selectCols)
-              .gte('work_date', fromIso)
-              .lte('work_date', toIso)
-              .in('user_id', part);
-            if (error) throw error;
-            if (data?.length) rows.push(...data);
-          }
-          return rows;
-        }
-        const { data, error } = await sb
-          .from('attendance_records')
-          .select(selectCols)
-          .eq('department_id', deptId)
-          .gte('work_date', fromIso)
-          .lte('work_date', toIso);
-        if (error) throw error;
-        return data || [];
-      }
-
-      function attFormatTimeForExport(value) {
-        const hm24 = typeof attTimeToInput === 'function' ? attTimeToInput(value) : String(value || '').slice(0, 5);
-        if (!hm24) return '';
-        if (typeof attPartsFromHm24 === 'function') {
-          const parts = attPartsFromHm24(hm24);
-          return `${parts.hm} ${parts.mer}`;
-        }
-        return hm24;
-      }
-
-      function buildAttendanceCycleExportRows(users, records, dateList, dept, branchId) {
-        const byUserDate = new Map();
-        for (const r of records || []) {
-          if (!r?.user_id || !r?.work_date) continue;
-          byUserDate.set(`${r.user_id}|${String(r.work_date).slice(0, 10)}`, r);
-        }
-        if (!state._branchById) {
-          try { rebuildLookupMaps(); } catch (_) { /* noop */ }
-        }
-        const branchGroup = (dept?.slug === 'galleries' && branchId)
-          ? getAttendanceBranchGroups(dept).find(g => g.id === branchId)
-          : null;
-        const headers = [
-          'الرقم الوظيفي',
-          'الاسم',
-          'الدور',
-          'القسم',
-          'الفرع',
-          'التاريخ',
-          'اليوم',
-          'الحالة',
-          'وقت الحضور',
-          'وقت الانصراف',
-          'ملاحظة'
-        ];
-        const rows = [];
-        for (const u of users) {
-          const br = u.branch_id
-            ? (state._branchById?.get(u.branch_id) || (state.branches || []).find(b => b.id === u.branch_id))
-            : null;
-          const empNo = typeof padEmpNum === 'function'
-            ? (padEmpNum(u.employee_number) || u.employee_number || '')
-            : (u.employee_number || '');
-          const roleLbl = ROLE_LABELS[normalizeUserRole(u.role)] || u.role || '';
-          const deptName = dept?.name || '';
-          const branchName = branchGroup?.name || br?.name || '';
-          for (const dayIso of dateList) {
-            const rec = byUserDate.get(`${u.id}|${dayIso}`);
-            const status = rec?.status || 'unset';
-            rows.push([
-              empNo,
-              u.name || '',
-              roleLbl,
-              deptName,
-              branchName,
-              dayIso,
-              formatAttendanceDateReportLine(dayIso),
-              attStatusLabel(status),
-              status === 'present' ? attFormatTimeForExport(rec?.check_in_time) : '',
-              status === 'present' ? attFormatTimeForExport(rec?.check_out_time) : '',
-              rec?.note || ''
-            ]);
-          }
-        }
-        return { headers, rows };
-      }
-
-      async function exportAttendanceCycleReport() {
-        if (!canViewAttendanceTab()) {
-          showToast('لا تملك صلاحية عرض الحضور', 'warning');
-          return;
-        }
-        const cycle = getAttendanceReportRange(getAttendanceWorkDate());
-        if (!cycle) {
-          showToast('تعذّر تحديد فترة التقرير', 'error');
-          return;
-        }
-
-        let depts = [];
-        let branchId = state._attSelectedBranchId || null;
-        if (state._attSelectedDeptId) {
-          const d = (state.attendanceDepartments || []).find(x => x.id === state._attSelectedDeptId);
-          if (d) depts = [d];
-        }
-        if (!depts.length) {
-          depts = typeof getVisibleAttendanceDepartments === 'function'
-            ? getVisibleAttendanceDepartments()
-            : (state.attendanceDepartments || []);
-          branchId = null;
-        }
-        if (!depts.length) {
-          showToast('لا توجد أقسام للتصدير', 'warning');
-          return;
-        }
-
-        const modeLbl = cycle.mode === 'monthly' ? 'شهري' : 'فترة الرواتب';
-        const ok = window.confirm(
-          `تنزيل تقرير الحضور (${modeLbl}):\n${cycle.fromLabel}\nإلى\n${cycle.toLabel}`
-        );
-        if (!ok) return;
-
-        const btn = document.getElementById('attCycleExportBtn');
-        const prevHtml = btn?.innerHTML;
-        if (btn) {
-          btn.disabled = true;
-          btn.innerHTML = '<i class="fas fa-spinner fa-spin" aria-hidden="true"></i><span>جاري التصدير…</span>';
-        }
-
-        try {
-          const dateList = eachAttendanceIsoInRange(cycle.from, cycle.to);
-          if (!dateList.length) {
-            showToast('لا توجد أيام في هذه الفترة', 'warning');
-            return;
-          }
-
-          const allRows = [];
-          for (const dept of depts) {
-            const users = getAttendanceDeptUsers(dept, branchId);
-            if (!users.length) continue;
-            const records = await loadAttendanceRecordsForRange(dept, cycle.from, cycle.to, branchId);
-            const built = buildAttendanceCycleExportRows(users, records, dateList, dept, branchId);
-            allRows.push(...built.rows);
-          }
-
-          if (!allRows.length) {
-            showToast('لا توجد بيانات للتصدير في هذه الفترة', 'warning');
-            return;
-          }
-
-          const XLSX = await ensureXlsxLib();
-          const meta = [
-            [cycle.title],
-            ['نوع الفترة', modeLbl],
-            ['من', cycle.fromLabel],
-            ['إلى', cycle.toLabel],
-            ['تاريخ التصدير', formatAttendanceDateReportLine(getAttendanceTodayKey())],
-            []
-          ];
-          const headers = [
-            'الرقم الوظيفي', 'الاسم', 'الدور', 'القسم', 'الفرع',
-            'التاريخ', 'اليوم', 'الحالة', 'وقت الحضور', 'وقت الانصراف', 'ملاحظة'
-          ];
-          const sheetData = [
-            ...meta,
-            headers,
-            ...allRows.map(row => row.map(v => String(v ?? '').replace(/\r?\n+/g, ' ').trim()))
-          ];
-          const ws = XLSX.utils.aoa_to_sheet(sheetData);
-          ws['!cols'] = [
-            { wch: 14 }, { wch: 22 }, { wch: 14 }, { wch: 16 }, { wch: 16 },
-            { wch: 12 }, { wch: 26 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 24 }
-          ];
-          const wb = XLSX.utils.book_new();
-          XLSX.utils.book_append_sheet(wb, ws, 'الحضور');
-          const fileName = `attendance-${cycle.mode}-${cycle.from}_to_${cycle.to}.xlsx`;
-          XLSX.writeFile(wb, fileName, { cellStyles: true });
-          showToast('تم تنزيل تقرير الحضور ✓', 'success');
-        } catch (e) {
-          showToast('تعذّر تنزيل التقرير: ' + (e.message || e), 'error');
-        } finally {
-          if (btn) {
-            btn.disabled = false;
-            if (prevHtml != null) btn.innerHTML = prevHtml;
-          }
-        }
-      }
-
-      function renderAttendanceDeptCardsHtml(depts) {
-        if (!depts.length) {
-          const role = normalizeUserRole(state.currentUser?.role);
-          const hint = role === 'admin'
-            ? 'لا توجد أقسام حضورية بعد.'
-            : 'لم يُعيَّن لك قسم حضور. اطلب من مدير النظام ربط حسابك بقسم من إدارة المستخدمين.';
-          return `<div class="rd-att-empty"><i class="fas fa-building" aria-hidden="true"></i><p>${Sec.escapeHTML(hint)}</p></div>`;
-        }
-        const visible = depts.filter((d) => attendanceMatchesSearch([d.name, d.slug]));
-        if (!visible.length) {
-          return `<div class="rd-att-empty"><i class="fas fa-magnifying-glass" aria-hidden="true"></i><p>لا نتائج لهذا البحث.</p></div>`;
-        }
-        return `<div class="rd-att-depts" role="list">${visible.map((d, i) => {
-          const users = getAttendanceDeptUsers(d);
-          const icon = ATTENDANCE_DEPT_ICONS[d.slug] || 'fa-users';
-          let sub;
-          if (d.slug === 'galleries') {
-            const branches = getAttendanceBranchGroups(d).length;
-            sub = `${users.length} موظف · ${branches} فرع`;
-          } else {
-            sub = `${users.length} موظف`;
-          }
-          return `<button type="button" class="rd-att-dept-card" role="listitem" style="--rd-att-i:${i}" onclick="attendanceOpenDepartment('${d.id}')">
-            <span class="rd-att-dept-card__ico" aria-hidden="true"><i class="fas ${icon}"></i></span>
-            <span class="rd-att-dept-card__body">
-              <span class="rd-att-dept-card__name">${Sec.escapeHTML(d.name)}</span>
-              <span class="rd-att-dept-card__meta">${Sec.escapeHTML(sub)}</span>
-            </span>
-            <span class="rd-att-dept-card__chev" aria-hidden="true"><i class="fas fa-chevron-left"></i></span>
-          </button>`;
-        }).join('')}</div>`;
-      }
-
-      function renderAttendanceBranchCardsHtml(dept) {
-        const groups = getAttendanceBranchGroups(dept);
-        const dateLabel = getAttendanceWorkDate();
-        if (!groups.length) {
-          return `<div class="rd-att-roster">
-            <div class="rd-att-roster__head">
-              <h3 class="rd-att-roster__title">${Sec.escapeHTML(dept.name)}</h3>
-              <p class="rd-att-roster__sub">اختر فرع الفريق · ${Sec.escapeHTML(dateLabel)}</p>
-            </div>
-            <div class="rd-att-empty"><i class="fas fa-store" aria-hidden="true"></i><p>لا يوجد مدراء فروع أو مشرفين أو أخصائيي مبيعات نشطون.</p></div>
-          </div>`;
-        }
-        const visible = groups.filter((g) => {
-          const userBits = (g.users || []).flatMap((u) => [
-            u.name,
-            u.employee_number,
-            typeof padEmpNum === 'function' ? padEmpNum(u.employee_number) : '',
-            ROLE_LABELS[normalizeUserRole(u.role)]
-          ]);
-          return attendanceMatchesSearch([
-            g.name,
-            g.regionName,
-            g.id === '__none__' ? 'بدون فرع' : g.id,
-            ...userBits
-          ]);
-        });
-        if (!visible.length) {
-          return `<div class="rd-att-roster">
-            <div class="rd-att-roster__head">
-              <h3 class="rd-att-roster__title">${Sec.escapeHTML(dept.name)}</h3>
-              <p class="rd-att-roster__sub">فرق الفروع · ${Sec.escapeHTML(dateLabel)}</p>
-            </div>
-            <div class="rd-att-empty"><i class="fas fa-magnifying-glass" aria-hidden="true"></i><p>لا نتائج لهذا البحث.</p></div>
-          </div>`;
-        }
-        return `<div class="rd-att-roster">
-          <div class="rd-att-roster__head">
-            <h3 class="rd-att-roster__title">${Sec.escapeHTML(dept.name)}</h3>
-            <p class="rd-att-roster__sub">فرق الفروع · ${visible.length} فرع · ${Sec.escapeHTML(dateLabel)}</p>
-          </div>
-          <div class="rd-att-depts rd-att-branches" role="list">${visible.map((g, i) => {
-            const roleBits = [];
-            const nEmp = g.users.filter(u => normalizeUserRole(u.role) === 'employee').length;
-            const nSup = g.users.filter(u => normalizeUserRole(u.role) === 'supervisor').length;
-            const nMgr = g.users.filter(u => normalizeUserRole(u.role) === 'branch_manager').length;
-            if (nMgr) roleBits.push(`${nMgr} مدير فرع`);
-            if (nSup) roleBits.push(`${nSup} مشرف`);
-            if (nEmp) roleBits.push(`${nEmp} أخصائي مبيعات`);
-            const meta = roleBits.length ? roleBits.join(' · ') : `${g.users.length} موظف`;
-            const region = g.regionName ? ` · ${g.regionName}` : '';
-            return `<button type="button" class="rd-att-dept-card rd-att-branch-card" role="listitem" style="--rd-att-i:${i}" onclick="attendanceOpenBranch('${g.id}')">
-              <span class="rd-att-dept-card__ico" aria-hidden="true"><i class="fas fa-store"></i></span>
-              <span class="rd-att-dept-card__body">
-                <span class="rd-att-dept-card__name">${Sec.escapeHTML(g.name)}</span>
-                <span class="rd-att-dept-card__meta">${Sec.escapeHTML(meta + region)}</span>
-              </span>
-              <span class="rd-att-dept-card__chev" aria-hidden="true"><i class="fas fa-chevron-left"></i></span>
-            </button>`;
-          }).join('')}</div>
-        </div>`;
-      }
-
-      function renderAttendanceStatusOptions(selected) {
-        return ATTENDANCE_STATUS_OPTS.map(o =>
-          `<option value="${o.id}" ${o.id === selected ? 'selected' : ''}>${Sec.escapeHTML(o.label)}</option>`
-        ).join('');
-      }
-
-      function attNormalizeTypedTime(raw) {
-        let s = String(raw || '').trim();
-        if (!s) return '';
-        s = s.replace(/[٠-٩]/g, d => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)));
-        s = s.replace(/[۰-۹]/g, d => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d)));
-        const m = s.match(/^(\d{1,2})\s*[:：]\s*(\d{1,2})\s*(ص|م|صباحاً|صباحًا|مساءً|مساءاً|am|pm)?$/i);
-        if (!m) return '';
-        let h = Number(m[1]);
-        const min = Number(m[2]);
-        if (!Number.isFinite(h) || !Number.isFinite(min) || min > 59) return '';
-        const mer = String(m[3] || '').trim().toLowerCase();
-        if (mer) {
-          if (h < 1 || h > 12) return '';
-          const isPm = mer === 'م' || mer === 'مساءً' || mer === 'مساءاً' || mer === 'pm';
-          if (isPm) h = h === 12 ? 12 : h + 12;
-          else h = h === 12 ? 0 : h;
-        } else if (h > 23) {
-          return '';
-        }
-        return `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
-      }
-
-      function renderAttTimeControlHtml(field, value, editable, present, opts = {}) {
-        const label = field === 'check_in' ? 'وقت الحضور' : 'وقت الانصراف';
-        const lateHtml = opts.late ? '<span class="rd-att-pill rd-att-pill--late">حضور متأخر</span>' : '';
-        if (!present) {
-          return `<span class="rd-att-time-chip rd-att-time-chip--muted">لا يوجد سجل</span>`;
-        }
-        const hm24 = attTimeToInput(value);
-        const parts = attPartsFromHm24(hm24);
-        if (!editable) {
-          if (!hm24) return `<span class="rd-att-time-chip rd-att-time-chip--muted">لا يوجد سجل</span>`;
-          return `<div class="rd-att-time-cell">
-            <span class="rd-att-time-chip">
-              <span class="rd-att-time-chip__hm" dir="ltr">${Sec.escapeHTML(parts.hm)}</span>
-              <span class="rd-att-time-chip__mer">${parts.mer}</span>
-            </span>
-            ${lateHtml}
-          </div>`;
-        }
-        const empty = !hm24;
-        const chipInner = empty
-          ? 'لا يوجد سجل'
-          : `<span class="rd-att-time-chip__hm" dir="ltr">${Sec.escapeHTML(parts.hm)}</span><span class="rd-att-time-chip__mer">${parts.mer}</span>`;
-        return `<div class="rd-att-time-cell" data-att-time-cell data-att-empty="${empty ? '1' : '0'}">
-          <button type="button" class="rd-att-time-chip${empty ? ' rd-att-time-chip--empty' : ''}"
-            data-att-time-chip onclick="onAttendanceTimeChipClick(this)" aria-label="${label}">
-            ${chipInner}
-          </button>
-          <div class="rd-att-time-editor" data-att-time-editor hidden>
-            <div class="rd-att-time-editor__box" dir="ltr">
-              <input type="text" class="rd-att-time-hm" data-att-hm inputmode="numeric" maxlength="5"
-                autocomplete="off" placeholder="--:--" value="${empty ? '' : Sec.escapeHTML(parts.hm)}"
-                oninput="onAttendanceHmInput(this)" onblur="onAttendanceTimeEditorBlur(this)">
-              <button type="button" class="rd-att-mer${parts.mer === 'ص' ? ' is-on' : ''}" data-att-mer="ص"
-                onclick="onAttendanceMerPick(this)" aria-label="صباحًا">ص</button>
-              <button type="button" class="rd-att-mer${parts.mer === 'م' ? ' is-on' : ''}" data-att-mer="م"
-                onclick="onAttendanceMerPick(this)" aria-label="مساءً">م</button>
-            </div>
-          </div>
-          <input type="hidden" data-att-field="${field}" value="${Sec.escapeHTML(hm24 || '')}">
-          ${lateHtml}
-        </div>`;
-      }
-
-      function renderAttendanceRosterHtml(dept, branchId) {
-        const allUsers = getAttendanceDeptUsers(dept, branchId);
-        const users = allUsers.filter((u) => {
-          const status = getAttendanceRecordForUser(u.id)?.status || 'unset';
-          if (!attendanceMatchesStatusFilter(status)) return false;
-          const br = u.branch_id
-            ? (state._branchById?.get(u.branch_id) || (state.branches || []).find(b => b.id === u.branch_id))
-            : null;
-          return attendanceMatchesSearch([
-            u.name,
-            u.employee_number,
-            typeof padEmpNum === 'function' ? padEmpNum(u.employee_number) : u.employee_number,
-            ROLE_LABELS[normalizeUserRole(u.role)],
-            getStaffJobTitle?.(u),
-            br?.name
-          ]);
-        });
-        const canAny = canMarkAttendance();
-        const q = attendanceSearchNeedle();
-        const statusFilter = getAttStatusFilter();
-        const branchGroup = (dept?.slug === 'galleries' && branchId)
-          ? getAttendanceBranchGroups(dept).find(g => g.id === branchId)
-          : null;
-        const title = branchGroup
-          ? `${dept.name} · ${branchGroup.name}`
-          : dept.name;
-
-        let presentN = 0;
-        let unsetN = 0;
-        let absentN = 0;
-        let leaveN = 0;
-        for (const u of allUsers) {
-          const st = getAttendanceRecordForUser(u.id)?.status || 'unset';
-          if (st === 'present') presentN += 1;
-          else if (st === 'unset') unsetN += 1;
-          else if (st === 'off') absentN += 1;
-          else leaveN += 1;
-        }
-
-        if (!allUsers.length) {
-          return `<div class="rd-att-roster">
-            <div class="rd-att-roster__head">
-              <h3 class="rd-att-roster__title">${Sec.escapeHTML(title)}</h3>
-            </div>
-            <div class="rd-att-empty"><i class="fas fa-user-slash" aria-hidden="true"></i><p>${dept.slug === 'galleries' ? 'لا يوجد موظفون لهذا الفرع.' : 'اربط الموظفين بالقسم من إدارة المستخدمين.'}</p></div>
-          </div>`;
-        }
-
-        const rows = users.map((u, i) => {
-          const rec = getAttendanceRecordForUser(u.id);
-          const status = rec?.status || 'unset';
-          const editable = canMarkUserAttendance(u);
-          const present = status === 'present';
-          const disabled = editable ? '' : 'disabled';
-          const av = (u.name || '?').trim().charAt(0);
-          const roleLbl = getStaffJobTitle(u) || ROLE_LABELS[normalizeUserRole(u.role)] || '';
-          const metrics = getAttendanceWorkMetrics(rec, status);
-          const diff = attFormatDiffLabel(metrics.diff);
-          const statusLbl = attStatusLabel(status);
-          return `<tr class="rd-att-tr" data-user-id="${u.id}" style="--rd-att-i:${i}">
-            <td class="rd-att-td rd-att-td--emp">
-              <div class="rd-att-emp">
-                <span class="rd-att-emp__av" aria-hidden="true">${Sec.escapeHTML(av)}</span>
-                <div class="rd-att-emp__meta">
-                  <div class="rd-att-emp__name">${Sec.escapeHTML(u.name || '—')}</div>
-                  <div class="rd-att-emp__sub">${Sec.escapeHTML(roleLbl || '—')}</div>
-                  <div class="rd-att-emp__num">${Sec.escapeHTML(padEmpNum(u.employee_number) || '—')}</div>
-                </div>
-              </div>
-            </td>
-            <td class="rd-att-td rd-att-td--status">
-              <div class="rd-att-status-cell">
-                <span class="rd-att-pill ${attStatusBadgeClass(status)}">${Sec.escapeHTML(statusLbl)}</span>
-                <select class="form-select rd-att-status" data-att-field="status" ${disabled} onchange="onAttendanceRowChange('${u.id}')" aria-label="حالة ${Sec.escapeHTML(u.name || '')}">
-                  ${renderAttendanceStatusOptions(status)}
-                </select>
-              </div>
-            </td>
-            <td class="rd-att-td rd-att-td--breaks">${renderAttBreaksCellHtml(u.id)}</td>
-            <td class="rd-att-td rd-att-td--sched">${renderAttScheduleBlockHtml()}</td>
-            <td class="rd-att-td rd-att-td--time">
-              ${renderAttTimeControlHtml('check_in', rec?.check_in_time, editable, present, { late: metrics.late })}
-            </td>
-            <td class="rd-att-td rd-att-td--time">
-              ${renderAttTimeControlHtml('check_out', rec?.check_out_time, editable, present)}
-            </td>
-            <td class="rd-att-td rd-att-td--dur">${Sec.escapeHTML(attFormatDurationLabel(metrics.worked))}</td>
-            <td class="rd-att-td rd-att-td--diff"><span class="rd-att-diff rd-att-diff--${diff.tone}">${Sec.escapeHTML(diff.text)}</span></td>
-            <td class="rd-att-td rd-att-td--save" data-att-save-state>${editable ? '' : '<span class="rd-att-badge">عرض فقط</span>'}</td>
-          </tr>`;
-        }).join('');
-
-        const filterNote = statusFilter !== 'all' ? ` · تصفية: ${users.length}` : '';
-        const searchNote = q ? ` · نتائج البحث: ${users.length}` : '';
-
-        return `<div class="rd-att-roster rd-att-roster--table">
-          <div class="rd-att-roster__head">
-            <div>
-              <h3 class="rd-att-roster__title">${Sec.escapeHTML(title)}</h3>
-              <p class="rd-att-roster__sub">${allUsers.length} موظف${canAny ? '' : ' · عرض فقط'}${searchNote}${statusFilter !== 'all' && !q ? filterNote : ''}</p>
-            </div>
-          </div>
-          <div class="rd-att-table-wrap">
-            <table class="rd-att-table">
-              <thead>
-                <tr>
-                  <th>الموظفون (${allUsers.length})</th>
-                  <th>الحالة</th>
-                  <th>الاستراحات</th>
-                  <th>المجدول</th>
-                  <th>الحضور</th>
-                  <th>الانصراف</th>
-                  <th>مدة العمل</th>
-                  <th>الفرق</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                ${rows || `<tr><td colspan="9"><div class="rd-att-empty rd-att-empty--inline"><p>لا نتائج لهذا البحث.</p></div></td></tr>`}
-              </tbody>
-            </table>
-          </div>
-          <div class="rd-att-table-foot" aria-label="ملخص الحضور">
-            <span><strong>${presentN}</strong> حاضر</span>
-            <span><strong>${unsetN}</strong> دون تسجيل</span>
-            <span><strong>${leaveN}</strong> إجازة / عذر</span>
-            <span><strong>${absentN}</strong> أوف</span>
-          </div>
-        </div>`;
-      }
-
-      function paintAttendanceHost(html) {
-        if (typeof closeAttDatePicker === 'function') closeAttDatePicker();
-        const host = document.getElementById('rdAttendanceHost');
-        if (!host) return;
-        host.innerHTML = html;
-      }
-
-      function syncAttendanceBackBtn() {
-        const btn = document.getElementById('attBackBtn');
-        if (!btn) return;
-        const show = !!(state._attSelectedDeptId || state._attSelectedBranchId);
-        btn.hidden = !show;
-        const label = btn.querySelector('span');
-        if (label) {
-          if (state._attSelectedBranchId) label.textContent = 'الفروع';
-          else if (state._attSelectedDeptId) label.textContent = 'الأقسام';
-        }
-      }
-
-      function canManageAttendanceDepartments() {
-        // إدارة الأقسام من صفحة الحضور: أدمن أو من لديه manage_users (مشغّل المكتب)
-        return !!(typeof canManageUsers === 'function' && canManageUsers());
-      }
-
-      function syncAttendanceManageBtn() {
-        const btn = document.getElementById('attManageBtn');
-        if (!btn) return;
-        btn.hidden = !canManageAttendanceDepartments();
-      }
-
-      function attDeptSlugFromName(name) {
-        const base = String(name || '')
-          .trim()
-          .toLowerCase()
-          .replace(/\s+/g, '-')
-          .replace(/[^a-z0-9\u0600-\u06ff-]+/g, '')
-          .replace(/-+/g, '-')
-          .replace(/^-|-$/g, '')
-          .slice(0, 40);
-        return base || `dept-${Date.now().toString(36)}`;
-      }
-
-      function openAttendanceDeptManager(view) {
-        if (!canManageAttendanceDepartments()) {
-          showToast('لا تملك صلاحية إدارة أقسام الحضور', 'warning');
-          return;
-        }
-        state._attManageView = view || state._attManageView || { mode: 'list' };
-        paintAttDeptManage();
-        openModal('attDeptManageModal');
-      }
-
-      function reopenAttendanceDeptManager() {
-        if (!canManageAttendanceDepartments()) return;
-        if (!state._attManageView) state._attManageView = { mode: 'list' };
-        paintAttDeptManage();
-        openModal('attDeptManageModal');
-      }
-
-      function attendanceManageGoList() {
-        state._attManageView = { mode: 'list' };
-        paintAttDeptManage();
-      }
-
-      function attendanceManageOpenDept(deptId) {
-        state._attManageView = { mode: 'dept', deptId };
-        paintAttDeptManage();
-      }
-
-      function attendanceManageStartAddDept() {
-        state._attManageView = { mode: 'addDept' };
-        paintAttDeptManage();
-      }
-
-      function attendanceManageStartRenameDept(deptId) {
-        state._attManageView = { mode: 'renameDept', deptId };
-        paintAttDeptManage();
-      }
-
-      function attendanceManageAddUser(deptId, branchId) {
-        if (!canManageAttendanceDepartments()) return;
-        state._attReopenManageAfterUser = true;
-        closeModal('attDeptManageModal');
-        const dept = (state.attendanceDepartments || []).find(d => d.id === deptId);
-        const opts = { departmentId: deptId || null };
-        if (branchId && branchId !== '__none__') opts.branchId = branchId;
-        if (dept?.slug === 'galleries') opts.role = 'employee';
-        openUserModal(opts);
-      }
-
-      function attendanceManageEditUser(userId) {
-        if (!canManageAttendanceDepartments()) return;
-        state._attReopenManageAfterUser = true;
-        closeModal('attDeptManageModal');
-        editUser(userId);
-      }
-
-      function renderAttManageListHtml() {
-        const depts = (state.attendanceDepartments || []).slice().sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
-        const rows = depts.map(d => {
-          const n = getAttendanceDeptUsers(d).length;
-          const branches = d.slug === 'galleries' ? getAttendanceBranchGroups(d).length : 0;
-          const meta = d.slug === 'galleries' ? `${n} موظف · ${branches} فرع` : `${n} موظف`;
-          return `<div class="rd-att-manage-row">
-            <div class="rd-att-manage-row__main">
-              <strong>${Sec.escapeHTML(d.name)}</strong>
-              <span class="rd-att-manage-row__meta">${Sec.escapeHTML(meta)}</span>
-            </div>
-            <div class="rd-att-manage-row__actions">
-              <button type="button" class="btn btn-ghost btn-sm" onclick="attendanceManageOpenDept('${d.id}')">الموظفون</button>
-              <button type="button" class="btn btn-ghost btn-sm" onclick="attendanceManageStartRenameDept('${d.id}')">إعادة تسمية</button>
-            </div>
-          </div>`;
-        }).join('');
-        return `<div class="rd-att-manage">
-          <div class="rd-att-manage__toolbar">
-            <p class="rd-att-manage__hint">أضف أقسامًا جديدة، أعد تسميتها، أو أضف موظفين داخل القسم أو الفرع.</p>
-            <button type="button" class="btn btn-primary" onclick="attendanceManageStartAddDept()">
-              <i class="fas fa-plus" aria-hidden="true"></i> إضافة قسم
-            </button>
-          </div>
-          <div class="rd-att-manage-list">${rows || '<div class="rd-att-empty rd-att-empty--inline"><p>لا توجد أقسام بعد.</p></div>'}</div>
-        </div>`;
-      }
-
-      function renderAttManageAddDeptHtml() {
-        return `<div class="rd-att-manage">
-          <button type="button" class="btn btn-ghost btn-sm rd-att-manage__back" onclick="attendanceManageGoList()">
-            <i class="fas fa-arrow-right" aria-hidden="true"></i> رجوع
-          </button>
-          <div class="form-group" style="margin-top:12px">
-            <label class="form-label" for="attManageDeptName">اسم القسم</label>
-            <input type="text" id="attManageDeptName" class="form-input" placeholder="مثال: المستودع" maxlength="80">
-          </div>
-          <div class="rd-att-manage__footer">
-            <button type="button" class="btn btn-primary" onclick="attendanceManageSaveNewDept()">حفظ القسم</button>
-          </div>
-        </div>`;
-      }
-
-      function renderAttManageRenameDeptHtml(dept) {
-        return `<div class="rd-att-manage">
-          <button type="button" class="btn btn-ghost btn-sm rd-att-manage__back" onclick="attendanceManageGoList()">
-            <i class="fas fa-arrow-right" aria-hidden="true"></i> رجوع
-          </button>
-          <div class="form-group" style="margin-top:12px">
-            <label class="form-label" for="attManageDeptRename">الاسم الجديد</label>
-            <input type="text" id="attManageDeptRename" class="form-input" value="${Sec.escapeHTML(dept.name || '')}" maxlength="80">
-          </div>
-          <div class="rd-att-manage__footer">
-            <button type="button" class="btn btn-primary" onclick="attendanceManageSaveRenameDept('${dept.id}')">حفظ الاسم</button>
-          </div>
-        </div>`;
-      }
-
-      function renderAttManageDeptHtml(dept) {
-        const isGalleries = dept.slug === 'galleries';
-        if (isGalleries) {
-          const groups = getAttendanceBranchGroups(dept);
-          const blocks = groups.map(g => {
-            const users = (g.users || []).slice().sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'ar'));
-            const userRows = users.map(u => {
-              const roleLbl = getStaffJobTitle(u) || ROLE_LABELS[normalizeUserRole(u.role)] || '';
-              return `<div class="rd-att-manage-user">
-                <div>
-                  <strong>${Sec.escapeHTML(u.name || '—')}</strong>
-                  <span class="rd-att-manage-row__meta">${Sec.escapeHTML(roleLbl)} · ${Sec.escapeHTML(padEmpNum(u.employee_number) || '—')}</span>
-                </div>
-                <button type="button" class="btn btn-ghost btn-sm" onclick="attendanceManageEditUser('${u.id}')">تعديل / إعادة تسمية</button>
-              </div>`;
-            }).join('');
-            return `<section class="rd-att-manage-branch">
-              <div class="rd-att-manage-branch__head">
-                <strong>${Sec.escapeHTML(g.name)}</strong>
-                <button type="button" class="btn btn-primary btn-sm" onclick="attendanceManageAddUser('${dept.id}','${g.id}')">
-                  <i class="fas fa-user-plus" aria-hidden="true"></i> إضافة موظف
-                </button>
-              </div>
-              <div class="rd-att-manage-users">${userRows || '<p class="rd-att-manage-row__meta">لا يوجد موظفون في هذا الفرع.</p>'}</div>
-            </section>`;
-          }).join('');
-          return `<div class="rd-att-manage">
-            <button type="button" class="btn btn-ghost btn-sm rd-att-manage__back" onclick="attendanceManageGoList()">
-              <i class="fas fa-arrow-right" aria-hidden="true"></i> رجوع
-            </button>
-            <div class="rd-att-manage__toolbar" style="margin-top:10px">
-              <p class="rd-att-manage__hint">موظفو المعارض يُجمَّعون حسب الفرع. أضف موظفًا داخل الفرع أو أعد تسمية الموجودين.</p>
-              <button type="button" class="btn btn-ghost btn-sm" onclick="attendanceManageStartRenameDept('${dept.id}')">إعادة تسمية القسم</button>
-            </div>
-            ${blocks || `<div class="rd-att-empty rd-att-empty--inline"><p>لا توجد فروع بموظفين بعد.</p><button type="button" class="btn btn-primary" onclick="attendanceManageAddUser('${dept.id}',null)">إضافة موظف للمعارض</button></div>`}
-          </div>`;
-        }
-
-        const users = getAttendanceDeptUsers(dept);
-        const userRows = users.map(u => {
-          const roleLbl = getStaffJobTitle(u) || ROLE_LABELS[normalizeUserRole(u.role)] || '';
-          return `<div class="rd-att-manage-user">
-            <div>
-              <strong>${Sec.escapeHTML(u.name || '—')}</strong>
-              <span class="rd-att-manage-row__meta">${Sec.escapeHTML(roleLbl)} · ${Sec.escapeHTML(padEmpNum(u.employee_number) || '—')}</span>
-            </div>
-            <button type="button" class="btn btn-ghost btn-sm" onclick="attendanceManageEditUser('${u.id}')">تعديل / إعادة تسمية</button>
-          </div>`;
-        }).join('');
-        return `<div class="rd-att-manage">
-          <button type="button" class="btn btn-ghost btn-sm rd-att-manage__back" onclick="attendanceManageGoList()">
-            <i class="fas fa-arrow-right" aria-hidden="true"></i> رجوع
-          </button>
-          <div class="rd-att-manage__toolbar" style="margin-top:10px">
-            <p class="rd-att-manage__hint">موظفو قسم «${Sec.escapeHTML(dept.name)}».</p>
-            <div class="rd-att-manage-row__actions">
-              <button type="button" class="btn btn-ghost btn-sm" onclick="attendanceManageStartRenameDept('${dept.id}')">إعادة تسمية القسم</button>
-              <button type="button" class="btn btn-primary btn-sm" onclick="attendanceManageAddUser('${dept.id}',null)">
-                <i class="fas fa-user-plus" aria-hidden="true"></i> إضافة موظف
-              </button>
-            </div>
-          </div>
-          <div class="rd-att-manage-users">${userRows || '<p class="rd-att-manage-row__meta">لا يوجد موظفون في هذا القسم بعد.</p>'}</div>
-        </div>`;
-      }
-
-      function paintAttDeptManage() {
-        const host = document.getElementById('attDeptManageHost');
-        const title = document.getElementById('attDeptManageTitle');
-        if (!host) return;
-        const view = state._attManageView || { mode: 'list' };
-        if (view.mode === 'addDept') {
-          if (title) title.textContent = 'إضافة قسم';
-          host.innerHTML = renderAttManageAddDeptHtml();
-          return;
-        }
-        if (view.mode === 'renameDept') {
-          const dept = (state.attendanceDepartments || []).find(d => d.id === view.deptId);
-          if (!dept) {
-            state._attManageView = { mode: 'list' };
-            return paintAttDeptManage();
-          }
-          if (title) title.textContent = 'إعادة تسمية القسم';
-          host.innerHTML = renderAttManageRenameDeptHtml(dept);
-          return;
-        }
-        if (view.mode === 'dept') {
-          const dept = (state.attendanceDepartments || []).find(d => d.id === view.deptId);
-          if (!dept) {
-            state._attManageView = { mode: 'list' };
-            return paintAttDeptManage();
-          }
-          if (title) title.textContent = dept.name;
-          host.innerHTML = renderAttManageDeptHtml(dept);
-          return;
-        }
-        if (title) title.textContent = 'إدارة أقسام الحضور';
-        host.innerHTML = renderAttManageListHtml();
-      }
-
-      async function attendanceManageSaveNewDept() {
-        if (!canManageAttendanceDepartments()) return;
-        const name = Sec.sanitize(document.getElementById('attManageDeptName')?.value || '').trim();
-        if (!name) return showToast('أدخل اسم القسم', 'warning');
-        const slug = attDeptSlugFromName(name);
-        const maxOrder = (state.attendanceDepartments || []).reduce((m, d) => Math.max(m, Number(d.sort_order) || 0), 0);
-        try {
-          const { data, error } = await sb.from('departments').insert({
-            name,
-            slug,
-            sort_order: maxOrder + 10,
-            is_active: true
-          }).select('id,name,slug,sort_order,is_active').single();
-          if (error) throw error;
-          await ensureAttendanceDepartmentsLoaded(true);
-          if (data && !(state.attendanceDepartments || []).some(d => d.id === data.id)) {
-            state.attendanceDepartments = [...(state.attendanceDepartments || []), data];
-          }
-          showToast('تمت إضافة القسم ✓', 'success');
-          state._attManageView = { mode: 'dept', deptId: data.id };
-          paintAttDeptManage();
-          if (typeof renderAttendancePage === 'function') renderAttendancePage({ soft: true });
-        } catch (e) {
-          showToast('فشل إضافة القسم: ' + (e.message || e), 'error');
-        }
-      }
-
-      async function attendanceManageSaveRenameDept(deptId) {
-        if (!canManageAttendanceDepartments()) return;
-        const name = Sec.sanitize(document.getElementById('attManageDeptRename')?.value || '').trim();
-        if (!name) return showToast('أدخل الاسم الجديد', 'warning');
-        try {
-          const { data, error } = await sb.from('departments').update({
-            name,
-            updated_at: new Date().toISOString()
-          }).eq('id', deptId).select('id,name,slug,sort_order,is_active').single();
-          if (error) throw error;
-          await ensureAttendanceDepartmentsLoaded(true);
-          const idx = (state.attendanceDepartments || []).findIndex(d => d.id === deptId);
-          if (idx >= 0 && data) state.attendanceDepartments[idx] = data;
-          showToast('تم تحديث اسم القسم ✓', 'success');
-          state._attManageView = { mode: 'list' };
-          paintAttDeptManage();
-          if (typeof renderAttendancePage === 'function') renderAttendancePage({ soft: true });
-        } catch (e) {
-          showToast('فشل إعادة التسمية: ' + (e.message || e), 'error');
-        }
-      }
-
-      async function renderAttendancePage(opts = {}) {
-        if (!canViewAttendanceTab()) return;
-        const softPaint = !!opts.soft;
-        let settleAfterLoad = false;
-        if (softPaint && typeof beginRdSoftPaint === 'function') beginRdSoftPaint();
-        try {
-          const desk = document.querySelector('.rd-attendance-panel');
-          const mob = document.querySelector('.rd-attendance-mobile-block');
-          if (typeof isMobileViewport === 'function' && isMobileViewport()) {
-            if (desk) desk.hidden = true;
-            if (mob) mob.hidden = false;
-            return;
-          }
-          if (desk) desk.hidden = false;
-          if (mob) mob.hidden = true;
-
-          ensureAttendanceDateInput();
-          if (!opts.soft) {
-            const host = document.getElementById('rdAttendanceHost');
-            if (host && (!host.innerHTML.trim() || isAppDataPending())) {
-              host.innerHTML = dataLoadingEmptyHTML('جاري تحميل الحضور…');
-            }
-            await ensureAttendanceDepartmentsLoaded();
-            if (typeof beginRdSoftPaint === 'function') beginRdSoftPaint();
-            settleAfterLoad = true;
-          } else {
-            await ensureAttendanceDepartmentsLoaded();
-          }
-
-          const depts = getVisibleAttendanceDepartments();
-          if (!state._attSelectedDeptId && depts.length === 1 && depts[0].slug !== 'galleries') {
-            state._attSelectedDeptId = depts[0].id;
-          }
-
-          const selected = state._attSelectedDeptId
-            ? depts.find(d => d.id === state._attSelectedDeptId) || (state.attendanceDepartments || []).find(d => d.id === state._attSelectedDeptId)
-            : null;
-
-          if (selected) {
-            if (selected.slug === 'galleries' && !state._attSelectedBranchId) {
-              syncAttendanceSearchVisibility(true);
-              const searchInp = document.getElementById('attSearchInput');
-              if (searchInp && searchInp.value !== (state._attSearch || '')) {
-                searchInp.value = state._attSearch || '';
-              }
-              paintAttendanceHost(renderAttendanceBranchCardsHtml(selected));
-            } else {
-              try {
-                await loadAttendanceRecordsForDept(selected, getAttendanceWorkDate(), state._attSelectedBranchId || null);
-              } catch (e) {
-                showToast('تعذّر تحميل سجلات الحضور: ' + (e.message || e), 'error');
-                state.attendanceRecords = [];
-              }
-              syncAttendanceSearchVisibility(true);
-              const searchInp = document.getElementById('attSearchInput');
-              if (searchInp && searchInp.value !== (state._attSearch || '')) {
-                searchInp.value = state._attSearch || '';
-              }
-              paintAttendanceHost(renderAttendanceRosterHtml(selected, state._attSelectedBranchId || null));
-            }
-          } else {
-            state._attSelectedDeptId = null;
-            state._attSelectedBranchId = null;
-            syncAttendanceSearchVisibility(true);
-            const searchInp = document.getElementById('attSearchInput');
-            if (searchInp && searchInp.value !== (state._attSearch || '')) {
-              searchInp.value = state._attSearch || '';
-            }
-            paintAttendanceHost(renderAttendanceDeptCardsHtml(depts));
-          }
-          syncAttendanceBackBtn();
-          syncAttendanceManageBtn();
-          syncAttendanceDateDisplay();
-        } finally {
-          if (softPaint || settleAfterLoad) endRdSoftPaint();
-        }
-      }
-
-      function attendanceGoBack() {
-        if (state._attSelectedBranchId) {
-          state._attSelectedBranchId = null;
-        } else {
-          state._attSelectedDeptId = null;
-          state._attSelectedBranchId = null;
-        }
-        syncAttendanceBackBtn();
-        renderAttendancePage({ soft: true });
-      }
-
-      function attendanceGoDepartments() {
-        state._attSelectedDeptId = null;
-        state._attSelectedBranchId = null;
-        syncAttendanceBackBtn();
-        renderAttendancePage({ soft: true });
-      }
-
-      async function attendanceOpenDepartment(deptId) {
-        if (!deptId) return;
-        state._attSelectedDeptId = deptId;
-        state._attSelectedBranchId = null;
-        syncAttendanceBackBtn();
-        await renderAttendancePage({ soft: true });
-      }
-
-      async function attendanceOpenBranch(branchId) {
-        if (!branchId) return;
-        state._attSelectedBranchId = branchId;
-        syncAttendanceBackBtn();
-        await renderAttendancePage({ soft: true });
-      }
-
-      function onAttendanceDateChange() {
-        const input = document.getElementById('attWorkDate');
-        state._attWorkDate = input?.value || getAttendanceTodayKey();
-        syncAttendanceDateDisplay();
-        renderAttendancePage({ soft: true });
-      }
-
-      function readAttendanceRowValues(userId) {
-        const row = document.querySelector(`.rd-att-tr[data-user-id="${userId}"]`);
-        if (!row) return null;
-        const status = row.querySelector('[data-att-field="status"]')?.value || 'unset';
-        const checkIn = row.querySelector('[data-att-field="check_in"]')?.value || '';
-        const checkOut = row.querySelector('[data-att-field="check_out"]')?.value || '';
-        const note = row.querySelector('[data-att-field="note"]')?.value || '';
-        return { status, checkIn, checkOut, note, row };
-      }
-
-      function syncAttendanceRowTimeFields(row, status) {
-        if (!row) return;
-        const present = status === 'present';
-        const canEdit = !row.querySelector('[data-att-field="status"]')?.disabled;
-        row.querySelectorAll('[data-att-time-chip], .rd-att-time-hm, .rd-att-mer').forEach(el => {
-          if ('disabled' in el) el.disabled = !canEdit || !present;
-        });
-      }
-
-      function openAttendanceTimeEditor(cell) {
-        if (!cell) return;
-        cell.classList.add('is-editing');
-        const chip = cell.querySelector('[data-att-time-chip]');
-        const editor = cell.querySelector('[data-att-time-editor]');
-        if (chip) chip.hidden = true;
-        if (editor) editor.hidden = false;
-        const hm = cell.querySelector('[data-att-hm]');
-        requestAnimationFrame(() => {
-          hm?.focus();
-          if (typeof hm?.select === 'function') hm.select();
-        });
-      }
-
-      function refreshAttendanceTimeChip(cell) {
-        if (!cell) return;
-        const chip = cell.querySelector('[data-att-time-chip]');
-        const hidden = cell.querySelector('[data-att-field]');
-        const editor = cell.querySelector('[data-att-time-editor]');
-        if (editor) editor.hidden = true;
-        cell.classList.remove('is-editing');
-        if (!chip) return;
-        chip.hidden = false;
-        const val = hidden?.value || '';
-        if (!val) {
-          cell.setAttribute('data-att-empty', '1');
-          chip.classList.add('rd-att-time-chip--empty');
-          chip.textContent = 'لا يوجد سجل';
-          return;
-        }
-        const parts = attPartsFromHm24(val);
-        cell.setAttribute('data-att-empty', '0');
-        chip.classList.remove('rd-att-time-chip--empty');
-        chip.innerHTML = `<span class="rd-att-time-chip__hm" dir="ltr">${Sec.escapeHTML(parts.hm)}</span><span class="rd-att-time-chip__mer">${parts.mer}</span>`;
-      }
-
-      function onAttendanceTimeChipClick(btn) {
-        openAttendanceTimeEditor(btn?.closest('[data-att-time-cell]'));
-      }
-
-      function onAttendanceHmInput(el) {
-        if (!el) return;
-        el.value = attFormatHmDigits(el.value);
-      }
-
-      function onAttendanceMerPick(btn) {
-        const cell = btn?.closest('[data-att-time-cell]');
-        if (!cell) return;
-        cell.querySelectorAll('.rd-att-mer').forEach(b => b.classList.toggle('is-on', b === btn));
-        cell.querySelector('[data-att-hm]')?.focus();
-      }
-
-      function onAttendanceTimeEditorBlur(el) {
-        const cell = el?.closest('[data-att-time-cell]');
-        if (!cell) return;
-        setTimeout(() => {
-          if (cell.contains(document.activeElement)) return;
-          commitAttendanceTimeCell(cell);
-        }, 140);
-      }
-
-      function commitAttendanceTimeCell(cell) {
-        if (!cell || cell.dataset.attCommitting === '1') return;
-        const hmEl = cell.querySelector('[data-att-hm]');
-        const merEl = cell.querySelector('.rd-att-mer.is-on') || cell.querySelector('[data-att-mer="ص"]');
-        const mer = merEl?.getAttribute('data-att-mer') || 'ص';
-        const hidden = cell.querySelector('[data-att-field]');
-        const rawHm = String(hmEl?.value || '').trim();
-        const wasEmpty = cell.getAttribute('data-att-empty') === '1';
-        const prev = hidden?.value || '';
-
-        if (!rawHm) {
-          if (hidden) hidden.value = '';
-          refreshAttendanceTimeChip(cell);
-          if (wasEmpty && !prev) return;
-          const userId = cell.closest('.rd-att-tr')?.getAttribute('data-user-id');
-          if (userId) onAttendanceRowChange(userId);
-          return;
-        }
-
-        const normalized = attNormalizeTypedTime(`${rawHm} ${mer}`);
-        if (!normalized) {
-          showToast('أدخل الوقت مثل 9:30 ثم اختر ص أو م', 'warning');
-          openAttendanceTimeEditor(cell);
-          return;
-        }
-        if (hidden) hidden.value = normalized;
-        const parts = attPartsFromHm24(normalized);
-        if (hmEl) hmEl.value = parts.hm;
-        refreshAttendanceTimeChip(cell);
-        if (normalized === prev) return;
-        const userId = cell.closest('.rd-att-tr')?.getAttribute('data-user-id');
-        if (userId) onAttendanceRowChange(userId);
-      }
-
-      function onAttendanceEmptyTimeClick(btn) {
-        onAttendanceTimeChipClick(btn);
-      }
-
-      function onAttendanceTimeTyped() {
-        /* legacy no-op: time cells use chip + ص/م editor */
-      }
-
-      async function onAttendanceRowChange(userId) {
-        const target = (state.users || []).find(u => u.id === userId);
-        if (!canMarkUserAttendance(target)) {
-          showToast('لا تملك صلاحية تسجيل حضور هذا الموظف', 'warning');
-          return;
-        }
-        const vals = readAttendanceRowValues(userId);
-        if (!vals) return;
-        syncAttendanceRowTimeFields(vals.row, vals.status);
-
-        const saveEl = vals.row.querySelector('[data-att-save-state]');
-        if (saveEl) saveEl.innerHTML = '<span class="rd-att-saving"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i></span>';
-        state._attSavingUserId = userId;
-        try {
-          const { data, error } = await sb.rpc('upsert_attendance_record', {
-            p_user_id: userId,
-            p_work_date: getAttendanceWorkDate(),
-            p_status: vals.status,
-            p_check_in_time: vals.status === 'present' ? attInputToRpcTime(vals.checkIn) : null,
-            p_check_out_time: vals.status === 'present' ? attInputToRpcTime(vals.checkOut) : null,
-            p_note: vals.note || null
-          });
-          if (error) throw error;
-          const row = data;
-          if (row) {
-            const idx = (state.attendanceRecords || []).findIndex(r => r.user_id === userId);
-            if (idx >= 0) state.attendanceRecords[idx] = row;
-            else state.attendanceRecords = [...(state.attendanceRecords || []), row];
-          }
-          await renderAttendancePage({ soft: true });
-        } catch (e) {
-          if (saveEl) saveEl.innerHTML = '';
-          showToast('فشل حفظ الحضور: ' + (e.message || e), 'error');
-          await renderAttendancePage({ soft: true });
-        } finally {
-          if (state._attSavingUserId === userId) state._attSavingUserId = null;
-        }
-      }
-
-      window.renderAttendancePage = renderAttendancePage;
-      window.attendanceGoDepartments = attendanceGoDepartments;
-      window.attendanceGoBack = attendanceGoBack;
-      window.attendanceOpenDepartment = attendanceOpenDepartment;
-      window.attendanceOpenBranch = attendanceOpenBranch;
-      window.openAttendanceDeptManager = openAttendanceDeptManager;
-      window.reopenAttendanceDeptManager = reopenAttendanceDeptManager;
-      window.attendanceManageGoList = attendanceManageGoList;
-      window.attendanceManageOpenDept = attendanceManageOpenDept;
-      window.attendanceManageStartAddDept = attendanceManageStartAddDept;
-      window.attendanceManageStartRenameDept = attendanceManageStartRenameDept;
-      window.attendanceManageAddUser = attendanceManageAddUser;
-      window.attendanceManageEditUser = attendanceManageEditUser;
-      window.attendanceManageSaveNewDept = attendanceManageSaveNewDept;
-      window.attendanceManageSaveRenameDept = attendanceManageSaveRenameDept;
-      window.onAttendanceDateChange = onAttendanceDateChange;
-      window.onAttendanceRowChange = onAttendanceRowChange;
-      window.onAttendanceTimeTyped = onAttendanceTimeTyped;
-      window.onAttendanceEmptyTimeClick = onAttendanceEmptyTimeClick;
-      window.onAttendanceTimeChipClick = onAttendanceTimeChipClick;
-      window.onAttendanceHmInput = onAttendanceHmInput;
-      window.onAttendanceMerPick = onAttendanceMerPick;
-      window.onAttendanceTimeEditorBlur = onAttendanceTimeEditorBlur;
-      window.attendanceShiftDate = attendanceShiftDate;
-      window.attendanceShiftMonth = attendanceShiftMonth;
-      window.onAttendanceSearchInput = onAttendanceSearchInput;
-      window.toggleAttDatePicker = toggleAttDatePicker;
-      window.toggleAttPeriodMenu = toggleAttPeriodMenu;
-      window.setAttReportPeriodMode = setAttReportPeriodMode;
-      window.toggleAttStatusFilterMenu = toggleAttStatusFilterMenu;
-      window.setAttStatusFilter = setAttStatusFilter;
-      window.closeAttStatusFilterMenu = closeAttStatusFilterMenu;
-      window.attDpToggleMonthYear = attDpToggleMonthYear;
-      window.attDpPickMonth = attDpPickMonth;
-      window.attDpChangeMonth = attDpChangeMonth;
-      window.attDpPickDay = attDpPickDay;
-      window.attDpSelectToday = attDpSelectToday;
-      window.exportAttendanceCycleReport = exportAttendanceCycleReport;
+      // Attendance / حضور وانصراف UI removed — DB tables kept.
 
 
       // ============================================================================
