@@ -4368,7 +4368,19 @@
           // تحديد الإيميل (إذا كان المُدخَل رقم وظيفي)
           let email = identifier;
           if (!identifier.includes('@')) {
-            const { data, error } = await sb.rpc('get_email_by_emp_number', { emp_num: identifier });
+            const candidates = Array.from(new Set([
+              identifier,
+              (typeof padEmpNum === 'function' ? padEmpNum(identifier) : ''),
+              identifier.replace(/^0+/, '') || identifier
+            ].filter(Boolean)));
+            let data = null;
+            let error = null;
+            for (const emp of candidates) {
+              const res = await sb.rpc('get_email_by_emp_number', { emp_num: emp });
+              error = res.error;
+              if (error) break;
+              if (res.data) { data = res.data; break; }
+            }
             if (error) throw error;
             if (!data) {
               showLoginError('الرقم الوظيفي غير مسجل');
