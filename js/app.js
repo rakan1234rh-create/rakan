@@ -35802,7 +35802,8 @@
         return Math.max(0, (resolveBreakDurationMinsForUser(me, type) || 0) * 60);
       }
 
-      /** خلصت مدة اليوم أو حصل تجاوز — يمنع بدء بريك جديد من نفس النوع حتى لو بقي رصيد في جلسة أقدم */
+      /** خلصت مدة اليوم أو حصل تجاوز — يمنع بدء بريك جديد من نفس النوع.
+       *  يعتمد على أحدث جلسة مغلقة فقط؛ جلسات أقدم قد تُصفَّر remaining عند نقل الرصيد. */
       function isMyBreakAllowanceExhausted(breakType = 'regular') {
         if (getMyOpenStaffBreak()) return false;
         const me = state.currentUser;
@@ -35816,11 +35817,50 @@
         const list = rows.length
           ? rows
           : [getStaffBreakDayRowForType(me.id, type)].filter(Boolean);
-        return list.some((row) => {
-          if (row.status !== 'ended' && row.status !== 'paused') return false;
-          return Number(row.remaining_seconds || 0) <= 0
-            || Number(row.overtime_seconds || 0) > 0;
+        const closed = list.filter((row) => row && (row.status === 'ended' || row.status === 'paused'));
+        if (!closed.length) return false;
+        closed.sort((a, b) => {
+          const ta = new Date(a.ended_at || a.paused_at || a.updated_at || a.started_at || 0).getTime();
+          const tb = new Date(b.ended_at || b.paused_at || b.updated_at || b.started_at || 0).getTime();
+          return tb - ta;
         });
+        const latest = closed[0];
+        return Number(latest.remaining_seconds || 0) <= 0
+          || Number(latest.overtime_seconds || 0) > 0;
+      }
+
+      /** إصلاح نص UTF-8 المخزَّن كـ mojibake (مثل Ø¥ÙŠÙ‚…) قبل العرض */
+      function repairUtf8Mojibake(str) {
+        const s = String(str || '');
+        if (!s || !/[ØÙÃÂ]/.test(s)) return s;
+        try {
+          const bytes = [];
+          for (let i = 0; i < s.length; i++) {
+            const code = s.charCodeAt(i);
+            if (code <= 0xff) {
+              bytes.push(code);
+              continue;
+            }
+            // Windows-1252 leftovers that appear after bad double-encoding
+            const win1252 = {
+              0x20AC: 0x80, 0x201A: 0x82, 0x0192: 0x83, 0x201E: 0x84, 0x2026: 0x85,
+              0x2020: 0x86, 0x2021: 0x87, 0x02C6: 0x88, 0x2030: 0x89, 0x0160: 0x8A,
+              0x2039: 0x8B, 0x0152: 0x8C, 0x017D: 0x8E, 0x2018: 0x91, 0x2019: 0x92,
+              0x201C: 0x93, 0x201D: 0x94, 0x2022: 0x95, 0x2013: 0x96, 0x2014: 0x97,
+              0x02DC: 0x98, 0x2122: 0x99, 0x0161: 0x9A, 0x203A: 0x9B, 0x0153: 0x9C,
+              0x017E: 0x9E, 0x0178: 0x9F
+            };
+            if (win1252[code] == null) return s;
+            bytes.push(win1252[code]);
+          }
+          const fixed = new TextDecoder('utf-8', { fatal: false }).decode(Uint8Array.from(bytes));
+          if (fixed && !fixed.includes('\uFFFD') && /[\u0600-\u06FF]/.test(fixed)) return fixed;
+        } catch (_) { /* noop */ }
+        return s;
+      }
+
+      function formatStaffBreakOvertimeReason(raw) {
+        return repairUtf8Mojibake(String(raw || '').trim());
       }
 
       /** لا يوجد بريك مجدول لهذا اليوم (لا يوجد نطاق فيه مدة ليوم الأسبوع الحالي) */
@@ -35966,6 +36006,12 @@
           const ra = rank[a?.status] || 0;
           const rb = rank[b?.status] || 0;
           if (ra !== rb) return rb - ra;
+          // Prefer the ended session that still holds leftover (ignore consume markers with remaining=0)
+          if (a?.status === 'ended' && b?.status === 'ended') {
+            const posA = Number(a.remaining_seconds) > 0 ? 1 : 0;
+            const posB = Number(b.remaining_seconds) > 0 ? 1 : 0;
+            if (posA !== posB) return posB - posA;
+          }
           return staffBreakRowRecencyMs(b) - staffBreakRowRecencyMs(a);
         }).forEach((row) => {
           if (!row?.user_id) return;
@@ -37090,7 +37136,7 @@
             ? 'ما زال جاريًا'
             : formatBreakHistoryWhen(row.ended_at || row.paused_at || row.updated_at);
           const endKey = 'الانتهاء';
-          const reason = String(row.overtime_reason || '').trim();
+          const reason = formatStaffBreakOvertimeReason(row.overtime_reason);
           const showReason = overSec > 0 || !!reason || (row.status === 'active' && getBreakRemainingSeconds(row) < 0);
           const reasonHtml = showReason
             ? `<div class="break-history-item__reason">
@@ -37576,7 +37622,10 @@
         if (!window.confirm(`إيقاف بريك ${name} المتجاوز للمدة؟`)) return;
         setStaffBreakActionBusy(true, 'جاري الإيقاف…');
         try {
-          const { data, error } = await staffBreakRpc('admin_force_end_staff_break', { p_break_id: id });
+          const { data, error } = await staffBreakRpc('admin_force_end_staff_break', {
+            p_break_id: id,
+            p_overtime_reason: 'إيقاف إداري من مدير النظام'
+          });
           if (error) throw error;
           if (!data?.ok) {
             showToast(data?.error || 'تعذّر إيقاف البريك', 'error');
