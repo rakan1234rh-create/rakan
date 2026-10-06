@@ -878,9 +878,20 @@
       }
 
       async function resolveImageDisplayUrl(key, signedUrl, contentType) {
-        // <img src="signed-r2-url"> لا يحتاج CORS ولا يمرّر البايتات عبر Supabase
+        // الصور: blob محلي — رابط R2 الموقّع في <img> يفشل أحياناً (CORS/CORP/انتهاء)
         if (signedUrl && typeof isDirectR2SignedUrl === 'function' && isDirectR2SignedUrl(signedUrl)) {
-          return signedUrl;
+          try {
+            const res = await fetch(signedUrl, { referrerPolicy: 'no-referrer', mode: 'cors', credentials: 'omit' });
+            if (res.ok) {
+              const blob = await res.blob();
+              if (blob && blob.size) return URL.createObjectURL(blob);
+            }
+            if (res.status === 404 || res.status === 403) {
+              throw new Error('R2_MISSING');
+            }
+          } catch (e) {
+            if (String(e?.message || e) === 'R2_MISSING') throw e;
+          }
         }
         return fetchR2ProxyBlobUrl(key, contentType);
       }
@@ -18719,13 +18730,25 @@
       }
 
       async function transcodeHevcStreamToPlayableBlob(streamUrl, mimeType, onStatus) {
-        const len = await probeR2StreamContentLength(streamUrl);
+        const src = String(streamUrl || '').trim();
+        let len = 0;
+        if (isR2StreamPlayUrl(src)) {
+          len = await probeR2StreamContentLength(src);
+        } else if (isDirectR2SignedUrl(src)) {
+          try {
+            const head = await fetch(src, { method: 'HEAD', mode: 'cors', credentials: 'omit' });
+            len = parseInt(head.headers.get('Content-Length') || '0', 10) || 0;
+          } catch (_) { /* */ }
+        }
         if (len > HEVC_TRANSCODE_VIEWER_MAX_BYTES) {
           throw new Error('حجم الفيديو ' + Math.round(len / 1048576) + 'MB — كبير للتحويل داخل المتصفح. حمّله أو ثبّت HEVC Extensions.');
         }
         onStatus?.('تحميل الفيديو وأداة التحويل معاً…');
+        const loadBlob = isDirectR2SignedUrl(src)
+          ? fetchR2VideoBlob(src, mimeType || 'video/mp4')
+          : fetchAuthedStreamBlobUrl(src, mimeType || 'video/mp4');
         const [{ blob }] = await Promise.all([
-          fetchAuthedStreamBlobUrl(streamUrl, mimeType || 'video/mp4'),
+          loadBlob,
           ensureFfmpegTranscoder(onStatus),
         ]);
         if (!(blob instanceof Blob) || !blob.size) {
@@ -18737,7 +18760,8 @@
 
       async function convertHevcAttachmentInPlace(r2Key, streamUrl, mimeType, onStatus, vid, cacheKey) {
         const key = String(r2Key || '').trim();
-        if (!key || !isR2StreamPlayUrl(streamUrl)) {
+        const src = String(streamUrl || '').trim();
+        if (!key || !(isR2StreamPlayUrl(src) || isDirectR2SignedUrl(src))) {
           throw new Error('لا يتوفر رابط بث صالح للتحويل');
         }
         if (_hevcReplaceInflight[key]) {
