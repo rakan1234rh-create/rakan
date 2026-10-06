@@ -400,11 +400,8 @@ async function handleStreamRequest(
   const key = await verifyStreamToken(token, env)
   if (!key) return json({ error: 'رمز بث غير صالح أو منتهٍ' }, 401)
 
-  const range = req.headers.get('Range') || undefined
-  /** تجنّب تمرير فيديوهات كبيرة كاملة عبر Edge (غالباً 500/timeout) */
-  const STREAM_FULL_PROXY_MAX = 8 * 1024 * 1024
-
   try {
+    // HEAD: بيانات وصفية فقط (بدون جسم الملف)
     if (req.method === 'HEAD') {
       const head = await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: key }))
       const headers: Record<string, string> = { ..._cors }
@@ -416,44 +413,38 @@ async function handleStreamRequest(
       return new Response(null, { status: 200, headers })
     }
 
-    // بدون Range: للفيديو/الملفات الكبيرة نوجّه لرابط R2 موقّع بدل بروكسي كامل عبر Worker
+    const range = req.headers.get('Range') || undefined
+
+    // GET بدون Range: 302 إلى R2 — الفيديو الكبير لا يمر عبر Supabase
     if (!range) {
-      try {
-        const head = await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: key }))
-        const len = Number(head.ContentLength || 0)
-        const isVideo = /\.(mp4|m4v|mov|webm|avi|mkv)$/i.test(key)
-        if (isVideo || (len > 0 && len > STREAM_FULL_PROXY_MAX)) {
-          const ct = head.ContentType || guessContentTypeFromKey(key)
-          const signed = await getSignedUrl(
-            s3,
-            new GetObjectCommand({
-              Bucket: bucket,
-              Key: key,
-              ResponseContentType: ct,
-              ResponseContentDisposition: 'inline',
-            }),
-            { expiresIn: 3600 },
-          )
-          const headers: Record<string, string> = {
-            ..._cors,
-            Location: signed,
-            'Cache-Control': 'no-store',
-          }
-          return new Response(null, { status: 302, headers })
-        }
-      } catch (headErr) {
-        console.error('[r2-storage] stream preflight', r2ErrInfo(headErr))
+      const head = await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: key }))
+      const ct = head.ContentType || guessContentTypeFromKey(key)
+      const signed = await getSignedUrl(
+        s3,
+        new GetObjectCommand({
+          Bucket: bucket,
+          Key: key,
+          ResponseContentType: ct,
+          ResponseContentDisposition: 'inline',
+        }),
+        { expiresIn: 3600 },
+      )
+      const headers: Record<string, string> = {
+        ..._cors,
+        Location: signed,
+        'Cache-Control': 'no-store',
       }
+      return new Response(null, { status: 302, headers })
     }
 
+    // GET مع Range: بروكسي جزء صغير عبر Edge (للمشغّل/التحويل داخل المنصة فقط)
     const out = await s3.send(
       new GetObjectCommand({
         Bucket: bucket,
         Key: key,
-        ...(range ? { Range: range } : {}),
+        Range: range,
       }),
     )
-
     const headers: Record<string, string> = { ..._cors }
     headers['Content-Type'] = out.ContentType || guessContentTypeFromKey(key)
     headers['Accept-Ranges'] = 'bytes'
@@ -463,12 +454,10 @@ async function handleStreamRequest(
       headers['Content-Length'] = String(out.ContentLength)
     }
     if (out.ContentRange) headers['Content-Range'] = out.ContentRange
-
     const body = out.Body
     if (!body) return json({ error: 'جسم فارغ' }, 404)
-
     return new Response(body as ReadableStream, {
-      status: range && out.ContentRange ? 206 : 200,
+      status: out.ContentRange ? 206 : 200,
       headers,
     })
   } catch (e: unknown) {
