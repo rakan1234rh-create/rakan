@@ -37426,15 +37426,7 @@
           showToast('لا توجد مدة بريك متاحة اليوم', 'warning');
           return;
         }
-        // Skip modal hop when only one type is available today.
-        if (regularAvailable && !restroomAvailable) {
-          startStaffBreakFromUi('regular');
-          return;
-        }
-        if (restroomAvailable && !regularAvailable) {
-          startStaffBreakFromUi('restroom');
-          return;
-        }
+        // Always show the picker so the employee can choose (locked options stay disabled).
         openModal('breakTypeModal');
       }
 
