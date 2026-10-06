@@ -1,10 +1,10 @@
 -- SQL to set up break-expiry Web Push cron (production)
--- Notifies employees via Web Push when active break planned duration elapses.
+-- Notifies employees ONCE when an active break duration is exceeded.
 -- Also closes stale (yesterday) open break sessions via close_stale_staff_breaks inside the Edge Function.
 --
 -- 1. Ensure pg_net + pg_cron are enabled
 -- 2. Set AUTO_FORWARD_CRON_SECRET in Edge Function secrets (same as auto-forward / weekly digest)
--- 3. Schedule every 2 minutes (reduces Log Ingestion vs every minute) — replace PROJECT_REF and CRON_SECRET
+-- 3. Schedule every minute to detect expiry quickly; the Edge Function marks expiry_notified_at after one attempt
 
 CREATE EXTENSION IF NOT EXISTS pg_net;
 
@@ -12,7 +12,7 @@ CREATE EXTENSION IF NOT EXISTS pg_net;
 -- SELECT cron.unschedule('staff-break-expiry-push');
 -- SELECT cron.schedule(
 --   'staff-break-expiry-push',
---   '*/2 * * * *',
+--   '* * * * *',
 --   $$
 --   SELECT net.http_post(
 --     url := 'https://PROJECT_REF.supabase.co/functions/v1/violation-push',

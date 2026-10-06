@@ -1,6 +1,6 @@
-/** Cron: إشعار Web Push عند انتهاء مدة البريك */
+/** Cron: إشعار Web Push مرة واحدة عند تجاوز مدة البريك */
 
-export const BREAK_EXPIRY_CRON_VERSION = '2026-10-break-expiry-v4-stale-close';
+export const BREAK_EXPIRY_CRON_VERSION = '2026-10-break-expiry-v5-once';
 
 type BreakRow = {
   id: string;
@@ -54,12 +54,12 @@ export async function runBreakExpiryCron(
   const due = (rows || []).filter((r) => isExpired(r as BreakRow));
   let notified = 0;
   let pushed = 0;
-  let deferred = 0;
+  let marked = 0;
   const results: Record<string, unknown>[] = [];
 
   for (const row of due) {
     const isRestroom = row.break_type === 'restroom';
-    const title = isRestroom ? 'انتهت مدة بريك دورة المياه' : 'انتهت مدة البريك';
+    const title = isRestroom ? 'تجاوزت مدة بريك دورة المياه' : 'تجاوزت مدة البريك';
     const body = `${title} — يُرجى العودة وإيقاف الجلسة من التطبيق.`;
     const eventKey = `break_expiry_${row.id}`;
 
@@ -93,21 +93,9 @@ export async function runBreakExpiryCron(
     );
 
     const pushSent = Number(push.sent) || 0;
+    if (pushSent > 0) pushed += pushSent;
 
-    // لا نختم إلا بعد إرسال Web Push فعلي — وإلا يُعاد كل دقيقة والمنصة مقفلة.
-    if (pushSent <= 0) {
-      deferred += 1;
-      results.push({
-        id: row.id,
-        user_id: row.user_id,
-        ok: false,
-        deferred: true,
-        pushSent: 0,
-        pushError: push.error || (push.errors?.length ? push.errors[0] : 'push not delivered'),
-      });
-      continue;
-    }
-
+    // ختم مرة واحدة بعد أول محاولة إشعار — لا إعادة كل دقيقة حتى لو فشل Push
     const { error: markErr } = await supabase
       .from('staff_breaks')
       .update({ expiry_notified_at: new Date().toISOString(), updated_at: new Date().toISOString() })
@@ -116,16 +104,17 @@ export async function runBreakExpiryCron(
       .is('expiry_notified_at', null);
 
     if (markErr) {
-      results.push({ id: row.id, ok: false, error: markErr.message });
+      results.push({ id: row.id, ok: false, error: markErr.message, pushSent });
       continue;
     }
 
+    marked += 1;
     notified += 1;
-    pushed += pushSent;
     results.push({
       id: row.id,
       user_id: row.user_id,
       ok: true,
+      once: true,
       pushSent,
       pushError: push.error || (push.errors?.length ? push.errors[0] : undefined),
     });
@@ -136,8 +125,8 @@ export async function runBreakExpiryCron(
     scanned: (rows || []).length,
     due: due.length,
     notified,
+    marked,
     pushed,
-    deferred,
     results: results.slice(0, 30),
   };
 }
