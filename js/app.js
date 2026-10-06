@@ -378,7 +378,8 @@
       function getStaffJobTitle(u) {
         const roleKey = normalizeUserRole(u?.role);
         const fromDb = String(u?.job_title || '').trim();
-        if (fromDb) return fromDb;
+        const repaired = typeof repairUtf8Mojibake === 'function' ? repairUtf8Mojibake(fromDb) : fromDb;
+        if (repaired) return repaired;
         return STAFF_JOB_TITLE_LABELS[roleKey] || '—';
       }
 
@@ -5069,14 +5070,15 @@
           if (uErr) throw uErr;
           if (vtErr) {
             if (isMirsadDebugLog()) console.warn('[DataLoad] violation_types:', formatPostgrestError(vtErr), vtErr);
-            if (mobLoad) {
-              try {
-                const retry = await sb.from('violation_types').select('id,name,category,severity,weight').order('name');
-                if (!retry.error && retry.data?.length) {
-                  vTypes = retry.data;
-                  vtErr = null;
-                }
-              } catch (_) { /* noop */ }
+            try {
+              const retry = await sb.from('violation_types').select('id,name,category,severity,weight').order('name');
+              if (!retry.error && retry.data?.length) {
+                vTypes = retry.data;
+                vtErr = null;
+              }
+            } catch (_) { /* noop */ }
+            if (vtErr) {
+              showToast('تعذّر تحميل أنواع المخالفات — حدّث الصفحة', 'warning');
             }
           }
           if (nErr && isMirsadDebugLog()) console.warn('[DataLoad] notifications:', nErr.message, nErr);
@@ -5106,7 +5108,10 @@
           }
           const enrichRow = mobLoad ? enrichViolationLite : enrichViolation;
           state.violations = (violations || []).map(enrichRow);
-          state.violationTypes = vTypes || [];
+          state.violationTypes = (vTypes || []).map((row) => ({
+            ...row,
+            severity: violTypeSeverity(row)
+          }));
           invalidateEmpScoreCache();
           state.notifications = notifs || [];
           state.broadcastInbox = mobLoad ? [] : (broadcastInbox || []);
@@ -11163,7 +11168,7 @@
               const freqMult = COMPLIANCE_CONFIG.frequencyMultipliers[freqIdx];
               const effective = Math.round(effectiveViolationWeight(v, recentBefore) * 10) / 10;
 
-              const severity = type?.severity || 'منخفض';
+              const severity = violTypeSeverity(type);
               const sevColors = { 'منخفض': 'var(--blue)', 'متوسط': 'var(--amber)', 'عالي': '#FF0000', 'حرج': '#FF0000' };
               const sevColor = sevColors[severity] || 'var(--blue)';
 
@@ -14030,7 +14035,9 @@
         if (roleOrUser && typeof roleOrUser === 'object') {
           const u = roleOrUser;
           const roleKey = normalizeUserRole(u.role);
-          const jobTitle = String(u.job_title || '').trim();
+          const jobTitle = typeof repairUtf8Mojibake === 'function'
+            ? repairUtf8Mojibake(String(u.job_title || '').trim())
+            : String(u.job_title || '').trim();
           if ((roleKey === 'employee' || roleKey === 'branch_manager') && jobTitle) return jobTitle;
           return ROLE_LABELS[roleKey] || u.role;
         }
@@ -15002,8 +15009,15 @@
       }
 
       function violTypeSeverity(v) {
-        let sev = v.severity || 'منخفض';
-        if (sev === 'حرج') sev = 'عالي';
+        const raw = (v && typeof v === 'object') ? (v.severity || '') : (v || '');
+        let sev = typeof repairUtf8Mojibake === 'function'
+          ? repairUtf8Mojibake(raw)
+          : String(raw || '');
+        sev = String(sev || '').trim() || 'منخفض';
+        if (sev === 'حرج' || /^high$/i.test(sev)) sev = 'عالي';
+        else if (/^medium|mid$/i.test(sev)) sev = 'متوسط';
+        else if (/^low$/i.test(sev)) sev = 'منخفض';
+        if (!['منخفض', 'متوسط', 'عالي'].includes(sev)) sev = 'منخفض';
         return sev;
       }
 
@@ -15014,8 +15028,7 @@
       };
 
       function renderViolTypeMobItem(v, canManage) {
-        let sev = v.severity || 'منخفض';
-        if (sev === 'حرج') sev = 'عالي';
+        let sev = violTypeSeverity(v);
         const points = v.weight ?? v.points ?? 0;
         const desc = (v.description || v.category || '').trim() || '—';
         const sevClass = {
@@ -15309,8 +15322,7 @@
       function openViolDetailSheet(id) {
         const v = state.violationTypes.find(x => x.id === id);
         if (!v) return;
-        let sev = v.severity || 'منخفض';
-        if (sev === 'حرج') sev = 'عالي';
+        let sev = violTypeSeverity(v);
         const points = v.weight || 0;
         const desc = (v.description || v.category || '').trim() || 'لا يوجد وصف متاح لهذا النوع من المخالفات.';
         const sevClass = {
@@ -15375,7 +15387,7 @@
         document.getElementById('vm-editId').value = id;
         document.getElementById('vm-name').value = v.name;
         document.getElementById('vm-cat').value = v.category || 'انضباط';
-        document.getElementById('vm-sev').value = v.severity || 'منخفض';
+        document.getElementById('vm-sev').value = violTypeSeverity(v);
         document.getElementById('vm-weight').value = v.weight || 5;
         document.getElementById('vm-desc').value = v.description || '';
         document.getElementById('violModalTitle').textContent = 'تعديل نوع المخالفة';
@@ -15977,8 +15989,7 @@
       }
 
       function rdNtSevTone(sev) {
-        let s = sev || 'منخفض';
-        if (s === 'حرج') s = 'عالي';
+        const s = violTypeSeverity(sev);
         if (s === 'عالي') return { key: s, color: 'var(--danger)' };
         if (s === 'متوسط') return { key: s, color: 'var(--warning)' };
         return { key: 'منخفض', color: 'var(--info)' };
@@ -16316,8 +16327,7 @@
       }
 
       function getNtViolationSevBannerClass(severity) {
-        let sev = severity || 'منخفض';
-        if (sev === 'حرج') sev = 'عالي';
+        const sev = violTypeSeverity(severity);
         const map = {
           'منخفض': 'mk-pick-banner--sev-low',
           'متوسط': 'mk-pick-banner--sev-mid',
@@ -16327,8 +16337,7 @@
       }
 
       function renderNtViolationTypePickBanner(v) {
-        let sev = v.severity || 'منخفض';
-        if (sev === 'حرج') sev = 'عالي';
+        let sev = violTypeSeverity(v);
         const sevClass = getNtViolationSevBannerClass(sev);
         const points = v.weight != null ? v.weight : '—';
         const chips = [];
@@ -16422,8 +16431,7 @@
           item.className = compactRd ? 'autocomplete-item rd-nt-type-item' : 'autocomplete-item';
 
           // توحيد التصنيفات والألوان بناءً على طلب المستخدم
-          let severityText = v.severity || 'منخفض';
-          if (severityText === 'حرج') severityText = 'عالي'; // تحويل حرج إلى عالي
+          let severityText = violTypeSeverity(v);
 
           let badgeColor = '#007AFF'; // أزرق النظام (iOS)
           if (severityText === 'عالي') badgeColor = '#FF0000'; // أحمر للعالي (iOS system red)
@@ -16570,11 +16578,15 @@
         const time = document.getElementById('nt-time').value;
         const rawDesc = document.getElementById('nt-desc').value;
         const desc = Sec.sanitize(rawDesc);
-        
-        // أخذ نسخة محلية وتصفير المصفوفة فوراً لمنع التداخل بين المخالفات المتتالية
+
+        // Snapshot only — do not clear until validations pass (keeps DOM + state in sync)
         const filesToUpload = [...(state.uploadedFiles.nt || [])];
-        state.uploadedFiles.nt = []; 
-        const files = filesToUpload; // الحفاظ على اسم المتغير لبقية الدالة
+        const files = filesToUpload;
+
+        const restoreNtFiles = () => {
+          state.uploadedFiles.nt = filesToUpload;
+          try { syncAttachmentSubmitButtons('nt'); } catch (_) { /* noop */ }
+        };
 
         // Validations
         if (!empNum || !Sec.isEmpId(empNum)) return showToast('الرقم الوظيفي غير صالح', 'error');
@@ -16592,8 +16604,7 @@
         for (const f of filesToUpload) {
           if (f.prepStatus !== 'ready') {
             showToast('انتظر اكتمال تحضير المرفقات (تحويل/رفع) قبل الإرسال', 'warning');
-            state.uploadedFiles.nt = filesToUpload;
-            syncAttachmentSubmitButtons('nt');
+            restoreNtFiles();
             return;
           }
         }
@@ -16601,6 +16612,9 @@
         const emp = state.users.find(u => u.employee_number === empNum && isViolationSubjectUser(u));
         if (!emp) return showToast('الرقم الوظيفي غير موجود أو لا يمكن رصد مخالفة على هذا الدور', 'error');
         if (!emp.branch_id) return showToast('الموظف غير مرتبط بفرع', 'error');
+
+        // Clear only after validations succeed to avoid losing attachments on toast errors
+        state.uploadedFiles.nt = [];
 
         // افتح نافذة فارغة أثناء إيماءة المستخدم حتى لا يمنع المتصفح واتساب بعد الرفع
         let waPlaceholderWin = null;
@@ -16765,6 +16779,7 @@
           }
           if (isMirsadDebugLog()) console.error('[Sync] Critical Error:', err);
           showToast(err.message, 'error');
+          try { restoreNtFiles(); } catch (_) { /* noop */ }
         } finally {
           window.isUploading = false;
           showGlobalLoader(false);
@@ -24628,7 +24643,7 @@
           grossDeducted += effective;
           if (isPendingDeductionTicket(v)) pendingDeducted += effective;
 
-          const sev = type?.severity || 'منخفض';
+          const sev = violTypeSeverity(type);
           severityBreakdown[sev] = (severityBreakdown[sev] || 0) + 1;
           const myAgeDays = violationAgeDays(v);
           if (myAgeDays <= 30) freshCount++;
@@ -24644,7 +24659,7 @@
 
         const criticalRecent = sortedViols.some(v => {
           const type = state.violationTypes.find(x => x.name === v.violation_type);
-          return type?.severity === 'عالي' && violationAgeDays(v) <= 7;
+          return violTypeSeverity(type) === 'عالي' && violationAgeDays(v) <= 7;
         });
         const tooManyRecent = sortedViols.filter(v => violationAgeDays(v) <= 30).length >= 3;
         const actionRequired = score < 40 || criticalRecent || tooManyRecent;
@@ -24709,7 +24724,7 @@
         const branchViols = violations.filter(v => branchEmpIds.has(v.employee_id) && !violationExcludedFromDeduction(v));
         const criticalCount = branchViols.filter(v => {
           const type = state.violationTypes.find(x => x.name === v.violation_type);
-          return type?.severity === 'عالي' && violationAgeDays(v) <= 90;
+          return violTypeSeverity(type) === 'عالي' && violationAgeDays(v) <= 90;
         }).length;
         // كلما زادت المخالفات الحرجة قل score
         const expectedMax = branchEmps.length / COMPLIANCE_CONFIG.criticalFreedomDivider;
@@ -27527,10 +27542,9 @@
         const breakdown = { low: 0, mid: 0, high: 0, crit: 0 };
         getRateImpactingViolations(viols).forEach(v => {
           const type = state.violationTypes.find(x => x.name === v.violation_type);
-          const sev = type?.severity || 'منخفض';
+          const sev = violTypeSeverity(type);
           if (sev === 'منخفض') breakdown.low++;
           else if (sev === 'متوسط') breakdown.mid++;
-          else if (sev === 'عالي') breakdown.high++;
           else if (sev === 'عالي') breakdown.high++;
         });
         return breakdown;
@@ -28023,7 +28037,7 @@
               branch?.name || '-',
               region?.name || '-',
               v.violation_type || '-',
-              type?.severity || '-',
+              violTypeSeverity(type) || '-',
               type?.weight ?? '-',
               v.status_text || STATE_LABELS[v.state] || v.state || '-',
               String(v.description || '').replace(/\r?\n+/g, ' ').trim()
@@ -28710,7 +28724,7 @@
         <div class="cmp-viol-list score-viol-list cmp-viol-list--scroll">
           ${sorted.map(v => {
           const type = state.violationTypes.find(x => x.name === v.violation_type);
-          const sev = type?.severity || 'منخفض';
+          const sev = violTypeSeverity(type);
           const ded = cmpViolationDeductionInfo(v, sortedAsc);
           if (!ded) return '';
           const ageDays = Math.round(violationAgeDays(v));
@@ -28969,8 +28983,7 @@
             const bId = empBranch.get(v.employee_id);
             if (bId !== b.id) return;
             const type = vTypeById.get(v.violation_type_id);
-            let sev = type?.severity || 'منخفض';
-            if (sev === 'حرج') sev = 'عالي';
+            let sev = violTypeSeverity(type);
             if (sev === 'عالي') high++;
             else if (sev === 'متوسط') medium++;
             else low++;
