@@ -16,5 +16,9 @@
    - R2_ACCOUNT_ID
    - R2_BUCKET_NAME=athar-staging
 
-4. (اختياري) إعداد CORS على حاوية R2
-   - السماح للأصل: https://athar-app.online
+4. (مطلوب للمسار المباشر) إعداد CORS على حاوية R2
+   - استخدم الملف: supabase/r2-cors.json
+   - أمر مثال (Cloudflare Wrangler):
+     wrangler r2 bucket cors put <BUCKET_NAME> --file supabase/r2-cors.json
+   - يجب أن يشمل الأصل الإنتاجي: https://vms-v2.aromaticfamilies.com
+   - بدون CORS: المتصفح يفشل الرفع/العرض المباشر ويرجع لمسار ثقيل عبر Edge

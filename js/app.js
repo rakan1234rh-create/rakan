@@ -878,19 +878,9 @@
       }
 
       async function resolveImageDisplayUrl(key, signedUrl, contentType) {
+        // <img src="signed-r2-url"> لا يحتاج CORS ولا يمرّر البايتات عبر Supabase
         if (signedUrl && typeof isDirectR2SignedUrl === 'function' && isDirectR2SignedUrl(signedUrl)) {
-          try {
-            const res = await fetch(signedUrl, { referrerPolicy: 'no-referrer' });
-            if (res.ok) {
-              const blob = await res.blob();
-              if (blob && blob.size) return URL.createObjectURL(blob);
-            }
-            if (res.status === 404 || res.status === 403) {
-              throw new Error('R2_MISSING');
-            }
-          } catch (e) {
-            if (String(e?.message || e) === 'R2_MISSING') throw e;
-          }
+          return signedUrl;
         }
         return fetchR2ProxyBlobUrl(key, contentType);
       }
@@ -18453,9 +18443,13 @@
           : (/^https?:\/\//i.test(String(playUrl || ''))
             ? String(playUrl).trim()
             : (readCfCache(cacheKey) || ''));
-        const streamHref = (viewerCtx && viewerCtx.streamUrl) || (isR2StreamPlayUrl(href) ? href : readVideoStreamFallback(cacheKey)) || href;
+        const streamHref = (viewerCtx && viewerCtx.streamUrl)
+          || (isDirectR2SignedUrl(href) ? href : '')
+          || (isR2StreamPlayUrl(href) ? href : readVideoStreamFallback(cacheKey))
+          || href;
         const fileBytes = viewerCtx?.fileBytes || 0;
-        const showTranscode = isR2StreamPlayUrl(streamHref) && (!fileBytes || fileBytes <= HEVC_TRANSCODE_VIEWER_MAX_BYTES);
+        const showTranscode = (isR2StreamPlayUrl(streamHref) || isDirectR2SignedUrl(streamHref))
+          && (!fileBytes || fileBytes <= HEVC_TRANSCODE_VIEWER_MAX_BYTES);
         return { downloadHref: href, streamHref, showTranscode, codec: codec || 'h265' };
       }
 
@@ -19011,11 +19005,16 @@
         }
       }
 
-      async function playVideoInViewer(vid, playUrl, mimeType, streamFallback, cacheKey) {
+      async function playVideoInViewer(vid, playUrl, mimeType, streamFallback, cacheKey, fileId) {
         const mime = mimeType || 'video/mp4';
         let url = resolveMediaPlayUrl(playUrl);
         const fb = String(streamFallback || '').trim();
-        const directR2 = (cacheKey && readVideoDirectR2Url(cacheKey)) || '';
+        const directR2 = (cacheKey && readVideoDirectR2Url(cacheKey))
+          || (isDirectR2SignedUrl(url) ? url : '');
+        const objectKey = String(fileId || '').trim()
+          || (String(cacheKey || '').includes('::')
+            ? String(cacheKey).split('::').slice(1).join('::').trim()
+            : '');
 
         if (!isFastVideoStreamUrl(url) && !isR2StreamPlayUrl(url)) {
           await setVideoElementSource(vid, url, mime);
@@ -19041,17 +19040,16 @@
           return null;
         };
 
-        // 1) بث Edge أولاً (Range + CORS) — أنسب لـ <video> من رابط R2 المباشر
-        if (streamUrl) {
-          if (isMirsadDebugLog()) console.info('[Viewer] بث مباشر عبر Edge Function');
-          const direct = await tryAttach(streamUrl, 'بث مباشر', 45000);
-          if (direct) {
-            revealAttViewerMedia(vid);
-            return direct;
-          }
-        }
+        const showPrep = () => {
+          try {
+            showAttViewerLoader(
+              '<i class="fas fa-spinner fa-spin fa-2x"></i>'
+              + '<p style="font-size:14px;margin-top:10px">جاري تجهيز الفيديو داخل المنصة…</p>',
+            );
+          } catch (_) { /* */ }
+        };
 
-        // 2) رابط R2 موقّع
+        // 1) رابط R2 موقّع مباشرة داخل <video> — لا يحتاج JWT على Edge
         if (directR2 && isDirectR2SignedUrl(directR2)) {
           if (isMirsadDebugLog()) console.info('[Viewer] تشغيل عبر رابط R2 موقّع');
           const viaR2 = await tryAttach(directR2, 'R2 موقّع', 45000);
@@ -19069,17 +19067,43 @@
           }
         }
 
-        // 3) تجميع blob عبر Range (حتى ~40MB) بعد فشل العنصر مباشرة
-        if (streamUrl) {
-          const streamLen = await probeR2StreamContentLength(streamUrl);
-          const blobLimit = Math.max(VIDEO_BLOB_MAX_BYTES, HEVC_TRANSCODE_VIEWER_MAX_BYTES);
-          if (!streamLen || streamLen <= blobLimit) {
-            try {
-              if (isMirsadDebugLog()) console.info('[Viewer] بديل blob للفيديو', streamLen || '؟');
-              const packed = streamLen && streamLen > VIDEO_BLOB_MAX_BYTES
-                ? await fetchStreamBlobViaRanges(streamUrl, mime, blobLimit)
-                : await fetchAuthedStreamBlobUrl(streamUrl, mime);
-              if (packed?.blobUrl) {
+        // 2) تحميل مصادق كـ blob / proxyGet ثم تشغيل داخل المنصة
+        const blobLimit = Math.max(VIDEO_BLOB_MAX_BYTES, HEVC_TRANSCODE_VIEWER_MAX_BYTES);
+        const blobCandidates = [];
+        if (directR2 && isDirectR2SignedUrl(directR2)) blobCandidates.push({ kind: 'r2', src: directR2 });
+        if (objectKey) blobCandidates.push({ kind: 'proxy', src: objectKey });
+        if (streamUrl) blobCandidates.push({ kind: 'stream', src: streamUrl });
+
+        for (const cand of blobCandidates) {
+          try {
+            showPrep();
+            if (isMirsadDebugLog()) console.info('[Viewer] بديل blob للفيديو', cand.kind);
+            let packed = null;
+            if (cand.kind === 'r2') {
+              const lenProbe = await fetch(cand.src, { method: 'HEAD', mode: 'cors', credentials: 'omit' })
+                .then((r) => parseInt(r.headers.get('Content-Length') || '0', 10) || 0)
+                .catch(() => 0);
+              if (lenProbe && lenProbe > blobLimit) continue;
+              packed = await fetchR2VideoBlob(cand.src, mime);
+            } else if (cand.kind === 'proxy') {
+              let sizeOk = true;
+              try {
+                const head = await callR2StorageFn('headObject', { key: cand.src });
+                const len = Number(head?.contentLength || 0);
+                if (len > blobLimit) sizeOk = false;
+              } catch (_) { /* */ }
+              if (!sizeOk) continue;
+              const proxyUrl = await fetchR2ProxyBlobUrl(cand.src, mime);
+              packed = { blobUrl: proxyUrl, blob: null };
+            } else {
+              const streamLen = await probeR2StreamContentLength(cand.src);
+              if (streamLen && streamLen > blobLimit) continue;
+              packed = streamLen && streamLen > VIDEO_BLOB_MAX_BYTES
+                ? await fetchStreamBlobViaRanges(cand.src, mime, blobLimit)
+                : await fetchAuthedStreamBlobUrl(cand.src, mime);
+            }
+            if (packed?.blobUrl) {
+              if (packed.blob) {
                 const codec = await sniffMp4VideoCodec(packed.blob);
                 if (isHevcCodec(codec)) {
                   const hevcErr = new Error('HEVC_NOT_SUPPORTED');
@@ -19087,18 +19111,26 @@
                   hevcErr.codec = codec;
                   throw hevcErr;
                 }
-                const blobPlay = await tryAttach(packed.blobUrl, 'blob', 45000);
-                if (blobPlay) {
-                  revealAttViewerMedia(vid);
-                  return blobPlay;
-                }
               }
-            } catch (blobErr) {
-              if (blobErr?.code === 'HEVC') throw blobErr;
-              if (isMirsadDebugLog()) console.warn('[Viewer] blob stream فشل', blobErr);
+              const blobPlay = await tryAttach(packed.blobUrl, 'blob:' + cand.kind, 60000);
+              if (blobPlay) {
+                revealAttViewerMedia(vid);
+                return blobPlay;
+              }
             }
-          } else if (isMirsadDebugLog()) {
-            console.info('[Viewer] تخطّي blob — حجم كبير', streamLen);
+          } catch (blobErr) {
+            if (blobErr?.code === 'HEVC') throw blobErr;
+            if (isMirsadDebugLog()) console.warn('[Viewer] blob فشل', cand.kind, blobErr);
+          }
+        }
+
+        // 3) بث Edge أخيراً (قد يفشل بدون JWT)
+        if (streamUrl) {
+          if (isMirsadDebugLog()) console.info('[Viewer] بث عبر Edge Function');
+          const viaStream = await tryAttach(streamUrl, 'بث Edge', 45000);
+          if (viaStream) {
+            revealAttViewerMedia(vid);
+            return viaStream;
           }
         }
 
@@ -19154,20 +19186,23 @@
         const openHrefEarly = attachmentVideoOpenHref(ck, playUrl, streamFb);
         const hevcCtx = {
           vid,
-          streamUrl: streamFb || (isR2StreamPlayUrl(playUrl) ? playUrl : ''),
+          streamUrl: streamFb
+            || (isR2StreamPlayUrl(playUrl) ? playUrl : '')
+            || readVideoDirectR2Url(ck)
+            || (isDirectR2SignedUrl(playUrl) ? playUrl : ''),
           r2Key: String(fileId || '').trim(),
           fileId: String(fileId || '').trim(),
           mime: mime || 'video/mp4',
           viewerLoadGen,
           cacheKey: ck,
           playUrl,
-          fileBytes: streamFb ? await probeR2StreamContentLength(streamFb) : 0,
+          fileBytes: byteSize > 0 ? byteSize : 0,
           markedH264,
         };
 
         let playErrMediaCode = 0;
         try {
-          playUrl = await playVideoInViewer(vid, playUrl, mime, streamFb, ck);
+          playUrl = await playVideoInViewer(vid, playUrl, mime, streamFb, ck, fileId);
           if (await waitVideoElementPlayable(vid, 10000)) {
             revealAttViewerMedia(vid);
             return playUrl;
@@ -19281,9 +19316,10 @@
         if (!fileId) throw new Error('معرف الملف مفقود');
         const cacheKey = cfCacheKey(fileId, ticketCtx);
         let cached = readCfCache(cacheKey);
-        if (cached && isLikelyVideoAttachmentKey(fileId)) {
-          const streamFb = readVideoStreamFallback(cacheKey);
-          if (streamFb && isDirectR2SignedUrl(cached)) cached = streamFb;
+        // للفيديو فضّل رابط R2 المباشر (لا يحتاج JWT على الدالة)
+        if (cached && isLikelyVideoAttachmentKey(fileId) && !isDirectR2SignedUrl(cached)) {
+          const direct = readVideoDirectR2Url(cacheKey);
+          if (direct && isDirectR2SignedUrl(direct)) cached = direct;
         }
         if (cached) return cached;
 
@@ -19322,8 +19358,8 @@
                 if (streamPlay) _videoStreamFallback[cacheKey] = streamPlay;
                 if (signed.url) _videoDirectR2Url[cacheKey] = signed.url;
                 if (useStream) {
-                  // بث Edge لـ <video> (Range+CORS)؛ رابط R2 للاحتياطي/التحميل
-                  const playUrl = streamPlay || signed.url;
+                  // رابط R2 الموقّع يعمل في <video> بدون Authorization (بث Edge غالباً يُرفض بدون JWT)
+                  const playUrl = signed.url || streamPlay;
                   writeCfCache(cacheKey, playUrl);
                   return playUrl;
                 }

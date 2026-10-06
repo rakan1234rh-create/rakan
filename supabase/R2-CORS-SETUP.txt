@@ -1,0 +1,19 @@
+إعداد CORS لحاوية Cloudflare R2 (مطلوب للمسار المباشر)
+======================================================
+
+الهدف: المتصفح يرفع ويعرض الملفات مباشرة من R2.
+Supabase Edge يستخدم فقط: جلسة المستخدم، فحص الصلاحيات، وتوقيع الروابط.
+
+1) Dashboard
+   Cloudflare → R2 → اختر الـ bucket → Settings → CORS Policy
+   الصق محتوى supabase/r2-cors.json (أو عدّل AllowedOrigins حسب نطاقك).
+
+2) Wrangler (بديل)
+   wrangler r2 bucket cors put <BUCKET_NAME> --file supabase/r2-cors.json
+
+3) بعد الضبط
+   - امسح: sessionStorage.removeItem('athar_r2_direct_blocked')
+   - حدّث الصفحة وجرّب رفع مرفق من الراصد
+
+4) احتياطي ثقيل (غير موصى به — يستهلك Egress على Supabase)
+   localStorage.setItem('mirsad_allow_r2_edge_proxy','1'); location.reload();
