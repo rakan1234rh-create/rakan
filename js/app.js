@@ -35683,13 +35683,15 @@
           stopStaffBreakTicker();
           return;
         }
-        // Keep the existing 1s interval. Restarting it reset the 12s poll clock
+        // Keep the existing 1s interval. Restarting it reset the poll clock
         // and the first tick reloaded every session, overwriting a just-stopped leftover.
         if (state._staffBreakTicker) return;
         state._staffBreakOvertimeFilterSignature = getReportableActiveBreakSignature();
         if (!state._staffBreakSchedulePollAt) {
           state._staffBreakSchedulePollAt = Date.now();
         }
+        /** استطلاع شبكة أقل تكراراً — العدّاد محلي كل ثانية؛ التحميل الكامل فقط عند الحاجة */
+        const STAFF_BREAK_NET_POLL_MS = 60_000;
         state._staffBreakTicker = setInterval(() => {
           try {
             // KSA midnight: reload so daily logs / remaining minutes reset
@@ -35697,7 +35699,6 @@
               maybeRollStaffBreaksDay();
             }
             maybeNotifyBreakExpiredLocally();
-            // Fallback if realtime schedule events were missed: refresh every 12s
             const now = Date.now();
             const onBreaksTab = !!document.getElementById('tab-breaks')?.classList.contains('active');
             if (onBreaksTab) {
@@ -35710,13 +35711,16 @@
                 return;
               }
             }
-            if (!state._staffBreakSchedulePollAt || now - state._staffBreakSchedulePollAt > 12000) {
+            // أثناء البريك الشخصي فقط (بدون تبويب البريكات): ساعة محلية + إشعار محلي — بدون API كل ثوانٍ
+            if (!onBreaksTab && getMyActiveStaffBreak()) {
+              return;
+            }
+            if (onBreaksTab && (!state._staffBreakSchedulePollAt || now - state._staffBreakSchedulePollAt > STAFF_BREAK_NET_POLL_MS)) {
               state._staffBreakSchedulePollAt = now;
               loadStaffBreaksData().then(() => {
                 try {
-                  if (onBreaksTab) paintStaffBreakCountdownOnly();
+                  paintStaffBreakCountdownOnly();
                   maybeNotifyBreakExpiredLocally();
-                  if (!getMyActiveStaffBreak() && !onBreaksTab) stopStaffBreakTicker();
                 } catch (_) { /* noop */ }
               }).catch(() => { /* noop */ });
             } else if (onBreaksTab) {
@@ -35818,7 +35822,8 @@
         }
         if (state._staffBreakDayKey === todayKey) return false;
         state._staffBreakDayKey = todayKey;
-        loadStaffBreaksData().then(() => {
+        state._staffBreakStaleClosedDayKey = null; // اسمح بإغلاق جلسات الأمس مرة عند أول تحميل لليوم الجديد
+        loadStaffBreaksData({ forceCloseStale: true }).then(() => {
           const tab = document.getElementById('tab-breaks');
           if (tab?.classList.contains('active')) renderStaffBreaksPage({ soft: true });
         }).catch(() => { /* noop */ });
@@ -36086,7 +36091,16 @@
         return row;
       }
 
-      async function loadStaffBreaksData() {
+      function maybeCloseStaleStaffBreaksOnce() {
+        const todayKey = getStaffBreakTodayKey();
+        if (!todayKey) return Promise.resolve();
+        // مرة واحدة لكل يوم KSA في الجلسة — لا مع كل تحميل/استطلاع (يقلّل Log Ingestion)
+        if (state._staffBreakStaleClosedDayKey === todayKey) return Promise.resolve();
+        state._staffBreakStaleClosedDayKey = todayKey;
+        return sb.rpc('close_stale_staff_breaks').catch(() => { /* older DB / ignore */ });
+      }
+
+      async function loadStaffBreaksData(opts = {}) {
         if (!state.currentUser?.id || state.currentUser.id === GUEST_LOCAL_PROFILE.id) {
           state.staffBreaks = [];
           state.staffBreakSchedules = [];
@@ -36098,8 +36112,10 @@
         }
         try {
           const todayKey = getStaffBreakTodayKey();
-          // Close yesterday's open sessions so remaining minutes / logs reset for the new KSA day
-          try { await sb.rpc('close_stale_staff_breaks'); } catch (_) { /* older DB */ }
+          // إغلاق جلسات الأمس مرة يومياً فقط (أو عند تغيير اليوم)، وليس في كل poll
+          if (opts.forceCloseStale || state._staffBreakDayKey !== todayKey) {
+            await maybeCloseStaleStaffBreaksOnce();
+          }
           const [
             { data: breaks, error: bErr },
             { data: schedules, error: sErr },
@@ -36171,13 +36187,23 @@
         }
       }
 
+      /** من يراقب بريكات الآخرين يحتاج Realtime كامل؛ الموظف يكفي أحداثه فقط */
+      function needsStaffBreaksMonitorRealtime() {
+        return canViewStaffBreakHistory();
+      }
+
       function setupStaffBreaksRealtime() {
         if (state._staffBreaksChannel) {
           try { sb.removeChannel(state._staffBreaksChannel); } catch (_) { /* noop */ }
           state._staffBreaksChannel = null;
         }
-        const ch = sb.channel('public:staff_breaks')
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'staff_breaks' }, (payload) => {
+        const meId = state.currentUser?.id;
+        const monitorAll = needsStaffBreaksMonitorRealtime();
+        const breakFilter = (!monitorAll && meId)
+          ? { event: '*', schema: 'public', table: 'staff_breaks', filter: `user_id=eq.${meId}` }
+          : { event: '*', schema: 'public', table: 'staff_breaks' };
+        const ch = sb.channel(monitorAll ? 'public:staff_breaks' : `public:staff_breaks:mine:${meId || 'x'}`)
+          .on('postgres_changes', breakFilter, (payload) => {
             const todayKey = getStaffBreakTodayKey();
             const row = enrichStaffBreak(payload.new || payload.old);
             const rowDay = row?.day_key ? String(row.day_key).slice(0, 10) : '';

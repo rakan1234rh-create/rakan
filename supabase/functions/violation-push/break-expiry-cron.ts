@@ -1,6 +1,6 @@
 /** Cron: إشعار Web Push عند انتهاء مدة البريك */
 
-export const BREAK_EXPIRY_CRON_VERSION = '2026-09-break-expiry-v3-types';
+export const BREAK_EXPIRY_CRON_VERSION = '2026-10-break-expiry-v4-stale-close';
 
 type BreakRow = {
   id: string;
@@ -35,6 +35,13 @@ export async function runBreakExpiryCron(
     extras?: Record<string, unknown>,
   ) => Promise<{ sent?: number; error?: string; errors?: string[] }>,
 ) {
+  // إغلاق جلسات الأمس مرة من السيرفر بدل كل عميل — يقلّل Log Ingestion
+  try {
+    await supabase.rpc('close_stale_staff_breaks');
+  } catch (_) {
+    // older DB / ignore
+  }
+
   const { data: rows, error } = await supabase
     .from('staff_breaks')
     .select('id, user_id, break_type, started_at, planned_duration_minutes, remaining_seconds, expiry_notified_at')
