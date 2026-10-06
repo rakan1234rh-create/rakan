@@ -35690,8 +35690,8 @@
         if (!state._staffBreakSchedulePollAt) {
           state._staffBreakSchedulePollAt = Date.now();
         }
-        /** استطلاع شبكة أقل تكراراً — العدّاد محلي كل ثانية؛ التحميل الكامل فقط عند الحاجة */
-        const STAFF_BREAK_NET_POLL_MS = 60_000;
+        /** استطلاع شبكة أقل تكراراً — العدّاد محلي كل ثانية؛ التحميل الخفيف فقط كاحتياطي لـ Realtime */
+        const STAFF_BREAK_NET_POLL_MS = 120_000;
         state._staffBreakTicker = setInterval(() => {
           try {
             // KSA midnight: reload so daily logs / remaining minutes reset
@@ -35715,20 +35715,27 @@
             if (!onBreaksTab && getMyActiveStaffBreak()) {
               return;
             }
-            if (onBreaksTab && (!state._staffBreakSchedulePollAt || now - state._staffBreakSchedulePollAt > STAFF_BREAK_NET_POLL_MS)) {
+            // لا نستطلع والتاب غير ظاهر أو الصفحة بالخلفية
+            if (!onBreaksTab || document.hidden) {
+              if (!getMyActiveStaffBreak()) stopStaffBreakTicker();
+              else if (onBreaksTab) {
+                state._myBreakDurationMins = resolveBreakDurationMinsForUser(state.currentUser);
+                paintStaffBreakCountdownOnly();
+              }
+              return;
+            }
+            if (!state._staffBreakSchedulePollAt || now - state._staffBreakSchedulePollAt > STAFF_BREAK_NET_POLL_MS) {
               state._staffBreakSchedulePollAt = now;
-              loadStaffBreaksData().then(() => {
+              // light: صفوف البريك فقط — بدون schedules + بدون RPC مدة (Realtime يغطي التحديث الحي)
+              loadStaffBreaksData({ light: true }).then(() => {
                 try {
                   paintStaffBreakCountdownOnly();
                   maybeNotifyBreakExpiredLocally();
                 } catch (_) { /* noop */ }
               }).catch(() => { /* noop */ });
-            } else if (onBreaksTab) {
-              // Keep idle duration badge aligned with latest in-memory schedules
+            } else {
               state._myBreakDurationMins = resolveBreakDurationMinsForUser(state.currentUser);
               paintStaffBreakCountdownOnly();
-            } else if (!getMyActiveStaffBreak()) {
-              stopStaffBreakTicker();
             }
           } catch (_) { /* noop */ }
         }, 1000);
@@ -36117,10 +36124,40 @@
         }
         try {
           const todayKey = getStaffBreakTodayKey();
+          const light = opts.light === true;
           // إغلاق جلسات الأمس مرة يومياً فقط (أو عند تغيير اليوم)، وليس في كل poll
-          if (opts.forceCloseStale || state._staffBreakDayKey !== todayKey) {
+          if (!light && (opts.forceCloseStale || state._staffBreakDayKey !== todayKey)) {
             await maybeCloseStaleStaffBreaksOnce();
           }
+
+          if (light) {
+            // استطلاع خفيف: جدول البريك فقط → طلب API واحد بدل 4
+            const { data: breaks, error: bErr } = await sb.from('staff_breaks')
+              .select('id,user_id,branch_id,region_id,break_type,planned_duration_minutes,remaining_seconds,used_seconds,started_at,paused_at,ended_at,overtime_seconds,overtime_reason,status,day_key,expiry_notified_at,created_at,updated_at')
+              .eq('day_key', todayKey)
+              .in('status', ['active', 'paused', 'ended'])
+              .order('started_at', { ascending: false })
+              .limit(500);
+            if (bErr && isMirsadDebugLog()) console.warn('[staff_breaks] light', bErr);
+            const seenIds = new Set();
+            const enriched = [];
+            (breaks || []).forEach((raw) => {
+              if (!raw?.id || seenIds.has(raw.id)) return;
+              seenIds.add(raw.id);
+              enriched.push(enrichStaffBreak(raw));
+            });
+            rebuildStaffBreakDayMap(enriched);
+            state.staffBreakDayRows = enriched;
+            state.staffBreaks = enriched.filter(b => b.status === 'active');
+            state._staffBreakDayKey = todayKey;
+            try { ensureStaffBreakTicker(); } catch (_) { /* noop */ }
+            try {
+              const mine = getMyActiveStaffBreak();
+              if (mine) scheduleBreakExpiryLocalNotification(mine);
+            } catch (_) { /* noop */ }
+            return;
+          }
+
           const [
             { data: breaks, error: bErr },
             { data: schedules, error: sErr },
