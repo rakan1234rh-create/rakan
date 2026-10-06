@@ -35742,8 +35742,8 @@
 
       async function showLocalBreakExpiryNotification(brk) {
         const title = brk?.break_type === 'restroom'
-          ? 'انتهت مدة بريك دورة المياه'
-          : 'انتهت مدة البريك';
+          ? 'تجاوزت مدة بريك دورة المياه'
+          : 'تجاوزت مدة البريك';
         const body = `${title} — يُرجى العودة وإيقاف الجلسة من التطبيق.`;
         const tag = getBreakExpiryNotificationTag(brk);
         try {
@@ -35799,7 +35799,12 @@
           return;
         }
         const rem = getBreakRemainingSeconds(mine);
+        // إشعار مرة واحدة فقط عند التجاوز (remaining <= 0)
         if (rem > 0) return;
+        if (mine.expiry_notified_at) {
+          state._breakExpiryLocalNotifiedId = mine.id;
+          return;
+        }
         if (state._breakExpiryLocalNotifiedId === mine.id) return;
         const storageKey = `athar_break_expiry_local_${mine.id}`;
         try {
@@ -36123,7 +36128,7 @@
             { data: myRestroomMins, error: rErr }
           ] = await Promise.all([
             sb.from('staff_breaks')
-              .select('id,user_id,branch_id,region_id,break_type,planned_duration_minutes,remaining_seconds,used_seconds,started_at,paused_at,ended_at,overtime_seconds,overtime_reason,status,day_key,created_at,updated_at')
+              .select('id,user_id,branch_id,region_id,break_type,planned_duration_minutes,remaining_seconds,used_seconds,started_at,paused_at,ended_at,overtime_seconds,overtime_reason,status,day_key,expiry_notified_at,created_at,updated_at')
               .eq('day_key', todayKey)
               .in('status', ['active', 'paused', 'ended'])
               .order('started_at', { ascending: false })
