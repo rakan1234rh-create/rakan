@@ -21,7 +21,7 @@
       const ATHAR_SW_URL = './sw.js?v=12';
 
       /** رابط النشر — روابط استعادة كلمة المرور من file:// أو localhost */
-      const ATHAR_PUBLIC_ORIGIN = 'https://athar-app.online';
+      const ATHAR_PUBLIC_ORIGIN = 'https://vms-v2.aromaticfamilies.com';
 
       // 📁 Cloudflare Worker اختياري (مسار عارض/تحميل قديم)
       const CLOUDFLARE_WORKER_URL = '/upload';
@@ -44,7 +44,9 @@
       /** GitHub Pages أو أي نشر عام — لا يدعم وضع الضيف للبيانات */
       function isPublicDeployHost() {
         const h = (location.hostname || '').toLowerCase();
-        return h === 'github.io' || h.endsWith('.github.io') || h === 'athar-app.online' || h.endsWith('.athar-app.online');
+        return h === 'github.io' || h.endsWith('.github.io')
+          || h === 'vms-v2.aromaticfamilies.com' || h.endsWith('.aromaticfamilies.com')
+          || h === 'athar-app.online' || h.endsWith('.athar-app.online');
       }
 
       /** فتح الملف مباشرة من القرص (بدون http) — لا يوجد /config ولا R2 */
