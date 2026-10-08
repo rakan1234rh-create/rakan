@@ -151,11 +151,14 @@
         if (errMsg.includes('check_platform_email_for_reset') || errMsg.includes('check_password_reset_rate_limit')) {
           return 'التحقق من البريد غير متاح — شغّل supabase/password-reset-rate-limit.sql في SQL Editor';
         }
-        if (status === 500 || /error sending recovery|recovery email|hook|smtp|sender address|resend rejected/i.test(errMsg)) {
-          if (/resend rejected|domain|verify|not verified/i.test(errMsg)) {
-            return 'تعذّر إرسال الرمز عبر Resend. تحقق أن دومين athar-app.online مُتحقق في Resend وأن SENDER_EMAIL=no-reply@athar-app.online في Supabase Secrets.';
+        if (status === 500 || /error sending recovery|recovery email|hook|smtp|sender address|resend rejected|authentication failed/i.test(errMsg)) {
+          if (/authentication failed|535|invalid login/i.test(errMsg)) {
+            return 'تعذّر الدخول لبريد Hostinger (SMTP). تحقق من SES_SMTP_PASSWORD لصندوق info@athar-app.online.';
           }
-          return 'تعذّر إرسال رمز التحقق من الخادم. تحقق من SENDER_EMAIL في Supabase Secrets (دومين مُتحقق في Resend) وEdge Functions → send-auth-emails.';
+          if (/resend rejected|domain|verify|not verified/i.test(errMsg)) {
+            return 'تعذّر إرسال الرمز. تحقق من إعداد البريد في Supabase Secrets وEdge Functions → send-auth-emails.';
+          }
+          return 'تعذّر إرسال رمز التحقق من الخادم. حاول مرة أخرى بعد قليل، أو تحقق من إعداد SMTP (Hostinger) في Supabase Secrets.';
         }
         return 'فشل الإرسال: ' + (errMsg || 'حاول مجدداً');
       }
@@ -35881,6 +35884,8 @@
       /** لا يوجد بريك مجدول لهذا اليوم (لا يوجد نطاق فيه مدة ليوم الأسبوع الحالي) */
       function isMyBreakUnscheduledToday(breakType = 'regular') {
         if (getMyOpenStaffBreak()) return false;
+        // Until a full load succeeds today, let start_staff_break decide on the server.
+        if (state._staffBreakFullLoadDayKey !== getStaffBreakTodayKey()) return false;
         return !resolveBreakDurationMinsForUser(state.currentUser, breakType);
       }
 
@@ -35910,11 +35915,16 @@
       /** يرجع مدة البريك بالدقائق لهذا اليوم، أو null إن لم تكن مجدولة (لا يوجد بريك اليوم) */
       function resolveBreakDurationMinsForUser(u, breakType = 'regular') {
         const type = breakType === 'restroom' ? 'restroom' : 'regular';
-        if (!u) {
-          return type === 'restroom'
-            ? (state._myRestroomBreakDurationMins || null)
-            : (state._myBreakDurationMins || null);
-        }
+        const serverMins = type === 'restroom'
+          ? (state._myRestroomBreakDurationMins || null)
+          : (state._myBreakDurationMins || null);
+        if (!u) return serverMins;
+        const clientMins = resolveBreakDurationMinsFromSchedules(u, type);
+        if (clientMins) return clientMins;
+        return u.id && u.id === state.currentUser?.id ? serverMins : null;
+      }
+
+      function resolveBreakDurationMinsFromSchedules(u, type) {
         const dow = getStaffBreakTodayWeekday();
         const schedules = (state.staffBreakSchedules || []).filter(s =>
           s && s.is_active !== false &&
@@ -36160,6 +36170,7 @@
           // «في البريك الآن» = نشط فقط؛ الإيقاف يغلق الجلسة (ended) وتنزل للسجل
           state.staffBreaks = enriched.filter(b => b.status === 'active');
           state.staffBreakSchedules = schedules || [];
+          state._staffBreakFullLoadDayKey = sErr ? null : todayKey;
           // null means no break scheduled for today's weekday at any scope
           const resolvedMins = Number(myMins) > 0
             ? Number(myMins)
@@ -37462,7 +37473,7 @@
         const meta = document.getElementById(metaId);
         const mins = resolveBreakDurationMinsForUser(state.currentUser, type);
         const exhausted = isMyBreakAllowanceExhausted(type);
-        const locked = !mins || exhausted;
+        const locked = exhausted || isMyBreakUnscheduledToday(type);
         const disabled = locked || isStaffBreakActionBusy();
         if (button) {
           button.disabled = disabled;
@@ -37471,7 +37482,7 @@
         if (meta) {
           meta.textContent = exhausted
             ? 'اكتملت مدة اليوم'
-            : (mins ? `${mins} دقيقة اليوم` : 'غير مجدول اليوم');
+            : (mins ? `${mins} دقيقة اليوم` : (locked ? 'غير مجدول اليوم' : 'متاح اليوم'));
         }
         return !locked;
       }
