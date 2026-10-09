@@ -9,6 +9,8 @@ on:
       - 'supabase/functions/violation-auto-forward/**'
       - 'supabase/functions/r2-storage/**'
       - 'supabase/functions/send-auth-emails/**'
+      - 'supabase/functions/email-unsubscribe/**'
+      - 'supabase/functions/admin-users/**'
       - 'supabase/config.toml'
       - 'supabase/email-templates/**'
       - '.github/workflows/deploy-violation-push.yml'
@@ -41,3 +43,5 @@ jobs:
           supabase functions deploy broadcast-push --no-verify-jwt --project-ref "$PROJECT_ID" --use-api
           supabase functions deploy r2-storage --no-verify-jwt --project-ref "$PROJECT_ID" --use-api
           supabase functions deploy send-auth-emails --no-verify-jwt --project-ref "$PROJECT_ID" --use-api
+          supabase functions deploy email-unsubscribe --no-verify-jwt --project-ref "$PROJECT_ID" --use-api
+          supabase functions deploy admin-users --no-verify-jwt --project-ref "$PROJECT_ID" --use-api

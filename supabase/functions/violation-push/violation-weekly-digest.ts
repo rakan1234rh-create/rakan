@@ -23,14 +23,47 @@ function esc(s: unknown): string {
     .replace(/"/g, '&quot;');
 }
 
-function unsubscribeLink(email: string): string {
-  const origin = (Deno.env.get('ATHAR_PUBLIC_ORIGIN') || 'https://vms-v2.aromaticfamilies.com').replace(/\/$/, '');
-  return `${origin}/?unsubscribe=${encodeURIComponent(email)}`;
+function publicAppOrigin(): string {
+  return (Deno.env.get('ATHAR_PUBLIC_ORIGIN') || 'https://athar-app.online').replace(/\/$/, '');
+}
+
+function unsubscribePageLink(email: string): string {
+  return `${publicAppOrigin()}/?unsubscribe=${encodeURIComponent(email)}`;
+}
+
+function unsubscribeApiLink(email: string): string {
+  const base = (Deno.env.get('SUPABASE_URL') || '').replace(/\/$/, '');
+  const anon = (
+    Deno.env.get('SUPABASE_ANON_KEY')
+    || Deno.env.get('SUPABASE_PUBLISHABLE_KEY')
+    || ''
+  ).trim();
+  const q = new URLSearchParams({
+    email,
+    channel: 'digest',
+  });
+  if (anon) q.set('apikey', anon);
+  return `${base}/functions/v1/email-unsubscribe?${q.toString()}`;
+}
+
+async function isUnsubscribed(
+  supabase: ReturnType<typeof createClient>,
+  email: string,
+): Promise<boolean> {
+  const { data, error } = await supabase.rpc('athar_is_email_unsubscribed', {
+    p_email: email,
+    p_channel: 'digest',
+  });
+  if (error) {
+    console.warn('digest unsubscribe check failed', error.message);
+    return false;
+  }
+  return data === true;
 }
 
 async function sendEmail(to: string, subject: string, html: string, text: string) {
   const deliveryRef = crypto.randomUUID();
-  const unsubscribeUrl = unsubscribeLink(to);
+  const unsubscribeApi = unsubscribeApiLink(to);
   const host = (Deno.env.get('SES_SMTP_HOST') || '').trim();
   const user = (Deno.env.get('SES_SMTP_USERNAME') || '').trim();
   const pass = (Deno.env.get('SES_SMTP_PASSWORD') || '').trim();
@@ -53,7 +86,7 @@ async function sendEmail(to: string, subject: string, html: string, text: string
     headers: {
       'X-Entity-Ref-ID': deliveryRef,
       'X-ATHAR-Delivery': deliveryRef,
-      'List-Unsubscribe': `<${unsubscribeUrl}>`,
+      'List-Unsubscribe': `<${unsubscribeApi}>`,
       'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
     },
   });
@@ -111,10 +144,15 @@ export async function runWeeklyDigest(supabase: ReturnType<typeof createClient>)
   }
 
   let sentCount = 0;
+  let skippedUnsub = 0;
   const failures: string[] = [];
   for (const [email, userViolations] of digestMap.entries()) {
+    if (await isUnsubscribed(supabase, email)) {
+      skippedUnsub += 1;
+      continue;
+    }
     const subject = `ملخص المخالفات المعلقة بانتظارك - ATHAR`;
-    const unsubscribeUrl = unsubscribeLink(email);
+    const unsubscribeUrl = unsubscribePageLink(email);
 
     const tableRows = userViolations.map((v) => {
       const rawTicket = String(v.ticket_number || v.id);
@@ -170,6 +208,7 @@ export async function runWeeklyDigest(supabase: ReturnType<typeof createClient>)
 
   return {
     sent: sentCount,
+    skipped_unsubscribed: skippedUnsub,
     total_violations: violations.length,
     recipient_roles: [...DIGEST_ROLES],
     recipient_emails: digestMap.size,

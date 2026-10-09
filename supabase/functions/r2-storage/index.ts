@@ -137,13 +137,16 @@ function assertAvatarPresetKey(key: string): string {
   return k
 }
 
-async function requireMirsadAdmin(
+async function requireAtharAdmin(
   supabase: ReturnType<typeof createClient>,
 ): Promise<boolean> {
   const { data, error } = await supabase.rpc('current_user_role')
   if (error) return false
   return data === 'admin'
 }
+
+/** @deprecated use requireAtharAdmin */
+const requireMirsadAdmin = requireAtharAdmin
 
 function getBearerToken(req: Request): string {
   const authHeader = req.headers.get('Authorization') || ''

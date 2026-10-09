@@ -23,16 +23,29 @@ const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_PUBLISHABLE_KEY')
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SECRET_KEY')
   ?? Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
+function buildCorsHeaders(req: Request): Record<string, string> {
+  const raw = Deno.env.get('ALLOWED_ORIGIN') || 'https://athar-app.online';
+  const allowed = new Set(
+    raw.split(',').map((s) => s.trim()).filter(Boolean).concat([
+      'https://athar-app.online',
+      'https://athar.app',
+      'https://vms-v2.aromaticfamilies.com',
+    ]),
+  );
+  const requestOrigin = req.headers.get('Origin') || '';
+  const isAllowed = allowed.has(requestOrigin)
+    || (requestOrigin.endsWith('.aromaticfamilies.com') && requestOrigin.startsWith('https://'));
+  return {
+    'Access-Control-Allow-Origin': isAllowed ? requestOrigin : '',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  };
+}
 
-function json(body: unknown, status = 200) {
+function json(body: unknown, status = 200, cors: Record<string, string> = {}) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    headers: { ...cors, 'Content-Type': 'application/json' },
   });
 }
 
@@ -105,20 +118,23 @@ async function callerCanManageUsers(
 }
 
 serve(async (req) => {
+  const corsHeaders = buildCorsHeaders(req);
+  const respond = (body: unknown, status = 200) => json(body, status, corsHeaders);
+
   // CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
 
   if (req.method !== 'POST') {
-    return json({ error: 'Method not allowed' }, 405);
+    return respond({ error: 'Method not allowed' }, 405);
   }
 
   try {
     // ── 1. التحقق من JWT الخاص بالمستخدم الحالي ──
     const authHeader = req.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
-      return json({ error: 'Missing authorization' }, 401);
+      return respond({ error: 'Missing authorization' }, 401);
     }
     const jwt = authHeader.replace('Bearer ', '');
 
@@ -129,7 +145,7 @@ serve(async (req) => {
 
     const { data: { user }, error: userErr } = await userClient.auth.getUser(jwt);
     if (userErr || !user) {
-      return json({ error: 'Invalid session' }, 401);
+      return respond({ error: 'Invalid session' }, 401);
     }
 
     // ── 2. التحقق من صلاحية إدارة المستخدمين ──
@@ -144,13 +160,13 @@ serve(async (req) => {
       .maybeSingle();
 
     if (profileErr) {
-      return json({ error: 'Failed to verify user' }, 500);
+      return respond({ error: 'Failed to verify user' }, 500);
     }
     if (!profile) {
-      return json({ error: 'User profile not found' }, 403);
+      return respond({ error: 'User profile not found' }, 403);
     }
     if (!profile.is_active) {
-      return json({ error: 'Account is disabled' }, 403);
+      return respond({ error: 'Account is disabled' }, 403);
     }
 
     const canManage = await callerCanManageUsers(
@@ -159,7 +175,7 @@ serve(async (req) => {
       { id: String(profile.id), role: String(profile.role || '') },
     );
     if (!canManage) {
-      return json({ error: 'manage_users permission required' }, 403);
+      return respond({ error: 'manage_users permission required' }, 403);
     }
 
     // ── 3. تنفيذ العملية المطلوبة ──
@@ -170,10 +186,10 @@ serve(async (req) => {
       case 'create': {
         const { email, password, metadata } = body;
         if (!email || !password) {
-          return json({ error: 'Email and password are required' }, 400);
+          return respond({ error: 'Email and password are required' }, 400);
         }
         if (password.length < 6) {
-          return json({ error: 'Password must be at least 6 characters' }, 400);
+          return respond({ error: 'Password must be at least 6 characters' }, 400);
         }
 
         const { data, error } = await adminClient.auth.admin.createUser({
@@ -182,51 +198,51 @@ serve(async (req) => {
           email_confirm: true,
           user_metadata: metadata || {},
         });
-        if (error) return json({ error: error.message }, 400);
-        return json({ id: data.user.id });
+        if (error) return respond({ error: error.message }, 400);
+        return respond({ id: data.user.id });
       }
 
       case 'delete': {
         const { authUid } = body;
-        if (!authUid) return json({ error: 'authUid required' }, 400);
+        if (!authUid) return respond({ error: 'authUid required' }, 400);
 
         // منع الحذف الذاتي عن طريق الخطأ
         if (authUid === user.id) {
-          return json({ error: 'لا يمكنك حذف حسابك بنفسك' }, 400);
+          return respond({ error: 'لا يمكنك حذف حسابك بنفسك' }, 400);
         }
 
         const { error } = await adminClient.auth.admin.deleteUser(authUid);
-        if (error) return json({ error: error.message }, 400);
-        return json({ ok: true });
+        if (error) return respond({ error: error.message }, 400);
+        return respond({ ok: true });
       }
 
       case 'updateEmail': {
         const { authUid, email } = body;
         if (!authUid || !email) {
-          return json({ error: 'authUid and email required' }, 400);
+          return respond({ error: 'authUid and email required' }, 400);
         }
         const { data, error } = await adminClient.auth.admin.updateUserById(authUid, {
           email: String(email).trim().toLowerCase(),
         });
-        if (error) return json({ error: error.message }, 400);
-        return json({ ok: true, user: data.user });
+        if (error) return respond({ error: error.message }, 400);
+        return respond({ ok: true, user: data.user });
       }
 
       case 'updateMetadata': {
         const { authUid, metadata } = body;
-        if (!authUid) return json({ error: 'authUid required' }, 400);
+        if (!authUid) return respond({ error: 'authUid required' }, 400);
         const { data, error } = await adminClient.auth.admin.updateUserById(authUid, {
           user_metadata: metadata || {},
         });
-        if (error) return json({ error: error.message }, 400);
-        return json({ ok: true, user: data.user });
+        if (error) return respond({ error: error.message }, 400);
+        return respond({ ok: true, user: data.user });
       }
 
       default:
-        return json({ error: `Unknown action: ${action}` }, 400);
+        return respond({ error: `Unknown action: ${action}` }, 400);
     }
   } catch (err) {
     console.error('Edge function error:', err);
-    return json({ error: err instanceof Error ? err.message : 'Internal error' }, 500);
+    return respond({ error: err instanceof Error ? err.message : 'Internal error' }, 500);
   }
 });

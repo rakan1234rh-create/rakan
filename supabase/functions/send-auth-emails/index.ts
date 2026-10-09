@@ -49,19 +49,9 @@ function isAppleMailbox(email: string): boolean {
   return APPLE_DOMAINS.has(domain);
 }
 
-function publicAppOrigin(): string {
-  return (Deno.env.get('ATHAR_PUBLIC_ORIGIN') || 'https://vms-v2.aromaticfamilies.com').replace(/\/$/, '');
-}
-
-function unsubscribeUrlFor(to: string): string {
-  return `${publicAppOrigin()}/?unsubscribe=${encodeURIComponent(to || '')}`;
-}
-
 /** Ultra-plain text for Apple HM08 content filters: no HTML, no https links. */
 function buildAppleRecoveryEmail(token: string, to = ''): { subject: string; html?: string; text: string; deliveryRef: string } {
   const deliveryRef = crypto.randomUUID();
-  const { email: fromEmail } = parseSender(SENDER_EMAIL);
-  const unsubMail = fromEmail || 'info@athar-app.online';
   const text = [
     'مرحبا،',
     '',
@@ -69,8 +59,6 @@ function buildAppleRecoveryEmail(token: string, to = ''): { subject: string; htm
     '',
     'اكتب الرمز داخل صفحة الاستعادة في المنصة فقط.',
     'اذا لم تطلب الرمز فتجاهل هذه الرسالة.',
-    '',
-    `لوقف رسائل التنبيه ارسل بريدا الى ${unsubMail} بعنوان unsubscribe`,
     '',
     'منصة اثر',
     to ? `الى: ${to}` : '',
@@ -87,30 +75,20 @@ function buildRecoveryEmail(token: string, to = ''): { subject: string; html?: s
   if (isAppleMailbox(to)) return buildAppleRecoveryEmail(token, to);
 
   const deliveryRef = crypto.randomUUID();
-  const unsub = unsubscribeUrlFor(to);
+  // Auth/OTP mail: no marketing unsubscribe URL (OTP must not look like bulk newsletters).
   return {
     subject: b64utf8(SUBJECT_B64),
-    html: b64utf8(HTML_B64).replaceAll('{{TOKEN}}', token).replaceAll('{{UNSUBSCRIBE_URL}}', unsub),
-    text: b64utf8(TEXT_B64).replaceAll('{{TOKEN}}', token).replaceAll('{{UNSUBSCRIBE_URL}}', unsub),
+    html: b64utf8(HTML_B64).replaceAll('{{TOKEN}}', token).replaceAll('{{UNSUBSCRIBE_URL}}', '#'),
+    text: b64utf8(TEXT_B64).replaceAll('{{TOKEN}}', token).replaceAll('{{UNSUBSCRIBE_URL}}', ''),
     deliveryRef,
   };
 }
 
-function emailHeaders(deliveryRef: string, to: string, apple: boolean): Record<string, string> {
-  const { email: fromEmail } = parseSender(SENDER_EMAIL);
-  const mailto = `mailto:${fromEmail || 'info@athar-app.online'}?subject=unsubscribe`;
-  if (apple) {
-    // Avoid https + one-click headers that Apple may treat as bulk/spam signals on OTP mail.
-    return {
-      'X-Entity-Ref-ID': deliveryRef,
-      'List-Unsubscribe': `<${mailto}>`,
-    };
-  }
-  const unsubscribeUrl = unsubscribeUrlFor(to);
+function emailHeaders(deliveryRef: string, _to: string, apple: boolean): Record<string, string> {
+  // Recovery/OTP: no List-Unsubscribe One-Click (that is for alert/digest only).
   return {
     'X-Entity-Ref-ID': deliveryRef,
-    'List-Unsubscribe': `<${mailto}>, <${unsubscribeUrl}>`,
-    'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+    ...(apple ? {} : { 'X-ATHAR-Mail': 'auth-otp' }),
   };
 }
 

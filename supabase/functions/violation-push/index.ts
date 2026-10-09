@@ -17,11 +17,19 @@ import {
 import { runWeeklyDigest } from './violation-weekly-digest.ts';
 import { runBreakExpiryCron, BREAK_EXPIRY_CRON_VERSION } from './break-expiry-cron.ts';
 function buildCorsHeaders(req: Request): Record<string, string> {
-  const allowedOrigin = Deno.env.get('ALLOWED_ORIGIN') || 'https://athar-app.online';
+  const raw = Deno.env.get('ALLOWED_ORIGIN') || 'https://athar-app.online';
+  const allowed = new Set(
+    raw.split(',').map((s) => s.trim()).filter(Boolean).concat([
+      'https://athar-app.online',
+      'https://athar.app',
+      'https://vms-v2.aromaticfamilies.com',
+    ]),
+  );
   const requestOrigin = req.headers.get('Origin') || '';
-  const isAllowed = requestOrigin === allowedOrigin;
+  const isAllowed = allowed.has(requestOrigin)
+    || (requestOrigin.endsWith('.aromaticfamilies.com') && requestOrigin.startsWith('https://'));
   return {
-    'Access-Control-Allow-Origin': isAllowed ? allowedOrigin : '',
+    'Access-Control-Allow-Origin': isAllowed ? requestOrigin : '',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-cron-secret',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   };
@@ -365,6 +373,46 @@ function escEmailHtml(value: unknown): string {
     .replace(/"/g, '&quot;');
 }
 
+function publicAppOrigin(): string {
+  return (Deno.env.get('ATHAR_PUBLIC_ORIGIN') || 'https://athar-app.online').replace(/\/$/, '');
+}
+
+function emailUnsubscribeApiUrl(to: string): string {
+  const base = (Deno.env.get('SUPABASE_URL') || '').replace(/\/$/, '');
+  const anon = (
+    Deno.env.get('SUPABASE_ANON_KEY')
+    || Deno.env.get('SUPABASE_PUBLISHABLE_KEY')
+    || ''
+  ).trim();
+  const q = new URLSearchParams({
+    email: to,
+    channel: 'alerts',
+  });
+  // Publishable key is already public in the SPA; needed so mail One-Click can hit the gateway.
+  if (anon) q.set('apikey', anon);
+  return `${base}/functions/v1/email-unsubscribe?${q.toString()}`;
+}
+
+function emailUnsubscribePageUrl(to: string): string {
+  return `${publicAppOrigin()}/?unsubscribe=${encodeURIComponent(to)}`;
+}
+
+async function isEmailUnsubscribed(
+  supabase: ReturnType<typeof createClient>,
+  email: string,
+  channel = 'alerts',
+): Promise<boolean> {
+  const { data, error } = await supabase.rpc('athar_is_email_unsubscribed', {
+    p_email: email,
+    p_channel: channel,
+  });
+  if (error) {
+    console.warn('unsubscribe check failed', error.message);
+    return false;
+  }
+  return data === true;
+}
+
 async function sendImmediateEmail(
   supabase: ReturnType<typeof createClient>,
   to: string,
@@ -372,9 +420,12 @@ async function sendImmediateEmail(
   body: string,
   record: ViolationRow,
 ) {
+  if (await isEmailUnsubscribed(supabase, to, 'alerts')) {
+    return { ok: true as const, provider: 'skipped_unsubscribed' };
+  }
+
   const SENDER_EMAIL_RAW = Deno.env.get('SENDER_EMAIL') ?? 'no-reply@athar-app.online';
   const FULL_SENDER = SENDER_EMAIL_RAW.includes('<') ? SENDER_EMAIL_RAW : `ATHAR <${SENDER_EMAIL_RAW}>`;
-  const publicOrigin = (Deno.env.get('ATHAR_PUBLIC_ORIGIN') || 'https://vms-v2.aromaticfamilies.com').replace(/\/$/, '');
 
   // Format ticket number to show only the last part (e.g., V-2026-0356 -> 0356)
   const rawTicket = String(record.ticket_number || record.id);
@@ -389,7 +440,8 @@ async function sendImmediateEmail(
   const userName = userData?.name || '';
   const greeting = userName ? `مرحباً ${escEmailHtml(userName.split(' ')[0])}،` : 'مرحباً،';
 
-  const unsubscribeUrl = `${publicOrigin}/?unsubscribe=${encodeURIComponent(to)}`;
+  const unsubscribeApi = emailUnsubscribeApiUrl(to);
+  const unsubscribePage = emailUnsubscribePageUrl(to);
   const html = `
     <div dir="rtl" style="font-family: sans-serif; line-height: 1.6; color: #333;">
       <h2 style="color: #d9534f;">${safeTitle}</h2>
@@ -404,7 +456,7 @@ async function sendImmediateEmail(
       <p style="font-size: 11px; color: #999; text-align: center;">
         رسالة تلقائية من منصة أثر يرجى عدم الرد على هذا البريد.
         <br>
-        <a href="${unsubscribeUrl}" style="color: #999; text-decoration: underline;">إلغاء الاشتراك من هذه التنبيهات</a>
+        <a href="${unsubscribePage}" style="color: #999; text-decoration: underline;">إلغاء الاشتراك من هذه التنبيهات</a>
       </p>
     </div>
   `;
@@ -429,7 +481,7 @@ async function sendImmediateEmail(
     html,
     text,
     headers: {
-      'List-Unsubscribe': `<${unsubscribeUrl}>`,
+      'List-Unsubscribe': `<${unsubscribeApi}>`,
       'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
     },
   });

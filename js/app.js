@@ -33,6 +33,7 @@
       /** توقيع روابط R2 (رفع/تحميل/نقل) عبر Edge Function — المفاتيح لا تصل للمتصفح */
       const R2_STORAGE_FN_URL = `${SUPABASE_URL}/functions/v1/r2-storage`;
       const VIOLATION_PUSH_FN_URL = `${SUPABASE_URL}/functions/v1/violation-push`;
+      const EMAIL_UNSUBSCRIBE_FN_URL = `${SUPABASE_URL}/functions/v1/email-unsubscribe`;
       const VIOLATION_PUSH_FN_VERSION = '2026-07-parallel-push-v1';
 
       /** يعمل فقط على المضيف المحلي — لا يُفعّل على نطاق الإنتاج */
@@ -118,7 +119,14 @@
         const { error } = await sb.auth.resetPasswordForEmail(email, {
           redirectTo: getPasswordResetRedirectUrl()
         });
-        if (error) throw error;
+        // Uniform response: do not reveal whether the mailbox is registered.
+        if (error) {
+          const msg = String(error.message || error || '');
+          const status = error.status ?? error.statusCode;
+          const isNotFound = status === 404
+            || /user not found|email not found|unable to find user|signup_disabled/i.test(msg);
+          if (!isNotFound) throw error;
+        }
 
         const { error: recordErr } = await sb.rpc('record_password_reset_attempt', { p_email: email });
         if (recordErr && isMirsadDebugLog()) console.warn('[PasswordResetRateLimit] record failed', recordErr);
@@ -130,7 +138,7 @@
       }
 
       function passwordResetDeliveryNote(email) {
-        const base = 'تم إرسال رمز من 8 خانات إلى بريدك. إن لم يظهر خلال دقيقة، تحقق من البريد الغير الهام أو الرسائل الترويجية.';
+        const base = 'إن كان البريد مسجلاً في المنصة، سيصلك رمز من 8 خانات خلال دقيقة. تحقق من البريد الغير الهام أو الرسائل الترويجية.';
         if (!isAppleMailboxEmail(email)) return base;
         return base + ' بريد iCloud قد يتأخر قليلاً إلى ساعة أو أكثر إن لم يكن SMTP احتياطياً مضبوطاً.';
       }
@@ -148,8 +156,8 @@
           }
           return formatPasswordResetWaitSeconds(60);
         }
-        if (errMsg.includes('check_platform_email_for_reset') || errMsg.includes('check_password_reset_rate_limit')) {
-          return 'التحقق من البريد غير متاح — شغّل supabase/password-reset-rate-limit.sql في SQL Editor';
+        if (errMsg.includes('check_password_reset_rate_limit') || errMsg.includes('record_password_reset_attempt')) {
+          return 'تعذّر التحقق من حد الإرسال حالياً. حاول لاحقاً.';
         }
         if (status === 500 || /error sending recovery|recovery email|hook|smtp|sender address|authentication failed/i.test(errMsg)) {
           if (/authentication failed|535|invalid login/i.test(errMsg)) {
@@ -4673,25 +4681,14 @@
         const email = Sec.normalizeEmail(document.getElementById('forgotEmail').value);
         if (!email || !Sec.isEmail(email)) {
           document.getElementById('forgotError').classList.add('show');
-          document.getElementById('forgotErrorMsg').textContent = 'الايميل غير صحيح أو غير مسجل في المنصة';
+          document.getElementById('forgotErrorMsg').textContent = 'صيغة البريد الإلكتروني غير صحيحة';
           return;
         }
 
         setLoginLoading(true, 'forgotBtn', '<i class="fas fa-paper-plane"></i><span>إرسال الرمز</span>');
 
         try {
-          const { data: isRegistered, error: checkErr } = await sb.rpc('check_platform_email_for_reset', {
-            p_email: email
-          });
-          if (checkErr) throw checkErr;
-          if (!isRegistered) {
-            document.getElementById('forgotError').classList.add('show');
-            document.getElementById('forgotErrorMsg').textContent = 'الايميل غير صحيح أو غير مسجل في المنصة';
-            return;
-          }
-
           await requestPasswordResetEmail(email);
-
           rememberPasswordResetEmail(email);
           showOtpForm(email);
         } catch (err) {
@@ -31554,6 +31551,46 @@
         }
       }
 
+      async function handleEmailUnsubscribeFromUrl() {
+        const params = new URLSearchParams(window.location.search);
+        const raw = params.get('unsubscribe');
+        if (!raw) return false;
+        const email = Sec.normalizeEmail(raw);
+        try {
+          history.replaceState(null, '', location.pathname || '/');
+        } catch (_) { /* noop */ }
+        if (!email || !Sec.isEmail(email)) {
+          if (typeof showToast === 'function') showToast('رابط إلغاء الاشتراك غير صالح', 'error');
+          return true;
+        }
+        try {
+          const res = await fetch(
+            `${EMAIL_UNSUBSCRIBE_FN_URL}?email=${encodeURIComponent(email)}&channel=alerts`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                apikey: SUPABASE_ANON,
+              },
+              body: JSON.stringify({ email, channel: 'alerts' }),
+            },
+          );
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok || data?.ok === false) throw new Error(data?.error || `HTTP ${res.status}`);
+          if (typeof showToast === 'function') {
+            showToast('تم إلغاء اشتراك تنبيهات البريد لهذا العنوان', 'success');
+          } else {
+            alert('تم إلغاء اشتراك تنبيهات البريد لهذا العنوان');
+          }
+        } catch (err) {
+          if (isMirsadDebugLog()) console.warn('[Unsubscribe]', err);
+          if (typeof showToast === 'function') {
+            showToast('تعذّر إلغاء الاشتراك. حاول لاحقاً.', 'error');
+          }
+        }
+        return true;
+      }
+
       function maybeOpenBroadcastFromPushUrl() {
         const params = new URLSearchParams(window.location.search);
         const broadcastId = params.get('broadcast');
@@ -33888,6 +33925,9 @@
 
       document.addEventListener('DOMContentLoaded', async () => {
         try {
+          if (typeof handleEmailUnsubscribeFromUrl === 'function') {
+            await handleEmailUnsubscribeFromUrl();
+          }
           if (typeof window.__ATHAR_APPLY_PWA_GATE__ === 'function') {
             window.__ATHAR_APPLY_PWA_GATE__();
           }
