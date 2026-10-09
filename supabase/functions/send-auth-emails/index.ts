@@ -1,54 +1,24 @@
 import { Webhook } from 'https://esm.sh/standardwebhooks@1.0.0';
-import { Resend } from 'npm:resend@4.0.0';
 
-const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? '';
 const HOOK_SECRET = Deno.env.get('SEND_EMAIL_HOOK_SECRET') ?? '';
 const SENDER_EMAIL = Deno.env.get('SENDER_EMAIL') ?? '';
+const SMTP_HOST = (Deno.env.get('SES_SMTP_HOST') || Deno.env.get('SMTP_HOST') || '').trim();
+const SMTP_USER = (Deno.env.get('SES_SMTP_USERNAME') || Deno.env.get('SMTP_USERNAME') || '').trim();
+const SMTP_PASS = (Deno.env.get('SES_SMTP_PASSWORD') || Deno.env.get('SMTP_PASSWORD') || '').trim();
+const SMTP_PORT = Number(Deno.env.get('SES_SMTP_PORT') || Deno.env.get('SMTP_PORT') || 465);
 
-// Brevo disabled as per user request due to iCloud delivery issues (HM08).
-// Resend is now the primary and only provider for all email domains.
-const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null;
+const smtpConfigured = Boolean(SMTP_HOST && SMTP_USER && SMTP_PASS);
 
-// Arabic recovery template (base64 UTF-8) — see supabase/email-templates/athar-recovery-simple.html
-const HTML_B64 = 'PCFET0NUWVBFIGh0bWw+CjxodG1sIGxhbmc9ImFyIiBkaXI9InJ0bCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGh0bWwiIHhtbG5zOnY9InVybjpzY2hlbWFzLW1pY3Jvc29mdC1jb206dm1sIiB4bWxuczpvPSJ1cm46c2NoZW1hcy1taWNyb3NvZnQtY29tOm9mZmljZTpvZmZpY2UiPgo8aGVhZD4KICA8bWV0YSBjaGFyc2V0PSJ1dGYtOCI+CiAgPG1ldGEgbmFtZT0idmlld3BvcnQiIGNvbnRlbnQ9IndpZHRoPWRldmljZS13aWR0aCwgaW5pdGlhbC1zY2FsZT0xLjAiPgogIDxtZXRhIG5hbWU9ImNvbG9yLXNjaGVtZSIgY29udGVudD0ibGlnaHQgb25seSI+CiAgPG1ldGEgbmFtZT0ic3VwcG9ydGVkLWNvbG9yLXNjaGVtZXMiIGNvbnRlbnQ9ImxpZ2h0Ij4KICA8IS0tW2lmIG1zb10+PHhtbD48bzpPZmZpY2VEb2N1bWVudFNldHRpbmdzPjxvOlBpeGVsc1BlckluY2g+OTY8L286UGl4ZWxzUGVySW5jaD48L286T2ZmaWNlRG9jdW1lbnRTZXR0aW5ncz48L3htbD48IVtlbmRpZl0tLT4KICA8c3R5bGU+CiAgICA6cm9vdCB7IGNvbG9yLXNjaGVtZTogbGlnaHQgb25seTsgc3VwcG9ydGVkLWNvbG9yLXNjaGVtZXM6IGxpZ2h0OyB9CiAgICBib2R5LCB0YWJsZSwgdGQsIHAsIGRpdiwgc3BhbiB7IGNvbG9yLXNjaGVtZTogbGlnaHQgb25seTsgfQogICAgLmF0aGFyLW91dGVyIHsgYmFja2dyb3VuZC1jb2xvcjogI2Y1ZjVmNSAhaW1wb3J0YW50OyBiYWNrZ3JvdW5kLWltYWdlOiBsaW5lYXItZ3JhZGllbnQoI2Y1ZjVmNSwgI2Y1ZjVmNSkgIWltcG9ydGFudDsgfQogICAgLmF0aGFyLWNhcmQgeyBiYWNrZ3JvdW5kLWNvbG9yOiAjZmZmZmZmICFpbXBvcnRhbnQ7IGJhY2tncm91bmQtaW1hZ2U6 bGluZWFyLWdyYWRpZW50KCNmZmZmZmYsICNmZmZmZmYpICFpbXBvcnRhbnQ7IH0KICAgIC4YXRoYXItdG9rZW4geyBiYWNrZ3JvdW5kLWNvbG9yOiAjZmFmYWZhICFpbXBvcnRhbnQ7IGJhY2tncm91bmQtaW1hZ2U6 bGluZWFyLWdyYWRpZW50KCNmYWZhZmEsICNmYWZhZmEpICFpbXBvcnRhbnQ7IGNvbG9yOiAjMTgxODFiICFpbXBvcnRhbnQ7IH0KICAgIC4YXRoYXItdGl0bGUgeyBjb2xvcjogIzE4MTgxYiAhaW1wb3J0YW50OyB9CiAgICAuYXRoYXItYm9keSB7IGNvbG9yOiAjM2YzZjQ2ICFpbXBvcnRhbnQ7IH0KICAgIC4YXRoYXIttdXRlZCB7IGNvbG9yOiAjNzE3MTdhICFpbXBvcnRhbnQ7IH0KICAgIEBtZWRpYSAocHJlZmVycy1jb2xvci1zY2hlbWU6IGRhcmspIHsKICAgICAgLmF0aGFyLW91dGVyIHsgYmFja2dyb3VuZC1jb2xvcjogI2Y1ZjVmNSAhaW1wb3J0YW50OyBiYWNrZ3JvdW5kLWltYWdlOiBsaW5lYXItZ3JhZGllbnQoI2Y1ZjVmNSwgI2Y1ZjVmNSkgIWltcG9ydGFudDsgfQogICAgICAuYXRoYXItY2FyZCB7IGJhY2tncm91bmQtY29sb3I6ICNmZmZmZmYgIWltcG9ydGFudDsgYmFja2dyb3VuZC1pbWFnZTogbGluZWFyLWdyYWRpZW50KCNmZmZmZmYsICNmZmZmZmYpICFpbXBvcnRhbnQ7IH0KICAgICAgLmF0aGFyLXRva2VuIHsgYmFja2dyb3VuZC1jb2xvcjogI2ZhZmFmYSAhaW1wb3J0YW50OyBiYWNrZ3JvdW5kLWltYWdlOiBsaW5lYXItZ3JhZGllbnQoI2ZhZmFmYSwgI2ZhZmFmYSkgIWltcG9ydGFudDsgY29sb3I6ICMxODE4MWIgIWltcG9ydGFudDsgfQogICAgICAuYXRoYXItdGl0bGUgeyBjb2xvcjogIzE4MTgxYiAhaW1wb3J0YW50OyB9CiAgICAgIC5hdGhhci1ib2R5IHsgY29sb3I6ICMzZjNmNDYgIWltcG9ydGFudDsgfQogICAgICAuYXRoYXItbXV0ZWQgeyBjb2xvcjogIzcxNzE3YSAhaW1wb3J0YW50OyB9CiAgICB9CiAgICB1ICsgLmJvZHkgLmF0aGFyLW91dGVyIHsgYmFja2dyb3VuZC1jb2xvcjogI2Y1ZjVmNSAhaW1wb3J0YW50OyBiYWNrZ3JvdW5kLWltYWdlOiBsaW5lYXItZ3JhZGllbnQoI2Y1ZjVmNSwgI2Y1ZjVmNSkgIWltcG9ydGFudDsgfQogICAgdSArIC5ib2R5IC5hdGhhci1jYXJkIHsgYmFja2dyb3VuZC1jb2xvcjogI2ZmZmZmZiAhaW1wb3J0YW50OyBiYWNrZ3JvdW5kLWltYWdlOiBsaW5lYXItZ3JhZGllbnQoI2ZmZmZmZiwgI2ZmZmZmZikgIWltcG9ydGFudDsgfQogICAgdSArIC5ib2R5IC5hdGhhci10b2tlbiB7IGJhY2tncm91bmQtY29sb3I6ICNmYWZhZmEgIWltcG9ydGFudDsgYmFja2dyb3VuZC1pbWFnZTogbGluZWFyLWdyYWRpZW50KCNmYWZhZmEsICNmYWZhZmEpICFpbXBvcnRhbnQ7IGNvbG9yOiAjMTgxODFiICFpbXBvcnRhbnQ7IH0KICAgIHUgKyAuYm9keSAuYXRoYXItdGl0bGUgeyBjb2xvcjogIzE4MTgxYiAhaW1wb3J0YW50OyB9CiAgICB1ICsgLmJvZHkgLmF0aGFyLWJvZHkgeyBjb2xvcjogIzNmM2Y0NiAhaW1wb3J0YW50OyB9CiAgICB1ICsgLmJvZHkgLmF0aGFyLW11dGVkIHsgY29sb3I6ICM3MTcxN2EgIWltcG9ydGFudDsgfQogICAgW2RhdGEtb2dzY10gLmF0aGFyLW91dGVyIHsgYmFja2dyb3VuZC1jb2xvcjogI2Y1ZjVmNSAhaW1wb3J0YW50OyB9CiAgICBbZGF0YS1vZ3NjXSAuYXRoYXItY2FyZCB7IGJhY2tncm91bmQtY29sb3I6ICNmZmZmZmYgIWltcG9ydGFudDsgfQogICAgW2RhdGEtb2dzY10gLmF0aGFyLXRpdGxlIHsgY29sb3I6ICMxODE4MWIgIWltcG9ydGFudDsgfQogICAgW2RhdGEtb2dzY10gLmF0aGFyLWJvZHkgeyBjb2xvcjogIzNmM2Y0NiAhaW1wb3J0YW50OyB9CiAgICBbZGF0YS1vZ3NjXSAuYXRoYXItbXV0ZWQgeyBjb2xvcjogIzcxNzE3YSAhaW1wb3J0YW50OyB9CiAgICBbZGF0YS1vZ3NjXSAuYXRoYXItdG9rZW4geyBiYWNrZ3JvdW5kLWNvbG9yOiAjZmFmYWZhICFpbXBvcnRhbnQ7IGNvbG9yOiAjMTgxODFiICFpbXBvcnRhbnQ7IH0KICA8L3N0eWxlPgo8L2hlYWQ+Cjxib2R5IGNsYXNzPSJib2R5IiBzdHlsZT0ibWFyZ2luOjA7cGFkZGluZzowO2JhY2tncm91bmQtY29sb3I6I2Y1ZjVmNTsiPgo8dGFibGUgcm9sZT0icHJlc2VudGF0aW9uIiBjbGFzcz0iYXRoYXItb3V0ZXIiIHdpZHRoPSIxMDAlIiBjZWxsc3BhY2luZz0iMCIgY2VsbHBhZGRpbmc9IjAiIGJvcmRlcj0iMCIgYmdjb2xvcj0iI2Y1ZjVmNSIgc3R5bGU9ImJhY2tncm91bmQtY29sb3I6I2Y1ZjVmNTtiYWNrZ3JvdW5kLWltYWdlOmxpbmVhci1ncmFkaWVudCgjZjVmNWY1LCNmNWY1ZjUpO2ZvbnQtZmFtaWx5OlNlZ29lIFVJLFRhaG9tYSxBcmlhbCxzYW5zLXNlcmlmOyI+CiAgPHRyPgogICAgPHRkIGFsaWduPSJjZW50ZXIiIGNsYXNzPSJhdGhhci1vdXRlciIgYmdjb2xvcj0iI2Y1ZjVmNSIgc3R5bGU9InBhZGRpbmc6NDBweCAyMHB4O2JhY2tncm91bmQtY29sb3I6I2Y1ZjVmNTtiYWNrZ3JvdW5kLWltYWdlOmxpbmVhci1ncmFkaWVudCgjZjVmNWY1LCNmNWY1ZjUpOyI+CiAgICAgIDx0YWJsZSByb2xlPSJwcmVzZW50YXRpb24iIGNsYXNzPSJhdGhhci1jYXJkIiB3aWR0aD0iMTAwJSIgY2VsbHNwYWNpbmc9IjAiIGNlbGxwYWRkaW5nPSIwIiBib3JkZXI9IjAiIGJnY29sb3I9IiNmZmZmZmYiIHN0eWxlPSJtYXgtd2lkdGg6NDgwcHg7YmFja2dyb3VuZC1jb2xvcjojZmZmZmZmO2JhY2tncm91bmQtaW1hZ2U6bGluZWFyLWdyYWRpZW50KCNmZmZmZmYsI2ZmZmZmZik7Ym9yZGVyLXJhZGl1czoxNnB4O2JvcmRlcjoxcHggc29saWQgI2U0ZTRlNzsiPgogICAgICAgIDx0cj4KICAgICAgICAgIDx0ZCBhbGlnbj0iY2VudGVyIiBjbGFzcz0iYXRoYXItY2FyZCIgYmdjb2xvcj0iI2ZmZmZmZiIgc3R5bGU9InBhZGRpbmc6MzJweCAyOHB4IDE2cHg7YmFja2dyb3VuZC1jb2xvcjojZmZmZmZmO2JhY2tncm91bmQtaW1hZ2U6bGluZWFyLWdyYWRpZW50KCNmZmZmZmYsI2ZmZmZmZik7Ij4KICAgICAgICAgICAgPGltZyBzcmM9Imh0dHBzOi8vYXRoYXItYXBwLm9ubGluZS9pY29ucy9hdGhhci13b3JkbWFyay1lbWFpbC12Mzg4LnBuZyIgd2lkdGg9IjI0MCIgaGVpZ2h0PSIxNDgiIGFsdD0iQVRIQVIiIHN0eWxlPSJkaXNwbGF5OmJsb2NrO3dpZHRoOjI0MHB4O21heC13aWR0aDoxMDAlO2hlaWdodDphdXRvO2JvcmRlcjowO21hcmdpbjowIGF1dG87Ij4KICAgICAgICAgIDwvdGQ+CiAgICAgICAgPC90cj4KICAgICAgICA8dHI+CiAgICAgICAgICA8dGQgZGlyPSJydGwiIGNsYXNzPSJhdGhhci1jYXJkIiBiZ2NvbG9yPSIjZmZmZmZmIiBzdHlsZT0icGFkZGluZzo4cHggMjhweCAyOHB4O3RleHQtYWxpZ246cmlnaHQ7YmFja2dyb3VuZC1jb2xvcjojZmZmZmZmO2JhY2tncm91bmQtaW1hZ2U6bGluZWFyLWdyYWRpZW50KCNmZmZmZmYsI2ZmZmZmZik7Ij4KICAgICAgICAgICAgPHAgY2xhc3M9ImF0aGFyLXRpdGxlIiBzdHlsZT0ibWFyZ2luOjAgMCAxNnB4O2ZvbnQtc2l6ZToxNnB4O2xpbmUtaGVpZ2h0OjEuNztjb2xvcjojMTgxODFiOyI+2YXYsdit2KjYp9mL2Iw8L3A+CiAgICAgICAgICAgIDxwIGNsYXNzPSJhdGhhci1ib2R5IiBzdHlsZT0ibWFyZ2luOjAgMCAyNHB4O2ZvbnQtc2l6ZToxNXB4O2xpbmUtaGVpZ2h0OjEuNzU7Y29sb3I6IzNmM2Y0NjsiPtiq2YTZgtmR2YrZhtinINi32YTYqNin2Ysg2YTYpdi52KfYr9ipINiq2LnZitmK2YYg2YPZhNmF2Kkg2KfZhNmF2LHZiNixINmE2K3Ys9in2KjZgy48L3A+CiAgICAgICAgICAgIDxwIGNsYXNzPSJhdGhhci1ib2R5IiBzdHlsZT0ibWFyZ2luOjAgMCAxMHB4O2ZvbnQtc2l6ZToxNHB4O2xpbmUtaGVpZ2h0OjEuNztjb2xvcjojM2YzZjQ2O3RleHQtYWxpZ246Y2VudGVyOyI+2LHZhdiyINin2YTYqtit2YLZgiDYp9mE2K7Yp9i1INio2YM8L3A+CiAgICAgICAgICAgIDx0YWJsZSByb2xlPSJwcmVzZW50YXRpb24iIGNlbGxzcGFjaW5nPSIwIiBjZWxscGFkZGluZz0iMCIgYm9yZGVyPSIwIiBhbGlnbj0iY2VudGVyIiBzdHlsZT0ibWFyZ2luOjAgYXV0byAyNHB4OyI+CiAgICAgICAgICAgICAgPHRyPgogICAgICAgICAgICAgICAgPHRkIGRpcj0ibHRyIiBjbGFzcz0iYXRoYXItdG9rZW4iIGJnY29sb3I9IiNmYWZhZmEiIHN0eWxlPSJmb250LXNpemU6MzRweDtsZXR0ZXItc3BhY2luZzowLjI1ZW07Zm9udC13ZWlnaHQ6ODAwO2NvbG9yOiMxODE4MWI7YmFja2dyb3VuZC1jb2xvcjojZmFmYWZhO2JhY2tncm91bmQtaW1hZ2U6bGluZWFyLWdyYWRpZW50KCNmYWZhZmEsI2ZhZmFmYSk7Ym9yZGVyOjFweCBzb2xpZCAjZTRlNGU3O2JvcmRlci1yYWRpdXM6MTRweDtwYWRkaW5nOjE2cHggMThweDt0ZXh0LWFsaWduOmNlbnRlcjt3aGl0ZS1zcGFjZTpub3dyYXA7Ij4KICAgICAgICAgICAgICAgICAge3tUT0tFTn19CiAgICAgICAgICAgICAgICA8L3RkPgogICAgICAgICAgICAgIDwvdHI+CiAgICAgICAgICAgIDwvdGFibGU+CiAgICAgICAgICAgIDxwIGNsYXNzPSJhdGhhci1tdXRlZCIgc3R5bGU9Im1hcmdpbjowIDAgMThweDtmb250LXNpemU6MTNweDtsaW5lLWhlaWdodDoxLjc7Y29sb3I6IzcxNzE3YTt0ZXh0LWFsaWduOmNlbnRlcjsiPtin2YPYqtioINmH2LDYpyDYp9mE2LHZhdiyINmB2Yog2LXZgdit2Kkg2KfYs9iq2LnYp9iv2Kkg2YPZhNmF2Kkg2KfZhNmF2LHZiNixINiv2KfYrtmEINin2YTZhdmG2LXYqS48L3A+CiAgICAgICAgICAgIDxwIGNsYXNzPSJhdGhhci1tdXRlZCIgc3R5bGU9Im1hcmdpbjowIDAgMTJweDtmb250LXNpemU6MTNweDtsaW5lLWhlaWdodDoxLjY1O2NvbG9yOiM3MTcxN2E7Ij7Ypdiw2Kcg2YTZhSDYqti32YTYqCDYsNmE2YPYjCDYqtis2KfZh9mEINmH2LDZhyDYp9mE2LHYs9in2YTYqS48L3A+CiAgICAgICAgICAgIDxwIGNsYXNzPSJhdGhhci1tdXRlZCIgc3R5bGU9Im1hcmdpbjowO2ZvbnQtc2l6ZToxMnB4O2xpbmUtaGVpZ2h0OjEuNjtjb2xvcjojNzE3MTdhOyI+2KfZhNix2YXYsiDYtdin2YTYrSDZhNmF2LHYqSDZiNin2K3Yr9ipINmI2YTZhdiv2Kkg2YXYrdiv2YjYr9ipLjwvcD4KICAgICAgICAgIDwvdGQ+CiAgICAgICAgPC90cj4KICAgICAgPC90YWJsZT4KICAgIDwvdGQ+CiAgPC90cj4KPC90YWJsZT4KPC9ib2R5Pgo8L2h0bWw+Cg==';
-const SUBJECT_B64 = '2KXYudin2K/YqSDYqti52YrZitmGINmD2YTZhdipINin2YTZhdix2YjYsSDigJQgQVRIQVI=';
-const TEXT_B64 = '2LHZhdiyINil2LnYp9iv2Kkg2KrYudmK2YrZhiDZg9mE2YXYqSDYp9mE2YXYsdmI2LEg2KfZhNiu2KfYtSDYqNmDOiB7e1RPS0VOfX0g4oCUINin2YPYqtio2Ycg2YHZiiDYtdmB2K3YqSDYp9iz2KrYudin2K/YqSDZg9mE2YXYqSDYp9mE2YXYsdmI2LEg2K/Yp9iu2YQg2KfZhNmF2YbYtdipLiDYtdin2YTYrSDZhNmF2LHYqSDZiNin2K3Yr9ipINmI2YTZhdiv2Kkg2YXYrdiv2YjYr9ipLg==';
+// Arabic recovery template — see supabase/email-templates/athar-recovery-simple.html
+const HTML_B64 = 'PCFET0NUWVBFIGh0bWw+CjxodG1sIGxhbmc9ImFyIiBkaXI9InJ0bCI+CjxoZWFkPgogIDxtZXRhIGNoYXJzZXQ9InV0Zi04Ij4KICA8bWV0YSBuYW1lPSJ2aWV3cG9ydCIgY29udGVudD0id2lkdGg9ZGV2aWNlLXdpZHRoLCBpbml0aWFsLXNjYWxlPTEuMCI+CjwvaGVhZD4KPGJvZHkgc3R5bGU9Im1hcmdpbjowO3BhZGRpbmc6MDtiYWNrZ3JvdW5kOiNmZmZmZmY7Ij4KICA8ZGl2IGRpcj0icnRsIiBzdHlsZT0iZm9udC1mYW1pbHk6VGFob21hLEFyaWFsLHNhbnMtc2VyaWY7bGluZS1oZWlnaHQ6MS43O2NvbG9yOiMyMjI7bWF4LXdpZHRoOjQ4MHB4O21hcmdpbjowIGF1dG87cGFkZGluZzoyOHB4IDIwcHg7Ij4KICAgIDxwIHN0eWxlPSJtYXJnaW46MCAwIDhweDtmb250LXNpemU6MThweDtmb250LXdlaWdodDo3MDA7Ij5BVEhBUjwvcD4KICAgIDxwIHN0eWxlPSJtYXJnaW46MCAwIDIwcHg7Zm9udC1zaXplOjE2cHg7Zm9udC13ZWlnaHQ6NzAwOyI+2KfYs9iq2LnYp9iv2Kkg2YPZhNmF2Kkg2KfZhNmF2LHZiNixPC9wPgogICAgPHAgc3R5bGU9Im1hcmdpbjowIDAgMTZweDtmb250LXNpemU6MTVweDsiPtiq2YTZgtmK2YbYpyDYt9mE2KjYpyDZhNin2LnYp9iv2Kkg2KrYudmK2YrZhiDZg9mE2YXYqSDYp9mE2YXYsdmI2LEg2YTYrdiz2KfYqNmDINmB2Yog2YXZhti12Kkg2KfYq9ixLjwvcD4KICAgIDxwIHN0eWxlPSJtYXJnaW46MCAwIDhweDtmb250LXNpemU6MTRweDsiPtix2YXYsiDYp9mE2KrYrdmC2YI6PC9wPgogICAgPHAgZGlyPSJsdHIiIHN0eWxlPSJtYXJnaW46MCAwIDIwcHg7Zm9udC1zaXplOjI4cHg7Zm9udC13ZWlnaHQ6NzAwO2xldHRlci1zcGFjaW5nOjAuMTJlbTtmb250LWZhbWlseTpDb25zb2xhcyxNZW5sbyxtb25vc3BhY2U7Ij57e1RPS0VOfX08L3A+CiAgICA8cCBzdHlsZT0ibWFyZ2luOjAgMCAxNnB4O2ZvbnQtc2l6ZToxNHB4OyI+2KfYr9iu2YQg2KfZhNix2YXYsiDZgdmKINi12YHYrdipINin2LPYqti52KfYr9ipINmD2YTZhdipINin2YTZhdix2YjYsSDYr9in2K7ZhCDYp9mE2YXZhti12KkuPC9wPgogICAgPHAgc3R5bGU9Im1hcmdpbjowIDAgOHB4O2ZvbnQtc2l6ZToxM3B4O2NvbG9yOiM1NTU7Ij7Yp9iw2Kcg2YTZhSDYqti32YTYqCDYsNmE2YPYjCDYqtis2KfZh9mEINmH2LDZhyDYp9mE2LHYs9in2YTYqS48L3A+CiAgICA8cCBzdHlsZT0ibWFyZ2luOjAgMCAyNHB4O2ZvbnQtc2l6ZToxM3B4O2NvbG9yOiM1NTU7Ij7Yp9mE2LHZhdiyINi12KfZhNitINmE2YXYsdipINmI2KfYrdiv2Kkg2YjZhNmF2K/YqSDZhdit2K/ZiNiv2KkuPC9wPgogICAgPHAgc3R5bGU9Im1hcmdpbjowO2ZvbnQtc2l6ZToxMnB4O2NvbG9yOiM3Nzc7Ij4KICAgICAgPGEgaHJlZj0ie3tVTlNVQlNDUklCRV9VUkx9fSIgc3R5bGU9ImNvbG9yOiM1NTU7Ij7Yp9mE2LrYp9ihINin2YTYp9i02KrYsdin2YM8L2E+CiAgICAgIMK3IEFUSEFSIMK3IGF0aGFyLWFwcC5vbmxpbmUKICAgIDwvcD4KICA8L2Rpdj4KPC9ib2R5Pgo8L2h0bWw+Cg==';
+const SUBJECT_B64 = '2KfYs9iq2LnYp9iv2Kkg2YPZhNmF2Kkg2KfZhNmF2LHZiNixIOKAlCBBVEhBUg==';
+const TEXT_B64 = '2LHZhdiyINin2LPYqti52KfYr9ipINmD2YTZhdipINin2YTZhdix2YjYsSDYp9mE2K7Yp9i1INio2YM6IHt7VE9LRU59fQoK2KfYr9iu2YQg2KfZhNix2YXYsiDZgdmKINi12YHYrdipINin2LPYqti52KfYr9ipINmD2YTZhdipINin2YTZhdix2YjYsSDYr9in2K7ZhCDYp9mE2YXZhti12KkuINin2YTYsdmF2LIg2LXYp9mE2K0g2YTZhdix2Kkg2YjYp9it2K/YqSDZiNmE2YXYr9ipINmF2K3Yr9mI2K/YqS4KCtin2YTYutin2KEg2KfZhNin2LTYqtix2KfZgzoge3tVTlNVQlNDUklCRV9VUkx9fQoKQVRIQVIgwrcgYXRoYXItYXBwLm9ubGluZQ==';
 
 function b64utf8(b64: string): string {
-  const bin = atob(b64);
+  const clean = String(b64 || '').replace(/\s+/g, '');
+  const bin = atob(clean);
   const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
   return new TextDecoder().decode(bytes);
-}
-
-function buildRecoveryEmail(token: string): { subject: string; html: string; text: string; deliveryRef: string } {
-  const deliveryRef = crypto.randomUUID();
-  const htmlCore = b64utf8(HTML_B64).replaceAll('{{TOKEN}}', token);
-  // Unique invisible marker per send — prevents Gmail/iCloud stacking without changing visible layout.
-  const html = htmlCore +
-    `<!-- athar-delivery:${deliveryRef} -->` +
-    `<div style="display:none!important;max-height:0;overflow:hidden;font-size:0;line-height:0;color:transparent;mso-hide:all" aria-hidden="true">&#8203;${deliveryRef}</div>`;
-  return {
-    subject: b64utf8(SUBJECT_B64) + invisibleSubjectSuffix(deliveryRef),
-    html,
-    text: b64utf8(TEXT_B64).replaceAll('{{TOKEN}}', token),
-    deliveryRef,
-  };
-}
-
-/** Zero-width chars — invisible in inbox subject, breaks client-side conversation threading. */
-function invisibleSubjectSuffix(ref: string): string {
-  const n = (ref.charCodeAt(0) + ref.charCodeAt(ref.length - 1)) % 8 + 1;
-  return '\u200C'.repeat(n);
-}
-
-function emailHeaders(deliveryRef: string, to: string): Record<string, string> {
-  const unsubscribeUrl = `https://athar-app.online/settings?unsubscribe=${encodeURIComponent(to)}`;
-  return {
-    'X-Entity-Ref-ID': deliveryRef,
-    'X-ATHAR-Delivery': deliveryRef,
-    'List-Unsubscribe': `<${unsubscribeUrl}>`,
-    'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-  };
 }
 
 function parseSender(raw: string): { name: string; email: string } {
@@ -70,6 +40,78 @@ function senderDomain(raw: string): string | null {
   const { email } = parseSender(raw);
   const match = email.match(/@([^>\s]+)/);
   return match?.[1]?.toLowerCase() ?? null;
+}
+
+const APPLE_DOMAINS = new Set(['icloud.com', 'me.com', 'mac.com']);
+
+function isAppleMailbox(email: string): boolean {
+  const domain = String(email || '').split('@').pop()?.toLowerCase() || '';
+  return APPLE_DOMAINS.has(domain);
+}
+
+function publicAppOrigin(): string {
+  return (Deno.env.get('ATHAR_PUBLIC_ORIGIN') || 'https://vms-v2.aromaticfamilies.com').replace(/\/$/, '');
+}
+
+function unsubscribeUrlFor(to: string): string {
+  return `${publicAppOrigin()}/?unsubscribe=${encodeURIComponent(to || '')}`;
+}
+
+/** Ultra-plain text for Apple HM08 content filters: no HTML, no https links. */
+function buildAppleRecoveryEmail(token: string, to = ''): { subject: string; html?: string; text: string; deliveryRef: string } {
+  const deliveryRef = crypto.randomUUID();
+  const { email: fromEmail } = parseSender(SENDER_EMAIL);
+  const unsubMail = fromEmail || 'info@athar-app.online';
+  const text = [
+    'مرحبا،',
+    '',
+    `رمز حسابك في منصة اثر هو: ${token}`,
+    '',
+    'اكتب الرمز داخل صفحة الاستعادة في المنصة فقط.',
+    'اذا لم تطلب الرمز فتجاهل هذه الرسالة.',
+    '',
+    `لوقف رسائل التنبيه ارسل بريدا الى ${unsubMail} بعنوان unsubscribe`,
+    '',
+    'منصة اثر',
+    to ? `الى: ${to}` : '',
+  ].filter(Boolean).join('\n');
+
+  return {
+    subject: 'رمز حسابك في منصة اثر',
+    text,
+    deliveryRef,
+  };
+}
+
+function buildRecoveryEmail(token: string, to = ''): { subject: string; html?: string; text: string; deliveryRef: string } {
+  if (isAppleMailbox(to)) return buildAppleRecoveryEmail(token, to);
+
+  const deliveryRef = crypto.randomUUID();
+  const unsub = unsubscribeUrlFor(to);
+  return {
+    subject: b64utf8(SUBJECT_B64),
+    html: b64utf8(HTML_B64).replaceAll('{{TOKEN}}', token).replaceAll('{{UNSUBSCRIBE_URL}}', unsub),
+    text: b64utf8(TEXT_B64).replaceAll('{{TOKEN}}', token).replaceAll('{{UNSUBSCRIBE_URL}}', unsub),
+    deliveryRef,
+  };
+}
+
+function emailHeaders(deliveryRef: string, to: string, apple: boolean): Record<string, string> {
+  const { email: fromEmail } = parseSender(SENDER_EMAIL);
+  const mailto = `mailto:${fromEmail || 'info@athar-app.online'}?subject=unsubscribe`;
+  if (apple) {
+    // Avoid https + one-click headers that Apple may treat as bulk/spam signals on OTP mail.
+    return {
+      'X-Entity-Ref-ID': deliveryRef,
+      'List-Unsubscribe': `<${mailto}>`,
+    };
+  }
+  const unsubscribeUrl = unsubscribeUrlFor(to);
+  return {
+    'X-Entity-Ref-ID': deliveryRef,
+    'List-Unsubscribe': `<${mailto}>, <${unsubscribeUrl}>`,
+    'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+  };
 }
 
 type EmailActionType = 'signup' | 'recovery' | 'invite' | 'magiclink' | 'email_change' | 'email';
@@ -94,93 +136,65 @@ function json(body: unknown, status = 200) {
   });
 }
 
-const BREVO_API_KEY = Deno.env.get('BREVO_API_KEY') ?? '';
-const APPLE_DOMAINS = new Set(['icloud.com', 'me.com', 'mac.com']);
-
-async function sendViaBrevo(to: string, subject: string, html: string, text: string): Promise<void> {
-  if (!BREVO_API_KEY) throw new Error('Brevo API key is not configured');
-  const { name, email } = parseSender(SENDER_EMAIL);
-  const resp = await fetch('https://api.brevo.com/v3/smtp/email', {
-    method: 'POST',
-    headers: { 'api-key': BREVO_API_KEY, 'content-type': 'application/json' },
-    body: JSON.stringify({
-      sender: { name, email },
-      to: [{ email: to }],
-      subject,
-      htmlContent: html,
-      textContent: text,
-    }),
-  });
-  if (!resp.ok) {
-    const err = await resp.text();
-    throw new Error(`Brevo failed: ${err}`);
-  }
-  console.log('send-auth-emails: brevo sent to ' + to);
-}
-
-async function sendViaResend(
+async function sendViaSmtp(
   to: string,
   subject: string,
-  html: string,
+  html: string | undefined,
   text: string,
   deliveryRef: string,
 ): Promise<void> {
-  if (!resend) throw new Error('Resend is not configured');
-  const from = formatSender(SENDER_EMAIL);
-  const { data, error } = await resend.emails.send({
-    from,
-    to: [to],
-    subject,
-    html,
-    text,
-    headers: emailHeaders(deliveryRef, to),
+  if (!smtpConfigured) throw new Error('SMTP is not configured');
+  const nodemailer = await import('npm:nodemailer@6.9.16');
+  // Auth Send Email Hook has a short timeout — use a single fast SMTP attempt.
+  const port = Number.isFinite(SMTP_PORT) && SMTP_PORT > 0 ? SMTP_PORT : 587;
+  const apple = isAppleMailbox(to);
+  const transporter = nodemailer.createTransport({
+    host: SMTP_HOST,
+    port,
+    secure: port === 465,
+    requireTLS: port === 587,
+    auth: { user: SMTP_USER, pass: SMTP_PASS },
+    connectionTimeout: 8000,
+    greetingTimeout: 8000,
+    socketTimeout: 12000,
   });
-  if (error) {
-    const msg = (error as { message?: string; name?: string }).message || 'Resend send failed';
-    console.error('send-auth-emails: resend error from=' + from + ' to=' + to + ' msg=' + msg);
-    throw new Error(msg);
-  }
-  console.log('send-auth-emails: resend sent to ' + to + ' id=' + (data as { id?: string })?.id);
+  await transporter.sendMail({
+    from: apple
+      ? `منصة اثر <${parseSender(SENDER_EMAIL).email || SMTP_USER}>`
+      : formatSender(SENDER_EMAIL || `ATHAR <${SMTP_USER}>`),
+    to,
+    subject,
+    text,
+    ...(html ? { html } : {}),
+    headers: emailHeaders(deliveryRef, to, apple),
+  });
+  console.log('send-auth-emails: smtp sent to ' + to + ' via ' + SMTP_HOST + ':' + port + (apple ? ' apple-plain' : ''));
+}
+
+async function deliverRecovery(to: string, token: string): Promise<string> {
+  const mail = buildRecoveryEmail(token, to);
+  await sendViaSmtp(to, mail.subject, mail.html, mail.text, mail.deliveryRef);
+  return 'smtp';
 }
 
 Deno.serve(async (req) => {
   const url = new URL(req.url);
 
   if (req.method === 'GET' && url.searchParams.get('health') === '1') {
-    const domain = senderDomain(SENDER_EMAIL);
-    const testTo = url.searchParams.get('test_to');
-    const resendDiag = resend && url.searchParams.get('resend_diag') === '1'
-      ? {
-        sender: formatSender(SENDER_EMAIL),
-        test_send: testTo
-          ? await (async () => {
-            try {
-              const mail = buildRecoveryEmail('12345678');
-              await sendViaResend(testTo, mail.subject, mail.html, mail.text, mail.deliveryRef);
-              return { ok: true };
-            } catch (error) {
-              return { ok: false, error: error instanceof Error ? error.message : String(error) };
-            }
-          })()
-          : null,
-      }
-      : null;
+    // Booleans only — never expose SMTP credentials or send test mail from this endpoint.
     return json({
       ok: true,
       configured: {
-        RESEND_API_KEY: Boolean(RESEND_API_KEY),
         SEND_EMAIL_HOOK_SECRET: Boolean(HOOK_SECRET),
         SENDER_EMAIL: Boolean(SENDER_EMAIL),
-        BREVO_ENABLED: false,
+        SMTP: smtpConfigured,
       },
       deliverability: {
-        sender_domain: domain,
-        uses_resend_shared_domain: domain === 'resend.dev',
-        template: 'arabic-html-wordmark-url',
-        primary_route: 'resend',
-        note: 'Brevo has been disabled. Resend is now used for all emails including iCloud/Apple.',
+        sender_domain: senderDomain(SENDER_EMAIL),
+        template: 'apple-text-only-no-https; others-html-unsub',
+        primary_route: 'smtp-hostinger',
+        note: 'Hostinger SMTP only.',
       },
-      resend_diag: resendDiag,
     });
   }
 
@@ -188,9 +202,9 @@ Deno.serve(async (req) => {
     return new Response('not allowed', { status: 400 });
   }
 
-  if (!HOOK_SECRET || !SENDER_EMAIL || !resend) {
-    console.error('send-auth-emails: missing Resend configuration');
-    return json({ error: { message: 'Email provider (Resend) is not configured' } }, 500);
+  if (!HOOK_SECRET || !SENDER_EMAIL || !smtpConfigured) {
+    console.error('send-auth-emails: missing email configuration');
+    return json({ error: { message: 'Email provider is not configured' } }, 500);
   }
 
   const payload = await req.text();
@@ -207,20 +221,35 @@ Deno.serve(async (req) => {
     }
 
     const token = String(email_data.token ?? '').trim();
-    if (!token) {
-      throw new Error('Recovery email missing token');
+    if (!token) throw new Error('Recovery email missing token');
+
+    // Auth HTTP hooks must finish in ~5s. Hostinger SMTP often needs longer,
+    // so return success quickly and finish sending in the background if needed.
+    const sendPromise = deliverRecovery(user.email, token);
+    const outcome = await Promise.race([
+      sendPromise.then((provider) => ({ status: 'done' as const, provider })),
+      new Promise<{ status: 'pending' }>((resolve) => {
+        setTimeout(() => resolve({ status: 'pending' }), 3500);
+      }),
+    ]);
+
+    if (outcome.status === 'pending') {
+      // deno-lint-ignore no-explicit-any
+      const runtime = (globalThis as any).EdgeRuntime;
+      if (runtime?.waitUntil) {
+        runtime.waitUntil(sendPromise.catch((err: unknown) => {
+          console.error('send-auth-emails: background send failed', err);
+        }));
+      } else {
+        sendPromise.catch((err: unknown) => {
+          console.error('send-auth-emails: background send failed', err);
+        });
+      }
+      console.log('send-auth-emails: returning early; SMTP continuing in background to ' + user.email);
+      return json({ success: true, provider: 'smtp-background' });
     }
 
-    const mail = buildRecoveryEmail(token);
-    
-    const isApple = APPLE_DOMAINS.has(user.email.split('@').pop()?.toLowerCase() ?? '');
-    if (isApple && BREVO_API_KEY) {
-      await sendViaBrevo(user.email, mail.subject, mail.html, mail.text);
-    } else {
-      await sendViaResend(user.email, mail.subject, mail.html, mail.text, mail.deliveryRef);
-    }
-
-    return json({ success: true, provider: 'resend' });
+    return json({ success: true, provider: outcome.provider });
   } catch (error) {
     console.error('send-auth-emails:', error);
     return json({

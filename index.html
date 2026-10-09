@@ -2764,7 +2764,7 @@
   <script>
     (function () {
       try {
-        var t = sessionStorage.getItem('mirsad_last_ui_tab');
+        var t = sessionStorage.getItem('athar_last_ui_tab') || sessionStorage.getItem('mirsad_last_ui_tab');
         if (t) document.documentElement.setAttribute('data-mr-restore-tab', t);
         for (var i = 0; i < localStorage.length; i++) {
           var k = localStorage.key(i);
@@ -2814,8 +2814,14 @@
 
   <script>
     (function () {
-      if ((location.hostname === 'vms-v2.aromaticfamilies.com' || location.hostname === 'athar-app.online')
-          && (location.pathname !== '/' || location.search || location.hash)) {
+      var host = location.hostname;
+      if (host !== 'vms-v2.aromaticfamilies.com' && host !== 'athar-app.online') return;
+      var hash = location.hash || '';
+      var search = location.search || '';
+      // Keep auth recovery / magic-link hashes and unsubscribe query for the app to consume.
+      if (/access_token|refresh_token|type=recovery|type=magiclink|type=invite|type=email_change/i.test(hash)) return;
+      if (/[?&]unsubscribe=/i.test(search)) return;
+      if (location.pathname !== '/' || search || hash) {
         history.replaceState(null, '', '/');
       }
     })();
@@ -4337,7 +4343,7 @@
           </div>
           <script>
             (function () {
-              var KEY = 'mirsad_last_ui_tab';
+              var KEY = 'athar_last_ui_tab';
               var VALID = { dashboard: 1, workflow: 1, newTicket: 1, breaks: 1, complaints: 1, reports: 1, compliance: 1, violations: 1, locations: 1, departments: 1, settings: 1, profileAvatars: 1, broadcasts: 1 };
               var saved = 'dashboard';
               try {

@@ -151,12 +151,9 @@
         if (errMsg.includes('check_platform_email_for_reset') || errMsg.includes('check_password_reset_rate_limit')) {
           return 'التحقق من البريد غير متاح — شغّل supabase/password-reset-rate-limit.sql في SQL Editor';
         }
-        if (status === 500 || /error sending recovery|recovery email|hook|smtp|sender address|resend rejected|authentication failed/i.test(errMsg)) {
+        if (status === 500 || /error sending recovery|recovery email|hook|smtp|sender address|authentication failed/i.test(errMsg)) {
           if (/authentication failed|535|invalid login/i.test(errMsg)) {
             return 'تعذّر الدخول لبريد Hostinger (SMTP). تحقق من SES_SMTP_PASSWORD لصندوق info@athar-app.online.';
-          }
-          if (/resend rejected|domain|verify|not verified/i.test(errMsg)) {
-            return 'تعذّر إرسال الرمز. تحقق من إعداد البريد في Supabase Secrets وEdge Functions → send-auth-emails.';
           }
           return 'تعذّر إرسال رمز التحقق من الخادم. حاول مرة أخرى بعد قليل، أو تحقق من إعداد SMTP (Hostinger) في Supabase Secrets.';
         }
@@ -333,13 +330,14 @@
       /**
        * اختبار R2 على Live Server / localhost بنفس سلوك الإنتاج (Edge ثم احتياط /config).
        * من كونسول المتصفح (F12 → Console) ثم حدّث الصفحة:
-       *   localStorage.setItem('mirsad_force_r2_local','1'); location.reload();
+       *   localStorage.setItem('athar_force_r2_local','1'); location.reload();
        * إيقاف الوضع:
-       *   localStorage.removeItem('mirsad_force_r2_local'); location.reload();
+       *   localStorage.removeItem('athar_force_r2_local'); location.reload();
        */
       function isForceR2LocalTest() {
         try {
-          return localStorage.getItem('mirsad_force_r2_local') === '1';
+          return localStorage.getItem('athar_force_r2_local') === '1'
+            || localStorage.getItem('mirsad_force_r2_local') === '1';
         } catch (_) {
           return false;
         }
@@ -353,16 +351,19 @@
       const DEV_ADMIN_EMAIL = '';
       const DEV_ADMIN_PASSWORD = '';
 
-      /** لوج تشخيص في Console: أضف ?debug=1 للرابط أو نفّذ localStorage.setItem('mirsad_debug_log','1') */
-      function isMirsadDebugLog() {
+      /** لوج تشخيص في Console: أضف ?debug=1 للرابط أو نفّذ localStorage.setItem('athar_debug_log','1') */
+      function isAtharDebugLog() {
         try {
           if (typeof window === 'undefined') return false;
           if (new URLSearchParams(window.location.search).get('debug') === '1') return true;
-          return localStorage.getItem('mirsad_debug_log') === '1';
+          return localStorage.getItem('athar_debug_log') === '1'
+            || localStorage.getItem('mirsad_debug_log') === '1';
         } catch (_) {
           return false;
         }
       }
+      // Compat alias while migrating call sites / old bookmarks
+      const isMirsadDebugLog = isAtharDebugLog;
 
       const ROLE_LABELS = {
         admin: 'مدير النظام',
@@ -3535,7 +3536,9 @@
 
       function setNativeAppShellActive(active) {
         const on = !!active && typeof isMobileViewport === 'function' && isMobileViewport();
-        document.body.classList.toggle('mirsad-app-active', on);
+        document.body.classList.toggle('athar-app-active', on);
+        document.body.classList.toggle('mirsad-app-active', on); // legacy CSS
+        document.documentElement.classList.toggle('athar-app-shell-lock', on);
         document.documentElement.classList.toggle('mirsad-app-shell-lock', on);
         if (on) {
           if (typeof syncLoginStandalonePwaClass === 'function') syncLoginStandalonePwaClass();
@@ -3556,7 +3559,7 @@
         document.addEventListener('touchstart', tryLockOnGesture, { capture: true, passive: true });
         document.addEventListener('click', tryLockOnGesture, { capture: true, passive: true });
         const blockGestureZoom = (e) => {
-          if (!document.body.classList.contains('mirsad-app-active')) return;
+          if (!document.body.classList.contains('athar-app-active') && !document.body.classList.contains('mirsad-app-active')) return;
           e.preventDefault();
         };
         ['gesturestart', 'gesturechange', 'gestureend'].forEach((ev) => {
@@ -3564,7 +3567,7 @@
         });
         let lastTouchEnd = 0;
         document.addEventListener('touchend', (e) => {
-          if (!document.body.classList.contains('mirsad-app-active')) return;
+          if (!document.body.classList.contains('athar-app-active') && !document.body.classList.contains('mirsad-app-active')) return;
           const now = Date.now();
           if (now - lastTouchEnd < 320) e.preventDefault();
           lastTouchEnd = now;
@@ -5944,10 +5947,21 @@
       // 10. RBAC (Role-Based Access Control)
       // ═══════════════════════════════════════════════════════════════════════════
 
-      const MR_PERMS_STORAGE_KEY = 'mirsad_role_permissions_v1';
-      const MR_WORKFLOW_SKIPS_STORAGE_KEY = 'mirsad_workflow_skips_v1';
-      const MR_USER_PERMS_STORAGE_KEY = 'mirsad_user_permissions_v1';
-      const MR_USER_DENY_KEYS_STORAGE = 'mirsad_user_perm_denies_v1';
+      const MR_PERMS_STORAGE_KEY = 'athar_role_permissions_v1';
+      const MR_WORKFLOW_SKIPS_STORAGE_KEY = 'athar_workflow_skips_v1';
+      const MR_USER_PERMS_STORAGE_KEY = 'athar_user_permissions_v1';
+      const MR_USER_DENY_KEYS_STORAGE = 'athar_user_perm_denies_v1';
+      const MR_PERMS_STORAGE_KEY_LEGACY = 'mirsad_role_permissions_v1';
+      const MR_WORKFLOW_SKIPS_STORAGE_KEY_LEGACY = 'mirsad_workflow_skips_v1';
+      const MR_USER_PERMS_STORAGE_KEY_LEGACY = 'mirsad_user_permissions_v1';
+      const MR_USER_DENY_KEYS_STORAGE_LEGACY = 'mirsad_user_perm_denies_v1';
+      function readLegacyStorage(store, key, legacyKey) {
+        try {
+          return store.getItem(key) || (legacyKey ? store.getItem(legacyKey) : null);
+        } catch (_) {
+          return null;
+        }
+      }
       const MR_PERMS_DB_KEY = 'role_permissions';
       const MR_USER_PERMS_DB_KEY = 'user_permissions';
       const MR_PERMS_BUNDLE_DB_KEY = 'permissions_bundle_v1';
@@ -6158,7 +6172,7 @@
 
       function loadUserPermDenyKeysFromCache() {
         try {
-          const raw = localStorage.getItem(MR_USER_DENY_KEYS_STORAGE);
+          const raw = readLegacyStorage(localStorage, MR_USER_DENY_KEYS_STORAGE, MR_USER_DENY_KEYS_STORAGE_LEGACY);
           if (raw) state._userPermDenyKeys = JSON.parse(raw);
         } catch (_) {}
       }
@@ -6346,7 +6360,7 @@
           || (shouldUseLocalPermissionCache() && state._permLocalDirtyAt && (Date.now() - state._permLocalDirtyAt < 120000));
         if (!overlay) return;
         try {
-          const rawRole = localStorage.getItem(MR_PERMS_STORAGE_KEY);
+          const rawRole = readLegacyStorage(localStorage, MR_PERMS_STORAGE_KEY, MR_PERMS_STORAGE_KEY_LEGACY);
           if (rawRole) {
             const parsed = sanitizeRolePermissionOverrides(JSON.parse(rawRole));
             if (parsed) {
@@ -6357,12 +6371,12 @@
               state.rolePermissionOverrides = sanitizeRolePermissionOverrides(merged);
             }
           }
-          const rawUser = localStorage.getItem(MR_USER_PERMS_STORAGE_KEY);
+          const rawUser = readLegacyStorage(localStorage, MR_USER_PERMS_STORAGE_KEY, MR_USER_PERMS_STORAGE_KEY_LEGACY);
           if (rawUser) {
             const parsed = sanitizeUserPermissionOverrides(JSON.parse(rawUser));
             state.userPermissionOverrides = mergeUserPermissionMaps(state.userPermissionOverrides, parsed);
           }
-          const rawSkips = localStorage.getItem(MR_WORKFLOW_SKIPS_STORAGE_KEY);
+          const rawSkips = readLegacyStorage(localStorage, MR_WORKFLOW_SKIPS_STORAGE_KEY, MR_WORKFLOW_SKIPS_STORAGE_KEY_LEGACY);
           if (rawSkips) {
             const parsed = JSON.parse(rawSkips);
             if (parsed && typeof parsed === 'object') {
@@ -6469,7 +6483,7 @@
 
       function loadRolePermissionsFromCache() {
         try {
-          const raw = localStorage.getItem(MR_PERMS_STORAGE_KEY);
+          const raw = readLegacyStorage(localStorage, MR_PERMS_STORAGE_KEY, MR_PERMS_STORAGE_KEY_LEGACY);
           if (raw) {
             state.rolePermissionOverrides = sanitizeRolePermissionOverrides(JSON.parse(raw));
             return true;
@@ -6480,7 +6494,7 @@
 
       function loadUserPermissionsFromCache() {
         try {
-          const raw = localStorage.getItem(MR_USER_PERMS_STORAGE_KEY);
+          const raw = readLegacyStorage(localStorage, MR_USER_PERMS_STORAGE_KEY, MR_USER_PERMS_STORAGE_KEY_LEGACY);
           if (raw) {
             state.userPermissionOverrides = sanitizeUserPermissionOverrides(JSON.parse(raw));
             return true;
@@ -6585,7 +6599,10 @@
           } else {
             localStorage.removeItem(MR_USER_DENY_KEYS_STORAGE);
           }
-          if (!opts.silent) window.dispatchEvent(new CustomEvent('mirsad-permissions-changed'));
+          if (!opts.silent) {
+            window.dispatchEvent(new CustomEvent('athar-permissions-changed'));
+            window.dispatchEvent(new CustomEvent('mirsad-permissions-changed')); // legacy listeners
+          }
         } catch (e) {
           if (isMirsadDebugLog()) console.warn('[permissions] local save failed', e);
         }
@@ -6602,7 +6619,7 @@
 
       function loadWorkflowSkipsFromCache() {
         try {
-          const raw = localStorage.getItem(MR_WORKFLOW_SKIPS_STORAGE_KEY);
+          const raw = readLegacyStorage(localStorage, MR_WORKFLOW_SKIPS_STORAGE_KEY, MR_WORKFLOW_SKIPS_STORAGE_KEY_LEGACY);
           if (!raw) return false;
           const parsed = JSON.parse(raw);
           if (!parsed || typeof parsed !== 'object') return false;
@@ -7558,11 +7575,12 @@
         }
       }
 
-      const MR_LAST_UI_TAB_KEY = 'mirsad_last_ui_tab';
+      const MR_LAST_UI_TAB_KEY = 'athar_last_ui_tab';
+      const MR_LAST_UI_TAB_KEY_LEGACY = 'mirsad_last_ui_tab';
 
       function getRestorableTab() {
         try {
-          const saved = sessionStorage.getItem(MR_LAST_UI_TAB_KEY);
+          const saved = readLegacyStorage(sessionStorage, MR_LAST_UI_TAB_KEY, MR_LAST_UI_TAB_KEY_LEGACY);
           if (!saved || !MR_NAV_TAB_ORDER.includes(saved)) return null;
           const perm = MR_TAB_PERM_MAP[saved];
           if (!perm || !hasPermission(perm)) return null;
@@ -7801,7 +7819,7 @@
 
       async function wfFetchExpandedViolationRows(limit, select) {
         if (!state._wfViolationsRpcUnavailable) {
-          const rpc = await sb.rpc('mirsad_fetch_all_violations', { p_limit: limit });
+          const rpc = await sb.rpc('athar_fetch_all_violations', { p_limit: limit });
           if (!rpc.error && Array.isArray(rpc.data)) return rpc.data;
           if (supabaseRpcMissing(rpc.error)) {
             state._wfViolationsRpcUnavailable = true;
@@ -7809,7 +7827,7 @@
               state._wfViolationsRpcWarned = true;
               if (isMirsadDebugLog()) {
                 console.info(
-                  '[workflow] دالة mirsad_fetch_all_violations غير منشأة في Supabase — شغّل الملف supabase/mirsad-view-all-violations.sql ثم أعد تحميل الصفحة.'
+                  '[workflow] دالة athar_fetch_all_violations غير منشأة في Supabase — راجع migrations ثم أعد تحميل الصفحة.'
                 );
               }
             }
@@ -14236,7 +14254,7 @@
           ];
         });
         const suffix = exportAll ? 'all' : 'filtered';
-        downloadCsvFile(`mirsad-users-${suffix}-${ksaCsvDateStamp()}.csv`, headers, rows);
+        downloadCsvFile(`athar-users-${suffix}-${ksaCsvDateStamp()}.csv`, headers, rows);
         showToast(`تم تصدير ${list.length} مستخدم ✓`, 'success');
       }
 
@@ -17404,7 +17422,7 @@
       }
 
       /** تخزين مرفقات التطوير (فيديو/صورة) في IndexedDB لتبقى بعد refresh */
-      const DEV_MEDIA_DB = 'mirsad_dev_media_v1';
+      const DEV_MEDIA_DB = 'athar_dev_media_v1';
       const DEV_MEDIA_STORE = 'blobs';
 
       function openDevMediaDb() {
@@ -33718,7 +33736,7 @@
       // 22. INITIALIZATION
       // ═══════════════════════════════════════════════════════════════════════════
 
-      window.addEventListener('mirsad-permissions-changed', () => {
+      window.addEventListener('athar-permissions-changed', () => {
         if (!state.currentUser) return;
         reloadPermissionsFromCache();
         state._seeAllCompliancePrev = undefined;

@@ -16,8 +16,6 @@ import {
 } from './violation-notification-copy.ts';
 import { runWeeklyDigest } from './violation-weekly-digest.ts';
 import { runBreakExpiryCron, BREAK_EXPIRY_CRON_VERSION } from './break-expiry-cron.ts';
-import { Resend } from 'npm:resend@4.0.0';
-
 function buildCorsHeaders(req: Request): Record<string, string> {
   const allowedOrigin = Deno.env.get('ALLOWED_ORIGIN') || 'https://athar-app.online';
   const requestOrigin = req.headers.get('Origin') || '';
@@ -359,6 +357,14 @@ async function dispatchViolationStatePush(
   return { ...result, state, dedupeKey };
 }
 
+function escEmailHtml(value: unknown): string {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 async function sendImmediateEmail(
   supabase: ReturnType<typeof createClient>,
   to: string,
@@ -366,34 +372,32 @@ async function sendImmediateEmail(
   body: string,
   record: ViolationRow,
 ) {
-  const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? '';
-  const BREVO_API_KEY = Deno.env.get('BREVO_API_KEY') ?? '';
   const SENDER_EMAIL_RAW = Deno.env.get('SENDER_EMAIL') ?? 'no-reply@athar-app.online';
   const FULL_SENDER = SENDER_EMAIL_RAW.includes('<') ? SENDER_EMAIL_RAW : `ATHAR <${SENDER_EMAIL_RAW}>`;
-  const SENDER_EMAIL = SENDER_EMAIL_RAW.includes('<') ? SENDER_EMAIL_RAW.match(/<(.+)>|$/)?.[1] || SENDER_EMAIL_RAW : SENDER_EMAIL_RAW;
-  const SENDER_NAME = SENDER_EMAIL_RAW.includes('<') ? SENDER_EMAIL_RAW.split('<')[0].trim() : 'ATHAR';
-
-  const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null;
-  const APPLE_DOMAINS = new Set(['icloud.com', 'me.com', 'mac.com']);
+  const publicOrigin = (Deno.env.get('ATHAR_PUBLIC_ORIGIN') || 'https://vms-v2.aromaticfamilies.com').replace(/\/$/, '');
 
   // Format ticket number to show only the last part (e.g., V-2026-0356 -> 0356)
   const rawTicket = String(record.ticket_number || record.id);
   const formattedTicket = rawTicket.includes('-') ? rawTicket.split('-').pop() : rawTicket;
+  const safeTitle = escEmailHtml(title);
+  const safeBody = escEmailHtml(body);
+  const safeTicket = escEmailHtml(formattedTicket);
+  const safeType = escEmailHtml(record.violation_type || '—');
 
   const subject = `${title} - رقم (${formattedTicket})`;
   const { data: userData } = await supabase.from('users').select('name').eq('email', to).maybeSingle();
   const userName = userData?.name || '';
-  const greeting = userName ? `مرحباً ${userName.split(' ')[0]}،` : 'مرحباً،';
+  const greeting = userName ? `مرحباً ${escEmailHtml(userName.split(' ')[0])}،` : 'مرحباً،';
 
-  const unsubscribeUrl = `https://athar-app.online/settings?unsubscribe=${encodeURIComponent(to)}`;
+  const unsubscribeUrl = `${publicOrigin}/?unsubscribe=${encodeURIComponent(to)}`;
   const html = `
     <div dir="rtl" style="font-family: sans-serif; line-height: 1.6; color: #333;">
-      <h2 style="color: #d9534f;">${title}</h2>
+      <h2 style="color: #d9534f;">${safeTitle}</h2>
       <p><strong>${greeting}</strong></p>
-      <p>${body}</p>
+      <p>${safeBody}</p>
       <div style="background: #f4f4f4; padding: 15px; border-radius: 8px; margin-top: 20px;">
-        <p><strong>رقم المخالفة:</strong> ${formattedTicket}</p>
-        <p><strong>نوع المخالفة:</strong> ${record.violation_type || '—'}</p>
+        <p><strong>رقم المخالفة:</strong> ${safeTicket}</p>
+        <p><strong>نوع المخالفة:</strong> ${safeType}</p>
       </div>
       <p style="margin-top: 20px;">يرجى مراجعة التفاصيل عبر تطبيق أثر</p>
       <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
@@ -406,97 +410,30 @@ async function sendImmediateEmail(
   `;
   const text = `${title}: ${body}. رقم المخالفة: ${record.ticket_number || record.id}`;
 
-  const isApple = APPLE_DOMAINS.has(to.split('@').pop()?.toLowerCase() ?? '');
-
-  const sendViaBrevo = async () => {
-    if (!BREVO_API_KEY) throw new Error('Brevo is not configured');
-    const resp = await fetch('https://api.brevo.com/v3/smtp/email', {
-      method: 'POST',
-      headers: { 'api-key': BREVO_API_KEY, 'content-type': 'application/json' },
-      body: JSON.stringify({
-        sender: { name: SENDER_NAME, email: SENDER_EMAIL },
-        to: [{ email: to }],
-        subject,
-        htmlContent: html,
-        textContent: text,
-      }),
-    });
-    if (!resp.ok) {
-      const err = await resp.text();
-      throw new Error(`Brevo failed: ${err}`);
-    }
-  };
-
-  const sendViaResend = async () => {
-    if (!resend) throw new Error('Resend is not configured');
-    const { error } = await resend.emails.send({
-      from: FULL_SENDER,
-      to: [to],
-      subject,
-      html,
-      text,
-      headers: {
-        'List-Unsubscribe': `<${unsubscribeUrl}>`,
-        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-      },
-    });
-    if (error) throw new Error(`Resend failed: ${error.message}`);
-  };
-
-  const sendViaSesSmtp = async () => {
-    const host = (Deno.env.get('SES_SMTP_HOST') || '').trim();
-    const user = (Deno.env.get('SES_SMTP_USERNAME') || '').trim();
-    const pass = (Deno.env.get('SES_SMTP_PASSWORD') || '').trim();
-    const port = Number(Deno.env.get('SES_SMTP_PORT') || 587);
-    if (!host || !user || !pass) throw new Error('SES SMTP is not configured');
-    const nodemailer = await import('npm:nodemailer@6.9.16');
-    const transporter = nodemailer.createTransport({
-      host,
-      port: Number.isFinite(port) ? port : 587,
-      secure: port === 465,
-      auth: { user, pass },
-    });
-    await transporter.sendMail({
-      from: FULL_SENDER,
-      to,
-      subject,
-      html,
-      text,
-      headers: {
-        'List-Unsubscribe': `<${unsubscribeUrl}>`,
-        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-      },
-    });
-  };
-
-  // Prefer SES for aromaticfamilies.com (verified there); then Resend; then Brevo.
-  const senderDomain = (SENDER_EMAIL.split('@')[1] || '').toLowerCase();
-  const preferSes = senderDomain.endsWith('aromaticfamilies.com');
-  const providers: Array<{ name: string; run: () => Promise<void> }> = [];
-  if (preferSes) {
-    providers.push({ name: 'ses', run: sendViaSesSmtp });
-    providers.push({ name: 'resend', run: sendViaResend });
-    providers.push({ name: 'brevo', run: sendViaBrevo });
-  } else if (isApple) {
-    providers.push({ name: 'brevo', run: sendViaBrevo });
-    providers.push({ name: 'ses', run: sendViaSesSmtp });
-    providers.push({ name: 'resend', run: sendViaResend });
-  } else {
-    providers.push({ name: 'resend', run: sendViaResend });
-    providers.push({ name: 'ses', run: sendViaSesSmtp });
-    providers.push({ name: 'brevo', run: sendViaBrevo });
-  }
-
-  const errors: string[] = [];
-  for (const provider of providers) {
-    try {
-      await provider.run();
-      return { ok: true as const, provider: provider.name };
-    } catch (err) {
-      errors.push(`${provider.name}: ${err instanceof Error ? err.message : String(err)}`);
-    }
-  }
-  throw new Error(errors.join(' | ') || 'No email provider configured.');
+  const host = (Deno.env.get('SES_SMTP_HOST') || '').trim();
+  const user = (Deno.env.get('SES_SMTP_USERNAME') || '').trim();
+  const pass = (Deno.env.get('SES_SMTP_PASSWORD') || '').trim();
+  const port = Number(Deno.env.get('SES_SMTP_PORT') || 587);
+  if (!host || !user || !pass) throw new Error('SES SMTP is not configured');
+  const nodemailer = await import('npm:nodemailer@6.9.16');
+  const transporter = nodemailer.createTransport({
+    host,
+    port: Number.isFinite(port) ? port : 587,
+    secure: port === 465,
+    auth: { user, pass },
+  });
+  await transporter.sendMail({
+    from: FULL_SENDER,
+    to,
+    subject,
+    html,
+    text,
+    headers: {
+      'List-Unsubscribe': `<${unsubscribeUrl}>`,
+      'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+    },
+  });
+  return { ok: true as const, provider: 'smtp' };
 }
 
 async function sendPushToUserIds(
@@ -633,17 +570,7 @@ async function isServiceRoleAuth(req: Request): Promise<boolean> {
   if (auth && await safeEqual(auth, serviceKey)) return true;
   const apikey = (req.headers.get('apikey') || '').trim();
   if (apikey && await safeEqual(apikey, serviceKey)) return true;
-  const probeKey = auth || apikey;
-  if (!probeKey) return false;
-  try {
-    const url = Deno.env.get('SUPABASE_URL') ?? '';
-    if (!url) return false;
-    const probe = createClient(url, probeKey, { auth: { persistSession: false } });
-    const { error } = await probe.from('violations').select('id').limit(1);
-    return !error;
-  } catch {
-    return false;
-  }
+  return false;
 }
 
 async function resolveUserIdFromJwt(req: Request) {

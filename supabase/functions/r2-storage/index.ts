@@ -558,7 +558,7 @@ Deno.serve(async (req) => {
         return json({ error: 'استبدال الملف مسموح لفيديوهات المرفقات فقط' }, 400)
       }
       const { data: canSee, error: permErr } = await auth.supabase.rpc(
-        'mirsad_user_can_see_attachment',
+        'athar_user_can_see_attachment',
         { p_key: key },
       )
       if (permErr) {
@@ -856,7 +856,7 @@ Deno.serve(async (req) => {
       }
       if (!isServiceRole) {
         const { data: canSee, error: permErr } = await supabase.rpc(
-          'mirsad_user_can_see_attachment',
+          'athar_user_can_see_attachment',
           { p_key: key },
         )
         if (permErr) {
@@ -947,7 +947,7 @@ Deno.serve(async (req) => {
       // استثناء: service_role للصيانة (تحويل HEVC من الخادم).
       if (!isServiceRole) {
         const { data: canSee, error: permErr } = await supabase.rpc(
-          'mirsad_user_can_see_attachment',
+          'athar_user_can_see_attachment',
           { p_key: key },
         )
         if (permErr) {
@@ -977,7 +977,7 @@ Deno.serve(async (req) => {
       const key = assertKey(body.key)
       if (!isServiceRole) {
         const { data: canSee, error: permErr } = await supabase.rpc(
-          'mirsad_user_can_see_attachment',
+          'athar_user_can_see_attachment',
           { p_key: key },
         )
         if (permErr) {
@@ -1012,7 +1012,7 @@ Deno.serve(async (req) => {
       const key = assertKey(body.key)
       if (!isServiceRole) {
         const { data: canSee, error: permErr } = await supabase.rpc(
-          'mirsad_user_can_see_attachment',
+          'athar_user_can_see_attachment',
           { p_key: key },
         )
         if (permErr) {

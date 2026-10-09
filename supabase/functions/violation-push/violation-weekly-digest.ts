@@ -1,19 +1,9 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
-import { Resend } from 'npm:resend@4.0.0';
 
-const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? '';
-const BREVO_API_KEY = Deno.env.get('BREVO_API_KEY') ?? '';
 const SENDER_EMAIL_RAW = Deno.env.get('SENDER_EMAIL') ?? 'no-reply@athar-app.online';
 const FULL_SENDER = SENDER_EMAIL_RAW.includes('<')
   ? SENDER_EMAIL_RAW
   : `ATHAR <${SENDER_EMAIL_RAW}>`;
-
-const SENDER_EMAIL = SENDER_EMAIL_RAW.includes('<')
-  ? SENDER_EMAIL_RAW.match(/<(.+)>|$/)?.[1] || SENDER_EMAIL_RAW
-  : SENDER_EMAIL_RAW;
-const SENDER_NAME = SENDER_EMAIL_RAW.includes('<')
-  ? SENDER_EMAIL_RAW.split('<')[0].trim()
-  : 'ATHAR';
 
 /** التقرير الأسبوعي يُرسل فقط لهذه الأدوار — لا موظف/مشرف/مدير فرع/راصد/أدمن */
 const DIGEST_ROLES = ['auditor', 'manager', 'hr'] as const;
@@ -25,14 +15,6 @@ const STATE_TO_ROLE: Record<string, DigestRole> = {
   hr: 'hr',
 };
 
-const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null;
-const APPLE_DOMAINS = new Set(['icloud.com', 'me.com', 'mac.com']);
-
-function isAppleMailbox(email: string): boolean {
-  const domain = email.split('@').pop()?.toLowerCase() ?? '';
-  return APPLE_DOMAINS.has(domain);
-}
-
 function esc(s: unknown): string {
   return String(s ?? '')
     .replace(/&/g, '&amp;')
@@ -42,49 +24,39 @@ function esc(s: unknown): string {
 }
 
 function unsubscribeLink(email: string): string {
-  return `https://athar-app.online/settings?unsubscribe=${encodeURIComponent(email)}`;
+  const origin = (Deno.env.get('ATHAR_PUBLIC_ORIGIN') || 'https://vms-v2.aromaticfamilies.com').replace(/\/$/, '');
+  return `${origin}/?unsubscribe=${encodeURIComponent(email)}`;
 }
 
 async function sendEmail(to: string, subject: string, html: string, text: string) {
   const deliveryRef = crypto.randomUUID();
   const unsubscribeUrl = unsubscribeLink(to);
-  const antiThreadHeaders = {
-    'X-Entity-Ref-ID': deliveryRef,
-    'X-ATHAR-Delivery': deliveryRef,
-    'List-Unsubscribe': `<${unsubscribeUrl}>`,
-    'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-  };
+  const host = (Deno.env.get('SES_SMTP_HOST') || '').trim();
+  const user = (Deno.env.get('SES_SMTP_USERNAME') || '').trim();
+  const pass = (Deno.env.get('SES_SMTP_PASSWORD') || '').trim();
+  const port = Number(Deno.env.get('SES_SMTP_PORT') || 587);
+  if (!host || !user || !pass) throw new Error('SES SMTP is not configured');
 
-  const isApple = isAppleMailbox(to);
-  if (isApple && BREVO_API_KEY) {
-    const resp = await fetch('https://api.brevo.com/v3/smtp/email', {
-      method: 'POST',
-      headers: { 'api-key': BREVO_API_KEY, 'content-type': 'application/json' },
-      body: JSON.stringify({
-        sender: { name: SENDER_NAME, email: SENDER_EMAIL },
-        to: [{ email: to }],
-        subject,
-        htmlContent: html,
-        textContent: text,
-      }),
-    });
-    if (!resp.ok) {
-      const err = await resp.text();
-      throw new Error(`Brevo failed: ${err}`);
-    }
-  } else if (resend) {
-    const { error } = await resend.emails.send({
-      from: FULL_SENDER,
-      to: [to],
-      subject,
-      html,
-      text,
-      headers: antiThreadHeaders,
-    });
-    if (error) throw new Error(`Resend failed: ${error.message}`);
-  } else {
-    throw new Error('No email provider configured');
-  }
+  const nodemailer = await import('npm:nodemailer@6.9.16');
+  const transporter = nodemailer.createTransport({
+    host,
+    port: Number.isFinite(port) ? port : 587,
+    secure: port === 465,
+    auth: { user, pass },
+  });
+  await transporter.sendMail({
+    from: FULL_SENDER,
+    to,
+    subject,
+    html,
+    text,
+    headers: {
+      'X-Entity-Ref-ID': deliveryRef,
+      'X-ATHAR-Delivery': deliveryRef,
+      'List-Unsubscribe': `<${unsubscribeUrl}>`,
+      'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+    },
+  });
 }
 
 export async function runWeeklyDigest(supabase: ReturnType<typeof createClient>) {
