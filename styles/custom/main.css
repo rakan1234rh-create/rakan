@@ -19906,7 +19906,7 @@
         touch-action: none !important
       }
 
-      html.mirsad-app-shell-lock {
+      html.athar-app-shell-lock {
         overflow: hidden;
         width: 100%;
         height: 100%;
@@ -19916,7 +19916,7 @@
         touch-action: manipulation
       }
 
-      body.mirsad-app-active {
+      body.athar-app-active {
         overflow: hidden;
         width: 100%;
         height: 100%;
@@ -19925,7 +19925,7 @@
         background: var(--mr-bg)
       }
 
-      body.mirsad-app-active #appWrap.app {
+      body.athar-app-active #appWrap.app {
         position: fixed;
         inset: 0;
         width: 100%;
@@ -19940,7 +19940,7 @@
         box-sizing: border-box
       }
 
-      body.mirsad-app-active #appWrap > .app-shell {
+      body.athar-app-active #appWrap > .app-shell {
         display: flex;
         flex-direction: column;
         flex: 1 1 auto;
@@ -19954,7 +19954,7 @@
         box-sizing: border-box
       }
 
-      body.mirsad-app-active #appWrap .topbar.unified-banner {
+      body.athar-app-active #appWrap .topbar.unified-banner {
         position: fixed !important;
         top: 0 !important;
         left: 0 !important;
@@ -19967,7 +19967,7 @@
         -webkit-user-drag: none
       }
 
-      body.mirsad-app-active #appWrap .app-body {
+      body.athar-app-active #appWrap .app-body {
         flex: 1 1 auto;
         min-height: 0;
         margin-top: 0 !important;
@@ -19976,7 +19976,7 @@
         flex-direction: column
       }
 
-      body.mirsad-app-active #appWrap .main {
+      body.athar-app-active #appWrap .main {
         flex: 1 1 auto;
         min-height: 0;
         height: auto !important;
@@ -24114,7 +24114,7 @@
         touch-action: pan-y
       }
 
-      html.mr-mobile-ui.mr-viol-tab-active body.mirsad-app-active #appWrap .main {
+      html.mr-mobile-ui.mr-viol-tab-active body.athar-app-active #appWrap .main {
         overflow: hidden !important;
         display: flex !important;
         flex-direction: column !important;
@@ -24123,7 +24123,7 @@
         padding: 0 !important
       }
 
-      html.mr-mobile-ui.mr-viol-tab-active body.mirsad-app-active #appWrap .main .content {
+      html.mr-mobile-ui.mr-viol-tab-active body.athar-app-active #appWrap .main .content {
         overflow: hidden !important;
         display: flex !important;
         flex-direction: column !important;
@@ -24834,7 +24834,7 @@
         }
       }
 
-      html.mr-mobile-ui.mr-users-tab-active body.mirsad-app-active #appWrap .main {
+      html.mr-mobile-ui.mr-users-tab-active body.athar-app-active #appWrap .main {
         overflow: hidden !important;
         display: flex !important;
         flex-direction: column !important;
@@ -24843,7 +24843,7 @@
         padding: 0 !important
       }
 
-      html.mr-mobile-ui.mr-users-tab-active body.mirsad-app-active #appWrap .main .content {
+      html.mr-mobile-ui.mr-users-tab-active body.athar-app-active #appWrap .main .content {
         overflow: hidden !important;
         display: flex !important;
         flex-direction: column !important;
@@ -25044,7 +25044,7 @@
         }
       }
 
-      html.mr-mobile-ui.mr-locations-tab-active body.mirsad-app-active #appWrap .main {
+      html.mr-mobile-ui.mr-locations-tab-active body.athar-app-active #appWrap .main {
         overflow: hidden !important;
         display: flex !important;
         flex-direction: column !important;
@@ -25053,7 +25053,7 @@
         padding: 0 !important
       }
 
-      html.mr-mobile-ui.mr-locations-tab-active body.mirsad-app-active #appWrap .main .content {
+      html.mr-mobile-ui.mr-locations-tab-active body.athar-app-active #appWrap .main .content {
         overflow: hidden !important;
         display: flex !important;
         flex-direction: column !important;
@@ -25579,7 +25579,7 @@
         font-size: 10px !important
       }
 
-      html.mr-mobile-ui.mr-cmp-tab-active body.mirsad-app-active #appWrap .main {
+      html.mr-mobile-ui.mr-cmp-tab-active body.athar-app-active #appWrap .main {
         overflow: hidden !important;
         display: flex !important;
         flex-direction: column !important;
@@ -25588,7 +25588,7 @@
         padding: 0 !important
       }
 
-      html.mr-mobile-ui.mr-cmp-tab-active body.mirsad-app-active #appWrap .main .content {
+      html.mr-mobile-ui.mr-cmp-tab-active body.athar-app-active #appWrap .main .content {
         overflow: hidden !important;
         display: flex !important;
         flex-direction: column !important;

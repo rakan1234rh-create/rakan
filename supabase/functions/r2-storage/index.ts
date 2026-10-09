@@ -145,9 +145,6 @@ async function requireAtharAdmin(
   return data === 'admin'
 }
 
-/** @deprecated use requireAtharAdmin */
-const requireMirsadAdmin = requireAtharAdmin
-
 function getBearerToken(req: Request): string {
   const authHeader = req.headers.get('Authorization') || ''
   const m = authHeader.match(/^Bearer\s+(.+)$/i)
@@ -601,7 +598,7 @@ Deno.serve(async (req) => {
     if ('error' in auth && auth.error) return auth.error
 
     try {
-      const isAdmin = await requireMirsadAdmin(auth.supabase)
+      const isAdmin = await requireAtharAdmin(auth.supabase)
       if (!isAdmin) return json({ error: 'غير مصرح — مدير النظام فقط' }, 403)
       const key = assertAvatarPresetKey(req.headers.get('X-R2-Key') || '')
       const contentType =
@@ -901,7 +898,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'deleteAvatarPreset') {
-      const isAdmin = await requireMirsadAdmin(supabase)
+      const isAdmin = await requireAtharAdmin(supabase)
       if (!isAdmin) return json({ error: 'غير مصرح — مدير النظام فقط' }, 403)
       const key = assertAvatarPresetKey(body.key || '')
       try {

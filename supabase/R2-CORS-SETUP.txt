@@ -16,4 +16,4 @@ Supabase Edge يستخدم فقط: جلسة المستخدم، فحص الصلا
    - حدّث الصفحة وجرّب رفع مرفق من الراصد
 
 4) احتياطي ثقيل (غير موصى به — يستهلك Egress على Supabase)
-   localStorage.setItem('mirsad_allow_r2_edge_proxy','1'); location.reload();
+   localStorage.setItem('athar_force_r2_local','1'); location.reload();

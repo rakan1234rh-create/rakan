@@ -129,7 +129,7 @@
         }
 
         const { error: recordErr } = await sb.rpc('record_password_reset_attempt', { p_email: email });
-        if (recordErr && isMirsadDebugLog()) console.warn('[PasswordResetRateLimit] record failed', recordErr);
+        if (recordErr && isAtharDebugLog()) console.warn('[PasswordResetRateLimit] record failed', recordErr);
       }
 
       function isAppleMailboxEmail(email) {
@@ -370,9 +370,6 @@
           return false;
         }
       }
-      // Compat alias while migrating call sites / old bookmarks
-      const isMirsadDebugLog = isAtharDebugLog;
-
       const ROLE_LABELS = {
         admin: 'مدير النظام',
         manager: 'المدير',
@@ -483,7 +480,8 @@
         return 'tab_' + Date.now() + '_' + rand;
       }
 
-      const PWA_AUTH_SCOPE = 'mirsad_pwa';
+      const PWA_AUTH_SCOPE = 'athar_pwa';
+      const PWA_AUTH_SCOPE_LEGACY = 'mirsad_pwa';
       const AUTH_SCOPE_SESSION_KEY = 'auth_scope_id';
 
       function isStandalonePwaShell() {
@@ -514,6 +512,27 @@
         return false;
       }
 
+      /** One-time move of standalone session keys mirsad_pwa_* → athar_pwa_* */
+      function migrateLegacyPwaAuthScope() {
+        try {
+          if (scopeHasAuthToken(PWA_AUTH_SCOPE)) return;
+          if (!scopeHasAuthToken(PWA_AUTH_SCOPE_LEGACY)) return;
+          const prefix = `${PWA_AUTH_SCOPE_LEGACY}_`;
+          const keys = [];
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith(prefix)) keys.push(key);
+          }
+          for (const key of keys) {
+            const dest = `${PWA_AUTH_SCOPE}_${key.slice(prefix.length)}`;
+            if (!localStorage.getItem(dest)) {
+              localStorage.setItem(dest, localStorage.getItem(key));
+            }
+            localStorage.removeItem(key);
+          }
+        } catch (_) { /* noop */ }
+      }
+
       function rememberAuthScope(scopeId) {
         if (!scopeId) return;
         sessionStorage.setItem(AUTH_SCOPE_SESSION_KEY, scopeId);
@@ -527,8 +546,11 @@
         if (scopeId) return scopeId;
 
         if (isStandalonePwaShell()) {
+          migrateLegacyPwaAuthScope();
           if (scopeHasAuthToken(PWA_AUTH_SCOPE)) {
             scopeId = PWA_AUTH_SCOPE;
+          } else if (scopeHasAuthToken(PWA_AUTH_SCOPE_LEGACY)) {
+            scopeId = PWA_AUTH_SCOPE_LEGACY;
           } else {
             const lastTabId = localStorage.getItem('last_tab_id');
             scopeId = (lastTabId && scopeHasAuthToken(lastTabId)) ? lastTabId : PWA_AUTH_SCOPE;
@@ -572,7 +594,7 @@
         for (let i = 0; i < localStorage.length; i++) {
           const key = localStorage.key(i);
           if (!key) continue;
-          if (key.startsWith(`${PWA_AUTH_SCOPE}_`)) continue;
+          if (key.startsWith(`${PWA_AUTH_SCOPE}_`) || key.startsWith(`${PWA_AUTH_SCOPE_LEGACY}_`)) continue;
           if (key && key.startsWith('tab_')) {
             const match = key.match(/^tab_(\d+)_/);
             if (match) {
@@ -624,7 +646,7 @@
         return s || String(err);
       }
 
-      if (typeof window !== 'undefined' && window.location?.protocol === 'file:' && isMirsadDebugLog()) {
+      if (typeof window !== 'undefined' && window.location?.protocol === 'file:' && isAtharDebugLog()) {
         console.warn('[Env] الصفحة تُفتح عبر file:// — يُفضّل خادم محلي (مثل: npx serve) حتى تعمل الروابط النسبية ومعاينة PDF داخل الصفحة دون قيود المتصفح.');
       }
 
@@ -787,7 +809,7 @@
                 if (j && j.error) hint = j.error + ' — ' + hint;
               } catch (_) { /* noop */ }
               _r2LastResolveNote = 'سبب التخطي: r2-storage أرجع 503 (أسرار R2 أو إعداد الدالة). ' + hint;
-              if (isMirsadDebugLog()) console.warn('[R2] الدالة r2-storage أرجعت 503 (الخدمة غير جاهزة).', hint);
+              if (isAtharDebugLog()) console.warn('[R2] الدالة r2-storage أرجعت 503 (الخدمة غير جاهزة).', hint);
             }
             if (res?.status === 401) {
               _r2LastResolveNote = 'سبب التخطي: r2-storage أرجع 401 — سجّل الخروج ثم الدخول من جديد، أو عطّل Enforce JWT Verification على الدالة.';
@@ -1564,7 +1586,7 @@
             renderDashboard();
           }
         } catch (e) {
-          if (isMirsadDebugLog()) console.warn('[mobile dash]', e);
+          if (isAtharDebugLog()) console.warn('[mobile dash]', e);
         }
       }
 
@@ -1574,7 +1596,7 @@
         showToast('جاري إعادة تحميل البيانات…', 'info');
         const ok = await loadAllData();
         if (ok) {
-          try { renderAll(); } catch (e) { if (isMirsadDebugLog()) console.error('renderAll', e); }
+          try { renderAll(); } catch (e) { if (isAtharDebugLog()) console.error('renderAll', e); }
         }
         return ok;
       }
@@ -2910,14 +2932,14 @@
             state._ksaClockOffsetMs = offset;
             state._ksaClockSynced = true;
             state._ksaClockSyncedAt = Date.now();
-            if (isMirsadDebugLog()) console.log('[KsaClock] synced offset ms:', Math.round(offset));
+            if (isAtharDebugLog()) console.log('[KsaClock] synced offset ms:', Math.round(offset));
             return true;
           } catch (e) {
             lastErr = e;
             window.clearTimeout(timer);
           }
         }
-        if (isMirsadDebugLog()) console.warn('[KsaClock] sync failed', lastErr);
+        if (isAtharDebugLog()) console.warn('[KsaClock] sync failed', lastErr);
         return false;
       }
 
@@ -3546,9 +3568,9 @@
       function setNativeAppShellActive(active) {
         const on = !!active && typeof isMobileViewport === 'function' && isMobileViewport();
         document.body.classList.toggle('athar-app-active', on);
-        document.body.classList.toggle('mirsad-app-active', on); // legacy CSS
+        document.body.classList.remove('mirsad-app-active');
         document.documentElement.classList.toggle('athar-app-shell-lock', on);
-        document.documentElement.classList.toggle('mirsad-app-shell-lock', on);
+        document.documentElement.classList.remove('mirsad-app-shell-lock');
         if (on) {
           if (typeof syncLoginStandalonePwaClass === 'function') syncLoginStandalonePwaClass();
           if (typeof syncWefaqBranding === 'function') syncWefaqBranding();
@@ -3568,7 +3590,7 @@
         document.addEventListener('touchstart', tryLockOnGesture, { capture: true, passive: true });
         document.addEventListener('click', tryLockOnGesture, { capture: true, passive: true });
         const blockGestureZoom = (e) => {
-          if (!document.body.classList.contains('athar-app-active') && !document.body.classList.contains('mirsad-app-active')) return;
+          if (!document.body.classList.contains('athar-app-active')) return;
           e.preventDefault();
         };
         ['gesturestart', 'gesturechange', 'gestureend'].forEach((ev) => {
@@ -3576,7 +3598,7 @@
         });
         let lastTouchEnd = 0;
         document.addEventListener('touchend', (e) => {
-          if (!document.body.classList.contains('athar-app-active') && !document.body.classList.contains('mirsad-app-active')) return;
+          if (!document.body.classList.contains('athar-app-active')) return;
           const now = Date.now();
           if (now - lastTouchEnd < 320) e.preventDefault();
           lastTouchEnd = now;
@@ -4123,7 +4145,7 @@
         _mrSessionRestoreGuard = setTimeout(() => {
           _mrSessionRestoreGuard = null;
           if (!document.documentElement.classList.contains('mr-session-restore')) return;
-          if (isMirsadDebugLog()) console.warn('[boot] session restore guard — forcing UI visible');
+          if (isAtharDebugLog()) console.warn('[boot] session restore guard — forcing UI visible');
           finishSessionRestoreBoot();
           if (!state.currentUser) {
             try {
@@ -4145,11 +4167,11 @@
         try {
           const { error: anonErr } = await sb.auth.signInAnonymously();
           if (anonErr) {
-            if (isMirsadDebugLog()) console.warn('[Guest] Anonymous sign-in:', anonErr.message);
+            if (isAtharDebugLog()) console.warn('[Guest] Anonymous sign-in:', anonErr.message);
             showToast('تنبيه الضيف: فعّل «Anonymous sign-ins» في Supabase وحدّث سياسات RLS للقراءة، وإلا ستظهر المنصة بدون بيانات.', 'warning');
           }
         } catch (e) {
-          if (isMirsadDebugLog()) console.warn('[Guest] signInAnonymously', e);
+          if (isAtharDebugLog()) console.warn('[Guest] signInAnonymously', e);
         }
         await onUserAuthenticated(GUEST_LOCAL_PROFILE);
       }
@@ -4436,7 +4458,7 @@
           // طلب الإشعارات عند تسجيل دخول جديد
           try { initAtharWebPush({ promptIfNeeded: true }); } catch (_) { /* noop */ }
         } catch (err) {
-          if (isMirsadDebugLog()) console.error('Login error:', formatPostgrestError(err), err);
+          if (isAtharDebugLog()) console.error('Login error:', formatPostgrestError(err), err);
           showLoginError('خطأ في الاتصال بالخادم. حاول مجدداً.');
           setLoginLoading(false);
         }
@@ -4470,7 +4492,7 @@
           };
           if (normalizeUserRole(profile.role) === 'supervisor') {
             if (isMobileViewport()) {
-              setTimeout(() => loadSupervisorBranches().catch(e => { if (isMirsadDebugLog()) console.warn('[supervisor branches]', e); }), 0);
+              setTimeout(() => loadSupervisorBranches().catch(e => { if (isAtharDebugLog()) console.warn('[supervisor branches]', e); }), 0);
             } else {
               const { data: regions } = await sb.from('regions').select('id').eq('supervisor_id', profile.id);
               const regionIds = (regions || []).map(r => r.id);
@@ -4513,7 +4535,7 @@
               try {
                 setupRealtime();
               } catch (e) {
-                if (isMirsadDebugLog()) console.warn('[Realtime] تعذّر بدء الاشتراك:', e);
+                if (isAtharDebugLog()) console.warn('[Realtime] تعذّر بدء الاشتراك:', e);
                 syncMobilePermissionsFallbackPoll();
               }
             };
@@ -4529,7 +4551,7 @@
             // مزامنة إشعارات Web Push عند كل فتح للتطبيق (بعد تحميل البيانات)
             setTimeout(() => {
               bootAtharWebPushOnAppOpen().catch((e) => {
-                if (isMirsadDebugLog()) console.warn('[webPush] app open boot', e);
+                if (isAtharDebugLog()) console.warn('[webPush] app open boot', e);
               });
             }, 1200);
 
@@ -4561,7 +4583,7 @@
             try {
               renderAll();
             } catch (renderErr) {
-              if (isMirsadDebugLog()) console.error('renderAll', renderErr);
+              if (isAtharDebugLog()) console.error('renderAll', renderErr);
               showToast('تعذّر عرض بعض أقسام الواجهة. راجع وحدة التحكم للتفاصيل.', 'error');
             }
           };
@@ -4588,7 +4610,7 @@
           runInitialRender();
           finishLoginBoot();
         } catch (err) {
-          if (isMirsadDebugLog()) console.error('onUserAuthenticated', err);
+          if (isAtharDebugLog()) console.error('onUserAuthenticated', err);
           showGlobalLoader(false);
           cancelSessionRestoreBoot();
           try { await atharSignOut(); } catch (_) { /* noop */ }
@@ -4692,7 +4714,7 @@
           rememberPasswordResetEmail(email);
           showOtpForm(email);
         } catch (err) {
-          if (isMirsadDebugLog()) console.error('[ForgotPassword]', err);
+          if (isAtharDebugLog()) console.error('[ForgotPassword]', err);
           document.getElementById('forgotError').classList.add('show');
           document.getElementById('forgotErrorMsg').textContent = formatForgotPasswordError(err);
         } finally {
@@ -4728,7 +4750,7 @@
           document.getElementById('resetOtp')?.focus();
           await syncPasswordResetResendUi(email);
         } catch (err) {
-          if (isMirsadDebugLog()) console.error('[ResendPasswordCode]', err);
+          if (isAtharDebugLog()) console.error('[ResendPasswordCode]', err);
           if (errEl && errMsg) {
             errEl.classList.add('show');
             errMsg.textContent = formatForgotPasswordError(err);
@@ -4783,7 +4805,7 @@
           if (data?.session?.user?.id) markPasswordRecoveryPending(data.session.user.id);
           showResetForm();
         } catch (err) {
-          if (isMirsadDebugLog()) console.error('[VerifyResetCode]', err);
+          if (isAtharDebugLog()) console.error('[VerifyResetCode]', err);
           errEl.classList.add('show');
           errMsg.textContent = 'الرمز غير صحيح أو منتهي الصلاحية. تأكد من آخر رمز وصلك على البريد.';
         } finally {
@@ -4858,7 +4880,7 @@
             password
           });
           if (error) {
-            if (isMirsadDebugLog()) console.warn('[DEV] Auto login:', error.message);
+            if (isAtharDebugLog()) console.warn('[DEV] Auto login:', error.message);
             return false;
           }
           const { data: { session } } = await sb.auth.getSession();
@@ -4871,10 +4893,10 @@
             return true;
           }
           await atharSignOut();
-          if (isMirsadDebugLog()) console.warn('[DEV] Auto login: لا يوجد مستخدم نشط مرتبط بهذا الحساب');
+          if (isAtharDebugLog()) console.warn('[DEV] Auto login: لا يوجد مستخدم نشط مرتبط بهذا الحساب');
           return false;
         } catch (e) {
-          if (isMirsadDebugLog()) console.warn('[DEV] Auto login:', e);
+          if (isAtharDebugLog()) console.warn('[DEV] Auto login:', e);
           return false;
         }
       }
@@ -4898,7 +4920,7 @@
               await onUserAuthenticated(profile);
             }
           } catch (e) {
-            if (isMirsadDebugLog()) console.warn('[PWA resume]', e);
+            if (isAtharDebugLog()) console.warn('[PWA resume]', e);
           }
         };
 
@@ -4990,7 +5012,7 @@
           msg += ' تأكد من Authentication → URL Configuration في Supabase: ' + location.origin + location.pathname;
         }
         showToast(msg, 'warning');
-        if (isMirsadDebugLog()) console.warn('[DataAccess]', { role, regRes, violRes });
+        if (isAtharDebugLog()) console.warn('[DataAccess]', { role, regRes, violRes });
       }
 
       async function loadAllData(isRetry) {
@@ -5064,18 +5086,18 @@
           if (vErr) throw vErr;
 
           if (uErr && mobLoad) {
-            if (isMirsadDebugLog()) console.warn('[DataLoad mobile] users, fallback partial', uErr);
+            if (isAtharDebugLog()) console.warn('[DataLoad mobile] users, fallback partial', uErr);
             try {
               users = await loadUsersForMobileViolations(violations || [], mobTimeout);
               uErr = null;
               showToast('تم تحميل مستخدمي التذاكر فقط — الشبكة بطيئة.', 'warning');
             } catch (partialErr) {
-              if (isMirsadDebugLog()) console.warn('[DataLoad mobile] partial users failed', partialErr);
+              if (isAtharDebugLog()) console.warn('[DataLoad mobile] partial users failed', partialErr);
             }
           }
           if (uErr) throw uErr;
           if (vtErr) {
-            if (isMirsadDebugLog()) console.warn('[DataLoad] violation_types:', formatPostgrestError(vtErr), vtErr);
+            if (isAtharDebugLog()) console.warn('[DataLoad] violation_types:', formatPostgrestError(vtErr), vtErr);
             try {
               const retry = await sb.from('violation_types').select('id,name,category,severity,weight').order('name');
               if (!retry.error && retry.data?.length) {
@@ -5087,12 +5109,12 @@
               showToast('تعذّر تحميل أنواع المخالفات — حدّث الصفحة', 'warning');
             }
           }
-          if (nErr && isMirsadDebugLog()) console.warn('[DataLoad] notifications:', nErr.message, nErr);
-          if (biErr && isMirsadDebugLog()) console.warn('[DataLoad] broadcast_inbox:', biErr.message, biErr);
-          if (ndErr && isMirsadDebugLog()) console.warn('[DataLoad] user_notif_dismissals:', ndErr.message, ndErr);
+          if (nErr && isAtharDebugLog()) console.warn('[DataLoad] notifications:', nErr.message, nErr);
+          if (biErr && isAtharDebugLog()) console.warn('[DataLoad] broadcast_inbox:', biErr.message, biErr);
+          if (ndErr && isAtharDebugLog()) console.warn('[DataLoad] user_notif_dismissals:', ndErr.message, ndErr);
 
           const _ms = Math.round(((typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now()) - _loadT0);
-          if (isMirsadDebugLog()) {
+          if (isAtharDebugLog()) {
             console.log(`[DataLoad] Loaded ${violations?.length || 0} violations from Supabase (${_ms}ms).`);
             if (_ms > 8000) {
               console.warn('[Perf] تحميل البيانات أبطأ من المتوقع — راجع Network (طلبات REST إلى Supabase) وحجم أعمدة JSON في الجداول.');
@@ -5135,7 +5157,7 @@
           if (nR + nB + nU + nV === 0 && !sessionStorage.getItem('dataLoadEmptyWarn')) {
             sessionStorage.setItem('dataLoadEmptyWarn', '1');
             if (state.currentUser?.auth_uid && typeof showDataAccessDiagnosis === 'function') {
-              showDataAccessDiagnosis().catch(e => { if (isMirsadDebugLog()) console.warn('[DataAccess]', e); });
+              showDataAccessDiagnosis().catch(e => { if (isAtharDebugLog()) console.warn('[DataAccess]', e); });
             }
             const isGuest = state.currentUser && state.currentUser.id === GUEST_LOCAL_PROFILE.id;
             const isAdmin = !isGuest && state.currentUser && state.currentUser.role === 'admin';
@@ -5164,7 +5186,7 @@
           return true;
         } catch (err) {
           state._dataLoading = false;
-          if (isMirsadDebugLog()) console.error('Failed to load data:', err);
+          if (isAtharDebugLog()) console.error('Failed to load data:', err);
           setConnStatus('disconnected');
           if (mobLoad) showGlobalLoader(false);
           const msg = formatPostgrestError(err) || (err && err.message) || String(err);
@@ -5908,14 +5930,14 @@
                     if (isProfilePageOpen()) renderProfilePage();
                   }
                 })
-                .catch(e => { if (isMirsadDebugLog()) console.warn('[profile_avatars] realtime refresh', e); });
+                .catch(e => { if (isAtharDebugLog()) console.warn('[profile_avatars] realtime refresh', e); });
               return;
             }
             if (!permKeys.includes(key)) return;
             state._seeAllCompliancePrev = undefined;
             state._viewAllTicketsPrev = undefined;
             refreshPermissionsFromCloud({ forceCloud: true })
-              .catch(e => { if (isMirsadDebugLog()) console.warn('[permissions] realtime refresh', e); });
+              .catch(e => { if (isAtharDebugLog()) console.warn('[permissions] realtime refresh', e); });
           })
           .subscribe((status) => {
             if (status === 'SUBSCRIBED') {
@@ -6335,7 +6357,7 @@
           if (!bErr && branches?.length) state.branches = branches;
           rebuildLookupMaps();
         } catch (e) {
-          if (isMirsadDebugLog()) console.warn('[compliance] geo reload failed', e);
+          if (isAtharDebugLog()) console.warn('[compliance] geo reload failed', e);
         }
       }
 
@@ -6519,19 +6541,19 @@
         try {
           const { data, error } = await sb.rpc('get_platform_setting', { p_key: key });
           if (!error && data != null) return normalizePlatformSettingValue(data);
-          if (error && isMirsadDebugLog()) console.warn('[platform_settings] rpc load:', key, error.message || error);
+          if (error && isAtharDebugLog()) console.warn('[platform_settings] rpc load:', key, error.message || error);
         } catch (e) {
-          if (isMirsadDebugLog()) console.warn('[platform_settings] rpc load exception:', key, e);
+          if (isAtharDebugLog()) console.warn('[platform_settings] rpc load exception:', key, e);
         }
         try {
           const { data, error } = await sb.from('platform_settings').select('value').eq('key', key).maybeSingle();
           if (error) {
-            if (isMirsadDebugLog()) console.warn('[platform_settings] table load failed:', key, error.message || error);
+            if (isAtharDebugLog()) console.warn('[platform_settings] table load failed:', key, error.message || error);
             return null;
           }
           if (data?.value != null) return normalizePlatformSettingValue(data.value);
         } catch (e) {
-          if (isMirsadDebugLog()) console.warn('[platform_settings] table load exception:', key, e);
+          if (isAtharDebugLog()) console.warn('[platform_settings] table load exception:', key, e);
         }
         return null;
       }
@@ -6544,12 +6566,12 @@
             p_value: value ?? {}
           });
           if (!error) return { ok: true };
-          if (isMirsadDebugLog()) console.error('[platform_settings] rpc save failed:', key, error);
+          if (isAtharDebugLog()) console.error('[platform_settings] rpc save failed:', key, error);
           if (error.code === '42501' || (error.message || '').includes('admin')) {
             return { ok: false, reason: 'ليس لديك صلاحية حفظ الإعدادات — تأكد أن حسابك admin ومرتبط بـ auth_uid في جدول users.' };
           }
         } catch (e) {
-          if (isMirsadDebugLog()) console.error('[platform_settings] rpc save exception:', key, e);
+          if (isAtharDebugLog()) console.error('[platform_settings] rpc save exception:', key, e);
         }
         try {
           const { error } = await sb.from('platform_settings').upsert({
@@ -6558,7 +6580,7 @@
             updated_at: new Date().toISOString()
           }, { onConflict: 'key' });
           if (error) {
-            if (isMirsadDebugLog()) console.error('[platform_settings] table save failed:', key, error);
+            if (isAtharDebugLog()) console.error('[platform_settings] table save failed:', key, error);
             return { ok: false, reason: error.message || String(error) };
           }
           return { ok: true };
@@ -6599,10 +6621,9 @@
           }
           if (!opts.silent) {
             window.dispatchEvent(new CustomEvent('athar-permissions-changed'));
-            window.dispatchEvent(new CustomEvent('mirsad-permissions-changed')); // legacy listeners
           }
         } catch (e) {
-          if (isMirsadDebugLog()) console.warn('[permissions] local save failed', e);
+          if (isAtharDebugLog()) console.warn('[permissions] local save failed', e);
         }
       }
 
@@ -6676,7 +6697,7 @@
             return;
           }
           refreshPermissionsFromCloud({ forceCloud: true })
-            .catch(e => { if (isMirsadDebugLog()) console.warn('[permissions] fallback poll', e); });
+            .catch(e => { if (isAtharDebugLog()) console.warn('[permissions] fallback poll', e); });
         }, MR_PERMS_FALLBACK_POLL_MS);
       }
 
@@ -7319,7 +7340,7 @@
           else if (tab === 'profileAvatars' && typeof renderProfileAvatarsAdmin === 'function') renderProfileAvatarsAdmin();
           else if (tab === 'broadcasts' && typeof renderBroadcastsPage === 'function') renderBroadcastsPage();
         } catch (e) {
-          if (isMirsadDebugLog()) console.warn('[permissions] active tab refresh', e);
+          if (isAtharDebugLog()) console.warn('[permissions] active tab refresh', e);
         }
       }
 
@@ -7695,7 +7716,7 @@
           }
         } catch (e) {
           _hrQueueCloseStarted = false;
-          if (isMirsadDebugLog()) console.warn('[workflow] close HR queue failed', e);
+          if (isAtharDebugLog()) console.warn('[workflow] close HR queue failed', e);
         }
         if (changed) {
           invalidateEmpScoreCache();
@@ -7823,7 +7844,7 @@
             state._wfViolationsRpcUnavailable = true;
             if (!state._wfViolationsRpcWarned) {
               state._wfViolationsRpcWarned = true;
-              if (isMirsadDebugLog()) {
+              if (isAtharDebugLog()) {
                 console.info(
                   '[workflow] دالة athar_fetch_all_violations غير منشأة في Supabase — راجع migrations ثم أعد تحميل الصفحة.'
                 );
@@ -7870,7 +7891,7 @@
               state._wfViolationsScope = viewAll;
             }
           } catch (e) {
-            if (isMirsadDebugLog()) console.warn('[workflow] violations reload failed', e);
+            if (isAtharDebugLog()) console.warn('[workflow] violations reload failed', e);
           } finally {
             _wfViolationsReloadPromise = null;
           }
@@ -9894,7 +9915,7 @@
           }
           return url || '';
         } catch (e) {
-          if (isMirsadDebugLog()) console.warn('[profile_avatars] sign get failed', preset.id, e);
+          if (isAtharDebugLog()) console.warn('[profile_avatars] sign get failed', preset.id, e);
           return '';
         }
       }
@@ -11540,7 +11561,7 @@
           invalidateNotifCache();
           renderAll();
         } catch (err) {
-          if (isMirsadDebugLog()) console.error('Cleanup failed:', err);
+          if (isAtharDebugLog()) console.error('Cleanup failed:', err);
           showToast('فشل التنظيف: ' + err.message, 'error');
         } finally {
           showGlobalLoader(false);
@@ -12728,7 +12749,7 @@
           try {
             renderDashboardDesktopRedesign(visible, allVisible, monthFromIso, nextFromIso, ksaNowParts);
           } catch (e) {
-            if (typeof isMirsadDebugLog === 'function' && isMirsadDebugLog()) console.warn('[rdDashDesk]', e);
+            if (typeof isAtharDebugLog === 'function' && isAtharDebugLog()) console.warn('[rdDashDesk]', e);
           }
           const playEntryDesk = !!state._dashHandPlayEntryWave;
           state._dashHandPlayEntryWave = false;
@@ -12740,7 +12761,7 @@
           try {
             renderDashboardRedesign(visible, allVisible, monthFromIso, nextFromIso, ksaNowParts);
           } catch (e) {
-            if (typeof isMirsadDebugLog === 'function' && isMirsadDebugLog()) console.warn('[rdDashMob]', e);
+            if (typeof isAtharDebugLog === 'function' && isAtharDebugLog()) console.warn('[rdDashMob]', e);
           }
           const playEntryMob = !!state._dashHandPlayEntryWave;
           state._dashHandPlayEntryWave = false;
@@ -12774,7 +12795,7 @@
                     // تحديث الحالة محلياً فقط دون إعادة تحميل كاملة لتوفير الموارد
                     state.violations = state.violations.filter(v => !ids.includes(v.id));
                     invalidateEmpScoreCache();
-                    if (isMirsadDebugLog()) console.log(`[Cleanup] Silently removed ${ids.length} stuck tickets.`);
+                    if (isAtharDebugLog()) console.log(`[Cleanup] Silently removed ${ids.length} stuck tickets.`);
                 }
             });
           }
@@ -12802,7 +12823,7 @@
           dashRenderSpark('st-pending-spark', dashBucketizeMonth(allVisible, monthFromIso, nextFromIso, isTicketWorkflowOpen), 'var(--mr-warning)', 'tone', monthStart);
           dashRenderSpark('st-overdue-spark', dashBucketizeMonth(allVisible, monthFromIso, nextFromIso, dashIsOverdueTicket), 'var(--mr-danger)', 'tone', monthStart);
         } catch (kpiErr) {
-          if (isMirsadDebugLog()) console.warn('[dashboard kpi]', kpiErr);
+          if (isAtharDebugLog()) console.warn('[dashboard kpi]', kpiErr);
         }
 
         // ─── توزيع الحالات (تتجدد شهرياً - تعرض فقط بيانات الشهر الحالي) ───
@@ -14363,7 +14384,7 @@
         }
         renderUsers();
         const summary = `تم: ${created} جديد، ${skipped} متخطى، ${failed} فشل`;
-        if (errors.length && isMirsadDebugLog()) console.warn('[users import]', errors);
+        if (errors.length && isAtharDebugLog()) console.warn('[users import]', errors);
         showToast(summary, created > 0 ? 'success' : (failed ? 'error' : 'info'));
         if (errors.length && errors.length <= 5) {
           setTimeout(() => showToast(errors.join(' · '), 'warning'), 400);
@@ -14386,7 +14407,7 @@
             if (byId.has(u.id)) u.phone = byId.get(u.id);
           });
         } catch (e) {
-          if (isMirsadDebugLog()) console.warn('[users] phone refresh', e);
+          if (isAtharDebugLog()) console.warn('[users] phone refresh', e);
         }
       }
 
@@ -14863,10 +14884,10 @@
                 const { error: violErr } = await sb.from('violations')
                   .update({ branch_id: branchId })
                   .eq('employee_id', editId);
-                if (violErr && isMirsadDebugLog()) console.warn('[saveUser] branch sync violations', violErr);
+                if (violErr && isAtharDebugLog()) console.warn('[saveUser] branch sync violations', violErr);
                 else patchViolationsBranchForEmployee(editId, branchId);
               } catch (syncErr) {
-                if (isMirsadDebugLog()) console.warn('[saveUser] branch sync violations', syncErr);
+                if (isAtharDebugLog()) console.warn('[saveUser] branch sync violations', syncErr);
               }
             }
 
@@ -14898,7 +14919,7 @@
           closeModal('userModal');
           renderUsers();
         } catch (err) {
-          if (isMirsadDebugLog()) console.error('[saveUser]', err);
+          if (isAtharDebugLog()) console.error('[saveUser]', err);
           const msg = formatPostgrestError(err);
           const enumHint = /enum|user_role|branch_manager/i.test(msg)
             ? ' إن كان السبب الدور «مدير الفرع»: نفّذ تحديث enum في القاعدة (ملف supabase/rls_session_helpers.sql).'
@@ -14937,7 +14958,7 @@
           renderUsers();
           showToast('تم تعطيل المستخدم — سجلاته التاريخية محفوظة', 'info');
         } catch (err) {
-          if (isMirsadDebugLog()) console.error('[deleteUser]', err);
+          if (isAtharDebugLog()) console.error('[deleteUser]', err);
           showToast('فشل التعطيل: ' + formatPostgrestError(err), 'error');
         }
       }
@@ -15024,7 +15045,7 @@
           state.violationTypes = res.data || [];
           return state.violationTypes.length > 0;
         } catch (e) {
-          if (isMirsadDebugLog()) console.warn('[violation_types]', formatPostgrestError(e), e);
+          if (isAtharDebugLog()) console.warn('[violation_types]', formatPostgrestError(e), e);
           return false;
         }
       }
@@ -15488,7 +15509,7 @@
       function compressImageFile(file) {
         return new Promise((resolve, reject) => {
           const failPassthrough = (err) => {
-            if (err && isMirsadDebugLog()) console.error('[Compress]', err);
+            if (err && isAtharDebugLog()) console.error('[Compress]', err);
             fileToBase64(file)
               .then((b) => resolve({
                 base64: b,
@@ -15590,7 +15611,7 @@
             };
           };
           reader.onerror = (error) => {
-            if (isMirsadDebugLog()) console.error('[Compress] Reader error:', error);
+            if (isAtharDebugLog()) console.error('[Compress] Reader error:', error);
             reject(error);
           };
         });
@@ -16757,7 +16778,7 @@
           const { data: insertData, error: insertError } = await sb.from('violations').insert(finalPayload).select();
 
           if (insertError) {
-            if (isMirsadDebugLog()) console.error('[Sync] Failed to create ticket:', insertError);
+            if (isAtharDebugLog()) console.error('[Sync] Failed to create ticket:', insertError);
             throw new Error(`فشل إنشاء المخالفة: ${insertError.message}`);
           }
 
@@ -16798,7 +16819,7 @@
           if (waPlaceholderWin && !waPlaceholderWin.closed) {
             try { waPlaceholderWin.close(); } catch (_) { /* noop */ }
           }
-          if (isMirsadDebugLog()) console.error('[Sync] Critical Error:', err);
+          if (isAtharDebugLog()) console.error('[Sync] Critical Error:', err);
           showToast(err.message, 'error');
           try { restoreNtFiles(); } catch (_) { /* noop */ }
         } finally {
@@ -16868,13 +16889,13 @@
                   if (!state._devAttachmentBlobUrls) state._devAttachmentBlobUrls = {};
                   state._devAttachmentBlobUrls[objectKey] = URL.createObjectURL(fileObj.rawFile);
                 } catch (idbErr) {
-                  if (isMirsadDebugLog()) console.warn('[DEV] تعذّر حفظ الفيديو محلياً بعد refresh:', idbErr);
+                  if (isAtharDebugLog()) console.warn('[DEV] تعذّر حفظ الفيديو محلياً بعد refresh:', idbErr);
                 }
               }
               const devWhy = _r2LastResolveNote
                 ? (' ' + _r2LastResolveNote)
                 : ' (وضع محلي: localhost أو file:// — لم يُفعّل اختبار Edge أو لا يوجد مسار تخزين).';
-              if (isMirsadDebugLog()) {
+              if (isAtharDebugLog()) {
                 console.info('[DEV] تخطي الرفع إلى R2.' + devWhy + (devDataUrl ? ' تم حفظ معاينة الصورة داخل السجل (محلي فقط).' : ' (فيديو/PDF: بدون معاينة محلية)'));
               }
               return { success: true, fileId: objectKey, devSkipR2: true, devDataUrl };
@@ -16965,7 +16986,7 @@
           }
           return { success: true, fileId: objectKey };
         } catch (error) {
-          if (isMirsadDebugLog()) console.error('R2 Upload Error:', error);
+          if (isAtharDebugLog()) console.error('R2 Upload Error:', error);
           let msg = String(error?.message || error);
           if (/Load failed|Failed to fetch/i.test(msg)) {
             msg = 'انقطع الاتصال أثناء الرفع — جرّب واي فاي أو ملفاً أصغر';
@@ -16978,7 +16999,7 @@
        * نقل مرفقات التذكرة من المجلد المؤقت إلى المجلد النهائي الرسمي
        */
       async function moveAttachmentsToFinalFolder(violationId, ticketNumber, attachments) {
-        if (isMirsadDebugLog()) console.log(`[R2-Move] Starting move for ${ticketNumber}...`);
+        if (isAtharDebugLog()) console.log(`[R2-Move] Starting move for ${ticketNumber}...`);
         try {
           const backend = await resolveR2Backend();
           let updatedAtts = [...attachments];
@@ -17004,7 +17025,7 @@
                 const idx = state.violations.findIndex(v => v.id === violationId);
                 if (idx !== -1) state.violations[idx].attachments = updatedAtts;
               }
-              if (isMirsadDebugLog()) console.info('[DEV] تحديث مسارات المرفقات محلياً (IndexedDB).');
+              if (isAtharDebugLog()) console.info('[DEV] تحديث مسارات المرفقات محلياً (IndexedDB).');
               return movedAny ? updatedAtts : null;
             }
             throw new Error('لم يُجرَ إعداد تخزين المرفقات لنقل الملفات (انشر Edge Function r2-storage).');
@@ -17016,11 +17037,11 @@
             const newKey = `${r2Folder}/${oldKey.split('/').pop()}`;
             try {
               await callR2StorageFn('moveObject', { fromKey: oldKey, toKey: newKey });
-              if (isMirsadDebugLog()) console.log(`[R2-Move] Moved: ${oldKey} -> ${newKey}`);
+              if (isAtharDebugLog()) console.log(`[R2-Move] Moved: ${oldKey} -> ${newKey}`);
               return { i, newKey };
             } catch (e) {
               failed.push(oldKey);
-              if (isMirsadDebugLog()) console.error(`[R2-Move] Failed to move ${oldKey}:`, e);
+              if (isAtharDebugLog()) console.error(`[R2-Move] Failed to move ${oldKey}:`, e);
               return null;
             }
           };
@@ -17034,7 +17055,7 @@
 
           if (movedAny) {
             await sb.from('violations').update({ attachments: updatedAtts }).eq('id', violationId);
-            if (isMirsadDebugLog()) console.log(`[R2-Move] DB paths updated for ${ticketNumber}`);
+            if (isAtharDebugLog()) console.log(`[R2-Move] DB paths updated for ${ticketNumber}`);
             const idx = state.violations.findIndex(v => v.id === violationId);
             if (idx !== -1) {
               state.violations[idx].attachments = updatedAtts;
@@ -17046,7 +17067,7 @@
           }
           return movedAny ? updatedAtts : null;
         } catch (err) {
-          if (isMirsadDebugLog()) console.error('[R2-Move] Critical Error:', err);
+          if (isAtharDebugLog()) console.error('[R2-Move] Critical Error:', err);
           throw err;
         }
       }
@@ -17093,7 +17114,7 @@
             return { i, newKey };
           } catch (e) {
             failed.push(oldKey);
-            if (isMirsadDebugLog()) console.error('[R2-Move] complaint failed', oldKey, e);
+            if (isAtharDebugLog()) console.error('[R2-Move] complaint failed', oldKey, e);
             return null;
           }
         };
@@ -17393,7 +17414,7 @@
           fileEntry.prepStatus = 'error';
           fileEntry.prepError = String(err?.message || err);
           updateAttachmentPrepUi(scope, fileEntry._fileId);
-          if (isMirsadDebugLog()) console.warn('[Prep] فشل تجهيز مرفق', err);
+          if (isAtharDebugLog()) console.warn('[Prep] فشل تجهيز مرفق', err);
         }).finally(() => {
           syncAttachmentSubmitButtons(scope);
         });
@@ -17887,7 +17908,7 @@
                   await callR2StorageFn('moveObject', { fromKey: oldKey, toKey: candidateKey });
                   newKey = candidateKey;
                 } catch (moveErr) {
-                  if (isMirsadDebugLog()) console.warn('[R2-Repair] move failed', moveErr);
+                  if (isAtharDebugLog()) console.warn('[R2-Repair] move failed', moveErr);
                 }
               } else if (atFinal !== false) {
                 newKey = candidateKey;
@@ -17916,10 +17937,10 @@
           ticket.attachments = updated;
           const idx = state.violations.findIndex(v => v.id === ticket.id);
           if (idx !== -1) state.violations[idx].attachments = updated;
-          if (isMirsadDebugLog()) console.log('[R2-Repair] updated attachment paths for', ticket.ticket_number);
+          if (isAtharDebugLog()) console.log('[R2-Repair] updated attachment paths for', ticket.ticket_number);
           return true;
         } catch (e) {
-          if (isMirsadDebugLog()) console.warn('[R2-Repair]', e);
+          if (isAtharDebugLog()) console.warn('[R2-Repair]', e);
           return false;
         }
       }
@@ -18556,7 +18577,7 @@
             void (await import('https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/+esm'));
             const ffmpeg = new FFmpeg();
             ffmpeg.on('log', ({ message }) => {
-              if (isMirsadDebugLog()) console.info('[ffmpeg]', message);
+              if (isAtharDebugLog()) console.info('[ffmpeg]', message);
             });
             ffmpeg.on('progress', ({ progress }) => {
               if (progress > 0) {
@@ -18777,7 +18798,7 @@
           await convertHevcAttachmentInPlace(r2Key, streamUrl, ctx.mime || 'video/mp4', setStatus, vid, ctx.cacheKey);
           revealAttViewerMedia(vid);
         } catch (e) {
-          if (isMirsadDebugLog()) console.warn('[Viewer] فشل تحويل HEVC', e);
+          if (isAtharDebugLog()) console.warn('[Viewer] فشل تحويل HEVC', e);
           const opts = buildHevcViewerHelpOpts(ctx.playUrl, ctx.cacheKey, 'h265', ctx);
           const errMsg = Sec.escapeHTML(e?.message || String(e));
           showAttViewerLoader(
@@ -18821,7 +18842,7 @@
             revealAttViewerMedia(vid);
             return r2Key;
           } catch (autoErr) {
-            if (isMirsadDebugLog()) console.warn('[Viewer] تحويل HEVC تلقائي فشل', autoErr);
+            if (isAtharDebugLog()) console.warn('[Viewer] تحويل HEVC تلقائي فشل', autoErr);
             const errMsg = Sec.escapeHTML(autoErr?.message || String(autoErr));
             setStatus('فشل التحويل: ' + (autoErr?.message || String(autoErr)));
             const opts = buildHevcViewerHelpOpts(playUrl, ck, codec, hevcCtx);
@@ -18990,7 +19011,7 @@
             if (await waitPlayable(12000)) return src;
           } catch (attachErr) {
             if (attachErr?.mediaCode) lastMediaCode = attachErr.mediaCode;
-            if (isMirsadDebugLog()) console.warn('[Viewer] ' + label + ' فشل', attachErr);
+            if (isAtharDebugLog()) console.warn('[Viewer] ' + label + ' فشل', attachErr);
           }
           return null;
         };
@@ -19006,7 +19027,7 @@
 
         // 1) رابط R2 موقّع مباشرة داخل <video> — لا يحتاج JWT على Edge
         if (directR2 && isDirectR2SignedUrl(directR2)) {
-          if (isMirsadDebugLog()) console.info('[Viewer] تشغيل عبر رابط R2 موقّع');
+          if (isAtharDebugLog()) console.info('[Viewer] تشغيل عبر رابط R2 موقّع');
           const viaR2 = await tryAttach(directR2, 'R2 موقّع', 45000);
           if (viaR2) {
             revealAttViewerMedia(vid);
@@ -19032,7 +19053,7 @@
         for (const cand of blobCandidates) {
           try {
             showPrep();
-            if (isMirsadDebugLog()) console.info('[Viewer] بديل blob للفيديو', cand.kind);
+            if (isAtharDebugLog()) console.info('[Viewer] بديل blob للفيديو', cand.kind);
             let packed = null;
             if (cand.kind === 'r2') {
               const lenProbe = await fetch(cand.src, { method: 'HEAD', mode: 'cors', credentials: 'omit' })
@@ -19075,13 +19096,13 @@
             }
           } catch (blobErr) {
             if (blobErr?.code === 'HEVC') throw blobErr;
-            if (isMirsadDebugLog()) console.warn('[Viewer] blob فشل', cand.kind, blobErr);
+            if (isAtharDebugLog()) console.warn('[Viewer] blob فشل', cand.kind, blobErr);
           }
         }
 
         // 3) بث Edge أخيراً (قد يفشل بدون JWT)
         if (streamUrl) {
-          if (isMirsadDebugLog()) console.info('[Viewer] بث عبر Edge Function');
+          if (isAtharDebugLog()) console.info('[Viewer] بث عبر Edge Function');
           const viaStream = await tryAttach(streamUrl, 'بث Edge', 45000);
           if (viaStream) {
             revealAttViewerMedia(vid);
@@ -19171,7 +19192,7 @@
             return await handleHevcCameraVideoPlayback(vid, fileId, name, ticketCtx, mime, ck, viewerLoadGen, streamFb, playUrl, playErr.codec || 'h265');
           }
           playErrMediaCode = playErr?.mediaCode || (playErr?.message === 'CODEC_NOT_SUPPORTED' ? 4 : 0);
-          if (isMirsadDebugLog()) console.warn('[Viewer] فشل تشغيل الفيديو', playErr);
+          if (isAtharDebugLog()) console.warn('[Viewer] فشل تشغيل الفيديو', playErr);
           if (isVideoElementPlayable(vid)) {
             revealAttViewerMedia(vid);
             return playUrl;
@@ -19357,7 +19378,7 @@
           }
           throw new Error('لا يوجد إعداد تخزين للمرفقات — انشر Edge Function r2-storage');
         } catch (err) {
-          if (isMirsadDebugLog()) console.error(`[R2 Error] Failed to load ${fileId}:`, err);
+          if (isAtharDebugLog()) console.error(`[R2 Error] Failed to load ${fileId}:`, err);
           throw err;
         }
       }
@@ -19459,7 +19480,7 @@
           : document;
         const images = root.querySelectorAll('img[data-cf-id]');
         if (!images.length) return;
-        if (isMirsadDebugLog()) console.log(`[CloudflareProxy] Lazy thumbs: ${images.length}`);
+        if (isAtharDebugLog()) console.log(`[CloudflareProxy] Lazy thumbs: ${images.length}`);
         const force = !!opts.force;
         const obs = force ? null : ensureCfThumbObserver();
         images.forEach((img) => {
@@ -21441,7 +21462,7 @@
         const job = sb.from('violations').select(TICKET_DETAIL_EXTRA_SELECT).eq('id', id).maybeSingle()
           .then(({ data, error }) => {
             if (error) {
-              if (isMirsadDebugLog()) console.warn('[fetchTicketFullDetail]', formatPostgrestError(error), error);
+              if (isAtharDebugLog()) console.warn('[fetchTicketFullDetail]', formatPostgrestError(error), error);
               // Do not mark as fetched on failure — allow retry on next open.
               return t;
             }
@@ -21457,7 +21478,7 @@
             return t;
           })
           .catch((e) => {
-            if (isMirsadDebugLog()) console.warn('[fetchTicketFullDetail]', e);
+            if (isAtharDebugLog()) console.warn('[fetchTicketFullDetail]', e);
             return t;
           })
           .finally(() => {
@@ -21563,7 +21584,7 @@
           await fetchTicketFullDetail(id);
           if (state.editingTicket?.id === id) refreshTicketDetailAfterExtras(id);
         } catch (e) {
-          if (isMirsadDebugLog()) console.warn('[openTicket detail]', e);
+          if (isAtharDebugLog()) console.warn('[openTicket detail]', e);
         }
       }
 
@@ -21926,11 +21947,11 @@
         let atts = parseDbJsonArray(t && t.attachments);
         try {
           if (typeof (t && t.attachments) === 'string' && (t.attachments.includes('[object Object]'))) {
-            if (isMirsadDebugLog()) console.warn('[Viewer] Detected corrupted attachment data (object-string conversion issue)');
+            if (isAtharDebugLog()) console.warn('[Viewer] Detected corrupted attachment data (object-string conversion issue)');
             atts = [];
           }
         } catch (e) {
-          if (isMirsadDebugLog()) console.error('[Viewer] Failed to parse attachments:', e, t && t.attachments);
+          if (isAtharDebugLog()) console.error('[Viewer] Failed to parse attachments:', e, t && t.attachments);
           atts = [];
         }
         if (!Array.isArray(atts)) return [];
@@ -22260,7 +22281,7 @@
             setTimeout(async () => {
               if (viewerLoadGen !== state._attViewerLoadGen) return;
               try {
-                if (isMirsadDebugLog()) console.log(`[Viewer] Loading R2 Image: ${fileId}`);
+                if (isAtharDebugLog()) console.log(`[Viewer] Loading R2 Image: ${fileId}`);
                 const dataUrl = await loadCloudflareFile(fileId, ticketCtx);
                 if (viewerLoadGen !== state._attViewerLoadGen) return;
                 const img = document.getElementById('att-proxy-img');
@@ -22300,7 +22321,7 @@
                   img.src = dataUrl;
                 }
               } catch (e) {
-                if (isMirsadDebugLog()) console.error('Lightbox Image Load Error:', e);
+                if (isAtharDebugLog()) console.error('Lightbox Image Load Error:', e);
                 const loader = document.getElementById('att-loading');
                 if (loader) {
                   loader.innerHTML = `
@@ -22348,7 +22369,7 @@
                 if (viewerLoadGen !== state._attViewerLoadGen) return;
                 if (vid && isVideoElementPlayable(vid)) revealAttViewerMedia(vid);
               } catch (e) {
-                if (isMirsadDebugLog()) console.error('Lightbox Video Load Error:', e);
+                if (isAtharDebugLog()) console.error('Lightbox Video Load Error:', e);
                 if (e?.code === 'HEVC' || e?.code === 'VIDEO' || /HEVC_NOT_SUPPORTED|VIDEO_PLAYBACK_FAILED/i.test(String(e?.message || e))) return;
                 const openHref = e?.downloadHref
                   || savedDirect
@@ -22420,14 +22441,14 @@
                   safeSrc = URL.createObjectURL(pdfBlob);
                   state._attPdfBlobUrl = safeSrc;
                 } catch (fetchErr) {
-                  if (isMirsadDebugLog()) console.warn('[Viewer] PDF blob fetch failed, fallback to URL', fetchErr);
+                  if (isAtharDebugLog()) console.warn('[Viewer] PDF blob fetch failed, fallback to URL', fetchErr);
                 }
               }
               const isSafePdfSrc = /^https?:\/\//i.test(safeSrc) || /^blob:/i.test(safeSrc)
                 || /^data:application\/pdf/i.test(safeSrc) || /^data:application\/x-pdf/i.test(safeSrc);
               if (pdf) {
                 if (!safeSrc || !isSafePdfSrc) {
-                  if (isMirsadDebugLog()) console.warn('[Viewer] PDF: رابط غير مدعوم لعرض iframe أو فارغ — تجنّب file:// والروابط النسبية فقط.', safeSrc ? safeSrc.slice(0, 96) : '');
+                  if (isAtharDebugLog()) console.warn('[Viewer] PDF: رابط غير مدعوم لعرض iframe أو فارغ — تجنّب file:// والروابط النسبية فقط.', safeSrc ? safeSrc.slice(0, 96) : '');
                   if (loader) {
                     loader.style.pointerEvents = 'auto';
                     const openHref = (safeSrc && /^https?:\/\//i.test(safeSrc))
@@ -22455,7 +22476,7 @@
               }
               if (loader && !pdf) loader.remove();
             } catch (e) {
-              if (isMirsadDebugLog()) console.error('Lightbox PDF Load Error:', e);
+              if (isAtharDebugLog()) console.error('Lightbox PDF Load Error:', e);
               const loader = document.getElementById('att-loading');
               if (loader) {
                 loader.style.pointerEvents = 'auto';
@@ -22495,7 +22516,7 @@
                 else if (resolved && (String(resolved).startsWith('data:') || String(resolved).startsWith('blob:'))) href = String(resolved);
               }
             } catch (e) {
-              if (isMirsadDebugLog()) console.warn('[Viewer] fallback download resolve failed:', e);
+              if (isAtharDebugLog()) console.warn('[Viewer] fallback download resolve failed:', e);
             }
             if (!href && cfUrl && /^https?:\/\//i.test(String(cfUrl).trim())) href = String(cfUrl).trim();
             if (href) {
@@ -28257,7 +28278,7 @@
           XLSX.writeFile(wb, `compliance-${ksaCsvDateStamp()}.xlsx`, { cellStyles: true });
           showToast('تم تصدير Excel ✓', 'success');
         } catch (err) {
-          if (isMirsadDebugLog()) console.warn('[compliance export]', err);
+          if (isAtharDebugLog()) console.warn('[compliance export]', err);
           showToast('تعذّر تصدير Excel — تحقق من الاتصال', 'error');
         }
       }
@@ -28620,7 +28641,7 @@
               win.addEventListener('afterprint', cleanup, { once: true });
               setTimeout(cleanup, 4000);
             } catch (err) {
-              if (isMirsadDebugLog()) console.error('[CmpPDF]', err);
+              if (isAtharDebugLog()) console.error('[CmpPDF]', err);
               showToast('تعذّر فتح نافذة الطباعة', 'error');
               cleanup();
             }
@@ -28640,7 +28661,7 @@
           doc.close();
           runPrint();
         } catch (err) {
-          if (isMirsadDebugLog()) console.error('[CmpPDF] write failed', err);
+          if (isAtharDebugLog()) console.error('[CmpPDF] write failed', err);
           showToast('تعذّر تجهيز تقرير PDF', 'error');
           cleanup();
         }
@@ -28656,7 +28677,7 @@
           printCmpPdfReport(buildCmpPdfReportBody(tables));
           showToast('اختر «حفظ كـ PDF» من نافذة الطباعة', 'info');
         } catch (err) {
-          if (isMirsadDebugLog()) console.warn('[compliance pdf]', err);
+          if (isAtharDebugLog()) console.warn('[compliance pdf]', err);
           showToast('تعذّر تصدير PDF', 'error');
         }
       }
@@ -29926,7 +29947,7 @@
         try {
           await persistNotifDismissToDb(notifId);
         } catch (e) {
-          if (isMirsadDebugLog()) console.warn('[notif dismiss]', e);
+          if (isAtharDebugLog()) console.warn('[notif dismiss]', e);
           showToast('تعذّر حفظ الحذف — شغّل supabase/user_notif_dismissals.sql', 'warning');
         }
       }
@@ -29998,7 +30019,7 @@
           invalidateNotifCache();
           return true;
         } catch (e) {
-          if (isMirsadDebugLog()) console.warn('[Notifications DB]', e);
+          if (isAtharDebugLog()) console.warn('[Notifications DB]', e);
           return false;
         }
       }
@@ -30026,7 +30047,7 @@
           if (error) throw error;
           row.is_read = true;
         } catch (e) {
-          if (isMirsadDebugLog()) console.warn('[notif read]', e);
+          if (isAtharDebugLog()) console.warn('[notif read]', e);
         }
       }
 
@@ -31583,7 +31604,7 @@
             alert('تم إلغاء اشتراك تنبيهات البريد لهذا العنوان');
           }
         } catch (err) {
-          if (isMirsadDebugLog()) console.warn('[Unsubscribe]', err);
+          if (isAtharDebugLog()) console.warn('[Unsubscribe]', err);
           if (typeof showToast === 'function') {
             showToast('تعذّر إلغاء الاشتراك. حاول لاحقاً.', 'error');
           }
@@ -31772,14 +31793,14 @@
           await reg.showNotification(title, opts);
           return true;
         } catch (e) {
-          if (isMirsadDebugLog()) console.warn('[webPush] welcome sw', e);
+          if (isAtharDebugLog()) console.warn('[webPush] welcome sw', e);
         }
         if (Notification.permission === 'granted') {
           try {
             new Notification(title, opts);
             return true;
           } catch (e2) {
-            if (isMirsadDebugLog()) console.warn('[webPush] welcome api', e2);
+            if (isAtharDebugLog()) console.warn('[webPush] welcome api', e2);
           }
         }
         return false;
@@ -31798,12 +31819,12 @@
         };
         invokeViolationPush({ notify: true, type: 'INSERT', record })
           .then((data) => {
-            if (data?.errors?.length && isMirsadDebugLog()) console.warn('[webPush] new violation notify', data);
+            if (data?.errors?.length && isAtharDebugLog()) console.warn('[webPush] new violation notify', data);
             return refreshNotificationsFromDb();
           })
           .then(() => { try { renderNotifications(false); } catch (_) { /* noop */ } })
           .catch((e) => {
-            if (isMirsadDebugLog()) console.warn('[webPush] new violation notify', e);
+            if (isAtharDebugLog()) console.warn('[webPush] new violation notify', e);
           });
       }
 
@@ -31838,12 +31859,12 @@
           dedupeKey
         })
           .then((data) => {
-            if (data?.errors?.length && isMirsadDebugLog()) console.warn('[webPush] state change notify', data);
+            if (data?.errors?.length && isAtharDebugLog()) console.warn('[webPush] state change notify', data);
             return refreshNotificationsFromDb();
           })
           .then(() => { try { renderNotifications(false); } catch (_) { /* noop */ } })
           .catch((e) => {
-            if (isMirsadDebugLog()) console.warn('[webPush] state change notify', e);
+            if (isAtharDebugLog()) console.warn('[webPush] state change notify', e);
           });
       }
 
@@ -31973,7 +31994,7 @@
           }
           return true;
         } catch (e) {
-          if (isMirsadDebugLog()) console.error('[webPush] subscribe', e);
+          if (isAtharDebugLog()) console.error('[webPush] subscribe', e);
           throw e;
         }
       }
@@ -32002,7 +32023,7 @@
             }
           }
         } catch (e) {
-          if (!opts.silent && isMirsadDebugLog()) console.warn('[webPush] disable', e);
+          if (!opts.silent && isAtharDebugLog()) console.warn('[webPush] disable', e);
         }
         clearAtharWebPushSyncMarkers();
         syncWebPushUiLabels();
@@ -32045,7 +32066,7 @@
         const perm = Notification.permission;
         if (perm === 'granted') {
           try { await syncAtharWebPushSubscription({ minIntervalMs: ATHAR_WEB_PUSH_OPEN_SYNC_MS }); }
-          catch (e) { if (isMirsadDebugLog()) console.warn('[webPush] background sync', e); }
+          catch (e) { if (isAtharDebugLog()) console.warn('[webPush] background sync', e); }
           return;
         }
         if (!opts.promptIfNeeded) return;
@@ -32071,7 +32092,7 @@
         if (!isWebPushSupported() || !state.currentUser || Notification.permission !== 'granted') return;
         setTimeout(() => {
           syncAtharWebPushSubscription({ minIntervalMs: ATHAR_WEB_PUSH_OPEN_SYNC_MS })
-            .catch(e => { if (isMirsadDebugLog()) console.warn('[webPush] resync ' + reason, e); });
+            .catch(e => { if (isAtharDebugLog()) console.warn('[webPush] resync ' + reason, e); });
         }, 800);
       }
 
@@ -33001,7 +33022,7 @@
                 if (dbIds.includes(row.id)) row.is_read = true;
               });
             })
-            .catch(e => { if (isMirsadDebugLog()) console.warn('[notif read all]', e); });
+            .catch(e => { if (isAtharDebugLog()) console.warn('[notif read all]', e); });
         }
         state._bellBadgeLocked = 0;
         renderNotifications();
@@ -33029,7 +33050,7 @@
         try {
           await Promise.all(visible.map(n => persistNotifDismissToDb(n.id)));
         } catch (e) {
-          if (isMirsadDebugLog()) console.warn('[notif dismiss all]', e);
+          if (isAtharDebugLog()) console.warn('[notif dismiss all]', e);
           showToast('تعذّر حفظ بعض الحذوفات — شغّل supabase/user_notif_dismissals.sql', 'warning');
         }
         visible.forEach(n => {
@@ -33474,7 +33495,7 @@
         Promise.resolve()
           .then(() => { if (t) return tryAutoForwardTicket(t); })
           .catch((e) => {
-            if (isMirsadDebugLog()) console.warn('[auto-forward countdown]', e);
+            if (isAtharDebugLog()) console.warn('[auto-forward countdown]', e);
           });
       }
 
@@ -33563,7 +33584,7 @@
             },
           };
         } catch (err) {
-          if (isMirsadDebugLog()) console.error('Auto-forward failed:', err);
+          if (isAtharDebugLog()) console.error('Auto-forward failed:', err);
           return { ok: false };
         } finally {
           state._autoForwardLocks.delete(lockKey);
@@ -33646,7 +33667,7 @@
               win.addEventListener('afterprint', cleanup, { once: true });
               setTimeout(cleanup, 3000);
             } catch (err) {
-              if (isMirsadDebugLog()) console.error('[Print]', err);
+              if (isAtharDebugLog()) console.error('[Print]', err);
               showToast('تعذّر فتح نافذة الطباعة', 'error');
               cleanup();
             }
@@ -33666,7 +33687,7 @@
           doc.close();
           runPrint();
         } catch (err) {
-          if (isMirsadDebugLog()) console.error('[Print] write failed', err);
+          if (isAtharDebugLog()) console.error('[Print] write failed', err);
           showToast('تعذّر تجهيز تقرير الطباعة', 'error');
           cleanup();
         }
@@ -33771,7 +33792,7 @@
 
         printHtmlInFrame(printBody, `تقرير مخالفة ${shortTicketNum(t.ticket_number)}`.trim());
         } catch (err) {
-          if (isMirsadDebugLog()) console.error('[Print] printTicketDetail', err);
+          if (isAtharDebugLog()) console.error('[Print] printTicketDetail', err);
           showToast('تعذّر إنشاء تقرير الطباعة', 'error');
         }
       }
@@ -33787,7 +33808,7 @@
         state._viewAllTicketsPrev = undefined;
         applyEffectivePermissionsAndRender({ forceCloud: false })
           .then(() => flushPermissionsMobileShell({ skipRbac: true }))
-          .catch(e => { if (isMirsadDebugLog()) console.warn('[permissions] refresh', e); });
+          .catch(e => { if (isAtharDebugLog()) console.warn('[permissions] refresh', e); });
       });
       window.addEventListener('storage', (e) => {
         if (!state.currentUser) return;
@@ -33796,7 +33817,7 @@
           state._viewAllTicketsPrev = undefined;
           applyEffectivePermissionsAndRender({ forceCloud: false })
             .then(() => flushPermissionsMobileShell({ skipRbac: true }))
-            .catch(err => { if (isMirsadDebugLog()) console.warn('[permissions] storage sync', err); });
+            .catch(err => { if (isAtharDebugLog()) console.warn('[permissions] storage sync', err); });
         }
       });
 
@@ -33821,19 +33842,19 @@
         if (isMobileViewport()) {
           setTimeout(() => {
             try { setupRealtime(); } catch (e) {
-              if (isMirsadDebugLog()) console.warn('[Realtime] resume', e);
+              if (isAtharDebugLog()) console.warn('[Realtime] resume', e);
               syncMobilePermissionsFallbackPoll();
             }
           }, 400);
         }
         refreshPermissionsFromCloud()
-          .catch(e => { if (isMirsadDebugLog()) console.warn('[permissions] refresh', e); });
+          .catch(e => { if (isAtharDebugLog()) console.warn('[permissions] refresh', e); });
       });
 
       window.addEventListener('focus', () => {
         if (!state.currentUser) return;
         if (document.getElementById('tab-compliance')?.classList.contains('active')) {
-          syncComplianceAccessAndRender().catch(e => { if (isMirsadDebugLog()) console.warn('[compliance] focus sync', e); });
+          syncComplianceAccessAndRender().catch(e => { if (isAtharDebugLog()) console.warn('[compliance] focus sync', e); });
         }
       });
 
@@ -33896,7 +33917,7 @@
           if (typeof mountMobileBottomNav === 'function') mountMobileBottomNav();
           if (typeof layoutMobileBottomNav === 'function') layoutMobileBottomNav();
           if (document.getElementById('tab-dashboard')?.classList.contains('active') && typeof renderDashboard === 'function') {
-            try { renderDashboard(); } catch (e) { if (isMirsadDebugLog()) console.warn('[dashboard viewport]', e); }
+            try { renderDashboard(); } catch (e) { if (isAtharDebugLog()) console.warn('[dashboard viewport]', e); }
           }
           if (document.getElementById('tab-workflow')?.classList.contains('active') && typeof filterTickets === 'function') {
             filterTickets();
@@ -33973,7 +33994,7 @@
           }
           await checkExistingSession();
         } catch (e) {
-          if (isMirsadDebugLog()) console.error('[Init]', e);
+          if (isAtharDebugLog()) console.error('[Init]', e);
           try {
             openLoginPortal();
             showLoginForm();
@@ -36169,7 +36190,7 @@
               .in('status', ['active', 'paused', 'ended'])
               .order('started_at', { ascending: false })
               .limit(500);
-            if (bErr && isMirsadDebugLog()) console.warn('[staff_breaks] light', bErr);
+            if (bErr && isAtharDebugLog()) console.warn('[staff_breaks] light', bErr);
             const seenIds = new Set();
             const enriched = [];
             (breaks || []).forEach((raw) => {
@@ -36219,10 +36240,10 @@
               p_break_type: 'restroom'
             })
           ]);
-          if (bErr && isMirsadDebugLog()) console.warn('[staff_breaks]', bErr);
-          if (sErr && isMirsadDebugLog()) console.warn('[staff_break_schedules]', sErr);
-          if (dErr && isMirsadDebugLog()) console.warn('[resolve_staff_break_duration]', dErr);
-          if (rErr && isMirsadDebugLog()) console.warn('[resolve_restroom_break_duration]', rErr);
+          if (bErr && isAtharDebugLog()) console.warn('[staff_breaks]', bErr);
+          if (sErr && isAtharDebugLog()) console.warn('[staff_break_schedules]', sErr);
+          if (dErr && isAtharDebugLog()) console.warn('[resolve_staff_break_duration]', dErr);
+          if (rErr && isAtharDebugLog()) console.warn('[resolve_restroom_break_duration]', rErr);
           const seenIds = new Set();
           const enriched = [];
           (breaks || []).forEach((raw) => {
@@ -36252,7 +36273,7 @@
             if (mine) scheduleBreakExpiryLocalNotification(mine);
           } catch (_) { /* noop */ }
         } catch (e) {
-          if (isMirsadDebugLog()) console.warn('[staff_breaks] load', e);
+          if (isAtharDebugLog()) console.warn('[staff_breaks] load', e);
           state.staffBreaks = state.staffBreaks || [];
           state.staffBreakSchedules = state.staffBreakSchedules || [];
           state.staffBreakDayByUser = state.staffBreakDayByUser || {};
@@ -37307,7 +37328,7 @@
             .eq('day_key', todayKey)
             .order('started_at', { ascending: false })
             .limit(100);
-          if (error && isMirsadDebugLog()) console.warn('[staff_breaks] history', error);
+          if (error && isAtharDebugLog()) console.warn('[staff_breaks] history', error);
           if (data?.length) sessions = data.map(enrichStaffBreak);
           sessions = sessions
             .slice()
@@ -38948,7 +38969,7 @@
           if (error) throw error;
           state.complaints = data || [];
         } catch (e) {
-          if (isMirsadDebugLog()) console.warn('[complaints] load', e);
+          if (isAtharDebugLog()) console.warn('[complaints] load', e);
           state.complaints = state.complaints || [];
         }
       }
@@ -39168,7 +39189,7 @@
           printCmpPdfReport(buildCmplPdfReportBody(rows, reportTitle), reportTitle);
           showToast('اختر «حفظ كـ PDF» من نافذة الطباعة', 'info');
         } catch (err) {
-          if (isMirsadDebugLog()) console.warn('[complaints pdf]', err);
+          if (isAtharDebugLog()) console.warn('[complaints pdf]', err);
           showToast('تعذّر تصدير PDF', 'error');
         }
       }
@@ -39190,7 +39211,7 @@
           printCmpPdfReport(buildCmplPdfReportBody([row], `تقرير ${kindWord}`), docTitle);
           showToast('اختر «حفظ كـ PDF» من نافذة الطباعة', 'info');
         } catch (err) {
-          if (isMirsadDebugLog()) console.warn('[complaint pdf]', err);
+          if (isAtharDebugLog()) console.warn('[complaint pdf]', err);
           showToast('تعذّر تصدير PDF', 'error');
         }
       }
@@ -39544,7 +39565,7 @@
           const moved = await moveComplaintAttachmentsToFinalFolder(row.id, row.complaint_number, atts);
           if (moved) return { ...row, attachments: moved };
         } catch (e) {
-          if (isMirsadDebugLog()) console.warn('[complaints] move attachments', e);
+          if (isAtharDebugLog()) console.warn('[complaints] move attachments', e);
           showToast('تم حفظ الشكوى لكن تعذّر تثبيت المرفقات في التخزين', 'warning');
         }
         return row;
