@@ -1464,11 +1464,12 @@
       /** أعمدة موجودة فعلاً في جدول users — لا تضف region_id أو supervisor_id (غير موجودين في Supabase) */
       const MOB_USER_SELECT = 'id,name,role,branch_id,department_id,employee_number,auth_uid,is_active,email,phone,job_title,avatar_key,push_subscriptions(id)';
       const MOB_LOAD_TIMEOUT_MS = 28000;
-      /** قائمة التذاكر — بدون logs/attachments (تُجلب عند فتح التذكرة) */
+      /** قائمة التذاكر — نُبقي logs/attachments هنا حتى لا تختفي بعد فتح التذكرة إذا فشل جلب التفاصيل */
       const VIOLATION_LIST_SELECT = [
         'id', 'created_at', 'updated_at', 'ticket_number', 'state', 'status_text',
         'employee_id', 'branch_id', 'observer_id', 'supervisor_id',
         'violation_type', 'violation_date', 'violation_time', 'description',
+        'attachments', 'logs',
         'employee_reply', 'supervisor_reply', 'audit_reply', 'management_reply', 'hr_reply',
         'auto_forwarded_emp', 'auto_forwarded_sup',
         'emp_forward_after', 'sup_forward_after',
@@ -21438,16 +21439,23 @@
 
       function fetchTicketFullDetail(id) {
         const t = state.violations.find(v => v.id === id);
-        if (!t || t._detailFetched) return Promise.resolve(t);
+        if (!t || t._detailExtrasLoaded) return Promise.resolve(t);
         if (_ticketDetailPrefetch.has(id)) return _ticketDetailPrefetch.get(id);
         const job = sb.from('violations').select(TICKET_DETAIL_EXTRA_SELECT).eq('id', id).maybeSingle()
           .then(({ data, error }) => {
             if (error) {
               if (isMirsadDebugLog()) console.warn('[fetchTicketFullDetail]', formatPostgrestError(error), error);
-            } else if (data) {
+              // Do not mark as fetched on failure — allow retry on next open.
+              return t;
+            }
+            if (data) {
               Object.assign(t, data);
               t._detailExtrasLoaded = true;
+              t._detailFetched = true;
               enrichViolation(t);
+            } else {
+              // Row missing for extras; still mark fetched to avoid infinite spinner.
+              t._detailFetched = true;
             }
             return t;
           })
@@ -21456,7 +21464,6 @@
             return t;
           })
           .finally(() => {
-            if (t) t._detailFetched = true;
             _ticketDetailPrefetch.delete(id);
             refreshTicketDetailAfterExtras(id);
           });
