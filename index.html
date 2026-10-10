@@ -110,15 +110,15 @@
       if (location.protocol === 'file:') return;
       var link = document.createElement('link');
       link.rel = 'manifest';
-      link.href = 'manifest.webmanifest?v=412';
+      link.href = 'manifest.webmanifest?v=413';
       document.head.appendChild(link);
     })();
   </script>
-  <link rel="icon" type="image/png" sizes="512x512" href="icons/athar-pwa-512-v406.png">
-  <link rel="icon" type="image/png" sizes="192x192" href="icons/athar-pwa-192-v406.png">
-  <link rel="apple-touch-icon-precomposed" href="icons/athar-pwa-180-v406.png?v=406">
-  <link rel="apple-touch-icon" sizes="180x180" href="icons/athar-pwa-180-v406.png?v=406">
-  <link rel="apple-touch-icon" sizes="512x512" href="icons/athar-pwa-512-v406.png?v=406">
+  <link rel="icon" type="image/png" sizes="512x512" href="icons/athar-pwa-512-v407.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/athar-pwa-192-v407.png">
+  <link rel="apple-touch-icon-precomposed" href="icons/athar-pwa-180-v407.png?v=407">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/athar-pwa-180-v407.png?v=407">
+  <link rel="apple-touch-icon" sizes="512x512" href="icons/athar-pwa-512-v407.png?v=407">
   <!-- Roboto: مطلوب لرأس منتقي التاريخ MD2 (Figma Material Design 2 web starter kit — node 142-9428) -->
   <!-- Poppins: شريط جانبي Figma — Side-bar components for dashboard (node 11:10961) -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
@@ -179,10 +179,8 @@
       box-sizing: border-box;
       overflow: auto;
       -webkit-overflow-scrolling: touch;
-      background:
-        radial-gradient(120% 80% at 50% -10%, rgba(255, 255, 255, 0.07), transparent 55%),
-        linear-gradient(180deg, #000000 0%, #141416 42%, #000000 100%);
-      color: #f5f5f7;
+      background: #000000;
+      color: #f5f5f5;
       font-family: "IBM Plex Sans Arabic", system-ui, sans-serif;
     }
     html.athar-pwa-gate-active #atharPwaGate { display: flex !important; }
@@ -202,7 +200,7 @@
     }
     .athar-pwa-gate {
       width: min(440px, 100%);
-      margin: auto;
+      margin: 0 auto;
       display: flex;
       flex-direction: column;
       gap: 18px;
@@ -214,10 +212,6 @@
       margin: 8px auto 0;
       box-sizing: border-box;
       object-fit: contain;
-      border: 1px solid rgba(255, 255, 255, 0.16);
-      border-radius: 14px;
-      background: #000000;
-      filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.35));
     }
     .athar-pwa-gate__title {
       margin: 0;
@@ -228,7 +222,7 @@
     }
     .athar-pwa-gate__lead {
       margin: 0;
-      color: rgba(245, 245, 247, 0.72);
+      color: rgba(245, 245, 245, 0.72);
       font-size: 0.95rem;
       line-height: 1.7;
     }
@@ -251,7 +245,7 @@
     .athar-pwa-gate__card ol {
       margin: 0;
       padding: 0 1.2rem 0 0;
-      color: rgba(245, 245, 247, 0.88);
+      color: rgba(245, 245, 245, 0.88);
       font-size: 0.92rem;
       line-height: 1.75;
     }
@@ -261,7 +255,7 @@
       padding: 10px;
       border: 1px solid rgba(255, 255, 255, 0.11);
       border-radius: 15px;
-      background: rgba(5, 8, 12, 0.34);
+      background: rgba(255, 255, 255, 0.04);
       direction: ltr;
     }
     .athar-pwa-illustration__browser {
@@ -270,16 +264,16 @@
       align-items: center;
       gap: 8px;
       padding: 5px 7px;
-      border: 1px solid rgba(15, 23, 42, 0.1);
+      border: 1px solid rgba(0, 0, 0, 0.12);
       border-radius: 11px;
-      background: #f8fafc;
-      color: #334155;
+      background: #ffffff;
+      color: #111111;
     }
     .athar-pwa-illustration__address {
       flex: 1;
       min-width: 0;
       overflow: hidden;
-      color: #475569;
+      color: #333333;
       font-size: 0.7rem;
       text-align: left;
       text-overflow: ellipsis;
@@ -318,11 +312,11 @@
       padding: 8px;
       border-radius: 12px;
       background: #fff;
-      color: #172033;
+      color: #111111;
       box-shadow: 0 5px 16px rgba(0, 0, 0, 0.16);
     }
     .athar-pwa-illustration__panel-title {
-      color: #64748b;
+      color: #666666;
       font-size: 0.68rem;
       font-weight: 600;
       text-align: right;
@@ -341,7 +335,7 @@
     }
     .athar-pwa-illustration__row--focus {
       border: 1px solid #111111;
-      background: #f2f2f7;
+      background: #f5f5f5;
       color: #000000;
       font-weight: 700;
     }
@@ -366,15 +360,11 @@
       width: 34px;
       height: 34px;
       flex: 0 0 34px;
-      display: grid;
-      place-items: center;
+      display: block;
+      object-fit: cover;
       border-radius: 10px;
       border: 1px solid rgba(255, 255, 255, 0.72);
       background: #000000;
-      color: #ffffff;
-      direction: ltr;
-      font-size: 0.57rem;
-      font-weight: 800;
     }
     .athar-pwa-illustration__install-copy {
       min-width: 0;
@@ -386,7 +376,7 @@
       font-weight: 700;
     }
     .athar-pwa-illustration__install-copy small {
-      color: rgba(245, 245, 247, 0.65);
+      color: rgba(245, 245, 245, 0.65);
       font-size: 0.64rem;
       font-weight: 400;
     }
@@ -419,7 +409,7 @@
     }
     .athar-pwa-illustration__caption {
       margin-top: 7px;
-      color: rgba(245, 245, 247, 0.62);
+      color: rgba(245, 245, 245, 0.62);
       font-size: 0.7rem;
       line-height: 1.5;
       text-align: right;
@@ -436,7 +426,7 @@
     .athar-pwa-gate__hint {
       margin: 12px 0 0;
       font-size: 0.82rem;
-      color: rgba(245, 245, 247, 0.58);
+      color: rgba(245, 245, 245, 0.58);
       line-height: 1.6;
     }
     .athar-pwa-gate__actions {
@@ -461,7 +451,7 @@
     .athar-pwa-gate__btn--primary[hidden] { display: none !important; }
     .athar-pwa-gate__btn--ghost {
       background: rgba(255, 255, 255, 0.08);
-      color: #f5f5f7;
+      color: #f5f5f5;
       border: 1px solid rgba(255, 255, 255, 0.12);
     }
   </style>
@@ -3112,7 +3102,7 @@
             </div>
           </div>
           <div class="athar-pwa-illustration__install-card" dir="rtl">
-            <span class="athar-pwa-illustration__app-icon">ATHAR</span>
+            <img class="athar-pwa-illustration__app-icon" src="icons/athar-pwa-192-v407.png" alt="" width="34" height="34" decoding="async">
             <span class="athar-pwa-illustration__install-copy">
               <span>فتح كتطبيق ويب</span>
               <small>فعّل الخيار ثم أضف المنصة</small>
@@ -3149,7 +3139,7 @@
             </div>
           </div>
           <div class="athar-pwa-illustration__install-card" dir="rtl">
-            <span class="athar-pwa-illustration__app-icon">ATHAR</span>
+            <img class="athar-pwa-illustration__app-icon" src="icons/athar-pwa-192-v407.png" alt="" width="34" height="34" decoding="async">
             <span class="athar-pwa-illustration__install-copy">
               <span>تثبيت ATHAR</span>
               <small>إضافة إلى الجهاز</small>

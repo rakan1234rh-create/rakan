@@ -1,19 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 842 842" width="842" height="842">
-  <defs>
-    <linearGradient id="athar-pwa-bg" x1="421" y1="0" x2="421" y2="842" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#3a3a3a"/>
-      <stop offset="40%" stop-color="#141414"/>
-      <stop offset="100%" stop-color="#000000"/>
-    </linearGradient>
-    <radialGradient id="athar-pwa-shine" cx="260" cy="120" r="470" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.16"/>
-      <stop offset="45%" stop-color="#ffffff" stop-opacity="0.05"/>
-      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
-    </radialGradient>
-  </defs>
-  <rect width="842" height="842" fill="url(#athar-pwa-bg)"/>
-  <rect width="842" height="842" fill="url(#athar-pwa-shine)"/>
+  <rect width="842" height="842" fill="#000000"/>
   <g transform="translate(92.61999999999999 92.61999999999999) scale(0.78)"><svg x="78" y="336" width="686" height="170" viewBox="174 298 686 170" overflow="visible">
     <g fill="#FFFFFF" transform="matrix(3.3434 0 0 3.3434 512 384)">
       <g transform="matrix(1 0 0 1 -78.984 0.324)">
