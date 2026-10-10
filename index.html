@@ -252,6 +252,176 @@
       line-height: 1.75;
     }
     .athar-pwa-gate__card li + li { margin-top: 6px; }
+    .athar-pwa-illustration {
+      margin: 12px 0;
+      padding: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.11);
+      border-radius: 15px;
+      background: rgba(5, 8, 12, 0.34);
+      direction: ltr;
+    }
+    .athar-pwa-illustration__browser {
+      min-height: 40px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 7px;
+      border: 1px solid rgba(15, 23, 42, 0.1);
+      border-radius: 11px;
+      background: #f8fafc;
+      color: #334155;
+    }
+    .athar-pwa-illustration__address {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      color: #475569;
+      font-size: 0.7rem;
+      text-align: left;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .athar-pwa-illustration__highlight {
+      width: 32px;
+      height: 32px;
+      flex: 0 0 32px;
+      display: grid;
+      place-items: center;
+      border: 2px solid #34c759;
+      border-radius: 9px;
+      background: #ecfdf3;
+      color: #166534;
+      box-shadow: 0 0 0 3px rgba(52, 199, 89, 0.12);
+      font-size: 1.25rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+    .athar-pwa-illustration__highlight svg,
+    .athar-pwa-illustration__row svg {
+      width: 17px;
+      height: 17px;
+      flex: 0 0 17px;
+      fill: none;
+      stroke: currentColor;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-width: 1.8;
+    }
+    .athar-pwa-illustration__panel {
+      display: grid;
+      gap: 5px;
+      margin-top: 8px;
+      padding: 8px;
+      border-radius: 12px;
+      background: #fff;
+      color: #172033;
+      box-shadow: 0 5px 16px rgba(0, 0, 0, 0.16);
+    }
+    .athar-pwa-illustration__panel-title {
+      color: #64748b;
+      font-size: 0.68rem;
+      font-weight: 600;
+      text-align: right;
+    }
+    .athar-pwa-illustration__row {
+      min-height: 32px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 7px;
+      border-radius: 9px;
+      direction: rtl;
+      font-size: 0.75rem;
+      line-height: 1.35;
+      text-align: right;
+    }
+    .athar-pwa-illustration__row--focus {
+      border: 1px solid #86efac;
+      background: #effcf3;
+      color: #14532d;
+      font-weight: 700;
+    }
+    .athar-pwa-illustration__row-mark {
+      margin-inline-start: auto;
+      color: #16a34a;
+      font-size: 1rem;
+      font-weight: 800;
+    }
+    .athar-pwa-illustration__install-card {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      margin-top: 8px;
+      padding: 8px 9px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      direction: rtl;
+      text-align: right;
+    }
+    .athar-pwa-illustration__app-icon {
+      width: 34px;
+      height: 34px;
+      flex: 0 0 34px;
+      display: grid;
+      place-items: center;
+      border-radius: 10px;
+      background: #34c759;
+      color: #06240f;
+      direction: ltr;
+      font-size: 0.57rem;
+      font-weight: 800;
+    }
+    .athar-pwa-illustration__install-copy {
+      min-width: 0;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      font-size: 0.76rem;
+      font-weight: 700;
+    }
+    .athar-pwa-illustration__install-copy small {
+      color: rgba(245, 245, 247, 0.65);
+      font-size: 0.64rem;
+      font-weight: 400;
+    }
+    .athar-pwa-illustration__toggle {
+      width: 30px;
+      height: 17px;
+      flex: 0 0 30px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding: 2px;
+      border-radius: 99px;
+      background: #34c759;
+    }
+    .athar-pwa-illustration__toggle i {
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: #fff;
+    }
+    .athar-pwa-illustration__install-action {
+      padding: 5px 9px;
+      border-radius: 99px;
+      background: #34c759;
+      color: #06240f;
+      font-size: 0.68rem;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+    .athar-pwa-illustration__caption {
+      margin-top: 7px;
+      color: rgba(245, 245, 247, 0.62);
+      font-size: 0.7rem;
+      line-height: 1.5;
+      text-align: right;
+    }
+    @media (max-width: 360px) {
+      .athar-pwa-illustration { padding: 8px; }
+      .athar-pwa-illustration__row { font-size: 0.71rem; }
+    }
     .athar-pwa-gate__card kbd,
     .athar-pwa-gate__card strong {
       color: #fff;
@@ -2961,6 +3131,31 @@
 
       <div class="athar-pwa-gate__card" id="atharPwaGateIos" hidden>
         <h2><i class="fab fa-apple" aria-hidden="true"></i> iPhone أو iPad</h2>
+        <div class="athar-pwa-illustration" aria-hidden="true">
+          <div class="athar-pwa-illustration__browser" dir="ltr">
+            <span class="athar-pwa-illustration__address">aA &nbsp; athar-app.online</span>
+            <span class="athar-pwa-illustration__highlight">
+              <svg viewBox="0 0 24 24"><path d="M12 15V3m0 0 4 4m-4-4L8 7M5 12v8h14v-8" /></svg>
+            </span>
+          </div>
+          <div class="athar-pwa-illustration__panel" dir="rtl">
+            <div class="athar-pwa-illustration__panel-title">قائمة المشاركة</div>
+            <div class="athar-pwa-illustration__row athar-pwa-illustration__row--focus">
+              <svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7M5 9v11h14V9m-9 11v-6h4v6" /></svg>
+              <span>إضافة إلى الشاشة الرئيسية</span>
+              <b class="athar-pwa-illustration__row-mark">＋</b>
+            </div>
+          </div>
+          <div class="athar-pwa-illustration__install-card" dir="rtl">
+            <span class="athar-pwa-illustration__app-icon">ATHAR</span>
+            <span class="athar-pwa-illustration__install-copy">
+              <span>فتح كتطبيق ويب</span>
+              <small>فعّل الخيار ثم أضف المنصة</small>
+            </span>
+            <span class="athar-pwa-illustration__toggle"><i></i></span>
+          </div>
+          <div class="athar-pwa-illustration__caption" dir="rtl">رسم توضيحي؛ قد يختلف موضع زر المشاركة وشكل القائمة حسب إصدار iOS.</div>
+        </div>
         <ol>
           <li>لأفضل توافق، افتح الرابط في <strong>Safari</strong>. إذا فتح في تطبيق آخر، انسخه وافتحه في Safari.</li>
           <li>اضغط زر <strong>المشاركة</strong> (المربع والسهم للأعلى).</li>
@@ -2973,6 +3168,32 @@
 
       <div class="athar-pwa-gate__card" id="atharPwaGateAndroid" hidden>
         <h2><i class="fab fa-android" aria-hidden="true"></i> أندرويد</h2>
+        <div class="athar-pwa-illustration" aria-hidden="true">
+          <div class="athar-pwa-illustration__browser" dir="ltr">
+            <span class="athar-pwa-illustration__address">athar-app.online</span>
+            <span class="athar-pwa-illustration__highlight">⋮</span>
+          </div>
+          <div class="athar-pwa-illustration__panel" dir="rtl">
+            <div class="athar-pwa-illustration__panel-title">قد يظهر أحد الخيارين</div>
+            <div class="athar-pwa-illustration__row athar-pwa-illustration__row--focus">
+              <svg viewBox="0 0 24 24"><path d="M12 3v11m0 0 4-4m-4 4-4-4M5 15v5h14v-5" /></svg>
+              <span>تثبيت التطبيق</span>
+            </div>
+            <div class="athar-pwa-illustration__row">
+              <svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7M5 9v11h14V9m-9 11v-6h4v6" /></svg>
+              <span>إضافة إلى الشاشة الرئيسية</span>
+            </div>
+          </div>
+          <div class="athar-pwa-illustration__install-card" dir="rtl">
+            <span class="athar-pwa-illustration__app-icon">ATHAR</span>
+            <span class="athar-pwa-illustration__install-copy">
+              <span>تثبيت ATHAR</span>
+              <small>إضافة إلى الجهاز</small>
+            </span>
+            <span class="athar-pwa-illustration__install-action">تثبيت</span>
+          </div>
+          <div class="athar-pwa-illustration__caption" dir="rtl">رسم توضيحي؛ قد تختلف أسماء الخيارات قليلًا حسب إصدار Chrome والجهاز.</div>
+        </div>
         <ol>
           <li>افتح الرابط في <strong>Chrome</strong>.</li>
           <li>اضغط قائمة <strong>⋮</strong> بجانب شريط العنوان، ثم اختر <strong>تثبيت التطبيق</strong>. إذا لم يظهر، اختر <strong>إضافة إلى الشاشة الرئيسية</strong>.</li>
