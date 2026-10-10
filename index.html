@@ -347,7 +347,7 @@
       }
     }
 
-    // الكل مقفول على الموبايل إلا بعد إضافة جديدة تفتح كتطبيق (standalone)
+    // تظهر بوابة التثبيت على الهاتف إلى أن تُفتح المنصة بوضع التطبيق (standalone).
     function needsGate() {
       if (!isMobileClient()) return false;
       if (isRecoveryPath()) return false;
@@ -399,7 +399,7 @@
         lockAppShell();
         if (lead) {
           lead.textContent =
-            'الكل مقفول على الموبايل إلا بعد إضافة ATHAR من جديد إلى الشاشة الرئيسية. احذف أي أيقونة قديمة، ثم أضف من الرابط وافتح الأيقونة الجديدة فقط (بدون شريط Safari أو علامة المتصفح).';
+            'للدخول إلى المنصة من الهاتف، أضف ATHAR إلى الشاشة الرئيسية ثم افتحها من الأيقونة الجديدة. لا يمكن المتابعة من تبويب المتصفح.';
         }
         if (linkEl) linkEl.textContent = installUrlText();
       }
@@ -453,7 +453,14 @@
             window.location.reload();
             return;
           }
-          recheck.textContent = 'ما زالت تفتح عبر المتصفح — احذف الأيقونة وأضف من جديد عبر Safari ثم افتح الأيقونة الجديدة';
+          var plat = detectPlatform();
+          if (plat.ios) {
+            recheck.textContent = 'لم يتم فتح ATHAR كتطبيق بعد. أضفها من Safari إلى الشاشة الرئيسية، ثم افتح الأيقونة الجديدة.';
+          } else if (plat.android) {
+            recheck.textContent = 'لم يتم فتح ATHAR كتطبيق بعد. ثبّتها من Chrome، ثم افتح الأيقونة الجديدة.';
+          } else {
+            recheck.textContent = 'لم يتم فتح ATHAR كتطبيق بعد. أضفها إلى الشاشة الرئيسية، ثم افتح الأيقونة الجديدة.';
+          }
         });
       }
       var copyBtn = document.getElementById('atharPwaCopyLinkBtn');
@@ -464,11 +471,11 @@
             if (navigator.clipboard && navigator.clipboard.writeText) {
               await navigator.clipboard.writeText(text);
             } else {
-              window.prompt('انسخ الرابط:', text);
+              window.prompt('انسخ رابط المنصة:', text);
             }
-            copyBtn.textContent = 'تم نسخ الرابط';
+            copyBtn.textContent = 'تم نسخ رابط المنصة';
           } catch (_) {
-            window.prompt('انسخ الرابط:', text);
+            window.prompt('انسخ رابط المنصة:', text);
           }
         });
       }
@@ -2940,47 +2947,48 @@
   <div id="atharPwaGate" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="atharPwaGateTitle">
     <div class="athar-pwa-gate">
       <img class="athar-pwa-gate__logo" src="icons/athar-logo-v403-white.png" alt="ATHAR" width="88" height="88" decoding="async">
-      <h1 class="athar-pwa-gate__title" id="atharPwaGateTitle">ثبّت ATHAR على الشاشة الرئيسية</h1>
+      <h1 class="athar-pwa-gate__title" id="atharPwaGateTitle">أضف ATHAR إلى الشاشة الرئيسية</h1>
       <p class="athar-pwa-gate__lead" id="atharPwaGateLead">
-        الكل مقفول على الموبايل إلا بعد إضافة ATHAR من جديد إلى الشاشة الرئيسية. احذف أي أيقونة قديمة، ثم أضف وافتح الأيقونة الجديدة فقط.
+        للدخول إلى المنصة من الهاتف، أضف ATHAR إلى الشاشة الرئيسية ثم افتحها من الأيقونة الجديدة. لا يمكن المتابعة من تبويب المتصفح.
       </p>
       <div class="athar-pwa-gate__card" style="text-align:center">
-        <div style="font-size:12px;color:rgba(245,245,247,.6);margin-bottom:8px">الرابط</div>
+        <div style="font-size:12px;color:rgba(245,245,247,.6);margin-bottom:8px">رابط المنصة</div>
         <code id="atharPwaGateLink" dir="ltr" style="display:block;font-size:12px;line-height:1.5;word-break:break-all;color:#fff">https://athar-app.online/</code>
       </div>
       <p class="athar-pwa-gate__hint" style="margin-top:-6px">
-        الإضافة الصحيحة تفتح بدون شريط Safari وبدون علامة المتصفح على الأيقونة.
+        بعد الإضافة، افتح ATHAR من الأيقونة الجديدة لتعمل في نافذة مستقلة عن المتصفح.
       </p>
 
       <div class="athar-pwa-gate__card" id="atharPwaGateIos" hidden>
-        <h2><i class="fab fa-apple" aria-hidden="true"></i> آيفون / آيباد</h2>
+        <h2><i class="fab fa-apple" aria-hidden="true"></i> iPhone أو iPad</h2>
         <ol>
-          <li>افتح الرابط في <strong>Safari</strong> (مهم).</li>
-          <li>اضغط زر <strong>المشاركة</strong> أسفل الشاشة.</li>
+          <li>لأفضل توافق، افتح الرابط في <strong>Safari</strong>. إذا فتح في تطبيق آخر، انسخه وافتحه في Safari.</li>
+          <li>اضغط زر <strong>المشاركة</strong> (المربع والسهم للأعلى).</li>
           <li>اختر <strong>إضافة إلى الشاشة الرئيسية</strong>.</li>
-          <li>احذف الأيقونات القديمة، ثم افتح أيقونة <strong>ATHAR</strong> الجديدة فقط.</li>
+          <li>فعّل <strong>فتح كتطبيق ويب</strong> إذا ظهر الخيار، ثم اضغط <strong>إضافة</strong>.</li>
+          <li>افتح <strong>ATHAR</strong> من الأيقونة الجديدة على الشاشة الرئيسية.</li>
         </ol>
-        <p class="athar-pwa-gate__hint">Chrome أو التطبيقات الأخرى على iOS لا تثبّت التطبيق بشكل كامل — استخدم Safari.</p>
+        <p class="athar-pwa-gate__hint">إذا لم يظهر خيار «إضافة إلى الشاشة الرئيسية»، ابحث عنه ضمن «تحرير الإجراءات» في قائمة المشاركة.</p>
       </div>
 
       <div class="athar-pwa-gate__card" id="atharPwaGateAndroid" hidden>
         <h2><i class="fab fa-android" aria-hidden="true"></i> أندرويد</h2>
         <ol>
           <li>افتح الرابط في <strong>Chrome</strong>.</li>
-          <li>اضغط قائمة <strong>⋮</strong> ثم <strong>تثبيت التطبيق</strong> أو <strong>إضافة إلى الشاشة الرئيسية</strong>.</li>
-          <li>افتح <strong>ATHAR</strong> من الشاشة الرئيسية أو درج التطبيقات.</li>
+          <li>اضغط قائمة <strong>⋮</strong> بجانب شريط العنوان، ثم اختر <strong>تثبيت التطبيق</strong>. إذا لم يظهر، اختر <strong>إضافة إلى الشاشة الرئيسية</strong>.</li>
+          <li>وافق على رسالة التأكيد إذا ظهرت، ثم افتح <strong>ATHAR</strong> من الشاشة الرئيسية أو قائمة التطبيقات.</li>
         </ol>
       </div>
 
       <div class="athar-pwa-gate__actions">
         <button type="button" class="athar-pwa-gate__btn athar-pwa-gate__btn--primary" id="atharPwaCopyLinkBtn">
-          نسخ الرابط
+          نسخ رابط المنصة
         </button>
         <button type="button" class="athar-pwa-gate__btn athar-pwa-gate__btn--primary" id="atharPwaInstallBtn" hidden>
-          تثبيت التطبيق الآن
+          تثبيت ATHAR
         </button>
         <button type="button" class="athar-pwa-gate__btn athar-pwa-gate__btn--ghost" id="atharPwaRecheckBtn">
-          فتحت من الشاشة الرئيسية؟ أعد المحاولة
+          فتحت ATHAR من الأيقونة الجديدة؟ اضغط للتحقق
         </button>
       </div>
     </div>
