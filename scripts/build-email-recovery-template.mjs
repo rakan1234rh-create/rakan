@@ -3,8 +3,8 @@
  * تشغيل: node scripts/build-email-recovery-template.mjs
  *
  * القالب المعتمد للإرسال (send-auth-emails) هو athar-recovery-simple.html
- * ويحتوي شعار ATHAR المضمّن (PNG base64). لتوليد HTML_B64 للـ Edge Function:
- *   node -e "console.log(Buffer.from(require('fs').readFileSync('supabase/email-templates/athar-recovery-simple.html')).toString('base64'))"
+ * بعد تعديل المصدر، زامن Base64 في الـ Edge Function عبر:
+ *   node scripts/sync-auth-email-templates.mjs
  */
 import { mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { dirname, join } from 'path';

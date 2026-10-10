@@ -1,5 +1,5 @@
 // Public email opt-out for ATHAR alert/digest mail (not auth OTP).
-// Prefers signed ?t= tokens. Supports browser GET and RFC 8058 One-Click POST.
+// Signed ?t= tokens only — raw-email unsubscribe is rejected (prevents preference takeover).
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 import { verifyUnsubscribeToken } from '../_shared/unsubscribe-token.ts';
 
@@ -9,6 +9,7 @@ function buildCors(req: Request): Record<string, string> {
     raw.split(',').map((s) => s.trim()).filter(Boolean).concat([
       'https://athar-app.online',
       'https://athar.app',
+      // Temporary CORS allowlist only — not used for mail/unsubscribe link generation.
       'https://vms-v2.aromaticfamilies.com',
     ]),
   );
@@ -42,67 +43,56 @@ function htmlPage(title: string, body: string, lang = 'en'): Response {
   });
 }
 
-async function resolveRequest(req: Request): Promise<{
+async function resolveSignedRequest(req: Request): Promise<{
   email: string;
   channel: string;
   source: string;
-  viaToken: boolean;
-  error?: string;
+  error?: 'missing_token' | 'invalid_token';
 }> {
   const url = new URL(req.url);
   let token = (url.searchParams.get('t') || url.searchParams.get('token') || '').trim();
-  let email = '';
-  let channel = 'alerts';
-  let source = req.method === 'GET' ? 'link' : 'one-click';
-  let bodyEmail = '';
   let bodyChannel = '';
-  let bodyToken = '';
+  let source = req.method === 'GET' ? 'token' : 'one-click';
 
   if (req.method === 'POST') {
     const ct = (req.headers.get('content-type') || '').toLowerCase();
     try {
       if (ct.includes('application/json')) {
         const body = await req.json();
-        bodyToken = String(body?.t || body?.token || '').trim();
-        bodyEmail = normalizeEmail(body?.email || body?.unsubscribe || '');
+        token = String(body?.t || body?.token || token || '').trim();
         bodyChannel = normalizeEmail(body?.channel || '') || '';
         source = 'app';
       } else {
         const text = await req.text();
         const params = new URLSearchParams(text);
-        bodyToken = String(params.get('t') || params.get('token') || '').trim();
-        bodyEmail = normalizeEmail(params.get('email') || params.get('unsubscribe') || '');
+        token = String(params.get('t') || params.get('token') || token || '').trim();
         bodyChannel = normalizeEmail(params.get('channel') || '') || '';
         if (params.get('List-Unsubscribe') || /List-Unsubscribe=One-Click/i.test(text)) {
           source = 'one-click';
         }
       }
     } catch {
-      // keep query
+      // keep query token
     }
   }
 
-  if (bodyToken) token = bodyToken;
-  if (token) {
-    const claims = await verifyUnsubscribeToken(token);
-    if (!claims) {
-      return { email: '', channel: 'alerts', source, viaToken: true, error: 'invalid_token' };
-    }
-    return {
-      email: claims.email,
-      channel: bodyChannel || claims.channel || 'alerts',
-      source: source === 'app' ? 'app' : (source === 'one-click' ? 'one-click' : 'token'),
-      viaToken: true,
-    };
+  if (!token) {
+    return { email: '', channel: 'alerts', source, error: 'missing_token' };
   }
 
-  // Legacy fallback for older inbox links only (raw email). Prefer tokens for new mail.
-  email = normalizeEmail(
-    bodyEmail || url.searchParams.get('email') || url.searchParams.get('unsubscribe') || '',
-  );
-  channel = bodyChannel || normalizeEmail(url.searchParams.get('channel') || 'alerts') || 'alerts';
+  const claims = await verifyUnsubscribeToken(token);
+  if (!claims) {
+    return { email: '', channel: 'alerts', source, error: 'invalid_token' };
+  }
+
+  let channel = bodyChannel || claims.channel || 'alerts';
   if (channel !== 'digest' && channel !== 'all') channel = 'alerts';
-  return { email, channel, source: source === 'app' ? 'legacy-app' : 'legacy-link', viaToken: false };
+
+  return {
+    email: claims.email,
+    channel,
+    source,
+  };
 }
 
 Deno.serve(async (req) => {
@@ -117,14 +107,24 @@ Deno.serve(async (req) => {
     });
   }
 
-  const resolved = await resolveRequest(req);
+  const resolved = await resolveSignedRequest(req);
   const wantsHtml = (req.headers.get('accept') || '').includes('text/html') || req.method === 'GET';
 
-  if (resolved.error === 'invalid_token') {
+  if (resolved.error === 'missing_token' || resolved.error === 'invalid_token') {
+    // Reject unsigned / raw-email attempts — do not call record RPC.
     if (wantsHtml) {
-      return htmlPage('Unsubscribe', 'This unsubscribe link is invalid or has expired.', 'en');
+      return htmlPage(
+        'Unsubscribe',
+        resolved.error === 'missing_token'
+          ? 'This unsubscribe link is incomplete. Open the signed link from your email.'
+          : 'This unsubscribe link is invalid or has expired.',
+        'en',
+      );
     }
-    return new Response(JSON.stringify({ ok: false, error: 'invalid_token' }), {
+    return new Response(JSON.stringify({
+      ok: false,
+      error: resolved.error === 'missing_token' ? 'missing_token' : 'invalid_token',
+    }), {
       status: 400,
       headers: { ...cors, 'Content-Type': 'application/json' },
     });
