@@ -21,7 +21,7 @@
       const ATHAR_SW_URL = './sw.js?v=12';
 
       /** رابط النشر — روابط استعادة كلمة المرور من file:// أو localhost */
-      const ATHAR_PUBLIC_ORIGIN = 'https://vms-v2.aromaticfamilies.com';
+      const ATHAR_PUBLIC_ORIGIN = 'https://athar-app.online';
 
       // 📁 Cloudflare Worker اختياري (مسار عارض/تحميل قديم)
       const CLOUDFLARE_WORKER_URL = '/upload';
@@ -31581,34 +31581,24 @@
           history.replaceState(null, '', location.pathname || '/');
         } catch (_) { /* noop */ }
 
+        // Signed tokens only — raw ?unsubscribe=email is rejected (legacy inbox links break).
+        if (!token) {
+          if (typeof showToast === 'function') {
+            showToast('رابط إلغاء الاشتراك قديم أو غير صالح. استخدم رابط Unsubscribe من رسالة أحدث.', 'error');
+          }
+          return true;
+        }
+
         const headers = {
           'Content-Type': 'application/json',
           apikey: SUPABASE_ANON,
         };
         try {
-          let res;
-          if (token) {
-            res = await fetch(`${EMAIL_UNSUBSCRIBE_FN_URL}?t=${encodeURIComponent(token)}`, {
-              method: 'POST',
-              headers,
-              body: JSON.stringify({ t: token, channel: 'alerts' }),
-            });
-          } else {
-            // Legacy inbox links only
-            const email = Sec.normalizeEmail(raw);
-            if (!email || !Sec.isEmail(email)) {
-              if (typeof showToast === 'function') showToast('رابط إلغاء الاشتراك غير صالح', 'error');
-              return true;
-            }
-            res = await fetch(
-              `${EMAIL_UNSUBSCRIBE_FN_URL}?email=${encodeURIComponent(email)}&channel=alerts`,
-              {
-                method: 'POST',
-                headers,
-                body: JSON.stringify({ email, channel: 'alerts' }),
-              },
-            );
-          }
+          const res = await fetch(`${EMAIL_UNSUBSCRIBE_FN_URL}?t=${encodeURIComponent(token)}`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ t: token, channel: 'alerts' }),
+          });
           const data = await res.json().catch(() => ({}));
           if (!res.ok || data?.ok === false) throw new Error(data?.error || `HTTP ${res.status}`);
           if (typeof showToast === 'function') {

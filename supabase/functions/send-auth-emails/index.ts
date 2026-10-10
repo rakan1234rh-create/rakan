@@ -10,9 +10,9 @@ const SMTP_PORT = Number(Deno.env.get('SES_SMTP_PORT') || Deno.env.get('SMTP_POR
 const smtpConfigured = Boolean(SMTP_HOST && SMTP_USER && SMTP_PASS);
 
 // Arabic recovery template — see supabase/email-templates/athar-recovery-simple.html
-const HTML_B64 = 'PCFET0NUWVBFIGh0bWw+CjxodG1sIGxhbmc9ImFyIiBkaXI9InJ0bCI+CjxoZWFkPgogIDxtZXRhIGNoYXJzZXQ9InV0Zi04Ij4KICA8bWV0YSBuYW1lPSJ2aWV3cG9ydCIgY29udGVudD0id2lkdGg9ZGV2aWNlLXdpZHRoLCBpbml0aWFsLXNjYWxlPTEuMCI+CjwvaGVhZD4KPGJvZHkgc3R5bGU9Im1hcmdpbjowO3BhZGRpbmc6MDtiYWNrZ3JvdW5kOiNmZmZmZmY7Ij4KICA8ZGl2IGRpcj0icnRsIiBzdHlsZT0iZm9udC1mYW1pbHk6VGFob21hLEFyaWFsLHNhbnMtc2VyaWY7bGluZS1oZWlnaHQ6MS43O2NvbG9yOiMyMjI7bWF4LXdpZHRoOjQ4MHB4O21hcmdpbjowIGF1dG87cGFkZGluZzoyOHB4IDIwcHg7Ij4KICAgIDxwIHN0eWxlPSJtYXJnaW46MCAwIDhweDtmb250LXNpemU6MThweDtmb250LXdlaWdodDo3MDA7Ij5BVEhBUjwvcD4KICAgIDxwIHN0eWxlPSJtYXJnaW46MCAwIDIwcHg7Zm9udC1zaXplOjE2cHg7Zm9udC13ZWlnaHQ6NzAwOyI+2KfYs9iq2LnYp9iv2Kkg2YPZhNmF2Kkg2KfZhNmF2LHZiNixPC9wPgogICAgPHAgc3R5bGU9Im1hcmdpbjowIDAgMTZweDtmb250LXNpemU6MTVweDsiPtiq2YTZgtmK2YbYpyDYt9mE2KjYpyDZhNin2LnYp9iv2Kkg2KrYudmK2YrZhiDZg9mE2YXYqSDYp9mE2YXYsdmI2LEg2YTYrdiz2KfYqNmDINmB2Yog2YXZhti12Kkg2KfYq9ixLjwvcD4KICAgIDxwIHN0eWxlPSJtYXJnaW46MCAwIDhweDtmb250LXNpemU6MTRweDsiPtix2YXYsiDYp9mE2KrYrdmC2YI6PC9wPgogICAgPHAgZGlyPSJsdHIiIHN0eWxlPSJtYXJnaW46MCAwIDIwcHg7Zm9udC1zaXplOjI4cHg7Zm9udC13ZWlnaHQ6NzAwO2xldHRlci1zcGFjaW5nOjAuMTJlbTtmb250LWZhbWlseTpDb25zb2xhcyxNZW5sbyxtb25vc3BhY2U7Ij57e1RPS0VOfX08L3A+CiAgICA8cCBzdHlsZT0ibWFyZ2luOjAgMCAxNnB4O2ZvbnQtc2l6ZToxNHB4OyI+2KfYr9iu2YQg2KfZhNix2YXYsiDZgdmKINi12YHYrdipINin2LPYqti52KfYr9ipINmD2YTZhdipINin2YTZhdix2YjYsSDYr9in2K7ZhCDYp9mE2YXZhti12KkuPC9wPgogICAgPHAgc3R5bGU9Im1hcmdpbjowIDAgOHB4O2ZvbnQtc2l6ZToxM3B4O2NvbG9yOiM1NTU7Ij7Yp9iw2Kcg2YTZhSDYqti32YTYqCDYsNmE2YPYjCDYqtis2KfZh9mEINmH2LDZhyDYp9mE2LHYs9in2YTYqS48L3A+CiAgICA8cCBzdHlsZT0ibWFyZ2luOjAgMCAyNHB4O2ZvbnQtc2l6ZToxM3B4O2NvbG9yOiM1NTU7Ij7Yp9mE2LHZhdiyINi12KfZhNitINmE2YXYsdipINmI2KfYrdiv2Kkg2YjZhNmF2K/YqSDZhdit2K/ZiNiv2KkuPC9wPgogICAgPHAgc3R5bGU9Im1hcmdpbjowO2ZvbnQtc2l6ZToxMnB4O2NvbG9yOiM3Nzc7Ij4KICAgICAgPGEgaHJlZj0ie3tVTlNVQlNDUklCRV9VUkx9fSIgc3R5bGU9ImNvbG9yOiM1NTU7Ij7Yp9mE2LrYp9ihINin2YTYp9i02KrYsdin2YM8L2E+CiAgICAgIMK3IEFUSEFSIMK3IGF0aGFyLWFwcC5vbmxpbmUKICAgIDwvcD4KICA8L2Rpdj4KPC9ib2R5Pgo8L2h0bWw+Cg==';
+const HTML_B64 = 'PCFET0NUWVBFIGh0bWw+CjxodG1sIGxhbmc9ImFyIiBkaXI9InJ0bCI+CjxoZWFkPgogIDxtZXRhIGNoYXJzZXQ9InV0Zi04Ij4KICA8bWV0YSBuYW1lPSJ2aWV3cG9ydCIgY29udGVudD0id2lkdGg9ZGV2aWNlLXdpZHRoLCBpbml0aWFsLXNjYWxlPTEuMCI+CjwvaGVhZD4KPGJvZHkgc3R5bGU9Im1hcmdpbjowO3BhZGRpbmc6MDtiYWNrZ3JvdW5kOiNmZmZmZmY7Ij4KICA8ZGl2IGRpcj0icnRsIiBzdHlsZT0iZm9udC1mYW1pbHk6VGFob21hLEFyaWFsLHNhbnMtc2VyaWY7bGluZS1oZWlnaHQ6MS43O2NvbG9yOiMyMjI7bWF4LXdpZHRoOjQ4MHB4O21hcmdpbjowIGF1dG87cGFkZGluZzoyOHB4IDIwcHg7Ij4KICAgIDxwIHN0eWxlPSJtYXJnaW46MCAwIDhweDtmb250LXNpemU6MThweDtmb250LXdlaWdodDo3MDA7Ij5BVEhBUjwvcD4KICAgIDxwIHN0eWxlPSJtYXJnaW46MCAwIDIwcHg7Zm9udC1zaXplOjE2cHg7Zm9udC13ZWlnaHQ6NzAwOyI+2KfYs9iq2LnYp9iv2Kkg2YPZhNmF2Kkg2KfZhNmF2LHZiNixPC9wPgogICAgPHAgc3R5bGU9Im1hcmdpbjowIDAgMTZweDtmb250LXNpemU6MTVweDsiPtiq2YTZgtmK2YbYpyDYt9mE2KjYpyDZhNin2LnYp9iv2Kkg2KrYudmK2YrZhiDZg9mE2YXYqSDYp9mE2YXYsdmI2LEg2YTYrdiz2KfYqNmDINmB2Yog2YXZhti12Kkg2KfYq9ixLjwvcD4KICAgIDxwIHN0eWxlPSJtYXJnaW46MCAwIDhweDtmb250LXNpemU6MTRweDsiPtix2YXYsiDYp9mE2KrYrdmC2YI6PC9wPgogICAgPHAgZGlyPSJsdHIiIHN0eWxlPSJtYXJnaW46MCAwIDIwcHg7Zm9udC1zaXplOjI4cHg7Zm9udC13ZWlnaHQ6NzAwO2xldHRlci1zcGFjaW5nOjAuMTJlbTtmb250LWZhbWlseTpDb25zb2xhcyxNZW5sbyxtb25vc3BhY2U7Ij57e1RPS0VOfX08L3A+CiAgICA8cCBzdHlsZT0ibWFyZ2luOjAgMCAxNnB4O2ZvbnQtc2l6ZToxNHB4OyI+2KfYr9iu2YQg2KfZhNix2YXYsiDZgdmKINi12YHYrdipINin2LPYqti52KfYr9ipINmD2YTZhdipINin2YTZhdix2YjYsSDYr9in2K7ZhCDYp9mE2YXZhti12KkuPC9wPgogICAgPHAgc3R5bGU9Im1hcmdpbjowIDAgOHB4O2ZvbnQtc2l6ZToxM3B4O2NvbG9yOiM1NTU7Ij7Yp9iw2Kcg2YTZhSDYqti32YTYqCDYsNmE2YPYjCDYqtis2KfZh9mEINmH2LDZhyDYp9mE2LHYs9in2YTYqS48L3A+CiAgICA8cCBzdHlsZT0ibWFyZ2luOjAgMCAyNHB4O2ZvbnQtc2l6ZToxM3B4O2NvbG9yOiM1NTU7Ij7Yp9mE2LHZhdiyINi12KfZhNitINmE2YXYsdipINmI2KfYrdiv2Kkg2YjZhNmF2K/YqSDZhdit2K/ZiNiv2KkuPC9wPgogICAgPHAgc3R5bGU9Im1hcmdpbjowO2ZvbnQtc2l6ZToxMnB4O2NvbG9yOiM3Nzc7Ij5BVEhBUiDCtyBhdGhhci1hcHAub25saW5lPC9wPgogIDwvZGl2Pgo8L2JvZHk+CjwvaHRtbD4K';
 const SUBJECT_B64 = '2KfYs9iq2LnYp9iv2Kkg2YPZhNmF2Kkg2KfZhNmF2LHZiNixIOKAlCBBVEhBUg==';
-const TEXT_B64 = '2LHZhdiyINin2LPYqti52KfYr9ipINmD2YTZhdipINin2YTZhdix2YjYsSDYp9mE2K7Yp9i1INio2YM6IHt7VE9LRU59fQoK2KfYr9iu2YQg2KfZhNix2YXYsiDZgdmKINi12YHYrdipINin2LPYqti52KfYr9ipINmD2YTZhdipINin2YTZhdix2YjYsSDYr9in2K7ZhCDYp9mE2YXZhti12KkuINin2YTYsdmF2LIg2LXYp9mE2K0g2YTZhdix2Kkg2YjYp9it2K/YqSDZiNmE2YXYr9ipINmF2K3Yr9mI2K/YqS4KCtin2YTYutin2KEg2KfZhNin2LTYqtix2KfZgzoge3tVTlNVQlNDUklCRV9VUkx9fQoKQVRIQVIgwrcgYXRoYXItYXBwLm9ubGluZQ==';
+const TEXT_B64 = '2YXYsdit2KjYp9iMCgrYqtmE2YLZitmG2Kcg2LfZhNio2Kcg2YTYp9i52KfYr9ipINiq2LnZitmK2YYg2YPZhNmF2Kkg2KfZhNmF2LHZiNixINmE2K3Ys9in2KjZgyDZgdmKINmF2YbYtdipINin2KvYsS4KCtix2YXYsiDYp9mE2KrYrdmC2YI6IHt7VE9LRU59fQoK2KfYr9iu2YQg2KfZhNix2YXYsiDZgdmKINi12YHYrdipINin2LPYqti52KfYr9ipINmD2YTZhdipINin2YTZhdix2YjYsSDYr9in2K7ZhCDYp9mE2YXZhti12KkuCtin2LDYpyDZhNmFINiq2LfZhNioINiw2YTZg9iMINiq2KzYp9mH2YQg2YfYsNmHINin2YTYsdiz2KfZhNipLgrYp9mE2LHZhdiyINi12KfZhNitINmE2YXYsdipINmI2KfYrdiv2Kkg2YjZhNmF2K/YqSDZhdit2K/ZiNiv2KkuCgpBVEhBUiDCtyBhdGhhci1hcHAub25saW5l';
 
 function b64utf8(b64: string): string {
   const clean = String(b64 || '').replace(/\s+/g, '');
@@ -49,9 +49,10 @@ function isAppleMailbox(email: string): boolean {
   return APPLE_DOMAINS.has(domain);
 }
 
-/** Ultra-plain text for Apple HM08 content filters: no HTML, no https links. */
-function buildAppleRecoveryEmail(token: string, to = ''): { subject: string; html?: string; text: string; deliveryRef: string } {
+/** Ultra-plain text for Apple HM08: no HTML, no https links, no unsubscribe. */
+function buildAppleRecoveryEmail(token: string, _to = ''): { subject: string; html?: string; text: string; deliveryRef: string } {
   const deliveryRef = crypto.randomUUID();
+  // Never put recipient address or https URLs in Apple recovery body/headers.
   const text = [
     'مرحبا،',
     '',
@@ -61,8 +62,7 @@ function buildAppleRecoveryEmail(token: string, to = ''): { subject: string; htm
     'اذا لم تطلب الرمز فتجاهل هذه الرسالة.',
     '',
     'منصة اثر',
-    to ? `الى: ${to}` : '',
-  ].filter(Boolean).join('\n');
+  ].join('\n');
 
   return {
     subject: 'رمز حسابك في منصة اثر',
@@ -75,21 +75,27 @@ function buildRecoveryEmail(token: string, to = ''): { subject: string; html?: s
   if (isAppleMailbox(to)) return buildAppleRecoveryEmail(token, to);
 
   const deliveryRef = crypto.randomUUID();
-  // Auth/OTP mail: no marketing unsubscribe URL (OTP must not look like bulk newsletters).
+  // Auth/OTP: never include unsubscribe links or List-Unsubscribe headers.
+  const html = b64utf8(HTML_B64).replaceAll('{{TOKEN}}', token);
+  const text = b64utf8(TEXT_B64).replaceAll('{{TOKEN}}', token);
+  if (/UNSUBSCRIBE_URL|List-Unsubscribe|settings\?unsubscribe|href\s*=\s*["']#["']/i.test(html + text)) {
+    throw new Error('Recovery template contains forbidden unsubscribe content');
+  }
   return {
     subject: b64utf8(SUBJECT_B64),
-    html: b64utf8(HTML_B64).replaceAll('{{TOKEN}}', token).replaceAll('{{UNSUBSCRIBE_URL}}', '#'),
-    text: b64utf8(TEXT_B64).replaceAll('{{TOKEN}}', token).replaceAll('{{UNSUBSCRIBE_URL}}', ''),
+    html,
+    text,
     deliveryRef,
   };
 }
 
 function emailHeaders(deliveryRef: string, _to: string, apple: boolean): Record<string, string> {
-  // Recovery/OTP: no List-Unsubscribe One-Click (that is for alert/digest only).
-  return {
+  // Recovery/OTP: X-Entity-Ref-ID only — never List-Unsubscribe / List-Unsubscribe-Post.
+  const headers: Record<string, string> = {
     'X-Entity-Ref-ID': deliveryRef,
-    ...(apple ? {} : { 'X-ATHAR-Mail': 'auth-otp' }),
   };
+  if (!apple) headers['X-ATHAR-Mail'] = 'auth-otp';
+  return headers;
 }
 
 type EmailActionType = 'signup' | 'recovery' | 'invite' | 'magiclink' | 'email_change' | 'email';
@@ -169,9 +175,9 @@ Deno.serve(async (req) => {
       },
       deliverability: {
         sender_domain: senderDomain(SENDER_EMAIL),
-        template: 'apple-text-only-no-https; others-html-unsub',
+        template: 'apple-text-only-no-https; others-html-no-unsub',
         primary_route: 'smtp-hostinger',
-        note: 'Hostinger SMTP only.',
+        note: 'Hostinger SMTP only. Recovery mail never includes List-Unsubscribe.',
       },
     });
   }
