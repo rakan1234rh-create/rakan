@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>ATHAR Unsubscribe</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #f5f5f7; color: #1c1c21; margin: 0; padding: 2rem; line-height: 1.7; }
+    main { max-width: 28rem; margin: 3rem auto; background: #fff; padding: 1.5rem 1.25rem; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+    h1 { font-size: 1.25rem; margin: 0 0 .75rem; }
+    p { margin: 0; color: #444; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1 id="title">Unsubscribe</h1>
+    <p id="msg">Processing your request…</p>
+  </main>
+  <script>
+    (function () {
+      var title = document.getElementById('title');
+      var msg = document.getElementById('msg');
+      var params = new URLSearchParams(location.search || '');
+      var token = (params.get('t') || params.get('token') || '').trim();
+      if (!token) {
+        title.textContent = 'Unsubscribe';
+        msg.textContent = 'This unsubscribe link is incomplete or invalid.';
+        return;
+      }
+      var endpoint = 'https://cmdkldxbocbpiptdodmp.supabase.co/functions/v1/email-unsubscribe';
+      var anon = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNtZGtsZHhib2NicGlwdGRvZG1wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEwMjE1MDgsImV4cCI6MjEwNjU5NzUwOH0.99UW9KaWjxP0Ufpr8crIDzt24xFdBa3YSFmCe5lwBv8';
+      fetch(endpoint + '?t=' + encodeURIComponent(token), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': anon
+        },
+        body: JSON.stringify({ t: token, channel: 'alerts' })
+      }).then(function (res) {
+        return res.json().catch(function () { return {}; }).then(function (data) {
+          if (!res.ok || data.ok === false) throw new Error(data.error || ('HTTP ' + res.status));
+          title.textContent = 'Unsubscribed';
+          msg.textContent = 'You will no longer receive ATHAR alert emails at this address. Password reset and login codes are not affected.';
+        });
+      }).catch(function () {
+        title.textContent = 'Unsubscribe';
+        msg.textContent = 'We could not complete your request. Please try again later.';
+      });
+    })();
+  </script>
+</body>
+</html>

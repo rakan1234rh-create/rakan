@@ -2819,9 +2819,10 @@
       if (host !== 'vms-v2.aromaticfamilies.com' && host !== 'athar-app.online') return;
       var hash = location.hash || '';
       var search = location.search || '';
-      // Keep auth recovery / magic-link hashes and unsubscribe query for the app to consume.
+      // Keep auth recovery / magic-link hashes and unsubscribe params for the app to consume.
       if (/access_token|refresh_token|type=recovery|type=magiclink|type=invite|type=email_change/i.test(hash)) return;
-      if (/[?&]unsubscribe=/i.test(search)) return;
+      if (/[?&](unsubscribe|t)=/i.test(search)) return;
+      if (/unsubscribe\.html$/i.test(location.pathname)) return;
       if (location.pathname !== '/' || search || hash) {
         history.replaceState(null, '', '/');
       }
@@ -5177,7 +5178,7 @@
   </div><!-- /#appWrap -->
 
     <div id="rdCmplOverlayHost"></div>
-    <script src="js/app.js?v=atharmig11"></script>
+    <script src="js/app.js?v=atharmig12"></script>
         <style>
       @media (max-width: 992px) {
         /* ── workflow: منع التمدد الأفقي ── */

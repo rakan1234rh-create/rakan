@@ -1,4 +1,9 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
+import {
+  buildUnsubscribeUrls,
+  createUnsubscribeToken,
+  isAppleMailbox,
+} from '../_shared/unsubscribe-token.ts';
 
 const SENDER_EMAIL_RAW = Deno.env.get('SENDER_EMAIL') ?? 'no-reply@athar-app.online';
 const FULL_SENDER = SENDER_EMAIL_RAW.includes('<')
@@ -23,29 +28,6 @@ function esc(s: unknown): string {
     .replace(/"/g, '&quot;');
 }
 
-function publicAppOrigin(): string {
-  return (Deno.env.get('ATHAR_PUBLIC_ORIGIN') || 'https://athar-app.online').replace(/\/$/, '');
-}
-
-function unsubscribePageLink(email: string): string {
-  return `${publicAppOrigin()}/?unsubscribe=${encodeURIComponent(email)}`;
-}
-
-function unsubscribeApiLink(email: string): string {
-  const base = (Deno.env.get('SUPABASE_URL') || '').replace(/\/$/, '');
-  const anon = (
-    Deno.env.get('SUPABASE_ANON_KEY')
-    || Deno.env.get('SUPABASE_PUBLISHABLE_KEY')
-    || ''
-  ).trim();
-  const q = new URLSearchParams({
-    email,
-    channel: 'digest',
-  });
-  if (anon) q.set('apikey', anon);
-  return `${base}/functions/v1/email-unsubscribe?${q.toString()}`;
-}
-
 async function isUnsubscribed(
   supabase: ReturnType<typeof createClient>,
   email: string,
@@ -61,14 +43,22 @@ async function isUnsubscribed(
   return data === true;
 }
 
-async function sendEmail(to: string, subject: string, html: string, text: string) {
+async function sendEmail(
+  to: string,
+  subject: string,
+  html: string,
+  text: string,
+  opts: { apiUrl?: string; apple?: boolean } = {},
+) {
   const deliveryRef = crypto.randomUUID();
-  const unsubscribeApi = unsubscribeApiLink(to);
   const host = (Deno.env.get('SES_SMTP_HOST') || '').trim();
   const user = (Deno.env.get('SES_SMTP_USERNAME') || '').trim();
   const pass = (Deno.env.get('SES_SMTP_PASSWORD') || '').trim();
   const port = Number(Deno.env.get('SES_SMTP_PORT') || 587);
   if (!host || !user || !pass) throw new Error('SES SMTP is not configured');
+
+  const fromEmail = (SENDER_EMAIL_RAW.match(/<([^>]+)>/)?.[1] || SENDER_EMAIL_RAW || 'info@athar-app.online').trim();
+  const mailtoUnsub = `mailto:${fromEmail}?subject=unsubscribe`;
 
   const nodemailer = await import('npm:nodemailer@6.9.16');
   const transporter = nodemailer.createTransport({
@@ -77,18 +67,23 @@ async function sendEmail(to: string, subject: string, html: string, text: string
     secure: port === 465,
     auth: { user, pass },
   });
+  const headers: Record<string, string> = {
+    'X-Entity-Ref-ID': deliveryRef,
+    'X-ATHAR-Delivery': deliveryRef,
+  };
+  if (opts.apple) {
+    headers['List-Unsubscribe'] = `<${mailtoUnsub}>`;
+  } else if (opts.apiUrl) {
+    headers['List-Unsubscribe'] = `<${opts.apiUrl}>`;
+    headers['List-Unsubscribe-Post'] = 'List-Unsubscribe=One-Click';
+  }
   await transporter.sendMail({
     from: FULL_SENDER,
     to,
     subject,
     html,
     text,
-    headers: {
-      'X-Entity-Ref-ID': deliveryRef,
-      'X-ATHAR-Delivery': deliveryRef,
-      'List-Unsubscribe': `<${unsubscribeApi}>`,
-      'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-    },
+    headers,
   });
 }
 
@@ -152,7 +147,18 @@ export async function runWeeklyDigest(supabase: ReturnType<typeof createClient>)
       continue;
     }
     const subject = `ملخص المخالفات المعلقة بانتظارك - ATHAR`;
-    const unsubscribeUrl = unsubscribePageLink(email);
+    const apple = isAppleMailbox(email);
+    let unsubscribePage = '';
+    let unsubscribeApi = '';
+    try {
+      const token = await createUnsubscribeToken(email, 'digest');
+      const urls = buildUnsubscribeUrls(token, 'digest');
+      unsubscribePage = urls.pageUrl;
+      unsubscribeApi = urls.apiUrl;
+    } catch (err) {
+      failures.push(`${email}: unsub token: ${String(err)}`);
+      continue;
+    }
 
     const tableRows = userViolations.map((v) => {
       const rawTicket = String(v.ticket_number || v.id);
@@ -167,6 +173,14 @@ export async function runWeeklyDigest(supabase: ReturnType<typeof createClient>)
         </tr>
       `;
     }).join('');
+
+    const footer = apple
+      ? `<p style="font-size: 11px; color: #999; text-align: center;">رسالة تلقائية من منصة أثر يرجى عدم الرد على هذا البريد.</p>`
+      : `<p style="font-size: 11px; color: #999; text-align: center;">
+          Automatic message from ATHAR. Please do not reply.
+          <br>
+          <a href="${unsubscribePage}" style="color: #999; text-decoration: underline;">Unsubscribe</a>
+        </p>`;
 
     const html = `
       <div dir="rtl" style="font-family: sans-serif; line-height: 1.6; color: #333;">
@@ -187,18 +201,14 @@ export async function runWeeklyDigest(supabase: ReturnType<typeof createClient>)
         </table>
         <p style="margin-top: 20px;">يرجى مراجعة التفاصيل عبر تطبيق أثر</p>
         <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0;">
-        <p style="font-size: 11px; color: #999; text-align: center;">
-          رسالة تلقائية من منصة أثر يرجى عدم الرد على هذا البريد.
-          <br>
-          <a href="${unsubscribeUrl}" style="color: #999; text-decoration: underline;">إلغاء الاشتراك من هذه التنبيهات</a>
-        </p>
+        ${footer}
       </div>
     `;
 
     const text = `ملخص المخالفات المعلقة بانتظارك: ${userViolations.length} مخالفات. يرجى الدخول للتطبيق.`;
 
     try {
-      await sendEmail(email, subject, html, text);
+      await sendEmail(email, subject, html, text, { apiUrl: unsubscribeApi, apple });
       sentCount++;
     } catch (err) {
       console.error(`Failed to send digest to ${email}:`, err);

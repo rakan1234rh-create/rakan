@@ -31574,28 +31574,41 @@
 
       async function handleEmailUnsubscribeFromUrl() {
         const params = new URLSearchParams(window.location.search);
+        const token = String(params.get('t') || params.get('token') || '').trim();
         const raw = params.get('unsubscribe');
-        if (!raw) return false;
-        const email = Sec.normalizeEmail(raw);
+        if (!token && !raw) return false;
         try {
           history.replaceState(null, '', location.pathname || '/');
         } catch (_) { /* noop */ }
-        if (!email || !Sec.isEmail(email)) {
-          if (typeof showToast === 'function') showToast('رابط إلغاء الاشتراك غير صالح', 'error');
-          return true;
-        }
+
+        const headers = {
+          'Content-Type': 'application/json',
+          apikey: SUPABASE_ANON,
+        };
         try {
-          const res = await fetch(
-            `${EMAIL_UNSUBSCRIBE_FN_URL}?email=${encodeURIComponent(email)}&channel=alerts`,
-            {
+          let res;
+          if (token) {
+            res = await fetch(`${EMAIL_UNSUBSCRIBE_FN_URL}?t=${encodeURIComponent(token)}`, {
               method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                apikey: SUPABASE_ANON,
+              headers,
+              body: JSON.stringify({ t: token, channel: 'alerts' }),
+            });
+          } else {
+            // Legacy inbox links only
+            const email = Sec.normalizeEmail(raw);
+            if (!email || !Sec.isEmail(email)) {
+              if (typeof showToast === 'function') showToast('رابط إلغاء الاشتراك غير صالح', 'error');
+              return true;
+            }
+            res = await fetch(
+              `${EMAIL_UNSUBSCRIBE_FN_URL}?email=${encodeURIComponent(email)}&channel=alerts`,
+              {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({ email, channel: 'alerts' }),
               },
-              body: JSON.stringify({ email, channel: 'alerts' }),
-            },
-          );
+            );
+          }
           const data = await res.json().catch(() => ({}));
           if (!res.ok || data?.ok === false) throw new Error(data?.error || `HTTP ${res.status}`);
           if (typeof showToast === 'function') {

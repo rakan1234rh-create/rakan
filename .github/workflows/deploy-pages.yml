@@ -62,6 +62,7 @@ jobs:
               cp -r vendor "$DEST/"
               test -f "$DEST/vendor/ffmpeg/worker.js"
               cp manifest.webmanifest "$DEST/manifest.webmanifest"
+              if [ -f unsubscribe.html ]; then cp unsubscribe.html "$DEST/unsubscribe.html"; fi
               if [ -f sw.js ]; then cp sw.js "$DEST/sw.js"; fi
               cp icons/athar-pwa-192-v${VER}.png icons/athar-pwa-512-v${VER}.png \
                 icons/athar-pwa-180-v${VER}.png icons/athar-pwa-maskable-512-v${VER}.png \
