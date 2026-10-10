@@ -8,8 +8,8 @@ self.addEventListener('push', (event) => {
   const title = payload.title || 'تنبيه';
   const options = {
     body: payload.body || '',
-    icon: './icons/athar-pwa-192-v406.png',
-    badge: './icons/athar-pwa-192-v406.png',
+    icon: './icons/athar-pwa-192-v407.png',
+    badge: './icons/athar-pwa-192-v407.png',
     tag: payload.tag || payload.ticketId || 'athar-notif',
     // Break expiry may replace an immediate in-app notification with the same
     // tag; do not vibrate/sound again when that replacement arrives.

@@ -11,7 +11,7 @@ const iconsDir = join(root, 'icons');
 const fontsDir = join(iconsDir, 'fonts');
 const BLEED_BG = '#000000';
 const VIEW = 842;
-const ICON_CACHE_VER = '406';
+const ICON_CACHE_VER = '407';
 
 const FONT_SOURCES = [
   {
@@ -68,9 +68,10 @@ function splitLogoInner(inner) {
 function buildSvg(contentScale) {
   const s = contentScale;
   const { defs, bgRects, wordmark } = splitLogoInner(logoPaths);
-  const body = s === 1
-    ? `${defs}\n  ${bgRects}\n  ${wordmark}`
-    : `${defs}\n  ${bgRects}\n  <g transform="translate(${(VIEW / 2) * (1 - s)} ${(VIEW / 2) * (1 - s)}) scale(${s})">${wordmark}</g>`;
+  const scaledWordmark = s === 1
+    ? wordmark
+    : `<g transform="translate(${(VIEW / 2) * (1 - s)} ${(VIEW / 2) * (1 - s)}) scale(${s})">${wordmark}</g>`;
+  const body = [defs, bgRects, scaledWordmark].filter(Boolean).join('\n  ');
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${VIEW} ${VIEW}" width="${VIEW}" height="${VIEW}">
   ${body}
