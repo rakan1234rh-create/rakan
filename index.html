@@ -504,6 +504,19 @@
       }
     }
 
+    function installUrlText() {
+      try {
+        var url = new URL(window.location.href);
+        // Prefer /start/ on the official domain — WhatsApp often caches the old "/" redirect page.
+        if (url.hostname === 'athar-app.online' || url.hostname === 'vms-v2.aromaticfamilies.com') {
+          return url.origin + '/start/';
+        }
+        return url.origin + (url.pathname || '/');
+      } catch (_) {
+        return window.location.href;
+      }
+    }
+
     // تظهر بوابة التثبيت على الهاتف إلى أن تُفتح المنصة بوضع التطبيق (standalone).
     function needsGate() {
       if (!isMobileClient()) return false;
@@ -551,12 +564,14 @@
       window.__ATHAR_PWA_GATE_ACTIVE__ = on;
       var gate = document.getElementById('atharPwaGate');
       var lead = document.getElementById('atharPwaGateLead');
+      var linkEl = document.getElementById('atharPwaGateLink');
       if (on) {
         lockAppShell();
         if (lead) {
           lead.textContent =
             'للدخول إلى المنصة، اتبع الخطوات التالية.';
         }
+        if (linkEl) linkEl.textContent = installUrlText();
       }
       if (!gate) return on;
       if (!on) {
@@ -2958,11 +2973,18 @@
       if (host !== 'vms-v2.aromaticfamilies.com' && host !== 'athar-app.online') return;
       var hash = location.hash || '';
       var search = location.search || '';
+      var path = location.pathname || '/';
       // Keep auth recovery / magic-link hashes and unsubscribe params for the app to consume.
       if (/access_token|refresh_token|type=recovery|type=magiclink|type=invite|type=email_change/i.test(hash)) return;
       if (/[?&](unsubscribe|t)=/i.test(search)) return;
-      if (/unsubscribe\.html$/i.test(location.pathname)) return;
-      if (location.pathname !== '/' || search || hash) {
+      if (/unsubscribe\.html$/i.test(path)) return;
+      // Keep /start/ as the WhatsApp-safe entry (avoids cached athar-redirect HTML on "/").
+      if (/^\/start\/?$/i.test(path)) {
+        if (path !== '/start/') history.replaceState(null, '', '/start/' + search + hash);
+        return;
+      }
+      if (/^\/index\.html$/i.test(path) && /(?:^|[?&])entry=start(?:&|$)/i.test(search)) return;
+      if (path !== '/' || search || hash) {
         history.replaceState(null, '', '/');
       }
     })();
@@ -3082,6 +3104,13 @@
       <h1 class="athar-pwa-gate__title" id="atharPwaGateTitle">أضف ATHAR إلى الشاشة الرئيسية</h1>
       <p class="athar-pwa-gate__lead" id="atharPwaGateLead">
         للدخول إلى المنصة، اتبع الخطوات التالية.
+      </p>
+      <div class="athar-pwa-gate__card" style="text-align:center">
+        <div style="font-size:12px;color:rgba(245,245,247,.6);margin-bottom:8px">الرابط</div>
+        <code id="atharPwaGateLink" dir="ltr" style="display:block;font-size:12px;line-height:1.5;word-break:break-all;color:#fff">https://athar-app.online/start/</code>
+      </div>
+      <p class="athar-pwa-gate__hint" style="margin-top:-6px">
+        افتح هذا الرابط في Safari ثم أضف إلى الشاشة الرئيسية (تجنّب فتح الجذر / داخل واتساب بسبب الكاش القديم).
       </p>
 
       <div class="athar-pwa-gate__card" id="atharPwaGateIos" hidden>

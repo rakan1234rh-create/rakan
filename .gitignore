@@ -25,5 +25,6 @@ Desktop.ini
 node_modules/
 dist/
 .cache/
+.tmp-video-frames/
 *.log
 npm-debug.log*

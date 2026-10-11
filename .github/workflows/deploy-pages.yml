@@ -56,6 +56,9 @@ jobs:
               sed -i "s/<meta name=\"athar-build\" content=\"[^\"]*\">/<meta name=\"athar-build\" content=\"${SHORT_SHA}\">/" "$DEST/index.html"
               # كسر كاش CDN/المتصفح لـ app.js (بدون ?v= يبقى max-age ويعرض منطقاً قديماً على الجوال)
               sed -i "s|src=\"js/app.js\\(?v=[^\"]*\\)\\?\"|src=\"js/app.js?v=${SHORT_SHA}\"|g" "$DEST/index.html"
+              # /start/ = نسخة كاملة من التطبيق مع <base href="/"> لكسر كاش واتساب لصفحة التحويل القديمة على "/"
+              mkdir -p "$DEST/start"
+              sed 's|<head>|<head>\n  <base href="/">|' "$DEST/index.html" > "$DEST/start/index.html"
               printf '%s\n' "{\"build\":\"${SHORT_SHA}\",\"builtAt\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"env\":\"${LABEL}\"}" > "$DEST/app-version.json"
               cp -r styles "$DEST/"
               if [ -d js ]; then cp -r js "$DEST/"; fi

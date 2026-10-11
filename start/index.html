@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#0a0a0b">
+  <title>ATHAR</title>
+  <!--
+    WhatsApp-safe entry: /start/ was never served by athar-redirect, so in-app browsers
+    fetch fresh HTML instead of the cached "/" page that bounced to vms-v2.
+    This page IS the app shell (base href → site root assets), not a cross-domain redirect.
+  -->
+  <base href="/">
+  <script>
+    (function () {
+      // If an old document somehow still tries to bounce away, stay on this origin only.
+      try {
+        if (location.hostname === 'athar-app.online' || location.hostname === 'vms-v2.aromaticfamilies.com') {
+          /* ok */
+        }
+      } catch (_) {}
+    })();
+  </script>
+  <script>
+    // Load the real built index into this path via same-origin fetch+replace is heavy;
+    // instead copy is produced at deploy time. Fallback if bare bootstrap is hit locally:
+    (function () {
+      var boot = document.currentScript;
+      // When deploy wrote the full app here, this stub is overwritten. Local fallback:
+      if (!document.querySelector('meta[name="athar-build"]')) {
+        location.replace('/index.html?entry=start&_=' + Date.now());
+      }
+    })();
+  </script>
+  <style>
+    body { margin: 0; min-height: 100vh; background: #0a0a0b; color: #f5f5f7;
+      font-family: Tahoma, Arial, sans-serif; display: grid; place-items: center; text-align: center; }
+    p { opacity: .75; }
+  </style>
+</head>
+<body>
+  <main>
+    <p style="font-size:1.5rem;font-weight:700;letter-spacing:.12em;margin:0 0 .75rem">ATHAR</p>
+    <p>جاري فتح المنصة…</p>
+    <p dir="ltr" style="font-size:12px;opacity:.5">athar-app.online/start/</p>
+  </main>
+</body>
+</html>
