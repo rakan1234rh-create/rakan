@@ -36,8 +36,11 @@ jobs:
           deno test --allow-read --allow-env \
             supabase/functions/password-recovery/*.test.ts \
             supabase/functions/employee-login/*.test.ts \
+            supabase/functions/_shared/auth-ingress.test.ts \
+            supabase/functions/_shared/auth-ingress-handlers.test.ts \
             supabase/functions/r2-storage/*.test.ts \
-            supabase/functions/_shared/client-ip.test.ts
+            supabase/functions/_shared/client-ip.test.ts \
+            cloudflare/auth-ingress-worker/src/index.test.ts
           node --check js/app.js
 
       - name: Install isolated SQL test tooling
@@ -49,4 +52,5 @@ jobs:
           bash tests/security_legacy_storage_test.sh
           bash supabase/functions/password-recovery/postgres-rate-limit.local.test.sh
           bash supabase/functions/employee-login/local-postgres-security-test.sh
+          bash supabase/functions/_shared/auth-ingress-replay.local.test.sh
           bash tests/security_r2_test.sh

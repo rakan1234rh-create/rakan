@@ -1,6 +1,9 @@
 // employee-login — resolves a work number privately, then signs in without exposing email.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-import { verifiedManagedClientIp } from "../_shared/client-ip.ts";
+import {
+  readBoundedJsonObject,
+  verifiedAuthIngress,
+} from "../_shared/auth-ingress.ts";
 
 const GENERIC_LOGIN_ERROR =
   "بيانات تسجيل الدخول غير صحيحة أو المحاولة مقيّدة مؤقتاً.";
@@ -100,54 +103,6 @@ function employeeNumberCandidates(canonical: string): string[] {
   return canonical === unpadded ? [canonical] : [canonical, unpadded];
 }
 
-async function readBoundedJson(
-  req: Request,
-): Promise<Record<string, unknown> | null> {
-  const declaredLength = req.headers.get("content-length");
-  if (
-    declaredLength &&
-    (!/^\d+$/.test(declaredLength) ||
-      Number(declaredLength) > MAX_REQUEST_BODY_BYTES)
-  ) {
-    return null;
-  }
-  if (!req.body) return null;
-
-  const reader = req.body.getReader();
-  const chunks: Uint8Array[] = [];
-  let total = 0;
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      total += value.byteLength;
-      if (total > MAX_REQUEST_BODY_BYTES) {
-        await reader.cancel();
-        return null;
-      }
-      chunks.push(value);
-    }
-  } catch {
-    return null;
-  }
-
-  try {
-    const bytes = new Uint8Array(total);
-    let offset = 0;
-    for (const chunk of chunks) {
-      bytes.set(chunk, offset);
-      offset += chunk.byteLength;
-    }
-    const decoded = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
-    const parsed = JSON.parse(decoded);
-    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
-      ? parsed as Record<string, unknown>
-      : null;
-  } catch {
-    return null;
-  }
-}
-
 function toHex(bytes: ArrayBuffer): string {
   return Array.from(
     new Uint8Array(bytes),
@@ -189,6 +144,19 @@ async function consumeRateLimit(
   return data === true;
 }
 
+async function consumeIngressReplay(
+  client: SupabaseClientLike,
+  nonceHash: string,
+  expiresAt: number,
+): Promise<boolean> {
+  const { data, error } = await client.rpc("consume_auth_ingress_replay", {
+    p_nonce_hash: nonceHash,
+    p_expires_at: new Date(expiresAt * 1000).toISOString(),
+  });
+  if (error || data !== true) return false;
+  return true;
+}
+
 async function lookupEmployeeProfile(
   serviceClient: SupabaseClientLike,
   canonicalEmployeeNumber: string,
@@ -221,8 +189,8 @@ async function revalidateSignedInProfile(
 /**
  * Dependency-injected handler: local tests never instantiate production clients.
  * Deployment requirements: set EMPLOYEE_LOGIN_ALLOWED_ORIGINS and an independent
- * EMPLOYEE_LOGIN_RATE_LIMIT_SALT, then verify the gateway's CF/XFF last-hop
- * invariant before exposing this endpoint.
+ * EMPLOYEE_LOGIN_RATE_LIMIT_SALT. Production should use AUTH_INGRESS_MODE=signed
+ * with the HMAC Worker; legacy proxy mode remains an explicit compatibility path.
  */
 export async function handleEmployeeLogin(
   req: Request,
@@ -239,23 +207,31 @@ export async function handleEmployeeLogin(
     return new Response(null, { status: 204, headers: corsHeaders(origin) });
   }
 
-  const body = await readBoundedJson(req);
-  const employeeNumber = normalizeEmployeeNumber(body?.employee_number);
-  const password = typeof body?.password === "string" ? body.password : "";
+  const body = await readBoundedJsonObject(req, MAX_REQUEST_BODY_BYTES);
+  if (!body) return loginFailure(origin, 400);
+  const employeeNumber = normalizeEmployeeNumber(body.value.employee_number);
+  const password = typeof body.value.password === "string"
+    ? body.value.password
+    : "";
   if (!employeeNumber || !password || password.length > MAX_PASSWORD_LENGTH) {
     return loginFailure(origin, 400);
   }
 
-  const clientIp = verifiedManagedClientIp(
+  const ingress = await verifiedAuthIngress(
     req,
-    getEnv("AUTH_PROXY_IP_VERIFIED") === "true",
+    body.bytes,
+    {
+      expectedMethod: "POST",
+      expectedPath: "/functions/v1/employee-login",
+      getEnv,
+    },
   );
   const supabaseUrl = getEnv("SUPABASE_URL") ?? "";
   const anonKey = getEnv("SUPABASE_ANON_KEY") ?? "";
   const serviceRoleKey = getEnv("SUPABASE_SERVICE_ROLE_KEY") ?? "";
   const rateLimitSalt = getEnv("EMPLOYEE_LOGIN_RATE_LIMIT_SALT") ?? "";
   if (
-    !clientIp || !supabaseUrl || !anonKey || !serviceRoleKey ||
+    !ingress || !supabaseUrl || !anonKey || !serviceRoleKey ||
     rateLimitSalt.length < 32
   ) {
     return loginFailure(origin, 503);
@@ -263,6 +239,7 @@ export async function handleEmployeeLogin(
 
   const makeClient = deps.createClient ?? createClient;
   try {
+    const clientIp = ingress.clientIp;
     const [ipKey, employeeKey] = await Promise.all([
       employeeLoginRateKey(rateLimitSalt, "ip", clientIp),
       employeeLoginRateKey(rateLimitSalt, "employee", employeeNumber),
@@ -279,6 +256,16 @@ export async function handleEmployeeLogin(
       serviceRoleKey,
       clientOptions,
     );
+    // Replay consumption is atomic in PostgreSQL and happens before any Auth
+    // action or rate-limit mutation. Unsigned requests never reach this point.
+    if (
+      ingress.mode === "signed" &&
+      !await consumeIngressReplay(
+        serviceClient,
+        ingress.replayNonceHash!,
+        ingress.replayExpiresAt!,
+      )
+    ) return loginFailure(origin);
     const [ipAllowed, employeeAllowed] = await Promise.all([
       consumeRateLimit(serviceClient, ipKey),
       consumeRateLimit(serviceClient, employeeKey),

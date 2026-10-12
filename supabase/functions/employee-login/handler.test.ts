@@ -16,6 +16,7 @@ const ENV: Record<string, string> = {
   EMPLOYEE_LOGIN_RATE_LIMIT_SALT:
     "local-test-rate-limit-salt-at-least-32-bytes",
   EMPLOYEE_LOGIN_ALLOWED_ORIGINS: "https://athar-app.online",
+  AUTH_INGRESS_MODE: "legacy-proxy",
   AUTH_PROXY_IP_VERIFIED: "true",
 };
 

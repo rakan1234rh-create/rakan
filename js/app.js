@@ -29,14 +29,47 @@
       // ✅ العمليات الإدارية تتم عبر Edge Function آمنة على الخادم
       // Secret Key يبقى في متغيرات البيئة على Supabase ولا يصل المتصفح أبداً
       const ADMIN_FN_URL = `${SUPABASE_URL}/functions/v1/admin-users`;
-      const EMPLOYEE_LOGIN_FN_URL = `${SUPABASE_URL}/functions/v1/employee-login`;
+      const DIRECT_EMPLOYEE_LOGIN_FN_URL = `${SUPABASE_URL}/functions/v1/employee-login`;
 
       /** توقيع روابط R2 (رفع/تحميل/نقل) عبر Edge Function — المفاتيح لا تصل للمتصفح */
       const R2_STORAGE_FN_URL = `${SUPABASE_URL}/functions/v1/r2-storage`;
       const VIOLATION_PUSH_FN_URL = `${SUPABASE_URL}/functions/v1/violation-push`;
       const EMAIL_UNSUBSCRIBE_FN_URL = `${SUPABASE_URL}/functions/v1/email-unsubscribe`;
-      const PASSWORD_RECOVERY_FN_URL = `${SUPABASE_URL}/functions/v1/password-recovery`;
+      const DIRECT_PASSWORD_RECOVERY_FN_URL = `${SUPABASE_URL}/functions/v1/password-recovery`;
       const VIOLATION_PUSH_FN_VERSION = '2026-07-parallel-push-v1';
+
+      /**
+       * بوابة المصادقة الموقعة اختيارية حتى تكتمل الهجرة. الملف الذي يحمّل
+       * قبل app.js يضبط عنوان Worker فقط بعد نشره؛ لا توجد fallback صامتة إذا
+       * كانت القيمة موجودة لكنها غير HTTPS صالحاً.
+       */
+      const ATHAR_AUTH_INGRESS_BASE_URL = typeof window.ATHAR_AUTH_INGRESS_BASE_URL === 'string'
+        ? window.ATHAR_AUTH_INGRESS_BASE_URL.trim().replace(/\/+$/, '')
+        : '';
+
+      function authEndpoint(ingressPath, directUrl) {
+        if (!ATHAR_AUTH_INGRESS_BASE_URL) {
+          return { url: directUrl, viaIngress: false };
+        }
+        try {
+          const base = new URL(ATHAR_AUTH_INGRESS_BASE_URL);
+          if (base.protocol !== 'https:' || base.pathname !== '/' || base.search || base.hash) {
+            throw new Error('invalid_auth_ingress_url');
+          }
+          return { url: base.origin + ingressPath, viaIngress: true };
+        } catch (_) {
+          return { url: '', viaIngress: true };
+        }
+      }
+
+      const EMPLOYEE_LOGIN_ENDPOINT = authEndpoint(
+        '/api/auth/employee-login',
+        DIRECT_EMPLOYEE_LOGIN_FN_URL,
+      );
+      const PASSWORD_RECOVERY_ENDPOINT = authEndpoint(
+        '/api/auth/password-recovery',
+        DIRECT_PASSWORD_RECOVERY_FN_URL,
+      );
 
       /** يعمل فقط على المضيف المحلي — لا يُفعّل على نطاق الإنتاج */
       function isLocalDevHost() {
@@ -98,11 +131,12 @@
       async function requestPasswordResetEmail(email) {
         let response;
         try {
-          response = await fetch(PASSWORD_RECOVERY_FN_URL, {
+          if (!PASSWORD_RECOVERY_ENDPOINT.url) throw new Error('invalid_auth_ingress_url');
+          response = await fetch(PASSWORD_RECOVERY_ENDPOINT.url, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'apikey': SUPABASE_ANON,
+              ...(PASSWORD_RECOVERY_ENDPOINT.viaIngress ? {} : { apikey: SUPABASE_ANON }),
             },
             body: JSON.stringify({ email }),
           });
@@ -4347,13 +4381,14 @@
       }
 
       async function signInWithEmployeeNumber(employeeNumber, password) {
-        const genericError = new Error('بيانات الدخول غير صحيحة أو المحاولة مقيّدة مؤقتاً');
+        const genericError = new Error('بيانات تسجيل الدخول غير صحيحة أو المحاولة مقيّدة مؤقتاً');
         try {
-          const response = await fetch(EMPLOYEE_LOGIN_FN_URL, {
+          if (!EMPLOYEE_LOGIN_ENDPOINT.url) throw genericError;
+          const response = await fetch(EMPLOYEE_LOGIN_ENDPOINT.url, {
             method: 'POST',
             headers: {
-              'apikey': SUPABASE_ANON,
-              'Content-Type': 'application/json'
+              'Content-Type': 'application/json',
+              ...(EMPLOYEE_LOGIN_ENDPOINT.viaIngress ? {} : { apikey: SUPABASE_ANON }),
             },
             body: JSON.stringify({ employee_number: employeeNumber, password })
           });
