@@ -16,6 +16,8 @@ concurrency:
 
 jobs:
   build:
+    # لا يُسمح لـ workflow_dispatch من ref آخر ببناء artifact للنطاق الرسمي.
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout main (production root)
@@ -23,20 +25,27 @@ jobs:
         with:
           path: main-src
           ref: main
-
-      - name: Checkout staging (for /staging/ subpath)
-        uses: actions/checkout@v4
-        with:
-          path: staging-src
-          ref: staging
+          persist-credentials: false
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '24'
+              node-version: '24'
 
       - uses: actions/configure-pages@v5
 
-      - name: Build production root + /staging
+      - name: Require reviewed security backend rollout
+        env:
+          BACKEND_READY: ${{ vars.ATHAR_SECURITY_BACKEND_READY }}
+        run: |
+          if [ "$BACKEND_READY" != "true" ]; then
+            echo "::error::Pages is blocked until the reviewed security backend migrations, Edge secrets, and proxy-IP checks are complete. See docs/DEPLOYMENT_SECURITY.md."
+            exit 1
+          fi
+
+      - name: Verify production Pages source policy
+        run: node main-src/scripts/test-deploy-security.mjs
+
+      - name: Build production root
         run: |
           set -euo pipefail
 
@@ -96,8 +105,11 @@ jobs:
           if [ -f "$GITHUB_WORKSPACE/main-src/CNAME" ]; then
             cp "$GITHUB_WORKSPACE/main-src/CNAME" "$GITHUB_WORKSPACE/site/CNAME"
           fi
-          # لا تمسح /staging عند نشر الإنتاج — انشره من فرع staging دائماً
-          build_site "$GITHUB_WORKSPACE/staging-src" "$GITHUB_WORKSPACE/site/staging" "staging"
+
+      - name: Assert staging is absent from the Pages artifact
+        run: |
+          set -euo pipefail
+          test ! -e site/staging
 
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -105,6 +117,7 @@ jobs:
 
   deploy:
     needs: build
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment:
       name: github-pages

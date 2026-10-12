@@ -1,0 +1,52 @@
+name: Deploy security checks
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  source-security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Test deployment security contracts
+        run: node scripts/test-deploy-security.mjs
+
+      - name: Test authentication-email unsubscribe hardening
+        run: node scripts/test-mail-unsub-hardening.mjs
+
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.7
+
+      - name: Typecheck and test auth and attachment handlers without production access
+        run: |
+          deno test --allow-read --allow-env \
+            supabase/functions/password-recovery/*.test.ts \
+            supabase/functions/employee-login/*.test.ts \
+            supabase/functions/r2-storage/*.test.ts \
+            supabase/functions/_shared/client-ip.test.ts
+          node --check js/app.js
+
+      - name: Install isolated SQL test tooling
+        run: sudo apt-get update -qq && sudo apt-get install -y postgresql postgresql-client
+
+      - name: Test real SQL migrations in temporary local databases only
+        run: |
+          bash tests/security_rpc_hardening_test.sh
+          bash tests/security_legacy_storage_test.sh
+          bash supabase/functions/password-recovery/postgres-rate-limit.local.test.sh
+          bash supabase/functions/employee-login/local-postgres-security-test.sh
+          bash tests/security_r2_test.sh
