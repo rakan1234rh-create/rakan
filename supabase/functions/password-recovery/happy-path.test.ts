@@ -5,6 +5,7 @@ function assert(value: unknown, message: string): asserts value {
 }
 const env: Record<string, string> = {
   ALLOWED_ORIGIN: "https://athar-app.online",
+  AUTH_INGRESS_MODE: "legacy-proxy",
   AUTH_PROXY_IP_VERIFIED: "true",
   SUPABASE_URL: "https://test.invalid",
   SUPABASE_ANON_KEY: "test-public-key",

@@ -10,6 +10,13 @@ async function responseJson(
   return await response.json() as Record<string, unknown>;
 }
 
+const ENV: Record<string, string> = {
+  ALLOWED_ORIGIN: "https://athar-app.online",
+  AUTH_INGRESS_MODE: "legacy-proxy",
+  AUTH_PROXY_IP_VERIFIED: "true",
+};
+const getEnv = (name: string) => ENV[name];
+
 Deno.test("handler يرفض الطريقة وorigin غير المسموح قبل أي مسار خادمي", async () => {
   const method = await handlePasswordRecovery(
     new Request("https://example.test", { method: "GET" }),
@@ -39,6 +46,7 @@ Deno.test("handler يرفض body غير صالح وIP غير مثبت بدون �
       },
       body: JSON.stringify({ email: "not-an-email" }),
     }),
+    { getEnv },
   );
   assert(invalidBody.status === 400, "الصيغة غير الصالحة يجب أن ترفض");
 
@@ -51,6 +59,7 @@ Deno.test("handler يرفض body غير صالح وIP غير مثبت بدون �
       },
       body: JSON.stringify({ email: `${"a".repeat(3000)}@example.test` }),
     }),
+    { getEnv },
   );
   assert(oversizedBody.status === 400, "الجسم الكبير يجب أن يرفض قبل أي خدمة");
 
@@ -63,6 +72,9 @@ Deno.test("handler يرفض body غير صالح وIP غير مثبت بدون �
       },
       body: JSON.stringify({ email: "user@example.test" }),
     }),
+    {
+      getEnv: (name) => name === "AUTH_INGRESS_MODE" ? undefined : getEnv(name),
+    },
   );
   assert(missingTrustedIp.status === 503, "غياب IP الموثق يفشل مغلقاً");
   const body = await responseJson(missingTrustedIp);
@@ -95,6 +107,7 @@ Deno.test("handler يوقف قارئ body المتدفق فور تجاوز 2048 
       },
       body: oversizedStream,
     }),
+    { getEnv },
   );
 
   assert(response.status === 400, "الجسم المتدفق الكبير يجب أن يرفض");
@@ -108,6 +121,7 @@ Deno.test("preflight مسموح فقط كـ CORS ولا يشغل الاستعا�
       method: "OPTIONS",
       headers: { origin: "https://athar-app.online" },
     }),
+    { getEnv },
   );
   assert(response.status === 204, "OPTIONS يجب أن يعيد 204");
   assert(

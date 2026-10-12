@@ -80,11 +80,13 @@ GitHub Pages لا يوفّر ملف `_headers` أو إعداد مستودع يض
 
 ### حواجز الإصدار وفترة التحديث
 
-أضيف حاجزان يفشلان مغلقًا: `ATHAR_SECURITY_EDGE_RELEASE_APPROVED` يمنع نشر Edge تلقائيًا لمجرد دمج PR، و`ATHAR_SECURITY_BACKEND_READY` يمنع نشر الواجهة قبل جاهزية الخلفية. اتركهما غير مفعّلين أثناء المراجعة والدمج. يلزم كذلك إبقاء `AUTH_PROXY_IP_VERIFIED` غير مفعّل في Supabase حتى توثيق وضبط مصدر IP؛ يرفض كلا endpoint الطلبات قبل ذلك. بعد موافقة الإصدار وتجهيز أسرار المحدد وبيئة الاختبار، فعّل الأول وانشر وظائف Edge؛ طبّق migrations بالتسلسل المتحقق منه، ثم افحص عقد الوظائف وRLS والمرفقات، وبعد النجاح فعّل الثاني وانشر Pages. لم يضبط هذا العمل أي متغير في GitHub.
+أضيف حاجزان يفشلان مغلقًا: `ATHAR_SECURITY_EDGE_RELEASE_APPROVED` يمنع نشر Edge تلقائيًا لمجرد دمج PR، و`ATHAR_SECURITY_BACKEND_READY` يمنع نشر الواجهة قبل جاهزية الخلفية. اتركهما غير مفعّلين أثناء المراجعة والدمج. لم يضبط هذا العمل أي متغير في GitHub.
+
+المسار المعتمد الجديد لمصدر IP هو بوابة Cloudflare موقعة، لا افتراض أن رؤوس Supabase موثوقة. تظل قيمة `AUTH_PROXY_IP_VERIFIED=false`، ويضبط الإصدار المراجع `AUTH_INGRESS_MODE=signed` مع `AUTH_INGRESS_HMAC_SECRET` مشترك بين Worker وEdge ومهاجرة `20261012210000_auth_ingress_replay.sql`. ترفض Edge الطلب المباشر غير الموقع قبل إنشاء عميل service-role. توجد تفاصيل البناء وتسلسل الإطلاق والتراجع في [`cloudflare/auth-ingress-worker/README.md`](../cloudflare/auth-ingress-worker/README.md). لا تفعّل حواجز GitHub حتى يكتمل هذا التسلسل وتُراجع نتيجة الاختبار.
 
 استبدال وظائف R2 وسحب RPC القديمة قبل تحديث الواجهة قد يسبب رفضًا مؤقتًا لطلبات العملاء القديمة؛ تطبق الحزمة في نافذة صيانة معلنة أو عبر إصدار متدرج بعقد متوافق موثق. لا يقدم هذا الترتيب على أنه تحديث بلا انقطاع.
 
-تطابق آخر XFF مع CF-Connecting-IP لا يكفي وحده لإثبات أن بوابة Supabase تضبطهما. يلزم اختبار بيئة مستقلة وتوثيق مصدرهما قبل التفعيل؛ المعالجات ترفض عند فقدهما أو اختلافهما. نقاط Auth المباشرة مثل `/auth/v1/recover` تبقى عامة وتحكمها حدود Supabase. نقل Auth إلى Edge قد يجعل حدود IP الأصلية مشتركة بين مستخدمي خادم الوظيفة. توجيه `Sb-Forwarded-For` يتطلب مفتاح `sb_secret` حديثًا وتفعيلًا صريحًا في إعدادات Auth، ولا يعمل بمفتاح legacy service_role؛ لا تغيّر ذلك دون مراجعة وموافقة. راجع [وثائق حدود Supabase](https://supabase.com/docs/guides/auth/rate-limits) و[رؤوس Cloudflare](https://developers.cloudflare.com/fundamentals/reference/http-headers/).
+تطابق آخر XFF مع CF-Connecting-IP لا يكفي وحده لإثبات أن بوابة Supabase تضبطهما. لا يستخدم وضع `signed` هذه الرؤوس عند وصولها إلى Supabase: يستقبل Worker طلب المتصفح، ويرفض Worker subrequests الغامضة، ويوقّع العنوان الذي رآه قبل أن يمرر الطلب. نقاط Auth المباشرة مثل `/auth/v1/recover` تبقى عامة وتحكمها حدود Supabase. نقل Auth إلى Edge قد يجعل حدود IP الأصلية مشتركة بين مستخدمي خادم الوظيفة. توجيه `Sb-Forwarded-For` يتطلب مفتاح `sb_secret` حديثًا وتفعيلًا صريحًا في إعدادات Auth، ولا يعمل بمفتاح legacy service_role؛ لا تغيّر ذلك دون مراجعة وموافقة. راجع [وثائق حدود Supabase](https://supabase.com/docs/guides/auth/rate-limits) و[رؤوس Cloudflare](https://developers.cloudflare.com/fundamentals/reference/http-headers/).
 
 ## التراجع
 
@@ -97,5 +99,5 @@ GitHub Pages لا يوفّر ملف `_headers` أو إعداد مستودع يض
 
 - لم تنشر، ولم تدفع commit، ولم تدمج، ولم تطبق migration، ولم تنشئ GitHub approval أو Environment أو branch policy.
 - لم تغير Cloudflare أو DNS أو أسرار أو صلاحيات حسابات أو بيانات موظفين.
-- لم تعدّل JavaScript للمصادقة أو كود المرفقات.
-- جُمعت شيفرة `password-recovery` و`employee-login` واختباراتها في الحزمة؛ لم تُفعّل بوابة IP ولم تجر اختبارات تسليم Auth فعلية أو نشر إنتاجي. يلزم تفعيل `AUTH_PROXY_IP_VERIFIED=true` فقط بعد تحقق مستقل موثق من ingress، مع `PASSWORD_RECOVERY_RATE_LIMIT_SALT` و`EMPLOYEE_LOGIN_RATE_LIMIT_SALT` قويين وأصول CORS المعتمدة.
+- عُدّلت واجهة المصادقة لتستعمل Worker فقط عند ضبط عنوانه الصريح في `js/auth-ingress-config.js`؛ لم يُعدّل كود المرفقات.
+- جُمعت شيفرة `password-recovery` و`employee-login` واختباراتها مع مصدر Worker موقّع ومهاجرة منع إعادة الإرسال. لم يُنشر Worker أو Edge أو migration ولم تُضبط أسرار أو DNS أو Cloudflare. الإطلاق يتطلب `AUTH_INGRESS_MODE=signed` وHMAC مشتركاً وأسرار حدود قوية وأصول CORS معتمدة؛ لا يتطلب ولا يبرر تفعيل `AUTH_PROXY_IP_VERIFIED=true`.

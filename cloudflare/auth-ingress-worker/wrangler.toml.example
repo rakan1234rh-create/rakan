@@ -1,0 +1,25 @@
+# Copy to wrangler.toml only in an operator-controlled Worker project.
+# This repository neither deploys nor owns a route for athar-app.online.
+name = "athar-auth-ingress"
+main = "src/index.ts"
+compatibility_date = "2026-10-12"
+workers_dev = true
+
+# Bind a custom route only after the domain owner has approved it. Do not add a
+# wildcard, and do not enable both a Pages Function and this Worker for /api/auth/*.
+# [[routes]]
+# pattern = "auth-ingress.example-owned-domain.invalid/api/auth/*"
+# zone_name = "example-owned-domain.invalid"
+
+[vars]
+# Exact browser origin(s), comma-separated. No wildcard and no HTTP origin.
+AUTH_INGRESS_ALLOWED_ORIGINS = "https://athar-app.online"
+# This is a public Supabase publishable/anon key supplied by the operator.
+# Never put a real key in this committed example.
+SUPABASE_ANON_KEY = "REPLACE_WITH_PUBLISHABLE_KEY"
+
+# Set only as a Worker secret, never in this file:
+#   npx wrangler secret put AUTH_INGRESS_HMAC_SECRET
+# Value format: unpadded base64url representing >=32 cryptographically random bytes.
+# Example local generation (do not paste output into Git):
+#   openssl rand -base64 48 | tr '+/' '-_' | tr -d '=\n'

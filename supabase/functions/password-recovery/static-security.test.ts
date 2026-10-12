@@ -8,6 +8,9 @@ const migration = await Deno.readTextFile(
   ),
 );
 const fn = await Deno.readTextFile(new URL("./index.ts", import.meta.url));
+const ingress = await Deno.readTextFile(
+  new URL("../_shared/auth-ingress.ts", import.meta.url),
+);
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message);
@@ -87,9 +90,15 @@ Deno.test("الدالة لا تسجل أو تعيد email أو OTP أو سر ا�
     "الدالة لا تتعامل مع OTP",
   );
   assert(
-    fn.includes("verifiedRecoveryClientIp(") &&
-      fn.includes('getEnv("AUTH_PROXY_IP_VERIFIED") === "true"'),
+    fn.includes("verifiedAuthIngress(") &&
+      fn.includes('expectedPath: "/functions/v1/password-recovery"'),
     "لا تستخدم الدالة IP header غير مثبت",
+  );
+  assert(
+    ingress.includes("AUTH_INGRESS_HMAC_SECRET") &&
+      ingress.includes('mode === "signed"') &&
+      ingress.includes('mode !== "legacy-proxy"'),
+    "البوابة الموقعة تفشل مغلقاً ولا تعود بصمت إلى رؤوس proxy",
   );
   assert(!fn.includes("req.text()"), "قراءة body يجب أن تبقى محدودة متدفقة");
   assert(
