@@ -7,6 +7,17 @@
  *   (بدائل مقبولة: AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY، CLOUDFLARE_ACCOUNT_ID، R2_BUCKET / AWS_S3_BUCKET)
  */
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8'
+import {
+  assertAttachmentPayload,
+  assertAttachmentSignature,
+  assertAttachmentSize,
+  assertKey,
+  assertTempUploadKey,
+  normalizedAttachmentContentType,
+  R2_ATTACHMENT_MAX_BYTES,
+  R2_MULTIPART_MAX_PARTS,
+  R2_MULTIPART_PART_MAX_BYTES,
+} from './security.js'
 
 /* Lazy AWS SDK — OPTIONS/health/ping must not pay cold-start cost of client-s3. */
 // deno-lint-ignore no-explicit-any
@@ -107,27 +118,21 @@ function r2ErrInfo(e: unknown): { name: string; message: string } {
   return { name: name || 'Error', message: message || 'unknown' }
 }
 
-function assertKey(key: unknown): string {
-  if (typeof key !== 'string' || !key.length) throw new Error('key مطلوب')
-  if (key.length > 2048) throw new Error('key طويل جداً')
-  if (key.includes('..') || key.startsWith('/') || key.includes('\0') || key.includes('\\')) {
-    throw new Error('مسار غير صالح')
-  }
-  if (!/^[a-zA-Z0-9_\-./]+$/.test(key)) throw new Error('أحرف غير مسموحة في المفتاح')
-  return key
-}
-
-const R2_PROXY_PUT_MAX_BYTES = 52 * 1024 * 1024
-const R2_PROXY_PART_MAX_BYTES = 10 * 1024 * 1024
 const AVATAR_PRESET_MAX_BYTES = 8 * 1024 * 1024
 
-function assertTempUploadKey(key: string, userId: string): string {
-  const k = assertKey(key)
-  if (!k.startsWith(`temp_${userId}`)) {
-    throw new Error('غير مصرح بالرفع في هذا المسار')
-  }
-  return k
+// لا يوجد Database type مولّد في هذا المستودع؛ هذه الدالة لا تعتمد من العميل
+// إلا على RPC. إبقاء الحدّ هنا ضيقاً مهم أيضاً للاختبارات: لا ينبغي أن يضطر
+// mock آمن إلى تقليد عميل Supabase كامل.
+type RpcResult = { data: unknown; error: { message?: string } | null }
+type RpcClient = {
+  rpc: (fn: string, args?: Record<string, unknown>) => PromiseLike<RpcResult>
 }
+
+type AuthenticatedRequest =
+  | { error: Response; user?: never; supabase?: never; isServiceRole?: never }
+  | { user: { id: string }; supabase: RpcClient; isServiceRole: boolean; error?: never }
+
+type AuthenticateRequest = (req: Request) => Promise<AuthenticatedRequest>
 
 function assertAvatarPresetKey(key: string): string {
   const k = assertKey(key)
@@ -138,7 +143,7 @@ function assertAvatarPresetKey(key: string): string {
 }
 
 async function requireAtharAdmin(
-  supabase: ReturnType<typeof createClient>,
+  supabase: RpcClient,
 ): Promise<boolean> {
   const { data, error } = await supabase.rpc('current_user_role')
   if (error) return false
@@ -169,7 +174,7 @@ function isServiceRoleRequest(req: Request): boolean {
   return false
 }
 
-async function authenticateRequest(req: Request) {
+async function authenticateRequest(req: Request): Promise<AuthenticatedRequest> {
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!
   const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
   const authHeader = req.headers.get('Authorization')
@@ -317,6 +322,91 @@ function guessContentTypeFromKey(key: string): string {
     pdf: 'application/pdf',
   }
   return map[ext] || 'application/octet-stream'
+}
+
+async function requireAttachmentRead(
+  supabase: RpcClient,
+  key: string,
+): Promise<void> {
+  const { data, error } = await supabase.rpc('athar_attachment_can_read', { p_key: key })
+  if (error) {
+    console.error('[r2-storage] attachment read check failed', error.message)
+    throw new Error('تعذّر التحقق من صلاحية قراءة الملف')
+  }
+  if (!data) throw new Error('غير مصرح بقراءة هذا الملف')
+}
+
+async function requireAttachmentModify(
+  supabase: RpcClient,
+  key: string,
+): Promise<void> {
+  const { data, error } = await supabase.rpc('athar_attachment_can_modify', { p_key: key })
+  if (error) {
+    console.error('[r2-storage] attachment modify check failed', error.message)
+    throw new Error('تعذّر التحقق من صلاحية تعديل الملف')
+  }
+  if (!data) throw new Error('غير مصرح بتعديل هذا الملف')
+}
+
+async function requireAttachmentMoveDestination(
+  supabase: RpcClient,
+  input: {
+    recordType: string
+    recordId: string
+    fromKey: string
+    toKey: string
+    operation: string
+    expectedState?: string
+  },
+): Promise<void> {
+  const { data, error } = await supabase.rpc('athar_attachment_destination_can_modify', {
+    p_record_type: input.recordType,
+    p_record_id: input.recordId,
+    p_from_key: input.fromKey,
+    p_to_key: input.toKey,
+    p_operation: input.operation,
+    p_expected_state: input.expectedState || null,
+  })
+  if (error) {
+    console.error('[r2-storage] attachment move check failed', error.message)
+    throw new Error('تعذّر التحقق من وجهة نقل المرفق')
+  }
+  if (!data) throw new Error('غير مصرح بنقل المرفق إلى هذا السجل')
+}
+
+async function requireAttachmentMoveRollback(
+  supabase: RpcClient,
+  input: {
+    recordType: string
+    recordId: string
+    fromKey: string
+    toKey: string
+    operation: string
+    expectedState?: string
+  },
+): Promise<void> {
+  const { data, error } = await supabase.rpc('athar_attachment_move_rollback_allowed', {
+    p_record_type: input.recordType,
+    p_record_id: input.recordId,
+    p_from_key: input.fromKey,
+    p_to_key: input.toKey,
+    p_operation: input.operation,
+    p_expected_state: input.expectedState || null,
+  })
+  if (error) {
+    console.error('[r2-storage] attachment rollback check failed', error.message)
+    throw new Error('تعذّر التحقق من تراجع نقل المرفق')
+  }
+  if (!data) throw new Error('غير مصرح بالتراجع عن نقل هذا المرفق')
+}
+
+function requestErrorStatus(error: unknown): number {
+  const msg = error instanceof Error ? error.message : String(error || '')
+  if (/50 ميغابايت|حجم.*(كبير|يتجاوز)/.test(msg)) return 413
+  if (/PreconditionFailed|ConditionalRequestConflict|412|يوجد ملف/.test(msg)) return 409
+  if (/غير مصرح/.test(msg)) return 403
+  if (/غير صالح|غير مسموح|لا يطابق|مطلوب|فارغ/.test(msg)) return 400
+  return 500
 }
 
 function b64url(data: Uint8Array | string): string {
@@ -474,7 +564,32 @@ async function handleStreamRequest(
   }
 }
 
-Deno.serve(async (req) => {
+/** حقن محدود للاختبارات فقط؛ التنفيذ المنشور يستعمل الاعتمادات الافتراضية أدناه. */
+export function installR2StorageTestAwsPrimitives(primitives: Record<string, unknown>): void {
+  if ('AbortMultipartUploadCommand' in primitives) AbortMultipartUploadCommand = primitives.AbortMultipartUploadCommand
+  if ('CompleteMultipartUploadCommand' in primitives) CompleteMultipartUploadCommand = primitives.CompleteMultipartUploadCommand
+  if ('CopyObjectCommand' in primitives) CopyObjectCommand = primitives.CopyObjectCommand
+  if ('CreateMultipartUploadCommand' in primitives) CreateMultipartUploadCommand = primitives.CreateMultipartUploadCommand
+  if ('DeleteObjectCommand' in primitives) DeleteObjectCommand = primitives.DeleteObjectCommand
+  if ('GetObjectCommand' in primitives) GetObjectCommand = primitives.GetObjectCommand
+  if ('HeadObjectCommand' in primitives) HeadObjectCommand = primitives.HeadObjectCommand
+  if ('ListObjectsV2Command' in primitives) ListObjectsV2Command = primitives.ListObjectsV2Command
+  if ('PutObjectCommand' in primitives) PutObjectCommand = primitives.PutObjectCommand
+  if ('UploadPartCommand' in primitives) UploadPartCommand = primitives.UploadPartCommand
+}
+
+export function createR2StorageHandler(deps: {
+  requireR2Env?: typeof requireR2Env
+  authenticateRequest?: AuthenticateRequest
+  ensureAws?: typeof ensureAws
+  makeS3?: typeof makeS3
+} = {}) {
+  const getR2Env = deps.requireR2Env || requireR2Env
+  const authenticate = deps.authenticateRequest || authenticateRequest
+  const loadAws = deps.ensureAws || ensureAws
+  const newS3 = deps.makeS3 || makeS3
+
+  return async (req: Request) => {
   _cors = buildCors(req);
 
   if (req.method === 'OPTIONS') {
@@ -508,27 +623,32 @@ Deno.serve(async (req) => {
     }
   }
 
-  const env = requireR2Env()
+  const env = getR2Env()
 
   if (req.method === 'POST' && req.headers.get('X-R2-Action') === 'uploadPart') {
     if (!env) return json({ error: 'R2 غير مُعدّ (متغيرات البيئة على الدالة)' }, 503)
-    const auth = await authenticateRequest(req)
+    const auth = await authenticate(req)
     if ('error' in auth && auth.error) return auth.error
 
     try {
       const key = assertTempUploadKey(req.headers.get('X-R2-Key') || '', auth.user.id)
+      const contentType = normalizedAttachmentContentType(
+        key,
+        req.headers.get('X-R2-Content-Type') || '',
+      )
       const uploadId = String(req.headers.get('X-R2-Upload-Id') || '').trim()
       const partNumber = parseInt(String(req.headers.get('X-R2-Part-Number') || '0'), 10)
-      if (!uploadId || !Number.isFinite(partNumber) || partNumber < 1 || partNumber > 10_000) {
+      if (!uploadId || !Number.isFinite(partNumber) || partNumber < 1 || partNumber > R2_MULTIPART_MAX_PARTS) {
         return json({ error: 'معرّف الرفع أو رقم الجزء غير صالح' }, 400)
       }
       const bytes = new Uint8Array(await req.arrayBuffer())
       if (!bytes.length) return json({ error: 'جسم فارغ' }, 400)
-      if (bytes.length > R2_PROXY_PART_MAX_BYTES) {
+      if (bytes.length > R2_MULTIPART_PART_MAX_BYTES) {
         return json({ error: 'حجم الجزء كبير جداً للرفع عبر الخادم' }, 413)
       }
-      await ensureAws()
-      const s3 = makeS3(env)
+      if (partNumber === 1) assertAttachmentSignature(key, bytes)
+      await loadAws()
+      const s3 = newS3(env)
       const out = await s3.send(
         new UploadPartCommand({
           Bucket: env.bucket,
@@ -538,18 +658,18 @@ Deno.serve(async (req) => {
           Body: bytes,
         }),
       )
-      return json({ ok: true, etag: out.ETag, partNumber })
+      return json({ ok: true, etag: out.ETag, partNumber, contentType })
     } catch (e) {
       console.error('[r2-storage] uploadPart', e)
       const msg = e instanceof Error ? e.message : 'حدث خطأ أثناء رفع الجزء'
-      const status = msg.includes('غير مصرح') ? 403 : 500
+      const status = requestErrorStatus(e)
       return json({ error: msg }, status)
     }
   }
 
   if (req.method === 'POST' && req.headers.get('X-R2-Action') === 'replaceObject') {
     if (!env) return json({ error: 'R2 غير مُعدّ (متغيرات البيئة على الدالة)' }, 503)
-    const auth = await authenticateRequest(req)
+    const auth = await authenticate(req)
     if ('error' in auth && auth.error) return auth.error
 
     try {
@@ -557,26 +677,12 @@ Deno.serve(async (req) => {
       if (!/\.(mp4|mov|m4v|webm|avi|mkv)$/i.test(key)) {
         return json({ error: 'استبدال الملف مسموح لفيديوهات المرفقات فقط' }, 400)
       }
-      const { data: canSee, error: permErr } = await auth.supabase.rpc(
-        'athar_user_can_see_attachment',
-        { p_key: key },
-      )
-      if (permErr) {
-        console.error('[r2-storage] replaceObject perm check failed', permErr.message)
-        return json({ error: 'تعذّر التحقق من صلاحية الملف' }, 500)
-      }
-      if (!canSee) {
-        return json({ error: 'غير مصرح بالوصول لهذا الملف' }, 403)
-      }
-      const contentType =
-        (req.headers.get('Content-Type') || '').trim() || guessContentTypeFromKey(key)
+      if (!auth.isServiceRole) await requireAttachmentModify(auth.supabase, key)
+      const contentType = normalizedAttachmentContentType(key, req.headers.get('Content-Type') || '')
       const bytes = new Uint8Array(await req.arrayBuffer())
-      if (!bytes.length) return json({ error: 'جسم فارغ' }, 400)
-      if (bytes.length > R2_PROXY_PUT_MAX_BYTES) {
-        return json({ error: 'حجم الملف كبير جداً للرفع عبر الخادم' }, 413)
-      }
-      await ensureAws()
-      const s3 = makeS3(env)
+      assertAttachmentPayload(key, contentType, bytes)
+      await loadAws()
+      const s3 = newS3(env)
       await s3.send(
         new PutObjectCommand({
           Bucket: env.bucket,
@@ -588,13 +694,14 @@ Deno.serve(async (req) => {
       return json({ ok: true, key, replaced: true })
     } catch (e) {
       console.error('[r2-storage] replaceObject', e)
-      return json({ error: 'حدث خطأ أثناء استبدال الملف' }, 500)
+      const msg = e instanceof Error ? e.message : 'حدث خطأ أثناء استبدال الملف'
+      return json({ error: msg }, requestErrorStatus(e))
     }
   }
 
   if (req.method === 'POST' && req.headers.get('X-R2-Action') === 'putAvatarPreset') {
     if (!env) return json({ error: 'R2 غير مُعدّ (متغيرات البيئة على الدالة)' }, 503)
-    const auth = await authenticateRequest(req)
+    const auth = await authenticate(req)
     if ('error' in auth && auth.error) return auth.error
 
     try {
@@ -608,8 +715,8 @@ Deno.serve(async (req) => {
       if (bytes.length > AVATAR_PRESET_MAX_BYTES) {
         return json({ error: 'حجم صورة البروفايل كبير جداً (الحد 8 ميغابايت)' }, 413)
       }
-      await ensureAws()
-      const s3 = makeS3(env)
+      await loadAws()
+      const s3 = newS3(env)
       await s3.send(
         new PutObjectCommand({
           Bucket: env.bucket,
@@ -630,62 +737,40 @@ Deno.serve(async (req) => {
 
   if (req.method === 'POST' && req.headers.get('X-R2-Action') === 'putObject') {
     if (!env) return json({ error: 'R2 غير مُعدّ (متغيرات البيئة على الدالة)' }, 503)
-    const auth = await authenticateRequest(req)
+    const auth = await authenticate(req)
     if ('error' in auth && auth.error) return auth.error
 
     try {
       const key = assertTempUploadKey(req.headers.get('X-R2-Key') || '', auth.user.id)
-      const contentType =
-        (req.headers.get('Content-Type') || '').trim() || guessContentTypeFromKey(key)
+      const contentType = normalizedAttachmentContentType(key, req.headers.get('Content-Type') || '')
       const bytes = new Uint8Array(await req.arrayBuffer())
-      if (!bytes.length) return json({ error: 'جسم فارغ' }, 400)
-      if (bytes.length > R2_PROXY_PUT_MAX_BYTES) {
-        return json({ error: 'حجم الملف كبير جداً للرفع عبر الخادم' }, 413)
-      }
-      await ensureAws()
-      const s3 = makeS3(env)
-      // R2 + AWS SDK PutObjectCommand مع Body داخل Deno يفشل أحياناً بصمت/بطء.
-      // المسار الأوثق: توقيع URL ثم PUT مباشر بـ fetch.
-      const signed = await getSignedUrl(
-        s3,
-        new PutObjectCommand({
-          Bucket: env.bucket,
-          Key: key,
-          ContentType: contentType,
-        }),
-        { expiresIn: 3600 },
-      )
-      const putRes = await fetch(signed, {
-        method: 'PUT',
-        headers: { 'Content-Type': contentType },
-        body: bytes,
-      })
-      if (!putRes.ok) {
-        const errText = (await putRes.text().catch(() => '')).slice(0, 240)
-        console.error('[r2-storage] putObject signed PUT', putRes.status, errText)
-        return json({
-          error: `فشل الرفع إلى R2 (HTTP ${putRes.status}): ${errText || putRes.statusText}`,
-          r2Error: `HTTP_${putRes.status}`,
-          ...r2PublicDiag(env),
-        }, 500)
-      }
-      return json({ ok: true, key })
+      assertAttachmentPayload(key, contentType, bytes)
+      await loadAws()
+      const s3 = newS3(env)
+      await s3.send(new PutObjectCommand({
+        Bucket: env.bucket,
+        Key: key,
+        Body: bytes,
+        ContentType: contentType,
+        // R2 يدعم شرط S3 هذا؛ يمنع طلباً ثانياً من الكتابة فوق temp قائم.
+        IfNoneMatch: '*',
+      }))
+      return json({ ok: true, key, contentType })
     } catch (e) {
       const info = r2ErrInfo(e)
       console.error('[r2-storage] putObject', info.name, info.message, e)
       return json({
-        error: `فشل الرفع إلى R2 (${info.name}): ${info.message}`,
+        error: info.message,
         r2Error: info.name,
-        ...r2PublicDiag(env),
-      }, 500)
+      }, requestErrorStatus(e))
     }
   }
 
   if (req.method === 'GET' || req.method === 'HEAD') {
     if (!env) return json({ error: 'R2 غير مُعدّ (متغيرات البيئة على الدالة)' }, 503)
     try {
-      await ensureAws()
-      const s3 = makeS3(env)
+      await loadAws()
+      const s3 = newS3(env)
       const streamResp = await handleStreamRequest(req, s3, env.bucket, env)
       if (streamResp) return streamResp
       return json({ error: 'Method not allowed' }, 405)
@@ -703,7 +788,7 @@ Deno.serve(async (req) => {
     return json({ error: 'Method not allowed' }, 405)
   }
 
-  const auth = await authenticateRequest(req)
+  const auth = await authenticate(req)
   if ('error' in auth && auth.error) return auth.error
   const { user, supabase, isServiceRole } = auth
   void user
@@ -715,6 +800,10 @@ Deno.serve(async (req) => {
     prefix?: string
     fromKey?: string
     toKey?: string
+    recordType?: string
+    recordId?: string
+    operation?: string
+    expectedState?: string
     uploadId?: string
     partNumber?: number
     parts?: Array<{ partNumber?: number; etag?: string }>
@@ -739,31 +828,24 @@ Deno.serve(async (req) => {
       return json({ ok: true, mode: 'edge', r2: 'ready', ...diag })
     }
 
-    await ensureAws()
-    const s3 = makeS3(env)
+    await loadAws()
+    const s3 = newS3(env)
 
-    if (action === 'signPut') {
-      const key = assertTempUploadKey(body.key || '', user.id)
-      const contentType =
-        typeof body.contentType === 'string' && body.contentType.length
-          ? body.contentType
-          : 'application/octet-stream'
-
-      const cmd = new PutObjectCommand({
-        Bucket: bucket,
-        Key: key,
-        ContentType: contentType,
-      })
-      const url = await getSignedUrl(s3, cmd, { expiresIn: 3600 })
-      return json({ url, key })
+    if (action === 'signPut' || action === 'signUploadPart') {
+      // لا يتيح S3 presigned PUT فرض الحجم أو منع overwrite على نحو موثوق.
+      return json({ error: 'الرفع المباشر معطّل؛ استخدم مسار الرفع عبر الخادم' }, 410)
     }
 
     if (action === 'createMultipart') {
       const key = assertTempUploadKey(body.key || '', user.id)
-      const contentType =
-        typeof body.contentType === 'string' && body.contentType.length
-          ? body.contentType
-          : guessContentTypeFromKey(key)
+      const contentType = normalizedAttachmentContentType(key, body.contentType || '')
+      try {
+        await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: key }))
+        return json({ error: 'يوجد ملف بالمفتاح المؤقت نفسه' }, 409)
+      } catch (e: unknown) {
+        const name = e && typeof e === 'object' && 'name' in e ? String((e as { name: string }).name) : ''
+        if (name && !['NotFound', 'NoSuchKey', '404'].includes(name)) throw e
+      }
       const out = await s3.send(
         new CreateMultipartUploadCommand({
           Bucket: bucket,
@@ -772,25 +854,7 @@ Deno.serve(async (req) => {
         }),
       )
       if (!out.UploadId) throw new Error('تعذّر بدء الرفع المتعدد الأجزاء')
-      return json({ uploadId: out.UploadId, key })
-    }
-
-    if (action === 'signUploadPart') {
-      const key = assertTempUploadKey(body.key || '', user.id)
-      const uploadId = String(body.uploadId || '').trim()
-      const partNumber = Number(body.partNumber)
-      if (!uploadId) return json({ error: 'uploadId مطلوب' }, 400)
-      if (!Number.isFinite(partNumber) || partNumber < 1 || partNumber > 10_000) {
-        return json({ error: 'رقم الجزء غير صالح' }, 400)
-      }
-      const cmd = new UploadPartCommand({
-        Bucket: bucket,
-        Key: key,
-        UploadId: uploadId,
-        PartNumber: partNumber,
-      })
-      const url = await getSignedUrl(s3, cmd, { expiresIn: 3600 })
-      return json({ url, key, uploadId, partNumber })
+      return json({ uploadId: out.UploadId, key, contentType })
     }
 
     if (action === 'completeMultipart') {
@@ -804,7 +868,7 @@ Deno.serve(async (req) => {
           PartNumber: Number(p.partNumber),
           ETag: String(p.etag || ''),
         }))
-        .filter((p) => Number.isFinite(p.PartNumber) && p.PartNumber > 0 && p.ETag)
+        .filter((p) => Number.isFinite(p.PartNumber) && p.PartNumber > 0 && p.PartNumber <= R2_MULTIPART_MAX_PARTS && p.ETag)
         .sort((a, b) => a.PartNumber - b.PartNumber)
       if (!normalized.length) return json({ error: 'أجزاء غير صالحة' }, 400)
       await s3.send(
@@ -815,7 +879,10 @@ Deno.serve(async (req) => {
           MultipartUpload: { Parts: normalized },
         }),
       )
-      return json({ ok: true, key })
+      const head = await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: key }))
+      assertAttachmentSize(Number(head.ContentLength || 0))
+      normalizedAttachmentContentType(key, head.ContentType || '')
+      return json({ ok: true, key, contentType: head.ContentType })
     }
 
     if (action === 'abortMultipart') {
@@ -850,34 +917,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'signReplacePut') {
-      const key = assertKey(body.key)
-      if (!/\.(mp4|mov|m4v|webm|avi|mkv)$/i.test(key)) {
-        return json({ error: 'استبدال الملف مسموح لفيديوهات المرفقات فقط' }, 400)
-      }
-      if (!isServiceRole) {
-        const { data: canSee, error: permErr } = await supabase.rpc(
-          'athar_user_can_see_attachment',
-          { p_key: key },
-        )
-        if (permErr) {
-          console.error('[r2-storage] signReplacePut perm check failed', permErr.message)
-          return json({ error: 'تعذّر التحقق من صلاحية الملف' }, 500)
-        }
-        if (!canSee) {
-          return json({ error: 'غير مصرح بالوصول لهذا الملف' }, 403)
-        }
-      }
-      const ct =
-        typeof body.contentType === 'string' && body.contentType.trim()
-          ? body.contentType.trim()
-          : guessContentTypeFromKey(key)
-      const cmd = new PutObjectCommand({
-        Bucket: bucket,
-        Key: key,
-        ContentType: ct,
-      })
-      const url = await getSignedUrl(s3, cmd, { expiresIn: 3600 })
-      return json({ url, key, contentType: ct })
+      return json({ error: 'استبدال المرفق عبر رابط مباشر معطّل؛ استخدم replaceObject' }, 410)
     }
 
     if (action === 'signAvatarPresetGet') {
@@ -942,26 +982,9 @@ Deno.serve(async (req) => {
 
     if (action === 'signGet') {
       const key = assertKey(body.key)
-      // [أمان] منع IDOR: لا نوقّع رابطاً/بثّاً إلا لملف يخص مخالفة يستطيع
-      // المستخدم رؤيتها (تُفرض عبر RLS داخل الدالة SECURITY INVOKER).
-      // استثناء: service_role للصيانة (تحويل HEVC من الخادم).
-      if (!isServiceRole) {
-        const { data: canSee, error: permErr } = await supabase.rpc(
-          'athar_user_can_see_attachment',
-          { p_key: key },
-        )
-        if (permErr) {
-          console.error('[r2-storage] perm check failed', permErr.message)
-          return json({ error: 'تعذّر التحقق من صلاحية الملف' }, 500)
-        }
-        if (!canSee) {
-          return json({ error: 'غير مصرح بالوصول لهذا الملف' }, 403)
-        }
-      }
-      const ct =
-        typeof body.contentType === 'string' && body.contentType.trim()
-          ? body.contentType.trim()
-          : guessContentTypeFromKey(key)
+      if (!isServiceRole) await requireAttachmentRead(supabase, key)
+      const head = await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: key }))
+      const ct = head.ContentType || guessContentTypeFromKey(key)
       const cmd = new GetObjectCommand({
         Bucket: bucket,
         Key: key,
@@ -975,19 +998,7 @@ Deno.serve(async (req) => {
 
     if (action === 'headObject') {
       const key = assertKey(body.key)
-      if (!isServiceRole) {
-        const { data: canSee, error: permErr } = await supabase.rpc(
-          'athar_user_can_see_attachment',
-          { p_key: key },
-        )
-        if (permErr) {
-          console.error('[r2-storage] headObject perm check failed', permErr.message)
-          return json({ error: 'تعذّر التحقق من صلاحية الملف' }, 500)
-        }
-        if (!canSee) {
-          return json({ error: 'غير مصرح بالوصول لهذا الملف' }, 403)
-        }
-      }
+      if (!isServiceRole) await requireAttachmentRead(supabase, key)
       try {
         const head = await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: key }))
         return json({
@@ -1010,25 +1021,10 @@ Deno.serve(async (req) => {
 
     if (action === 'proxyGet') {
       const key = assertKey(body.key)
-      if (!isServiceRole) {
-        const { data: canSee, error: permErr } = await supabase.rpc(
-          'athar_user_can_see_attachment',
-          { p_key: key },
-        )
-        if (permErr) {
-          console.error('[r2-storage] proxyGet perm check failed', permErr.message)
-          return json({ error: 'تعذّر التحقق من صلاحية الملف' }, 500)
-        }
-        if (!canSee) {
-          return json({ error: 'غير مصرح بالوصول لهذا الملف' }, 403)
-        }
-      }
+      if (!isServiceRole) await requireAttachmentRead(supabase, key)
       try {
         const out = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key }))
-        const ct =
-          (typeof body.contentType === 'string' && body.contentType.trim())
-          || out.ContentType
-          || guessContentTypeFromKey(key)
+        const ct = out.ContentType || guessContentTypeFromKey(key)
         const headers: Record<string, string> = {
           ..._cors,
           'Content-Type': ct,
@@ -1050,41 +1046,84 @@ Deno.serve(async (req) => {
       }
     }
 
-    if (action === 'moveObject') {
-      const fromKey = assertKey(body.fromKey)
+    if (action === 'rollbackMove') {
+      const fromKey = assertTempUploadKey(body.fromKey || '', user.id)
       const toKey = assertKey(body.toKey)
-      // [أمان] التأكد أن الملف المؤقت يخص المستخدم الحالي
-      if (!fromKey.startsWith(`temp_${user.id}`)) {
-        return json({ error: 'غير مصرح بنقل هذا الملف' }, 403)
+      if (!isServiceRole) {
+        await requireAttachmentMoveRollback(supabase, {
+          recordType: String(body.recordType || ''),
+          recordId: String(body.recordId || ''),
+          fromKey,
+          toKey,
+          operation: String(body.operation || ''),
+          expectedState: body.expectedState,
+        })
       }
-      if (!fromKey.startsWith('temp_')) {
-        return json({ error: 'نقل الملفات مسموح من المجلد المؤقت فقط' }, 400)
+      try {
+        await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: toKey }))
+        return json({ ok: true, rolledBack: true, fromKey, toKey })
+      } catch (e: unknown) {
+        const name = e && typeof e === 'object' && 'name' in e ? String((e as { name: string }).name) : ''
+        if (name === 'NotFound' || name === 'NoSuchKey' || name === '404') {
+          return json({ ok: true, rolledBack: true, missing: true, fromKey, toKey })
+        }
+        throw e
       }
-      const copySource = encodeURI(`${bucket}/${fromKey}`)
-      await s3.send(
-        new CopyObjectCommand({
-          Bucket: bucket,
-          Key: toKey,
-          CopySource: copySource,
-        }),
-      )
-      await s3.send(
-        new DeleteObjectCommand({
-          Bucket: bucket,
-          Key: fromKey,
-        }),
-      )
-      return json({ ok: true, fromKey, toKey })
+    }
+
+    if (action === 'moveObject') {
+      const fromKey = assertTempUploadKey(body.fromKey || '', user.id)
+      const toKey = assertKey(body.toKey)
+      if (!isServiceRole) {
+        await requireAttachmentMoveDestination(supabase, {
+          recordType: String(body.recordType || ''),
+          recordId: String(body.recordId || ''),
+          fromKey,
+          toKey,
+          operation: String(body.operation || ''),
+          expectedState: body.expectedState,
+        })
+      }
+      try {
+        await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: toKey }))
+        return json({ error: 'يوجد ملف بالفعل في وجهة النقل' }, 409)
+      } catch (e: unknown) {
+        const name = e && typeof e === 'object' && 'name' in e ? String((e as { name: string }).name) : ''
+        if (name && !['NotFound', 'NoSuchKey', '404'].includes(name)) throw e
+      }
+      const sourceHead = await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: fromKey }))
+      assertAttachmentSize(Number(sourceHead.ContentLength || 0))
+      const sourceContentType = normalizedAttachmentContentType(fromKey, sourceHead.ContentType || '')
+      normalizedAttachmentContentType(toKey, sourceContentType)
+      const source = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: fromKey }))
+      if (!source.Body) throw new Error('جسم الملف المؤقت فارغ')
+      await s3.send(new PutObjectCommand({
+        Bucket: bucket,
+        Key: toKey,
+        Body: source.Body,
+        ContentType: sourceContentType,
+        ContentLength: sourceHead.ContentLength,
+        // الشرط الذري يمنع سباق Head/Put من استبدال ملف قائم.
+        IfNoneMatch: '*',
+      }))
+      // لا نحذف المصدر الآن: يجب أن ينجح RPC الذي يثبت المرجع في قاعدة
+      // البيانات أولاً. عند فشله يمكن للعميل حذف النسخة النهائية بأمان
+      // والإبقاء على temp لإعادة المحاولة، بلا orphan أو 404 مرجعي.
+      return json({ ok: true, copied: true, sourceRetained: true, fromKey, toKey })
     }
 
     return json({ error: 'عملية غير معروفة' }, 400)
   } catch (e) {
     const info = r2ErrInfo(e)
     console.error('[r2-storage]', info.name, info.message, e)
+    const status = requestErrorStatus(e)
     return json({
-      error: `حدث خطأ أثناء المعالجة (${info.name}): ${info.message}`,
-      bucket,
-      r2Error: info.name,
-    }, 500)
+      error: status >= 500 ? 'حدث خطأ أثناء معالجة التخزين' : info.message,
+    }, status)
   }
-})
+  }
+}
+
+if (import.meta.main) {
+  Deno.serve(createR2StorageHandler())
+}

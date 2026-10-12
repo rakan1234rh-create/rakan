@@ -13,9 +13,14 @@ permissions:
 
 jobs:
   apply:
+    # workflow_dispatch من فرع أو tag آخر لا يملك حق تشغيل SQL للإنتاج.
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
 
       - name: Validate and apply SQL via Supabase Management API
         env:
@@ -32,20 +37,10 @@ jobs:
             echo "::error::sql_file input is required"
             exit 1
           fi
-          # Only allow migration files — no arbitrary supabase/*.sql from push
-          case "$SQL_FILE" in
-            migrations/*.sql) ;;
-            *)
-              echo "::error::Only paths under migrations/*.sql are allowed (got: $SQL_FILE)"
-              exit 1
-              ;;
-          esac
-          if [ ! -f "supabase/$SQL_FILE" ]; then
-            echo "::error::File not found: supabase/$SQL_FILE"
-            exit 1
-          fi
+          SQL_PATH="$(bash scripts/validate-sql-migration-path.sh "$GITHUB_WORKSPACE" "$SQL_FILE")"
+          SQL_FILE="${SQL_PATH#"$GITHUB_WORKSPACE/supabase/"}"
           echo "Applying supabase/$SQL_FILE"
-          QUERY=$(python3 -c 'import json,sys; print(json.dumps(open(sys.argv[1],encoding="utf-8").read()))' "supabase/$SQL_FILE")
+          QUERY=$(python3 -c 'import json,sys; print(json.dumps(open(sys.argv[1],encoding="utf-8").read()))' "$SQL_PATH")
           HTTP=$(curl -sS -o /tmp/sql_resp.json -w "%{http_code}" \
             -X POST "https://api.supabase.com/v1/projects/${PROJECT_ID}/database/query" \
             -H "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" \

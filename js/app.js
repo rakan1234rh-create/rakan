@@ -29,11 +29,13 @@
       // ✅ العمليات الإدارية تتم عبر Edge Function آمنة على الخادم
       // Secret Key يبقى في متغيرات البيئة على Supabase ولا يصل المتصفح أبداً
       const ADMIN_FN_URL = `${SUPABASE_URL}/functions/v1/admin-users`;
+      const EMPLOYEE_LOGIN_FN_URL = `${SUPABASE_URL}/functions/v1/employee-login`;
 
       /** توقيع روابط R2 (رفع/تحميل/نقل) عبر Edge Function — المفاتيح لا تصل للمتصفح */
       const R2_STORAGE_FN_URL = `${SUPABASE_URL}/functions/v1/r2-storage`;
       const VIOLATION_PUSH_FN_URL = `${SUPABASE_URL}/functions/v1/violation-push`;
       const EMAIL_UNSUBSCRIBE_FN_URL = `${SUPABASE_URL}/functions/v1/email-unsubscribe`;
+      const PASSWORD_RECOVERY_FN_URL = `${SUPABASE_URL}/functions/v1/password-recovery`;
       const VIOLATION_PUSH_FN_VERSION = '2026-07-parallel-push-v1';
 
       /** يعمل فقط على المضيف المحلي — لا يُفعّل على نطاق الإنتاج */
@@ -66,10 +68,6 @@
         return (location.origin || '').replace(/\/$/, '') + path;
       }
 
-      function getPasswordResetRedirectUrl() {
-        return `${getAppBaseUrl()}/#reset-password`;
-      }
-
       function formatPasswordResetWaitSeconds(seconds) {
         const wait = Math.max(1, Math.ceil(Number(seconds) || 0));
         if (wait >= 86400) {
@@ -89,47 +87,44 @@
 
       function formatPasswordResetRateLimitMessage(rateData) {
         if (!rateData || typeof rateData !== 'object') {
-          return 'تعذّر التحقق من حد الإرسال. حاول لاحقاً';
+          return 'تعذّر إرسال الرمز حالياً. حاول لاحقاً';
         }
-        if (rateData.blocked) {
-          return rateData.message || 'تجاوزت الحد المسموح لإرسال رموز استعادة كلمة المرور. إذا كنت تواجه صعوبة في تسجيل الدخول، تواصل مع إدارة المنصة.';
-        }
-        if (!rateData.allowed && Number(rateData.wait_seconds) > 0) {
-          return formatPasswordResetWaitSeconds(rateData.wait_seconds);
+        if (Number(rateData.retry_after_seconds) > 0) {
+          return formatPasswordResetWaitSeconds(rateData.retry_after_seconds);
         }
         return 'تعذّر إرسال الرمز حالياً. حاول لاحقاً';
       }
 
-      async function ensurePasswordResetRateLimitAllowed(email) {
-        const { data, error } = await sb.rpc('check_password_reset_rate_limit', { p_email: email });
-        if (error) throw error;
-        return data;
-      }
-
       async function requestPasswordResetEmail(email) {
-        const rate = await ensurePasswordResetRateLimitAllowed(email);
-        if (!rate?.allowed) {
-          const err = new Error(formatPasswordResetRateLimitMessage(rate));
-          err.isPasswordResetRateLimit = true;
-          err.waitSeconds = Number(rate.wait_seconds) || 0;
-          err.blocked = !!rate.blocked;
+        let response;
+        try {
+          response = await fetch(PASSWORD_RECOVERY_FN_URL, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': SUPABASE_ANON,
+            },
+            body: JSON.stringify({ email }),
+          });
+        } catch (_) {
+          const err = new Error('تعذّر الاتصال بخدمة الاستعادة. حاول لاحقاً');
+          err.isPasswordResetRecovery = true;
           throw err;
         }
 
-        const { error } = await sb.auth.resetPasswordForEmail(email, {
-          redirectTo: getPasswordResetRedirectUrl()
-        });
-        // Uniform response: do not reveal whether the mailbox is registered.
-        if (error) {
-          const msg = String(error.message || error || '');
-          const status = error.status ?? error.statusCode;
-          const isNotFound = status === 404
-            || /user not found|email not found|unable to find user|signup_disabled/i.test(msg);
-          if (!isNotFound) throw error;
+        let data = null;
+        try { data = await response.json(); } catch (_) { /* استجابة غير صالحة */ }
+        if (!response.ok) {
+          const err = new Error(formatPasswordResetRateLimitMessage(data));
+          err.isPasswordResetRateLimit = true;
+          err.status = response.status;
+          err.waitSeconds = Number(data?.retry_after_seconds) || 0;
+          throw err;
         }
 
-        const { error: recordErr } = await sb.rpc('record_password_reset_attempt', { p_email: email });
-        if (recordErr && isAtharDebugLog()) console.warn('[PasswordResetRateLimit] record failed', recordErr);
+        const resendAfter = Math.max(0, Number(data?.resend_after_seconds) || 0);
+        if (resendAfter > 0) startPasswordResetResendCountdown(email, resendAfter);
+        return data;
       }
 
       function isAppleMailboxEmail(email) {
@@ -147,25 +142,11 @@
         if (err?.isPasswordResetRateLimit) {
           return String(err.message || 'تعذّر إرسال الرمز حالياً. حاول لاحقاً');
         }
-        const errMsg = String(err?.message || err || '');
         const status = err?.status ?? err?.statusCode;
-        if (status === 429 || /too many|rate limit|429|over_email_send_rate_limit/i.test(errMsg)) {
-          const secMatch = errMsg.match(/after\s+(\d+)\s+seconds?/i);
-          if (secMatch) {
-            return formatPasswordResetWaitSeconds(Number(secMatch[1]));
-          }
+        if (status === 429) {
           return formatPasswordResetWaitSeconds(60);
         }
-        if (errMsg.includes('check_password_reset_rate_limit') || errMsg.includes('record_password_reset_attempt')) {
-          return 'تعذّر التحقق من حد الإرسال حالياً. حاول لاحقاً.';
-        }
-        if (status === 500 || /error sending recovery|recovery email|hook|smtp|sender address|authentication failed/i.test(errMsg)) {
-          if (/authentication failed|535|invalid login/i.test(errMsg)) {
-            return 'تعذّر الدخول لبريد Hostinger (SMTP). تحقق من SES_SMTP_PASSWORD لصندوق info@athar-app.online.';
-          }
-          return 'تعذّر إرسال رمز التحقق من الخادم. حاول مرة أخرى بعد قليل، أو تحقق من إعداد SMTP (Hostinger) في Supabase Secrets.';
-        }
-        return 'فشل الإرسال: ' + (errMsg || 'حاول مجدداً');
+        return 'تعذّر إرسال الرمز حالياً. حاول لاحقاً.';
       }
 
       let passwordResetResendTimerId = null;
@@ -220,20 +201,7 @@
         const cd = document.getElementById('otpResendCountdown');
         if (!btn) return;
         const enabled = !!opts?.enabled;
-        const blocked = !!opts?.blocked;
         const seconds = Math.max(0, Number(opts?.seconds) || 0);
-
-        if (blocked) {
-          btn.classList.add('lp-link--disabled');
-          btn.setAttribute('aria-disabled', 'true');
-          btn.tabIndex = -1;
-          if (cd) {
-            cd.hidden = false;
-            cd.className = 'lp-resend-countdown lp-resend-countdown--blocked';
-            cd.textContent = 'تواصل مع إدارة المنصة';
-          }
-          return;
-        }
 
         if (!enabled && seconds > 0) {
           btn.classList.add('lp-link--disabled');
@@ -309,25 +277,9 @@
           return;
         }
 
-        try {
-          const rate = await ensurePasswordResetRateLimitAllowed(normalized);
-          if (rate?.blocked) {
-            stopPasswordResetResendCountdown();
-            clearPasswordResetResendStorage(normalized);
-            updatePasswordResetResendButton({ enabled: false, blocked: true });
-            return;
-          }
-          if (!rate?.allowed && Number(rate?.wait_seconds) > 0) {
-            startPasswordResetResendCountdown(normalized, Number(rate.wait_seconds));
-            return;
-          }
-          stopPasswordResetResendCountdown();
-          clearPasswordResetResendStorage(normalized);
-          updatePasswordResetResendButton({ enabled: true });
-        } catch (_) {
-          if (stored > 0) startPasswordResetResendCountdown(normalized, stored);
-          else updatePasswordResetResendButton({ enabled: true });
-        }
+        stopPasswordResetResendCountdown();
+        clearPasswordResetResendStorage(normalized);
+        updatePasswordResetResendButton({ enabled: true });
       }
 
       /** تخطي R2 واستخدام مرفقات محلية (data URL) عند عدم توفر /config */
@@ -718,6 +670,16 @@
         return _r2DirectPutBlocked ? (12 * 1024 * 1024) : (20 * 1024 * 1024);
       }
 
+      // يطابق حد r2-storage؛ يمنع محاولة كبيرة قبل إرسال أي بايت إلى التخزين.
+      const R2_ATTACHMENT_MAX_BYTES = 50 * 1024 * 1024;
+      function assertR2AttachmentUploadSize(size) {
+        const bytes = Number(size || 0);
+        if (!Number.isFinite(bytes) || bytes < 1) throw new Error('المرفق فارغ');
+        if (bytes > R2_ATTACHMENT_MAX_BYTES) {
+          throw new Error('حجم المرفق يتجاوز الحد المسموح (50 ميغابايت)');
+        }
+      }
+
       let _uploadWakeLock = null;
       async function acquireUploadWakeLock() {
         try {
@@ -1077,18 +1039,10 @@
         const key = String(objectKey || '').trim();
         if (!key || key.includes('..')) throw new Error('مسار الملف غير صالح');
         const ct = contentType || 'video/mp4';
-        try {
-          await uploadR2DirectReplacePut(key, body, ct);
-        } catch (e) {
-          const msg = String(e?.message || e);
-          if (/CORS|R2_DIRECT_CORS_BLOCKED/i.test(msg)) {
-            await uploadR2ReplaceViaEdgeProxy(key, body, ct);
-          } else if (/R2_EDGE_PAYLOAD_TOO_LARGE/i.test(msg)) {
-            throw new Error('حجم الفيديو كبير لاستبداله عبر الخادم — جرّب شبكة أقوى أو ملفاً أصغر');
-          } else {
-            throw e;
-          }
-        }
+        const size = (body instanceof Blob && body.size) || (body && body.byteLength) || 0;
+        assertR2AttachmentUploadSize(size);
+        // لا نستخدم PUT موقّعاً: الخادم هو نقطة فرض صلاحية التعديل وMIME والحجم.
+        await uploadR2ReplaceViaEdgeProxy(key, body, ct);
       }
 
       async function uploadR2DirectPut(objectKey, body, contentType, cancelHandle) {
@@ -1493,6 +1447,7 @@
 
       /** أعمدة موجودة فعلاً في جدول users — لا تضف region_id أو supervisor_id (غير موجودين في Supabase) */
       const MOB_USER_SELECT = 'id,name,role,branch_id,department_id,employee_number,auth_uid,is_active,email,phone,job_title,avatar_key,push_subscriptions(id)';
+      const USER_DIRECTORY_RPC = 'get_user_directory';
       const MOB_LOAD_TIMEOUT_MS = 28000;
       /** قائمة التذاكر — نُبقي logs/attachments هنا حتى لا تختفي بعد فتح التذكرة إذا فشل جلب التفاصيل */
       const VIOLATION_LIST_SELECT = [
@@ -1564,18 +1519,26 @@
         if (state.currentUser?.id) ids.add(state.currentUser.id);
         if (!ids.size) return state.currentUser ? [state.currentUser] : [];
         const idList = [...ids];
-        const chunk = 80;
-        const users = [];
-        for (let i = 0; i < idList.length; i += chunk) {
-          const part = idList.slice(i, i + chunk);
-          const rows = await mobSupabaseQuery(
-            'مستخدمون (جزئي)',
-            sb.from('users').select(MOB_USER_SELECT).in('id', part),
-            timeoutMs
-          );
-          users.push(...rows);
+        const users = await mobSupabaseQuery(
+          'دليل المستخدمين (جزئي)',
+          loadUsersForCurrentSession(),
+          timeoutMs
+        );
+        return (users || []).filter((user) => idList.includes(user.id));
+      }
+
+      async function loadUsersForCurrentSession() {
+        // الإدارة النشطة/من يملك manage_users يحتاجون الحقول الكاملة لإدارة الحسابات.
+        if (canManageUsers()) {
+          return sb.from('users').select(MOB_USER_SELECT).order('name');
         }
-        return users;
+        // بقية الحسابات لا تستدعي REST على public.users؛ RPC لا يعيد PII.
+        const { data, error } = await sb.rpc(USER_DIRECTORY_RPC);
+        if (error) return { data: null, error };
+        return {
+          data: (data || []).sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'ar')),
+          error: null
+        };
       }
 
       function mobFinishDashboardRender() {
@@ -4282,7 +4245,7 @@
         if (rc) rc.style.display = 'none';
         hideLoginError();
         const hint = document.getElementById('otpEmailHint');
-        if (hint) hint.textContent = resetEmail || '';
+        if (hint) hint.textContent = 'أدخل الرمز المرسل إلى بريدك المسجل';
         const msg = document.getElementById('otpSuccessMsg');
         const ok = document.getElementById('otpSuccess');
         if (msg && ok) {
@@ -4383,6 +4346,30 @@
         }
       }
 
+      async function signInWithEmployeeNumber(employeeNumber, password) {
+        const genericError = new Error('بيانات الدخول غير صحيحة أو المحاولة مقيّدة مؤقتاً');
+        try {
+          const response = await fetch(EMPLOYEE_LOGIN_FN_URL, {
+            method: 'POST',
+            headers: {
+              'apikey': SUPABASE_ANON,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ employee_number: employeeNumber, password })
+          });
+          const payload = await response.json().catch(() => null);
+          if (!response.ok || !payload?.access_token || !payload?.refresh_token) {
+            return { data: null, error: genericError };
+          }
+          return await sb.auth.setSession({
+            access_token: payload.access_token,
+            refresh_token: payload.refresh_token
+          });
+        } catch (_) {
+          return { data: null, error: genericError };
+        }
+      }
+
       async function handleLogin() {
         if (!document.getElementById('loginIdentifier')) {
           showToast('تسجيل الدخول من الواجهة غير متاح.', 'info');
@@ -4398,36 +4385,18 @@
         setLoginLoading(true);
 
         try {
-          // تحديد الإيميل (إذا كان المُدخَل رقم وظيفي)
-          let email = identifier;
+          let authData = null;
+          let authErr = null;
           if (!identifier.includes('@')) {
-            const candidates = Array.from(new Set([
-              identifier,
-              (typeof padEmpNum === 'function' ? padEmpNum(identifier) : ''),
-              identifier.replace(/^0+/, '') || identifier
-            ].filter(Boolean)));
-            let data = null;
-            let error = null;
-            for (const emp of candidates) {
-              const res = await sb.rpc('get_email_by_emp_number', { emp_num: emp });
-              error = res.error;
-              if (error) break;
-              if (res.data) { data = res.data; break; }
-            }
-            if (error) throw error;
-            if (!data) {
-              showLoginError('الرقم الوظيفي غير مسجل');
-              setLoginLoading(false);
-              return;
-            }
-            email = data;
+            // البريد لا يغادر الخادم: employee-login يحله داخلياً ثم يثبت كلمة المرور.
+            ({ data: authData, error: authErr } = await signInWithEmployeeNumber(identifier, password));
+          } else {
+            const email = Sec.normalizeEmail(identifier);
+            ({ data: authData, error: authErr } = await sb.auth.signInWithPassword({ email, password }));
           }
-          email = Sec.normalizeEmail(email);
 
-          // تسجيل الدخول
-          const { data: authData, error: authErr } = await sb.auth.signInWithPassword({ email, password });
-          if (authErr) {
-            showLoginError('البريد أو كلمة المرور غير صحيحة');
+          if (authErr || !authData?.user) {
+            showLoginError('بيانات الدخول غير صحيحة أو المحاولة مقيّدة مؤقتاً');
             setLoginLoading(false);
             return;
           }
@@ -4755,14 +4724,10 @@
             errEl.classList.add('show');
             errMsg.textContent = formatForgotPasswordError(err);
           }
-          const waitSeconds = err?.blocked
-            ? 0
-            : (Number(err.waitSeconds) || parsePasswordResetErrorWaitSeconds(err) || ((err?.status === 429 || /rate limit|429/i.test(String(err?.message || ''))) ? 60 : 0));
-          if (err?.blocked) {
-            stopPasswordResetResendCountdown();
-            clearPasswordResetResendStorage(email);
-            updatePasswordResetResendButton({ enabled: false, blocked: true });
-          } else if (waitSeconds > 0) {
+          const waitSeconds = Number(err.waitSeconds)
+            || parsePasswordResetErrorWaitSeconds(err)
+            || (err?.status === 429 ? 60 : 0);
+          if (waitSeconds > 0) {
             startPasswordResetResendCountdown(email, waitSeconds);
           } else {
             await syncPasswordResetResendUi(email);
@@ -4844,11 +4809,6 @@
         try {
           const { error } = await sb.auth.updateUser({ password: newPw });
           if (error) throw error;
-
-          const resetEmail = getPasswordResetEmail();
-          if (resetEmail) {
-            try { await sb.rpc('clear_password_reset_attempts', { p_email: resetEmail }); } catch (_) { /* noop */ }
-          }
 
           clearPasswordRecoveryPending();
           try { await atharSignOut(); } catch (_) { /* noop */ }
@@ -5034,7 +4994,7 @@
           const fetchAll = Promise.all([
             sb.from('regions').select(DESKTOP_REGION_SELECT).order('name'),
             sb.from('branches').select(mobLoad ? 'id,name,region_id' : DESKTOP_BRANCH_SELECT).order('name'),
-            sb.from('users').select(mobLoad ? MOB_USER_SELECT : DESKTOP_USER_SELECT).order('name'),
+            loadUsersForCurrentSession(),
             sb.from('violations').select(VIOLATION_LIST_SELECT_LOCAL).order('created_at', { ascending: false }).limit(VIOLATIONS_LIMIT),
             sb.from('violation_types').select(mobLoad ? MOB_VIOLATION_TYPES_SELECT : DESKTOP_VIOLATION_TYPES_SELECT).order('name'),
             !state.currentUser?.id
@@ -16932,58 +16892,8 @@
             || (body instanceof Blob && body.size)
             || (body && body.byteLength)
             || 0;
-          const isVideo = /^video\//i.test(contentType)
-            || /\.(mp4|mov|webm|m4v|avi|mkv)$/i.test(String(fileObj.name || ''));
-          const needsMultipart = fileSize > getR2MultipartThreshold();
-
-          const uploadViaDirect = async () => {
-            await uploadR2DirectPut(objectKey, body, contentType);
-          };
-          const uploadViaProxy = async () => {
-            await uploadR2ViaEdgeProxy(objectKey, body, contentType);
-          };
-          const uploadViaMultipart = async (onPartProgress) => {
-            await uploadR2MultipartViaEdge(objectKey, body, contentType, onPartProgress);
-          };
-
-          if (_r2DirectPutBlocked) {
-            if (needsMultipart) await uploadViaMultipart(onProgress);
-            else await uploadViaProxy();
-          } else if (needsMultipart) {
-            try {
-              await uploadViaDirect();
-            } catch (directErr) {
-              const directMsg = String(directErr?.message || directErr);
-              if (/R2_DIRECT_CORS_BLOCKED|CORS|Failed to fetch|Load failed|blocked/i.test(directMsg)) {
-                markR2DirectPutBlocked();
-                await uploadViaMultipart(onProgress);
-              } else {
-                throw directErr;
-              }
-            }
-          } else if (isVideo || fileSize > (4 * 1024 * 1024)) {
-            try {
-              await uploadViaDirect();
-            } catch (directErr) {
-              const directMsg = String(directErr?.message || directErr);
-              if (/R2_DIRECT_CORS_BLOCKED|CORS|Failed to fetch|Load failed|blocked/i.test(directMsg)) {
-                markR2DirectPutBlocked();
-                await uploadViaProxy();
-              } else {
-                throw directErr;
-              }
-            }
-          } else {
-            try {
-              await uploadViaProxy();
-            } catch (proxyErr) {
-              const proxyMsg = String(proxyErr?.message || proxyErr);
-              if (!/R2_EDGE_PAYLOAD_TOO_LARGE|413|كبير جداً|403|غير مصرح|502|504|timeout|Load failed/i.test(proxyMsg)) {
-                throw proxyErr;
-              }
-              await uploadViaDirect();
-            }
-          }
+          assertR2AttachmentUploadSize(fileSize);
+          await uploadR2ViaEdgeProxy(objectKey, body, contentType);
           return { success: true, fileId: objectKey };
         } catch (error) {
           if (isAtharDebugLog()) console.error('R2 Upload Error:', error);
@@ -16998,7 +16908,59 @@
       /**
        * نقل مرفقات التذكرة من المجلد المؤقت إلى المجلد النهائي الرسمي
        */
-      async function moveAttachmentsToFinalFolder(violationId, ticketNumber, attachments) {
+      async function finalizeR2AttachmentPath(recordType, recordId, fromKey, toKey, opts = {}) {
+        const { data, error } = await sb.rpc('athar_finalize_attachment_path', {
+          p_record_type: recordType,
+          p_record_id: recordId,
+          p_from_key: fromKey,
+          p_to_key: toKey,
+          p_operation: opts.operation || 'create',
+          p_expected_state: opts.expectedState || null,
+        });
+        if (error) throw error;
+        if (!data) throw new Error('تعذّر تثبيت مسار المرفق في السجل');
+      }
+
+      async function rollbackR2CopiedAttachment(recordType, recordId, move, opts = {}) {
+        if (!move?.oldKey || !move?.newKey) return false;
+        try {
+          await callR2StorageFn('rollbackMove', {
+            fromKey: move.oldKey,
+            toKey: move.newKey,
+            recordType,
+            recordId,
+            operation: opts.operation || 'create',
+            ...(opts.expectedState ? { expectedState: opts.expectedState } : {}),
+          });
+          return true;
+        } catch (e) {
+          // رفض rollback يعني غالباً أن المرجع النهائي ثُبّت رغم فقد استجابة
+          // الشبكة؛ لا نحذف حينها الملف النهائي الصحيح.
+          if (isAtharDebugLog()) console.warn('[R2-Move] rollback skipped', e);
+          return false;
+        }
+      }
+
+      async function cleanupR2CopiedTempKey(oldKey) {
+        try {
+          await deleteR2TempObject(oldKey);
+        } catch (e) {
+          // المرجع النهائي صحيح؛ بقاء temp المملوك مؤقتاً أهون من حذف النهائي.
+          if (isAtharDebugLog()) console.warn('[R2-Move] temp cleanup deferred', oldKey, e);
+        }
+      }
+
+      async function rollbackR2CopiedAttachments(recordType, recordId, moves, opts = {}) {
+        await Promise.all((moves || []).map((move) =>
+          rollbackR2CopiedAttachment(recordType, recordId, move, opts)
+        ));
+      }
+
+      async function commitR2CopiedAttachments(moves) {
+        await Promise.all((moves || []).map((move) => cleanupR2CopiedTempKey(move.oldKey)));
+      }
+
+      async function moveAttachmentsToFinalFolder(violationId, ticketNumber, attachments, opts = {}) {
         if (isAtharDebugLog()) console.log(`[R2-Move] Starting move for ${ticketNumber}...`);
         try {
           const backend = await resolveR2Backend();
@@ -17006,8 +16968,8 @@
           let movedAny = false;
           const failed = [];
 
-          const violRef = state.violations.find(v => v.id === violationId);
-          const r2Folder = pickPreferredR2Folder(ticketNumber, violRef?.created_at, attachments);
+          // كل المرفقات الجديدة مربوطة بمعرّف السجل، لا برقم تذكرة قابل للتخمين.
+          const r2Folder = `violations/${violationId}`;
 
           if (backend === 'none') {
             if (allowAttachmentDevSkip()) {
@@ -17036,9 +16998,16 @@
             if (!oldKey || !oldKey.startsWith('temp_')) return null;
             const newKey = `${r2Folder}/${oldKey.split('/').pop()}`;
             try {
-              await callR2StorageFn('moveObject', { fromKey: oldKey, toKey: newKey });
+              await callR2StorageFn('moveObject', {
+                fromKey: oldKey,
+                toKey: newKey,
+                recordType: 'violation',
+                recordId: violationId,
+                operation: opts.operation || 'create',
+                ...(opts.expectedState ? { expectedState: opts.expectedState } : {}),
+              });
               if (isAtharDebugLog()) console.log(`[R2-Move] Moved: ${oldKey} -> ${newKey}`);
-              return { i, newKey };
+              return { i, oldKey, newKey };
             } catch (e) {
               failed.push(oldKey);
               if (isAtharDebugLog()) console.error(`[R2-Move] Failed to move ${oldKey}:`, e);
@@ -17049,13 +17018,19 @@
           const moveResults = await Promise.all(updatedAtts.map((att, i) => moveOne(att, i)));
           for (const r of moveResults) {
             if (!r) continue;
-            updatedAtts[r.i].p = r.newKey;
-            movedAny = true;
+            try {
+              await finalizeR2AttachmentPath('violation', violationId, r.oldKey, r.newKey, opts);
+              updatedAtts[r.i].p = r.newKey;
+              movedAny = true;
+              await cleanupR2CopiedTempKey(r.oldKey);
+            } catch (e) {
+              await rollbackR2CopiedAttachment('violation', violationId, r, opts);
+              failed.push(r.oldKey);
+            }
           }
 
           if (movedAny) {
-            await sb.from('violations').update({ attachments: updatedAtts }).eq('id', violationId);
-            if (isAtharDebugLog()) console.log(`[R2-Move] DB paths updated for ${ticketNumber}`);
+            if (isAtharDebugLog()) console.log(`[R2-Move] DB paths finalized for ${ticketNumber}`);
             const idx = state.violations.findIndex(v => v.id === violationId);
             if (idx !== -1) {
               state.violations[idx].attachments = updatedAtts;
@@ -17077,8 +17052,8 @@
         if (!Array.isArray(attachments) || !attachments.length) return null;
         const persistColumn = opts.persistColumn !== false;
         const backend = await resolveR2Backend();
-        const safeNum = String(complaintNumber || complaintId || 'unknown').replace(/[^\w.\-]/g, '_');
-        const r2Folder = `complaints/${safeNum}`;
+        // لا نستخدم رقم الشكوى في ACL: UUID السجل هو namespace النهائي.
+        const r2Folder = `complaints/${complaintId}`;
         let updatedAtts = attachments.map(a => (a && typeof a === 'object') ? { ...a } : a);
         let movedAny = false;
         const failed = [];
@@ -17110,8 +17085,14 @@
           if (!oldKey || !String(oldKey).startsWith('temp_')) return null;
           const newKey = `${r2Folder}/${String(oldKey).split('/').pop()}`;
           try {
-            await callR2StorageFn('moveObject', { fromKey: oldKey, toKey: newKey });
-            return { i, newKey };
+            await callR2StorageFn('moveObject', {
+              fromKey: oldKey,
+              toKey: newKey,
+              recordType: 'complaint',
+              recordId: complaintId,
+              operation: opts.operation || 'create',
+            });
+            return { i, oldKey, newKey };
           } catch (e) {
             failed.push(oldKey);
             if (isAtharDebugLog()) console.error('[R2-Move] complaint failed', oldKey, e);
@@ -17119,18 +17100,36 @@
           }
         };
 
+        const pendingMoves = [];
         const moveResults = await Promise.all(updatedAtts.map((att, i) => moveOne(att, i)));
         for (const r of moveResults) {
           if (!r) continue;
-          updatedAtts[r.i] = { ...updatedAtts[r.i], p: r.newKey };
-          movedAny = true;
+          try {
+            if (persistColumn) {
+              await finalizeR2AttachmentPath('complaint', complaintId, r.oldKey, r.newKey, opts);
+            } else {
+              pendingMoves.push(r);
+            }
+            updatedAtts[r.i] = { ...updatedAtts[r.i], p: r.newKey };
+            movedAny = true;
+            if (persistColumn) await cleanupR2CopiedTempKey(r.oldKey);
+          } catch (e) {
+            await rollbackR2CopiedAttachment('complaint', complaintId, r, opts);
+            failed.push(r.oldKey);
+          }
         }
 
         if (movedAny && persistColumn) {
-          await sb.from('complaints').update({ attachments: updatedAtts }).eq('id', complaintId);
+          if (isAtharDebugLog()) console.log('[R2-Move] complaint paths finalized');
         }
         if (failed.length) {
           throw new Error('فشل تثبيت ' + failed.length + ' مرفق(ات) للشكوى');
+        }
+        if (!persistColumn && pendingMoves.length) {
+          Object.defineProperty(updatedAtts, '__r2PendingMoves', {
+            value: pendingMoves,
+            enumerable: false,
+          });
         }
         return movedAny ? updatedAtts : (updatedAtts.length ? updatedAtts : null);
       }
@@ -17215,61 +17214,11 @@
 
       async function uploadPreparedBlobToR2(objectKey, body, contentType, fileName, onProgress, cancelHandle) {
         const fileSize = (body instanceof Blob && body.size) || (body && body.byteLength) || 0;
-        const isVideo = /^video\//i.test(contentType)
-          || /\.(mp4|mov|webm|m4v|avi|mkv)$/i.test(String(fileName || ''));
-        const needsMultipart = fileSize > getR2MultipartThreshold();
-        const onPartProgress = (done, total) => {
-          if (typeof onProgress === 'function') onProgress(done, total);
-        };
-
-        const uploadViaDirect = async () => {
-          await uploadR2DirectPut(objectKey, body, contentType, cancelHandle);
-        };
-        const uploadViaProxy = async () => {
-          await uploadR2ViaEdgeProxy(objectKey, body, contentType);
-        };
-        const uploadViaMultipart = async () => {
-          await uploadR2MultipartViaEdge(objectKey, body, contentType, onPartProgress, cancelHandle);
-        };
-
-        if (_r2DirectPutBlocked) {
-          if (needsMultipart) await uploadViaMultipart();
-          else await uploadViaProxy();
-        } else if (needsMultipart) {
-          try {
-            await uploadViaDirect();
-          } catch (directErr) {
-            const directMsg = String(directErr?.message || directErr);
-            if (/R2_DIRECT_CORS_BLOCKED|CORS|Failed to fetch|Load failed|blocked/i.test(directMsg)) {
-              markR2DirectPutBlocked();
-              await uploadViaMultipart();
-            } else {
-              throw directErr;
-            }
-          }
-        } else if (isVideo || fileSize > (4 * 1024 * 1024)) {
-          try {
-            await uploadViaDirect();
-          } catch (directErr) {
-            const directMsg = String(directErr?.message || directErr);
-            if (/R2_DIRECT_CORS_BLOCKED|CORS|Failed to fetch|Load failed|blocked/i.test(directMsg)) {
-              markR2DirectPutBlocked();
-              await uploadViaProxy();
-            } else {
-              throw directErr;
-            }
-          }
-        } else {
-          try {
-            await uploadViaProxy();
-          } catch (proxyErr) {
-            const proxyMsg = String(proxyErr?.message || proxyErr);
-            if (!/R2_EDGE_PAYLOAD_TOO_LARGE|413|كبير جداً|403|غير مصرح|502|504|timeout|Load failed/i.test(proxyMsg)) {
-              throw proxyErr;
-            }
-            await uploadViaDirect();
-          }
-        }
+        void fileName;
+        void onProgress;
+        void cancelHandle;
+        assertR2AttachmentUploadSize(fileSize);
+        await uploadR2ViaEdgeProxy(objectKey, body, contentType);
       }
 
       async function waitForAttachmentPrep(fileEntry, timeoutMs) {
@@ -17896,28 +17845,47 @@
           const baseName = String(oldKey).split('/').pop();
           let newKey = null;
           if (String(oldKey).startsWith('temp_')) {
-            const folder = await resolveR2FolderForAttachment(ticket, baseName, atts);
-            const candidateKey = `${folder}/${baseName}`;
+            const candidateKey = `violations/${ticket.id}/${baseName}`;
             const atFinal = await r2ObjectExists(candidateKey);
             if (atFinal === true) {
-              newKey = candidateKey;
+              try {
+                await finalizeR2AttachmentPath('violation', ticket.id, oldKey, candidateKey, {
+                  operation: 'repair', expectedState: ticket.state,
+                });
+                await cleanupR2CopiedTempKey(oldKey);
+                newKey = candidateKey;
+              } catch (finalizeErr) {
+                if (isAtharDebugLog()) console.warn('[R2-Repair] finalize existing copy failed', finalizeErr);
+              }
             } else {
               const atTemp = await r2ObjectExists(oldKey);
               if (atTemp === true) {
                 try {
-                  await callR2StorageFn('moveObject', { fromKey: oldKey, toKey: candidateKey });
-                  newKey = candidateKey;
+                  await callR2StorageFn('moveObject', {
+                    fromKey: oldKey,
+                    toKey: candidateKey,
+                    recordType: 'violation',
+                    recordId: ticket.id,
+                    operation: 'repair',
+                    expectedState: ticket.state,
+                  });
+                  try {
+                    await finalizeR2AttachmentPath('violation', ticket.id, oldKey, candidateKey, {
+                      operation: 'repair', expectedState: ticket.state,
+                    });
+                    await cleanupR2CopiedTempKey(oldKey);
+                    newKey = candidateKey;
+                  } catch (finalizeErr) {
+                    await rollbackR2CopiedAttachment('violation', ticket.id, { oldKey, newKey: candidateKey }, {
+                      operation: 'repair', expectedState: ticket.state,
+                    });
+                    if (isAtharDebugLog()) console.warn('[R2-Repair] finalize failed', finalizeErr);
+                  }
                 } catch (moveErr) {
                   if (isAtharDebugLog()) console.warn('[R2-Repair] move failed', moveErr);
                 }
-              } else if (atFinal !== false) {
-                newKey = candidateKey;
               }
             }
-          } else if (isBareTicketStorageKey(oldKey)) {
-            const folder = pickPreferredR2Folder(ticket.ticket_number, ticket.created_at, atts);
-            const currentFolder = String(oldKey).substring(0, String(oldKey).lastIndexOf('/'));
-            if (folder && folder !== currentFolder) newKey = `${folder}/${baseName}`;
           }
           if (newKey && newKey !== oldKey) {
             changed = true;
@@ -17932,17 +17900,11 @@
           }
         }
         if (!changed) return false;
-        try {
-          await sb.from('violations').update({ attachments: updated }).eq('id', ticket.id);
-          ticket.attachments = updated;
-          const idx = state.violations.findIndex(v => v.id === ticket.id);
-          if (idx !== -1) state.violations[idx].attachments = updated;
-          if (isAtharDebugLog()) console.log('[R2-Repair] updated attachment paths for', ticket.ticket_number);
-          return true;
-        } catch (e) {
-          if (isAtharDebugLog()) console.warn('[R2-Repair]', e);
-          return false;
-        }
+        ticket.attachments = updated;
+        const idx = state.violations.findIndex(v => v.id === ticket.id);
+        if (idx !== -1) state.violations[idx].attachments = updated;
+        if (isAtharDebugLog()) console.log('[R2-Repair] finalized attachment paths for', ticket.ticket_number);
+        return true;
       }
 
       function isR2StreamPlayUrl(url) {
@@ -23351,7 +23313,9 @@
         if (activeBtn) activeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الرفع...';
 
         let newAttachments = parseDbJsonArray(t.attachments);
-        const r2Folder = pickPreferredR2Folder(t.ticket_number, t.created_at, newAttachments);
+        const r2Folder = `violations/${t.id}`;
+        let copiedReplyMoves = [];
+        let replyReferenceCommitted = false;
 
         try {
           if (respFiles.length > 0) {
@@ -23400,13 +23364,22 @@
                 ...(file.devDataUrl ? { u: file.devDataUrl } : {})
               });
             }
-            await Promise.all(uploadedAtts.map(async (att, i) => {
+            for (let i = 0; i < uploadedAtts.length; i++) {
+              const att = uploadedAtts[i];
               const oldKey = att.p;
-              if (!oldKey || !oldKey.startsWith('temp_')) return;
+              if (!oldKey || !oldKey.startsWith('temp_')) continue;
               const newKey = `${r2Folder}/${oldKey.split('/').pop()}`;
-              await callR2StorageFn('moveObject', { fromKey: oldKey, toKey: newKey });
+              await callR2StorageFn('moveObject', {
+                fromKey: oldKey,
+                toKey: newKey,
+                recordType: 'violation',
+                recordId: t.id,
+                operation: 'reply',
+                expectedState: t.state,
+              });
+              copiedReplyMoves.push({ oldKey, newKey });
               uploadedAtts[i].p = newKey;
-            }));
+            }
             if (state.uploadTempFolders) state.uploadTempFolders.resp = null;
             newAttachments = newAttachments.concat(uploadedAtts);
           }
@@ -23427,8 +23400,10 @@
           });
           if (rpcErr) throw rpcErr;
           if (!rpcData?.ok) {
-            return showToast(rpcData?.error || 'فشل إرسال الرد — حالة التذكرة تغيّرت', 'error');
+            throw new Error(rpcData?.error || 'فشل إرسال الرد — حالة التذكرة تغيّرت');
           }
+          replyReferenceCommitted = true;
+          await commitR2CopiedAttachments(copiedReplyMoves);
 
           notifyViolationPushAfterStateChange(
             { ...t, state: tr.newState, ticket_number: t.ticket_number },
@@ -23454,6 +23429,11 @@
 
           showToast('تم حفظ الرد وتحديث التذكرة بنجاح ✓', 'success');
         } catch (err) {
+          if (!replyReferenceCommitted) {
+            await rollbackR2CopiedAttachments('violation', t.id, copiedReplyMoves, {
+              operation: 'reply', expectedState: t.state,
+            });
+          }
           showToast('فشل التنفيذ: ' + err.message, 'error');
         } finally {
           window.isUploading = false;
@@ -38819,6 +38799,8 @@
         }
         const sendBtn = document.getElementById('rdCmplReplySendBtn');
         const prevHtml = sendBtn?.innerHTML;
+        let copiedReplyMoves = [];
+        let replyReferenceCommitted = false;
         try {
           if (sendBtn) {
             sendBtn.dataset.submitting = '1';
@@ -38831,9 +38813,10 @@
               row.id,
               row.complaint_number,
               attachments,
-              { persistColumn: false }
+              { persistColumn: false, operation: 'reply' }
             );
             if (moved) attachments = moved;
+            copiedReplyMoves = attachments.__r2PendingMoves || [];
           }
           const { data, error } = await sb.rpc('add_complaint_reply', {
             p_complaint_id: id,
@@ -38842,9 +38825,10 @@
           });
           if (error) throw error;
           if (!data?.ok) {
-            showToast(data?.error || 'تعذّر إرسال الرد', 'error');
-            return;
+            throw new Error(data?.error || 'تعذّر إرسال الرد');
           }
+          replyReferenceCommitted = true;
+          await commitR2CopiedAttachments(copiedReplyMoves);
           const idx = (state.complaints || []).findIndex(c => c.id === data.complaint.id);
           if (idx >= 0) state.complaints[idx] = data.complaint;
           else state.complaints = [data.complaint, ...(state.complaints || [])];
@@ -38853,6 +38837,9 @@
           await renderComplaintsDesktop({ soft: true });
           showToast('تم إرسال الرد', 'success');
         } catch (e) {
+          if (!replyReferenceCommitted && row) {
+            await rollbackR2CopiedAttachments('complaint', row.id, copiedReplyMoves, { operation: 'reply' });
+          }
           showToast('فشل إرسال الرد: ' + (e.message || e), 'error');
         } finally {
           if (sendBtn) {
@@ -39876,6 +39863,8 @@
         if (!state.activeComplaintId) return;
         const sendBtn = document.getElementById('cpReplySendBtn');
         const prevHtml = sendBtn?.innerHTML;
+        let copiedReplyMoves = [];
+        let replyReferenceCommitted = false;
         try {
           if (sendBtn) {
             sendBtn.dataset.submitting = '1';
@@ -39888,9 +39877,10 @@
               c.id,
               c.complaint_number,
               attachments,
-              { persistColumn: false }
+              { persistColumn: false, operation: 'reply' }
             );
             if (moved) attachments = moved;
+            copiedReplyMoves = attachments.__r2PendingMoves || [];
           }
           const { data, error } = await sb.rpc('add_complaint_reply', {
             p_complaint_id: state.activeComplaintId,
@@ -39899,9 +39889,10 @@
           });
           if (error) throw error;
           if (!data?.ok) {
-            showToast(data?.error || 'تعذّر إرسال الرد', 'error');
-            return;
+            throw new Error(data?.error || 'تعذّر إرسال الرد');
           }
+          replyReferenceCommitted = true;
+          await commitR2CopiedAttachments(copiedReplyMoves);
           const idx = (state.complaints || []).findIndex(c => c.id === data.complaint.id);
           if (idx >= 0) state.complaints[idx] = data.complaint;
           else state.complaints = [data.complaint, ...(state.complaints || [])];
@@ -39910,6 +39901,9 @@
           paintComplaintsPage();
           showToast('تم إرسال الرد', 'success');
         } catch (e) {
+          if (!replyReferenceCommitted && c) {
+            await rollbackR2CopiedAttachments('complaint', c.id, copiedReplyMoves, { operation: 'reply' });
+          }
           showToast('فشل إرسال الرد: ' + (e.message || e), 'error');
         } finally {
           if (sendBtn) {
