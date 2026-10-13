@@ -7,4 +7,4 @@
  * للـWorker هنا فقط، مثل: https://athar-auth-ingress.<account>.workers.dev
  * لا تضع أي مفتاح أو HMAC أو URL فيه query/fragment في هذا الملف.
  */
-window.ATHAR_AUTH_INGRESS_BASE_URL = "";
+window.ATHAR_AUTH_INGRESS_BASE_URL = "https://athar-auth-ingress.rakan1234-rh.workers.dev";
