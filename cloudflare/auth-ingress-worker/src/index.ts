@@ -11,7 +11,6 @@ import { normalizedClientIp } from "../../../supabase/functions/_shared/client-i
 
 const UPSTREAM_ORIGIN = "https://cmdkldxbocbpiptdodmp.supabase.co";
 const MAX_CORS_HEADER_BYTES = 256;
-const CLOUDFLARE_CROSS_ZONE_SENTINEL = "2a06:98c0:3600::103";
 
 const ROUTES: Record<string, { upstreamPath: string; maxBodyBytes: number }> = {
   "/api/auth/employee-login": {
@@ -114,9 +113,12 @@ function workerClientIp(req: Request): string | null {
   const candidate = oneHeader(req, "cf-connecting-ip", 64);
   if (!candidate) return null;
   const ip = normalizedClientIp(candidate);
-  // Cloudflare documents this value for cross-zone Worker subrequests. It is
-  // not a user address and must never become a common rate-limit bucket.
-  if (!ip || ip === CLOUDFLARE_CROSS_ZONE_SENTINEL) return null;
+  // The client IP is supplied by Cloudflare. Do not blacklist a hard-coded
+  // address: Apple Private Relay and carrier proxies can legitimately reuse
+  // Cloudflare egress ranges. Worker-to-Worker requests are rejected above
+  // using the cf-worker marker, and the signed ingress plus rate limits remain
+  // the security boundary.
+  if (!ip) return null;
 
   // CF-Ray is added by Cloudflare to a client request reaching this Worker. It
   // does not prove user identity, but its absence signals a nonstandard or
