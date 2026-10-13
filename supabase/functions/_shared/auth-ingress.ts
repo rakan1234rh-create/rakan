@@ -285,7 +285,12 @@ function validNonce(value: string): boolean {
 
 function exactPath(req: Request, expectedPath: string): boolean {
   try {
-    return new URL(req.url).pathname === expectedPath;
+    const pathname = new URL(req.url).pathname;
+    // Supabase Edge Runtime may expose the function path without the gateway
+    // prefix, while the signed upstream header deliberately carries the full
+    // public path (/functions/v1/<function>). Keep both representations exact.
+    const runtimePath = expectedPath.replace(/^\/functions\/v1\//, "/");
+    return pathname === expectedPath || pathname === runtimePath;
   } catch {
     return false;
   }
