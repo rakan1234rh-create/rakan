@@ -135,7 +135,12 @@
           response = await fetch(PASSWORD_RECOVERY_ENDPOINT.url, {
             method: 'POST',
             headers: {
-              'Content-Type': 'application/json',
+              // text/plain is a CORS-safelisted content type. The Worker reads
+              // the JSON body and forwards it upstream as application/json,
+              // avoiding Safari/iCloud Private Relay preflight failures.
+              'Content-Type': PASSWORD_RECOVERY_ENDPOINT.viaIngress
+                ? 'text/plain;charset=UTF-8'
+                : 'application/json',
               ...(PASSWORD_RECOVERY_ENDPOINT.viaIngress ? {} : { apikey: SUPABASE_ANON }),
             },
             body: JSON.stringify({ email }),
