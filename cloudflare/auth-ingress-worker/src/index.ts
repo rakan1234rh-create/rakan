@@ -131,6 +131,13 @@ function validContentLength(req: Request, maxBodyBytes: number): boolean {
   return !value || (/^\d{1,8}$/.test(value) && Number(value) <= maxBodyBytes);
 }
 
+async function secretFingerprintPrefix(secret: Uint8Array): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", secret);
+  return Array.from(new Uint8Array(digest), (byte) =>
+    byte.toString(16).padStart(2, "0")
+  ).join("").slice(0, 8);
+}
+
 async function readBoundedBody(
   req: Request,
   maxBodyBytes: number,
@@ -225,6 +232,10 @@ export async function handleAuthIngress(
   if (!secret || !env.SUPABASE_ANON_KEY) {
     return errorResponse(origin, 503, "ingress_unavailable");
   }
+  console.error(JSON.stringify({
+    event: "auth_ingress_diagnostic",
+    hmac_fingerprint_prefix: await secretFingerprintPrefix(secret),
+  }));
   const clientIp = workerClientIp(req);
   const body = await readBoundedBody(req, route.maxBodyBytes);
   if (!clientIp || !body) return errorResponse(origin, 400, "invalid_request");

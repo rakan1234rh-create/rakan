@@ -36,6 +36,16 @@ function diagnostic(stage: string, details: Record<string, unknown> = {}): void 
   }));
 }
 
+async function secretFingerprintPrefix(
+  secret: Uint8Array | null,
+): Promise<string | null> {
+  if (!secret) return null;
+  const digest = await crypto.subtle.digest("SHA-256", secret);
+  return Array.from(new Uint8Array(digest), (byte) =>
+    byte.toString(16).padStart(2, "0")
+  ).join("").slice(0, 8);
+}
+
 function allowedOrigins(
   getEnv: (name: string) => string | undefined,
 ): Set<string> {
@@ -156,12 +166,14 @@ export async function handlePasswordRecovery(
     },
   );
   if (!ingress) {
+    const configuredSecret = decodeAuthIngressSecret(
+      getEnv("AUTH_INGRESS_HMAC_SECRET"),
+    );
     diagnostic("ingress_verification_failed", {
       mode: getEnv("AUTH_INGRESS_MODE") ?? "unset",
       hmac_present: Boolean(getEnv("AUTH_INGRESS_HMAC_SECRET")),
-      hmac_valid_format: Boolean(
-        decodeAuthIngressSecret(getEnv("AUTH_INGRESS_HMAC_SECRET")),
-      ),
+      hmac_valid_format: Boolean(configuredSecret),
+      hmac_fingerprint_prefix: await secretFingerprintPrefix(configuredSecret),
     });
     return json(origin, { error: "recovery_temporarily_unavailable" }, 503);
   }
