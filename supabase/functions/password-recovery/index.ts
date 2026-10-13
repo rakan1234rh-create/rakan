@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
   readBoundedJsonObject,
+  decodeAuthIngressSecret,
   verifiedAuthIngress,
 } from "../_shared/auth-ingress.ts";
 import {
@@ -24,6 +25,16 @@ type RateLimitDecision = {
   allowed: boolean;
   retry_after_seconds: number;
 };
+
+function diagnostic(stage: string, details: Record<string, unknown> = {}): void {
+  // Safe diagnostics only: never include secrets, email addresses, IPs, bodies,
+  // signatures, nonces, or provider error messages.
+  console.error(JSON.stringify({
+    event: "password_recovery_diagnostic",
+    stage,
+    ...details,
+  }));
+}
 
 function allowedOrigins(
   getEnv: (name: string) => string | undefined,
@@ -125,11 +136,15 @@ export async function handlePasswordRecovery(
     return json(origin, { error: "method_not_allowed" }, 405);
   }
   if (!origin) {
+    diagnostic("origin_rejected");
     return json(null, { error: "forbidden" }, 403);
   }
 
   const payload = await parseBody(req);
-  if (!payload) return json(origin, { error: "invalid_request" }, 400);
+  if (!payload) {
+    diagnostic("body_rejected");
+    return json(origin, { error: "invalid_request" }, 400);
+  }
 
   const ingress = await verifiedAuthIngress(
     req,
@@ -141,6 +156,13 @@ export async function handlePasswordRecovery(
     },
   );
   if (!ingress) {
+    diagnostic("ingress_verification_failed", {
+      mode: getEnv("AUTH_INGRESS_MODE") ?? "unset",
+      hmac_present: Boolean(getEnv("AUTH_INGRESS_HMAC_SECRET")),
+      hmac_valid_format: Boolean(
+        decodeAuthIngressSecret(getEnv("AUTH_INGRESS_HMAC_SECRET")),
+      ),
+    });
     return json(origin, { error: "recovery_temporarily_unavailable" }, 503);
   }
 
@@ -150,10 +172,18 @@ export async function handlePasswordRecovery(
   const serviceRoleKey = getEnv("SUPABASE_SECRET_KEY") ||
     getEnv("SUPABASE_SERVICE_ROLE_KEY") || "";
   const counterSalt = getEnv("PASSWORD_RECOVERY_RATE_LIMIT_SALT") || "";
+  diagnostic("config_checked", {
+    url_present: Boolean(url),
+    publishable_key_present: Boolean(anonKey),
+    service_key_present: Boolean(serviceRoleKey),
+    rate_salt_present: Boolean(counterSalt),
+    rate_salt_bytes: new TextEncoder().encode(counterSalt).byteLength,
+  });
   if (
     !url || !anonKey || !serviceRoleKey ||
     !hasUsableRecoveryRateLimitSalt(counterSalt)
   ) {
+    diagnostic("required_config_missing_or_invalid");
     return json(origin, { error: "recovery_temporarily_unavailable" }, 503);
   }
 
@@ -176,6 +206,7 @@ export async function handlePasswordRecovery(
       ingress.replayExpiresAt!,
     )
   ) {
+    diagnostic("replay_rpc_rejected");
     return json(origin, { error: "recovery_temporarily_unavailable" }, 503);
   }
 
@@ -186,6 +217,10 @@ export async function handlePasswordRecovery(
   );
   const limit = asRateDecision(limitData);
   if (limitError || !limit) {
+    diagnostic("rate_limit_rpc_failed", {
+      error_code: limitError?.code ?? null,
+      result_shape_valid: Boolean(limit),
+    });
     return json(origin, { error: "recovery_temporarily_unavailable" }, 503);
   }
   if (!limit.allowed) {
@@ -202,6 +237,9 @@ export async function handlePasswordRecovery(
     .eq("email", payload.email)
     .maybeSingle();
   if (profileError) {
+    diagnostic("profile_lookup_failed", {
+      error_code: profileError.code ?? null,
+    });
     return json(origin, { error: "recovery_temporarily_unavailable" }, 503);
   }
 
@@ -220,6 +258,9 @@ export async function handlePasswordRecovery(
     );
     if (authError) {
       const status = Number(authError.status || 0);
+      diagnostic("auth_recovery_call_failed", {
+        provider_status: Number.isFinite(status) ? status : 0,
+      });
       if (status === 429) {
         return json(origin, {
           error: "try_later",
@@ -240,6 +281,7 @@ export async function handlePasswordRecovery(
 if (import.meta.main) {
   Deno.serve((req) =>
     handlePasswordRecovery(req).catch(() => (
+      diagnostic("unhandled_exception"),
       json(null, { error: "recovery_temporarily_unavailable" }, 503)
     ))
   );
