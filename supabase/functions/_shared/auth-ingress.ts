@@ -108,6 +108,23 @@ export function authIngressCanonicalMessage(fields: {
   ].join("\n");
 }
 
+async function ingressDiagnostic(
+  stage: string,
+  details: Record<string, unknown> = {},
+): Promise<void> {
+  // Hashes/lengths only; never log secret, signature, nonce, IP, body, or the
+  // canonical message itself.
+  console.error(JSON.stringify({
+    event: "auth_ingress_diagnostic",
+    stage,
+    ...details,
+  }));
+}
+
+async function textFingerprint(value: string): Promise<string> {
+  return (await sha256Hex(encoder.encode(value))).slice(0, 8);
+}
+
 async function hmacKey(
   secret: Uint8Array,
   usage: KeyUsage[],
@@ -279,6 +296,13 @@ async function verifySignedAuthIngress(
   body: Uint8Array,
   options: AuthIngressVerificationOptions,
 ): Promise<VerifiedAuthIngress | null> {
+  const reject = async (
+    stage: string,
+    details: Record<string, unknown> = {},
+  ): Promise<null> => {
+    await ingressDiagnostic(stage, details);
+    return null;
+  };
   const secret = decodeAuthIngressSecret(
     options.getEnv("AUTH_INGRESS_HMAC_SECRET"),
   );
@@ -286,9 +310,15 @@ async function verifySignedAuthIngress(
     !secret || req.method !== options.expectedMethod ||
     !exactPath(req, options.expectedPath)
   ) {
-    return null;
+    return await reject("config_or_request_shape_rejected", {
+      secret_valid_format: Boolean(secret),
+      method_match: req.method === options.expectedMethod,
+      request_path_match: exactPath(req, options.expectedPath),
+    });
   }
-  if (!onlyExpectedSignedHeaders(req)) return null;
+  if (!onlyExpectedSignedHeaders(req)) {
+    return await reject("unexpected_signed_header_rejected");
+  }
 
   const version = oneSignedHeader(
     req,
@@ -321,33 +351,73 @@ async function verifySignedAuthIngress(
     path !== options.expectedPath || !/^\d{1,10}$/.test(timestamp) ||
     !validNonce(nonce) ||
     !/^[a-f0-9]{64}$/.test(bodySha256) || !/^[A-Za-z0-9_-]{43}$/.test(signature)
-  ) return null;
+  ) {
+    return await reject("signed_header_shape_rejected", {
+      version_match: version === AUTH_INGRESS_VERSION,
+      method_match: method === options.expectedMethod,
+      path_match: path === options.expectedPath,
+      timestamp_format: Boolean(timestamp && /^\d{1,10}$/.test(timestamp)),
+      nonce_format: Boolean(nonce && validNonce(nonce)),
+      body_hash_format: Boolean(bodySha256 && /^[a-f0-9]{64}$/.test(bodySha256)),
+      signature_format: Boolean(signature && /^[A-Za-z0-9_-]{43}$/.test(signature)),
+    });
+  }
 
   const clientIp = normalizedClientIp(claimedIp);
-  if (!clientIp) return null;
+  if (!clientIp) {
+    return await reject("client_ip_rejected", {
+      claimed_ip_fingerprint: await textFingerprint(claimedIp),
+    });
+  }
   const nowSeconds = options.nowSeconds ?? Math.floor(Date.now() / 1000);
   const signedSeconds = Number(timestamp);
   if (
     !Number.isSafeInteger(signedSeconds) ||
     signedSeconds < nowSeconds - AUTH_INGRESS_MAX_AGE_SECONDS ||
     signedSeconds > nowSeconds + AUTH_INGRESS_MAX_FUTURE_SECONDS
-  ) return null;
+  ) {
+    return await reject("timestamp_rejected", {
+      age_seconds: nowSeconds - signedSeconds,
+    });
+  }
 
   const actualBodyHash = await sha256Hex(body);
-  if (actualBodyHash !== bodySha256) return null;
+  if (actualBodyHash !== bodySha256) {
+    return await reject("body_hash_mismatch", {
+      supplied_body_hash_prefix: bodySha256.slice(0, 8),
+      actual_body_hash_prefix: actualBodyHash.slice(0, 8),
+    });
+  }
+  const canonicalMessage = authIngressCanonicalMessage({
+    method,
+    path,
+    timestamp,
+    nonce,
+    clientIp,
+    bodySha256,
+  });
+  const canonicalHash = (await sha256Hex(encoder.encode(canonicalMessage)))
+    .slice(0, 8);
+  await ingressDiagnostic("canonical_message_built", {
+    canonical_hash_prefix: canonicalHash,
+    method,
+    path,
+    timestamp_length: timestamp.length,
+    nonce_length: nonce.length,
+    client_ip_fingerprint: await textFingerprint(clientIp),
+    body_hash_prefix: bodySha256.slice(0, 8),
+  });
   const validSignature = await verifyAuthIngressSignature(
     secret,
-    authIngressCanonicalMessage({
-      method,
-      path,
-      timestamp,
-      nonce,
-      clientIp,
-      bodySha256,
-    }),
+    canonicalMessage,
     signature,
   );
-  if (!validSignature) return null;
+  if (!validSignature) {
+    return await reject("signature_mismatch", {
+      canonical_hash_prefix: canonicalHash,
+      signature_length: signature.length,
+    });
+  }
 
   return {
     clientIp,

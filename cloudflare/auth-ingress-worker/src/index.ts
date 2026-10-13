@@ -138,6 +138,13 @@ async function secretFingerprintPrefix(secret: Uint8Array): Promise<string> {
   ).join("").slice(0, 8);
 }
 
+async function textFingerprint(value: string): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+  return Array.from(new Uint8Array(digest), (byte) =>
+    byte.toString(16).padStart(2, "0")
+  ).join("").slice(0, 8);
+}
+
 async function readBoundedBody(
   req: Request,
   maxBodyBytes: number,
@@ -243,16 +250,28 @@ export async function handleAuthIngress(
   const timestamp = String(Math.floor(Date.now() / 1000));
   const nonce = randomAuthIngressNonce();
   const bodySha256 = await sha256Hex(body);
+  const canonicalMessage = authIngressCanonicalMessage({
+    method: "POST",
+    path: route.upstreamPath,
+    timestamp,
+    nonce,
+    clientIp,
+    bodySha256,
+  });
+  const canonicalHash = await textFingerprint(canonicalMessage);
+  console.error(JSON.stringify({
+    event: "auth_ingress_canonical_diagnostic",
+    canonical_hash_prefix: canonicalHash,
+    method: "POST",
+    path: route.upstreamPath,
+    timestamp_length: timestamp.length,
+    nonce_length: nonce.length,
+    client_ip_fingerprint: await textFingerprint(clientIp),
+    body_hash_prefix: bodySha256.slice(0, 8),
+  }));
   const signature = await authIngressSignature(
     secret,
-    authIngressCanonicalMessage({
-      method: "POST",
-      path: route.upstreamPath,
-      timestamp,
-      nonce,
-      clientIp,
-      bodySha256,
-    }),
+    canonicalMessage,
   );
 
   // Build an allowlisted header set from scratch. In particular, a browser can
