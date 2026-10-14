@@ -178,7 +178,11 @@
 
       function formatForgotPasswordError(err) {
         if (err?.isPasswordResetRateLimit) {
-          return String(err.message || 'تعذّر إرسال الرمز حالياً. حاول لاحقاً');
+          const message = String(err.message || '');
+          if (/smtp|mailchannels|hostinger|supabase|postgres|postgrest|edge function|internal server|stack|exception|provider/i.test(message)) {
+            return 'تعذّر إرسال الرمز حالياً. حاول لاحقاً.';
+          }
+          return message || 'تعذّر إرسال الرمز حالياً. حاول لاحقاً.';
         }
         const status = err?.status ?? err?.statusCode;
         if (status === 429) {

@@ -237,7 +237,7 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('send-auth-emails:', error);
     return json({
-      error: { message: error instanceof Error ? error.message : 'Unknown error' },
+      error: { message: 'تعذّر إرسال رسالة الاستعادة حالياً' },
     }, 500);
   }
 });
