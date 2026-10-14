@@ -60,7 +60,7 @@ function requestedOrigin(
 ): string | null {
   const origin = req.headers.get("origin")?.trim() ?? "";
   return origin &&
-      exactHttpsOrigins(env.AUTH_INGRESS_ALLOWED_ORIGINS).has(origin)
+    exactHttpsOrigins(env.AUTH_INGRESS_ALLOWED_ORIGINS).has(origin)
     ? origin
     : null;
 }
@@ -72,7 +72,7 @@ function corsHeaders(origin: string): Headers {
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Max-Age": "600",
     "Content-Type": "application/json; charset=utf-8",
-    "Vary": "Origin",
+    Vary: "Origin",
   });
 }
 
@@ -81,10 +81,12 @@ function errorResponse(
   status: number,
   error: string,
 ): Response {
-  const headers = origin ? corsHeaders(origin) : new Headers({
-    "Content-Type": "application/json; charset=utf-8",
-    "Vary": "Origin",
-  });
+  const headers = origin
+    ? corsHeaders(origin)
+    : new Headers({
+        "Content-Type": "application/json; charset=utf-8",
+        Vary: "Origin",
+      });
   return new Response(JSON.stringify({ error }), { status, headers });
 }
 
@@ -97,7 +99,9 @@ function oneHeader(
   // Fetch combines duplicate request headers with commas. Treat an ambiguity as
   // absent rather than trying to choose which attacker-controlled value won.
   if (
-    !value || value.length > maxBytes || value.includes(",") ||
+    !value ||
+    value.length > maxBytes ||
+    value.includes(",") ||
     /[\r\n\x00]/.test(value)
   ) {
     return null;
@@ -131,22 +135,6 @@ function workerClientIp(req: Request): string | null {
 function validContentLength(req: Request, maxBodyBytes: number): boolean {
   const value = req.headers.get("content-length");
   return !value || (/^\d{1,8}$/.test(value) && Number(value) <= maxBodyBytes);
-}
-
-async function secretFingerprintPrefix(secret: Uint8Array): Promise<string> {
-  const copy = new Uint8Array(secret.byteLength);
-  copy.set(secret);
-  const digest = await crypto.subtle.digest("SHA-256", copy.buffer);
-  return Array.from(new Uint8Array(digest), (byte) =>
-    byte.toString(16).padStart(2, "0")
-  ).join("").slice(0, 8);
-}
-
-async function textFingerprint(value: string): Promise<string> {
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
-  return Array.from(new Uint8Array(digest), (byte) =>
-    byte.toString(16).padStart(2, "0")
-  ).join("").slice(0, 8);
 }
 
 async function readBoundedBody(
@@ -187,21 +175,20 @@ function validPreflight(req: Request): boolean {
   if (requestedMethod && requestedMethod.toUpperCase() !== "POST") return false;
   if (!requestedHeaders) return true;
   if (requestedHeaders.length > MAX_CORS_HEADER_BYTES) return false;
-  return requestedHeaders.split(",").every((header) =>
-    header.trim().toLowerCase() === "content-type"
-  );
+  return requestedHeaders
+    .split(",")
+    .every((header) => header.trim().toLowerCase() === "content-type");
 }
 
 function upstreamResponse(response: Response, origin: string): Response {
   const headers = new Headers(response.headers);
-  for (
-    const name of [
-      "access-control-allow-origin",
-      "access-control-allow-headers",
-      "access-control-allow-methods",
-      "access-control-max-age",
-    ]
-  ) headers.delete(name);
+  for (const name of [
+    "access-control-allow-origin",
+    "access-control-allow-headers",
+    "access-control-allow-methods",
+    "access-control-max-age",
+  ])
+    headers.delete(name);
   for (const name of [...headers.keys()]) {
     if (name.toLowerCase().startsWith(AUTH_INGRESS_HEADER_PREFIX)) {
       headers.delete(name);
@@ -243,10 +230,6 @@ export async function handleAuthIngress(
   if (!secret || !env.SUPABASE_ANON_KEY) {
     return errorResponse(origin, 503, "ingress_unavailable");
   }
-  console.error(JSON.stringify({
-    event: "auth_ingress_diagnostic",
-    hmac_fingerprint_prefix: await secretFingerprintPrefix(secret),
-  }));
   const clientIp = workerClientIp(req);
   const body = await readBoundedBody(req, route.maxBodyBytes);
   if (!clientIp || !body) return errorResponse(origin, 400, "invalid_request");
@@ -262,21 +245,7 @@ export async function handleAuthIngress(
     clientIp,
     bodySha256,
   });
-  const canonicalHash = await textFingerprint(canonicalMessage);
-  console.error(JSON.stringify({
-    event: "auth_ingress_canonical_diagnostic",
-    canonical_hash_prefix: canonicalHash,
-    method: "POST",
-    path: route.upstreamPath,
-    timestamp_length: timestamp.length,
-    nonce_length: nonce.length,
-    client_ip_fingerprint: await textFingerprint(clientIp),
-    body_hash_prefix: bodySha256.slice(0, 8),
-  }));
-  const signature = await authIngressSignature(
-    secret,
-    canonicalMessage,
-  );
+  const signature = await authIngressSignature(secret, canonicalMessage);
 
   // Build an allowlisted header set from scratch. In particular, a browser can
   // never select signed values or an upstream API key by supplying duplicates.
@@ -284,8 +253,8 @@ export async function handleAuthIngress(
     // The two allowlisted endpoints accept JSON only. Do not copy a caller's
     // arbitrary content type to a privileged upstream request.
     "content-type": "application/json; charset=utf-8",
-    "origin": origin,
-    "apikey": env.SUPABASE_ANON_KEY,
+    origin: origin,
+    apikey: env.SUPABASE_ANON_KEY,
     [`${AUTH_INGRESS_HEADER_PREFIX}version`]: AUTH_INGRESS_VERSION,
     [`${AUTH_INGRESS_HEADER_PREFIX}timestamp`]: timestamp,
     [`${AUTH_INGRESS_HEADER_PREFIX}nonce`]: nonce,

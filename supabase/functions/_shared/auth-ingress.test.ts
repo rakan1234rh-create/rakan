@@ -93,124 +93,157 @@ async function verify(req: Request) {
   });
 }
 
-Deno.test("signed ingress accepts cryptographically valid normalized IPv4 and IPv6 only", async () => {
-  for (
-    const [ip, expected] of [
+Deno.test(
+  "signed ingress accepts cryptographically valid normalized IPv4 and IPv6 only",
+  async () => {
+    for (const [ip, expected] of [
       ["198.051.100.044", "198.51.100.44"],
       ["2001:0db8::0044", "2001:db8::44"],
-    ]
-  ) {
-    const result = await verify(await signedRequest({ ip }));
-    assert(result?.mode === "signed", "valid HMAC request accepted");
-    assert(result.clientIp === expected, `canonical IP must be ${expected}`);
+    ]) {
+      const result = await verify(await signedRequest({ ip }));
+      assert(result?.mode === "signed", "valid HMAC request accepted");
+      assert(result.clientIp === expected, `canonical IP must be ${expected}`);
+      assert(
+        /^[a-f0-9]{64}$/.test(result.replayNonceHash ?? ""),
+        "nonce hash is not raw nonce",
+      );
+    }
+  },
+);
+
+Deno.test(
+  "signed ingress rejects forged, missing, expired, future, and duplicate fields",
+  async () => {
+    const cases: Array<[string, SignedRequestOptions]> = [
+      [
+        "forged signature",
+        {
+          mutateHeaders: (headers) =>
+            headers.set(
+              `${AUTH_INGRESS_HEADER_PREFIX}signature`,
+              "A".repeat(43),
+            ),
+        },
+      ],
+      [
+        "missing nonce",
+        {
+          mutateHeaders: (headers) =>
+            headers.delete(`${AUTH_INGRESS_HEADER_PREFIX}nonce`),
+        },
+      ],
+      ["expired timestamp", { timestamp: NOW - 61 }],
+      ["future timestamp", { timestamp: NOW + 11 }],
+      [
+        "unknown signed field",
+        {
+          mutateHeaders: (headers) =>
+            headers.set(`${AUTH_INGRESS_HEADER_PREFIX}extra`, "x"),
+        },
+      ],
+      [
+        "duplicate folded nonce",
+        {
+          mutateHeaders: (headers) =>
+            headers.append(`${AUTH_INGRESS_HEADER_PREFIX}nonce`, "other"),
+        },
+      ],
+      ["malformed IP", { ip: "198.51.100.44, 203.0.113.1" }],
+    ];
+    for (const [label, options] of cases) {
+      assert(
+        (await verify(await signedRequest(options))) === null,
+        `${label} must fail closed`,
+      );
+    }
+  },
+);
+
+Deno.test(
+  "signed ingress binds the exact raw body, Edge path, and POST method",
+  async () => {
+    const bodyTampered = await signedRequest({
+      body: '{"employee_number":"00123","password":"changed"}',
+    });
+    // Sign a different body and transplant those fields to model a body swap.
+    const original = await signedRequest();
+    const tamperedHeaders = new Headers(original.headers);
+    const differentBody = new Request(bodyTampered.url, {
+      method: "POST",
+      headers: tamperedHeaders,
+      body: await bodyTampered.text(),
+    });
     assert(
-      /^[a-f0-9]{64}$/.test(result.replayNonceHash ?? ""),
-      "nonce hash is not raw nonce",
+      (await verify(differentBody)) === null,
+      "body hash/signature mismatch rejects",
     );
-  }
-});
-
-Deno.test("signed ingress rejects forged, missing, expired, future, and duplicate fields", async () => {
-  const cases: Array<[string, SignedRequestOptions]> = [
-    ["forged signature", {
-      mutateHeaders: (headers) =>
-        headers.set(`${AUTH_INGRESS_HEADER_PREFIX}signature`, "A".repeat(43)),
-    }],
-    ["missing nonce", {
-      mutateHeaders: (headers) =>
-        headers.delete(`${AUTH_INGRESS_HEADER_PREFIX}nonce`),
-    }],
-    ["expired timestamp", { timestamp: NOW - 61 }],
-    ["future timestamp", { timestamp: NOW + 11 }],
-    ["unknown signed field", {
-      mutateHeaders: (headers) =>
-        headers.set(`${AUTH_INGRESS_HEADER_PREFIX}extra`, "x"),
-    }],
-    ["duplicate folded nonce", {
-      mutateHeaders: (headers) =>
-        headers.append(`${AUTH_INGRESS_HEADER_PREFIX}nonce`, "other"),
-    }],
-    ["malformed IP", { ip: "198.51.100.44, 203.0.113.1" }],
-  ];
-  for (const [label, options] of cases) {
     assert(
-      await verify(await signedRequest(options)) === null,
-      `${label} must fail closed`,
+      (await verify(
+        await signedRequest({ path: "/functions/v1/password-recovery" }),
+      )) === null,
+      "signed path mismatch rejects",
     );
-  }
-});
+    assert(
+      (await verify(
+        await signedRequest({ requestPath: "/functions/v1/password-recovery" }),
+      )) === null,
+      "actual Edge path mismatch rejects",
+    );
+    assert(
+      (await verify(await signedRequest({ method: "GET" }))) === null,
+      "method change rejects",
+    );
+  },
+);
 
-Deno.test("signed ingress binds the exact raw body, Edge path, and POST method", async () => {
-  const bodyTampered = await signedRequest({
-    body: '{"employee_number":"00123","password":"changed"}',
-  });
-  // Sign a different body and transplant those fields to model a body swap.
-  const original = await signedRequest();
-  const tamperedHeaders = new Headers(original.headers);
-  const differentBody = new Request(bodyTampered.url, {
-    method: "POST",
-    headers: tamperedHeaders,
-    body: await bodyTampered.text(),
-  });
-  assert(
-    await verify(differentBody) === null,
-    "body hash/signature mismatch rejects",
-  );
-  assert(
-    await verify(
-      await signedRequest({ path: "/functions/v1/password-recovery" }),
-    ) === null,
-    "signed path mismatch rejects",
-  );
-  assert(
-    await verify(
-      await signedRequest({ requestPath: "/functions/v1/password-recovery" }),
-    ) === null,
-    "actual Edge path mismatch rejects",
-  );
-  assert(
-    await verify(await signedRequest({ method: "GET" })) === null,
-    "method change rejects",
-  );
-});
+Deno.test(
+  "the same signed nonce has a stable replay key for atomic database consumption",
+  async () => {
+    const first = await verify(await signedRequest());
+    const second = await verify(await signedRequest());
+    assert(
+      first?.replayNonceHash === second?.replayNonceHash,
+      "same nonce maps to one replay row",
+    );
+    assert(
+      first?.replayExpiresAt === NOW + 120,
+      "replay expiry is bounded from signed time",
+    );
+    // The database RPC test covers the required atomic first-consumer-wins behavior.
+  },
+);
 
-Deno.test("the same signed nonce has a stable replay key for atomic database consumption", async () => {
-  const first = await verify(await signedRequest());
-  const second = await verify(await signedRequest());
-  assert(
-    first?.replayNonceHash === second?.replayNonceHash,
-    "same nonce maps to one replay row",
-  );
-  assert(
-    first?.replayExpiresAt === NOW + 120,
-    "replay expiry is bounded from signed time",
-  );
-  // The database RPC test covers the required atomic first-consumer-wins behavior.
-});
+Deno.test(
+  "signed mode never silently falls back to legacy proxy headers",
+  async () => {
+    const previous = ENV.AUTH_INGRESS_HMAC_SECRET;
+    ENV.AUTH_INGRESS_HMAC_SECRET = "invalid";
+    const req = await signedRequest();
+    assert(
+      (await verify(req)) === null,
+      "missing/bad signed secret must not use CF/XFF",
+    );
+    ENV.AUTH_INGRESS_HMAC_SECRET = previous;
+  },
+);
 
-Deno.test("signed mode never silently falls back to legacy proxy headers", async () => {
-  const previous = ENV.AUTH_INGRESS_HMAC_SECRET;
-  ENV.AUTH_INGRESS_HMAC_SECRET = "invalid";
-  const req = await signedRequest();
-  assert(
-    await verify(req) === null,
-    "missing/bad signed secret must not use CF/XFF",
-  );
-  ENV.AUTH_INGRESS_HMAC_SECRET = previous;
-});
-
-Deno.test("الواجهة لا تستخدم البوابة قبل ضبط عنوانها ولا تمرر مفتاح المتصفح إليها", () => {
-  assert(
-    appIngressConfig.includes('window.ATHAR_AUTH_INGRESS_BASE_URL = ""'),
-    "الإعداد الافتراضي لا يوجه المستخدمين إلى بوابة غير منشورة",
-  );
-  assert(
-    app.includes("const EMPLOYEE_LOGIN_ENDPOINT = authEndpoint(") &&
-      app.includes("const PASSWORD_RECOVERY_ENDPOINT = authEndpoint("),
-    "مسارا الدخول والاستعادة يتحولان صراحة إلى Worker عند ضبطه",
-  );
-  assert(
-    app.includes("viaIngress ? {} : { apikey: SUPABASE_ANON }"),
-    "مفتاح المتصفح لا يمرر إلى Worker؛ Worker يضع مفتاح المشروع من إعداده",
-  );
-});
+Deno.test(
+  "الواجهة لا تستخدم البوابة قبل ضبط عنوانها ولا تمرر مفتاح المتصفح إليها",
+  () => {
+    assert(
+      appIngressConfig.includes(
+        'window.ATHAR_AUTH_INGRESS_BASE_URL = "https://athar-auth-ingress.rakan1234-rh.workers.dev"',
+      ),
+      "عنوان Worker المنشور مضبوط ومحدد بدون سر أو query",
+    );
+    assert(
+      app.includes("const EMPLOYEE_LOGIN_ENDPOINT = authEndpoint(") &&
+        app.includes("const PASSWORD_RECOVERY_ENDPOINT = authEndpoint("),
+      "مسارا الدخول والاستعادة يتحولان صراحة إلى Worker عند ضبطه",
+    );
+    assert(
+      app.includes("viaIngress ? {} : { apikey: SUPABASE_ANON }"),
+      "مفتاح المتصفح لا يمرر إلى Worker؛ Worker يضع مفتاح المشروع من إعداده",
+    );
+  },
+);

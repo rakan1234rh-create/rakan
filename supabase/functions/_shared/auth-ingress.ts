@@ -49,7 +49,8 @@ export type AuthIngressVerificationOptions = {
 function base64UrlToBytes(value: string): Uint8Array | null {
   if (!/^[A-Za-z0-9_-]+$/.test(value) || value.length % 4 === 1) return null;
   try {
-    const base64 = value.replace(/-/g, "+").replace(/_/g, "/") +
+    const base64 =
+      value.replace(/-/g, "+").replace(/_/g, "/") +
       "=".repeat((4 - (value.length % 4)) % 4);
     const binary = atob(base64);
     const bytes = new Uint8Array(binary.length);
@@ -65,10 +66,10 @@ function base64UrlToBytes(value: string): Uint8Array | null {
 export function bytesToBase64Url(bytes: Uint8Array): string {
   let binary = "";
   for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(
-    /=+$/g,
-    "",
-  );
+  return btoa(binary)
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/g, "");
 }
 
 /**
@@ -106,23 +107,6 @@ export function authIngressCanonicalMessage(fields: {
     fields.bodySha256,
     "",
   ].join("\n");
-}
-
-async function ingressDiagnostic(
-  stage: string,
-  details: Record<string, unknown> = {},
-): Promise<void> {
-  // Hashes/lengths only; never log secret, signature, nonce, IP, body, or the
-  // canonical message itself.
-  console.error(JSON.stringify({
-    event: "auth_ingress_diagnostic",
-    stage,
-    ...details,
-  }));
-}
-
-async function textFingerprint(value: string): Promise<string> {
-  return (await sha256Hex(encoder.encode(value))).slice(0, 8);
 }
 
 async function hmacKey(
@@ -167,9 +151,8 @@ async function verifyAuthIngressSignature(
 
 export async function sha256Hex(bytes: Uint8Array): Promise<string> {
   const digest = await crypto.subtle.digest("SHA-256", ownedArrayBuffer(bytes));
-  return Array.from(
-    new Uint8Array(digest),
-    (byte) => byte.toString(16).padStart(2, "0"),
+  return Array.from(new Uint8Array(digest), (byte) =>
+    byte.toString(16).padStart(2, "0"),
   ).join("");
 }
 
@@ -187,8 +170,10 @@ export function randomAuthIngressNonce(): string {
 
 function declaredBodyLength(req: Request, maxBytes: number): boolean {
   const contentLength = req.headers.get("content-length");
-  return !contentLength ||
-    (/^\d{1,8}$/.test(contentLength) && Number(contentLength) <= maxBytes);
+  return (
+    !contentLength ||
+    (/^\d{1,8}$/.test(contentLength) && Number(contentLength) <= maxBytes)
+  );
 }
 
 /** Reads once, enforces an actual byte cap, rejects invalid UTF-8 and arrays. */
@@ -197,7 +182,8 @@ export async function readBoundedJsonObject(
   maxBytes: number,
 ): Promise<BoundedJsonBody | null> {
   if (
-    !Number.isSafeInteger(maxBytes) || maxBytes < 1 ||
+    !Number.isSafeInteger(maxBytes) ||
+    maxBytes < 1 ||
     !declaredBodyLength(req, maxBytes)
   ) {
     return null;
@@ -243,7 +229,9 @@ function oneSignedHeader(
   // Fetch folds duplicate headers with a comma. No signed field admits commas,
   // so reject them rather than selecting a value from an ambiguous request.
   if (
-    !value || value.length > maxLength || value.includes(",") ||
+    !value ||
+    value.length > maxLength ||
+    value.includes(",") ||
     /[\r\n\x00]/.test(value)
   ) {
     return null;
@@ -278,8 +266,9 @@ function onlyExpectedSignedHeaders(req: Request): boolean {
 function validNonce(value: string): boolean {
   const bytes = base64UrlToBytes(value);
   return Boolean(
-    bytes && bytes.byteLength >= MIN_AUTH_INGRESS_NONCE_BYTES &&
-      bytes.byteLength <= MAX_AUTH_INGRESS_NONCE_BYTES,
+    bytes &&
+    bytes.byteLength >= MIN_AUTH_INGRESS_NONCE_BYTES &&
+    bytes.byteLength <= MAX_AUTH_INGRESS_NONCE_BYTES,
   );
 }
 
@@ -305,14 +294,14 @@ async function verifySignedAuthIngress(
     stage: string,
     details: Record<string, unknown> = {},
   ): Promise<null> => {
-    await ingressDiagnostic(stage, details);
     return null;
   };
   const secret = decodeAuthIngressSecret(
     options.getEnv("AUTH_INGRESS_HMAC_SECRET"),
   );
   if (
-    !secret || req.method !== options.expectedMethod ||
+    !secret ||
+    req.method !== options.expectedMethod ||
     !exactPath(req, options.expectedPath)
   ) {
     return await reject("config_or_request_shape_rejected", {
@@ -350,12 +339,20 @@ async function verifySignedAuthIngress(
     64,
   );
   if (
-    version !== AUTH_INGRESS_VERSION || !timestamp || !nonce || !claimedIp ||
+    version !== AUTH_INGRESS_VERSION ||
+    !timestamp ||
+    !nonce ||
+    !claimedIp ||
     !bodySha256 ||
-    !method || !path || !signature || method !== options.expectedMethod ||
-    path !== options.expectedPath || !/^\d{1,10}$/.test(timestamp) ||
+    !method ||
+    !path ||
+    !signature ||
+    method !== options.expectedMethod ||
+    path !== options.expectedPath ||
+    !/^\d{1,10}$/.test(timestamp) ||
     !validNonce(nonce) ||
-    !/^[a-f0-9]{64}$/.test(bodySha256) || !/^[A-Za-z0-9_-]{43}$/.test(signature)
+    !/^[a-f0-9]{64}$/.test(bodySha256) ||
+    !/^[A-Za-z0-9_-]{43}$/.test(signature)
   ) {
     return await reject("signed_header_shape_rejected", {
       version_match: version === AUTH_INGRESS_VERSION,
@@ -363,16 +360,18 @@ async function verifySignedAuthIngress(
       path_match: path === options.expectedPath,
       timestamp_format: Boolean(timestamp && /^\d{1,10}$/.test(timestamp)),
       nonce_format: Boolean(nonce && validNonce(nonce)),
-      body_hash_format: Boolean(bodySha256 && /^[a-f0-9]{64}$/.test(bodySha256)),
-      signature_format: Boolean(signature && /^[A-Za-z0-9_-]{43}$/.test(signature)),
+      body_hash_format: Boolean(
+        bodySha256 && /^[a-f0-9]{64}$/.test(bodySha256),
+      ),
+      signature_format: Boolean(
+        signature && /^[A-Za-z0-9_-]{43}$/.test(signature),
+      ),
     });
   }
 
   const clientIp = normalizedClientIp(claimedIp);
   if (!clientIp) {
-    return await reject("client_ip_rejected", {
-      claimed_ip_fingerprint: await textFingerprint(claimedIp),
-    });
+    return await reject("client_ip_rejected", {});
   }
   const nowSeconds = options.nowSeconds ?? Math.floor(Date.now() / 1000);
   const signedSeconds = Number(timestamp);
@@ -401,15 +400,14 @@ async function verifySignedAuthIngress(
     clientIp,
     bodySha256,
   });
-  const canonicalHash = (await sha256Hex(encoder.encode(canonicalMessage)))
-    .slice(0, 8);
+  const canonicalHash = (
+    await sha256Hex(encoder.encode(canonicalMessage))
+  ).slice(0, 8);
   await ingressDiagnostic("canonical_message_built", {
-    canonical_hash_prefix: canonicalHash,
     method,
     path,
     timestamp_length: timestamp.length,
     nonce_length: nonce.length,
-    client_ip_fingerprint: await textFingerprint(clientIp),
     body_hash_prefix: bodySha256.slice(0, 8),
   });
   const validSignature = await verifyAuthIngressSignature(
@@ -419,7 +417,6 @@ async function verifySignedAuthIngress(
   );
   if (!validSignature) {
     return await reject("signature_mismatch", {
-      canonical_hash_prefix: canonicalHash,
       signature_length: signature.length,
     });
   }
