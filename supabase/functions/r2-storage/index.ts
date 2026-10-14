@@ -78,12 +78,10 @@ function buildCors(req: Request): Record<string, string> {
     raw.split(',').map((s) => s.trim()).filter(Boolean).concat([
       'https://athar-app.online',
       'https://athar.app',
-      'https://vms-v2.aromaticfamilies.com',
     ]),
   );
   const requestOrigin = req.headers.get('Origin') || '';
-  const isAllowed = allowed.has(requestOrigin)
-    || (requestOrigin.endsWith('.aromaticfamilies.com') && requestOrigin.startsWith('https://'));
+  const isAllowed = allowed.has(requestOrigin);
   return {
     'Access-Control-Allow-Origin': isAllowed ? requestOrigin : '',
     'Access-Control-Allow-Headers':

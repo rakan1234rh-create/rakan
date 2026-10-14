@@ -81,7 +81,6 @@
       function isPublicDeployHost() {
         const h = (location.hostname || '').toLowerCase();
         return h === 'github.io' || h.endsWith('.github.io')
-          || h === 'vms-v2.aromaticfamilies.com' || h.endsWith('.aromaticfamilies.com')
           || h === 'athar-app.online' || h.endsWith('.athar-app.online');
       }
 

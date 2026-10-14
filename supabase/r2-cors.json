@@ -1,7 +1,6 @@
 [
   {
     "AllowedOrigins": [
-      "https://vms-v2.aromaticfamilies.com",
       "https://athar-app.online",
       "https://athar.app",
       "http://localhost:5500",

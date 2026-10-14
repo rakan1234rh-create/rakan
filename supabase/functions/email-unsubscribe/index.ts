@@ -10,13 +10,10 @@ function buildCors(req: Request): Record<string, string> {
       'https://athar-app.online',
       'https://athar.app',
       // Temporary CORS allowlist only — not used for mail/unsubscribe link generation.
-      'https://vms-v2.aromaticfamilies.com',
     ]),
   );
   const requestOrigin = req.headers.get('Origin') || '';
-  const isAllowed = !requestOrigin
-    || allowed.has(requestOrigin)
-    || (requestOrigin.endsWith('.aromaticfamilies.com') && requestOrigin.startsWith('https://'));
+  const isAllowed = !requestOrigin || allowed.has(requestOrigin);
   return {
     'Access-Control-Allow-Origin': isAllowed ? (requestOrigin || '*') : '',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, list-unsubscribe, list-unsubscribe-post',

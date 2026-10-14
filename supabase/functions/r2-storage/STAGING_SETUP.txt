@@ -20,5 +20,5 @@
    - استخدم الملف: supabase/r2-cors.json
    - أمر مثال (Cloudflare Wrangler):
      wrangler r2 bucket cors put <BUCKET_NAME> --file supabase/r2-cors.json
-   - يجب أن يشمل الأصل الإنتاجي: https://vms-v2.aromaticfamilies.com
+   - يجب أن يشمل الأصل الإنتاجي: https://athar-app.online
    - بدون CORS: المتصفح يفشل الرفع/العرض المباشر ويرجع لمسار ثقيل عبر Edge

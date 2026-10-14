@@ -10,7 +10,7 @@ const SMTP_ENDPOINT = Deno.env.get('SMTP_ENDPOINT') ?? 'email-smtp.us-east-1.ama
 const SMTP_PORT = parseInt(Deno.env.get('SMTP_PORT') ?? '587', 10);
 const SMTP_USERNAME = Deno.env.get('SMTP_USERNAME') ?? '';
 const SMTP_PASSWORD = Deno.env.get('SMTP_PASSWORD') ?? '';
-const SENDER_EMAIL = Deno.env.get('SENDER_EMAIL') ?? 'noreply@aromaticfamilies.com';
+const SENDER_EMAIL = Deno.env.get('SENDER_EMAIL') ?? 'no-reply@athar-app.online';
 const TEST_TO_EMAIL = 'it@aromatic.sa';
 
 function log(label: string, message: string) {

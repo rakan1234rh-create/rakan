@@ -508,7 +508,7 @@
       try {
         var url = new URL(window.location.href);
         // Prefer /start/ on the official domain — WhatsApp often caches the old "/" redirect page.
-        if (url.hostname === 'athar-app.online' || url.hostname === 'vms-v2.aromaticfamilies.com') {
+        if (url.hostname === 'athar-app.online') {
           return url.origin + '/start/';
         }
         return url.origin + (url.pathname || '/');
@@ -2970,7 +2970,7 @@
   <script>
     (function () {
       var host = location.hostname;
-      if (host !== 'vms-v2.aromaticfamilies.com' && host !== 'athar-app.online') return;
+      if (host !== 'athar-app.online') return;
       var hash = location.hash || '';
       var search = location.search || '';
       var path = location.pathname || '/';
