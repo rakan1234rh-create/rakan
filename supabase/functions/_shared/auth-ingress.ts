@@ -400,16 +400,6 @@ async function verifySignedAuthIngress(
     clientIp,
     bodySha256,
   });
-  const canonicalHash = (
-    await sha256Hex(encoder.encode(canonicalMessage))
-  ).slice(0, 8);
-  await ingressDiagnostic("canonical_message_built", {
-    method,
-    path,
-    timestamp_length: timestamp.length,
-    nonce_length: nonce.length,
-    body_hash_prefix: bodySha256.slice(0, 8),
-  });
   const validSignature = await verifyAuthIngressSignature(
     secret,
     canonicalMessage,
