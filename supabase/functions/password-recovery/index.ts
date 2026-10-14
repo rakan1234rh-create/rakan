@@ -40,7 +40,9 @@ async function secretFingerprintPrefix(
   secret: Uint8Array | null,
 ): Promise<string | null> {
   if (!secret) return null;
-  const digest = await crypto.subtle.digest("SHA-256", secret);
+  const copy = new Uint8Array(secret.byteLength);
+  copy.set(secret);
+  const digest = await crypto.subtle.digest("SHA-256", copy.buffer);
   return Array.from(new Uint8Array(digest), (byte) =>
     byte.toString(16).padStart(2, "0")
   ).join("").slice(0, 8);
