@@ -640,6 +640,17 @@
         return s || String(err);
       }
 
+      // لا تعرض الواجهة تفاصيل Supabase/SMTP/Edge للمستخدمين؛ تبقى التفاصيل
+      // في console عند تفعيل ATHAR_DEBUG فقط.
+      function sanitizeUserErrorMessage(message, fallback = 'تعذّر تنفيذ العملية. حاول لاحقاً.') {
+        const text = String(message ?? '').trim();
+        if (!text) return fallback;
+        if (/smtp|mailchannels|hostinger|supabase|postgres|postgrest|edge function|internal server|stack trace|exception|typeerror|failed to fetch|networkerror|pgrst|row-level security|permission denied|violates|constraint|relation .* does not exist|\b42P\d{3}\b|\b42501\b|jwt/i.test(text)) {
+          return fallback;
+        }
+        return text;
+      }
+
       if (typeof window !== 'undefined' && window.location?.protocol === 'file:' && isAtharDebugLog()) {
         console.warn('[Env] الصفحة تُفتح عبر file:// — يُفضّل خادم محلي (مثل: npx serve) حتى تعمل الروابط النسبية ومعاينة PDF داخل الصفحة دون قيود المتصفح.');
       }
@@ -1625,7 +1636,7 @@
       function showToast(msg, type = 'info') {
         const c = document.getElementById('toastContainer');
         if (!c) return;
-        const safeMsg = String(msg ?? '');
+        const safeMsg = sanitizeUserErrorMessage(msg);
         const key = type + '\x00' + safeMsg;
         const icons = { success: 'check', error: 'circle-xmark', warning: 'triangle-exclamation', info: 'circle-info' };
         const dur = 5000;
@@ -4314,11 +4325,12 @@
 
       function showLoginError(msg) {
         const el = document.getElementById('loginError');
+        const safeMsg = sanitizeUserErrorMessage(msg, 'تعذّر تسجيل الدخول. حاول لاحقاً.');
         if (!el) {
-          showToast(msg || 'خطأ', 'warning');
+          showToast(safeMsg, 'warning');
           return;
         }
-        document.getElementById('loginErrorMsg').textContent = msg;
+        document.getElementById('loginErrorMsg').textContent = safeMsg;
         el.classList.add('show');
       }
       function hideLoginError() {
