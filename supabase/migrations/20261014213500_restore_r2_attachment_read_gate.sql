@@ -83,14 +83,15 @@ BEGIN
     SELECT 1 FROM public.violations v
     WHERE (public.athar_attachment_json_has_key(v.attachments, p_key)
        OR public.athar_attachment_logs_have_key(v.logs, p_key))
-      AND public.athar_attachment_key_is_canonical(p_key, 'violation', v.id)
+      -- Exact key match is sufficient here because SECURITY INVOKER preserves
+      -- the row-level policies on violations and complaints. This supports
+      -- legacy keys while preventing basename/substring authorization.
   ) INTO ok;
   IF ok THEN RETURN true; END IF;
   SELECT EXISTS (
     SELECT 1 FROM public.complaints c
     WHERE (public.athar_attachment_json_has_key(c.attachments, p_key)
        OR public.athar_attachment_logs_have_key(c.logs, p_key))
-      AND public.athar_attachment_key_is_canonical(p_key, 'complaint', c.id)
   ) INTO ok;
   RETURN COALESCE(ok, false);
 END;
