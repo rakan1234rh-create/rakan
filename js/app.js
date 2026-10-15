@@ -20557,7 +20557,7 @@
           grid.classList.add('is-dragging');
           popup?.classList.add('dp-range-dragging');
           try { grid.setPointerCapture(e.pointerId); } catch (_) {}
-          wfDpRender();
+          // لا نعيد بناء الخلايا هنا حتى يصل حدث click ويثبت التاريخ الأول.
         });
         grid.addEventListener('pointermove', (e) => {
           if (!wfDpPtr.dragging || e.pointerId !== wfDpPtr.pointerId) return;
