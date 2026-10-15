@@ -20553,7 +20553,8 @@
           wfDpPtr.anchor = btn.dataset.wfIso;
           wfDpPtr.pointerId = e.pointerId;
           wfDpState.from = wfDpPtr.anchor;
-          wfDpState.to = wfDpPtr.anchor;
+          // لا نعتبر الضغط المفرد نطاقاً مكتملًا؛ حدث click سيختار النهاية.
+          wfDpState.to = '';
           grid.classList.add('is-dragging');
           popup?.classList.add('dp-range-dragging');
           try { grid.setPointerCapture(e.pointerId); } catch (_) {}
