@@ -20424,6 +20424,8 @@
         const clear = document.getElementById('wf-date-clear');
         const startValue = document.getElementById('wf-date-start-value');
         const endValue = document.getElementById('wf-date-end-value');
+        const startPart = document.getElementById('wf-date-start-part');
+        const endPart = document.getElementById('wf-date-end-part');
         const buttonLabel = from && to
           ? `من ${fromDisplay} إلى ${toDisplay}`
           : from ? `من ${fromDisplay} · اختر النهاية` : 'اختر الفترة';
@@ -20431,8 +20433,10 @@
           ? `الفترة من ${fromDisplay} إلى ${toDisplay}`
           : from ? `تاريخ البداية ${fromDisplay}، اختر تاريخ النهاية` : 'اختر فترة تاريخ المخالفة';
         if (label) label.textContent = buttonLabel;
-        if (startValue) startValue.textContent = from ? fromDisplay : 'اختر التاريخ الأول';
-        if (endValue) endValue.textContent = to ? toDisplay : 'اختر التاريخ الثاني';
+        if (startValue) startValue.textContent = from ? fromDisplay : '—';
+        if (endValue) endValue.textContent = to ? toDisplay : from ? 'اختر النهاية' : '—';
+        startPart?.classList.toggle('is-selected', !!from);
+        endPart?.classList.toggle('is-selected', !!to);
         if (btn) {
           btn.classList.toggle('active', !!(from || to));
           btn.title = accessibleLabel;
