@@ -20570,6 +20570,14 @@
         });
         grid.addEventListener('pointerup', finish);
         grid.addEventListener('pointercancel', finish);
+        grid.addEventListener('click', (e) => {
+          if (wfDpPtr.dragging) return;
+          const btn = e.target.closest?.('.dp-day[data-wf-iso]');
+          if (!btn || btn.disabled) return;
+          e.preventDefault();
+          e.stopPropagation();
+          wfDpSelect(btn.dataset.wfIso);
+        });
       }
       wfDpWireGrid();
       function applyWfDateFilter(list) {
