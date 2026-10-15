@@ -20007,6 +20007,11 @@
 
         const sel = document.getElementById('wf-status');
         if (sel) sel.value = '';
+        const dateFrom = document.getElementById('wf-date-from');
+        const dateTo = document.getElementById('wf-date-to');
+        if (dateFrom) dateFrom.value = '';
+        if (dateTo) dateTo.value = '';
+        syncWfDateFilterUi();
         wfStatusSyncUi('');
         wfStatusClose();
 
@@ -20383,8 +20388,40 @@
         return { color: 'var(--text2)', soft: 'var(--surface2)' };
       }
 
+      function getWfTicketDateKey(ticket) {
+        const raw = ticket?.created_at || ticket?.violation_date || ticket?.date || ticket?.createdAt;
+        if (!raw) return '';
+        const match = String(raw).match(/^(\d{4}-\d{2}-\d{2})/);
+        return match ? match[1] : '';
+      }
+      function syncWfDateFilterUi() {
+        const from = document.getElementById('wf-date-from')?.value || '';
+        const to = document.getElementById('wf-date-to')?.value || '';
+        const clear = document.getElementById('wf-date-clear');
+        clear?.classList.toggle('is-active', !!(from || to));
+      }
+      function clearWfDateFilter() {
+        const from = document.getElementById('wf-date-from');
+        const to = document.getElementById('wf-date-to');
+        if (from) from.value = '';
+        if (to) to.value = '';
+        syncWfDateFilterUi();
+        filterTickets();
+      }
+      function applyWfDateFilter(list) {
+        const from = document.getElementById('wf-date-from')?.value || '';
+        const to = document.getElementById('wf-date-to')?.value || '';
+        if (!from && !to) return list;
+        const min = from || '0000-01-01';
+        const max = to || '9999-12-31';
+        return list.filter(ticket => {
+          const key = getWfTicketDateKey(ticket);
+          return !!key && key >= min && key <= max;
+        });
+      }
       function filterTickets() {
-        let visible = getTicketsListViolations();
+        syncWfDateFilterUi();
+        let visible = applyWfDateFilter(getTicketsListViolations());
 
         const useRdChips = (typeof isAtharRedesignUi === 'function' && isAtharRedesignUi())
           || (typeof isAtharDesktopRedesignUi === 'function' && isAtharDesktopRedesignUi())

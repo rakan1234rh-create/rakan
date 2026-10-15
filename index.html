@@ -3857,6 +3857,25 @@
                       <i class="fas fa-magnifying-glass"></i>
                     </button>
                   </div>
+                  <div class="wf-date-range" role="group" aria-label="فلترة التذاكر حسب التاريخ">
+                    <label class="wf-date-field">
+                      <span>من تاريخ</span>
+                      <span class="wf-date-control">
+                        <i class="fas fa-calendar-days" aria-hidden="true"></i>
+                        <input type="date" id="wf-date-from" aria-label="تاريخ البداية" onchange="filterTickets()">
+                      </span>
+                    </label>
+                    <label class="wf-date-field">
+                      <span>إلى تاريخ</span>
+                      <span class="wf-date-control">
+                        <i class="fas fa-calendar-days" aria-hidden="true"></i>
+                        <input type="date" id="wf-date-to" aria-label="تاريخ النهاية" onchange="filterTickets()">
+                      </span>
+                    </label>
+                    <button type="button" class="wf-date-clear" id="wf-date-clear" onclick="clearWfDateFilter()" aria-label="مسح فلترة التاريخ" title="مسح التاريخ">
+                      <i class="fas fa-xmark" aria-hidden="true"></i>
+                    </button>
+                  </div>
                   <div class="wf-status-filter" id="wf-status-filter">
                     <button type="button" class="wf-status-trigger" id="wf-status-trigger"
                       onclick="wfStatusToggle(event)" aria-haspopup="listbox" aria-expanded="false">
