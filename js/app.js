@@ -5194,6 +5194,7 @@
           state._dataReady = true;
           state._wfViolationsScope = canViewAllTickets();
           closeRetiredHrQueue().catch(() => {});
+          realignLegacyAuditQueueToManagement().catch(() => {});
           try { loadStaffBreaksData(); } catch (_) { /* noop */ }
           try { loadComplaintsData(); } catch (_) { /* noop */ }
           setConnStatus('connected');
@@ -7687,6 +7688,102 @@
         return s;
       }
 
+      let _legacyAuditRealignStarted = false;
+      /**
+       * بعد نقل الرقابة الداخلية لآخر المسار: التذاكر التي كانت عالقة في aud
+       * دون مرور بالإدارة تُعاد إلى mgt حتى تعالجها الإدارة أولًا.
+       */
+      async function realignLegacyAuditQueueToManagement() {
+        if (_legacyAuditRealignStarted) return;
+        if (!state.currentUser || typeof sb === 'undefined' || !sb) return;
+        const role = normalizeUserRole(state.currentUser.role);
+        if (
+          role !== 'admin'
+          && !canViewAllTickets()
+          && !hasPermission('act_as_manager')
+          && !hasPermission('act_as_auditor')
+        ) return;
+        _legacyAuditRealignStarted = true;
+
+        const needsMgmt = (v) => v
+          && v.state === 'aud'
+          && !String(v.management_reply || '').trim();
+        const needsLabelFix = (v) => v
+          && (v.state === 'aud' || v.state === 'mgt' || v.state === 'sup' || v.state === 'emp' || v.state === 'hr')
+          && STATE_LABELS[v.state]
+          && String(v.status_text || '').trim() !== STATE_LABELS[v.state]
+          && /بانتظار|تدقيق|رقابة|موظف|مشرف|إدار|موارد/i.test(String(v.status_text || ''));
+
+        let changed = false;
+        for (const v of state.violations || []) {
+          if (needsMgmt(v)) {
+            v.state = 'mgt';
+            v.status_text = STATE_LABELS.mgt;
+            changed = true;
+          } else if (needsLabelFix(v)) {
+            v.status_text = STATE_LABELS[v.state];
+            changed = true;
+          }
+        }
+
+        try {
+          const { data, error } = await sb
+            .from('violations')
+            .select('id, state, status_text, management_reply, logs')
+            .eq('state', 'aud')
+            .limit(500);
+          if (error) throw error;
+          const rows = Array.isArray(data) ? data : [];
+          for (const row of rows) {
+            if (String(row.management_reply || '').trim()) {
+              // Already past management under the new order — only refresh waiting label.
+              if (String(row.status_text || '').trim() !== STATE_LABELS.aud) {
+                const { error: updErr } = await sb
+                  .from('violations')
+                  .update({ status_text: STATE_LABELS.aud })
+                  .eq('id', row.id)
+                  .eq('state', 'aud');
+                if (!updErr) {
+                  const local = (state.violations || []).find(v => v.id === row.id);
+                  if (local) local.status_text = STATE_LABELS.aud;
+                  changed = true;
+                }
+              }
+              continue;
+            }
+            const logEntry = {
+              date: getNow(),
+              user: 'النظام',
+              role: 'النظام',
+              action: 'إعادة توجيه للمسار الجديد',
+              note: 'نُقلت التذكرة من التدقيق إلى الإدارة لأن إدارة الرقابة الداخلية أصبحت آخر مرحلة في المسار',
+            };
+            const { data: rpcData, error: rpcErr } = await sb.rpc('append_violation_log_with_guard', {
+              p_violation_id: row.id,
+              p_expected_state: 'aud',
+              p_log_entry: logEntry,
+              p_new_state: 'mgt',
+              p_status_text: STATE_LABELS.mgt,
+            });
+            if (rpcErr || !rpcData?.ok) continue;
+            const local = (state.violations || []).find(v => v.id === row.id);
+            if (local) {
+              local.state = 'mgt';
+              local.status_text = STATE_LABELS.mgt;
+              if (rpcData.logs) local.logs = rpcData.logs;
+              changed = true;
+            }
+          }
+        } catch (e) {
+          _legacyAuditRealignStarted = false;
+          if (isAtharDebugLog()) console.warn('[workflow] realign aud→mgt failed', e);
+        }
+        if (changed) {
+          try { wfRefreshAfterPermissionChange(); } catch (_) {}
+          try { refreshViolationsUI(); } catch (_) {}
+        }
+      }
+
       let _hrQueueCloseStarted = false;
       /** إغلاق التذاكر العالقة عند الموارد البشرية بعد إلغاء المرحلة */
       async function closeRetiredHrQueue() {
@@ -7803,7 +7900,8 @@
         if (next) {
           return {
             newState: next,
-            statusText: null,
+            // Always refresh waiting label so badges don't keep an old stage name.
+            statusText: STATE_LABELS[next] || null,
             fieldKey,
             actionLabel: workflowForwardButtonLabel(fromStage),
           };
@@ -33481,7 +33579,7 @@
       // 21.6. AUTO-FORWARD (التمرير التلقائي للتذاكر بعد انتهاء المهلة)
       // ═══════════════════════════════════════════════════════════════════════════
       // 24 ساعة للموظف (emp → sup)
-      // 48 ساعة للمشرف (sup → aud)
+      // 48 ساعة للمشرف (sup → الإدارة ثم الرقابة الداخلية حسب المسار)
       const EMP_TIMEOUT_HOURS = 24;
       const SUP_TIMEOUT_HOURS = 48;
 
@@ -33608,6 +33706,7 @@
 
           const updatePayload = {
             state: newState,
+            status_text: STATE_LABELS[newState] || newState,
             logs: newLogs,
             [flagCol]: true
           };
@@ -33627,7 +33726,7 @@
               state: newState,
               ticket_number: t.ticket_number,
               auto_forwarded_emp: direction === 'emp_to_sup' ? true : t.auto_forwarded_emp,
-              auto_forwarded_sup: direction === 'sup_to_aud' ? true : t.auto_forwarded_sup
+              auto_forwarded_sup: direction !== 'emp_to_sup' ? true : t.auto_forwarded_sup
             },
             t.state,
             { autoForward: true }
@@ -33636,6 +33735,7 @@
             ok: true,
             patch: {
               state: newState,
+              status_text: STATE_LABELS[newState] || newState,
               logs: newLogs,
               [flagCol]: true,
               ...(direction === 'emp_to_sup' ? { emp_forward_after: null } : { sup_forward_after: null }),

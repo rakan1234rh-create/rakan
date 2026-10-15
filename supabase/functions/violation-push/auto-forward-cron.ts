@@ -224,6 +224,7 @@ async function autoForwardTicket(
 
   const updatePayload: Record<string, unknown> = {
     state: newState,
+    status_text: STATE_LABELS[newState] || newState,
     logs: [...existingLogs, newLog],
     [flagCol]: true,
   };
