@@ -20400,10 +20400,9 @@
         return d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` : '';
       }
       function getWfTicketDateKey(ticket) {
-        const raw = ticket?.violation_date || ticket?.created_at || ticket?.date || ticket?.createdAt;
-        if (!raw) return '';
-        const match = String(raw).match(/^(\d{4}-\d{2}-\d{2})/);
-        return match ? match[1] : '';
+        // فلترة التذاكر تعتمد على تاريخ المخالفة الظاهر للمستخدم فقط.
+        const raw = String(ticket?.violation_date || '').trim();
+        return raw.slice(0, 10);
       }
       function syncWfDateFilterUi() {
         const from = wfDpState.from || '';
