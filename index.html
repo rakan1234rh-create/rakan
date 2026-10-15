@@ -1262,7 +1262,7 @@
       }
     }
   </style>
-  <link rel="stylesheet" href="styles/custom/main.css">
+  <link rel="stylesheet" href="styles/custom/main.css?v=wf-date-ui2">
   <link rel="stylesheet" href="styles/custom/athar-home-redesign.css?v=rp19" id="athar-home-redesign">
   <link rel="stylesheet" href="styles/custom/athar-newticket-redesign.css?v=rp3" id="athar-newticket-redesign">
   <link rel="stylesheet" href="styles/custom/athar-workflow-redesign.css?v=wf6" id="athar-workflow-redesign">
@@ -3879,13 +3879,13 @@
                           </div>
                         </div>
                         <div class="wf-date-selection" role="status" aria-live="polite" aria-atomic="true">
-                          <div class="wf-date-selection__part">
-                            <span class="wf-date-selection__label">تاريخ البداية</span>
-                            <strong class="wf-date-selection__value" id="wf-date-start-value" dir="ltr">اختر التاريخ الأول</strong>
+                          <div class="wf-date-selection__part" id="wf-date-start-part">
+                            <span class="wf-date-selection__label">البداية</span>
+                            <strong class="wf-date-selection__value" id="wf-date-start-value" dir="ltr">—</strong>
                           </div>
-                          <div class="wf-date-selection__part">
-                            <span class="wf-date-selection__label">تاريخ النهاية</span>
-                            <strong class="wf-date-selection__value" id="wf-date-end-value" dir="ltr">اختر التاريخ الثاني</strong>
+                          <div class="wf-date-selection__part" id="wf-date-end-part">
+                            <span class="wf-date-selection__label">النهاية</span>
+                            <strong class="wf-date-selection__value" id="wf-date-end-value" dir="ltr">—</strong>
                           </div>
                         </div>
                         <div class="dp-quick-actions">
@@ -5428,7 +5428,7 @@
 
     <div id="rdCmplOverlayHost"></div>
     <script src="js/auth-ingress-config.js?v=auth-ingress-v2"></script>
-    <script src="js/app.js?v=atharmig14"></script>
+    <script src="js/app.js?v=atharmig15"></script>
         <style>
       @media (max-width: 992px) {
         /* ── workflow: منع التمدد الأفقي ── */
