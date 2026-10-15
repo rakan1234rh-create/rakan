@@ -3868,8 +3868,8 @@
                         <button type="button" class="wf-status-opt is-active" data-val="" onclick="wfStatusPick('')">جميع المراحل</button>
                         <button type="button" class="wf-status-opt" data-val="emp" onclick="wfStatusPick('emp')">بانتظار الموظف</button>
                         <button type="button" class="wf-status-opt" data-val="sup" onclick="wfStatusPick('sup')">بانتظار المشرف</button>
-                        <button type="button" class="wf-status-opt" data-val="aud" onclick="wfStatusPick('aud')">بانتظار التدقيق</button>
                         <button type="button" class="wf-status-opt" data-val="mgt" onclick="wfStatusPick('mgt')">بانتظار الإدارة</button>
+                        <button type="button" class="wf-status-opt" data-val="aud" onclick="wfStatusPick('aud')">بانتظار الرقابة الداخلية</button>
                         <button type="button" class="wf-status-opt" data-val="hr" onclick="wfStatusPick('hr')">بانتظار الموارد البشرية</button>
                       </div>
                     </div>
@@ -3877,8 +3877,8 @@
                       <option value="">جميع المراحل</option>
                       <option value="emp">بانتظار الموظف</option>
                       <option value="sup">بانتظار المشرف</option>
-                      <option value="aud">بانتظار التدقيق</option>
                       <option value="mgt">بانتظار الإدارة</option>
+                      <option value="aud">بانتظار الرقابة الداخلية</option>
                       <option value="hr">بانتظار الموارد البشرية</option>
                     </select>
                   </div>
@@ -4184,7 +4184,7 @@
                             <button type="button" class="wf-status-opt" data-val="branch_manager" onclick="userRoleDdPick('branch_manager')">مدير الفرع</button>
                             <button type="button" class="wf-status-opt" data-val="employee" onclick="userRoleDdPick('employee')">الموظف</button>
                             <button type="button" class="wf-status-opt" data-val="supervisor" onclick="userRoleDdPick('supervisor')">المشرف</button>
-                            <button type="button" class="wf-status-opt" data-val="auditor" onclick="userRoleDdPick('auditor')">المدقق</button>
+                            <button type="button" class="wf-status-opt" data-val="auditor" onclick="userRoleDdPick('auditor')">إدارة الرقابة الداخلية</button>
                             <button type="button" class="wf-status-opt" data-val="manager" onclick="userRoleDdPick('manager')">المدير</button>
                             <button type="button" class="wf-status-opt" data-val="hr" onclick="userRoleDdPick('hr')">الموارد البشرية</button>
                             <button type="button" class="wf-status-opt" data-val="admin" onclick="userRoleDdPick('admin')">مدير النظام</button>
@@ -4196,7 +4196,7 @@
                           <option value="branch_manager">مدير الفرع</option>
                           <option value="employee">الموظف</option>
                           <option value="supervisor">المشرف</option>
-                          <option value="auditor">المدقق</option>
+                          <option value="auditor">إدارة الرقابة الداخلية</option>
                           <option value="manager">المدير</option>
                           <option value="hr">الموارد البشرية</option>
                           <option value="admin">مدير النظام</option>
@@ -4693,7 +4693,7 @@
               <div class="mr-avatar-admin-roles">
                 <label><input type="checkbox" id="paa-role-admin" value="admin" checked> مدير النظام</label>
                 <label><input type="checkbox" id="paa-role-manager" value="manager" checked> المدير</label>
-                <label><input type="checkbox" id="paa-role-auditor" value="auditor" checked> المدقق</label>
+                <label><input type="checkbox" id="paa-role-auditor" value="auditor" checked> إدارة الرقابة الداخلية</label>
                 <label><input type="checkbox" id="paa-role-supervisor" value="supervisor" checked> المشرف</label>
                 <label><input type="checkbox" id="paa-role-employee" value="employee" checked> موظف</label>
                 <label><input type="checkbox" id="paa-role-branch_manager" value="branch_manager" checked> مدير فرع</label>
@@ -4986,7 +4986,7 @@
                   <option value="branch_manager">مدير فرع</option>
                   <option value="supervisor">مشرف</option>
                   <option value="observer">راصد</option>
-                  <option value="auditor">مدقق</option>
+                  <option value="auditor">إدارة الرقابة الداخلية</option>
                   <option value="manager">مدير</option>
                   <option value="hr">الموارد البشرية</option>
                   <option value="admin">مدير النظام</option>
@@ -5170,8 +5170,8 @@
           <div class="fp-chips" id="fp-stage-chips">
             <div class="fp-chip" data-val="emp" onclick="toggleChip(this,'stage','active')">بانتظار الموظف</div>
             <div class="fp-chip" data-val="sup" onclick="toggleChip(this,'stage','active')">بانتظار المشرف</div>
-            <div class="fp-chip" data-val="aud" onclick="toggleChip(this,'stage','active')">بانتظار التدقيق</div>
             <div class="fp-chip" data-val="mgt" onclick="toggleChip(this,'stage','active')">بانتظار الإدارة</div>
+            <div class="fp-chip" data-val="aud" onclick="toggleChip(this,'stage','active')">بانتظار الرقابة الداخلية</div>
             <div class="fp-chip" data-val="hr" onclick="toggleChip(this,'stage','active')">بانتظار الموارد البشرية</div>
             <div class="fp-chip" data-val="Warning_Issued" onclick="toggleChip(this,'stage','active')">تنبيه إداري صادر</div>
           </div>

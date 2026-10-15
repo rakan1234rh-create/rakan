@@ -88,7 +88,7 @@ async function sendEmail(
 }
 
 export async function runWeeklyDigest(supabase: ReturnType<typeof createClient>) {
-  // مخالفات بانتظار التدقيق / الإدارة / الموارد البشرية فقط
+  // مخالفات بانتظار الإدارة / الرقابة الداخلية / الموارد البشرية فقط
   const { data: violations, error } = await supabase
     .from('violations')
     .select(`

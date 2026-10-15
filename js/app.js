@@ -367,7 +367,7 @@
       const ROLE_LABELS = {
         admin: 'مدير النظام',
         manager: 'المدير',
-        auditor: 'المدقق',
+        auditor: 'إدارة الرقابة الداخلية',
         supervisor: 'المشرف',
         employee: 'الموظف',
         branch_manager: 'مدير الفرع',
@@ -419,8 +419,8 @@
         uploading: 'جاري الرفع...',
         emp: 'بانتظار رد الموظف',
         sup: 'بانتظار رد المشرف',
-        aud: 'بانتظار التدقيق',
         mgt: 'بانتظار القرار الإداري',
+        aud: 'بانتظار الرقابة الداخلية',
         hr: 'بانتظار الموارد البشرية',
         Warning_Issued: 'تنبيه إداري صادر',
         closed: 'مغلقة'
@@ -6019,12 +6019,12 @@
         { id: 'view_all_tickets', label: 'عرض جميع التذاكر (كل الفروع)', group: 'سير العمل', roles: ['admin', 'manager', 'auditor', 'hr'] },
         { id: 'respond_own_ticket', label: 'الرد على التذكرة الموجّهة إليه', group: 'سير العمل', roles: ['admin', 'employee', 'branch_manager'] },
         { id: 'act_as_supervisor', label: 'معالجة مرحلة المشرف', group: 'سير العمل', roles: ['admin', 'supervisor'] },
-        { id: 'act_as_auditor', label: 'معالجة مرحلة المدقق', group: 'سير العمل', roles: ['admin', 'auditor'] },
-        { id: 'act_as_manager', label: 'معالجة مرحلة المدير (تمرير/تنبيه/إلغاء)', group: 'سير العمل', roles: ['admin', 'manager'] },
+        { id: 'act_as_auditor', label: 'معالجة مرحلة الرقابة الداخلية', group: 'سير العمل', roles: ['admin', 'auditor'] },
+        { id: 'act_as_manager', label: 'معالجة مرحلة الإدارة (تمرير/تنبيه/إلغاء)', group: 'سير العمل', roles: ['admin', 'manager'] },
         { id: 'act_as_hr', label: 'معالجة مرحلة الموارد البشرية (تمرير/تنبيه/إلغاء)', group: 'سير العمل', roles: ['admin', 'hr'] },
         { id: 'skip_stage_supervisor', label: 'تجاهل مرحلة المشرف في المعالجة', group: 'تخطي مراحل المعالجة', roles: [] },
-        { id: 'skip_stage_auditor', label: 'تجاهل مرحلة المدقق في المعالجة', group: 'تخطي مراحل المعالجة', roles: [] },
-        { id: 'skip_stage_manager', label: 'تجاهل مرحلة المدير في المعالجة', group: 'تخطي مراحل المعالجة', roles: [] },
+        { id: 'skip_stage_manager', label: 'تجاهل مرحلة الإدارة في المعالجة', group: 'تخطي مراحل المعالجة', roles: [] },
+        { id: 'skip_stage_auditor', label: 'تجاهل مرحلة الرقابة الداخلية في المعالجة', group: 'تخطي مراحل المعالجة', roles: [] },
         { id: 'skip_stage_hr', label: 'تجاهل مرحلة الموارد البشرية في المعالجة', group: 'تخطي مراحل المعالجة', roles: [] },
         { id: 'act_all_tickets', label: 'الإجراء على أي تذكرة (صلاحية مدير)', group: 'سير العمل', roles: ['admin'] },
         { id: 'export_reports', label: 'تصدير التقارير Excel', group: 'إجراءات', roles: ['admin', 'manager', 'auditor', 'hr'] },
@@ -7650,17 +7650,18 @@
         goTab(tab, getNavButtonForTab(tab), opts);
       }
 
-      const WORKFLOW_PROCESS_STAGES = ['emp', 'sup', 'aud', 'mgt', 'hr'];
+      // الراصد يرصد → الموظف → المشرف → الإدارة → الرقابة الداخلية (أخيرة) → (HR ملغاة)
+      const WORKFLOW_PROCESS_STAGES = ['emp', 'sup', 'mgt', 'aud', 'hr'];
       const WORKFLOW_STAGE_SKIP_PERM = {
         sup: 'skip_stage_supervisor',
-        aud: 'skip_stage_auditor',
         mgt: 'skip_stage_manager',
+        aud: 'skip_stage_auditor',
         hr: 'skip_stage_hr',
       };
 
       /** هل مرحلة معالجة مُلغاة من إعدادات المنصة (تبديل عام في صلاحيات المنصة) */
       function isWorkflowStageSkipped(stage) {
-        // مرحلة الموارد البشرية ملغاة: الإغلاق يتم فور انتهاء الإدارة
+        // مرحلة الموارد البشرية ملغاة: الإغلاق يتم فور انتهاء الرقابة الداخلية
         if (stage === 'hr') return true;
         const permId = WORKFLOW_STAGE_SKIP_PERM[stage];
         if (!permId) return false;
@@ -7757,14 +7758,25 @@
       function getNextWorkflowState(current) {
         const stages = getActiveWorkflowStages();
         const idx = stages.indexOf(current);
-        if (idx >= 0 && idx < stages.length - 1) return stages[idx + 1];
-        const allIdx = WORKFLOW_PROCESS_STAGES.indexOf(current);
-        if (allIdx < 0) return null;
-        for (let i = allIdx + 1; i < WORKFLOW_PROCESS_STAGES.length; i++) {
-          const s = WORKFLOW_PROCESS_STAGES[i];
-          if (!isWorkflowStageSkipped(s)) return s;
+        let next = null;
+        if (idx >= 0 && idx < stages.length - 1) next = stages[idx + 1];
+        else {
+          const allIdx = WORKFLOW_PROCESS_STAGES.indexOf(current);
+          if (allIdx < 0) return null;
+          for (let i = allIdx + 1; i < WORKFLOW_PROCESS_STAGES.length; i++) {
+            const s = WORKFLOW_PROCESS_STAGES[i];
+            if (!isWorkflowStageSkipped(s)) {
+              next = s;
+              break;
+            }
+          }
         }
-        return null;
+        // تذاكر قديمة أُنجز تدقيقها قبل الإدارة: لا تُعاد لمرحلة الرقابة الداخلية
+        const ticket = state.editingTicket;
+        if (next === 'aud' && ticket && String(ticket.audit_reply || '').trim()) {
+          return getNextWorkflowState('aud');
+        }
+        return next;
       }
 
       function workflowForwardButtonLabel(fromStage) {
@@ -7772,8 +7784,8 @@
         const byStage = {
           emp: 'إفادة الموظف',
           sup: 'إفادة المشرف',
-          aud: 'إفادة التدقيق',
           mgt: 'إفادة الإدارة',
+          aud: 'إفادة الرقابة الداخلية',
           hr: 'قرار الموارد البشرية',
         };
         return byStage[fromStage] || 'اعتماد نهائي';
@@ -7828,8 +7840,7 @@
           return list.filter(v => supBranches.includes(v.branch_id));
         }
         if (role === 'manager') {
-          const es = violationEffectiveState;
-          return list.filter(v => { const s = es(v); return s === 'mgt' || s === 'aud'; });
+          return list.filter(v => violationEffectiveState(v) === 'mgt');
         }
         if (role === 'auditor') return list.filter(v => violationEffectiveState(v) === 'aud');
         if (role === 'hr') return list.filter(v => violationEffectiveState(v) === 'hr');
@@ -7985,7 +7996,7 @@
       /**
        * هل يخفي اسم الراصد عن المستخدم الحالي؟
        * نعم → لجميع الأدوار ما عدا من يُذكرون أدناه
-       * لا  → مدير النظام (admin)، المدير (manager)، المدقق (auditor) فقط
+       * لا  → مدير النظام (admin)، المدير (manager)، الرقابة الداخلية (auditor) فقط
        */
       function shouldHideObserverName() {
         if (!state.currentUser) return true;
@@ -9655,7 +9666,7 @@
       const PROFILE_AVATAR_ROLE_LABELS = {
         admin: 'مدير النظام',
         manager: 'المدير',
-        auditor: 'المدقق',
+        auditor: 'إدارة الرقابة الداخلية',
         supervisor: 'المشرف',
         employee: 'موظف',
         branch_manager: 'مدير فرع',
@@ -10907,7 +10918,7 @@
         if (isDbTruthy(t.auto_forwarded_emp) || isDbTruthy(t.auto_forwarded_sup)) {
           return true;
         }
-        const replyHay = [t.employee_reply, t.supervisor_reply, t.audit_reply].filter(Boolean).join(' ');
+        const replyHay = [t.employee_reply, t.supervisor_reply, t.management_reply, t.audit_reply].filter(Boolean).join(' ');
         if (/مررت التذكرة تلقائياً|تمرير تلقائي/i.test(replyHay)) return true;
         let logs = t.logs;
         if (typeof logs === 'string') {
@@ -12429,8 +12440,8 @@
         const statusItems = [
           { key: 'emp', label: 'بانتظار الموظف', icon: 'fa-user', colorKey: 'warning' },
           { key: 'sup', label: 'بانتظار المشرف', icon: 'fa-user-shield', colorKey: 'info' },
-          { key: 'aud', label: 'بانتظار التدقيق', icon: 'fa-magnifying-glass', colorKey: 'purple' },
           { key: 'mgt', label: 'بانتظار الإدارة', icon: 'fa-bolt', colorKey: 'danger' },
+          { key: 'aud', label: 'بانتظار الرقابة الداخلية', icon: 'fa-magnifying-glass', colorKey: 'purple' },
           { key: 'hr', label: 'بانتظار الموارد البشرية', icon: 'fa-id-badge', colorKey: 'gold' },
           { key: 'closed', label: 'مغلقة', icon: 'fa-check', colorKey: 'success' },
           { key: 'Warning_Issued', label: 'تنبيه إداري صادر', icon: 'fa-bell', colorKey: 'text3' }
@@ -12609,8 +12620,8 @@
         const statusItems = [
           { key: 'emp', label: 'بانتظار الموظف', icon: 'fa-user', colorKey: 'warning' },
           { key: 'sup', label: 'بانتظار المشرف', icon: 'fa-user-shield', colorKey: 'info' },
-          { key: 'aud', label: 'بانتظار التدقيق', icon: 'fa-magnifying-glass', colorKey: 'purple' },
           { key: 'mgt', label: 'بانتظار الإدارة', icon: 'fa-bolt', colorKey: 'danger' },
+          { key: 'aud', label: 'بانتظار الرقابة الداخلية', icon: 'fa-magnifying-glass', colorKey: 'purple' },
           { key: 'hr', label: 'بانتظار الموارد البشرية', icon: 'fa-id-badge', colorKey: 'gold' },
           { key: 'closed', label: 'مغلقة', icon: 'fa-check', colorKey: 'success' },
           { key: 'Warning_Issued', label: 'تنبيه إداري صادر', icon: 'fa-bell', colorKey: 'text3' }
@@ -12855,9 +12866,9 @@
           };
           const items = [
             { key: 'emp', label: 'بانتظار الموظف', sub: 'مرحلة الرد الأول', tone: 'amber', icon: 'fa-user-clock', fill: 'var(--amber)' },
-            { key: 'sup', label: 'بانتظار المشرف', sub: 'تدقيق المشرف المباشر', tone: 'blue', icon: 'fa-user-tie', fill: 'var(--blue)' },
-            { key: 'aud', label: 'بانتظار التدقيق', sub: 'مراجعة مدقّق الجودة', tone: 'purple', icon: 'fa-magnifying-glass', fill: 'var(--purple)' },
+            { key: 'sup', label: 'بانتظار المشرف', sub: 'مراجعة المشرف المباشر', tone: 'blue', icon: 'fa-user-tie', fill: 'var(--blue)' },
             { key: 'mgt', label: 'بانتظار الإدارة', sub: 'القرار الإداري', tone: 'red', icon: 'fa-gavel', fill: 'var(--red)' },
+            { key: 'aud', label: 'بانتظار الرقابة الداخلية', sub: 'المراجعة النهائية', tone: 'purple', icon: 'fa-magnifying-glass', fill: 'var(--purple)' },
             { key: 'hr', label: 'بانتظار الموارد البشرية', sub: 'القرار النهائي', tone: 'orange', icon: 'fa-users-gear', fill: 'var(--orange)' },
             { key: 'closed', label: 'مغلقة', sub: 'تذاكر منتهية ومُعتمدة', tone: 'green', icon: 'fa-circle-check', fill: 'var(--green)' },
             { key: 'Warning_Issued', label: 'تنبيه إداري صادر', sub: 'مخالفات صدر بشأنها قرار', tone: 'amber', icon: 'fa-bell', fill: 'var(--amber)' },
@@ -14146,7 +14157,7 @@
         'مدير فرع': 'branch_manager', 'مدير الفرع': 'branch_manager',
         supervisor: 'supervisor', 'مشرف': 'supervisor',
         observer: 'observer', 'راصد': 'observer',
-        auditor: 'auditor', 'مدقق': 'auditor',
+        auditor: 'auditor', 'مدقق': 'auditor', 'رقابة داخلية': 'auditor', 'إدارة الرقابة الداخلية': 'auditor', 'الرقابة الداخلية': 'auditor',
         manager: 'manager', 'مدير': 'manager',
         hr: 'hr', human_resources: 'hr', 'موارد بشرية': 'hr', 'الموارد البشرية': 'hr',
         admin: 'admin', 'مدير النظام': 'admin', 'مدير نظام': 'admin'
@@ -14203,7 +14214,7 @@
         if (/مدير\s*(\(|\s)*فرع|مدير\s*الفرع|branch\s*manager|مدير\s*فرع/.test(t)) return 'branch_manager';
         if (/مشرف|supervisor/.test(t)) return 'supervisor';
         if (/راصد|observer/.test(t)) return 'observer';
-        if (/مدقق|auditor/.test(t)) return 'auditor';
+        if (/مدقق|auditor|رقابة\s*داخلية/.test(t)) return 'auditor';
         if (/موارد\s*بشرية|\bhr\b|human\s*resources/.test(t)) return 'hr';
         if (/مدير\s*نظام|system\s*admin|\badmin\b|مدير\s*النظام/.test(t)) return 'admin';
         if ((/مدير|manager/.test(t)) && !/فرع|branch|مساعد|assistant|مباشر/.test(t)) return 'manager';
@@ -19670,8 +19681,8 @@
         '': 'جميع المراحل',
         emp: 'بانتظار الموظف',
         sup: 'بانتظار المشرف',
-        aud: 'بانتظار التدقيق',
         mgt: 'بانتظار الإدارة',
+        aud: 'بانتظار الرقابة الداخلية',
         hr: 'بانتظار الموارد البشرية'
       };
 
@@ -19885,7 +19896,7 @@
         '': 'كل الأدوار',
         admin: 'مدير النظام',
         manager: 'المدير',
-        auditor: 'المدقق',
+        auditor: 'إدارة الرقابة الداخلية',
         supervisor: 'المشرف',
         employee: 'الموظف',
         branch_manager: 'مدير الفرع',
@@ -21815,6 +21826,8 @@
           'الموظف': { bg: 'rgba(107,114,128,0.15)', color: '#4b5563' },
           'المشرف': { bg: 'var(--amber-light)', color: 'var(--amber-text)' },
           'المدقق': { bg: 'var(--blue-light)', color: 'var(--blue-text)' },
+          'إدارة الرقابة الداخلية': { bg: 'var(--blue-light)', color: 'var(--blue-text)' },
+          'الرقابة الداخلية': { bg: 'var(--blue-light)', color: 'var(--blue-text)' },
           'المدير': { bg: 'var(--red-light)', color: 'var(--red-text)' },
           'المدير العام': { bg: 'var(--purple-light)', color: 'var(--purple-text)' }
         };
@@ -21877,8 +21890,8 @@
       function guessAttachmentUploaderRole(att) {
         const s = att.s || att.stage || '';
         if (s.includes('الموظف')) return 'الموظف';
-        if (s.includes('المشرف') || s.includes('للتدقيق')) return 'المشرف';
-        if (s.includes('التدقيق')) return 'المدقق';
+        if (s.includes('المشرف') || s.includes('للإدارة') || s.includes('للتدقيق')) return 'المشرف';
+        if (s.includes('الرقابة') || s.includes('التدقيق')) return 'إدارة الرقابة الداخلية';
         if (s.includes('إدار') || s.includes('اعتماد')) return 'المدير';
         return 'الراصد';
       }
@@ -21892,7 +21905,7 @@
       }
 
       function formatAttachmentUploaderForDisplay(att, hideObs) {
-        // نستخدم نفس منطق السجل لتوحيد عرض الأسماء (إخفاء أسماء المدير والمدقق عن الموظف/المشرف)
+        // نستخدم نفس منطق السجل لتوحيد عرض الأسماء (إخفاء أسماء المدير والرقابة الداخلية عن الموظف/المشرف)
         const role = att.r || att.uploaderRole || guessAttachmentUploaderRole(att);
         const user = att.b || att.uploadedBy || '';
         const actor = formatLogActorForDisplay({ role, user }, null, hideObs);
@@ -21926,12 +21939,19 @@
         const role = String(log.role || '').trim();
         const me = state.currentUser;
         const myRole = me?.role;
-        // إخفاء أسماء الإدارة والمدقق عن الموظف والمشرف
+        // إخفاء أسماء الإدارة والرقابة الداخلية عن الموظف والمشرف
         const isLowRole = myRole === 'employee' || myRole === 'supervisor' || myRole === 'branch_manager' || myRole === 'observer';
 
         if (isLowRole) {
-          if (role === 'المدقق' || role === 'auditor' || role === 'التدقيق') {
-            return { user: 'إدارة الجودة - التدقيق', role: '', masked: true };
+          if (
+            role === 'المدقق'
+            || role === 'auditor'
+            || role === 'التدقيق'
+            || role === 'الرقابة الداخلية'
+            || role === 'إدارة الرقابة الداخلية'
+            || /رقابة\s*داخلية|تدقيق/i.test(role)
+          ) {
+            return { user: 'إدارة الرقابة الداخلية', role: '', masked: true };
           }
           if (role === 'المدير' || role === 'manager' || role === 'المدير العام' || role === 'القرار الإداري') {
             return { user: 'الإدارة', role: '', masked: true };
@@ -22907,7 +22927,7 @@
         const st = String(t?.status_text || '');
         if (outcome === 'cancel') {
           if (/الموارد البشرية/i.test(st)) return 'hr';
-          if (/التدقيق/i.test(st)) return 'aud';
+          if (/رقابة|التدقيق/i.test(st)) return 'aud';
           if (/إداري/i.test(st)) return 'mgt';
         }
 
@@ -22918,17 +22938,19 @@
           const hay = `${a} ${role}`;
           if (outcome === 'cancel' && /إلغاء|ملغ/i.test(a)) {
             if (/الموارد|hr/i.test(hay)) return 'hr';
-            if (/التدقيق|تدقيق/i.test(hay)) return 'aud';
+            if (/رقابة|التدقيق|تدقيق/i.test(hay)) return 'aud';
             if (/إدارة|إداري|management/i.test(hay)) return 'mgt';
           }
           if (outcome === 'warn' && /تنبيه|اكتفاء بالتنبيه/i.test(a)) {
             if (/الموارد|hr/i.test(hay)) return 'hr';
+            if (/رقابة|التدقيق/i.test(hay)) return 'aud';
             if (/إدارة|قرار إداري|management/i.test(hay)) return 'mgt';
           }
         }
 
         if (outcome === 'warn') {
           if (t?.hr_reply) return 'hr';
+          if (t?.audit_reply) return 'aud';
           if (t?.management_reply) return 'mgt';
           return 'mgt';
         }
@@ -22992,11 +23014,11 @@
         if (!t) return null;
         if (code === 'obs' || code === 'emp') return t.created_at || null;
         if (code === 'sup') return resolveSupStartTime(t);
-        if (code === 'aud') {
-          return findWfLogDate(t, l => /التدقيق|بانتظار التدقيق|بانتظار رد المدقق|تمرير.*المدقق/i.test(String(l?.action || '')));
-        }
         if (code === 'mgt') {
-          return findWfLogDate(t, l => /قرار إداري|بانتظار الإدارة|بانتظار رد المدير|المدير(?! الفرع)/i.test(String(l?.action || '')));
+          return findWfLogDate(t, l => /قرار إداري|بانتظار الإدارة|بانتظار القرار الإداري|بانتظار رد المدير|المدير(?! الفرع)|تمرير.*الإدارة/i.test(String(l?.action || '')));
+        }
+        if (code === 'aud') {
+          return findWfLogDate(t, l => /الرقابة\s*الداخلية|التدقيق|بانتظار التدقيق|بانتظار الرقابة|بانتظار رد المدقق|تمرير.*(المدقق|الرقابة)/i.test(String(l?.action || '')));
         }
         if (code === 'hr') {
           return findWfLogDate(t, l => /الموارد البشرية|بانتظار الموارد/i.test(String(l?.action || '')));
@@ -23032,11 +23054,11 @@
         const fromSupervisor = t.source_role === 'supervisor';
 
         const allSteps = [
-          { code: 'obs', label: 'رصد المخالفة', sub: 'تم تسجيلها من قبل مراقب الجودة', icon: 'fa-camera' },
+          { code: 'obs', label: 'رصد المخالفة', sub: 'تم تسجيلها من قبل الراصد', icon: 'fa-camera' },
           { code: 'emp', label: 'إشعار الموظف', sub: '24 ساعة لتقديم الرد', icon: 'fa-user' },
           { code: 'sup', label: 'مراجعة المشرف', sub: 'انتظار مراجعة واعتماد المشرف', icon: 'fa-user-tie' },
-          { code: 'aud', label: 'التدقيق الإداري', sub: 'إدارة الالتزام والجودة', icon: 'fa-magnifying-glass' },
-          { code: 'mgt', label: 'القرار الإداري', sub: 'تنبيه أو تمرير للموارد البشرية', icon: 'fa-gavel' },
+          { code: 'mgt', label: 'القرار الإداري', sub: 'مراجعة الإدارة ثم الإحالة للرقابة الداخلية', icon: 'fa-gavel' },
+          { code: 'aud', label: 'الرقابة الداخلية', sub: 'المراجعة النهائية من إدارة الرقابة الداخلية', icon: 'fa-magnifying-glass' },
           { code: 'hr', label: 'الموارد البشرية', sub: 'القرار النهائي والاعتماد', icon: 'fa-users-gear' }
         ];
 
@@ -23048,7 +23070,7 @@
           visibleSteps = visibleSteps.filter(s => s.code === 'obs' || (s.code !== 'emp' && s.code !== 'sup'));
         }
 
-        const orderMap = { obs: 0, emp: 1, sup: 2, aud: 3, mgt: 4, hr: 5, closed: 6, Warning_Issued: 6 };
+        const orderMap = { obs: 0, emp: 1, sup: 2, mgt: 3, aud: 4, hr: 5, closed: 6, Warning_Issued: 6 };
         const terminal = getWfTerminalOutcome(t);
         const wfState = terminal ? t.state : getEffectiveWorkflowState(t.state);
         const liveCurrentOrder = terminal ? 99 : (orderMap[wfState] || 1);
@@ -23220,8 +23242,8 @@
         const buttons = [];
         const RESP_SEND_LABEL = 'إرسال الرد';
 
-        // Path A: من الراصد
-        // Path B: من المشرف (يبدأ مباشرة من aud)
+        // Path A: من الراصد → موظف → مشرف → إدارة → رقابة داخلية
+        // Path B: من المشرف (يبدأ مباشرة من الإدارة ثم الرقابة الداخلية)
 
         if (wfState === 'emp' && (actAsAdmin || (hasPermission('respond_own_ticket') && (role === 'employee' || role === 'branch_manager') && t.employee_id === meId))) {
           buttons.push({ act: 'respond', label: RESP_SEND_LABEL, cls: 'btn-primary', icon: 'fa-paper-plane' });
@@ -23241,7 +23263,7 @@
             icon: 'fa-paper-plane',
           });
           buttons.push({ act: 'aud_delete', label: 'إلغاء التذكرة', cls: 'btn-danger', icon: 'fa-times' });
-          respTextarea.placeholder = 'اكتب ملاحظات التدقيق... (مطلوب)';
+          respTextarea.placeholder = 'اكتب ملاحظات الرقابة الداخلية... (مطلوب)';
         }
         else if (wfState === 'mgt' && !isWorkflowStageSkipped('mgt')
           && (actAsAdmin || (hasPermission('act_as_manager') && role === 'manager'))) {
@@ -23251,9 +23273,7 @@
           const blockWarn = employeeHadWarningSameTypeThisCalendarMonth(
             t.employee_id, vTypeId, t.violation_type, refDt, t.id, state.violations || []
           );
-          if (!isWorkflowStageSkipped('hr')) {
-            buttons.push({ act: 'mgt_forward', label: RESP_SEND_LABEL, cls: 'btn-primary', icon: 'fa-paper-plane' });
-          } else if (getNextWorkflowState('mgt')) {
+          if (getNextWorkflowState('mgt')) {
             buttons.push({ act: 'mgt_forward', label: RESP_SEND_LABEL, cls: 'btn-primary', icon: 'fa-paper-plane' });
           } else {
             buttons.push({ act: 'mgt_approve', label: RESP_SEND_LABEL, cls: 'btn-success', icon: 'fa-paper-plane' });
@@ -23326,7 +23346,7 @@
         const transitions = {
           respond: () => resolveForwardTransition('emp', 'employee_reply'),
           sup_process: () => resolveForwardTransition('sup', 'supervisor_reply'),
-          aud_delete: { newState: 'closed', statusText: 'ملغاة بقرار التدقيق', fieldKey: 'audit_reply', actionLabel: 'إلغاء (التدقيق)' },
+          aud_delete: { newState: 'closed', statusText: 'ملغاة بقرار الرقابة الداخلية', fieldKey: 'audit_reply', actionLabel: 'إلغاء (الرقابة الداخلية)' },
           aud_approve: () => resolveForwardTransition('aud', 'audit_reply'),
           mgt_forward: () => resolveForwardTransition('mgt', 'management_reply'),
           mgt_approve: { newState: 'closed', statusText: 'معتمدة نهائياً', fieldKey: 'management_reply', actionLabel: 'اعتماد نهائي' },
@@ -23344,10 +23364,10 @@
         let logUser = me.name;
         let logRole = ROLE_LABELS[me.role];
 
-        // إخفاء هوية المستخدم في مراحل التدقيق والمدير بناءً على طلب المستخدم
+        // إخفاء هوية المستخدم في مراحل الرقابة الداخلية والإدارة
         if (t.state === 'aud') {
-          logUser = 'إدارة الجودة - التدقيق';
-          logRole = 'التدقيق';
+          logUser = 'إدارة الرقابة الداخلية';
+          logRole = 'الرقابة الداخلية';
         } else if (t.state === 'mgt') {
           logUser = 'الإدارة';
           logRole = 'القرار الإداري';
@@ -23401,8 +23421,8 @@
               let attRole = ROLE_LABELS[me.role] || me.role;
 
               if (t.state === 'aud') {
-                attUser = 'إدارة الجودة - التدقيق';
-                attRole = 'التدقيق';
+                attUser = 'إدارة الرقابة الداخلية';
+                attRole = 'الرقابة الداخلية';
               } else if (t.state === 'mgt') {
                 attUser = 'الإدارة';
                 attRole = 'القرار الإداري';
@@ -29630,7 +29650,7 @@
         const headers = [
           'رقم التذكرة', 'الموظف', 'الرقم الوظيفي', 'نوع المخالفة', 'الفرع',
           'تاريخ المخالفة', 'وقت المخالفة', 'الحالة',
-          'الوصف', 'رد الموظف', 'رد المشرف', 'ملاحظات التدقيق', 'ملاحظة الإدارة', 'قرار الموارد البشرية',
+          'الوصف', 'رد الموظف', 'رد المشرف', 'ملاحظة الإدارة', 'ملاحظات الرقابة الداخلية', 'قرار الموارد البشرية',
           'عدد المرفقات', 'تمرير تلقائي'
         ];
         if (!hideObs) headers.splice(5, 0, 'الراصد');
@@ -29651,8 +29671,8 @@
             t.description || '',
             t.employee_reply || '',
             t.supervisor_reply || '',
-            t.audit_reply || '',
             t.management_reply || '',
+            t.audit_reply || '',
             t.hr_reply || '',
             attCount,
             autoFlag
@@ -30146,7 +30166,7 @@
       function notifAutoForwardLogPattern(direction) {
         return direction === 'emp_to_sup'
           ? /تمرير تلقائي.*(المشرف|بانتظار رد المشرف)/i
-          : /تمرير تلقائي.*(المدقق|بانتظار التدقيق|بانتظار رد المدقق)/i;
+          : /تمرير تلقائي.*(الإدارة|القرار الإداري|الرقابة|المدقق|بانتظار التدقيق|بانتظار الرقابة|بانتظار رد المدقق)/i;
       }
 
       function notifParseLogDateMs(raw) {
@@ -33563,7 +33583,7 @@
           const existingLogs = parseDbJsonArray(current.logs);
           const autoActionRe = direction === 'emp_to_sup'
             ? /تمرير تلقائي.*(المشرف|بانتظار رد المشرف)/i
-            : /تمرير تلقائي.*(المدقق|بانتظار رد المدقق)/i;
+            : /تمرير تلقائي.*(الإدارة|القرار الإداري|الرقابة|المدقق|بانتظار رد المدقق)/i;
           if (existingLogs.some(l => autoActionRe.test(String(l?.action || '')))) return false;
 
           let newState, actionLabel, note;
@@ -33755,8 +33775,8 @@
         const replies = [];
         if (t.employee_reply) replies.push(['رد الموظف', t.employee_reply]);
         if (t.supervisor_reply) replies.push(['رد المشرف', t.supervisor_reply]);
-        if (t.audit_reply) replies.push(['ملاحظات التدقيق', t.audit_reply]);
         if (t.management_reply) replies.push(['ملاحظة الإدارة', t.management_reply]);
+        if (t.audit_reply) replies.push(['ملاحظات الرقابة الداخلية', t.audit_reply]);
         if (t.hr_reply) replies.push(['قرار الموارد البشرية', t.hr_reply]);
 
         const escape = Sec.escapeHTML;
@@ -35539,7 +35559,7 @@
         /* التاريخ يُعرض فقط بجانب «عدد النتائج» (rp-period) وليس كشريحة فلتر */
 
         const statusLabels = { approved: 'معتمدة نهائياً', rejected: 'ملغاة', pending: 'قيد المعالجة', auto: 'تمرير تلقائي' };
-        const stageLabels = { emp: 'بانتظار الموظف', sup: 'بانتظار المشرف', aud: 'بانتظار التدقيق', mgt: 'بانتظار الإدارة', hr: 'بانتظار الموارد البشرية', Warning_Issued: 'تنبيه إداري صادر' };
+        const stageLabels = { emp: 'بانتظار الموظف', sup: 'بانتظار المشرف', mgt: 'بانتظار الإدارة', aud: 'بانتظار الرقابة الداخلية', hr: 'بانتظار الموارد البشرية', Warning_Issued: 'تنبيه إداري صادر' };
 
         fpState.status.forEach(v => tags.push({ label: statusLabels[v], key: 'status', val: v }));
         fpState.stage.forEach(v => tags.push({ label: stageLabels[v] || v, key: 'stage', val: v }));

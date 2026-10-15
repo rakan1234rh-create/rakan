@@ -3,18 +3,18 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 export const AUTO_FORWARD_CRON_VERSION = '2026-06-cron-v3';
 const EMP_TIMEOUT_HOURS = 24;
 const SUP_TIMEOUT_HOURS = 48;
-const WORKFLOW_PROCESS_STAGES = ['emp', 'sup', 'aud', 'mgt', 'hr'] as const;
+const WORKFLOW_PROCESS_STAGES = ['emp', 'sup', 'mgt', 'aud', 'hr'] as const;
 const WORKFLOW_STAGE_SKIP_PERM: Record<string, string> = {
   sup: 'skip_stage_supervisor',
-  aud: 'skip_stage_auditor',
   mgt: 'skip_stage_manager',
+  aud: 'skip_stage_auditor',
   hr: 'skip_stage_hr',
 };
 const STATE_LABELS: Record<string, string> = {
   emp: 'بانتظار رد الموظف',
   sup: 'بانتظار رد المشرف',
-  aud: 'بانتظار التدقيق',
   mgt: 'بانتظار القرار الإداري',
+  aud: 'بانتظار الرقابة الداخلية',
   hr: 'بانتظار الموارد البشرية',
   closed: 'مغلقة',
 };
@@ -184,7 +184,7 @@ async function autoForwardTicket(
   supabase: ReturnType<typeof createClient>,
   notify: StatePushNotifier,
   t: CronViolationRow,
-  direction: 'emp_to_sup' | 'sup_to_aud',
+  direction: 'emp_to_sup' | 'sup_to_next',
   skips: WorkflowSkips,
 ) {
   const flagCol = direction === 'emp_to_sup' ? 'auto_forwarded_emp' : 'auto_forwarded_sup';
@@ -205,7 +205,7 @@ async function autoForwardTicket(
   const existingLogs = parseDbJsonArray(current.logs);
   const autoActionRe = direction === 'emp_to_sup'
     ? /تمرير تلقائي.*(المشرف|بانتظار رد المشرف)/i
-    : /تمرير تلقائي.*(المدقق|بانتظار رد المدقق)/i;
+    : /تمرير تلقائي.*(الإدارة|القرار الإداري|الرقابة|المدقق|بانتظار رد المدقق)/i;
   if (existingLogs.some((l) => autoActionRe.test(String(l?.action || '')))) {
     return { ok: false, reason: 'log_exists' };
   }
@@ -256,7 +256,7 @@ function resolveDirection(t: CronViolationRow, skips: WorkflowSkips) {
     if (hoursSince(t.created_at) >= EMP_TIMEOUT_HOURS) return 'emp_to_sup' as const;
   }
   if (t.state === 'sup' && !isDbTruthy(t.auto_forwarded_sup) && !isWorkflowStageSkipped('sup', skips)) {
-    if (hoursSince(getStateStartTime(t)) >= SUP_TIMEOUT_HOURS) return 'sup_to_aud' as const;
+    if (hoursSince(getStateStartTime(t)) >= SUP_TIMEOUT_HOURS) return 'sup_to_next' as const;
   }
   return null;
 }
