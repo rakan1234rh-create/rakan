@@ -20007,10 +20007,8 @@
 
         const sel = document.getElementById('wf-status');
         if (sel) sel.value = '';
-        const dateFrom = document.getElementById('wf-date-from');
-        const dateTo = document.getElementById('wf-date-to');
-        if (dateFrom) dateFrom.value = '';
-        if (dateTo) dateTo.value = '';
+        wfDpState.from = '';
+        wfDpState.to = '';
         syncWfDateFilterUi();
         wfStatusSyncUi('');
         wfStatusClose();
@@ -20388,6 +20386,19 @@
         return { color: 'var(--text2)', soft: 'var(--surface2)' };
       }
 
+      const wfDpState = { viewYear: 0, viewMonth: 0, pickerView: 'days', from: '', to: '' };
+      const wfDpPtr = { dragging: false, anchor: '', pointerId: null };
+      function wfDpTodayIso() {
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      }
+      function wfDpParseIso(iso) {
+        const m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : null;
+      }
+      function wfDpIso(d) {
+        return d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` : '';
+      }
       function getWfTicketDateKey(ticket) {
         const raw = ticket?.created_at || ticket?.violation_date || ticket?.date || ticket?.createdAt;
         if (!raw) return '';
@@ -20395,19 +20406,173 @@
         return match ? match[1] : '';
       }
       function syncWfDateFilterUi() {
-        const from = document.getElementById('wf-date-from')?.value || '';
-        const to = document.getElementById('wf-date-to')?.value || '';
+        const from = wfDpState.from || '';
+        const to = wfDpState.to || '';
+        const label = document.getElementById('wf-date-range-label');
+        const btn = document.getElementById('wf-date-range-btn');
         const clear = document.getElementById('wf-date-clear');
+        if (label) label.textContent = from && to ? `${from} — ${to}` : from ? `من ${from}` : 'اختر الفترة';
+        if (btn) {
+          btn.classList.toggle('active', !!(from || to));
+          btn.title = from && to ? `${from} — ${to}` : 'اختر الفترة';
+        }
         clear?.classList.toggle('is-active', !!(from || to));
       }
       function clearWfDateFilter() {
-        const from = document.getElementById('wf-date-from');
-        const to = document.getElementById('wf-date-to');
-        if (from) from.value = '';
-        if (to) to.value = '';
+        wfDpState.from = '';
+        wfDpState.to = '';
         syncWfDateFilterUi();
         filterTickets();
+        const popup = document.getElementById('wfDatePickerPopup');
+        if (popup?.classList.contains('open')) {
+          wfDpRender();
+          popup.classList.remove('dp-range-pending');
+        }
       }
+      function wfDpMonthLabel() {
+        const month = (typeof DP_MONTHS !== 'undefined' && DP_MONTHS[wfDpState.viewMonth]) || String(wfDpState.viewMonth + 1);
+        return `${month} ${wfDpState.viewYear}`;
+      }
+      function wfDpRender() {
+        const grid = document.getElementById('wfDpDays');
+        const label = document.getElementById('wfDpMonthLabel');
+        if (!grid || !label) return;
+        label.textContent = wfDpState.pickerView === 'months' ? String(wfDpState.viewYear) : wfDpMonthLabel();
+        if (wfDpState.pickerView === 'months') {
+          grid.classList.add('dp-mode-pick');
+          grid.innerHTML = dpBuildMonthGridHtml(DP_MONTHS, wfDpState.viewMonth, 'wfDpPickMonth');
+          return;
+        }
+        grid.classList.remove('dp-mode-pick');
+        const first = new Date(wfDpState.viewYear, wfDpState.viewMonth, 1);
+        const total = new Date(wfDpState.viewYear, wfDpState.viewMonth + 1, 0).getDate();
+        const prevTotal = new Date(wfDpState.viewYear, wfDpState.viewMonth, 0).getDate();
+        let out = '';
+        for (let i = first.getDay(); i > 0; i--) out += `<button class="dp-day other-month" disabled>${prevTotal - i + 1}</button>`;
+        for (let day = 1; day <= total; day++) {
+          const iso = wfDpIso(new Date(wfDpState.viewYear, wfDpState.viewMonth, day));
+          const classes = ['dp-day'];
+          if (iso === wfDpTodayIso()) classes.push('today');
+          if (iso === wfDpState.from) classes.push('start');
+          if (iso === wfDpState.to) classes.push('end');
+          if (wfDpState.from && wfDpState.to && iso > wfDpState.from && iso < wfDpState.to) classes.push('in-range');
+          out += `<button type="button" class="${classes.join(' ')}" data-wf-iso="${iso}">${day}</button>`;
+        }
+        const used = first.getDay() + total;
+        for (let day = 1; day <= (7 - (used % 7)) % 7; day++) out += `<button class="dp-day other-month" disabled>${day}</button>`;
+        grid.innerHTML = out;
+        document.getElementById('wfDatePickerPopup')?.classList.toggle('dp-range-pending', !!(wfDpState.from && !wfDpState.to));
+      }
+      function wfDpOpenState() {
+        const current = wfDpState.from || wfDpTodayIso();
+        const d = wfDpParseIso(current) || new Date();
+        wfDpState.viewYear = d.getFullYear();
+        wfDpState.viewMonth = d.getMonth();
+        wfDpState.pickerView = 'days';
+      }
+      function toggleWfDatePicker(e) {
+        e?.stopPropagation();
+        const popup = document.getElementById('wfDatePickerPopup');
+        const btn = document.getElementById('wf-date-range-btn');
+        if (!popup || !btn) return;
+        if (popup.classList.contains('open')) {
+          dpFloatClose(popup);
+          btn.setAttribute('aria-expanded', 'false');
+          return;
+        }
+        wfDpOpenState();
+        wfDpRender();
+        popup._dpFloatHome = popup.parentElement;
+        dpFloatOpen(popup, btn);
+        btn.setAttribute('aria-expanded', 'true');
+      }
+      function wfDpChangeMonth(dir) {
+        if (wfDpState.pickerView === 'months') wfDpState.viewYear += dir;
+        else {
+          wfDpState.viewMonth += dir;
+          if (wfDpState.viewMonth > 11) { wfDpState.viewMonth = 0; wfDpState.viewYear++; }
+          if (wfDpState.viewMonth < 0) { wfDpState.viewMonth = 11; wfDpState.viewYear--; }
+        }
+        wfDpRender();
+      }
+      function wfDpToggleMonthYear() {
+        wfDpState.pickerView = wfDpState.pickerView === 'months' ? 'days' : 'months';
+        wfDpRender();
+      }
+      function wfDpPickMonth(month) {
+        wfDpState.viewMonth = month;
+        wfDpState.pickerView = 'days';
+        wfDpRender();
+      }
+      function wfDpPickToday() {
+        const today = wfDpTodayIso();
+        wfDpState.from = today;
+        wfDpState.to = today;
+        syncWfDateFilterUi();
+        filterTickets();
+        wfDpRender();
+      }
+      function wfDpSelect(iso) {
+        if (!wfDpState.from || wfDpState.to) {
+          wfDpState.from = iso;
+          wfDpState.to = '';
+        } else if (iso < wfDpState.from) {
+          wfDpState.to = wfDpState.from;
+          wfDpState.from = iso;
+        } else {
+          wfDpState.to = iso;
+        }
+        syncWfDateFilterUi();
+        filterTickets();
+        wfDpRender();
+        if (wfDpState.from && wfDpState.to) {
+          const popup = document.getElementById('wfDatePickerPopup');
+          const btn = document.getElementById('wf-date-range-btn');
+          if (popup && btn) { dpFloatClose(popup); btn.setAttribute('aria-expanded', 'false'); }
+        }
+      }
+      function wfDpWireGrid() {
+        const grid = document.getElementById('wfDpDays');
+        if (!grid || grid.dataset.wired === '1') return;
+        grid.dataset.wired = '1';
+        const popup = document.getElementById('wfDatePickerPopup');
+        const finish = (e) => {
+          if (!wfDpPtr.dragging || (e && e.pointerId != null && e.pointerId !== wfDpPtr.pointerId)) return;
+          wfDpPtr.dragging = false;
+          grid.classList.remove('is-dragging');
+          popup?.classList.remove('dp-range-dragging');
+          try { grid.releasePointerCapture(e.pointerId); } catch (_) {}
+          syncWfDateFilterUi();
+          filterTickets();
+          if (wfDpState.from && wfDpState.to) { dpFloatClose(popup); document.getElementById('wf-date-range-btn')?.setAttribute('aria-expanded', 'false'); }
+        };
+        grid.addEventListener('pointerdown', (e) => {
+          const btn = e.target.closest?.('.dp-day[data-wf-iso]');
+          if (!e.isPrimary || (e.pointerType === 'mouse' && e.button !== 0) || !btn) return;
+          e.preventDefault();
+          wfDpPtr.dragging = true;
+          wfDpPtr.anchor = btn.dataset.wfIso;
+          wfDpPtr.pointerId = e.pointerId;
+          wfDpState.from = wfDpPtr.anchor;
+          wfDpState.to = wfDpPtr.anchor;
+          grid.classList.add('is-dragging');
+          popup?.classList.add('dp-range-dragging');
+          try { grid.setPointerCapture(e.pointerId); } catch (_) {}
+          wfDpRender();
+        });
+        grid.addEventListener('pointermove', (e) => {
+          if (!wfDpPtr.dragging || e.pointerId !== wfDpPtr.pointerId) return;
+          const btn = document.elementFromPoint(e.clientX, e.clientY)?.closest?.('.dp-day[data-wf-iso]');
+          if (!btn) return;
+          const iso = btn.dataset.wfIso;
+          wfDpState.from = iso < wfDpPtr.anchor ? iso : wfDpPtr.anchor;
+          wfDpState.to = iso < wfDpPtr.anchor ? wfDpPtr.anchor : iso;
+          wfDpRender();
+        });
+        grid.addEventListener('pointerup', finish);
+        grid.addEventListener('pointercancel', finish);
+      }
+      wfDpWireGrid();
       function applyWfDateFilter(list) {
         const from = document.getElementById('wf-date-from')?.value || '';
         const to = document.getElementById('wf-date-to')?.value || '';
@@ -35134,6 +35299,12 @@
           dpFloatClose(cmplPop);
         }
 
+        const wfDatePopup = document.getElementById('wfDatePickerPopup');
+        const wfDateBtn = document.getElementById('wf-date-range-btn');
+        if (wfDatePopup && wfDatePopup.classList.contains('open') && !wfDatePopup.contains(e.target) && !wfDateBtn?.contains(e.target)) {
+          dpFloatClose(wfDatePopup);
+          wfDateBtn?.setAttribute('aria-expanded', 'false');
+        }
         const wfMenu = document.getElementById('wf-status-menu');
         const wfFilter = document.getElementById('wf-status-filter');
         if (wfMenu && wfMenu.classList.contains('open') && wfFilter && !wfFilter.contains(e.target)) {

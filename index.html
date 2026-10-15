@@ -3858,23 +3858,34 @@
                     </button>
                   </div>
                   <div class="wf-date-range" role="group" aria-label="فلترة التذاكر حسب التاريخ">
-                    <label class="wf-date-field">
-                      <span>من تاريخ</span>
-                      <span class="wf-date-control">
-                        <i class="fas fa-calendar-days" aria-hidden="true"></i>
-                        <input type="date" id="wf-date-from" aria-label="تاريخ البداية" onchange="filterTickets()">
-                      </span>
-                    </label>
-                    <label class="wf-date-field">
-                      <span>إلى تاريخ</span>
-                      <span class="wf-date-control">
-                        <i class="fas fa-calendar-days" aria-hidden="true"></i>
-                        <input type="date" id="wf-date-to" aria-label="تاريخ النهاية" onchange="filterTickets()">
-                      </span>
-                    </label>
+                    <button type="button" class="wf-date-range-btn" id="wf-date-range-btn" onclick="toggleWfDatePicker(event)" aria-haspopup="dialog" aria-expanded="false" title="اختر الفترة">
+                      <i class="fas fa-calendar-days" aria-hidden="true"></i>
+                      <span id="wf-date-range-label">اختر الفترة</span>
+                    </button>
                     <button type="button" class="wf-date-clear" id="wf-date-clear" onclick="clearWfDateFilter()" aria-label="مسح فلترة التاريخ" title="مسح التاريخ">
                       <i class="fas fa-xmark" aria-hidden="true"></i>
                     </button>
+                    <div class="date-picker-popup wf-date-picker-popup" id="wfDatePickerPopup" role="dialog" aria-label="اختيار فترة التذاكر">
+                      <div class="fig-dp1429428-top-spacer" aria-hidden="true"></div>
+                      <div class="dp-popup-body">
+                        <div class="dp-header-fig" dir="ltr">
+                          <button type="button" class="dp-month-trigger" onclick="wfDpToggleMonthYear()" aria-expanded="false" aria-haspopup="listbox">
+                            <span class="dp-month-label" id="wfDpMonthLabel">--</span>
+                            <span class="dp-month-chevron" aria-hidden="true"><i class="fas fa-chevron-down"></i></span>
+                          </button>
+                          <div class="dp-month-arrows">
+                            <button type="button" class="dp-icon-btn dp-icon-btn--nav" onclick="wfDpChangeMonth(1)" aria-label="الشهر التالي"><i class="fas fa-chevron-left"></i></button>
+                            <button type="button" class="dp-icon-btn dp-icon-btn--nav" onclick="wfDpChangeMonth(-1)" aria-label="الشهر السابق"><i class="fas fa-chevron-right"></i></button>
+                          </div>
+                        </div>
+                        <div class="dp-quick-actions">
+                          <button type="button" class="dp-quick-btn" onclick="clearWfDateFilter()">مسح</button>
+                          <button type="button" class="dp-quick-btn" onclick="wfDpPickToday()">اليوم</button>
+                        </div>
+                        <div class="dp-weekdays"><span>أ</span><span>إ</span><span>ث</span><span>ر</span><span>خ</span><span>ج</span><span>س</span></div>
+                        <div class="dp-days" id="wfDpDays"></div>
+                      </div>
+                    </div>
                   </div>
                   <div class="wf-status-filter" id="wf-status-filter">
                     <button type="button" class="wf-status-trigger" id="wf-status-trigger"

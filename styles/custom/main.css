@@ -27170,3 +27170,70 @@
     flex: 0 0 30px;
   }
 }
+
+/* منتقي فترة موحّد للتذاكر — اختيار البداية والنهاية بالسحب أو النقر */
+#tab-workflow .wf-date-range {
+  position: relative;
+  display: inline-flex;
+  align-items: end;
+  gap: 6px;
+  flex: 0 0 auto;
+  direction: rtl;
+}
+#tab-workflow .wf-date-range-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  height: 38px;
+  min-width: 168px;
+  padding: 0 13px;
+  border: 1px solid var(--mr-border);
+  border-radius: 999px;
+  background: var(--mr-surface);
+  color: var(--mr-text-2);
+  box-shadow: 0 1px 2px rgba(15, 18, 36, 0.04);
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+#tab-workflow .wf-date-range-btn:hover,
+#tab-workflow .wf-date-range-btn.active {
+  border-color: var(--mr-primary, #111827);
+  color: var(--mr-text);
+}
+#tab-workflow .wf-date-range-btn i { font-size: 12px; flex: 0 0 auto; }
+#tab-workflow .wf-date-range-btn span { overflow: hidden; text-overflow: ellipsis; }
+#tab-workflow .wf-date-clear {
+  width: 30px;
+  height: 30px;
+  margin-bottom: 4px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--mr-text-3);
+  cursor: pointer;
+  opacity: .35;
+}
+#tab-workflow .wf-date-clear.is-active { opacity: 1; color: var(--danger, #c2413b); }
+#tab-workflow .wf-date-picker-popup { left: auto; right: 0; }
+#tab-workflow .wf-date-picker-popup .dp-quick-actions { justify-content: space-between; }
+#tab-workflow .wf-date-picker-popup .dp-quick-btn { min-width: 72px; }
+#tab-workflow .wf-date-picker-popup .dp-day.in-range { background: var(--md2-dp-range-bg); color: var(--md2-dp-range-text); }
+#tab-workflow .wf-date-picker-popup .dp-day.start,
+#tab-workflow .wf-date-picker-popup .dp-day.end {
+  background: var(--md2-dp-primary, var(--mr-primary));
+  color: var(--md2-dp-on-primary, #fff);
+  font-weight: 700;
+}
+#tab-workflow .wf-date-picker-popup .dp-day.start { border-radius: 50% 0 0 50%; }
+#tab-workflow .wf-date-picker-popup .dp-day.end { border-radius: 0 50% 50% 0; }
+#tab-workflow .wf-date-picker-popup .dp-day.start.end { border-radius: 50%; }
+@media (max-width: 900px) {
+  #tab-workflow .toolbar.wf-toolbar { flex-wrap: wrap !important; }
+  #tab-workflow .wf-date-range { width: 100%; order: 3; }
+  #tab-workflow .wf-date-range-btn { flex: 1 1 auto; min-width: 0; justify-content: center; }
+  #tab-workflow .wf-date-picker-popup { max-width: calc(100vw - 24px); }
+}
