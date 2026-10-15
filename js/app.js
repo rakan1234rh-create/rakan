@@ -7689,9 +7689,23 @@
       }
 
       let _legacyAuditRealignStarted = false;
+
+      function isLegacyWorkflowRealignLog(entry) {
+        const action = String(entry?.action || '');
+        const note = String(entry?.note || '');
+        return /إعادة توجيه للمسار الجديد/i.test(action)
+          || /نُقلت التذكرة من التدقيق إلى الإدارة/i.test(note);
+      }
+
+      function stripLegacyWorkflowRealignLogs(logs) {
+        const list = parseDbJsonArray(logs);
+        const next = list.filter((entry) => !isLegacyWorkflowRealignLog(entry));
+        return { logs: next, removed: next.length !== list.length };
+      }
+
       /**
        * بعد نقل الرقابة الداخلية لآخر المسار: التذاكر التي كانت عالقة في aud
-       * دون مرور بالإدارة تُعاد إلى mgt حتى تعالجها الإدارة أولًا.
+       * دون مرور بالإدارة تُعاد إلى mgt بصمت (بدون سجل ظاهر)، مع حذف سجلات النقل القديمة.
        */
       async function realignLegacyAuditQueueToManagement() {
         if (_legacyAuditRealignStarted) return;
@@ -7724,9 +7738,15 @@
             v.status_text = STATE_LABELS[v.state];
             changed = true;
           }
+          const stripped = stripLegacyWorkflowRealignLogs(v.logs);
+          if (stripped.removed) {
+            v.logs = stripped.logs;
+            changed = true;
+          }
         }
 
         try {
+          // Silent move: no visible system log entry.
           const { data, error } = await sb
             .from('violations')
             .select('id, state, status_text, management_reply, logs')
@@ -7736,7 +7756,6 @@
           const rows = Array.isArray(data) ? data : [];
           for (const row of rows) {
             if (String(row.management_reply || '').trim()) {
-              // Already past management under the new order — only refresh waiting label.
               if (String(row.status_text || '').trim() !== STATE_LABELS.aud) {
                 const { error: updErr } = await sb
                   .from('violations')
@@ -7751,26 +7770,43 @@
               }
               continue;
             }
-            const logEntry = {
-              date: getNow(),
-              user: 'النظام',
-              role: 'النظام',
-              action: 'إعادة توجيه للمسار الجديد',
-              note: 'نُقلت التذكرة من التدقيق إلى الإدارة لأن إدارة الرقابة الداخلية أصبحت آخر مرحلة في المسار',
-            };
-            const { data: rpcData, error: rpcErr } = await sb.rpc('append_violation_log_with_guard', {
-              p_violation_id: row.id,
-              p_expected_state: 'aud',
-              p_log_entry: logEntry,
-              p_new_state: 'mgt',
-              p_status_text: STATE_LABELS.mgt,
-            });
-            if (rpcErr || !rpcData?.ok) continue;
+            const stripped = stripLegacyWorkflowRealignLogs(row.logs);
+            const { error: updErr } = await sb
+              .from('violations')
+              .update({
+                state: 'mgt',
+                status_text: STATE_LABELS.mgt,
+                logs: stripped.logs,
+              })
+              .eq('id', row.id)
+              .eq('state', 'aud');
+            if (updErr) continue;
             const local = (state.violations || []).find(v => v.id === row.id);
             if (local) {
               local.state = 'mgt';
               local.status_text = STATE_LABELS.mgt;
-              if (rpcData.logs) local.logs = rpcData.logs;
+              local.logs = stripped.logs;
+              changed = true;
+            }
+          }
+
+          // Remove already-written realign comments from tickets now in management.
+          const { data: mgtRows, error: mgtErr } = await sb
+            .from('violations')
+            .select('id, logs')
+            .eq('state', 'mgt')
+            .limit(500);
+          if (!mgtErr) {
+            for (const row of Array.isArray(mgtRows) ? mgtRows : []) {
+              const stripped = stripLegacyWorkflowRealignLogs(row.logs);
+              if (!stripped.removed) continue;
+              const { error: updErr } = await sb
+                .from('violations')
+                .update({ logs: stripped.logs })
+                .eq('id', row.id);
+              if (updErr) continue;
+              const local = (state.violations || []).find(v => v.id === row.id);
+              if (local) local.logs = stripped.logs;
               changed = true;
             }
           }
