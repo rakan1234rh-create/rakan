@@ -20387,7 +20387,11 @@
       }
 
       const wfDpState = { viewYear: 0, viewMonth: 0, pickerView: 'days', from: '', to: '' };
-      const wfDpPtr = { dragging: false, anchor: '', pointerId: null };
+      const wfDpApplied = { from: '', to: '' };
+      const wfDpPtr = {
+        dragging: false, anchor: '', pointerId: null, moved: false,
+        originalFrom: '', originalTo: '', suppressClickUntil: 0
+      };
       function wfDpTodayIso() {
         const d = new Date();
         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -20399,6 +20403,12 @@
       function wfDpIso(d) {
         return d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` : '';
       }
+      function wfDpFormatDisplay(iso) {
+        const date = wfDpParseIso(iso);
+        return date
+          ? `${String(date.getDate()).padStart(2, '0')}-${String(date.getMonth() + 1).padStart(2, '0')}-${date.getFullYear()}`
+          : '';
+      }
       function getWfTicketDateKey(ticket) {
         // فلترة التذاكر تعتمد على تاريخ المخالفة الظاهر للمستخدم فقط.
         const raw = String(ticket?.violation_date || '').trim();
@@ -20407,19 +20417,34 @@
       function syncWfDateFilterUi() {
         const from = wfDpState.from || '';
         const to = wfDpState.to || '';
+        const fromDisplay = wfDpFormatDisplay(from);
+        const toDisplay = wfDpFormatDisplay(to);
         const label = document.getElementById('wf-date-range-label');
         const btn = document.getElementById('wf-date-range-btn');
         const clear = document.getElementById('wf-date-clear');
-        if (label) label.textContent = from && to ? `${from} — ${to}` : from ? `من ${from}` : 'اختر الفترة';
+        const startValue = document.getElementById('wf-date-start-value');
+        const endValue = document.getElementById('wf-date-end-value');
+        const buttonLabel = from && to
+          ? `من ${fromDisplay} إلى ${toDisplay}`
+          : from ? `من ${fromDisplay} · اختر النهاية` : 'اختر الفترة';
+        const accessibleLabel = from && to
+          ? `الفترة من ${fromDisplay} إلى ${toDisplay}`
+          : from ? `تاريخ البداية ${fromDisplay}، اختر تاريخ النهاية` : 'اختر فترة تاريخ المخالفة';
+        if (label) label.textContent = buttonLabel;
+        if (startValue) startValue.textContent = from ? fromDisplay : 'اختر التاريخ الأول';
+        if (endValue) endValue.textContent = to ? toDisplay : 'اختر التاريخ الثاني';
         if (btn) {
           btn.classList.toggle('active', !!(from || to));
-          btn.title = from && to ? `${from} — ${to}` : 'اختر الفترة';
+          btn.title = accessibleLabel;
+          btn.setAttribute('aria-label', accessibleLabel);
         }
         clear?.classList.toggle('is-active', !!(from || to));
       }
       function clearWfDateFilter() {
         wfDpState.from = '';
         wfDpState.to = '';
+        wfDpApplied.from = '';
+        wfDpApplied.to = '';
         syncWfDateFilterUi();
         filterTickets();
         const popup = document.getElementById('wfDatePickerPopup');
@@ -20507,24 +20532,37 @@
         const today = wfDpTodayIso();
         wfDpState.from = today;
         wfDpState.to = today;
+        wfDpCommitDraftRange();
         syncWfDateFilterUi();
         filterTickets();
         wfDpRender();
+        const popup = document.getElementById('wfDatePickerPopup');
+        const btn = document.getElementById('wf-date-range-btn');
+        if (popup && btn) { dpFloatClose(popup); btn.setAttribute('aria-expanded', 'false'); }
+      }
+      function wfDpCommitDraftRange() {
+        if (!wfDpState.from || !wfDpState.to) return false;
+        wfDpApplied.from = wfDpState.from;
+        wfDpApplied.to = wfDpState.to;
+        return true;
       }
       function wfDpSelect(iso) {
+        const selected = String(iso || '');
+        if (!wfDpParseIso(selected)) return;
         if (!wfDpState.from || wfDpState.to) {
-          wfDpState.from = iso;
+          wfDpState.from = selected;
           wfDpState.to = '';
-        } else if (iso < wfDpState.from) {
+        } else if (selected < wfDpState.from) {
           wfDpState.to = wfDpState.from;
-          wfDpState.from = iso;
+          wfDpState.from = selected;
         } else {
-          wfDpState.to = iso;
+          wfDpState.to = selected;
         }
+        const complete = wfDpCommitDraftRange();
         syncWfDateFilterUi();
         filterTickets();
         wfDpRender();
-        if (wfDpState.from && wfDpState.to) {
+        if (complete) {
           const popup = document.getElementById('wfDatePickerPopup');
           const btn = document.getElementById('wf-date-range-btn');
           if (popup && btn) { dpFloatClose(popup); btn.setAttribute('aria-expanded', 'false'); }
@@ -20535,43 +20573,76 @@
         if (!grid || grid.dataset.wired === '1') return;
         grid.dataset.wired = '1';
         const popup = document.getElementById('wfDatePickerPopup');
-        const finish = (e) => {
+        const finish = (e, cancelled = false) => {
           if (!wfDpPtr.dragging || (e && e.pointerId != null && e.pointerId !== wfDpPtr.pointerId)) return;
+          const anchor = wfDpPtr.anchor;
+          const moved = wfDpPtr.moved;
+          const originalFrom = wfDpPtr.originalFrom;
+          const originalTo = wfDpPtr.originalTo;
+          const pointerId = wfDpPtr.pointerId;
           wfDpPtr.dragging = false;
+          wfDpPtr.moved = false;
           grid.classList.remove('is-dragging');
           popup?.classList.remove('dp-range-dragging');
-          try { grid.releasePointerCapture(e.pointerId); } catch (_) {}
-          syncWfDateFilterUi();
-          filterTickets();
-          if (wfDpState.from && wfDpState.to) { dpFloatClose(popup); document.getElementById('wf-date-range-btn')?.setAttribute('aria-expanded', 'false'); }
+          try { grid.releasePointerCapture(pointerId); } catch (_) {}
+          if (cancelled) {
+            wfDpState.from = originalFrom;
+            wfDpState.to = originalTo;
+            syncWfDateFilterUi();
+            wfDpRender();
+            return;
+          }
+          if (moved) {
+            wfDpCommitDraftRange();
+            syncWfDateFilterUi();
+            filterTickets();
+            wfDpRender();
+            if (wfDpState.from && wfDpState.to) {
+              dpFloatClose(popup);
+              document.getElementById('wf-date-range-btn')?.setAttribute('aria-expanded', 'false');
+            }
+          } else {
+            wfDpState.from = originalFrom;
+            wfDpState.to = originalTo;
+            wfDpSelect(anchor);
+          }
+          wfDpPtr.suppressClickUntil = Date.now() + 700;
         };
         grid.addEventListener('pointerdown', (e) => {
           const btn = e.target.closest?.('.dp-day[data-wf-iso]');
           if (!e.isPrimary || (e.pointerType === 'mouse' && e.button !== 0) || !btn) return;
-          e.preventDefault();
           wfDpPtr.dragging = true;
           wfDpPtr.anchor = btn.dataset.wfIso;
           wfDpPtr.pointerId = e.pointerId;
-          wfDpState.from = wfDpPtr.anchor;
-          // لا نعتبر الضغط المفرد نطاقاً مكتملًا؛ حدث click سيختار النهاية.
-          wfDpState.to = '';
+          wfDpPtr.moved = false;
+          wfDpPtr.originalFrom = wfDpState.from;
+          wfDpPtr.originalTo = wfDpState.to;
           grid.classList.add('is-dragging');
           popup?.classList.add('dp-range-dragging');
           try { grid.setPointerCapture(e.pointerId); } catch (_) {}
-          // لا نعيد بناء الخلايا هنا حتى يصل حدث click ويثبت التاريخ الأول.
         });
         grid.addEventListener('pointermove', (e) => {
           if (!wfDpPtr.dragging || e.pointerId !== wfDpPtr.pointerId) return;
           const btn = document.elementFromPoint(e.clientX, e.clientY)?.closest?.('.dp-day[data-wf-iso]');
           if (!btn) return;
           const iso = btn.dataset.wfIso;
+          if (iso !== wfDpPtr.anchor) wfDpPtr.moved = true;
+          if (!wfDpPtr.moved) return;
           wfDpState.from = iso < wfDpPtr.anchor ? iso : wfDpPtr.anchor;
           wfDpState.to = iso < wfDpPtr.anchor ? wfDpPtr.anchor : iso;
+          syncWfDateFilterUi();
           wfDpRender();
         });
-        grid.addEventListener('pointerup', finish);
-        grid.addEventListener('pointercancel', finish);
+        grid.addEventListener('pointerup', (e) => finish(e));
+        grid.addEventListener('pointercancel', (e) => finish(e, true));
         grid.addEventListener('click', (e) => {
+          if (e.detail > 0 && wfDpPtr.suppressClickUntil > Date.now()) {
+            e.preventDefault();
+            e.stopPropagation();
+            wfDpPtr.suppressClickUntil = 0;
+            return;
+          }
+          wfDpPtr.suppressClickUntil = 0;
           if (wfDpPtr.dragging) return;
           const btn = e.target.closest?.('.dp-day[data-wf-iso]');
           if (!btn || btn.disabled) return;
@@ -20582,9 +20653,9 @@
       }
       wfDpWireGrid();
       function applyWfDateFilter(list) {
-        const from = wfDpState.from || '';
-        const to = wfDpState.to || '';
-        // لا نغيّر النتائج حتى تكتمل الفترة بتاريخ بداية ونهاية.
+        const from = wfDpApplied.from || '';
+        const to = wfDpApplied.to || '';
+        // يظل النطاق المطبق ثابتًا إلى أن يكتمل اختيار البداية والنهاية الجديدتين.
         if (!from || !to) return list;
         return list.filter(ticket => {
           const key = getWfTicketDateKey(ticket);
