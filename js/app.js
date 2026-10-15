@@ -20573,14 +20573,13 @@
       }
       wfDpWireGrid();
       function applyWfDateFilter(list) {
-        const from = document.getElementById('wf-date-from')?.value || '';
-        const to = document.getElementById('wf-date-to')?.value || '';
-        if (!from && !to) return list;
-        const min = from || '0000-01-01';
-        const max = to || '9999-12-31';
+        const from = wfDpState.from || '';
+        const to = wfDpState.to || '';
+        // لا نغيّر النتائج حتى تكتمل الفترة بتاريخ بداية ونهاية.
+        if (!from || !to) return list;
         return list.filter(ticket => {
           const key = getWfTicketDateKey(ticket);
-          return !!key && key >= min && key <= max;
+          return !!key && key >= from && key <= to;
         });
       }
       function filterTickets() {
