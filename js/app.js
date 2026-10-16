@@ -19507,12 +19507,25 @@
             const useStream = isLikelyVideoAttachmentKey(fileId);
             const hasFinalComplaintKey = candidates.some((k) => String(k).startsWith('complaints/'));
             let lastSignErr = null;
+            let lastProxyErr = null;
             for (const key of candidates) {
               try {
                 const isTempKey = String(key).startsWith('temp_');
                 if (isTempKey && hasFinalComplaintKey && !useStream) continue;
                 const exists = await r2ObjectExists(key);
                 if (exists === false) continue;
+                // الصور وPDF لا تحتاج رابطاً موقّعاً؛ التحميل المباشر عبر
+                // POST المصادق يتجاوز signGet الذي قد يرجع 503 عند التسخين.
+                if (!useStream) {
+                  try {
+                    const proxyUrl = await fetchR2ProxyBlobUrl(key, ct);
+                    writeCfCache(cacheKey, proxyUrl);
+                    if (key !== fileId) void persistComplaintAttachmentKey(fileId, key);
+                    return proxyUrl;
+                  } catch (proxyErr) {
+                    lastProxyErr = proxyErr;
+                  }
+                }
                 const signed = await callR2StorageFn('signGet', { key, ...(ct ? { contentType: ct } : {}) });
                 if (!signed?.url) continue;
                 const streamPlay = signed?.streamToken ? buildR2StreamPlayUrl(signed.streamToken) : '';
@@ -19539,7 +19552,7 @@
               writeCfCache(cacheKey, devFallback);
               return devFallback;
             }
-            throw lastSignErr || new Error('الملف غير موجود في R2. أعد رفع المرفق أو تحقق من إعدادات التخزين.');
+            throw lastProxyErr || lastSignErr || new Error('الملف غير موجود في R2. أعد رفع المرفق أو تحقق من إعدادات التخزين.');
           }
 
           if (allowAttachmentDevSkip()) {
