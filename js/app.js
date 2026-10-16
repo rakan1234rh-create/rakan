@@ -18072,9 +18072,19 @@
           const baseName = String(oldKey).split('/').pop();
           let newKey = null;
           if (String(oldKey).startsWith('temp_')) {
-            const candidateKey = `violations/${ticket.id}/${baseName}`;
-            const atFinal = await r2ObjectExists(candidateKey);
-            if (atFinal === true) {
+            const ticketFolder = String(ticket.ticket_number).replace(/^V-\d{4}-/, '');
+            const candidateKeys = [
+              `${ticketFolder}/${baseName}`,
+              `violations/${ticket.id}/${baseName}`,
+            ];
+            let candidateKey = null;
+            for (const candidate of candidateKeys) {
+              if (await r2ObjectExists(candidate) === true) {
+                candidateKey = candidate;
+                break;
+              }
+            }
+            if (candidateKey) {
               try {
                 await finalizeR2AttachmentPath('violation', ticket.id, oldKey, candidateKey, {
                   operation: 'repair', expectedState: ticket.state,
@@ -18085,6 +18095,7 @@
                 if (isAtharDebugLog()) console.warn('[R2-Repair] finalize existing copy failed', finalizeErr);
               }
             } else {
+              candidateKey = candidateKeys[0];
               const atTemp = await r2ObjectExists(oldKey);
               if (atTemp === true) {
                 try {
