@@ -16774,6 +16774,11 @@
           showToast('لا تملك صلاحية رصد مخالفة جديدة.', 'warning');
           return;
         }
+        const submitBtn = document.getElementById('submitTicketBtn');
+        if (submitBtn?.dataset.submitting === '1') {
+          showToast('جاري معالجة المخالفة الحالية — لا تضغط إنشاء مرة أخرى.', 'info');
+          return;
+        }
         const empNum = document.getElementById('nt-empId').value.trim();
         const type = document.getElementById('nt-type').value;
         const date = document.getElementById('nt-date').value;
@@ -16865,9 +16870,11 @@
           payload.supervisor_reply = 'تم رصد المخالفة من قبل المشرف مباشرة';
         }
 
-        const submitBtn = document.getElementById('submitTicketBtn');
         const cancelBtn = document.querySelector('button[onclick="resetNewTicket()"]');
         const originalBtnText = submitBtn ? submitBtn.innerHTML : '';
+        let createdTicketId = null;
+        let createdTicketNumber = '';
+        let preserveSubmitLock = false;
         if (submitBtn) {
           submitBtn.dataset.submitting = '1';
           submitBtn.disabled = true;
@@ -16944,6 +16951,8 @@
 
           const ticketData = insertData[0];
           const officialNumber = ticketData.ticket_number;
+          createdTicketId = ticketData.id;
+          createdTicketNumber = officialNumber;
 
           // الخطوة 3: نقل الملفات إلى المجلد النهائي قبل إظهار النجاح (تجنّب 404 على مسار temp_)
           const movedAtts = await moveAttachmentsToFinalFolder(ticketData.id, officialNumber, tempAttachments);
@@ -16980,16 +16989,36 @@
             try { waPlaceholderWin.close(); } catch (_) { /* noop */ }
           }
           if (isAtharDebugLog()) console.error('[Sync] Critical Error:', err);
-          showToast(err.message, 'error');
+          if (createdTicketId) {
+            // السجل أُنشئ قبل نقل المرفقات؛ لا نسمح بإعادة الضغط وإنشاء سجل ثانٍ.
+            preserveSubmitLock = true;
+            try {
+              await sb.from('violations')
+                .update({ state: 'uploading', status_text: 'جاري استكمال نقل المرفقات' })
+                .eq('id', createdTicketId);
+            } catch (_) { /* يبقى السجل موجوداً ويُراجع إدارياً عند الحاجة */ }
+            showToast(
+              `تم إنشاء المخالفة ${shortTicketNum(createdTicketNumber)} لكن تعذّر نقل المرفق. لا تعِد الضغط؛ تواصل مع الدعم لاستكمال النقل.`,
+              'warning'
+            );
+          } else {
+            showToast(err.message, 'error');
+          }
           try { restoreNtFiles(); } catch (_) { /* noop */ }
         } finally {
           window.isUploading = false;
           showGlobalLoader(false);
           if (submitBtn) {
-            submitBtn.disabled = false;
-            delete submitBtn.dataset.submitting;
-            submitBtn.innerHTML = originalBtnText;
-            syncAttachmentSubmitButtons('nt');
+            if (preserveSubmitLock) {
+              submitBtn.disabled = true;
+              submitBtn.dataset.submitting = '1';
+              submitBtn.innerHTML = '<i class="fas fa-lock"></i> تمت الإضافة — لا تعِد المحاولة';
+            } else {
+              submitBtn.disabled = false;
+              delete submitBtn.dataset.submitting;
+              submitBtn.innerHTML = originalBtnText;
+              syncAttachmentSubmitButtons('nt');
+            }
           }
           if (cancelBtn) {
             cancelBtn.disabled = false;
