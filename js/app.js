@@ -19507,7 +19507,10 @@
 
           if (backend === 'edge') {
             const ct = mimeTypeFromAttachmentExt(extractAttachmentExt(fileId, ''));
-            const candidates = getR2KeyFallbackCandidates(fileId, ticketCtx);
+            // إذا كان السجل يحتوي مساراً كاملاً، فهو المصدر الموثوق الوحيد.
+            // لا نجرّب مجلدات تخمينية؛ فهي تولّد 403/404 وتضغط الدالة.
+            const knownKey = String(fileId).includes('/');
+            const candidates = knownKey ? [String(fileId).trim()] : getR2KeyFallbackCandidates(fileId, ticketCtx);
             const useStream = isLikelyVideoAttachmentKey(fileId);
             const hasFinalComplaintKey = candidates.some((k) => String(k).startsWith('complaints/'));
             let lastSignErr = null;
@@ -19515,8 +19518,10 @@
             for (const key of candidates) {
               try {
                 const isTempKey = String(key).startsWith('temp_');
-                if (isTempKey && hasFinalComplaintKey && !useStream) continue;
-                const exists = await r2ObjectExists(key);
+                if (!knownKey && isTempKey && hasFinalComplaintKey && !useStream) continue;
+                // للمفتاح المسجل مباشرة، دع proxyGet/signGet يتحققان من الملف
+                // مرة واحدة؛ فحص HEAD المنفصل غير ضروري وقد يُرفض بالصلاحيات.
+                const exists = knownKey ? null : await r2ObjectExists(key);
                 if (exists === false) continue;
                 // الصور وPDF لا تحتاج رابطاً موقّعاً؛ التحميل المباشر عبر
                 // POST المصادق يتجاوز signGet الذي قد يرجع 503 عند التسخين.
