@@ -19533,6 +19533,9 @@
                     return proxyUrl;
                   } catch (proxyErr) {
                     lastProxyErr = proxyErr;
+                    // لا تستدعِ signGet للصور/الـPDF؛ فهو لا يعالج 404
+                    // ويحوّل فقدان الملف إلى 503 عند ضغط Edge Function.
+                    if (knownKey) break;
                   }
                 }
                 const signed = await callR2StorageFn('signGet', { key, ...(ct ? { contentType: ct } : {}) });
