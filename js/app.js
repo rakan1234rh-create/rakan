@@ -17849,7 +17849,11 @@
           _r2HeadObjectOk = true;
           return !!head?.ok;
         } catch (he) {
-          if (/غير معروف|unknown|400/i.test(String(he?.message || he))) {
+          const message = String(he?.message || he);
+          // 403 هنا لا يعني أن الملف مفقود؛ يعني أن فحص HEAD لا يكشف
+          // وجوده قبل التحقق من سياق السجل. دع مسار proxyGet المصادق
+          // يجرب المفتاح مباشرة بدل إسقاطه من قائمة المرشحين.
+          if (/غير مصرح|غير معروف|unknown|400|403/i.test(message)) {
             _r2HeadObjectOk = false;
             return null;
           }
