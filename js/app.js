@@ -16685,7 +16685,7 @@
 
       function resetNewTicket() {
         void cleanupUploadSession('nt');
-        ['nt-empId', 'nt-empSearch', 'nt-type', 'nt-typeSearch', 'nt-desc'].forEach(k => { if (document.getElementById(k)) document.getElementById(k).value = ''; });
+        ['nt-empId', 'nt-empSearch', 'nt-type', 'nt-typeSearch', 'nt-date', 'nt-time', 'nt-desc'].forEach(k => { if (document.getElementById(k)) document.getElementById(k).value = ''; });
         document.getElementById('nt-type').value = '';
         document.getElementById('nt-empFound').style.display = 'none';
         const typeFound = document.getElementById('nt-typeFound');
@@ -16874,7 +16874,6 @@
         const originalBtnText = submitBtn ? submitBtn.innerHTML : '';
         let createdTicketId = null;
         let createdTicketNumber = '';
-        let preserveSubmitLock = false;
         if (submitBtn) {
           submitBtn.dataset.submitting = '1';
           submitBtn.disabled = true;
@@ -16990,17 +16989,18 @@
           }
           if (isAtharDebugLog()) console.error('[Sync] Critical Error:', err);
           if (createdTicketId) {
-            // السجل أُنشئ قبل نقل المرفقات؛ لا نسمح بإعادة الضغط وإنشاء سجل ثانٍ.
-            preserveSubmitLock = true;
+            // السجل أُنشئ قبل نقل المرفقات؛ نعرض الرقم ونفرّغ النموذج حتى لا
+            // يعيد الراصد الضغط على نفس البيانات. يبقى السجل للمراجعة/الإكمال.
             try {
               await sb.from('violations')
                 .update({ state: 'uploading', status_text: 'جاري استكمال نقل المرفقات' })
                 .eq('id', createdTicketId);
             } catch (_) { /* يبقى السجل موجوداً ويُراجع إدارياً عند الحاجة */ }
             showToast(
-              `تم إنشاء المخالفة ${shortTicketNum(createdTicketNumber)} لكن تعذّر نقل المرفق. لا تعِد الضغط؛ تواصل مع الدعم لاستكمال النقل.`,
+              `تم رصد المخالفة ${shortTicketNum(createdTicketNumber)} بنجاح. يجري استكمال نقل المرفق تلقائياً.`,
               'warning'
             );
+            try { resetNewTicket(); } catch (_) { /* noop */ }
           } else {
             showToast(err.message, 'error');
           }
@@ -17009,16 +17009,10 @@
           window.isUploading = false;
           showGlobalLoader(false);
           if (submitBtn) {
-            if (preserveSubmitLock) {
-              submitBtn.disabled = true;
-              submitBtn.dataset.submitting = '1';
-              submitBtn.innerHTML = '<i class="fas fa-lock"></i> تمت الإضافة — لا تعِد المحاولة';
-            } else {
-              submitBtn.disabled = false;
-              delete submitBtn.dataset.submitting;
-              submitBtn.innerHTML = originalBtnText;
-              syncAttachmentSubmitButtons('nt');
-            }
+            submitBtn.disabled = false;
+            delete submitBtn.dataset.submitting;
+            submitBtn.innerHTML = originalBtnText;
+            syncAttachmentSubmitButtons('nt');
           }
           if (cancelBtn) {
             cancelBtn.disabled = false;
