@@ -441,6 +441,13 @@
         return digits.padStart(5, '0');
       }
 
+      /** مقارنة الرقم الوظيفي بعد توحيد الأصفار اليسارية بين العرض والقاعدة */
+      function sameEmpNum(a, b) {
+        const left = padEmpNum(a);
+        const right = padEmpNum(b);
+        return left !== '-' && right !== '-' && left === right;
+      }
+
       const STATE_BADGES = {
         uploading: 'b-gray fa-fade',
         emp: 'b-amber',
@@ -16434,9 +16441,9 @@
         if (!empNum || !foundDiv) return;
 
         let emp = state.ntPickedEmployee;
-        if (!emp || String(emp.employee_number) !== String(empNum)) {
+        if (!emp || !sameEmpNum(emp.employee_number, empNum)) {
           emp = state.users.find(u =>
-            isViolationSubjectUser(u) && String(u.employee_number) === String(empNum)
+            isViolationSubjectUser(u) && sameEmpNum(u.employee_number, empNum)
           ) || null;
           if (emp) state.ntPickedEmployee = emp;
         }
@@ -16493,12 +16500,13 @@
           return;
         }
 
-        const results = state.users.filter(u =>
-          isViolationSubjectUser(u) && (
-            (u.employee_number && u.employee_number.toLowerCase().includes(query)) ||
-            (u.name && u.name.toLowerCase().includes(query))
-          )
-        ).slice(0, 8);
+        const results = state.users.filter(u => {
+          if (!isViolationSubjectUser(u)) return false;
+          const empNum = String(u.employee_number ?? '').toLowerCase();
+          const paddedEmpNum = padEmpNum(u.employee_number).toLowerCase();
+          const name = String(u.name ?? '').toLowerCase();
+          return empNum.includes(query) || paddedEmpNum.includes(query) || name.includes(query);
+        }).slice(0, 8);
 
         if (results.length === 0) {
           dropdown.innerHTML = '<div style="padding: 12px; text-align: center; color: var(--text3); font-size: 12px;">لا يوجد موظف أو مدير فرع مطابق لبيانات البحث</div>';
@@ -16816,7 +16824,7 @@
           }
         }
 
-        const emp = state.users.find(u => u.employee_number === empNum && isViolationSubjectUser(u));
+        const emp = state.users.find(u => sameEmpNum(u.employee_number, empNum) && isViolationSubjectUser(u));
         if (!emp) return showToast('الرقم الوظيفي غير موجود أو لا يمكن رصد مخالفة على هذا الدور', 'error');
         if (!emp.branch_id) return showToast('الموظف غير مرتبط بفرع', 'error');
 
