@@ -1282,6 +1282,7 @@
         broadcastInbox: [],     // نشرات admin الواردة للمستخدم
         uploadedFiles: { nt: [], resp: [], cp: [], cpr: [] },  // الملفات المرفوعة
         uploadTempFolders: { nt: null, resp: null, cp: null, cpr: null },
+        uploadSessions: { nt: null, resp: null, cp: null, cpr: null },
         ntPickedEmployee: null,  // الموظف المختار في نموذج رصد المخالفة
         ntPickedViolationType: null,  // نوع المخالفة المختار في نموذج رصد المخالفة
         editingTicket: null,    // التذكرة قيد التحرير
@@ -16797,6 +16798,7 @@
         // Snapshot only — do not clear until validations pass (keeps DOM + state in sync)
         const filesToUpload = [...(state.uploadedFiles.nt || [])];
         const files = filesToUpload;
+        const uploadSessionId = state.uploadSessions?.nt || null;
 
         const restoreNtFiles = () => {
           state.uploadedFiles.nt = filesToUpload;
@@ -16815,6 +16817,9 @@
         if (descError) return showToast('الوصف: ' + descError, 'error');
 
         if (!files.length) return showToast('أرفق ملف واحد على الأقل', 'error');
+        if (!uploadSessionId || filesToUpload.some((file) => file.uploadSessionId !== uploadSessionId)) {
+          return showToast('انتهت جلسة المرفقات — أعد اختيار الملفات لهذه المخالفة', 'warning');
+        }
 
         for (const f of filesToUpload) {
           if (f.prepStatus !== 'ready') {
@@ -17396,8 +17401,19 @@
         await deleteR2TempObject(key);
       }
 
+      function ensureUploadSessionId(scope) {
+        if (!state.uploadSessions) state.uploadSessions = { nt: null, resp: null, cp: null, cpr: null };
+        if (!state.uploadSessions[scope]) {
+          state.uploadSessions[scope] = (typeof crypto !== 'undefined' && crypto.randomUUID)
+            ? crypto.randomUUID()
+            : `session_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+        }
+        return state.uploadSessions[scope];
+      }
+
       async function ensureUploadTempFolder(scope) {
         if (!state.uploadTempFolders) state.uploadTempFolders = { nt: null, resp: null, cp: null, cpr: null };
+        ensureUploadSessionId(scope);
         if (state.uploadTempFolders[scope]) return state.uploadTempFolders[scope];
         const folder = await buildTempUploadFolder();
         state.uploadTempFolders[scope] = folder;
@@ -17405,10 +17421,14 @@
       }
 
       async function cleanupUploadSession(scope) {
+        const sessionId = state.uploadSessions?.[scope] || null;
         const files = [...(state.uploadedFiles[scope] || [])];
         for (const f of files) cancelAttachmentPrep(f);
         await Promise.all(files.map((f) => deleteAttachmentTempKey(f)));
-        if (state.uploadTempFolders) state.uploadTempFolders[scope] = null;
+        if (state.uploadSessions?.[scope] === sessionId) {
+          if (state.uploadTempFolders) state.uploadTempFolders[scope] = null;
+          if (state.uploadSessions) state.uploadSessions[scope] = null;
+        }
       }
 
       function attachmentPrepStatusLabel(fileEntry) {
@@ -19729,6 +19749,7 @@
         if (!files.length) return;
 
         if (!state.uploadedFiles[scope]) state.uploadedFiles[scope] = [];
+        const uploadSessionId = ensureUploadSessionId(scope);
 
         const areaId = scope === 'nt' ? 'ntFileArea'
           : scope === 'cp' ? 'cpFileArea'
@@ -19814,6 +19835,7 @@
 
             state.uploadedFiles[scope].push({
               _fileId: fileId,
+              uploadSessionId,
               name: uploadFile.name,
               type: finalType,
               base64: base64Data,
