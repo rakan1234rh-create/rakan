@@ -17002,17 +17002,20 @@
           }
           if (isAtharDebugLog()) console.error('[Sync] Critical Error:', err);
           if (createdTicketId) {
-            // السجل أُنشئ قبل نقل المرفقات؛ نعرض الرقم ونفرّغ النموذج حتى لا
-            // يعيد الراصد الضغط على نفس البيانات. يبقى السجل للمراجعة/الإكمال.
+            // السجل أُنشئ قبل نقل المرفقات. لا تنظف ملفات الجلسة هنا لأن
+            // مسار temp_ هو نسخة العمل التي ستُعاد محاولة نقلها عند فتح التذكرة.
             try {
               await sb.from('violations')
-                .update({ state: 'uploading', status_text: 'جاري استكمال نقل المرفقات' })
+                .update({ state: initialState, status_text: STATE_LABELS[initialState] || null })
                 .eq('id', createdTicketId);
             } catch (_) { /* يبقى السجل موجوداً ويُراجع إدارياً عند الحاجة */ }
             showToast(
-              `تم رصد المخالفة ${shortTicketNum(createdTicketNumber)} بنجاح. يجري استكمال نقل المرفق تلقائياً.`,
+              `تم رصد المخالفة ${shortTicketNum(createdTicketNumber)} بنجاح. سيتم استكمال نقل المرفق عند فتح التذكرة.`,
               'warning'
             );
+            state.uploadedFiles.nt = [];
+            if (state.uploadTempFolders) state.uploadTempFolders.nt = null;
+            if (state.uploadSessions) state.uploadSessions.nt = null;
             try { resetNewTicket(); } catch (_) { /* noop */ }
           } else {
             showToast(err.message, 'error');
