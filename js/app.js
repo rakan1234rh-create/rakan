@@ -29771,9 +29771,16 @@
                 <i class="fas fa-chevron-left rd-rp-link__chev" aria-hidden="true"></i>
               </button>`).join('')}
           </div>`;
+        const downloadHtml = `
+          <div class="rd-rp-download-row">
+            <button type="button" class="rd-rp-download-btn" onclick="exportReportExcel()">
+              <i class="fas fa-file-excel" aria-hidden="true"></i>
+              <span>تنزيل التقارير</span>
+            </button>
+          </div>`;
         return desk
-          ? `<div class="rd-rp-main">${metricsHtml}<div class="rd-rp-desk-split"><div class="rd-rp-desk-split__main">${barsHtml}</div><div class="rd-rp-desk-split__side">${linksHtml}</div></div></div>`
-          : `${metricsHtml}${barsHtml}${linksHtml}`;
+          ? `<div class="rd-rp-main">${downloadHtml}${metricsHtml}<div class="rd-rp-desk-split"><div class="rd-rp-desk-split__main">${barsHtml}</div><div class="rd-rp-desk-split__side">${linksHtml}</div></div></div>`
+          : `${downloadHtml}${metricsHtml}${barsHtml}${linksHtml}`;
       }
 
       function rdRpDrillHead(icon, title, sub) {
@@ -30297,7 +30304,7 @@
       }
 
       async function exportReportExcel() {
-        if (!hasPermission('export_reports')) { showToast('لا تملك صلاحية تصدير التقارير.', 'warning'); return; }
+        if (!hasPermission('export_reports') && !hasPermission('tab_reports')) { showToast('لا تملك صلاحية تنزيل التقارير.', 'warning'); return; }
 
         const { headers, rows } = buildReportExportRows();
         if (!rows.length) return showToast('لا توجد بيانات للتصدير', 'warning');

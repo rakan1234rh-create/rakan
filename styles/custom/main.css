@@ -27379,3 +27379,31 @@
 #tab-workflow .wf-date-picker-popup:not(.dp-range-pending) .wf-dp-selection-status {
   color: var(--mr-text-2);
 }
+
+
+/* زر تنزيل التقارير داخل واجهة التقارير الجديدة */
+.rd-rp-download-row {
+  display: flex;
+  justify-content: flex-start;
+  margin: 0 0 16px;
+}
+.rd-rp-download-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--mr-border);
+  border-radius: 999px;
+  background: var(--mr-primary);
+  color: #fff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 5px 14px rgba(15, 18, 36, .16);
+}
+.rd-rp-download-btn:hover {
+  background: var(--mr-primary-hover, var(--mr-primary));
+}
