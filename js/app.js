@@ -19794,6 +19794,7 @@
         const uploadSessionId = ensureUploadSessionId(scope);
 
         const areaId = scope === 'nt' ? 'ntFileArea'
+          : scope === 'adminAtt' ? 'adminAttFileArea'
           : scope === 'cp' ? 'cpFileArea'
             : scope === 'cpr' ? 'cprFileArea'
               : 'respFileArea';
@@ -22315,6 +22316,67 @@
       // ───────────────────────────────────────────────────────────────────────────
       // بناء واجهة المرفقات داخل فيو المعلومات
       // ───────────────────────────────────────────────────────────────────────────
+      function isSystemAdminForAttachmentEdit() {
+        return normalizeUserRole(state.currentUser?.role) === 'admin';
+      }
+
+      function toggleAdminAttachmentEditor() {
+        if (!isSystemAdminForAttachmentEdit()) return;
+        state._adminAttachmentEditMode = !state._adminAttachmentEditMode;
+        if (!state._adminAttachmentEditMode) state.uploadedFiles.adminAtt = [];
+        buildInlineAttachments(state.editingTicket);
+      }
+
+      async function adminDeleteAttachment(index) {
+        if (!isSystemAdminForAttachmentEdit()) return;
+        const t = state.editingTicket;
+        const atts = parseDbJsonArray(t?.attachments);
+        if (!t || !atts[index]) return;
+        const name = atts[index].n || atts[index].name || 'المرفق';
+        if (!window.confirm(`هل تؤكد حذف المرفق «${name}»؟`)) return;
+        const next = atts.filter((_, i) => i !== index);
+        const { data, error } = await sb.rpc('admin_update_violation_attachments', {
+          p_violation_id: t.id, p_attachments: next, p_action: 'delete',
+          p_added_names: [], p_removed_names: [name]
+        });
+        if (error) return showToast('تعذر حذف المرفق: ' + (error.message || 'خطأ'), 'error');
+        t.attachments = data?.attachments || next;
+        patchViolationLocally(t.id, { attachments: t.attachments });
+        buildInlineAttachments(t);
+        showToast('تم حذف المرفق من قبل مدير النظام', 'success');
+      }
+
+      async function saveAdminAttachmentEdits() {
+        if (!isSystemAdminForAttachmentEdit()) return;
+        const t = state.editingTicket;
+        const files = state.uploadedFiles.adminAtt || [];
+        if (!t) return;
+        if (!files.length) { state._adminAttachmentEditMode = false; buildInlineAttachments(t); return; }
+        const added = [];
+        try {
+          for (const file of files) {
+            await waitForAttachmentPrep(file);
+            if (!file.tempKey) throw new Error('المرفق لم يكتمل رفعه بعد');
+            const base = String(file.tempKey).split('/').pop();
+            const finalKey = `violations/${t.id}/${base}`;
+            await callR2StorageFn('moveObject', { fromKey: file.tempKey, toKey: finalKey, recordType: 'violation', recordId: t.id, operation: 'repair', expectedState: t.state });
+            added.push({ n: file.name, p: finalKey, s: 'إصلاح مرفق من مدير النظام', b: t.observer_name || 'الراصد', r: 'الراصد', t: getNow(), ...(file.transcoded ? { v: 'h264' } : {}) });
+          }
+          const current = parseDbJsonArray(t.attachments);
+          const next = current.concat(added);
+          const { data, error } = await sb.rpc('admin_update_violation_attachments', { p_violation_id: t.id, p_attachments: next, p_action: 'add', p_added_names: added.map(a => a.n), p_removed_names: [] });
+          if (error) throw error;
+          t.attachments = data?.attachments || next;
+          patchViolationLocally(t.id, { attachments: t.attachments });
+          state.uploadedFiles.adminAtt = [];
+          state._adminAttachmentEditMode = false;
+          buildInlineAttachments(t);
+          showToast('تمت إضافة المرفقات بواسطة مدير النظام', 'success');
+        } catch (err) {
+          showToast('تعذر حفظ المرفق: ' + (err.message || 'خطأ'), 'error');
+        }
+      }
+
       function buildInlineAttachments(t) {
         const c = document.getElementById('tdInlineAttachments');
         if (!c) return;
@@ -22339,8 +22401,8 @@
             : `
       <div class="td-att-section-head">
         <h3><i class="fas fa-paperclip"></i> المرفقات</h3>
-        <span class="td-att-hint">لا توجد مرفقات</span>
-      </div>`;
+        <span class="td-att-hint">لا توجد مرفقات</span>${isSystemAdminForAttachmentEdit() ? `<button type="button" class="td-admin-att-edit" onclick="event.stopPropagation();toggleAdminAttachmentEditor()">تعديل المرفقات</button>` : ''}
+      </div>${isSystemAdminForAttachmentEdit() && state._adminAttachmentEditMode ? `<div class="admin-att-editor"><input id="adminAttInput" type="file" multiple onchange="handleFiles(event, 'adminAtt')"><div id="adminAttFileArea"></div><button type="button" onclick="saveAdminAttachmentEdits()">حفظ الإضافة</button></div>` : ''}`;
           return;
         }
 
@@ -22408,7 +22470,7 @@
           return `
       <div class="att-card" onclick="${clickAction}" style="cursor:pointer">
         ${thumb}
-        <div class="att-name">${Sec.escapeHTML(a.name)}</div>
+        <div class="att-name">${Sec.escapeHTML(a.name)}</div>${isSystemAdminForAttachmentEdit() && state._adminAttachmentEditMode ? `<button type="button" class="td-admin-att-delete" onclick="event.stopPropagation();adminDeleteAttachment(${idx})">حذف</button>` : ''}
         <div class="att-uploader">
           <span class="att-uploader-role" style="background:${rc.bg};color:${rc.color}">${Sec.escapeHTML(a.role)}</span>
           <span>${Sec.escapeHTML(a.user)}</span>
@@ -22424,8 +22486,8 @@
           : `
     <div class="td-att-section-head">
       <h3><i class="fas fa-paperclip"></i> المرفقات (${normalizedAtts.length})</h3>
-      <span class="td-att-hint">اضغط على أي مرفق لفتحه</span>
-    </div>
+      <span class="td-att-hint">اضغط على أي مرفق لفتحه</span>${isSystemAdminForAttachmentEdit() ? `<button type="button" class="td-admin-att-edit" onclick="event.stopPropagation();toggleAdminAttachmentEditor()">${state._adminAttachmentEditMode ? 'إغلاق التعديل' : 'تعديل المرفقات'}</button>` : ''}
+    </div>${isSystemAdminForAttachmentEdit() && state._adminAttachmentEditMode ? `<div class="admin-att-editor"><input id="adminAttInput" type="file" multiple onchange="handleFiles(event, 'adminAtt')"><div id="adminAttFileArea"></div><button type="button" onclick="saveAdminAttachmentEdits()">حفظ الإضافة</button></div>` : ''}
     <div class="att-grid">${items}</div>`;
         // بعد رسم الـ DOM، نحمّل صور Cloudflare تلقائياً عبر الوسيط
         setTimeout(loadAllCloudflareImages, 100);
