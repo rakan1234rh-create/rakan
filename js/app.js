@@ -18100,13 +18100,12 @@
           if (!a) { updated.push(a); continue; }
           const oldKey = a.p || a.path;
           if (!oldKey) { updated.push(a); continue; }
-          const baseName = String(oldKey).split('/').pop();
-          let newKey = null;
-          if (String(oldKey).startsWith('temp_')) {
-            const ticketFolder = String(ticket.ticket_number).replace(/^V-\d{4}-/, '');
+            const baseName = String(oldKey).split('/').pop();
+            let newKey = null;
+            if (String(oldKey).startsWith('temp_')) {
             const candidateKeys = [
-              `${ticketFolder}/${baseName}`,
               `violations/${ticket.id}/${baseName}`,
+              `${String(ticket.ticket_number).replace(/^V-\d{4}-/, '')}/${baseName}`,
             ];
             let candidateKey = null;
             for (const candidate of candidateKeys) {
