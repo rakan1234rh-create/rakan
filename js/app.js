@@ -669,6 +669,8 @@
       /** رابط R2 الموقّع للتحميل المباشر (التشغيل عبر Edge Function لتجاوز CORS) */
       const _videoDirectR2Url = {};
       let _r2HeadObjectOk = false;
+      /** يمنع تشغيل إصلاح نفس السجل عدة مرات أثناء تحميل مرفقاته */
+      const _r2RepairInflight = new Map();
       /** روابط التوقيع تنتهي (~ساعة)؛ لا نخزّنها دائماً */
       const _cfSignedTtlMs = 50 * 60 * 1000;
 
@@ -697,6 +699,18 @@
           return;
         }
         _cloudflareCache[fileId] = url;
+      }
+      function scheduleExistingAttachmentRepair(ticketCtx) {
+        if (!ticketCtx?.id || !String(ticketCtx?.ticket_number || '').startsWith('V-')) return;
+        const id = String(ticketCtx.id);
+        if (_r2RepairInflight.has(id)) return;
+        const job = Promise.resolve()
+          .then(() => repairViolationAttachmentPaths(ticketCtx))
+          .catch((err) => {
+            if (isAtharDebugLog()) console.warn('[R2-Repair] background repair skipped', err);
+          })
+          .finally(() => _r2RepairInflight.delete(id));
+        _r2RepairInflight.set(id, job);
       }
 
       /** undefined = لم نُحلّ بعد؛ edge | none = نتيجة التحليل */
@@ -19586,6 +19600,9 @@
                   try {
                     const proxyUrl = await fetchR2ProxyBlobUrl(key, ct);
                     writeCfCache(cacheKey, proxyUrl);
+                    // الملف المؤقت موجود فعلياً؛ ثبّته في المسار النهائي
+                    // دون تعطيل عرض الملف الحالي. الملفات المفقودة تُتجاوز.
+                    if (isTempKey && ticketCtx?.id) scheduleExistingAttachmentRepair(ticketCtx);
                     if (key !== fileId) {
                       if (String(ticketCtx?.ticket_number || '').startsWith('V-') && ticketCtx?.id) {
                         try {
@@ -19627,6 +19644,7 @@
                 if (useStream) {
                   // رابط R2 الموقّع يعمل في <video> بدون Authorization (بث Edge غالباً يُرفض بدون JWT)
                   const playUrl = signed.url || streamPlay;
+                  if (String(key).startsWith('temp_') && ticketCtx?.id) scheduleExistingAttachmentRepair(ticketCtx);
                   writeCfCache(cacheKey, playUrl);
                   return playUrl;
                 }
