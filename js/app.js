@@ -22317,7 +22317,8 @@
       // بناء واجهة المرفقات داخل فيو المعلومات
       // ───────────────────────────────────────────────────────────────────────────
       function isSystemAdminForAttachmentEdit() {
-        return normalizeUserRole(state.currentUser?.role) === 'admin';
+        const role = state.currentUser?.role;
+        return normalizeUserRole(role) === 'admin' || role === 'admin' || role === 'مدير النظام' || role === 'مدير نظام';
       }
 
       function toggleAdminAttachmentEditor() {
@@ -22384,7 +22385,7 @@
         const rdAtt = typeof isTicketDetailAtharUi === 'function' && isTicketDetailAtharUi();
         if (!ticketDetailExtrasReady(t)) {
           c.innerHTML = rdAtt
-            ? `<div class="td-att-section-head"><i class="fas fa-paperclip" aria-hidden="true"></i><span>المرفقات (…)</span></div>`
+            ? `<div class="td-att-section-head"><i class="fas fa-paperclip" aria-hidden="true"></i><span>المرفقات (…)</span>${isSystemAdminForAttachmentEdit() ? `<button type="button" class="td-admin-att-edit" onclick="event.stopPropagation();toggleAdminAttachmentEditor()">تعديل المرفقات</button>` : ''}</div>`
             : `
       <div class="td-att-section-head">
         <h3><i class="fas fa-paperclip"></i> المرفقات</h3>
@@ -22397,7 +22398,7 @@
 
         if (!atts || !atts.length) {
           c.innerHTML = rdAtt
-            ? `<div class="td-att-section-head"><i class="fas fa-paperclip" aria-hidden="true"></i><span>المرفقات (0)</span></div>`
+            ? `<div class="td-att-section-head"><i class="fas fa-paperclip" aria-hidden="true"></i><span>المرفقات (0)</span>${isSystemAdminForAttachmentEdit() ? `<button type="button" class="td-admin-att-edit" onclick="event.stopPropagation();toggleAdminAttachmentEditor()">تعديل المرفقات</button>` : ''}</div>${isSystemAdminForAttachmentEdit() && state._adminAttachmentEditMode ? `<div class="admin-att-editor"><input id="adminAttInput" type="file" multiple onchange="handleFiles(event, 'adminAtt')"><div id="adminAttFileArea"></div><button type="button" onclick="saveAdminAttachmentEdits()">حفظ الإضافة</button></div>` : ''}`
             : `
       <div class="td-att-section-head">
         <h3><i class="fas fa-paperclip"></i> المرفقات</h3>
@@ -22481,7 +22482,7 @@
 
         c.innerHTML = rdAtt
           ? `
-    <div class="td-att-section-head"><i class="fas fa-paperclip" aria-hidden="true"></i><span>المرفقات (${normalizedAtts.length})</span></div>
+    <div class="td-att-section-head"><i class="fas fa-paperclip" aria-hidden="true"></i><span>المرفقات (${normalizedAtts.length})</span>${isSystemAdminForAttachmentEdit() ? `<button type="button" class="td-admin-att-edit" onclick="event.stopPropagation();toggleAdminAttachmentEditor()">${state._adminAttachmentEditMode ? 'إغلاق التعديل' : 'تعديل المرفقات'}</button>` : ''}</div>${isSystemAdminForAttachmentEdit() && state._adminAttachmentEditMode ? `<div class="admin-att-editor"><input id="adminAttInput" type="file" multiple onchange="handleFiles(event, 'adminAtt')"><div id="adminAttFileArea"></div><button type="button" onclick="saveAdminAttachmentEdits()">حفظ الإضافة</button></div>` : ''}
     <div class="att-grid att-grid--rd">${items}</div>`
           : `
     <div class="td-att-section-head">
