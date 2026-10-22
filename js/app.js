@@ -19552,9 +19552,25 @@
             // إذا كان السجل يحتوي مساراً كاملاً، فهو المصدر الموثوق الوحيد.
             // لا نجرّب مجلدات تخمينية؛ فهي تولّد 403/404 وتضغط الدالة.
             const knownKey = String(fileId).includes('/');
-            const candidates = knownKey ? [String(fileId).trim()] : getR2KeyFallbackCandidates(fileId, ticketCtx);
+            let candidates = knownKey ? [String(fileId).trim()] : getR2KeyFallbackCandidates(fileId, ticketCtx);
+            // قد يكون النقل إلى R2 نجح، لكن تعطل تثبيت المسار النهائي في قاعدة البيانات.
+            // في هذه الحالة لا يكفي تجربة temp_ فقط؛ جرّب المسارات النهائية المرتبطة
+            // بمعرّف المخالفة نفسه، ولا تخلطها مع مسارات تذاكر أخرى.
+            const tempKey = String(fileId).trim();
+            const ctxId = String(ticketCtx?.id || '').trim();
+            if (ctxId && tempKey.startsWith('temp_')) {
+              const base = tempKey.split('/').pop();
+              const recovered = [
+                `violations/${ctxId}/${base}`,
+                ...(ticketCtx?.ticket_number
+                  ? [`${String(ticketCtx.ticket_number).replace(/^V-\d{4}-/, '')}/${base}`]
+                  : []),
+              ];
+              candidates = [...new Set([tempKey, ...recovered, ...candidates])];
+            }
             const useStream = isLikelyVideoAttachmentKey(fileId);
             const hasFinalComplaintKey = candidates.some((k) => String(k).startsWith('complaints/'));
+            const canTryAlternateKnownKeys = candidates.length > 1;
             let lastSignErr = null;
             let lastProxyErr = null;
             for (const key of candidates) {
@@ -19571,13 +19587,37 @@
                   try {
                     const proxyUrl = await fetchR2ProxyBlobUrl(key, ct);
                     writeCfCache(cacheKey, proxyUrl);
-                    if (key !== fileId) void persistComplaintAttachmentKey(fileId, key);
+                    if (key !== fileId) {
+                      if (String(ticketCtx?.ticket_number || '').startsWith('V-') && ticketCtx?.id) {
+                        try {
+                          await finalizeR2AttachmentPath('violation', ticketCtx.id, fileId, key, {
+                            operation: 'repair',
+                            expectedState: ticketCtx.state,
+                          });
+                          const next = (Array.isArray(ticketCtx.attachments) ? ticketCtx.attachments : []).map((a) => {
+                            const p = a?.p || a?.path;
+                            if (p !== fileId) return a;
+                            const copy = { ...a, p: key };
+                            if ('path' in a) copy.path = key;
+                            return copy;
+                          });
+                          if (Array.isArray(ticketCtx.attachments)) ticketCtx.attachments = next;
+                          const idx = state.violations.findIndex((v) => v.id === ticketCtx.id);
+                          if (idx >= 0) state.violations[idx].attachments = next;
+                          void cleanupR2CopiedTempKey(fileId);
+                        } catch (repairErr) {
+                          if (isAtharDebugLog()) console.warn('[R2-Repair] recovered violation path not persisted', repairErr);
+                        }
+                      } else {
+                        void persistComplaintAttachmentKey(fileId, key);
+                      }
+                    }
                     return proxyUrl;
                   } catch (proxyErr) {
                     lastProxyErr = proxyErr;
                     // لا تستدعِ signGet للصور/الـPDF؛ فهو لا يعالج 404
                     // ويحوّل فقدان الملف إلى 503 عند ضغط Edge Function.
-                    if (knownKey) break;
+                    if (knownKey && !canTryAlternateKnownKeys) break;
                   }
                 }
                 const signed = await callR2StorageFn('signGet', { key, ...(ct ? { contentType: ct } : {}) });
