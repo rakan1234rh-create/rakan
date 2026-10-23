@@ -22378,8 +22378,24 @@
             if (!file.tempKey) throw new Error('المرفق لم يكتمل رفعه بعد');
             const base = String(file.tempKey).split('/').pop();
             const finalKey = `violations/${t.id}/${base}`;
-            await callR2StorageFn('moveObject', { fromKey: file.tempKey, toKey: finalKey, recordType: 'violation', recordId: t.id, operation: 'repair', expectedState: t.state });
-            added.push({ n: file.name, p: finalKey, s: 'إصلاح مرفق من مدير النظام', b: t.observer_name || 'الراصد', r: 'الراصد', t: getNow(), ...(file.transcoded ? { v: 'h264' } : {}) });
+            let storedKey = finalKey;
+            try {
+              await callR2StorageFn('moveObject', {
+                fromKey: file.tempKey,
+                toKey: finalKey,
+                recordType: 'violation',
+                recordId: t.id,
+                operation: 'repair',
+                expectedState: t.state,
+              });
+            } catch (moveErr) {
+              // لا نلغي الإضافة إذا كان الرفع نجح والنقل النهائي تعطل مؤقتاً.
+              // المفتاح المؤقت مملوك لجلسة الرفع، وبوابة القراءة تسمح به فقط
+              // بعد ربطه بهذه المخالفة. سيُعاد تثبيته تلقائياً عند فتحه.
+              storedKey = file.tempKey;
+              if (isAtharDebugLog()) console.warn('[Admin attachments] final move deferred', moveErr);
+            }
+            added.push({ n: file.name, p: storedKey, s: 'إضافة مرفق من مدير النظام', b: t.observer_name || 'الراصد', r: 'الراصد', t: getNow(), ...(file.transcoded ? { v: 'h264' } : {}) });
           }
           const current = parseDbJsonArray(t.attachments);
           const next = current.concat(added);
