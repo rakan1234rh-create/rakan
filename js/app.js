@@ -38870,39 +38870,29 @@
             return;
           }
 
-          const scopeIdArg = scopeType === 'global' ? null : scopeIdRaw;
-          const typesToSave = (msgForm.enabled && minutes === 0)
-            ? ['regular', 'restroom']
-            : [breakType];
-          let data = null;
-          let applied = 0;
-          let cleared = 0;
-          for (const typeToSave of typesToSave) {
-            const res = await sb.rpc('upsert_staff_break_schedule', {
-              p_scope_type: scopeType,
-              p_scope_id: scopeIdArg,
-              p_day_of_week: dayOfWeek,
-              p_duration_minutes: minutes,
-              p_label: label || null,
-              p_break_type: typeToSave
-            });
-            if (res.error) throw res.error;
-            if (!res.data?.ok) {
-              showToast(res.data?.error || 'تعذّر الحفظ', 'error');
-              return;
-            }
-            data = res.data;
-            applied += Number(res.data?.applied_sessions) || 0;
-            cleared += Number(res.data?.cleared_overrides) || 0;
+          const { data, error } = await sb.rpc('upsert_staff_break_schedule', {
+            p_scope_type: scopeType,
+            p_scope_id: scopeType === 'global' ? null : scopeIdRaw,
+            p_day_of_week: dayOfWeek,
+            p_duration_minutes: minutes,
+            p_label: label || null,
+            p_break_type: breakType
+          });
+          if (error) throw error;
+          if (!data?.ok) {
+            showToast(data?.error || 'تعذّر الحفظ', 'error');
+            return;
           }
           closeModal('breakScheduleModal');
+          const applied = Number(data?.applied_sessions) || 0;
+          const cleared = Number(data?.cleared_overrides) || 0;
           const dayName = KSA_AR_WEEKDAYS[dayOfWeek] || '';
           const breakLabel = breakType === 'restroom' ? 'بريك دورة المياه' : 'البريك';
           const disabledDay = minutes === 0 || data?.disabled === true;
           showToast(
             disabledDay
               ? (msgForm.enabled
-                ? `تم إيقاف البريكات ليوم ${dayName} وحفظ رسالة الإيقاف`
+                ? `تم إيقاف ${breakLabel} ليوم ${dayName} وحفظ رسالة الإيقاف`
                 : `تم إيقاف ${breakLabel} ليوم ${dayName} (المدة 0)`)
               : (applied > 0
                 ? `تم حفظ ${breakLabel} ليوم ${dayName} وتحديث ${applied} جلسة لليوم`
