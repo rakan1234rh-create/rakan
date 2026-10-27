@@ -5167,10 +5167,13 @@
             <div id="wfStepsContainer"></div>
           </div>
           <div class="td-pane" id="tdp-logs">
-            <div id="responseForm" class="log-item log-item--compose" style="display:none">
-              <div class="log-compose-title">إضافة رد</div>
+            <div id="responseForm" class="log-item log-item--compose" style="display:none" data-testid="supervisor-reply-compose">
+              <div class="log-compose-title" id="respComposeTitle">إضافة رد</div>
               <textarea id="respText" class="ticket-resp-input" rows="1"
-                placeholder="اكتب ردك أو ملاحظاتك..."></textarea>
+                aria-labelledby="respComposeTitle"
+                name="ticket_response"
+                autocomplete="off"
+                placeholder="اكتب ردك أو ملاحظاتك…"></textarea>
               <div id="respFileArea" class="file-list log-compose-files"></div>
               <input type="file" id="resp-files" multiple accept="image/*,video/*,application/pdf"
                 style="display:none" onchange="handleFiles(event,'resp')">
@@ -5411,15 +5414,16 @@
     <div id="printArea"></div>
 
     <!-- Attachment Viewer (Lightbox) -->
-    <div class="att-viewer" id="attViewer">
+    <div class="att-viewer" id="attViewer" role="dialog" aria-modal="true"
+      aria-label="عارض المرفقات" aria-hidden="true" data-testid="att-viewer">
       <div class="att-viewer-stage att-viewer-drag-zone">
         <div class="att-viewer-main">
           <div class="att-viewer-media-frame">
-            <div class="att-viewer-content" id="attViewerContent"></div>
+            <div class="att-viewer-content" id="attViewerContent" aria-live="polite"></div>
           </div>
-          <div class="att-viewer-counter" id="attViewerCounter"></div>
+          <div class="att-viewer-counter" id="attViewerCounter" aria-live="polite"></div>
           <button type="button" class="att-viewer-close-btn" id="attViewerCloseBtn"
-            onclick="event.stopPropagation(); closeAttViewer();" aria-label="إغلاق">
+            onclick="event.stopPropagation(); closeAttViewer();" aria-label="إغلاق عارض المرفقات">
             <span>إغلاق</span>
           </button>
         </div>

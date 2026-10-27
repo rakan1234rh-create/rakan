@@ -28,3 +28,10 @@ dist/
 .tmp-video-frames/
 *.log
 npm-debug.log*
+
+# Playwright (e2e smoke — local artifacts only)
+e2e/node_modules/
+e2e/test-results/
+e2e/playwright-report/
+e2e/blob-report/
+e2e/playwright/.cache/

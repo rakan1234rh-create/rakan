@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ATHAR smoke harness — رد المشرف والمرفقات</title>
+  <style>
+    :root {
+      --blue: #2f2fe4;
+      --blue-light: rgba(47, 47, 228, 0.18);
+      --text: #111;
+      --text2: #444;
+      --text3: #888;
+      --surface: #fff;
+      --surface2: #f5f5f7;
+      --border2: #d8d8e0;
+      --font: "Segoe UI", Tahoma, sans-serif;
+    }
+    body { margin: 0; font-family: var(--font); background: #f0f0f4; color: var(--text); }
+    main { max-width: 480px; margin: 24px auto; padding: 16px; }
+    h1 { font-size: 18px; margin: 0 0 12px; text-wrap: balance; }
+    .log-item--compose {
+      border: 1px solid var(--border2);
+      margin-bottom: 16px;
+      background: var(--surface2);
+      border-radius: 8px;
+      padding: 10px 12px;
+    }
+    .log-item--compose:focus-within {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px var(--blue-light);
+    }
+    .log-compose-title { font-weight: 600; font-size: 13px; margin-bottom: 4px; }
+    .ticket-resp-input {
+      width: 100%; min-height: 32px; border: 0; background: transparent;
+      font: inherit; outline: none; resize: none;
+    }
+    .log-compose-actions { display: flex; gap: 8px; margin-top: 8px; justify-content: space-between; }
+    .btn {
+      min-height: 34px; padding: 0 14px; border-radius: 8px; border: 0;
+      background: var(--blue); color: #fff; font: inherit; cursor: pointer;
+      touch-action: manipulation;
+    }
+    .btn:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+    .att-open {
+      min-height: 44px; padding: 0 16px; border-radius: 8px; border: 1px solid var(--border2);
+      background: var(--surface); cursor: pointer; font: inherit; touch-action: manipulation;
+    }
+    .att-open:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+    .att-viewer {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 10000;
+      display: none; align-items: center; justify-content: center; padding: 24px;
+      overscroll-behavior: contain;
+    }
+    .att-viewer.open { display: flex; }
+    .att-viewer-content img { max-width: 100%; max-height: 70vh; border-radius: 8px; display: block; }
+    .att-viewer-close-btn {
+      margin-top: 12px; min-width: 128px; min-height: 44px; border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.28); background: rgba(255,255,255,0.14);
+      color: #fff; font: inherit; font-weight: 700; cursor: pointer; touch-action: manipulation;
+    }
+    .att-viewer-close-btn:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+    .att-viewer-main { display: flex; flex-direction: column; align-items: center; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>محاكاة مسار المشرف والمرفقات</h1>
+
+    <div id="responseForm" class="log-item log-item--compose" data-testid="supervisor-reply-compose">
+      <div class="log-compose-title" id="respComposeTitle">إضافة رد</div>
+      <textarea id="respText" class="ticket-resp-input" rows="2"
+        aria-labelledby="respComposeTitle"
+        name="ticket_response"
+        autocomplete="off"
+        placeholder="أضف ملاحظاتك أو رأيك في التذكرة… (مطلوب)"></textarea>
+      <div class="log-compose-actions">
+        <button type="button" class="btn" id="sendReplyBtn" data-testid="send-reply-btn">إرسال الرد</button>
+      </div>
+      <p id="replyStatus" aria-live="polite" data-testid="reply-status" hidden>تم إرسال رد المشرف (محاكاة)</p>
+    </div>
+
+    <button type="button" class="att-open" id="openAttBtn" data-testid="open-attachment-btn"
+      aria-label="فتح مرفق تجريبي">فتح مرفق</button>
+  </main>
+
+  <div class="att-viewer" id="attViewer" role="dialog" aria-modal="true"
+    aria-label="عارض المرفقات" aria-hidden="true" data-testid="att-viewer">
+    <div class="att-viewer-main">
+      <div class="att-viewer-content" id="attViewerContent" aria-live="polite"></div>
+      <button type="button" class="att-viewer-close-btn" id="attViewerCloseBtn"
+        aria-label="إغلاق عارض المرفقات">إغلاق</button>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('responseForm');
+    const resp = document.getElementById('respText');
+    const status = document.getElementById('replyStatus');
+    const viewer = document.getElementById('attViewer');
+    const content = document.getElementById('attViewerContent');
+    const closeBtn = document.getElementById('attViewerCloseBtn');
+
+    document.getElementById('sendReplyBtn').addEventListener('click', () => {
+      const text = (resp.value || '').trim();
+      if (!text) {
+        resp.focus();
+        status.hidden = true;
+        return;
+      }
+      status.hidden = false;
+      status.textContent = 'تم إرسال رد المشرف (محاكاة)';
+    });
+
+    function openAttViewer() {
+      // 1×1 PNG
+      const png = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+      content.innerHTML = '<img src="' + png + '" width="240" height="240" alt="مرفق تجريبي">';
+      viewer.classList.add('open');
+      viewer.setAttribute('aria-hidden', 'false');
+      closeBtn.focus({ preventScroll: true });
+    }
+
+    function closeAttViewer() {
+      viewer.classList.remove('open');
+      viewer.setAttribute('aria-hidden', 'true');
+      content.innerHTML = '';
+    }
+
+    document.getElementById('openAttBtn').addEventListener('click', openAttViewer);
+    closeBtn.addEventListener('click', closeAttViewer);
+    document.addEventListener('keydown', (e) => {
+      if (!viewer.classList.contains('open')) return;
+      if (e.key === 'Escape') closeAttViewer();
+    });
+
+    window.openAttViewer = openAttViewer;
+    window.closeAttViewer = closeAttViewer;
+  </script>
+</body>
+</html>

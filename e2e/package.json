@@ -1,0 +1,12 @@
+{
+  "name": "athar-e2e-smoke",
+  "private": true,
+  "description": "Smoke Playwright tests for ATHAR PWA (isolated from production deploy)",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.51.0"
+  }
+}
