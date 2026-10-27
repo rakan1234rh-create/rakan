@@ -36886,6 +36886,35 @@
         return sb.rpc('close_stale_staff_breaks').catch(() => { /* older DB / ignore */ });
       }
 
+      function staffBreaksFetchLimit() {
+        // المراقبون يحتاجون رؤية أوسع؛ الموظف يكفي حد أصغر لاستجابة أسرع
+        return needsStaffBreaksMonitorRealtime() ? 500 : 200;
+      }
+
+      function todayStaffBreaksSelectQuery(todayKey) {
+        return sb.from('staff_breaks')
+          .select('id,user_id,branch_id,region_id,break_type,planned_duration_minutes,remaining_seconds,used_seconds,started_at,paused_at,ended_at,overtime_seconds,overtime_reason,status,day_key,expiry_notified_at,created_at,updated_at')
+          .eq('day_key', todayKey)
+          .in('status', ['active', 'paused', 'ended'])
+          .order('started_at', { ascending: false })
+          .limit(staffBreaksFetchLimit());
+      }
+
+      function scheduleStaffBreaksSoftRender() {
+        if (isStaffBreakActionBusy()) return;
+        if (state._staffBreakSoftRenderTimer) {
+          clearTimeout(state._staffBreakSoftRenderTimer);
+          state._staffBreakSoftRenderTimer = null;
+        }
+        state._staffBreakSoftRenderTimer = setTimeout(() => {
+          state._staffBreakSoftRenderTimer = null;
+          if (isStaffBreakActionBusy()) return;
+          const tab = document.getElementById('tab-breaks');
+          if (!tab?.classList.contains('active')) return;
+          renderStaffBreaksPage({ soft: true }).catch(() => {});
+        }, 280);
+      }
+
       async function loadStaffBreaksData(opts = {}) {
         if (!state.currentUser?.id || state.currentUser.id === GUEST_LOCAL_PROFILE.id) {
           state.staffBreaks = [];
@@ -36899,19 +36928,15 @@
         try {
           const todayKey = getStaffBreakTodayKey();
           const light = opts.light === true;
-          // إغلاق جلسات الأمس مرة يومياً فقط (أو عند تغيير اليوم)، وليس في كل poll
+          // إغلاق جلسات الأمس مرة يومياً — لا نحجب رسم الصفحة إلا عند تمرير اليوم صراحةً
           if (!light && (opts.forceCloseStale || state._staffBreakDayKey !== todayKey)) {
-            await maybeCloseStaleStaffBreaksOnce();
+            if (opts.forceCloseStale) await maybeCloseStaleStaffBreaksOnce();
+            else maybeCloseStaleStaffBreaksOnce();
           }
 
           if (light) {
             // استطلاع خفيف: جدول البريك فقط → طلب API واحد بدل 4
-            const { data: breaks, error: bErr } = await sb.from('staff_breaks')
-              .select('id,user_id,branch_id,region_id,break_type,planned_duration_minutes,remaining_seconds,used_seconds,started_at,paused_at,ended_at,overtime_seconds,overtime_reason,status,day_key,expiry_notified_at,created_at,updated_at')
-              .eq('day_key', todayKey)
-              .in('status', ['active', 'paused', 'ended'])
-              .order('started_at', { ascending: false })
-              .limit(500);
+            const { data: breaks, error: bErr } = await todayStaffBreaksSelectQuery(todayKey);
             if (bErr && isAtharDebugLog()) console.warn('[staff_breaks] light', bErr);
             const seenIds = new Set();
             const enriched = [];
@@ -36938,12 +36963,7 @@
             { data: myMins, error: dErr },
             { data: myRestroomMins, error: rErr }
           ] = await Promise.all([
-            sb.from('staff_breaks')
-              .select('id,user_id,branch_id,region_id,break_type,planned_duration_minutes,remaining_seconds,used_seconds,started_at,paused_at,ended_at,overtime_seconds,overtime_reason,status,day_key,expiry_notified_at,created_at,updated_at')
-              .eq('day_key', todayKey)
-              .in('status', ['active', 'paused', 'ended'])
-              .order('started_at', { ascending: false })
-              .limit(500),
+            todayStaffBreaksSelectQuery(todayKey),
             sb.from('staff_break_schedules')
               .select('id,scope_type,scope_id,day_of_week,break_type,duration_minutes,label,is_active,updated_at')
               .eq('is_active', true)
@@ -37055,17 +37075,16 @@
               .map(enrichStaffBreak);
 
             try { ensureStaffBreakTicker(); } catch (_) { /* noop */ }
-            const tab = document.getElementById('tab-breaks');
-            // Don't replace the ring mid-click — keeps busy UI stable until RPC finishes.
-            if (tab?.classList.contains('active') && !isStaffBreakActionBusy()) {
-              renderStaffBreaksPage({ soft: true });
-            }
+            // Don't replace the ring mid-click — debounce soft paint after RPC finishes.
+            scheduleStaffBreaksSoftRender();
           })
           .on('postgres_changes', { event: '*', schema: 'public', table: 'staff_break_schedules' }, () => {
-            // Duration edits must refresh minutes for every connected employee immediately
+            // Duration edits must refresh minutes — skip while start/stop in flight
+            if (isStaffBreakActionBusy()) return;
             loadStaffBreaksData().then(() => {
+              if (isStaffBreakActionBusy()) return;
               const tab = document.getElementById('tab-breaks');
-              if (tab?.classList.contains('active')) renderStaffBreaksPage({ soft: true });
+              if (tab?.classList.contains('active')) scheduleStaffBreaksSoftRender();
               else if (typeof paintStaffBreakCountdownOnly === 'function') {
                 try { paintStaffBreakCountdownOnly(); } catch (_) { /* noop */ }
               }
@@ -38218,24 +38237,40 @@
         } catch (_) { /* noop */ }
       }
 
-      const STAFF_BREAK_RPC_TIMEOUT_MS = 12000;
+      const STAFF_BREAK_RPC_TIMEOUT_MS = 10000;
+      const STAFF_BREAK_RPC_SLOW_HINT_MS = 3000;
 
       function isStaffBreakActionBusy() {
         return !!state._staffBreakActionInFlight;
       }
 
-      function setStaffBreakActionBusy(busy, label) {
-        state._staffBreakActionInFlight = !!busy;
-        const busyLbl = label || 'جاري…';
+      function paintStaffBreakBusyButtons(busyLbl) {
         document.querySelectorAll('#rdBreaksRingHost .rd-break-btn, .rd-break-actions .rd-break-btn').forEach((btn) => {
           if (!btn) return;
-          if (busy) {
-            if (!btn.dataset.breakIdleHtml) btn.dataset.breakIdleHtml = btn.innerHTML;
-            btn.disabled = true;
-            btn.setAttribute('aria-busy', 'true');
-            btn.classList.add('rd-break-btn--busy');
-            btn.innerHTML = `<i class="fas fa-spinner fa-spin" aria-hidden="true"></i>${Sec.escapeHTML(busyLbl)}`;
-          } else {
+          if (!btn.dataset.breakIdleHtml) btn.dataset.breakIdleHtml = btn.innerHTML;
+          btn.disabled = true;
+          btn.setAttribute('aria-busy', 'true');
+          btn.classList.add('rd-break-btn--busy');
+          btn.innerHTML = `<i class="fas fa-spinner fa-spin" aria-hidden="true"></i>${Sec.escapeHTML(busyLbl)}`;
+        });
+      }
+
+      function setStaffBreakActionBusy(busy, label) {
+        if (state._staffBreakBusyHintTimer) {
+          clearTimeout(state._staffBreakBusyHintTimer);
+          state._staffBreakBusyHintTimer = null;
+        }
+        state._staffBreakActionInFlight = !!busy;
+        const busyLbl = label || 'جاري…';
+        if (busy) {
+          paintStaffBreakBusyButtons(busyLbl);
+          state._staffBreakBusyHintTimer = setTimeout(() => {
+            if (!state._staffBreakActionInFlight) return;
+            paintStaffBreakBusyButtons('الاتصال بطيء… انتظر');
+          }, STAFF_BREAK_RPC_SLOW_HINT_MS);
+        } else {
+          document.querySelectorAll('#rdBreaksRingHost .rd-break-btn, .rd-break-actions .rd-break-btn').forEach((btn) => {
+            if (!btn) return;
             btn.classList.remove('rd-break-btn--busy');
             btn.removeAttribute('aria-busy');
             if (btn.dataset.breakIdleHtml != null) {
@@ -38243,8 +38278,8 @@
               delete btn.dataset.breakIdleHtml;
             }
             if (btn.getAttribute('aria-disabled') !== 'true') btn.disabled = false;
-          }
-        });
+          });
+        }
         ['breakTypeRegular', 'breakTypeRestroom'].forEach((id) => {
           const btn = document.getElementById(id);
           if (!btn) return;
