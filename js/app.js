@@ -36697,6 +36697,61 @@
         return !resolveBreakDurationMinsForUser(state.currentUser, breakType);
       }
 
+      /** رسالة الإيقاف المخصّصة إن كان الخيار مفعّلاً والنص غير فارغ */
+      function getStaffBreakDisableMessageText() {
+        const cfg = state._staffBreakDisableMsg || null;
+        if (!cfg || !cfg.enabled) return '';
+        const msg = String(cfg.message || '').trim();
+        return msg ? msg.slice(0, 500) : '';
+      }
+
+      function getStaffBreakUnscheduledNote(breakType = 'regular') {
+        const custom = getStaffBreakDisableMessageText();
+        if (custom) return custom;
+        return breakType === 'restroom'
+          ? 'لا يوجد بريك دورة مياه مجدول لهذا اليوم'
+          : 'لا يوجد بريك مجدول لهذا اليوم';
+      }
+
+      function syncBreakDisableMessageForm() {
+        const cfg = state._staffBreakDisableMsg || { enabled: false, message: '' };
+        const sw = document.getElementById('breakSchMsgEnabled');
+        const ta = document.getElementById('breakSchDisableMsg');
+        const enabled = !!cfg.enabled;
+        if (sw) sw.setAttribute('aria-checked', enabled ? 'true' : 'false');
+        if (ta) {
+          ta.value = String(cfg.message || '');
+          ta.disabled = !enabled;
+        }
+      }
+
+      function toggleBreakDisableMessageEnabled() {
+        const sw = document.getElementById('breakSchMsgEnabled');
+        const ta = document.getElementById('breakSchDisableMsg');
+        if (!sw) return;
+        const next = sw.getAttribute('aria-checked') !== 'true';
+        sw.setAttribute('aria-checked', next ? 'true' : 'false');
+        if (ta) {
+          ta.disabled = !next;
+          if (next) {
+            try { ta.focus(); } catch (_) { /* noop */ }
+          }
+        }
+      }
+
+      function onBreakDisableMessageInput() {
+        /* placeholder for live validation hooks — length capped by maxlength */
+      }
+
+      function readBreakDisableMessageForm() {
+        const sw = document.getElementById('breakSchMsgEnabled');
+        const ta = document.getElementById('breakSchDisableMsg');
+        return {
+          enabled: sw?.getAttribute('aria-checked') === 'true',
+          message: String(ta?.value || '').trim().slice(0, 500)
+        };
+      }
+
       function getStaffBreakTodayKey() {
         // Prefer Intl directly — ksaFormatParts().month is 0-indexed
         try {
@@ -36923,6 +36978,7 @@
           state.staffBreakDayByUserType = {};
           state.staffBreakDayRows = [];
           state._staffBreakDayKey = null;
+          state._staffBreakDisableMsg = { enabled: false, message: '' };
           return;
         }
         try {
@@ -36961,7 +37017,8 @@
             { data: breaks, error: bErr },
             { data: schedules, error: sErr },
             { data: myMins, error: dErr },
-            { data: myRestroomMins, error: rErr }
+            { data: myRestroomMins, error: rErr },
+            { data: disableMsg, error: dmErr }
           ] = await Promise.all([
             todayStaffBreaksSelectQuery(todayKey),
             sb.from('staff_break_schedules')
@@ -36980,12 +37037,22 @@
               p_branch_id: state.currentUser.branch_id || null,
               p_region_id: null,
               p_break_type: 'restroom'
-            })
+            }),
+            sb.rpc('get_staff_break_disable_message')
           ]);
           if (bErr && isAtharDebugLog()) console.warn('[staff_breaks]', bErr);
           if (sErr && isAtharDebugLog()) console.warn('[staff_break_schedules]', sErr);
           if (dErr && isAtharDebugLog()) console.warn('[resolve_staff_break_duration]', dErr);
           if (rErr && isAtharDebugLog()) console.warn('[resolve_restroom_break_duration]', rErr);
+          if (dmErr && isAtharDebugLog()) console.warn('[get_staff_break_disable_message]', dmErr);
+          if (!dmErr && disableMsg && typeof disableMsg === 'object') {
+            state._staffBreakDisableMsg = {
+              enabled: !!disableMsg.enabled,
+              message: String(disableMsg.message || '')
+            };
+          } else if (!state._staffBreakDisableMsg) {
+            state._staffBreakDisableMsg = { enabled: false, message: '' };
+          }
           const seenIds = new Set();
           const enriched = [];
           (breaks || []).forEach((raw) => {
@@ -37486,7 +37553,7 @@
           } else if (unscheduledToday) {
             actionsHtml = `
               <button type="button" class="btn btn-primary rd-break-btn rd-break-btn--muted" disabled aria-disabled="true">بدء البريك</button>
-              <p class="rd-break-note rd-break-note--warn">لا يوجد بريك مجدول لهذا اليوم</p>`;
+              <p class="rd-break-note rd-break-note--warn">${Sec.escapeHTML(getStaffBreakUnscheduledNote())}</p>`;
           } else if (colleague) {
             actionsHtml = `
               <button type="button" class="btn btn-primary rd-break-btn rd-break-btn--muted" disabled aria-disabled="true">بدء البريك</button>
@@ -37558,7 +37625,7 @@
           unscheduled: {
             badge: '', badgeColor: '', ring: 'var(--text3)',
             center: '', centerColor: 'var(--text3)', icon: 'fa-calendar-xmark', actions: 'disabled',
-            note: 'لا يوجد بريك مجدول لهذا اليوم'
+            note: getStaffBreakUnscheduledNote()
           },
           branchBusy: {
             badge: '', badgeColor: '', ring: 'var(--text3)',
@@ -38338,7 +38405,10 @@
           'restroom', 'breakTypeRestroom', 'breakTypeRestroomMeta'
         );
         if (!regularAvailable && !restroomAvailable) {
-          showToast('لا توجد مدة بريك متاحة اليوم', 'warning');
+          showToast(
+            getStaffBreakDisableMessageText() || 'لا توجد مدة بريك متاحة اليوم',
+            'warning'
+          );
           return;
         }
         // Always show the picker so the employee can choose (locked options stay disabled).
@@ -38374,7 +38444,7 @@
           return;
         }
         if (isMyBreakUnscheduledToday(breakType)) {
-          showToast(`لا يوجد ${breakLabel} مجدول لهذا اليوم`, 'warning');
+          showToast(getStaffBreakUnscheduledNote(breakType), 'warning');
           return;
         }
         closeModal('breakTypeModal');
@@ -38385,7 +38455,16 @@
           });
           if (error) throw error;
           if (!data?.ok) {
-            showToast(data?.error || 'تعذّر بدء البريك', 'error');
+            if (data?.no_schedule_today && data?.disable_message) {
+              const serverMsg = String(data.disable_message || '').trim();
+              if (serverMsg) {
+                state._staffBreakDisableMsg = {
+                  enabled: true,
+                  message: serverMsg.slice(0, 500)
+                };
+              }
+            }
+            showToast(data?.error || 'تعذّر بدء البريك', data?.no_schedule_today ? 'warning' : 'error');
             refreshStaffBreaksUiFast();
             return;
           }
@@ -38716,6 +38795,7 @@
         if (breakTypeInp) breakTypeInp.value = 'regular';
         if (dayInp) dayInp.value = String(getStaffBreakTodayWeekday());
         syncBreakScheduleScopeFields();
+        syncBreakDisableMessageForm();
         initBreakScheduleSheetDrag();
         openModal('breakScheduleModal');
       }
@@ -38729,21 +38809,59 @@
         const scopeIdRaw = document.getElementById('breakSchScopeId')?.value || '';
         const dayOfWeek = Number(document.getElementById('breakSchDayOfWeek')?.value);
         const breakType = document.getElementById('breakSchBreakType')?.value === 'restroom' ? 'restroom' : 'regular';
-        const minutes = Number(document.getElementById('breakSchMinutes')?.value || 0);
+        const minutesRaw = document.getElementById('breakSchMinutes')?.value;
+        const minutes = Number(minutesRaw || 0);
         const label = String(document.getElementById('breakSchLabel')?.value || '').trim();
+        const msgForm = readBreakDisableMessageForm();
+        if (msgForm.enabled && !msgForm.message) {
+          showToast('أدخل نص الرسالة قبل تفعيل خيار الإيقاف', 'warning');
+          return;
+        }
         if (!Number.isInteger(dayOfWeek) || dayOfWeek < 0 || dayOfWeek > 6) {
           showToast('اختر يوم الأسبوع', 'warning');
           return;
         }
-        if (!Number.isFinite(minutes) || minutes < 1 || minutes > 480) {
+        const hasDuration = minutesRaw !== '' && minutesRaw != null && Number.isFinite(minutes);
+        const durationOk = hasDuration && minutes >= 1 && minutes <= 480;
+        if (!durationOk && !(minutesRaw === '' || minutesRaw == null)) {
           showToast('أدخل مدة بين 1 و 480 دقيقة', 'warning');
           return;
         }
-        if (scopeType !== 'global' && !scopeIdRaw) {
+        if (durationOk && scopeType !== 'global' && !scopeIdRaw) {
           showToast('اختر النطاق', 'warning');
           return;
         }
+        if (!durationOk && !msgForm.enabled && !msgForm.message && !(state._staffBreakDisableMsg?.enabled || state._staffBreakDisableMsg?.message)) {
+          showToast('أدخل مدة بين 1 و 480 دقيقة', 'warning');
+          return;
+        }
         try {
+          const { data: msgData, error: msgErr } = await sb.rpc('upsert_staff_break_disable_message', {
+            p_enabled: !!msgForm.enabled,
+            p_message: msgForm.message || ''
+          });
+          if (msgErr) throw msgErr;
+          if (!msgData?.ok) {
+            showToast(msgData?.error || 'تعذّر حفظ رسالة الإيقاف', 'error');
+            return;
+          }
+          state._staffBreakDisableMsg = {
+            enabled: !!msgData.enabled,
+            message: String(msgData.message || '')
+          };
+
+          if (!durationOk) {
+            closeModal('breakScheduleModal');
+            showToast(
+              msgForm.enabled
+                ? 'تم حفظ رسالة إيقاف البريكات — ستظهر للموظفين عند غياب الجدول'
+                : 'تم حفظ إعداد رسالة الإيقاف',
+              'success'
+            );
+            await renderStaffBreaksPage({ soft: true });
+            return;
+          }
+
           const { data, error } = await sb.rpc('upsert_staff_break_schedule', {
             p_scope_type: scopeType,
             p_scope_id: scopeType === 'global' ? null : scopeIdRaw,
@@ -38791,6 +38909,8 @@
       window.saveBreakScheduleFromUi = saveBreakScheduleFromUi;
       window.syncBreakScheduleScopeFields = syncBreakScheduleScopeFields;
       window.syncBreakScheduleFormFields = syncBreakScheduleFormFields;
+      window.toggleBreakDisableMessageEnabled = toggleBreakDisableMessageEnabled;
+      window.onBreakDisableMessageInput = onBreakDisableMessageInput;
       window.openStaffBreakHistory = openStaffBreakHistory;
 
 
