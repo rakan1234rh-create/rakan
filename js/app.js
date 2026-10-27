@@ -36800,25 +36800,31 @@
           Number(s.day_of_week) === dow &&
           String(s.break_type || 'regular') === type
         );
-        const pick = (type, id) => {
-          const rows = schedules.filter(s => s.scope_type === type && (id == null ? !s.scope_id : s.scope_id === id));
-          if (!rows.length) return null;
+        // undefined = لا يوجد صف لهذا النطاق؛ 0 = إيقاف صريح (لا توريث للأعم)
+        const pick = (scopeType, id) => {
+          const rows = schedules.filter(s => s.scope_type === scopeType && (id == null ? !s.scope_id : s.scope_id === id));
+          if (!rows.length) return undefined;
           rows.sort((a, b) => new Date(b.updated_at || 0) - new Date(a.updated_at || 0));
-          return Number(rows[0].duration_minutes) || null;
+          const n = Number(rows[0].duration_minutes);
+          if (!Number.isFinite(n) || n <= 0) return 0;
+          return n;
         };
+        const finish = (mins) => (mins > 0 ? mins : null);
         const userMins = pick('user', u.id);
-        if (userMins) return userMins;
+        if (userMins !== undefined) return finish(userMins);
         if (u.branch_id) {
           const branchMins = pick('branch', u.branch_id);
-          if (branchMins) return branchMins;
+          if (branchMins !== undefined) return finish(branchMins);
           if (!state._branchById) rebuildLookupMaps();
           const branch = state._branchById?.get(u.branch_id) || state.branches.find(b => b.id === u.branch_id);
           if (branch?.region_id) {
             const regionMins = pick('region', branch.region_id);
-            if (regionMins) return regionMins;
+            if (regionMins !== undefined) return finish(regionMins);
           }
         }
-        return pick('global', null);
+        const globalMins = pick('global', null);
+        if (globalMins !== undefined) return finish(globalMins);
+        return null;
       }
 
       function getUserBreakRemainingSeconds(u) {
