@@ -1272,8 +1272,8 @@
   <link rel="stylesheet" href="styles/custom/athar-violations-redesign.css?v=vl2" id="athar-violations-redesign">
   <link rel="stylesheet" href="styles/custom/athar-locations-redesign.css?v=loc4" id="athar-locations-redesign">
   <link rel="stylesheet" href="styles/custom/athar-users-redesign.css?v=usr5" id="athar-users-redesign">
-  <link rel="stylesheet" href="styles/custom/athar-breaks-redesign.css?v=brk16" id="athar-breaks-redesign">
-  <link rel="stylesheet" href="styles/custom/athar-redesign-staging.css?v=mob-ui22" id="athar-redesign-staging">
+  <link rel="stylesheet" href="styles/custom/athar-breaks-redesign.css?v=brk17" id="athar-breaks-redesign">
+  <link rel="stylesheet" href="styles/custom/athar-redesign-staging.css?v=mob-ui23" id="athar-redesign-staging">
   <link rel="stylesheet" href="styles/custom/athar-complaints-redesign.css?v=cmpl41" id="athar-complaints-redesign">
 
   <link rel="stylesheet" href="styles/custom/design-kit.css?v=dk2" id="mk-design-kit">
@@ -4884,7 +4884,27 @@
           <input type="number" id="breakSchMinutes" class="break-sch-input" min="1" max="480" step="1" placeholder="0 = ممنوع البريك هذا اليوم" oninput="paintBreakScheduleWeekSummary()">
 
           <label class="break-sch-label" for="breakSchLabel">وصف (اختياري)</label>
-          <input type="text" id="breakSchLabel" class="break-sch-input" placeholder="ملاحظة داخلية عن هذا الاستثناء...">
+          <input type="text" id="breakSchLabel" class="break-sch-input" placeholder="ملاحظة داخلية عن هذا الاستثناء..." autocomplete="off">
+
+          <div class="break-sch-msg" id="breakSchDisableMsgBlock">
+            <div class="break-sch-msg__row">
+              <div class="break-sch-msg__copy">
+                <span class="break-sch-label" id="breakSchMsgLabel" style="margin:0">رسالة عند إيقاف البريكات</span>
+                <p class="break-sch-hint" id="breakSchMsgHint" style="margin:4px 0 0">تظهر للموظفين عندما لا يوجد بريك مجدول لليوم.</p>
+              </div>
+              <button type="button" class="break-sch-switch" id="breakSchMsgEnabled"
+                role="switch" aria-checked="false" aria-labelledby="breakSchMsgLabel"
+                aria-describedby="breakSchMsgHint" onclick="toggleBreakDisableMessageEnabled()">
+                <span class="break-sch-switch__track" aria-hidden="true"><span class="break-sch-switch__thumb"></span></span>
+              </button>
+            </div>
+            <label class="break-sch-label" for="breakSchDisableMsg">نص الرسالة</label>
+            <textarea id="breakSchDisableMsg" class="break-sch-input break-sch-textarea" rows="3"
+              maxlength="500" dir="rtl" autocomplete="off"
+              placeholder="مثال: البريكات موقوفة اليوم بسبب ضغط العمل…"
+              aria-describedby="breakSchMsgHint"
+              oninput="onBreakDisableMessageInput()"></textarea>
+          </div>
 
           <div class="break-sch-label">ملخص أسبوعي لهذا النطاق</div>
           <div class="break-sch-week" id="breakSchWeekSummary"></div>
@@ -5434,7 +5454,7 @@
 
     <div id="rdCmplOverlayHost"></div>
     <script src="js/auth-ingress-config.js?v=auth-ingress-v2"></script>
-    <script src="js/app.js?v=atharmig17"></script>
+    <script src="js/app.js?v=atharmig18"></script>
         <style>
       @media (max-width: 992px) {
         /* ── workflow: منع التمدد الأفقي ── */

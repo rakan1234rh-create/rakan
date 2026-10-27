@@ -1051,6 +1051,90 @@ html.athar-staging-redesign.mr-desktop-ui #tab-breaks .rd-breaks-page--desk .rd-
 .break-sch-week-cell.is-off .break-sch-week-cell__m {
   color: var(--danger);
 }
+.break-sch-msg {
+  margin: 4px 0 18px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface2) 88%, transparent);
+}
+.break-sch-msg__row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.break-sch-msg__copy {
+  min-width: 0;
+  flex: 1;
+}
+.break-sch-switch {
+  flex: 0 0 auto;
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+}
+.break-sch-switch:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+  border-radius: 999px;
+}
+.break-sch-switch__track {
+  width: 44px;
+  height: 26px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  display: block;
+  position: relative;
+  transition: background 0.18s ease, border-color 0.18s ease;
+}
+.break-sch-switch__thumb {
+  position: absolute;
+  top: 2px;
+  inset-inline-start: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--text3);
+  transition: transform 0.18s ease, background 0.18s ease;
+}
+.break-sch-switch[aria-checked="true"] .break-sch-switch__track {
+  background: color-mix(in srgb, var(--gold) 28%, var(--surface));
+  border-color: var(--gold);
+}
+.break-sch-switch[aria-checked="true"] .break-sch-switch__thumb {
+  transform: translateX(-18px);
+  background: var(--gold);
+}
+html[dir="ltr"] .break-sch-switch[aria-checked="true"] .break-sch-switch__thumb,
+[dir="ltr"] .break-sch-switch[aria-checked="true"] .break-sch-switch__thumb {
+  transform: translateX(18px);
+}
+.break-sch-textarea {
+  resize: vertical;
+  min-height: 84px;
+  line-height: 1.55;
+  margin-bottom: 0;
+}
+.break-sch-textarea:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+@media (prefers-reduced-motion: reduce) {
+  .break-sch-switch__track,
+  .break-sch-switch__thumb {
+    transition: none;
+  }
+}
 .break-sch-footer {
   display: flex;
   gap: 10px;
