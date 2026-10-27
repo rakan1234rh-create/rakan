@@ -107,7 +107,7 @@ export async function runWeeklyDigest(supabase: ReturnType<typeof createClient>)
     return { sent: 0, reason: 'no_pending_violations', recipient_roles: [...DIGEST_ROLES] };
   }
 
-  // جلب المستلمين مرة واحدة — مدقق + مدير + موارد بشرية فقط
+  // جلب المستلمين مرة واحدة — رقابة داخلية + مدير + موارد بشرية فقط
   const { data: recipients, error: usersErr } = await supabase
     .from('users')
     .select('email, role')

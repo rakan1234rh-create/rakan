@@ -426,6 +426,36 @@
         closed: 'مغلقة'
       };
 
+      /** تسميات الحالة القديمة (تدقيق) → الرقابة الداخلية — للعرض فقط */
+      const LEGACY_STATUS_TEXT_MAP = {
+        'بانتظار التدقيق': STATE_LABELS.aud,
+        'بانتظار رد المدقق': STATE_LABELS.aud,
+        'ملغاة بقرار التدقيق': 'ملغاة بقرار الرقابة الداخلية',
+      };
+
+      function rewriteLegacyAuditLabel(text) {
+        return String(text || '')
+          .replace(/بانتظار التدقيق/g, 'بانتظار الرقابة الداخلية')
+          .replace(/بانتظار رد المدقق/g, 'بانتظار الرقابة الداخلية')
+          .replace(/ملغاة بقرار التدقيق/g, 'ملغاة بقرار الرقابة الداخلية')
+          .replace(/للتدقيق/g, 'للرقابة الداخلية')
+          .replace(/إدارة التدقيق/g, 'إدارة الرقابة الداخلية')
+          .replace(/بقرار التدقيق/g, 'بقرار الرقابة الداخلية');
+      }
+
+      function normalizeViolationStatusText(t) {
+        if (!t) return t;
+        const raw = String(t.status_text || '').trim();
+        if (!raw) return t;
+        if (LEGACY_STATUS_TEXT_MAP[raw]) {
+          t.status_text = LEGACY_STATUS_TEXT_MAP[raw];
+          return t;
+        }
+        const rewritten = rewriteLegacyAuditLabel(raw);
+        if (rewritten !== raw) t.status_text = rewritten;
+        return t;
+      }
+
       /** استخراج الرقم المختصر من رقم التذكرة: V-2026-0219 → 00219 */
       function shortTicketNum(num) {
         if (!num) return '';
@@ -1581,6 +1611,7 @@
         t._regionName = region?.name || '-';
         t.logs = parseDbJsonArray(t.logs);
         if (t.attachments != null) t.attachments = parseDbJsonArray(t.attachments);
+        normalizeViolationStatusText(t);
         // Needed for supervisor SLA countdown before full enrich finishes.
         t._supStartTime = resolveSupStartTime(t);
         return t;
@@ -5371,6 +5402,7 @@
         t._obsName = obs?.name || '-';
         t._branchName = br?.name || '-';
         t._regionName = region?.name || '-';
+        normalizeViolationStatusText(t);
 
         if (!t.violation_type_id && t.violation_type && state.violationTypes?.length) {
           const vt = state.violationTypes.find(x => x.name === t.violation_type);
@@ -11695,7 +11727,7 @@
             'var(--amber)',
             'الاستجابة',
             'مؤشر استجابة المشرف',
-            'يقيس سرعة معالجتك للمخالفات. ينقص 20 نقاط لكل مخالفة مررت تلقائياً للتدقيق.',
+            'يقيس سرعة معالجتك للمخالفات. ينقص 20 نقاط لكل مخالفة مررت تلقائياً للرقابة الداخلية.',
             `<span class="badge b-blue"><i class="fas fa-folder"></i> ${totalAssigned} مخالفة كلياً</span>
                   ${buildResponseRateBadges(response, autoCount, respondedCount, bonus, { variant: 'supervisor' })}`,
             responseBreakdownHTML
@@ -23837,7 +23869,7 @@
             const role = actor.masked ? '' : (String(actor.role || '').trim() || '');
             const time = formatLogDate(l.date) || '—';
             const isAuto = (l.user === 'النظام' || l.role === 'النظام' || /تلقائي/.test(l.action || ''));
-            const content = [l.action, l.note].filter(Boolean).join('\n') || '—';
+            const content = rewriteLegacyAuditLabel([l.action, l.note].filter(Boolean).join('\n') || '—');
             return `
       <article class="rd-td-log${isAuto ? ' rd-td-log--auto' : ''}">
         <div class="rd-td-log__top">
@@ -23856,8 +23888,8 @@
           return `
       <div class="log-item${isAuto ? ' log-item--auto' : ''}">
         <div class="log-meta">${Sec.escapeHTML(metaLine)}</div>
-        <div class="log-action">${isAuto ? '<i class="fas fa-robot" style="color:var(--red);margin-left:4px"></i>' : ''}${Sec.escapeHTML(l.action || '-')}</div>
-        ${l.note ? `<div class="log-note">${Sec.escapeHTML(l.note)}</div>` : ''}
+        <div class="log-action">${isAuto ? '<i class="fas fa-robot" style="color:var(--red);margin-left:4px"></i>' : ''}${Sec.escapeHTML(rewriteLegacyAuditLabel(l.action || '-'))}</div>
+        ${l.note ? `<div class="log-note">${Sec.escapeHTML(rewriteLegacyAuditLabel(l.note))}</div>` : ''}
       </div>`;
         }).join('');
       }
@@ -31164,7 +31196,7 @@
         { id: 'branch_manager', label: 'مدير فرع' },
         { id: 'supervisor', label: 'مشرف' },
         { id: 'manager', label: 'مدير' },
-        { id: 'auditor', label: 'مدقق' },
+        { id: 'auditor', label: 'إدارة الرقابة الداخلية' },
         { id: 'hr', label: 'موارد بشرية' },
         { id: 'observer', label: 'راصد' }
       ];
@@ -34499,8 +34531,8 @@
           return `
           <div class="print-log">
             <div class="print-log-meta">${escape(metaLine)}</div>
-            <div class="print-log-action">${escape(l.action || '-')}</div>
-            ${l.note ? `<div class="print-log-note">${escape(l.note)}</div>` : ''}
+            <div class="print-log-action">${escape(rewriteLegacyAuditLabel(l.action || '-'))}</div>
+            ${l.note ? `<div class="print-log-note">${escape(rewriteLegacyAuditLabel(l.note))}</div>` : ''}
           </div>`;
         }).join('') : '<p class="print-muted">لا يوجد سجل</p>'}
     </div>

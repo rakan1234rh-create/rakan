@@ -432,16 +432,16 @@ SELECT set_config('test.role', 'auditor', false);
 SELECT public.test_assert(
   NOT COALESCE((public.append_violation_log_with_guard(
     '00000000-0000-0000-0000-000000000109', 'aud', jsonb_build_object('action', 'null-field'),
-    'closed', 'ملغاة بقرار التدقيق', NULL, NULL, NULL, false, false
+    'closed', 'ملغاة بقرار الرقابة الداخلية', NULL, NULL, NULL, false, false
   )->>'ok')::boolean, false),
   'aud قبل إغلاقاً بلا audit_reply'
 );
 SELECT public.test_assert(
   COALESCE((public.append_violation_log_with_guard(
     '00000000-0000-0000-0000-000000000112', 'aud', jsonb_build_object('action', 'إلغاء'),
-    'closed', 'ملغاة بقرار التدقيق', 'audit_reply', 'ملاحظة تدقيق', NULL, false, false
+    'closed', 'ملغاة بقرار الرقابة الداخلية', 'audit_reply', 'ملاحظة الرقابة الداخلية', NULL, false, false
   )->>'ok')::boolean, false),
-  'إجراء إلغاء التدقيق المشروع حُجب'
+  'إجراء إلغاء الرقابة الداخلية المشروع نجح'
 );
 
 SELECT set_config('test.role', 'manager', false);
