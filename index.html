@@ -4881,7 +4881,7 @@
           <input type="hidden" id="breakSchDayOfWeek" value="0">
 
           <label class="break-sch-label" for="breakSchMinutes">المدة بالدقائق</label>
-          <input type="number" id="breakSchMinutes" class="break-sch-input" min="1" max="480" step="1" placeholder="0 = ممنوع البريك هذا اليوم" oninput="paintBreakScheduleWeekSummary()">
+          <input type="number" id="breakSchMinutes" class="break-sch-input" min="0" max="480" step="1" placeholder="0 = ممنوع البريك هذا اليوم" oninput="paintBreakScheduleWeekSummary()" inputmode="numeric">
 
           <label class="break-sch-label" for="breakSchLabel">وصف (اختياري)</label>
           <input type="text" id="breakSchLabel" class="break-sch-input" placeholder="ملاحظة داخلية عن هذا الاستثناء..." autocomplete="off">
@@ -4890,7 +4890,7 @@
             <div class="break-sch-msg__row">
               <div class="break-sch-msg__copy">
                 <span class="break-sch-label" id="breakSchMsgLabel" style="margin:0">رسالة عند إيقاف البريكات</span>
-                <p class="break-sch-hint" id="breakSchMsgHint" style="margin:4px 0 0">تظهر للموظفين عندما لا يوجد بريك مجدول لليوم.</p>
+                <p class="break-sch-hint" id="breakSchMsgHint" style="margin:4px 0 0">عند التفعيل تُضبط مدة اليوم المحدد إلى 0 ويظهر النص للموظفين.</p>
               </div>
               <button type="button" class="break-sch-switch" id="breakSchMsgEnabled"
                 role="switch" aria-checked="false" aria-labelledby="breakSchMsgLabel"
@@ -5454,7 +5454,7 @@
 
     <div id="rdCmplOverlayHost"></div>
     <script src="js/auth-ingress-config.js?v=auth-ingress-v2"></script>
-    <script src="js/app.js?v=atharmig18"></script>
+    <script src="js/app.js?v=atharmig19"></script>
         <style>
       @media (max-width: 992px) {
         /* ── workflow: منع التمدد الأفقي ── */
