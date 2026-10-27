@@ -1045,7 +1045,14 @@ export function createR2StorageHandler(deps: {
     }
 
     if (action === 'rollbackMove') {
-      const fromKey = assertTempUploadKey(body.fromKey || '', user.id)
+      // Privileged repair may roll back a foreign temp_* copy; ACL is enforced below.
+      let fromKey: string
+      try {
+        fromKey = assertTempUploadKey(body.fromKey || '', user.id)
+      } catch {
+        fromKey = assertKey(body.fromKey || '')
+        if (!fromKey.startsWith('temp_')) throw new Error('غير مصرح بالرفع في هذا المسار')
+      }
       const toKey = assertKey(body.toKey)
       if (!isServiceRole) {
         await requireAttachmentMoveRollback(supabase, {
@@ -1070,7 +1077,15 @@ export function createR2StorageHandler(deps: {
     }
 
     if (action === 'moveObject') {
-      const fromKey = assertTempUploadKey(body.fromKey || '', user.id)
+      // Owner path uses assertTempUploadKey. Privileged repair may move a foreign
+      // temp_* object when athar_attachment_destination_can_modify allows it.
+      let fromKey: string
+      try {
+        fromKey = assertTempUploadKey(body.fromKey || '', user.id)
+      } catch {
+        fromKey = assertKey(body.fromKey || '')
+        if (!fromKey.startsWith('temp_')) throw new Error('غير مصرح بالرفع في هذا المسار')
+      }
       const toKey = assertKey(body.toKey)
       if (!isServiceRole) {
         await requireAttachmentMoveDestination(supabase, {

@@ -1581,6 +1581,8 @@
         t._regionName = region?.name || '-';
         t.logs = parseDbJsonArray(t.logs);
         if (t.attachments != null) t.attachments = parseDbJsonArray(t.attachments);
+        // Needed for supervisor SLA countdown before full enrich finishes.
+        t._supStartTime = resolveSupStartTime(t);
         return t;
       }
 
@@ -4528,24 +4530,19 @@
           invalidateR2BackendResolution();
 
           // جلب الفروع التي يشرف عليها المستخدم (المشرف يشرف على منطقة، فنجيب كل فروعها)
+          // يجب انتظار التحميل قبل أي إجراء على التذاكر — وإلا canActOnTicket يفشل (فروع فارغة)
+          // ويختفي نموذج الرد، خصوصاً على الجوال حيث كان التحميل مؤجلاً بـ setTimeout.
           let mySupervisedBranches = [];
-          const loadSupervisorBranches = async () => {
-            const { data: regions } = await sb.from('regions').select('id').eq('supervisor_id', profile.id);
-            const regionIds = (regions || []).map(r => r.id);
-            if (!regionIds.length) return;
-            const { data: branches } = await sb.from('branches').select('id').in('region_id', regionIds);
-            state.currentUser.supervisedBranches = (branches || []).map(b => b.id);
-          };
           if (normalizeUserRole(profile.role) === 'supervisor') {
-            if (isMobileViewport()) {
-              setTimeout(() => loadSupervisorBranches().catch(e => { if (isAtharDebugLog()) console.warn('[supervisor branches]', e); }), 0);
-            } else {
+            try {
               const { data: regions } = await sb.from('regions').select('id').eq('supervisor_id', profile.id);
               const regionIds = (regions || []).map(r => r.id);
               if (regionIds.length) {
                 const { data: branches } = await sb.from('branches').select('id').in('region_id', regionIds);
                 mySupervisedBranches = (branches || []).map(b => b.id);
               }
+            } catch (e) {
+              if (isAtharDebugLog()) console.warn('[supervisor branches]', e);
             }
           }
 
@@ -23882,7 +23879,7 @@
         if (typeof initTicketRespKeyboardGuard === 'function') initTicketRespKeyboardGuard();
         if (typeof initViolRespKeyboardGuard === 'function') initViolRespKeyboardGuard();
 
-        const role = state.currentUser.role;
+        const role = normalizeUserRole(state.currentUser.role);
         const meId = state.currentUser.id;
         const actAsAdmin = role === 'admin' || hasPermission('act_all_tickets');
         const wfState = getEffectiveWorkflowState(t.state);
