@@ -36728,6 +36728,7 @@
       function toggleBreakDisableMessageEnabled() {
         const sw = document.getElementById('breakSchMsgEnabled');
         const ta = document.getElementById('breakSchDisableMsg');
+        const mins = document.getElementById('breakSchMinutes');
         if (!sw) return;
         const next = sw.getAttribute('aria-checked') !== 'true';
         sw.setAttribute('aria-checked', next ? 'true' : 'false');
@@ -36736,6 +36737,11 @@
           if (next) {
             try { ta.focus(); } catch (_) { /* noop */ }
           }
+        }
+        // تفعيل الرسالة = إيقاف البريك لليوم المحدد (مدة 0)
+        if (next && mins) {
+          mins.value = '0';
+          try { paintBreakScheduleWeekSummary(); } catch (_) { /* noop */ }
         }
       }
 
@@ -38809,8 +38815,8 @@
         const scopeIdRaw = document.getElementById('breakSchScopeId')?.value || '';
         const dayOfWeek = Number(document.getElementById('breakSchDayOfWeek')?.value);
         const breakType = document.getElementById('breakSchBreakType')?.value === 'restroom' ? 'restroom' : 'regular';
-        const minutesRaw = document.getElementById('breakSchMinutes')?.value;
-        const minutes = Number(minutesRaw || 0);
+        let minutesRaw = document.getElementById('breakSchMinutes')?.value;
+        let minutes = Number(minutesRaw === '' || minutesRaw == null ? NaN : minutesRaw);
         const label = String(document.getElementById('breakSchLabel')?.value || '').trim();
         const msgForm = readBreakDisableMessageForm();
         if (msgForm.enabled && !msgForm.message) {
@@ -38821,10 +38827,17 @@
           showToast('اختر يوم الأسبوع', 'warning');
           return;
         }
+        // تفعيل الرسالة يوقف البريك لليوم المحدد (مدة 0)
+        if (msgForm.enabled) {
+          minutes = 0;
+          minutesRaw = '0';
+          const minsEl = document.getElementById('breakSchMinutes');
+          if (minsEl) minsEl.value = '0';
+        }
         const hasDuration = minutesRaw !== '' && minutesRaw != null && Number.isFinite(minutes);
-        const durationOk = hasDuration && minutes >= 1 && minutes <= 480;
+        const durationOk = hasDuration && minutes >= 0 && minutes <= 480;
         if (!durationOk && !(minutesRaw === '' || minutesRaw == null)) {
-          showToast('أدخل مدة بين 1 و 480 دقيقة', 'warning');
+          showToast('أدخل مدة بين 0 و 480 دقيقة (0 = إيقاف اليوم)', 'warning');
           return;
         }
         if (durationOk && scopeType !== 'global' && !scopeIdRaw) {
@@ -38832,7 +38845,7 @@
           return;
         }
         if (!durationOk && !msgForm.enabled && !msgForm.message && !(state._staffBreakDisableMsg?.enabled || state._staffBreakDisableMsg?.message)) {
-          showToast('أدخل مدة بين 1 و 480 دقيقة', 'warning');
+          showToast('أدخل مدة بين 0 و 480 دقيقة (0 = إيقاف اليوم)', 'warning');
           return;
         }
         try {
@@ -38852,12 +38865,7 @@
 
           if (!durationOk) {
             closeModal('breakScheduleModal');
-            showToast(
-              msgForm.enabled
-                ? 'تم حفظ رسالة إيقاف البريكات — ستظهر للموظفين عند غياب الجدول'
-                : 'تم حفظ إعداد رسالة الإيقاف',
-              'success'
-            );
+            showToast('تم حفظ إعداد رسالة الإيقاف', 'success');
             await renderStaffBreaksPage({ soft: true });
             return;
           }
@@ -38880,12 +38888,17 @@
           const cleared = Number(data?.cleared_overrides) || 0;
           const dayName = KSA_AR_WEEKDAYS[dayOfWeek] || '';
           const breakLabel = breakType === 'restroom' ? 'بريك دورة المياه' : 'البريك';
+          const disabledDay = minutes === 0 || data?.disabled === true;
           showToast(
-            applied > 0
-              ? `تم حفظ ${breakLabel} ليوم ${dayName} وتحديث ${applied} جلسة لليوم`
-              : (cleared > 0
-                ? `تم حفظ ${breakLabel} ليوم ${dayName} وإلغاء ${cleared} تخصيص أخص — يظهر للموظفين فورًا`
-                : `تم حفظ ${breakLabel} ليوم ${dayName} — يظهر للموظفين فورًا`),
+            disabledDay
+              ? (msgForm.enabled
+                ? `تم إيقاف ${breakLabel} ليوم ${dayName} وحفظ رسالة الإيقاف`
+                : `تم إيقاف ${breakLabel} ليوم ${dayName} (المدة 0)`)
+              : (applied > 0
+                ? `تم حفظ ${breakLabel} ليوم ${dayName} وتحديث ${applied} جلسة لليوم`
+                : (cleared > 0
+                  ? `تم حفظ ${breakLabel} ليوم ${dayName} وإلغاء ${cleared} تخصيص أخص — يظهر للموظفين فورًا`
+                  : `تم حفظ ${breakLabel} ليوم ${dayName} — يظهر للموظفين فورًا`)),
             'success'
           );
           await loadStaffBreaksData();
