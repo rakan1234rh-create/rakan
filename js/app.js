@@ -36705,12 +36705,57 @@
         return msg ? msg.slice(0, 500) : '';
       }
 
+      /** هل لدى الموظف أي نوع بريك موقوف اليوم (عادي أو دورة مياه) */
+      function hasMyBreakTypeUnscheduledToday() {
+        return isMyBreakUnscheduledToday('regular') || isMyBreakUnscheduledToday('restroom');
+      }
+
       function getStaffBreakUnscheduledNote(breakType = 'regular') {
         const custom = getStaffBreakDisableMessageText();
         if (custom) return custom;
         return breakType === 'restroom'
           ? 'لا يوجد بريك دورة مياه مجدول لهذا اليوم'
           : 'لا يوجد بريك مجدول لهذا اليوم';
+      }
+
+      /** HTML ملاحظة رسالة الإيقاف — تظهر حتى لو بقي نوع بريك آخر متاحاً */
+      function getStaffBreakDisableNoticeHtml() {
+        const msg = getStaffBreakDisableMessageText();
+        if (!msg || !hasMyBreakTypeUnscheduledToday()) return '';
+        return `<p class="rd-break-note rd-break-note--warn" role="status" data-break-disable-msg="1">${Sec.escapeHTML(msg)}</p>`;
+      }
+
+      function applyStaffBreakDisableMsgState(payload) {
+        if (!payload || typeof payload !== 'object') return;
+        state._staffBreakDisableMsg = {
+          enabled: !!(payload.enabled ?? payload.disable_message_enabled),
+          message: String(payload.message ?? payload.disable_message ?? '')
+        };
+      }
+
+      async function loadStaffBreakDisableMessage() {
+        try {
+          const { data, error } = await sb.rpc('get_staff_break_disable_message');
+          if (!error && data && typeof data === 'object') {
+            applyStaffBreakDisableMsgState(data);
+            return state._staffBreakDisableMsg;
+          }
+        } catch (_) { /* fall through */ }
+        try {
+          const { data, error } = await sb
+            .from('staff_break_settings')
+            .select('disable_message_enabled, disable_message')
+            .eq('id', 1)
+            .maybeSingle();
+          if (!error && data) {
+            applyStaffBreakDisableMsgState(data);
+            return state._staffBreakDisableMsg;
+          }
+        } catch (_) { /* noop */ }
+        if (!state._staffBreakDisableMsg) {
+          state._staffBreakDisableMsg = { enabled: false, message: '' };
+        }
+        return state._staffBreakDisableMsg;
       }
 
       function syncBreakDisableMessageForm() {
@@ -37029,8 +37074,7 @@
             { data: breaks, error: bErr },
             { data: schedules, error: sErr },
             { data: myMins, error: dErr },
-            { data: myRestroomMins, error: rErr },
-            { data: disableMsg, error: dmErr }
+            { data: myRestroomMins, error: rErr }
           ] = await Promise.all([
             todayStaffBreaksSelectQuery(todayKey),
             sb.from('staff_break_schedules')
@@ -37050,19 +37094,13 @@
               p_region_id: null,
               p_break_type: 'restroom'
             }),
-            sb.rpc('get_staff_break_disable_message')
+            loadStaffBreakDisableMessage()
           ]);
           if (bErr && isAtharDebugLog()) console.warn('[staff_breaks]', bErr);
           if (sErr && isAtharDebugLog()) console.warn('[staff_break_schedules]', sErr);
           if (dErr && isAtharDebugLog()) console.warn('[resolve_staff_break_duration]', dErr);
           if (rErr && isAtharDebugLog()) console.warn('[resolve_restroom_break_duration]', rErr);
-          if (dmErr && isAtharDebugLog()) console.warn('[get_staff_break_disable_message]', dmErr);
-          if (!dmErr && disableMsg && typeof disableMsg === 'object') {
-            state._staffBreakDisableMsg = {
-              enabled: !!disableMsg.enabled,
-              message: String(disableMsg.message || '')
-            };
-          } else if (!state._staffBreakDisableMsg) {
+          if (!state._staffBreakDisableMsg) {
             state._staffBreakDisableMsg = { enabled: false, message: '' };
           }
           const seenIds = new Set();
@@ -37573,6 +37611,8 @@
           } else {
             actionsHtml = `<button type="button" class="btn btn-primary rd-break-btn rd-break-btn--gold" onclick="startStaffBreakFromUi()">بدء البريك</button>`;
           }
+          // رسالة الإيقاف تظهر حتى لو بقي نوع آخر متاحاً (مثل دورة المياه)
+          if (!unscheduledToday) actionsHtml += getStaffBreakDisableNoticeHtml();
           return `
             <div class="rd-streak rd-break-card${isPaused ? ' rd-break-card--paused' : ''}${overtime ? ' rd-break-card--over' : ''}"
               id="rdBreaksRingHost" data-break-kind="${active ? (overtime ? 'overage' : 'active') : (isPaused ? 'paused' : (exhausted ? 'depleted' : (unscheduledToday ? 'unscheduled' : (colleague ? 'branchBusy' : 'ready'))))}">
@@ -37665,6 +37705,8 @@
         }
         if (def.note) {
           actionsHtml += `<div class="rd-break-note">${Sec.escapeHTML(def.note)}</div>`;
+        } else if (kind === 'ready' || kind === 'branchBusy' || kind === 'depleted') {
+          actionsHtml += getStaffBreakDisableNoticeHtml();
         }
 
         const badgeStyle = def.badge
