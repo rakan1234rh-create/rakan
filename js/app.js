@@ -22865,7 +22865,9 @@
         viewer.classList.remove('att-dragging');
         mountAttViewerTop();
         viewer.classList.add('open');
+        viewer.setAttribute('aria-hidden', 'false');
         document.body.style.overflow = 'hidden';
+        try { document.getElementById('attViewerCloseBtn')?.focus({ preventScroll: true }); } catch (_) {}
         if (t) {
           try { await repairViolationAttachmentPaths(t); } catch (_) {}
           state._attList = getVisibleAttachments(t);
@@ -22890,7 +22892,9 @@
         viewer.classList.remove('att-dragging');
         mountAttViewerTop();
         viewer.classList.add('open');
+        viewer.setAttribute('aria-hidden', 'false');
         document.body.style.overflow = 'hidden';
+        try { document.getElementById('attViewerCloseBtn')?.focus({ preventScroll: true }); } catch (_) {}
         renderAttViewer();
       }
 
@@ -23269,6 +23273,7 @@
         }
         const stage = viewer?.querySelector('.att-viewer-stage');
         viewer?.classList.remove('open', 'att-dragging');
+        viewer?.setAttribute('aria-hidden', 'true');
         resetAttViewerDragVisual(viewer, stage);
         document.getElementById('attViewerContent').innerHTML = '';
         if (state._attPdfBlobUrl) {
@@ -23891,12 +23896,12 @@
 
         if (wfState === 'emp' && (actAsAdmin || (hasPermission('respond_own_ticket') && (role === 'employee' || role === 'branch_manager') && t.employee_id === meId))) {
           buttons.push({ act: 'respond', label: RESP_SEND_LABEL, cls: 'btn-primary', icon: 'fa-paper-plane' });
-          respTextarea.placeholder = 'اكتب ردك على المخالفة... (مطلوب)';
+          respTextarea.placeholder = 'اكتب ردك على المخالفة… (مطلوب)';
         }
         else if (wfState === 'sup' && !isWorkflowStageSkipped('sup')
           && (actAsAdmin || (hasPermission('act_as_supervisor') && role === 'supervisor'))) {
           buttons.push({ act: 'sup_process', label: RESP_SEND_LABEL, cls: 'btn-primary', icon: 'fa-paper-plane' });
-          respTextarea.placeholder = 'أضف ملاحظاتك أو رأيك في التذكرة... (مطلوب)';
+          respTextarea.placeholder = 'أضف ملاحظاتك أو رأيك في التذكرة… (مطلوب)';
         }
         else if (wfState === 'aud' && !isWorkflowStageSkipped('aud')
           && (actAsAdmin || (hasPermission('act_as_auditor') && role === 'auditor'))) {
@@ -23907,7 +23912,7 @@
             icon: 'fa-paper-plane',
           });
           buttons.push({ act: 'aud_delete', label: 'إلغاء التذكرة', cls: 'btn-danger', icon: 'fa-times' });
-          respTextarea.placeholder = 'اكتب ملاحظات الرقابة الداخلية... (مطلوب)';
+          respTextarea.placeholder = 'اكتب ملاحظات الرقابة الداخلية… (مطلوب)';
         }
         else if (wfState === 'mgt' && !isWorkflowStageSkipped('mgt')
           && (actAsAdmin || (hasPermission('act_as_manager') && role === 'manager'))) {
@@ -23928,7 +23933,7 @@
             blockedWarnStrip = '<div class="td-resp-blocked-wrap"><button type="button" class="btn" disabled style="opacity:.7;cursor:not-allowed;width:100%;border-style:dashed;min-height:34px;font-size:11px">مخالفة مكررة هذا الشهر — يستوجب الخصم</button></div>';
           }
           buttons.push({ act: 'mgt_delete', label: 'إلغاء', cls: 'btn-danger', icon: 'fa-times', title: 'إلغاء (قرار إداري)' });
-          respTextarea.placeholder = 'اكتب ملاحظات الإدارة أو قرار التنبيه... (مطلوب)';
+          respTextarea.placeholder = 'اكتب ملاحظات الإدارة أو قرار التنبيه… (مطلوب)';
         }
         else if (wfState === 'hr' && !isWorkflowStageSkipped('hr')
           && (actAsAdmin || (hasPermission('act_as_hr') && role === 'hr'))) {
@@ -23945,7 +23950,7 @@
             blockedWarnStrip = '<div class="td-resp-blocked-wrap"><button type="button" class="btn" disabled style="opacity:.7;cursor:not-allowed;width:100%;border-style:dashed;min-height:34px;font-size:11px">مخالفة مكررة هذا الشهر — يستوجب الخصم</button></div>';
           }
           buttons.push({ act: 'hr_delete', label: 'إلغاء (قرار الموارد البشرية)', cls: 'btn-danger', icon: 'fa-times' });
-          respTextarea.placeholder = 'اكتب قرار الموارد البشرية أو ملاحظات التنبيه... (مطلوب)';
+          respTextarea.placeholder = 'اكتب قرار الموارد البشرية أو ملاحظات التنبيه… (مطلوب)';
         }
 
         if (!buttons.length) {
