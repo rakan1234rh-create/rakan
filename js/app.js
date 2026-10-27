@@ -37612,7 +37612,7 @@
             actionsHtml = `<button type="button" class="btn btn-primary rd-break-btn rd-break-btn--gold" onclick="startStaffBreakFromUi()">بدء البريك</button>`;
           }
           // رسالة الإيقاف تظهر حتى لو بقي نوع آخر متاحاً (مثل دورة المياه)
-          if (!unscheduledToday) actionsHtml += getStaffBreakDisableNoticeHtml();
+          if (!active && !isPaused && !unscheduledToday) actionsHtml += getStaffBreakDisableNoticeHtml();
           return `
             <div class="rd-streak rd-break-card${isPaused ? ' rd-break-card--paused' : ''}${overtime ? ' rd-break-card--over' : ''}"
               id="rdBreaksRingHost" data-break-kind="${active ? (overtime ? 'overage' : 'active') : (isPaused ? 'paused' : (exhausted ? 'depleted' : (unscheduledToday ? 'unscheduled' : (colleague ? 'branchBusy' : 'ready'))))}">
