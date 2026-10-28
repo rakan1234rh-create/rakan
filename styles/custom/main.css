@@ -27641,18 +27641,29 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: 40px;
-  padding: 0 16px;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 18px;
   border: 1px solid var(--mr-border);
   border-radius: 999px;
   background: var(--mr-primary);
   color: #fff;
   font: inherit;
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 700;
   cursor: pointer;
   box-shadow: 0 5px 14px rgba(15, 18, 36, .16);
+  transition: background-color .18s ease, border-color .18s ease, color .18s ease, box-shadow .18s ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 .rd-rp-download-btn:hover {
   background: var(--mr-primary-hover, var(--mr-primary));
+}
+.rd-rp-download-btn:focus {
+  outline: none;
+}
+.rd-rp-download-btn:focus-visible {
+  outline: 2px solid var(--mr-primary, var(--gold));
+  outline-offset: 3px;
 }

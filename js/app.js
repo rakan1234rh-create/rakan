@@ -29906,8 +29906,8 @@
           });
           // تقدير الالتزام: يبدأ 100 ويُخصم لكل مخالفة مؤثرة
           const hits = monthViols.filter((v) => !violationExcludedFromDeduction(v) && !(v.state === 'closed' && /ملغ/i.test(v.status_text || ''))).length;
-          const rate = Math.max(0, Math.min(100, 100 - hits * 4));
-          return { label: r.label, pct: Math.max(8, Math.round(rate)) };
+          const rate = Math.max(0, Math.min(100, Math.round(100 - hits * 4)));
+          return { label: r.label, rate, pct: Math.max(8, rate) };
         });
         return bars;
       }
@@ -30125,71 +30125,84 @@
             ];
 
         const metricsHtml = `
-          <div class="rd-rp-metrics">
+          <section class="rd-rp-metrics" aria-label="ملخص المؤشرات" aria-live="polite">
             ${metrics.map((m) => desk ? `
-              <div class="rd-rp-metric" style="animation-delay:${m.delay}s">
+              <article class="rd-rp-metric" style="animation-delay:${m.delay}s">
                 <div class="rd-rp-metric__label">${Sec.escapeHTML(m.label)}</div>
                 <div class="rd-rp-metric__value">${Sec.escapeHTML(m.value)}</div>
                 <div class="rd-rp-metric__trend">${Sec.escapeHTML(m.trend)}</div>
-              </div>` : `
-              <div class="rd-rp-metric" style="animation-delay:${m.delay}s">
+              </article>` : `
+              <article class="rd-rp-metric" style="animation-delay:${m.delay}s">
                 <div>
                   <div class="rd-rp-metric__label">${Sec.escapeHTML(m.label)}</div>
                   <div class="rd-rp-metric__trend">${Sec.escapeHTML(m.trend)}</div>
                 </div>
                 <div class="rd-rp-metric__value">${Sec.escapeHTML(m.value)}</div>
-              </div>`).join('')}
-          </div>`;
+              </article>`).join('')}
+          </section>`;
         const barsHtml = `
-          <div class="rd-rp-sec-title">اتجاه الالتزام الشهري</div>
-          <div class="rd-rp-bars-card">
-            <div class="rd-rp-bars" role="img" aria-label="اتجاه الالتزام الشهري">
-              ${bars.map((b) => `
-                <div class="rd-rp-bar">
-                  <div class="rd-rp-bar__track">
-                    <div class="rd-rp-bar__fill" style="height:${b.pct}%"></div>
-                  </div>
-                  <span class="rd-rp-bar__lbl">${Sec.escapeHTML(b.label)}</span>
-                </div>`).join('')}
+          <section class="rd-rp-section rd-rp-section--bars" aria-labelledby="rdRpBarsTitle">
+            <h3 class="rd-rp-sec-title" id="rdRpBarsTitle">اتجاه الالتزام الشهري</h3>
+            <div class="rd-rp-bars-card">
+              <div class="rd-rp-bars" role="img" aria-label="اتجاه الالتزام الشهري لآخر ستة أشهر">
+                ${bars.map((b) => {
+                  const rate = Number.isFinite(b.rate) ? b.rate : b.pct;
+                  return `
+                  <div class="rd-rp-bar" title="${Sec.escapeHTML(b.label)}: ${rate}%">
+                    <span class="rd-rp-bar__pct" aria-hidden="true">${rate}%</span>
+                    <div class="rd-rp-bar__track">
+                      <div class="rd-rp-bar__fill" style="height:${b.pct}%" aria-hidden="true"></div>
+                    </div>
+                    <span class="rd-rp-bar__lbl">${Sec.escapeHTML(b.label)}</span>
+                    <span class="sr-only">${Sec.escapeHTML(b.label)}: ${rate}٪</span>
+                  </div>`;
+                }).join('')}
+              </div>
             </div>
-          </div>`;
+          </section>`;
         const linksHtml = `
-          <div class="rd-rp-sec-title">تقارير سريعة</div>
-          <div class="rd-rp-links">
-            ${links.map((r) => `
-              <button type="button" class="rd-rp-link" style="animation-delay:${r.delay}s" onclick="${r.action}">
-                <div class="rd-rp-link__ico"><i class="fas ${r.icon}" aria-hidden="true"></i></div>
-                <div class="rd-rp-link__body">
-                  <div class="rd-rp-link__title">${Sec.escapeHTML(r.title)}</div>
-                  <div class="rd-rp-link__sub">${Sec.escapeHTML(r.sub)}</div>
-                </div>
-                <i class="fas fa-chevron-left rd-rp-link__chev" aria-hidden="true"></i>
-              </button>`).join('')}
-          </div>`;
-        const downloadHtml = `
-          <div class="rd-rp-download-row">
-            <button type="button" class="rd-rp-download-btn" onclick="exportReportExcel()">
+          <nav class="rd-rp-section rd-rp-section--links" aria-labelledby="rdRpLinksTitle">
+            <h3 class="rd-rp-sec-title" id="rdRpLinksTitle">تقارير سريعة</h3>
+            <div class="rd-rp-links">
+              ${links.map((r) => `
+                <button type="button" class="rd-rp-link" style="animation-delay:${r.delay}s" onclick="${r.action}">
+                  <span class="rd-rp-link__ico" aria-hidden="true"><i class="fas ${r.icon}" aria-hidden="true"></i></span>
+                  <span class="rd-rp-link__body">
+                    <span class="rd-rp-link__title">${Sec.escapeHTML(r.title)}</span>
+                    <span class="rd-rp-link__sub">${Sec.escapeHTML(r.sub)}</span>
+                  </span>
+                  <i class="fas fa-chevron-left rd-rp-link__chev" aria-hidden="true"></i>
+                </button>`).join('')}
+            </div>
+          </nav>`;
+        const headHtml = `
+          <header class="rd-rp-page-head">
+            <div class="rd-rp-page-head__text">
+              <h2 class="rd-rp-page-head__title">التقارير</h2>
+              <p class="rd-rp-page-head__sub">مؤشرات الأداء والاتجاهات والملخصات السريعة</p>
+            </div>
+            <button type="button" class="rd-rp-download-btn" onclick="exportReportExcel()" aria-label="تنزيل التقارير بصيغة Excel">
               <i class="fas fa-file-excel" aria-hidden="true"></i>
-              <span>تنزيل التقارير</span>
+              <span>تنزيل Excel</span>
             </button>
-          </div>`;
+          </header>`;
         return desk
-          ? `<div class="rd-rp-main">${downloadHtml}${metricsHtml}<div class="rd-rp-desk-split"><div class="rd-rp-desk-split__main">${barsHtml}</div><div class="rd-rp-desk-split__side">${linksHtml}</div></div></div>`
-          : `${downloadHtml}${metricsHtml}${barsHtml}${linksHtml}`;
+          ? `<div class="rd-rp-main">${headHtml}${metricsHtml}<div class="rd-rp-desk-split"><div class="rd-rp-desk-split__main">${barsHtml}</div><div class="rd-rp-desk-split__side">${linksHtml}</div></div></div>`
+          : `<div class="rd-rp-main rd-rp-main--mob">${headHtml}${metricsHtml}${barsHtml}${linksHtml}</div>`;
       }
 
       function rdRpDrillHead(icon, title, sub) {
         return `
-          <button type="button" class="rd-rp-back" onclick="rdBackReportsMain()">
-            <i class="fas fa-arrow-right" aria-hidden="true"></i>التقارير
+          <button type="button" class="rd-rp-back" onclick="rdBackReportsMain()" aria-label="العودة إلى التقارير">
+            <i class="fas fa-arrow-right" aria-hidden="true"></i><span>التقارير</span>
           </button>
-          <div class="rd-rp-drill-hero">
-            <div class="rd-rp-drill-hero__ico"><i class="fas ${icon}" aria-hidden="true"></i></div>
+          <header class="rd-rp-drill-hero">
+            <div class="rd-rp-drill-hero__ico" aria-hidden="true"><i class="fas ${icon}" aria-hidden="true"></i></div>
             <div>
-              <div class="rd-rp-drill-hero__title">${Sec.escapeHTML(title)}</div>
-              <div class="rd-rp-drill-hero__sub">${Sec.escapeHTML(sub)}</div>
+              <h2 class="rd-rp-drill-hero__title">${Sec.escapeHTML(title)}</h2>
+              <p class="rd-rp-drill-hero__sub">${Sec.escapeHTML(sub)}</p>
             </div>
-          </div>`;
+          </header>`;
       }
 
       function rdRpSortIcon(activeKey, key, dir) {
@@ -30221,6 +30234,10 @@
 
         const sortName = rdRpSortIcon(sortKey, 'name', sortDir);
         const sortResp = rdRpSortIcon(sortKey, 'response', sortDir);
+        const ariaSort = (key) => {
+          if (sortKey !== key) return 'none';
+          return sortDir === 1 ? 'ascending' : 'descending';
+        };
 
         const rowsHtml = rows.map((r, i) => {
           const color = rdRpScoreColorVar(r.response);
@@ -30228,56 +30245,59 @@
           const status = rdRpRespStatusLabel(r.response);
           const initial = String(r.name || '؟').trim().charAt(0) || '؟';
           return `
-            <div class="rd-rp-drill-row rd-rp-emp-row" style="animation-delay:${Math.min(0.3, i * 0.03)}s">
-              <div class="rd-rp-emp-cell rd-rp-emp-cell--name">
-                <span class="rd-rp-emp-av">${Sec.escapeHTML(initial)}</span>
+            <div class="rd-rp-drill-row rd-rp-emp-row" role="row" style="animation-delay:${Math.min(0.3, i * 0.03)}s">
+              <div class="rd-rp-emp-cell rd-rp-emp-cell--name" role="cell">
+                <span class="rd-rp-emp-av" aria-hidden="true">${Sec.escapeHTML(initial)}</span>
                 <span class="rd-rp-emp-name">${Sec.escapeHTML(r.name)}</span>
               </div>
-              <span class="rd-rp-emp-cell rd-rp-emp-branch">${Sec.escapeHTML(r.branchName)}</span>
-              <div class="rd-rp-emp-cell rd-rp-emp-bar">
-                <div class="rd-rp-bar-track"><div class="rd-rp-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+              <span class="rd-rp-emp-cell rd-rp-emp-branch" role="cell">${Sec.escapeHTML(r.branchName)}</span>
+              <div class="rd-rp-emp-cell rd-rp-emp-bar" role="cell" aria-label="معدل الاستجابة ${pct}">
+                <div class="rd-rp-bar-track" aria-hidden="true"><div class="rd-rp-bar-fill" style="width:${pct}%;background:${color}"></div></div>
                 <span class="rd-rp-emp-val" style="color:${color}">${pct}</span>
               </div>
-              <span class="rd-rp-emp-cell rd-rp-emp-count">${r.ticketCount}</span>
-              <span class="rd-rp-emp-cell rd-rp-emp-status" style="--sc:${color}">${Sec.escapeHTML(status)}</span>
+              <span class="rd-rp-emp-cell rd-rp-emp-count" role="cell">${r.ticketCount}</span>
+              <span class="rd-rp-emp-cell rd-rp-emp-status" role="cell" style="--sc:${color}">${Sec.escapeHTML(status)}</span>
             </div>`;
         }).join('');
 
         return `
           <div class="rd-rp-drill">
             ${rdRpDrillHead('fa-gauge-high', 'تقرير الاستجابة للموظفين', 'متوسط زمن الرد على البلاغات وسرعة التعامل معها')}
-            <div class="rd-rp-drill-metrics">
-              <div class="rd-rp-drill-metric">
+            <section class="rd-rp-drill-metrics" aria-label="ملخص الاستجابة" aria-live="polite">
+              <article class="rd-rp-drill-metric">
                 <div class="rd-rp-drill-metric__lbl">متوسط الاستجابة العام</div>
                 <div class="rd-rp-drill-metric__val" style="color:${rdRpScoreColorVar(avg)}">${avg == null ? '—' : avg}</div>
-              </div>
-              <div class="rd-rp-drill-metric">
+              </article>
+              <article class="rd-rp-drill-metric">
                 <div class="rd-rp-drill-metric__lbl">الأسرع استجابة</div>
                 <div class="rd-rp-drill-metric__val rd-rp-drill-metric__val--name" style="color:var(--success)">${Sec.escapeHTML(best?.name || '—')}</div>
                 <div class="rd-rp-drill-metric__sub">${best ? best.response : '—'}</div>
-              </div>
-              <div class="rd-rp-drill-metric">
+              </article>
+              <article class="rd-rp-drill-metric">
                 <div class="rd-rp-drill-metric__lbl">بحاجة لتحسين</div>
                 <div class="rd-rp-drill-metric__val rd-rp-drill-metric__val--name" style="color:var(--danger)">${Sec.escapeHTML(worst?.name || '—')}</div>
                 <div class="rd-rp-drill-metric__sub">${worst ? worst.response : '—'}</div>
-              </div>
-            </div>
+              </article>
+            </section>
             <div class="rd-rp-drill-toolbar">
-              <div class="figma-search-wrap wf-search rd-rp-drill-search">
-                <input type="text" class="figma-search-input" value="${Sec.escapeHTML(state._rdEmpResponseQuery || '')}"
-                  placeholder="ابحث بالاسم أو الفرع..." oninput="rdEmpResponseSearch(this.value)">
-                <button type="button" class="figma-search-btn" aria-label="بحث"><i class="fas fa-magnifying-glass"></i></button>
-              </div>
+              <label class="figma-search-wrap wf-search rd-rp-drill-search">
+                <span class="sr-only">بحث في تقرير الاستجابة</span>
+                <input type="search" class="figma-search-input" name="rd-emp-response-q" autocomplete="off" spellcheck="false"
+                  value="${Sec.escapeHTML(state._rdEmpResponseQuery || '')}"
+                  placeholder="ابحث بالاسم أو الفرع…" aria-label="ابحث بالاسم أو الفرع"
+                  oninput="rdEmpResponseSearch(this.value)">
+                <button type="button" class="figma-search-btn" tabindex="-1" aria-hidden="true"><i class="fas fa-magnifying-glass"></i></button>
+              </label>
             </div>
-            <div class="rd-rp-drill-table">
-              <div class="rd-rp-drill-thead rd-rp-emp-row">
-                <button type="button" class="rd-rp-th" onclick="rdEmpResponseSort('name')">الموظف<i class="fas ${sortName}" aria-hidden="true"></i></button>
-                <span class="rd-rp-th">الفرع</span>
-                <button type="button" class="rd-rp-th" onclick="rdEmpResponseSort('response')">معدل الاستجابة<i class="fas ${sortResp}" aria-hidden="true"></i></button>
-                <span class="rd-rp-th">التذاكر</span>
-                <span class="rd-rp-th">الحالة</span>
+            <div class="rd-rp-drill-table" role="table" aria-label="جدول استجابة الموظفين" aria-rowcount="${rows.length}">
+              <div class="rd-rp-drill-thead rd-rp-emp-row" role="row">
+                <button type="button" class="rd-rp-th" role="columnheader" aria-sort="${ariaSort('name')}" onclick="rdEmpResponseSort('name')">الموظف<i class="fas ${sortName}" aria-hidden="true"></i></button>
+                <span class="rd-rp-th" role="columnheader">الفرع</span>
+                <button type="button" class="rd-rp-th" role="columnheader" aria-sort="${ariaSort('response')}" onclick="rdEmpResponseSort('response')">معدل الاستجابة<i class="fas ${sortResp}" aria-hidden="true"></i></button>
+                <span class="rd-rp-th" role="columnheader">التذاكر</span>
+                <span class="rd-rp-th" role="columnheader">الحالة</span>
               </div>
-              ${rowsHtml || '<div class="rd-ticket-empty"><i class="fas fa-users"></i><p>لا توجد بيانات</p></div>'}
+              ${rowsHtml || '<div class="rd-ticket-empty" role="status"><i class="fas fa-users" aria-hidden="true"></i><p>لا توجد نتائج مطابقة</p></div>'}
             </div>
           </div>`;
       }
@@ -30295,6 +30315,7 @@
         const worst = withData.length ? withData.reduce((a, b) => (b.total > a.total ? b : a)) : null;
         const best = withData.length ? withData.reduce((a, b) => (b.total < a.total ? b : a)) : null;
         const sortTotal = rdRpSortIcon(sortKey, 'total', sortDir);
+        const totalSort = sortKey === 'total' ? (sortDir === 1 ? 'ascending' : 'descending') : 'none';
 
         const rowsHtml = rows.map((r, i) => {
           const t = Math.max(1, r.total);
@@ -30302,55 +30323,64 @@
           const mp = Math.round((r.medium / t) * 100);
           const lp = Math.round((r.low / t) * 100);
           const color = rdRpScoreColorVar(r.score);
+          const sevText = `عالية ${r.high}، متوسطة ${r.medium}، منخفضة ${r.low}`;
           return `
-            <div class="rd-rp-drill-row rd-rp-vb-row" style="animation-delay:${Math.min(0.3, i * 0.03)}s">
-              <span class="rd-rp-vb-cell rd-rp-vb-name">${Sec.escapeHTML(r.name)}</span>
-              <span class="rd-rp-vb-cell rd-rp-vb-region">${Sec.escapeHTML(r.regionName)}</span>
-              <span class="rd-rp-vb-cell rd-rp-vb-total">${r.total}</span>
-              <div class="rd-rp-vb-cell rd-rp-vb-sev" title="عالية:${r.high} · متوسطة:${r.medium} · منخفضة:${r.low}">
-                <div class="rd-rp-vb-sev__seg" style="width:${hp}%;background:var(--danger)"></div>
-                <div class="rd-rp-vb-sev__seg" style="width:${mp}%;background:var(--warning)"></div>
-                <div class="rd-rp-vb-sev__seg" style="width:${lp}%;background:var(--info)"></div>
+            <div class="rd-rp-drill-row rd-rp-vb-row" role="row" style="animation-delay:${Math.min(0.3, i * 0.03)}s">
+              <span class="rd-rp-vb-cell rd-rp-vb-name" role="cell">${Sec.escapeHTML(r.name)}</span>
+              <span class="rd-rp-vb-cell rd-rp-vb-region" role="cell">${Sec.escapeHTML(r.regionName)}</span>
+              <span class="rd-rp-vb-cell rd-rp-vb-total" role="cell">${r.total}</span>
+              <div class="rd-rp-vb-cell rd-rp-vb-sev" role="cell" aria-label="${sevText}" title="${sevText}">
+                <div class="rd-rp-vb-sev__seg" style="width:${hp}%;background:var(--danger)" aria-hidden="true"></div>
+                <div class="rd-rp-vb-sev__seg" style="width:${mp}%;background:var(--warning)" aria-hidden="true"></div>
+                <div class="rd-rp-vb-sev__seg" style="width:${lp}%;background:var(--info)" aria-hidden="true"></div>
               </div>
-              <span class="rd-rp-vb-cell rd-rp-vb-score" style="color:${color}">${r.score}</span>
+              <span class="rd-rp-vb-cell rd-rp-vb-score" role="cell" style="color:${color}">${r.score}</span>
             </div>`;
         }).join('');
 
         return `
           <div class="rd-rp-drill">
             ${rdRpDrillHead('fa-code-branch', 'تقرير المخالفات حسب الفرع', 'مقارنة عدد المخالفات وتوزيع خطورتها بين الفروع')}
-            <div class="rd-rp-drill-metrics">
-              <div class="rd-rp-drill-metric">
+            <section class="rd-rp-drill-metrics" aria-label="ملخص المخالفات حسب الفرع" aria-live="polite">
+              <article class="rd-rp-drill-metric">
                 <div class="rd-rp-drill-metric__lbl">إجمالي المخالفات</div>
                 <div class="rd-rp-drill-metric__val" style="color:var(--gold)">${total}</div>
-              </div>
-              <div class="rd-rp-drill-metric">
+              </article>
+              <article class="rd-rp-drill-metric">
                 <div class="rd-rp-drill-metric__lbl">الأكثر مخالفات</div>
                 <div class="rd-rp-drill-metric__val rd-rp-drill-metric__val--name" style="color:var(--danger)">${Sec.escapeHTML(worst?.name || '—')}</div>
                 <div class="rd-rp-drill-metric__sub">${worst ? worst.total : 0} مخالفة</div>
-              </div>
-              <div class="rd-rp-drill-metric">
+              </article>
+              <article class="rd-rp-drill-metric">
                 <div class="rd-rp-drill-metric__lbl">الأقل مخالفات</div>
                 <div class="rd-rp-drill-metric__val rd-rp-drill-metric__val--name" style="color:var(--success)">${Sec.escapeHTML(best?.name || '—')}</div>
                 <div class="rd-rp-drill-metric__sub">${best ? best.total : 0} مخالفة</div>
-              </div>
-            </div>
+              </article>
+            </section>
             <div class="rd-rp-drill-toolbar">
-              <div class="figma-search-wrap wf-search rd-rp-drill-search">
-                <input type="text" class="figma-search-input" value="${Sec.escapeHTML(state._rdVbQuery || '')}"
-                  placeholder="ابحث بالفرع أو المنطقة..." oninput="rdVbSearch(this.value)">
-                <button type="button" class="figma-search-btn" aria-label="بحث"><i class="fas fa-magnifying-glass"></i></button>
-              </div>
+              <label class="figma-search-wrap wf-search rd-rp-drill-search">
+                <span class="sr-only">بحث في تقرير المخالفات حسب الفرع</span>
+                <input type="search" class="figma-search-input" name="rd-vb-q" autocomplete="off" spellcheck="false"
+                  value="${Sec.escapeHTML(state._rdVbQuery || '')}"
+                  placeholder="ابحث بالفرع أو المنطقة…" aria-label="ابحث بالفرع أو المنطقة"
+                  oninput="rdVbSearch(this.value)">
+                <button type="button" class="figma-search-btn" tabindex="-1" aria-hidden="true"><i class="fas fa-magnifying-glass"></i></button>
+              </label>
+              <ul class="rd-rp-sev-legend" aria-label="مفتاح توزيع الخطورة">
+                <li><span class="rd-rp-sev-legend__swatch" style="background:var(--danger)" aria-hidden="true"></span>عالية</li>
+                <li><span class="rd-rp-sev-legend__swatch" style="background:var(--warning)" aria-hidden="true"></span>متوسطة</li>
+                <li><span class="rd-rp-sev-legend__swatch" style="background:var(--info)" aria-hidden="true"></span>منخفضة</li>
+              </ul>
             </div>
-            <div class="rd-rp-drill-table">
-              <div class="rd-rp-drill-thead rd-rp-vb-row">
-                <span class="rd-rp-th">الفرع</span>
-                <span class="rd-rp-th">المنطقة</span>
-                <button type="button" class="rd-rp-th" onclick="rdVbSort('total')">الإجمالي<i class="fas ${sortTotal}" aria-hidden="true"></i></button>
-                <span class="rd-rp-th">توزيع الخطورة</span>
-                <span class="rd-rp-th">معدل الالتزام</span>
+            <div class="rd-rp-drill-table" role="table" aria-label="جدول المخالفات حسب الفرع" aria-rowcount="${rows.length}">
+              <div class="rd-rp-drill-thead rd-rp-vb-row" role="row">
+                <span class="rd-rp-th" role="columnheader">الفرع</span>
+                <span class="rd-rp-th" role="columnheader">المنطقة</span>
+                <button type="button" class="rd-rp-th" role="columnheader" aria-sort="${totalSort}" onclick="rdVbSort('total')">الإجمالي<i class="fas ${sortTotal}" aria-hidden="true"></i></button>
+                <span class="rd-rp-th" role="columnheader">توزيع الخطورة</span>
+                <span class="rd-rp-th" role="columnheader">معدل الالتزام</span>
               </div>
-              ${rowsHtml || '<div class="rd-ticket-empty"><i class="fas fa-code-branch"></i><p>لا توجد بيانات</p></div>'}
+              ${rowsHtml || '<div class="rd-ticket-empty" role="status"><i class="fas fa-code-branch" aria-hidden="true"></i><p>لا توجد نتائج مطابقة</p></div>'}
             </div>
           </div>`;
       }
@@ -30376,74 +30406,109 @@
         const worstRow = rows.reduce((a, b) => (b.rate < a.rate ? b : a), rows[0] || { label: '—', rate: 0 });
 
         const barsHtml = rows.map((m, i) => `
-          <div class="rd-rp-mc-bar" style="animation-delay:${Math.min(0.3, i * 0.04)}s">
-            <span class="rd-rp-mc-bar__pct">${m.rate}%</span>
+          <div class="rd-rp-mc-bar" style="animation-delay:${Math.min(0.3, i * 0.04)}s" title="${Sec.escapeHTML(m.label)}: ${m.rate}%">
+            <span class="rd-rp-mc-bar__pct" aria-hidden="true">${m.rate}%</span>
             <div class="rd-rp-mc-bar__track">
-              <div class="rd-rp-mc-bar__fill" style="height:${m.rate}%"></div>
+              <div class="rd-rp-mc-bar__fill" style="height:${m.rate}%" aria-hidden="true"></div>
             </div>
             <span class="rd-rp-mc-bar__lbl">${Sec.escapeHTML(m.label)}</span>
+            <span class="sr-only">${Sec.escapeHTML(m.label)}: ${m.rate}٪</span>
           </div>`).join('');
 
         const rowsHtml = rows.map((m, i) => `
-          <div class="rd-rp-drill-row rd-rp-mc-row" style="animation-delay:${Math.min(0.3, i * 0.03)}s">
-            <span class="rd-rp-mc-cell rd-rp-mc-month">${Sec.escapeHTML(m.label)}</span>
-            <span class="rd-rp-mc-cell rd-rp-mc-rate" style="color:${m.color}">${m.rate}%</span>
-            <span class="rd-rp-mc-cell rd-rp-mc-viols">${m.violations}</span>
-            <span class="rd-rp-mc-cell rd-rp-mc-res">${m.resolved}</span>
-            <span class="rd-rp-mc-cell rd-rp-mc-delta" style="color:${m.deltaColor}">${Sec.escapeHTML(m.deltaLabel)}</span>
+          <div class="rd-rp-drill-row rd-rp-mc-row" role="row" style="animation-delay:${Math.min(0.3, i * 0.03)}s">
+            <span class="rd-rp-mc-cell rd-rp-mc-month" role="cell">${Sec.escapeHTML(m.label)}</span>
+            <span class="rd-rp-mc-cell rd-rp-mc-rate" role="cell" style="color:${m.color}">${m.rate}%</span>
+            <span class="rd-rp-mc-cell rd-rp-mc-viols" role="cell">${m.violations}</span>
+            <span class="rd-rp-mc-cell rd-rp-mc-res" role="cell">${m.resolved}</span>
+            <span class="rd-rp-mc-cell rd-rp-mc-delta" role="cell" style="color:${m.deltaColor}">${Sec.escapeHTML(m.deltaLabel)}</span>
           </div>`).join('');
 
         return `
           <div class="rd-rp-drill">
             ${rdRpDrillHead('fa-file-lines', 'تقرير الالتزام الشهري', 'ملخص تلقائي شهري لمعدل الالتزام على مستوى كل الفروع')}
-            <div class="rd-rp-drill-metrics">
-              <div class="rd-rp-drill-metric">
+            <section class="rd-rp-drill-metrics" aria-label="ملخص الالتزام الشهري" aria-live="polite">
+              <article class="rd-rp-drill-metric">
                 <div class="rd-rp-drill-metric__lbl">معدل الشهر الحالي</div>
                 <div class="rd-rp-drill-metric__val" style="color:${cur.color}">${cur.rate}%</div>
                 <div class="rd-rp-drill-metric__sub">${Sec.escapeHTML(trendLabel)}</div>
-              </div>
-              <div class="rd-rp-drill-metric">
+              </article>
+              <article class="rd-rp-drill-metric">
                 <div class="rd-rp-drill-metric__lbl">أفضل شهر</div>
                 <div class="rd-rp-drill-metric__val rd-rp-drill-metric__val--name" style="color:var(--success)">${Sec.escapeHTML(bestRow.label)}</div>
                 <div class="rd-rp-drill-metric__sub">${bestRow.rate}%</div>
-              </div>
-              <div class="rd-rp-drill-metric">
+              </article>
+              <article class="rd-rp-drill-metric">
                 <div class="rd-rp-drill-metric__lbl">أضعف شهر</div>
                 <div class="rd-rp-drill-metric__val rd-rp-drill-metric__val--name" style="color:var(--danger)">${Sec.escapeHTML(worstRow.label)}</div>
                 <div class="rd-rp-drill-metric__sub">${worstRow.rate}%</div>
+              </article>
+            </section>
+            <section class="rd-rp-mc-chart-card" aria-label="مخطط الالتزام الشهري">
+              <div class="rd-rp-mc-bars" role="img" aria-label="معدلات الالتزام الشهرية">${barsHtml}</div>
+            </section>
+            <h3 class="rd-rp-sec-title" id="rdRpMcDetailsTitle">التفاصيل الشهرية</h3>
+            <div class="rd-rp-drill-table" role="table" aria-labelledby="rdRpMcDetailsTitle" aria-rowcount="${rows.length}">
+              <div class="rd-rp-drill-thead rd-rp-mc-row" role="row">
+                <span class="rd-rp-th" role="columnheader">الشهر</span>
+                <span class="rd-rp-th" role="columnheader">معدل الالتزام</span>
+                <span class="rd-rp-th" role="columnheader">المخالفات</span>
+                <span class="rd-rp-th" role="columnheader">المغلقة</span>
+                <span class="rd-rp-th" role="columnheader">التغيّر عن الشهر السابق</span>
               </div>
-            </div>
-            <div class="rd-rp-mc-chart-card">
-              <div class="rd-rp-mc-bars">${barsHtml}</div>
-            </div>
-            <div class="rd-rp-sec-title">التفاصيل الشهرية</div>
-            <div class="rd-rp-drill-table">
-              <div class="rd-rp-drill-thead rd-rp-mc-row">
-                <span class="rd-rp-th">الشهر</span>
-                <span class="rd-rp-th">معدل الالتزام</span>
-                <span class="rd-rp-th">المخالفات</span>
-                <span class="rd-rp-th">المغلقة</span>
-                <span class="rd-rp-th">التغيّر عن الشهر السابق</span>
-              </div>
-              ${rowsHtml}
+              ${rowsHtml || '<div class="rd-ticket-empty" role="status"><i class="fas fa-file-lines" aria-hidden="true"></i><p>لا توجد بيانات شهرية</p></div>'}
             </div>
           </div>`;
+      }
+
+      function rdFocusReportsChrome() {
+        requestAnimationFrame(() => {
+          const host = document.getElementById('rdReports');
+          if (!host || host.hidden) return;
+          const back = host.querySelector('.rd-rp-back');
+          if (back) {
+            try { back.focus({ preventScroll: true }); } catch (_) { try { back.focus(); } catch (__) {} }
+            return;
+          }
+          const heading = host.querySelector('.rd-rp-page-head__title, .rd-rp-drill-hero__title');
+          if (heading && typeof heading.focus === 'function') {
+            if (!heading.hasAttribute('tabindex')) heading.setAttribute('tabindex', '-1');
+            try { heading.focus({ preventScroll: true }); } catch (_) {}
+          }
+        });
       }
 
       function rdOpenReportView(viewId) {
         const allowed = ['main', 'employeeResponse', 'violationsByBranch', 'monthlyCompliance'];
         state._rdReportView = allowed.includes(viewId) ? viewId : 'main';
         renderReportsRedesign();
+        rdFocusReportsChrome();
       }
 
       function rdBackReportsMain() {
         state._rdReportView = 'main';
         renderReportsRedesign();
+        rdFocusReportsChrome();
+      }
+
+      function rdRestoreReportsSearchFocus(inputName, selStart, selEnd) {
+        requestAnimationFrame(() => {
+          const next = document.querySelector(`#rdReports input[name="${inputName}"]`);
+          if (!next) return;
+          try { next.focus({ preventScroll: true }); } catch (_) { try { next.focus(); } catch (__) {} }
+          if (typeof selStart === 'number' && typeof selEnd === 'number') {
+            try { next.setSelectionRange(selStart, selEnd); } catch (_) {}
+          }
+        });
       }
 
       function rdEmpResponseSearch(val) {
+        const active = document.activeElement;
+        const selStart = active && active.name === 'rd-emp-response-q' ? active.selectionStart : null;
+        const selEnd = active && active.name === 'rd-emp-response-q' ? active.selectionEnd : null;
         state._rdEmpResponseQuery = val || '';
         renderReportsRedesign();
+        rdRestoreReportsSearchFocus('rd-emp-response-q', selStart, selEnd);
       }
 
       function rdEmpResponseSort(key) {
@@ -30453,8 +30518,12 @@
       }
 
       function rdVbSearch(val) {
+        const active = document.activeElement;
+        const selStart = active && active.name === 'rd-vb-q' ? active.selectionStart : null;
+        const selEnd = active && active.name === 'rd-vb-q' ? active.selectionEnd : null;
         state._rdVbQuery = val || '';
         renderReportsRedesign();
+        rdRestoreReportsSearchFocus('rd-vb-q', selStart, selEnd);
       }
 
       function rdVbSort(key) {
