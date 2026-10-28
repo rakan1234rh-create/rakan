@@ -27647,7 +27647,7 @@
   border: 1px solid var(--mr-border);
   border-radius: 999px;
   background: var(--mr-primary);
-  color: #fff;
+  color: var(--mr-primary-text, #fff);
   font: inherit;
   font-size: 12.5px;
   font-weight: 700;
@@ -27659,6 +27659,7 @@
 }
 .rd-rp-download-btn:hover {
   background: var(--mr-primary-hover, var(--mr-primary));
+  color: var(--mr-primary-text, #fff);
 }
 .rd-rp-download-btn:focus {
   outline: none;

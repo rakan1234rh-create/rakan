@@ -102,16 +102,27 @@ html.athar-staging-redesign.mr-desktop-ui #tab-reports .wf-panel-intro {
   max-width: 22px;
   border-radius: 6px 6px 0 0;
   background: var(--gold);
-  min-height: 4px;
+  flex: 0 0 auto;
   transition: height .35s ease;
 }
-.rd-rp-bar__track {
+.rd-rp-bar__track,
+.rd-rp-mc-bar__track {
   flex: 1 1 auto;
   min-height: 0;
   width: 100%;
   display: flex;
-  align-items: flex-end;
+  align-items: stretch;
   justify-content: center;
+}
+.rd-rp-bar__stack,
+.rd-rp-mc-bar__stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
 }
 .rd-rp-bar__lbl {
   flex: 0 0 auto;
@@ -122,13 +133,15 @@ html.athar-staging-redesign.mr-desktop-ui #tab-reports .wf-panel-intro {
   overflow: visible;
   text-align: center;
 }
-.rd-rp-mc-bar__track {
-  flex: 1 1 auto;
-  min-height: 0;
-  width: 100%;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
+.rd-rp-bar.is-zero .rd-rp-bar__fill,
+.rd-rp-mc-bar.is-zero .rd-rp-mc-bar__fill {
+  height: 2px !important;
+  min-height: 2px;
+  opacity: 0.45;
+}
+.rd-rp-bar.is-zero .rd-rp-bar__pct,
+.rd-rp-mc-bar.is-zero .rd-rp-mc-bar__pct {
+  margin-bottom: 2px;
 }
 .rd-rp-links {
   display: flex;
@@ -713,7 +726,7 @@ html.athar-staging-redesign.mr-desktop-ui .rd-rp-mc-bar__fill {
   max-width: 36px;
   border-radius: 8px 8px 0 0;
   background: var(--gold);
-  min-height: 4px;
+  flex: 0 0 auto;
 }
 
 html.athar-staging-redesign.mr-desktop-ui .rd-rp-mc-bar__lbl {
@@ -804,8 +817,18 @@ html.athar-staging-redesign.mr-desktop-ui .rd-rp-mc-bar__track {
   min-height: 0 !important;
   width: 100% !important;
   display: flex !important;
-  align-items: flex-end !important;
+  align-items: stretch !important;
   justify-content: center !important;
+}
+html.athar-staging-redesign.mr-desktop-ui #tab-reports .rd-rp-bar__stack,
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-mc-bar__stack {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
 }
 html.athar-staging-redesign.mr-desktop-ui #tab-reports .rd-rp-bar__fill,
 html.athar-staging-redesign.mr-desktop-ui .rd-rp-mc-bar__fill {
@@ -813,6 +836,7 @@ html.athar-staging-redesign.mr-desktop-ui .rd-rp-mc-bar__fill {
   width: 100% !important;
   max-width: 36px !important;
   align-self: center !important;
+  min-height: 0 !important;
 }
 html.athar-staging-redesign.mr-desktop-ui #tab-reports .rd-rp-bar__lbl,
 html.athar-staging-redesign.mr-desktop-ui .rd-rp-mc-bar__lbl {
@@ -830,9 +854,12 @@ html.athar-staging-redesign.mr-desktop-ui .rd-rp-mc-bar__lbl {
   transform: none !important;
   letter-spacing: 0 !important;
 }
-html.athar-staging-redesign.mr-desktop-ui .rd-rp-mc-bar__pct {
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-mc-bar__pct,
+html.athar-staging-redesign.mr-desktop-ui #tab-reports .rd-rp-bar__pct {
   flex: 0 0 auto !important;
   margin-bottom: 4px !important;
+  position: static !important;
+  transform: none !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -960,7 +987,8 @@ html.athar-staging-redesign.mr-mobile-ui #rdReports.rd-reports {
   font-feature-settings: "tnum" 1, "lnum" 1;
 }
 
-.rd-rp-bar__pct {
+.rd-rp-bar__pct,
+.rd-rp-mc-bar__pct {
   display: block;
   flex: 0 0 auto;
   font-size: 10px;
@@ -968,6 +996,8 @@ html.athar-staging-redesign.mr-mobile-ui #rdReports.rd-reports {
   line-height: 1.2;
   color: var(--text3);
   margin-bottom: 4px;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
 }
 
 .rd-rp-sev-legend {
@@ -1192,4 +1222,225 @@ html.athar-staging-redesign.mr-mobile-ui .rd-rp-drill-search {
   .rd-rp-bar-fill {
     transition: none !important;
   }
+}
+
+/* ── Employee monthly compliance report ── */
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-month-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-month-field__lbl {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text2);
+  white-space: nowrap;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-month-select {
+  min-height: 40px;
+  min-width: 160px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-month-select:focus-visible {
+  outline: 2px solid var(--mr-primary, var(--gold));
+  outline-offset: 2px;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-drill-thead.rd-rp-emc-row,
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-drill-row.rd-rp-emc-row,
+html.athar-staging-redesign.mr-desktop-ui article.rd-rp-emc-row {
+  display: grid;
+  grid-template-columns: 1.6fr 1.3fr 90px 90px minmax(220px, 2fr);
+  gap: 12px;
+  align-items: start;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-drill-thead.rd-rp-emc-row {
+  align-items: center;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-cell--name {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-name-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-empno {
+  font-size: 11px;
+  color: var(--text3);
+  font-variant-numeric: tabular-nums;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-rate {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-count {
+  font-variant-numeric: tabular-nums;
+  color: var(--text2);
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-viols {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-viol {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 7px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface2) 80%, transparent);
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-viol--high {
+  border-color: color-mix(in srgb, var(--danger) 35%, var(--border));
+  background: color-mix(in srgb, var(--danger) 8%, var(--surface));
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-viol--mid {
+  border-color: color-mix(in srgb, var(--warning) 35%, var(--border));
+  background: color-mix(in srgb, var(--warning) 8%, var(--surface));
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-viol--low {
+  border-color: color-mix(in srgb, var(--info) 30%, var(--border));
+  background: color-mix(in srgb, var(--info) 7%, var(--surface));
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-viol--none {
+  border-style: dashed;
+  color: var(--text3);
+  font-size: 12px;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-viol__name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-viol__meta {
+  font-size: 10.5px;
+  color: var(--text3);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 1100px) {
+  html.athar-staging-redesign.mr-desktop-ui .rd-rp-drill-thead.rd-rp-emc-row,
+  html.athar-staging-redesign.mr-desktop-ui .rd-rp-drill-row.rd-rp-emc-row,
+  html.athar-staging-redesign.mr-desktop-ui article.rd-rp-emc-row {
+    grid-template-columns: 1.4fr 1fr 70px 70px minmax(180px, 1.6fr) !important;
+  }
+}
+
+/* ── Dark mode: report buttons follow platform tokens ── */
+html[data-theme="dark"] .rd-rp-download-btn,
+[data-theme="dark"] .rd-rp-download-btn {
+  background: var(--mr-primary) !important;
+  color: var(--mr-primary-text, #000) !important;
+  border-color: color-mix(in srgb, var(--mr-primary) 70%, var(--mr-border)) !important;
+  box-shadow: 0 5px 16px rgba(0, 0, 0, 0.35);
+}
+
+html[data-theme="dark"] .rd-rp-download-btn i,
+[data-theme="dark"] .rd-rp-download-btn i,
+html[data-theme="dark"] .rd-rp-download-btn span,
+[data-theme="dark"] .rd-rp-download-btn span {
+  color: inherit !important;
+}
+
+html[data-theme="dark"] .rd-rp-download-btn:hover,
+[data-theme="dark"] .rd-rp-download-btn:hover {
+  background: var(--mr-primary-hover, var(--mr-primary)) !important;
+  color: var(--mr-primary-text, #000) !important;
+}
+
+html[data-theme="dark"] .rd-rp-link,
+[data-theme="dark"] .rd-rp-link {
+  background: var(--surface) !important;
+  border-color: var(--border) !important;
+  color: var(--text) !important;
+}
+
+html[data-theme="dark"] .rd-rp-link:hover,
+[data-theme="dark"] .rd-rp-link:hover {
+  background: color-mix(in srgb, var(--surface2) 85%, var(--surface)) !important;
+  border-color: color-mix(in srgb, var(--gold, var(--mr-primary)) 28%, var(--border)) !important;
+}
+
+html[data-theme="dark"] .rd-rp-link__title,
+[data-theme="dark"] .rd-rp-link__title {
+  color: var(--text) !important;
+}
+
+html[data-theme="dark"] .rd-rp-link__sub,
+html[data-theme="dark"] .rd-rp-link__chev,
+[data-theme="dark"] .rd-rp-link__sub,
+[data-theme="dark"] .rd-rp-link__chev {
+  color: var(--text3) !important;
+}
+
+html[data-theme="dark"] .rd-rp-link__ico,
+[data-theme="dark"] .rd-rp-link__ico {
+  background: var(--goldSoft, var(--mr-primary-soft)) !important;
+  color: var(--gold, var(--mr-primary)) !important;
+}
+
+html[data-theme="dark"] .rd-rp-back,
+[data-theme="dark"] .rd-rp-back {
+  color: var(--text2) !important;
+  background: transparent !important;
+}
+
+html[data-theme="dark"] .rd-rp-back:hover,
+[data-theme="dark"] .rd-rp-back:hover {
+  color: var(--text) !important;
+}
+
+html[data-theme="dark"] .rd-rp-month-select,
+[data-theme="dark"] .rd-rp-month-select {
+  background: var(--surface2, var(--surface)) !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+}
+
+html[data-theme="dark"] button.rd-rp-th,
+[data-theme="dark"] button.rd-rp-th {
+  color: var(--text2) !important;
+  background: transparent !important;
 }
