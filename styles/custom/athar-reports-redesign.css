@@ -1550,18 +1550,28 @@ html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-viols {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 0;
 }
 
 html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-viol {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
-  padding: 8px 10px;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: color-mix(in srgb, var(--surface2) 55%, var(--surface));
+  gap: 12px;
+  padding: 10px 2px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  background: transparent;
   min-width: 0;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-viol:last-child {
+  border-bottom: 0;
+  padding-bottom: 2px;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-viol:first-child {
+  padding-top: 2px;
 }
 
 html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-sev {
@@ -1576,48 +1586,42 @@ html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-sev {
   font-size: 11px;
   font-weight: 700;
   line-height: 1;
-  background: var(--surface);
+  background: transparent;
   color: var(--text2);
   border: 1px solid var(--border);
 }
 
-html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-viol--high {
-  border-color: color-mix(in srgb, var(--danger) 32%, var(--border));
-  background: color-mix(in srgb, var(--danger) 7%, var(--surface));
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-viol--high,
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-viol--mid,
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-viol--low {
+  background: transparent;
+  border-color: transparent;
+  border-bottom-color: var(--border);
 }
 
 html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-viol--high .rd-rp-emc-sev {
   color: var(--danger);
-  border-color: color-mix(in srgb, var(--danger) 35%, var(--border));
-  background: color-mix(in srgb, var(--danger) 10%, var(--surface));
-}
-
-html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-viol--mid {
-  border-color: color-mix(in srgb, var(--warning) 32%, var(--border));
-  background: color-mix(in srgb, var(--warning) 7%, var(--surface));
+  border-color: color-mix(in srgb, var(--danger) 45%, var(--border));
+  background: transparent;
 }
 
 html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-viol--mid .rd-rp-emc-sev {
-  color: color-mix(in srgb, var(--warning) 80%, var(--text));
-  border-color: color-mix(in srgb, var(--warning) 35%, var(--border));
-  background: color-mix(in srgb, var(--warning) 10%, var(--surface));
-}
-
-html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-viol--low {
-  border-color: color-mix(in srgb, var(--info) 28%, var(--border));
-  background: color-mix(in srgb, var(--info) 6%, var(--surface));
+  color: color-mix(in srgb, var(--warning) 85%, var(--text));
+  border-color: color-mix(in srgb, var(--warning) 45%, var(--border));
+  background: transparent;
 }
 
 html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-viol--low .rd-rp-emc-sev {
   color: var(--info);
-  border-color: color-mix(in srgb, var(--info) 30%, var(--border));
-  background: color-mix(in srgb, var(--info) 9%, var(--surface));
+  border-color: color-mix(in srgb, var(--info) 40%, var(--border));
+  background: transparent;
 }
 
 html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-viol--none {
   align-items: center;
   gap: 8px;
-  border-style: dashed;
+  border-bottom: 0;
+  padding: 6px 2px;
   color: var(--text3);
   font-size: 12.5px;
   background: transparent;
@@ -1659,11 +1663,12 @@ html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-viol-details__sum {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  min-height: 40px;
-  padding: 8px 12px;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: var(--surface2);
+  min-height: 36px;
+  padding: 6px 2px;
+  border-radius: 0;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
   color: var(--text2);
   font-size: 12.5px;
   font-weight: 600;
