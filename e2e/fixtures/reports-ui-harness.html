@@ -24,10 +24,30 @@
       --info: #007aff;
       --mr-primary: #000000;
       --mr-primary-hover: #1c1c1e;
+      --mr-primary-text: #ffffff;
       --mr-primary-soft: rgba(0, 0, 0, 0.08);
       --mr-primary-softer: rgba(0, 0, 0, 0.04);
       --mr-border: rgba(60, 60, 67, 0.18);
       --searchFill: rgba(118, 118, 128, 0.12);
+    }
+    html[data-theme="dark"] {
+      --text: #fafafa;
+      --text2: #c8c8d0;
+      --text3: #a1a1aa;
+      --surface: #1c1c1e;
+      --surface2: #2c2c2e;
+      --border: rgba(255, 255, 255, 0.14);
+      --gold: #ffffff;
+      --onGold: #000000;
+      --goldSoft: rgba(255, 255, 255, 0.14);
+      --mr-primary: #ffffff;
+      --mr-primary-hover: #e5e5ea;
+      --mr-primary-text: #000000;
+      --mr-primary-soft: rgba(255, 255, 255, 0.14);
+      --mr-primary-softer: rgba(255, 255, 255, 0.09);
+      --mr-border: rgba(255, 255, 255, 0.14);
+      --searchFill: rgba(118, 118, 128, 0.24);
+      color-scheme: dark;
     }
     * { box-sizing: border-box; }
     body {
@@ -37,6 +57,7 @@
       color: var(--text);
       padding: 24px;
     }
+    html[data-theme="dark"] body { background: #131316; }
     #appWrap { max-width: 1100px; margin: 0 auto; }
     #tab-reports.tab-content.active { display: block; }
     .sr-only {
@@ -47,11 +68,10 @@
   </style>
   <link rel="stylesheet" href="../../styles/custom/athar-reports-redesign.css">
   <style>
-    /* Minimal layout tokens for harness when served from e2e/fixtures */
     .rd-rp-download-btn {
       display: inline-flex; align-items: center; justify-content: center; gap: 8px;
       min-height: 44px; padding: 0 18px; border: 1px solid var(--border); border-radius: 999px;
-      background: var(--mr-primary); color: #fff; font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer;
+      background: var(--mr-primary); color: var(--mr-primary-text, #fff); font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer;
     }
     .rd-rp-download-btn:focus-visible { outline: 2px solid var(--mr-primary); outline-offset: 3px; }
     .rd-rp-page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px 18px; flex-wrap: wrap; margin: 0 0 18px; }
@@ -66,10 +86,12 @@
     .rd-rp-sec-title { margin: 0 0 12px; font-size: 13.5px; font-weight: 700; color: var(--text); }
     .rd-rp-bars-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px; }
     .rd-rp-bars { display: flex; align-items: stretch; justify-content: space-between; height: 180px; gap: 16px; }
-    .rd-rp-bar { flex: 1 1 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; min-width: 0; gap: 0; }
+    .rd-rp-bar { flex: 1 1 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; min-width: 0; gap: 0; height: 100%; }
+    .rd-rp-bar__track { flex: 1 1 auto; min-height: 0; width: 100%; display: flex; align-items: stretch; justify-content: center; }
+    .rd-rp-bar__stack { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; width: 100%; height: 100%; min-height: 0; }
     .rd-rp-bar__pct { flex: 0 0 auto; font-size: 11px; font-weight: 600; color: var(--text2); margin-bottom: 4px; font-variant-numeric: tabular-nums; }
-    .rd-rp-bar__track { flex: 1 1 auto; min-height: 0; width: 100%; display: flex; align-items: flex-end; justify-content: center; }
-    .rd-rp-bar__fill { width: 100%; max-width: 36px; border-radius: 8px 8px 0 0; background: var(--gold); min-height: 4px; }
+    .rd-rp-bar__fill { width: 100%; max-width: 36px; border-radius: 8px 8px 0 0; background: var(--gold); flex: 0 0 auto; }
+    .rd-rp-bar.is-zero .rd-rp-bar__fill { height: 2px !important; min-height: 2px; opacity: 0.45; }
     .rd-rp-bar__lbl { flex: 0 0 auto; margin-top: 8px; font-size: 12px; color: var(--text2); white-space: nowrap; }
     .rd-rp-links { display: flex; flex-direction: column; gap: 10px; }
     .rd-rp-link { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 44px; text-align: start; font-family: inherit; color: inherit; cursor: pointer; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px; }
@@ -120,13 +142,13 @@
                 <section class="rd-rp-section rd-rp-section--bars" aria-labelledby="rdRpBarsTitle">
                   <h3 class="rd-rp-sec-title" id="rdRpBarsTitle">اتجاه الالتزام الشهري</h3>
                   <div class="rd-rp-bars-card">
-                    <div class="rd-rp-bars" role="img" aria-label="اتجاه الالتزام الشهري لآخر ستة أشهر">
-                      <div class="rd-rp-bar" title="مايو: 88%"><span class="rd-rp-bar__pct" aria-hidden="true">88%</span><div class="rd-rp-bar__track"><div class="rd-rp-bar__fill" style="height:88%" aria-hidden="true"></div></div><span class="rd-rp-bar__lbl">مايو</span></div>
-                      <div class="rd-rp-bar" title="يونيو: 84%"><span class="rd-rp-bar__pct" aria-hidden="true">84%</span><div class="rd-rp-bar__track"><div class="rd-rp-bar__fill" style="height:84%" aria-hidden="true"></div></div><span class="rd-rp-bar__lbl">يونيو</span></div>
-                      <div class="rd-rp-bar" title="يوليو: 90%"><span class="rd-rp-bar__pct" aria-hidden="true">90%</span><div class="rd-rp-bar__track"><div class="rd-rp-bar__fill" style="height:90%" aria-hidden="true"></div></div><span class="rd-rp-bar__lbl">يوليو</span></div>
-                      <div class="rd-rp-bar" title="أغسطس: 86%"><span class="rd-rp-bar__pct" aria-hidden="true">86%</span><div class="rd-rp-bar__track"><div class="rd-rp-bar__fill" style="height:86%" aria-hidden="true"></div></div><span class="rd-rp-bar__lbl">أغسطس</span></div>
-                      <div class="rd-rp-bar" title="سبتمبر: 91%"><span class="rd-rp-bar__pct" aria-hidden="true">91%</span><div class="rd-rp-bar__track"><div class="rd-rp-bar__fill" style="height:91%" aria-hidden="true"></div></div><span class="rd-rp-bar__lbl">سبتمبر</span></div>
-                      <div class="rd-rp-bar" title="أكتوبر: 92%"><span class="rd-rp-bar__pct" aria-hidden="true">92%</span><div class="rd-rp-bar__track"><div class="rd-rp-bar__fill" style="height:92%" aria-hidden="true"></div></div><span class="rd-rp-bar__lbl">أكتوبر</span></div>
+                    <div class="rd-rp-bars" role="img" aria-label="اتجاه الالتزام الشهري لآخر ستة أشهر" data-testid="rp-bars">
+                      <div class="rd-rp-bar" title="مايو: 88%"><div class="rd-rp-bar__track"><div class="rd-rp-bar__stack"><span class="rd-rp-bar__pct" aria-hidden="true">88%</span><div class="rd-rp-bar__fill" style="height:88%" aria-hidden="true"></div></div></div><span class="rd-rp-bar__lbl">مايو</span></div>
+                      <div class="rd-rp-bar is-zero" data-testid="rp-bar-zero" title="يونيو: 0%"><div class="rd-rp-bar__track"><div class="rd-rp-bar__stack"><span class="rd-rp-bar__pct" aria-hidden="true">0%</span><div class="rd-rp-bar__fill" style="height:0%" aria-hidden="true"></div></div></div><span class="rd-rp-bar__lbl">يونيو</span></div>
+                      <div class="rd-rp-bar" title="يوليو: 90%"><div class="rd-rp-bar__track"><div class="rd-rp-bar__stack"><span class="rd-rp-bar__pct" aria-hidden="true">90%</span><div class="rd-rp-bar__fill" style="height:90%" aria-hidden="true"></div></div></div><span class="rd-rp-bar__lbl">يوليو</span></div>
+                      <div class="rd-rp-bar" title="أغسطس: 86%"><div class="rd-rp-bar__track"><div class="rd-rp-bar__stack"><span class="rd-rp-bar__pct" aria-hidden="true">86%</span><div class="rd-rp-bar__fill" style="height:86%" aria-hidden="true"></div></div></div><span class="rd-rp-bar__lbl">أغسطس</span></div>
+                      <div class="rd-rp-bar" title="سبتمبر: 91%"><div class="rd-rp-bar__track"><div class="rd-rp-bar__stack"><span class="rd-rp-bar__pct" aria-hidden="true">91%</span><div class="rd-rp-bar__fill" style="height:91%" aria-hidden="true"></div></div></div><span class="rd-rp-bar__lbl">سبتمبر</span></div>
+                      <div class="rd-rp-bar" title="أكتوبر: 92%"><div class="rd-rp-bar__track"><div class="rd-rp-bar__stack"><span class="rd-rp-bar__pct" aria-hidden="true">92%</span><div class="rd-rp-bar__fill" style="height:92%" aria-hidden="true"></div></div></div><span class="rd-rp-bar__lbl">أكتوبر</span></div>
                     </div>
                   </div>
                 </section>
@@ -135,6 +157,14 @@
                 <nav class="rd-rp-section rd-rp-section--links" aria-labelledby="rdRpLinksTitle">
                   <h3 class="rd-rp-sec-title" id="rdRpLinksTitle">تقارير سريعة</h3>
                   <div class="rd-rp-links">
+                    <button type="button" class="rd-rp-link" data-testid="rp-link-emc">
+                      <span class="rd-rp-link__ico" aria-hidden="true"><i class="fas fa-user-check" aria-hidden="true"></i></span>
+                      <span class="rd-rp-link__body">
+                        <span class="rd-rp-link__title">تقرير الالتزام الشهري للموظفين</span>
+                        <span class="rd-rp-link__sub">لكل موظف ومخالفاته حسب الشهر</span>
+                      </span>
+                      <i class="fas fa-chevron-left rd-rp-link__chev" aria-hidden="true"></i>
+                    </button>
                     <button type="button" class="rd-rp-link" data-testid="rp-link-mc">
                       <span class="rd-rp-link__ico" aria-hidden="true"><i class="fas fa-file-lines" aria-hidden="true"></i></span>
                       <span class="rd-rp-link__body">

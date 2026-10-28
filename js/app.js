@@ -29907,7 +29907,7 @@
           // تقدير الالتزام: يبدأ 100 ويُخصم لكل مخالفة مؤثرة
           const hits = monthViols.filter((v) => !violationExcludedFromDeduction(v) && !(v.state === 'closed' && /ملغ/i.test(v.status_text || ''))).length;
           const rate = Math.max(0, Math.min(100, Math.round(100 - hits * 4)));
-          return { label: r.label, rate, pct: Math.max(8, rate) };
+          return { label: r.label, rate, pct: rate };
         });
         return bars;
       }
@@ -30072,6 +30072,8 @@
           host.innerHTML = rdRpRenderViolationsByBranch();
         } else if (view === 'monthlyCompliance') {
           host.innerHTML = rdRpRenderMonthlyCompliance();
+        } else if (view === 'employeeMonthlyCompliance') {
+          host.innerHTML = rdRpRenderEmployeeMonthlyCompliance();
         } else {
           host.innerHTML = rdRpRenderMain(desk);
         }
@@ -30114,11 +30116,13 @@
         const bars = rdMonthlyCommitmentBars(allVisible);
         const links = desk
           ? [
+              { title: 'تقرير الالتزام الشهري للموظفين', sub: 'لكل موظف ومخالفاته حسب الشهر', icon: 'fa-user-check', action: "rdOpenReportView('employeeMonthlyCompliance')", delay: 0.02 },
               { title: 'تقرير الالتزام الشهري', sub: 'ملخص تلقائي شهري لكل الفروع', icon: 'fa-file-lines', action: "rdOpenReportView('monthlyCompliance')", delay: 0.05 },
               { title: 'تقرير المخالفات حسب الفرع', sub: 'مقارنة الأداء بين الفروع', icon: 'fa-code-branch', action: "rdOpenReportView('violationsByBranch')", delay: 0.1 },
               { title: 'تقرير الاستجابة للموظفين', sub: 'متوسط زمن الرد على البلاغات', icon: 'fa-gauge-high', action: "rdOpenReportView('employeeResponse')", delay: 0.15 },
             ]
           : [
+              { title: 'تقرير الالتزام الشهري للموظفين', sub: 'لكل موظف ومخالفاته حسب الشهر', icon: 'fa-user-check', action: "goTab('compliance')", delay: 0.02 },
               { title: 'تقرير الالتزام الشهري', sub: 'ملخص تلقائي شهري لكل الفروع', icon: 'fa-file-lines', action: "goTab('compliance')", delay: 0.05 },
               { title: 'تقرير المخالفات حسب الفرع', sub: 'مقارنة الأداء بين الفروع', icon: 'fa-code-branch', action: "goTab('locations')", delay: 0.1 },
               { title: 'تقرير الاستجابة للموظفين', sub: 'متوسط زمن الرد على البلاغات', icon: 'fa-gauge-high', action: "goTab('departments')", delay: 0.15 },
@@ -30147,11 +30151,15 @@
               <div class="rd-rp-bars" role="img" aria-label="اتجاه الالتزام الشهري لآخر ستة أشهر">
                 ${bars.map((b) => {
                   const rate = Number.isFinite(b.rate) ? b.rate : b.pct;
+                  const h = Math.max(0, Math.min(100, Number(b.pct) || 0));
+                  const zeroCls = h <= 0 ? ' is-zero' : '';
                   return `
-                  <div class="rd-rp-bar" title="${Sec.escapeHTML(b.label)}: ${rate}%">
-                    <span class="rd-rp-bar__pct" aria-hidden="true">${rate}%</span>
+                  <div class="rd-rp-bar${zeroCls}" title="${Sec.escapeHTML(b.label)}: ${rate}%">
                     <div class="rd-rp-bar__track">
-                      <div class="rd-rp-bar__fill" style="height:${b.pct}%" aria-hidden="true"></div>
+                      <div class="rd-rp-bar__stack">
+                        <span class="rd-rp-bar__pct" aria-hidden="true">${rate}%</span>
+                        <div class="rd-rp-bar__fill" style="height:${h}%" aria-hidden="true"></div>
+                      </div>
                     </div>
                     <span class="rd-rp-bar__lbl">${Sec.escapeHTML(b.label)}</span>
                     <span class="sr-only">${Sec.escapeHTML(b.label)}: ${rate}٪</span>
@@ -30405,15 +30413,21 @@
         const bestRow = rows.reduce((a, b) => (b.rate > a.rate ? b : a), rows[0] || { label: '—', rate: 0 });
         const worstRow = rows.reduce((a, b) => (b.rate < a.rate ? b : a), rows[0] || { label: '—', rate: 0 });
 
-        const barsHtml = rows.map((m, i) => `
-          <div class="rd-rp-mc-bar" style="animation-delay:${Math.min(0.3, i * 0.04)}s" title="${Sec.escapeHTML(m.label)}: ${m.rate}%">
-            <span class="rd-rp-mc-bar__pct" aria-hidden="true">${m.rate}%</span>
+        const barsHtml = rows.map((m, i) => {
+          const h = Math.max(0, Math.min(100, Number(m.rate) || 0));
+          const zeroCls = h <= 0 ? ' is-zero' : '';
+          return `
+          <div class="rd-rp-mc-bar${zeroCls}" style="animation-delay:${Math.min(0.3, i * 0.04)}s" title="${Sec.escapeHTML(m.label)}: ${m.rate}%">
             <div class="rd-rp-mc-bar__track">
-              <div class="rd-rp-mc-bar__fill" style="height:${m.rate}%" aria-hidden="true"></div>
+              <div class="rd-rp-mc-bar__stack">
+                <span class="rd-rp-mc-bar__pct" aria-hidden="true">${m.rate}%</span>
+                <div class="rd-rp-mc-bar__fill" style="height:${h}%" aria-hidden="true"></div>
+              </div>
             </div>
             <span class="rd-rp-mc-bar__lbl">${Sec.escapeHTML(m.label)}</span>
             <span class="sr-only">${Sec.escapeHTML(m.label)}: ${m.rate}٪</span>
-          </div>`).join('');
+          </div>`;
+        }).join('');
 
         const rowsHtml = rows.map((m, i) => `
           <div class="rd-rp-drill-row rd-rp-mc-row" role="row" style="animation-delay:${Math.min(0.3, i * 0.03)}s">
@@ -30461,6 +30475,223 @@
           </div>`;
       }
 
+      /** مفتاح الشهر الحالي لتقرير التزام الموظفين (YYYY-MM) */
+      function rdRpEmpMcMonthKey() {
+        const ranges = rdLastSixMonthRanges();
+        const cur = ranges[ranges.length - 1];
+        const fallback = cur ? String(cur.fromIso || '').slice(0, 7) : '';
+        const key = String(state._rdEmpMcMonthKey || fallback || '').slice(0, 7);
+        if (key && ranges.some((r) => String(r.fromIso || '').startsWith(key))) return key;
+        return fallback;
+      }
+
+      function rdRpEmpMcSelectedRange() {
+        const key = rdRpEmpMcMonthKey();
+        const ranges = rdLastSixMonthRanges();
+        return ranges.find((r) => String(r.fromIso || '').startsWith(key)) || ranges[ranges.length - 1] || null;
+      }
+
+      /** صفوف تقرير الالتزام الشهري لكل موظف ومخالفاته في شهر محدد */
+      function rdRpBuildEmpMcRows(range) {
+        if (!range) return [];
+        const emps = (state.users || []).filter((u) => (typeof isViolationSubjectUser === 'function' ? isViolationSubjectUser(u) : (normalizeUserRole(u.role) === 'employee')));
+        const allViolations = (state.violations || []).filter((v) => v.state !== 'uploading');
+        const vTypeById = new Map();
+        (state.violationTypes || []).forEach((vt) => { if (vt && vt.id) vTypeById.set(vt.id, vt); });
+        const rows = [];
+        emps.forEach((u) => {
+          const monthViols = allViolations.filter((v) => {
+            if (v.employee_id !== u.id) return false;
+            const iso = typeof dashViolationIsoDate === 'function' ? dashViolationIsoDate(v) : String(v.violation_date || v.created_at || '').slice(0, 10);
+            return iso && iso >= range.fromIso && iso < range.nextIso;
+          });
+          if (!monthViols.length && rows.length >= 40) return;
+          const branch = (state.branches || []).find((b) => b.id === u.branch_id);
+          const region = branch ? (state.regions || []).find((r) => r.id === branch.region_id) : null;
+          const branchLabel = branch
+            ? (region ? region.name + ' — ' + branch.name : branch.name)
+            : '—';
+          const scoreCard = typeof calcEmpScore === 'function'
+            ? calcEmpScore(u.id, monthViols)
+            : { score: Math.max(0, Math.min(100, 100 - monthViols.filter((v) => !violationExcludedFromDeduction(v)).length * 4)) };
+          const rate = Math.max(0, Math.min(100, Math.round(Number(scoreCard.score) || 0)));
+          const violations = monthViols
+            .slice()
+            .sort((a, b) => {
+              const ia = typeof dashViolationIsoDate === 'function' ? dashViolationIsoDate(a) : String(a.violation_date || a.created_at || '');
+              const ib = typeof dashViolationIsoDate === 'function' ? dashViolationIsoDate(b) : String(b.violation_date || b.created_at || '');
+              return String(ib).localeCompare(String(ia));
+            })
+            .map((v) => {
+              const type = vTypeById.get(v.violation_type_id) || (state.violationTypes || []).find((t) => t.name === v.violation_type);
+              const sev = typeof violTypeSeverity === 'function' ? violTypeSeverity(type) : '—';
+              const dateIso = typeof dashViolationIsoDate === 'function' ? dashViolationIsoDate(v) : String(v.violation_date || v.created_at || '').slice(0, 10);
+              return {
+                id: v.id,
+                name: v.violation_type || type?.name || 'مخالفة',
+                severity: sev || '—',
+                date: dateIso || '—',
+                state: v.state || '',
+              };
+            });
+          rows.push({
+            id: u.id,
+            name: u.name || '—',
+            empNumber: u.employee_number || u.emp_number || '',
+            branchName: branchLabel,
+            rate,
+            violCount: monthViols.length,
+            violations,
+          });
+        });
+        if (!rows.length) {
+          return [
+            {
+              id: 'demo-emc-1', name: 'ريان الحربي', empNumber: '1042', branchName: 'الرياض — العليا', rate: 88, violCount: 2,
+              violations: [
+                { id: 'd1', name: 'تأخير عن الوردية', severity: 'متوسط', date: range.fromIso, state: 'closed' },
+                { id: 'd2', name: 'زي غير مكتمل', severity: 'منخفض', date: range.fromIso, state: 'open' },
+              ],
+            },
+            {
+              id: 'demo-emc-2', name: 'نورة القحطاني', empNumber: '1108', branchName: 'الرياض — العليا', rate: 100, violCount: 0,
+              violations: [],
+            },
+            {
+              id: 'demo-emc-3', name: 'خالد العتيبي', empNumber: '1215', branchName: 'الرياض — النخيل', rate: 64, violCount: 4,
+              violations: [
+                { id: 'd3', name: 'عدم الالتزام بإجراء السلامة', severity: 'عالي', date: range.fromIso, state: 'open' },
+                { id: 'd4', name: 'تأخير عن الوردية', severity: 'متوسط', date: range.fromIso, state: 'closed' },
+              ],
+            },
+          ];
+        }
+        return rows.sort((a, b) => (a.rate - b.rate) || String(a.name).localeCompare(String(b.name), 'ar'));
+      }
+
+      function rdRpRenderEmployeeMonthlyCompliance() {
+        const ranges = rdLastSixMonthRanges();
+        const range = rdRpEmpMcSelectedRange();
+        const monthKey = rdRpEmpMcMonthKey();
+        let rows = rdRpBuildEmpMcRows(range);
+        const q = (state._rdEmpMcQuery || '').toLowerCase().trim();
+        if (q) {
+          rows = rows.filter((r) => (`${r.name} ${r.branchName} ${r.empNumber}`).toLowerCase().includes(q));
+        }
+        const sortKey = state._rdEmpMcSortKey || 'rate';
+        const sortDir = state._rdEmpMcSortDir || 1;
+        rows = rdRpSortRows(rows, sortKey, sortDir);
+
+        const withData = rows.filter((r) => r.violCount > 0);
+        const avg = rows.length ? Math.round(rows.reduce((s, r) => s + r.rate, 0) / rows.length) : null;
+        const totalViols = rows.reduce((s, r) => s + r.violCount, 0);
+        const worst = rows.length ? rows.reduce((a, b) => (b.rate < a.rate ? b : a)) : null;
+        const monthLabel = range
+          ? `${range.label}${range.year ? ' ' + range.year : ''}`
+          : '—';
+
+        const monthOptions = (ranges.length ? ranges : []).map((r) => {
+          const key = String(r.fromIso || '').slice(0, 7);
+          const label = `${r.label}${r.year ? ' ' + r.year : ''}`;
+          const sel = key === monthKey ? ' selected' : '';
+          return `<option value="${Sec.escapeHTML(key)}"${sel}>${Sec.escapeHTML(label)}</option>`;
+        }).join('');
+
+        const sortRate = rdRpSortIcon(sortKey, 'rate', sortDir);
+        const sortName = rdRpSortIcon(sortKey, 'name', sortDir);
+        const sortViol = rdRpSortIcon(sortKey, 'violCount', sortDir);
+
+        const rowsHtml = rows.map((r, i) => {
+          const color = rdRpScoreColorVar(r.rate);
+          const initial = String(r.name || '؟').trim().charAt(0) || '؟';
+          const violChips = r.violations.length
+            ? r.violations.map((v) => {
+                const sevTone = v.severity === 'عالي' ? 'high' : (v.severity === 'متوسط' ? 'mid' : 'low');
+                return `<li class="rd-rp-emc-viol rd-rp-emc-viol--${sevTone}" title="${Sec.escapeHTML(v.date)} · ${Sec.escapeHTML(v.severity)}">
+                  <span class="rd-rp-emc-viol__name">${Sec.escapeHTML(v.name)}</span>
+                  <span class="rd-rp-emc-viol__meta">${Sec.escapeHTML(v.date)} · ${Sec.escapeHTML(v.severity)}</span>
+                </li>`;
+              }).join('')
+            : '<li class="rd-rp-emc-viol rd-rp-emc-viol--none">لا مخالفات في هذا الشهر</li>';
+          return `
+            <article class="rd-rp-drill-row rd-rp-emc-row" style="animation-delay:${Math.min(0.3, i * 0.03)}s">
+              <div class="rd-rp-emc-cell rd-rp-emc-cell--name">
+                <span class="rd-rp-emp-av">${Sec.escapeHTML(initial)}</span>
+                <div class="rd-rp-emc-name-wrap">
+                  <span class="rd-rp-emp-name">${Sec.escapeHTML(r.name)}</span>
+                  ${r.empNumber ? `<span class="rd-rp-emc-empno">${Sec.escapeHTML(String(r.empNumber))}</span>` : ''}
+                </div>
+              </div>
+              <span class="rd-rp-emc-cell rd-rp-emc-branch">${Sec.escapeHTML(r.branchName)}</span>
+              <span class="rd-rp-emc-cell rd-rp-emc-rate" style="color:${color}">${r.rate}%</span>
+              <span class="rd-rp-emc-cell rd-rp-emc-count">${r.violCount}</span>
+              <ul class="rd-rp-emc-cell rd-rp-emc-viols" aria-label="مخالفات ${Sec.escapeHTML(r.name)}">${violChips}</ul>
+            </article>`;
+        }).join('');
+
+        return `
+          <div class="rd-rp-drill rd-rp-emc">
+            ${rdRpDrillHead('fa-user-check', 'تقرير الالتزام الشهري للموظفين', 'عرض كل موظف ومخالفاته خلال شهر محدد')}
+            <section class="rd-rp-drill-metrics" aria-label="ملخص التزام الموظفين الشهري" aria-live="polite">
+              <article class="rd-rp-drill-metric">
+                <div class="rd-rp-drill-metric__lbl">الشهر المحدد</div>
+                <div class="rd-rp-drill-metric__val rd-rp-drill-metric__val--name">${Sec.escapeHTML(monthLabel)}</div>
+                <div class="rd-rp-drill-metric__sub">${rows.length} موظفاً</div>
+              </article>
+              <article class="rd-rp-drill-metric">
+                <div class="rd-rp-drill-metric__lbl">متوسط الالتزام</div>
+                <div class="rd-rp-drill-metric__val" style="color:${rdRpScoreColorVar(avg)}">${avg == null ? '—' : avg + '%'}</div>
+                <div class="rd-rp-drill-metric__sub">${totalViols} مخالفة</div>
+              </article>
+              <article class="rd-rp-drill-metric">
+                <div class="rd-rp-drill-metric__lbl">الأضعف التزاماً</div>
+                <div class="rd-rp-drill-metric__val rd-rp-drill-metric__val--name" style="color:var(--danger)">${Sec.escapeHTML(worst?.name || '—')}</div>
+                <div class="rd-rp-drill-metric__sub">${worst ? worst.rate + '%' : '—'} · ${withData.length} لديهم مخالفات</div>
+              </article>
+            </section>
+            <div class="rd-rp-drill-toolbar rd-rp-emc-toolbar">
+              <label class="rd-rp-month-field">
+                <span class="rd-rp-month-field__lbl">الشهر</span>
+                <select class="rd-rp-month-select" aria-label="اختيار شهر التقرير" onchange="rdEmpMcSetMonth(this.value)">
+                  ${monthOptions || '<option value="">لا تتوفر أشهر</option>'}
+                </select>
+              </label>
+              <div class="figma-search-wrap wf-search rd-rp-drill-search">
+                <input type="text" class="figma-search-input" value="${Sec.escapeHTML(state._rdEmpMcQuery || '')}"
+                  placeholder="ابحث بالاسم أو الفرع أو الرقم..." oninput="rdEmpMcSearch(this.value)" aria-label="بحث في تقرير التزام الموظفين">
+                <button type="button" class="figma-search-btn" aria-label="بحث"><i class="fas fa-magnifying-glass"></i></button>
+              </div>
+            </div>
+            <div class="rd-rp-drill-table rd-rp-emc-table" role="table" aria-label="التزام الموظفين ومخالفاتهم">
+              <div class="rd-rp-drill-thead rd-rp-emc-row" role="row">
+                <button type="button" class="rd-rp-th" onclick="rdEmpMcSort('name')">الموظف<i class="fas ${sortName}" aria-hidden="true"></i></button>
+                <span class="rd-rp-th">الفرع</span>
+                <button type="button" class="rd-rp-th" onclick="rdEmpMcSort('rate')">الالتزام<i class="fas ${sortRate}" aria-hidden="true"></i></button>
+                <button type="button" class="rd-rp-th" onclick="rdEmpMcSort('violCount')">المخالفات<i class="fas ${sortViol}" aria-hidden="true"></i></button>
+                <span class="rd-rp-th">تفاصيل المخالفات</span>
+              </div>
+              ${rowsHtml || '<div class="rd-ticket-empty" role="status"><i class="fas fa-user-check" aria-hidden="true"></i><p>لا توجد بيانات لهذا الشهر</p></div>'}
+            </div>
+          </div>`;
+      }
+
+      function rdEmpMcSetMonth(val) {
+        state._rdEmpMcMonthKey = String(val || '').slice(0, 7);
+        renderReportsRedesign();
+        rdFocusReportsChrome();
+      }
+
+      function rdEmpMcSearch(val) {
+        state._rdEmpMcQuery = val || '';
+        renderReportsRedesign();
+      }
+
+      function rdEmpMcSort(key) {
+        if (state._rdEmpMcSortKey === key) state._rdEmpMcSortDir = -(state._rdEmpMcSortDir || 1);
+        else { state._rdEmpMcSortKey = key; state._rdEmpMcSortDir = 1; }
+        renderReportsRedesign();
+      }
+
       function rdFocusReportsChrome() {
         requestAnimationFrame(() => {
           const host = document.getElementById('rdReports');
@@ -30479,7 +30710,7 @@
       }
 
       function rdOpenReportView(viewId) {
-        const allowed = ['main', 'employeeResponse', 'violationsByBranch', 'monthlyCompliance'];
+        const allowed = ['main', 'employeeResponse', 'violationsByBranch', 'monthlyCompliance', 'employeeMonthlyCompliance'];
         state._rdReportView = allowed.includes(viewId) ? viewId : 'main';
         renderReportsRedesign();
         rdFocusReportsChrome();
@@ -41343,6 +41574,9 @@
       window.rdEmpResponseSort = rdEmpResponseSort;
       window.rdVbSearch = rdVbSearch;
       window.rdVbSort = rdVbSort;
+      window.rdEmpMcSetMonth = rdEmpMcSetMonth;
+      window.rdEmpMcSearch = rdEmpMcSearch;
+      window.rdEmpMcSort = rdEmpMcSort;
       window.openTicketFromCompliance = openTicketFromCompliance;
       window.prefetchTicketDetail = prefetchTicketDetail;
       window.switchDetailTab = switchDetailTab;
