@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ATHAR — محاكاة انقطاع الاتصال</title>
+  <style>
+    :root {
+      --mr-primary: #0f1224;
+      --mr-primary-hover: #2a2d3f;
+      --mr-surface: #ffffff;
+      --mr-bg-2: #f5f5f7;
+      --mr-border: #e2e2e6;
+      --mr-text: #131316;
+      --mr-text-2: #4b4b57;
+      --mr-danger: #FF0000;
+      --mr-radius-card: 16px;
+      --mr-radius-md: 12px;
+      --mr-shadow-card: 0 1px 4px rgba(0, 0, 0, 0.08), 0 6px 20px rgba(0, 0, 0, 0.07);
+      --font: "Segoe UI", Tahoma, sans-serif;
+    }
+    body { margin: 0; font-family: var(--font); background: var(--mr-bg-2); color: var(--mr-text); min-height: 100vh; }
+    .athar-conn-overlay {
+      position: fixed; inset: 0; z-index: 100050; display: none;
+      align-items: center; justify-content: center; padding: 20px;
+      background: color-mix(in srgb, var(--mr-bg-2) 92%, transparent);
+      direction: rtl;
+    }
+    .athar-conn-overlay.is-visible { display: flex; }
+    .athar-conn {
+      width: min(100%, 22rem); text-align: center; padding: 1.75rem 1.35rem 1.5rem;
+      border-radius: var(--mr-radius-card); background: var(--mr-surface);
+      border: 1px solid var(--mr-border); box-shadow: var(--mr-shadow-card);
+    }
+    .athar-conn__icon {
+      position: relative; width: 3.5rem; height: 3.5rem; margin: 0 auto 1rem;
+      border-radius: 1rem; display: flex; align-items: center; justify-content: center;
+      background: var(--mr-bg-2); border: 1px solid var(--mr-border); font-size: 1.4rem;
+    }
+    .athar-conn__slash {
+      position: absolute; inset: 18% auto 18% 48%; width: 2px; background: var(--mr-danger);
+      transform: rotate(-42deg);
+    }
+    .athar-conn__title { margin: 0 0 .45rem; font-size: 1.15rem; font-weight: 700; }
+    .athar-conn__desc { margin: 0 0 1.25rem; font-size: .92rem; color: var(--mr-text-2); line-height: 1.55; }
+    .athar-conn__btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: .55rem;
+      min-height: 44px; min-width: 10.5rem; padding: .65rem 1.25rem; border: 0;
+      border-radius: var(--mr-radius-md); background: var(--mr-primary); color: #fff;
+      font: inherit; font-weight: 700; cursor: pointer;
+    }
+    .athar-conn__btn:focus-visible { outline: 2px solid var(--mr-primary); outline-offset: 3px; }
+    #status { text-align: center; padding: 24px; color: var(--mr-text-2); }
+  </style>
+</head>
+<body>
+  <p id="status">محاكاة شاشة انقطاع الاتصال</p>
+  <div id="atharConnOverlay" class="athar-conn-overlay is-visible" role="alertdialog"
+    aria-modal="true" aria-labelledby="atharConnTitle" aria-describedby="atharConnDesc"
+    data-testid="athar-conn-overlay">
+    <div class="athar-conn">
+      <div class="athar-conn__icon" aria-hidden="true">
+        <span>📶</span>
+        <span class="athar-conn__slash"></span>
+      </div>
+      <h2 class="athar-conn__title" id="atharConnTitle">لا يوجد اتصال بالإنترنت</h2>
+      <p class="athar-conn__desc" id="atharConnDesc">تحقق من الشبكة ثم اضغط إعادة المحاولة للمتابعة.</p>
+      <button type="button" class="athar-conn__btn" id="atharConnRetryBtn" data-testid="athar-conn-retry">
+        <span>إعادة المحاولة</span>
+      </button>
+    </div>
+  </div>
+  <script>
+    document.getElementById('atharConnRetryBtn').addEventListener('click', function () {
+      var overlay = document.getElementById('atharConnOverlay');
+      overlay.classList.remove('is-visible');
+      overlay.hidden = true;
+      document.getElementById('status').textContent = 'تمت إعادة المحاولة';
+    });
+  </script>
+</body>
+</html>
