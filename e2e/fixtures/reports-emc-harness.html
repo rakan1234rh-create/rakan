@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="athar-staging-redesign mr-desktop-ui" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>أثر — اختبار تقرير التزام الموظفين</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    :root {
+      --font: "Segoe UI", Tahoma, Arial, sans-serif;
+      --text: #000000;
+      --text2: #6e6e73;
+      --text3: #8e8e93;
+      --surface: #ffffff;
+      --surface2: #f2f2f7;
+      --border: rgba(60, 60, 67, 0.18);
+      --gold: #000000;
+      --onGold: #ffffff;
+      --goldSoft: rgba(0, 0, 0, 0.06);
+      --success: #34c759;
+      --danger: #ff3b30;
+      --warning: #ff9500;
+      --info: #007aff;
+      --mr-primary: #000000;
+      --mr-primary-hover: #1c1c1e;
+      --mr-primary-text: #ffffff;
+      --mr-primary-soft: rgba(0, 0, 0, 0.08);
+      --mr-primary-softer: rgba(0, 0, 0, 0.04);
+      --mr-border: rgba(60, 60, 67, 0.18);
+      --searchFill: rgba(118, 118, 128, 0.12);
+    }
+    html[data-theme="dark"] {
+      --text: #fafafa;
+      --text2: #c8c8d0;
+      --text3: #a1a1aa;
+      --surface: #1c1c1e;
+      --surface2: #2c2c2e;
+      --border: rgba(255, 255, 255, 0.14);
+      --gold: #ffffff;
+      --onGold: #000000;
+      --goldSoft: rgba(255, 255, 255, 0.14);
+      --mr-primary: #ffffff;
+      --mr-primary-hover: #e5e5ea;
+      --mr-primary-text: #000000;
+      --mr-primary-soft: rgba(255, 255, 255, 0.14);
+      --mr-primary-softer: rgba(255, 255, 255, 0.09);
+      --mr-border: rgba(255, 255, 255, 0.14);
+      --searchFill: rgba(118, 118, 128, 0.24);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: var(--font);
+      background: #f5f5f7;
+      color: var(--text);
+      padding: 24px;
+    }
+    html[data-theme="dark"] body { background: #131316; }
+    #appWrap { max-width: 1100px; margin: 0 auto; }
+    #tab-reports.tab-content.active { display: block; }
+    .rd-rp-back {
+      display: inline-flex; align-items: center; gap: 6px;
+      min-height: 36px; padding: 0; border: 0; background: transparent;
+      color: var(--text2); font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;
+    }
+    .rd-rp-drill-hero { display: flex; align-items: center; gap: 12px; margin: 10px 0 18px; }
+    .rd-rp-drill-hero__ico {
+      width: 40px; height: 40px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center;
+      background: var(--goldSoft); color: var(--gold);
+    }
+    .rd-rp-drill-hero__title { font-size: 1.2rem; font-weight: 700; }
+    .rd-rp-drill-hero__sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
+    .rd-rp-drill-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px; }
+    .rd-rp-drill-metric {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px;
+    }
+    .rd-rp-drill-metric__lbl { font-size: 11.5px; color: var(--text2); }
+    .rd-rp-drill-metric__val { font-size: 20px; font-weight: 700; margin-top: 6px; font-variant-numeric: tabular-nums; }
+    .rd-rp-drill-metric__val--name { font-size: 15px; }
+    .rd-rp-drill-metric__sub { font-size: 11px; color: var(--text3); margin-top: 4px; }
+    .figma-search-wrap { display: flex; align-items: center; gap: 0; background: var(--searchFill); border-radius: 12px; min-height: 44px; padding: 0 4px 0 10px; flex: 1 1 240px; max-width: 360px; }
+    .figma-search-input { flex: 1; border: 0; background: transparent; color: var(--text); font: inherit; font-size: 13px; outline: none; min-width: 0; }
+    .figma-search-btn { width: 36px; height: 36px; border: 0; border-radius: 10px; background: transparent; color: var(--text2); cursor: pointer; }
+    .rd-rp-emp-av {
+      width: 40px; height: 40px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center;
+      background: var(--goldSoft); color: var(--gold); font-weight: 700; flex-shrink: 0;
+    }
+  </style>
+  <link rel="stylesheet" href="styles/custom/athar-reports-redesign.css">
+</head>
+<body>
+  <div id="appWrap">
+    <div class="tab-content active" id="tab-reports">
+      <div class="panel wf-panel">
+        <div id="rdReports" class="rd-reports" data-testid="rd-reports-emc" aria-label="تقرير الالتزام الشهري للموظفين">
+          <div class="rd-rp-drill rd-rp-emc">
+            <button type="button" class="rd-rp-back"><i class="fas fa-arrow-right" aria-hidden="true"></i>التقارير</button>
+            <div class="rd-rp-drill-hero">
+              <div class="rd-rp-drill-hero__ico"><i class="fas fa-user-check" aria-hidden="true"></i></div>
+              <div>
+                <div class="rd-rp-drill-hero__title">تقرير الالتزام الشهري للموظفين</div>
+                <div class="rd-rp-drill-hero__sub">عرض كل موظف ومخالفاته خلال شهر محدد</div>
+              </div>
+            </div>
+            <section class="rd-rp-drill-metrics" aria-label="ملخص التزام الموظفين الشهري" aria-live="polite">
+              <article class="rd-rp-drill-metric">
+                <div class="rd-rp-drill-metric__lbl">الشهر المحدد</div>
+                <div class="rd-rp-drill-metric__val rd-rp-drill-metric__val--name">أكتوبر 2026</div>
+                <div class="rd-rp-drill-metric__sub">3 موظفاً</div>
+              </article>
+              <article class="rd-rp-drill-metric">
+                <div class="rd-rp-drill-metric__lbl">متوسط الالتزام</div>
+                <div class="rd-rp-drill-metric__val" style="color:var(--info)">84%</div>
+                <div class="rd-rp-drill-metric__sub">6 مخالفة</div>
+              </article>
+              <article class="rd-rp-drill-metric">
+                <div class="rd-rp-drill-metric__lbl">الأضعف التزاماً</div>
+                <div class="rd-rp-drill-metric__val rd-rp-drill-metric__val--name" style="color:var(--danger)">خالد العتيبي</div>
+                <div class="rd-rp-drill-metric__sub">64% · 2 لديهم مخالفات</div>
+              </article>
+            </section>
+            <div class="rd-rp-emc-controls">
+              <div class="rd-rp-month-picker">
+                <span class="rd-rp-month-picker__lbl" id="rdEmpMcMonthLbl">الشهر</span>
+                <div class="rd-rp-month-chips" role="group" aria-labelledby="rdEmpMcMonthLbl" data-testid="emc-month-chips">
+                  <div role="button" tabindex="0" class="rd-rp-month-chip is-active" data-month-key="2026-10" aria-pressed="true" aria-label="أكتوبر 2026">
+                    <span class="rd-rp-month-chip__face"><span class="rd-rp-month-chip__name">أكتوبر</span><span class="rd-rp-month-chip__year">2026</span></span>
+                  </div>
+                  <div role="button" tabindex="0" class="rd-rp-month-chip" data-month-key="2026-09" aria-pressed="false" aria-label="سبتمبر 2026">
+                    <span class="rd-rp-month-chip__face"><span class="rd-rp-month-chip__name">سبتمبر</span><span class="rd-rp-month-chip__year">2026</span></span>
+                  </div>
+                  <div role="button" tabindex="0" class="rd-rp-month-chip" data-month-key="2026-08" aria-pressed="false" aria-label="أغسطس 2026">
+                    <span class="rd-rp-month-chip__face"><span class="rd-rp-month-chip__name">أغسطس</span><span class="rd-rp-month-chip__year">2026</span></span>
+                  </div>
+                  <div role="button" tabindex="0" class="rd-rp-month-chip" data-month-key="2026-07" aria-pressed="false" aria-label="يوليو 2026">
+                    <span class="rd-rp-month-chip__face"><span class="rd-rp-month-chip__name">يوليو</span><span class="rd-rp-month-chip__year">2026</span></span>
+                  </div>
+                  <div role="button" tabindex="0" class="rd-rp-month-chip" data-month-key="2026-06" aria-pressed="false" aria-label="يونيو 2026">
+                    <span class="rd-rp-month-chip__face"><span class="rd-rp-month-chip__name">يونيو</span><span class="rd-rp-month-chip__year">2026</span></span>
+                  </div>
+                  <div role="button" tabindex="0" class="rd-rp-month-chip" data-month-key="2026-05" aria-pressed="false" aria-label="مايو 2026">
+                    <span class="rd-rp-month-chip__face"><span class="rd-rp-month-chip__name">مايو</span><span class="rd-rp-month-chip__year">2026</span></span>
+                  </div>
+                </div>
+              </div>
+              <div class="rd-rp-emc-toolbar">
+                <div class="figma-search-wrap wf-search rd-rp-drill-search">
+                  <input type="search" class="figma-search-input" name="emc-search" autocomplete="off" spellcheck="false"
+                    placeholder="ابحث بالاسم أو الفرع أو الرقم…" aria-label="بحث في تقرير التزام الموظفين">
+                  <button type="button" class="figma-search-btn" aria-label="بحث"><i class="fas fa-magnifying-glass" aria-hidden="true"></i></button>
+                </div>
+                <div class="rd-rp-emc-sort" role="group" aria-label="ترتيب القائمة">
+                  <button type="button" class="rd-rp-emc-sort-btn" aria-pressed="false">الموظف<i class="fas fa-sort" aria-hidden="true"></i></button>
+                  <button type="button" class="rd-rp-emc-sort-btn is-active" aria-pressed="true">الالتزام<i class="fas fa-sort-up" aria-hidden="true"></i></button>
+                  <button type="button" class="rd-rp-emc-sort-btn" aria-pressed="false">المخالفات<i class="fas fa-sort" aria-hidden="true"></i></button>
+                </div>
+              </div>
+            </div>
+            <div class="rd-rp-emc-list" aria-label="التزام الموظفين ومخالفاتهم" data-testid="emc-list">
+              <article class="rd-rp-emc-card" data-testid="emc-card">
+                <header class="rd-rp-emc-card__head">
+                  <div class="rd-rp-emc-card__who">
+                    <span class="rd-rp-emp-av" aria-hidden="true">خ</span>
+                    <div class="rd-rp-emc-name-wrap">
+                      <h3 class="rd-rp-emc-card__name">خالد العتيبي</h3>
+                      <p class="rd-rp-emc-card__meta">#1215 · الرياض — النخيل</p>
+                    </div>
+                  </div>
+                  <div class="rd-rp-emc-card__rate" aria-label="معدل الالتزام 64%">
+                    <div class="rd-rp-emc-card__rate-top">
+                      <span class="rd-rp-emc-card__rate-lbl">الالتزام</span>
+                      <strong class="rd-rp-emc-rate" style="color:var(--danger)">64%</strong>
+                    </div>
+                    <div class="rd-rp-bar-track" aria-hidden="true"><div class="rd-rp-bar-fill" style="width:64%;background:var(--danger)"></div></div>
+                  </div>
+                </header>
+                <div class="rd-rp-emc-card__viol-panel">
+                  <div class="rd-rp-emc-card__viol-head">
+                    <span class="rd-rp-emc-card__viol-lbl">المخالفات</span>
+                    <span class="rd-rp-emc-count-pill">4</span>
+                  </div>
+                  <details class="rd-rp-emc-viol-details" open>
+                    <summary class="rd-rp-emc-viol-details__sum">
+                      <span>عرض 4 مخالفات</span>
+                      <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                    </summary>
+                    <ul class="rd-rp-emc-viols" aria-label="مخالفات خالد العتيبي">
+                      <li class="rd-rp-emc-viol rd-rp-emc-viol--high">
+                        <span class="rd-rp-emc-sev">عالي</span>
+                        <span class="rd-rp-emc-viol__body">
+                          <span class="rd-rp-emc-viol__name">عدم الالتزام بإجراء السلامة</span>
+                          <time class="rd-rp-emc-viol__date" datetime="2026-10-04">2026-10-04</time>
+                        </span>
+                      </li>
+                      <li class="rd-rp-emc-viol rd-rp-emc-viol--mid">
+                        <span class="rd-rp-emc-sev">متوسط</span>
+                        <span class="rd-rp-emc-viol__body">
+                          <span class="rd-rp-emc-viol__name">تأخير عن الوردية</span>
+                          <time class="rd-rp-emc-viol__date" datetime="2026-10-11">2026-10-11</time>
+                        </span>
+                      </li>
+                      <li class="rd-rp-emc-viol rd-rp-emc-viol--low">
+                        <span class="rd-rp-emc-sev">منخفض</span>
+                        <span class="rd-rp-emc-viol__body">
+                          <span class="rd-rp-emc-viol__name">زي غير مكتمل</span>
+                          <time class="rd-rp-emc-viol__date" datetime="2026-10-18">2026-10-18</time>
+                        </span>
+                      </li>
+                      <li class="rd-rp-emc-viol rd-rp-emc-viol--mid">
+                        <span class="rd-rp-emc-sev">متوسط</span>
+                        <span class="rd-rp-emc-viol__body">
+                          <span class="rd-rp-emc-viol__name">غياب عن الاجتماع الأسبوعي</span>
+                          <time class="rd-rp-emc-viol__date" datetime="2026-10-22">2026-10-22</time>
+                        </span>
+                      </li>
+                    </ul>
+                  </details>
+                </div>
+              </article>
+              <article class="rd-rp-emc-card">
+                <header class="rd-rp-emc-card__head">
+                  <div class="rd-rp-emc-card__who">
+                    <span class="rd-rp-emp-av" aria-hidden="true">ر</span>
+                    <div class="rd-rp-emc-name-wrap">
+                      <h3 class="rd-rp-emc-card__name">ريان الحربي</h3>
+                      <p class="rd-rp-emc-card__meta">#1042 · الرياض — العليا</p>
+                    </div>
+                  </div>
+                  <div class="rd-rp-emc-card__rate" aria-label="معدل الالتزام 88%">
+                    <div class="rd-rp-emc-card__rate-top">
+                      <span class="rd-rp-emc-card__rate-lbl">الالتزام</span>
+                      <strong class="rd-rp-emc-rate" style="color:var(--info)">88%</strong>
+                    </div>
+                    <div class="rd-rp-bar-track" aria-hidden="true"><div class="rd-rp-bar-fill" style="width:88%;background:var(--info)"></div></div>
+                  </div>
+                </header>
+                <div class="rd-rp-emc-card__viol-panel">
+                  <div class="rd-rp-emc-card__viol-head">
+                    <span class="rd-rp-emc-card__viol-lbl">المخالفات</span>
+                    <span class="rd-rp-emc-count-pill">2</span>
+                  </div>
+                  <ul class="rd-rp-emc-viols" aria-label="مخالفات ريان الحربي">
+                    <li class="rd-rp-emc-viol rd-rp-emc-viol--mid">
+                      <span class="rd-rp-emc-sev">متوسط</span>
+                      <span class="rd-rp-emc-viol__body">
+                        <span class="rd-rp-emc-viol__name">تأخير عن الوردية</span>
+                        <time class="rd-rp-emc-viol__date" datetime="2026-10-07">2026-10-07</time>
+                      </span>
+                    </li>
+                    <li class="rd-rp-emc-viol rd-rp-emc-viol--low">
+                      <span class="rd-rp-emc-sev">منخفض</span>
+                      <span class="rd-rp-emc-viol__body">
+                        <span class="rd-rp-emc-viol__name">زي غير مكتمل</span>
+                        <time class="rd-rp-emc-viol__date" datetime="2026-10-15">2026-10-15</time>
+                      </span>
+                    </li>
+                  </ul>
+                </div>
+              </article>
+              <article class="rd-rp-emc-card">
+                <header class="rd-rp-emc-card__head">
+                  <div class="rd-rp-emc-card__who">
+                    <span class="rd-rp-emp-av" aria-hidden="true">ن</span>
+                    <div class="rd-rp-emc-name-wrap">
+                      <h3 class="rd-rp-emc-card__name">نورة القحطاني</h3>
+                      <p class="rd-rp-emc-card__meta">#1108 · الرياض — العليا</p>
+                    </div>
+                  </div>
+                  <div class="rd-rp-emc-card__rate" aria-label="معدل الالتزام 100%">
+                    <div class="rd-rp-emc-card__rate-top">
+                      <span class="rd-rp-emc-card__rate-lbl">الالتزام</span>
+                      <strong class="rd-rp-emc-rate" style="color:var(--success)">100%</strong>
+                    </div>
+                    <div class="rd-rp-bar-track" aria-hidden="true"><div class="rd-rp-bar-fill" style="width:100%;background:var(--success)"></div></div>
+                  </div>
+                </header>
+                <div class="rd-rp-emc-card__viol-panel">
+                  <div class="rd-rp-emc-card__viol-head">
+                    <span class="rd-rp-emc-card__viol-lbl">المخالفات</span>
+                    <span class="rd-rp-emc-count-pill is-zero">0</span>
+                  </div>
+                  <ul class="rd-rp-emc-viols" aria-label="مخالفات نورة القحطاني">
+                    <li class="rd-rp-emc-viol rd-rp-emc-viol--none">
+                      <i class="fas fa-check-circle" aria-hidden="true"></i>
+                      <span>لا مخالفات في هذا الشهر</span>
+                    </li>
+                  </ul>
+                </div>
+              </article>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

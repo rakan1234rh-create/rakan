@@ -301,11 +301,15 @@ html.athar-staging-redesign.mr-desktop-ui #tab-reports .rd-rp-links {
 }
 
 html.athar-staging-redesign.mr-desktop-ui #tab-reports .rd-rp-link {
-  background: var(--surface) !important;
+  background-color: var(--surface) !important;
+  background-image: none !important;
   border: 1px solid var(--border) !important;
   border-radius: 14px !important;
   padding: 14px !important;
   gap: 12px !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  color-scheme: light;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #tab-reports .rd-rp-link__ico {
@@ -1211,6 +1215,8 @@ html.athar-staging-redesign.mr-mobile-ui .rd-rp-drill-search {
   .rd-rp-drill-row,
   .rd-rp-mc-bar,
   .rd-rp-main,
+  .rd-rp-emc-card,
+  .rd-rp-month-chip,
   html.athar-staging-redesign.mr-desktop-ui .rd-rp-drill,
   html.athar-staging-redesign.mr-desktop-ui #tab-reports .rd-rp-main {
     animation: none !important;
@@ -1225,86 +1231,316 @@ html.athar-staging-redesign.mr-mobile-ui .rd-rp-drill-search {
 }
 
 /* ── Employee monthly compliance report ── */
-html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-toolbar {
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-controls {
   display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 12px 16px;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 18px;
 }
 
-html.athar-staging-redesign.mr-desktop-ui .rd-rp-month-field {
-  display: inline-flex;
-  align-items: center;
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-month-picker {
+  display: flex;
+  flex-direction: column;
   gap: 8px;
-  min-height: 44px;
 }
 
-html.athar-staging-redesign.mr-desktop-ui .rd-rp-month-field__lbl {
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-month-picker__lbl {
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text2);
-  white-space: nowrap;
+  letter-spacing: 0.01em;
 }
 
-html.athar-staging-redesign.mr-desktop-ui .rd-rp-month-select {
-  min-height: 40px;
-  min-width: 160px;
-  padding: 0 12px;
-  border-radius: 10px;
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-month-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 6px;
+  border-radius: 14px;
   border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--text);
-  font: inherit;
-  font-size: 12.5px;
-  font-weight: 600;
-  cursor: pointer;
+  background: color-mix(in srgb, var(--surface2) 72%, var(--surface));
 }
 
-html.athar-staging-redesign.mr-desktop-ui .rd-rp-month-select:focus-visible {
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-month-chip {
+  display: inline-flex;
+  align-items: stretch;
+  justify-content: center;
+  min-width: 72px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-month-chip__face {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  width: 100%;
+  min-height: 44px;
+  padding: 6px 12px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background-color: transparent;
+  color: var(--text2);
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-month-chip__name {
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-month-chip__year {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text3);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-month-chip:hover .rd-rp-month-chip__face {
+  background-color: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-month-chip:focus-visible {
   outline: 2px solid var(--mr-primary, var(--gold));
   outline-offset: 2px;
 }
 
-html.athar-staging-redesign.mr-desktop-ui .rd-rp-drill-thead.rd-rp-emc-row,
-html.athar-staging-redesign.mr-desktop-ui .rd-rp-drill-row.rd-rp-emc-row,
-html.athar-staging-redesign.mr-desktop-ui article.rd-rp-emc-row {
-  display: grid;
-  grid-template-columns: 1.6fr 1.3fr 90px 90px minmax(220px, 2fr);
-  gap: 12px;
-  align-items: start;
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-month-chip.is-active .rd-rp-month-chip__face,
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-month-chip[aria-pressed="true"] .rd-rp-month-chip__face {
+  background-color: var(--mr-primary, var(--gold));
+  color: var(--mr-primary-text, var(--onGold, #fff));
+  border-color: var(--mr-primary, var(--gold));
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
 }
 
-html.athar-staging-redesign.mr-desktop-ui .rd-rp-drill-thead.rd-rp-emc-row {
-  align-items: center;
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-month-chip.is-active .rd-rp-month-chip__year,
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-month-chip[aria-pressed="true"] .rd-rp-month-chip__year {
+  color: inherit;
+  opacity: 0.75;
 }
 
-html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-cell--name {
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-month-empty {
+  font-size: 12px;
+  color: var(--text3);
+  padding: 8px 10px;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-toolbar {
   display: flex;
   align-items: center;
-  gap: 10px;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  justify-content: space-between;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-sort {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-sort-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text2);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  touch-action: manipulation;
+  appearance: none;
+  -webkit-appearance: none;
+  color-scheme: light;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-sort-btn i {
+  font-size: 10px;
+  opacity: 0.75;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-sort-btn:hover {
+  color: var(--text);
+  background: var(--surface2);
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-sort-btn:focus-visible {
+  outline: 2px solid var(--mr-primary, var(--gold));
+  outline-offset: 2px;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-sort-btn.is-active {
+  background: var(--mr-primary-soft, var(--goldSoft));
+  color: var(--text);
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px 18px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  animation: atharRdFadeUp 0.35s ease both;
+  min-width: 0;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-card__head {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(160px, 0.9fr);
+  gap: 14px 20px;
+  align-items: center;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-card__who {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   min-width: 0;
 }
 
 html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-name-wrap {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
   min-width: 0;
 }
 
-html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-empno {
-  font-size: 11px;
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-card__name {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.35;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-card__meta {
+  margin: 0;
+  font-size: 11.5px;
   color: var(--text3);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-card__rate {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-card__rate-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-card__rate-lbl {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text3);
 }
 
 html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-rate {
-  font-weight: 700;
+  font-size: 15px;
+  font-weight: 800;
   font-variant-numeric: tabular-nums;
+  line-height: 1;
 }
 
-html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-count {
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-card .rd-rp-bar-track {
+  flex: 0 0 auto;
+  width: 100%;
+  max-width: none;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--surface2);
+  overflow: hidden;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-card .rd-rp-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  min-width: 0;
+  transition: width 0.35s ease;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-card__viol-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-card__viol-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-card__viol-lbl {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text2);
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-count-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  min-height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
+  background: color-mix(in srgb, var(--warning) 14%, var(--surface2));
+  color: var(--text);
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-count-pill.is-zero {
+  background: color-mix(in srgb, var(--success) 12%, var(--surface2));
   color: var(--text2);
 }
 
@@ -1319,52 +1555,144 @@ html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-viols {
 
 html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-viol {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 7px 10px;
-  border-radius: 10px;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 12px;
   border: 1px solid var(--border);
-  background: color-mix(in srgb, var(--surface2) 80%, transparent);
+  background: color-mix(in srgb, var(--surface2) 55%, var(--surface));
+  min-width: 0;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-sev {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 52px;
+  min-height: 24px;
+  padding: 0 8px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  background: var(--surface);
+  color: var(--text2);
+  border: 1px solid var(--border);
 }
 
 html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-viol--high {
+  border-color: color-mix(in srgb, var(--danger) 32%, var(--border));
+  background: color-mix(in srgb, var(--danger) 7%, var(--surface));
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-viol--high .rd-rp-emc-sev {
+  color: var(--danger);
   border-color: color-mix(in srgb, var(--danger) 35%, var(--border));
-  background: color-mix(in srgb, var(--danger) 8%, var(--surface));
+  background: color-mix(in srgb, var(--danger) 10%, var(--surface));
 }
 
 html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-viol--mid {
+  border-color: color-mix(in srgb, var(--warning) 32%, var(--border));
+  background: color-mix(in srgb, var(--warning) 7%, var(--surface));
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-viol--mid .rd-rp-emc-sev {
+  color: color-mix(in srgb, var(--warning) 80%, var(--text));
   border-color: color-mix(in srgb, var(--warning) 35%, var(--border));
-  background: color-mix(in srgb, var(--warning) 8%, var(--surface));
+  background: color-mix(in srgb, var(--warning) 10%, var(--surface));
 }
 
 html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-viol--low {
+  border-color: color-mix(in srgb, var(--info) 28%, var(--border));
+  background: color-mix(in srgb, var(--info) 6%, var(--surface));
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-viol--low .rd-rp-emc-sev {
+  color: var(--info);
   border-color: color-mix(in srgb, var(--info) 30%, var(--border));
-  background: color-mix(in srgb, var(--info) 7%, var(--surface));
+  background: color-mix(in srgb, var(--info) 9%, var(--surface));
 }
 
 html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-viol--none {
+  align-items: center;
+  gap: 8px;
   border-style: dashed;
   color: var(--text3);
-  font-size: 12px;
+  font-size: 12.5px;
+  background: transparent;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-viol--none i {
+  color: var(--success);
+  opacity: 0.85;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-viol__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
 html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-viol__name {
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 600;
   color: var(--text);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
-html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-viol__meta {
-  font-size: 10.5px;
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-viol__date {
+  font-size: 11px;
   color: var(--text3);
   font-variant-numeric: tabular-nums;
 }
 
-@media (max-width: 1100px) {
-  html.athar-staging-redesign.mr-desktop-ui .rd-rp-drill-thead.rd-rp-emc-row,
-  html.athar-staging-redesign.mr-desktop-ui .rd-rp-drill-row.rd-rp-emc-row,
-  html.athar-staging-redesign.mr-desktop-ui article.rd-rp-emc-row {
-    grid-template-columns: 1.4fr 1fr 70px 70px minmax(180px, 1.6fr) !important;
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-viol-details {
+  border-radius: 12px;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-viol-details__sum {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 40px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text2);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+  touch-action: manipulation;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-viol-details__sum::-webkit-details-marker {
+  display: none;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-viol-details__sum:focus-visible {
+  outline: 2px solid var(--mr-primary, var(--gold));
+  outline-offset: 2px;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-viol-details[open] .rd-rp-emc-viol-details__sum {
+  margin-bottom: 8px;
+  color: var(--text);
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-viol-details[open] .rd-rp-emc-viol-details__sum i {
+  transform: rotate(180deg);
+}
+
+@media (max-width: 900px) {
+  html.athar-staging-redesign.mr-desktop-ui .rd-rp-emc-card__head {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -1392,7 +1720,8 @@ html[data-theme="dark"] .rd-rp-download-btn:hover,
 
 html[data-theme="dark"] .rd-rp-link,
 [data-theme="dark"] .rd-rp-link {
-  background: var(--surface) !important;
+  background-color: var(--surface) !important;
+  background-image: none !important;
   border-color: var(--border) !important;
   color: var(--text) !important;
 }
@@ -1432,10 +1761,30 @@ html[data-theme="dark"] .rd-rp-back:hover,
   color: var(--text) !important;
 }
 
-html[data-theme="dark"] .rd-rp-month-select,
-[data-theme="dark"] .rd-rp-month-select {
-  background: var(--surface2, var(--surface)) !important;
-  color: var(--text) !important;
+html[data-theme="dark"] .rd-rp-month-chips,
+[data-theme="dark"] .rd-rp-month-chips {
+  background: color-mix(in srgb, var(--surface2) 80%, #000) !important;
+  border-color: var(--border) !important;
+}
+
+html[data-theme="dark"] .rd-rp-month-chip.is-active .rd-rp-month-chip__face,
+html[data-theme="dark"] .rd-rp-month-chip[aria-pressed="true"] .rd-rp-month-chip__face,
+[data-theme="dark"] .rd-rp-month-chip.is-active .rd-rp-month-chip__face {
+  background-color: var(--mr-primary) !important;
+  color: var(--mr-primary-text, #000) !important;
+  border-color: var(--mr-primary) !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35) !important;
+}
+
+html[data-theme="dark"] .rd-rp-emc-card,
+[data-theme="dark"] .rd-rp-emc-card {
+  background: var(--surface) !important;
+  border-color: var(--border) !important;
+}
+
+html[data-theme="dark"] .rd-rp-emc-sort,
+[data-theme="dark"] .rd-rp-emc-sort {
+  background: var(--surface) !important;
   border-color: var(--border) !important;
 }
 

@@ -30590,11 +30590,24 @@
           ? `${range.label}${range.year ? ' ' + range.year : ''}`
           : '—';
 
-        const monthOptions = (ranges.length ? ranges : []).map((r) => {
+        /* أحدث شهر أولاً — أوضح للمستخدم في اختيار سريع */
+        const monthChips = [...(ranges.length ? ranges : [])].reverse().map((r) => {
           const key = String(r.fromIso || '').slice(0, 7);
-          const label = `${r.label}${r.year ? ' ' + r.year : ''}`;
-          const sel = key === monthKey ? ' selected' : '';
-          return `<option value="${Sec.escapeHTML(key)}"${sel}>${Sec.escapeHTML(label)}</option>`;
+          const shortLbl = r.label || key;
+          const fullLbl = `${r.label}${r.year ? ' ' + r.year : ''}`;
+          const pressed = key === monthKey;
+          return `<div role="button" tabindex="0" class="rd-rp-month-chip${pressed ? ' is-active' : ''}"
+            data-month-key="${Sec.escapeHTML(key)}"
+            aria-pressed="${pressed ? 'true' : 'false'}"
+            aria-label="${Sec.escapeHTML(fullLbl)}"
+            title="${Sec.escapeHTML(fullLbl)}"
+            onclick="rdEmpMcSetMonth('${Sec.escapeHTML(key)}')"
+            onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();rdEmpMcSetMonth('${Sec.escapeHTML(key)}')}">
+            <span class="rd-rp-month-chip__face">
+              <span class="rd-rp-month-chip__name">${Sec.escapeHTML(shortLbl)}</span>
+              ${r.year ? `<span class="rd-rp-month-chip__year">${Sec.escapeHTML(String(r.year))}</span>` : ''}
+            </span>
+          </div>`;
         }).join('');
 
         const sortRate = rdRpSortIcon(sortKey, 'rate', sortDir);
@@ -30603,29 +30616,56 @@
 
         const rowsHtml = rows.map((r, i) => {
           const color = rdRpScoreColorVar(r.rate);
+          const pct = Math.max(0, Math.min(100, Math.round(r.rate)));
           const initial = String(r.name || '؟').trim().charAt(0) || '؟';
-          const violChips = r.violations.length
+          const metaBits = [r.empNumber ? `#${r.empNumber}` : '', r.branchName].filter(Boolean).join(' · ');
+          const violList = r.violations.length
             ? r.violations.map((v) => {
                 const sevTone = v.severity === 'عالي' ? 'high' : (v.severity === 'متوسط' ? 'mid' : 'low');
-                return `<li class="rd-rp-emc-viol rd-rp-emc-viol--${sevTone}" title="${Sec.escapeHTML(v.date)} · ${Sec.escapeHTML(v.severity)}">
-                  <span class="rd-rp-emc-viol__name">${Sec.escapeHTML(v.name)}</span>
-                  <span class="rd-rp-emc-viol__meta">${Sec.escapeHTML(v.date)} · ${Sec.escapeHTML(v.severity)}</span>
+                const sevLabel = v.severity && v.severity !== '—' ? v.severity : 'غير محدد';
+                return `<li class="rd-rp-emc-viol rd-rp-emc-viol--${sevTone}">
+                  <span class="rd-rp-emc-sev" aria-label="الخطورة: ${Sec.escapeHTML(sevLabel)}">${Sec.escapeHTML(sevLabel)}</span>
+                  <span class="rd-rp-emc-viol__body">
+                    <span class="rd-rp-emc-viol__name">${Sec.escapeHTML(v.name)}</span>
+                    <time class="rd-rp-emc-viol__date" datetime="${Sec.escapeHTML(v.date)}">${Sec.escapeHTML(v.date)}</time>
+                  </span>
                 </li>`;
               }).join('')
-            : '<li class="rd-rp-emc-viol rd-rp-emc-viol--none">لا مخالفات في هذا الشهر</li>';
+            : '<li class="rd-rp-emc-viol rd-rp-emc-viol--none"><i class="fas fa-check-circle" aria-hidden="true"></i><span>لا مخالفات في هذا الشهر</span></li>';
+          const violBlock = r.violations.length > 3
+            ? `<details class="rd-rp-emc-viol-details">
+                <summary class="rd-rp-emc-viol-details__sum">
+                  <span>عرض ${r.violCount} مخالفات</span>
+                  <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                </summary>
+                <ul class="rd-rp-emc-viols" aria-label="مخالفات ${Sec.escapeHTML(r.name)}">${violList}</ul>
+              </details>`
+            : `<ul class="rd-rp-emc-viols" aria-label="مخالفات ${Sec.escapeHTML(r.name)}">${violList}</ul>`;
           return `
-            <article class="rd-rp-drill-row rd-rp-emc-row" style="animation-delay:${Math.min(0.3, i * 0.03)}s">
-              <div class="rd-rp-emc-cell rd-rp-emc-cell--name">
-                <span class="rd-rp-emp-av">${Sec.escapeHTML(initial)}</span>
-                <div class="rd-rp-emc-name-wrap">
-                  <span class="rd-rp-emp-name">${Sec.escapeHTML(r.name)}</span>
-                  ${r.empNumber ? `<span class="rd-rp-emc-empno">${Sec.escapeHTML(String(r.empNumber))}</span>` : ''}
+            <article class="rd-rp-emc-card" style="animation-delay:${Math.min(0.3, i * 0.03)}s">
+              <header class="rd-rp-emc-card__head">
+                <div class="rd-rp-emc-card__who">
+                  <span class="rd-rp-emp-av" aria-hidden="true">${Sec.escapeHTML(initial)}</span>
+                  <div class="rd-rp-emc-name-wrap">
+                    <h3 class="rd-rp-emc-card__name">${Sec.escapeHTML(r.name)}</h3>
+                    ${metaBits ? `<p class="rd-rp-emc-card__meta">${Sec.escapeHTML(metaBits)}</p>` : ''}
+                  </div>
                 </div>
+                <div class="rd-rp-emc-card__rate" aria-label="معدل الالتزام ${pct}%">
+                  <div class="rd-rp-emc-card__rate-top">
+                    <span class="rd-rp-emc-card__rate-lbl">الالتزام</span>
+                    <strong class="rd-rp-emc-rate" style="color:${color}">${pct}%</strong>
+                  </div>
+                  <div class="rd-rp-bar-track" aria-hidden="true"><div class="rd-rp-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+                </div>
+              </header>
+              <div class="rd-rp-emc-card__viol-panel">
+                <div class="rd-rp-emc-card__viol-head">
+                  <span class="rd-rp-emc-card__viol-lbl">المخالفات</span>
+                  <span class="rd-rp-emc-count-pill${r.violCount ? '' : ' is-zero'}">${r.violCount}</span>
+                </div>
+                ${violBlock}
               </div>
-              <span class="rd-rp-emc-cell rd-rp-emc-branch">${Sec.escapeHTML(r.branchName)}</span>
-              <span class="rd-rp-emc-cell rd-rp-emc-rate" style="color:${color}">${r.rate}%</span>
-              <span class="rd-rp-emc-cell rd-rp-emc-count">${r.violCount}</span>
-              <ul class="rd-rp-emc-cell rd-rp-emc-viols" aria-label="مخالفات ${Sec.escapeHTML(r.name)}">${violChips}</ul>
             </article>`;
         }).join('');
 
@@ -30649,27 +30689,35 @@
                 <div class="rd-rp-drill-metric__sub">${worst ? worst.rate + '%' : '—'} · ${withData.length} لديهم مخالفات</div>
               </article>
             </section>
-            <div class="rd-rp-drill-toolbar rd-rp-emc-toolbar">
-              <label class="rd-rp-month-field">
-                <span class="rd-rp-month-field__lbl">الشهر</span>
-                <select class="rd-rp-month-select" aria-label="اختيار شهر التقرير" onchange="rdEmpMcSetMonth(this.value)">
-                  ${monthOptions || '<option value="">لا تتوفر أشهر</option>'}
-                </select>
-              </label>
-              <div class="figma-search-wrap wf-search rd-rp-drill-search">
-                <input type="text" class="figma-search-input" value="${Sec.escapeHTML(state._rdEmpMcQuery || '')}"
-                  placeholder="ابحث بالاسم أو الفرع أو الرقم..." oninput="rdEmpMcSearch(this.value)" aria-label="بحث في تقرير التزام الموظفين">
-                <button type="button" class="figma-search-btn" aria-label="بحث"><i class="fas fa-magnifying-glass"></i></button>
+            <div class="rd-rp-emc-controls">
+              <div class="rd-rp-month-picker">
+                <span class="rd-rp-month-picker__lbl" id="rdEmpMcMonthLbl">الشهر</span>
+                <div class="rd-rp-month-chips" role="group" aria-labelledby="rdEmpMcMonthLbl">
+                  ${monthChips || '<span class="rd-rp-month-empty" role="status">لا تتوفر أشهر</span>'}
+                </div>
+              </div>
+              <div class="rd-rp-emc-toolbar">
+                <div class="figma-search-wrap wf-search rd-rp-drill-search">
+                  <input type="search" class="figma-search-input" name="emc-search" autocomplete="off" spellcheck="false"
+                    value="${Sec.escapeHTML(state._rdEmpMcQuery || '')}"
+                    placeholder="ابحث بالاسم أو الفرع أو الرقم…"
+                    oninput="rdEmpMcSearch(this.value)" aria-label="بحث في تقرير التزام الموظفين">
+                  <button type="button" class="figma-search-btn" aria-label="بحث"><i class="fas fa-magnifying-glass" aria-hidden="true"></i></button>
+                </div>
+                <div class="rd-rp-emc-sort" role="group" aria-label="ترتيب القائمة">
+                  <button type="button" class="rd-rp-emc-sort-btn${sortKey === 'name' ? ' is-active' : ''}" onclick="rdEmpMcSort('name')" aria-pressed="${sortKey === 'name' ? 'true' : 'false'}">
+                    الموظف<i class="fas ${sortName}" aria-hidden="true"></i>
+                  </button>
+                  <button type="button" class="rd-rp-emc-sort-btn${sortKey === 'rate' ? ' is-active' : ''}" onclick="rdEmpMcSort('rate')" aria-pressed="${sortKey === 'rate' ? 'true' : 'false'}">
+                    الالتزام<i class="fas ${sortRate}" aria-hidden="true"></i>
+                  </button>
+                  <button type="button" class="rd-rp-emc-sort-btn${sortKey === 'violCount' ? ' is-active' : ''}" onclick="rdEmpMcSort('violCount')" aria-pressed="${sortKey === 'violCount' ? 'true' : 'false'}">
+                    المخالفات<i class="fas ${sortViol}" aria-hidden="true"></i>
+                  </button>
+                </div>
               </div>
             </div>
-            <div class="rd-rp-drill-table rd-rp-emc-table" role="table" aria-label="التزام الموظفين ومخالفاتهم">
-              <div class="rd-rp-drill-thead rd-rp-emc-row" role="row">
-                <button type="button" class="rd-rp-th" onclick="rdEmpMcSort('name')">الموظف<i class="fas ${sortName}" aria-hidden="true"></i></button>
-                <span class="rd-rp-th">الفرع</span>
-                <button type="button" class="rd-rp-th" onclick="rdEmpMcSort('rate')">الالتزام<i class="fas ${sortRate}" aria-hidden="true"></i></button>
-                <button type="button" class="rd-rp-th" onclick="rdEmpMcSort('violCount')">المخالفات<i class="fas ${sortViol}" aria-hidden="true"></i></button>
-                <span class="rd-rp-th">تفاصيل المخالفات</span>
-              </div>
+            <div class="rd-rp-emc-list" aria-label="التزام الموظفين ومخالفاتهم">
               ${rowsHtml || '<div class="rd-ticket-empty" role="status"><i class="fas fa-user-check" aria-hidden="true"></i><p>لا توجد بيانات لهذا الشهر</p></div>'}
             </div>
           </div>`;
@@ -30678,7 +30726,15 @@
       function rdEmpMcSetMonth(val) {
         state._rdEmpMcMonthKey = String(val || '').slice(0, 7);
         renderReportsRedesign();
-        rdFocusReportsChrome();
+        requestAnimationFrame(() => {
+          const host = document.getElementById('rdReports');
+          if (!host || host.hidden) return;
+          const key = state._rdEmpMcMonthKey;
+          const chip = host.querySelector(`.rd-rp-month-chip[data-month-key="${key}"]`);
+          if (chip) {
+            try { chip.focus({ preventScroll: true }); } catch (_) { try { chip.focus(); } catch (__) {} }
+          }
+        });
       }
 
       function rdEmpMcSearch(val) {
