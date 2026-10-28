@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="athar-staging-redesign mr-desktop-ui" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>أثر — اختبار واجهة التقارير</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    :root {
+      --font: "Segoe UI", Tahoma, Arial, sans-serif;
+      --text: #1a1a1f;
+      --text2: #5c5c66;
+      --text3: #8a8a96;
+      --surface: #fff;
+      --surface2: #f4f4f7;
+      --border: #e4e4ea;
+      --gold: #b8952a;
+      --goldSoft: rgba(184, 149, 42, 0.14);
+      --success: #1f8a4c;
+      --danger: #c0392b;
+      --warning: #c48a16;
+      --info: #2f6fed;
+      --mr-primary: #1a1a1f;
+      --mr-primary-hover: #000;
+      --mr-border: #e4e4ea;
+      --searchFill: #f4f4f7;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: var(--font);
+      background: #f5f5f7;
+      color: var(--text);
+      padding: 24px;
+    }
+    #appWrap { max-width: 1100px; margin: 0 auto; }
+    #tab-reports.tab-content.active { display: block; }
+    .sr-only {
+      position: absolute !important; width: 1px !important; height: 1px !important;
+      padding: 0 !important; margin: -1px !important; overflow: hidden !important;
+      clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; border: 0 !important;
+    }
+  </style>
+  <link rel="stylesheet" href="../../styles/custom/athar-reports-redesign.css">
+  <style>
+    /* Minimal layout tokens for harness when served from e2e/fixtures */
+    .rd-rp-download-btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      min-height: 44px; padding: 0 18px; border: 1px solid var(--border); border-radius: 999px;
+      background: var(--mr-primary); color: #fff; font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer;
+    }
+    .rd-rp-download-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+    .rd-rp-page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px 18px; flex-wrap: wrap; margin: 0 0 18px; }
+    .rd-rp-page-head__title { margin: 0; font-size: 1.35rem; font-weight: 700; color: var(--text); }
+    .rd-rp-page-head__sub { margin: 6px 0 0; font-size: 12.5px; color: var(--text3); max-width: 48ch; }
+    .rd-rp-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-bottom: 22px; }
+    .rd-rp-metric { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 0; min-height: 108px; }
+    .rd-rp-metric__label { font-size: 12px; color: var(--text2); }
+    .rd-rp-metric__value { font-size: 26px; font-weight: 700; color: var(--gold); margin-top: 8px; font-variant-numeric: tabular-nums; }
+    .rd-rp-metric__trend { font-size: 11px; color: var(--text3); margin-top: 6px; }
+    .rd-rp-desk-split { display: grid; grid-template-columns: 1.7fr 1fr; gap: 22px; align-items: start; }
+    .rd-rp-sec-title { margin: 0 0 12px; font-size: 13.5px; font-weight: 700; color: var(--text); }
+    .rd-rp-bars-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px; }
+    .rd-rp-bars { display: flex; align-items: stretch; justify-content: space-between; height: 180px; gap: 16px; }
+    .rd-rp-bar { flex: 1 1 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; min-width: 0; gap: 0; }
+    .rd-rp-bar__pct { flex: 0 0 auto; font-size: 11px; font-weight: 600; color: var(--text2); margin-bottom: 4px; font-variant-numeric: tabular-nums; }
+    .rd-rp-bar__track { flex: 1 1 auto; min-height: 0; width: 100%; display: flex; align-items: flex-end; justify-content: center; }
+    .rd-rp-bar__fill { width: 100%; max-width: 36px; border-radius: 8px 8px 0 0; background: var(--gold); min-height: 4px; }
+    .rd-rp-bar__lbl { flex: 0 0 auto; margin-top: 8px; font-size: 12px; color: var(--text2); white-space: nowrap; }
+    .rd-rp-links { display: flex; flex-direction: column; gap: 10px; }
+    .rd-rp-link { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 44px; text-align: start; font-family: inherit; color: inherit; cursor: pointer; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px; }
+    .rd-rp-link:hover { border-color: color-mix(in srgb, var(--gold) 35%, var(--border)); background: color-mix(in srgb, var(--goldSoft) 55%, var(--surface)); }
+    .rd-rp-link:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+    .rd-rp-link__ico { width: 36px; height: 36px; border-radius: 10px; background: var(--goldSoft); color: var(--gold); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .rd-rp-link__body { flex: 1 1 auto; min-width: 0; text-align: start; }
+    .rd-rp-link__title { display: block; font-size: 12.5px; font-weight: 600; color: var(--text); }
+    .rd-rp-link__sub { display: block; font-size: 10.5px; color: var(--text3); margin-top: 2px; }
+    .rd-rp-link__chev { color: var(--text3); font-size: 10px; margin-inline-start: auto; }
+  </style>
+</head>
+<body>
+  <div id="appWrap">
+    <div class="tab-content active" id="tab-reports">
+      <div class="panel wf-panel">
+        <div id="rdReports" class="rd-reports" data-testid="rd-reports" aria-label="التقارير">
+          <div class="rd-rp-main">
+            <header class="rd-rp-page-head">
+              <div class="rd-rp-page-head__text">
+                <h2 class="rd-rp-page-head__title">التقارير</h2>
+                <p class="rd-rp-page-head__sub">مؤشرات الأداء والاتجاهات والملخصات السريعة</p>
+              </div>
+              <button type="button" class="rd-rp-download-btn" data-testid="rp-export" aria-label="تنزيل التقارير بصيغة Excel">
+                <i class="fas fa-file-excel" aria-hidden="true"></i>
+                <span>تنزيل Excel</span>
+              </button>
+            </header>
+            <section class="rd-rp-metrics" aria-label="ملخص المؤشرات" aria-live="polite">
+              <article class="rd-rp-metric">
+                <div class="rd-rp-metric__label">معدل الالتزام العام</div>
+                <div class="rd-rp-metric__value">92%</div>
+                <div class="rd-rp-metric__trend">+2% عن الشهر الماضي</div>
+              </article>
+              <article class="rd-rp-metric">
+                <div class="rd-rp-metric__label">إجمالي المخالفات</div>
+                <div class="rd-rp-metric__value">18</div>
+                <div class="rd-rp-metric__trend">-3 عن الشهر الماضي</div>
+              </article>
+              <article class="rd-rp-metric">
+                <div class="rd-rp-metric__label">متوسط زمن الاستجابة</div>
+                <div class="rd-rp-metric__value">4 س</div>
+                <div class="rd-rp-metric__trend">أسرع بـ 20 دقيقة</div>
+              </article>
+            </section>
+            <div class="rd-rp-desk-split">
+              <div class="rd-rp-desk-split__main">
+                <section class="rd-rp-section rd-rp-section--bars" aria-labelledby="rdRpBarsTitle">
+                  <h3 class="rd-rp-sec-title" id="rdRpBarsTitle">اتجاه الالتزام الشهري</h3>
+                  <div class="rd-rp-bars-card">
+                    <div class="rd-rp-bars" role="img" aria-label="اتجاه الالتزام الشهري لآخر ستة أشهر">
+                      <div class="rd-rp-bar" title="مايو: 88%"><span class="rd-rp-bar__pct" aria-hidden="true">88%</span><div class="rd-rp-bar__track"><div class="rd-rp-bar__fill" style="height:88%" aria-hidden="true"></div></div><span class="rd-rp-bar__lbl">مايو</span></div>
+                      <div class="rd-rp-bar" title="يونيو: 84%"><span class="rd-rp-bar__pct" aria-hidden="true">84%</span><div class="rd-rp-bar__track"><div class="rd-rp-bar__fill" style="height:84%" aria-hidden="true"></div></div><span class="rd-rp-bar__lbl">يونيو</span></div>
+                      <div class="rd-rp-bar" title="يوليو: 90%"><span class="rd-rp-bar__pct" aria-hidden="true">90%</span><div class="rd-rp-bar__track"><div class="rd-rp-bar__fill" style="height:90%" aria-hidden="true"></div></div><span class="rd-rp-bar__lbl">يوليو</span></div>
+                      <div class="rd-rp-bar" title="أغسطس: 86%"><span class="rd-rp-bar__pct" aria-hidden="true">86%</span><div class="rd-rp-bar__track"><div class="rd-rp-bar__fill" style="height:86%" aria-hidden="true"></div></div><span class="rd-rp-bar__lbl">أغسطس</span></div>
+                      <div class="rd-rp-bar" title="سبتمبر: 91%"><span class="rd-rp-bar__pct" aria-hidden="true">91%</span><div class="rd-rp-bar__track"><div class="rd-rp-bar__fill" style="height:91%" aria-hidden="true"></div></div><span class="rd-rp-bar__lbl">سبتمبر</span></div>
+                      <div class="rd-rp-bar" title="أكتوبر: 92%"><span class="rd-rp-bar__pct" aria-hidden="true">92%</span><div class="rd-rp-bar__track"><div class="rd-rp-bar__fill" style="height:92%" aria-hidden="true"></div></div><span class="rd-rp-bar__lbl">أكتوبر</span></div>
+                    </div>
+                  </div>
+                </section>
+              </div>
+              <div class="rd-rp-desk-split__side">
+                <nav class="rd-rp-section rd-rp-section--links" aria-labelledby="rdRpLinksTitle">
+                  <h3 class="rd-rp-sec-title" id="rdRpLinksTitle">تقارير سريعة</h3>
+                  <div class="rd-rp-links">
+                    <button type="button" class="rd-rp-link" data-testid="rp-link-mc">
+                      <span class="rd-rp-link__ico" aria-hidden="true"><i class="fas fa-file-lines" aria-hidden="true"></i></span>
+                      <span class="rd-rp-link__body">
+                        <span class="rd-rp-link__title">تقرير الالتزام الشهري</span>
+                        <span class="rd-rp-link__sub">ملخص تلقائي شهري لكل الفروع</span>
+                      </span>
+                      <i class="fas fa-chevron-left rd-rp-link__chev" aria-hidden="true"></i>
+                    </button>
+                    <button type="button" class="rd-rp-link">
+                      <span class="rd-rp-link__ico" aria-hidden="true"><i class="fas fa-code-branch" aria-hidden="true"></i></span>
+                      <span class="rd-rp-link__body">
+                        <span class="rd-rp-link__title">تقرير المخالفات حسب الفرع</span>
+                        <span class="rd-rp-link__sub">مقارنة الأداء بين الفروع</span>
+                      </span>
+                      <i class="fas fa-chevron-left rd-rp-link__chev" aria-hidden="true"></i>
+                    </button>
+                    <button type="button" class="rd-rp-link">
+                      <span class="rd-rp-link__ico" aria-hidden="true"><i class="fas fa-gauge-high" aria-hidden="true"></i></span>
+                      <span class="rd-rp-link__body">
+                        <span class="rd-rp-link__title">تقرير الاستجابة للموظفين</span>
+                        <span class="rd-rp-link__sub">متوسط زمن الرد على البلاغات</span>
+                      </span>
+                      <i class="fas fa-chevron-left rd-rp-link__chev" aria-hidden="true"></i>
+                    </button>
+                  </div>
+                </nav>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -894,3 +894,302 @@ html.athar-staging-redesign.mr-mobile-ui #rdReports.rd-reports {
   animation: none;
 }
 
+
+/* ── ATHAR reports UX polish (ui-design / web-design-guidelines) ── */
+
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+.rd-rp-page-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px 18px;
+  flex-wrap: wrap;
+  margin: 0 0 18px;
+}
+
+.rd-rp-page-head__text {
+  min-width: 0;
+  flex: 1 1 220px;
+}
+
+.rd-rp-page-head__title {
+  margin: 0;
+  font-size: clamp(1.15rem, 1.8vw, 1.4rem);
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--text);
+  text-wrap: balance;
+}
+
+.rd-rp-page-head__sub {
+  margin: 6px 0 0;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--text3);
+  max-width: 48ch;
+}
+
+.rd-rp-section {
+  min-width: 0;
+}
+
+.rd-rp-metric__value,
+.rd-rp-drill-metric__val,
+.rd-rp-emp-val,
+.rd-rp-emp-count,
+.rd-rp-vb-total,
+.rd-rp-vb-score,
+.rd-rp-mc-rate,
+.rd-rp-mc-viols,
+.rd-rp-mc-res,
+.rd-rp-mc-delta,
+.rd-rp-bar__pct,
+.rd-rp-mc-bar__pct {
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+}
+
+.rd-rp-bar__pct {
+  display: block;
+  flex: 0 0 auto;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--text3);
+  margin-bottom: 4px;
+}
+
+.rd-rp-sev-legend {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text2);
+}
+
+.rd-rp-sev-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rd-rp-sev-legend__swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.rd-rp-link,
+.rd-rp-back,
+button.rd-rp-th {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.rd-rp-link:focus,
+.rd-rp-back:focus,
+button.rd-rp-th:focus,
+.rd-rp-download-btn:focus,
+.rd-rp-drill-search .figma-search-input:focus {
+  outline: none;
+}
+
+.rd-rp-link:focus-visible,
+.rd-rp-back:focus-visible,
+button.rd-rp-th:focus-visible {
+  outline: 2px solid var(--mr-primary, var(--gold, #b8952a));
+  outline-offset: 3px;
+}
+
+.rd-rp-drill-search:focus-within {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--mr-primary, var(--gold, #b8952a)) 28%, transparent) !important;
+}
+
+.rd-rp-link {
+  min-height: 44px;
+  transition: border-color .18s ease, background-color .18s ease, box-shadow .18s ease;
+}
+
+.rd-rp-link:hover {
+  border-color: color-mix(in srgb, var(--gold, var(--mr-primary)) 35%, var(--border));
+  background: color-mix(in srgb, var(--goldSoft, var(--mr-primary-softer)) 55%, var(--surface));
+}
+
+.rd-rp-back {
+  min-height: 44px;
+  min-width: 44px;
+  padding-inline: 2px;
+  transition: color .15s ease;
+}
+
+.rd-rp-drill-hero__title {
+  margin: 0;
+  text-wrap: balance;
+}
+
+.rd-rp-drill-hero__sub {
+  margin: 2px 0 0;
+}
+
+.rd-rp-drill-toolbar {
+  flex-wrap: wrap;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-reports .rd-rp-page-head {
+  margin-bottom: 20px;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-reports .rd-rp-metrics {
+  gap: 14px !important;
+  margin-bottom: 22px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-reports .rd-rp-metric {
+  min-height: 108px;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-reports .rd-rp-desk-split {
+  gap: 22px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-reports .rd-rp-sec-title {
+  margin-bottom: 12px !important;
+  text-wrap: balance;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-reports .rd-rp-bar__pct {
+  font-size: 11px;
+  color: var(--text2);
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-drill-toolbar {
+  justify-content: space-between;
+  gap: 12px 16px;
+  margin-bottom: 16px;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-drill-search {
+  max-width: 360px !important;
+  min-height: 44px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui button.rd-rp-th {
+  min-height: 32px;
+  padding: 4px 2px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-rp-drill-row:hover {
+  background: color-mix(in srgb, var(--surface2) 70%, transparent);
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-ticket-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 36px 16px;
+  color: var(--text3);
+  text-align: center;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-ticket-empty i {
+  font-size: 22px;
+  opacity: .7;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-ticket-empty p {
+  margin: 0;
+  font-size: 13px;
+}
+
+/* Mobile: keep existing page title in banner; hide duplicate redesign title */
+html.athar-staging-redesign.mr-mobile-ui #tab-reports .rd-rp-page-head__text {
+  display: none;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-reports .rd-rp-page-head {
+  margin: 0 0 14px;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-reports .rd-rp-download-btn {
+  width: 100%;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-reports .rd-rp-metrics {
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-reports .rd-rp-metric {
+  min-height: 64px;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-reports .rd-rp-sec-title {
+  margin: 4px 0 10px;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-reports .rd-rp-bars-card {
+  margin-bottom: 18px;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-reports .rd-rp-bars {
+  height: 120px;
+  gap: 8px;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-reports .rd-rp-bar__pct {
+  font-size: 9.5px;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-reports .rd-rp-link {
+  min-height: 52px;
+}
+
+html.athar-staging-redesign.mr-mobile-ui .rd-rp-sev-legend {
+  width: 100%;
+  margin-top: 4px;
+}
+
+html.athar-staging-redesign.mr-mobile-ui .rd-rp-drill-search {
+  width: 100%;
+  max-width: none;
+  min-height: 44px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rd-rp-metric,
+  .rd-rp-link,
+  .rd-rp-drill,
+  .rd-rp-drill-row,
+  .rd-rp-mc-bar,
+  .rd-rp-main,
+  html.athar-staging-redesign.mr-desktop-ui .rd-rp-drill,
+  html.athar-staging-redesign.mr-desktop-ui #tab-reports .rd-rp-main {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .rd-rp-bar__fill,
+  .rd-rp-mc-bar__fill,
+  .rd-rp-bar-fill {
+    transition: none !important;
+  }
+}
