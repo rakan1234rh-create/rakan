@@ -27664,6 +27664,6 @@
   outline: none;
 }
 .rd-rp-download-btn:focus-visible {
-  outline: 2px solid var(--mr-primary, var(--gold, #b8952a));
+  outline: 2px solid var(--mr-primary, var(--gold));
   outline-offset: 3px;
 }

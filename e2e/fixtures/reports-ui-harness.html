@@ -7,23 +7,27 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <style>
     :root {
+      /* نفس رموز ثيم أثر الإنتاج (athar-redesign-staging — فاتح) */
       --font: "Segoe UI", Tahoma, Arial, sans-serif;
-      --text: #1a1a1f;
-      --text2: #5c5c66;
-      --text3: #8a8a96;
-      --surface: #fff;
-      --surface2: #f4f4f7;
-      --border: #e4e4ea;
-      --gold: #b8952a;
-      --goldSoft: rgba(184, 149, 42, 0.14);
-      --success: #1f8a4c;
-      --danger: #c0392b;
-      --warning: #c48a16;
-      --info: #2f6fed;
-      --mr-primary: #1a1a1f;
-      --mr-primary-hover: #000;
-      --mr-border: #e4e4ea;
-      --searchFill: #f4f4f7;
+      --text: #000000;
+      --text2: #6e6e73;
+      --text3: #8e8e93;
+      --surface: #ffffff;
+      --surface2: #f2f2f7;
+      --border: rgba(60, 60, 67, 0.18);
+      --gold: #000000;
+      --onGold: #ffffff;
+      --goldSoft: rgba(0, 0, 0, 0.06);
+      --success: #34c759;
+      --danger: #ff3b30;
+      --warning: #ff9500;
+      --info: #007aff;
+      --mr-primary: #000000;
+      --mr-primary-hover: #1c1c1e;
+      --mr-primary-soft: rgba(0, 0, 0, 0.08);
+      --mr-primary-softer: rgba(0, 0, 0, 0.04);
+      --mr-border: rgba(60, 60, 67, 0.18);
+      --searchFill: rgba(118, 118, 128, 0.12);
     }
     * { box-sizing: border-box; }
     body {
@@ -49,7 +53,7 @@
       min-height: 44px; padding: 0 18px; border: 1px solid var(--border); border-radius: 999px;
       background: var(--mr-primary); color: #fff; font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer;
     }
-    .rd-rp-download-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+    .rd-rp-download-btn:focus-visible { outline: 2px solid var(--mr-primary); outline-offset: 3px; }
     .rd-rp-page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px 18px; flex-wrap: wrap; margin: 0 0 18px; }
     .rd-rp-page-head__title { margin: 0; font-size: 1.35rem; font-weight: 700; color: var(--text); }
     .rd-rp-page-head__sub { margin: 6px 0 0; font-size: 12.5px; color: var(--text3); max-width: 48ch; }
@@ -70,7 +74,7 @@
     .rd-rp-links { display: flex; flex-direction: column; gap: 10px; }
     .rd-rp-link { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 44px; text-align: start; font-family: inherit; color: inherit; cursor: pointer; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px; }
     .rd-rp-link:hover { border-color: color-mix(in srgb, var(--gold) 35%, var(--border)); background: color-mix(in srgb, var(--goldSoft) 55%, var(--surface)); }
-    .rd-rp-link:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+    .rd-rp-link:focus-visible { outline: 2px solid var(--mr-primary); outline-offset: 3px; }
     .rd-rp-link__ico { width: 36px; height: 36px; border-radius: 10px; background: var(--goldSoft); color: var(--gold); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
     .rd-rp-link__body { flex: 1 1 auto; min-width: 0; text-align: start; }
     .rd-rp-link__title { display: block; font-size: 12.5px; font-weight: 600; color: var(--text); }

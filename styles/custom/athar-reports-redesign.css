@@ -1014,12 +1014,12 @@ button.rd-rp-th:focus,
 .rd-rp-link:focus-visible,
 .rd-rp-back:focus-visible,
 button.rd-rp-th:focus-visible {
-  outline: 2px solid var(--mr-primary, var(--gold, #b8952a));
+  outline: 2px solid var(--mr-primary, var(--gold));
   outline-offset: 3px;
 }
 
 .rd-rp-drill-search:focus-within {
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--mr-primary, var(--gold, #b8952a)) 28%, transparent) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--mr-primary, var(--gold)) 28%, transparent) !important;
 }
 
 .rd-rp-link {
