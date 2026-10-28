@@ -1339,6 +1339,220 @@
       color: var(--mr-text-3)
     }
 
+    /* طبقة انقطاع الاتصال — RTL، واضحة، مع زر إعادة المحاولة */
+    .athar-conn-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 100050;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: max(20px, env(safe-area-inset-top, 0px)) max(20px, env(safe-area-inset-right, 0px)) max(20px, env(safe-area-inset-bottom, 0px)) max(20px, env(safe-area-inset-left, 0px));
+      box-sizing: border-box;
+      background: color-mix(in srgb, var(--mr-bg-2, #f5f5f7) 92%, transparent);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      direction: rtl;
+      color: var(--mr-text, #131316);
+      overscroll-behavior: contain;
+    }
+
+    .athar-conn-overlay.is-visible {
+      display: flex;
+      animation: atharConnFade .22s ease
+    }
+
+    @keyframes atharConnFade {
+      from { opacity: 0 }
+      to { opacity: 1 }
+    }
+
+    .athar-conn {
+      width: min(100%, 22rem);
+      text-align: center;
+      padding: 1.75rem 1.35rem 1.5rem;
+      border-radius: var(--mr-radius-card, 16px);
+      background: var(--mr-surface, #fff);
+      border: 1px solid var(--mr-border, #e2e2e6);
+      box-shadow: var(--mr-shadow-card, 0 1px 4px rgba(0, 0, 0, 0.08), 0 6px 20px rgba(0, 0, 0, 0.07));
+    }
+
+    .athar-conn__icon {
+      position: relative;
+      width: 3.5rem;
+      height: 3.5rem;
+      margin: 0 auto 1rem;
+      border-radius: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.55rem;
+      color: var(--mr-text-2, #4b4b57);
+      background: var(--mr-bg-2, #f5f5f7);
+      border: 1px solid var(--mr-border, #e2e2e6);
+    }
+
+    .athar-conn__slash {
+      position: absolute;
+      inset: 18% auto 18% 48%;
+      width: 2px;
+      background: var(--mr-danger, #FF0000);
+      border-radius: 2px;
+      transform: rotate(-42deg);
+      transform-origin: center;
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--mr-surface, #fff) 70%, transparent);
+    }
+
+    .athar-conn__title {
+      margin: 0 0 .45rem;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--mr-text, #131316);
+      line-height: 1.35;
+      text-wrap: balance;
+    }
+
+    .athar-conn__desc {
+      margin: 0 0 1.25rem;
+      font-size: .92rem;
+      line-height: 1.55;
+      color: var(--mr-text-2, #4b4b57);
+      text-wrap: pretty;
+    }
+
+    .athar-conn__btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: .55rem;
+      min-height: 44px;
+      min-width: 10.5rem;
+      padding: .65rem 1.25rem;
+      border: 0;
+      border-radius: var(--mr-radius-md, 12px);
+      background: var(--mr-primary, #0f1224);
+      color: #fff;
+      font-family: var(--font, inherit);
+      font-size: .95rem;
+      font-weight: 700;
+      cursor: pointer;
+      touch-action: manipulation;
+      transition: background .18s ease, transform .18s ease, opacity .18s ease;
+    }
+
+    .athar-conn__btn:hover {
+      background: var(--mr-primary-hover, #2a2d3f);
+    }
+
+    .athar-conn__btn:focus-visible {
+      outline: 2px solid var(--mr-primary, #0f1224);
+      outline-offset: 3px;
+    }
+
+    .athar-conn__btn:active {
+      transform: scale(.98);
+    }
+
+    .athar-conn__btn:disabled {
+      opacity: .65;
+      cursor: wait;
+      transform: none;
+    }
+
+    .athar-conn__btn.is-busy .fa-rotate-right {
+      animation: atharConnSpin .8s linear infinite;
+    }
+
+    @keyframes atharConnSpin {
+      to { transform: rotate(-360deg) }
+    }
+
+    [data-theme="dark"] .athar-conn-overlay,
+    html[data-theme="dark"] .athar-conn-overlay {
+      background: color-mix(in srgb, #0c0c0e 88%, transparent);
+    }
+
+    [data-theme="dark"] .athar-conn,
+    html[data-theme="dark"] .athar-conn {
+      background: #1c1c21;
+      border-color: #2e2e36;
+    }
+
+    [data-theme="dark"] .athar-conn__icon,
+    html[data-theme="dark"] .athar-conn__icon {
+      background: #141418;
+      border-color: #2e2e36;
+      color: #c8c8d0;
+    }
+
+    [data-theme="dark"] .athar-conn__btn,
+    html[data-theme="dark"] .athar-conn__btn {
+      background: #fff;
+      color: #000;
+    }
+
+    [data-theme="dark"] .athar-conn__btn:hover,
+    html[data-theme="dark"] .athar-conn__btn:hover {
+      background: #f2f2f2;
+    }
+
+    [data-theme="dark"] .athar-conn__btn:focus-visible,
+    html[data-theme="dark"] .athar-conn__btn:focus-visible {
+      outline-color: #fff;
+    }
+
+    .mr-offline-empty {
+      padding: 40px 16px;
+      text-align: center;
+      color: var(--mr-text-2, #4b4b57);
+      direction: rtl;
+    }
+
+    .mr-offline-empty i {
+      font-size: 28px;
+      margin-bottom: 10px;
+      display: block;
+      opacity: .7;
+      color: var(--mr-text-3, #87879a);
+    }
+
+    .mr-offline-empty p {
+      margin: 0 0 14px;
+      font-size: .95rem;
+      line-height: 1.5;
+    }
+
+    .mr-offline-empty__btn {
+      display: inline-flex;
+      align-items: center;
+      gap: .45rem;
+      min-height: 40px;
+      padding: .5rem 1rem;
+      border-radius: var(--mr-radius-md, 12px);
+      border: 1px solid var(--mr-border, #e2e2e6);
+      background: var(--mr-surface, #fff);
+      color: var(--mr-text, #131316);
+      font-family: var(--font, inherit);
+      font-size: .88rem;
+      font-weight: 600;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    .mr-offline-empty__btn:focus-visible {
+      outline: 2px solid var(--mr-primary, #0f1224);
+      outline-offset: 2px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .athar-conn-overlay.is-visible,
+      .athar-conn__btn.is-busy .fa-rotate-right,
+      .athar-conn__btn {
+        animation: none !important;
+        transition: none !important;
+      }
+    }
+
     /* شاشة ترحيب — نفس شعار الشريط العلوي (athar-logo-v401.png) */
     #atharWelcomeSplash {
       position: fixed;

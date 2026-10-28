@@ -1262,7 +1262,7 @@
       }
     }
   </style>
-  <link rel="stylesheet" href="styles/custom/main.css?v=wf-date-ui2">
+  <link rel="stylesheet" href="styles/custom/main.css?v=conn-offline1">
   <link rel="stylesheet" href="styles/custom/athar-home-redesign.css?v=rp19" id="athar-home-redesign">
   <link rel="stylesheet" href="styles/custom/athar-newticket-redesign.css?v=rp3" id="athar-newticket-redesign">
   <link rel="stylesheet" href="styles/custom/athar-workflow-redesign.css?v=wf6" id="athar-workflow-redesign">
@@ -3081,6 +3081,37 @@
       </div>
     </div>
   </div>
+
+  <!-- انقطاع الاتصال — بدل شاشة التحميل البيضاء ورسالة مزامنة الوقت المربكة -->
+  <div id="atharConnOverlay" class="athar-conn-overlay" hidden aria-hidden="true" role="alertdialog"
+    aria-modal="true" aria-labelledby="atharConnTitle" aria-describedby="atharConnDesc" data-testid="athar-conn-overlay">
+    <div class="athar-conn">
+      <div class="athar-conn__icon" aria-hidden="true">
+        <i class="fas fa-wifi"></i>
+        <span class="athar-conn__slash"></span>
+      </div>
+      <h2 class="athar-conn__title" id="atharConnTitle">لا يوجد اتصال بالإنترنت</h2>
+      <p class="athar-conn__desc" id="atharConnDesc">تحقق من الشبكة ثم اضغط إعادة المحاولة للمتابعة.</p>
+      <button type="button" class="athar-conn__btn" id="atharConnRetryBtn" data-testid="athar-conn-retry">
+        <i class="fas fa-rotate-right" aria-hidden="true"></i>
+        <span>إعادة المحاولة</span>
+      </button>
+    </div>
+  </div>
+  <script>
+    (function () {
+      try {
+        if (navigator.onLine !== false) return;
+        var el = document.getElementById('atharConnOverlay');
+        if (!el) return;
+        el.hidden = false;
+        el.removeAttribute('hidden');
+        el.classList.add('is-visible');
+        el.setAttribute('aria-hidden', 'false');
+        document.documentElement.classList.add('mr-boot-ready');
+      } catch (_) {}
+    })();
+  </script>
 
   <!-- Toast -->
   <div class="toast-container mk-toast-stack" id="toastContainer"></div>
@@ -5454,7 +5485,7 @@
 
     <div id="rdCmplOverlayHost"></div>
     <script src="js/auth-ingress-config.js?v=auth-ingress-v2"></script>
-    <script src="js/app.js?v=atharmig23"></script>
+    <script src="js/app.js?v=conn-offline1"></script>
         <style>
       @media (max-width: 992px) {
         /* ── workflow: منع التمدد الأفقي ── */

@@ -1342,6 +1342,9 @@
         _profileAvatarsFromCloud: false,
         _dataLoading: false,
         _dataReady: false,
+        _connStatus: 'connected',
+        _connAttempt: 0,
+        _connRetryBusy: false,
         complaints: [],
         complaintTypeFilter: 'all',
         complaintStatusFilter: '',
@@ -1372,12 +1375,46 @@
         return !!(state._dataLoading || !state._dataReady);
       }
 
+      function isBrowserOffline() {
+        try {
+          return typeof navigator !== 'undefined' && navigator.onLine === false;
+        } catch (_) {
+          return false;
+        }
+      }
+
+      function isLikelyNetworkFailure(err) {
+        if (isBrowserOffline()) return true;
+        const msg = String(
+          (err && (err.message || err.details || err.hint || err.code)) || err || ''
+        ).toLowerCase();
+        return /failed to fetch|networkerror|network request failed|load failed|err_internet_disconnected|err_network_changed|err_connection|offline|مهلة|timeout|انقطع|الإنترنت|انترنت/.test(msg);
+      }
+
+      function offlineEmptyHTML(message) {
+        const msg = message || 'لا يوجد اتصال بالإنترنت';
+        return `<div class="mr-offline-empty" role="status">
+          <i class="fas fa-wifi" aria-hidden="true"></i>
+          <p>${Sec.escapeHTML(msg)}</p>
+          <button type="button" class="mr-offline-empty__btn" onclick="retryAtharConnectivity()">
+            <i class="fas fa-rotate-right" aria-hidden="true"></i>
+            <span>إعادة المحاولة</span>
+          </button>
+        </div>`;
+      }
+
       function dataLoadingEmptyHTML(message) {
+        if (isBrowserOffline() || state._connStatus === 'offline' || state._connStatus === 'disconnected') {
+          return offlineEmptyHTML('لا يوجد اتصال بالإنترنت — أعد المحاولة بعد عودة الشبكة');
+        }
         const msg = message || 'جاري تحميل البيانات…';
         return `<div class="empty mr-data-loading"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i><p>${Sec.escapeHTML(msg)}</p></div>`;
       }
 
       function dashPanelLoadingHTML() {
+        if (isBrowserOffline() || state._connStatus === 'offline' || state._connStatus === 'disconnected') {
+          return offlineEmptyHTML('لا يوجد اتصال بالإنترنت');
+        }
         return '<div class="mk-empty"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i><p>جاري التحميل…</p></div>';
       }
 
@@ -1662,14 +1699,7 @@
       }
 
       async function retryMobileDataLoad() {
-        if (!state.currentUser) return false;
-        sessionStorage.removeItem('dataLoadEmptyWarn');
-        showToast('جاري إعادة تحميل البيانات…', 'info');
-        const ok = await loadAllData();
-        if (ok) {
-          try { renderAll(); } catch (e) { if (isAtharDebugLog()) console.error('renderAll', e); }
-        }
-        return ok;
+        return retryAtharConnectivity();
       }
       window.retryMobileDataLoad = retryMobileDataLoad;
 
@@ -2931,8 +2961,138 @@
       }
 
       function setConnStatus(status, attempt) {
-        void status;
-        void attempt;
+        state._connStatus = status || 'connected';
+        state._connAttempt = attempt || 0;
+        const overlay = document.getElementById('atharConnOverlay');
+        const titleEl = document.getElementById('atharConnTitle');
+        const descEl = document.getElementById('atharConnDesc');
+        const retryBtn = document.getElementById('atharConnRetryBtn');
+        if (!overlay) return;
+
+        if (status === 'offline' || status === 'disconnected') {
+          try {
+            document.getElementById('loginTransition')?.classList.remove('is-visible');
+            showGlobalLoader(false);
+          } catch (_) { /* noop */ }
+          if (titleEl) titleEl.textContent = 'لا يوجد اتصال بالإنترنت';
+          if (descEl) {
+            descEl.textContent = status === 'offline'
+              ? 'انقطع الاتصال. تحقق من الشبكة ثم اضغط إعادة المحاولة.'
+              : 'تعذّر الوصول للخادم. تحقق من الشبكة ثم اضغط إعادة المحاولة.';
+          }
+          overlay.hidden = false;
+          overlay.removeAttribute('hidden');
+          overlay.classList.add('is-visible');
+          overlay.setAttribute('aria-hidden', 'false');
+          if (retryBtn) {
+            retryBtn.disabled = false;
+            retryBtn.classList.remove('is-busy');
+          }
+          try { retryBtn?.focus({ preventScroll: true }); } catch (_) { /* noop */ }
+          return;
+        }
+
+        if (status === 'reconnecting') {
+          // لا تُظهر الطبقة أثناء التحميل الأول العادي — فقط عند إعادة المحاولة بعد انقطاع
+          const showUi = overlay.classList.contains('is-visible') || state._connRetryBusy;
+          if (!showUi) return;
+          if (titleEl) titleEl.textContent = 'جاري إعادة الاتصال…';
+          if (descEl) descEl.textContent = 'نحاول استعادة الاتصال بالإنترنت الآن.';
+          if (retryBtn) {
+            retryBtn.disabled = true;
+            retryBtn.classList.add('is-busy');
+          }
+          overlay.hidden = false;
+          overlay.removeAttribute('hidden');
+          overlay.classList.add('is-visible');
+          overlay.setAttribute('aria-hidden', 'false');
+          return;
+        }
+
+        // connected / default
+        overlay.classList.remove('is-visible');
+        overlay.hidden = true;
+        overlay.setAttribute('hidden', '');
+        overlay.setAttribute('aria-hidden', 'true');
+        if (retryBtn) {
+          retryBtn.disabled = false;
+          retryBtn.classList.remove('is-busy');
+        }
+      }
+
+      async function retryAtharConnectivity() {
+        if (state._connRetryBusy) return false;
+        state._connRetryBusy = true;
+        setConnStatus('reconnecting');
+        try {
+          if (isBrowserOffline()) {
+            setConnStatus('offline');
+            return false;
+          }
+          const clockOk = await syncKsaClockOffset().catch(() => false);
+          if (clockOk && typeof startLiveClock === 'function') {
+            try { startLiveClock(); } catch (_) { /* noop */ }
+          }
+          if (!state.currentUser) {
+            if (isBrowserOffline()) {
+              setConnStatus('offline');
+              return false;
+            }
+            setConnStatus('connected');
+            try {
+              if (typeof checkExistingSession === 'function') await checkExistingSession();
+            } catch (_) { /* noop */ }
+            return !!state.currentUser || !isBrowserOffline();
+          }
+          sessionStorage.removeItem('dataLoadEmptyWarn');
+          const ok = await loadAllData(true);
+          if (ok) {
+            setConnStatus('connected');
+            try { renderAll(); } catch (e) { if (isAtharDebugLog()) console.error('renderAll', e); }
+            return true;
+          }
+          setConnStatus(isBrowserOffline() ? 'offline' : 'disconnected');
+          return false;
+        } catch (e) {
+          if (isAtharDebugLog()) console.warn('[conn retry]', e);
+          setConnStatus(isBrowserOffline() || isLikelyNetworkFailure(e) ? 'offline' : 'disconnected');
+          return false;
+        } finally {
+          state._connRetryBusy = false;
+        }
+      }
+      window.retryAtharConnectivity = retryAtharConnectivity;
+
+      function initAtharConnectivityUi() {
+        if (window._atharConnUiBound) return;
+        window._atharConnUiBound = true;
+        const retryBtn = document.getElementById('atharConnRetryBtn');
+        if (retryBtn) {
+          retryBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            retryAtharConnectivity();
+          });
+        }
+        window.addEventListener('offline', () => {
+          setConnStatus('offline');
+          try {
+            if (typeof renderAll === 'function' && state.currentUser && document.getElementById('appWrap')?.style.display !== 'none') {
+              // أفرغ حالات «جاري التحميل» العالقة إلى رسالة اتصال واضحة
+              if (isAppDataPending()) {
+                try { renderAll(); } catch (_) { /* noop */ }
+              }
+            }
+          } catch (_) { /* noop */ }
+        });
+        window.addEventListener('online', () => {
+          if (state._connStatus === 'offline' || state._connStatus === 'disconnected' || isAppDataPending()) {
+            retryAtharConnectivity();
+          } else {
+            setConnStatus('connected');
+            syncKsaClockOffset().catch(() => {});
+          }
+        });
+        if (isBrowserOffline()) setConnStatus('offline');
       }
 
       /** توقيت المنصة الرسمي — المملكة العربية السعودية */
@@ -3042,7 +3202,12 @@
 
       async function initKsaClockSync() {
         armKsaClockResync();
-        const ok = await ensureKsaClockSynced(5);
+        // عند الانقطاع لا نطيل الانتظار بمحاولات مزامنة الوقت — نُظهر واجهة الاتصال بدل ذلك
+        if (isBrowserOffline()) {
+          armKsaClockRetryUntilSynced();
+          return false;
+        }
+        const ok = await ensureKsaClockSynced(3);
         if (!ok) armKsaClockRetryUntilSynced();
         return ok;
       }
@@ -3332,10 +3497,18 @@
       function formatKsaLiveClock(now) {
         const d = now ?? ksaNow();
         if (!d || isNaN(d.getTime())) {
-          return { hm: '--:--', ampm: '', dateLine: 'جاري مزامنة وقت الرياض…' };
+          const waiting = (isBrowserOffline() || state._connStatus === 'offline')
+            ? 'بانتظار الاتصال…'
+            : 'جاري ضبط الوقت…';
+          return { hm: '--:--', ampm: '', dateLine: waiting };
         }
         const p = ksaFormatParts(d);
-        if (!p) return { hm: '--:--', ampm: '', dateLine: 'جاري مزامنة وقت الرياض…' };
+        if (!p) {
+          const waiting = (isBrowserOffline() || state._connStatus === 'offline')
+            ? 'بانتظار الاتصال…'
+            : 'جاري ضبط الوقت…';
+          return { hm: '--:--', ampm: '', dateLine: waiting };
+        }
         const h12 = p.hour % 12 || 12;
         const ampm = p.hour >= 12 ? 'م' : 'ص';
         const wd = KSA_AR_WEEKDAYS[ksaWeekdayIndex(p.year, p.month, p.day)] || '';
@@ -4594,7 +4767,14 @@
           armSessionRestoreGuard();
           startLiveClock();
           const clockOk = await initKsaClockSync();
-          if (!clockOk) showToast('تعذّر مزامنة وقت الرياض — إعادة المحاولة…', 'warning');
+          if (!clockOk) {
+            // لا نربك المستخدم برسالة «فشل مزامنة وقت الرياض» عند انقطاع النت
+            if (isBrowserOffline() || state._connStatus === 'offline') {
+              setConnStatus('offline');
+            } else if (isAtharDebugLog()) {
+              console.warn('[KsaClock] sync deferred — retrying in background');
+            }
+          }
           if (ksaClockReady()) {
             ksaInitViewState(ntDpState);
             ksaInitViewState(cmpDpState);
@@ -4671,10 +4851,21 @@
           };
 
           revealAppShell();
+          if (isBrowserOffline()) {
+            setConnStatus('offline');
+            finishLoginBoot();
+            return;
+          }
           const dataOk = await loadAllData();
           if (!dataOk) {
+            if (isBrowserOffline() || state._connStatus === 'offline' || state._connStatus === 'disconnected') {
+              setConnStatus(isBrowserOffline() ? 'offline' : 'disconnected');
+              finishLoginBoot();
+              return;
+            }
             throw new Error('تعذّر تحميل البيانات من Supabase (انظر رسالة الخطأ السابقة أو Console).');
           }
+          setConnStatus('connected');
           state._seeAllCompliancePrev = canSeeAllCompliance();
           state._viewAllTicketsPrev = canViewAllTickets();
           await Promise.all([cmpReloadGeoDataIfNeeded()]);
@@ -4686,6 +4877,19 @@
         } catch (err) {
           if (isAtharDebugLog()) console.error('onUserAuthenticated', err);
           showGlobalLoader(false);
+          const networkFail = isLikelyNetworkFailure(err) || isBrowserOffline();
+          if (networkFail && state.currentUser) {
+            // أبقِ الجلسة وأظهر واجهة الاتصال بدل الشاشة البيضاء أو طرد المستخدم
+            try {
+              goToSavedOrDefaultTab({});
+              closeLoginPortal();
+              updateSidebarUser();
+              finishSessionRestoreBoot();
+            } catch (_) { /* noop */ }
+            setLoginLoading(false);
+            setConnStatus(isBrowserOffline() ? 'offline' : 'disconnected');
+            return;
+          }
           cancelSessionRestoreBoot();
           try { await atharSignOut(); } catch (_) { /* noop */ }
           state.currentUser = null;
@@ -5030,12 +5234,26 @@
           showResetForm();
           return;
         } else {
-          const { data: profile } = await sb
-            .from('users').select('*').eq('auth_uid', session.user.id).maybeSingle();
+          try {
+            const { data: profile, error: profileErr } = await sb
+              .from('users').select('*').eq('auth_uid', session.user.id).maybeSingle();
 
-          if (profile && profile.is_active) {
-            await onUserAuthenticated(profile);
-            return;
+            if (profile && profile.is_active) {
+              await onUserAuthenticated(profile);
+              return;
+            }
+            if (profileErr && (isBrowserOffline() || isLikelyNetworkFailure(profileErr))) {
+              finishSessionRestoreBoot();
+              setConnStatus('offline');
+              return;
+            }
+          } catch (sessionErr) {
+            if (isBrowserOffline() || isLikelyNetworkFailure(sessionErr)) {
+              finishSessionRestoreBoot();
+              setConnStatus('offline');
+              return;
+            }
+            throw sessionErr;
           }
           await atharSignOut();
         }
@@ -5253,15 +5471,19 @@
         } catch (err) {
           state._dataLoading = false;
           if (isAtharDebugLog()) console.error('Failed to load data:', err);
-          setConnStatus('disconnected');
+          const offline = isBrowserOffline() || isLikelyNetworkFailure(err);
+          setConnStatus(offline ? 'offline' : 'disconnected');
           if (mobLoad) showGlobalLoader(false);
-          const msg = formatPostgrestError(err) || (err && err.message) || String(err);
-          showToast(
-            /مهلة|timeout/i.test(msg)
-              ? msg + ' — Wi‑Fi أو 4G ثم حدّث الصفحة'
-              : 'فشل تحميل البيانات: ' + msg,
-            'error'
-          );
+          // واجهة الاتصال تغني عن toast مفصّل عند انقطاع النت
+          if (!offline) {
+            const msg = formatPostgrestError(err) || (err && err.message) || String(err);
+            showToast(
+              /مهلة|timeout/i.test(msg)
+                ? msg + ' — تحقق من الشبكة ثم أعد المحاولة'
+                : 'فشل تحميل البيانات: ' + msg,
+              'error'
+            );
+          }
           return false;
         } finally {
           if (loaderGuard) clearTimeout(loaderGuard);
@@ -12912,7 +13134,10 @@
             const host = document.getElementById('rdDash');
             if (host) {
               host.hidden = false;
-              host.innerHTML = '<div class="rd-screen"><div class="rd-home-loading">جاري تحميل الإحصائيات…</div></div>';
+              const pendingHtml = (isBrowserOffline() || state._connStatus === 'offline' || state._connStatus === 'disconnected')
+                ? offlineEmptyHTML('لا يوجد اتصال بالإنترنت')
+                : '<div class="rd-screen"><div class="rd-home-loading">جاري تحميل الإحصائيات…</div></div>';
+              host.innerHTML = pendingHtml;
             }
             return;
           }
@@ -34736,6 +34961,8 @@
               showResetForm();
             }
           });
+
+          if (typeof initAtharConnectivityUi === 'function') initAtharConnectivityUi();
 
           if (typeof playAtharWelcomeSplash === 'function') {
             await playAtharWelcomeSplash();
