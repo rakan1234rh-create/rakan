@@ -59,13 +59,27 @@ class FakeS3 {
     if (command instanceof FakeGetObjectCommand) {
       const value = this.objects.get(key)
       if (!value) throw namedError('NotFound')
-      return { Body: value.body, ContentLength: value.body.byteLength, ContentType: value.contentType }
+      // Mimic the AWS SDK stream mixin: raw pipe into PutObject must not be
+      // relied on (production Deno hits "unexpected end of file").
+      const bodyBytes = value.body
+      return {
+        Body: {
+          transformToByteArray: async () => bodyBytes,
+          async *[Symbol.asyncIterator]() {
+            throw new TypeError('unexpected end of file')
+          },
+        },
+        ContentLength: value.body.byteLength,
+        ContentType: value.contentType,
+      }
     }
     if (command instanceof FakePutObjectCommand) {
       if (command.input.IfNoneMatch === '*' && this.objects.has(key)) throw namedError('PreconditionFailed')
       const body = command.input.Body
-      const bytes = body instanceof Uint8Array ? body : new Uint8Array()
-      this.objects.set(key, { body: bytes, contentType: String(command.input.ContentType || '') })
+      if (!(body instanceof Uint8Array) || !body.byteLength) {
+        throw new TypeError('unexpected end of file')
+      }
+      this.objects.set(key, { body, contentType: String(command.input.ContentType || '') })
       return {}
     }
     if (command instanceof FakeDeleteObjectCommand) {
@@ -216,6 +230,37 @@ Deno.test('handler ينفذ temp -> record-copy ثم commit cleanup بلا overw
     fromKey: second, toKey, recordType: 'violation', recordId: RECORD, operation: 'create',
   }))
   if (collision.status !== 409 || !s3.objects.has(second)) throw new Error('destination overwrite was not prevented')
+})
+
+Deno.test('handler buffers GetObject body for complaint reply moveObject (no live stream pipe)', async () => {
+  const s3 = new FakeS3()
+  const fromKey = tempKey('reply.png')
+  const toKey = `complaints/${RECORD}/reply.png`
+  s3.objects.set(fromKey, {
+    body: new TextEncoder().encode('\x89PNG\r\n\x1a\ncomplaint-reply'),
+    contentType: 'image/png',
+  })
+  const { handler, rpcCalls } = buildHandler(s3)
+  const copied = await handler(req('moveObject', {
+    fromKey,
+    toKey,
+    recordType: 'complaint',
+    recordId: RECORD,
+    operation: 'reply',
+  }))
+  if (copied.status !== 200) {
+    throw new Error(`complaint reply move failed: ${copied.status} ${await copied.text()}`)
+  }
+  const payload = await copied.json()
+  if (!payload.copied || !payload.sourceRetained) throw new Error('expected buffered copy result')
+  if (!s3.objects.has(toKey) || !s3.objects.has(fromKey)) {
+    throw new Error('buffered move must write destination and retain temp')
+  }
+  if (!rpcCalls.some((call) =>
+    call.fn === 'athar_attachment_destination_can_modify' && call.args.p_operation === 'reply'
+  )) {
+    throw new Error('reply move must authorize via destination_can_modify')
+  }
 })
 
 Deno.test('handler يعوّض نسخة نقل فاشلة قبل تثبيت المرجع ولا يحذف مرجعاً مكتملًا', async () => {

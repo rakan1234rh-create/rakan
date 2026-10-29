@@ -372,6 +372,46 @@ async function requireAttachmentMoveDestination(
   if (!data) throw new Error('غير مصرح بنقل المرفق إلى هذا السجل')
 }
 
+/**
+ * Buffer an AWS SDK GetObject Body before PutObject.
+ * Piping the live Node/Deno HTTP stream into PutObject fails in the Edge
+ * runtime with `TypeError: unexpected end of file` (seen as r2-storage 503
+ * right after athar_attachment_destination_can_modify succeeds).
+ */
+async function readAwsSdkBodyBytes(body: unknown): Promise<Uint8Array> {
+  if (body == null) throw new Error('جسم الملف المؤقت فارغ')
+  if (body instanceof Uint8Array) return body
+  if (ArrayBuffer.isView(body)) {
+    const view = body as ArrayBufferView
+    return new Uint8Array(view.buffer.slice(view.byteOffset, view.byteOffset + view.byteLength))
+  }
+  if (body instanceof ArrayBuffer) return new Uint8Array(body)
+  if (typeof body === 'object') {
+    const candidate = body as {
+      transformToByteArray?: () => Promise<Uint8Array>
+      transformToWebStream?: () => ReadableStream<Uint8Array>
+      arrayBuffer?: () => Promise<ArrayBuffer>
+    }
+    if (typeof candidate.transformToByteArray === 'function') {
+      return await candidate.transformToByteArray()
+    }
+    if (typeof candidate.arrayBuffer === 'function') {
+      return new Uint8Array(await candidate.arrayBuffer())
+    }
+    if (typeof candidate.transformToWebStream === 'function') {
+      return new Uint8Array(await new Response(candidate.transformToWebStream()).arrayBuffer())
+    }
+  }
+  if (typeof Response !== 'undefined') {
+    try {
+      return new Uint8Array(await new Response(body as BodyInit).arrayBuffer())
+    } catch {
+      // fall through
+    }
+  }
+  throw new Error('تعذّر قراءة جسم الملف المؤقت')
+}
+
 async function requireAttachmentMoveRollback(
   supabase: RpcClient,
   input: {
@@ -1110,12 +1150,16 @@ export function createR2StorageHandler(deps: {
       normalizedAttachmentContentType(toKey, sourceContentType)
       const source = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: fromKey }))
       if (!source.Body) throw new Error('جسم الملف المؤقت فارغ')
+      // Buffer first — do not pipe the live GetObject stream into PutObject.
+      const bytes = await readAwsSdkBodyBytes(source.Body)
+      if (!bytes.byteLength) throw new Error('جسم الملف المؤقت فارغ')
+      assertAttachmentSize(bytes.byteLength)
       await s3.send(new PutObjectCommand({
         Bucket: bucket,
         Key: toKey,
-        Body: source.Body,
+        Body: bytes,
         ContentType: sourceContentType,
-        ContentLength: sourceHead.ContentLength,
+        ContentLength: bytes.byteLength,
         // الشرط الذري يمنع سباق Head/Put من استبدال ملف قائم.
         IfNoneMatch: '*',
       }))
