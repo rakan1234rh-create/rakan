@@ -124,14 +124,42 @@ $block$;
 ROLLBACK;
 SQL
 
-# The first five attempts are accepted; the sixth enters a 15-minute block.
-"${PSQL[@]}" -At <<'SQL' | grep -qx 'true|true|true|true|true|false'
+# Apply the retry_after shape migration used by the lockout wait message.
+"${PSQL[@]}" -f "${ROOT}/supabase/migrations/20261029193000_employee_login_rate_limit_retry_after.sql"
+
+# The first five attempts are accepted; the sixth enters a 15-minute block
+# and exposes a positive retry_after_seconds for the UI minute figure.
+"${PSQL[@]}" <<'SQL'
 SET ROLE service_role;
-SELECT string_agg(
-  public.consume_employee_login_rate_limit(repeat('a', 64))::text,
-  '|' ORDER BY n
-)
-FROM generate_series(1, 6) AS n;
+DO $block$
+DECLARE
+  v_key text := repeat('b', 64);
+  v_allowed boolean;
+  v_retry integer;
+  v_results text[] := ARRAY[]::text[];
+  v_i integer;
+BEGIN
+  FOR v_i IN 1..6 LOOP
+    SELECT allowed, retry_after_seconds
+      INTO v_allowed, v_retry
+    FROM public.consume_employee_login_rate_limit(v_key);
+    v_results := v_results || v_allowed::text;
+  END LOOP;
+
+  IF array_to_string(v_results, '|') <> 'true|true|true|true|true|false' THEN
+    RAISE EXCEPTION 'unexpected allow sequence: %', array_to_string(v_results, '|');
+  END IF;
+
+  SELECT allowed, retry_after_seconds
+    INTO v_allowed, v_retry
+  FROM public.consume_employee_login_rate_limit(v_key);
+
+  IF v_allowed OR v_retry IS NULL OR v_retry < 1 THEN
+    RAISE EXCEPTION 'blocked key must expose positive retry_after_seconds, got allowed=% retry=%',
+      v_allowed, v_retry;
+  END IF;
+END
+$block$;
 SQL
 
 echo 'local PostgreSQL users security test: PASS'
