@@ -40521,10 +40521,12 @@
       }
 
       function canManageComplaints() {
-        return typeof hasPermission === 'function'
-          ? hasPermission('manage_complaints')
-          : normalizeUserRole(state.currentUser?.role) === 'admin'
-            || normalizeUserRole(state.currentUser?.role) === 'auditor';
+        // Hard role gate (matches can_manage_complaints() in DB): only admin
+        // and auditor (إدارة الرقابة الداخلية) may view/resolve/communicate on
+        // ALL complaints. Do not use hasPermission here — platform matrix
+        // overrides must not open manage-all to other staff roles.
+        const role = normalizeUserRole(state.currentUser?.role);
+        return role === 'admin' || role === 'auditor';
       }
 
       function canSubmitComplaint() {
@@ -41533,6 +41535,16 @@
           .on('postgres_changes', { event: '*', schema: 'public', table: 'complaints' }, (payload) => {
             const row = payload.new || payload.old;
             if (!row?.id) return;
+            // Defense in depth: non-managers only keep their own rows even if
+            // a realtime event arrives for another employee's complaint.
+            const uid = state.currentUser?.id;
+            const maySeeAll = typeof canManageComplaints === 'function' && canManageComplaints();
+            if (!maySeeAll && uid && String(row.employee_id) !== String(uid)) {
+              if (payload.eventType === 'DELETE') {
+                state.complaints = (state.complaints || []).filter(c => c.id !== row.id);
+              }
+              return;
+            }
             let list = [...(state.complaints || [])];
             if (payload.eventType === 'DELETE') {
               list = list.filter(c => c.id !== row.id);
