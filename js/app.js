@@ -1014,12 +1014,17 @@
         const next = atts.map((a) => {
           if (!a || (a.p !== oldKey && a.path !== oldKey)) return a;
           changed = true;
-          return { ...a, p: newKey };
+          const copy = { ...a, p: newKey };
+          if ('path' in a) copy.path = newKey;
+          return copy;
         });
         if (!changed) return;
         try {
-          await sb.from('complaints').update({ attachments: next }).eq('id', id);
+          // RLS يمنع UPDATE المباشر على complaints؛ ثبّت عبر RPC مثل المخالفات.
+          await finalizeR2AttachmentPath('complaint', id, oldKey, newKey, { operation: 'repair' });
           row.attachments = next;
+          if (ctx) ctx.attachments = next;
+          void cleanupR2CopiedTempKey(oldKey);
         } catch (_) { /* noop */ }
       }
 
@@ -6282,7 +6287,7 @@
         { id: 'tab_newTicket', label: 'رصد مخالفة جديدة', group: 'التنقل', roles: ['admin', 'observer', 'supervisor'] },
         { id: 'tab_workflow', label: 'معالجة التذاكر', group: 'التنقل', roles: ['admin', 'manager', 'auditor', 'supervisor', 'employee', 'branch_manager', 'observer', 'hr'] },
         { id: 'tab_breaks', label: 'بريكات الموظفين', group: 'التنقل', roles: ['admin', 'manager', 'auditor', 'supervisor', 'branch_manager', 'observer', 'employee'] },
-        { id: 'tab_complaints', label: 'الشكاوى والاقتراحات', group: 'التنقل', roles: ['admin', 'supervisor', 'branch_manager', 'observer', 'employee'] },
+        { id: 'tab_complaints', label: 'الشكاوى والاقتراحات', group: 'التنقل', roles: ['admin', 'auditor', 'supervisor', 'branch_manager', 'observer', 'employee'] },
         { id: 'tab_reports', label: 'التقارير', group: 'التنقل', roles: ['admin', 'manager', 'auditor', 'hr'] },
         { id: 'tab_compliance', label: 'مؤشرات الامتثال', group: 'التنقل', roles: ['admin', 'manager', 'auditor', 'supervisor', 'branch_manager'] },
         { id: 'tab_violations', label: 'أنواع المخالفات', group: 'التنقل', roles: ['admin', 'manager', 'auditor', 'supervisor', 'employee', 'branch_manager', 'observer'] },
@@ -6307,7 +6312,7 @@
         { id: 'manage_regions', label: 'إضافة/تعديل المناطق والفروع', group: 'إجراءات إدارية', roles: ['admin'] },
         { id: 'delete_regions', label: 'حذف المناطق والفروع', group: 'إجراءات إدارية', roles: ['admin'] },
         { id: 'manage_break_schedules', label: 'تعديل مدد البريك (منطقة/فرع/موظف)', group: 'إجراءات إدارية', roles: ['admin'] },
-        { id: 'manage_complaints', label: 'إدارة الشكاوى والاقتراحات (الرد والإغلاق)', group: 'إجراءات إدارية', roles: ['admin'] },
+        { id: 'manage_complaints', label: 'إدارة الشكاوى والاقتراحات (الرد والإغلاق)', group: 'إجراءات إدارية', roles: ['admin', 'auditor'] },
         { id: 'manage_violation_types', label: 'إدارة أنواع المخالفات', group: 'إجراءات إدارية', roles: ['admin'] },
         { id: 'manage_users', label: 'إضافة/تعديل/تعطيل المستخدمين', group: 'إجراءات إدارية', roles: ['admin'] },
         { id: 'import_users', label: 'استيراد المستخدمين CSV', group: 'إجراءات إدارية', roles: ['admin'] },
@@ -18279,11 +18284,14 @@
           scanAtts(atts);
           const logs = Array.isArray(c.logs) ? c.logs : [];
           for (const m of logs) scanAtts(parseAtts(m?.attachments));
-          const safeNum = String(c.complaint_number || c.id || '').replace(/[^\w.\-]/g, '_');
+          // المسار النهائي الرسمي هو complaints/{uuid}/… وليس رقم الشكوى.
+          if (c.id && base) addUnique(ticketFolder, `complaints/${c.id}/${base}`);
+          const safeNum = String(c.complaint_number || '').replace(/[^\w.\-]/g, '_');
           if (safeNum && base) addUnique(ticketFolder, `complaints/${safeNum}/${base}`);
         }
         if (ctx?.complaint_number || (ctx && !ctx.ticket_number && ctx.id)) {
-          const safeNum = String(ctx.complaint_number || ctx.id || '').replace(/[^\w.\-]/g, '_');
+          if (ctx.id && base) addUnique(ticketFolder, `complaints/${ctx.id}/${base}`);
+          const safeNum = String(ctx.complaint_number || '').replace(/[^\w.\-]/g, '_');
           if (safeNum && base) addUnique(ticketFolder, `complaints/${safeNum}/${base}`);
         }
         const rank = new Map();
@@ -19827,12 +19835,16 @@
             const ctxId = String(ticketCtx?.id || '').trim();
             if (ctxId && tempKey.startsWith('temp_')) {
               const base = tempKey.split('/').pop();
-              const recovered = [
-                `violations/${ctxId}/${base}`,
-                ...(ticketCtx?.ticket_number
-                  ? [`${String(ticketCtx.ticket_number).replace(/^V-\d{4}-/, '')}/${base}`]
-                  : []),
-              ];
+              const isComplaintCtx = !!(ticketCtx?.complaint_number)
+                || (!!state._attComplaintCtx && String(state._attComplaintCtx.id) === ctxId);
+              const recovered = isComplaintCtx
+                ? [`complaints/${ctxId}/${base}`]
+                : [
+                    `violations/${ctxId}/${base}`,
+                    ...(ticketCtx?.ticket_number
+                      ? [`${String(ticketCtx.ticket_number).replace(/^V-\d{4}-/, '')}/${base}`]
+                      : []),
+                  ];
               candidates = [...new Set([tempKey, ...recovered, ...candidates])];
             }
             const useStream = isLikelyVideoAttachmentKey(fileId);
@@ -40509,7 +40521,10 @@
       }
 
       function canManageComplaints() {
-        return normalizeUserRole(state.currentUser?.role) === 'admin';
+        return typeof hasPermission === 'function'
+          ? hasPermission('manage_complaints')
+          : normalizeUserRole(state.currentUser?.role) === 'admin'
+            || normalizeUserRole(state.currentUser?.role) === 'auditor';
       }
 
       function canSubmitComplaint() {
