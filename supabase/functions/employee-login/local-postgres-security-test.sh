@@ -124,14 +124,23 @@ $block$;
 ROLLBACK;
 SQL
 
-# The first five attempts are accepted; the sixth enters a 15-minute block.
+# Apply the retry_after shape migration used by the lockout wait message.
+"${PSQL[@]}" -f "${ROOT}/supabase/migrations/20261029193000_employee_login_rate_limit_retry_after.sql" >/dev/null
+
+# The first five attempts are accepted; the sixth enters a 15-minute block
+# and exposes a positive retry_after_seconds for the UI minute figure.
 "${PSQL[@]}" -At <<'SQL' | grep -qx 'true|true|true|true|true|false'
 SET ROLE service_role;
-SELECT string_agg(
-  public.consume_employee_login_rate_limit(repeat('a', 64))::text,
-  '|' ORDER BY n
-)
-FROM generate_series(1, 6) AS n;
+SELECT string_agg(allowed::text, '|' ORDER BY n)
+FROM generate_series(1, 6) AS n,
+LATERAL public.consume_employee_login_rate_limit(repeat('b', 64));
+SQL
+
+"${PSQL[@]}" -At <<'SQL' | grep -Eq '^[0-9]+$'
+SET ROLE service_role;
+SELECT retry_after_seconds
+FROM public.consume_employee_login_rate_limit(repeat('b', 64))
+WHERE allowed = false;
 SQL
 
 echo 'local PostgreSQL users security test: PASS'

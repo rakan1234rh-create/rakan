@@ -4,6 +4,12 @@ const migration = await Deno.readTextFile(
     import.meta.url,
   ),
 );
+const retryAfterMigration = await Deno.readTextFile(
+  new URL(
+    "../../migrations/20261029193000_employee_login_rate_limit_retry_after.sql",
+    import.meta.url,
+  ),
+);
 const app = await Deno.readTextFile(
   new URL("../../../js/app.js", import.meta.url),
 );
@@ -109,5 +115,33 @@ Deno.test("عداد الدخول server-only ومحدد ولا يحذف عداد
   assert(
     !handler.includes("encode(SUPABASE_SERVICE_ROLE_KEY)"),
     "لا يستعمل service_role كملح HMAC",
+  );
+});
+
+Deno.test("هجرة retry_after تُبقي العداد server-only وتعرض دقائق الانتظار", () => {
+  for (
+    const required of [
+      "DROP FUNCTION IF EXISTS public.consume_employee_login_rate_limit(text);",
+      "RETURNS TABLE (allowed boolean, retry_after_seconds integer)",
+      "REVOKE ALL ON FUNCTION public.consume_employee_login_rate_limit(text) FROM anon, authenticated;",
+      "GRANT EXECUTE ON FUNCTION public.consume_employee_login_rate_limit(text) TO service_role;",
+    ]
+  ) {
+    assert(
+      retryAfterMigration.includes(required),
+      `هجرة مدة الانتظار ينقصها: ${required}`,
+    );
+  }
+  assert(
+    handler.includes('code: "rate_limited"') &&
+      handler.includes("retry_after_minutes") &&
+      handler.includes("انتظر"),
+    "handler يعيد رمز القفل ورقم الدقائق",
+  );
+  assert(
+    app.includes("formatLoginWaitMinutes") &&
+      app.includes("isLoginRateLimit") &&
+      app.includes("بيانات الدخول غير صحيحة."),
+    "الواجهة تفرّق بين القفل وبيانات الدخول وتعرض رقم الدقائق",
   );
 });

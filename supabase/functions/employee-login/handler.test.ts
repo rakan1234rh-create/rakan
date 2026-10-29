@@ -42,6 +42,8 @@ function request(
 type MockOptions = {
   ipAllowed?: boolean;
   employeeAllowed?: boolean;
+  /** When set, RPC returns TABLE rows instead of legacy boolean. */
+  rateLimitRetryAfterSeconds?: number;
   profile?: Record<string, unknown> | null;
   revalidated?: Record<string, unknown> | null;
   signInUserId?: string;
@@ -75,10 +77,22 @@ function mockDependencies(options: MockOptions = {}) {
     rpc: async (_name: string, args: { p_key_hash: string }) => {
       calls.rateKeys.push(args.p_key_hash);
       const isIp = calls.rateKeys.length === 1;
+      const allowed = isIp
+        ? options.ipAllowed !== false
+        : options.employeeAllowed !== false;
+      if (options.rateLimitRetryAfterSeconds != null) {
+        return {
+          data: [{
+            allowed,
+            retry_after_seconds: allowed
+              ? 0
+              : options.rateLimitRetryAfterSeconds,
+          }],
+          error: null,
+        };
+      }
       return {
-        data: isIp
-          ? options.ipAllowed !== false
-          : options.employeeAllowed !== false,
+        data: allowed,
         error: null,
       };
     },
@@ -345,6 +359,47 @@ Deno.test("handler يوقف قبل lookup حين يحجب أحد العدادي�
   );
   assert(response.status === 429, "حظر العداد يعيد 429 عاماً");
   assert(calls.lookupCandidates.length === 0, "لا استعلام ملف عند حظر العداد");
+  const payload = await response.json() as Record<string, unknown>;
+  assert(payload.code === "rate_limited", "رمز القفل واضح للواجهة");
+  assert(payload.retry_after_minutes === 15, "دقائق الانتظار رقم صريح");
+  assert(
+    String(payload.error).includes("15") &&
+      String(payload.error).includes("دقيقة"),
+    "رسالة القفل تتضمن رقم الدقائق",
+  );
+});
+
+Deno.test("handler يميّز بيانات الدخول الخاطئة عن القفل", async () => {
+  const { deps } = mockDependencies({ signInError: { message: "Invalid" } });
+  const response = await handleEmployeeLogin(
+    request({ employee_number: "123", password: "wrong" }),
+    deps,
+  );
+  assert(response.status === 401, "بيانات خاطئة تعيد 401");
+  const payload = await response.json() as Record<string, unknown>;
+  assert(payload.code === "invalid_credentials", "رمز بيانات الدخول واضح");
+  assert(
+    String(payload.error).includes("غير صحيحة") &&
+      !String(payload.error).includes("انتظر"),
+    "رسالة البيانات الخاطئة لا تخلط مع القفل",
+  );
+});
+
+Deno.test("handler يقرأ مدة القفل المتبقية من شكل RPC الجديد", async () => {
+  const { deps, calls } = mockDependencies({
+    employeeAllowed: false,
+    rateLimitRetryAfterSeconds: 125,
+  });
+  const response = await handleEmployeeLogin(
+    request({ employee_number: "123", password: "wrong" }),
+    deps,
+  );
+  assert(response.status === 429, "القفل يعيد 429");
+  assert(calls.lookupCandidates.length === 0, "لا استعلام ملف عند القفل");
+  const payload = await response.json() as Record<string, unknown>;
+  assert(payload.retry_after_seconds === 125, "الثواني تُمرَّر من الخادم");
+  assert(payload.retry_after_minutes === 3, "الثواني تُحوَّل لدقائق للأعلى");
+  assert(String(payload.error).includes("3"), "الرسالة تعرض رقم الدقائق");
 });
 
 Deno.test("شرط ingress غير المثبت يمنع الدخول قبل أي اتصال", async () => {

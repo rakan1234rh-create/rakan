@@ -7,9 +7,15 @@ import {
 
 const GENERIC_LOGIN_ERROR =
   "بيانات تسجيل الدخول غير صحيحة أو المحاولة مقيّدة مؤقتاً.";
+const INVALID_CREDENTIALS_ERROR = "بيانات الدخول غير صحيحة.";
 const RATE_LIMIT_WINDOW_SECONDS = 15 * 60;
 const MAX_REQUEST_BODY_BYTES = 4 * 1024;
 const MAX_PASSWORD_LENGTH = 1024;
+
+type RateLimitDecision = {
+  allowed: boolean;
+  retry_after_seconds: number;
+};
 
 type EnvReader = (name: string) => string | undefined;
 type SupabaseClientLike = any;
@@ -85,8 +91,64 @@ function respond(
   return new Response(JSON.stringify(body), { status, headers });
 }
 
+function minutesFromRetrySeconds(seconds: number): number {
+  return Math.max(1, Math.ceil(Math.max(1, seconds) / 60));
+}
+
+function formatLoginRateLimitError(retryAfterSeconds: number): string {
+  const minutes = minutesFromRetrySeconds(retryAfterSeconds);
+  return `كثرت المحاولات. انتظر ${minutes} دقيقة ثم حاول مرة أخرى.`;
+}
+
 function loginFailure(origin: string | null, status = 401): Response {
-  return respond(origin, { error: GENERIC_LOGIN_ERROR }, status);
+  const error = status === 401 ? INVALID_CREDENTIALS_ERROR : GENERIC_LOGIN_ERROR;
+  return respond(origin, { error, code: status === 401 ? "invalid_credentials" : "login_failed" }, status);
+}
+
+function loginRateLimited(
+  origin: string | null,
+  retryAfterSeconds: number,
+): Response {
+  const seconds = Math.max(
+    1,
+    Math.ceil(Number(retryAfterSeconds) || RATE_LIMIT_WINDOW_SECONDS),
+  );
+  const minutes = minutesFromRetrySeconds(seconds);
+  return respond(origin, {
+    error: formatLoginRateLimitError(seconds),
+    code: "rate_limited",
+    retry_after_seconds: seconds,
+    retry_after_minutes: minutes,
+  }, 429);
+}
+
+function parseRateLimitDecision(data: unknown): RateLimitDecision {
+  // New RPC returns TABLE (allowed, retry_after_seconds). Older boolean shape
+  // remains readable so a staggered deploy still fails closed with the known window.
+  if (data === true) {
+    return { allowed: true, retry_after_seconds: 0 };
+  }
+  if (data === false) {
+    return {
+      allowed: false,
+      retry_after_seconds: RATE_LIMIT_WINDOW_SECONDS,
+    };
+  }
+  const row = Array.isArray(data) ? data[0] : data;
+  if (row && typeof row === "object") {
+    const allowed = (row as { allowed?: unknown }).allowed === true;
+    const retry = Math.max(
+      0,
+      Math.ceil(Number((row as { retry_after_seconds?: unknown }).retry_after_seconds) || 0),
+    );
+    return {
+      allowed,
+      retry_after_seconds: allowed
+        ? 0
+        : (retry > 0 ? retry : RATE_LIMIT_WINDOW_SECONDS),
+    };
+  }
+  throw new Error("rate-limit-unavailable");
 }
 
 /** Turns 123 and 00123 into one five-digit, rate-limit-safe identifier. */
@@ -133,7 +195,7 @@ export async function employeeLoginRateKey(
 async function consumeRateLimit(
   client: SupabaseClientLike,
   keyHash: string,
-): Promise<boolean> {
+): Promise<RateLimitDecision> {
   const { data, error } = await client.rpc(
     "consume_employee_login_rate_limit",
     {
@@ -141,7 +203,7 @@ async function consumeRateLimit(
     },
   );
   if (error) throw new Error("rate-limit-unavailable");
-  return data === true;
+  return parseRateLimitDecision(data);
 }
 
 async function consumeIngressReplay(
@@ -266,11 +328,19 @@ export async function handleEmployeeLogin(
         ingress.replayExpiresAt!,
       )
     ) return loginFailure(origin);
-    const [ipAllowed, employeeAllowed] = await Promise.all([
+    const [ipLimit, employeeLimit] = await Promise.all([
       consumeRateLimit(serviceClient, ipKey),
       consumeRateLimit(serviceClient, employeeKey),
     ]);
-    if (!ipAllowed || !employeeAllowed) return loginFailure(origin, 429);
+    if (!ipLimit.allowed || !employeeLimit.allowed) {
+      return loginRateLimited(
+        origin,
+        Math.max(
+          ipLimit.allowed ? 0 : ipLimit.retry_after_seconds,
+          employeeLimit.allowed ? 0 : employeeLimit.retry_after_seconds,
+        ),
+      );
+    }
 
     const profile = await lookupEmployeeProfile(serviceClient, employeeNumber);
     if (!profile?.email) return loginFailure(origin);

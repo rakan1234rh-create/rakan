@@ -4633,8 +4633,41 @@
         }
       }
 
+      const LOGIN_RATE_LIMIT_WINDOW_SECONDS = 15 * 60;
+
+      function formatLoginWaitMinutes(minutes) {
+        const wait = Math.max(1, Math.ceil(Number(minutes) || 0) || 15);
+        return 'كثرت المحاولات. انتظر ' + wait + ' دقيقة ثم حاول مرة أخرى.';
+      }
+
+      function formatLoginRateLimitMessage(payload) {
+        const minutesFromPayload = Number(payload?.retry_after_minutes);
+        if (Number.isFinite(minutesFromPayload) && minutesFromPayload > 0) {
+          return formatLoginWaitMinutes(minutesFromPayload);
+        }
+        const seconds = Number(payload?.retry_after_seconds);
+        if (Number.isFinite(seconds) && seconds > 0) {
+          return formatLoginWaitMinutes(Math.ceil(seconds / 60));
+        }
+        return formatLoginWaitMinutes(LOGIN_RATE_LIMIT_WINDOW_SECONDS / 60);
+      }
+
+      function formatEmployeeLoginError(status, payload) {
+        if (status === 429 || payload?.code === 'rate_limited') {
+          return formatLoginRateLimitMessage(payload);
+        }
+        if (status === 401 || payload?.code === 'invalid_credentials') {
+          return 'بيانات الدخول غير صحيحة.';
+        }
+        const serverError = String(payload?.error || '').trim();
+        if (serverError && !/smtp|supabase|postgres|postgrest|stack|exception|jwt/i.test(serverError)) {
+          return serverError;
+        }
+        return 'تعذّر تسجيل الدخول. حاول لاحقاً.';
+      }
+
       async function signInWithEmployeeNumber(employeeNumber, password) {
-        const genericError = new Error('بيانات تسجيل الدخول غير صحيحة أو المحاولة مقيّدة مؤقتاً');
+        const genericError = new Error('تعذّر تسجيل الدخول. حاول لاحقاً.');
         try {
           if (!EMPLOYEE_LOGIN_ENDPOINT.url) throw genericError;
           const response = await fetch(EMPLOYEE_LOGIN_ENDPOINT.url, {
@@ -4647,13 +4680,29 @@
           });
           const payload = await response.json().catch(() => null);
           if (!response.ok || !payload?.access_token || !payload?.refresh_token) {
-            return { data: null, error: genericError };
+            const err = new Error(formatEmployeeLoginError(response.status, payload));
+            err.status = response.status;
+            if (response.status === 429 || payload?.code === 'rate_limited') {
+              err.isLoginRateLimit = true;
+              err.retryAfterSeconds = Math.max(
+                1,
+                Number(payload?.retry_after_seconds) || LOGIN_RATE_LIMIT_WINDOW_SECONDS
+              );
+              err.retryAfterMinutes = Math.max(
+                1,
+                Number(payload?.retry_after_minutes) || Math.ceil(err.retryAfterSeconds / 60)
+              );
+            }
+            return { data: null, error: err };
           }
           return await sb.auth.setSession({
             access_token: payload.access_token,
             refresh_token: payload.refresh_token
           });
-        } catch (_) {
+        } catch (err) {
+          if (err?.isLoginRateLimit || err?.status === 401 || err?.status === 429) {
+            return { data: null, error: err };
+          }
           return { data: null, error: genericError };
         }
       }
@@ -4684,7 +4733,13 @@
           }
 
           if (authErr || !authData?.user) {
-            showLoginError('بيانات الدخول غير صحيحة أو المحاولة مقيّدة مؤقتاً');
+            if (authErr?.isLoginRateLimit) {
+              showLoginError(authErr.message || formatLoginWaitMinutes(15));
+            } else if (!identifier.includes('@') && authErr?.message) {
+              showLoginError(authErr.message);
+            } else {
+              showLoginError('بيانات الدخول غير صحيحة.');
+            }
             setLoginLoading(false);
             return;
           }
