@@ -51,11 +51,12 @@ async function sendEmail(
   opts: { apiUrl?: string; apple?: boolean } = {},
 ) {
   const deliveryRef = crypto.randomUUID();
-  const host = (Deno.env.get('SES_SMTP_HOST') || '').trim();
-  const user = (Deno.env.get('SES_SMTP_USERNAME') || '').trim();
-  const pass = (Deno.env.get('SES_SMTP_PASSWORD') || '').trim();
-  const port = Number(Deno.env.get('SES_SMTP_PORT') || 587);
-  if (!host || !user || !pass) throw new Error('SES SMTP is not configured');
+  // Hostinger SMTP (same env aliases as send-auth-emails)
+  const host = (Deno.env.get('SES_SMTP_HOST') || Deno.env.get('SMTP_HOST') || '').trim();
+  const user = (Deno.env.get('SES_SMTP_USERNAME') || Deno.env.get('SMTP_USERNAME') || '').trim();
+  const pass = (Deno.env.get('SES_SMTP_PASSWORD') || Deno.env.get('SMTP_PASSWORD') || '').trim();
+  const port = Number(Deno.env.get('SES_SMTP_PORT') || Deno.env.get('SMTP_PORT') || 465);
+  if (!host || !user || !pass) throw new Error('Hostinger SMTP is not configured');
 
   const fromEmail = (SENDER_EMAIL_RAW.match(/<([^>]+)>/)?.[1] || SENDER_EMAIL_RAW || 'info@athar-app.online').trim();
   const mailtoUnsub = `mailto:${fromEmail}?subject=unsubscribe`;
@@ -63,7 +64,7 @@ async function sendEmail(
   const nodemailer = await import('npm:nodemailer@6.9.16');
   const transporter = nodemailer.createTransport({
     host,
-    port: Number.isFinite(port) ? port : 587,
+    port: Number.isFinite(port) && port > 0 ? port : 465,
     secure: port === 465,
     auth: { user, pass },
   });
