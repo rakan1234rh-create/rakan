@@ -3842,7 +3842,7 @@
                         <span>صور (بما فيها من المعرض) أو فيديو — حتى 100MB لكل ملف</span>
                       </span>
                     </button>
-                    <input type="file" id="nt-files" multiple accept="image/*,image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif,.heic,.heif,video/*" style="display:none"
+                    <input type="file" id="nt-files" multiple accept="image/*,image/jpeg,image/png,image/gif,image/webp,image/bmp,image/heic,image/heif,.bmp,.heic,.heif,video/*" style="display:none"
                       onchange="handleFiles(event,'nt')">
                     <div id="ntFileArea" class="file-list"></div>
                   </div>
@@ -4975,7 +4975,7 @@
           </div>
           <div class="form-group">
             <label class="form-label">مرفقات (اختياري)</label>
-            <input type="file" id="cpAttachInput" accept="image/*,image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif,.heic,.heif,video/*,.pdf,application/pdf" multiple hidden onchange="handleFiles(event,'cp')">
+            <input type="file" id="cpAttachInput" accept="image/*,image/jpeg,image/png,image/gif,image/webp,image/bmp,image/heic,image/heif,.bmp,.heic,.heif,video/*,.pdf,application/pdf" multiple hidden onchange="handleFiles(event,'cp')">
             <button type="button" class="cp-mob-attach" id="cpAttachBtn" onclick="document.getElementById('cpAttachInput').click()">
               <i class="fas fa-paperclip" aria-hidden="true"></i>
               <span id="cpAttachLabel">اضغط لإرفاق ملف</span>
@@ -5230,7 +5230,7 @@
                 autocomplete="off"
                 placeholder="اكتب ردك أو ملاحظاتك…"></textarea>
               <div id="respFileArea" class="file-list log-compose-files"></div>
-              <input type="file" id="resp-files" multiple accept="image/*,image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif,.heic,.heif,video/*,application/pdf,.pdf"
+              <input type="file" id="resp-files" multiple accept="image/*,image/jpeg,image/png,image/gif,image/webp,image/bmp,image/heic,image/heif,.bmp,.heic,.heif,video/*,application/pdf,.pdf"
                 style="display:none" onchange="handleFiles(event,'resp')">
               <div class="log-compose-actions">
                 <button type="button" class="log-compose-attach log-compose-attach--labeled"

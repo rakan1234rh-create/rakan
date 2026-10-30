@@ -16138,10 +16138,13 @@
           const nameStr = String(file?.name || '');
           const isHeicLike = /image\/(heic|heif)/i.test(typeStr)
             || /\.(heic|heif)$/i.test(nameStr);
+          // كاميرات المراقبة غالباً تصدّر BMP بأسماء طويلة وMIME فارغ أو octet-stream.
+          const isBmpLike = /image\/bmp/i.test(typeStr) || /\.bmp$/i.test(nameStr);
           const looksLikeRaster = (typeStr.startsWith('image/') && typeStr !== 'image/svg+xml' && typeStr !== 'image/gif')
             || isHeicLike
-            || (/\.(jpe?g|png|webp|bmp)$/i.test(nameStr) && !typeStr);
-          // GIF/SVG: لا نضغط. HEIC وملفات بلا MIME (شائعة على سطح المكتب/الموبايل): نحاول فكّها عبر Canvas.
+            || isBmpLike
+            || (/\.(jpe?g|png|webp)$/i.test(nameStr) && !typeStr);
+          // GIF/SVG: لا نضغط. HEIC/BMP وملفات بلا MIME: نحاول فكّها عبر Canvas.
           if (!looksLikeRaster) {
             return failPassthrough();
           }
@@ -16149,8 +16152,9 @@
           const MIN_COMPRESS_BYTES = 200 * 1024;
           const TARGET_MAX_BYTES = 500 * 1024;
           const MAX_EDGE = 1600;
-          // HEIC وأي صيغة غير JPEG/PNG/WebP يجب تحويلها دائماً حتى لو كانت صغيرة.
+          // HEIC/BMP وأي صيغة غير JPEG/PNG/WebP يجب تحويلها دائماً حتى لو كانت صغيرة.
           const mustReencode = isHeicLike
+            || isBmpLike
             || !/^image\/(jpeg|png|webp)$/i.test(typeStr);
 
           const reader = new FileReader();
@@ -20492,10 +20496,10 @@
               ? Math.max(R2_ATTACHMENT_MAX_BYTES, HEVC_TRANSCODE_UPLOAD_MAX_BYTES)
               : R2_ATTACHMENT_MAX_BYTES;
 
-            // HEIC/HEIF تظهر في المعرض عبر accept=image/* — نحوّلها عبر compressImageFile.
+            // HEIC/BMP تظهر في المعرض ونحوّلها عبر compressImageFile إلى JPEG/WebP.
             // نرفض فقط الصيغ التي لا يمكن تجهيزها للمتصفح/التخزين.
-            if (/\.(bmp|tif|tiff|svg)$/i.test(file.name)
-              || /image\/(bmp|tiff|svg\+xml)/i.test(String(file.type || ''))) {
+            if (/\.(tif|tiff|svg)$/i.test(file.name)
+              || /image\/(tiff|svg\+xml)/i.test(String(file.type || ''))) {
               showToast(
                 `الصيغة "${file.name}" غير مدعومة للرفع. احفظ الصورة كـ JPEG أو PNG ثم أعد الإرفاق.`,
                 'error',
@@ -40567,7 +40571,7 @@
                 </div>`
             : `<div class="rd-cmpl-panel__compose">
                   <textarea class="rd-cmpl-textarea" id="rdCmplReplyInput" placeholder="اكتب ردك هنا..." rows="1" oninput="autoExpandComplaintReplyText(this)">${Sec.escapeHTML(state._rdCmplReply || '')}</textarea>
-                  <input type="file" id="cprAttachInput" accept="image/*,image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif,.heic,.heif,video/*,.pdf,application/pdf" multiple hidden onchange="handleFiles(event,'cpr')">
+                  <input type="file" id="cprAttachInput" accept="image/*,image/jpeg,image/png,image/gif,image/webp,image/bmp,image/heic,image/heif,.bmp,.heic,.heif,video/*,.pdf,application/pdf" multiple hidden onchange="handleFiles(event,'cpr')">
                   <div id="cprFileArea" class="file-list rd-cmpl-reply-files"></div>
                   <div class="rd-cmpl-panel__actions">
                     <button type="button" class="rd-cmpl-btn rd-cmpl-btn--primary" id="rdCmplReplySendBtn" onclick="rdSubmitComplaintReply()">إرسال الرد</button>
@@ -41842,7 +41846,7 @@
             </div>`
                 : `<div class="cp-detail__compose">
               <textarea id="cpReplyText" class="cp-detail__reply" placeholder="اكتب ردك هنا..." rows="1" oninput="autoExpandComplaintReplyText(this)"></textarea>
-              <input type="file" id="cprAttachInput" accept="image/*,image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif,.heic,.heif,video/*,.pdf,application/pdf" multiple hidden onchange="handleFiles(event,'cpr')">
+              <input type="file" id="cprAttachInput" accept="image/*,image/jpeg,image/png,image/gif,image/webp,image/bmp,image/heic,image/heif,.bmp,.heic,.heif,video/*,.pdf,application/pdf" multiple hidden onchange="handleFiles(event,'cpr')">
               <div id="cprFileArea" class="file-list cp-mob-file-list cp-detail__reply-files"></div>
               <div class="cp-detail__actions">
                 <button type="button" class="cp-detail__send" id="cpReplySendBtn" onclick="submitComplaintReplyFromUi()">إرسال الرد</button>
