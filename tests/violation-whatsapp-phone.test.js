@@ -36,8 +36,12 @@ assert(!app.includes('جاري التحضير لفتح واتساب'), 'must not
 assert(!app.includes('armWhatsAppPlaceholderWindow'), 'placeholder arming removed');
 assert(!app.includes('closeWhatsAppPlaceholder'), 'must not auto-close WhatsApp windows');
 
+assert(
+  app.includes('async function openWhatsAppAfterViolation'),
+  'openWhatsAppAfterViolation must be async so submit can await after goTab'
+);
 const openFn = app.slice(
-  app.indexOf('function openWhatsAppAfterViolation'),
+  app.indexOf('async function openWhatsAppAfterViolation'),
   app.indexOf('async function submitNewTicket')
 );
 assert(
@@ -45,6 +49,24 @@ assert(
   'must not navigate Athar tab via window.location.href = url'
 );
 assert(openFn.includes('promptOpenViolationWhatsApp'), 'after-violation uses gesture prompt');
+
+// goTab dismisses confirmOverlay — WhatsApp prompt must run AFTER goTab
+const submitSlice = app.slice(
+  app.indexOf('async function submitNewTicket'),
+  app.indexOf('// ═══════════════════════════════════════════════════════════════════════════\n      // 19. FILE UPLOADS')
+);
+const goTabAt = submitSlice.indexOf("goTab('workflow'");
+const waAfterAt = submitSlice.indexOf('await openWhatsAppAfterViolation');
+assert(goTabAt > 0, 'submitNewTicket navigates to workflow');
+assert(waAfterAt > 0, 'submitNewTicket awaits WhatsApp prompt');
+assert(
+  goTabAt < waAfterAt,
+  'goTab(workflow) must run before await openWhatsAppAfterViolation (else dismiss cancels confirm)'
+);
+assert(
+  app.includes("document.getElementById('confirmCancelBtn')?.click()"),
+  'dismissPageOverlaysOnTabLeave still cancels open confirms (documents the race)'
+);
 
 // Saudi phone → 9665XXXXXXXX
 const phoneFnMatch = app.match(
