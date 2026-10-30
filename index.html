@@ -3842,7 +3842,7 @@
                         <span>صور JPG/PNG أو فيديو MP4 — حتى 25MB لكل ملف</span>
                       </span>
                     </button>
-                    <input type="file" id="nt-files" multiple accept="image/*,video/*" style="display:none"
+                    <input type="file" id="nt-files" multiple accept="image/jpeg,image/png,image/gif,image/webp,video/*" style="display:none"
                       onchange="handleFiles(event,'nt')">
                     <div id="ntFileArea" class="file-list"></div>
                   </div>
@@ -4975,7 +4975,7 @@
           </div>
           <div class="form-group">
             <label class="form-label">مرفقات (اختياري)</label>
-            <input type="file" id="cpAttachInput" accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx" multiple hidden onchange="handleFiles(event,'cp')">
+            <input type="file" id="cpAttachInput" accept="image/jpeg,image/png,image/gif,image/webp,video/*,.pdf" multiple hidden onchange="handleFiles(event,'cp')">
             <button type="button" class="cp-mob-attach" id="cpAttachBtn" onclick="document.getElementById('cpAttachInput').click()">
               <i class="fas fa-paperclip" aria-hidden="true"></i>
               <span id="cpAttachLabel">اضغط لإرفاق ملف</span>
@@ -5230,7 +5230,7 @@
                 autocomplete="off"
                 placeholder="اكتب ردك أو ملاحظاتك…"></textarea>
               <div id="respFileArea" class="file-list log-compose-files"></div>
-              <input type="file" id="resp-files" multiple accept="image/*,video/*,application/pdf"
+              <input type="file" id="resp-files" multiple accept="image/jpeg,image/png,image/gif,image/webp,video/*,application/pdf"
                 style="display:none" onchange="handleFiles(event,'resp')">
               <div class="log-compose-actions">
                 <button type="button" class="log-compose-attach log-compose-attach--labeled"
@@ -5489,7 +5489,7 @@
 
     <div id="rdCmplOverlayHost"></div>
     <script src="js/auth-ingress-config.js?v=auth-ingress-v2"></script>
-    <script src="js/app.js?v=wa-banner-top-v13"></script>
+    <script src="js/app.js?v=emp-attach-upload-finalize-v2"></script>
         <style>
       @media (max-width: 992px) {
         /* ── workflow: منع التمدد الأفقي ── */

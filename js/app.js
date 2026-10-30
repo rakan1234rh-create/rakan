@@ -772,9 +772,47 @@
         return mobile ? 2 : 3;
       }
 
-      /** حد التحويل إلى multipart — أقل من سقف جسم Edge تجنّباً لـ 413 على الفيديو. */
+      /** حد التحويل إلى multipart — أقل من سقف جسم Edge تجنّباً لـ 413 / Load failed على الجوال. */
       function getR2MultipartThreshold() {
-        return _r2DirectPutBlocked ? (4 * 1024 * 1024) : (20 * 1024 * 1024);
+        // signPut معطّل؛ putObject بجسم كامل على Safari/الجوال يفشل غالباً بـ «Load failed».
+        if (window.matchMedia('(pointer: coarse)').matches) return 256 * 1024;
+        return _r2DirectPutBlocked ? (1 * 1024 * 1024) : (20 * 1024 * 1024);
+      }
+
+      function isR2NetworkFailureMsg(msg) {
+        return /load failed|failed to fetch|networkerror|network request failed|err_internet_disconnected|err_network_changed|err_connection|offline|timeout|مهلة|انقطع/i
+          .test(String(msg || ''));
+      }
+
+      function humanizeR2NetworkError(err) {
+        const msg = String(err?.message || err || '');
+        if (isR2NetworkFailureMsg(msg)) {
+          return 'انقطع الاتصال أثناء الرفع إلى التخزين — أعد المحاولة على شبكة ثابتة أو بملف أصغر';
+        }
+        return msg || 'فشل الاتصال بالتخزين';
+      }
+
+      /** fetch إلى r2-storage مع إعادة محاولة عند انقطاع الشبكة (رسالة Safari الشائعة: Load failed). */
+      async function fetchR2StorageRequest(init, opts = {}) {
+        const retries = Number.isFinite(opts.retries) ? opts.retries : 2;
+        let lastErr;
+        for (let attempt = 0; attempt <= retries; attempt++) {
+          try {
+            return await fetch(R2_STORAGE_FN_URL, init);
+          } catch (err) {
+            lastErr = err;
+            if (!isR2NetworkFailureMsg(err?.message || err) || attempt === retries) {
+              throw new Error(humanizeR2NetworkError(err));
+            }
+            await new Promise((resolve) => setTimeout(resolve, 400 * (attempt + 1)));
+          }
+        }
+        throw new Error(humanizeR2NetworkError(lastErr));
+      }
+
+      function isR2ObjectAlreadyExistsMsg(msg) {
+        return /يوجد ملف بالمفتاح المؤقت نفسه|يوجد ملف بالفعل في وجهة النقل|PreconditionFailed|ConditionalRequestConflict|412/i
+          .test(String(msg || ''));
       }
 
       /** MIME قانوني يطابق الامتداد — يمنع رفض الخادم بسبب أنواع الهواتف الغريبة. */
@@ -787,12 +825,28 @@
       }
 
       // يطابق حد r2-storage؛ يمنع محاولة كبيرة قبل إرسال أي بايت إلى التخزين.
-      const R2_ATTACHMENT_MAX_BYTES = 50 * 1024 * 1024;
+      const R2_ATTACHMENT_MAX_BYTES = 100 * 1024 * 1024;
+      const R2_ATTACHMENT_MAX_MB = Math.round(R2_ATTACHMENT_MAX_BYTES / 1048576);
       function assertR2AttachmentUploadSize(size) {
         const bytes = Number(size || 0);
         if (!Number.isFinite(bytes) || bytes < 1) throw new Error('المرفق فارغ');
         if (bytes > R2_ATTACHMENT_MAX_BYTES) {
-          throw new Error('حجم المرفق يتجاوز الحد المسموح (50 ميغابايت)');
+          throw new Error(`حجم المرفق يتجاوز الحد المسموح (${R2_ATTACHMENT_MAX_MB} ميغابايت)`);
+        }
+      }
+
+      /** فحص temp مملوك بعد فشل استجابة الشبكة — headObject العادي يرفض temp غير المربوط بسجل. */
+      async function recoverOwnedTempObjectIfPresent(objectKey, expectedBytes) {
+        try {
+          const head = await callR2StorageFn('headTempObject', { key: objectKey });
+          if (!head?.ok) return false;
+          const len = Number(head.contentLength || 0);
+          if (Number.isFinite(expectedBytes) && expectedBytes > 0 && len > 0 && len !== expectedBytes) {
+            return false;
+          }
+          return len > 0;
+        } catch (_) {
+          return false;
         }
       }
 
@@ -926,7 +980,7 @@
           throw new Error('انتهت الجلسة، يرجى تسجيل الدخول من جديد');
         }
 
-        const res = await fetch(R2_STORAGE_FN_URL, {
+        const res = await fetchR2StorageRequest({
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -1051,17 +1105,30 @@
           throw new Error('انتهت الجلسة، يرجى تسجيل الدخول من جديد');
         }
 
-        const res = await fetch(R2_STORAGE_FN_URL, {
-          method: 'POST',
-          headers: {
-            'Content-Type': contentType,
-            'apikey': SUPABASE_ANON,
-            'Authorization': `Bearer ${session.access_token}`,
-            'X-R2-Action': 'putObject',
-            'X-R2-Key': objectKey,
-          },
-          body,
-        });
+        const expectedBytes = (body instanceof Blob && body.size)
+          || (body && body.byteLength)
+          || 0;
+
+        let res;
+        try {
+          res = await fetchR2StorageRequest({
+            method: 'POST',
+            headers: {
+              'Content-Type': contentType,
+              'apikey': SUPABASE_ANON,
+              'Authorization': `Bearer ${session.access_token}`,
+              'X-R2-Action': 'putObject',
+              'X-R2-Key': objectKey,
+            },
+            body,
+          });
+        } catch (netErr) {
+          // الاستجابة ضاعت بعد نجاح Put أحياناً — تحقق من وجود المفتاح المؤقت المملوك.
+          if (await recoverOwnedTempObjectIfPresent(objectKey, expectedBytes)) {
+            return { ok: true, key: objectKey, recovered: true };
+          }
+          throw netErr;
+        }
 
         let data = {};
         try { data = await res.json(); } catch (_) { }
@@ -1081,6 +1148,10 @@
           }
           if (res.status === 413) {
             throw new Error('R2_EDGE_PAYLOAD_TOO_LARGE');
+          }
+          // إعادة رفع بعد نجاح سابق: الملف موجود مسبقاً — اعتبره نجاحاً.
+          if (res.status === 409 || isR2ObjectAlreadyExistsMsg(msg)) {
+            return { ok: true, key: objectKey, alreadyExists: true };
           }
           throw new Error(msg);
         }
@@ -1199,9 +1270,11 @@
       }
 
       const R2_MULTIPART_PART_BYTES = 8 * 1024 * 1024;
+      /** يطابق R2_MULTIPART_MAX_PARTS في r2-storage/security.js */
+      const R2_MULTIPART_MAX_PARTS = 20;
 
       async function uploadR2MultipartPartViaEdge(objectKey, uploadId, partNumber, chunk, authToken, contentType) {
-        for (let attempt = 0; attempt < 2; attempt++) {
+        for (let attempt = 0; attempt < 3; attempt++) {
           let token = authToken;
           if (!token || attempt > 0) {
             let session = await ensureSupabaseSessionFresh();
@@ -1213,20 +1286,29 @@
             token = session.access_token;
           }
 
-          const res = await fetch(R2_STORAGE_FN_URL, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/octet-stream',
-              'apikey': SUPABASE_ANON,
-              'Authorization': `Bearer ${token}`,
-              'X-R2-Action': 'uploadPart',
-              'X-R2-Key': objectKey,
-              'X-R2-Upload-Id': uploadId,
-              'X-R2-Part-Number': String(partNumber),
-              'X-R2-Content-Type': contentType || 'application/octet-stream',
-            },
-            body: chunk,
-          });
+          let res;
+          try {
+            res = await fetchR2StorageRequest({
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/octet-stream',
+                'apikey': SUPABASE_ANON,
+                'Authorization': `Bearer ${token}`,
+                'X-R2-Action': 'uploadPart',
+                'X-R2-Key': objectKey,
+                'X-R2-Upload-Id': uploadId,
+                'X-R2-Part-Number': String(partNumber),
+                'X-R2-Content-Type': contentType || 'application/octet-stream',
+              },
+              body: chunk,
+            }, { retries: 1 });
+          } catch (netErr) {
+            if (attempt < 2) {
+              await new Promise((resolve) => setTimeout(resolve, 500 * (attempt + 1)));
+              continue;
+            }
+            throw netErr;
+          }
 
           let data = {};
           try { data = await res.json(); } catch (_) { }
@@ -1256,7 +1338,18 @@
         const totalSize = blob.size;
         if (!totalSize) throw new Error('ملف فارغ');
 
-        const { uploadId } = await callR2StorageFn('createMultipart', { key: objectKey, contentType });
+        let uploadId;
+        try {
+          const created = await callR2StorageFn('createMultipart', { key: objectKey, contentType });
+          uploadId = created?.uploadId;
+        } catch (createErr) {
+          // putObject نجح سابقاً وفُقدت استجابته ثم حُوّلنا لـ multipart — الملف موجود.
+          if (isR2ObjectAlreadyExistsMsg(createErr?.message || createErr)
+            && await recoverOwnedTempObjectIfPresent(objectKey, totalSize)) {
+            return;
+          }
+          throw createErr;
+        }
         if (!uploadId) throw new Error('تعذّر بدء الرفع المتعدد الأجزاء');
         if (cancelHandle) {
           cancelHandle._multipart = { objectKey, uploadId };
@@ -1287,6 +1380,9 @@
           partNumber++;
         }
         const totalParts = partJobs.length;
+        if (totalParts > R2_MULTIPART_MAX_PARTS) {
+          throw new Error(`حجم المرفق يتجاوز الحد المسموح (${R2_ATTACHMENT_MAX_MB} ميغابايت)`);
+        }
         const completedParts = new Array(totalParts);
         let doneCount = 0;
 
@@ -17997,7 +18093,7 @@
           await uploadR2MultipartViaEdge(objectKey, body, ct, onPartProgress, cancelHandle);
         };
 
-        // signPut معطّل — للفيديو/الملفات الأكبر استخدم أجزاء Edge؛ وإلا الوكيل مع احتياط multipart عند 413.
+        // signPut معطّل — للجوال/الملفات الأكبر استخدم أجزاء Edge؛ وإلا الوكيل مع احتياط multipart عند 413/Load failed.
         if (needsMultipart || (isVideo && fileSize > (4 * 1024 * 1024))) {
           await uploadViaMultipart();
           return;
@@ -18006,10 +18102,16 @@
           await uploadViaProxy();
         } catch (proxyErr) {
           const proxyMsg = String(proxyErr?.message || proxyErr);
-          if (!/R2_EDGE_PAYLOAD_TOO_LARGE|413|كبير جداً|timeout|Load failed|Failed to fetch/i.test(proxyMsg)) {
-            throw proxyErr;
+          if (await recoverOwnedTempObjectIfPresent(objectKey, fileSize)) return;
+          if (!/R2_EDGE_PAYLOAD_TOO_LARGE|413|كبير جداً|timeout|Load failed|Failed to fetch|انقطع الاتصال/i.test(proxyMsg)) {
+            throw new Error(humanizeR2NetworkError(proxyErr));
           }
-          await uploadViaMultipart();
+          try {
+            await uploadViaMultipart();
+          } catch (mpErr) {
+            if (await recoverOwnedTempObjectIfPresent(objectKey, fileSize)) return;
+            throw new Error(humanizeR2NetworkError(mpErr));
+          }
         }
       }
 
@@ -18100,6 +18202,11 @@
               }
               fileEntry.blobUrl = URL.createObjectURL(blob);
               fileEntry.rawFile = blob;
+              if (blob.size > R2_ATTACHMENT_MAX_BYTES) {
+                throw new Error(
+                  `بعد التحويل بقي الفيديو ${Math.round(blob.size / 1048576)} ميغابايت — الحد ${R2_ATTACHMENT_MAX_MB} ميغابايت. قصّ المقطع أو خفّض الجودة ثم أعد الرفع.`,
+                );
+              }
             }
           }
 
@@ -18153,7 +18260,7 @@
             return;
           }
           fileEntry.prepStatus = 'error';
-          fileEntry.prepError = String(err?.message || err);
+          fileEntry.prepError = humanizeR2NetworkError(err);
           updateAttachmentPrepUi(scope, fileEntry._fileId);
           if (isAtharDebugLog()) console.warn('[Prep] فشل تجهيز مرفق', err);
         }).finally(() => {
@@ -19001,10 +19108,11 @@
         if (!(blob instanceof Blob) || !blob.size) return 'ملف الفيديو غير صالح';
         const mb = Math.round(blob.size / 1048576);
         if (blob.size > HEVC_TRANSCODE_UPLOAD_MAX_BYTES) {
-          return `حجم الفيديو ${mb}MB أكبر من حد التحويل التلقائي (${Math.round(HEVC_TRANSCODE_UPLOAD_MAX_BYTES / 1048576)}MB). اضغطه إلى H.264 720p ثم ارفعه.`;
+          return `حجم الفيديو ${mb} ميغابايت أكبر من حد التحويل التلقائي (${Math.round(HEVC_TRANSCODE_UPLOAD_MAX_BYTES / 1048576)} ميغابايت). اضغطه إلى H.264 720p ثم ارفعه.`;
         }
-        if (!isAtharDesktopViewer() && blob.size > 48 * 1024 * 1024) {
-          return `هذا الفيديو (${mb}MB) يحتاج تحويل H.264 من جهاز كمبيوتر (ليس من الجوال).`;
+        // على الجوال نسمح بالتحويل حتى حد التخزين؛ فوق ذلك يُفضَّل جهاز كمبيوتر.
+        if (!isAtharDesktopViewer() && blob.size > R2_ATTACHMENT_MAX_BYTES) {
+          return `هذا الفيديو (${mb} ميغابايت) أكبر من حد الرفع (${R2_ATTACHMENT_MAX_MB} ميغابايت) ويحتاج تحويل H.264 من جهاز كمبيوتر.`;
         }
         return '';
       }
@@ -19054,6 +19162,9 @@
             btn.disabled = !!block;
             btn.style.opacity = block ? '0.55' : '';
             btn.style.cursor = block ? 'not-allowed' : '';
+            if (inProgress) btn.title = 'انتظر اكتمال تحضير المرفقات (تحويل/رفع)…';
+            else if (hasError) btn.title = 'أزل المرفق الفاشل أو أعد اختياره';
+            else btn.title = btn.getAttribute('aria-label') || '';
           });
         }
 
@@ -20356,14 +20467,6 @@
 
         for (let fileIndex = 0; fileIndex < files.length; fileIndex++) {
           const file = files[fileIndex];
-          if (file.size > R2_ATTACHMENT_MAX_BYTES) {
-            showToast(
-              `الملف "${file.name}" أكبر من الحد المسموح (${Math.round(R2_ATTACHMENT_MAX_BYTES / 1048576)} ميغابايت).`,
-              'error',
-            );
-            continue;
-          }
-
           const item = document.createElement('div');
           item.className = 'file-item';
 
@@ -20372,6 +20475,44 @@
               || /\.(jpe?g|png|gif|webp|bmp|heic|heif)$/i.test(file.name);
             const isVid = (file.type && file.type.startsWith('video/'))
               || /\.(mp4|mov|webm|avi|mkv|m4v|mpeg|mpg|ts|m2ts|3gp)$/i.test(file.name);
+            const isPdf = (file.type === 'application/pdf') || /\.pdf$/i.test(file.name);
+            const selectCeiling = isVid
+              ? Math.max(R2_ATTACHMENT_MAX_BYTES, HEVC_TRANSCODE_UPLOAD_MAX_BYTES)
+              : R2_ATTACHMENT_MAX_BYTES;
+
+            if (/\.(heic|heif|bmp|tif|tiff|svg)$/i.test(file.name)
+              || /image\/(heic|heif|bmp|tiff|svg\+xml)/i.test(String(file.type || ''))) {
+              showToast(
+                `الصيغة "${file.name}" غير مدعومة للرفع. احفظ الصورة كـ JPEG أو PNG ثم أعد الإرفاق.`,
+                'error',
+              );
+              continue;
+            }
+            if (/\.(docx?|xlsx?|pptx?)$/i.test(file.name)) {
+              showToast('مستندات Office غير مدعومة. ارفع PDF أو صورة أو فيديو.', 'error');
+              continue;
+            }
+            if (file.size > selectCeiling) {
+              showToast(
+                isVid
+                  ? `الفيديو "${file.name}" أكبر من الحد الأقصى (${Math.round(selectCeiling / 1048576)} ميغابايت). اضغطه إلى H.264 720p أو اختر مقطعاً أقصر.`
+                  : `الملف "${file.name}" أكبر من الحد المسموح (${R2_ATTACHMENT_MAX_MB} ميغابايت).`,
+                'error',
+              );
+              continue;
+            }
+            if (!isVid && file.size > R2_ATTACHMENT_MAX_BYTES) {
+              showToast(
+                `الملف "${file.name}" أكبر من الحد المسموح (${R2_ATTACHMENT_MAX_MB} ميغابايت).`,
+                'error',
+              );
+              continue;
+            }
+            if (!isImg && !isVid && !isPdf) {
+              showToast(`نوع الملف "${file.name}" غير مدعوم. المسموح: صور JPEG/PNG/WebP، فيديو، أو PDF.`, 'error');
+              continue;
+            }
+
             let base64Data = null;
             let finalType = canonicalAttachmentContentType(file.name, file.type || '');
             let uploadFile = file;
@@ -20406,6 +20547,15 @@
                   ? compressResult.blob
                   : new File([compressResult.blob], file.name, { type: finalType });
               }
+              if (!/^image\/(jpeg|png|gif|webp)$/i.test(String(finalType || ''))
+                && !/\.(jpe?g|png|gif|webp)$/i.test(uploadFile.name || file.name)) {
+                showToast(
+                  `تعذّر تجهيز الصورة "${file.name}" لصيغة مدعومة. احفظها كـ JPEG أو PNG.`,
+                  'error',
+                );
+                item.remove();
+                continue;
+              }
             } else if (isVid) {
               vCodecHint = await sniffMp4VideoCodec(file);
               const gate = explainVideoTranscodeGate(file, file.name, vCodecHint);
@@ -20414,11 +20564,20 @@
                 item.remove();
                 continue;
               }
-              if (shouldPrepTranscodeVideo(file, file.name, vCodecHint)) {
+              const willTranscode = shouldPrepTranscodeVideo(file, file.name, vCodecHint);
+              if (!willTranscode && file.size > R2_ATTACHMENT_MAX_BYTES) {
+                showToast(
+                  `الفيديو "${file.name}" أكبر من حد الرفع (${R2_ATTACHMENT_MAX_MB} ميغابايت). اضغطه إلى H.264 720p أو اختر مقطعاً أقصر.`,
+                  'error',
+                );
+                item.remove();
+                continue;
+              }
+              if (willTranscode) {
                 const mb = Math.round(file.size / 1048576);
                 showToast(
                   mb >= 40
-                    ? `سيتم تحويل الفيديو (${mb}MB) إلى H.264 تلقائياً — قد يستغرق عدة دقائق، لا تغلق الصفحة.`
+                    ? `سيتم تحويل الفيديو (${mb} ميغابايت) إلى H.264 تلقائياً — قد يستغرق عدة دقائق، لا تغلق الصفحة. حد الرفع النهائي ${R2_ATTACHMENT_MAX_MB} ميغابايت.`
                     : 'سيتم تحويل الفيديو إلى H.264 تلقائياً أثناء التحضير.',
                   'info',
                 );
@@ -24500,6 +24659,9 @@
         btnsWrap.innerHTML = buttons.map(b =>
           `<button type="button" class="btn td-resp-action ${Sec.escapeHTML(b.cls)}" onclick="submitResp('${Sec.escapeHTML(b.act)}')"${b.title ? ` title="${Sec.escapeHTML(b.title)}" aria-label="${Sec.escapeHTML(b.title)}"` : ''}><span>${Sec.escapeHTML(b.label)}</span><i class="fas ${Sec.escapeHTML(b.icon)}" aria-hidden="true"></i></button>`
         ).join('') + blockedWarnStrip;
+        // بعد إعادة بناء الأزرار (مثلاً عند اكتمال جلب تفاصيل التذكرة) أعد قفل الإرسال
+        // إن كان تحضير مرفقات الرد ما زال جارياً أو فاشلاً — وإلا يظهر زر الإرسال نشطاً بالخطأ.
+        if (typeof syncAttachmentSubmitButtons === 'function') syncAttachmentSubmitButtons('resp');
       }
 
       // ───────────────────────────────────────────────────────────────────────────
@@ -24524,6 +24686,9 @@
 
         if (respFiles.length) {
           for (const f of respFiles) {
+            if (f.prepStatus === 'error') {
+              return showToast(f.prepError || 'مرفق فاشل — أزله أو أعد اختياره', 'error');
+            }
             if (f.prepStatus !== 'ready') {
               return showToast('انتظر اكتمال تحضير المرفقات قبل الإرسال', 'warning');
             }
@@ -24631,14 +24796,21 @@
               const oldKey = att.p;
               if (!oldKey || !oldKey.startsWith('temp_')) continue;
               const newKey = `${r2Folder}/${oldKey.split('/').pop()}`;
-              await callR2StorageFn('moveObject', {
-                fromKey: oldKey,
-                toKey: newKey,
-                recordType: 'violation',
-                recordId: t.id,
-                operation: 'reply',
-                expectedState: t.state,
-              });
+              try {
+                await callR2StorageFn('moveObject', {
+                  fromKey: oldKey,
+                  toKey: newKey,
+                  recordType: 'violation',
+                  recordId: t.id,
+                  operation: 'reply',
+                  expectedState: t.state,
+                });
+              } catch (moveErr) {
+                // النقل نجح وفُقدت الاستجابة، أو إعادة محاولة بعد نجاح سابق.
+                if (!isR2ObjectAlreadyExistsMsg(moveErr?.message || moveErr)) {
+                  throw new Error(humanizeR2NetworkError(moveErr));
+                }
+              }
               copiedReplyMoves.push({ oldKey, newKey });
               uploadedAtts[i].p = newKey;
             }
@@ -24696,7 +24868,7 @@
               operation: 'reply', expectedState: t.state,
             });
           }
-          showToast('فشل التنفيذ: ' + err.message, 'error');
+          showToast('فشل التنفيذ: ' + humanizeR2NetworkError(err), 'error');
         } finally {
           window.isUploading = false;
           btnSnapshots.forEach(s => {
@@ -40381,7 +40553,7 @@
                 </div>`
             : `<div class="rd-cmpl-panel__compose">
                   <textarea class="rd-cmpl-textarea" id="rdCmplReplyInput" placeholder="اكتب ردك هنا..." rows="1" oninput="autoExpandComplaintReplyText(this)">${Sec.escapeHTML(state._rdCmplReply || '')}</textarea>
-                  <input type="file" id="cprAttachInput" accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx" multiple hidden onchange="handleFiles(event,'cpr')">
+                  <input type="file" id="cprAttachInput" accept="image/jpeg,image/png,image/gif,image/webp,video/*,.pdf" multiple hidden onchange="handleFiles(event,'cpr')">
                   <div id="cprFileArea" class="file-list rd-cmpl-reply-files"></div>
                   <div class="rd-cmpl-panel__actions">
                     <button type="button" class="rd-cmpl-btn rd-cmpl-btn--primary" id="rdCmplReplySendBtn" onclick="rdSubmitComplaintReply()">إرسال الرد</button>
@@ -41656,7 +41828,7 @@
             </div>`
                 : `<div class="cp-detail__compose">
               <textarea id="cpReplyText" class="cp-detail__reply" placeholder="اكتب ردك هنا..." rows="1" oninput="autoExpandComplaintReplyText(this)"></textarea>
-              <input type="file" id="cprAttachInput" accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx" multiple hidden onchange="handleFiles(event,'cpr')">
+              <input type="file" id="cprAttachInput" accept="image/jpeg,image/png,image/gif,image/webp,video/*,.pdf" multiple hidden onchange="handleFiles(event,'cpr')">
               <div id="cprFileArea" class="file-list cp-mob-file-list cp-detail__reply-files"></div>
               <div class="cp-detail__actions">
                 <button type="button" class="cp-detail__send" id="cpReplySendBtn" onclick="submitComplaintReplyFromUi()">إرسال الرد</button>

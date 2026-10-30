@@ -442,7 +442,7 @@ async function requireAttachmentMoveRollback(
 
 function requestErrorStatus(error: unknown): number {
   const msg = error instanceof Error ? error.message : String(error || '')
-  if (/50 ميغابايت|حجم.*(كبير|يتجاوز)/.test(msg)) return 413
+  if (/ميغابايت|حجم.*(كبير|يتجاوز)/.test(msg)) return 413
   if (/PreconditionFailed|ConditionalRequestConflict|412|يوجد ملف/.test(msg)) return 409
   if (/غير مصرح/.test(msg)) return 403
   if (/غير صالح|غير مسموح|لا يطابق|مطلوب|فارغ/.test(msg)) return 400
@@ -1059,6 +1059,30 @@ export function createR2StorageHandler(deps: {
       }
     }
 
+    // فحص مفتاح temp مملوك فقط — يستخدم بعد فشل استجابة putObject/multipart
+    // عندما يكون الملف قد كُتب فعلياً لكن العميل رأى Load failed.
+    if (action === 'headTempObject') {
+      const key = assertTempUploadKey(body.key || '', user.id)
+      try {
+        const head = await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: key }))
+        return json({
+          ok: true,
+          key,
+          contentLength: head.ContentLength ?? null,
+          contentType: head.ContentType || guessContentTypeFromKey(key),
+        })
+      } catch (e: unknown) {
+        const name =
+          e && typeof e === 'object' && 'name' in e
+            ? String((e as { name: string }).name)
+            : ''
+        if (name === 'NotFound' || name === 'NoSuchKey' || name === '404') {
+          return json({ ok: false, key })
+        }
+        throw e
+      }
+    }
+
     if (action === 'proxyGet') {
       const key = assertKey(body.key)
       if (!isServiceRole) await requireAttachmentRead(supabase, key)
@@ -1147,24 +1171,45 @@ export function createR2StorageHandler(deps: {
         if (name && !['NotFound', 'NoSuchKey', '404'].includes(name)) throw e
       }
       const sourceHead = await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: fromKey }))
-      assertAttachmentSize(Number(sourceHead.ContentLength || 0))
+      const sourceLen = Number(sourceHead.ContentLength || 0)
+      assertAttachmentSize(sourceLen)
       const sourceContentType = normalizedAttachmentContentType(fromKey, sourceHead.ContentType || '')
       normalizedAttachmentContentType(toKey, sourceContentType)
-      const source = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: fromKey }))
-      if (!source.Body) throw new Error('جسم الملف المؤقت فارغ')
-      // Buffer first — do not pipe the live GetObject stream into PutObject.
-      const bytes = await readAwsSdkBodyBytes(source.Body)
-      if (!bytes.byteLength) throw new Error('جسم الملف المؤقت فارغ')
-      assertAttachmentSize(bytes.byteLength)
-      await s3.send(new PutObjectCommand({
-        Bucket: bucket,
-        Key: toKey,
-        Body: bytes,
-        ContentType: sourceContentType,
-        ContentLength: bytes.byteLength,
-        // الشرط الذري يمنع سباق Head/Put من استبدال ملف قائم.
-        IfNoneMatch: '*',
-      }))
+      // نسخ من جهة الخادم — يتجنب تحميل الملف كاملاً في ذاكرة Edge (مهم للفيديو >50MB).
+      // إن فشل CopyObject (مثلاً بيئة اختبار قديمة) نسقط إلى Put مُخزَّن للملفات الصغيرة فقط.
+      try {
+        await s3.send(new CopyObjectCommand({
+          Bucket: bucket,
+          Key: toKey,
+          CopySource: encodeURI(`${bucket}/${fromKey}`),
+          ContentType: sourceContentType,
+          MetadataDirective: 'REPLACE',
+          // الشرط الذري يمنع سباق Head/Copy من استبدال ملف قائم.
+          IfNoneMatch: '*',
+        }))
+      } catch (copyErr: unknown) {
+        const copyMsg = copyErr instanceof Error ? copyErr.message : String(copyErr || '')
+        const copyName = copyErr && typeof copyErr === 'object' && 'name' in copyErr
+          ? String((copyErr as { name: string }).name)
+          : ''
+        if (/PreconditionFailed|ConditionalRequestConflict|412|يوجد ملف/.test(`${copyName} ${copyMsg}`)) {
+          throw copyErr
+        }
+        if (sourceLen > (32 * 1024 * 1024)) throw copyErr
+        const source = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: fromKey }))
+        if (!source.Body) throw new Error('جسم الملف المؤقت فارغ')
+        const bytes = await readAwsSdkBodyBytes(source.Body)
+        if (!bytes.byteLength) throw new Error('جسم الملف المؤقت فارغ')
+        assertAttachmentSize(bytes.byteLength)
+        await s3.send(new PutObjectCommand({
+          Bucket: bucket,
+          Key: toKey,
+          Body: bytes,
+          ContentType: sourceContentType,
+          ContentLength: bytes.byteLength,
+          IfNoneMatch: '*',
+        }))
+      }
       // لا نحذف المصدر الآن: يجب أن ينجح RPC الذي يثبت المرجع في قاعدة
       // البيانات أولاً. عند فشله يمكن للعميل حذف النسخة النهائية بأمان
       // والإبقاء على temp لإعادة المحاولة، بلا orphan أو 404 مرجعي.

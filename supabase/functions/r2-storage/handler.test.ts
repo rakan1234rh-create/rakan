@@ -82,6 +82,19 @@ class FakeS3 {
       this.objects.set(key, { body, contentType: String(command.input.ContentType || '') })
       return {}
     }
+    if (command instanceof FakeCopyObjectCommand) {
+      if (command.input.IfNoneMatch === '*' && this.objects.has(key)) throw namedError('PreconditionFailed')
+      const copySource = decodeURI(String(command.input.CopySource || ''))
+      const slash = copySource.indexOf('/')
+      const srcKey = slash >= 0 ? copySource.slice(slash + 1) : copySource
+      const value = this.objects.get(srcKey)
+      if (!value) throw namedError('NotFound')
+      this.objects.set(key, {
+        body: value.body,
+        contentType: String(command.input.ContentType || value.contentType),
+      })
+      return {}
+    }
     if (command instanceof FakeDeleteObjectCommand) {
       this.objects.delete(key)
       return {}
@@ -164,6 +177,27 @@ Deno.test('handler يرفض temp أجنبي وpath traversal قبل أي كتا�
   }))
   if (traversal.status !== 400) throw new Error(`expected 400, got ${traversal.status}`)
   if (s3.objects.size !== 0) throw new Error('rejected requests wrote an object')
+})
+
+Deno.test('handler يسمح بـ headTempObject للمفتاح المملوك فقط', async () => {
+  const s3 = new FakeS3()
+  const owned = tempKey()
+  s3.objects.set(owned, { body: pdf(), contentType: 'application/pdf' })
+  const { handler } = buildHandler(s3)
+
+  const ok = await handler(req('headTempObject', { key: owned }))
+  if (ok.status !== 200) throw new Error(`expected 200, got ${ok.status}`)
+  const okBody = await ok.json()
+  if (!okBody.ok || okBody.contentLength !== s3.objects.get(owned)!.body.byteLength) {
+    throw new Error('owned temp head failed')
+  }
+
+  const foreign = `temp_22222222-2222-2222-2222-222222222222_nonce123/file.pdf`
+  s3.objects.set(foreign, { body: pdf(), contentType: 'application/pdf' })
+  const denied = await handler(req('headTempObject', { key: foreign }))
+  if (denied.status !== 403 && denied.status !== 400) {
+    throw new Error(`foreign temp head expected 403/400, got ${denied.status}`)
+  }
 })
 
 Deno.test('handler يسمح بالاستبدال للفعل المصرح فقط ويرفض قارئاً بلا edit', async () => {
