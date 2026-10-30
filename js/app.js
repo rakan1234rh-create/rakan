@@ -17062,16 +17062,20 @@
         try { syncRdNewTicketChrome(); } catch (_) { /* noop */ }
       }
 
-      /** جوال محلي → رقم واتساب دولي بدون + (مثال: 05XXXXXXXX → 9665XXXXXXXX) */
+      /**
+       * جوال → أرقام دولية لـ Click to Chat (بدون + أو أصفار بادئة/أقواس/شرطات).
+       * سعودي: 05XXXXXXXX | 5XXXXXXXX | +9665… | 009665… → 9665XXXXXXXX
+       */
       function phoneToWhatsAppDigits(phone) {
         const n = Sec.normalizePhone(phone);
-        if (!n) return '';
-        if (/^05\d{8}$/.test(n)) return '966' + n.slice(1);
-        if (/^9665\d{8}$/.test(n)) return n;
-        const digits = String(phone || '').replace(/\D/g, '');
+        if (n && /^05\d{8}$/.test(n)) return '966' + n.slice(1);
+        if (n && /^9665\d{8}$/.test(n)) return n;
+        let digits = String(phone || '').replace(/\D/g, '');
+        if (!digits) return '';
+        if (digits.startsWith('00')) digits = digits.slice(2);
         if (/^05\d{8}$/.test(digits)) return '966' + digits.slice(1);
         if (/^5\d{8}$/.test(digits)) return '966' + digits;
-        if (/^9665\d{8}$/.test(digits)) return digits;
+        if (/^9665\d{8}/.test(digits)) return digits.slice(0, 12);
         return '';
       }
 
@@ -17122,48 +17126,18 @@
       /**
        * Click to Chat الرسمي (FAQ واتساب):
        * https://wa.me/<number>?text=urlencodedtext
-       * الرقم دولي بأرقام فقط — بلا + أو أصفار بادئة أو أقواس أو شرطات.
        * @see https://faq.whatsapp.com/5913398998672934
        */
       function buildViolationWhatsAppUrl(phone, ticketNumber, violationType, employeeName) {
         const digits = phoneToWhatsAppDigits(phone);
-        if (!digits || !/^\d+$/.test(digits)) return '';
+        if (!digits || !/^\d{10,15}$/.test(digits)) return '';
         const text = buildViolationWhatsAppText(ticketNumber, violationType, employeeName);
         return `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
       }
 
-      /** نافذة/تبويب منفصل عن أثر */
-      function isSeparateBrowserWindow(win) {
-        try {
-          return !!(win && !win.closed && win !== window);
-        } catch (_) {
-          return false;
-        }
-      }
-
       /**
-       * احجز تبويباً فارغاً أثناء إيماءة الإرسال فقط (بدون HTML مخصص).
-       * يُتخطى في الوضع المستقل حتى لا تُفرَّغ نافذة أثر.
-       */
-      function armWhatsAppPlaceholderWindow() {
-        if (typeof isNativeMobileShell === 'function' && isNativeMobileShell()) return null;
-        let win = null;
-        try {
-          win = window.open('about:blank', '_blank');
-        } catch (_) {
-          return null;
-        }
-        if (!isSeparateBrowserWindow(win)) return null;
-        return win;
-      }
-
-      function closeWhatsAppPlaceholder(win) {
-        if (!isSeparateBrowserWindow(win)) return;
-        try { win.close(); } catch (_) { /* noop */ }
-      }
-
-      /**
-       * نمط FAQ: فتح رابط wa.me عبر <a target="_blank"> — لا يمس تبويب أثر.
+       * فتح wa.me مباشرة عبر <a target="_blank" rel="noopener"> — لا about:blank،
+       * لا window.close، ولا تحويل تبويب أثر.
        */
       function clickWhatsAppClickToChatLink(url) {
         if (!url || !/^https:\/\/wa\.me\/\d+\?text=/.test(url)) return false;
@@ -17171,7 +17145,7 @@
           const a = document.createElement('a');
           a.href = url;
           a.target = '_blank';
-          a.rel = 'noopener noreferrer';
+          a.rel = 'noopener';
           a.setAttribute('aria-label', 'Chat on WhatsApp');
           a.style.display = 'none';
           document.body.appendChild(a);
@@ -17183,45 +17157,29 @@
         }
       }
 
-      /** محاولة window.open لـ wa.me في تبويب جديد */
-      function openWhatsAppUrlInNewContext(url) {
-        let w = null;
-        try {
-          w = window.open(url, '_blank');
-        } catch (_) {
-          w = null;
-        }
-        if (isSeparateBrowserWindow(w)) {
-          try { w.opener = null; } catch (_) { /* noop */ }
-          return true;
-        }
-        if (w === window) {
-          try { history.back(); } catch (_) { /* noop */ }
-          return false;
-        }
-        return false;
-      }
-
-      function openWhatsAppComposeFromUserGesture(url) {
-        if (openWhatsAppUrlInNewContext(url)) return true;
-        return clickWhatsAppClickToChatLink(url);
-      }
-
-      /** إيماءة جديدة بعد الرفع — يفتح Click to Chat (wa.me) في تبويب جديد */
+      /**
+       * بعد اكتمال الرصد (بعد awaits) إيماءة الإرسال تكون انتهت — اطلب ضغطة
+       * «فتح واتساب» ثم افتح https://wa.me/… مباشرة في تبويب جديد.
+       */
       async function promptOpenViolationWhatsApp(url) {
         const ok = await confirmDialog(
-          'سيُفتح رابط واتساب الرسمي (Click to Chat) وفي الحقل نص الإشعار جاهزاً للإرسال.',
+          'اضغط «فتح واتساب» لفتح المحادثة مع الرسالة جاهزة للإرسال (تبويب جديد، أثر يبقى مفتوحاً).',
           { type: 'info', title: 'واتساب', okText: 'فتح واتساب', cancelText: 'لاحقاً' }
         );
         if (!ok) return false;
-        if (openWhatsAppComposeFromUserGesture(url)) return true;
+        if (clickWhatsAppClickToChatLink(url)) return true;
+        // احتياطي نادر: window.open أثناء نفس الإيماءة
+        try {
+          const w = window.open(url, '_blank', 'noopener');
+          if (w && w !== window) return true;
+        } catch (_) { /* noop */ }
         showToast('تعذّر فتح واتساب — اسمح بالنوافذ المنبثقة ثم أعد المحاولة', 'warning');
         return false;
       }
 
       /**
-       * بعد الرصد: تبويب منفصل على https://wa.me/<number>?text=…
-       * لا تستخدم window.location على أثر.
+       * لا تستخدم about:blank (شاشة بيضاء تُغلق وحدها أثناء الرفع).
+       * افتح wa.me فقط بعد إيماءة مستخدم جديدة.
        */
       function openWhatsAppAfterViolation(opts = {}) {
         const url = buildViolationWhatsAppUrl(
@@ -17231,23 +17189,11 @@
           opts.employeeName
         );
         if (!url) {
-          closeWhatsAppPlaceholder(opts.placeholderWin);
           showToast('لا يوجد جوال محفوظ للموظف — تعذّر فتح واتساب', 'warning');
           return false;
         }
-        if (isSeparateBrowserWindow(opts.placeholderWin)) {
-          try {
-            opts.placeholderWin.location.href = url;
-            try { opts.placeholderWin.opener = null; } catch (_) { /* noop */ }
-            return true;
-          } catch (_) {
-            closeWhatsAppPlaceholder(opts.placeholderWin);
-          }
-        }
-        if (openWhatsAppUrlInNewContext(url)) return true;
-        if (clickWhatsAppClickToChatLink(url)) return true;
         void promptOpenViolationWhatsApp(url);
-        return false;
+        return true;
       }
 
       async function submitNewTicket() {
@@ -17308,9 +17254,8 @@
         // Clear only after validations succeed to avoid losing attachments on toast errors
         state.uploadedFiles.nt = [];
 
-        // نافذة منفصلة أثناء إيماءة المستخدم (قبل await) — تُتخطى في PWA حتى لا تُفرَّغ أثر.
-        // الدليل لا يعيد phone للراصدين — الجلب عبر RPC بعد التأمين مباشرة.
-        let waPlaceholderWin = armWhatsAppPlaceholderWindow();
+        // لا about:blank هنا — يفتح شاشة بيضاء ثم تُغلق أثناء الرفع.
+        // الدليل لا يعيد phone للراصدين — الجلب عبر RPC؛ فتح wa.me بعد النجاح بإيماءة جديدة.
         let empPhone = String(emp.phone || '').trim();
         if (!(empPhone && phoneToWhatsAppDigits(empPhone))) {
           try {
@@ -17321,8 +17266,6 @@
           }
         }
         if (!(empPhone && phoneToWhatsAppDigits(empPhone))) {
-          closeWhatsAppPlaceholder(waPlaceholderWin);
-          waPlaceholderWin = null;
           empPhone = '';
         }
 
@@ -17467,16 +17410,12 @@
               phone: empPhone,
               ticketNumber: officialNumber,
               violationType: type,
-              employeeName: emp.name || emp.fullName || '',
-              placeholderWin: waPlaceholderWin
+              employeeName: emp.name || emp.fullName || ''
             });
-          } else {
-            closeWhatsAppPlaceholder(waPlaceholderWin);
           }
           goTab('workflow', document.querySelector('[onclick*=workflow]'));
           
         } catch (err) {
-          closeWhatsAppPlaceholder(waPlaceholderWin);
           if (isAtharDebugLog()) console.error('[Sync] Critical Error:', err);
           if (createdTicketId) {
             // السجل أُنشئ قبل نقل المرفقات. لا تنظف ملفات الجلسة هنا لأن
