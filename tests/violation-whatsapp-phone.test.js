@@ -23,7 +23,11 @@ assert(app.includes('fetchViolationSubjectPhone'), 'app defines phone helper');
 assert(app.includes('buildViolationWhatsAppUrl'), 'keeps WhatsApp compose URL builder');
 assert(app.includes('openWhatsAppAfterViolation'), 'keeps open-WhatsApp after insert');
 assert(app.includes('showViolationWhatsAppBar'), 'shows persistent in-app wa.me bar');
-assert(app.includes("bar.id = 'violationWaBar'") || app.includes('violationWaBar'), 'bar id present');
+assert(app.includes('violationWaBar'), 'bar id present');
+assert(app.includes("top:var(--unified-topbar-h, 76px)"), 'banner anchored at top under topbar');
+assert(app.includes("border-radius:0"), 'rectangular banner (no rounded card)');
+assert(app.includes("setAttribute('aria-label', 'إغلاق')"), 'X close control');
+assert(app.includes("getElementById('tab-newTicket')"), 'attaches to issue ticket page');
 assert(!app.includes('promptOpenViolationWhatsApp'), 'confirmDialog prompt path removed');
 assert(!app.includes("window.open('about:blank'"), 'must not open about:blank');
 assert(!app.includes('api.whatsapp.com/send'), 'must not use api.whatsapp.com/send');
@@ -41,7 +45,10 @@ assert(
   submitSlice.includes('employeeId: emp.id'),
   'passes employeeId so phone RPC can run if cache empty'
 );
-// Must not gate the call on empPhone alone (silent skip when RPC needed)
+assert(
+  !submitSlice.includes("goTab('workflow'"),
+  'must stay on ticket-issue page (no navigate to workflow after issue)'
+);
 assert(
   !/if\s*\(\s*empPhone\s*\)\s*\{\s*await openWhatsAppAfterViolation/.test(submitSlice) &&
     !/if\s*\(\s*phoneForWa/.test(submitSlice),
