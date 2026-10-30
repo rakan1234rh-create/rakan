@@ -6,12 +6,14 @@ export const R2_MULTIPART_PART_MAX_BYTES = 10 * 1024 * 1024
 export const R2_MULTIPART_MAX_PARTS = 7
 
 const MIME_BY_EXTENSION = {
-  mp4: new Set(['video/mp4']),
+  // هواتف/متصفحات ترسل أحياناً MIME غير مطابق للامتداد (خصوصاً iOS/Android).
+  mp4: new Set(['video/mp4', 'video/x-m4v', 'video/quicktime']),
   m4v: new Set(['video/mp4', 'video/x-m4v']),
-  mov: new Set(['video/quicktime']),
+  mov: new Set(['video/quicktime', 'video/mp4']),
   webm: new Set(['video/webm']),
   avi: new Set(['video/x-msvideo', 'video/avi']),
   mkv: new Set(['video/x-matroska']),
+  '3gp': new Set(['video/3gpp', 'video/3gpp2', 'video/mp4']),
   jpg: new Set(['image/jpeg']),
   jpeg: new Set(['image/jpeg']),
   png: new Set(['image/png']),
@@ -97,6 +99,7 @@ export function assertAttachmentSignature(key, bytes) {
     mp4: ascii(bytes, 4, 'ftyp'),
     m4v: ascii(bytes, 4, 'ftyp'),
     mov: ascii(bytes, 4, 'ftyp'),
+    '3gp': ascii(bytes, 4, 'ftyp'),
     avi: ascii(bytes, 0, 'RIFF') && ascii(bytes, 8, 'AVI '),
     webm: bytes.length >= 4 && bytes[0] === 0x1a && bytes[1] === 0x45 && bytes[2] === 0xdf && bytes[3] === 0xa3,
     mkv: bytes.length >= 4 && bytes[0] === 0x1a && bytes[1] === 0x45 && bytes[2] === 0xdf && bytes[3] === 0xa3,

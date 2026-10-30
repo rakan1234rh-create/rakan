@@ -85,7 +85,7 @@ function buildCors(req: Request): Record<string, string> {
   return {
     'Access-Control-Allow-Origin': isAllowed ? requestOrigin : '',
     'Access-Control-Allow-Headers':
-      'authorization, x-client-info, apikey, content-type, range, x-r2-action, x-r2-key, x-r2-upload-id, x-r2-part-number',
+      'authorization, x-client-info, apikey, content-type, range, x-r2-action, x-r2-key, x-r2-upload-id, x-r2-part-number, x-r2-content-type',
     'Access-Control-Allow-Methods': 'GET, HEAD, POST, OPTIONS',
     'Access-Control-Expose-Headers':
       'Content-Length, Content-Range, Accept-Ranges, Content-Type',
@@ -308,10 +308,12 @@ function guessContentTypeFromKey(key: string): string {
   const ext = key.includes('.') ? key.split('.').pop()!.toLowerCase() : ''
   const map: Record<string, string> = {
     mp4: 'video/mp4',
+    m4v: 'video/mp4',
     mov: 'video/quicktime',
     webm: 'video/webm',
     avi: 'video/x-msvideo',
     mkv: 'video/x-matroska',
+    '3gp': 'video/3gpp',
     jpg: 'image/jpeg',
     jpeg: 'image/jpeg',
     png: 'image/png',
