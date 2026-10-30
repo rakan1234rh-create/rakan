@@ -54,3 +54,18 @@ Deno.test('security helper يطابق MIME والتوقيع والحجم مع ا
     'oversized payload accepted',
   )
 })
+
+Deno.test('security helper يقبل MIME شائع للهواتف على امتدادات الفيديو', () => {
+  if (normalizedAttachmentContentType('clip.mp4', 'video/quicktime') !== 'video/quicktime') {
+    throw new Error('mp4+quicktime رُفض')
+  }
+  if (normalizedAttachmentContentType('clip.mov', 'video/mp4') !== 'video/mp4') {
+    throw new Error('mov+mp4 رُفض')
+  }
+  if (normalizedAttachmentContentType('clip.3gp', 'video/3gpp') !== 'video/3gpp') {
+    throw new Error('3gp رُفض')
+  }
+  const ftyp = new Uint8Array([0, 0, 0, 0x18, ...new TextEncoder().encode('ftypisom'), 0, 0, 0, 0])
+  assertAttachmentPayload('clip.mp4', 'video/mp4', ftyp)
+  assertAttachmentPayload('clip.3gp', 'video/3gpp', ftyp)
+})

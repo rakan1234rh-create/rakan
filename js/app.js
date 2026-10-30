@@ -750,7 +750,8 @@
       /** يُملأ عند فشل ping (مثل 503) لتوضيح سبب تخطي الرفع في وضع التطوير */
       let _r2LastResolveNote = '';
       /** بعد أول فشل CORS للرفع المباشر — نتخطاه لبقية الجلسة */
-      let _r2DirectPutBlocked = false;
+      // signPut معطّل أمنياً في r2-storage (410) — الرفع يكون عبر الوكيل أو multipart فقط.
+      let _r2DirectPutBlocked = true;
       try {
         if (sessionStorage.getItem('athar_r2_direct_blocked') === '1') _r2DirectPutBlocked = true;
       } catch (_) { /* */ }
@@ -761,8 +762,9 @@
       }
 
       function markR2DirectPutUnblocked() {
-        _r2DirectPutBlocked = false;
-        try { sessionStorage.removeItem('athar_r2_direct_blocked'); } catch (_) { /* */ }
+        // لا تُفعّل الرفع المباشر ما دام signPut يعيد 410.
+        _r2DirectPutBlocked = true;
+        try { sessionStorage.setItem('athar_r2_direct_blocked', '1'); } catch (_) { /* */ }
       }
 
       function getR2MultipartConcurrency() {
@@ -770,8 +772,18 @@
         return mobile ? 2 : 3;
       }
 
+      /** حد التحويل إلى multipart — أقل من سقف جسم Edge تجنّباً لـ 413 على الفيديو. */
       function getR2MultipartThreshold() {
-        return _r2DirectPutBlocked ? (12 * 1024 * 1024) : (20 * 1024 * 1024);
+        return _r2DirectPutBlocked ? (4 * 1024 * 1024) : (20 * 1024 * 1024);
+      }
+
+      /** MIME قانوني يطابق الامتداد — يمنع رفض الخادم بسبب أنواع الهواتف الغريبة. */
+      function canonicalAttachmentContentType(fileName, contentType) {
+        const ext = String(fileName || '').split('.').pop().toLowerCase();
+        const fromExt = mimeTypeFromAttachmentExt(ext);
+        if (fromExt) return fromExt;
+        const mime = String(contentType || '').split(';', 1)[0].trim().toLowerCase();
+        return mime || 'application/octet-stream';
       }
 
       // يطابق حد r2-storage؛ يمنع محاولة كبيرة قبل إرسال أي بايت إلى التخزين.
@@ -1188,7 +1200,7 @@
 
       const R2_MULTIPART_PART_BYTES = 8 * 1024 * 1024;
 
-      async function uploadR2MultipartPartViaEdge(objectKey, uploadId, partNumber, chunk, authToken) {
+      async function uploadR2MultipartPartViaEdge(objectKey, uploadId, partNumber, chunk, authToken, contentType) {
         for (let attempt = 0; attempt < 2; attempt++) {
           let token = authToken;
           if (!token || attempt > 0) {
@@ -1211,6 +1223,7 @@
               'X-R2-Key': objectKey,
               'X-R2-Upload-Id': uploadId,
               'X-R2-Part-Number': String(partNumber),
+              'X-R2-Content-Type': contentType || 'application/octet-stream',
             },
             body: chunk,
           });
@@ -1290,7 +1303,14 @@
               const jobIndex = nextJob++;
               if (jobIndex >= totalParts) break;
               const job = partJobs[jobIndex];
-              const result = await uploadR2MultipartPartViaEdge(objectKey, uploadId, job.partNumber, job.chunk, authToken);
+              const result = await uploadR2MultipartPartViaEdge(
+                objectKey,
+                uploadId,
+                job.partNumber,
+                job.chunk,
+                authToken,
+                contentType,
+              );
               if (cancelHandle?.cancelled) throw new Error('UPLOAD_CANCELLED');
               if (result.authToken) authToken = result.authToken;
               completedParts[jobIndex] = result;
@@ -17443,24 +17463,40 @@
           } else {
             body = fileObj;
           }
-          let contentType = String(fileObj.type || (fileObj.rawFile && fileObj.rawFile.type) || '').trim();
-          if (!contentType) {
-            const ext = String(fileObj.name || '').split('.').pop().toLowerCase();
-            if (['mp4', 'm4v'].includes(ext)) contentType = 'video/mp4';
-            else if (ext === 'mov') contentType = 'video/quicktime';
-            else if (ext === 'webm') contentType = 'video/webm';
-            else if (['jpg', 'jpeg'].includes(ext)) contentType = 'image/jpeg';
-            else if (ext === 'png') contentType = 'image/png';
-            else if (ext === 'pdf') contentType = 'application/pdf';
-            else contentType = 'application/octet-stream';
-          }
+          let contentType = canonicalAttachmentContentType(
+            fileObj.name || (fileObj.rawFile && fileObj.rawFile.name) || '',
+            fileObj.type || (fileObj.rawFile && fileObj.rawFile.type) || '',
+          );
 
           const fileSize = (fileObj.rawFile && fileObj.rawFile.size)
             || (body instanceof Blob && body.size)
             || (body && body.byteLength)
             || 0;
           assertR2AttachmentUploadSize(fileSize);
-          await uploadR2ViaEdgeProxy(objectKey, body, contentType);
+
+          const isVideo = /^video\//i.test(contentType)
+            || /\.(mp4|mov|webm|m4v|avi|mkv|3gp)$/i.test(String(fileObj.name || ''));
+          const needsMultipart = fileSize > getR2MultipartThreshold();
+          const uploadViaProxy = async () => {
+            await uploadR2ViaEdgeProxy(objectKey, body, contentType);
+          };
+          const uploadViaMultipart = async (onPartProgress) => {
+            await uploadR2MultipartViaEdge(objectKey, body, contentType, onPartProgress);
+          };
+
+          if (needsMultipart || (isVideo && fileSize > (4 * 1024 * 1024))) {
+            await uploadViaMultipart(onProgress);
+          } else {
+            try {
+              await uploadViaProxy();
+            } catch (proxyErr) {
+              const proxyMsg = String(proxyErr?.message || proxyErr);
+              if (!/R2_EDGE_PAYLOAD_TOO_LARGE|413|كبير جداً|timeout|Load failed|Failed to fetch/i.test(proxyMsg)) {
+                throw proxyErr;
+              }
+              await uploadViaMultipart(onProgress);
+            }
+          }
           return { success: true, fileId: objectKey };
         } catch (error) {
           if (isAtharDebugLog()) console.error('R2 Upload Error:', error);
@@ -17796,11 +17832,35 @@
 
       async function uploadPreparedBlobToR2(objectKey, body, contentType, fileName, onProgress, cancelHandle) {
         const fileSize = (body instanceof Blob && body.size) || (body && body.byteLength) || 0;
-        void fileName;
-        void onProgress;
-        void cancelHandle;
         assertR2AttachmentUploadSize(fileSize);
-        await uploadR2ViaEdgeProxy(objectKey, body, contentType);
+        const ct = canonicalAttachmentContentType(fileName, contentType);
+        const isVideo = /^video\//i.test(ct)
+          || /\.(mp4|mov|webm|m4v|avi|mkv|3gp)$/i.test(String(fileName || ''));
+        const needsMultipart = fileSize > getR2MultipartThreshold();
+        const onPartProgress = (done, total) => {
+          if (typeof onProgress === 'function') onProgress(done, total);
+        };
+        const uploadViaProxy = async () => {
+          await uploadR2ViaEdgeProxy(objectKey, body, ct);
+        };
+        const uploadViaMultipart = async () => {
+          await uploadR2MultipartViaEdge(objectKey, body, ct, onPartProgress, cancelHandle);
+        };
+
+        // signPut معطّل — للفيديو/الملفات الأكبر استخدم أجزاء Edge؛ وإلا الوكيل مع احتياط multipart عند 413.
+        if (needsMultipart || (isVideo && fileSize > (4 * 1024 * 1024))) {
+          await uploadViaMultipart();
+          return;
+        }
+        try {
+          await uploadViaProxy();
+        } catch (proxyErr) {
+          const proxyMsg = String(proxyErr?.message || proxyErr);
+          if (!/R2_EDGE_PAYLOAD_TOO_LARGE|413|كبير جداً|timeout|Load failed|Failed to fetch/i.test(proxyMsg)) {
+            throw proxyErr;
+          }
+          await uploadViaMultipart();
+        }
       }
 
       async function waitForAttachmentPrep(fileEntry, timeoutMs) {
@@ -17843,8 +17903,8 @@
 
           const folder = await ensureUploadTempFolder(scope);
           let body = fileEntry.rawFile;
-          let contentType = String(fileEntry.type || '').trim() || 'application/octet-stream';
           let uploadName = fileEntry.name || 'file';
+          let contentType = canonicalAttachmentContentType(uploadName, fileEntry.type || '');
 
           if (!body && fileEntry.base64) {
             const byteCharacters = atob(fileEntry.base64);
@@ -17855,7 +17915,7 @@
           }
 
           const isVideo = /^video\//i.test(contentType)
-            || /\.(mp4|mov|webm|m4v|avi|mkv|mpeg|mpg|ts|m2ts)$/i.test(uploadName);
+            || /\.(mp4|mov|webm|m4v|avi|mkv|mpeg|mpg|ts|m2ts|3gp)$/i.test(uploadName);
 
           if (isVideo && body instanceof Blob) {
             if (!body.size) {
@@ -20146,8 +20206,11 @@
 
         for (let fileIndex = 0; fileIndex < files.length; fileIndex++) {
           const file = files[fileIndex];
-          if (file.size > 500 * 1024 * 1024) {
-            showToast(`الملف "${file.name}" كبير جداً (أكبر من 500MB). يرجى ضغطه أو رفع ملف أصغر.`, 'error');
+          if (file.size > R2_ATTACHMENT_MAX_BYTES) {
+            showToast(
+              `الملف "${file.name}" أكبر من الحد المسموح (${Math.round(R2_ATTACHMENT_MAX_BYTES / 1048576)} ميغابايت).`,
+              'error',
+            );
             continue;
           }
 
@@ -20155,11 +20218,12 @@
           item.className = 'file-item';
 
           try {
-            const isImg = file.type.startsWith('image/');
-            const isVid = file.type.startsWith('video/')
-              || /\.(mp4|mov|webm|avi|mkv|m4v|mpeg|mpg|ts|m2ts)$/i.test(file.name);
+            const isImg = (file.type && file.type.startsWith('image/'))
+              || /\.(jpe?g|png|gif|webp|bmp|heic|heif)$/i.test(file.name);
+            const isVid = (file.type && file.type.startsWith('video/'))
+              || /\.(mp4|mov|webm|avi|mkv|m4v|mpeg|mpg|ts|m2ts|3gp)$/i.test(file.name);
             let base64Data = null;
-            let finalType = file.type;
+            let finalType = canonicalAttachmentContentType(file.name, file.type || '');
             let uploadFile = file;
 
             item.innerHTML = `
