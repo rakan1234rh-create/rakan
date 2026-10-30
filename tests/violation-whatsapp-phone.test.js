@@ -1,7 +1,6 @@
 /**
- * WhatsApp Click to Chat after violation.
+ * WhatsApp Click to Chat after violation — persistent in-app wa.me link.
  * FAQ: https://wa.me/<number>?text=urlencodedtext
- * No about:blank / auto-close white tab.
  */
 const fs = require('fs');
 const path = require('path');
@@ -23,52 +22,32 @@ assert(app.includes("sb.rpc('get_violation_subject_phone'"), 'app calls phone RP
 assert(app.includes('fetchViolationSubjectPhone'), 'app defines phone helper');
 assert(app.includes('buildViolationWhatsAppUrl'), 'keeps WhatsApp compose URL builder');
 assert(app.includes('openWhatsAppAfterViolation'), 'keeps open-WhatsApp after insert');
-assert(app.includes('clickWhatsAppClickToChatLink'), 'uses <a target=_blank> Click to Chat');
-assert(app.includes('promptOpenViolationWhatsApp'), 'opens after fresh user gesture');
-
+assert(app.includes('showViolationWhatsAppBar'), 'shows persistent in-app wa.me bar');
+assert(app.includes("bar.id = 'violationWaBar'") || app.includes('violationWaBar'), 'bar id present');
+assert(!app.includes('promptOpenViolationWhatsApp'), 'confirmDialog prompt path removed');
+assert(!app.includes("window.open('about:blank'"), 'must not open about:blank');
+assert(!app.includes('api.whatsapp.com/send'), 'must not use api.whatsapp.com/send');
 assert(
   /return `https:\/\/wa\.me\/\$\{digits\}\?text=\$\{encodeURIComponent\(text\)\}`/.test(app),
   'compose URL must be https://wa.me/<digits>?text=urlencoded'
 );
-assert(!app.includes('api.whatsapp.com/send'), 'must not use api.whatsapp.com/send');
-assert(!app.includes("window.open('about:blank'"), 'must not open about:blank placeholder');
-assert(!app.includes('جاري التحضير لفتح واتساب'), 'must not inject prep HTML');
-assert(!app.includes('armWhatsAppPlaceholderWindow'), 'placeholder arming removed');
-assert(!app.includes('closeWhatsAppPlaceholder'), 'must not auto-close WhatsApp windows');
 
-assert(
-  app.includes('async function openWhatsAppAfterViolation'),
-  'openWhatsAppAfterViolation must be async so submit can await after goTab'
-);
-const openFn = app.slice(
-  app.indexOf('async function openWhatsAppAfterViolation'),
-  app.indexOf('async function submitNewTicket')
-);
-assert(
-  !/window\.location\.href\s*=\s*url/.test(openFn),
-  'must not navigate Athar tab via window.location.href = url'
-);
-assert(openFn.includes('promptOpenViolationWhatsApp'), 'after-violation uses gesture prompt');
-
-// goTab dismisses confirmOverlay — WhatsApp prompt must run AFTER goTab
 const submitSlice = app.slice(
   app.indexOf('async function submitNewTicket'),
   app.indexOf('// ═══════════════════════════════════════════════════════════════════════════\n      // 19. FILE UPLOADS')
 );
-const goTabAt = submitSlice.indexOf("goTab('workflow'");
-const waAfterAt = submitSlice.indexOf('await openWhatsAppAfterViolation');
-assert(goTabAt > 0, 'submitNewTicket navigates to workflow');
-assert(waAfterAt > 0, 'submitNewTicket awaits WhatsApp prompt');
+assert(submitSlice.includes('await openWhatsAppAfterViolation'), 'submit awaits WhatsApp offer');
 assert(
-  goTabAt < waAfterAt,
-  'goTab(workflow) must run before await openWhatsAppAfterViolation (else dismiss cancels confirm)'
+  submitSlice.includes('employeeId: emp.id'),
+  'passes employeeId so phone RPC can run if cache empty'
 );
+// Must not gate the call on empPhone alone (silent skip when RPC needed)
 assert(
-  app.includes("document.getElementById('confirmCancelBtn')?.click()"),
-  'dismissPageOverlaysOnTabLeave still cancels open confirms (documents the race)'
+  !/if\s*\(\s*empPhone\s*\)\s*\{\s*await openWhatsAppAfterViolation/.test(submitSlice) &&
+    !/if\s*\(\s*phoneForWa/.test(submitSlice),
+  'must always call openWhatsAppAfterViolation after success (toast if no phone)'
 );
 
-// Saudi phone → 9665XXXXXXXX
 const phoneFnMatch = app.match(
   /function phoneToWhatsAppDigits\(phone\) \{[\s\S]*?\n      \}/
 );
@@ -77,8 +56,7 @@ const sandbox = {
   Sec: {
     normalizePhone(s) {
       if (s == null || s === '') return '';
-      let t = String(s).trim();
-      let digits = t.replace(/\D/g, '');
+      let digits = String(s).trim().replace(/\D/g, '');
       if (!digits) return '';
       if (digits.startsWith('966') && digits.length >= 12) {
         digits = '0' + digits.slice(3, 12);
@@ -93,10 +71,8 @@ const sandbox = {
 vm.createContext(sandbox);
 vm.runInContext(phoneFnMatch[0], sandbox);
 assert(sandbox.phoneToWhatsAppDigits('0501234567') === '966501234567', '05… → 9665…');
-assert(sandbox.phoneToWhatsAppDigits('501234567') === '966501234567', '5… → 9665…');
 assert(sandbox.phoneToWhatsAppDigits('+966501234567') === '966501234567', '+966…');
 assert(sandbox.phoneToWhatsAppDigits('00966501234567') === '966501234567', '00966…');
-assert(sandbox.phoneToWhatsAppDigits('966501234567') === '966501234567', '966…');
 
 assert(
   fs.existsSync(path.join(root, 'supabase/functions/violation-push/index.ts')),

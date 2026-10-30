@@ -17136,64 +17136,125 @@
         return `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
       }
 
+      function dismissViolationWhatsAppBar() {
+        document.getElementById('violationWaBar')?.remove();
+      }
+
       /**
-       * فتح wa.me مباشرة عبر <a target="_blank" rel="noopener"> — لا about:blank،
-       * لا window.close، ولا تحويل تبويب أثر.
+       * شريط ثابت بعد الإصدار: رابط wa.me حقيقي يضغطه المستخدم (إيماءة حقيقية).
+       * لا confirmDialog (goTab كان يلغيها) ولا about:blank ولا window.open المؤجّل.
        */
-      function clickWhatsAppClickToChatLink(url) {
+      function showViolationWhatsAppBar(url, ticketLabel) {
         if (!url || !/^https:\/\/wa\.me\/\d+\?text=/.test(url)) return false;
-        try {
-          const a = document.createElement('a');
-          a.href = url;
-          a.target = '_blank';
-          a.rel = 'noopener';
-          a.setAttribute('aria-label', 'Chat on WhatsApp');
-          a.style.display = 'none';
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          return true;
-        } catch (_) {
-          return false;
-        }
+        dismissViolationWhatsAppBar();
+
+        const bar = document.createElement('div');
+        bar.id = 'violationWaBar';
+        bar.setAttribute('role', 'region');
+        bar.setAttribute('aria-label', 'إشعار واتساب للمخالفة');
+        bar.style.cssText = [
+          'position:fixed',
+          'inset-inline:12px',
+          'bottom:calc(12px + var(--mr-mob-bottom-nav-h, 0px))',
+          'z-index:10050',
+          'display:flex',
+          'align-items:center',
+          'gap:10px',
+          'padding:12px 14px',
+          'border-radius:14px',
+          'background:var(--surface, #fff)',
+          'border:1px solid var(--border, #e5e7eb)',
+          'box-shadow:0 10px 30px rgba(0,0,0,.18)',
+          'font-family:inherit',
+          'direction:rtl'
+        ].join(';');
+
+        const textWrap = document.createElement('div');
+        textWrap.style.cssText = 'flex:1;min-width:0';
+        const title = document.createElement('div');
+        title.style.cssText = 'font-weight:700;font-size:14px;color:var(--text, #111)';
+        title.textContent = 'إرسال إشعار واتساب';
+        const sub = document.createElement('div');
+        sub.style.cssText = 'font-size:12px;color:var(--text3, #6b7280);margin-top:2px';
+        const ticketTxt = ticketLabel ? ` للتذكرة ${ticketLabel}` : '';
+        sub.textContent = `اضغط الزر لفتح واتساب بالرسالة جاهزة${ticketTxt}.`;
+        textWrap.appendChild(title);
+        textWrap.appendChild(sub);
+
+        const link = document.createElement('a');
+        link.href = url;
+        link.target = '_blank';
+        link.rel = 'noopener';
+        link.setAttribute('aria-label', 'Chat on WhatsApp');
+        link.textContent = 'فتح واتساب';
+        link.style.cssText = [
+          'flex:0 0 auto',
+          'display:inline-flex',
+          'align-items:center',
+          'justify-content:center',
+          'padding:10px 14px',
+          'border-radius:10px',
+          'background:#25D366',
+          'color:#fff',
+          'font-weight:700',
+          'font-size:13px',
+          'text-decoration:none',
+          'white-space:nowrap'
+        ].join(';');
+
+        const closeBtn = document.createElement('button');
+        closeBtn.type = 'button';
+        closeBtn.setAttribute('aria-label', 'إغلاق');
+        closeBtn.textContent = '×';
+        closeBtn.style.cssText = [
+          'flex:0 0 auto',
+          'width:32px',
+          'height:32px',
+          'border:0',
+          'border-radius:8px',
+          'background:transparent',
+          'color:var(--text3, #6b7280)',
+          'font-size:22px',
+          'line-height:1',
+          'cursor:pointer'
+        ].join(';');
+        closeBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          dismissViolationWhatsAppBar();
+        });
+
+        bar.appendChild(textWrap);
+        bar.appendChild(link);
+        bar.appendChild(closeBtn);
+        document.body.appendChild(bar);
+        return true;
       }
 
       /**
-       * بعد اكتمال الرصد (بعد awaits) إيماءة الإرسال تكون انتهت — اطلب ضغطة
-       * «فتح واتساب» ثم افتح https://wa.me/… مباشرة في تبويب جديد.
-       */
-      async function promptOpenViolationWhatsApp(url) {
-        const ok = await confirmDialog(
-          'اضغط «فتح واتساب» لفتح المحادثة مع الرسالة جاهزة للإرسال (تبويب جديد، أثر يبقى مفتوحاً).',
-          { type: 'info', title: 'واتساب', okText: 'فتح واتساب', cancelText: 'لاحقاً', focus: 'ok' }
-        );
-        if (!ok) return false;
-        if (clickWhatsAppClickToChatLink(url)) return true;
-        // احتياطي نادر: window.open أثناء نفس الإيماءة
-        try {
-          const w = window.open(url, '_blank', 'noopener');
-          if (w && w !== window) return true;
-        } catch (_) { /* noop */ }
-        showToast('تعذّر فتح واتساب — اسمح بالنوافذ المنبثقة ثم أعد المحاولة', 'warning');
-        return false;
-      }
-
-      /**
-       * لا تستخدم about:blank. يجب استدعاؤها بعد goTab — لأن goTab يستدعي
-       * dismissPageOverlaysOnTabLeave ويلغي confirmOverlay فوراً إن فُتح قبلها.
+       * بعد نجاح الإصدار: شريط رابط wa.me دائم حتى يضغط المستخدم.
+       * يجلب الجوال عبر RPC إن لزم — لا يعتمد على confirmDialog.
        */
       async function openWhatsAppAfterViolation(opts = {}) {
+        let phone = String(opts.phone || '').trim();
+        const empId = String(opts.employeeId || '').trim();
+        if (!(phone && phoneToWhatsAppDigits(phone)) && empId) {
+          try {
+            phone = String(await fetchViolationSubjectPhone(empId) || '').trim();
+          } catch (_) {
+            phone = '';
+          }
+        }
         const url = buildViolationWhatsAppUrl(
-          opts.phone,
+          phone,
           opts.ticketNumber,
           opts.violationType,
           opts.employeeName
         );
         if (!url) {
-          showToast('لا يوجد جوال محفوظ للموظف — تعذّر فتح واتساب', 'warning');
+          showToast('لا يوجد جوال محفوظ للموظف — تعذّر تجهيز رابط واتساب', 'warning');
           return false;
         }
-        return promptOpenViolationWhatsApp(url);
+        return showViolationWhatsAppBar(url, shortTicketNum(opts.ticketNumber));
       }
 
       async function submitNewTicket() {
@@ -17405,24 +17466,15 @@
           renderNotifications();
           showToast('تم إصدار التذكرة ' + shortTicketNum(officialNumber) + ' بنجاح ✓', 'success');
           notifyViolationPushAfterInsert(ticketData);
-          // انتقل أولاً — goTab يلغي أي confirmOverlay مفتوح عبر dismissPageOverlaysOnTabLeave
           goTab('workflow', document.querySelector('[onclick*=workflow]'));
-          let phoneForWa = empPhone;
-          if (!(phoneForWa && phoneToWhatsAppDigits(phoneForWa))) {
-            try {
-              phoneForWa = String(await fetchViolationSubjectPhone(emp.id) || '').trim();
-            } catch (_) {
-              phoneForWa = '';
-            }
-          }
-          if (phoneForWa && phoneToWhatsAppDigits(phoneForWa)) {
-            await openWhatsAppAfterViolation({
-              phone: phoneForWa,
-              ticketNumber: officialNumber,
-              violationType: type,
-              employeeName: emp.name || emp.fullName || ''
-            });
-          }
+          // شريط رابط wa.me ثابت — لا confirmDialog (كان يُلغى عند التنقل/الطبقات)
+          await openWhatsAppAfterViolation({
+            phone: empPhone,
+            employeeId: emp.id,
+            ticketNumber: officialNumber,
+            violationType: type,
+            employeeName: emp.name || emp.fullName || ''
+          });
           
         } catch (err) {
           if (isAtharDebugLog()) console.error('[Sync] Critical Error:', err);
@@ -17442,6 +17494,18 @@
             if (state.uploadTempFolders) state.uploadTempFolders.nt = null;
             if (state.uploadSessions) state.uploadSessions.nt = null;
             try { resetNewTicket(); } catch (_) { /* noop */ }
+            try {
+              goTab('workflow', document.querySelector('[onclick*=workflow]'));
+            } catch (_) { /* noop */ }
+            try {
+              await openWhatsAppAfterViolation({
+                phone: empPhone,
+                employeeId: emp.id,
+                ticketNumber: createdTicketNumber,
+                violationType: type,
+                employeeName: emp.name || emp.fullName || ''
+              });
+            } catch (_) { /* noop */ }
           } else {
             showToast(err.message, 'error');
           }
