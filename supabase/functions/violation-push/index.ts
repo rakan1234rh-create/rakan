@@ -272,24 +272,35 @@ async function dispatchNotificationTemplates(
     }));
 
     let tplEmailsSent = 0;
-    // Immediate Email Logic
+    // Immediate Email Logic (idempotent per violation + event + recipient)
     if (tpl.sendEmail) {
       const { data: users } = await supabase
         .from('users')
         .select('email')
         .in('id', Array.from(userIds))
         .eq('is_active', true);
-      
+
       if (users?.length) {
+        const seenEmails = new Set<string>();
         for (const u of users) {
-          if (u.email) {
-            try {
-              await sendImmediateEmail(supabase, u.email, tpl.title, tpl.message, record);
-              tplEmailsSent += 1;
-            } catch (err) {
-              const msg = err instanceof Error ? err.message : String(err);
-              allErrors.push(`Email failed to ${u.email}: ${msg}`);
-            }
+          const rawEmail = String(u.email || '').trim();
+          if (!rawEmail) continue;
+          const emailKey = rawEmail.toLowerCase();
+          if (seenEmails.has(emailKey)) continue;
+          seenEmails.add(emailKey);
+          try {
+            const sent = await sendImmediateEmail(
+              supabase,
+              rawEmail,
+              tpl.title,
+              tpl.message,
+              record,
+              eventKey,
+            );
+            if (sent?.provider === 'smtp') tplEmailsSent += 1;
+          } catch (err) {
+            const msg = err instanceof Error ? err.message : String(err);
+            allErrors.push(`Email failed to ${rawEmail}: ${msg}`);
           }
         }
       }
@@ -407,15 +418,68 @@ async function isEmailUnsubscribed(
   return data === true;
 }
 
+async function claimViolationEmailSend(
+  supabase: ReturnType<typeof createClient>,
+  violationId: string,
+  eventKey: string,
+  email: string,
+): Promise<'acquired' | 'skip'> {
+  const { data, error } = await supabase.rpc('athar_claim_violation_email', {
+    p_violation_id: violationId,
+    p_event_key: eventKey,
+    p_email: email,
+  });
+  if (error) {
+    // Migration not applied yet — fail open once, still log.
+    if (/does not exist|function|schema cache/i.test(error.message || '')) {
+      console.warn('email claim RPC missing — sending without durable idempotency');
+      return 'acquired';
+    }
+    console.warn('email claim failed', error.message);
+    return 'acquired';
+  }
+  return data === 'acquired' ? 'acquired' : 'skip';
+}
+
+async function completeViolationEmailSend(
+  supabase: ReturnType<typeof createClient>,
+  violationId: string,
+  eventKey: string,
+  email: string,
+  ok: boolean,
+  errMsg?: string,
+) {
+  const { error } = await supabase.rpc('athar_complete_violation_email', {
+    p_violation_id: violationId,
+    p_event_key: eventKey,
+    p_email: email,
+    p_ok: ok,
+    p_error: errMsg || null,
+  });
+  if (error && !/does not exist|function|schema cache/i.test(error.message || '')) {
+    console.warn('email complete failed', error.message);
+  }
+}
+
 async function sendImmediateEmail(
   supabase: ReturnType<typeof createClient>,
   to: string,
   title: string,
   body: string,
   record: ViolationRow,
+  eventKey: string,
 ) {
   if (await isEmailUnsubscribed(supabase, to, 'alerts')) {
     return { ok: true as const, provider: 'skipped_unsubscribed' };
+  }
+
+  const violationId = String(record.id || '').trim();
+  const claimKey = String(eventKey || '').trim() || `violation_email_${violationId}`;
+  if (violationId) {
+    const claim = await claimViolationEmailSend(supabase, violationId, claimKey, to);
+    if (claim === 'skip') {
+      return { ok: true as const, provider: 'skipped_duplicate' };
+    }
   }
 
   const SENDER_EMAIL_RAW = Deno.env.get('SENDER_EMAIL') ?? 'no-reply@athar-app.online';
@@ -470,29 +534,46 @@ async function sendImmediateEmail(
   const user = (Deno.env.get('SES_SMTP_USERNAME') || Deno.env.get('SMTP_USERNAME') || '').trim();
   const pass = (Deno.env.get('SES_SMTP_PASSWORD') || Deno.env.get('SMTP_PASSWORD') || '').trim();
   const port = Number(Deno.env.get('SES_SMTP_PORT') || Deno.env.get('SMTP_PORT') || 465);
-  if (!host || !user || !pass) throw new Error('Hostinger SMTP is not configured');
-  const nodemailer = await import('npm:nodemailer@6.9.16');
-  const transporter = nodemailer.createTransport({
-    host,
-    port: Number.isFinite(port) && port > 0 ? port : 465,
-    secure: port === 465,
-    auth: { user, pass },
-  });
-  const headers: Record<string, string> = apple
-    ? { 'List-Unsubscribe': `<${mailtoUnsub}>` }
-    : {
-      'List-Unsubscribe': `<${unsubscribeApi}>`,
-      'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-    };
-  await transporter.sendMail({
-    from: FULL_SENDER,
-    to,
-    subject,
-    html,
-    text,
-    headers,
-  });
-  return { ok: true as const, provider: 'smtp' };
+  if (!host || !user || !pass) {
+    if (violationId) {
+      await completeViolationEmailSend(supabase, violationId, claimKey, to, false, 'Hostinger SMTP is not configured');
+    }
+    throw new Error('Hostinger SMTP is not configured');
+  }
+
+  try {
+    const nodemailer = await import('npm:nodemailer@6.9.16');
+    const transporter = nodemailer.createTransport({
+      host,
+      port: Number.isFinite(port) && port > 0 ? port : 465,
+      secure: port === 465,
+      auth: { user, pass },
+    });
+    const headers: Record<string, string> = apple
+      ? { 'List-Unsubscribe': `<${mailtoUnsub}>` }
+      : {
+        'List-Unsubscribe': `<${unsubscribeApi}>`,
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+      };
+    await transporter.sendMail({
+      from: FULL_SENDER,
+      to,
+      subject,
+      html,
+      text,
+      headers,
+    });
+    if (violationId) {
+      await completeViolationEmailSend(supabase, violationId, claimKey, to, true);
+    }
+    return { ok: true as const, provider: 'smtp' };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (violationId) {
+      await completeViolationEmailSend(supabase, violationId, claimKey, to, false, msg);
+    }
+    throw err;
+  }
 }
 
 async function sendPushToUserIds(
@@ -1009,7 +1090,7 @@ Deno.serve(async (req) => {
     return json({
       ok: true,
       service: 'violation-push',
-      version: '2026-10-lazy-webpush-v5',
+      version: '2026-10-email-idempotency-v6',
       autoForwardCron: AUTO_FORWARD_CRON_VERSION,
       breakExpiryCron: BREAK_EXPIRY_CRON_VERSION,
       vapidConfigured: !!(vapidPublic && vapidPrivate),

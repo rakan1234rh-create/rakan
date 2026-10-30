@@ -33313,7 +33313,12 @@
         return false;
       }
 
-      /** إشعار Push بعد إنشاء مخالفة — لا يوقف الواجهة */
+      /**
+       * إشعار بعد إنشاء مخالفة.
+       * الإيميل محمي بسجل claim في القاعدة (مسار واحد لكل مستلم).
+       * محفّز DB athar_violation_push_after_insert قد يطلق نفس المسار؛
+       * لذلك لا نعيد الإرسال عند التكرار — واتساب يبقى منفصلاً.
+       */
       function notifyViolationPushAfterInsert(violationRow) {
         if (!violationRow?.id) return;
         const record = {
@@ -33324,6 +33329,8 @@
           branch_id: violationRow.branch_id,
           state: violationRow.state
         };
+        // Prefer DB webhook as primary; client is a fallback if webhook fails.
+        // Durable email claim prevents Hostinger duplicates when both fire.
         invokeViolationPush({ notify: true, type: 'INSERT', record })
           .then((data) => {
             if (data?.errors?.length && isAtharDebugLog()) console.warn('[webPush] new violation notify', data);
@@ -33332,6 +33339,9 @@
           .then(() => { try { renderNotifications(false); } catch (_) { /* noop */ } })
           .catch((e) => {
             if (isAtharDebugLog()) console.warn('[webPush] new violation notify', e);
+            return refreshNotificationsFromDb()
+              .then(() => { try { renderNotifications(false); } catch (_) { /* noop */ } })
+              .catch(() => {});
           });
       }
 
