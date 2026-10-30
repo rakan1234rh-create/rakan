@@ -1,6 +1,5 @@
 // violation-push — إشعارات المخالفات (الخطة الرسمية 2026)
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
-import webpush from 'npm:web-push@3.6.7';
 import {
   AUTO_FORWARD_CRON_VERSION,
   isAuthorizedCron,
@@ -21,6 +20,21 @@ import {
   createUnsubscribeToken,
   isAppleMailbox,
 } from '../_shared/unsubscribe-token.ts';
+
+// Lazy-load web-push: top-level npm:web-push OOM'd the isolate (HTTP 546 WORKER_RESOURCE_LIMIT).
+type WebPushModule = typeof import('npm:web-push@3.6.7').default;
+let _webpush: WebPushModule | null = null;
+async function getWebPush(): Promise<WebPushModule> {
+  if (!_webpush) {
+    const mod = await import('npm:web-push@3.6.7');
+    _webpush = mod.default;
+  }
+  return _webpush;
+}
+
+function looksLikeVapidKey(key: string): boolean {
+  return /^[A-Za-z0-9_-]+$/.test(key) && key.length >= 20;
+}
 
 function buildCorsHeaders(req: Request): Record<string, string> {
   const raw = Deno.env.get('ALLOWED_ORIGIN') || 'https://athar-app.online';
@@ -494,7 +508,9 @@ async function sendPushToUserIds(
   if (!vapidPublic || !vapidPrivate) {
     return { error: 'VAPID keys not configured in Edge Function secrets', sent: 0 };
   }
+  let webpush: WebPushModule;
   try {
+    webpush = await getWebPush();
     webpush.setVapidDetails(vapidSubject, vapidPublic, vapidPrivate);
   } catch (err) {
     return {
@@ -981,19 +997,10 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: _activeCors });
 
   if (req.method === 'GET') {
+    // Do not import web-push here — that package alone can exhaust isolate memory (546).
     const vapidPublic = Deno.env.get('VAPID_PUBLIC_KEY') ?? '';
     const vapidPrivate = Deno.env.get('VAPID_PRIVATE_KEY') ?? '';
-    let vapidValid = false;
-    if (vapidPublic && vapidPrivate) {
-      try {
-        webpush.setVapidDetails(
-          Deno.env.get('VAPID_SUBJECT') ?? 'mailto:admin@athar.local',
-          vapidPublic,
-          vapidPrivate,
-        );
-        vapidValid = true;
-      } catch (_) { /* invalid pair */ }
-    }
+    const vapidValid = looksLikeVapidKey(vapidPublic) && looksLikeVapidKey(vapidPrivate);
     const smtpConfigured = Boolean(
       (Deno.env.get('SES_SMTP_HOST') || Deno.env.get('SMTP_HOST') || '').trim()
       && (Deno.env.get('SES_SMTP_USERNAME') || Deno.env.get('SMTP_USERNAME') || '').trim()
@@ -1002,7 +1009,7 @@ Deno.serve(async (req) => {
     return json({
       ok: true,
       service: 'violation-push',
-      version: '2026-10-hostinger-webhook-auth-v4',
+      version: '2026-10-lazy-webpush-v5',
       autoForwardCron: AUTO_FORWARD_CRON_VERSION,
       breakExpiryCron: BREAK_EXPIRY_CRON_VERSION,
       vapidConfigured: !!(vapidPublic && vapidPrivate),
