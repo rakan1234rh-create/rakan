@@ -1830,7 +1830,8 @@
           document.addEventListener('keydown', onKey);
 
           overlay.classList.add('open');
-          setTimeout(() => (hideCancel ? okBtn : cancelBtn).focus(), 50);
+          const focusEl = (opts.focus === 'ok' || hideCancel) ? okBtn : cancelBtn;
+          setTimeout(() => focusEl.focus(), 50);
         });
       }
 
@@ -17164,7 +17165,7 @@
       async function promptOpenViolationWhatsApp(url) {
         const ok = await confirmDialog(
           'اضغط «فتح واتساب» لفتح المحادثة مع الرسالة جاهزة للإرسال (تبويب جديد، أثر يبقى مفتوحاً).',
-          { type: 'info', title: 'واتساب', okText: 'فتح واتساب', cancelText: 'لاحقاً' }
+          { type: 'info', title: 'واتساب', okText: 'فتح واتساب', cancelText: 'لاحقاً', focus: 'ok' }
         );
         if (!ok) return false;
         if (clickWhatsAppClickToChatLink(url)) return true;
@@ -17178,10 +17179,10 @@
       }
 
       /**
-       * لا تستخدم about:blank (شاشة بيضاء تُغلق وحدها أثناء الرفع).
-       * افتح wa.me فقط بعد إيماءة مستخدم جديدة.
+       * لا تستخدم about:blank. يجب استدعاؤها بعد goTab — لأن goTab يستدعي
+       * dismissPageOverlaysOnTabLeave ويلغي confirmOverlay فوراً إن فُتح قبلها.
        */
-      function openWhatsAppAfterViolation(opts = {}) {
+      async function openWhatsAppAfterViolation(opts = {}) {
         const url = buildViolationWhatsAppUrl(
           opts.phone,
           opts.ticketNumber,
@@ -17192,8 +17193,7 @@
           showToast('لا يوجد جوال محفوظ للموظف — تعذّر فتح واتساب', 'warning');
           return false;
         }
-        void promptOpenViolationWhatsApp(url);
-        return true;
+        return promptOpenViolationWhatsApp(url);
       }
 
       async function submitNewTicket() {
@@ -17405,15 +17405,24 @@
           renderNotifications();
           showToast('تم إصدار التذكرة ' + shortTicketNum(officialNumber) + ' بنجاح ✓', 'success');
           notifyViolationPushAfterInsert(ticketData);
-          if (empPhone) {
-            openWhatsAppAfterViolation({
-              phone: empPhone,
+          // انتقل أولاً — goTab يلغي أي confirmOverlay مفتوح عبر dismissPageOverlaysOnTabLeave
+          goTab('workflow', document.querySelector('[onclick*=workflow]'));
+          let phoneForWa = empPhone;
+          if (!(phoneForWa && phoneToWhatsAppDigits(phoneForWa))) {
+            try {
+              phoneForWa = String(await fetchViolationSubjectPhone(emp.id) || '').trim();
+            } catch (_) {
+              phoneForWa = '';
+            }
+          }
+          if (phoneForWa && phoneToWhatsAppDigits(phoneForWa)) {
+            await openWhatsAppAfterViolation({
+              phone: phoneForWa,
               ticketNumber: officialNumber,
               violationType: type,
               employeeName: emp.name || emp.fullName || ''
             });
           }
-          goTab('workflow', document.querySelector('[onclick*=workflow]'));
           
         } catch (err) {
           if (isAtharDebugLog()) console.error('[Sync] Critical Error:', err);
