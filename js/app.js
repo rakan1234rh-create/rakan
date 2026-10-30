@@ -17091,6 +17091,31 @@
         return `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
       }
 
+      /**
+       * الراصد/المشرف يحمّلون الدليل بدون phone (أمنياً). نجلب الجوال عند الرصد فقط
+       * عبر RPC ضيقة — لا نعيد إرسال واتساب لمخالفات قديمة.
+       */
+      async function resolveViolationSubjectPhone(emp) {
+        let phone = String(emp?.phone || '').trim();
+        if (phone && phoneToWhatsAppDigits(phone)) return phone;
+        if (!emp?.id || !sb?.rpc) return '';
+        try {
+          const { data, error } = await sb.rpc('get_violation_subject_phone', {
+            p_employee_id: emp.id
+          });
+          if (error) {
+            if (isAtharDebugLog()) console.warn('[whatsapp] subject phone rpc', error);
+            return '';
+          }
+          phone = String(data || '').trim();
+          if (phone && emp && typeof emp === 'object') emp.phone = phone;
+          return phone && phoneToWhatsAppDigits(phone) ? phone : '';
+        } catch (e) {
+          if (isAtharDebugLog()) console.warn('[whatsapp] subject phone rpc', e);
+          return '';
+        }
+      }
+
       /** يفتح واتساب بعد الرصد — نافذة مبكرة تتجاوز حظر النوافذ المنبثقة بعد الانتظار */
       function openWhatsAppAfterViolation(opts = {}) {
         const url = buildViolationWhatsAppUrl(
@@ -17184,15 +17209,24 @@
         // Clear only after validations succeed to avoid losing attachments on toast errors
         state.uploadedFiles.nt = [];
 
-        // افتح نافذة فارغة أثناء إيماءة المستخدم حتى لا يمنع المتصفح واتساب بعد الرفع
+        // افتح نافذة فارغة أثناء إيماءة المستخدم (قبل أي await) حتى لا يمنع المتصفح واتساب.
+        // الدليل للراصد لا يتضمن phone — نفتح النافذة ثم نجلب الجوال مباشرة بعدها.
         let waPlaceholderWin = null;
-        const empPhone = String(emp.phone || '').trim();
-        if (empPhone && phoneToWhatsAppDigits(empPhone)) {
+        const cachedPhone = String(emp.phone || '').trim();
+        const hasCachedWaPhone = !!(cachedPhone && phoneToWhatsAppDigits(cachedPhone));
+        if (hasCachedWaPhone || !cachedPhone) {
           try {
             waPlaceholderWin = window.open('about:blank', '_blank');
           } catch (_) {
             waPlaceholderWin = null;
           }
+        }
+        const empPhone = await resolveViolationSubjectPhone(emp);
+        if (!(empPhone && phoneToWhatsAppDigits(empPhone))) {
+          if (waPlaceholderWin && !waPlaceholderWin.closed) {
+            try { waPlaceholderWin.close(); } catch (_) { /* noop */ }
+          }
+          waPlaceholderWin = null;
         }
 
         const branch = state.branches.find(b => b.id === emp.branch_id);
