@@ -1,9 +1,11 @@
 /**
  * قيود أمنية مشتركة لمرفقات R2. هذا الملف بلا أسرار وبلا I/O كي يُختبر بـ Node.
  */
-export const R2_ATTACHMENT_MAX_BYTES = 50 * 1024 * 1024
+/** حد المرفق النهائي المخزَّن — يكفي لمقاطع هاتف/كاميرا قصيرة بعد ضغط/تحويل. */
+export const R2_ATTACHMENT_MAX_BYTES = 100 * 1024 * 1024
 export const R2_MULTIPART_PART_MAX_BYTES = 10 * 1024 * 1024
-export const R2_MULTIPART_MAX_PARTS = 7
+/** مع أجزاء العميل ~8MB يكفي لحد 100MB مع هامش. */
+export const R2_MULTIPART_MAX_PARTS = 20
 
 const MIME_BY_EXTENSION = {
   // هواتف/متصفحات ترسل أحياناً MIME غير مطابق للامتداد (خصوصاً iOS/Android).
@@ -71,7 +73,8 @@ export function normalizedAttachmentContentType(key, contentType) {
 export function assertAttachmentSize(size) {
   if (!Number.isFinite(size) || size < 1) throw new Error('جسم فارغ')
   if (size > R2_ATTACHMENT_MAX_BYTES) {
-    throw new Error('حجم الملف يتجاوز الحد المسموح (50 ميغابايت)')
+    const mb = Math.round(R2_ATTACHMENT_MAX_BYTES / 1048576)
+    throw new Error(`حجم الملف يتجاوز الحد المسموح (${mb} ميغابايت)`)
   }
 }
 

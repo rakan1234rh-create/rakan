@@ -787,12 +787,13 @@
       }
 
       // يطابق حد r2-storage؛ يمنع محاولة كبيرة قبل إرسال أي بايت إلى التخزين.
-      const R2_ATTACHMENT_MAX_BYTES = 50 * 1024 * 1024;
+      const R2_ATTACHMENT_MAX_BYTES = 100 * 1024 * 1024;
+      const R2_ATTACHMENT_MAX_MB = Math.round(R2_ATTACHMENT_MAX_BYTES / 1048576);
       function assertR2AttachmentUploadSize(size) {
         const bytes = Number(size || 0);
         if (!Number.isFinite(bytes) || bytes < 1) throw new Error('المرفق فارغ');
         if (bytes > R2_ATTACHMENT_MAX_BYTES) {
-          throw new Error('حجم المرفق يتجاوز الحد المسموح (50 ميغابايت)');
+          throw new Error(`حجم المرفق يتجاوز الحد المسموح (${R2_ATTACHMENT_MAX_MB} ميغابايت)`);
         }
       }
 
@@ -1199,6 +1200,8 @@
       }
 
       const R2_MULTIPART_PART_BYTES = 8 * 1024 * 1024;
+      /** يطابق R2_MULTIPART_MAX_PARTS في r2-storage/security.js */
+      const R2_MULTIPART_MAX_PARTS = 20;
 
       async function uploadR2MultipartPartViaEdge(objectKey, uploadId, partNumber, chunk, authToken, contentType) {
         for (let attempt = 0; attempt < 2; attempt++) {
@@ -1287,6 +1290,9 @@
           partNumber++;
         }
         const totalParts = partJobs.length;
+        if (totalParts > R2_MULTIPART_MAX_PARTS) {
+          throw new Error(`حجم المرفق يتجاوز الحد المسموح (${R2_ATTACHMENT_MAX_MB} ميغابايت)`);
+        }
         const completedParts = new Array(totalParts);
         let doneCount = 0;
 
@@ -18100,6 +18106,11 @@
               }
               fileEntry.blobUrl = URL.createObjectURL(blob);
               fileEntry.rawFile = blob;
+              if (blob.size > R2_ATTACHMENT_MAX_BYTES) {
+                throw new Error(
+                  `بعد التحويل بقي الفيديو ${Math.round(blob.size / 1048576)} ميغابايت — الحد ${R2_ATTACHMENT_MAX_MB} ميغابايت. قصّ المقطع أو خفّض الجودة ثم أعد الرفع.`,
+                );
+              }
             }
           }
 
@@ -19001,10 +19012,11 @@
         if (!(blob instanceof Blob) || !blob.size) return 'ملف الفيديو غير صالح';
         const mb = Math.round(blob.size / 1048576);
         if (blob.size > HEVC_TRANSCODE_UPLOAD_MAX_BYTES) {
-          return `حجم الفيديو ${mb}MB أكبر من حد التحويل التلقائي (${Math.round(HEVC_TRANSCODE_UPLOAD_MAX_BYTES / 1048576)}MB). اضغطه إلى H.264 720p ثم ارفعه.`;
+          return `حجم الفيديو ${mb} ميغابايت أكبر من حد التحويل التلقائي (${Math.round(HEVC_TRANSCODE_UPLOAD_MAX_BYTES / 1048576)} ميغابايت). اضغطه إلى H.264 720p ثم ارفعه.`;
         }
-        if (!isAtharDesktopViewer() && blob.size > 48 * 1024 * 1024) {
-          return `هذا الفيديو (${mb}MB) يحتاج تحويل H.264 من جهاز كمبيوتر (ليس من الجوال).`;
+        // على الجوال نسمح بالتحويل حتى حد التخزين؛ فوق ذلك يُفضَّل جهاز كمبيوتر.
+        if (!isAtharDesktopViewer() && blob.size > R2_ATTACHMENT_MAX_BYTES) {
+          return `هذا الفيديو (${mb} ميغابايت) أكبر من حد الرفع (${R2_ATTACHMENT_MAX_MB} ميغابايت) ويحتاج تحويل H.264 من جهاز كمبيوتر.`;
         }
         return '';
       }
@@ -19054,6 +19066,9 @@
             btn.disabled = !!block;
             btn.style.opacity = block ? '0.55' : '';
             btn.style.cursor = block ? 'not-allowed' : '';
+            if (inProgress) btn.title = 'انتظر اكتمال تحضير المرفقات (تحويل/رفع)…';
+            else if (hasError) btn.title = 'أزل المرفق الفاشل أو أعد اختياره';
+            else btn.title = btn.getAttribute('aria-label') || '';
           });
         }
 
@@ -20356,14 +20371,6 @@
 
         for (let fileIndex = 0; fileIndex < files.length; fileIndex++) {
           const file = files[fileIndex];
-          if (file.size > R2_ATTACHMENT_MAX_BYTES) {
-            showToast(
-              `الملف "${file.name}" أكبر من الحد المسموح (${Math.round(R2_ATTACHMENT_MAX_BYTES / 1048576)} ميغابايت).`,
-              'error',
-            );
-            continue;
-          }
-
           const item = document.createElement('div');
           item.className = 'file-item';
 
@@ -20372,6 +20379,44 @@
               || /\.(jpe?g|png|gif|webp|bmp|heic|heif)$/i.test(file.name);
             const isVid = (file.type && file.type.startsWith('video/'))
               || /\.(mp4|mov|webm|avi|mkv|m4v|mpeg|mpg|ts|m2ts|3gp)$/i.test(file.name);
+            const isPdf = (file.type === 'application/pdf') || /\.pdf$/i.test(file.name);
+            const selectCeiling = isVid
+              ? Math.max(R2_ATTACHMENT_MAX_BYTES, HEVC_TRANSCODE_UPLOAD_MAX_BYTES)
+              : R2_ATTACHMENT_MAX_BYTES;
+
+            if (/\.(heic|heif|bmp|tif|tiff|svg)$/i.test(file.name)
+              || /image\/(heic|heif|bmp|tiff|svg\+xml)/i.test(String(file.type || ''))) {
+              showToast(
+                `الصيغة "${file.name}" غير مدعومة للرفع. احفظ الصورة كـ JPEG أو PNG ثم أعد الإرفاق.`,
+                'error',
+              );
+              continue;
+            }
+            if (/\.(docx?|xlsx?|pptx?)$/i.test(file.name)) {
+              showToast('مستندات Office غير مدعومة. ارفع PDF أو صورة أو فيديو.', 'error');
+              continue;
+            }
+            if (file.size > selectCeiling) {
+              showToast(
+                isVid
+                  ? `الفيديو "${file.name}" أكبر من الحد الأقصى (${Math.round(selectCeiling / 1048576)} ميغابايت). اضغطه إلى H.264 720p أو اختر مقطعاً أقصر.`
+                  : `الملف "${file.name}" أكبر من الحد المسموح (${R2_ATTACHMENT_MAX_MB} ميغابايت).`,
+                'error',
+              );
+              continue;
+            }
+            if (!isVid && file.size > R2_ATTACHMENT_MAX_BYTES) {
+              showToast(
+                `الملف "${file.name}" أكبر من الحد المسموح (${R2_ATTACHMENT_MAX_MB} ميغابايت).`,
+                'error',
+              );
+              continue;
+            }
+            if (!isImg && !isVid && !isPdf) {
+              showToast(`نوع الملف "${file.name}" غير مدعوم. المسموح: صور JPEG/PNG/WebP، فيديو، أو PDF.`, 'error');
+              continue;
+            }
+
             let base64Data = null;
             let finalType = canonicalAttachmentContentType(file.name, file.type || '');
             let uploadFile = file;
@@ -20406,6 +20451,15 @@
                   ? compressResult.blob
                   : new File([compressResult.blob], file.name, { type: finalType });
               }
+              if (!/^image\/(jpeg|png|gif|webp)$/i.test(String(finalType || ''))
+                && !/\.(jpe?g|png|gif|webp)$/i.test(uploadFile.name || file.name)) {
+                showToast(
+                  `تعذّر تجهيز الصورة "${file.name}" لصيغة مدعومة. احفظها كـ JPEG أو PNG.`,
+                  'error',
+                );
+                item.remove();
+                continue;
+              }
             } else if (isVid) {
               vCodecHint = await sniffMp4VideoCodec(file);
               const gate = explainVideoTranscodeGate(file, file.name, vCodecHint);
@@ -20414,11 +20468,20 @@
                 item.remove();
                 continue;
               }
-              if (shouldPrepTranscodeVideo(file, file.name, vCodecHint)) {
+              const willTranscode = shouldPrepTranscodeVideo(file, file.name, vCodecHint);
+              if (!willTranscode && file.size > R2_ATTACHMENT_MAX_BYTES) {
+                showToast(
+                  `الفيديو "${file.name}" أكبر من حد الرفع (${R2_ATTACHMENT_MAX_MB} ميغابايت). اضغطه إلى H.264 720p أو اختر مقطعاً أقصر.`,
+                  'error',
+                );
+                item.remove();
+                continue;
+              }
+              if (willTranscode) {
                 const mb = Math.round(file.size / 1048576);
                 showToast(
                   mb >= 40
-                    ? `سيتم تحويل الفيديو (${mb}MB) إلى H.264 تلقائياً — قد يستغرق عدة دقائق، لا تغلق الصفحة.`
+                    ? `سيتم تحويل الفيديو (${mb} ميغابايت) إلى H.264 تلقائياً — قد يستغرق عدة دقائق، لا تغلق الصفحة. حد الرفع النهائي ${R2_ATTACHMENT_MAX_MB} ميغابايت.`
                     : 'سيتم تحويل الفيديو إلى H.264 تلقائياً أثناء التحضير.',
                   'info',
                 );
@@ -24500,6 +24563,9 @@
         btnsWrap.innerHTML = buttons.map(b =>
           `<button type="button" class="btn td-resp-action ${Sec.escapeHTML(b.cls)}" onclick="submitResp('${Sec.escapeHTML(b.act)}')"${b.title ? ` title="${Sec.escapeHTML(b.title)}" aria-label="${Sec.escapeHTML(b.title)}"` : ''}><span>${Sec.escapeHTML(b.label)}</span><i class="fas ${Sec.escapeHTML(b.icon)}" aria-hidden="true"></i></button>`
         ).join('') + blockedWarnStrip;
+        // بعد إعادة بناء الأزرار (مثلاً عند اكتمال جلب تفاصيل التذكرة) أعد قفل الإرسال
+        // إن كان تحضير مرفقات الرد ما زال جارياً أو فاشلاً — وإلا يظهر زر الإرسال نشطاً بالخطأ.
+        if (typeof syncAttachmentSubmitButtons === 'function') syncAttachmentSubmitButtons('resp');
       }
 
       // ───────────────────────────────────────────────────────────────────────────
@@ -24524,6 +24590,9 @@
 
         if (respFiles.length) {
           for (const f of respFiles) {
+            if (f.prepStatus === 'error') {
+              return showToast(f.prepError || 'مرفق فاشل — أزله أو أعد اختياره', 'error');
+            }
             if (f.prepStatus !== 'ready') {
               return showToast('انتظر اكتمال تحضير المرفقات قبل الإرسال', 'warning');
             }
@@ -40381,7 +40450,7 @@
                 </div>`
             : `<div class="rd-cmpl-panel__compose">
                   <textarea class="rd-cmpl-textarea" id="rdCmplReplyInput" placeholder="اكتب ردك هنا..." rows="1" oninput="autoExpandComplaintReplyText(this)">${Sec.escapeHTML(state._rdCmplReply || '')}</textarea>
-                  <input type="file" id="cprAttachInput" accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx" multiple hidden onchange="handleFiles(event,'cpr')">
+                  <input type="file" id="cprAttachInput" accept="image/jpeg,image/png,image/gif,image/webp,video/*,.pdf" multiple hidden onchange="handleFiles(event,'cpr')">
                   <div id="cprFileArea" class="file-list rd-cmpl-reply-files"></div>
                   <div class="rd-cmpl-panel__actions">
                     <button type="button" class="rd-cmpl-btn rd-cmpl-btn--primary" id="rdCmplReplySendBtn" onclick="rdSubmitComplaintReply()">إرسال الرد</button>
@@ -41656,7 +41725,7 @@
             </div>`
                 : `<div class="cp-detail__compose">
               <textarea id="cpReplyText" class="cp-detail__reply" placeholder="اكتب ردك هنا..." rows="1" oninput="autoExpandComplaintReplyText(this)"></textarea>
-              <input type="file" id="cprAttachInput" accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx" multiple hidden onchange="handleFiles(event,'cpr')">
+              <input type="file" id="cprAttachInput" accept="image/jpeg,image/png,image/gif,image/webp,video/*,.pdf" multiple hidden onchange="handleFiles(event,'cpr')">
               <div id="cprFileArea" class="file-list cp-mob-file-list cp-detail__reply-files"></div>
               <div class="cp-detail__actions">
                 <button type="button" class="cp-detail__send" id="cpReplySendBtn" onclick="submitComplaintReplyFromUi()">إرسال الرد</button>

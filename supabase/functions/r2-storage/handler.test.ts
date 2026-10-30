@@ -82,6 +82,19 @@ class FakeS3 {
       this.objects.set(key, { body, contentType: String(command.input.ContentType || '') })
       return {}
     }
+    if (command instanceof FakeCopyObjectCommand) {
+      if (command.input.IfNoneMatch === '*' && this.objects.has(key)) throw namedError('PreconditionFailed')
+      const copySource = decodeURI(String(command.input.CopySource || ''))
+      const slash = copySource.indexOf('/')
+      const srcKey = slash >= 0 ? copySource.slice(slash + 1) : copySource
+      const value = this.objects.get(srcKey)
+      if (!value) throw namedError('NotFound')
+      this.objects.set(key, {
+        body: value.body,
+        contentType: String(command.input.ContentType || value.contentType),
+      })
+      return {}
+    }
     if (command instanceof FakeDeleteObjectCommand) {
       this.objects.delete(key)
       return {}
