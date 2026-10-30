@@ -84,14 +84,21 @@ class FakeS3 {
     }
     if (command instanceof FakeCopyObjectCommand) {
       if (command.input.IfNoneMatch === '*' && this.objects.has(key)) throw namedError('PreconditionFailed')
-      const copySource = decodeURI(String(command.input.CopySource || ''))
-      const slash = copySource.indexOf('/')
-      const srcKey = slash >= 0 ? copySource.slice(slash + 1) : copySource
+      // Mirror R2/S3: CopySource is bucket/key with path segments URI-encoded.
+      const rawSource = String(command.input.CopySource || '')
+      const slash = rawSource.indexOf('/')
+      const encodedKey = slash >= 0 ? rawSource.slice(slash + 1) : rawSource
+      const srcKey = encodedKey.split('/').map((seg) => {
+        try { return decodeURIComponent(seg) } catch { return seg }
+      }).join('/')
       const value = this.objects.get(srcKey)
       if (!value) throw namedError('NotFound')
+      const directive = String(command.input.MetadataDirective || 'COPY').toUpperCase()
       this.objects.set(key, {
         body: value.body,
-        contentType: String(command.input.ContentType || value.contentType),
+        contentType: directive === 'REPLACE'
+          ? String(command.input.ContentType || value.contentType)
+          : value.contentType,
       })
       return {}
     }
@@ -264,6 +271,37 @@ Deno.test('handler ينفذ temp -> record-copy ثم commit cleanup بلا overw
     fromKey: second, toKey, recordType: 'violation', recordId: RECORD, operation: 'create',
   }))
   if (collision.status !== 409 || !s3.objects.has(second)) throw new Error('destination overwrite was not prevented')
+})
+
+Deno.test('handler rejects moveObject when destination verify fails after copy', async () => {
+  class BrokenCopyS3 extends FakeS3 {
+    override async send(command: FakeCommand) {
+      if (command instanceof FakeCopyObjectCommand) {
+        const key = String(command.input.Key || '')
+        // Pretend CopyObject succeeded but wrote an empty object.
+        this.objects.set(key, { body: new Uint8Array(), contentType: 'application/pdf' })
+        return {}
+      }
+      return super.send(command)
+    }
+  }
+  const s3 = new BrokenCopyS3()
+  const fromKey = tempKey()
+  const toKey = `violations/${RECORD}/file.pdf`
+  s3.objects.set(fromKey, { body: pdf(), contentType: 'application/pdf' })
+  const { handler } = buildHandler(s3)
+  const res = await handler(req('moveObject', {
+    fromKey, toKey, recordType: 'violation', recordId: RECORD, operation: 'create',
+  }))
+  // Small files fall back to buffered Put after bad copy, so destination must end valid.
+  if (res.status !== 200) {
+    throw new Error(`expected put fallback after bad copy, got ${res.status} ${await res.text()}`)
+  }
+  const dest = s3.objects.get(toKey)
+  if (!dest || dest.body.byteLength !== pdf().byteLength) {
+    throw new Error('verify path must recover via buffered Put for small attachments')
+  }
+  if (!s3.objects.has(fromKey)) throw new Error('temp source must remain until DB finalize')
 })
 
 Deno.test('handler buffers GetObject body for complaint reply moveObject (no live stream pipe)', async () => {
