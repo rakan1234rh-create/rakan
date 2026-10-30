@@ -1059,6 +1059,30 @@ export function createR2StorageHandler(deps: {
       }
     }
 
+    // فحص مفتاح temp مملوك فقط — يستخدم بعد فشل استجابة putObject/multipart
+    // عندما يكون الملف قد كُتب فعلياً لكن العميل رأى Load failed.
+    if (action === 'headTempObject') {
+      const key = assertTempUploadKey(body.key || '', user.id)
+      try {
+        const head = await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: key }))
+        return json({
+          ok: true,
+          key,
+          contentLength: head.ContentLength ?? null,
+          contentType: head.ContentType || guessContentTypeFromKey(key),
+        })
+      } catch (e: unknown) {
+        const name =
+          e && typeof e === 'object' && 'name' in e
+            ? String((e as { name: string }).name)
+            : ''
+        if (name === 'NotFound' || name === 'NoSuchKey' || name === '404') {
+          return json({ ok: false, key })
+        }
+        throw e
+      }
+    }
+
     if (action === 'proxyGet') {
       const key = assertKey(body.key)
       if (!isServiceRole) await requireAttachmentRead(supabase, key)

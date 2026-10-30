@@ -179,6 +179,27 @@ Deno.test('handler يرفض temp أجنبي وpath traversal قبل أي كتا�
   if (s3.objects.size !== 0) throw new Error('rejected requests wrote an object')
 })
 
+Deno.test('handler يسمح بـ headTempObject للمفتاح المملوك فقط', async () => {
+  const s3 = new FakeS3()
+  const owned = tempKey()
+  s3.objects.set(owned, { body: pdf(), contentType: 'application/pdf' })
+  const { handler } = buildHandler(s3)
+
+  const ok = await handler(req('headTempObject', { key: owned }))
+  if (ok.status !== 200) throw new Error(`expected 200, got ${ok.status}`)
+  const okBody = await ok.json()
+  if (!okBody.ok || okBody.contentLength !== s3.objects.get(owned)!.body.byteLength) {
+    throw new Error('owned temp head failed')
+  }
+
+  const foreign = `temp_22222222-2222-2222-2222-222222222222_nonce123/file.pdf`
+  s3.objects.set(foreign, { body: pdf(), contentType: 'application/pdf' })
+  const denied = await handler(req('headTempObject', { key: foreign }))
+  if (denied.status !== 403 && denied.status !== 400) {
+    throw new Error(`foreign temp head expected 403/400, got ${denied.status}`)
+  }
+})
+
 Deno.test('handler يسمح بالاستبدال للفعل المصرح فقط ويرفض قارئاً بلا edit', async () => {
   const key = `violations/${RECORD}/clip.mp4`
   const allowedStore = new FakeS3()

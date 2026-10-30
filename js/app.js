@@ -772,9 +772,47 @@
         return mobile ? 2 : 3;
       }
 
-      /** حد التحويل إلى multipart — أقل من سقف جسم Edge تجنّباً لـ 413 على الفيديو. */
+      /** حد التحويل إلى multipart — أقل من سقف جسم Edge تجنّباً لـ 413 / Load failed على الجوال. */
       function getR2MultipartThreshold() {
-        return _r2DirectPutBlocked ? (4 * 1024 * 1024) : (20 * 1024 * 1024);
+        // signPut معطّل؛ putObject بجسم كامل على Safari/الجوال يفشل غالباً بـ «Load failed».
+        if (window.matchMedia('(pointer: coarse)').matches) return 256 * 1024;
+        return _r2DirectPutBlocked ? (1 * 1024 * 1024) : (20 * 1024 * 1024);
+      }
+
+      function isR2NetworkFailureMsg(msg) {
+        return /load failed|failed to fetch|networkerror|network request failed|err_internet_disconnected|err_network_changed|err_connection|offline|timeout|مهلة|انقطع/i
+          .test(String(msg || ''));
+      }
+
+      function humanizeR2NetworkError(err) {
+        const msg = String(err?.message || err || '');
+        if (isR2NetworkFailureMsg(msg)) {
+          return 'انقطع الاتصال أثناء الرفع إلى التخزين — أعد المحاولة على شبكة ثابتة أو بملف أصغر';
+        }
+        return msg || 'فشل الاتصال بالتخزين';
+      }
+
+      /** fetch إلى r2-storage مع إعادة محاولة عند انقطاع الشبكة (رسالة Safari الشائعة: Load failed). */
+      async function fetchR2StorageRequest(init, opts = {}) {
+        const retries = Number.isFinite(opts.retries) ? opts.retries : 2;
+        let lastErr;
+        for (let attempt = 0; attempt <= retries; attempt++) {
+          try {
+            return await fetch(R2_STORAGE_FN_URL, init);
+          } catch (err) {
+            lastErr = err;
+            if (!isR2NetworkFailureMsg(err?.message || err) || attempt === retries) {
+              throw new Error(humanizeR2NetworkError(err));
+            }
+            await new Promise((resolve) => setTimeout(resolve, 400 * (attempt + 1)));
+          }
+        }
+        throw new Error(humanizeR2NetworkError(lastErr));
+      }
+
+      function isR2ObjectAlreadyExistsMsg(msg) {
+        return /يوجد ملف بالمفتاح المؤقت نفسه|يوجد ملف بالفعل في وجهة النقل|PreconditionFailed|ConditionalRequestConflict|412/i
+          .test(String(msg || ''));
       }
 
       /** MIME قانوني يطابق الامتداد — يمنع رفض الخادم بسبب أنواع الهواتف الغريبة. */
@@ -794,6 +832,21 @@
         if (!Number.isFinite(bytes) || bytes < 1) throw new Error('المرفق فارغ');
         if (bytes > R2_ATTACHMENT_MAX_BYTES) {
           throw new Error(`حجم المرفق يتجاوز الحد المسموح (${R2_ATTACHMENT_MAX_MB} ميغابايت)`);
+        }
+      }
+
+      /** فحص temp مملوك بعد فشل استجابة الشبكة — headObject العادي يرفض temp غير المربوط بسجل. */
+      async function recoverOwnedTempObjectIfPresent(objectKey, expectedBytes) {
+        try {
+          const head = await callR2StorageFn('headTempObject', { key: objectKey });
+          if (!head?.ok) return false;
+          const len = Number(head.contentLength || 0);
+          if (Number.isFinite(expectedBytes) && expectedBytes > 0 && len > 0 && len !== expectedBytes) {
+            return false;
+          }
+          return len > 0;
+        } catch (_) {
+          return false;
         }
       }
 
@@ -927,7 +980,7 @@
           throw new Error('انتهت الجلسة، يرجى تسجيل الدخول من جديد');
         }
 
-        const res = await fetch(R2_STORAGE_FN_URL, {
+        const res = await fetchR2StorageRequest({
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -1052,17 +1105,30 @@
           throw new Error('انتهت الجلسة، يرجى تسجيل الدخول من جديد');
         }
 
-        const res = await fetch(R2_STORAGE_FN_URL, {
-          method: 'POST',
-          headers: {
-            'Content-Type': contentType,
-            'apikey': SUPABASE_ANON,
-            'Authorization': `Bearer ${session.access_token}`,
-            'X-R2-Action': 'putObject',
-            'X-R2-Key': objectKey,
-          },
-          body,
-        });
+        const expectedBytes = (body instanceof Blob && body.size)
+          || (body && body.byteLength)
+          || 0;
+
+        let res;
+        try {
+          res = await fetchR2StorageRequest({
+            method: 'POST',
+            headers: {
+              'Content-Type': contentType,
+              'apikey': SUPABASE_ANON,
+              'Authorization': `Bearer ${session.access_token}`,
+              'X-R2-Action': 'putObject',
+              'X-R2-Key': objectKey,
+            },
+            body,
+          });
+        } catch (netErr) {
+          // الاستجابة ضاعت بعد نجاح Put أحياناً — تحقق من وجود المفتاح المؤقت المملوك.
+          if (await recoverOwnedTempObjectIfPresent(objectKey, expectedBytes)) {
+            return { ok: true, key: objectKey, recovered: true };
+          }
+          throw netErr;
+        }
 
         let data = {};
         try { data = await res.json(); } catch (_) { }
@@ -1082,6 +1148,10 @@
           }
           if (res.status === 413) {
             throw new Error('R2_EDGE_PAYLOAD_TOO_LARGE');
+          }
+          // إعادة رفع بعد نجاح سابق: الملف موجود مسبقاً — اعتبره نجاحاً.
+          if (res.status === 409 || isR2ObjectAlreadyExistsMsg(msg)) {
+            return { ok: true, key: objectKey, alreadyExists: true };
           }
           throw new Error(msg);
         }
@@ -1204,7 +1274,7 @@
       const R2_MULTIPART_MAX_PARTS = 20;
 
       async function uploadR2MultipartPartViaEdge(objectKey, uploadId, partNumber, chunk, authToken, contentType) {
-        for (let attempt = 0; attempt < 2; attempt++) {
+        for (let attempt = 0; attempt < 3; attempt++) {
           let token = authToken;
           if (!token || attempt > 0) {
             let session = await ensureSupabaseSessionFresh();
@@ -1216,20 +1286,29 @@
             token = session.access_token;
           }
 
-          const res = await fetch(R2_STORAGE_FN_URL, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/octet-stream',
-              'apikey': SUPABASE_ANON,
-              'Authorization': `Bearer ${token}`,
-              'X-R2-Action': 'uploadPart',
-              'X-R2-Key': objectKey,
-              'X-R2-Upload-Id': uploadId,
-              'X-R2-Part-Number': String(partNumber),
-              'X-R2-Content-Type': contentType || 'application/octet-stream',
-            },
-            body: chunk,
-          });
+          let res;
+          try {
+            res = await fetchR2StorageRequest({
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/octet-stream',
+                'apikey': SUPABASE_ANON,
+                'Authorization': `Bearer ${token}`,
+                'X-R2-Action': 'uploadPart',
+                'X-R2-Key': objectKey,
+                'X-R2-Upload-Id': uploadId,
+                'X-R2-Part-Number': String(partNumber),
+                'X-R2-Content-Type': contentType || 'application/octet-stream',
+              },
+              body: chunk,
+            }, { retries: 1 });
+          } catch (netErr) {
+            if (attempt < 2) {
+              await new Promise((resolve) => setTimeout(resolve, 500 * (attempt + 1)));
+              continue;
+            }
+            throw netErr;
+          }
 
           let data = {};
           try { data = await res.json(); } catch (_) { }
@@ -1259,7 +1338,18 @@
         const totalSize = blob.size;
         if (!totalSize) throw new Error('ملف فارغ');
 
-        const { uploadId } = await callR2StorageFn('createMultipart', { key: objectKey, contentType });
+        let uploadId;
+        try {
+          const created = await callR2StorageFn('createMultipart', { key: objectKey, contentType });
+          uploadId = created?.uploadId;
+        } catch (createErr) {
+          // putObject نجح سابقاً وفُقدت استجابته ثم حُوّلنا لـ multipart — الملف موجود.
+          if (isR2ObjectAlreadyExistsMsg(createErr?.message || createErr)
+            && await recoverOwnedTempObjectIfPresent(objectKey, totalSize)) {
+            return;
+          }
+          throw createErr;
+        }
         if (!uploadId) throw new Error('تعذّر بدء الرفع المتعدد الأجزاء');
         if (cancelHandle) {
           cancelHandle._multipart = { objectKey, uploadId };
@@ -18003,7 +18093,7 @@
           await uploadR2MultipartViaEdge(objectKey, body, ct, onPartProgress, cancelHandle);
         };
 
-        // signPut معطّل — للفيديو/الملفات الأكبر استخدم أجزاء Edge؛ وإلا الوكيل مع احتياط multipart عند 413.
+        // signPut معطّل — للجوال/الملفات الأكبر استخدم أجزاء Edge؛ وإلا الوكيل مع احتياط multipart عند 413/Load failed.
         if (needsMultipart || (isVideo && fileSize > (4 * 1024 * 1024))) {
           await uploadViaMultipart();
           return;
@@ -18012,10 +18102,16 @@
           await uploadViaProxy();
         } catch (proxyErr) {
           const proxyMsg = String(proxyErr?.message || proxyErr);
-          if (!/R2_EDGE_PAYLOAD_TOO_LARGE|413|كبير جداً|timeout|Load failed|Failed to fetch/i.test(proxyMsg)) {
-            throw proxyErr;
+          if (await recoverOwnedTempObjectIfPresent(objectKey, fileSize)) return;
+          if (!/R2_EDGE_PAYLOAD_TOO_LARGE|413|كبير جداً|timeout|Load failed|Failed to fetch|انقطع الاتصال/i.test(proxyMsg)) {
+            throw new Error(humanizeR2NetworkError(proxyErr));
           }
-          await uploadViaMultipart();
+          try {
+            await uploadViaMultipart();
+          } catch (mpErr) {
+            if (await recoverOwnedTempObjectIfPresent(objectKey, fileSize)) return;
+            throw new Error(humanizeR2NetworkError(mpErr));
+          }
         }
       }
 
@@ -18164,7 +18260,7 @@
             return;
           }
           fileEntry.prepStatus = 'error';
-          fileEntry.prepError = String(err?.message || err);
+          fileEntry.prepError = humanizeR2NetworkError(err);
           updateAttachmentPrepUi(scope, fileEntry._fileId);
           if (isAtharDebugLog()) console.warn('[Prep] فشل تجهيز مرفق', err);
         }).finally(() => {
@@ -24700,14 +24796,21 @@
               const oldKey = att.p;
               if (!oldKey || !oldKey.startsWith('temp_')) continue;
               const newKey = `${r2Folder}/${oldKey.split('/').pop()}`;
-              await callR2StorageFn('moveObject', {
-                fromKey: oldKey,
-                toKey: newKey,
-                recordType: 'violation',
-                recordId: t.id,
-                operation: 'reply',
-                expectedState: t.state,
-              });
+              try {
+                await callR2StorageFn('moveObject', {
+                  fromKey: oldKey,
+                  toKey: newKey,
+                  recordType: 'violation',
+                  recordId: t.id,
+                  operation: 'reply',
+                  expectedState: t.state,
+                });
+              } catch (moveErr) {
+                // النقل نجح وفُقدت الاستجابة، أو إعادة محاولة بعد نجاح سابق.
+                if (!isR2ObjectAlreadyExistsMsg(moveErr?.message || moveErr)) {
+                  throw new Error(humanizeR2NetworkError(moveErr));
+                }
+              }
               copiedReplyMoves.push({ oldKey, newKey });
               uploadedAtts[i].p = newKey;
             }
@@ -24765,7 +24868,7 @@
               operation: 'reply', expectedState: t.state,
             });
           }
-          showToast('فشل التنفيذ: ' + err.message, 'error');
+          showToast('فشل التنفيذ: ' + humanizeR2NetworkError(err), 'error');
         } finally {
           window.isUploading = false;
           btnSnapshots.forEach(s => {
