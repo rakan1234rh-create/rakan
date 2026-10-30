@@ -17119,14 +17119,18 @@
         ].join('\n');
       }
 
+      /**
+       * صفحة واتساب الكلاسيكية (api.whatsapp.com/send): الرسالة جاهزة وزر المتابعة
+       * لفتح المحادثة — نفس تجربة wa.me دون كتابة HTML مخصص في about:blank.
+       */
       function buildViolationWhatsAppUrl(phone, ticketNumber, violationType, employeeName) {
         const digits = phoneToWhatsAppDigits(phone);
         if (!digits) return '';
         const text = buildViolationWhatsAppText(ticketNumber, violationType, employeeName);
-        return `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
+        return `https://api.whatsapp.com/send?phone=${encodeURIComponent(digits)}&text=${encodeURIComponent(text)}`;
       }
 
-      /** نافذة منبثقة حقيقية — لا نفس تبويب أثر (تجنّب شاشة بيضاء في PWA) */
+      /** نافذة منبثقة حقيقية — لا نفس تبويب أثر */
       function isSeparateBrowserWindow(win) {
         try {
           return !!(win && !win.closed && win !== window);
@@ -17136,8 +17140,9 @@
       }
 
       /**
-       * افتح about:blank أثناء إيماءة الإرسال فقط إن كانت نافذة منفصلة.
-       * في وضع التطبيق المستقل window.open غالباً يفرّغ نفس النافذة → شاشة بيضاء.
+       * احجز تبويباً منفصلاً أثناء إيماءة الإرسال (about:blank خام فقط).
+       * لا تكتب «جاري التحضير…» — بعد الرصد نوجّهه لصفحة واتساب بالرسالة.
+       * في الوضع المستقل يُتخطى لأن window.open يفرّغ نفس نافذة أثر.
        */
       function armWhatsAppPlaceholderWindow() {
         if (typeof isNativeMobileShell === 'function' && isNativeMobileShell()) return null;
@@ -17148,15 +17153,6 @@
           return null;
         }
         if (!isSeparateBrowserWindow(win)) return null;
-        try {
-          win.document.open();
-          win.document.write(
-            '<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>واتساب</title></head>' +
-            '<body style="margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;' +
-            'font-family:system-ui,sans-serif;background:#f4f5f7;color:#333">جاري التحضير لفتح واتساب…</body></html>'
-          );
-          win.document.close();
-        } catch (_) { /* noop */ }
         return win;
       }
 
@@ -17165,11 +17161,10 @@
         try { win.close(); } catch (_) { /* noop */ }
       }
 
-      /** فتح wa.me دون لمس location الصفحة الحالية */
+      /** افتح صفحة واتساب في تبويب منفصل — لا تلمس location تبويب أثر */
       function openWhatsAppUrlInNewContext(url) {
         let w = null;
         try {
-          // بدون noopener في المزايا حتى نميّز النجاح عن الحظر (noopener يعيد null دائماً)
           w = window.open(url, '_blank');
         } catch (_) {
           w = null;
@@ -17179,10 +17174,15 @@
           return true;
         }
         if (w === window) {
-          // بعض بيئات PWA تفتح في نفس النافذة — ارجع فوراً ولا تبقَ على wa.me
           try { history.back(); } catch (_) { /* noop */ }
           return false;
         }
+        return false;
+      }
+
+      /** أثناء إيماءة المستخدم: window.open ثم رابط target=_blank لصفحة واتساب */
+      function openWhatsAppComposeFromUserGesture(url) {
+        if (openWhatsAppUrlInNewContext(url)) return true;
         try {
           const a = document.createElement('a');
           a.href = url;
@@ -17198,21 +17198,21 @@
         }
       }
 
-      /** إيماءة مستخدم جديدة بعد الرفع غير المتزامن — يتجاوز حظر النوافذ المنبثقة */
+      /** ضغطة جديدة → صفحة واتساب بالرسالة الجاهزة وزر فتح المحادثة */
       async function promptOpenViolationWhatsApp(url) {
         const ok = await confirmDialog(
-          'اضغط «فتح واتساب» لإرسال إشعار المخالفة للموظف دون مغادرة أثر.',
+          'ستُفتح صفحة واتساب وفيها نص الإشعار جاهزاً. اضغط المتابعة ثم أرسل للموظف.',
           { type: 'info', title: 'إشعار واتساب', okText: 'فتح واتساب', cancelText: 'لاحقاً' }
         );
         if (!ok) return false;
-        if (openWhatsAppUrlInNewContext(url)) return true;
-        showToast('تعذّر فتح واتساب — اسمح بالنوافذ المنبثقة أو افتح من المتصفح', 'warning');
+        if (openWhatsAppComposeFromUserGesture(url)) return true;
+        showToast('تعذّر فتح واتساب — اسمح بالنوافذ المنبثقة ثم أعد المحاولة', 'warning');
         return false;
       }
 
       /**
-       * يفتح واتساب بعد الرصد دون تفريغ تبويب أثر.
-       * لا تستخدم window.location.href → شاشة بيضاء ثم رجوع (خصوصاً مع noopener=null).
+       * بعد الرصد: تبويب منفصل → صفحة api.whatsapp.com بالرسالة (التجربة الكلاسيكية).
+       * لا window.location على أثر، ولا صفحة HTML وسيطة من عندنا.
        */
       function openWhatsAppAfterViolation(opts = {}) {
         const url = buildViolationWhatsAppUrl(
@@ -17228,7 +17228,8 @@
         }
         if (isSeparateBrowserWindow(opts.placeholderWin)) {
           try {
-            opts.placeholderWin.location.replace(url);
+            // الانتقال لصفحة واتساب الرسمية (الرسالة + زر فتح المحادثة)
+            opts.placeholderWin.location.href = url;
             try { opts.placeholderWin.opener = null; } catch (_) { /* noop */ }
             return true;
           } catch (_) {
@@ -17236,7 +17237,6 @@
           }
         }
         if (openWhatsAppUrlInNewContext(url)) return true;
-        // بعد انتظار الرفع يُحظر الفتح التلقائي — اطلب ضغطة جديدة بدل تحويل نفس الصفحة
         void promptOpenViolationWhatsApp(url);
         return false;
       }
