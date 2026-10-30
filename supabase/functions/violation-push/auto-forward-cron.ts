@@ -171,10 +171,13 @@ export async function isAuthorizedCron(req: Request, payload?: Record<string, un
   }
 
   const auth = normSecret((req.headers.get('Authorization') || '').replace(/^Bearer\s+/i, ''));
-  const serviceKey = normSecret(Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'));
-  if (serviceKey && auth) {
-    const eq = await safeEqual(auth, serviceKey);
-    if (eq) return true;
+  const serviceKeys = [
+    Deno.env.get('SUPABASE_SECRET_KEY'),
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),
+    Deno.env.get('SERVICE_ROLE_KEY'),
+  ].map(normSecret).filter(Boolean);
+  for (const serviceKey of serviceKeys) {
+    if (auth && await safeEqual(auth, serviceKey)) return true;
   }
 
   return false;

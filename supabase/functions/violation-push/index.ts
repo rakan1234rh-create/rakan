@@ -451,15 +451,16 @@ async function sendImmediateEmail(
   `;
   const text = `${title}: ${body}. رقم المخالفة: ${record.ticket_number || record.id}`;
 
-  const host = (Deno.env.get('SES_SMTP_HOST') || '').trim();
-  const user = (Deno.env.get('SES_SMTP_USERNAME') || '').trim();
-  const pass = (Deno.env.get('SES_SMTP_PASSWORD') || '').trim();
-  const port = Number(Deno.env.get('SES_SMTP_PORT') || 587);
-  if (!host || !user || !pass) throw new Error('SES SMTP is not configured');
+  // Hostinger SMTP (same env aliases as send-auth-emails)
+  const host = (Deno.env.get('SES_SMTP_HOST') || Deno.env.get('SMTP_HOST') || '').trim();
+  const user = (Deno.env.get('SES_SMTP_USERNAME') || Deno.env.get('SMTP_USERNAME') || '').trim();
+  const pass = (Deno.env.get('SES_SMTP_PASSWORD') || Deno.env.get('SMTP_PASSWORD') || '').trim();
+  const port = Number(Deno.env.get('SES_SMTP_PORT') || Deno.env.get('SMTP_PORT') || 465);
+  if (!host || !user || !pass) throw new Error('Hostinger SMTP is not configured');
   const nodemailer = await import('npm:nodemailer@6.9.16');
   const transporter = nodemailer.createTransport({
     host,
-    port: Number.isFinite(port) ? port : 587,
+    port: Number.isFinite(port) && port > 0 ? port : 465,
     secure: port === 465,
     auth: { user, pass },
   });
@@ -607,14 +608,68 @@ async function safeEqual(a: string, b: string): Promise<boolean> {
   return diff === 0;
 }
 
+function serviceRoleEnvKeys(): string[] {
+  return [
+    Deno.env.get('SUPABASE_SECRET_KEY') || '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '',
+    Deno.env.get('SERVICE_ROLE_KEY') || '',
+  ].map((s) => s.trim()).filter(Boolean);
+}
+
 async function isServiceRoleAuth(req: Request): Promise<boolean> {
-  const serviceKey = (Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '').trim();
-  if (!serviceKey) return false;
+  const keys = serviceRoleEnvKeys();
+  if (!keys.length) return false;
   const auth = (req.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '').trim();
-  if (auth && await safeEqual(auth, serviceKey)) return true;
   const apikey = (req.headers.get('apikey') || '').trim();
-  if (apikey && await safeEqual(apikey, serviceKey)) return true;
+  for (const serviceKey of keys) {
+    if (auth && await safeEqual(auth, serviceKey)) return true;
+    if (apikey && await safeEqual(apikey, serviceKey)) return true;
+  }
   return false;
+}
+
+/**
+ * DB webhook auth that does not require the legacy service_role JWT.
+ * Gateway still needs a valid project API key (anon/publishable) on Authorization/apikey;
+ * the shared secret is carried in x-athar-push-secret (or x-cron-secret).
+ */
+async function isPushWebhookAuth(
+  req: Request,
+  supabase: ReturnType<typeof createClient>,
+): Promise<boolean> {
+  const provided = String(
+    req.headers.get('x-athar-push-secret') || req.headers.get('x-cron-secret') || '',
+  ).trim();
+  if (!provided) return false;
+
+  const envSecrets = [
+    Deno.env.get('VIOLATION_PUSH_WEBHOOK_SECRET') || '',
+    Deno.env.get('AUTO_FORWARD_CRON_SECRET') || '',
+  ].map((s) => s.trim()).filter(Boolean);
+  for (const secret of envSecrets) {
+    if (await safeEqual(provided, secret)) return true;
+  }
+
+  try {
+    const { data } = await supabase
+      .from('athar_secrets')
+      .select('value')
+      .eq('key', 'violation_push_webhook_secret')
+      .maybeSingle();
+    const dbSecret = String(data?.value || '').trim();
+    if (dbSecret && await safeEqual(provided, dbSecret)) return true;
+  } catch (err) {
+    console.warn('push webhook secret lookup failed', String(err).slice(0, 120));
+  }
+  return false;
+}
+
+async function isInternalPushAuth(
+  req: Request,
+  supabase: ReturnType<typeof createClient>,
+): Promise<boolean> {
+  if (await isServiceRoleAuth(req)) return true;
+  return await isPushWebhookAuth(req, supabase);
 }
 
 async function resolveUserIdFromJwt(req: Request) {
@@ -939,15 +994,22 @@ Deno.serve(async (req) => {
         vapidValid = true;
       } catch (_) { /* invalid pair */ }
     }
+    const smtpConfigured = Boolean(
+      (Deno.env.get('SES_SMTP_HOST') || Deno.env.get('SMTP_HOST') || '').trim()
+      && (Deno.env.get('SES_SMTP_USERNAME') || Deno.env.get('SMTP_USERNAME') || '').trim()
+      && (Deno.env.get('SES_SMTP_PASSWORD') || Deno.env.get('SMTP_PASSWORD') || '').trim(),
+    );
     return json({
       ok: true,
       service: 'violation-push',
-      version: '2026-09-email-ses-fallback-v3',
+      version: '2026-10-hostinger-webhook-auth-v4',
       autoForwardCron: AUTO_FORWARD_CRON_VERSION,
       breakExpiryCron: BREAK_EXPIRY_CRON_VERSION,
       vapidConfigured: !!(vapidPublic && vapidPrivate),
       vapidValid,
       vapidPublicKey: vapidPublic || null,
+      smtpConfigured,
+      smtpProvider: 'hostinger',
     });
   }
 
@@ -1034,7 +1096,7 @@ Deno.serve(async (req) => {
 
   if (payload.notifyState === true) {
     try {
-      const serviceInternal = await isServiceRoleAuth(req);
+      const serviceInternal = await isInternalPushAuth(req, supabase);
       const userId = serviceInternal ? null : await resolveUserIdFromJwt(req);
       if (!userId && !serviceInternal) return json({ error: 'يجب تسجيل الدخول لإرسال التنبيه' }, 401);
       const record = extractRecord(payload);
@@ -1067,7 +1129,7 @@ Deno.serve(async (req) => {
 
   if (payload.notify === true) {
     try {
-      const serviceInternal = await isServiceRoleAuth(req);
+      const serviceInternal = await isInternalPushAuth(req, supabase);
       const userId = serviceInternal ? null : await resolveUserIdFromJwt(req);
       if (!userId && !serviceInternal) return json({ error: 'يجب تسجيل الدخول لإرسال التنبيه' }, 401);
       const record = extractRecord(payload);
@@ -1108,7 +1170,7 @@ Deno.serve(async (req) => {
     const table = String(payload.table || '');
     const record = extractRecord(payload);
     if (record?.id && table === 'violations' && (op === 'INSERT' || op === 'UPDATE')) {
-      const serviceInternal = await isServiceRoleAuth(req);
+      const serviceInternal = await isInternalPushAuth(req, supabase);
       if (!serviceInternal) return json({ error: 'unauthorized webhook' }, 401);
       try {
         const { data: row, error: rowErr } = await supabase
