@@ -17141,8 +17141,8 @@
       }
 
       /**
-       * شريط ثابت بعد الإصدار: رابط wa.me حقيقي يضغطه المستخدم (إيماءة حقيقية).
-       * لا confirmDialog (goTab كان يلغيها) ولا about:blank ولا window.open المؤجّل.
+       * شريط مستطيل أعلى صفحة رصد المخالفة (نفس الصفحة — بلا تنقل).
+       * رابط wa.me حقيقي + زر إغلاق X.
        */
       function showViolationWhatsAppBar(url, ticketLabel) {
         if (!url || !/^https:\/\/wa\.me\/\d+\?text=/.test(url)) return false;
@@ -17154,30 +17154,53 @@
         bar.setAttribute('aria-label', 'إشعار واتساب للمخالفة');
         bar.style.cssText = [
           'position:fixed',
-          'inset-inline:12px',
-          'bottom:calc(12px + var(--mr-mob-bottom-nav-h, 0px))',
+          'top:var(--unified-topbar-h, 76px)',
+          'inset-inline:0',
           'z-index:10050',
           'display:flex',
           'align-items:center',
-          'gap:10px',
+          'gap:12px',
           'padding:12px 14px',
-          'border-radius:14px',
+          'border-radius:0',
           'background:var(--surface, #fff)',
-          'border:1px solid var(--border, #e5e7eb)',
-          'box-shadow:0 10px 30px rgba(0,0,0,.18)',
+          'border-bottom:1px solid var(--border, #e5e7eb)',
+          'box-shadow:0 4px 16px rgba(0,0,0,.12)',
           'font-family:inherit',
-          'direction:rtl'
+          'direction:rtl',
+          'box-sizing:border-box'
         ].join(';');
 
+        const closeBtn = document.createElement('button');
+        closeBtn.type = 'button';
+        closeBtn.setAttribute('aria-label', 'إغلاق');
+        closeBtn.textContent = '×';
+        closeBtn.style.cssText = [
+          'flex:0 0 auto',
+          'order:3',
+          'width:36px',
+          'height:36px',
+          'border:1px solid var(--border, #e5e7eb)',
+          'border-radius:0',
+          'background:var(--surface, #fff)',
+          'color:var(--text, #111)',
+          'font-size:22px',
+          'line-height:1',
+          'cursor:pointer'
+        ].join(';');
+        closeBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          dismissViolationWhatsAppBar();
+        });
+
         const textWrap = document.createElement('div');
-        textWrap.style.cssText = 'flex:1;min-width:0';
+        textWrap.style.cssText = 'flex:1;min-width:0;order:1';
         const title = document.createElement('div');
         title.style.cssText = 'font-weight:700;font-size:14px;color:var(--text, #111)';
         title.textContent = 'إرسال إشعار واتساب';
         const sub = document.createElement('div');
         sub.style.cssText = 'font-size:12px;color:var(--text3, #6b7280);margin-top:2px';
         const ticketTxt = ticketLabel ? ` للتذكرة ${ticketLabel}` : '';
-        sub.textContent = `اضغط الزر لفتح واتساب بالرسالة جاهزة${ticketTxt}.`;
+        sub.textContent = `اضغط «فتح واتساب» لإرسال الرسالة جاهزة${ticketTxt}.`;
         textWrap.appendChild(title);
         textWrap.appendChild(sub);
 
@@ -17189,11 +17212,12 @@
         link.textContent = 'فتح واتساب';
         link.style.cssText = [
           'flex:0 0 auto',
+          'order:2',
           'display:inline-flex',
           'align-items:center',
           'justify-content:center',
-          'padding:10px 14px',
-          'border-radius:10px',
+          'padding:10px 16px',
+          'border-radius:0',
           'background:#25D366',
           'color:#fff',
           'font-weight:700',
@@ -17202,31 +17226,20 @@
           'white-space:nowrap'
         ].join(';');
 
-        const closeBtn = document.createElement('button');
-        closeBtn.type = 'button';
-        closeBtn.setAttribute('aria-label', 'إغلاق');
-        closeBtn.textContent = '×';
-        closeBtn.style.cssText = [
-          'flex:0 0 auto',
-          'width:32px',
-          'height:32px',
-          'border:0',
-          'border-radius:8px',
-          'background:transparent',
-          'color:var(--text3, #6b7280)',
-          'font-size:22px',
-          'line-height:1',
-          'cursor:pointer'
-        ].join(';');
-        closeBtn.addEventListener('click', (e) => {
-          e.preventDefault();
-          dismissViolationWhatsAppBar();
-        });
-
+        // RTL: نص | زر واتساب | X — order يثبّت X في أقصى الطرف
         bar.appendChild(textWrap);
         bar.appendChild(link);
         bar.appendChild(closeBtn);
-        document.body.appendChild(bar);
+
+        const page = document.getElementById('tab-newTicket');
+        if (page) {
+          page.insertBefore(bar, page.firstChild);
+          // ثابت أعلى الشاشة حتى يبقى ظاهراً فوق نموذج الرصد
+          bar.style.position = 'fixed';
+        } else {
+          document.body.appendChild(bar);
+        }
+        try { bar.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (_) { /* noop */ }
         return true;
       }
 
@@ -17466,8 +17479,7 @@
           renderNotifications();
           showToast('تم إصدار التذكرة ' + shortTicketNum(officialNumber) + ' بنجاح ✓', 'success');
           notifyViolationPushAfterInsert(ticketData);
-          goTab('workflow', document.querySelector('[onclick*=workflow]'));
-          // شريط رابط wa.me ثابت — لا confirmDialog (كان يُلغى عند التنقل/الطبقات)
+          // ابقَ في صفحة رصد المخالفة — شريط واتساب مستطيل أعلى نفس الصفحة (بلا goTab)
           await openWhatsAppAfterViolation({
             phone: empPhone,
             employeeId: emp.id,
@@ -17494,9 +17506,6 @@
             if (state.uploadTempFolders) state.uploadTempFolders.nt = null;
             if (state.uploadSessions) state.uploadSessions.nt = null;
             try { resetNewTicket(); } catch (_) { /* noop */ }
-            try {
-              goTab('workflow', document.querySelector('[onclick*=workflow]'));
-            } catch (_) { /* noop */ }
             try {
               await openWhatsAppAfterViolation({
                 phone: empPhone,
