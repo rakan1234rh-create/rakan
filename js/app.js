@@ -17874,6 +17874,11 @@
               if (isAtharDebugLog()) console.log(`[R2-Move] Moved: ${oldKey} -> ${newKey}`);
               return { i, oldKey, newKey };
             } catch (e) {
+              // مثل مسار الرد: النقل نجح وفُقدت الاستجابة، أو إعادة محاولة بعد نجاح سابق.
+              if (isR2ObjectAlreadyExistsMsg(e?.message || e)) {
+                if (isAtharDebugLog()) console.log(`[R2-Move] Destination already present: ${newKey}`);
+                return { i, oldKey, newKey, alreadyExisted: true };
+              }
               failed.push(oldKey);
               if (isAtharDebugLog()) console.error(`[R2-Move] Failed to move ${oldKey}:`, e);
               return null;
@@ -17884,10 +17889,16 @@
           for (const r of moveResults) {
             if (!r) continue;
             try {
+              // تأكيد الوجهة قبل تثبيت المسار وحذف temp — يمنع مرجعاً نهائياً بلا جسم.
+              const destOk = await r2ObjectExists(r.newKey);
+              if (destOk === false) {
+                throw new Error('نسخة المرفق النهائية غير موجودة بعد النقل');
+              }
               await finalizeR2AttachmentPath('violation', violationId, r.oldKey, r.newKey, opts);
               updatedAtts[r.i].p = r.newKey;
               movedAny = true;
-              await cleanupR2CopiedTempKey(r.oldKey);
+              // لا تحذف temp إن تعذّر التأكد من الوجهة (null = head غير حاسم).
+              if (destOk === true) await cleanupR2CopiedTempKey(r.oldKey);
             } catch (e) {
               await rollbackR2CopiedAttachment('violation', violationId, r, opts);
               failed.push(r.oldKey);
@@ -17959,6 +17970,9 @@
             });
             return { i, oldKey, newKey };
           } catch (e) {
+            if (isR2ObjectAlreadyExistsMsg(e?.message || e)) {
+              return { i, oldKey, newKey, alreadyExisted: true };
+            }
             failed.push(oldKey);
             if (isAtharDebugLog()) console.error('[R2-Move] complaint failed', oldKey, e);
             return null;
@@ -17970,6 +17984,10 @@
         for (const r of moveResults) {
           if (!r) continue;
           try {
+            const destOk = await r2ObjectExists(r.newKey);
+            if (destOk === false) {
+              throw new Error('نسخة المرفق النهائية غير موجودة بعد النقل');
+            }
             if (persistColumn) {
               await finalizeR2AttachmentPath('complaint', complaintId, r.oldKey, r.newKey, opts);
             } else {
@@ -17977,7 +17995,7 @@
             }
             updatedAtts[r.i] = { ...updatedAtts[r.i], p: r.newKey };
             movedAny = true;
-            if (persistColumn) await cleanupR2CopiedTempKey(r.oldKey);
+            if (persistColumn && destOk === true) await cleanupR2CopiedTempKey(r.oldKey);
           } catch (e) {
             await rollbackR2CopiedAttachment('complaint', complaintId, r, opts);
             failed.push(r.oldKey);

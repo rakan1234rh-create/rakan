@@ -1175,27 +1175,14 @@ export function createR2StorageHandler(deps: {
       assertAttachmentSize(sourceLen)
       const sourceContentType = normalizedAttachmentContentType(fromKey, sourceHead.ContentType || '')
       normalizedAttachmentContentType(toKey, sourceContentType)
-      // نسخ من جهة الخادم — يتجنب تحميل الملف كاملاً في ذاكرة Edge (مهم للفيديو >50MB).
-      // إن فشل CopyObject (مثلاً بيئة اختبار قديمة) نسقط إلى Put مُخزَّن للملفات الصغيرة فقط.
-      try {
-        await s3.send(new CopyObjectCommand({
-          Bucket: bucket,
-          Key: toKey,
-          CopySource: encodeURI(`${bucket}/${fromKey}`),
-          ContentType: sourceContentType,
-          MetadataDirective: 'REPLACE',
-          // الشرط الذري يمنع سباق Head/Copy من استبدال ملف قائم.
-          IfNoneMatch: '*',
-        }))
-      } catch (copyErr: unknown) {
-        const copyMsg = copyErr instanceof Error ? copyErr.message : String(copyErr || '')
-        const copyName = copyErr && typeof copyErr === 'object' && 'name' in copyErr
-          ? String((copyErr as { name: string }).name)
-          : ''
-        if (/PreconditionFailed|ConditionalRequestConflict|412|يوجد ملف/.test(`${copyName} ${copyMsg}`)) {
-          throw copyErr
-        }
-        if (sourceLen > (32 * 1024 * 1024)) throw copyErr
+      // R2/S3: Encode each CopySource path segment; keep '/' between bucket and key.
+      // Do not use MetadataDirective REPLACE + IfNoneMatch here:
+      // - SDK 3.733 CopyObjectRequest has no IfNoneMatch (it was a no-op)
+      // - R2 destination conditions use cf-copy-destination-if-none-match (beta)
+      // - REPLACE can drop source system metadata if ContentType is mishandled
+      // Overwrite is already blocked by the HeadObject check above.
+      const copySource = `${bucket}/${fromKey.split('/').map(encodeURIComponent).join('/')}`
+      const putBufferedCopy = async () => {
         const source = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: fromKey }))
         if (!source.Body) throw new Error('جسم الملف المؤقت فارغ')
         const bytes = await readAwsSdkBodyBytes(source.Body)
@@ -1210,10 +1197,86 @@ export function createR2StorageHandler(deps: {
           IfNoneMatch: '*',
         }))
       }
+      // نسخ من جهة الخادم — يتجنب تحميل الملف كاملاً في ذاكرة Edge (مهم للفيديو >50MB).
+      // إن فشل CopyObject نسقط إلى Put مُخزَّن للملفات الصغيرة فقط.
+      let copiedVia: 'copy' | 'put' = 'copy'
+      try {
+        await s3.send(new CopyObjectCommand({
+          Bucket: bucket,
+          Key: toKey,
+          CopySource: copySource,
+          MetadataDirective: 'COPY',
+        }))
+      } catch (copyErr: unknown) {
+        const copyMsg = copyErr instanceof Error ? copyErr.message : String(copyErr || '')
+        const copyName = copyErr && typeof copyErr === 'object' && 'name' in copyErr
+          ? String((copyErr as { name: string }).name)
+          : ''
+        if (/PreconditionFailed|ConditionalRequestConflict|412|يوجد ملف/.test(`${copyName} ${copyMsg}`)) {
+          throw copyErr
+        }
+        if (sourceLen > (32 * 1024 * 1024)) throw copyErr
+        await putBufferedCopy()
+        copiedVia = 'put'
+      }
+      // Verify destination before the client finalizes DB + deletes temp.
+      // A "successful" Copy that leaves a missing/empty object caused
+      // «فشل تحميل … عبر الوسيط» after issue (DB final path, temp gone).
+      const removeBadDestination = async () => {
+        try {
+          await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: toKey }))
+        } catch {
+          /* best-effort */
+        }
+      }
+      let destHead
+      try {
+        destHead = await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: toKey }))
+      } catch (verifyErr: unknown) {
+        await removeBadDestination()
+        if (copiedVia === 'copy' && sourceLen <= (32 * 1024 * 1024)) {
+          await putBufferedCopy()
+          destHead = await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: toKey }))
+          copiedVia = 'put'
+        } else {
+          const name = verifyErr && typeof verifyErr === 'object' && 'name' in verifyErr
+            ? String((verifyErr as { name: string }).name)
+            : ''
+          throw new Error(
+            name === 'NotFound' || name === 'NoSuchKey' || name === '404'
+              ? 'فشل التحقق من نسخة المرفق بعد النقل'
+              : (verifyErr instanceof Error ? verifyErr.message : 'فشل التحقق من نسخة المرفق بعد النقل'),
+          )
+        }
+      }
+      const destLen = Number(destHead.ContentLength || 0)
+      if (destLen < 1 || destLen !== sourceLen) {
+        await removeBadDestination()
+        if (copiedVia === 'copy' && sourceLen <= (32 * 1024 * 1024)) {
+          await putBufferedCopy()
+          const retryHead = await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: toKey }))
+          const retryLen = Number(retryHead.ContentLength || 0)
+          if (retryLen < 1 || retryLen !== sourceLen) {
+            await removeBadDestination()
+            throw new Error('فشل التحقق من نسخة المرفق بعد النقل')
+          }
+          copiedVia = 'put'
+        } else {
+          throw new Error('فشل التحقق من نسخة المرفق بعد النقل')
+        }
+      }
       // لا نحذف المصدر الآن: يجب أن ينجح RPC الذي يثبت المرجع في قاعدة
       // البيانات أولاً. عند فشله يمكن للعميل حذف النسخة النهائية بأمان
       // والإبقاء على temp لإعادة المحاولة، بلا orphan أو 404 مرجعي.
-      return json({ ok: true, copied: true, sourceRetained: true, fromKey, toKey })
+      return json({
+        ok: true,
+        copied: true,
+        sourceRetained: true,
+        fromKey,
+        toKey,
+        bytes: sourceLen,
+        via: copiedVia,
+      })
     }
 
     return json({ error: 'عملية غير معروفة' }, 400)
