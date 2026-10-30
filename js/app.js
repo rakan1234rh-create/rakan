@@ -17126,7 +17126,94 @@
         return `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
       }
 
-      /** يفتح واتساب بعد الرصد — نافذة مبكرة تتجاوز حظر النوافذ المنبثقة بعد الانتظار */
+      /** نافذة منبثقة حقيقية — لا نفس تبويب أثر (تجنّب شاشة بيضاء في PWA) */
+      function isSeparateBrowserWindow(win) {
+        try {
+          return !!(win && !win.closed && win !== window);
+        } catch (_) {
+          return false;
+        }
+      }
+
+      /**
+       * افتح about:blank أثناء إيماءة الإرسال فقط إن كانت نافذة منفصلة.
+       * في وضع التطبيق المستقل window.open غالباً يفرّغ نفس النافذة → شاشة بيضاء.
+       */
+      function armWhatsAppPlaceholderWindow() {
+        if (typeof isNativeMobileShell === 'function' && isNativeMobileShell()) return null;
+        let win = null;
+        try {
+          win = window.open('about:blank', '_blank');
+        } catch (_) {
+          return null;
+        }
+        if (!isSeparateBrowserWindow(win)) return null;
+        try {
+          win.document.open();
+          win.document.write(
+            '<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>واتساب</title></head>' +
+            '<body style="margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;' +
+            'font-family:system-ui,sans-serif;background:#f4f5f7;color:#333">جاري التحضير لفتح واتساب…</body></html>'
+          );
+          win.document.close();
+        } catch (_) { /* noop */ }
+        return win;
+      }
+
+      function closeWhatsAppPlaceholder(win) {
+        if (!isSeparateBrowserWindow(win)) return;
+        try { win.close(); } catch (_) { /* noop */ }
+      }
+
+      /** فتح wa.me دون لمس location الصفحة الحالية */
+      function openWhatsAppUrlInNewContext(url) {
+        let w = null;
+        try {
+          // بدون noopener في المزايا حتى نميّز النجاح عن الحظر (noopener يعيد null دائماً)
+          w = window.open(url, '_blank');
+        } catch (_) {
+          w = null;
+        }
+        if (isSeparateBrowserWindow(w)) {
+          try { w.opener = null; } catch (_) { /* noop */ }
+          return true;
+        }
+        if (w === window) {
+          // بعض بيئات PWA تفتح في نفس النافذة — ارجع فوراً ولا تبقَ على wa.me
+          try { history.back(); } catch (_) { /* noop */ }
+          return false;
+        }
+        try {
+          const a = document.createElement('a');
+          a.href = url;
+          a.target = '_blank';
+          a.rel = 'noopener noreferrer';
+          a.style.display = 'none';
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          return true;
+        } catch (_) {
+          return false;
+        }
+      }
+
+      /** إيماءة مستخدم جديدة بعد الرفع غير المتزامن — يتجاوز حظر النوافذ المنبثقة */
+      async function promptOpenViolationWhatsApp(url) {
+        const ok = await confirmDialog(
+          'اضغط «فتح واتساب» لإرسال إشعار المخالفة للموظف دون مغادرة أثر.',
+          { type: 'info', title: 'إشعار واتساب', okText: 'فتح واتساب', cancelText: 'لاحقاً' }
+        );
+        if (!ok) return false;
+        if (openWhatsAppUrlInNewContext(url)) return true;
+        showToast('تعذّر فتح واتساب — اسمح بالنوافذ المنبثقة أو افتح من المتصفح', 'warning');
+        return false;
+      }
+
+      /**
+       * يفتح واتساب بعد الرصد دون تفريغ تبويب أثر.
+       * لا تستخدم window.location.href → شاشة بيضاء ثم رجوع (خصوصاً مع noopener=null).
+       */
       function openWhatsAppAfterViolation(opts = {}) {
         const url = buildViolationWhatsAppUrl(
           opts.phone,
@@ -17135,30 +17222,23 @@
           opts.employeeName
         );
         if (!url) {
-          if (opts.placeholderWin && !opts.placeholderWin.closed) {
-            try { opts.placeholderWin.close(); } catch (_) { /* noop */ }
-          }
+          closeWhatsAppPlaceholder(opts.placeholderWin);
           showToast('لا يوجد جوال محفوظ للموظف — تعذّر فتح واتساب', 'warning');
           return false;
         }
-        try {
-          if (opts.placeholderWin && !opts.placeholderWin.closed) {
-            opts.placeholderWin.location.href = url;
-            return true;
-          }
-        } catch (_) { /* noop */ }
-        const w = window.open(url, '_blank', 'noopener,noreferrer');
-        if (!w) {
-          // احتياطي: تحويل نفس الصفحة إن حُظر الـ popup
+        if (isSeparateBrowserWindow(opts.placeholderWin)) {
           try {
-            window.location.href = url;
+            opts.placeholderWin.location.replace(url);
+            try { opts.placeholderWin.opener = null; } catch (_) { /* noop */ }
             return true;
           } catch (_) {
-            showToast('تعذّر فتح واتساب — اسمح بالنوافذ المنبثقة', 'warning');
-            return false;
+            closeWhatsAppPlaceholder(opts.placeholderWin);
           }
         }
-        return true;
+        if (openWhatsAppUrlInNewContext(url)) return true;
+        // بعد انتظار الرفع يُحظر الفتح التلقائي — اطلب ضغطة جديدة بدل تحويل نفس الصفحة
+        void promptOpenViolationWhatsApp(url);
+        return false;
       }
 
       async function submitNewTicket() {
@@ -17219,14 +17299,9 @@
         // Clear only after validations succeed to avoid losing attachments on toast errors
         state.uploadedFiles.nt = [];
 
-        // افتح نافذة فارغة أثناء إيماءة المستخدم (قبل أي await) حتى لا يمنع المتصفح واتساب.
-        // الدليل لا يعيد phone للراصدين — الجلب عبر RPC بعد الفتح مباشرة.
-        let waPlaceholderWin = null;
-        try {
-          waPlaceholderWin = window.open('about:blank', '_blank');
-        } catch (_) {
-          waPlaceholderWin = null;
-        }
+        // نافذة منفصلة أثناء إيماءة المستخدم (قبل await) — تُتخطى في PWA حتى لا تُفرَّغ أثر.
+        // الدليل لا يعيد phone للراصدين — الجلب عبر RPC بعد التأمين مباشرة.
+        let waPlaceholderWin = armWhatsAppPlaceholderWindow();
         let empPhone = String(emp.phone || '').trim();
         if (!(empPhone && phoneToWhatsAppDigits(empPhone))) {
           try {
@@ -17237,9 +17312,7 @@
           }
         }
         if (!(empPhone && phoneToWhatsAppDigits(empPhone))) {
-          if (waPlaceholderWin && !waPlaceholderWin.closed) {
-            try { waPlaceholderWin.close(); } catch (_) { /* noop */ }
-          }
+          closeWhatsAppPlaceholder(waPlaceholderWin);
           waPlaceholderWin = null;
           empPhone = '';
         }
@@ -17388,15 +17461,13 @@
               employeeName: emp.name || emp.fullName || '',
               placeholderWin: waPlaceholderWin
             });
-          } else if (waPlaceholderWin && !waPlaceholderWin.closed) {
-            try { waPlaceholderWin.close(); } catch (_) { /* noop */ }
+          } else {
+            closeWhatsAppPlaceholder(waPlaceholderWin);
           }
           goTab('workflow', document.querySelector('[onclick*=workflow]'));
           
         } catch (err) {
-          if (waPlaceholderWin && !waPlaceholderWin.closed) {
-            try { waPlaceholderWin.close(); } catch (_) { /* noop */ }
-          }
+          closeWhatsAppPlaceholder(waPlaceholderWin);
           if (isAtharDebugLog()) console.error('[Sync] Critical Error:', err);
           if (createdTicketId) {
             // السجل أُنشئ قبل نقل المرفقات. لا تنظف ملفات الجلسة هنا لأن
