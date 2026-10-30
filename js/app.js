@@ -16779,6 +16779,11 @@
           foundDiv.style.display = 'block';
           foundDiv.innerHTML = renderNtEmpPickBanner(emp);
         }
+
+        // جهّز الجوال مبكراً لواتساب (الدليل لا يعيده للراصدين)
+        if (emp.id && !(String(emp.phone || '').trim() && phoneToWhatsAppDigits(emp.phone))) {
+          fetchViolationSubjectPhone(emp.id).catch(() => {});
+        }
       
         try { syncRdNewTicketChrome(); } catch (_) { /* noop */ }
       }
@@ -17070,6 +17075,36 @@
         return '';
       }
 
+      /**
+       * دليل get_user_directory لا يعيد phone (PII). راصد/مشرف يحتاجون الجوال
+       * فقط لفتح واتساب بعد الرصد — عبر RPC ضيق النطاق.
+       */
+      async function fetchViolationSubjectPhone(employeeId) {
+        const id = String(employeeId || '').trim();
+        if (!id) return '';
+        const cached = (state.users || []).find(u => u && u.id === id);
+        const existing = String(cached?.phone || '').trim();
+        if (existing && phoneToWhatsAppDigits(existing)) return existing;
+        try {
+          const { data, error } = await sb.rpc('get_violation_subject_phone', {
+            p_employee_id: id
+          });
+          if (error) {
+            if (isAtharDebugLog()) console.warn('[whatsapp] phone rpc', error);
+            return existing;
+          }
+          const phone = String(data || '').trim();
+          if (phone && cached) cached.phone = phone;
+          if (phone && state.ntPickedEmployee?.id === id) {
+            state.ntPickedEmployee.phone = phone;
+          }
+          return phone;
+        } catch (e) {
+          if (isAtharDebugLog()) console.warn('[whatsapp] phone rpc', e);
+          return existing;
+        }
+      }
+
       function buildViolationWhatsAppText(ticketNumber, violationType, employeeName) {
         const ticket = shortTicketNum(ticketNumber);
         const vType = String(violationType || '—').trim() || '—';
@@ -17184,15 +17219,29 @@
         // Clear only after validations succeed to avoid losing attachments on toast errors
         state.uploadedFiles.nt = [];
 
-        // افتح نافذة فارغة أثناء إيماءة المستخدم حتى لا يمنع المتصفح واتساب بعد الرفع
+        // افتح نافذة فارغة أثناء إيماءة المستخدم (قبل أي await) حتى لا يمنع المتصفح واتساب.
+        // الدليل لا يعيد phone للراصدين — الجلب عبر RPC بعد الفتح مباشرة.
         let waPlaceholderWin = null;
-        const empPhone = String(emp.phone || '').trim();
-        if (empPhone && phoneToWhatsAppDigits(empPhone)) {
+        try {
+          waPlaceholderWin = window.open('about:blank', '_blank');
+        } catch (_) {
+          waPlaceholderWin = null;
+        }
+        let empPhone = String(emp.phone || '').trim();
+        if (!(empPhone && phoneToWhatsAppDigits(empPhone))) {
           try {
-            waPlaceholderWin = window.open('about:blank', '_blank');
+            empPhone = String(await fetchViolationSubjectPhone(emp.id) || '').trim();
+            if (empPhone) emp.phone = empPhone;
           } catch (_) {
-            waPlaceholderWin = null;
+            empPhone = '';
           }
+        }
+        if (!(empPhone && phoneToWhatsAppDigits(empPhone))) {
+          if (waPlaceholderWin && !waPlaceholderWin.closed) {
+            try { waPlaceholderWin.close(); } catch (_) { /* noop */ }
+          }
+          waPlaceholderWin = null;
+          empPhone = '';
         }
 
         const branch = state.branches.find(b => b.id === emp.branch_id);
