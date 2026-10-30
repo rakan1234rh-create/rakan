@@ -1,7 +1,7 @@
 /**
- * Static guard: WhatsApp after violation must resolve phone without putting
- * phone back into get_user_directory (PII), keep classic api.whatsapp.com
- * compose page, and must not blank the SPA/PWA.
+ * Static guard: WhatsApp Click to Chat after violation.
+ * Official FAQ: https://wa.me/<number>?text=urlencodedtext
+ * https://faq.whatsapp.com/5913398998672934
  */
 const fs = require('fs');
 const path = require('path');
@@ -30,22 +30,21 @@ assert(app.includes("sb.rpc('get_violation_subject_phone'"), 'app calls phone RP
 assert(app.includes('fetchViolationSubjectPhone'), 'app defines phone helper');
 assert(app.includes('buildViolationWhatsAppUrl'), 'keeps WhatsApp compose URL builder');
 assert(app.includes('openWhatsAppAfterViolation'), 'keeps open-WhatsApp after insert');
-assert(app.includes('armWhatsAppPlaceholderWindow'), 'arms separate placeholder only');
+assert(app.includes('clickWhatsAppClickToChatLink'), 'uses FAQ-style <a> Click to Chat');
 assert(app.includes('isSeparateBrowserWindow'), 'guards against same-tab open');
-assert(app.includes('promptOpenViolationWhatsApp'), 'offers gesture re-prompt when blocked');
-assert(app.includes('openWhatsAppUrlInNewContext'), 'opens WhatsApp outside current tab');
 
-// Classic click-to-chat landing (message prefilled + Continue / Open WhatsApp).
+// Official FAQ format — prefer wa.me, not api.whatsapp.com
 assert(
-  app.includes('https://api.whatsapp.com/send?phone='),
-  'compose URL must use api.whatsapp.com/send intermediate page'
+  app.includes('https://wa.me/${digits}?text=${encodeURIComponent(text)}') ||
+    /return `https:\/\/wa\.me\/\$\{digits\}\?text=\$\{encodeURIComponent\(text\)\}`/.test(app),
+  'compose URL must be https://wa.me/<digits>?text=urlencoded'
 );
+assert(!app.includes('api.whatsapp.com/send'), 'must not use api.whatsapp.com/send');
 assert(
   !app.includes('جاري التحضير لفتح واتساب'),
   'must not inject custom Arabic prep HTML into about:blank'
 );
 
-// Must never navigate the Athar tab to WhatsApp (white flash → back).
 const openFn = app.slice(
   app.indexOf('function openWhatsAppAfterViolation'),
   app.indexOf('async function submitNewTicket')
@@ -56,14 +55,9 @@ assert(
   'openWhatsAppAfterViolation must not set window.location.href = url on Athar'
 );
 assert(
-  !/window\.location\.assign\s*\(\s*url\s*\)/.test(openFn),
-  'openWhatsAppAfterViolation must not location.assign(url) on Athar'
-);
-// Placeholder tab may navigate: placeholderWin.location.href = url
-assert(
   openFn.includes('placeholderWin.location.href = url') ||
     openFn.includes('opts.placeholderWin.location.href = url'),
-  'placeholder tab should navigate to WhatsApp compose URL'
+  'placeholder tab may navigate to wa.me'
 );
 
 assert(
@@ -76,7 +70,9 @@ assert(
   'directory migration still omits phone'
 );
 
-const pushPath = path.join(root, 'supabase/functions/violation-push/index.ts');
-assert(fs.existsSync(pushPath), 'violation-push function present');
+assert(
+  fs.existsSync(path.join(root, 'supabase/functions/violation-push/index.ts')),
+  'violation-push function present'
+);
 
 console.log('violation-whatsapp-phone.test.js: ok');

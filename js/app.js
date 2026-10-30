@@ -17120,17 +17120,19 @@
       }
 
       /**
-       * صفحة واتساب الكلاسيكية (api.whatsapp.com/send): الرسالة جاهزة وزر المتابعة
-       * لفتح المحادثة — نفس تجربة wa.me دون كتابة HTML مخصص في about:blank.
+       * Click to Chat الرسمي (FAQ واتساب):
+       * https://wa.me/<number>?text=urlencodedtext
+       * الرقم دولي بأرقام فقط — بلا + أو أصفار بادئة أو أقواس أو شرطات.
+       * @see https://faq.whatsapp.com/5913398998672934
        */
       function buildViolationWhatsAppUrl(phone, ticketNumber, violationType, employeeName) {
         const digits = phoneToWhatsAppDigits(phone);
-        if (!digits) return '';
+        if (!digits || !/^\d+$/.test(digits)) return '';
         const text = buildViolationWhatsAppText(ticketNumber, violationType, employeeName);
-        return `https://api.whatsapp.com/send?phone=${encodeURIComponent(digits)}&text=${encodeURIComponent(text)}`;
+        return `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
       }
 
-      /** نافذة منبثقة حقيقية — لا نفس تبويب أثر */
+      /** نافذة/تبويب منفصل عن أثر */
       function isSeparateBrowserWindow(win) {
         try {
           return !!(win && !win.closed && win !== window);
@@ -17140,9 +17142,8 @@
       }
 
       /**
-       * احجز تبويباً منفصلاً أثناء إيماءة الإرسال (about:blank خام فقط).
-       * لا تكتب «جاري التحضير…» — بعد الرصد نوجّهه لصفحة واتساب بالرسالة.
-       * في الوضع المستقل يُتخطى لأن window.open يفرّغ نفس نافذة أثر.
+       * احجز تبويباً فارغاً أثناء إيماءة الإرسال فقط (بدون HTML مخصص).
+       * يُتخطى في الوضع المستقل حتى لا تُفرَّغ نافذة أثر.
        */
       function armWhatsAppPlaceholderWindow() {
         if (typeof isNativeMobileShell === 'function' && isNativeMobileShell()) return null;
@@ -17161,7 +17162,28 @@
         try { win.close(); } catch (_) { /* noop */ }
       }
 
-      /** افتح صفحة واتساب في تبويب منفصل — لا تلمس location تبويب أثر */
+      /**
+       * نمط FAQ: فتح رابط wa.me عبر <a target="_blank"> — لا يمس تبويب أثر.
+       */
+      function clickWhatsAppClickToChatLink(url) {
+        if (!url || !/^https:\/\/wa\.me\/\d+\?text=/.test(url)) return false;
+        try {
+          const a = document.createElement('a');
+          a.href = url;
+          a.target = '_blank';
+          a.rel = 'noopener noreferrer';
+          a.setAttribute('aria-label', 'Chat on WhatsApp');
+          a.style.display = 'none';
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          return true;
+        } catch (_) {
+          return false;
+        }
+      }
+
+      /** محاولة window.open لـ wa.me في تبويب جديد */
       function openWhatsAppUrlInNewContext(url) {
         let w = null;
         try {
@@ -17180,29 +17202,16 @@
         return false;
       }
 
-      /** أثناء إيماءة المستخدم: window.open ثم رابط target=_blank لصفحة واتساب */
       function openWhatsAppComposeFromUserGesture(url) {
         if (openWhatsAppUrlInNewContext(url)) return true;
-        try {
-          const a = document.createElement('a');
-          a.href = url;
-          a.target = '_blank';
-          a.rel = 'noopener noreferrer';
-          a.style.display = 'none';
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          return true;
-        } catch (_) {
-          return false;
-        }
+        return clickWhatsAppClickToChatLink(url);
       }
 
-      /** ضغطة جديدة → صفحة واتساب بالرسالة الجاهزة وزر فتح المحادثة */
+      /** إيماءة جديدة بعد الرفع — يفتح Click to Chat (wa.me) في تبويب جديد */
       async function promptOpenViolationWhatsApp(url) {
         const ok = await confirmDialog(
-          'ستُفتح صفحة واتساب وفيها نص الإشعار جاهزاً. اضغط المتابعة ثم أرسل للموظف.',
-          { type: 'info', title: 'إشعار واتساب', okText: 'فتح واتساب', cancelText: 'لاحقاً' }
+          'سيُفتح رابط واتساب الرسمي (Click to Chat) وفي الحقل نص الإشعار جاهزاً للإرسال.',
+          { type: 'info', title: 'واتساب', okText: 'فتح واتساب', cancelText: 'لاحقاً' }
         );
         if (!ok) return false;
         if (openWhatsAppComposeFromUserGesture(url)) return true;
@@ -17211,8 +17220,8 @@
       }
 
       /**
-       * بعد الرصد: تبويب منفصل → صفحة api.whatsapp.com بالرسالة (التجربة الكلاسيكية).
-       * لا window.location على أثر، ولا صفحة HTML وسيطة من عندنا.
+       * بعد الرصد: تبويب منفصل على https://wa.me/<number>?text=…
+       * لا تستخدم window.location على أثر.
        */
       function openWhatsAppAfterViolation(opts = {}) {
         const url = buildViolationWhatsAppUrl(
@@ -17228,7 +17237,6 @@
         }
         if (isSeparateBrowserWindow(opts.placeholderWin)) {
           try {
-            // الانتقال لصفحة واتساب الرسمية (الرسالة + زر فتح المحادثة)
             opts.placeholderWin.location.href = url;
             try { opts.placeholderWin.opener = null; } catch (_) { /* noop */ }
             return true;
@@ -17237,6 +17245,7 @@
           }
         }
         if (openWhatsAppUrlInNewContext(url)) return true;
+        if (clickWhatsAppClickToChatLink(url)) return true;
         void promptOpenViolationWhatsApp(url);
         return false;
       }
