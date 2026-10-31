@@ -1094,6 +1094,86 @@
         } catch (_) { /* noop */ }
       }
 
+      /**
+       * احتياط النقل: رفع الجسم الذي بحوزة العميل مباشرة إلى المفتاح النهائي.
+       * يتجنّب GetObject داخل Edge (سبب 503 / انقطاع الاتصال عند moveObject).
+       */
+      async function uploadR2FinalViaEdgeProxy(opts, allowRetry = true) {
+        const objectKey = String(opts?.toKey || '').trim();
+        const fromKey = String(opts?.fromKey || '').trim();
+        const body = opts?.body;
+        const contentType = canonicalAttachmentContentType(
+          opts?.fileName || objectKey,
+          opts?.contentType || '',
+        );
+        if (!objectKey || !fromKey || !body) {
+          throw new Error('بيانات رفع الوجهة النهائية غير مكتملة');
+        }
+        let session = await ensureSupabaseSessionFresh();
+        if (!session?.access_token) {
+          const { data: { session: s2 } } = await sb.auth.getSession();
+          session = s2;
+        }
+        if (!session?.access_token) {
+          throw new Error('انتهت الجلسة، يرجى تسجيل الدخول من جديد');
+        }
+        const headers = {
+          'Content-Type': contentType,
+          'apikey': SUPABASE_ANON,
+          'Authorization': `Bearer ${session.access_token}`,
+          'X-R2-Action': 'putFinalObject',
+          'X-R2-Key': objectKey,
+          'X-R2-From-Key': fromKey,
+          'X-R2-Record-Type': String(opts.recordType || ''),
+          'X-R2-Record-Id': String(opts.recordId || ''),
+          'X-R2-Operation': String(opts.operation || 'create'),
+          'X-R2-Content-Type': contentType,
+        };
+        if (opts.expectedState) headers['X-R2-Expected-State'] = String(opts.expectedState);
+        let res;
+        try {
+          res = await fetchR2StorageRequest({
+            method: 'POST',
+            headers,
+            body,
+          });
+        } catch (netErr) {
+          throw new Error(humanizeR2NetworkError(netErr));
+        }
+        let data = {};
+        try { data = await res.json(); } catch (_) { /* */ }
+        if (res.status === 401 && allowRetry) {
+          invalidateR2BackendResolution();
+          const { data: refreshed } = await sb.auth.refreshSession();
+          if (refreshed.session?.access_token) {
+            return uploadR2FinalViaEdgeProxy(opts, false);
+          }
+        }
+        if (!res.ok) {
+          const msg = data.error || data.message || `فشل تثبيت الوجهة النهائية (${res.status})`;
+          if (res.status === 409 || isR2ObjectAlreadyExistsMsg(msg)) {
+            return { ok: true, key: objectKey, alreadyExists: true, via: 'putFinal' };
+          }
+          throw new Error(msg);
+        }
+        return data;
+      }
+
+      function attachmentBlobForTempKey(tempKey, blobByTempKey) {
+        if (!tempKey || !blobByTempKey) return null;
+        if (blobByTempKey instanceof Map) return blobByTempKey.get(tempKey) || null;
+        if (typeof blobByTempKey === 'object') return blobByTempKey[tempKey] || null;
+        return null;
+      }
+
+      function buildTempKeyBlobMap(files) {
+        const map = new Map();
+        for (const f of files || []) {
+          if (f?.tempKey) map.set(f.tempKey, f);
+        }
+        return map;
+      }
+
       /** رفع ملف إلى R2 عبر Edge Function (يتجاوز CORS على bucket) */
       async function uploadR2ViaEdgeProxy(objectKey, body, contentType, allowRetry = true) {
         let session = await ensureSupabaseSessionFresh();
@@ -17575,7 +17655,12 @@
           createdTicketNumber = officialNumber;
 
           // الخطوة 3: نقل الملفات إلى المجلد النهائي قبل إظهار النجاح (تجنّب 404 على مسار temp_)
-          const movedAtts = await moveAttachmentsToFinalFolder(ticketData.id, officialNumber, tempAttachments);
+          const movedAtts = await moveAttachmentsToFinalFolder(
+            ticketData.id,
+            officialNumber,
+            tempAttachments,
+            { blobByTempKey: buildTempKeyBlobMap(filesToUpload) },
+          );
           if (movedAtts) ticketData.attachments = movedAtts;
 
           state.tempTicketId = null;
@@ -17862,22 +17947,55 @@
             const oldKey = att.p;
             if (!oldKey || !oldKey.startsWith('temp_')) return null;
             const newKey = `${r2Folder}/${oldKey.split('/').pop()}`;
+            const movePayload = {
+              fromKey: oldKey,
+              toKey: newKey,
+              recordType: 'violation',
+              recordId: violationId,
+              operation: opts.operation || 'create',
+              ...(opts.expectedState ? { expectedState: opts.expectedState } : {}),
+            };
             try {
-              await callR2StorageFn('moveObject', {
-                fromKey: oldKey,
-                toKey: newKey,
-                recordType: 'violation',
-                recordId: violationId,
-                operation: opts.operation || 'create',
-                ...(opts.expectedState ? { expectedState: opts.expectedState } : {}),
-              });
+              const moved = await callR2StorageFn('moveObject', movePayload);
               if (isAtharDebugLog()) console.log(`[R2-Move] Moved: ${oldKey} -> ${newKey}`);
-              return { i, oldKey, newKey };
+              return {
+                i, oldKey, newKey,
+                serverVerified: !!(moved?.verified || (Number(moved?.bytes) > 0 && moved?.ok !== false)),
+              };
             } catch (e) {
               // مثل مسار الرد: النقل نجح وفُقدت الاستجابة، أو إعادة محاولة بعد نجاح سابق.
               if (isR2ObjectAlreadyExistsMsg(e?.message || e)) {
                 if (isAtharDebugLog()) console.log(`[R2-Move] Destination already present: ${newKey}`);
-                return { i, oldKey, newKey, alreadyExisted: true };
+                return { i, oldKey, newKey, alreadyExisted: true, serverVerified: false };
+              }
+              // احتياط: الجسم ما زال عند العميل — ارفع للوجهة النهائية بلا GetObject على Edge.
+              const local = attachmentBlobForTempKey(oldKey, opts.blobByTempKey);
+              const localBody = local?.rawFile || local?.body || null;
+              if (localBody) {
+                try {
+                  const putFinal = await uploadR2FinalViaEdgeProxy({
+                    fromKey: oldKey,
+                    toKey: newKey,
+                    body: localBody,
+                    contentType: local.type || local.contentType || '',
+                    fileName: local.name || att.n || newKey,
+                    recordType: 'violation',
+                    recordId: violationId,
+                    operation: opts.operation || 'create',
+                    expectedState: opts.expectedState,
+                  });
+                  if (isAtharDebugLog()) console.log(`[R2-Move] putFinal: ${oldKey} -> ${newKey}`);
+                  return {
+                    i, oldKey, newKey,
+                    serverVerified: !!(putFinal?.verified || putFinal?.ok || putFinal?.alreadyExists),
+                    viaPutFinal: true,
+                  };
+                } catch (putErr) {
+                  if (isR2ObjectAlreadyExistsMsg(putErr?.message || putErr)) {
+                    return { i, oldKey, newKey, alreadyExisted: true, serverVerified: false };
+                  }
+                  if (isAtharDebugLog()) console.error(`[R2-Move] putFinal failed ${oldKey}:`, putErr);
+                }
               }
               failed.push(oldKey);
               if (isAtharDebugLog()) console.error(`[R2-Move] Failed to move ${oldKey}:`, e);
@@ -17885,14 +18003,22 @@
             }
           };
 
-          const moveResults = await Promise.all(updatedAtts.map((att, i) => moveOne(att, i)));
+          // تسلسلي: النقل المتوازي على Edge كان يضاعف أعطال العزل (503 / انقطاع).
+          const moveResults = [];
+          for (let i = 0; i < updatedAtts.length; i++) {
+            moveResults.push(await moveOne(updatedAtts[i], i));
+          }
           for (const r of moveResults) {
             if (!r) continue;
             try {
-              // تأكيد الوجهة قبل تثبيت المسار وحذف temp — يمنع مرجعاً نهائياً بلا جسم.
-              const destOk = await r2ObjectExists(r.newKey);
-              if (destOk === false) {
-                throw new Error('نسخة المرفق النهائية غير موجودة بعد النقل');
+              // إذا أكّد الخادم الحجم بعد Copy/putFinal لا تعتمد على headObject
+              // (قد يرفضه ACL قبل تثبيت المرجع في قاعدة البيانات → 403 مضلل).
+              let destOk = r.serverVerified ? true : null;
+              if (destOk !== true) {
+                destOk = await r2ObjectExists(r.newKey);
+                if (destOk === false) {
+                  throw new Error('نسخة المرفق النهائية غير موجودة بعد النقل');
+                }
               }
               await finalizeR2AttachmentPath('violation', violationId, r.oldKey, r.newKey, opts);
               updatedAtts[r.i].p = r.newKey;
@@ -17961,17 +18087,46 @@
           if (!oldKey || !String(oldKey).startsWith('temp_')) return null;
           const newKey = `${r2Folder}/${String(oldKey).split('/').pop()}`;
           try {
-            await callR2StorageFn('moveObject', {
+            const moved = await callR2StorageFn('moveObject', {
               fromKey: oldKey,
               toKey: newKey,
               recordType: 'complaint',
               recordId: complaintId,
               operation: opts.operation || 'create',
             });
-            return { i, oldKey, newKey };
+            return {
+              i, oldKey, newKey,
+              serverVerified: !!(moved?.verified || (Number(moved?.bytes) > 0 && moved?.ok !== false)),
+            };
           } catch (e) {
             if (isR2ObjectAlreadyExistsMsg(e?.message || e)) {
-              return { i, oldKey, newKey, alreadyExisted: true };
+              return { i, oldKey, newKey, alreadyExisted: true, serverVerified: false };
+            }
+            const local = attachmentBlobForTempKey(oldKey, opts.blobByTempKey);
+            const localBody = local?.rawFile || local?.body || null;
+            if (localBody) {
+              try {
+                const putFinal = await uploadR2FinalViaEdgeProxy({
+                  fromKey: oldKey,
+                  toKey: newKey,
+                  body: localBody,
+                  contentType: local.type || local.contentType || '',
+                  fileName: local.name || att.n || newKey,
+                  recordType: 'complaint',
+                  recordId: complaintId,
+                  operation: opts.operation || 'create',
+                });
+                return {
+                  i, oldKey, newKey,
+                  serverVerified: !!(putFinal?.verified || putFinal?.ok || putFinal?.alreadyExists),
+                  viaPutFinal: true,
+                };
+              } catch (putErr) {
+                if (isR2ObjectAlreadyExistsMsg(putErr?.message || putErr)) {
+                  return { i, oldKey, newKey, alreadyExisted: true, serverVerified: false };
+                }
+                if (isAtharDebugLog()) console.error('[R2-Move] complaint putFinal failed', oldKey, putErr);
+              }
             }
             failed.push(oldKey);
             if (isAtharDebugLog()) console.error('[R2-Move] complaint failed', oldKey, e);
@@ -17980,13 +18135,20 @@
         };
 
         const pendingMoves = [];
-        const moveResults = await Promise.all(updatedAtts.map((att, i) => moveOne(att, i)));
+        // تسلسلي — تجنّب ضغط Edge المتوازي الذي كان يترجم إلى «انقطع الاتصال».
+        const moveResults = [];
+        for (let i = 0; i < updatedAtts.length; i++) {
+          moveResults.push(await moveOne(updatedAtts[i], i));
+        }
         for (const r of moveResults) {
           if (!r) continue;
           try {
-            const destOk = await r2ObjectExists(r.newKey);
-            if (destOk === false) {
-              throw new Error('نسخة المرفق النهائية غير موجودة بعد النقل');
+            let destOk = r.serverVerified ? true : null;
+            if (destOk !== true) {
+              destOk = await r2ObjectExists(r.newKey);
+              if (destOk === false) {
+                throw new Error('نسخة المرفق النهائية غير موجودة بعد النقل');
+              }
             }
             if (persistColumn) {
               await finalizeR2AttachmentPath('complaint', complaintId, r.oldKey, r.newKey, opts);
@@ -24827,6 +24989,7 @@
                 ...(file.devDataUrl ? { u: file.devDataUrl } : {})
               });
             }
+            const respBlobByTempKey = buildTempKeyBlobMap(respFiles);
             for (let i = 0; i < uploadedAtts.length; i++) {
               const att = uploadedAtts[i];
               const oldKey = att.p;
@@ -24843,8 +25006,29 @@
                 });
               } catch (moveErr) {
                 // النقل نجح وفُقدت الاستجابة، أو إعادة محاولة بعد نجاح سابق.
-                if (!isR2ObjectAlreadyExistsMsg(moveErr?.message || moveErr)) {
-                  throw new Error(humanizeR2NetworkError(moveErr));
+                if (isR2ObjectAlreadyExistsMsg(moveErr?.message || moveErr)) {
+                  // ok
+                } else {
+                  const local = attachmentBlobForTempKey(oldKey, respBlobByTempKey);
+                  const localBody = local?.rawFile || local?.body || null;
+                  if (!localBody) throw new Error(humanizeR2NetworkError(moveErr));
+                  try {
+                    await uploadR2FinalViaEdgeProxy({
+                      fromKey: oldKey,
+                      toKey: newKey,
+                      body: localBody,
+                      contentType: local.type || local.contentType || '',
+                      fileName: local.name || att.n || newKey,
+                      recordType: 'violation',
+                      recordId: t.id,
+                      operation: 'reply',
+                      expectedState: t.state,
+                    });
+                  } catch (putErr) {
+                    if (!isR2ObjectAlreadyExistsMsg(putErr?.message || putErr)) {
+                      throw new Error(humanizeR2NetworkError(putErr));
+                    }
+                  }
                 }
               }
               copiedReplyMoves.push({ oldKey, newKey });
@@ -40882,7 +41066,11 @@
               row.id,
               row.complaint_number,
               attachments,
-              { persistColumn: false, operation: 'reply' }
+              {
+                persistColumn: false,
+                operation: 'reply',
+                blobByTempKey: buildTempKeyBlobMap(state.uploadedFiles.cpr || []),
+              }
             );
             if (moved) attachments = moved;
             copiedReplyMoves = attachments.__r2PendingMoves || [];
@@ -41626,7 +41814,12 @@
         const hasTemp = atts.some(a => a && a.p && String(a.p).startsWith('temp_'));
         if (!hasTemp) return row;
         try {
-          const moved = await moveComplaintAttachmentsToFinalFolder(row.id, row.complaint_number, atts);
+          const moved = await moveComplaintAttachmentsToFinalFolder(
+            row.id,
+            row.complaint_number,
+            atts,
+            { blobByTempKey: buildTempKeyBlobMap(state.uploadedFiles.cp || []) },
+          );
           if (moved) return { ...row, attachments: moved };
         } catch (e) {
           if (isAtharDebugLog()) console.warn('[complaints] move attachments', e);
@@ -41951,7 +42144,11 @@
               c.id,
               c.complaint_number,
               attachments,
-              { persistColumn: false, operation: 'reply' }
+              {
+                persistColumn: false,
+                operation: 'reply',
+                blobByTempKey: buildTempKeyBlobMap(state.uploadedFiles.cpr || []),
+              }
             );
             if (moved) attachments = moved;
             copiedReplyMoves = attachments.__r2PendingMoves || [];
