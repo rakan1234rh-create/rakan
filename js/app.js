@@ -33,6 +33,37 @@
       // ✅ العمليات الإدارية تتم عبر Edge Function آمنة على الخادم
       // Secret Key يبقى في متغيرات البيئة على Supabase ولا يصل المتصفح أبداً
       const ADMIN_FN_URL = `${SUPABASE_URL}/functions/v1/admin-users`;
+      const DIRECT_EMPLOYEE_LOGIN_FN_URL = `${SUPABASE_URL}/functions/v1/employee-login`;
+      const DIRECT_PASSWORD_RECOVERY_FN_URL = `${SUPABASE_URL}/functions/v1/password-recovery`;
+      const EMAIL_UNSUBSCRIBE_FN_URL = `${SUPABASE_URL}/functions/v1/email-unsubscribe`;
+
+      const ATHAR_AUTH_INGRESS_BASE_URL = typeof window.ATHAR_AUTH_INGRESS_BASE_URL === 'string'
+        ? window.ATHAR_AUTH_INGRESS_BASE_URL.trim().replace(/\/+$/, '')
+        : '';
+
+      function authEndpoint(ingressPath, directUrl) {
+        if (!ATHAR_AUTH_INGRESS_BASE_URL) {
+          return { url: directUrl, viaIngress: false };
+        }
+        try {
+          const base = new URL(ATHAR_AUTH_INGRESS_BASE_URL);
+          if (base.protocol !== 'https:' || base.pathname !== '/' || base.search || base.hash) {
+            throw new Error('invalid_auth_ingress_url');
+          }
+          return { url: base.origin + ingressPath, viaIngress: true };
+        } catch (_) {
+          return { url: '', viaIngress: true };
+        }
+      }
+
+      const EMPLOYEE_LOGIN_ENDPOINT = authEndpoint(
+        '/api/auth/employee-login',
+        DIRECT_EMPLOYEE_LOGIN_FN_URL,
+      );
+      const PASSWORD_RECOVERY_ENDPOINT = authEndpoint(
+        '/api/auth/password-recovery',
+        DIRECT_PASSWORD_RECOVERY_FN_URL,
+      );
 
       /** توقيع روابط R2 (رفع/تحميل/نقل) عبر Edge Function — المفاتيح لا تصل للمتصفح */
       const R2_STORAGE_FN_URL = `${SUPABASE_URL}/functions/v1/r2-storage`;
@@ -4104,6 +4135,80 @@
         }
       }
 
+      const LOGIN_RATE_LIMIT_WINDOW_SECONDS = 15 * 60;
+
+      function formatLoginWaitMinutes(minutes) {
+        const wait = Math.max(1, Math.ceil(Number(minutes) || 0) || 15);
+        return 'كثرت المحاولات. انتظر ' + wait + ' دقيقة ثم حاول مرة أخرى.';
+      }
+
+      function formatLoginRateLimitMessage(payload) {
+        const minutesFromPayload = Number(payload?.retry_after_minutes);
+        if (Number.isFinite(minutesFromPayload) && minutesFromPayload > 0) {
+          return formatLoginWaitMinutes(minutesFromPayload);
+        }
+        const seconds = Number(payload?.retry_after_seconds);
+        if (Number.isFinite(seconds) && seconds > 0) {
+          return formatLoginWaitMinutes(Math.ceil(seconds / 60));
+        }
+        return formatLoginWaitMinutes(LOGIN_RATE_LIMIT_WINDOW_SECONDS / 60);
+      }
+
+      function formatEmployeeLoginError(status, payload) {
+        if (status === 429 || payload?.code === 'rate_limited') {
+          return formatLoginRateLimitMessage(payload);
+        }
+        if (status === 401 || payload?.code === 'invalid_credentials') {
+          return 'بيانات الدخول غير صحيحة.';
+        }
+        const serverError = String(payload?.error || '').trim();
+        if (serverError && !/smtp|supabase|postgres|postgrest|stack|exception|jwt/i.test(serverError)) {
+          return serverError;
+        }
+        return 'تعذّر تسجيل الدخول. حاول لاحقاً.';
+      }
+
+      async function signInWithEmployeeNumber(employeeNumber, password) {
+        const genericError = new Error('تعذّر تسجيل الدخول. حاول لاحقاً.');
+        try {
+          if (!EMPLOYEE_LOGIN_ENDPOINT.url) throw genericError;
+          const response = await fetch(EMPLOYEE_LOGIN_ENDPOINT.url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(EMPLOYEE_LOGIN_ENDPOINT.viaIngress ? {} : { apikey: SUPABASE_ANON }),
+            },
+            body: JSON.stringify({ employee_number: employeeNumber, password })
+          });
+          const payload = await response.json().catch(() => null);
+          if (!response.ok || !payload?.access_token || !payload?.refresh_token) {
+            const err = new Error(formatEmployeeLoginError(response.status, payload));
+            err.status = response.status;
+            if (response.status === 429 || payload?.code === 'rate_limited') {
+              err.isLoginRateLimit = true;
+              err.retryAfterSeconds = Math.max(
+                1,
+                Number(payload?.retry_after_seconds) || LOGIN_RATE_LIMIT_WINDOW_SECONDS
+              );
+              err.retryAfterMinutes = Math.max(
+                1,
+                Number(payload?.retry_after_minutes) || Math.ceil(err.retryAfterSeconds / 60)
+              );
+            }
+            return { data: null, error: err };
+          }
+          return await sb.auth.setSession({
+            access_token: payload.access_token,
+            refresh_token: payload.refresh_token
+          });
+        } catch (err) {
+          if (err?.isLoginRateLimit || err?.status === 401 || err?.status === 429) {
+            return { data: null, error: err };
+          }
+          return { data: null, error: genericError };
+        }
+      }
+
       async function handleLogin() {
         if (!document.getElementById('loginIdentifier')) {
           showToast('تسجيل الدخول من الواجهة غير متاح.', 'info');
@@ -4119,24 +4224,24 @@
         setLoginLoading(true);
 
         try {
-          // تحديد الإيميل (إذا كان المُدخَل رقم وظيفي)
-          let email = identifier;
+          let authData = null;
+          let authErr = null;
           if (!identifier.includes('@')) {
-            const { data, error } = await sb.rpc('get_email_by_emp_number', { emp_num: identifier });
-            if (error) throw error;
-            if (!data) {
-              showLoginError('الرقم الوظيفي غير مسجل');
-              setLoginLoading(false);
-              return;
-            }
-            email = data;
+            // البريد لا يغادر الخادم: employee-login يحله داخلياً ثم يثبت كلمة المرور.
+            ({ data: authData, error: authErr } = await signInWithEmployeeNumber(identifier, password));
+          } else {
+            const email = Sec.normalizeEmail(identifier);
+            ({ data: authData, error: authErr } = await sb.auth.signInWithPassword({ email, password }));
           }
-          email = Sec.normalizeEmail(email);
 
-          // تسجيل الدخول
-          const { data: authData, error: authErr } = await sb.auth.signInWithPassword({ email, password });
-          if (authErr) {
-            showLoginError('البريد أو كلمة المرور غير صحيحة');
+          if (authErr || !authData?.user) {
+            if (authErr?.isLoginRateLimit) {
+              showLoginError(authErr.message || formatLoginWaitMinutes(15));
+            } else if (!identifier.includes('@') && authErr?.message) {
+              showLoginError(authErr.message);
+            } else {
+              showLoginError('بيانات الدخول غير صحيحة.');
+            }
             setLoginLoading(false);
             return;
           }
@@ -4167,7 +4272,9 @@
           // طلب الإشعارات عند تسجيل دخول جديد
           try { initAtharWebPush({ promptIfNeeded: true }); } catch (_) { /* noop */ }
         } catch (err) {
-          if (isMirsadDebugLog()) console.error('Login error:', formatPostgrestError(err), err);
+          if (typeof isAtharDebugLog === 'function' ? isAtharDebugLog() : (typeof isMirsadDebugLog === 'function' && isMirsadDebugLog())) {
+            console.error('Login error:', formatPostgrestError(err), err);
+          }
           showLoginError('خطأ في الاتصال بالخادم. حاول مجدداً.');
           setLoginLoading(false);
         }
