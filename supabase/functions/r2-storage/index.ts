@@ -612,11 +612,19 @@ async function requireAttachmentMoveRollback(
     p_operation: input.operation,
     p_expected_state: input.expectedState || null,
   })
-  if (error) {
+  if (!error) {
+    if (!data) throw new Error('غير مصرح بالتراجع عن نقل هذا المرفق')
+    return
+  }
+  // Prod briefly lacked this RPC while destination_can_modify existed — fall back
+  // so a failed finalize does not 500 and leave observers stuck mid-move.
+  const missing = /Could not find the function|PGRST202|schema cache/i.test(String(error.message || ''))
+  if (!missing) {
     console.error('[r2-storage] attachment rollback check failed', error.message)
     throw new Error('تعذّر التحقق من تراجع نقل المرفق')
   }
-  if (!data) throw new Error('غير مصرح بالتراجع عن نقل هذا المرفق')
+  console.warn('[r2-storage] rollback RPC missing; using destination_can_modify fallback')
+  await requireAttachmentMoveDestination(supabase, input)
 }
 
 function requestErrorStatus(error: unknown): number {
@@ -1152,12 +1160,10 @@ export function createR2StorageHandler(deps: {
     if (action === 'createMultipart') {
       const key = assertTempUploadKey(body.key || '', user.id)
       const contentType = normalizedAttachmentContentType(key, body.contentType || '')
-      try {
-        await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: key }))
+      // Fetch Head — SDK HeadObject on a missing key crashes Deno Edge (EOF → 503).
+      const existing = await rest.headMeta(env!, key)
+      if (existing.exists) {
         return json({ error: 'يوجد ملف بالمفتاح المؤقت نفسه' }, 409)
-      } catch (e: unknown) {
-        const name = e && typeof e === 'object' && 'name' in e ? String((e as { name: string }).name) : ''
-        if (name && !['NotFound', 'NoSuchKey', '404'].includes(name)) throw e
       }
       const out = await s3.send(
         new CreateMultipartUploadCommand({
@@ -1312,48 +1318,29 @@ export function createR2StorageHandler(deps: {
     if (action === 'headObject') {
       const key = assertKey(body.key)
       if (!isServiceRole) await requireAttachmentRead(supabase, key)
-      try {
-        const head = await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: key }))
-        return json({
-          ok: true,
-          key,
-          contentLength: head.ContentLength ?? null,
-          contentType: head.ContentType || guessContentTypeFromKey(key),
-        })
-      } catch (e: unknown) {
-        const name =
-          e && typeof e === 'object' && 'name' in e
-            ? String((e as { name: string }).name)
-            : ''
-        if (name === 'NotFound' || name === 'NoSuchKey' || name === '404') {
-          return json({ ok: false, key })
-        }
-        throw e
-      }
+      // Fetch Head avoids SDK Head(404) isolate crash on Deno Edge.
+      const head = await rest.headMeta(env!, key)
+      if (!head.exists) return json({ ok: false, key })
+      return json({
+        ok: true,
+        key,
+        contentLength: head.contentLength ?? null,
+        contentType: head.contentType || guessContentTypeFromKey(key),
+      })
     }
 
     // فحص مفتاح temp مملوك فقط — يستخدم بعد فشل استجابة putObject/multipart
     // عندما يكون الملف قد كُتب فعلياً لكن العميل رأى Load failed.
     if (action === 'headTempObject') {
       const key = assertTempUploadKey(body.key || '', user.id)
-      try {
-        const head = await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: key }))
-        return json({
-          ok: true,
-          key,
-          contentLength: head.ContentLength ?? null,
-          contentType: head.ContentType || guessContentTypeFromKey(key),
-        })
-      } catch (e: unknown) {
-        const name =
-          e && typeof e === 'object' && 'name' in e
-            ? String((e as { name: string }).name)
-            : ''
-        if (name === 'NotFound' || name === 'NoSuchKey' || name === '404') {
-          return json({ ok: false, key })
-        }
-        throw e
-      }
+      const head = await rest.headMeta(env!, key)
+      if (!head.exists) return json({ ok: false, key })
+      return json({
+        ok: true,
+        key,
+        contentLength: head.contentLength ?? null,
+        contentType: head.contentType || guessContentTypeFromKey(key),
+      })
     }
 
     if (action === 'proxyGet') {

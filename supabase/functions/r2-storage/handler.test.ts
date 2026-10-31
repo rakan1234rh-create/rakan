@@ -442,6 +442,55 @@ Deno.test('handler يعوّض نسخة نقل فاشلة قبل تثبيت ال�
   }
 })
 
+Deno.test('handler createMultipart uses rest head (no SDK Head on missing key)', async () => {
+  class HeadCountingS3 extends FakeS3 {
+    headCalls = 0
+    override async send(command: FakeCommand) {
+      if (command instanceof FakeHeadObjectCommand) {
+        this.headCalls += 1
+        return super.send(command)
+      }
+      if (command instanceof FakeCreateMultipartUploadCommand) {
+        return { UploadId: 'up-1' }
+      }
+      return super.send(command)
+    }
+  }
+  const s3 = new HeadCountingS3()
+  const key = tempKey('clip.mp4')
+  const { handler } = buildHandler(s3)
+  const res = await handler(req('createMultipart', { key, contentType: 'video/mp4' }))
+  if (res.status !== 200) throw new Error(`createMultipart failed: ${res.status} ${await res.text()}`)
+  if (s3.headCalls !== 0) throw new Error('createMultipart must not SDK-Head a missing temp key')
+  const payload = await res.json()
+  if (payload.uploadId !== 'up-1' || payload.key !== key) {
+    throw new Error(`unexpected createMultipart payload ${JSON.stringify(payload)}`)
+  }
+})
+
+Deno.test('handler headTempObject missing key returns ok:false without SDK Head', async () => {
+  class HeadCountingS3 extends FakeS3 {
+    headCalls = 0
+    override async send(command: FakeCommand) {
+      if (command instanceof FakeHeadObjectCommand) {
+        this.headCalls += 1
+        return super.send(command)
+      }
+      return super.send(command)
+    }
+  }
+  const s3 = new HeadCountingS3()
+  const key = tempKey('missing.webp')
+  const { handler } = buildHandler(s3)
+  const res = await handler(req('headTempObject', { key }))
+  if (res.status !== 200) throw new Error(`headTempObject failed: ${res.status} ${await res.text()}`)
+  if (s3.headCalls !== 0) throw new Error('headTempObject must use fetch Head, not SDK')
+  const payload = await res.json()
+  if (payload.ok !== false || payload.key !== key) {
+    throw new Error(`unexpected headTempObject payload ${JSON.stringify(payload)}`)
+  }
+})
+
 Deno.test('handler putFinalObject writes canonical key with move ACL (no GetObject)', async () => {
   const s3 = new FakeS3()
   const fromKey = tempKey('shot.webp')
