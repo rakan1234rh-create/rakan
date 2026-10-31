@@ -1271,7 +1271,7 @@
   <link rel="stylesheet" href="styles/custom/athar-compliance-redesign.css?v=cm7" id="athar-compliance-redesign">
   <link rel="stylesheet" href="styles/custom/athar-violations-redesign.css?v=vl2" id="athar-violations-redesign">
   <link rel="stylesheet" href="styles/custom/athar-locations-redesign.css?v=loc4" id="athar-locations-redesign">
-  <link rel="stylesheet" href="styles/custom/athar-users-redesign.css?v=usr6" id="athar-users-redesign">
+  <link rel="stylesheet" href="styles/custom/athar-users-redesign.css?v=usr7" id="athar-users-redesign">
   <link rel="stylesheet" href="styles/custom/athar-breaks-redesign.css?v=brk17" id="athar-breaks-redesign">
   <link rel="stylesheet" href="styles/custom/athar-redesign-staging.css?v=mob-ui23" id="athar-redesign-staging">
   <link rel="stylesheet" href="styles/custom/athar-complaints-redesign.css?v=cmpl41" id="athar-complaints-redesign">
@@ -4227,73 +4227,70 @@
           <!-- USERS -->
           <div class="tab-content" id="tab-departments">
             <div class="panel wf-panel usr-board">
-              <header class="usr-board__masthead">
-                <div class="usr-board__titles">
+              <header class="usr-board__hero">
+                <div class="usr-board__hero-copy">
                   <h2 class="wf-panel-title usr-board__title">إدارة المستخدمين</h2>
-                  <p class="wf-panel-sub usr-board__sub">ابحث وعيّن الأدوار من دليل واحد</p>
+                  <p class="usr-board__lede" id="users-lede">
+                    <span id="users-count-desk">0</span><span class="usr-board__lede-rest"> أشخاص. ابحث بالاسم أو الرقم وعيّن الدور</span>
+                    <strong id="users-count" class="usr-board__count-mob">0</strong>
+                  </p>
                 </div>
-                <div class="usr-board__mast-actions">
+                <div class="usr-board__hero-actions">
                   <button type="button" class="usr-board__add" onclick="openUserModal()" data-perm="manage_users">
-                    <i class="fas fa-user-plus" aria-hidden="true"></i><span>مستخدم جديد</span>
+                    <i class="fas fa-user-plus" aria-hidden="true"></i><span>إضافة مستخدم</span>
                   </button>
+                  <div class="usr-board__io">
+                    <button type="button" class="usr-tool" onclick="exportUsersCSV(false)" data-perm-any="export_users,manage_users" title="تصدير المفلتر" aria-label="تصدير المفلتر">
+                      <i class="fas fa-file-export" aria-hidden="true"></i>
+                    </button>
+                    <button type="button" class="usr-tool" onclick="downloadUsersImportTemplate()" data-perm-any="import_users,manage_users" title="قالب Excel" aria-label="قالب Excel">
+                      <i class="fas fa-file-download" aria-hidden="true"></i>
+                    </button>
+                    <button type="button" class="usr-tool" onclick="triggerUsersImport()" data-perm-any="import_users,manage_users" title="استيراد Excel" aria-label="استيراد Excel">
+                      <i class="fas fa-file-import" aria-hidden="true"></i>
+                    </button>
+                    <button type="button" class="usr-tool usr-tool--more" id="usersIoMoreBtn"
+                      onclick="usersIoMenuToggle(event)" aria-haspopup="menu" aria-expanded="false"
+                      aria-controls="usersIoMenu" title="استيراد وتصدير" aria-label="استيراد وتصدير">
+                      <i class="fas fa-ellipsis" aria-hidden="true"></i>
+                    </button>
+                    <div class="users-io-menu" id="usersIoMenu" role="menu" aria-label="استيراد وتصدير المستخدمين" hidden>
+                      <button type="button" role="menuitem" class="users-io-menu-item" onclick="usersIoMenuClose(); downloadUsersImportTemplate()" data-perm-any="import_users,manage_users">
+                        <i class="fas fa-file-download"></i><span>قالب Excel</span>
+                      </button>
+                      <button type="button" role="menuitem" class="users-io-menu-item" onclick="usersIoMenuClose(); exportUsersCSV(false)" data-perm-any="export_users,manage_users">
+                        <i class="fas fa-file-export"></i><span>تصدير المفلتر</span>
+                      </button>
+                      <button type="button" role="menuitem" class="users-io-menu-item" onclick="usersIoMenuClose(); exportUsersCSV(true)" data-perm-any="export_users,manage_users">
+                        <i class="fas fa-file-export"></i><span>تصدير الكل</span>
+                      </button>
+                      <button type="button" role="menuitem" class="users-io-menu-item" onclick="usersIoMenuClose(); triggerUsersImport()" data-perm-any="import_users,manage_users">
+                        <i class="fas fa-file-import"></i><span>استيراد Excel</span>
+                      </button>
+                    </div>
+                    <input type="file" id="users-import-file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" style="display:none" onchange="handleUsersImportFile(event)">
+                  </div>
                 </div>
               </header>
 
-              <div class="usr-board__command" role="search">
+              <div class="usr-board__find" role="search">
                 <label class="usr-board__search" for="user-search">
                   <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
                   <input type="search" class="figma-search-input usr-board__search-input" id="user-search"
-                    placeholder="اسم، رقم وظيفي، بريد، جوال…"
+                    placeholder="ابحث عن شخص…"
                     title="ابحث بالاسم، الرقم الوظيفي، البريد الإلكتروني، رقم الجوال"
                     autocomplete="off" enterkeyhint="search"
                     aria-controls="usersList"
                     oninput="scheduleRenderUsers()">
                 </label>
                 <div class="usr-board__status" role="group" aria-label="حالة الحساب">
-                  <button type="button" class="usr-seg is-active" id="usersChipActiveDesk" data-users-status="active" onclick="setUsersStatusFilter('active')">نشط</button>
+                  <button type="button" class="usr-seg is-active" id="usersChipActiveDesk" data-users-status="active" onclick="setUsersStatusFilter('active')">النشطون</button>
                   <button type="button" class="usr-seg" id="usersChipAllDesk" data-users-status="all" onclick="setUsersStatusFilter('all')" data-perm="manage_users">الكل</button>
-                  <button type="button" class="usr-seg is-active usr-seg--mob" id="usersChipActive" data-users-status="active" onclick="setUsersStatusFilter('active')">نشط</button>
+                  <button type="button" class="usr-seg is-active usr-seg--mob" id="usersChipActive" data-users-status="active" onclick="setUsersStatusFilter('active')">النشطون</button>
                   <button type="button" class="usr-seg usr-seg--mob" id="usersChipAll" data-users-status="all" onclick="setUsersStatusFilter('all')" data-perm="manage_users">الكل</button>
-                </div>
-                <div class="usr-board__tools">
-                  <button type="button" class="usr-tool" onclick="exportUsersCSV(false)" data-perm-any="export_users,manage_users" title="تصدير المفلتر" aria-label="تصدير المفلتر">
-                    <i class="fas fa-file-export" aria-hidden="true"></i>
-                  </button>
-                  <button type="button" class="usr-tool" onclick="downloadUsersImportTemplate()" data-perm-any="import_users,manage_users" title="قالب Excel" aria-label="قالب Excel">
-                    <i class="fas fa-file-download" aria-hidden="true"></i>
-                  </button>
-                  <button type="button" class="usr-tool" onclick="triggerUsersImport()" data-perm-any="import_users,manage_users" title="استيراد Excel" aria-label="استيراد Excel">
-                    <i class="fas fa-file-import" aria-hidden="true"></i>
-                  </button>
-                  <button type="button" class="usr-tool usr-tool--more" id="usersIoMoreBtn"
-                    onclick="usersIoMenuToggle(event)" aria-haspopup="menu" aria-expanded="false"
-                    aria-controls="usersIoMenu" title="استيراد وتصدير" aria-label="استيراد وتصدير">
-                    <i class="fas fa-ellipsis" aria-hidden="true"></i>
-                  </button>
-                  <div class="users-io-menu" id="usersIoMenu" role="menu" aria-label="استيراد وتصدير المستخدمين" hidden>
-                    <button type="button" role="menuitem" class="users-io-menu-item" onclick="usersIoMenuClose(); downloadUsersImportTemplate()" data-perm-any="import_users,manage_users">
-                      <i class="fas fa-file-download"></i><span>قالب Excel</span>
-                    </button>
-                    <button type="button" role="menuitem" class="users-io-menu-item" onclick="usersIoMenuClose(); exportUsersCSV(false)" data-perm-any="export_users,manage_users">
-                      <i class="fas fa-file-export"></i><span>تصدير المفلتر</span>
-                    </button>
-                    <button type="button" role="menuitem" class="users-io-menu-item" onclick="usersIoMenuClose(); exportUsersCSV(true)" data-perm-any="export_users,manage_users">
-                      <i class="fas fa-file-export"></i><span>تصدير الكل</span>
-                    </button>
-                    <button type="button" role="menuitem" class="users-io-menu-item" onclick="usersIoMenuClose(); triggerUsersImport()" data-perm-any="import_users,manage_users">
-                      <i class="fas fa-file-import"></i><span>استيراد Excel</span>
-                    </button>
-                  </div>
-                  <input type="file" id="users-import-file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" style="display:none" onchange="handleUsersImportFile(event)">
-                </div>
-                <div class="usr-board__count" aria-live="polite">
-                  <strong id="users-count-desk">0</strong>
-                  <span>نتيجة</span>
-                  <strong id="users-count" class="usr-board__count-mob">0</strong>
                 </div>
               </div>
 
-              <!-- مزامنة فلتر الدور القديم مع السكة -->
               <div class="wf-status-filter user-role-dd usr-board__role-legacy" id="user-role-dd-filter" hidden>
                 <button type="button" class="wf-status-trigger" id="user-role-dd-trigger"
                   onclick="userRoleDdToggle(event)" aria-haspopup="listbox" aria-expanded="false"
@@ -4326,10 +4323,11 @@
                 </select>
               </div>
 
-              <div id="usersDeskHost" class="usr-board__body wf-desk-tickets-host">
-                <aside id="usersRoleRail" class="usr-rail" aria-label="تصفية حسب الدور"></aside>
-                <div class="usr-roster-shell mr-users-list-wrap wf-table-wrap">
-                  <div id="usersList" class="mr-users-list usr-roster" role="list" aria-label="قائمة المستخدمين" aria-busy="false"></div>
+              <nav id="usersRoleRail" class="usr-roles" aria-label="تصفية حسب الدور"></nav>
+
+              <div id="usersDeskHost" class="usr-board__stage wf-desk-tickets-host">
+                <div class="usr-people-shell mr-users-list-wrap wf-table-wrap">
+                  <div id="usersList" class="mr-users-list usr-people" role="list" aria-label="قائمة المستخدمين" aria-busy="false"></div>
                 </div>
               </div>
             </div>

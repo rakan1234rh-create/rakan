@@ -3,39 +3,21 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ATHAR — بعد (دليل المستخدمين)</title>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <title>ATHAR — بعد (أشخاص)</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
-  <link rel="stylesheet" href="/styles/custom/athar-users-redesign.css?v=usr6" />
+  <link rel="stylesheet" href="/styles/custom/athar-users-redesign.css?v=usr7" />
   <style>
-    :root{
-      --font:'IBM Plex Sans Arabic',sans-serif;
-      --mr-bg:#fff;--mr-bg-2:#f5f5f7;--mr-surface:#fff;--mr-border:#e2e2e6;
-      --mr-text:#000;--mr-text-2:#5c5c66;--mr-text-3:#8e8e93;
-      --surface:#fff;--surface2:#f5f5f7;--border:#e2e2e6;
-      --text:#000;--text2:#5c5c66;--text3:#8e8e93;--searchFill:#ededf0;
-    }
-    html[data-theme=dark]{
-      --mr-bg:#131316;--mr-bg-2:#1c1c21;--mr-surface:#1c1c21;--mr-border:#2e2e36;
-      --mr-text:#f2f2f4;--mr-text-2:#b0b0b8;--mr-text-3:#7d7d86;
-      --surface:#1c1c21;--surface2:#131316;--border:#2e2e36;
-      --text:#f2f2f4;--text2:#b0b0b8;--text3:#7d7d86;--searchFill:#25252c;
-      color-scheme: dark;
-    }
-    *{box-sizing:border-box}
-    html,body{height:100%;margin:0;font-family:var(--font);background:var(--mr-bg-2);color:var(--mr-text)}
+    :root{--font:'IBM Plex Sans Arabic',sans-serif;--mr-bg:#fff;--mr-bg-2:#f4f4f4;--mr-surface:#fff;--mr-border:#e2e2e2;--mr-text:#000;--mr-text-2:#5c5c5c;--mr-text-3:#8a8a8a;--surface:#fff;--surface2:#f4f4f4;--border:#e2e2e2;--text:#000;--text2:#5c5c5c;--text3:#8a8a8a}
+    html[data-theme=dark]{--mr-bg:#101010;--mr-bg-2:#101010;--mr-surface:#171717;--mr-border:#2c2c2c;--mr-text:#f5f5f5;--mr-text-2:#a3a3a3;--mr-text-3:#737373;--surface:#171717;--surface2:#101010;--border:#2c2c2c;--text:#f5f5f5;--text2:#a3a3a3;--text3:#737373;color-scheme:dark}
+    *{box-sizing:border-box}html,body{height:100%;margin:0;font-family:var(--font);background:var(--mr-bg-2);color:var(--mr-text)}
     #appWrap{height:100%;display:flex;flex-direction:column}
     .topbar{height:52px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 16px;background:var(--mr-surface);border-bottom:1px solid var(--mr-border);flex-shrink:0}
-    .brand{display:flex;align-items:center;gap:10px}
-    .brand-icon img{width:30px;height:30px;object-fit:contain}
-    .brand-name{font-weight:700}
-    .theme-btn{min-height:36px;padding:0 12px;border:1px solid var(--border);background:transparent;color:inherit;font:inherit;font-size:12px;cursor:pointer}
-    .main{flex:1;min-height:0;display:flex;flex-direction:column}
-    .content{flex:1;min-height:0;padding:0;display:flex;flex-direction:column;overflow:hidden}
-    .tab-content{display:none}
-    .tab-content.active{display:flex;flex:1;min-height:0;flex-direction:column;overflow:hidden}
+    .brand{display:flex;align-items:center;gap:10px}.brand-icon img{width:30px;height:30px;object-fit:contain}.brand-name{font-weight:700}
+    .theme-btn{min-height:36px;padding:0 12px;border:1px solid var(--border);border-radius:999px;background:transparent;color:inherit;font:inherit;font-size:12px;cursor:pointer}
+    .main{flex:1;min-height:0;display:flex;flex-direction:column}.content{flex:1;min-height:0;padding:0;display:flex;flex-direction:column;overflow:hidden}
+    .tab-content{display:none}.tab-content.active{display:flex;flex:1;min-height:0;flex-direction:column;overflow:hidden}
     .users-io-menu[hidden]{display:none!important}
-    .users-io-menu{display:flex;flex-direction:column}
   </style>
 </head>
 <body>
@@ -47,144 +29,115 @@
     </div>
     <button type="button" class="theme-btn" id="themeToggle">وضع داكن</button>
   </header>
-  <div class="main"><div class="content">
-    <div class="tab-content active" id="tab-departments"></div>
-  </div></div>
+  <div class="main"><div class="content"><div class="tab-content active" id="tab-departments"></div></div></div>
 </div>
 <script>
-const USERS = [
-  {id:'1',n:'نورة العتيبي',r:'admin',rl:'مدير النظام',e:'10001',b:'—',p:'0501112233',m:'noura@athar.sa'},
-  {id:'2',n:'خالد السبيعي',r:'manager',rl:'المدير',e:'10018',b:'الإدارة العامة',p:'0559988776',m:'khaled@athar.sa'},
-  {id:'3',n:'سارة القحطاني',r:'auditor',rl:'إدارة الرقابة الداخلية',e:'10042',b:'—',p:'0533344556',m:'sara@athar.sa'},
-  {id:'4',n:'فهد الدوسري',r:'supervisor',rl:'المشرف',e:'10105',b:'فرع الرياض',p:'0541122334',m:'fahad@athar.sa'},
-  {id:'5',n:'ريم الحربي',r:'branch_manager',rl:'مدير الفرع',e:'10220',b:'فرع جدة',p:'0566677889',m:'reem@athar.sa'},
-  {id:'6',n:'عبدالله الشمري',r:'employee',rl:'أخصائي مبيعات',e:'10331',b:'فرع الدمام',p:'0590011223',m:'abdullah@athar.sa'},
-  {id:'7',n:'لينا الغامدي',r:'observer',rl:'الراصد',e:'10410',b:'فرع الرياض',p:'0502223344',m:'lina@athar.sa'},
-  {id:'8',n:'ماجد العتيبي',r:'employee',rl:'الموظف',e:'10455',b:'فرع جدة',p:'0556677889',m:'majed@athar.sa'}
+const USERS=[
+  {n:'نورة العتيبي',r:'admin',rl:'مدير النظام',e:'10001',b:'',p:'0501112233',m:'noura@athar.sa'},
+  {n:'خالد السبيعي',r:'manager',rl:'المدير',e:'10018',b:'الإدارة العامة',p:'0559988776',m:'khaled@athar.sa'},
+  {n:'سارة القحطاني',r:'auditor',rl:'إدارة الرقابة الداخلية',e:'10042',b:'',p:'0533344556',m:'sara@athar.sa'},
+  {n:'فهد الدوسري',r:'supervisor',rl:'المشرف',e:'10105',b:'فرع الرياض',p:'0541122334',m:'fahad@athar.sa'},
+  {n:'ريم الحربي',r:'branch_manager',rl:'مدير الفرع',e:'10220',b:'فرع جدة',p:'0566677889',m:'reem@athar.sa'},
+  {n:'عبدالله الشمري',r:'employee',rl:'أخصائي مبيعات',e:'10331',b:'فرع الدمام',p:'0590011223',m:'abdullah@athar.sa'},
+  {n:'لينا الغامدي',r:'observer',rl:'الراصد',e:'10410',b:'فرع الرياض',p:'0502223344',m:'lina@athar.sa'},
+  {n:'ماجد العتيبي',r:'employee',rl:'الموظف',e:'10455',b:'فرع جدة',p:'0556677889',m:'majed@athar.sa'}
 ];
-const ROLE_ORDER = ['admin','manager','auditor','hr','supervisor','branch_manager','observer','employee'];
-const ROLE_LABELS = {
-  admin:'مدير النظام', manager:'المدير', auditor:'إدارة الرقابة الداخلية', hr:'الموارد البشرية',
-  supervisor:'المشرف', branch_manager:'مدير الفرع', observer:'الراصد', employee:'الموظف'
-};
+const ROLE_ORDER=['admin','manager','auditor','hr','supervisor','branch_manager','observer','employee'];
+const ROLE_LABELS={admin:'مدير النظام',manager:'المدير',auditor:'إدارة الرقابة الداخلية',hr:'الموارد البشرية',supervisor:'المشرف',branch_manager:'مدير الفرع',observer:'الراصد',employee:'الموظف'};
+const q=new URLSearchParams(location.search);
+const mobile=q.get('mobile')==='1';
+let theme=q.get('theme')==='dark'?'dark':'light';
+document.documentElement.dataset.theme=theme;
+document.documentElement.classList.toggle('mr-desktop-ui',!mobile);
+document.documentElement.classList.toggle('mr-mobile-ui',mobile);
+document.getElementById('themeToggle').textContent=theme==='dark'?'وضع فاتح':'وضع داكن';
+document.getElementById('themeToggle').onclick=()=>{theme=theme==='dark'?'light':'dark';document.documentElement.dataset.theme=theme;document.getElementById('themeToggle').textContent=theme==='dark'?'وضع فاتح':'وضع داكن';};
 
-const q = new URLSearchParams(location.search);
-const mobile = q.get('mobile') === '1';
-let theme = q.get('theme') === 'dark' ? 'dark' : 'light';
-document.documentElement.dataset.theme = theme;
-document.documentElement.classList.toggle('mr-desktop-ui', !mobile);
-document.documentElement.classList.toggle('mr-mobile-ui', mobile);
-document.getElementById('themeToggle').textContent = theme === 'dark' ? 'وضع فاتح' : 'وضع داكن';
-document.getElementById('themeToggle').onclick = () => {
-  theme = theme === 'dark' ? 'light' : 'dark';
-  document.documentElement.dataset.theme = theme;
-  document.getElementById('themeToggle').textContent = theme === 'dark' ? 'وضع فاتح' : 'وضع داكن';
-};
-
-const tab = document.getElementById('tab-departments');
-tab.innerHTML = `
+const tab=document.getElementById('tab-departments');
+tab.innerHTML=`
   <div class="panel wf-panel usr-board">
-    <header class="usr-board__masthead">
-      <div class="usr-board__titles">
+    <header class="usr-board__hero">
+      <div class="usr-board__hero-copy">
         <h2 class="wf-panel-title usr-board__title">إدارة المستخدمين</h2>
-        <p class="wf-panel-sub usr-board__sub">ابحث وعيّن الأدوار من دليل واحد</p>
+        <p class="usr-board__lede"><span id="users-count-desk">0</span><span class="usr-board__lede-rest"> أشخاص. ابحث بالاسم أو الرقم وعيّن الدور</span><strong id="users-count" class="usr-board__count-mob">0</strong></p>
       </div>
-      <div class="usr-board__mast-actions">
-        <button type="button" class="usr-board__add"><i class="fas fa-user-plus" aria-hidden="true"></i><span>مستخدم جديد</span></button>
+      <div class="usr-board__hero-actions">
+        <button type="button" class="usr-board__add"><i class="fas fa-user-plus" aria-hidden="true"></i><span>إضافة مستخدم</span></button>
+        <div class="usr-board__io">
+          <button type="button" class="usr-tool" aria-label="تصدير"><i class="fas fa-file-export" aria-hidden="true"></i></button>
+          <button type="button" class="usr-tool" aria-label="قالب"><i class="fas fa-file-download" aria-hidden="true"></i></button>
+          <button type="button" class="usr-tool usr-tool--more" aria-label="المزيد"><i class="fas fa-ellipsis" aria-hidden="true"></i></button>
+        </div>
       </div>
     </header>
-    <div class="usr-board__command" role="search">
+    <div class="usr-board__find" role="search">
       <label class="usr-board__search" for="user-search">
         <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
-        <input type="search" class="figma-search-input usr-board__search-input" id="user-search" placeholder="اسم، رقم وظيفي، بريد، جوال…">
+        <input type="search" class="figma-search-input usr-board__search-input" id="user-search" placeholder="ابحث عن شخص…">
       </label>
       <div class="usr-board__status" role="group" aria-label="حالة الحساب">
-        <button type="button" class="usr-seg is-active" id="usersChipActiveDesk">نشط</button>
+        <button type="button" class="usr-seg is-active" id="usersChipActiveDesk">النشطون</button>
         <button type="button" class="usr-seg" id="usersChipAllDesk">الكل</button>
-        <button type="button" class="usr-seg is-active usr-seg--mob" id="usersChipActive">نشط</button>
+        <button type="button" class="usr-seg is-active usr-seg--mob" id="usersChipActive">النشطون</button>
         <button type="button" class="usr-seg usr-seg--mob" id="usersChipAll">الكل</button>
-      </div>
-      <div class="usr-board__tools">
-        <button type="button" class="usr-tool" aria-label="تصدير"><i class="fas fa-file-export" aria-hidden="true"></i></button>
-        <button type="button" class="usr-tool" aria-label="قالب"><i class="fas fa-file-download" aria-hidden="true"></i></button>
-        <button type="button" class="usr-tool usr-tool--more" aria-label="المزيد"><i class="fas fa-ellipsis" aria-hidden="true"></i></button>
-      </div>
-      <div class="usr-board__count" aria-live="polite">
-        <strong id="users-count-desk">0</strong><span>نتيجة</span>
-        <strong id="users-count" class="usr-board__count-mob">0</strong>
       </div>
     </div>
     <select id="user-roleFilter" hidden><option value=""></option></select>
-    <div id="usersDeskHost" class="usr-board__body">
-      <aside id="usersRoleRail" class="usr-rail" aria-label="تصفية حسب الدور"></aside>
-      <div class="usr-roster-shell"><div id="usersList" class="mr-users-list usr-roster" role="list"></div></div>
+    <nav id="usersRoleRail" class="usr-roles" aria-label="تصفية حسب الدور"></nav>
+    <div id="usersDeskHost" class="usr-board__stage">
+      <div class="usr-people-shell"><div id="usersList" class="mr-users-list usr-people" role="list"></div></div>
     </div>
   </div>`;
 
-let activeRole = '';
+let activeRole='';
 function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function filtered(){
-  const search = (document.getElementById('user-search').value||'').toLowerCase().trim();
-  return USERS.filter(u => {
-    if (activeRole && u.r !== activeRole) return false;
-    if (!search) return true;
+  const search=(document.getElementById('user-search').value||'').toLowerCase().trim();
+  return USERS.filter(u=>{
+    if(activeRole&&u.r!==activeRole)return false;
+    if(!search)return true;
     return [u.n,u.e,u.m,u.p,u.rl,u.b].join(' ').toLowerCase().includes(search);
   });
 }
 function renderRail(list){
-  const counts = {};
-  list.forEach(u => { counts[u.r]=(counts[u.r]|0)+1; });
-  const parts = [
-    `<div class="usr-rail__label">الأدوار</div>`,
-    `<button type="button" class="usr-rail__btn${activeRole===''?' is-active':''}" data-role=""><span>الكل</span><span class="usr-rail__n">${list.length}</span></button>`
-  ];
-  ROLE_ORDER.forEach(role => {
-    const n = counts[role]|0;
-    if (!n && activeRole !== role) return;
-    parts.push(`<button type="button" class="usr-rail__btn${activeRole===role?' is-active':''}" data-role="${esc(role)}"><span>${esc(ROLE_LABELS[role]||role)}</span><span class="usr-rail__n">${n}</span></button>`);
+  const counts={};list.forEach(u=>{counts[u.r]=(counts[u.r]|0)+1;});
+  const parts=[`<button type="button" class="usr-roles__btn${activeRole===''?' is-active':''}" data-role=""><span>الجميع</span><span class="usr-roles__n">${list.length}</span></button>`];
+  ROLE_ORDER.forEach(role=>{
+    const n=counts[role]|0; if(!n&&activeRole!==role)return;
+    parts.push(`<button type="button" class="usr-roles__btn${activeRole===role?' is-active':''}" data-role="${esc(role)}"><span>${esc(ROLE_LABELS[role]||role)}</span><span class="usr-roles__n">${n}</span></button>`);
   });
-  const rail = document.getElementById('usersRoleRail');
-  rail.innerHTML = parts.join('');
-  rail.querySelectorAll('.usr-rail__btn').forEach(btn => {
-    btn.onclick = () => { activeRole = btn.getAttribute('data-role')||''; render(); };
-  });
+  const rail=document.getElementById('usersRoleRail');
+  rail.innerHTML=parts.join('');
+  rail.querySelectorAll('.usr-roles__btn').forEach(btn=>{btn.onclick=()=>{activeRole=btn.getAttribute('data-role')||'';render();};});
 }
-function row(u, i, compact){
-  const meta = compact ? [u.e, u.rl].filter(Boolean).join(' · ') : esc(u.p);
-  return `<article class="usr-row" role="listitem" style="animation-delay:${Math.min(0.2,i*0.02)}s">
-    <span class="usr-row__av" aria-hidden="true">${esc(u.n[0])}<i class="usr-row__dot is-on"></i></span>
-    <div class="usr-row__who"><div class="usr-row__name">${esc(u.n)}</div><div class="usr-row__meta">${meta}</div></div>
-    <div class="usr-row__emp">${esc(u.e)}</div>
-    <div class="usr-row__branch">${esc(u.b)}</div>
-    <div class="usr-row__mail">${esc(u.m)}</div>
-    <div class="usr-row__acts">
-      <button type="button" class="usr-row__act" aria-label="تعديل"><i class="fas fa-pen" aria-hidden="true"></i><span>تعديل</span></button>
-      <button type="button" class="usr-row__act usr-row__act--danger" aria-label="تعطيل"><i class="fas fa-trash" aria-hidden="true"></i><span>تعطيل</span></button>
+function row(u){
+  const details=[];
+  if(u.e)details.push('الرقم '+esc(u.e));
+  if(u.b)details.push(esc(u.b));
+  if(u.p)details.push('<span dir="ltr">'+esc(u.p)+'</span>');
+  if(!mobile&&u.m)details.push('<span dir="ltr">'+esc(u.m)+'</span>');
+  return `<article class="usr-person" role="listitem">
+    <span class="usr-person__av" aria-hidden="true">${esc(u.n[0])}<i class="usr-person__dot is-on"></i></span>
+    <div class="usr-person__body">
+      <p class="usr-person__name">${esc(u.n)}</p>
+      <p class="usr-person__role">${esc(u.rl)}</p>
+      ${details.length?`<p class="usr-person__detail">${details.join('، ')}</p>`:''}
+    </div>
+    <div class="usr-person__acts">
+      <button type="button" class="usr-person__act" aria-label="تعديل"><i class="fas fa-pen" aria-hidden="true"></i><span>تعديل</span></button>
+      <button type="button" class="usr-person__act usr-person__act--danger" aria-label="تعطيل"><i class="fas fa-trash" aria-hidden="true"></i><span>تعطيل</span></button>
     </div>
   </article>`;
 }
 function render(){
-  const list = filtered();
-  document.getElementById('users-count-desk').textContent = String(list.length);
-  document.getElementById('users-count').textContent = String(list.length);
-  renderRail(USERS.filter(u => {
-    const search = (document.getElementById('user-search').value||'').toLowerCase().trim();
-    if (!search) return true;
-    return [u.n,u.e,u.m,u.p,u.rl,u.b].join(' ').toLowerCase().includes(search);
-  }));
-  const groups = {};
-  list.forEach(u => { (groups[u.r]||(groups[u.r]=[])).push(u); });
-  const order = ROLE_ORDER.filter(k => groups[k]?.length);
-  let i = 0;
-  document.getElementById('usersList').innerHTML = order.map(role => {
-    const rows = groups[role].map(u => row(u, i++, mobile)).join('');
-    return `<div class="usr-sec" role="presentation"><span>${esc(ROLE_LABELS[role]||role)}</span><span class="usr-sec__n">${groups[role].length}</span></div>${rows}`;
-  }).join('');
+  const list=filtered();
+  document.getElementById('users-count-desk').textContent=String(list.length);
+  document.getElementById('users-count').textContent=String(list.length);
+  const search=(document.getElementById('user-search').value||'').toLowerCase().trim();
+  renderRail(USERS.filter(u=>!search||[u.n,u.e,u.m,u.p,u.rl,u.b].join(' ').toLowerCase().includes(search)));
+  document.getElementById('usersList').innerHTML=list.map(row).join('');
 }
-document.getElementById('user-search').addEventListener('input', () => {
-  clearTimeout(window._t);
-  window._t = setTimeout(render, 160);
-});
+document.getElementById('user-search').addEventListener('input',()=>{clearTimeout(window._t);window._t=setTimeout(render,160);});
 render();
 </script>
 </body>

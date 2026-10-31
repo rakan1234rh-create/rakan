@@ -15383,17 +15383,16 @@
         const activeRole = document.getElementById('user-roleFilter')?.value || '';
         const total = searched.length;
         const parts = [
-          `<div class="usr-rail__label">الأدوار</div>`,
-          `<button type="button" class="usr-rail__btn${activeRole === '' ? ' is-active' : ''}" data-role="" onclick="userRoleDdPick('')" aria-pressed="${activeRole === '' ? 'true' : 'false'}">
-            <span>الكل</span><span class="usr-rail__n">${total}</span>
+          `<button type="button" class="usr-roles__btn${activeRole === '' ? ' is-active' : ''}" data-role="" onclick="userRoleDdPick('')" aria-pressed="${activeRole === '' ? 'true' : 'false'}">
+            <span>الجميع</span><span class="usr-roles__n">${total}</span>
           </button>`
         ];
         USERS_ROLE_RAIL_ORDER.forEach((role) => {
           const n = counts[role] || 0;
-          if (!n && activeRole !== role) return; // hide empty roles unless selected
+          if (!n && activeRole !== role) return;
           const label = ROLE_LABELS[role] || role;
-          parts.push(`<button type="button" class="usr-rail__btn${activeRole === role ? ' is-active' : ''}" data-role="${Sec.escapeHTML(role)}" onclick="userRoleDdPick('${Sec.escapeHTML(role)}')" aria-pressed="${activeRole === role ? 'true' : 'false'}">
-            <span>${Sec.escapeHTML(label)}</span><span class="usr-rail__n">${n}</span>
+          parts.push(`<button type="button" class="usr-roles__btn${activeRole === role ? ' is-active' : ''}" data-role="${Sec.escapeHTML(role)}" onclick="userRoleDdPick('${Sec.escapeHTML(role)}')" aria-pressed="${activeRole === role ? 'true' : 'false'}">
+            <span>${Sec.escapeHTML(label)}</span><span class="usr-roles__n">${n}</span>
           </button>`);
         });
         rail.innerHTML = parts.join('');
@@ -15404,20 +15403,19 @@
           return `<div class="usr-skel" aria-hidden="true">
             <div class="usr-skel__row"></div><div class="usr-skel__row"></div>
             <div class="usr-skel__row"></div><div class="usr-skel__row"></div>
-            <div class="usr-skel__row"></div>
           </div>
-          <div class="usr-empty" role="status"><p class="usr-empty__title">جاري تحميل الدليل…</p></div>`;
+          <div class="usr-empty" role="status"><p class="usr-empty__title">جاري جلب الأشخاص…</p></div>`;
         }
         const hasSearch = !!(document.getElementById('user-search')?.value || '').trim();
         const hasRole = !!(document.getElementById('user-roleFilter')?.value || '');
-        const title = hasSearch || hasRole ? 'لا نتائج لهذا التصفية' : 'لا يوجد مستخدمون بعد';
+        const title = hasSearch || hasRole ? 'لا يوجد أحد بهذا البحث' : 'لا يوجد مستخدمون بعد';
         const hint = hasSearch || hasRole
-          ? 'جرّب مسح البحث أو اختيار «الكل» من سكة الأدوار.'
-          : 'أضف أول حساب ليظهر في الدليل.';
+          ? 'امسح البحث أو اختر «الجميع» لعرض القائمة كاملة.'
+          : 'أضف أول شخص ليظهر هنا.';
         const cta = canManage
           ? (hasSearch || hasRole
             ? `<button type="button" class="usr-empty__cta" onclick="document.getElementById('user-search').value='';userRoleDdPick('');">مسح التصفية</button>`
-            : `<button type="button" class="usr-empty__cta" onclick="openUserModal()"><i class="fas fa-user-plus" aria-hidden="true"></i>مستخدم جديد</button>`)
+            : `<button type="button" class="usr-empty__cta" onclick="openUserModal()"><i class="fas fa-user-plus" aria-hidden="true"></i>إضافة مستخدم</button>`)
           : '';
         return `<div class="usr-empty" role="status">
           <p class="usr-empty__title">${title}</p>
@@ -15432,7 +15430,6 @@
         const roleLabel = userTableRoleLabel(u) || ROLE_LABELS[roleKey] || roleKey;
         const empNum = padEmpNum(u.employee_number);
         const uid = safeUserDomId(u.id);
-        const delay = Math.min(0.2, (Number(delayIdx) || 0) * 0.02);
         const active = !!(u.auth_uid && isActiveUser(u));
         const initial = String(u.name || '؟').trim().charAt(0) || '؟';
         const avatar = usersListAvatarMarkup(u);
@@ -15440,51 +15437,38 @@
         const avInner = hasPhoto
           ? `<span class="${avatar.className}"${avatar.style ? ` style="${Sec.escapeHTML(avatar.style)}"` : ''} aria-hidden="true">${avatar.html}</span>`
           : Sec.escapeHTML(initial);
-        const metaBits = [];
-        if (compact) {
-          if (empNum) metaBits.push(empNum);
-          if (roleLabel) metaBits.push(roleLabel);
-        } else if (u.phone) {
-          metaBits.push(Sec.escapeHTML(u.phone));
-        }
+
+        const roleText = roleLabel ? Sec.escapeHTML(roleLabel) : '';
+        const placeText = branch?.name ? Sec.escapeHTML(branch.name) : '';
+        const detailParts = [];
+        if (empNum) detailParts.push(`الرقم ${Sec.escapeHTML(empNum)}`);
+        if (placeText) detailParts.push(placeText);
+        if (!compact && u.phone) detailParts.push(`<span dir="ltr">${Sec.escapeHTML(u.phone)}</span>`);
+        else if (compact && u.phone) detailParts.push(`<span dir="ltr">${Sec.escapeHTML(u.phone)}</span>`);
+        if (!compact && u.email) detailParts.push(`<span dir="ltr">${Sec.escapeHTML(u.email)}</span>`);
+
         const actions = (canManage && uid)
-          ? `<div class="usr-row__acts">
-              <button type="button" class="usr-row__act" data-usr-act="edit" data-user-id="${Sec.escapeHTML(uid)}" aria-label="تعديل"><i class="fas fa-pen" aria-hidden="true"></i><span>تعديل</span></button>
-              <button type="button" class="usr-row__act usr-row__act--danger" data-usr-act="delete" data-user-id="${Sec.escapeHTML(uid)}" aria-label="تعطيل"><i class="fas fa-trash" aria-hidden="true"></i><span>تعطيل</span></button>
+          ? `<div class="usr-person__acts">
+              <button type="button" class="usr-person__act" data-usr-act="edit" data-user-id="${Sec.escapeHTML(uid)}" aria-label="تعديل"><i class="fas fa-pen" aria-hidden="true"></i><span>تعديل</span></button>
+              <button type="button" class="usr-person__act usr-person__act--danger" data-usr-act="delete" data-user-id="${Sec.escapeHTML(uid)}" aria-label="تعطيل"><i class="fas fa-trash" aria-hidden="true"></i><span>تعطيل</span></button>
             </div>`
-          : '<span class="usr-row__acts" aria-hidden="true"></span>';
+          : '<span class="usr-person__acts" aria-hidden="true"></span>';
         const inactiveCls = isActiveUser(u) ? '' : ' is-inactive';
         return `
-          <article class="usr-row${inactiveCls}" role="listitem" style="animation-delay:${delay}s">
-            <span class="usr-row__av" aria-hidden="true">${avInner}<i class="usr-row__dot${active ? ' is-on' : ''}"></i></span>
-            <div class="usr-row__who">
-              <div class="usr-row__name">${Sec.escapeHTML(u.name || '')}</div>
-              ${metaBits.length ? `<div class="usr-row__meta">${metaBits.join(' · ')}</div>` : ''}
+          <article class="usr-person${inactiveCls}" role="listitem">
+            <span class="usr-person__av" aria-hidden="true">${avInner}<i class="usr-person__dot${active ? ' is-on' : ''}"></i></span>
+            <div class="usr-person__body">
+              <p class="usr-person__name">${Sec.escapeHTML(u.name || '')}</p>
+              ${roleText ? `<p class="usr-person__role">${roleText}</p>` : ''}
+              ${detailParts.length ? `<p class="usr-person__detail">${detailParts.join('، ')}</p>` : ''}
             </div>
-            <div class="usr-row__emp">${Sec.escapeHTML(empNum || '—')}</div>
-            <div class="usr-row__branch">${Sec.escapeHTML((branch && branch.name) || '—')}</div>
-            <div class="usr-row__mail">${Sec.escapeHTML(u.email || '—')}</div>
             ${actions}
           </article>`;
       }
 
       function usrRosterHTML(users, canManage, compact) {
-        const groups = Object.create(null);
-        users.forEach((u) => {
-          const k = normalizeUserRole(u.role);
-          (groups[k] || (groups[k] = [])).push(u);
-        });
-        const order = USERS_ROLE_RAIL_ORDER.filter((k) => groups[k]?.length);
-        Object.keys(groups).forEach((k) => {
-          if (!order.includes(k)) order.push(k);
-        });
-        let i = 0;
-        return order.map((role) => {
-          const list = groups[role] || [];
-          const label = ROLE_LABELS[role] || role;
-          const rows = list.map((u) => usrRowHTML(u, canManage, i++, compact)).join('');
-          return `<div class="usr-sec" role="presentation"><span>${Sec.escapeHTML(label)}</span><span class="usr-sec__n">${list.length}</span></div>${rows}`;
-        }).join('');
+        // Flat people list — no spreadsheet groups; role filter already scopes the set
+        return users.map((u, i) => usrRowHTML(u, canManage, i, compact)).join('');
       }
 
       function rdUsrCardHTML(u, canManage, delayIdx) {
@@ -15521,13 +15505,12 @@
         const usersMob = isMobileViewport();
         const rdMob = typeof isUsersAtharMobileUi === 'function' && isUsersAtharMobileUi();
         const rdDesk = isAtharDesktopScreenUi();
-        const rd = rdMob || rdDesk;
         const panel = document.getElementById('tab-departments');
         panel?.classList.add('usr-board-active');
 
-        list.className = 'mr-users-list usr-roster'
-          + (rdDesk ? ' usr-roster--desk' : '')
-          + (rdMob || usersMob ? ' usr-roster--mob users-grid--mob-list' : '');
+        list.className = 'mr-users-list usr-people'
+          + (rdDesk ? ' usr-people--desk' : '')
+          + (rdMob || usersMob ? ' usr-people--mob users-grid--mob-list' : '');
 
         try { renderUsersRoleRail(); } catch (_) { /* noop */ }
 

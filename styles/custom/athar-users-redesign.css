@@ -1,44 +1,54 @@
-/* ATHAR Users — Swiss monochrome + data-dense roster (ui-ux-pro-max)
-   Constraints: black/white only, light+dark, RTL, simple motion, logo untouched */
+/* ATHAR Users — typography-led people directory (frontend-design)
+   Grayscale only · light/dark · RTL · soft motion · logo untouched */
 
 html.athar-staging-redesign #tab-departments {
-  --usr-ink: var(--text, var(--mr-text, #000));
-  --usr-paper: var(--surface, var(--mr-surface, #fff));
-  --usr-wash: var(--surface2, var(--mr-bg-2, #f5f5f7));
-  --usr-line: var(--border, var(--mr-border, #e2e2e6));
-  --usr-muted: var(--text2, var(--mr-text-2, #5c5c66));
-  --usr-faint: var(--text3, var(--mr-text-3, #8e8e93));
-  --usr-rail: 220px;
-  --usr-row: 44px;
-  --usr-gap: 8px;
+  --usr-ink: #000000;
+  --usr-paper: #ffffff;
+  --usr-mist: #f4f4f4;
+  --usr-fog: #ebebeb;
+  --usr-line: #e2e2e2;
+  --usr-mute: #5c5c5c;
+  --usr-faint: #8a8a8a;
+  --usr-soft: 18px;
   --usr-ease: cubic-bezier(0.22, 1, 0.36, 1);
-  --usr-radius: 0;
-  --usr-focus: color-mix(in srgb, var(--usr-ink) 28%, transparent);
+  --usr-focus: color-mix(in srgb, var(--usr-ink) 22%, transparent);
+  --usr-stage: color-mix(in srgb, var(--usr-paper) 88%, var(--usr-mist));
+  background:
+    radial-gradient(120% 80% at 100% 0%, color-mix(in srgb, var(--usr-ink) 5%, transparent), transparent 55%),
+    radial-gradient(90% 70% at 0% 100%, color-mix(in srgb, var(--usr-ink) 3.5%, transparent), transparent 50%),
+    var(--usr-mist) !important;
 }
 
 html.athar-staging-redesign[data-theme="dark"] #tab-departments {
-  --usr-ink: var(--text, #f2f2f4);
-  --usr-paper: var(--surface, #1c1c21);
-  --usr-wash: var(--surface2, #131316);
-  --usr-line: var(--border, #2e2e36);
-  --usr-muted: var(--text2, #b0b0b8);
-  --usr-faint: var(--text3, #7d7d86);
-  --usr-focus: color-mix(in srgb, #fff 32%, transparent);
+  --usr-ink: #f5f5f5;
+  --usr-paper: #171717;
+  --usr-mist: #101010;
+  --usr-fog: #1e1e1e;
+  --usr-line: #2c2c2c;
+  --usr-mute: #a3a3a3;
+  --usr-faint: #737373;
+  --usr-focus: color-mix(in srgb, #fff 28%, transparent);
+  --usr-stage: color-mix(in srgb, var(--usr-paper) 92%, #000);
+  color-scheme: dark;
+  background:
+    radial-gradient(110% 70% at 100% 0%, color-mix(in srgb, #fff 6%, transparent), transparent 55%),
+    radial-gradient(80% 60% at 0% 100%, color-mix(in srgb, #fff 3%, transparent), transparent 50%),
+    var(--usr-mist) !important;
 }
 
-@keyframes usrBoardIn {
-  from { opacity: 0; transform: translateY(4px); }
+@keyframes usrPeopleIn {
+  from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  @keyframes usrBoardIn {
+  @keyframes usrPeopleIn {
     from { opacity: 1; transform: none; }
     to { opacity: 1; transform: none; }
   }
 }
 
-/* ── desktop shell: fill main ── */
+/* ── shell ── */
 
 html.athar-staging-redesign.mr-desktop-ui .main:has(#tab-departments.active),
 html.athar-staging-redesign.mr-desktop-ui #appWrap .main:has(#tab-departments.active) {
@@ -68,13 +78,12 @@ html.athar-staging-redesign.mr-desktop-ui #tab-departments.tab-content.active {
   max-width: 100% !important;
   min-height: 0 !important;
   overflow: hidden !important;
-  padding: 20px 24px 16px !important;
+  padding: 28px 32px 20px !important;
   box-sizing: border-box !important;
-  background: var(--usr-wash) !important;
 }
 
-html.athar-staging-redesign.mr-desktop-ui #tab-departments > .panel,
-html.athar-staging-redesign.mr-desktop-ui #tab-departments .wf-panel,
+html.athar-staging-redesign #tab-departments > .panel,
+html.athar-staging-redesign #tab-departments .wf-panel,
 html.athar-staging-redesign #tab-departments .usr-board {
   background: transparent !important;
   border: none !important;
@@ -85,48 +94,82 @@ html.athar-staging-redesign #tab-departments .usr-board {
   flex: 1 1 0% !important;
   min-height: 0 !important;
   overflow: hidden !important;
+  max-width: 920px;
+  width: 100%;
+  margin-inline: auto;
 }
 
 html.athar-staging-redesign #tab-departments .wf-panel-intro,
+html.athar-staging-redesign #tab-departments .wf-panel-banner,
 html.athar-staging-redesign #tab-departments .users-meta-row,
 html.athar-staging-redesign #tab-departments .wf-count,
-html.athar-staging-redesign #tab-departments .wf-panel-banner {
+html.athar-staging-redesign #tab-departments .users-controls,
+html.athar-staging-redesign #tab-departments .users-io-group--desk,
+html.athar-staging-redesign #tab-departments .rd-desk-table,
+html.athar-staging-redesign #tab-departments .rd-usr {
   display: none !important;
 }
 
-/* masthead */
-html.athar-staging-redesign #tab-departments .usr-board__masthead {
+/* ── hero: typography is the personality ── */
+
+html.athar-staging-redesign #tab-departments .usr-board__hero {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 16px;
-  padding: 0 0 14px;
-  margin: 0;
+  gap: 20px;
   flex-shrink: 0;
-  border-bottom: 2px solid var(--usr-ink);
+  padding: 4px 2px 22px;
+  animation: usrPeopleIn 420ms var(--usr-ease) both;
 }
 
-html.athar-staging-redesign #tab-departments .usr-board__titles {
+html.athar-staging-redesign #tab-departments .usr-board__hero-copy {
   min-width: 0;
 }
 
 html.athar-staging-redesign #tab-departments .usr-board__title {
   margin: 0;
-  font-size: clamp(1.55rem, 2.1vw, 2rem);
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  font-family: "IBM Plex Sans Arabic", sans-serif;
+  font-size: clamp(2rem, 4.2vw, 2.75rem);
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: -0.03em;
   color: var(--usr-ink);
-  line-height: 1.15;
   text-wrap: balance;
 }
 
-html.athar-staging-redesign #tab-departments .usr-board__sub {
-  margin: 6px 0 0;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--usr-muted);
-  letter-spacing: 0;
-  text-transform: none;
+html.athar-staging-redesign #tab-departments .usr-board__lede {
+  margin: 10px 0 0;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.55;
+  color: var(--usr-mute);
+  max-width: 36ch;
+}
+
+html.athar-staging-redesign #tab-departments .usr-board__lede #users-count-desk {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--usr-ink);
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .usr-board__count-mob {
+  display: none !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-departments #users-count-desk,
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-board__lede-rest {
+  /* keep lede readable; mob count mirrors via strong */
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-board__count-mob {
+  display: none !important; /* desk span already updated */
+}
+
+html.athar-staging-redesign #tab-departments .usr-board__hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 html.athar-staging-redesign #tab-departments .usr-board__add {
@@ -135,20 +178,20 @@ html.athar-staging-redesign #tab-departments .usr-board__add {
   gap: 8px;
   min-height: 44px;
   padding: 0 18px;
-  border: 1px solid var(--usr-ink);
-  border-radius: var(--usr-radius);
+  border: 0;
+  border-radius: 999px;
   background: var(--usr-ink);
   color: var(--usr-paper);
   font: inherit;
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 13.5px;
+  font-weight: 600;
   cursor: pointer;
-  flex-shrink: 0;
-  transition: opacity 160ms var(--usr-ease), transform 160ms var(--usr-ease);
+  transition: transform 160ms var(--usr-ease), opacity 160ms var(--usr-ease);
 }
 
 html.athar-staging-redesign #tab-departments .usr-board__add:hover {
-  opacity: 0.88;
+  opacity: 0.9;
+  transform: translateY(-1px);
 }
 
 html.athar-staging-redesign #tab-departments .usr-board__add:focus-visible {
@@ -156,34 +199,117 @@ html.athar-staging-redesign #tab-departments .usr-board__add:focus-visible {
   outline-offset: 3px;
 }
 
-/* command strip */
-html.athar-staging-redesign #tab-departments .usr-board__command {
+html.athar-staging-redesign #tab-departments .usr-board__io {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  position: relative;
+}
+
+html.athar-staging-redesign #tab-departments .usr-tool {
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--usr-mute);
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 150ms var(--usr-ease), color 150ms var(--usr-ease);
+}
+
+html.athar-staging-redesign #tab-departments .usr-tool:hover {
+  background: color-mix(in srgb, var(--usr-ink) 6%, transparent);
+  color: var(--usr-ink);
+}
+
+html.athar-staging-redesign #tab-departments .usr-tool:focus-visible {
+  outline: 2px solid var(--usr-ink);
+  outline-offset: 2px;
+}
+
+/* IO icons live behind one overflow control — hero keeps a single bold CTA */
+html.athar-staging-redesign #tab-departments .usr-tool:not(.usr-tool--more) {
+  display: none !important;
+}
+
+html.athar-staging-redesign #tab-departments .usr-tool--more {
+  display: inline-flex !important;
+}
+
+html.athar-staging-redesign #tab-departments .users-io-menu {
+  position: absolute;
+  inset-inline-end: 0;
+  top: calc(100% + 6px);
+  z-index: 30;
+  min-width: 180px;
+  padding: 6px;
+  background: var(--usr-paper);
+  border: 1px solid var(--usr-line);
+  border-radius: 14px;
+  box-shadow: 0 12px 32px color-mix(in srgb, var(--usr-ink) 10%, transparent);
+}
+
+html.athar-staging-redesign #tab-departments .users-io-menu[hidden] {
+  display: none !important;
+}
+
+html.athar-staging-redesign #tab-departments .users-io-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--usr-ink);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  text-align: start;
+}
+
+html.athar-staging-redesign #tab-departments .users-io-menu-item:hover {
+  background: var(--usr-fog);
+}
+
+/* ── find ── */
+
+html.athar-staging-redesign #tab-departments .usr-board__find {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 10px;
-  padding: 12px 0;
   flex-shrink: 0;
+  margin-bottom: 14px;
+  animation: usrPeopleIn 420ms var(--usr-ease) 60ms both;
 }
 
 html.athar-staging-redesign #tab-departments .usr-board__search {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   flex: 1 1 240px;
-  min-width: 180px;
-  min-height: 44px;
-  padding: 0 14px;
+  min-height: 52px;
+  padding: 0 18px;
   background: var(--usr-paper);
-  border: 1px solid var(--usr-line);
-  border-radius: var(--usr-radius);
+  border: 1px solid transparent;
+  border-radius: 999px;
   color: var(--usr-faint);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--usr-ink) 4%, transparent);
   cursor: text;
+  transition: box-shadow 160ms var(--usr-ease), border-color 160ms var(--usr-ease);
 }
 
 html.athar-staging-redesign #tab-departments .usr-board__search:focus-within {
-  border-color: var(--usr-ink);
-  box-shadow: 0 0 0 2px var(--usr-focus);
+  border-color: color-mix(in srgb, var(--usr-ink) 28%, transparent);
+  box-shadow: 0 0 0 4px var(--usr-focus);
+  color: var(--usr-ink);
 }
 
 html.athar-staging-redesign #tab-departments .usr-board__search-input,
@@ -192,7 +318,8 @@ html.athar-staging-redesign #tab-departments .usr-board__search .figma-search-in
   background: transparent !important;
   width: 100%;
   font: inherit;
-  font-size: 13.5px;
+  font-size: 15px;
+  font-weight: 500;
   color: var(--usr-ink);
   outline: 0;
   min-width: 0;
@@ -201,39 +328,36 @@ html.athar-staging-redesign #tab-departments .usr-board__search .figma-search-in
 
 html.athar-staging-redesign #tab-departments .usr-board__status {
   display: inline-flex;
-  border: 1px solid var(--usr-ink);
-  border-radius: var(--usr-radius);
-  overflow: hidden;
+  padding: 3px;
+  background: color-mix(in srgb, var(--usr-ink) 5%, var(--usr-paper));
+  border-radius: 999px;
   flex-shrink: 0;
 }
 
 html.athar-staging-redesign #tab-departments .usr-seg {
-  min-height: 44px;
-  min-width: 56px;
+  min-height: 40px;
+  min-width: 72px;
   padding: 0 14px;
   border: 0;
-  background: var(--usr-paper);
-  color: var(--usr-ink);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--usr-mute);
   font: inherit;
-  font-size: 12.5px;
-  font-weight: 700;
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
   transition: background 150ms var(--usr-ease), color 150ms var(--usr-ease);
 }
 
-html.athar-staging-redesign #tab-departments .usr-seg + .usr-seg {
-  border-inline-start: 1px solid var(--usr-ink);
-}
-
 html.athar-staging-redesign #tab-departments .usr-seg.is-active {
-  background: var(--usr-ink);
-  color: var(--usr-paper);
+  background: var(--usr-paper);
+  color: var(--usr-ink);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--usr-ink) 8%, transparent);
 }
 
 html.athar-staging-redesign #tab-departments .usr-seg:focus-visible {
   outline: 2px solid var(--usr-ink);
-  outline-offset: -2px;
-  z-index: 1;
+  outline-offset: 2px;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #tab-departments .usr-seg--mob {
@@ -241,72 +365,6 @@ html.athar-staging-redesign.mr-desktop-ui #tab-departments .usr-seg--mob {
 }
 
 html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-board__status .usr-seg:not(.usr-seg--mob) {
-  display: none !important;
-}
-
-html.athar-staging-redesign #tab-departments .usr-board__tools {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  position: relative;
-  flex-shrink: 0;
-}
-
-html.athar-staging-redesign #tab-departments .usr-tool {
-  width: 44px;
-  height: 44px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid var(--usr-line);
-  border-radius: var(--usr-radius);
-  background: var(--usr-paper);
-  color: var(--usr-ink);
-  cursor: pointer;
-  font-size: 14px;
-  transition: background 150ms var(--usr-ease), border-color 150ms var(--usr-ease);
-}
-
-html.athar-staging-redesign #tab-departments .usr-tool:hover {
-  border-color: var(--usr-ink);
-  background: var(--usr-wash);
-}
-
-html.athar-staging-redesign #tab-departments .usr-tool:focus-visible {
-  outline: 2px solid var(--usr-ink);
-  outline-offset: 2px;
-}
-
-html.athar-staging-redesign.mr-desktop-ui #tab-departments .usr-tool--more {
-  display: none !important;
-}
-
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-tool:not(.usr-tool--more) {
-  display: none !important;
-}
-
-html.athar-staging-redesign #tab-departments .usr-board__count {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 6px;
-  margin-inline-start: auto;
-  font-size: 12.5px;
-  color: var(--usr-muted);
-  font-variant-numeric: tabular-nums;
-  flex-shrink: 0;
-}
-
-html.athar-staging-redesign #tab-departments .usr-board__count strong {
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--usr-ink);
-}
-
-html.athar-staging-redesign.mr-desktop-ui #tab-departments .usr-board__count-mob {
-  display: none !important;
-}
-
-html.athar-staging-redesign.mr-mobile-ui #tab-departments #users-count-desk {
   display: none !important;
 }
 
@@ -318,340 +376,327 @@ html.athar-staging-redesign #tab-departments .usr-board__role-legacy {
   clip: rect(0 0 0 0) !important;
 }
 
-/* body: rail + roster */
-html.athar-staging-redesign #tab-departments .usr-board__body,
-html.athar-staging-redesign #tab-departments #usersDeskHost {
-  display: grid !important;
-  grid-template-columns: var(--usr-rail) minmax(0, 1fr);
-  gap: 0;
-  flex: 1 1 0% !important;
-  min-height: 0 !important;
-  overflow: hidden !important;
-  border: 1px solid var(--usr-line);
-  background: var(--usr-paper);
-  visibility: visible !important;
-}
+/* ── role chips (horizontal, not a dated rail) ── */
 
-/* role rail */
-html.athar-staging-redesign #tab-departments .usr-rail {
+html.athar-staging-redesign #tab-departments .usr-roles {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 12px 10px;
-  border-inline-end: 1px solid var(--usr-line);
-  background: var(--usr-wash);
-  overflow: auto;
-  overscroll-behavior: contain;
-  min-height: 0;
-}
-
-html.athar-staging-redesign #tab-departments .usr-rail__label {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--usr-faint);
-  padding: 4px 8px 10px;
-  letter-spacing: 0.04em;
-}
-
-html.athar-staging-redesign #tab-departments .usr-rail__btn {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-wrap: nowrap;
   gap: 8px;
-  width: 100%;
-  min-height: 40px;
-  padding: 8px 10px;
-  border: 0;
-  border-radius: var(--usr-radius);
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0 2px 14px;
+  margin: 0;
+  flex-shrink: 0;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  animation: usrPeopleIn 420ms var(--usr-ease) 100ms both;
+}
+
+html.athar-staging-redesign #tab-departments .usr-roles::-webkit-scrollbar {
+  display: none;
+}
+
+html.athar-staging-redesign #tab-departments .usr-roles__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: 999px;
   background: transparent;
-  color: var(--usr-ink);
+  color: var(--usr-mute);
   font: inherit;
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 600;
-  text-align: start;
   cursor: pointer;
-  transition: background 150ms var(--usr-ease), color 150ms var(--usr-ease);
+  white-space: nowrap;
+  transition: background 150ms var(--usr-ease), color 150ms var(--usr-ease), border-color 150ms var(--usr-ease);
 }
 
-html.athar-staging-redesign #tab-departments .usr-rail__btn:hover {
-  background: color-mix(in srgb, var(--usr-ink) 6%, transparent);
+html.athar-staging-redesign #tab-departments .usr-roles__btn:hover {
+  color: var(--usr-ink);
+  background: color-mix(in srgb, var(--usr-ink) 5%, transparent);
 }
 
-html.athar-staging-redesign #tab-departments .usr-rail__btn.is-active {
+html.athar-staging-redesign #tab-departments .usr-roles__btn.is-active {
   background: var(--usr-ink);
   color: var(--usr-paper);
+  border-color: var(--usr-ink);
 }
 
-html.athar-staging-redesign #tab-departments .usr-rail__btn:focus-visible {
+html.athar-staging-redesign #tab-departments .usr-roles__btn:focus-visible {
   outline: 2px solid var(--usr-ink);
-  outline-offset: 1px;
+  outline-offset: 2px;
 }
 
-html.athar-staging-redesign #tab-departments .usr-rail__n {
+html.athar-staging-redesign #tab-departments .usr-roles__n {
   font-variant-numeric: tabular-nums;
   font-size: 12px;
   font-weight: 700;
-  opacity: 0.7;
+  opacity: 0.72;
 }
 
-html.athar-staging-redesign #tab-departments .usr-rail__btn.is-active .usr-rail__n {
+html.athar-staging-redesign #tab-departments .usr-roles__btn.is-active .usr-roles__n {
   opacity: 1;
 }
 
-/* roster */
-html.athar-staging-redesign #tab-departments .usr-roster-shell,
+/* ── people stage ── */
+
+html.athar-staging-redesign #tab-departments .usr-board__stage,
+html.athar-staging-redesign #tab-departments #usersDeskHost {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  background: var(--usr-stage) !important;
+  border: 1px solid var(--usr-line);
+  border-radius: var(--usr-soft);
+  visibility: visible !important;
+  animation: usrPeopleIn 480ms var(--usr-ease) 140ms both;
+}
+
+html.athar-staging-redesign #tab-departments .usr-people-shell,
 html.athar-staging-redesign #tab-departments .mr-users-list-wrap {
   display: flex !important;
   flex-direction: column !important;
-  min-width: 0 !important;
-  min-height: 0 !important;
-  overflow: hidden !important;
   flex: 1 1 auto !important;
+  min-height: 0 !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
   border: 0 !important;
   background: transparent !important;
 }
 
 html.athar-staging-redesign #tab-departments #usersList,
-html.athar-staging-redesign #tab-departments .usr-roster {
-  display: block !important;
+html.athar-staging-redesign #tab-departments .usr-people {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0 !important;
   flex: 1 1 auto !important;
   min-height: 0 !important;
   overflow: auto !important;
   overscroll-behavior: contain;
-  padding: 0 !important;
-  background: var(--usr-paper) !important;
+  padding: 8px !important;
+  background: transparent !important;
 }
 
-html.athar-staging-redesign #tab-departments .usr-sec {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  padding: 10px 16px 8px;
-  background: var(--usr-paper);
-  border-bottom: 1px solid var(--usr-line);
-  font-size: 11.5px;
-  font-weight: 700;
-  color: var(--usr-muted);
-  letter-spacing: 0.02em;
-}
-
-html.athar-staging-redesign #tab-departments .usr-sec__n {
-  font-variant-numeric: tabular-nums;
-  color: var(--usr-faint);
-}
-
-html.athar-staging-redesign #tab-departments .usr-row {
+/* person row — name-first, not a spreadsheet */
+html.athar-staging-redesign #tab-departments .usr-person {
   display: grid;
-  grid-template-columns: 40px minmax(140px, 1.4fr) 88px minmax(90px, 1fr) minmax(120px, 1.2fr) auto;
-  gap: 12px;
+  grid-template-columns: 52px minmax(0, 1fr) auto;
+  gap: 14px;
   align-items: center;
-  min-height: var(--usr-row);
-  padding: 8px 16px;
-  border-bottom: 1px solid var(--usr-line);
+  padding: 14px 16px;
+  border-radius: 14px;
   content-visibility: auto;
-  contain-intrinsic-size: auto 52px;
-  animation: usrBoardIn 320ms var(--usr-ease) both;
+  contain-intrinsic-size: auto 76px;
+  transition: background 160ms var(--usr-ease);
 }
 
-html.athar-staging-redesign #tab-departments .usr-row:hover {
-  background: color-mix(in srgb, var(--usr-ink) 3.5%, transparent);
+html.athar-staging-redesign #tab-departments .usr-person:hover,
+html.athar-staging-redesign #tab-departments .usr-person:focus-within {
+  background: var(--usr-paper);
 }
 
-html.athar-staging-redesign #tab-departments .usr-row.is-inactive {
+html.athar-staging-redesign #tab-departments .usr-person.is-inactive {
   opacity: 0.55;
 }
 
-html.athar-staging-redesign #tab-departments .usr-row__av {
+html.athar-staging-redesign #tab-departments .usr-person__av {
   position: relative;
-  width: 34px;
-  height: 34px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
-  background: var(--usr-wash);
-  border: 1px solid var(--usr-line);
+  background: var(--usr-fog);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
+  font-size: 17px;
   font-weight: 700;
   color: var(--usr-ink);
   overflow: hidden;
   flex-shrink: 0;
 }
 
-html.athar-staging-redesign #tab-departments .usr-row__av img,
-html.athar-staging-redesign #tab-departments .usr-row__av .mr-user-card__avatar,
-html.athar-staging-redesign #tab-departments .usr-row__av [class*="avatar"] {
+html.athar-staging-redesign #tab-departments .usr-person__av img,
+html.athar-staging-redesign #tab-departments .usr-person__av .mr-user-card__avatar,
+html.athar-staging-redesign #tab-departments .usr-person__av [class*="avatar"] {
   width: 100% !important;
   height: 100% !important;
   border-radius: 50%;
   object-fit: cover;
 }
 
-html.athar-staging-redesign #tab-departments .usr-row__dot {
+html.athar-staging-redesign #tab-departments .usr-person__dot {
   position: absolute;
-  bottom: 0;
-  inset-inline-start: 0;
-  width: 9px;
-  height: 9px;
+  bottom: 1px;
+  inset-inline-start: 1px;
+  width: 11px;
+  height: 11px;
   border-radius: 50%;
   background: var(--usr-faint);
-  border: 2px solid var(--usr-paper);
+  border: 2px solid var(--usr-stage);
 }
 
-html.athar-staging-redesign #tab-departments .usr-row__dot.is-on {
+html.athar-staging-redesign #tab-departments .usr-person:hover .usr-person__dot,
+html.athar-staging-redesign #tab-departments .usr-person:focus-within .usr-person__dot {
+  border-color: var(--usr-paper);
+}
+
+html.athar-staging-redesign #tab-departments .usr-person__dot.is-on {
   background: var(--usr-ink);
 }
 
-html.athar-staging-redesign #tab-departments .usr-row__who {
+html.athar-staging-redesign #tab-departments .usr-person__body {
   min-width: 0;
 }
 
-html.athar-staging-redesign #tab-departments .usr-row__name {
-  font-size: 13.5px;
+html.athar-staging-redesign #tab-departments .usr-person__name {
+  margin: 0;
+  font-size: 16px;
   font-weight: 700;
+  line-height: 1.25;
   color: var(--usr-ink);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-html.athar-staging-redesign #tab-departments .usr-row__meta {
-  margin-top: 2px;
-  font-size: 11.5px;
-  color: var(--usr-muted);
+html.athar-staging-redesign #tab-departments .usr-person__role {
+  margin: 3px 0 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--usr-mute);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  direction: ltr;
-  text-align: start;
-  unicode-bidi: plaintext;
 }
 
-html.athar-staging-redesign #tab-departments .usr-row__emp {
-  font-family: ui-monospace, "JetBrains Mono", Menlo, monospace;
+html.athar-staging-redesign #tab-departments .usr-person__detail {
+  margin: 2px 0 0;
   font-size: 12.5px;
-  font-variant-numeric: tabular-nums;
-  color: var(--usr-muted);
-}
-
-html.athar-staging-redesign #tab-departments .usr-row__branch,
-html.athar-staging-redesign #tab-departments .usr-row__mail {
-  font-size: 12.5px;
-  color: var(--usr-muted);
+  font-weight: 400;
+  color: var(--usr-faint);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  min-width: 0;
 }
 
-html.athar-staging-redesign #tab-departments .usr-row__mail {
-  direction: ltr;
-  text-align: start;
+html.athar-staging-redesign #tab-departments .usr-person__detail[dir="ltr"] {
   unicode-bidi: plaintext;
+  text-align: start;
 }
 
-html.athar-staging-redesign #tab-departments .usr-row__acts {
+html.athar-staging-redesign #tab-departments .usr-person__acts {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  justify-content: flex-end;
+  opacity: 0.55;
+  transition: opacity 160ms var(--usr-ease);
 }
 
-html.athar-staging-redesign #tab-departments .usr-row__act {
+html.athar-staging-redesign #tab-departments .usr-person:hover .usr-person__acts,
+html.athar-staging-redesign #tab-departments .usr-person:focus-within .usr-person__acts {
+  opacity: 1;
+}
+
+html.athar-staging-redesign #tab-departments .usr-person__act {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 36px;
-  padding: 0 10px;
-  border: 1px solid var(--usr-line);
-  border-radius: var(--usr-radius);
-  background: var(--usr-paper);
-  color: var(--usr-ink);
+  min-height: 40px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--usr-mute);
   font: inherit;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 150ms var(--usr-ease), border-color 150ms var(--usr-ease);
+  transition: background 150ms var(--usr-ease), color 150ms var(--usr-ease);
 }
 
-html.athar-staging-redesign #tab-departments .usr-row__act:hover {
-  border-color: var(--usr-ink);
-  background: var(--usr-wash);
+html.athar-staging-redesign #tab-departments .usr-person__act:hover {
+  background: var(--usr-fog);
+  color: var(--usr-ink);
 }
 
-html.athar-staging-redesign #tab-departments .usr-row__act:focus-visible {
+html.athar-staging-redesign #tab-departments .usr-person__act:focus-visible {
   outline: 2px solid var(--usr-ink);
   outline-offset: 2px;
-}
-
-html.athar-staging-redesign #tab-departments .usr-row__act--danger {
-  color: var(--usr-ink);
-  opacity: 0.72;
-}
-
-html.athar-staging-redesign #tab-departments .usr-row__act--danger:hover {
   opacity: 1;
+}
+
+html.athar-staging-redesign #tab-departments .usr-person__act--danger:hover {
+  color: var(--usr-ink);
   background: color-mix(in srgb, var(--usr-ink) 8%, transparent);
 }
 
-/* empty / skeleton */
+/* empty */
 html.athar-staging-redesign #tab-departments .usr-empty {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: 220px;
-  padding: 32px 16px;
+  min-height: 240px;
+  padding: 40px 20px;
   text-align: center;
 }
 
 html.athar-staging-redesign #tab-departments .usr-empty__title {
   margin: 0;
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 700;
   color: var(--usr-ink);
 }
 
 html.athar-staging-redesign #tab-departments .usr-empty__hint {
   margin: 0;
-  font-size: 13px;
-  color: var(--usr-muted);
-  max-width: 36ch;
+  font-size: 14px;
+  color: var(--usr-mute);
+  max-width: 32ch;
+  line-height: 1.5;
 }
 
 html.athar-staging-redesign #tab-departments .usr-empty__cta {
-  margin-top: 8px;
+  margin-top: 10px;
   display: inline-flex;
   align-items: center;
   gap: 8px;
   min-height: 44px;
-  padding: 0 16px;
-  border: 1px solid var(--usr-ink);
-  border-radius: var(--usr-radius);
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
   background: var(--usr-ink);
   color: var(--usr-paper);
   font: inherit;
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 13.5px;
+  font-weight: 600;
   cursor: pointer;
 }
 
 html.athar-staging-redesign #tab-departments .usr-skel {
-  padding: 12px 16px;
+  padding: 12px;
   display: grid;
   gap: 10px;
 }
 
 html.athar-staging-redesign #tab-departments .usr-skel__row {
-  height: 40px;
-  background: linear-gradient(90deg, var(--usr-wash), color-mix(in srgb, var(--usr-ink) 6%, var(--usr-wash)), var(--usr-wash));
+  height: 68px;
+  border-radius: 14px;
+  background: linear-gradient(
+    90deg,
+    var(--usr-fog),
+    color-mix(in srgb, var(--usr-ink) 5%, var(--usr-fog)),
+    var(--usr-fog)
+  );
   background-size: 200% 100%;
-  animation: usrSkel 1.1s linear infinite;
+  animation: usrSkel 1.15s linear infinite;
 }
 
 @keyframes usrSkel {
@@ -660,76 +705,43 @@ html.athar-staging-redesign #tab-departments .usr-skel__row {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  html.athar-staging-redesign #tab-departments .usr-skel__row {
-    animation: none;
+  html.athar-staging-redesign #tab-departments .usr-skel__row,
+  html.athar-staging-redesign #tab-departments .usr-board__hero,
+  html.athar-staging-redesign #tab-departments .usr-board__find,
+  html.athar-staging-redesign #tab-departments .usr-roles,
+  html.athar-staging-redesign #tab-departments .usr-board__stage {
+    animation: none !important;
   }
-  html.athar-staging-redesign #tab-departments .usr-row {
-    animation: none;
-  }
 }
 
-/* hide legacy colored role pills / table chrome on this page */
-html.athar-staging-redesign #tab-departments .rd-desk-table,
-html.athar-staging-redesign #tab-departments .rd-usr,
-html.athar-staging-redesign #tab-departments .rd-desk-role,
-html.athar-staging-redesign #tab-departments .users-io-group--desk,
-html.athar-staging-redesign #tab-departments .users-filters-toolbar:not(.usr-board__command),
-html.athar-staging-redesign #tab-departments .users-controls {
-  display: none !important;
-}
-
-html.athar-staging-redesign #tab-departments .users-io-menu {
-  position: absolute;
-  inset-inline-end: 0;
-  top: calc(100% + 4px);
-  z-index: 30;
-  min-width: 180px;
-  background: var(--usr-paper);
-  border: 1px solid var(--usr-line);
-  box-shadow: 0 8px 24px color-mix(in srgb, var(--usr-ink) 12%, transparent);
-}
-
-html.athar-staging-redesign #tab-departments .users-io-menu-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  min-height: 40px;
-  padding: 8px 12px;
-  border: 0;
-  background: transparent;
-  color: var(--usr-ink);
-  font: inherit;
-  font-size: 13px;
+html.athar-staging-redesign #tab-departments .usr-board__add,
+html.athar-staging-redesign #tab-departments .usr-roles__btn,
+html.athar-staging-redesign #tab-departments .usr-person__act,
+html.athar-staging-redesign #tab-departments .usr-seg,
+html.athar-staging-redesign #tab-departments .usr-tool {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
   cursor: pointer;
-  text-align: start;
 }
 
-html.athar-staging-redesign #tab-departments .users-io-menu-item:hover {
-  background: var(--usr-wash);
-}
-
-/* ── mobile: horizontal role chips + compact rows ── */
+/* ── mobile ── */
 
 html.athar-staging-redesign.mr-mobile-ui #tab-departments.tab-content.active {
-  padding: 12px 12px 10px !important;
+  padding: 16px 14px 12px !important;
   box-sizing: border-box !important;
-  background: var(--usr-wash) !important;
 }
 
 html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-board {
-  flex: 1 1 auto !important;
-  min-height: 0 !important;
+  max-width: none;
 }
 
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-board__masthead {
-  padding: 4px 2px 10px;
-  margin-bottom: 0;
-  border-bottom-width: 1px;
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-board__hero {
+  align-items: flex-start;
+  padding-bottom: 16px;
 }
 
 html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-board__title {
-  font-size: 1.35rem;
+  font-size: 1.75rem;
 }
 
 html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-board__add span {
@@ -742,114 +754,37 @@ html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-board__add {
   justify-content: center;
 }
 
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-board__command {
-  padding: 10px 0;
-  gap: 8px;
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-board__search {
+  min-height: 48px;
+  flex: 1 1 100%;
 }
 
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-board__body,
-html.athar-staging-redesign.mr-mobile-ui #tab-departments #usersDeskHost {
-  display: flex !important;
-  flex-direction: column !important;
-  grid-template-columns: none !important;
-  border: 0;
-  background: transparent;
-  gap: 8px;
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-person {
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  gap: 12px;
+  padding: 12px;
 }
 
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-rail {
-  flex-direction: row;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  overflow-y: hidden;
-  gap: 6px;
-  padding: 0 0 8px;
-  border: 0;
-  background: transparent;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-person__av {
+  width: 44px;
+  height: 44px;
+  font-size: 15px;
 }
 
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-rail::-webkit-scrollbar {
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-person__name {
+  font-size: 15px;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-person__act span {
   display: none;
 }
 
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-rail__label {
-  display: none;
-}
-
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-rail__btn {
-  flex: 0 0 auto;
-  width: auto;
-  min-height: 36px;
-  padding: 6px 12px;
-  border: 1px solid var(--usr-line);
-  background: var(--usr-paper);
-  gap: 8px;
-}
-
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-rail__btn.is-active {
-  border-color: var(--usr-ink);
-}
-
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-roster-shell {
-  border: 1px solid var(--usr-line);
-  background: var(--usr-paper) !important;
-  flex: 1 1 auto !important;
-}
-
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-row {
-  grid-template-columns: 36px minmax(0, 1fr) auto;
-  grid-template-areas:
-    "av who acts"
-    "av emp acts"
-    "av branch acts";
-  gap: 4px 10px;
-  padding: 12px 12px;
-  min-height: 0;
-}
-
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-row__av { grid-area: av; align-self: start; }
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-row__who { grid-area: who; }
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-row__emp {
-  grid-area: emp;
-  font-size: 11.5px;
-}
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-row__branch {
-  grid-area: branch;
-  font-size: 11.5px;
-}
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-row__mail {
-  display: none;
-}
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-row__acts {
-  grid-area: acts;
-  flex-direction: column;
-  align-items: stretch;
-}
-
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-row__act span {
-  display: none;
-}
-
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-row__act {
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-person__act {
   width: 40px;
-  min-height: 40px;
   justify-content: center;
   padding: 0;
 }
 
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-sec {
-  padding: 10px 12px 8px;
-}
-
-/* touch */
-html.athar-staging-redesign #tab-departments .usr-rail__btn,
-html.athar-staging-redesign #tab-departments .usr-row__act,
-html.athar-staging-redesign #tab-departments .usr-seg,
-html.athar-staging-redesign #tab-departments .usr-tool,
-html.athar-staging-redesign #tab-departments .usr-board__add {
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-  cursor: pointer;
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-person__acts {
+  flex-direction: column;
 }
