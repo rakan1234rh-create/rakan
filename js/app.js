@@ -21,6 +21,11 @@
       const ATHAR_SW_URL = './sw.js?v=12';
 
       /** رابط النشر — روابط استعادة كلمة المرور من file:// أو localhost */
+      /** بيئة الواجهة: staging يظهر شريط «نسخة تجريبية» على مضيفي الاختبار فقط */
+      const ATHAR_ENV = (typeof window !== 'undefined' && window.ATHAR_ENV === 'staging')
+        ? 'staging'
+        : 'production';
+
       const ATHAR_PUBLIC_ORIGIN = 'https://athar-app.online';
 
       // 📁 Cloudflare Worker اختياري (مسار عارض/تحميل قديم)
@@ -81,7 +86,8 @@
       function isPublicDeployHost() {
         const h = (location.hostname || '').toLowerCase();
         return h === 'github.io' || h.endsWith('.github.io')
-          || h === 'athar-app.online' || h.endsWith('.athar-app.online');
+          || h === 'athar-app.online' || h.endsWith('.athar-app.online')
+          || h.endsWith('.pages.dev');
       }
 
       /** فتح الملف مباشرة من القرص (بدون http) — لا يوجد /config ولا R2 */

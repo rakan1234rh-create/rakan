@@ -17,9 +17,11 @@
 
 لا يحذف هذا التغيير فرع `staging` أو تاريخه أو بياناته. لكنه لا يجعل الفرع قناة نشر للنطاق الرسمي.
 
-فحص القراءة فقط لإعداد GitHub الحالي وجد أن Environment `github-pages` يسمح بفرعين: `main` و`staging`. لذلك يلزم مالك المستودع، بعد مراجعة التغيير وقبل release، أن يحذف سياسة فرع `staging` من **Settings → Environments → github-pages → Deployment branches** ويُبقي `main` فقط. لا يُنشأ هذا الإجراء من هذا العمل، ولا توجد موافقة GitHub أُنشئت هنا.
+**قناة staging الحالية للواجهة فقط:** مشروع Cloudflare Pages اسمه `athar-staging` على [https://athar-staging.pages.dev](https://athar-staging.pages.dev) (فرع Git = `staging`). التفاصيل وخطوات الترقية في [`docs/STAGING.md`](./STAGING.md). لا يُعاد مسار `/staging/` على `athar-app.online`.
 
-هذا الإعداد مهم لأن نسخة workflow القديمة الموجودة في فرع `staging` قد تُشغّل يدوياً من ذلك الفرع ما دام Environment يسمح به. بعد تعديل policy، لا يستطيع هذا المسار نشر artifact إلى Environment Pages الرسمي. لا تحذف الفرع ولا تعِد استخدامه على نفس النطاق؛ إن لزم اختبار staging مستقبلاً، خصص نطاقاً وEnvironment ومشروع Supabase منفصلين.
+فحص القراءة فقط لإعداد GitHub الحالي وجد أن Environment `github-pages` يسمح بفرعين: `main` و`staging`. لذلك يلزم مالك المستودع أن يحذف سياسة فرع `staging` من **Settings → Environments → github-pages → Deployment branches** ويُبقي `main` فقط. لا يُنشأ هذا الإجراء من هذا العمل، ولا توجد موافقة GitHub أُنشئت هنا.
+
+هذا الإعداد مهم لأن نسخة workflow قديمة على فرع `staging` كانت قد تنشر إلى Environment Pages الرسمي. بعد تعديل policy، لا يستطيع ذلك المسار الكتابة على النطاق الرسمي. لا تحذف فرع `staging`؛ استخدمه فقط مع Cloudflare Pages كما في `docs/STAGING.md`.
 
 ## حماية GitHub المطلوبة قبل تفعيل SQL أو النشر
 
