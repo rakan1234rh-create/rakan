@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="light" class="athar-staging-redesign mr-desktop-ui mr-users-tab-active">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ATHAR — معاينة صفحة المستخدمين</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+  <link rel="stylesheet" href="styles/custom/main.css" />
+  <link rel="stylesheet" href="styles/custom/athar-users-redesign.css?v=usr6" />
+  <style>
+    :root {
+      --font: 'IBM Plex Sans Arabic', 'Segoe UI', Tahoma, Arial, sans-serif;
+      --mr-primary: #0f1224;
+      --mr-bg: #ffffff;
+      --mr-bg-2: #f5f5f7;
+      --mr-surface: #ffffff;
+      --mr-border: #e2e2e6;
+      --mr-text: #131316;
+      --mr-text-2: #5c5c66;
+      --mr-text-3: #8e8e93;
+      --bg: var(--mr-bg);
+      --surface: var(--mr-surface);
+      --surface2: var(--mr-bg-2);
+      --border: var(--mr-border);
+      --text: var(--mr-text);
+      --text2: var(--mr-text-2);
+      --text3: var(--mr-text-3);
+      --searchFill: #ededf0;
+    }
+    html[data-theme="dark"] {
+      --mr-primary: #52586b;
+      --mr-bg: #131316;
+      --mr-bg-2: #1c1c21;
+      --mr-surface: #1c1c21;
+      --mr-border: #2e2e36;
+      --mr-text: #f2f2f4;
+      --mr-text-2: #b0b0b8;
+      --mr-text-3: #7d7d86;
+      --searchFill: #25252c;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: var(--font);
+      background: var(--mr-bg-2);
+      color: var(--mr-text);
+      min-height: 100vh;
+    }
+    html, body { height: 100%; }
+    #appWrap { min-height: 100vh; height: 100%; display: flex; flex-direction: column; }
+    .topbar {
+      height: 56px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 18px;
+      background: var(--mr-surface);
+      border-bottom: 1px solid var(--mr-border);
+      flex-shrink: 0;
+    }
+    .brand-icon img { width: 34px; height: 34px; object-fit: contain; display: block; }
+    .brand-name { font-weight: 700; letter-spacing: -0.03em; font-size: 15px; }
+    .main { flex: 1 1 auto; min-height: 0; height: 0; display: flex; flex-direction: column; }
+    .content { flex: 1 1 auto; min-height: 0; height: 0; padding: 12px 14px 18px; display: flex; flex-direction: column; overflow: hidden; }
+    html.mr-desktop-ui .content { padding: 0; }
+    .tab-content { display: none; }
+    .tab-content.active { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; height: 0; overflow: hidden; }
+    #tab-departments .panel.wf-panel { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; height: 0; overflow: hidden; }
+    #usersDeskHost { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; overflow: hidden; }
+    #usersList.rd-usr-list { overflow: auto; flex: 1 1 auto; min-height: 0; -webkit-overflow-scrolling: touch; padding-bottom: 12px; }
+    .wf-status-trigger {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 0 12px; border: 1px solid var(--border); border-radius: 12px;
+      background: var(--surface); color: var(--text); font: inherit; cursor: pointer;
+    }
+    .wf-status-select-native { position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; }
+    .wf-status-menu { display: none; }
+    .rp-tool-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 12px; min-height: 42px; border-radius: 12px;
+      border: 1px solid var(--border); background: var(--surface);
+      color: var(--text); font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;
+    }
+    .rp-tool-btn-primary { background: var(--text); color: var(--surface); border-color: var(--text); }
+    html[data-theme="dark"] .rp-tool-btn-primary { color: #131316; }
+    .figma-search-input { border: 0; outline: 0; background: transparent; width: 100%; font: inherit; color: inherit; }
+    .figma-search-wrap { display: flex; align-items: center; }
+    .users-io-mob-wrap { display: none; }
+    html.mr-mobile-ui .users-io-mob-wrap { display: block; }
+    html.mr-mobile-ui .users-io-group--desk { display: none !important; }
+    .rd-desk-menu { position: relative; }
+    .rd-desk-menu__btn {
+      width: 30px; height: 30px; border-radius: 9px; border: 1px solid var(--border);
+      background: transparent; color: var(--text2); cursor: pointer;
+    }
+    .rd-desk-menu__pop { display: none; }
+    .theme-toggle {
+      margin-inline-start: auto; border: 1px solid var(--border); background: transparent;
+      color: var(--text); border-radius: 999px; padding: 6px 12px; font: inherit; cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div id="appWrap" class="rbac-ready">
+    <header class="topbar">
+      <div class="brand-icon wefaq-logo-slot">
+        <img class="wefaq-app-logo--athar" src="../../icons/athar-logo-v403.png" alt="ATHAR" width="34" height="34" />
+      </div>
+      <div class="brand-name">أثر</div>
+      <button type="button" class="theme-toggle" id="themeToggle">وضع داكن</button>
+    </header>
+    <div class="main">
+      <div class="content">
+        <div class="tab-content active" id="tab-departments">
+          <div class="panel wf-panel">
+            <div class="wf-panel-banner users-panel-banner">
+              <div class="wf-panel-intro">
+                <h2 class="wf-panel-title">إدارة المستخدمين</h2>
+                <p class="wf-panel-sub">دليل الحسابات والأدوار والصلاحيات</p>
+              </div>
+              <div class="users-head-meta" aria-live="polite">
+                <span>النتائج</span>
+                <strong id="users-count-desk">6</strong>
+              </div>
+            </div>
+            <div id="usersDeskHost" class="wf-desk-tickets-host">
+              <div class="users-controls">
+                <div class="users-filters-row">
+                  <div class="toolbar wf-toolbar users-toolbar users-filters-toolbar">
+                    <div class="figma-search-wrap wf-search">
+                      <input type="search" class="figma-search-input" id="user-search"
+                        placeholder="ابحث بالاسم، الرقم الوظيفي، البريد، الجوال" value="" />
+                    </div>
+                    <div class="wf-status-filter user-role-dd">
+                      <button type="button" class="wf-status-trigger" aria-label="فلتر الأدوار">
+                        <span class="wf-status-trigger__label">كل الأدوار</span>
+                        <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                      </button>
+                    </div>
+                    <div class="users-filter-chips users-filter-chips--desk" role="group" aria-label="حالة الحساب">
+                      <button type="button" class="users-chip is-active">النشطون</button>
+                      <button type="button" class="users-chip">الكل</button>
+                    </div>
+                    <div class="users-io-mob-wrap">
+                      <button type="button" class="rp-tool-btn users-io-more-btn"><i class="fas fa-file-export"></i></button>
+                    </div>
+                    <div class="users-io-group users-io-group--desk">
+                      <button type="button" class="rp-tool-btn users-io-btn"><i class="fas fa-file-export"></i><span>تصدير المفلتر</span></button>
+                      <button type="button" class="rp-tool-btn rp-tool-btn-primary users-io-btn"><i class="fas fa-user-plus"></i><span>إضافة مستخدم</span></button>
+                    </div>
+                  </div>
+                </div>
+                <div class="users-meta-row">
+                  <div class="wf-count">عدد النتائج: <strong id="users-count">6</strong></div>
+                  <div class="users-meta-actions users-filter-chips" role="group" aria-label="حالة الحساب">
+                    <button type="button" class="users-chip is-active">النشطون</button>
+                    <button type="button" class="users-chip">الكل</button>
+                  </div>
+                </div>
+              </div>
+              <div class="mr-users-list-wrap wf-table-wrap">
+                <div id="usersList" class="mr-users-list rd-usr-desk" role="list" aria-label="قائمة المستخدمين"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    const USERS = [
+      { name: 'نورة العتيبي', role: 'admin', roleLabel: 'مدير النظام', emp: '10001', branch: '—', phone: '0501112233', email: 'noura@athar.sa', active: true },
+      { name: 'خالد السبيعي', role: 'manager', roleLabel: 'المدير', emp: '10018', branch: 'الإدارة العامة', phone: '0559988776', email: 'khaled@athar.sa', active: true },
+      { name: 'سارة القحطاني', role: 'auditor', roleLabel: 'إدارة الرقابة الداخلية', emp: '10042', branch: '—', phone: '0533344556', email: 'sara@athar.sa', active: true },
+      { name: 'فهد الدوسري', role: 'supervisor', roleLabel: 'المشرف', emp: '10105', branch: 'فرع الرياض', phone: '0541122334', email: 'fahad@athar.sa', active: true },
+      { name: 'ريم الحربي', role: 'branch_manager', roleLabel: 'مدير الفرع', emp: '10220', branch: 'فرع جدة', phone: '0566677889', email: 'reem@athar.sa', active: true },
+      { name: 'عبدالله الشمري', role: 'employee', roleLabel: 'أخصائي مبيعات', emp: '10331', branch: 'فرع الدمام', phone: '0590011223', email: 'abdullah@athar.sa', active: true }
+    ];
+
+    function deskHTML() {
+      const head = `<div class="rd-desk-table rd-desk-table--users" role="table">
+        <div class="rd-desk-table__head" role="row">
+          <span role="columnheader">الموظف</span>
+          <button type="button" class="rd-desk-sort is-active" role="columnheader">الرقم الوظيفي<i class="fas fa-sort-up" aria-hidden="true"></i></button>
+          <span role="columnheader">الدور</span>
+          <span role="columnheader">الفرع</span>
+          <span role="columnheader">الهاتف</span>
+          <span role="columnheader">البريد</span>
+          <span role="columnheader">إجراءات</span>
+        </div>`;
+      const rows = USERS.map((u, i) => `
+        <div class="rd-desk-table__row" role="row" style="animation-delay:${Math.min(0.22, i * 0.028)}s">
+          <div class="rd-desk-user" role="cell">
+            <span class="rd-desk-user__av">${u.name.charAt(0)}<i class="rd-desk-user__dot is-on"></i></span>
+            <span class="rd-desk-user__name">${u.name}</span>
+          </div>
+          <span role="cell" class="rd-desk-mono">${u.emp}</span>
+          <span role="cell"><span class="rd-desk-role" data-role="${u.role}">${u.roleLabel}</span></span>
+          <span role="cell" class="rd-desk-muted rd-desk-clip">${u.branch}</span>
+          <span role="cell" class="rd-desk-phone"><span class="rd-desk-phone__val" dir="ltr">${u.phone}</span></span>
+          <span role="cell" class="rd-desk-muted rd-desk-clip">${u.email}</span>
+          <span role="cell"><div class="rd-desk-menu"><button type="button" class="rd-desk-menu__btn" aria-label="إجراءات"><i class="fas fa-ellipsis"></i></button></div></span>
+        </div>`).join('');
+      return head + rows + '</div>';
+    }
+
+    function mobHTML() {
+      return USERS.map((u, i) => `
+        <article class="rd-usr" role="listitem" style="animation-delay:${Math.min(0.22, i * 0.03)}s">
+          <span class="rd-usr__role" data-role="${u.role}">${u.roleLabel}</span>
+          <div class="rd-usr__head">
+            <div class="rd-usr__av-wrap">
+              <span class="rd-usr__av-fallback">${u.name.charAt(0)}</span>
+              <span class="rd-usr__dot is-on"></span>
+            </div>
+            <div class="rd-usr__body">
+              <div class="rd-usr__name">${u.name}</div>
+              <div class="rd-usr__rows">
+                <div class="rd-usr__row"><i class="fas fa-id-badge"></i>الرقم الوظيفي: ${u.emp}</div>
+                <div class="rd-usr__row"><i class="fas fa-phone"></i><span dir="ltr">${u.phone}</span></div>
+                <div class="rd-usr__row rd-usr__row--clip"><i class="fas fa-envelope"></i>${u.email}</div>
+                <div class="rd-usr__row"><i class="fas fa-location-dot"></i>${u.branch}</div>
+              </div>
+            </div>
+          </div>
+          <div class="rd-usr__actions">
+            <button type="button" class="rd-usr__btn"><i class="fas fa-pen"></i>تعديل</button>
+            <button type="button" class="rd-usr__btn rd-usr__btn--danger"><i class="fas fa-trash"></i>تعطيل</button>
+          </div>
+        </article>`).join('');
+    }
+
+    function applyMode() {
+      const params = new URLSearchParams(location.search);
+      const theme = params.get('theme') === 'dark' ? 'dark' : 'light';
+      const mobile = params.get('mobile') === '1';
+      document.documentElement.setAttribute('data-theme', theme);
+      document.documentElement.classList.toggle('mr-desktop-ui', !mobile);
+      document.documentElement.classList.toggle('mr-mobile-ui', mobile);
+      document.documentElement.classList.add('mr-users-tab-active', 'athar-staging-redesign');
+      document.getElementById('appWrap')?.classList.add('rbac-ready');
+      const list = document.getElementById('usersList');
+      if (mobile) {
+        list.className = 'mr-users-list users-grid--mob-list rd-usr-list';
+        list.innerHTML = mobHTML();
+      } else {
+        list.className = 'mr-users-list rd-usr-desk';
+        list.innerHTML = deskHTML();
+      }
+      const btn = document.getElementById('themeToggle');
+      btn.textContent = theme === 'dark' ? 'وضع فاتح' : 'وضع داكن';
+      btn.onclick = () => {
+        const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        const q = new URLSearchParams(location.search);
+        q.set('theme', next);
+        location.search = q.toString();
+      };
+    }
+    applyMode();
+  </script>
+</body>
+</html>

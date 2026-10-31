@@ -1,4 +1,40 @@
-/* ATHAR Production — المستخدمين / users (desktop #tab-departments) */
+/* ATHAR — صفحة المستخدمين (أبيض/أسود، فاتح/داكن، RTL) */
+
+html.athar-staging-redesign #tab-departments {
+  --usr-ink: var(--text, var(--mr-text, #131316));
+  --usr-muted: var(--text2, var(--mr-text-2, #5c5c66));
+  --usr-faint: var(--text3, var(--mr-text-3, #8e8e93));
+  --usr-paper: var(--surface, var(--mr-surface, #ffffff));
+  --usr-wash: var(--surface2, var(--mr-bg-2, #f5f5f7));
+  --usr-line: var(--border, var(--mr-border, #e2e2e6));
+  --usr-search: var(--searchFill, var(--usr-wash));
+  --usr-shadow: 0 1px 0 color-mix(in srgb, var(--usr-ink) 6%, transparent);
+  --usr-focus: color-mix(in srgb, var(--usr-ink) 28%, transparent);
+  --usr-danger: color-mix(in srgb, var(--usr-ink) 72%, transparent);
+  --usr-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html.athar-staging-redesign[data-theme="dark"] #tab-departments {
+  --usr-shadow: 0 1px 0 color-mix(in srgb, #fff 7%, transparent);
+  --usr-focus: color-mix(in srgb, #fff 32%, transparent);
+  --usr-danger: color-mix(in srgb, #fff 78%, transparent);
+}
+
+@keyframes atharUsrIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.athar-staging-redesign #tab-departments *,
+  html.athar-staging-redesign #tab-departments *::before,
+  html.athar-staging-redesign #tab-departments *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ── desktop shell ── */
 
 html.athar-staging-redesign.mr-desktop-ui .main:has(#tab-departments.active),
 html.athar-staging-redesign.mr-desktop-ui #appWrap .main:has(#tab-departments.active) {
@@ -20,56 +56,8 @@ html.athar-staging-redesign.mr-desktop-ui .main:has(#tab-departments.active) .co
 }
 
 html.athar-staging-redesign.mr-desktop-ui #appWrap #tab-departments.tab-content.active {
-  padding: 24px 24px 16px !important;
+  padding: 22px 24px 14px !important;
   box-sizing: border-box !important;
-}
-html.athar-staging-redesign.mr-desktop-ui #tab-departments > .panel,
-html.athar-staging-redesign.mr-desktop-ui #tab-departments .wf-panel {
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  padding: 0 !important;
-}
-html.athar-staging-redesign.mr-desktop-ui #tab-departments .wf-panel-intro,
-html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-meta-row,
-html.athar-staging-redesign.mr-desktop-ui #tab-departments .wf-count {
-  display: none !important;
-}
-
-/* Keep add/import/export visible (staging hid the whole desk IO group) */
-html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-io-group--desk {
-  display: flex !important;
-  flex-wrap: wrap !important;
-  gap: 8px !important;
-  align-items: center !important;
-}
-
-@keyframes atharRdCardIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.rd-ticket-empty {
-  text-align: center;
-  padding: 36px 16px;
-  color: var(--text3);
-  font-size: 13px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  flex: 1 1 auto;
-  min-height: 0;
-}
-.rd-ticket-empty i {
-  display: block;
-  font-size: 22px;
-  margin-bottom: 10px;
-  opacity: 0.7;
-}
-
-/* ── desktop toolbar + host ── */
-
-html.athar-staging-redesign.mr-desktop-ui #tab-departments.tab-content.active {
   display: flex !important;
   flex-direction: column !important;
   flex: 1 1 0% !important;
@@ -79,12 +67,93 @@ html.athar-staging-redesign.mr-desktop-ui #tab-departments.tab-content.active {
   overflow: hidden !important;
 }
 
+html.athar-staging-redesign.mr-desktop-ui #tab-departments > .panel,
 html.athar-staging-redesign.mr-desktop-ui #tab-departments .wf-panel {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
   display: flex !important;
   flex-direction: column !important;
   flex: 1 1 0% !important;
   min-height: 0 !important;
   overflow: hidden !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .wf-panel-banner.users-panel-banner {
+  display: flex !important;
+  align-items: flex-end !important;
+  justify-content: space-between !important;
+  gap: 16px !important;
+  flex-wrap: wrap !important;
+  margin: 0 0 14px !important;
+  padding: 0 2px !important;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  flex-shrink: 0 !important;
+  animation: atharUsrIn 0.42s var(--usr-ease) both;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .wf-panel-intro {
+  display: block !important;
+  min-width: 0 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .wf-panel-title {
+  margin: 0 !important;
+  font-family: var(--font) !important;
+  font-size: clamp(1.35rem, 2vw, 1.7rem) !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.03em !important;
+  color: var(--usr-ink) !important;
+  line-height: 1.15 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .wf-panel-sub {
+  display: block !important;
+  margin: 6px 0 0 !important;
+  font-family: var(--font) !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.01em !important;
+  text-transform: none !important;
+  color: var(--usr-muted) !important;
+  line-height: 1.4 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-meta-row {
+  display: none !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-filter-chips--desk {
+  display: none !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-head-meta {
+  display: inline-flex !important;
+  align-items: baseline !important;
+  gap: 8px !important;
+  flex-shrink: 0 !important;
+  color: var(--usr-muted) !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-head-meta strong {
+  font-variant-numeric: tabular-nums !important;
+  font-family: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace !important;
+  font-size: 1.35em !important;
+  font-weight: 600 !important;
+  color: var(--usr-ink) !important;
+  letter-spacing: -0.02em !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-io-group--desk {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  align-items: center !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #tab-departments #usersDeskHost {
@@ -94,16 +163,6 @@ html.athar-staging-redesign.mr-desktop-ui #tab-departments #usersDeskHost {
   min-height: 0 !important;
   overflow: hidden !important;
   visibility: visible !important;
-}
-
-html.athar-staging-redesign.mr-desktop-ui #tab-departments #usersList {
-  display: flex !important;
-  flex-direction: column !important;
-  visibility: visible !important;
-  flex: 1 1 0% !important;
-  min-height: 0 !important;
-  height: 100% !important;
-  overflow: hidden !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-controls {
@@ -117,27 +176,34 @@ html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-filters-toolba
   gap: 10px !important;
   align-items: center !important;
   flex-shrink: 0 !important;
-  margin: 0 0 14px !important;
+  margin: 0 0 12px !important;
 }
 
-/* ┘å┘ü╪│ ╪┤╪▒┘è╪╖ ╪¿╪¡╪½ ╪╡┘ü╪¡╪⌐ ╪º┘ä╪¼╪»╪º┘ê┘ä */
 html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-filters-toolbar .wf-search,
 html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-filters-toolbar .figma-search-wrap {
   display: flex !important;
   align-items: center !important;
   gap: 8px !important;
-  max-width: 320px !important;
-  width: 320px !important;
-  flex: 0 0 320px !important;
+  max-width: 360px !important;
+  width: min(360px, 100%) !important;
+  flex: 1 1 280px !important;
   min-width: 0 !important;
   height: auto !important;
-  min-height: 0 !important;
+  min-height: 42px !important;
   padding: 10px 14px !important;
-  background: var(--searchFill) !important;
-  border: none !important;
-  border-radius: 10px !important;
+  background: var(--usr-search) !important;
+  border: 1px solid transparent !important;
+  border-radius: 12px !important;
   box-shadow: none !important;
   direction: rtl !important;
+  transition: border-color 0.18s ease, background 0.18s ease !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-filters-toolbar .wf-search:focus-within,
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-filters-toolbar .figma-search-wrap:focus-within {
+  border-color: color-mix(in srgb, var(--usr-ink) 22%, transparent) !important;
+  background: var(--usr-paper) !important;
+  box-shadow: 0 0 0 3px var(--usr-focus) !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-filters-toolbar .wf-search::before,
@@ -145,7 +211,7 @@ html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-filters-toolba
   content: "\f002" !important;
   font-family: "Font Awesome 6 Free" !important;
   font-weight: 900 !important;
-  color: var(--text3) !important;
+  color: var(--usr-faint) !important;
   font-size: 12px !important;
   flex-shrink: 0 !important;
   line-height: 1 !important;
@@ -163,29 +229,86 @@ html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-filters-toolba
   min-height: 0 !important;
   height: auto !important;
   padding: 0 !important;
-  font-size: 12.5px !important;
+  font-size: 13px !important;
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
   outline: none !important;
   text-align: start !important;
+  color: var(--usr-ink) !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-filters-toolbar .figma-search-input::placeholder {
-  font-size: 12.5px !important;
-  color: var(--text3) !important;
+  font-size: 13px !important;
+  color: var(--usr-faint) !important;
   opacity: 1 !important;
   letter-spacing: 0 !important;
 }
 
-/* ── users desktop table ── */
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .user-role-dd .wf-status-trigger,
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-status-dd .wf-status-trigger {
+  min-height: 42px !important;
+  border-radius: 12px !important;
+  border: 1px solid var(--usr-line) !important;
+  background: var(--usr-paper) !important;
+  color: var(--usr-ink) !important;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .user-role-dd .wf-status-trigger:focus-visible,
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-status-dd .wf-status-trigger:focus-visible,
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-io-btn:focus-visible,
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .rd-desk-act:focus-visible,
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .rd-desk-menu__btn:focus-visible,
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .rd-usr__btn:focus-visible {
+  outline: 2px solid var(--usr-ink) !important;
+  outline-offset: 2px !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-filter-chips {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  flex-wrap: wrap !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-chip {
+  appearance: none;
+  border: 1px solid var(--usr-line);
+  background: transparent;
+  color: var(--usr-muted);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  min-height: 36px;
+  transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-chip.is-active {
+  background: var(--usr-ink);
+  border-color: var(--usr-ink);
+  color: var(--usr-paper);
+}
+
+html.athar-staging-redesign[data-theme="dark"].mr-desktop-ui #tab-departments .users-chip.is-active {
+  color: #131316;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-chip:focus-visible {
+  outline: 2px solid var(--usr-ink);
+  outline-offset: 2px;
+}
+
+/* ── desktop table ── */
 
 html.athar-staging-redesign.mr-desktop-ui #tab-departments #usersDeskHost.wf-desk-tickets-host,
 html.athar-staging-redesign.mr-desktop-ui #tab-departments .mr-users-list-wrap.wf-table-wrap,
 html.athar-staging-redesign.mr-desktop-ui #tab-departments #usersList.rd-usr-desk {
   background: transparent !important;
   border: none !important;
-  border-top: none !important;
   border-radius: 0 !important;
   box-shadow: none !important;
   outline: none !important;
@@ -212,8 +335,8 @@ html.athar-staging-redesign.mr-desktop-ui #tab-departments #usersList.rd-usr-des
 }
 
 html.athar-staging-redesign.mr-desktop-ui #tab-departments .rd-desk-table--users {
-  background: var(--surface) !important;
-  border: 1px solid var(--border) !important;
+  background: var(--usr-paper) !important;
+  border: 1px solid var(--usr-line) !important;
   border-radius: 16px !important;
   flex: 1 1 0% !important;
   min-height: 0 !important;
@@ -223,19 +346,13 @@ html.athar-staging-redesign.mr-desktop-ui #tab-departments .rd-desk-table--users
   overflow-y: auto !important;
   isolation: isolate !important;
   -webkit-overflow-scrolling: touch;
-}
-
-html.athar-staging-redesign.mr-desktop-ui .rd-desk-table:not(.rd-desk-table--users) {
-  background: var(--surface) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 16px !important;
-  overflow: hidden !important;
+  box-shadow: var(--usr-shadow) !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--users .rd-desk-table__head,
 html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--users .rd-desk-table__row {
   display: grid !important;
-  grid-template-columns: minmax(0, 1.5fr) minmax(0, 0.85fr) minmax(0, 0.9fr) minmax(0, 1.1fr) minmax(120px, 0.95fr) minmax(0, 1.2fr) 72px !important;
+  grid-template-columns: minmax(0, 1.55fr) minmax(0, 0.8fr) minmax(0, 0.95fr) minmax(0, 1.05fr) minmax(118px, 0.9fr) minmax(0, 1.2fr) 72px !important;
   gap: 10px !important;
   align-items: center !important;
   padding: 12px 16px !important;
@@ -269,19 +386,19 @@ html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--users .rd-desk-sort {
 
 html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--users .rd-desk-sort i {
   font-size: 9px !important;
-  color: var(--text3) !important;
+  color: var(--usr-faint) !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--users .rd-desk-sort.is-active i {
-  color: var(--text2) !important;
+  color: var(--usr-ink) !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui .rd-desk-table__head {
-  background: var(--surface2) !important;
+  background: var(--usr-wash) !important;
   background-clip: padding-box !important;
   font-size: 11.5px !important;
   font-weight: 700 !important;
-  color: var(--text2) !important;
+  color: var(--usr-muted) !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--users > .rd-desk-table__head {
@@ -289,15 +406,26 @@ html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--users > .rd-desk-table
   top: 0 !important;
   z-index: 4 !important;
   flex-shrink: 0 !important;
-  background: var(--surface2) !important;
+  background: var(--usr-wash) !important;
   border-start-start-radius: 15px !important;
   border-start-end-radius: 15px !important;
-  box-shadow: 0 1px 0 var(--border) !important;
+  box-shadow: 0 1px 0 var(--usr-line) !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui .rd-desk-table__row {
-  border-top: 1px solid var(--border) !important;
-  animation: atharRdCardIn .35s ease both;
+  border-top: 1px solid var(--usr-line) !important;
+  content-visibility: auto;
+  contain-intrinsic-size: 56px;
+  transition: background 0.15s ease;
+  animation: atharUsrIn 0.34s var(--usr-ease) both;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-table__row:hover {
+  background: color-mix(in srgb, var(--usr-ink) 3.5%, var(--usr-paper)) !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-table__row.is-inactive {
+  opacity: 0.62;
 }
 
 html.athar-staging-redesign.mr-desktop-ui .rd-desk-user {
@@ -310,11 +438,12 @@ html.athar-staging-redesign.mr-desktop-ui .rd-desk-user {
 
 html.athar-staging-redesign.mr-desktop-ui .rd-desk-user__av {
   position: relative !important;
-  width: 32px !important;
-  height: 32px !important;
+  width: 34px !important;
+  height: 34px !important;
   border-radius: 50% !important;
-  background: var(--surface2) !important;
-  color: var(--text2) !important;
+  background: var(--usr-wash) !important;
+  color: var(--usr-ink) !important;
+  border: 1px solid var(--usr-line) !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -330,49 +459,85 @@ html.athar-staging-redesign.mr-desktop-ui .rd-desk-user__dot {
   width: 9px !important;
   height: 9px !important;
   border-radius: 50% !important;
-  background: var(--text3) !important;
-  border: 2px solid var(--surface) !important;
+  background: var(--usr-faint) !important;
+  border: 2px solid var(--usr-paper) !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui .rd-desk-user__dot.is-on {
-  background: var(--success) !important;
+  background: var(--usr-ink) !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui .rd-desk-user__name {
-  font-size: 13px !important;
+  font-size: 13.5px !important;
   font-weight: 600 !important;
+  color: var(--usr-ink) !important;
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
   min-width: 0 !important;
 }
 
-html.athar-staging-redesign.mr-desktop-ui .rd-desk-role {
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-role,
+html.athar-staging-redesign #tab-departments .rd-usr__role,
+html.athar-staging-redesign #tab-departments .mr-user-card__role,
+html.athar-staging-redesign #tab-departments .user-mob-card__role {
   display: inline-flex !important;
   max-width: 100% !important;
+  align-items: center !important;
   padding: 4px 10px !important;
   border-radius: 999px !important;
-  font-size: 10.5px !important;
+  font-size: 11px !important;
   font-weight: 700 !important;
-  background: color-mix(in srgb, var(--rc, var(--gold)) 14%, transparent) !important;
-  color: var(--rc, var(--gold)) !important;
+  letter-spacing: -0.01em !important;
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
+  border: 1px solid var(--usr-line) !important;
+  background: var(--usr-wash) !important;
+  color: var(--usr-ink) !important;
+  /* تدرج رمادي حسب الدور — بلا ألوان */
+  --rc: transparent !important;
+}
+
+html.athar-staging-redesign #tab-departments .rd-desk-role[data-role="admin"],
+html.athar-staging-redesign #tab-departments .rd-usr__role[data-role="admin"] {
+  background: var(--usr-ink) !important;
+  border-color: var(--usr-ink) !important;
+  color: var(--usr-paper) !important;
+}
+
+html.athar-staging-redesign[data-theme="dark"] #tab-departments .rd-desk-role[data-role="admin"],
+html.athar-staging-redesign[data-theme="dark"] #tab-departments .rd-usr__role[data-role="admin"] {
+  color: #131316 !important;
+}
+
+html.athar-staging-redesign #tab-departments .rd-desk-role[data-role="manager"],
+html.athar-staging-redesign #tab-departments .rd-desk-role[data-role="auditor"],
+html.athar-staging-redesign #tab-departments .rd-usr__role[data-role="manager"],
+html.athar-staging-redesign #tab-departments .rd-usr__role[data-role="auditor"] {
+  background: color-mix(in srgb, var(--usr-ink) 14%, var(--usr-paper)) !important;
+  border-color: color-mix(in srgb, var(--usr-ink) 28%, var(--usr-line)) !important;
+}
+
+html.athar-staging-redesign #tab-departments .rd-desk-role[data-role="employee"],
+html.athar-staging-redesign #tab-departments .rd-usr__role[data-role="employee"] {
+  background: transparent !important;
+  font-weight: 600 !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui .rd-desk-mono {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
   font-size: 12px !important;
-  color: var(--text2) !important;
+  color: var(--usr-muted) !important;
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
+  font-variant-numeric: tabular-nums !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui .rd-desk-muted {
-  font-size: 12px !important;
-  color: var(--text2) !important;
+  font-size: 12.5px !important;
+  color: var(--usr-muted) !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui .rd-desk-clip {
@@ -393,7 +558,7 @@ html.athar-staging-redesign.mr-desktop-ui .rd-desk-phone {
   width: 100% !important;
   min-width: 0 !important;
   font-size: 12px !important;
-  color: var(--text2) !important;
+  color: var(--usr-muted) !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui .rd-desk-phone__val {
@@ -401,7 +566,7 @@ html.athar-staging-redesign.mr-desktop-ui .rd-desk-phone__val {
   direction: ltr !important;
   unicode-bidi: isolate !important;
   font-variant-numeric: tabular-nums !important;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
   font-size: 12px !important;
   letter-spacing: 0.01em !important;
   white-space: nowrap !important;
@@ -413,21 +578,50 @@ html.athar-staging-redesign.mr-desktop-ui .rd-desk-acts {
   justify-content: flex-end !important;
 }
 
-html.athar-staging-redesign.mr-desktop-ui .rd-desk-act {
-  width: 28px !important;
-  height: 28px !important;
-  border-radius: 8px !important;
-  border: 1px solid var(--border) !important;
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-act,
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-menu__btn {
+  width: 30px !important;
+  height: 30px !important;
+  border-radius: 9px !important;
+  border: 1px solid var(--usr-line) !important;
   background: transparent !important;
-  color: var(--text2) !important;
+  color: var(--usr-muted) !important;
   cursor: pointer !important;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease !important;
+}
+
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-act:hover,
+html.athar-staging-redesign.mr-desktop-ui .rd-desk-menu__btn:hover {
+  background: var(--usr-wash) !important;
+  color: var(--usr-ink) !important;
+  border-color: color-mix(in srgb, var(--usr-ink) 22%, var(--usr-line)) !important;
 }
 
 html.athar-staging-redesign.mr-desktop-ui .rd-desk-act--danger {
-  color: var(--danger) !important;
+  color: var(--usr-danger) !important;
 }
 
-/* ── mobile shell + rd-usr cards ── */
+.rd-ticket-empty {
+  text-align: center;
+  padding: 40px 16px;
+  color: var(--usr-faint, var(--text3));
+  font-size: 13px;
+  background: var(--usr-paper, var(--surface));
+  border: 1px dashed var(--usr-line, var(--border));
+  border-radius: 16px;
+  flex: 1 1 auto;
+  min-height: 0;
+  animation: atharUsrIn 0.4s var(--usr-ease, ease) both;
+}
+
+.rd-ticket-empty i {
+  display: block;
+  font-size: 22px;
+  margin-bottom: 10px;
+  opacity: 0.7;
+}
+
+/* ── mobile shell ── */
 
 html.athar-staging-redesign.mr-mobile-ui #tab-departments .panel.wf-panel {
   background: transparent !important;
@@ -435,28 +629,40 @@ html.athar-staging-redesign.mr-mobile-ui #tab-departments .panel.wf-panel {
   box-shadow: none !important;
   padding: 0 !important;
 }
+
 html.athar-staging-redesign.mr-mobile-ui #tab-departments .wf-panel-banner {
   padding: 0 !important;
   border: none !important;
   background: transparent !important;
   box-shadow: none !important;
+  animation: atharUsrIn 0.4s var(--usr-ease) both;
 }
+
 html.athar-staging-redesign.mr-mobile-ui #tab-departments .wf-panel-title {
-  font-size: 18px !important;
+  font-size: 1.35rem !important;
   font-weight: 700 !important;
-  color: var(--text) !important;
+  letter-spacing: -0.03em !important;
+  color: var(--usr-ink) !important;
   margin: 0 !important;
 }
+
 html.athar-staging-redesign.mr-mobile-ui #tab-departments .wf-panel-sub {
-  font-size: 10.5px !important;
-  color: var(--text3) !important;
-  letter-spacing: 0.08em !important;
-  text-transform: uppercase !important;
-  margin: 3px 0 16px !important;
+  font-size: 12.5px !important;
+  font-weight: 500 !important;
+  color: var(--usr-muted) !important;
+  letter-spacing: -0.01em !important;
+  text-transform: none !important;
+  margin: 4px 0 14px !important;
 }
+
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-head-meta {
+  display: none !important;
+}
+
 html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-io-group--desk {
   display: none !important;
 }
+
 html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-controls,
 html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-filters-row,
 html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-toolbar {
@@ -464,8 +670,9 @@ html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-toolbar {
   border: none !important;
   box-shadow: none !important;
   padding: 0 !important;
-  margin: 0 0 12px !important;
+  margin: 0 0 10px !important;
 }
+
 html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-toolbar {
   display: flex !important;
   flex-wrap: nowrap !important;
@@ -473,61 +680,119 @@ html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-toolbar {
   align-items: center !important;
   width: 100% !important;
 }
+
 html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-toolbar .figma-search-wrap {
   flex: 1 1 auto !important;
   min-width: 0 !important;
-  height: 40px !important;
-  background: var(--searchFill) !important;
+  height: 42px !important;
+  background: var(--usr-search) !important;
   padding: 0 14px !important;
+  border-radius: 12px !important;
+  border: 1px solid transparent !important;
 }
+
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-toolbar .figma-search-wrap:focus-within {
+  border-color: color-mix(in srgb, var(--usr-ink) 22%, transparent) !important;
+  box-shadow: 0 0 0 3px var(--usr-focus) !important;
+  background: var(--usr-paper) !important;
+}
+
 html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-toolbar .figma-search-input {
-  font-size: 11.5px !important;
+  font-size: 13px !important;
+  color: var(--usr-ink) !important;
 }
+
 html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-toolbar .figma-search-input::placeholder {
-  color: var(--text3) !important;
+  color: var(--usr-faint) !important;
 }
+
 html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-io-mob-wrap {
   flex: 0 0 auto !important;
 }
+
 html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-io-more-btn {
   width: 46px !important;
   min-width: 46px !important;
-  height: 41px !important;
+  height: 42px !important;
+  border-radius: 12px !important;
   align-items: center !important;
   justify-content: center !important;
 }
+
 html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-io-more-btn span {
   display: none !important;
 }
+
 html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-io-more-btn i {
   font-size: 13px !important;
   margin: 0 !important;
 }
+
 html.athar-staging-redesign.mr-mobile-ui #tab-departments .user-role-dd {
   flex: 0 0 auto !important;
   max-width: 42% !important;
 }
+
 html.athar-staging-redesign.mr-mobile-ui #tab-departments .wf-status-trigger {
-  height: 41px !important;
-  min-height: 41px !important;
+  height: 42px !important;
+  min-height: 42px !important;
   border-radius: 12px !important;
   padding: 0 12px !important;
   gap: 6px !important;
+  border: 1px solid var(--usr-line) !important;
+  background: var(--usr-paper) !important;
 }
+
 html.athar-staging-redesign.mr-mobile-ui #tab-departments .wf-status-trigger__ico {
   display: none !important;
 }
+
 html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-meta-row {
   margin: 0 0 10px !important;
   padding: 0 !important;
   border: none !important;
   background: transparent !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
 }
+
 html.athar-staging-redesign.mr-mobile-ui #tab-departments .wf-count {
-  font-size: 12px !important;
-  color: var(--text2) !important;
+  font-size: 12.5px !important;
+  color: var(--usr-muted) !important;
   margin: 0 !important;
 }
+
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-filter-chips {
+  display: inline-flex !important;
+  gap: 6px !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-chip {
+  appearance: none;
+  border: 1px solid var(--usr-line);
+  background: transparent;
+  color: var(--usr-muted);
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  min-height: 32px;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-chip.is-active {
+  background: var(--usr-ink);
+  border-color: var(--usr-ink);
+  color: var(--usr-paper);
+}
+
+html.athar-staging-redesign[data-theme="dark"].mr-mobile-ui #tab-departments .users-chip.is-active {
+  color: #131316;
+}
+
 html.athar-staging-redesign.mr-mobile-ui #tab-departments #usersDeskHost,
 html.athar-staging-redesign.mr-mobile-ui #tab-departments #usersDeskHost .mr-users-list-wrap {
   background: transparent !important;
@@ -536,47 +801,58 @@ html.athar-staging-redesign.mr-mobile-ui #tab-departments #usersDeskHost .mr-use
   padding: 0 !important;
   overflow: hidden !important;
 }
+
 html.athar-staging-redesign.mr-mobile-ui #tab-departments #usersList.rd-usr-list,
 html.athar-staging-redesign.mr-mobile-ui #tab-departments #usersList.users-grid--mob-list {
   display: flex !important;
   flex-direction: column !important;
-  gap: 10px !important;
+  gap: 8px !important;
   background: transparent !important;
 }
 
+/* بطاقات الجوال — دفتر أسماء رمادي */
 .rd-usr {
   position: relative;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  padding: 16px;
-  animation: atharRdCardIn 0.4s ease both;
+  background: var(--usr-paper, var(--surface));
+  border: 1px solid var(--usr-line, var(--border));
+  border-radius: 16px;
+  padding: 14px 14px 12px;
+  animation: atharUsrIn 0.36s var(--usr-ease, ease) both;
   direction: rtl;
+  content-visibility: auto;
+  contain-intrinsic-size: 140px;
+  transition: border-color 0.16s ease, transform 0.16s ease;
 }
+
+.rd-usr:active {
+  transform: scale(0.992);
+}
+
+.rd-usr.is-inactive {
+  opacity: 0.62;
+}
+
 .rd-usr__role {
   position: absolute;
-  top: 14px;
-  inset-inline-start: 14px;
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 10px;
-  font-weight: 700;
-  background: color-mix(in srgb, var(--rc, #8e8e93) 14%, transparent);
-  color: var(--rc, #8e8e93);
+  top: 12px;
+  inset-inline-start: 12px;
   z-index: 1;
 }
+
 .rd-usr__head {
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  margin-top: 28px;
+  margin-top: 26px;
 }
+
 .rd-usr__av-wrap {
   position: relative;
   width: 44px;
   height: 44px;
   flex-shrink: 0;
 }
+
 .rd-usr__av-fallback,
 .rd-usr__av-media {
   width: 44px;
@@ -586,11 +862,13 @@ html.athar-staging-redesign.mr-mobile-ui #tab-departments #usersList.users-grid-
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  background: var(--surface2);
-  color: var(--text2);
+  background: var(--usr-wash, var(--surface2));
+  color: var(--usr-ink, var(--text));
+  border: 1px solid var(--usr-line, var(--border));
   font-size: 14px;
   font-weight: 700;
 }
+
 .rd-usr__av-media img,
 .rd-usr__av-media .profile-hero__default-svg,
 .rd-usr__av-media svg {
@@ -599,6 +877,7 @@ html.athar-staging-redesign.mr-mobile-ui #tab-departments #usersList.users-grid-
   object-fit: cover;
   display: block;
 }
+
 .rd-usr__dot {
   position: absolute;
   bottom: 0;
@@ -606,65 +885,91 @@ html.athar-staging-redesign.mr-mobile-ui #tab-departments #usersList.users-grid-
   width: 11px;
   height: 11px;
   border-radius: 50%;
-  background: var(--text3);
-  border: 2px solid var(--surface);
+  background: var(--usr-faint, var(--text3));
+  border: 2px solid var(--usr-paper, var(--surface));
 }
-.rd-usr__dot.is-on { background: var(--success); }
-.rd-usr__body { flex: 1; min-width: 0; }
+
+.rd-usr__dot.is-on {
+  background: var(--usr-ink, var(--text));
+}
+
+.rd-usr__body {
+  flex: 1;
+  min-width: 0;
+}
+
 .rd-usr__name {
-  font-size: 14px;
+  font-size: 14.5px;
   font-weight: 700;
-  color: var(--text);
+  color: var(--usr-ink, var(--text));
   line-height: 1.3;
+  letter-spacing: -0.02em;
 }
+
 .rd-usr__rows {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  margin-top: 9px;
+  margin-top: 8px;
 }
+
 .rd-usr__row {
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 11.5px;
-  color: var(--text2);
+  font-size: 12px;
+  color: var(--usr-muted, var(--text2));
   min-width: 0;
 }
+
 .rd-usr__row i {
   width: 13px;
-  color: var(--text3);
+  color: var(--usr-faint, var(--text3));
   font-size: 11px;
   flex-shrink: 0;
   text-align: center;
 }
+
 .rd-usr__row--clip {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
 .rd-usr__actions {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-  margin-top: 14px;
-  padding-top: 12px;
-  border-top: 1px solid var(--border);
+  margin-top: 12px;
+  padding-top: 11px;
+  border-top: 1px solid var(--usr-line, var(--border));
 }
+
 .rd-usr__btn {
-  padding: 6px 12px;
-  border-radius: 9px;
-  border: 1px solid var(--border);
+  padding: 7px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--usr-line, var(--border));
   background: transparent;
-  color: var(--text2);
-  font-size: 11px;
+  color: var(--usr-muted, var(--text2));
+  font-size: 11.5px;
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 5px;
+  transition: background 0.15s ease, color 0.15s ease;
 }
-.rd-usr__btn i { font-size: 10px; }
-.rd-usr__btn--danger { color: var(--danger); }
-.rd-usr__btn:active { opacity: 0.88; }
+
+.rd-usr__btn:hover {
+  background: var(--usr-wash, var(--surface2));
+  color: var(--usr-ink, var(--text));
+}
+
+.rd-usr__btn i {
+  font-size: 10px;
+}
+
+.rd-usr__btn--danger {
+  color: var(--usr-danger, var(--text2));
+}

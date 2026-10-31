@@ -14780,12 +14780,39 @@
         return ROLE_LABELS[key] || roleOrUser;
       }
 
+      function getUsersStatusFilter() {
+        const mode = state._usersStatusFilter;
+        return mode === 'all' ? 'all' : 'active';
+      }
+
+      function setUsersStatusFilter(mode) {
+        const next = mode === 'all' ? 'all' : 'active';
+        if (next === 'all' && typeof canManageUsers === 'function' && !canManageUsers()) {
+          showToast('عرض المعطّلين يتطلب صلاحية إدارة المستخدمين.', 'warning');
+          return;
+        }
+        state._usersStatusFilter = next;
+        ['usersChipActive', 'usersChipActiveDesk'].forEach((id) => {
+          document.getElementById(id)?.classList.toggle('is-active', next === 'active');
+        });
+        ['usersChipAll', 'usersChipAllDesk'].forEach((id) => {
+          document.getElementById(id)?.classList.toggle('is-active', next === 'all');
+        });
+        renderUsers();
+      }
+
       function getFilteredUsersList() {
         const search = (document.getElementById('user-search')?.value || '').toLowerCase().trim();
         const roleFilter = document.getElementById('user-roleFilter')?.value || '';
+        const statusFilter = getUsersStatusFilter();
+        const roleFilterNorm = roleFilter ? normalizeUserRole(roleFilter) : '';
         return state.users.filter(u => {
-          if (!isActiveUser(u)) return false;
-          if (roleFilter && u.role !== roleFilter) return false;
+          if (statusFilter === 'active') {
+            if (!isActiveUser(u)) return false;
+          } else if (!u) {
+            return false;
+          }
+          if (roleFilterNorm && normalizeUserRole(u.role) !== roleFilterNorm) return false;
           if (search) {
             const manager = getUserDirectManager(u);
             const hay = [
@@ -14794,11 +14821,60 @@
               u.email,
               manager?.name,
               u.phone || '',
+              userTableRoleLabel(u),
             ].join(' ').toLowerCase();
             if (!hay.includes(search)) return false;
           }
           return true;
         });
+      }
+
+      /** معرّف آمن للسمات — يمنع حقن HTML/JS عبر onclick */
+      function safeUserDomId(id) {
+        const s = String(id == null ? '' : id);
+        if (!/^[0-9a-fA-F-]{8,64}$/.test(s) && !/^\d{1,18}$/.test(s)) return '';
+        return s;
+      }
+
+      function usersListAvatarMarkup(u) {
+        const base = buildUserListAvatarMarkup(u);
+        // صفحة المستخدمين: خلفية رمادية فقط (بدون ألوان الدور)
+        if (base.style && /linear-gradient|ROLE|#[0-9a-fA-F]{3,8}/.test(base.style)) {
+          return { ...base, style: 'background:var(--usr-wash,var(--surface2,var(--mr-bg-2)))' };
+        }
+        if (base.style && base.style.includes('background:') && !base.className.includes('has-avatar-photo')) {
+          return { ...base, style: 'background:var(--usr-wash,var(--surface2,var(--mr-bg-2)))' };
+        }
+        if (base.className.includes('has-avatar-photo') && base.style.includes('linear-gradient')) {
+          return { ...base, style: 'background:var(--usr-wash,var(--surface2,var(--mr-bg-2)))' };
+        }
+        return base;
+      }
+
+      const scheduleRenderUsers = debounce(() => {
+        try { renderUsers(); } catch (_) { /* noop */ }
+      }, 160);
+
+      function handleUsersListActionClick(ev) {
+        const btn = ev.target?.closest?.('[data-usr-act][data-user-id]');
+        if (!btn) return;
+        const inList = !!btn.closest?.('#usersList');
+        const inPortal = !!btn.closest?.('.rd-desk-menu__pop--portal');
+        if (!inList && !inPortal) return;
+        const act = btn.getAttribute('data-usr-act');
+        const uid = safeUserDomId(btn.getAttribute('data-user-id'));
+        if (!uid) return;
+        ev.preventDefault();
+        ev.stopPropagation();
+        try { closeAllRdActMenus(); } catch (_) { /* noop */ }
+        if (act === 'edit') editUser(uid);
+        else if (act === 'delete') deleteUser(uid);
+      }
+
+      function ensureUsersListActionDelegation() {
+        if (window._usrActDocBound) return;
+        window._usrActDocBound = true;
+        document.addEventListener('click', handleUsersListActionClick, true);
       }
 
       function csvEscapeCell(v) {
@@ -15133,9 +15209,8 @@
         const branch = state._branchById ? state._branchById.get(u.branch_id) : state.branches.find(b => b.id === u.branch_id);
         const roleKey = normalizeUserRole(u.role);
         const roleLabel = userTableRoleLabel(u);
-        const roleColor = ROLE_COLORS[roleKey] || ROLE_COLORS[u.role] || 'var(--mr-text-2)';
         const roleAfterName = roleLabel
-          ? `<span class="mr-user-card__role mr-user-card__role--${roleKey}" style="--rc:${roleColor}">${Sec.escapeHTML(roleLabel)}</span>`
+          ? `<span class="mr-user-card__role mr-user-card__role--${Sec.escapeHTML(roleKey)}" data-role="${Sec.escapeHTML(roleKey)}">${Sec.escapeHTML(roleLabel)}</span>`
           : '';
         const manager = getUserDirectManager(u);
         const empNum = padEmpNum(u.employee_number);
@@ -15146,16 +15221,18 @@
         if (manager?.name) subParts.push(`المدير مباشر: ${Sec.escapeHTML(manager.name)}`);
         if (branch) subParts.push(`الموقع: ${Sec.escapeHTML(branch.name)}`);
         const subLine = subParts.join(' · ');
-        const actions = canManage ? `
+        const uid = safeUserDomId(u.id);
+        const actions = (canManage && uid) ? `
           <div class="mr-user-card__actions">
-            <button type="button" class="mr-user-card__btn mr-user-card__btn--primary" onclick="editUser('${u.id}')">تعديل</button>
-            <button type="button" class="mr-user-card__btn mr-user-card__btn--icon mr-user-card__btn--danger" onclick="deleteUser('${u.id}')" aria-label="تعطيل" title="تعطيل"><i class="fas fa-trash" aria-hidden="true"></i></button>
+            <button type="button" class="mr-user-card__btn mr-user-card__btn--primary" data-usr-act="edit" data-user-id="${Sec.escapeHTML(uid)}">تعديل</button>
+            <button type="button" class="mr-user-card__btn mr-user-card__btn--icon mr-user-card__btn--danger" data-usr-act="delete" data-user-id="${Sec.escapeHTML(uid)}" aria-label="تعطيل" title="تعطيل"><i class="fas fa-trash" aria-hidden="true"></i></button>
           </div>` : '';
-        const avatar = buildUserListAvatarMarkup(u);
+        const avatar = usersListAvatarMarkup(u);
+        const inactiveCls = isActiveUser(u) ? '' : ' is-inactive';
         return `
-      <article class="mr-user-card" role="listitem">
+      <article class="mr-user-card${inactiveCls}" role="listitem">
         <div class="mr-user-card__identity">
-          <span class="${avatar.className}" aria-hidden="true"${avatar.style ? ` style="${avatar.style}"` : ''}>${avatar.html}</span>
+          <span class="${avatar.className}" aria-hidden="true"${avatar.style ? ` style="${Sec.escapeHTML(avatar.style)}"` : ''}>${avatar.html}</span>
           <div class="mr-user-card__body">
             <div class="mr-user-card__title">
               <h3 class="mr-user-card__name">${Sec.escapeHTML(u.name)}
@@ -15219,8 +15296,8 @@
         const branch = state._branchById ? state._branchById.get(u.branch_id) : state.branches.find(b => b.id === u.branch_id);
         const roleKey = normalizeUserRole(u.role);
         const roleLabel = userTableRoleLabel(u);
-        const roleColor = ROLE_COLORS[roleKey] || ROLE_COLORS[u.role] || 'var(--mr-primary)';
         const empNum = padEmpNum(u.employee_number);
+        const uid = safeUserDomId(u.id);
         const rows = [];
         if (empNum) {
           rows.push(`<li class="user-mob-card__row user-mob-card__row--plain"><span>الرقم الوظيفي: ${Sec.escapeHTML(empNum)}</span></li>`);
@@ -15235,23 +15312,25 @@
           rows.push(`<li class="user-mob-card__row"><i class="fas fa-store" aria-hidden="true"></i><span>${Sec.escapeHTML(branch.name)}</span></li>`);
         }
         const rowsHtml = rows.length ? `<ul class="user-mob-card__rows">${rows.join('')}</ul>` : '';
-        const adminBtns = canManage
+        const adminBtns = (canManage && uid)
           ? `<div class="user-mob-card__actions user-list-admin">
-          <button type="button" class="mr-viol-act" onclick="editUser('${u.id}')" aria-label="تعديل"><i class="fas fa-pen"></i></button>
-          <button type="button" class="mr-viol-act" onclick="deleteUser('${u.id}')" aria-label="تعطيل"><i class="fas fa-trash"></i></button>
+          <button type="button" class="mr-viol-act" data-usr-act="edit" data-user-id="${Sec.escapeHTML(uid)}" aria-label="تعديل"><i class="fas fa-pen"></i></button>
+          <button type="button" class="mr-viol-act" data-usr-act="delete" data-user-id="${Sec.escapeHTML(uid)}" aria-label="تعطيل"><i class="fas fa-trash"></i></button>
         </div>`
           : '';
-        const avatar = buildUserListAvatarMarkup(u);
+        const avatar = usersListAvatarMarkup(u);
+        const inactiveCls = isActiveUser(u) ? '' : ' is-inactive';
         return `
-    <article class="user-mob-card" role="listitem">
-      ${roleLabel ? `<span class="user-mob-card__role user-mob-card__role--${roleKey}" style="--rc:${roleColor}">${Sec.escapeHTML(roleLabel)}</span>` : ''}
+    <article class="user-mob-card${inactiveCls}" role="listitem">
+      ${roleLabel ? `<span class="user-mob-card__role user-mob-card__role--${Sec.escapeHTML(roleKey)}" data-role="${Sec.escapeHTML(roleKey)}">${Sec.escapeHTML(roleLabel)}</span>` : ''}
       <div class="user-mob-card__head">
-        <span class="${avatar.className} user-mob-card__avatar"${avatar.style ? ` style="${avatar.style}"` : ''} aria-hidden="true">${avatar.html}</span>
+        <span class="${avatar.className} user-mob-card__avatar"${avatar.style ? ` style="${Sec.escapeHTML(avatar.style)}"` : ''} aria-hidden="true">${avatar.html}</span>
         <div class="user-mob-card__main">
           <h3 class="user-mob-card__name">${Sec.escapeHTML(u.name)}
-            ${u.push_subscriptions && u.push_subscriptions.length > 0 ? '<i class="fas fa-bell user-indicator user-indicator--bell" title="مفعل الإشعارات"></i>' : '<i class="fas fa-bell-slash user-indicator user-indicator--bell-slash" title="غير مفعل الإشعارات"></i>'}                ${u.auth_uid ? 
-                  '<i class="fas fa-circle user-indicator user-indicator--active" title="حساب نشط"></i>' : 
-                  '<i class="fas fa-circle user-indicator user-indicator--inactive" title="حساب غير نشط"></i>'}}
+            ${u.push_subscriptions && u.push_subscriptions.length > 0 ? '<i class="fas fa-bell user-indicator user-indicator--bell" title="مفعل الإشعارات"></i>' : '<i class="fas fa-bell-slash user-indicator user-indicator--bell-slash" title="غير مفعل الإشعارات"></i>'}
+            ${u.auth_uid
+              ? '<i class="fas fa-circle user-indicator user-indicator--active" title="حساب نشط"></i>'
+              : '<i class="fas fa-circle user-indicator user-indicator--inactive" title="حساب غير نشط"></i>'}
           </h3>
           ${rowsHtml}
         </div>
@@ -15264,13 +15343,12 @@
         const branch = state._branchById ? state._branchById.get(u.branch_id) : state.branches.find(b => b.id === u.branch_id);
         const roleKey = normalizeUserRole(u.role);
         const roleLabel = userTableRoleLabel(u) || ROLE_LABELS[roleKey] || roleKey;
-        const roleColor = ROLE_COLORS[roleKey] || ROLE_COLORS[u.role] || '#8e8e93';
         const empNum = padEmpNum(u.employee_number);
-        const uid = String(u.id || '').replace(/'/g, "\\'");
-        const delay = Math.min(0.28, (Number(delayIdx) || 0) * 0.04);
+        const uid = safeUserDomId(u.id);
+        const delay = Math.min(0.22, (Number(delayIdx) || 0) * 0.03);
         const active = !!(u.auth_uid && isActiveUser(u));
         const initial = String(u.name || '؟').trim().charAt(0) || '؟';
-        const avatar = buildUserListAvatarMarkup(u);
+        const avatar = usersListAvatarMarkup(u);
         const rows = [];
         if (empNum) {
           rows.push(`<div class="rd-usr__row"><i class="fas fa-id-badge" aria-hidden="true"></i>الرقم الوظيفي: ${Sec.escapeHTML(empNum)}</div>`);
@@ -15284,19 +15362,20 @@
         if (branch?.name) {
           rows.push(`<div class="rd-usr__row"><i class="fas fa-location-dot" aria-hidden="true"></i>${Sec.escapeHTML(branch.name)}</div>`);
         }
-        const actions = canManage
+        const actions = (canManage && uid)
           ? `<div class="rd-usr__actions">
-              <button type="button" class="rd-usr__btn" onclick="editUser('${uid}')"><i class="fas fa-pen" aria-hidden="true"></i>تعديل</button>
-              <button type="button" class="rd-usr__btn rd-usr__btn--danger" onclick="deleteUser('${uid}')"><i class="fas fa-trash" aria-hidden="true"></i>حذف</button>
+              <button type="button" class="rd-usr__btn" data-usr-act="edit" data-user-id="${Sec.escapeHTML(uid)}"><i class="fas fa-pen" aria-hidden="true"></i>تعديل</button>
+              <button type="button" class="rd-usr__btn rd-usr__btn--danger" data-usr-act="delete" data-user-id="${Sec.escapeHTML(uid)}"><i class="fas fa-trash" aria-hidden="true"></i>تعطيل</button>
             </div>`
           : '';
         const hasPhoto = avatar.className.includes('has-avatar-photo') || avatar.className.includes('has-default-icon');
         const avInner = hasPhoto
-          ? `<span class="${avatar.className} rd-usr__av-media"${avatar.style ? ` style="${avatar.style}"` : ''} aria-hidden="true">${avatar.html}</span>`
+          ? `<span class="${avatar.className} rd-usr__av-media"${avatar.style ? ` style="${Sec.escapeHTML(avatar.style)}"` : ''} aria-hidden="true">${avatar.html}</span>`
           : `<span class="rd-usr__av-fallback" aria-hidden="true">${Sec.escapeHTML(initial)}</span>`;
+        const inactiveCls = isActiveUser(u) ? '' : ' is-inactive';
         return `
-          <article class="rd-usr" role="listitem" style="animation-delay:${delay}s">
-            ${roleLabel ? `<span class="rd-usr__role" style="--rc:${roleColor}">${Sec.escapeHTML(roleLabel)}</span>` : ''}
+          <article class="rd-usr${inactiveCls}" role="listitem" style="animation-delay:${delay}s">
+            ${roleLabel ? `<span class="rd-usr__role" data-role="${Sec.escapeHTML(roleKey)}">${Sec.escapeHTML(roleLabel)}</span>` : ''}
             <div class="rd-usr__head">
               <div class="rd-usr__av-wrap">
                 ${avInner}
@@ -15311,9 +15390,24 @@
           </article>`;
       }
 
+      function rdUsrDeskActMenu(uid) {
+        const safe = Sec.escapeHTML(uid);
+        return `
+          <div class="rd-desk-menu" onclick="event.stopPropagation()">
+            <button type="button" class="rd-desk-menu__btn" aria-label="إجراءات" aria-expanded="false"
+              onclick="event.stopPropagation(); toggleRdDeskMenu(this)">
+              <i class="fas fa-ellipsis" aria-hidden="true"></i>
+            </button>
+            <div class="rd-desk-menu__pop" hidden>
+              <button type="button" class="rd-desk-menu__item" data-usr-act="edit" data-user-id="${safe}"><i class="fas fa-pen" aria-hidden="true"></i>تعديل</button>
+              <button type="button" class="rd-desk-menu__item rd-desk-menu__item--danger" data-usr-act="delete" data-user-id="${safe}"><i class="fas fa-trash" aria-hidden="true"></i>تعطيل</button>
+            </div>
+          </div>`;
+      }
+
       function rdUsrDeskTableHTML(users, canManage) {
         const head = `
-          <div class="rd-desk-table rd-desk-table--users" role="table">
+          <div class="rd-desk-table rd-desk-table--users" role="table" aria-label="جدول المستخدمين">
             <div class="rd-desk-table__head" role="row">
               <span role="columnheader">الموظف</span>
               <button type="button" class="rd-desk-sort${state._rdUsrSortKey === 'emp' ? ' is-active' : ''}" role="columnheader" onclick="event.stopPropagation();rdUsrToggleSort('emp')">الرقم الوظيفي<i class="fas ${rdUsrSortIcon('emp')}" aria-hidden="true"></i></button>
@@ -15326,28 +15420,28 @@
         const rows = users.map((u, i) => {
           const roleKey = normalizeUserRole(u.role);
           const roleLabel = userTableRoleLabel(u) || ROLE_LABELS[roleKey] || roleKey;
-          const roleColor = ROLE_COLORS[roleKey] || ROLE_COLORS[u.role] || '#8e8e93';
           const branch = state._branchById
             ? state._branchById.get(u.branch_id)
             : (state.branches || []).find(b => b.id === u.branch_id);
           const branchName = (branch && branch.name) || '—';
           const empNum = padEmpNum(u.employee_number);
           const phone = String(u.phone || '').trim() || '—';
-          const uid = String(u.id || '').replace(/'/g, "\\'");
+          const uid = safeUserDomId(u.id);
           const active = !!(u.auth_uid && isActiveUser(u));
           const initial = String(u.name || '؟').trim().charAt(0) || '؟';
-          const delay = Math.min(0.28, i * 0.035);
-          const actions = canManage
-            ? rdDeskActMenuHTML(`editUser('${uid}')`, `deleteUser('${uid}')`, true, true)
+          const delay = Math.min(0.22, i * 0.028);
+          const actions = (canManage && uid)
+            ? rdUsrDeskActMenu(uid)
             : '<span class="rd-desk-muted">—</span>';
+          const inactiveCls = isActiveUser(u) ? '' : ' is-inactive';
           return `
-            <div class="rd-desk-table__row" role="row" style="animation-delay:${delay}s">
+            <div class="rd-desk-table__row${inactiveCls}" role="row" style="animation-delay:${delay}s">
               <div class="rd-desk-user" role="cell">
-                <span class="rd-desk-user__av">${Sec.escapeHTML(initial)}<i class="rd-desk-user__dot${active ? ' is-on' : ''}" aria-hidden="true"></i></span>
+                <span class="rd-desk-user__av" aria-hidden="true">${Sec.escapeHTML(initial)}<i class="rd-desk-user__dot${active ? ' is-on' : ''}"></i></span>
                 <span class="rd-desk-user__name">${Sec.escapeHTML(u.name || '')}</span>
               </div>
               <span role="cell" class="rd-desk-mono">${Sec.escapeHTML(empNum || '—')}</span>
-              <span role="cell"><span class="rd-desk-role" style="--rc:${roleColor}">${Sec.escapeHTML(roleLabel || '—')}</span></span>
+              <span role="cell"><span class="rd-desk-role" data-role="${Sec.escapeHTML(roleKey)}">${Sec.escapeHTML(roleLabel || '—')}</span></span>
               <span role="cell" class="rd-desk-muted rd-desk-clip">${Sec.escapeHTML(branchName)}</span>
               <span role="cell" class="rd-desk-phone"><span class="rd-desk-phone__val" dir="ltr">${Sec.escapeHTML(phone)}</span></span>
               <span role="cell" class="rd-desk-muted rd-desk-clip">${Sec.escapeHTML(u.email || '—')}</span>
@@ -15357,24 +15451,43 @@
         return `${head}${rows}</div>`;
       }
 
+      function syncUsersCountEls(value) {
+        const text = String(value);
+        const countEl = document.getElementById('users-count');
+        const deskEl = document.getElementById('users-count-desk');
+        if (countEl) countEl.textContent = text;
+        if (deskEl) deskEl.textContent = text;
+      }
+
       function renderUsers() {
         const list = document.getElementById('usersList');
         if (!list) return;
 
+        ensureUsersListActionDelegation();
         userRoleDdSyncUi(document.getElementById('user-roleFilter')?.value || '');
         syncUserRoleDdFixedWidth();
 
-        const countEl = document.getElementById('users-count');
+        const status = getUsersStatusFilter();
+        ['usersChipActive', 'usersChipActiveDesk'].forEach((id) => {
+          document.getElementById(id)?.classList.toggle('is-active', status === 'active');
+        });
+        ['usersChipAll', 'usersChipAllDesk'].forEach((id) => {
+          document.getElementById(id)?.classList.toggle('is-active', status === 'all');
+        });
+
         const usersMob = isMobileViewport();
         const rdMob = typeof isUsersAtharMobileUi === 'function' && isUsersAtharMobileUi();
         const rdDesk = isAtharDesktopScreenUi();
         const rd = rdMob || rdDesk;
         const subEl = document.querySelector('#tab-departments .wf-panel-sub');
-        if (subEl) subEl.textContent = rd ? 'USERS MANAGEMENT' : 'users management';
+        if (subEl && !subEl.dataset.usrLocked) {
+          subEl.textContent = 'دليل الحسابات والأدوار والصلاحيات';
+          subEl.dataset.usrLocked = '1';
+        }
 
         const searchEl = document.getElementById('user-search');
         if (rd && searchEl && !searchEl.dataset.rdPlaceholder) {
-          searchEl.placeholder = 'ابحث بالاسم، الرقم الوظيفي، البريد...';
+          searchEl.placeholder = 'ابحث بالاسم، الرقم الوظيفي، البريد، الجوال';
           searchEl.dataset.rdPlaceholder = '1';
         }
 
@@ -15385,7 +15498,8 @@
             : (usersMob ? 'mr-users-list users-grid--mob-list' : 'mr-users-list'));
 
         if (isAppDataPending()) {
-          if (countEl) countEl.textContent = '…';
+          syncUsersCountEls('…');
+          list.setAttribute('aria-busy', 'true');
           list.innerHTML = rd
             ? '<div class="rd-ticket-empty"><i class="fas fa-spinner fa-spin"></i><p>جاري تحميل المستخدمين…</p></div>'
             : (usersMob
@@ -15397,14 +15511,18 @@
 
         const filtered = sortUsersForDisplay(getFilteredUsersList());
         const canManage = canManageUsers();
-        if (countEl) countEl.textContent = String(filtered.length);
+        syncUsersCountEls(filtered.length);
+        list.setAttribute('aria-busy', 'false');
 
         if (!filtered.length) {
+          const emptyMsg = status === 'all'
+            ? 'لا يوجد مستخدمون مطابقة للبحث'
+            : 'لا يوجد مستخدمون نشطون مطابقة للبحث';
           list.innerHTML = rd
-            ? '<div class="rd-ticket-empty"><i class="fas fa-users-slash"></i><p>لا يوجد مستخدمون</p></div>'
+            ? `<div class="rd-ticket-empty"><i class="fas fa-users-slash"></i><p>${emptyMsg}</p></div>`
             : (usersMob
-              ? '<div class="empty users-empty-mob"><i class="fas fa-users-slash"></i><p>لا يوجد مستخدمون</p></div>'
-              : '<div class="mr-users-empty empty"><i class="fas fa-users-slash"></i><p>لا يوجد مستخدمون</p></div>');
+              ? `<div class="empty users-empty-mob"><i class="fas fa-users-slash"></i><p>${emptyMsg}</p></div>`
+              : `<div class="mr-users-empty empty"><i class="fas fa-users-slash"></i><p>${emptyMsg}</p></div>`);
           syncUsersMobileScrollShell('departments');
           return;
         }
@@ -42354,6 +42472,8 @@
       window.exportReportExcel = exportReportExcel;
       window.exportReportCSV = exportReportCSV;
       window.renderUsers = renderUsers;
+      window.scheduleRenderUsers = scheduleRenderUsers;
+      window.setUsersStatusFilter = setUsersStatusFilter;
       window.rdUsrToggleSort = rdUsrToggleSort;
       window.exportUsersCSV = exportUsersCSV;
       window.downloadUsersImportTemplate = downloadUsersImportTemplate;

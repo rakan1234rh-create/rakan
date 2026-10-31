@@ -1271,7 +1271,7 @@
   <link rel="stylesheet" href="styles/custom/athar-compliance-redesign.css?v=cm7" id="athar-compliance-redesign">
   <link rel="stylesheet" href="styles/custom/athar-violations-redesign.css?v=vl2" id="athar-violations-redesign">
   <link rel="stylesheet" href="styles/custom/athar-locations-redesign.css?v=loc4" id="athar-locations-redesign">
-  <link rel="stylesheet" href="styles/custom/athar-users-redesign.css?v=usr5" id="athar-users-redesign">
+  <link rel="stylesheet" href="styles/custom/athar-users-redesign.css?v=usr6" id="athar-users-redesign">
   <link rel="stylesheet" href="styles/custom/athar-breaks-redesign.css?v=brk17" id="athar-breaks-redesign">
   <link rel="stylesheet" href="styles/custom/athar-redesign-staging.css?v=mob-ui23" id="athar-redesign-staging">
   <link rel="stylesheet" href="styles/custom/athar-complaints-redesign.css?v=cmpl41" id="athar-complaints-redesign">
@@ -4230,7 +4230,11 @@
               <div class="wf-panel-banner users-panel-banner">
                 <div class="wf-panel-intro">
                   <h2 class="wf-panel-title">إدارة المستخدمين</h2>
-                  <p class="wf-panel-sub">users management</p>
+                  <p class="wf-panel-sub">دليل الحسابات والأدوار والصلاحيات</p>
+                </div>
+                <div class="users-head-meta" aria-live="polite">
+                  <span>النتائج</span>
+                  <strong id="users-count-desk">0</strong>
                 </div>
               </div>
               <div id="usersDeskHost" class="wf-desk-tickets-host">
@@ -4238,10 +4242,12 @@
                   <div class="users-filters-row">
                     <div class="toolbar wf-toolbar users-toolbar users-filters-toolbar">
                       <div class="figma-search-wrap wf-search">
-                        <input type="text" class="figma-search-input" id="user-search"
-                          placeholder="ابحث بالاسم، الرقم الوظيفي، البريد الإلكتروني، رقم الجوال"
+                        <input type="search" class="figma-search-input" id="user-search"
+                          placeholder="ابحث بالاسم، الرقم الوظيفي، البريد، الجوال"
                           title="ابحث بالاسم، الرقم الوظيفي، البريد الإلكتروني، رقم الجوال"
-                          oninput="renderUsers()">
+                          autocomplete="off" enterkeyhint="search"
+                          aria-controls="usersList"
+                          oninput="scheduleRenderUsers()">
                         <button type="button" class="figma-search-btn" onclick="renderUsers()" aria-label="بحث">
                           <i class="fas fa-magnifying-glass"></i>
                         </button>
@@ -4278,6 +4284,10 @@
                           <option value="hr">الموارد البشرية</option>
                           <option value="admin">مدير النظام</option>
                         </select>
+                      </div>
+                      <div class="users-filter-chips users-filter-chips--desk" role="group" aria-label="حالة الحساب">
+                        <button type="button" class="users-chip is-active" id="usersChipActiveDesk" data-users-status="active" onclick="setUsersStatusFilter('active')">النشطون</button>
+                        <button type="button" class="users-chip" id="usersChipAllDesk" data-users-status="all" onclick="setUsersStatusFilter('all')" data-perm="manage_users">الكل</button>
                       </div>
                       <div class="users-io-mob-wrap">
                         <button type="button" class="rp-tool-btn users-io-more-btn" id="usersIoMoreBtn"
@@ -4321,13 +4331,15 @@
                     </div>
                   </div>
                   <div class="users-meta-row">
-                    <div class="wf-count">عدد النتائج: <strong id="users-count">0</strong></div>
-                    <div class="users-meta-actions">
+                    <div class="wf-count" aria-live="polite">عدد النتائج: <strong id="users-count">0</strong></div>
+                    <div class="users-meta-actions users-filter-chips" role="group" aria-label="حالة الحساب">
+                      <button type="button" class="users-chip is-active" id="usersChipActive" data-users-status="active" onclick="setUsersStatusFilter('active')">النشطون</button>
+                      <button type="button" class="users-chip" id="usersChipAll" data-users-status="all" onclick="setUsersStatusFilter('all')" data-perm="manage_users">الكل</button>
                     </div>
                   </div>
                 </div>
                 <div class="mr-users-list-wrap wf-table-wrap">
-                  <div id="usersList" class="mr-users-list" role="list" aria-label="قائمة المستخدمين"></div>
+                  <div id="usersList" class="mr-users-list" role="list" aria-label="قائمة المستخدمين" aria-busy="false"></div>
                 </div>
               </div>
             </div>
