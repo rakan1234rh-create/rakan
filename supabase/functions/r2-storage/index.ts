@@ -304,6 +304,185 @@ function makeS3(env: NonNullable<ReturnType<typeof requireR2Env>>) {
   })
 }
 
+/** Web Crypto helpers — R2 REST via fetch, avoiding AWS SDK Node HTTP on Deno Edge. */
+function toHex(buf: ArrayBuffer): string {
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('')
+}
+
+function asArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  const copy = new Uint8Array(bytes.byteLength)
+  copy.set(bytes)
+  return copy.buffer
+}
+
+async function sha256Hex(data: string | Uint8Array): Promise<string> {
+  const bytes = typeof data === 'string' ? new TextEncoder().encode(data) : data
+  return toHex(await crypto.subtle.digest('SHA-256', asArrayBuffer(bytes)))
+}
+
+async function hmacSha256Raw(key: ArrayBuffer | Uint8Array, data: string): Promise<ArrayBuffer> {
+  const keyBytes = key instanceof Uint8Array ? asArrayBuffer(key) : key
+  const cryptoKey = await crypto.subtle.importKey(
+    'raw',
+    keyBytes,
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  )
+  return crypto.subtle.sign('HMAC', cryptoKey, new TextEncoder().encode(data))
+}
+
+async function awsSigningKey(secret: string, dateStamp: string, region: string, service: string) {
+  const enc = new TextEncoder()
+  const kDate = await hmacSha256Raw(enc.encode('AWS4' + secret), dateStamp)
+  const kRegion = await hmacSha256Raw(kDate, region)
+  const kService = await hmacSha256Raw(kRegion, service)
+  return hmacSha256Raw(kService, 'aws4_request')
+}
+
+function r2Endpoint(env: NonNullable<ReturnType<typeof requireR2Env>>) {
+  return `https://${env.accountId}.r2.cloudflarestorage.com`
+}
+
+function encodeS3PathKey(key: string): string {
+  return key.split('/').map(encodeURIComponent).join('/')
+}
+
+/**
+ * Signed R2/S3 request using fetch (not AWS SDK Node HTTP).
+ * Critical on Supabase Edge: SDK HeadObject/CopyObject/GetObject on missing or
+ * streamed bodies crash the isolate with `TypeError: unexpected end of file` → 503.
+ */
+async function r2Fetch(
+  env: NonNullable<ReturnType<typeof requireR2Env>>,
+  method: string,
+  key: string,
+  opts: {
+    headers?: Record<string, string>
+    body?: Uint8Array | string | null
+    query?: Record<string, string>
+  } = {},
+): Promise<Response> {
+  const region = 'auto'
+  const service = 's3'
+  const now = new Date()
+  const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, '')
+  const dateStamp = amzDate.slice(0, 8)
+  const encodedKey = encodeS3PathKey(key)
+  const qs = opts.query
+    ? Object.keys(opts.query).sort().map((k) =>
+      `${encodeURIComponent(k)}=${encodeURIComponent(opts.query![k])}`
+    ).join('&')
+    : ''
+  const canonicalUri = `/${env.bucket}/${encodedKey}`
+  const url = `${r2Endpoint(env)}${canonicalUri}${qs ? `?${qs}` : ''}`
+  const body = opts.body == null ? new Uint8Array() : (
+    typeof opts.body === 'string' ? new TextEncoder().encode(opts.body) : opts.body
+  )
+  const payloadHash = await sha256Hex(body)
+  const headers: Record<string, string> = {
+    host: `${env.accountId}.r2.cloudflarestorage.com`,
+    'x-amz-content-sha256': payloadHash,
+    'x-amz-date': amzDate,
+    ...(opts.headers || {}),
+  }
+  if (body.byteLength && !headers['content-length'] && !headers['Content-Length']) {
+    headers['content-length'] = String(body.byteLength)
+  }
+  const signedHeaderKeys = Object.keys(headers).map((h) => h.toLowerCase()).sort()
+  const canonicalHeaders = signedHeaderKeys
+    .map((h) => {
+      const match = Object.keys(headers).find((k) => k.toLowerCase() === h)!
+      return `${h}:${headers[match].trim().replace(/\s+/g, ' ')}\n`
+    })
+    .join('')
+  const signedHeaders = signedHeaderKeys.join(';')
+  const canonicalRequest = [
+    method,
+    canonicalUri,
+    qs,
+    canonicalHeaders,
+    signedHeaders,
+    payloadHash,
+  ].join('\n')
+  const credentialScope = `${dateStamp}/${region}/${service}/aws4_request`
+  const stringToSign = [
+    'AWS4-HMAC-SHA256',
+    amzDate,
+    credentialScope,
+    await sha256Hex(canonicalRequest),
+  ].join('\n')
+  const signingKey = await awsSigningKey(env.secretAccessKey, dateStamp, region, service)
+  const signature = toHex(await hmacSha256Raw(signingKey, stringToSign))
+  headers.authorization =
+    `AWS4-HMAC-SHA256 Credential=${env.accessKeyId}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`
+  const res = await fetch(url, {
+    method,
+    headers,
+    body: method === 'GET' || method === 'HEAD' ? undefined : asArrayBuffer(body),
+  })
+  // Always consume the body so Deno/Node compat never leaves an unread stream.
+  return res
+}
+
+async function r2HeadMeta(
+  env: NonNullable<ReturnType<typeof requireR2Env>>,
+  key: string,
+): Promise<{ exists: boolean; contentLength: number; contentType: string }> {
+  const res = await r2Fetch(env, 'HEAD', key)
+  // Drain just in case some runtimes attach a body to HEAD errors.
+  try { await res.arrayBuffer() } catch { /* */ }
+  if (res.status === 404) return { exists: false, contentLength: 0, contentType: '' }
+  if (!res.ok) {
+    throw new Error(`R2 HEAD فشل (${res.status})`)
+  }
+  return {
+    exists: true,
+    contentLength: Number(res.headers.get('content-length') || 0),
+    contentType: res.headers.get('content-type') || '',
+  }
+}
+
+async function r2CopyObject(
+  env: NonNullable<ReturnType<typeof requireR2Env>>,
+  fromKey: string,
+  toKey: string,
+  opts: { contentType?: string; replaceMetadata?: boolean } = {},
+): Promise<void> {
+  const copySource = `/${env.bucket}/${encodeS3PathKey(fromKey)}`
+  const headers: Record<string, string> = {
+    'x-amz-copy-source': copySource,
+    // R2 destination precondition (SDK IfNoneMatch is a no-op on CopyObject).
+    'cf-copy-destination-if-none-match': '*',
+  }
+  if (opts.replaceMetadata && opts.contentType) {
+    headers['x-amz-metadata-directive'] = 'REPLACE'
+    headers['content-type'] = opts.contentType
+  } else {
+    headers['x-amz-metadata-directive'] = 'COPY'
+  }
+  const res = await r2Fetch(env, 'PUT', toKey, { headers })
+  const text = await res.text()
+  if (res.status === 412 || /PreconditionFailed|ConditionalRequestConflict/i.test(text)) {
+    const err = new Error('يوجد ملف بالفعل في وجهة النقل')
+    err.name = 'PreconditionFailed'
+    throw err
+  }
+  if (!res.ok) {
+    throw new Error(text.slice(0, 240) || `R2 CopyObject فشل (${res.status})`)
+  }
+}
+
+async function r2DeleteObject(
+  env: NonNullable<ReturnType<typeof requireR2Env>>,
+  key: string,
+): Promise<void> {
+  const res = await r2Fetch(env, 'DELETE', key)
+  try { await res.arrayBuffer() } catch { /* */ }
+  if (res.status === 404) return
+  if (!res.ok) throw new Error(`R2 DeleteObject فشل (${res.status})`)
+}
+
 function guessContentTypeFromKey(key: string): string {
   const ext = key.includes('.') ? key.split('.').pop()!.toLowerCase() : ''
   const map: Record<string, string> = {
@@ -621,16 +800,28 @@ export function installR2StorageTestAwsPrimitives(primitives: Record<string, unk
   if ('UploadPartCommand' in primitives) UploadPartCommand = primitives.UploadPartCommand
 }
 
+type R2RestOps = {
+  headMeta: typeof r2HeadMeta
+  copyObject: typeof r2CopyObject
+  deleteObject: typeof r2DeleteObject
+}
+
 export function createR2StorageHandler(deps: {
   requireR2Env?: typeof requireR2Env
   authenticateRequest?: AuthenticateRequest
   ensureAws?: typeof ensureAws
   makeS3?: typeof makeS3
+  r2Rest?: R2RestOps
 } = {}) {
   const getR2Env = deps.requireR2Env || requireR2Env
   const authenticate = deps.authenticateRequest || authenticateRequest
   const loadAws = deps.ensureAws || ensureAws
   const newS3 = deps.makeS3 || makeS3
+  const rest: R2RestOps = deps.r2Rest || {
+    headMeta: r2HeadMeta,
+    copyObject: r2CopyObject,
+    deleteObject: r2DeleteObject,
+  }
 
   return async (req: Request) => {
   _cors = buildCors(req);
@@ -848,21 +1039,26 @@ export function createR2StorageHandler(deps: {
       }
       await loadAws()
       const s3 = newS3(env)
+      // Do NOT HeadObject the destination first: AWS SDK Head on a missing key
+      // crashes Deno Edge with unexpected EOF → HTTP 503 (seen live post-#399).
+      // IfNoneMatch:'*' atomically rejects overwrites instead.
       try {
-        await s3.send(new HeadObjectCommand({ Bucket: env.bucket, Key: toKey }))
-        return json({ error: 'يوجد ملف بالفعل في وجهة النقل' }, 409)
+        await s3.send(new PutObjectCommand({
+          Bucket: env.bucket,
+          Key: toKey,
+          Body: bytes,
+          ContentType: contentType,
+          ContentLength: bytes.byteLength,
+          IfNoneMatch: '*',
+        }))
       } catch (e: unknown) {
-        const name = e && typeof e === 'object' && 'name' in e ? String((e as { name: string }).name) : ''
-        if (name && !['NotFound', 'NoSuchKey', '404'].includes(name)) throw e
+        if (/PreconditionFailed|ConditionalRequestConflict|412|يوجد ملف/.test(
+          `${(e as { name?: string })?.name || ''} ${e instanceof Error ? e.message : e}`,
+        )) {
+          return json({ error: 'يوجد ملف بالفعل في وجهة النقل' }, 409)
+        }
+        throw e
       }
-      await s3.send(new PutObjectCommand({
-        Bucket: env.bucket,
-        Key: toKey,
-        Body: bytes,
-        ContentType: contentType,
-        ContentLength: bytes.byteLength,
-        IfNoneMatch: '*',
-      }))
       return json({
         ok: true,
         copied: true,
@@ -1240,40 +1436,24 @@ export function createR2StorageHandler(deps: {
           expectedState: body.expectedState,
         })
       }
-      try {
-        await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: toKey }))
-        return json({ error: 'يوجد ملف بالفعل في وجهة النقل' }, 409)
-      } catch (e: unknown) {
-        const name = e && typeof e === 'object' && 'name' in e ? String((e as { name: string }).name) : ''
-        if (name && !['NotFound', 'NoSuchKey', '404'].includes(name)) throw e
-      }
-      const sourceHead = await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: fromKey }))
-      const sourceLen = Number(sourceHead.ContentLength || 0)
+      // Fetch-based Head/Copy/Delete — AWS SDK Node HTTP Head(404)/Copy crashed
+      // live Edge after #399 with unexpected EOF → 503 while temp_* stayed stuck.
+      void bucket
+      void s3
+      const sourceMeta = await rest.headMeta(env!, fromKey)
+      if (!sourceMeta.exists) throw new Error('الملف المؤقت غير موجود في التخزين')
+      const sourceLen = Number(sourceMeta.contentLength || 0)
       assertAttachmentSize(sourceLen)
-      const sourceContentType = normalizedAttachmentContentType(fromKey, sourceHead.ContentType || '')
+      const sourceContentType = normalizedAttachmentContentType(fromKey, sourceMeta.contentType || '')
       normalizedAttachmentContentType(toKey, sourceContentType)
-      // CopyObject only — never GetObject→Put on Edge.
-      // Production Deno/Node compat crashes the isolate with
-      // `TypeError: unexpected end of file` when GetObject bodies are read,
-      // which surfaces as HTTP 503 / «انقطع الاتصال أثناء التخزين» and leaves
-      // temp_* refs stuck on complaints + violations after #395/#398.
-      const copySource = `${bucket}/${fromKey.split('/').map(encodeURIComponent).join('/')}`
       const removeBadDestination = async () => {
-        try {
-          await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: toKey }))
-        } catch {
-          /* best-effort */
-        }
+        try { await rest.deleteObject(env!, toKey) } catch { /* best-effort */ }
       }
-      const runCopy = async (directive: 'REPLACE' | 'COPY') => {
-        await s3.send(new CopyObjectCommand({
-          Bucket: bucket,
-          Key: toKey,
-          CopySource: copySource,
-          ...(directive === 'REPLACE'
-            ? { MetadataDirective: 'REPLACE', ContentType: sourceContentType }
-            : { MetadataDirective: 'COPY' }),
-        }))
+      const runCopy = async (replace: boolean) => {
+        await rest.copyObject(env!, fromKey, toKey, {
+          replaceMetadata: replace,
+          contentType: sourceContentType,
+        })
       }
       const isCopyConflict = (err: unknown) => {
         const copyMsg = err instanceof Error ? err.message : String(err || '')
@@ -1282,16 +1462,19 @@ export function createR2StorageHandler(deps: {
           : ''
         return /PreconditionFailed|ConditionalRequestConflict|412|يوجد ملف/.test(`${copyName} ${copyMsg}`)
       }
-      // REPLACE+ContentType first (stable MIME on R2). Fall back to COPY once.
       try {
-        await runCopy('REPLACE')
+        await runCopy(true)
       } catch (copyErr: unknown) {
-        if (isCopyConflict(copyErr)) throw copyErr
+        if (isCopyConflict(copyErr)) {
+          return json({ error: 'يوجد ملف بالفعل في وجهة النقل' }, 409)
+        }
         await removeBadDestination()
         try {
-          await runCopy('COPY')
+          await runCopy(false)
         } catch (copyErr2: unknown) {
-          if (isCopyConflict(copyErr2)) throw copyErr2
+          if (isCopyConflict(copyErr2)) {
+            return json({ error: 'يوجد ملف بالفعل في وجهة النقل' }, 409)
+          }
           const detail = copyErr2 instanceof Error ? copyErr2.message : String(copyErr2 || copyErr || '')
           throw new Error(
             detail
@@ -1300,47 +1483,28 @@ export function createR2StorageHandler(deps: {
           )
         }
       }
-      // Verify destination before the client finalizes DB + deletes temp.
-      // A "successful" Copy that leaves a missing/empty object caused
-      // «فشل تحميل … عبر الوسيط» after issue (DB final path, temp gone).
-      // On verify failure: delete bad dest and retry Copy once — still no GetObject.
-      const headDestinationOrThrow = async () => {
-        try {
-          return await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: toKey }))
-        } catch (verifyErr: unknown) {
-          const name = verifyErr && typeof verifyErr === 'object' && 'name' in verifyErr
-            ? String((verifyErr as { name: string }).name)
-            : ''
-          throw new Error(
-            name === 'NotFound' || name === 'NoSuchKey' || name === '404'
-              ? 'فشل التحقق من نسخة المرفق بعد النقل'
-              : (verifyErr instanceof Error ? verifyErr.message : 'فشل التحقق من نسخة المرفق بعد النقل'),
-          )
-        }
-      }
-      let destHead = await headDestinationOrThrow().catch(async (verifyErr) => {
-        await removeBadDestination()
-        await runCopy('REPLACE').catch(async () => {
-          await removeBadDestination()
-          await runCopy('COPY')
-        })
-        return headDestinationOrThrow().catch(() => {
-          throw verifyErr instanceof Error ? verifyErr : new Error('فشل التحقق من نسخة المرفق بعد النقل')
-        })
-      })
-      let destLen = Number(destHead.ContentLength || 0)
-      if (destLen < 1 || destLen !== sourceLen) {
-        await removeBadDestination()
-        try {
-          await runCopy('REPLACE')
-        } catch {
-          await runCopy('COPY')
-        }
-        destHead = await headDestinationOrThrow()
-        destLen = Number(destHead.ContentLength || 0)
-        if (destLen < 1 || destLen !== sourceLen) {
-          await removeBadDestination()
+      const verifyDest = async () => {
+        const meta = await rest.headMeta(env!, toKey)
+        if (!meta.exists || meta.contentLength < 1 || meta.contentLength !== sourceLen) {
           throw new Error('فشل التحقق من نسخة المرفق بعد النقل')
+        }
+        return meta
+      }
+      try {
+        await verifyDest()
+      } catch (verifyErr) {
+        await removeBadDestination()
+        try {
+          await runCopy(true)
+        } catch {
+          await removeBadDestination()
+          await runCopy(false)
+        }
+        try {
+          await verifyDest()
+        } catch {
+          await removeBadDestination()
+          throw verifyErr instanceof Error ? verifyErr : new Error('فشل التحقق من نسخة المرفق بعد النقل')
         }
       }
       // لا نحذف المصدر الآن: يجب أن ينجح RPC الذي يثبت المرجع في قاعدة
@@ -1353,7 +1517,7 @@ export function createR2StorageHandler(deps: {
         fromKey,
         toKey,
         bytes: sourceLen,
-        via: 'copy',
+        via: 'copy-fetch',
         verified: true,
       })
     }
