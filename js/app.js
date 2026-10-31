@@ -943,6 +943,13 @@
               _r2LastResolveNote = 'سبب التخطي: r2-storage أرجع 503 (أسرار R2 أو إعداد الدالة). ' + hint;
               if (isAtharDebugLog()) console.warn('[R2] الدالة r2-storage أرجعت 503 (الخدمة غير جاهزة).', hint);
             }
+            if (res?.status === 500 || res?.status === 502 || res?.status === 504) {
+              _r2LastResolveNote = 'سبب التخطي: r2-storage أرجع ' + res.status + ' (عطل مؤقت في الدالة). يُعاد الفحص تلقائياً.';
+              if (isAtharDebugLog()) console.warn('[R2] الدالة r2-storage أرجعت', res.status);
+              _r2ResolvedMode = undefined;
+              _r2EdgeRecheckAt = Date.now() + 15_000;
+              return 'none';
+            }
             if (res?.status === 401) {
               _r2LastResolveNote = 'سبب التخطي: r2-storage أرجع 401 — سجّل الخروج ثم الدخول من جديد، أو عطّل Enforce JWT Verification على الدالة.';
               invalidateR2BackendResolution();
@@ -959,6 +966,13 @@
         /** 503 = أسرار R2 ناقصة؛ لا نستدعي /config على localhost + force؛ نُجدد الفحص بعد 30ث */
         if (isLocalDevHost() && isForceR2LocalTest() && edgePingStatus === 503) {
           _r2ResolvedMode = 'none';
+          _r2EdgeRecheckAt = Date.now() + 30_000;
+          return 'none';
+        }
+
+        // 503 من الإنتاج: لا تقفل الجلسة على none إلى الأبد — أعد الفحص قريباً.
+        if (edgePingStatus === 503) {
+          _r2ResolvedMode = undefined;
           _r2EdgeRecheckAt = Date.now() + 30_000;
           return 'none';
         }
@@ -17867,7 +17881,13 @@
           p_operation: opts.operation || 'create',
           p_expected_state: opts.expectedState || null,
         });
-        if (error) throw error;
+        if (error) {
+          const msg = String(error.message || error.details || error.code || error);
+          if (/Could not find the function|athar_finalize_attachment_path|PGRST202|schema cache/i.test(msg)) {
+            throw new Error('فشل إعداد التخزين: دالة تثبيت المرفق غير متاحة على قاعدة البيانات — طبّق ترحيل athar_finalize_attachment_path');
+          }
+          throw error;
+        }
         if (!data) throw new Error('تعذّر تثبيت مسار المرفق في السجل');
       }
 
