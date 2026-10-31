@@ -273,12 +273,19 @@ Deno.test('handler ينفذ temp -> record-copy ثم commit cleanup بلا overw
   if (collision.status !== 409 || !s3.objects.has(second)) throw new Error('destination overwrite was not prevented')
 })
 
-Deno.test('handler rejects moveObject when destination verify fails after copy', async () => {
+Deno.test('handler rejects moveObject when destination verify fails after copy (no GetObject)', async () => {
   class BrokenCopyS3 extends FakeS3 {
+    getObjectCalls = 0
+    copyCalls = 0
     override async send(command: FakeCommand) {
+      if (command instanceof FakeGetObjectCommand) {
+        this.getObjectCalls += 1
+        return super.send(command)
+      }
       if (command instanceof FakeCopyObjectCommand) {
+        this.copyCalls += 1
         const key = String(command.input.Key || '')
-        // Pretend CopyObject succeeded but wrote an empty object.
+        // Pretend CopyObject succeeded but wrote an empty object every time.
         this.objects.set(key, { body: new Uint8Array(), contentType: 'application/pdf' })
         return {}
       }
@@ -293,15 +300,49 @@ Deno.test('handler rejects moveObject when destination verify fails after copy',
   const res = await handler(req('moveObject', {
     fromKey, toKey, recordType: 'violation', recordId: RECORD, operation: 'create',
   }))
-  // Small files fall back to buffered Put after bad copy, so destination must end valid.
-  if (res.status !== 200) {
-    throw new Error(`expected put fallback after bad copy, got ${res.status} ${await res.text()}`)
+  // Must fail closed without GetObject — Edge GetObject crashes the isolate (503).
+  if (res.status === 200) {
+    throw new Error('empty copy must not be accepted as a successful move')
   }
-  const dest = s3.objects.get(toKey)
-  if (!dest || dest.body.byteLength !== pdf().byteLength) {
-    throw new Error('verify path must recover via buffered Put for small attachments')
+  if (s3.getObjectCalls !== 0) {
+    throw new Error('moveObject must not fall back to GetObject after bad copy')
+  }
+  if (s3.copyCalls < 2) {
+    throw new Error('verify failure should retry CopyObject at least once')
+  }
+  if (s3.objects.has(toKey) && (s3.objects.get(toKey)?.body.byteLength || 0) === 0) {
+    throw new Error('empty destination must be removed after failed verify')
   }
   if (!s3.objects.has(fromKey)) throw new Error('temp source must remain until DB finalize')
+})
+
+Deno.test('handler moveObject never GetObjects when CopyObject fails outright', async () => {
+  class CopyFailS3 extends FakeS3 {
+    getObjectCalls = 0
+    override async send(command: FakeCommand) {
+      if (command instanceof FakeGetObjectCommand) {
+        this.getObjectCalls += 1
+        return super.send(command)
+      }
+      if (command instanceof FakeCopyObjectCommand) {
+        throw new Error('AccessDenied: copy not allowed')
+      }
+      return super.send(command)
+    }
+  }
+  const s3 = new CopyFailS3()
+  const fromKey = tempKey()
+  const toKey = `violations/${RECORD}/file.pdf`
+  s3.objects.set(fromKey, { body: pdf(), contentType: 'application/pdf' })
+  const { handler } = buildHandler(s3)
+  const res = await handler(req('moveObject', {
+    fromKey, toKey, recordType: 'violation', recordId: RECORD, operation: 'create',
+  }))
+  if (res.status === 200) throw new Error('failed copy must not succeed')
+  if (s3.getObjectCalls !== 0) throw new Error('failed copy must not fall back to GetObject')
+  if (s3.objects.has(toKey)) throw new Error('failed copy must not leave a destination object')
+  // Outer handler masks 5xx detail; still must fail closed without GetObject.
+  if (res.status < 400) throw new Error(`expected error status, got ${res.status}`)
 })
 
 Deno.test('handler buffers GetObject body for complaint reply moveObject (no live stream pipe)', async () => {
@@ -370,5 +411,45 @@ Deno.test('handler يعوّض نسخة نقل فاشلة قبل تثبيت ال�
   }))
   if (forged.status !== 403 || s3.objects.has(`complaints/${FOREIGN_RECORD}/file.pdf`)) {
     throw new Error('foreign record destination was accepted')
+  }
+})
+
+Deno.test('handler putFinalObject writes canonical key with move ACL (no GetObject)', async () => {
+  const s3 = new FakeS3()
+  const fromKey = tempKey('shot.webp')
+  const toKey = `complaints/${RECORD}/shot.webp`
+  s3.objects.set(fromKey, { body: pdf(), contentType: 'application/pdf' })
+  const { handler, rpcCalls } = buildHandler(s3)
+  // Minimal RIFF/WEBP signature accepted by assertAttachmentSignature.
+  const body = new Uint8Array([
+    0x52, 0x49, 0x46, 0x46, 0x18, 0x00, 0x00, 0x00,
+    0x57, 0x45, 0x42, 0x50, 0x56, 0x50, 0x38, 0x20,
+    0x0c, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00,
+  ])
+  const res = await handler(new Request('https://edge.test', {
+    method: 'POST',
+    headers: {
+      Authorization: 'Bearer test',
+      'Content-Type': 'image/webp',
+      'X-R2-Action': 'putFinalObject',
+      'X-R2-Key': toKey,
+      'X-R2-From-Key': fromKey,
+      'X-R2-Record-Type': 'complaint',
+      'X-R2-Record-Id': RECORD,
+      'X-R2-Operation': 'create',
+    },
+    body: requestBody(body),
+  }))
+  if (res.status !== 200) throw new Error(`putFinalObject failed: ${res.status} ${await res.text()}`)
+  const payload = await res.json()
+  if (!payload.ok || payload.via !== 'putFinal' || payload.bytes !== body.byteLength) {
+    throw new Error(`unexpected putFinal payload ${JSON.stringify(payload)}`)
+  }
+  if (!s3.objects.has(toKey) || !s3.objects.has(fromKey)) {
+    throw new Error('putFinal must write destination and retain temp')
+  }
+  if (!rpcCalls.some((call) => call.fn === 'athar_attachment_destination_can_modify')) {
+    throw new Error('putFinal must authorize via destination_can_modify')
   }
 })

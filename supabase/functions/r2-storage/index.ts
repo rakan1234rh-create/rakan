@@ -85,7 +85,7 @@ function buildCors(req: Request): Record<string, string> {
   return {
     'Access-Control-Allow-Origin': isAllowed ? requestOrigin : '',
     'Access-Control-Allow-Headers':
-      'authorization, x-client-info, apikey, content-type, range, x-r2-action, x-r2-key, x-r2-upload-id, x-r2-part-number, x-r2-content-type',
+      'authorization, x-client-info, apikey, content-type, range, x-r2-action, x-r2-key, x-r2-upload-id, x-r2-part-number, x-r2-content-type, x-r2-from-key, x-r2-record-type, x-r2-record-id, x-r2-operation, x-r2-expected-state',
     'Access-Control-Allow-Methods': 'GET, HEAD, POST, OPTIONS',
     'Access-Control-Expose-Headers':
       'Content-Length, Content-Range, Accept-Ranges, Content-Type',
@@ -446,6 +446,9 @@ function requestErrorStatus(error: unknown): number {
   if (/PreconditionFailed|ConditionalRequestConflict|412|يوجد ملف/.test(msg)) return 409
   if (/غير مصرح/.test(msg)) return 403
   if (/غير صالح|غير مسموح|لا يطابق|مطلوب|فارغ/.test(msg)) return 400
+  // Copy/verify failures are operational — keep the Arabic detail for the client
+  // putFinal fallback instead of masking as a generic 500.
+  if (/فشل نسخ المرفق|فشل التحقق من نسخة/.test(msg)) return 422
   return 500
 }
 
@@ -799,6 +802,80 @@ export function createR2StorageHandler(deps: {
     } catch (e) {
       const info = r2ErrInfo(e)
       console.error('[r2-storage] putObject', info.name, info.message, e)
+      return json({
+        error: info.message,
+        r2Error: info.name,
+      }, requestErrorStatus(e))
+    }
+  }
+
+  // Client-held body → canonical key when server-side CopyObject is unavailable.
+  // Avoids Edge GetObject (isolate crash) while still enforcing move ACL.
+  if (req.method === 'POST' && req.headers.get('X-R2-Action') === 'putFinalObject') {
+    if (!env) return json({ error: 'R2 غير مُعدّ (متغيرات البيئة على الدالة)' }, 503)
+    const auth = await authenticate(req)
+    if ('error' in auth && auth.error) return auth.error
+
+    try {
+      let fromKey: string
+      try {
+        fromKey = assertTempUploadKey(req.headers.get('X-R2-From-Key') || '', auth.user.id)
+      } catch {
+        fromKey = assertKey(req.headers.get('X-R2-From-Key') || '')
+        if (!fromKey.startsWith('temp_')) throw new Error('غير مصرح بالرفع في هذا المسار')
+      }
+      const toKey = assertKey(req.headers.get('X-R2-Key') || '')
+      if (!auth.isServiceRole) {
+        await requireAttachmentMoveDestination(auth.supabase, {
+          recordType: String(req.headers.get('X-R2-Record-Type') || ''),
+          recordId: String(req.headers.get('X-R2-Record-Id') || ''),
+          fromKey,
+          toKey,
+          operation: String(req.headers.get('X-R2-Operation') || 'create'),
+          expectedState: req.headers.get('X-R2-Expected-State') || undefined,
+        })
+      }
+      const contentType = normalizedAttachmentContentType(
+        toKey,
+        req.headers.get('Content-Type') || req.headers.get('X-R2-Content-Type') || '',
+      )
+      const bytes = new Uint8Array(await req.arrayBuffer())
+      assertAttachmentPayload(toKey, contentType, bytes)
+      // Leaf name must match temp → final rename contract used by moveObject.
+      const leafOf = (key: string) => key.replace(/^.*\//, '')
+      if (leafOf(fromKey) !== leafOf(toKey)) {
+        throw new Error('اسم ملف الوجهة لا يطابق المرفق المؤقت')
+      }
+      await loadAws()
+      const s3 = newS3(env)
+      try {
+        await s3.send(new HeadObjectCommand({ Bucket: env.bucket, Key: toKey }))
+        return json({ error: 'يوجد ملف بالفعل في وجهة النقل' }, 409)
+      } catch (e: unknown) {
+        const name = e && typeof e === 'object' && 'name' in e ? String((e as { name: string }).name) : ''
+        if (name && !['NotFound', 'NoSuchKey', '404'].includes(name)) throw e
+      }
+      await s3.send(new PutObjectCommand({
+        Bucket: env.bucket,
+        Key: toKey,
+        Body: bytes,
+        ContentType: contentType,
+        ContentLength: bytes.byteLength,
+        IfNoneMatch: '*',
+      }))
+      return json({
+        ok: true,
+        copied: true,
+        sourceRetained: true,
+        fromKey,
+        toKey,
+        bytes: bytes.byteLength,
+        via: 'putFinal',
+        verified: true,
+      })
+    } catch (e) {
+      const info = r2ErrInfo(e)
+      console.error('[r2-storage] putFinalObject', info.name, info.message, e)
       return json({
         error: info.message,
         r2Error: info.name,
@@ -1175,53 +1252,12 @@ export function createR2StorageHandler(deps: {
       assertAttachmentSize(sourceLen)
       const sourceContentType = normalizedAttachmentContentType(fromKey, sourceHead.ContentType || '')
       normalizedAttachmentContentType(toKey, sourceContentType)
-      // R2/S3: Encode each CopySource path segment; keep '/' between bucket and key.
-      // Do not use MetadataDirective REPLACE + IfNoneMatch here:
-      // - SDK 3.733 CopyObjectRequest has no IfNoneMatch (it was a no-op)
-      // - R2 destination conditions use cf-copy-destination-if-none-match (beta)
-      // - REPLACE can drop source system metadata if ContentType is mishandled
-      // Overwrite is already blocked by the HeadObject check above.
+      // CopyObject only — never GetObject→Put on Edge.
+      // Production Deno/Node compat crashes the isolate with
+      // `TypeError: unexpected end of file` when GetObject bodies are read,
+      // which surfaces as HTTP 503 / «انقطع الاتصال أثناء التخزين» and leaves
+      // temp_* refs stuck on complaints + violations after #395/#398.
       const copySource = `${bucket}/${fromKey.split('/').map(encodeURIComponent).join('/')}`
-      const putBufferedCopy = async () => {
-        const source = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: fromKey }))
-        if (!source.Body) throw new Error('جسم الملف المؤقت فارغ')
-        const bytes = await readAwsSdkBodyBytes(source.Body)
-        if (!bytes.byteLength) throw new Error('جسم الملف المؤقت فارغ')
-        assertAttachmentSize(bytes.byteLength)
-        await s3.send(new PutObjectCommand({
-          Bucket: bucket,
-          Key: toKey,
-          Body: bytes,
-          ContentType: sourceContentType,
-          ContentLength: bytes.byteLength,
-          IfNoneMatch: '*',
-        }))
-      }
-      // نسخ من جهة الخادم — يتجنب تحميل الملف كاملاً في ذاكرة Edge (مهم للفيديو >50MB).
-      // إن فشل CopyObject نسقط إلى Put مُخزَّن للملفات الصغيرة فقط.
-      let copiedVia: 'copy' | 'put' = 'copy'
-      try {
-        await s3.send(new CopyObjectCommand({
-          Bucket: bucket,
-          Key: toKey,
-          CopySource: copySource,
-          MetadataDirective: 'COPY',
-        }))
-      } catch (copyErr: unknown) {
-        const copyMsg = copyErr instanceof Error ? copyErr.message : String(copyErr || '')
-        const copyName = copyErr && typeof copyErr === 'object' && 'name' in copyErr
-          ? String((copyErr as { name: string }).name)
-          : ''
-        if (/PreconditionFailed|ConditionalRequestConflict|412|يوجد ملف/.test(`${copyName} ${copyMsg}`)) {
-          throw copyErr
-        }
-        if (sourceLen > (32 * 1024 * 1024)) throw copyErr
-        await putBufferedCopy()
-        copiedVia = 'put'
-      }
-      // Verify destination before the client finalizes DB + deletes temp.
-      // A "successful" Copy that leaves a missing/empty object caused
-      // «فشل تحميل … عبر الوسيط» after issue (DB final path, temp gone).
       const removeBadDestination = async () => {
         try {
           await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: toKey }))
@@ -1229,16 +1265,49 @@ export function createR2StorageHandler(deps: {
           /* best-effort */
         }
       }
-      let destHead
+      const runCopy = async (directive: 'REPLACE' | 'COPY') => {
+        await s3.send(new CopyObjectCommand({
+          Bucket: bucket,
+          Key: toKey,
+          CopySource: copySource,
+          ...(directive === 'REPLACE'
+            ? { MetadataDirective: 'REPLACE', ContentType: sourceContentType }
+            : { MetadataDirective: 'COPY' }),
+        }))
+      }
+      const isCopyConflict = (err: unknown) => {
+        const copyMsg = err instanceof Error ? err.message : String(err || '')
+        const copyName = err && typeof err === 'object' && 'name' in err
+          ? String((err as { name: string }).name)
+          : ''
+        return /PreconditionFailed|ConditionalRequestConflict|412|يوجد ملف/.test(`${copyName} ${copyMsg}`)
+      }
+      // REPLACE+ContentType first (stable MIME on R2). Fall back to COPY once.
       try {
-        destHead = await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: toKey }))
-      } catch (verifyErr: unknown) {
+        await runCopy('REPLACE')
+      } catch (copyErr: unknown) {
+        if (isCopyConflict(copyErr)) throw copyErr
         await removeBadDestination()
-        if (copiedVia === 'copy' && sourceLen <= (32 * 1024 * 1024)) {
-          await putBufferedCopy()
-          destHead = await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: toKey }))
-          copiedVia = 'put'
-        } else {
+        try {
+          await runCopy('COPY')
+        } catch (copyErr2: unknown) {
+          if (isCopyConflict(copyErr2)) throw copyErr2
+          const detail = copyErr2 instanceof Error ? copyErr2.message : String(copyErr2 || copyErr || '')
+          throw new Error(
+            detail
+              ? `فشل نسخ المرفق على التخزين: ${detail}`
+              : 'فشل نسخ المرفق على التخزين',
+          )
+        }
+      }
+      // Verify destination before the client finalizes DB + deletes temp.
+      // A "successful" Copy that leaves a missing/empty object caused
+      // «فشل تحميل … عبر الوسيط» after issue (DB final path, temp gone).
+      // On verify failure: delete bad dest and retry Copy once — still no GetObject.
+      const headDestinationOrThrow = async () => {
+        try {
+          return await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: toKey }))
+        } catch (verifyErr: unknown) {
           const name = verifyErr && typeof verifyErr === 'object' && 'name' in verifyErr
             ? String((verifyErr as { name: string }).name)
             : ''
@@ -1249,19 +1318,28 @@ export function createR2StorageHandler(deps: {
           )
         }
       }
-      const destLen = Number(destHead.ContentLength || 0)
+      let destHead = await headDestinationOrThrow().catch(async (verifyErr) => {
+        await removeBadDestination()
+        await runCopy('REPLACE').catch(async () => {
+          await removeBadDestination()
+          await runCopy('COPY')
+        })
+        return headDestinationOrThrow().catch(() => {
+          throw verifyErr instanceof Error ? verifyErr : new Error('فشل التحقق من نسخة المرفق بعد النقل')
+        })
+      })
+      let destLen = Number(destHead.ContentLength || 0)
       if (destLen < 1 || destLen !== sourceLen) {
         await removeBadDestination()
-        if (copiedVia === 'copy' && sourceLen <= (32 * 1024 * 1024)) {
-          await putBufferedCopy()
-          const retryHead = await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: toKey }))
-          const retryLen = Number(retryHead.ContentLength || 0)
-          if (retryLen < 1 || retryLen !== sourceLen) {
-            await removeBadDestination()
-            throw new Error('فشل التحقق من نسخة المرفق بعد النقل')
-          }
-          copiedVia = 'put'
-        } else {
+        try {
+          await runCopy('REPLACE')
+        } catch {
+          await runCopy('COPY')
+        }
+        destHead = await headDestinationOrThrow()
+        destLen = Number(destHead.ContentLength || 0)
+        if (destLen < 1 || destLen !== sourceLen) {
+          await removeBadDestination()
           throw new Error('فشل التحقق من نسخة المرفق بعد النقل')
         }
       }
@@ -1275,7 +1353,8 @@ export function createR2StorageHandler(deps: {
         fromKey,
         toKey,
         bytes: sourceLen,
-        via: copiedVia,
+        via: 'copy',
+        verified: true,
       })
     }
 
