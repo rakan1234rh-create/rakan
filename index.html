@@ -1271,7 +1271,7 @@
   <link rel="stylesheet" href="styles/custom/athar-compliance-redesign.css?v=cm7" id="athar-compliance-redesign">
   <link rel="stylesheet" href="styles/custom/athar-violations-redesign.css?v=vl2" id="athar-violations-redesign">
   <link rel="stylesheet" href="styles/custom/athar-locations-redesign.css?v=loc4" id="athar-locations-redesign">
-  <link rel="stylesheet" href="styles/custom/athar-users-redesign.css?v=usr5" id="athar-users-redesign">
+  <link rel="stylesheet" href="styles/custom/athar-users-redesign.css?v=usr6" id="athar-users-redesign">
   <link rel="stylesheet" href="styles/custom/athar-breaks-redesign.css?v=brk17" id="athar-breaks-redesign">
   <link rel="stylesheet" href="styles/custom/athar-redesign-staging.css?v=mob-ui23" id="athar-redesign-staging">
   <link rel="stylesheet" href="styles/custom/athar-complaints-redesign.css?v=cmpl41" id="athar-complaints-redesign">
@@ -4226,108 +4226,110 @@
 
           <!-- USERS -->
           <div class="tab-content" id="tab-departments">
-            <div class="panel wf-panel">
-              <div class="wf-panel-banner users-panel-banner">
-                <div class="wf-panel-intro">
-                  <h2 class="wf-panel-title">إدارة المستخدمين</h2>
-                  <p class="wf-panel-sub">users management</p>
+            <div class="panel wf-panel usr-board">
+              <header class="usr-board__masthead">
+                <div class="usr-board__titles">
+                  <h2 class="wf-panel-title usr-board__title">إدارة المستخدمين</h2>
+                  <p class="wf-panel-sub usr-board__sub">ابحث وعيّن الأدوار من دليل واحد</p>
+                </div>
+                <div class="usr-board__mast-actions">
+                  <button type="button" class="usr-board__add" onclick="openUserModal()" data-perm="manage_users">
+                    <i class="fas fa-user-plus" aria-hidden="true"></i><span>مستخدم جديد</span>
+                  </button>
+                </div>
+              </header>
+
+              <div class="usr-board__command" role="search">
+                <label class="usr-board__search" for="user-search">
+                  <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
+                  <input type="search" class="figma-search-input usr-board__search-input" id="user-search"
+                    placeholder="اسم، رقم وظيفي، بريد، جوال…"
+                    title="ابحث بالاسم، الرقم الوظيفي، البريد الإلكتروني، رقم الجوال"
+                    autocomplete="off" enterkeyhint="search"
+                    aria-controls="usersList"
+                    oninput="scheduleRenderUsers()">
+                </label>
+                <div class="usr-board__status" role="group" aria-label="حالة الحساب">
+                  <button type="button" class="usr-seg is-active" id="usersChipActiveDesk" data-users-status="active" onclick="setUsersStatusFilter('active')">نشط</button>
+                  <button type="button" class="usr-seg" id="usersChipAllDesk" data-users-status="all" onclick="setUsersStatusFilter('all')" data-perm="manage_users">الكل</button>
+                  <button type="button" class="usr-seg is-active usr-seg--mob" id="usersChipActive" data-users-status="active" onclick="setUsersStatusFilter('active')">نشط</button>
+                  <button type="button" class="usr-seg usr-seg--mob" id="usersChipAll" data-users-status="all" onclick="setUsersStatusFilter('all')" data-perm="manage_users">الكل</button>
+                </div>
+                <div class="usr-board__tools">
+                  <button type="button" class="usr-tool" onclick="exportUsersCSV(false)" data-perm-any="export_users,manage_users" title="تصدير المفلتر" aria-label="تصدير المفلتر">
+                    <i class="fas fa-file-export" aria-hidden="true"></i>
+                  </button>
+                  <button type="button" class="usr-tool" onclick="downloadUsersImportTemplate()" data-perm-any="import_users,manage_users" title="قالب Excel" aria-label="قالب Excel">
+                    <i class="fas fa-file-download" aria-hidden="true"></i>
+                  </button>
+                  <button type="button" class="usr-tool" onclick="triggerUsersImport()" data-perm-any="import_users,manage_users" title="استيراد Excel" aria-label="استيراد Excel">
+                    <i class="fas fa-file-import" aria-hidden="true"></i>
+                  </button>
+                  <button type="button" class="usr-tool usr-tool--more" id="usersIoMoreBtn"
+                    onclick="usersIoMenuToggle(event)" aria-haspopup="menu" aria-expanded="false"
+                    aria-controls="usersIoMenu" title="استيراد وتصدير" aria-label="استيراد وتصدير">
+                    <i class="fas fa-ellipsis" aria-hidden="true"></i>
+                  </button>
+                  <div class="users-io-menu" id="usersIoMenu" role="menu" aria-label="استيراد وتصدير المستخدمين" hidden>
+                    <button type="button" role="menuitem" class="users-io-menu-item" onclick="usersIoMenuClose(); downloadUsersImportTemplate()" data-perm-any="import_users,manage_users">
+                      <i class="fas fa-file-download"></i><span>قالب Excel</span>
+                    </button>
+                    <button type="button" role="menuitem" class="users-io-menu-item" onclick="usersIoMenuClose(); exportUsersCSV(false)" data-perm-any="export_users,manage_users">
+                      <i class="fas fa-file-export"></i><span>تصدير المفلتر</span>
+                    </button>
+                    <button type="button" role="menuitem" class="users-io-menu-item" onclick="usersIoMenuClose(); exportUsersCSV(true)" data-perm-any="export_users,manage_users">
+                      <i class="fas fa-file-export"></i><span>تصدير الكل</span>
+                    </button>
+                    <button type="button" role="menuitem" class="users-io-menu-item" onclick="usersIoMenuClose(); triggerUsersImport()" data-perm-any="import_users,manage_users">
+                      <i class="fas fa-file-import"></i><span>استيراد Excel</span>
+                    </button>
+                  </div>
+                  <input type="file" id="users-import-file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" style="display:none" onchange="handleUsersImportFile(event)">
+                </div>
+                <div class="usr-board__count" aria-live="polite">
+                  <strong id="users-count-desk">0</strong>
+                  <span>نتيجة</span>
+                  <strong id="users-count" class="usr-board__count-mob">0</strong>
                 </div>
               </div>
-              <div id="usersDeskHost" class="wf-desk-tickets-host">
-                <div class="users-controls">
-                  <div class="users-filters-row">
-                    <div class="toolbar wf-toolbar users-toolbar users-filters-toolbar">
-                      <div class="figma-search-wrap wf-search">
-                        <input type="text" class="figma-search-input" id="user-search"
-                          placeholder="ابحث بالاسم، الرقم الوظيفي، البريد الإلكتروني، رقم الجوال"
-                          title="ابحث بالاسم، الرقم الوظيفي، البريد الإلكتروني، رقم الجوال"
-                          oninput="renderUsers()">
-                        <button type="button" class="figma-search-btn" onclick="renderUsers()" aria-label="بحث">
-                          <i class="fas fa-magnifying-glass"></i>
-                        </button>
-                      </div>
-                      <div class="wf-status-filter user-role-dd" id="user-role-dd-filter">
-                        <button type="button" class="wf-status-trigger" id="user-role-dd-trigger"
-                          onclick="userRoleDdToggle(event)" aria-haspopup="listbox" aria-expanded="false"
-                          title="كل الأدوار" aria-label="فلتر الأدوار">
-                          <span class="wf-status-trigger__ico" aria-hidden="true"><i class="fas fa-user-tag"></i></span>
-                          <span class="wf-status-trigger__label" id="user-role-dd-label">كل الأدوار</span>
-                          <i class="fas fa-chevron-down wf-status-trigger__chev" aria-hidden="true"></i>
-                        </button>
-                        <div class="wf-status-menu" id="user-role-dd-menu" role="listbox" aria-label="فلتر الدور">
-                          <div class="wf-status-menu__scroll">
-                            <button type="button" class="wf-status-opt is-active" data-val="" onclick="userRoleDdPick('')">كل الأدوار</button>
-                            <button type="button" class="wf-status-opt" data-val="observer" onclick="userRoleDdPick('observer')">الراصد</button>
-                            <button type="button" class="wf-status-opt" data-val="branch_manager" onclick="userRoleDdPick('branch_manager')">مدير الفرع</button>
-                            <button type="button" class="wf-status-opt" data-val="employee" onclick="userRoleDdPick('employee')">الموظف</button>
-                            <button type="button" class="wf-status-opt" data-val="supervisor" onclick="userRoleDdPick('supervisor')">المشرف</button>
-                            <button type="button" class="wf-status-opt" data-val="auditor" onclick="userRoleDdPick('auditor')">إدارة الرقابة الداخلية</button>
-                            <button type="button" class="wf-status-opt" data-val="manager" onclick="userRoleDdPick('manager')">المدير</button>
-                            <button type="button" class="wf-status-opt" data-val="hr" onclick="userRoleDdPick('hr')">الموارد البشرية</button>
-                            <button type="button" class="wf-status-opt" data-val="admin" onclick="userRoleDdPick('admin')">مدير النظام</button>
-                          </div>
-                        </div>
-                        <select id="user-roleFilter" class="wf-status-select-native" tabindex="-1" aria-hidden="true" onchange="renderUsers()">
-                          <option value="">كل الأدوار</option>
-                          <option value="observer">الراصد</option>
-                          <option value="branch_manager">مدير الفرع</option>
-                          <option value="employee">الموظف</option>
-                          <option value="supervisor">المشرف</option>
-                          <option value="auditor">إدارة الرقابة الداخلية</option>
-                          <option value="manager">المدير</option>
-                          <option value="hr">الموارد البشرية</option>
-                          <option value="admin">مدير النظام</option>
-                        </select>
-                      </div>
-                      <div class="users-io-mob-wrap">
-                        <button type="button" class="rp-tool-btn users-io-more-btn" id="usersIoMoreBtn"
-                          onclick="usersIoMenuToggle(event)" aria-haspopup="menu" aria-expanded="false"
-                          aria-controls="usersIoMenu" title="استيراد وتصدير">
-                          <i class="fas fa-file-export" aria-hidden="true"></i><span>CSV</span>
-                        </button>
-                        <div class="users-io-menu" id="usersIoMenu" role="menu" aria-label="استيراد وتصدير المستخدمين" hidden>
-                          <button type="button" role="menuitem" class="users-io-menu-item" onclick="usersIoMenuClose(); downloadUsersImportTemplate()" data-perm-any="import_users,manage_users">
-                            <i class="fas fa-file-download"></i><span>قالب Excel</span>
-                          </button>
-                          <button type="button" role="menuitem" class="users-io-menu-item" onclick="usersIoMenuClose(); exportUsersCSV(false)" data-perm-any="export_users,manage_users">
-                            <i class="fas fa-file-export"></i><span>تصدير المفلتر</span>
-                          </button>
-                          <button type="button" role="menuitem" class="users-io-menu-item" onclick="usersIoMenuClose(); exportUsersCSV(true)" data-perm-any="export_users,manage_users">
-                            <i class="fas fa-file-export"></i><span>تصدير الكل</span>
-                          </button>
-                          <button type="button" role="menuitem" class="users-io-menu-item" onclick="usersIoMenuClose(); triggerUsersImport()" data-perm-any="import_users,manage_users">
-                            <i class="fas fa-file-import"></i><span>استيراد Excel</span>
-                          </button>
-                        </div>
-                      </div>
-                      <div class="users-io-group users-io-group--desk">
-                        <button type="button" class="rp-tool-btn users-io-btn" onclick="downloadUsersImportTemplate()" title="قالب Excel مبسّط للاستيراد" data-perm-any="import_users,manage_users">
-                          <i class="fas fa-file-download"></i><span>قالب Excel</span>
-                        </button>
-                        <button type="button" class="rp-tool-btn users-io-btn" onclick="exportUsersCSV(false)" data-perm-any="export_users,manage_users">
-                          <i class="fas fa-file-export"></i><span>تصدير المفلتر</span>
-                        </button>
-                        <button type="button" class="rp-tool-btn users-io-btn" onclick="exportUsersCSV(true)" data-perm-any="export_users,manage_users">
-                          <i class="fas fa-file-export"></i><span>تصدير الكل</span>
-                        </button>
-                        <button type="button" class="rp-tool-btn users-io-btn" onclick="triggerUsersImport()" data-perm-any="import_users,manage_users">
-                          <i class="fas fa-file-import"></i><span>استيراد Excel</span>
-                        </button>
-                        <input type="file" id="users-import-file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" style="display:none" onchange="handleUsersImportFile(event)">
-                        <button type="button" class="rp-tool-btn rp-tool-btn-primary users-io-btn" onclick="openUserModal()" data-perm="manage_users">
-                          <i class="fas fa-user-plus"></i><span>إضافة مستخدم</span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="users-meta-row">
-                    <div class="wf-count">عدد النتائج: <strong id="users-count">0</strong></div>
-                    <div class="users-meta-actions">
-                    </div>
+
+              <!-- مزامنة فلتر الدور القديم مع السكة -->
+              <div class="wf-status-filter user-role-dd usr-board__role-legacy" id="user-role-dd-filter" hidden>
+                <button type="button" class="wf-status-trigger" id="user-role-dd-trigger"
+                  onclick="userRoleDdToggle(event)" aria-haspopup="listbox" aria-expanded="false"
+                  title="كل الأدوار" aria-label="فلتر الأدوار">
+                  <span class="wf-status-trigger__label" id="user-role-dd-label">كل الأدوار</span>
+                </button>
+                <div class="wf-status-menu" id="user-role-dd-menu" role="listbox" aria-label="فلتر الدور">
+                  <div class="wf-status-menu__scroll">
+                    <button type="button" class="wf-status-opt is-active" data-val="" onclick="userRoleDdPick('')">كل الأدوار</button>
+                    <button type="button" class="wf-status-opt" data-val="observer" onclick="userRoleDdPick('observer')">الراصد</button>
+                    <button type="button" class="wf-status-opt" data-val="branch_manager" onclick="userRoleDdPick('branch_manager')">مدير الفرع</button>
+                    <button type="button" class="wf-status-opt" data-val="employee" onclick="userRoleDdPick('employee')">الموظف</button>
+                    <button type="button" class="wf-status-opt" data-val="supervisor" onclick="userRoleDdPick('supervisor')">المشرف</button>
+                    <button type="button" class="wf-status-opt" data-val="auditor" onclick="userRoleDdPick('auditor')">إدارة الرقابة الداخلية</button>
+                    <button type="button" class="wf-status-opt" data-val="manager" onclick="userRoleDdPick('manager')">المدير</button>
+                    <button type="button" class="wf-status-opt" data-val="hr" onclick="userRoleDdPick('hr')">الموارد البشرية</button>
+                    <button type="button" class="wf-status-opt" data-val="admin" onclick="userRoleDdPick('admin')">مدير النظام</button>
                   </div>
                 </div>
-                <div class="mr-users-list-wrap wf-table-wrap">
-                  <div id="usersList" class="mr-users-list" role="list" aria-label="قائمة المستخدمين"></div>
+                <select id="user-roleFilter" class="wf-status-select-native" tabindex="-1" aria-hidden="true" onchange="renderUsers()">
+                  <option value="">كل الأدوار</option>
+                  <option value="observer">الراصد</option>
+                  <option value="branch_manager">مدير الفرع</option>
+                  <option value="employee">الموظف</option>
+                  <option value="supervisor">المشرف</option>
+                  <option value="auditor">إدارة الرقابة الداخلية</option>
+                  <option value="manager">المدير</option>
+                  <option value="hr">الموارد البشرية</option>
+                  <option value="admin">مدير النظام</option>
+                </select>
+              </div>
+
+              <div id="usersDeskHost" class="usr-board__body wf-desk-tickets-host">
+                <aside id="usersRoleRail" class="usr-rail" aria-label="تصفية حسب الدور"></aside>
+                <div class="usr-roster-shell mr-users-list-wrap wf-table-wrap">
+                  <div id="usersList" class="mr-users-list usr-roster" role="list" aria-label="قائمة المستخدمين" aria-busy="false"></div>
                 </div>
               </div>
             </div>

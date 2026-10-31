@@ -1,4 +1,44 @@
-/* ATHAR Production — المستخدمين / users (desktop #tab-departments) */
+/* ATHAR Users — Swiss monochrome + data-dense roster (ui-ux-pro-max)
+   Constraints: black/white only, light+dark, RTL, simple motion, logo untouched */
+
+html.athar-staging-redesign #tab-departments {
+  --usr-ink: var(--text, var(--mr-text, #000));
+  --usr-paper: var(--surface, var(--mr-surface, #fff));
+  --usr-wash: var(--surface2, var(--mr-bg-2, #f5f5f7));
+  --usr-line: var(--border, var(--mr-border, #e2e2e6));
+  --usr-muted: var(--text2, var(--mr-text-2, #5c5c66));
+  --usr-faint: var(--text3, var(--mr-text-3, #8e8e93));
+  --usr-rail: 220px;
+  --usr-row: 44px;
+  --usr-gap: 8px;
+  --usr-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --usr-radius: 0;
+  --usr-focus: color-mix(in srgb, var(--usr-ink) 28%, transparent);
+}
+
+html.athar-staging-redesign[data-theme="dark"] #tab-departments {
+  --usr-ink: var(--text, #f2f2f4);
+  --usr-paper: var(--surface, #1c1c21);
+  --usr-wash: var(--surface2, #131316);
+  --usr-line: var(--border, #2e2e36);
+  --usr-muted: var(--text2, #b0b0b8);
+  --usr-faint: var(--text3, #7d7d86);
+  --usr-focus: color-mix(in srgb, #fff 32%, transparent);
+}
+
+@keyframes usrBoardIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @keyframes usrBoardIn {
+    from { opacity: 1; transform: none; }
+    to { opacity: 1; transform: none; }
+  }
+}
+
+/* ── desktop shell: fill main ── */
 
 html.athar-staging-redesign.mr-desktop-ui .main:has(#tab-departments.active),
 html.athar-staging-redesign.mr-desktop-ui #appWrap .main:has(#tab-departments.active) {
@@ -19,56 +59,7 @@ html.athar-staging-redesign.mr-desktop-ui .main:has(#tab-departments.active) .co
   padding: 0 !important;
 }
 
-html.athar-staging-redesign.mr-desktop-ui #appWrap #tab-departments.tab-content.active {
-  padding: 24px 24px 16px !important;
-  box-sizing: border-box !important;
-}
-html.athar-staging-redesign.mr-desktop-ui #tab-departments > .panel,
-html.athar-staging-redesign.mr-desktop-ui #tab-departments .wf-panel {
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  padding: 0 !important;
-}
-html.athar-staging-redesign.mr-desktop-ui #tab-departments .wf-panel-intro,
-html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-meta-row,
-html.athar-staging-redesign.mr-desktop-ui #tab-departments .wf-count {
-  display: none !important;
-}
-
-/* Keep add/import/export visible (staging hid the whole desk IO group) */
-html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-io-group--desk {
-  display: flex !important;
-  flex-wrap: wrap !important;
-  gap: 8px !important;
-  align-items: center !important;
-}
-
-@keyframes atharRdCardIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.rd-ticket-empty {
-  text-align: center;
-  padding: 36px 16px;
-  color: var(--text3);
-  font-size: 13px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  flex: 1 1 auto;
-  min-height: 0;
-}
-.rd-ticket-empty i {
-  display: block;
-  font-size: 22px;
-  margin-bottom: 10px;
-  opacity: 0.7;
-}
-
-/* ── desktop toolbar + host ── */
-
+html.athar-staging-redesign.mr-desktop-ui #appWrap #tab-departments.tab-content.active,
 html.athar-staging-redesign.mr-desktop-ui #tab-departments.tab-content.active {
   display: flex !important;
   flex-direction: column !important;
@@ -77,594 +68,788 @@ html.athar-staging-redesign.mr-desktop-ui #tab-departments.tab-content.active {
   max-width: 100% !important;
   min-height: 0 !important;
   overflow: hidden !important;
-}
-
-html.athar-staging-redesign.mr-desktop-ui #tab-departments .wf-panel {
-  display: flex !important;
-  flex-direction: column !important;
-  flex: 1 1 0% !important;
-  min-height: 0 !important;
-  overflow: hidden !important;
-}
-
-html.athar-staging-redesign.mr-desktop-ui #tab-departments #usersDeskHost {
-  display: flex !important;
-  flex-direction: column !important;
-  flex: 1 1 0% !important;
-  min-height: 0 !important;
-  overflow: hidden !important;
-  visibility: visible !important;
-}
-
-html.athar-staging-redesign.mr-desktop-ui #tab-departments #usersList {
-  display: flex !important;
-  flex-direction: column !important;
-  visibility: visible !important;
-  flex: 1 1 0% !important;
-  min-height: 0 !important;
-  height: 100% !important;
-  overflow: hidden !important;
-}
-
-html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-controls {
-  flex-shrink: 0 !important;
-}
-
-html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-toolbar,
-html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-filters-toolbar {
-  display: flex !important;
-  flex-wrap: wrap !important;
-  gap: 10px !important;
-  align-items: center !important;
-  flex-shrink: 0 !important;
-  margin: 0 0 14px !important;
-}
-
-/* ┘å┘ü╪│ ╪┤╪▒┘è╪╖ ╪¿╪¡╪½ ╪╡┘ü╪¡╪⌐ ╪º┘ä╪¼╪»╪º┘ê┘ä */
-html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-filters-toolbar .wf-search,
-html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-filters-toolbar .figma-search-wrap {
-  display: flex !important;
-  align-items: center !important;
-  gap: 8px !important;
-  max-width: 320px !important;
-  width: 320px !important;
-  flex: 0 0 320px !important;
-  min-width: 0 !important;
-  height: auto !important;
-  min-height: 0 !important;
-  padding: 10px 14px !important;
-  background: var(--searchFill) !important;
-  border: none !important;
-  border-radius: 10px !important;
-  box-shadow: none !important;
-  direction: rtl !important;
-}
-
-html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-filters-toolbar .wf-search::before,
-html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-filters-toolbar .figma-search-wrap::before {
-  content: "\f002" !important;
-  font-family: "Font Awesome 6 Free" !important;
-  font-weight: 900 !important;
-  color: var(--text3) !important;
-  font-size: 12px !important;
-  flex-shrink: 0 !important;
-  line-height: 1 !important;
-}
-
-html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-filters-toolbar .wf-search .figma-search-btn,
-html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-filters-toolbar .figma-search-wrap .figma-search-btn {
-  display: none !important;
-}
-
-html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-filters-toolbar .wf-search .figma-search-input,
-html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-filters-toolbar .figma-search-wrap .figma-search-input {
-  flex: 1 !important;
-  min-width: 0 !important;
-  min-height: 0 !important;
-  height: auto !important;
-  padding: 0 !important;
-  font-size: 12.5px !important;
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  outline: none !important;
-  text-align: start !important;
-}
-
-html.athar-staging-redesign.mr-desktop-ui #tab-departments .users-filters-toolbar .figma-search-input::placeholder {
-  font-size: 12.5px !important;
-  color: var(--text3) !important;
-  opacity: 1 !important;
-  letter-spacing: 0 !important;
-}
-
-/* ── users desktop table ── */
-
-html.athar-staging-redesign.mr-desktop-ui #tab-departments #usersDeskHost.wf-desk-tickets-host,
-html.athar-staging-redesign.mr-desktop-ui #tab-departments .mr-users-list-wrap.wf-table-wrap,
-html.athar-staging-redesign.mr-desktop-ui #tab-departments #usersList.rd-usr-desk {
-  background: transparent !important;
-  border: none !important;
-  border-top: none !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
-  outline: none !important;
-  padding: 0 !important;
-}
-
-html.athar-staging-redesign.mr-desktop-ui #tab-departments .mr-users-list-wrap.wf-table-wrap {
-  display: flex !important;
-  flex-direction: column !important;
-  flex: 1 1 0% !important;
-  min-height: 0 !important;
-  height: 100% !important;
-  max-height: none !important;
-  overflow: hidden !important;
-}
-
-html.athar-staging-redesign.mr-desktop-ui #tab-departments #usersList.rd-usr-desk {
-  display: flex !important;
-  flex-direction: column !important;
-  flex: 1 1 0% !important;
-  min-height: 0 !important;
-  height: 100% !important;
-  overflow: hidden !important;
-}
-
-html.athar-staging-redesign.mr-desktop-ui #tab-departments .rd-desk-table--users {
-  background: var(--surface) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 16px !important;
-  flex: 1 1 0% !important;
-  min-height: 0 !important;
-  height: 100% !important;
-  width: 100% !important;
-  overflow-x: hidden !important;
-  overflow-y: auto !important;
-  isolation: isolate !important;
-  -webkit-overflow-scrolling: touch;
-}
-
-html.athar-staging-redesign.mr-desktop-ui .rd-desk-table:not(.rd-desk-table--users) {
-  background: var(--surface) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 16px !important;
-  overflow: hidden !important;
-}
-
-html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--users .rd-desk-table__head,
-html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--users .rd-desk-table__row {
-  display: grid !important;
-  grid-template-columns: minmax(0, 1.5fr) minmax(0, 0.85fr) minmax(0, 0.9fr) minmax(0, 1.1fr) minmax(120px, 0.95fr) minmax(0, 1.2fr) 72px !important;
-  gap: 10px !important;
-  align-items: center !important;
-  padding: 12px 16px !important;
+  padding: 20px 24px 16px !important;
   box-sizing: border-box !important;
-  width: 100% !important;
-  min-width: 0 !important;
+  background: var(--usr-wash) !important;
 }
 
-html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--users .rd-desk-table__head > *,
-html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--users .rd-desk-table__row > * {
-  min-width: 0 !important;
-}
-
-html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--users .rd-desk-table__head > *:last-child,
-html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--users .rd-desk-table__row > *:last-child {
-  justify-self: end !important;
-  overflow: visible !important;
-}
-
-html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--users .rd-desk-sort {
-  all: unset !important;
-  cursor: pointer !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 5px !important;
-  font: inherit !important;
-  color: inherit !important;
-  font-size: 11.5px !important;
-  font-weight: 700 !important;
-}
-
-html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--users .rd-desk-sort i {
-  font-size: 9px !important;
-  color: var(--text3) !important;
-}
-
-html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--users .rd-desk-sort.is-active i {
-  color: var(--text2) !important;
-}
-
-html.athar-staging-redesign.mr-desktop-ui .rd-desk-table__head {
-  background: var(--surface2) !important;
-  background-clip: padding-box !important;
-  font-size: 11.5px !important;
-  font-weight: 700 !important;
-  color: var(--text2) !important;
-}
-
-html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--users > .rd-desk-table__head {
-  position: sticky !important;
-  top: 0 !important;
-  z-index: 4 !important;
-  flex-shrink: 0 !important;
-  background: var(--surface2) !important;
-  border-start-start-radius: 15px !important;
-  border-start-end-radius: 15px !important;
-  box-shadow: 0 1px 0 var(--border) !important;
-}
-
-html.athar-staging-redesign.mr-desktop-ui .rd-desk-table__row {
-  border-top: 1px solid var(--border) !important;
-  animation: atharRdCardIn .35s ease both;
-}
-
-html.athar-staging-redesign.mr-desktop-ui .rd-desk-user {
-  display: flex !important;
-  align-items: center !important;
-  gap: 10px !important;
-  min-width: 0 !important;
-  width: 100% !important;
-}
-
-html.athar-staging-redesign.mr-desktop-ui .rd-desk-user__av {
-  position: relative !important;
-  width: 32px !important;
-  height: 32px !important;
-  border-radius: 50% !important;
-  background: var(--surface2) !important;
-  color: var(--text2) !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  font-size: 12px !important;
-  font-weight: 700 !important;
-  flex-shrink: 0 !important;
-}
-
-html.athar-staging-redesign.mr-desktop-ui .rd-desk-user__dot {
-  position: absolute !important;
-  bottom: 0 !important;
-  left: 0 !important;
-  width: 9px !important;
-  height: 9px !important;
-  border-radius: 50% !important;
-  background: var(--text3) !important;
-  border: 2px solid var(--surface) !important;
-}
-
-html.athar-staging-redesign.mr-desktop-ui .rd-desk-user__dot.is-on {
-  background: var(--success) !important;
-}
-
-html.athar-staging-redesign.mr-desktop-ui .rd-desk-user__name {
-  font-size: 13px !important;
-  font-weight: 600 !important;
-  white-space: nowrap !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  min-width: 0 !important;
-}
-
-html.athar-staging-redesign.mr-desktop-ui .rd-desk-role {
-  display: inline-flex !important;
-  max-width: 100% !important;
-  padding: 4px 10px !important;
-  border-radius: 999px !important;
-  font-size: 10.5px !important;
-  font-weight: 700 !important;
-  background: color-mix(in srgb, var(--rc, var(--gold)) 14%, transparent) !important;
-  color: var(--rc, var(--gold)) !important;
-  white-space: nowrap !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-}
-
-html.athar-staging-redesign.mr-desktop-ui .rd-desk-mono {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
-  font-size: 12px !important;
-  color: var(--text2) !important;
-  white-space: nowrap !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-}
-
-html.athar-staging-redesign.mr-desktop-ui .rd-desk-muted {
-  font-size: 12px !important;
-  color: var(--text2) !important;
-}
-
-html.athar-staging-redesign.mr-desktop-ui .rd-desk-clip {
-  white-space: nowrap !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  display: block !important;
-  max-width: 100% !important;
-}
-
-html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--users .rd-desk-table__head > *:nth-child(5),
-html.athar-staging-redesign.mr-desktop-ui .rd-desk-table--users .rd-desk-table__row > .rd-desk-phone {
-  text-align: start !important;
-}
-
-html.athar-staging-redesign.mr-desktop-ui .rd-desk-phone {
-  display: block !important;
-  width: 100% !important;
-  min-width: 0 !important;
-  font-size: 12px !important;
-  color: var(--text2) !important;
-}
-
-html.athar-staging-redesign.mr-desktop-ui .rd-desk-phone__val {
-  display: inline-block !important;
-  direction: ltr !important;
-  unicode-bidi: isolate !important;
-  font-variant-numeric: tabular-nums !important;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
-  font-size: 12px !important;
-  letter-spacing: 0.01em !important;
-  white-space: nowrap !important;
-}
-
-html.athar-staging-redesign.mr-desktop-ui .rd-desk-acts {
-  display: flex !important;
-  gap: 4px !important;
-  justify-content: flex-end !important;
-}
-
-html.athar-staging-redesign.mr-desktop-ui .rd-desk-act {
-  width: 28px !important;
-  height: 28px !important;
-  border-radius: 8px !important;
-  border: 1px solid var(--border) !important;
-  background: transparent !important;
-  color: var(--text2) !important;
-  cursor: pointer !important;
-}
-
-html.athar-staging-redesign.mr-desktop-ui .rd-desk-act--danger {
-  color: var(--danger) !important;
-}
-
-/* ── mobile shell + rd-usr cards ── */
-
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .panel.wf-panel {
+html.athar-staging-redesign.mr-desktop-ui #tab-departments > .panel,
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .wf-panel,
+html.athar-staging-redesign #tab-departments .usr-board {
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
   padding: 0 !important;
-}
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .wf-panel-banner {
-  padding: 0 !important;
-  border: none !important;
-  background: transparent !important;
-  box-shadow: none !important;
-}
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .wf-panel-title {
-  font-size: 18px !important;
-  font-weight: 700 !important;
-  color: var(--text) !important;
-  margin: 0 !important;
-}
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .wf-panel-sub {
-  font-size: 10.5px !important;
-  color: var(--text3) !important;
-  letter-spacing: 0.08em !important;
-  text-transform: uppercase !important;
-  margin: 3px 0 16px !important;
-}
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-io-group--desk {
-  display: none !important;
-}
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-controls,
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-filters-row,
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-toolbar {
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  padding: 0 !important;
-  margin: 0 0 12px !important;
-}
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-toolbar {
-  display: flex !important;
-  flex-wrap: nowrap !important;
-  gap: 8px !important;
-  align-items: center !important;
-  width: 100% !important;
-}
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-toolbar .figma-search-wrap {
-  flex: 1 1 auto !important;
-  min-width: 0 !important;
-  height: 40px !important;
-  background: var(--searchFill) !important;
-  padding: 0 14px !important;
-}
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-toolbar .figma-search-input {
-  font-size: 11.5px !important;
-}
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-toolbar .figma-search-input::placeholder {
-  color: var(--text3) !important;
-}
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-io-mob-wrap {
-  flex: 0 0 auto !important;
-}
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-io-more-btn {
-  width: 46px !important;
-  min-width: 46px !important;
-  height: 41px !important;
-  align-items: center !important;
-  justify-content: center !important;
-}
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-io-more-btn span {
-  display: none !important;
-}
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-io-more-btn i {
-  font-size: 13px !important;
-  margin: 0 !important;
-}
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .user-role-dd {
-  flex: 0 0 auto !important;
-  max-width: 42% !important;
-}
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .wf-status-trigger {
-  height: 41px !important;
-  min-height: 41px !important;
-  border-radius: 12px !important;
-  padding: 0 12px !important;
-  gap: 6px !important;
-}
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .wf-status-trigger__ico {
-  display: none !important;
-}
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .users-meta-row {
-  margin: 0 0 10px !important;
-  padding: 0 !important;
-  border: none !important;
-  background: transparent !important;
-}
-html.athar-staging-redesign.mr-mobile-ui #tab-departments .wf-count {
-  font-size: 12px !important;
-  color: var(--text2) !important;
-  margin: 0 !important;
-}
-html.athar-staging-redesign.mr-mobile-ui #tab-departments #usersDeskHost,
-html.athar-staging-redesign.mr-mobile-ui #tab-departments #usersDeskHost .mr-users-list-wrap {
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  padding: 0 !important;
-  overflow: hidden !important;
-}
-html.athar-staging-redesign.mr-mobile-ui #tab-departments #usersList.rd-usr-list,
-html.athar-staging-redesign.mr-mobile-ui #tab-departments #usersList.users-grid--mob-list {
   display: flex !important;
   flex-direction: column !important;
-  gap: 10px !important;
-  background: transparent !important;
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
 }
 
-.rd-usr {
-  position: relative;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  padding: 16px;
-  animation: atharRdCardIn 0.4s ease both;
-  direction: rtl;
+html.athar-staging-redesign #tab-departments .wf-panel-intro,
+html.athar-staging-redesign #tab-departments .users-meta-row,
+html.athar-staging-redesign #tab-departments .wf-count,
+html.athar-staging-redesign #tab-departments .wf-panel-banner {
+  display: none !important;
 }
-.rd-usr__role {
-  position: absolute;
-  top: 14px;
-  inset-inline-start: 14px;
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 10px;
-  font-weight: 700;
-  background: color-mix(in srgb, var(--rc, #8e8e93) 14%, transparent);
-  color: var(--rc, #8e8e93);
-  z-index: 1;
-}
-.rd-usr__head {
+
+/* masthead */
+html.athar-staging-redesign #tab-departments .usr-board__masthead {
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  margin-top: 28px;
-}
-.rd-usr__av-wrap {
-  position: relative;
-  width: 44px;
-  height: 44px;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 0 14px;
+  margin: 0;
   flex-shrink: 0;
+  border-bottom: 2px solid var(--usr-ink);
 }
-.rd-usr__av-fallback,
-.rd-usr__av-media {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  background: var(--surface2);
-  color: var(--text2);
-  font-size: 14px;
-  font-weight: 700;
-}
-.rd-usr__av-media img,
-.rd-usr__av-media .profile-hero__default-svg,
-.rd-usr__av-media svg {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-.rd-usr__dot {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 11px;
-  height: 11px;
-  border-radius: 50%;
-  background: var(--text3);
-  border: 2px solid var(--surface);
-}
-.rd-usr__dot.is-on { background: var(--success); }
-.rd-usr__body { flex: 1; min-width: 0; }
-.rd-usr__name {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--text);
-  line-height: 1.3;
-}
-.rd-usr__rows {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-top: 9px;
-}
-.rd-usr__row {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 11.5px;
-  color: var(--text2);
+
+html.athar-staging-redesign #tab-departments .usr-board__titles {
   min-width: 0;
 }
-.rd-usr__row i {
-  width: 13px;
-  color: var(--text3);
-  font-size: 11px;
-  flex-shrink: 0;
-  text-align: center;
+
+html.athar-staging-redesign #tab-departments .usr-board__title {
+  margin: 0;
+  font-size: clamp(1.55rem, 2.1vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--usr-ink);
+  line-height: 1.15;
+  text-wrap: balance;
 }
-.rd-usr__row--clip {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+
+html.athar-staging-redesign #tab-departments .usr-board__sub {
+  margin: 6px 0 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--usr-muted);
+  letter-spacing: 0;
+  text-transform: none;
 }
-.rd-usr__actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 14px;
-  padding-top: 12px;
-  border-top: 1px solid var(--border);
-}
-.rd-usr__btn {
-  padding: 6px 12px;
-  border-radius: 9px;
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--text2);
-  font-size: 11px;
-  font-weight: 600;
-  font-family: inherit;
-  cursor: pointer;
+
+html.athar-staging-redesign #tab-departments .usr-board__add {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid var(--usr-ink);
+  border-radius: var(--usr-radius);
+  background: var(--usr-ink);
+  color: var(--usr-paper);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: opacity 160ms var(--usr-ease), transform 160ms var(--usr-ease);
 }
-.rd-usr__btn i { font-size: 10px; }
-.rd-usr__btn--danger { color: var(--danger); }
-.rd-usr__btn:active { opacity: 0.88; }
+
+html.athar-staging-redesign #tab-departments .usr-board__add:hover {
+  opacity: 0.88;
+}
+
+html.athar-staging-redesign #tab-departments .usr-board__add:focus-visible {
+  outline: 2px solid var(--usr-ink);
+  outline-offset: 3px;
+}
+
+/* command strip */
+html.athar-staging-redesign #tab-departments .usr-board__command {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 0;
+  flex-shrink: 0;
+}
+
+html.athar-staging-redesign #tab-departments .usr-board__search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1 1 240px;
+  min-width: 180px;
+  min-height: 44px;
+  padding: 0 14px;
+  background: var(--usr-paper);
+  border: 1px solid var(--usr-line);
+  border-radius: var(--usr-radius);
+  color: var(--usr-faint);
+  cursor: text;
+}
+
+html.athar-staging-redesign #tab-departments .usr-board__search:focus-within {
+  border-color: var(--usr-ink);
+  box-shadow: 0 0 0 2px var(--usr-focus);
+}
+
+html.athar-staging-redesign #tab-departments .usr-board__search-input,
+html.athar-staging-redesign #tab-departments .usr-board__search .figma-search-input {
+  border: 0 !important;
+  background: transparent !important;
+  width: 100%;
+  font: inherit;
+  font-size: 13.5px;
+  color: var(--usr-ink);
+  outline: 0;
+  min-width: 0;
+  box-shadow: none !important;
+}
+
+html.athar-staging-redesign #tab-departments .usr-board__status {
+  display: inline-flex;
+  border: 1px solid var(--usr-ink);
+  border-radius: var(--usr-radius);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+html.athar-staging-redesign #tab-departments .usr-seg {
+  min-height: 44px;
+  min-width: 56px;
+  padding: 0 14px;
+  border: 0;
+  background: var(--usr-paper);
+  color: var(--usr-ink);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 150ms var(--usr-ease), color 150ms var(--usr-ease);
+}
+
+html.athar-staging-redesign #tab-departments .usr-seg + .usr-seg {
+  border-inline-start: 1px solid var(--usr-ink);
+}
+
+html.athar-staging-redesign #tab-departments .usr-seg.is-active {
+  background: var(--usr-ink);
+  color: var(--usr-paper);
+}
+
+html.athar-staging-redesign #tab-departments .usr-seg:focus-visible {
+  outline: 2px solid var(--usr-ink);
+  outline-offset: -2px;
+  z-index: 1;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .usr-seg--mob {
+  display: none !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-board__status .usr-seg:not(.usr-seg--mob) {
+  display: none !important;
+}
+
+html.athar-staging-redesign #tab-departments .usr-board__tools {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+html.athar-staging-redesign #tab-departments .usr-tool {
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--usr-line);
+  border-radius: var(--usr-radius);
+  background: var(--usr-paper);
+  color: var(--usr-ink);
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 150ms var(--usr-ease), border-color 150ms var(--usr-ease);
+}
+
+html.athar-staging-redesign #tab-departments .usr-tool:hover {
+  border-color: var(--usr-ink);
+  background: var(--usr-wash);
+}
+
+html.athar-staging-redesign #tab-departments .usr-tool:focus-visible {
+  outline: 2px solid var(--usr-ink);
+  outline-offset: 2px;
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .usr-tool--more {
+  display: none !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-tool:not(.usr-tool--more) {
+  display: none !important;
+}
+
+html.athar-staging-redesign #tab-departments .usr-board__count {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-inline-start: auto;
+  font-size: 12.5px;
+  color: var(--usr-muted);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+html.athar-staging-redesign #tab-departments .usr-board__count strong {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--usr-ink);
+}
+
+html.athar-staging-redesign.mr-desktop-ui #tab-departments .usr-board__count-mob {
+  display: none !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-departments #users-count-desk {
+  display: none !important;
+}
+
+html.athar-staging-redesign #tab-departments .usr-board__role-legacy {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  overflow: hidden !important;
+  clip: rect(0 0 0 0) !important;
+}
+
+/* body: rail + roster */
+html.athar-staging-redesign #tab-departments .usr-board__body,
+html.athar-staging-redesign #tab-departments #usersDeskHost {
+  display: grid !important;
+  grid-template-columns: var(--usr-rail) minmax(0, 1fr);
+  gap: 0;
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  border: 1px solid var(--usr-line);
+  background: var(--usr-paper);
+  visibility: visible !important;
+}
+
+/* role rail */
+html.athar-staging-redesign #tab-departments .usr-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 10px;
+  border-inline-end: 1px solid var(--usr-line);
+  background: var(--usr-wash);
+  overflow: auto;
+  overscroll-behavior: contain;
+  min-height: 0;
+}
+
+html.athar-staging-redesign #tab-departments .usr-rail__label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--usr-faint);
+  padding: 4px 8px 10px;
+  letter-spacing: 0.04em;
+}
+
+html.athar-staging-redesign #tab-departments .usr-rail__btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: var(--usr-radius);
+  background: transparent;
+  color: var(--usr-ink);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-align: start;
+  cursor: pointer;
+  transition: background 150ms var(--usr-ease), color 150ms var(--usr-ease);
+}
+
+html.athar-staging-redesign #tab-departments .usr-rail__btn:hover {
+  background: color-mix(in srgb, var(--usr-ink) 6%, transparent);
+}
+
+html.athar-staging-redesign #tab-departments .usr-rail__btn.is-active {
+  background: var(--usr-ink);
+  color: var(--usr-paper);
+}
+
+html.athar-staging-redesign #tab-departments .usr-rail__btn:focus-visible {
+  outline: 2px solid var(--usr-ink);
+  outline-offset: 1px;
+}
+
+html.athar-staging-redesign #tab-departments .usr-rail__n {
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  font-weight: 700;
+  opacity: 0.7;
+}
+
+html.athar-staging-redesign #tab-departments .usr-rail__btn.is-active .usr-rail__n {
+  opacity: 1;
+}
+
+/* roster */
+html.athar-staging-redesign #tab-departments .usr-roster-shell,
+html.athar-staging-redesign #tab-departments .mr-users-list-wrap {
+  display: flex !important;
+  flex-direction: column !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  flex: 1 1 auto !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+html.athar-staging-redesign #tab-departments #usersList,
+html.athar-staging-redesign #tab-departments .usr-roster {
+  display: block !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow: auto !important;
+  overscroll-behavior: contain;
+  padding: 0 !important;
+  background: var(--usr-paper) !important;
+}
+
+html.athar-staging-redesign #tab-departments .usr-sec {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 10px 16px 8px;
+  background: var(--usr-paper);
+  border-bottom: 1px solid var(--usr-line);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--usr-muted);
+  letter-spacing: 0.02em;
+}
+
+html.athar-staging-redesign #tab-departments .usr-sec__n {
+  font-variant-numeric: tabular-nums;
+  color: var(--usr-faint);
+}
+
+html.athar-staging-redesign #tab-departments .usr-row {
+  display: grid;
+  grid-template-columns: 40px minmax(140px, 1.4fr) 88px minmax(90px, 1fr) minmax(120px, 1.2fr) auto;
+  gap: 12px;
+  align-items: center;
+  min-height: var(--usr-row);
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--usr-line);
+  content-visibility: auto;
+  contain-intrinsic-size: auto 52px;
+  animation: usrBoardIn 320ms var(--usr-ease) both;
+}
+
+html.athar-staging-redesign #tab-departments .usr-row:hover {
+  background: color-mix(in srgb, var(--usr-ink) 3.5%, transparent);
+}
+
+html.athar-staging-redesign #tab-departments .usr-row.is-inactive {
+  opacity: 0.55;
+}
+
+html.athar-staging-redesign #tab-departments .usr-row__av {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--usr-wash);
+  border: 1px solid var(--usr-line);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--usr-ink);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+html.athar-staging-redesign #tab-departments .usr-row__av img,
+html.athar-staging-redesign #tab-departments .usr-row__av .mr-user-card__avatar,
+html.athar-staging-redesign #tab-departments .usr-row__av [class*="avatar"] {
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+html.athar-staging-redesign #tab-departments .usr-row__dot {
+  position: absolute;
+  bottom: 0;
+  inset-inline-start: 0;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--usr-faint);
+  border: 2px solid var(--usr-paper);
+}
+
+html.athar-staging-redesign #tab-departments .usr-row__dot.is-on {
+  background: var(--usr-ink);
+}
+
+html.athar-staging-redesign #tab-departments .usr-row__who {
+  min-width: 0;
+}
+
+html.athar-staging-redesign #tab-departments .usr-row__name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--usr-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html.athar-staging-redesign #tab-departments .usr-row__meta {
+  margin-top: 2px;
+  font-size: 11.5px;
+  color: var(--usr-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: ltr;
+  text-align: start;
+  unicode-bidi: plaintext;
+}
+
+html.athar-staging-redesign #tab-departments .usr-row__emp {
+  font-family: ui-monospace, "JetBrains Mono", Menlo, monospace;
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--usr-muted);
+}
+
+html.athar-staging-redesign #tab-departments .usr-row__branch,
+html.athar-staging-redesign #tab-departments .usr-row__mail {
+  font-size: 12.5px;
+  color: var(--usr-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+html.athar-staging-redesign #tab-departments .usr-row__mail {
+  direction: ltr;
+  text-align: start;
+  unicode-bidi: plaintext;
+}
+
+html.athar-staging-redesign #tab-departments .usr-row__acts {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  justify-content: flex-end;
+}
+
+html.athar-staging-redesign #tab-departments .usr-row__act {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--usr-line);
+  border-radius: var(--usr-radius);
+  background: var(--usr-paper);
+  color: var(--usr-ink);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 150ms var(--usr-ease), border-color 150ms var(--usr-ease);
+}
+
+html.athar-staging-redesign #tab-departments .usr-row__act:hover {
+  border-color: var(--usr-ink);
+  background: var(--usr-wash);
+}
+
+html.athar-staging-redesign #tab-departments .usr-row__act:focus-visible {
+  outline: 2px solid var(--usr-ink);
+  outline-offset: 2px;
+}
+
+html.athar-staging-redesign #tab-departments .usr-row__act--danger {
+  color: var(--usr-ink);
+  opacity: 0.72;
+}
+
+html.athar-staging-redesign #tab-departments .usr-row__act--danger:hover {
+  opacity: 1;
+  background: color-mix(in srgb, var(--usr-ink) 8%, transparent);
+}
+
+/* empty / skeleton */
+html.athar-staging-redesign #tab-departments .usr-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 220px;
+  padding: 32px 16px;
+  text-align: center;
+}
+
+html.athar-staging-redesign #tab-departments .usr-empty__title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--usr-ink);
+}
+
+html.athar-staging-redesign #tab-departments .usr-empty__hint {
+  margin: 0;
+  font-size: 13px;
+  color: var(--usr-muted);
+  max-width: 36ch;
+}
+
+html.athar-staging-redesign #tab-departments .usr-empty__cta {
+  margin-top: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--usr-ink);
+  border-radius: var(--usr-radius);
+  background: var(--usr-ink);
+  color: var(--usr-paper);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+html.athar-staging-redesign #tab-departments .usr-skel {
+  padding: 12px 16px;
+  display: grid;
+  gap: 10px;
+}
+
+html.athar-staging-redesign #tab-departments .usr-skel__row {
+  height: 40px;
+  background: linear-gradient(90deg, var(--usr-wash), color-mix(in srgb, var(--usr-ink) 6%, var(--usr-wash)), var(--usr-wash));
+  background-size: 200% 100%;
+  animation: usrSkel 1.1s linear infinite;
+}
+
+@keyframes usrSkel {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.athar-staging-redesign #tab-departments .usr-skel__row {
+    animation: none;
+  }
+  html.athar-staging-redesign #tab-departments .usr-row {
+    animation: none;
+  }
+}
+
+/* hide legacy colored role pills / table chrome on this page */
+html.athar-staging-redesign #tab-departments .rd-desk-table,
+html.athar-staging-redesign #tab-departments .rd-usr,
+html.athar-staging-redesign #tab-departments .rd-desk-role,
+html.athar-staging-redesign #tab-departments .users-io-group--desk,
+html.athar-staging-redesign #tab-departments .users-filters-toolbar:not(.usr-board__command),
+html.athar-staging-redesign #tab-departments .users-controls {
+  display: none !important;
+}
+
+html.athar-staging-redesign #tab-departments .users-io-menu {
+  position: absolute;
+  inset-inline-end: 0;
+  top: calc(100% + 4px);
+  z-index: 30;
+  min-width: 180px;
+  background: var(--usr-paper);
+  border: 1px solid var(--usr-line);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--usr-ink) 12%, transparent);
+}
+
+html.athar-staging-redesign #tab-departments .users-io-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 0;
+  background: transparent;
+  color: var(--usr-ink);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  text-align: start;
+}
+
+html.athar-staging-redesign #tab-departments .users-io-menu-item:hover {
+  background: var(--usr-wash);
+}
+
+/* ── mobile: horizontal role chips + compact rows ── */
+
+html.athar-staging-redesign.mr-mobile-ui #tab-departments.tab-content.active {
+  padding: 12px 12px 10px !important;
+  box-sizing: border-box !important;
+  background: var(--usr-wash) !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-board {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-board__masthead {
+  padding: 4px 2px 10px;
+  margin-bottom: 0;
+  border-bottom-width: 1px;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-board__title {
+  font-size: 1.35rem;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-board__add span {
+  display: none;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-board__add {
+  width: 44px;
+  padding: 0;
+  justify-content: center;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-board__command {
+  padding: 10px 0;
+  gap: 8px;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-board__body,
+html.athar-staging-redesign.mr-mobile-ui #tab-departments #usersDeskHost {
+  display: flex !important;
+  flex-direction: column !important;
+  grid-template-columns: none !important;
+  border: 0;
+  background: transparent;
+  gap: 8px;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-rail {
+  flex-direction: row;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  gap: 6px;
+  padding: 0 0 8px;
+  border: 0;
+  background: transparent;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-rail::-webkit-scrollbar {
+  display: none;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-rail__label {
+  display: none;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-rail__btn {
+  flex: 0 0 auto;
+  width: auto;
+  min-height: 36px;
+  padding: 6px 12px;
+  border: 1px solid var(--usr-line);
+  background: var(--usr-paper);
+  gap: 8px;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-rail__btn.is-active {
+  border-color: var(--usr-ink);
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-roster-shell {
+  border: 1px solid var(--usr-line);
+  background: var(--usr-paper) !important;
+  flex: 1 1 auto !important;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-row {
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  grid-template-areas:
+    "av who acts"
+    "av emp acts"
+    "av branch acts";
+  gap: 4px 10px;
+  padding: 12px 12px;
+  min-height: 0;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-row__av { grid-area: av; align-self: start; }
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-row__who { grid-area: who; }
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-row__emp {
+  grid-area: emp;
+  font-size: 11.5px;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-row__branch {
+  grid-area: branch;
+  font-size: 11.5px;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-row__mail {
+  display: none;
+}
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-row__acts {
+  grid-area: acts;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-row__act span {
+  display: none;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-row__act {
+  width: 40px;
+  min-height: 40px;
+  justify-content: center;
+  padding: 0;
+}
+
+html.athar-staging-redesign.mr-mobile-ui #tab-departments .usr-sec {
+  padding: 10px 12px 8px;
+}
+
+/* touch */
+html.athar-staging-redesign #tab-departments .usr-rail__btn,
+html.athar-staging-redesign #tab-departments .usr-row__act,
+html.athar-staging-redesign #tab-departments .usr-seg,
+html.athar-staging-redesign #tab-departments .usr-tool,
+html.athar-staging-redesign #tab-departments .usr-board__add {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
+}
