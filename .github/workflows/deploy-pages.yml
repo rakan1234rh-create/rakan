@@ -16,6 +16,8 @@ concurrency:
 
 jobs:
   build:
+    # لا يُسمح لـ workflow_dispatch من ref آخر ببناء artifact للنطاق الرسمي.
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout main (production root)
@@ -23,20 +25,27 @@ jobs:
         with:
           path: main-src
           ref: main
-
-      - name: Checkout staging (for /staging/ subpath)
-        uses: actions/checkout@v4
-        with:
-          path: staging-src
-          ref: staging
+          persist-credentials: false
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '24'
+              node-version: '24'
 
       - uses: actions/configure-pages@v5
 
-      - name: Build production root + /staging
+      - name: Require reviewed security backend rollout
+        env:
+          BACKEND_READY: ${{ vars.ATHAR_SECURITY_BACKEND_READY }}
+        run: |
+          if [ "$BACKEND_READY" != "true" ]; then
+            echo "::error::Pages is blocked until the reviewed security backend migrations, Edge secrets, and proxy-IP checks are complete. See docs/DEPLOYMENT_SECURITY.md."
+            exit 1
+          fi
+
+      - name: Verify production Pages source policy
+        run: node main-src/scripts/test-deploy-security.mjs
+
+      - name: Build production root
         run: |
           set -euo pipefail
 
@@ -54,29 +63,25 @@ jobs:
               cp index.html "$DEST/index.html"
               # athar-build يجب أن يطابق app-version.json.build حرفياً وإلا يحدث رفرش لا نهائي
               sed -i "s/<meta name=\"athar-build\" content=\"[^\"]*\">/<meta name=\"athar-build\" content=\"${SHORT_SHA}\">/" "$DEST/index.html"
-              sed -i "s|href=\"styles/custom/athar-redesign-staging.css\\(?v=[^\"]*\\)\\?\"|href=\"styles/custom/athar-redesign-staging.css?v=${SHORT_SHA}\"|g" "$DEST/index.html"
               # كسر كاش CDN/المتصفح لـ app.js (بدون ?v= يبقى max-age ويعرض منطقاً قديماً على الجوال)
               sed -i "s|src=\"js/app.js\\(?v=[^\"]*\\)\\?\"|src=\"js/app.js?v=${SHORT_SHA}\"|g" "$DEST/index.html"
+              # /start/ = نسخة كاملة من التطبيق مع <base href="/"> لكسر كاش واتساب لصفحة التحويل القديمة على "/"
+              mkdir -p "$DEST/start"
+              sed 's|<head>|<head>\n  <base href="/">|' "$DEST/index.html" > "$DEST/start/index.html"
               printf '%s\n' "{\"build\":\"${SHORT_SHA}\",\"builtAt\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"env\":\"${LABEL}\"}" > "$DEST/app-version.json"
               cp -r styles "$DEST/"
               if [ -d js ]; then cp -r js "$DEST/"; fi
               cp -r vendor "$DEST/"
               test -f "$DEST/vendor/ffmpeg/worker.js"
               cp manifest.webmanifest "$DEST/manifest.webmanifest"
+              if [ -f unsubscribe.html ]; then cp unsubscribe.html "$DEST/unsubscribe.html"; fi
               if [ -f sw.js ]; then cp sw.js "$DEST/sw.js"; fi
               cp icons/athar-pwa-192-v${VER}.png icons/athar-pwa-512-v${VER}.png \
                 icons/athar-pwa-180-v${VER}.png icons/athar-pwa-maskable-512-v${VER}.png \
                 icons/athar-app-icon.svg icons/athar-homescreen-fullbleed.svg \
                 icons/athar-homescreen-maskable.svg icons/athar-wordmark-email.svg \
                 icons/athar-wordmark-email-v388.png icons/athar-logo-v401.png "$DEST/icons/"
-              # أصول الشعار الجديدة قد تكون على staging فقط — انسخ الموجود دون كسر بناء main
               for f in \
-                icons/athar-wordmark-email-v402.png \
-                icons/athar-wordmark-email-v403.png \
-                icons/athar-logo-v402.png \
-                icons/athar-logo-v402.svg \
-                icons/athar-logo-v402-on-light.png \
-                icons/athar-logo-v402-on-light.svg \
                 icons/athar-logo-v403.png \
                 icons/athar-logo-v403.svg \
                 icons/athar-logo-v403-white.png \
@@ -84,9 +89,8 @@ jobs:
               do
                 if [ -f "$f" ]; then cp "$f" "$DEST/icons/"; fi
               done
-              if [ -d icons/avatars ]; then mkdir -p "$DEST/icons/avatars" && cp -r icons/avatars/. "$DEST/icons/avatars/"; fi
               if [ -d icons/redesign ]; then mkdir -p "$DEST/icons/redesign" && cp -r icons/redesign/. "$DEST/icons/redesign/"; fi
-              if [ -d design ]; then cp -r design "$DEST/"; fi
+              if [ -d icons/avatars ]; then mkdir -p "$DEST/icons/avatars" && cp -r icons/avatars/. "$DEST/icons/avatars/"; fi
               touch "$DEST/.nojekyll"
               cp icons/athar-pwa-180-v${VER}.png "$DEST/apple-touch-icon.png"
               cp icons/athar-pwa-180-v${VER}.png "$DEST/apple-touch-icon-precomposed.png"
@@ -101,8 +105,11 @@ jobs:
           if [ -f "$GITHUB_WORKSPACE/main-src/CNAME" ]; then
             cp "$GITHUB_WORKSPACE/main-src/CNAME" "$GITHUB_WORKSPACE/site/CNAME"
           fi
-          # لا تمسح /staging عند نشر الإنتاج — انشره من فرع staging دائماً
-          build_site "$GITHUB_WORKSPACE/staging-src" "$GITHUB_WORKSPACE/site/staging" "staging"
+
+      - name: Assert staging is absent from the Pages artifact
+        run: |
+          set -euo pipefail
+          test ! -e site/staging
 
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -110,6 +117,7 @@ jobs:
 
   deploy:
     needs: build
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment:
       name: github-pages

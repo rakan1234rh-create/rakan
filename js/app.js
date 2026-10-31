@@ -6,15 +6,15 @@
       // 1. CONFIGURATION
       // ═══════════════════════════════════════════════════════════════════════════
       // Staging Supabase project (فرع staging فقط — لا يمس بيانات الإنتاج)
-      const SUPABASE_URL = 'https://omzclgjbvqfcbpfkcbpk.supabase.co';
+      const SUPABASE_URL = 'https://cmdkldxbocbpiptdodmp.supabase.co';
 
       // 🔑 Publishable Key (آمن للاستخدام في المتصفح طالما RLS مفعّل)
       // استبدل القيمة أدناه بالـ Publishable Key الجديد من:
       // Supabase Dashboard → Settings → API Keys → Publishable and secret API keys
-      const SUPABASE_ANON = 'sb_publishable_u5qNowdxPq9nClg97zKdgw_FkKnMoOD';
+      const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNtZGtsZHhib2NicGlwdGRvZG1wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEwMjE1MDgsImV4cCI6MjEwNjU5NzUwOH0.99UW9KaWjxP0Ufpr8crIDzt24xFdBa3YSFmCe5lwBv8';
 
       /** Web Push — المفتاح العام VAPID (الخاص في Supabase Secrets فقط) */
-      const ATHAR_VAPID_PUBLIC_KEY = 'BAAE2sxYeIGbYADV7uimLzIFB_en9SBWQ3a4-LBULuOIVm40YI7YfjXL2Fddttr1L1tHFkoaiPzmZankfUk_2jc';
+      const ATHAR_VAPID_PUBLIC_KEY = 'BAPcrCNwtNmP395lSHB2fgqJwGLIcrF6K4Bns0sYHOB8uvgdK0dPfyGL1D2TvNZI7W5sJgypUCAcoxK82yH3Tc4';
       const ATHAR_VAPID_STORAGE_KEY = 'athar_vapid_public_key';
       const ATHAR_WEB_PUSH_SYNC_KEY = 'athar_web_push_last_sync';
       const ATHAR_WEB_PUSH_USER_KEY = 'athar_web_push_last_user';
@@ -22,7 +22,10 @@
       const ATHAR_SW_URL = './sw.js?v=10';
 
       /** رابط النشر — روابط استعادة كلمة المرور من file:// أو localhost */
-      const ATHAR_PUBLIC_ORIGIN = 'https://athar-app.online/staging';
+      const ATHAR_PUBLIC_ORIGIN = 'https://athar-staging.pages.dev';
+
+      /** فرع staging — واجهة تجريبية فقط */
+      const ATHAR_ENV = 'staging';
 
       // 📁 Cloudflare Worker اختياري (مسار عارض/تحميل قديم)
       const CLOUDFLARE_WORKER_URL = '/upload';
@@ -45,7 +48,9 @@
       /** GitHub Pages أو أي نشر عام — لا يدعم وضع الضيف للبيانات */
       function isPublicDeployHost() {
         const h = (location.hostname || '').toLowerCase();
-        return h === 'github.io' || h.endsWith('.github.io') || h === 'athar-app.online' || h.endsWith('.athar-app.online');
+        return h === 'github.io' || h.endsWith('.github.io')
+          || h === 'athar-app.online' || h.endsWith('.athar-app.online')
+          || h.endsWith('.pages.dev');
       }
 
       /** فتح الملف مباشرة من القرص (بدون http) — لا يوجد /config ولا R2 */
