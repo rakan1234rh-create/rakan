@@ -17955,6 +17955,36 @@
               operation: opts.operation || 'create',
               ...(opts.expectedState ? { expectedState: opts.expectedState } : {}),
             };
+            // المسار الأساسي عند توفر الملف محلياً: putFinal (Put+IfNoneMatch).
+            // moveObject عبر SDK كان ينهار على Edge عند Head(404) للوجهة → 503.
+            const local = attachmentBlobForTempKey(oldKey, opts.blobByTempKey);
+            const localBody = local?.rawFile || local?.body || null;
+            if (localBody) {
+              try {
+                const putFinal = await uploadR2FinalViaEdgeProxy({
+                  fromKey: oldKey,
+                  toKey: newKey,
+                  body: localBody,
+                  contentType: local.type || local.contentType || '',
+                  fileName: local.name || att.n || newKey,
+                  recordType: 'violation',
+                  recordId: violationId,
+                  operation: opts.operation || 'create',
+                  expectedState: opts.expectedState,
+                });
+                if (isAtharDebugLog()) console.log(`[R2-Move] putFinal primary: ${oldKey} -> ${newKey}`);
+                return {
+                  i, oldKey, newKey,
+                  serverVerified: !!(putFinal?.verified || putFinal?.ok || putFinal?.alreadyExists),
+                  viaPutFinal: true,
+                };
+              } catch (putErr) {
+                if (isR2ObjectAlreadyExistsMsg(putErr?.message || putErr)) {
+                  return { i, oldKey, newKey, alreadyExisted: true, serverVerified: false };
+                }
+                if (isAtharDebugLog()) console.warn(`[R2-Move] putFinal primary failed, try copy`, putErr);
+              }
+            }
             try {
               const moved = await callR2StorageFn('moveObject', movePayload);
               if (isAtharDebugLog()) console.log(`[R2-Move] Moved: ${oldKey} -> ${newKey}`);
@@ -17963,39 +17993,9 @@
                 serverVerified: !!(moved?.verified || (Number(moved?.bytes) > 0 && moved?.ok !== false)),
               };
             } catch (e) {
-              // مثل مسار الرد: النقل نجح وفُقدت الاستجابة، أو إعادة محاولة بعد نجاح سابق.
               if (isR2ObjectAlreadyExistsMsg(e?.message || e)) {
                 if (isAtharDebugLog()) console.log(`[R2-Move] Destination already present: ${newKey}`);
                 return { i, oldKey, newKey, alreadyExisted: true, serverVerified: false };
-              }
-              // احتياط: الجسم ما زال عند العميل — ارفع للوجهة النهائية بلا GetObject على Edge.
-              const local = attachmentBlobForTempKey(oldKey, opts.blobByTempKey);
-              const localBody = local?.rawFile || local?.body || null;
-              if (localBody) {
-                try {
-                  const putFinal = await uploadR2FinalViaEdgeProxy({
-                    fromKey: oldKey,
-                    toKey: newKey,
-                    body: localBody,
-                    contentType: local.type || local.contentType || '',
-                    fileName: local.name || att.n || newKey,
-                    recordType: 'violation',
-                    recordId: violationId,
-                    operation: opts.operation || 'create',
-                    expectedState: opts.expectedState,
-                  });
-                  if (isAtharDebugLog()) console.log(`[R2-Move] putFinal: ${oldKey} -> ${newKey}`);
-                  return {
-                    i, oldKey, newKey,
-                    serverVerified: !!(putFinal?.verified || putFinal?.ok || putFinal?.alreadyExists),
-                    viaPutFinal: true,
-                  };
-                } catch (putErr) {
-                  if (isR2ObjectAlreadyExistsMsg(putErr?.message || putErr)) {
-                    return { i, oldKey, newKey, alreadyExisted: true, serverVerified: false };
-                  }
-                  if (isAtharDebugLog()) console.error(`[R2-Move] putFinal failed ${oldKey}:`, putErr);
-                }
               }
               failed.push(oldKey);
               if (isAtharDebugLog()) console.error(`[R2-Move] Failed to move ${oldKey}:`, e);
@@ -18086,6 +18086,32 @@
           const oldKey = att.p;
           if (!oldKey || !String(oldKey).startsWith('temp_')) return null;
           const newKey = `${r2Folder}/${String(oldKey).split('/').pop()}`;
+          const local = attachmentBlobForTempKey(oldKey, opts.blobByTempKey);
+          const localBody = local?.rawFile || local?.body || null;
+          if (localBody) {
+            try {
+              const putFinal = await uploadR2FinalViaEdgeProxy({
+                fromKey: oldKey,
+                toKey: newKey,
+                body: localBody,
+                contentType: local.type || local.contentType || '',
+                fileName: local.name || att.n || newKey,
+                recordType: 'complaint',
+                recordId: complaintId,
+                operation: opts.operation || 'create',
+              });
+              return {
+                i, oldKey, newKey,
+                serverVerified: !!(putFinal?.verified || putFinal?.ok || putFinal?.alreadyExists),
+                viaPutFinal: true,
+              };
+            } catch (putErr) {
+              if (isR2ObjectAlreadyExistsMsg(putErr?.message || putErr)) {
+                return { i, oldKey, newKey, alreadyExisted: true, serverVerified: false };
+              }
+              if (isAtharDebugLog()) console.warn('[R2-Move] complaint putFinal primary failed', oldKey, putErr);
+            }
+          }
           try {
             const moved = await callR2StorageFn('moveObject', {
               fromKey: oldKey,
@@ -18101,32 +18127,6 @@
           } catch (e) {
             if (isR2ObjectAlreadyExistsMsg(e?.message || e)) {
               return { i, oldKey, newKey, alreadyExisted: true, serverVerified: false };
-            }
-            const local = attachmentBlobForTempKey(oldKey, opts.blobByTempKey);
-            const localBody = local?.rawFile || local?.body || null;
-            if (localBody) {
-              try {
-                const putFinal = await uploadR2FinalViaEdgeProxy({
-                  fromKey: oldKey,
-                  toKey: newKey,
-                  body: localBody,
-                  contentType: local.type || local.contentType || '',
-                  fileName: local.name || att.n || newKey,
-                  recordType: 'complaint',
-                  recordId: complaintId,
-                  operation: opts.operation || 'create',
-                });
-                return {
-                  i, oldKey, newKey,
-                  serverVerified: !!(putFinal?.verified || putFinal?.ok || putFinal?.alreadyExists),
-                  viaPutFinal: true,
-                };
-              } catch (putErr) {
-                if (isR2ObjectAlreadyExistsMsg(putErr?.message || putErr)) {
-                  return { i, oldKey, newKey, alreadyExisted: true, serverVerified: false };
-                }
-                if (isAtharDebugLog()) console.error('[R2-Move] complaint putFinal failed', oldKey, putErr);
-              }
             }
             failed.push(oldKey);
             if (isAtharDebugLog()) console.error('[R2-Move] complaint failed', oldKey, e);
@@ -24995,39 +24995,40 @@
               const oldKey = att.p;
               if (!oldKey || !oldKey.startsWith('temp_')) continue;
               const newKey = `${r2Folder}/${oldKey.split('/').pop()}`;
-              try {
-                await callR2StorageFn('moveObject', {
-                  fromKey: oldKey,
-                  toKey: newKey,
-                  recordType: 'violation',
-                  recordId: t.id,
-                  operation: 'reply',
-                  expectedState: t.state,
-                });
-              } catch (moveErr) {
-                // النقل نجح وفُقدت الاستجابة، أو إعادة محاولة بعد نجاح سابق.
-                if (isR2ObjectAlreadyExistsMsg(moveErr?.message || moveErr)) {
-                  // ok
-                } else {
-                  const local = attachmentBlobForTempKey(oldKey, respBlobByTempKey);
-                  const localBody = local?.rawFile || local?.body || null;
-                  if (!localBody) throw new Error(humanizeR2NetworkError(moveErr));
-                  try {
-                    await uploadR2FinalViaEdgeProxy({
-                      fromKey: oldKey,
-                      toKey: newKey,
-                      body: localBody,
-                      contentType: local.type || local.contentType || '',
-                      fileName: local.name || att.n || newKey,
-                      recordType: 'violation',
-                      recordId: t.id,
-                      operation: 'reply',
-                      expectedState: t.state,
-                    });
-                  } catch (putErr) {
-                    if (!isR2ObjectAlreadyExistsMsg(putErr?.message || putErr)) {
-                      throw new Error(humanizeR2NetworkError(putErr));
-                    }
+              const local = attachmentBlobForTempKey(oldKey, respBlobByTempKey);
+              const localBody = local?.rawFile || local?.body || null;
+              let settled = false;
+              if (localBody) {
+                try {
+                  await uploadR2FinalViaEdgeProxy({
+                    fromKey: oldKey,
+                    toKey: newKey,
+                    body: localBody,
+                    contentType: local.type || local.contentType || '',
+                    fileName: local.name || att.n || newKey,
+                    recordType: 'violation',
+                    recordId: t.id,
+                    operation: 'reply',
+                    expectedState: t.state,
+                  });
+                  settled = true;
+                } catch (putErr) {
+                  if (isR2ObjectAlreadyExistsMsg(putErr?.message || putErr)) settled = true;
+                }
+              }
+              if (!settled) {
+                try {
+                  await callR2StorageFn('moveObject', {
+                    fromKey: oldKey,
+                    toKey: newKey,
+                    recordType: 'violation',
+                    recordId: t.id,
+                    operation: 'reply',
+                    expectedState: t.state,
+                  });
+                } catch (moveErr) {
+                  if (!isR2ObjectAlreadyExistsMsg(moveErr?.message || moveErr)) {
+                    throw new Error(humanizeR2NetworkError(moveErr));
                   }
                 }
               }

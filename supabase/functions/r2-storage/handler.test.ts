@@ -127,11 +127,39 @@ function buildHandler(s3: FakeS3, permission: Permission = 'allow') {
       throw new Error(`unexpected RPC ${fn}`)
     },
   }
+  const env = { accessKeyId: 'key', secretAccessKey: 'secret', accountId: 'a'.repeat(32), bucket: BUCKET }
   const handler = createR2StorageHandler({
-    requireR2Env: () => ({ accessKeyId: 'key', secretAccessKey: 'secret', accountId: 'a'.repeat(32), bucket: BUCKET }),
+    requireR2Env: () => env,
     authenticateRequest: async () => ({ user: { id: UID }, supabase, isServiceRole: false as const }),
     ensureAws: async () => {},
     makeS3: () => s3 as never,
+    // Exercise moveObject without AWS SDK Node HTTP (production uses fetch SigV4).
+    r2Rest: {
+      headMeta: async (_env, key) => {
+        const value = s3.objects.get(key)
+        if (!value) return { exists: false, contentLength: 0, contentType: '' }
+        return { exists: true, contentLength: value.body.byteLength, contentType: value.contentType }
+      },
+      copyObject: async (_env, fromKey, toKey, opts = {}) => {
+        if (s3.objects.has(toKey)) {
+          const err = new Error('يوجد ملف بالفعل في وجهة النقل')
+          err.name = 'PreconditionFailed'
+          throw err
+        }
+        const value = s3.objects.get(fromKey)
+        if (!value) throw namedError('NotFound')
+        // Allow BrokenCopyS3 subclasses to intercept via send(FakeCopyObjectCommand).
+        await s3.send(new FakeCopyObjectCommand({
+          Key: toKey,
+          CopySource: `${BUCKET}/${fromKey}`,
+          MetadataDirective: opts.replaceMetadata ? 'REPLACE' : 'COPY',
+          ContentType: opts.contentType || value.contentType,
+        }))
+      },
+      deleteObject: async (_env, key) => {
+        s3.objects.delete(key)
+      },
+    },
   })
   return { handler, rpcCalls }
 }
