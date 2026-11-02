@@ -1,0 +1,92 @@
+/* ATHAR — black & white login (split layout). Loaded last; scoped to #loginScreen. */
+#loginScreen.lp-screen {
+  --bw-bg: #ffffff; --bw-fg: #0a0a0a; --bw-mu: #5f5f5f; --bw-ln: #e4e4e4; --bw-ct: #8a8a8a; --bw-hv: #ededed;
+  background: var(--bw-bg) !important;
+  color: var(--bw-fg);
+  display: grid !important;
+  grid-template-columns: 5fr 6fr;
+  align-items: stretch;
+  justify-items: stretch;
+  padding: 0 !important;
+  min-height: 100vh; min-height: 100dvh;
+  font-family: 'IBM Plex Sans Arabic', system-ui, sans-serif;
+  position: relative;
+}
+[data-theme="dark"] #loginScreen.lp-screen {
+  --bw-bg: #0b0b0b; --bw-fg: #f2f2f2; --bw-mu: #a3a3a3; --bw-ln: #262626; --bw-ct: #6e6e6e; --bw-hv: #1c1c1c;
+}
+#loginScreen.lp-screen[hidden], #loginScreen.lp-screen.hidden { display: none !important; }
+
+/* brand panel (first column = right side in RTL) */
+#loginScreen.lp-screen::before {
+  content: 'EMPLOYEE VIOLATIONS · COMPLIANCE';
+  grid-column: 1; grid-row: 1;
+  background: #0a0a0a; color: #bdbdbd;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 12px; letter-spacing: .18em; direction: ltr; text-align: start;
+  padding: 40px 48px;
+}
+#loginScreen.lp-screen::after {
+  content: '';
+  grid-column: 1; grid-row: 1;
+  align-self: center; justify-self: center;
+  width: min(78%, 520px); aspect-ratio: 686 / 170;
+  background: #ffffff;
+  -webkit-mask: url('../../icons/redesign/athar-wordmark.svg') center / contain no-repeat;
+  mask: url('../../icons/redesign/athar-wordmark.svg') center / contain no-repeat;
+  pointer-events: none;
+}
+#loginScreen .lp-bg-blobs, #loginScreen .login-portal-backdrop, #loginScreen .login-screen-floor, #loginPortalBackdrop { display: none !important; }
+
+#loginScreen .lp-center {
+  grid-column: 2; grid-row: 1;
+  max-width: none; width: 100%;
+  display: flex; align-items: center; justify-content: center;
+  padding: 40px 48px; box-sizing: border-box;
+}
+#loginScreen .lp-card, #loginScreen .lp-card--in {
+  background: transparent !important; border: 0 !important; box-shadow: none !important; border-radius: 0 !important;
+  width: 100%; max-width: 420px; animation: none !important;
+}
+#loginScreen .lp-card .lp-bd { overflow: visible; border-radius: 0; padding: 0; }
+#loginScreen .lp-hd, #loginScreen .lp-hd--wefaq, #loginScreen #loginCard .lp-hd--wefaq { text-align: start; padding: 0 0 24px !important; }
+#loginScreen .lp-hd--wefaq .wefaq-logo-slot { display: none !important; }
+#loginScreen .lp-hd--wefaq::before {
+  content: 'تسجيل الدخول';
+  display: block; font-family: 'Readex Pro', 'IBM Plex Sans Arabic', sans-serif; font-weight: 600; font-size: 32px; line-height: 1.4; color: var(--bw-fg);
+}
+#loginScreen .lp-sub, #loginScreen #loginCard .lp-hd--wefaq .lp-sub {
+  margin: 6px 0 0; color: var(--bw-mu); font-size: 15px; text-align: start;
+}
+#loginScreen .lp-label { color: var(--bw-fg); font-size: 14px; font-weight: 500; }
+#loginScreen .lp-input {
+  height: 50px; box-sizing: border-box; border-radius: 4px !important;
+  background: var(--bw-bg) !important; color: var(--bw-fg) !important;
+  border: 1px solid var(--bw-ct) !important; box-shadow: none !important; font-size: 16px;
+}
+#loginScreen .lp-input:focus { outline: 2px solid var(--bw-fg); outline-offset: 2px; border-color: var(--bw-fg) !important; }
+#loginScreen .lp-input::placeholder { color: var(--bw-mu); opacity: .8; }
+#loginScreen .lp-pw-toggle { color: var(--bw-mu); }
+#loginScreen .lp-meta label, #loginScreen .lp-meta label span { color: var(--bw-fg); font-size: 14px; }
+#loginScreen .lp-meta input[type="checkbox"] { accent-color: var(--bw-fg); width: 18px; height: 18px; }
+#loginScreen .lp-link { color: var(--bw-fg) !important; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+#loginScreen .lp-btn-primary {
+  height: 52px; border-radius: 4px !important; border: 0; box-shadow: none !important;
+  background: var(--bw-fg) !important; color: var(--bw-bg) !important; font-size: 16px; font-weight: 600;
+}
+#loginScreen .lp-btn-primary:hover:not(:disabled) { opacity: .88; filter: none; transform: none; }
+#loginScreen .lp-btn-primary:focus-visible, #loginScreen .lp-link:focus-visible { outline: 2px solid var(--bw-fg); outline-offset: 2px; }
+#loginScreen .lp-divider, #loginScreen .lp-secure-note { border-top: 1px solid var(--bw-ln); color: var(--bw-mu); font-size: 13px; }
+#loginScreen .lp-brand-ico:not(.wefaq-logo-slot) { background: var(--bw-fg); color: var(--bw-bg); border-radius: 50%; }
+#loginScreen .lp-title { font-family: 'Readex Pro', 'IBM Plex Sans Arabic', sans-serif; font-weight: 600; color: var(--bw-fg); text-align: start; }
+
+/* tablet / mobile: brand band on top */
+@media (max-width: 900px) {
+  #loginScreen.lp-screen { grid-template-columns: 1fr; grid-template-rows: 120px 1fr; }
+  #loginScreen.lp-screen::before { grid-column: 1; grid-row: 1; padding: 16px 20px; font-size: 10px; }
+  #loginScreen.lp-screen::after { grid-column: 1; grid-row: 1; width: 150px; }
+  #loginScreen .lp-center { grid-column: 1; grid-row: 2; align-items: flex-start; padding: 28px 20px 40px; }
+}
+[data-theme="dark"] #loginScreen.lp-screen::before { background: #000; border-inline-end: 1px solid #262626; }
+#loginScreen .lp-hd, #loginScreen .lp-title, #loginScreen .lp-sub { text-align: start !important; }
+#loginScreen .lp-brand-ico:not(.wefaq-logo-slot) { display: none !important; }
