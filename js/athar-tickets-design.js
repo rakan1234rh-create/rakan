@@ -88,6 +88,16 @@
     aside();
   }
 
+  function t12(h, m) { var ap = h >= 12 ? 'م' : 'ص'; return (h % 12 || 12) + ':' + String(m).padStart(2, '0') + ' ' + ap; }
+  function dstr(d) { try { return d.toLocaleDateString('ar-u-ca-gregory-nu-latn', { day: 'numeric', month: 'long', year: 'numeric' }); } catch (_) { return ''; } }
+  function vtime(t) {
+    var p = String(t.violation_time || '').split(':'), h = parseInt(p[0], 10), tm = isNaN(h) ? '' : t12(h, parseInt(p[1] || '0', 10) || 0);
+    return esc(fdate(t) + (tm ? ' · ' + tm : ''));
+  }
+  function ctime(t) {
+    var d = new Date(t.created_at); if (isNaN(d)) return '—';
+    return esc(dstr(d) + ' · ' + t12(d.getHours(), d.getMinutes()));
+  }
   function replies(t) {
     var b = B(), h = '';
     if (b.state.editingTicket && b.state.editingTicket.id === t.id) {
@@ -130,7 +140,7 @@
       '<div class="atd-a-head"><span class="atd-mono atd-kk">TICKET #' + esc(b.shortTicketNum(t.ticket_number)) + '</span><h2 class="atd-h2">' + esc(t.violation_type) + '</h2><div class="atd-a-meta">' + sevChip(sv) + '<span class="atd-mu">' + esc(fdate(t)) + '</span></div></div>' +
       '<div class="atd-info"><div><div class="atd-mu">الموظف</div><div class="atd-v">' + esc(t._empName) + '</div></div><div><div class="atd-mu">الفرع</div><div class="atd-v">' + esc(t._branchName) + '</div></div>' +
       (b.hideObs() ? '' : '<div><div class="atd-mu">الراصد</div><div class="atd-v">' + esc(t._obsName || '-') + '</div></div>') +
-      '<div><div class="atd-mu">المرحلة الحالية</div><div class="atd-v">' + esc(NAMES[st]) + '</div></div></div>' +
+      '<div><div class="atd-mu">وقت المخالفة</div><div class="atd-v">' + vtime(t) + '</div></div><div><div class="atd-mu">وقت الرصد</div><div class="atd-v">' + ctime(t) + '</div></div><div><div class="atd-mu">المرحلة الحالية</div><div class="atd-v">' + esc(NAMES[st]) + '</div></div></div>' +
       '<p class="atd-desc">' + esc(t.description || '—') + '</p>' +
       '<div><h3 class="atd-h3">المرفقات</h3>' + (files || '<div class="atd-mu atd-nofile">لا توجد مرفقات</div>') + '</div>' +
       '<ol class="atd-steps" aria-label="مسار التذكرة">' + steps + '</ol>' + replies(t) + act;
