@@ -97,3 +97,8 @@ html:root.mr-desktop-ui #ticketModal .rd-tk-close { inset-inline-start: auto; in
 html:root.mr-desktop-ui #ticketModal .rd-td-hd__toolbar { padding-inline-end: 44px; }
 html:root.mr-desktop-ui #tab-workflow td .badge, html:root.mr-desktop-ui #tab-workflow td [class*="status"], html:root.mr-desktop-ui #tab-workflow td [class*="badge"] { white-space: nowrap; }
 html:root.mr-desktop-ui .rd-desk-ticket-badge { white-space: nowrap !important; width: auto !important; max-width: none !important; border-radius: 999px !important; padding: 3px 12px !important; }
+
+/* ---- breaks ---- */
+html:root.mr-desktop-ui #tab-breaks .breaks-panel, html:root.mr-desktop-ui #tab-breaks .wf-panel { background: transparent !important; border: 0 !important; box-shadow: none !important; }
+html:root.mr-desktop-ui #tab-breaks .rd-break-card { border-radius: 4px !important; box-shadow: none !important; border: 1px solid var(--pg-ln) !important; background: var(--pg-bg) !important; }
+html:root.mr-desktop-ui #tab-breaks .rd-break-card button { border-radius: 4px !important; box-shadow: none !important; }
