@@ -13226,6 +13226,9 @@
               </div>
             </div>
           </div>`;
+        try {
+          if (window.AtharRoleDash) window.AtharRoleDash.apply(host, { role: normalizeUserRole(me?.role), me, visible, allVisible });
+        } catch (_) { /* noop */ }
         host.hidden = false;
       }
 
