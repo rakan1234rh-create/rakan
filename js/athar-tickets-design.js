@@ -136,5 +136,5 @@
   document.addEventListener('input', function (e) {
     if (e.target && e.target.id === 'atdResp') { S.resp[S.sel] = e.target.value; var r = document.getElementById('respText'); if (r) r.value = e.target.value; }
   });
-  window.AtharTicketsDesign = { render: render };
+  window.AtharTicketsDesign = { render: render, sevOf: sevOf, fdate: fdate, esc: esc };
 })();
