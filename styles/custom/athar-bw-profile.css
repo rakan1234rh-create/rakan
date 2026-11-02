@@ -1,0 +1,28 @@
+/* Profile page — ATHAR black & white design */
+html:root.mr-desktop-ui.mr-desktop-ui #tab-profile{--t-fg:#0A0A0A;--t-mu:#5F5F5F;--t-ln:#E4E4E4;--t-ln2:#D9D9D9;--t-sf:#fff;--t-hv:#F7F7F7;--t-pb:#0A0A0A;--t-pf:#fff}
+html[data-theme="dark"]:root.mr-desktop-ui.mr-desktop-ui #tab-profile{--t-fg:#F2F2F2;--t-mu:#A3A3A3;--t-ln:#262626;--t-ln2:#303030;--t-sf:#151515;--t-hv:#1C1C1C;--t-pb:#F2F2F2;--t-pf:#0A0A0A}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-profile .profile-page-shell{max-width:1000px;margin:0 auto;padding:8px 0 40px;background:transparent !important}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-profile .profile-page-topbar{display:flex;align-items:center;gap:12px;margin:0 0 22px;padding:0;background:transparent !important;border:0 !important;box-shadow:none !important}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-profile .profile-page-topbar__title{margin:0;font-family:'Readex Pro',sans-serif;font-weight:600;font-size:30px;color:var(--t-fg)}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-profile .profile-page-topbar>*{color:var(--t-fg)}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-profile .profile-page-body{display:grid !important;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start;align-content:start;grid-template-rows:min-content min-content;padding:0 !important;max-width:none !important;width:100% !important}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-profile .profile-hero{grid-column:1;grid-row:1;display:flex;align-items:center;gap:18px;padding:24px;background:var(--t-sf) !important;border:1px solid var(--t-ln2) !important;border-radius:6px !important;box-shadow:none !important;margin:0 !important}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-profile .profile-hero__av-stack{display:flex;flex-direction:row !important;align-items:center;gap:18px;text-align:start;width:100%}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-profile .profile-hero__av-frame{flex:none;width:72px;height:72px;margin:0 !important}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-profile .profile-hero__av{width:72px !important;height:72px !important;border-radius:50% !important;background:var(--t-pb) !important;color:var(--t-pf) !important;display:grid !important;place-items:center;font-family:'Readex Pro',sans-serif;font-weight:600;font-size:28px !important;border:0 !important;box-shadow:none !important}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-profile :is(.profile-hero__av-edit-wrap,.profile-hero__av-edit,.profile-hero__av-new-dot,#profilePageAvatarsBtn){display:none !important}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-profile .profile-hero__name{margin:0 !important;font-size:20px;font-weight:600;color:var(--t-fg) !important}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-profile .profile-hero__role{display:inline-block;margin-top:4px;padding:2px 10px;border:1px solid var(--t-ln2);border-radius:4px;background:transparent !important;color:var(--t-mu) !important;font-size:12px}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-profile .profile-info-card,html:root.mr-desktop-ui.mr-desktop-ui #tab-profile .profile-actions-card{background:var(--t-sf) !important;border:1px solid var(--t-ln2) !important;border-radius:6px !important;box-shadow:none !important;padding:8px 24px !important;margin:0 !important;overflow:hidden}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-profile .profile-info-card{grid-column:1;grid-row:2}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-profile .profile-actions-card{grid-column:2;grid-row:1 / span 2}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-profile :is(.profile-info-row,.profile-action-row,.profile-action-btn){display:flex !important;align-items:center;justify-content:space-between;gap:16px;min-height:52px;padding:8px 0 !important;background:transparent !important;border:0 !important;border-top:1px solid var(--t-ln) !important;border-radius:0 !important;box-shadow:none !important;width:100%;color:var(--t-fg) !important}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-profile :is(.profile-info-card,.profile-actions-card)>:first-child{border-top:0 !important}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-profile .profile-info-row[hidden],html:root.mr-desktop-ui.mr-desktop-ui #tab-profile .profile-action-row[hidden],html:root.mr-desktop-ui.mr-desktop-ui #tab-profile .profile-action-btn[hidden]{display:none !important}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-profile .profile-info-row__lbl{font-size:14px;color:var(--t-mu) !important}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-profile .profile-info-row__val{font-size:14px;font-weight:600;color:var(--t-fg) !important}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-profile :is(.profile-action-row__lbl){display:flex;align-items:center;gap:10px;font-size:15px;font-weight:500;color:var(--t-fg) !important}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-profile .profile-action-btn{cursor:pointer;font-family:inherit}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-profile .profile-action-btn:hover{background:var(--t-hv) !important}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-profile .profile-action-btn--logout .profile-action-row__lbl,html:root.mr-desktop-ui.mr-desktop-ui #tab-profile .profile-action-btn--logout i{color:#B42318 !important}
+@media (max-width:1100px){html:root.mr-desktop-ui.mr-desktop-ui #tab-profile .profile-page-body{grid-template-columns:1fr}html:root.mr-desktop-ui.mr-desktop-ui #tab-profile :is(.profile-hero,.profile-info-card,.profile-actions-card){grid-column:1;grid-row:auto}}

@@ -10663,6 +10663,7 @@
       }
 
       function canPickProfileAvatar(u) {
+        return false; /* الصور الشخصية: افتراضية للجميع */
         return !!(u?.id && normalizeUserRole(u?.role));
       }
 
@@ -10687,6 +10688,7 @@
       }
 
       function getValidProfileAvatarPreset(u) {
+        return null; /* الصور الشخصية: افتراضية للجميع */
         const preset = getProfileAvatarPreset(u?.avatar_key);
         if (!preset || !isProfileAvatarVisible(preset)) return null;
         return preset;
