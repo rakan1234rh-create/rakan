@@ -187,6 +187,13 @@
     zone.insertBefore(box, zone.firstChild); syncPill(box);
     new MutationObserver(function () { syncPill(box); }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
   }
+  function mountTicketClose() {
+    var card = document.querySelector('#ticketModal .modal-card'); if (!card || card.querySelector('.rd-tk-close')) return;
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'rd-tk-close no-print'; b.setAttribute('aria-label', 'إغلاق'); b.innerHTML = '<i class="fas fa-xmark"></i>';
+    b.addEventListener('click', function () { if (typeof closeModal === 'function') closeModal('ticketModal'); });
+    card.appendChild(b);
+  }
+  setInterval(mountTicketClose, 1500);
   var tries = 0; (function wait() { mountThemePill(); if (!document.querySelector('.rd-h-theme--top') && tries++ < 60) setTimeout(wait, 500); })();
 
   window.AtharRoleDash = {
