@@ -90,3 +90,4 @@
 [data-theme="dark"] #loginScreen.lp-screen::before { background: #000; border-inline-end: 1px solid #262626; }
 #loginScreen .lp-hd, #loginScreen .lp-title, #loginScreen .lp-sub { text-align: start !important; }
 #loginScreen .lp-brand-ico:not(.wefaq-logo-slot) { display: none !important; }
+#loginScreen .lp-card .lp-hd h1, #loginScreen .lp-card .lp-hd p, #loginScreen .lp-card .lp-hd { text-align: start !important; justify-content: flex-start !important; align-items: flex-start !important; }
