@@ -9470,8 +9470,8 @@
 
       function isDesktopSidebarRailExpanded(sb) {
         if (!sb) return false;
-        return sb.classList.contains('sidebar-rail-open')
-          || sb.classList.contains('sidebar-rail-hover');
+        /* ATHAR B/W shell: desktop sidebar is always expanded */
+        return true;
       }
 
       function syncDesktopSidebarRailSize(sb) {

@@ -1,0 +1,63 @@
+/* ATHAR — black & white app shell (desktop sidebar + topbar). Loaded last. */
+html:root.mr-desktop-ui.mr-desktop-ui {
+  --fig-sidebar-collapsed-w: 236px; --fig-sidebar-w: 236px;
+  --sh-bg: #0a0a0a; --sh-fg: #f2f2f2; --sh-mu: #9a9a9a; --sh-ln: #262626; --sh-hv: #1a1a1a;
+}
+/* sidebar: always expanded, black */
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap #sidebar {
+  width: 236px !important; flex: 0 0 236px !important; max-width: 236px !important;
+  background: var(--sh-bg) !important; color: var(--sh-fg) !important;
+  border: 0 !important; border-inline-start: 1px solid var(--sh-ln) !important;
+  box-shadow: none !important;
+}
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap #sidebar .nav-item-label,
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap #sidebar .nav-section-label,
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap #sidebar .logout-btn span {
+  opacity: 1 !important; visibility: visible !important; max-width: none !important;
+  width: auto !important; overflow: visible !important;
+}
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap #sidebar .nav-section-label {
+  color: var(--sh-mu) !important; font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 10px; letter-spacing: .14em; text-transform: uppercase;
+}
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap #sidebar .nav-item {
+  justify-content: flex-start !important; gap: 12px; padding: 10px 14px !important;
+  margin: 2px 10px; border-radius: 4px !important; color: var(--sh-mu) !important;
+  background: transparent !important; box-shadow: none !important; border: 0 !important;
+}
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap #sidebar .nav-item .nav-icon-wrap,
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap #sidebar .nav-item i { color: inherit !important; background: transparent !important; }
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap #sidebar .nav-item:hover { background: var(--sh-hv) !important; color: var(--sh-fg) !important; }
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap #sidebar .nav-item.active,
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap #sidebar .nav-item[aria-current="page"] {
+  background: #fff !important; color: #0a0a0a !important; font-weight: 600;
+}
+/* brand */
+html:root.mr-desktop-ui.mr-desktop-ui #sidebar .rd-side-brand { border-bottom: 1px solid var(--sh-ln) !important; padding: 20px 18px !important; }
+html:root.mr-desktop-ui.mr-desktop-ui #sidebar .rd-side-brand img {
+  filter: brightness(0) invert(1); height: 28px; width: auto; max-width: 100%; object-fit: contain;
+}
+html:root.mr-desktop-ui.mr-desktop-ui #sidebar .rd-side-foot { border-top: 1px solid var(--sh-ln) !important; background: transparent !important; color: var(--sh-fg); }
+html:root.mr-desktop-ui.mr-desktop-ui #sidebar .logout-btn { color: var(--sh-mu) !important; background: transparent !important; }
+
+/* topbar: flat, hairline */
+html:root.mr-desktop-ui.mr-desktop-ui .topbar.unified-banner {
+  background: var(--bg, #fff) !important; box-shadow: none !important;
+  border-bottom: 1px solid var(--border, #e4e4e4) !important; border-radius: 0 !important;
+}
+html:root.mr-desktop-ui.mr-desktop-ui .topbar .rd-top-titles h1,
+html:root.mr-desktop-ui.mr-desktop-ui .topbar .rd-top-titles .rd-top-title { font-family: 'Readex Pro', 'IBM Plex Sans Arabic', sans-serif; font-weight: 600; }
+html:root.mr-desktop-ui.mr-desktop-ui .topbar .topbar-btn { border-radius: 4px !important; box-shadow: none !important; }
+html:root.mr-desktop-ui.mr-desktop-ui .topbar-brand-zone .wefaq-logo-slot { display: none !important; }
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap #sidebar .nav-item.active .nav-icon-wrap,
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap #sidebar .nav-item.active i { color: #0a0a0a !important; }
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap #sidebar .nav-item-label {
+  display: inline !important; color: inherit !important; font-size: 13.5px; flex: 1; text-align: start;
+}
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap #sidebar .nav-section-label { display: block !important; padding: 14px 24px 6px; }
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap #sidebar .rd-side-foot *,
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap #sidebar .rd-side-foot { color: var(--sh-fg) !important; }
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap #sidebar .rd-side-foot small,
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap #sidebar .rd-side-foot [class*="mail"],
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap #sidebar .rd-side-foot [class*="sub"] { color: var(--sh-mu) !important; }
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap #sidebar .rd-side-foot [class*="avatar"] { background: #fff !important; color: #0a0a0a !important; }
