@@ -30828,6 +30828,30 @@
               { title: 'تقرير الاستجابة للموظفين', sub: 'متوسط زمن الرد على البلاغات', icon: 'fa-gauge-high', action: "goTab('departments')", delay: 0.15 },
             ];
 
+        if (desk && window.AtharReportsDesign) {
+          try {
+            const isClosed = (v) => v.state === 'closed' || v.state === 'Warning_Issued';
+            const closedAll = allVisible.filter(isClosed);
+            const inTime = closedAll.filter(v => !v.auto_forwarded_emp && !v.auto_forwarded_sup).length;
+            const typeCount = {};
+            thisMonth.forEach(v => { const k = v.violation_type || '—'; typeCount[k] = (typeCount[k] || 0) + 1; });
+            const model = {
+              month: ranges.length ? ranges[ranges.length - 1].label : '',
+              year: ranges.length ? ranges[ranges.length - 1].year : '',
+              kpis: [
+                [thisMonth.length, 'مخالفات ' + (ranges.length ? ranges[ranges.length - 1].label : 'الشهر')],
+                [Math.round(rateNow), 'متوسط الامتثال'],
+                [allVisible.filter(isTicketWorkflowOpen).length, 'تذاكر مفتوحة'],
+                [(closedAll.length ? Math.round(inTime / closedAll.length * 100) : 100) + '%', 'تذاكر مغلقة خلال المهلة']
+              ],
+              months: ranges.map(r => ({ l: r.label, n: allVisible.filter(v => { const iso = dashViolationIsoDate(v); return iso && iso >= r.fromIso && iso < r.nextIso; }).length })),
+              tops: Object.keys(typeCount).map(k => ({ name: k, n: typeCount[k] })).sort((x, y) => y.n - x.n).slice(0, 5),
+              esc: (v) => Sec.escapeHTML(String(v == null ? '' : v))
+            };
+            window.__rpModel = model;
+            return window.AtharReportsDesign.html(model);
+          } catch (e) { console.warn('[atr]', e); }
+        }
         const metricsHtml = `
           <section class="rd-rp-metrics" aria-label="ملخص المؤشرات" aria-live="polite">
             ${metrics.map((m) => desk ? `
@@ -42439,6 +42463,19 @@
       window.submitResp = submitResp;
       window.filterReports = filterReports;
       window.filterReportsSearch = filterReportsSearch;
+      function exportReportsSummaryPDF() {
+        const m = window.__rpModel;
+        if (!m) return showToast('لا توجد بيانات للتصدير', 'warning');
+        try {
+          const e = (v) => Sec.escapeHTML(String(v));
+          const body = `<h2>ملخص التقارير</h2><table><thead><tr><th>المؤشر</th><th>القيمة</th></tr></thead><tbody>${m.kpis.map(k => `<tr><td>${e(k[1])}</td><td>${e(k[0])}</td></tr>`).join('')}</tbody></table>
+            <h2>المخالفات الشهرية</h2><table><thead><tr><th>الشهر</th><th>العدد</th></tr></thead><tbody>${m.months.map(x => `<tr><td>${e(x.l)}</td><td>${e(x.n)}</td></tr>`).join('')}</tbody></table>
+            <h2>أكثر المخالفات تكرارًا</h2><table><thead><tr><th>النوع</th><th>العدد</th></tr></thead><tbody>${m.tops.map(x => `<tr><td>${e(x.name)}</td><td>${e(x.n)}</td></tr>`).join('')}</tbody></table>`;
+          printCmpPdfReport(body, 'ملخص التقارير');
+          showToast('اختر «حفظ كـ PDF» من نافذة الطباعة', 'info');
+        } catch (_) { showToast('تعذّر تصدير PDF', 'error'); }
+      }
+      window.exportReportsSummaryPDF = exportReportsSummaryPDF;
       window.exportReportExcel = exportReportExcel;
       window.exportReportCSV = exportReportCSV;
       window.renderUsers = renderUsers;
