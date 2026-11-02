@@ -201,6 +201,7 @@
       if (!document.documentElement.classList.contains('mr-desktop-ui')) return;
       var tab = document.getElementById('tab-complaints'); var m = document.getElementById('newComplaintModal'); if (!tab || !m) return;
       var vis = !tab.hidden && tab.offsetParent !== null;
+      if (window.__cmplDesign) return;
       if (vis && !cmplDocked && !m.classList.contains('open') && typeof canSubmitComplaint === 'function' && canSubmitComplaint() && typeof openNewComplaintModal === 'function') { cmplDocked = true; openNewComplaintModal(); }
       if (!vis && cmplDocked) { cmplDocked = false; if (m.classList.contains('open') && typeof closeModal === 'function') closeModal('newComplaintModal'); }
     } catch (_) { /* noop */ }

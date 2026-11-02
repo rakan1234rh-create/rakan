@@ -40681,6 +40681,30 @@
         if (!opts.soft && typeof loadComplaintsData === 'function') {
           try { await loadComplaintsData(); } catch (_) { /* noop */ }
         }
+        if (!canManageComplaints() && window.AtharCmplDesign) {
+          try {
+            window.__cmplDesign = true;
+            const nm = document.getElementById('newComplaintModal');
+            if (nm && nm.classList.contains('open')) closeModal('newComplaintModal');
+            window.AtharCmplDesign.render(host, {
+              rows: (state.complaints || []).slice().sort((x, y) => new Date(y.created_at) - new Date(x.created_at)),
+              status: COMPLAINT_STATUS_LABELS,
+              open: (id) => openComplaintDetail(id),
+              submit: async (kind, anon, text) => {
+                const before = (state.complaints || [])[0]?.id;
+                state.complaintKind = kind === 'suggestion' ? 'suggestion' : 'complaint';
+                state.complaintAnonymous = !!anon;
+                state.complaintCategory = 'أخرى';
+                const ta = document.getElementById('cpDescText'); if (ta) ta.value = text;
+                await submitComplaintFromUi();
+                const ok = (state.complaints || [])[0]?.id !== before;
+                if (ok) renderComplaintsDesktop({ soft: true });
+                return ok;
+              }
+            });
+            return;
+          } catch (e) { console.warn('[atc]', e); }
+        }
         const all = getRdComplaints();
         const rows = applyComplaintQueryFilters(all.filter(complaintMatchesChipFilters));
 
