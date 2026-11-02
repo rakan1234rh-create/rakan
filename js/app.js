@@ -21864,6 +21864,9 @@
         const list = document.getElementById(isReportsList ? 'reportList' : 'ticketList');
         const mobHead = document.getElementById(isReportsList ? 'rpMobTicketsHead' : 'wfMobTicketsHead');
         if (!list) return;
+        if (!isReportsList && window.AtharTicketsDesign && isAtharDesktopScreenUi()) {
+          try { window.AtharTicketsDesign.render(tickets, list); return; } catch (e) { console.warn('[atd]', e); }
+        }
 
         if (!tickets.length) {
           if (mobHead) {
@@ -42359,6 +42362,12 @@
       window.usersIoMenuClose = usersIoMenuClose;
       window.usersIoMenuPosition = usersIoMenuPosition;
       window.openTicket = openTicket;
+      window.__atdBridge = {
+        state, STATE_LABELS, violTypeSeverity, getVisibleAttachments, canActOnTicket, shortTicketNum,
+        hideObs: () => (typeof shouldHideObserverName === 'function' ? shouldHideObserverName() : false),
+        isDesktop: () => (typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi()),
+        refilter: () => filterTickets()
+      };
       window.rdOpenReportView = rdOpenReportView;
       window.rdBackReportsMain = rdBackReportsMain;
       window.rdEmpResponseSearch = rdEmpResponseSearch;
