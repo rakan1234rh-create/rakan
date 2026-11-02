@@ -42512,6 +42512,7 @@
         hideObs: () => (typeof shouldHideObserverName === 'function' ? shouldHideObserverName() : false),
         isDesktop: () => (typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi()),
         refilter: () => filterTickets(),
+        setDateRange: (from, to) => { wfDpState.from = from || ''; wfDpState.to = to || ''; wfDpApplied.from = from || ''; wfDpApplied.to = to || ''; filterTickets(); },
         terminal: (t) => (typeof getWfTerminalOutcome === 'function' ? getWfTerminalOutcome(t) : null)
       };
       window.rdOpenReportView = rdOpenReportView;

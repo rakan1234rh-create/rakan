@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   var B = function () { return window.__atdBridge; };
-  var S = { stage: -1, sel: null, loading: null, resp: {}, last: [] };
+  var S = { sel: null, loading: null, resp: {}, last: [] };
   var STAGES = ['emp', 'sup', 'mgt', 'aud', 'hr'];
   var NAMES = ['بانتظار رد الموظف', 'بانتظار رد المشرف', 'بانتظار القرار الإداري', 'بانتظار الرقابة الداخلية', 'بانتظار الموارد البشرية', 'معتمدة', 'تنبيه', 'ملغاة', 'مغلقة'];
   var TONE = ['', '', '', '', '', 'ok', 'warn', 'bad', 'closed'];
@@ -41,35 +41,81 @@
     if (h.dataset.ok) return; h.dataset.ok = '1';
     h.innerHTML = '<div><p class="atd-kick">TICKET PROCESSING</p><h1 class="atd-h1">معالجة التذاكر</h1></div>';
   }
+  var SHORT = ['رد الموظف', 'رد المشرف', 'قرار الإدارة', 'الرقابة الداخلية', 'الموارد البشرية', 'معتمدة', 'تنبيه', 'ملغاة', 'مغلقة'];
+  var STAGE_OPTS = ['بانتظار رد الموظف', 'بانتظار رد المشرف', 'بانتظار القرار الإداري', 'بانتظار الرقابة الداخلية', 'بانتظار الموارد البشرية'];
+  var STATUS_OPTS = [['open', 'قيد المعالجة'], ['5', 'معتمدة'], ['6', 'تنبيه'], ['7', 'ملغاة'], ['8', 'مغلقة']];
+  S.f = { branch: '', emp: '', stage: '', status: '', from: '', to: '' };
+  function passes(t) {
+    var f = S.f, st = stageOf(t);
+    if (f.branch && t._branchName !== f.branch) return false;
+    if (f.emp && t._empName !== f.emp) return false;
+    if (f.stage !== '' && st !== +f.stage) return false;
+    if (f.status === 'open' && st > 4) return false;
+    if (f.status !== '' && f.status !== 'open' && st !== +f.status) return false;
+    return true;
+  }
+  function activeCount() { var f = S.f; return ['branch', 'emp', 'stage', 'status'].filter(function (k) { return f[k] !== ''; }).length + (f.from && f.to ? 1 : 0); }
+  function uniq(list, k) { var m = {}; list.forEach(function (t) { if (t[k]) m[t[k]] = 1; }); return Object.keys(m).sort(function (a, b) { return a.localeCompare(b, 'ar'); }); }
+  function opts(arr, cur) { return '<option value="">الكل</option>' + arr.map(function (o) { var v = Array.isArray(o) ? o[0] : o, l = Array.isArray(o) ? o[1] : o; return '<option value="' + esc(v) + '"' + (String(cur) === String(v) ? ' selected' : '') + '>' + esc(l) + '</option>'; }).join(''); }
+  function fld(label, inner) { return '<label class="atd-fld"><span>' + label + '</span>' + inner + '</label>'; }
+  function tagsHtml() {
+    var f = S.f, t = [];
+    if (f.branch) t.push(['branch', 'الفرع: ' + f.branch]); if (f.emp) t.push(['emp', 'الموظف: ' + f.emp]);
+    if (f.from && f.to) t.push(['period', 'الفترة: ' + f.from + ' → ' + f.to]);
+    if (f.stage !== '') t.push(['stage', STAGE_OPTS[+f.stage]]);
+    if (f.status !== '') t.push(['status', (STATUS_OPTS.filter(function (o) { return o[0] === f.status; })[0] || [0, ''])[1]]);
+    return t.map(function (x) { return '<button type="button" class="atd-tag" data-atd-clear="' + x[0] + '">' + esc(x[1]) + ' <i aria-hidden="true">×</i></button>'; }).join('') +
+      (t.length > 1 ? '<button type="button" class="atd-tag atd-tag--all" data-atd-clear="all">مسح الكل</button>' : '');
+  }
   function chips(all) {
+    var tb = document.getElementById('wfClassicToolbar'); if (!tb) return;
+    var n = activeCount(), btn = document.getElementById('atdFilterBtn');
+    if (!btn) {
+      btn = document.createElement('button'); btn.type = 'button'; btn.id = 'atdFilterBtn'; btn.className = 'atd-fbtn'; btn.setAttribute('aria-haspopup', 'dialog');
+      tb.appendChild(btn);
+      var pop = document.createElement('div'); pop.id = 'atdFilterPop'; pop.className = 'atd-pop'; pop.hidden = true; pop.setAttribute('role', 'dialog'); pop.setAttribute('aria-label', 'تصفية التذاكر');
+      tb.appendChild(pop);
+    }
+    btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h18M6 12h12M10 19h4"/></svg><span>تصفية</span>' + (n ? '<b>' + n + '</b>' : '');
+    var pop2 = document.getElementById('atdFilterPop');
+    if (!pop2.hidden && !pop2.contains(document.activeElement)) fillPop(all);
+    else if (pop2.hidden) pop2.dataset.dirty = '1';
     var c = slot('atdChips', document.getElementById('ticketList')); if (!c) return;
-    var cnt = [0, 0, 0, 0, 0, 0, 0, 0, 0]; all.forEach(function (t) { cnt[stageOf(t)]++; });
-    var items = [{ l: 'الكل', v: -1, n: all.length }].concat(NAMES.map(function (n, i) { return { l: n, v: i, n: cnt[i] }; }));
-    c.className = 'atd-chips'; c.setAttribute('aria-label', 'تصفية المراحل');
-    c.innerHTML = items.map(function (x) {
-      return '<button type="button" class="atd-chip' + (x.v >= 0 && TONE[x.v] ? ' tone-' + TONE[x.v] : '') + '" data-atd-stage="' + x.v + '" aria-pressed="' + (S.stage === x.v) + '"><span>' + esc(x.l) + '</span><b>' + x.n + '</b></button>';
-    }).join('');
+    c.className = 'atd-tags'; c.innerHTML = tagsHtml(); c.hidden = !n;
+  }
+  function fillPop(all) {
+    var p = document.getElementById('atdFilterPop'); if (!p) return;
+    var f = S.f, src = S.base || all;
+    p.innerHTML = '<div class="atd-pop__grid">' +
+      fld('الفرع', '<select data-atd-f="branch">' + opts(uniq(src, '_branchName'), f.branch) + '</select>') +
+      fld('الموظف', '<select data-atd-f="emp">' + opts(uniq(src, '_empName'), f.emp) + '</select>') +
+      fld('الفترة من', '<input type="date" data-atd-f="from" value="' + esc(f.from) + '">') +
+      fld('الفترة إلى', '<input type="date" data-atd-f="to" value="' + esc(f.to) + '">') +
+      fld('المرحلة', '<select data-atd-f="stage">' + opts(STAGE_OPTS.map(function (o, i) { return [String(i), o]; }), f.stage) + '</select>') +
+      fld('الحالة', '<select data-atd-f="status">' + opts(STATUS_OPTS, f.status) + '</select>') +
+      '</div><div class="atd-pop__ft"><button type="button" class="atd-btn" data-atd-clear="all">مسح الكل</button><button type="button" class="atd-btn atd-btn--p" data-atd-pop="close">تم</button></div>';
   }
 
   function render(tickets, host) {
     var b = B(); if (!b) throw new Error('no bridge');
     S.last = tickets; head();
     var all = tickets.slice();
-    chips(all);
-    var list = S.stage === -1 ? all : all.filter(function (t) { return stageOf(t) === S.stage; });
+    S.base = all; chips(all);
+    var list = all.filter(passes);
     var sel = list.filter(function (t) { return t.id === S.sel; })[0] || list[0] || null;
     S.sel = sel ? sel.id : null;
     host.classList.add('atd-host');
     if (!list.length) {
-      host.innerHTML = '<div class="atd-card atd-empty"><b>لا توجد تذاكر في هذه المرحلة</b></div>';
+      host.innerHTML = '<div class="atd-card atd-empty"><b>لا توجد تذاكر مطابقة</b></div>';
       return;
     }
     var rows = list.map(function (t) {
-      var on = t.id === S.sel, st = stageOf(t), sv = sevOf(t);
+      var on = t.id === S.sel, st = stageOf(t), sv = sevOf(t), no = b.shortTicketNum(t.ticket_number);
       return '<button type="button" class="atd-row" data-atd-pick="' + esc(t.id) + '" aria-pressed="' + on + '">' +
-        '<span class="atd-row__main"><span class="atd-mono">#' + esc(b.shortTicketNum(t.ticket_number)) + '</span><span class="atd-row__type">' + esc(t.violation_type) + '</span>' +
+        '<span class="atd-row__main"><span class="atd-row__type">' + esc(t.violation_type) + (no ? ' <span class="atd-mono atd-no">#' + esc(no) + '</span>' : '') + '</span>' +
         '<span class="atd-mu">' + esc(t._empName) + ' · ' + esc(t._branchName) + ' · ' + esc(fdate(t)) + '</span></span>' +
-        '<span class="atd-row__end">' + sevChip(sv) + '<span class="atd-pill' + (st >= 5 ? ' is-closed tone-' + TONE[st] : '') + '">' + esc(NAMES[st]) + '</span></span></button>';
+        '<span class="atd-row__end"><span class="atd-sevdot atd-sevdot--' + sv[0] + '" title="الخطورة: ' + sv[1] + '">' + sv[1] + '</span>' +
+        '<span class="atd-st atd-st--' + (TONE[st] || 'open') + '"><i></i>' + esc(SHORT[st]) + '</span></span></button>';
     }).join('');
     host.innerHTML = '<div class="atd-grid"><div class="atd-card atd-list">' + rows + '</div><aside class="atd-card atd-aside" id="atdAside" aria-label="تفاصيل التذكرة"></aside></div>';
     if (S.loading !== S.sel && (!b.state.editingTicket || b.state.editingTicket.id !== S.sel)) load(S.sel); else aside();
@@ -147,9 +193,16 @@
   }
 
   document.addEventListener('click', function (e) {
-    var t = e.target.closest && e.target.closest('[data-atd-stage],[data-atd-pick],[data-atd-view],[data-atd-act]'); if (!t) return;
+    var t = e.target.closest && e.target.closest('[data-atd-clear],[data-atd-pop],#atdFilterBtn,[data-atd-pick],[data-atd-view],[data-atd-act]'); if (!t) return;
     var b = B(); if (!b) return;
-    if (t.hasAttribute('data-atd-stage')) { S.stage = +t.getAttribute('data-atd-stage'); S.sel = null; b.refilter(); }
+    if (t.id === 'atdFilterBtn') { var pp = document.getElementById('atdFilterPop'); pp.hidden = !pp.hidden; if (!pp.hidden) fillPop(S.base || []); }
+    else if (t.hasAttribute('data-atd-pop')) { document.getElementById('atdFilterPop').hidden = true; }
+    else if (t.hasAttribute('data-atd-clear')) {
+      var k = t.getAttribute('data-atd-clear');
+      if (k === 'all') S.f = { branch: '', emp: '', stage: '', status: '', from: '', to: '' };
+      else if (k === 'period') { S.f.from = ''; S.f.to = ''; } else S.f[k] = '';
+      syncDates(); S.sel = null; b.refilter(); if (!document.getElementById('atdFilterPop').hidden) fillPop(S.base || []);
+    }
     else if (t.hasAttribute('data-atd-pick')) { S.sel = t.getAttribute('data-atd-pick'); b.refilter(); }
     else if (t.hasAttribute('data-atd-view')) { if (typeof window.openAttViewerByIndex === 'function') window.openAttViewerByIndex(+t.getAttribute('data-atd-view')); }
     else if (t.hasAttribute('data-atd-act')) {
@@ -158,6 +211,17 @@
       var r = document.querySelectorAll('#responseButtons .td-resp-action')[+t.getAttribute('data-atd-act')];
       if (r) r.click();
     }
+  });
+  function syncDates() { var b = B(); if (b && b.setDateRange) b.setDateRange(S.f.from, S.f.to); }
+  document.addEventListener('change', function (e) {
+    var k = e.target && e.target.getAttribute && e.target.getAttribute('data-atd-f'); if (!k) return;
+    S.f[k] = e.target.value; S.sel = null;
+    if (k === 'from' || k === 'to') { if (S.f.from && S.f.to) { if (S.f.from > S.f.to) { var x = S.f.from; S.f.from = S.f.to; S.f.to = x; } syncDates(); return; } if (!S.f.from && !S.f.to) syncDates(); }
+    B().refilter();
+  });
+  document.addEventListener('mousedown', function (e) {
+    var p = document.getElementById('atdFilterPop'); if (!p || p.hidden) return;
+    if (!p.contains(e.target) && !(e.target.closest && e.target.closest('#atdFilterBtn'))) p.hidden = true;
   });
   document.addEventListener('input', function (e) {
     if (e.target && e.target.id === 'atdResp') { S.resp[S.sel] = e.target.value; var r = document.getElementById('respText'); if (r) r.value = e.target.value; }
