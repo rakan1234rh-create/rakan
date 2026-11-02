@@ -4,10 +4,14 @@
   var B = function () { return window.__atdBridge; };
   var S = { stage: -1, sel: null, loading: null, resp: {}, last: [] };
   var STAGES = ['emp', 'sup', 'mgt', 'aud', 'hr'];
-  var NAMES = ['بانتظار رد الموظف', 'بانتظار رد المشرف', 'بانتظار القرار الإداري', 'بانتظار الرقابة الداخلية', 'بانتظار الموارد البشرية', 'مغلقة'];
-  var STEPS = ['الموظف', 'المشرف', 'القرار الإداري', 'إدارة الرقابة الداخلية', 'الموارد البشرية', 'مغلقة'];
+  var NAMES = ['بانتظار رد الموظف', 'بانتظار رد المشرف', 'بانتظار القرار الإداري', 'بانتظار الرقابة الداخلية', 'بانتظار الموارد البشرية', 'معتمدة', 'تنبيه', 'ملغاة'];
+  var STEPS = ['الموظف', 'المشرف', 'القرار الإداري', 'إدارة الرقابة الداخلية', 'الموارد البشرية', 'معتمدة'];
   function esc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
-  function stageOf(t) { var i = STAGES.indexOf(t.state); return i < 0 ? 5 : i; }
+  function stageOf(t) {
+    var i = STAGES.indexOf(t.state); if (i >= 0) return i;
+    var o = null; try { o = B().terminal(t); } catch (_) {}
+    return o === 'warn' ? 6 : o === 'cancel' ? 7 : 5;
+  }
   function sevOf(t) {
     var b = B(), rec = null;
     try { rec = (b.state.violationTypes || []).find(function (x) { return x.name === t.violation_type; }); } catch (_) {}
@@ -37,7 +41,7 @@
   }
   function chips(all) {
     var c = slot('atdChips', document.getElementById('ticketList')); if (!c) return;
-    var cnt = [0, 0, 0, 0, 0, 0]; all.forEach(function (t) { cnt[stageOf(t)]++; });
+    var cnt = [0, 0, 0, 0, 0, 0, 0, 0]; all.forEach(function (t) { cnt[stageOf(t)]++; });
     var items = [{ l: 'الكل', v: -1, n: all.length }].concat(NAMES.map(function (n, i) { return { l: n, v: i, n: cnt[i] }; }));
     c.className = 'atd-chips'; c.setAttribute('aria-label', 'تصفية المراحل');
     c.innerHTML = items.map(function (x) {
@@ -63,7 +67,7 @@
       return '<button type="button" class="atd-row" data-atd-pick="' + esc(t.id) + '" aria-pressed="' + on + '">' +
         '<span class="atd-row__main"><span class="atd-mono">#' + esc(b.shortTicketNum(t.ticket_number)) + '</span><span class="atd-row__type">' + esc(t.violation_type) + '</span>' +
         '<span class="atd-mu">' + esc(t._empName) + ' · ' + esc(t._branchName) + ' · ' + esc(fdate(t)) + '</span></span>' +
-        '<span class="atd-row__end">' + sevChip(sv) + '<span class="atd-pill' + (st === 5 ? ' is-closed' : '') + '">' + esc(NAMES[st]) + '</span></span></button>';
+        '<span class="atd-row__end">' + sevChip(sv) + '<span class="atd-pill' + (st >= 5 ? ' is-closed' : '') + '">' + esc(NAMES[st]) + '</span></span></button>';
     }).join('');
     host.innerHTML = '<div class="atd-grid"><div class="atd-card atd-list">' + rows + '</div><aside class="atd-card atd-aside" id="atdAside" aria-label="تفاصيل التذكرة"></aside></div>';
     if (S.loading !== S.sel && (!b.state.editingTicket || b.state.editingTicket.id !== S.sel)) load(S.sel); else aside();
@@ -73,14 +77,22 @@
     if (!id || typeof window.openTicket !== 'function') return aside();
     S.loading = id; document.body.classList.add('atd-loading');
     var fin = function () {
-      document.body.classList.remove('atd-loading');
       try { window.closeModal('ticketModal'); } catch (_) {}
+      setTimeout(function () { if (!S.loading || S.loading === id) document.body.classList.remove('atd-loading'); }, 450);
       if (S.loading === id) { S.loading = null; aside(); }
     };
     Promise.resolve(window.openTicket(id)).then(fin, fin);
     aside();
   }
 
+  function replies(t) {
+    var b = B(), h = '';
+    if (b.state.editingTicket && b.state.editingTicket.id === t.id) {
+      var w = document.getElementById('logsWrap'); if (w && !w.querySelector('.fa-spinner')) h = w.innerHTML;
+    }
+    if (!h || !h.trim()) h = '<div class="atd-mu atd-nofile">لا توجد ردود أو سجل بعد</div>';
+    return '<div class="atd-replies"><h3 class="atd-h3">الردود وسجل التذكرة</h3><div class="atd-logs">' + h + '</div></div>';
+  }
   function aside() {
     var el = document.getElementById('atdAside'), b = B(); if (!el || !b) return;
     var t = (b.state.violations || []).filter(function (v) { return v.id === S.sel; })[0];
@@ -92,9 +104,10 @@
       var sz = a.size ? (a.size > 1048576 ? (a.size / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(a.size / 1024)) + ' KB') : '';
       return '<div class="atd-file"><span class="atd-file__n">' + esc(nm) + (sz ? ' <span class="atd-mono">' + sz + '</span>' : '') + '</span><button type="button" class="atd-btn atd-btn--sm" data-atd-view="' + i + '">عرض</button></div>';
     }).join('');
+    var sx = Math.min(st, 5);
     var steps = STEPS.map(function (n, i) {
-      var done = i < st, now = i === st;
-      return '<li class="atd-step"><div class="atd-step__rail"><i class="atd-dot ' + (done ? 'is-done' : now ? 'is-now' : '') + '"></i><i class="atd-line' + (i < st ? ' is-done' : '') + '"></i></div><div class="atd-step__t"><div class="' + (now ? 'is-now' : done ? '' : 'is-off') + '">' + esc(n) + '</div><div class="atd-mu">' + (done ? 'تم' : now ? (st === 5 ? 'أُغلقت التذكرة' : 'بانتظار الإجراء') : '') + '</div></div></li>';
+      var done = i < sx, now = i === sx; if (i === 5 && st >= 5) n = NAMES[st];
+      return '<li class="atd-step"><div class="atd-step__rail"><i class="atd-dot ' + (done ? 'is-done' : now ? 'is-now' : '') + '"></i><i class="atd-line' + (i < sx ? ' is-done' : '') + '"></i></div><div class="atd-step__t"><div class="' + (now ? 'is-now' : done ? '' : 'is-off') + '">' + esc(n) + '</div><div class="atd-mu">' + (done ? 'تم' : now ? (st >= 5 ? 'أُغلقت التذكرة' : 'بانتظار الإجراء') : '') + '</div></div></li>';
     }).join('');
     var btns = [];
     if (b.state.editingTicket && b.state.editingTicket.id === t.id && S.loading !== t.id) {
@@ -117,7 +130,7 @@
       '<div><div class="atd-mu">المرحلة الحالية</div><div class="atd-v">' + esc(NAMES[st]) + '</div></div></div>' +
       '<p class="atd-desc">' + esc(t.description || '—') + '</p>' +
       '<div><h3 class="atd-h3">المرفقات</h3>' + (files || '<div class="atd-mu atd-nofile">لا توجد مرفقات</div>') + '</div>' +
-      '<ol class="atd-steps" aria-label="مسار التذكرة">' + steps + '</ol>' + act;
+      '<ol class="atd-steps" aria-label="مسار التذكرة">' + steps + '</ol>' + replies(t) + act;
   }
 
   document.addEventListener('click', function (e) {

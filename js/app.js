@@ -42509,7 +42509,8 @@
         state, STATE_LABELS, violTypeSeverity, getVisibleAttachments, canActOnTicket, shortTicketNum,
         hideObs: () => (typeof shouldHideObserverName === 'function' ? shouldHideObserverName() : false),
         isDesktop: () => (typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi()),
-        refilter: () => filterTickets()
+        refilter: () => filterTickets(),
+        terminal: (t) => (typeof getWfTerminalOutcome === 'function' ? getWfTerminalOutcome(t) : null)
       };
       window.rdOpenReportView = rdOpenReportView;
       window.rdBackReportsMain = rdBackReportsMain;

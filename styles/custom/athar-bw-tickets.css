@@ -63,3 +63,15 @@ html:root.mr-desktop-ui #tab-workflow .wf-panel>*:not(.wf-panel-banner):not(#atd
 .atd-act__b{display:flex;flex-wrap:wrap;gap:10px}
 .atd-ta{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--t-ct);border-radius:4px;background:transparent;color:var(--t-fg);font:14px inherit;font-family:inherit;resize:vertical}
 body.atd-loading #ticketModal,body.atd-loading .modal-overlay{visibility:hidden !important;opacity:0 !important}
+/* v3: no side-panel flash, scrollable aside, replies/log */
+body.atd-loading #ticketModal,body.atd-loading #ticketModal *,body.atd-loading .modal-overlay{visibility:hidden !important;opacity:0 !important;animation:none !important;transition:none !important}
+html:root.mr-desktop-ui .atd-aside{max-height:calc(100vh - 32px);overflow-y:auto;overscroll-behavior:contain}
+.atd-replies{display:flex;flex-direction:column;gap:10px}
+.atd-logs{display:flex;flex-direction:column;gap:10px}
+.atd-logs .rd-td-log,.atd-logs .log-item{padding:12px 14px;border:1px solid var(--t-ln);border-radius:4px;background:var(--t-hv);color:var(--t-fg)}
+.atd-logs .rd-td-log__top{display:flex;justify-content:space-between;gap:10px;font-size:13px}
+.atd-logs .rd-td-log__author{font-weight:600;color:var(--t-fg)}
+.atd-logs .rd-td-log__time,.atd-logs .rd-td-log__role,.atd-logs .log-meta{font-size:12px;color:var(--t-mu)}
+.atd-logs .rd-td-log__body,.atd-logs .log-action,.atd-logs .log-note{margin-top:6px;font-size:14px;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--t-fg)}
+.atd-logs .rd-td-log--auto,.atd-logs .log-item--auto{background:transparent;border-style:dashed}
+.atd-logs i{color:var(--t-ct) !important}
