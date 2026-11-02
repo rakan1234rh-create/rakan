@@ -66,3 +66,10 @@ html:root .mk-toast--error .mk-toast__icon { background: #FDE3E0 !important; col
 html:root .mk-toast--warning .mk-toast__icon, html:root .mk-toast--warn .mk-toast__icon { background: #FDF0CF !important; color: #7A4F00 !important; }
 html:root .mk-toast--info .mk-toast__icon { background: #E4EEFC !important; color: #1B4F9E !important; }
 html:root .mk-toast__text { font-family: 'IBM Plex Sans Arabic', system-ui, sans-serif; }
+
+/* ---- page canvas as in the design: #F4F4F4 / #0B0B0B, white / #151515 cards ---- */
+html:root.mr-desktop-ui body, html:root.mr-desktop-ui .content, html:root.mr-desktop-ui .app-body { background: #F4F4F4 !important; }
+html:root.mr-desktop-ui[data-theme="dark"] body, html:root.mr-desktop-ui[data-theme="dark"] .content, html:root.mr-desktop-ui[data-theme="dark"] .app-body { background: #0B0B0B !important; }
+html:root.mr-desktop-ui .rd-h-theme { display: inline-flex; border: 1px solid var(--pg-ln); border-radius: 4px; overflow: hidden; background: var(--pg-bg); margin-inline-end: 8px; }
+html:root.mr-desktop-ui .rd-h-theme button { width: 38px; height: 36px; border: 0; background: transparent; color: var(--pg-mu); cursor: pointer; }
+html:root.mr-desktop-ui .rd-h-theme button.is-on { background: var(--pg-on); color: var(--pg-onf); }

@@ -174,8 +174,20 @@
     var en = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }).replace(/,/g, '').toUpperCase();
     var place = role === 'employee' || role === 'branch_manager' ? branchName(me.branch_id) : (ROLE_LABEL[role] || '');
     return '<div class="rd-h-head"><div class="rd-h-head__t"><div class="rd-h-kick">' + esc(en) + ' · ' + esc(place) + '</div><h1>مرحبًا، ' + esc(String(me.name || '').split(' ')[0]) + '</h1></div>' +
-      '<div class="rd-h-theme" role="group" aria-label="المظهر"><button type="button" onclick="toggleTheme(event)" aria-label="فاتح"><i class="fas fa-sun"></i></button><button type="button" onclick="toggleTheme(event)" aria-label="داكن"><i class="fas fa-moon"></i></button></div></div>';
+      '</div>';
   }
+
+  function curTheme() { return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light'; }
+  function syncPill(box) { var t = curTheme(); box.querySelectorAll('button').forEach(function (b) { b.classList.toggle('is-on', b.dataset.t === t); b.setAttribute('aria-pressed', b.dataset.t === t ? 'true' : 'false'); }); }
+  function mountThemePill() {
+    var zone = document.querySelector('.topbar-actions-zone'); if (!zone || zone.querySelector('.rd-h-theme')) return;
+    var box = document.createElement('div'); box.className = 'rd-h-theme rd-h-theme--top'; box.setAttribute('role', 'group'); box.setAttribute('aria-label', 'المظهر');
+    box.innerHTML = '<button type="button" data-t="light" aria-label="فاتح"><i class="fas fa-sun"></i></button><button type="button" data-t="dark" aria-label="داكن"><i class="fas fa-moon"></i></button>';
+    box.addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; if (b.dataset.t !== curTheme() && typeof toggleTheme === 'function') toggleTheme(e); setTimeout(function () { syncPill(box); }, 50); });
+    zone.insertBefore(box, zone.firstChild); syncPill(box);
+    new MutationObserver(function () { syncPill(box); }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  }
+  var tries = 0; (function wait() { mountThemePill(); if (!document.querySelector('.rd-h-theme--top') && tries++ < 60) setTimeout(wait, 500); })();
 
   window.AtharRoleDash = {
     apply: function (host, ctx) {
