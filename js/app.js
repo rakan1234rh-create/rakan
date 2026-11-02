@@ -28600,6 +28600,27 @@
         const cmpSearchPh = cmpSearchPlaceholder(view);
         if (!cmpDataPending) cmpSnapshotBoardAnim(board);
 
+        if (rdCmp && !cmpDataPending && window.AtharComplianceDesign && typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi()
+          && (view === 'regions' || (view === 'branches' && !state._cmpDrill.regionId))) {
+          try {
+            const rowsD = (state.branches || []).map((b) => {
+              const st = calcBranchSafety(b.id, violations);
+              const reg = (state.regions || []).find(r => r.id === b.region_id);
+              return {
+                id: b.id, name: b.name, region: reg ? reg.name : '—',
+                n: getBranchStaff(b.id).length,
+                v: violations.filter(v => v.branch_id === b.id).length,
+                score: Math.round(Number(st.score) || 0)
+              };
+            });
+            let org = rowsD.length ? Math.round(rowsD.reduce((x, r) => x + r.score, 0) / rowsD.length) : 100;
+            board.innerHTML = window.AtharComplianceDesign.html({ rows: rowsD, org, esc: (v) => Sec.escapeHTML(String(v == null ? '' : v)) });
+            board.classList.add('atq-board');
+            return;
+          } catch (e) { console.warn('[atq]', e); }
+        } else {
+          board.classList.remove('atq-board');
+        }
         if (rdCmp) {
           const isRegionsRoot = view === 'regions';
           const desk = typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi();
