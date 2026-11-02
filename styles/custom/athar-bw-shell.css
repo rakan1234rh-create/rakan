@@ -61,3 +61,12 @@ html:root.mr-desktop-ui.mr-desktop-ui #appWrap #sidebar .rd-side-foot small,
 html:root.mr-desktop-ui.mr-desktop-ui #appWrap #sidebar .rd-side-foot [class*="mail"],
 html:root.mr-desktop-ui.mr-desktop-ui #appWrap #sidebar .rd-side-foot [class*="sub"] { color: var(--sh-mu) !important; }
 html:root.mr-desktop-ui.mr-desktop-ui #appWrap #sidebar .rd-side-foot [class*="avatar"] { background: #fff !important; color: #0a0a0a !important; }
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap #sidebar .nav-item.active .nav-item-label,
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap #sidebar .nav-item.active .nav-item-label * { color: #0a0a0a !important; }
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap #sidebar .rd-side-foot [class*="avatar"] *,
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap #sidebar .rd-side-foot [class*="av"] { color: #0a0a0a !important; background: #fff !important; }
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap #sidebar .nav-item.active,
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap #sidebar .nav-item.active * { -webkit-text-fill-color: #0a0a0a !important; }
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap #sidebar .nav-item:not(.active) .nav-item-label { -webkit-text-fill-color: currentColor !important; }
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap #sidebar .nav-item.active i::before,
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap #sidebar .nav-item.active .nav-icon-wrap i { color: #0a0a0a !important; -webkit-text-fill-color: #0a0a0a !important; opacity: 1 !important; }

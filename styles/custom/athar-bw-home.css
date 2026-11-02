@@ -1,0 +1,37 @@
+/* ATHAR — black & white home (desktop dashboard). Loaded last; scoped to .rd-desk-dash. */
+html:root .rd-desk-dash {
+  --hm-fg: #0a0a0a; --hm-mu: #6b6b6b; --hm-ln: #e4e4e4; --hm-bg: #fff; --hm-sf: #f5f5f5;
+}
+[data-theme="dark"] html:root .rd-desk-dash, html:root[data-theme="dark"] .rd-desk-dash {
+  --hm-fg: #f2f2f2; --hm-mu: #a3a3a3; --hm-ln: #262626; --hm-bg: #0f0f0f; --hm-sf: #181818;
+}
+html:root .rd-desk-dash__name { font-family: 'Readex Pro','IBM Plex Sans Arabic',sans-serif; font-weight: 600; letter-spacing: -.01em; color: var(--hm-fg); }
+html:root .rd-desk-dash__date { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: var(--hm-mu); }
+/* flat cards */
+html:root .rd-desk-streak, html:root .rd-desk-metric, html:root .rd-desk-stat,
+html:root .rd-desk-dist, html:root .rd-desk-activity {
+  background: var(--hm-bg) !important; border: 1px solid var(--hm-ln) !important;
+  border-radius: 4px !important; box-shadow: none !important; backdrop-filter: none !important;
+}
+html:root .rd-desk-mini { background: var(--hm-sf) !important; border-radius: 4px !important; box-shadow: none !important; }
+html:root .rd-desk-stat__val, html:root .rd-desk-mini__val, html:root .rd-desk-metric__val {
+  color: var(--hm-fg) !important; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-weight: 500;
+}
+html:root .rd-desk-stat__lbl, html:root .rd-desk-mini__lbl, html:root .rd-desk-metric__label,
+html:root .rd-desk-metric__sub, html:root .rd-desk-dist__label { color: var(--hm-mu) !important; }
+/* neutral icon chips */
+html:root .rd-desk-stat__ico, html:root .rd-desk-dist__ico {
+  background: var(--hm-sf) !important; color: var(--hm-fg) !important; border-radius: 4px !important;
+}
+html:root .rd-desk-stat__ico i, html:root .rd-desk-dist__ico i { color: var(--hm-fg) !important; }
+/* section titles + links */
+html:root .rd-desk-sec__title { font-family: 'Readex Pro','IBM Plex Sans Arabic',sans-serif; font-weight: 600; color: var(--hm-fg); }
+html:root .rd-desk-sec__link { color: var(--hm-fg) !important; text-decoration: underline; text-underline-offset: 3px; }
+/* distribution rows: hairline list, count in mono, color only as a small dot */
+html:root .rd-desk-dist { overflow: hidden; }
+html:root .rd-desk-dist__row { background: transparent !important; border-radius: 0 !important; border-bottom: 1px solid var(--hm-ln) !important; }
+html:root .rd-desk-dist__row:last-child { border-bottom: 0 !important; }
+html:root .rd-desk-dist__row:hover { background: var(--hm-sf) !important; }
+html:root .rd-desk-dist__count { font-family: 'IBM Plex Mono', ui-monospace, monospace; }
+/* streak badge: outlined chip */
+html:root .rd-desk-streak__badge { background: transparent !important; border: 1px solid var(--hm-ln); border-radius: 999px; color: var(--hm-fg) !important; }
