@@ -4,13 +4,15 @@
   var B = function () { return window.__atdBridge; };
   var S = { stage: -1, sel: null, loading: null, resp: {}, last: [] };
   var STAGES = ['emp', 'sup', 'mgt', 'aud', 'hr'];
-  var NAMES = ['بانتظار رد الموظف', 'بانتظار رد المشرف', 'بانتظار القرار الإداري', 'بانتظار الرقابة الداخلية', 'بانتظار الموارد البشرية', 'معتمدة', 'تنبيه', 'ملغاة'];
+  var NAMES = ['بانتظار رد الموظف', 'بانتظار رد المشرف', 'بانتظار القرار الإداري', 'بانتظار الرقابة الداخلية', 'بانتظار الموارد البشرية', 'معتمدة', 'تنبيه', 'ملغاة', 'مغلقة'];
+  var TONE = ['', '', '', '', '', 'ok', 'warn', 'bad', 'closed'];
   var STEPS = ['الموظف', 'المشرف', 'القرار الإداري', 'إدارة الرقابة الداخلية', 'الموارد البشرية', 'معتمدة'];
   function esc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function stageOf(t) {
     var i = STAGES.indexOf(t.state); if (i >= 0) return i;
     var o = null; try { o = B().terminal(t); } catch (_) {}
-    return o === 'warn' ? 6 : o === 'cancel' ? 7 : 5;
+    if (o === 'warn') return 6; if (o === 'cancel') return 7;
+    return /معتمد/.test(String(t.status_text || '')) ? 5 : 8;
   }
   function sevOf(t) {
     var b = B(), rec = null;
@@ -41,11 +43,11 @@
   }
   function chips(all) {
     var c = slot('atdChips', document.getElementById('ticketList')); if (!c) return;
-    var cnt = [0, 0, 0, 0, 0, 0, 0, 0]; all.forEach(function (t) { cnt[stageOf(t)]++; });
+    var cnt = [0, 0, 0, 0, 0, 0, 0, 0, 0]; all.forEach(function (t) { cnt[stageOf(t)]++; });
     var items = [{ l: 'الكل', v: -1, n: all.length }].concat(NAMES.map(function (n, i) { return { l: n, v: i, n: cnt[i] }; }));
     c.className = 'atd-chips'; c.setAttribute('aria-label', 'تصفية المراحل');
     c.innerHTML = items.map(function (x) {
-      return '<button type="button" class="atd-chip" data-atd-stage="' + x.v + '" aria-pressed="' + (S.stage === x.v) + '"><span>' + esc(x.l) + '</span><b>' + x.n + '</b></button>';
+      return '<button type="button" class="atd-chip' + (x.v >= 0 && TONE[x.v] ? ' tone-' + TONE[x.v] : '') + '" data-atd-stage="' + x.v + '" aria-pressed="' + (S.stage === x.v) + '"><span>' + esc(x.l) + '</span><b>' + x.n + '</b></button>';
     }).join('');
   }
 
@@ -67,7 +69,7 @@
       return '<button type="button" class="atd-row" data-atd-pick="' + esc(t.id) + '" aria-pressed="' + on + '">' +
         '<span class="atd-row__main"><span class="atd-mono">#' + esc(b.shortTicketNum(t.ticket_number)) + '</span><span class="atd-row__type">' + esc(t.violation_type) + '</span>' +
         '<span class="atd-mu">' + esc(t._empName) + ' · ' + esc(t._branchName) + ' · ' + esc(fdate(t)) + '</span></span>' +
-        '<span class="atd-row__end">' + sevChip(sv) + '<span class="atd-pill' + (st >= 5 ? ' is-closed' : '') + '">' + esc(NAMES[st]) + '</span></span></button>';
+        '<span class="atd-row__end">' + sevChip(sv) + '<span class="atd-pill' + (st >= 5 ? ' is-closed tone-' + TONE[st] : '') + '">' + esc(NAMES[st]) + '</span></span></button>';
     }).join('');
     host.innerHTML = '<div class="atd-grid"><div class="atd-card atd-list">' + rows + '</div><aside class="atd-card atd-aside" id="atdAside" aria-label="تفاصيل التذكرة"></aside></div>';
     if (S.loading !== S.sel && (!b.state.editingTicket || b.state.editingTicket.id !== S.sel)) load(S.sel); else aside();
@@ -75,8 +77,9 @@
 
   function load(id) {
     if (!id || typeof window.openTicket !== 'function') return aside();
-    S.loading = id; document.body.classList.add('atd-loading');
+    S.loading = id; window.__atdSilent = true; document.body.classList.add('atd-loading');
     var fin = function () {
+      window.__atdSilent = false;
       try { window.closeModal('ticketModal'); } catch (_) {}
       setTimeout(function () { if (!S.loading || S.loading === id) document.body.classList.remove('atd-loading'); }, 450);
       if (S.loading === id) { S.loading = null; aside(); }

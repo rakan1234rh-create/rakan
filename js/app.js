@@ -2026,6 +2026,7 @@
       }
 
       function openModal(id) {
+        if (id === 'ticketModal' && window.__atdSilent) return; /* تذاكر سطح المكتب: التفاصيل تُعرض في البطاقة الجانبية بدون فتح اللوحة */
         const el = document.getElementById(id);
         if (el) {
           el.classList.remove('rd-side-closing', 'sheet-dragging');
@@ -23134,7 +23135,8 @@
           isViolDetailMobSheet() && typeof isNotifPageOpen === 'function' && isNotifPageOpen()
         );
 
-        if (isViolDetailMobSheet()) openTicketSheetAnimated();
+        if (window.__atdSilent) { /* بدون فتح اللوحة */ }
+        else if (isViolDetailMobSheet()) openTicketSheetAnimated();
         else openModal('ticketModal');
 
         try {
