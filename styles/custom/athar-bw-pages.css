@@ -36,3 +36,33 @@ html:root.mr-desktop-ui .mr-perm-toggle__track::after, html:root.mr-desktop-ui .
 html:root.mr-desktop-ui .mr-perm-toggle input:not(:checked) + .mr-perm-toggle__track::after { background-color: #fff; }
 /* tables: hairlines, mono column heads */
 html:root.mr-desktop-ui .tab-content table th { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-weight: 500; font-size: 11px; letter-spacing: .04em; color: var(--pg-mu); }
+
+/* ---- ticket details (side panel) ---- */
+html:root.mr-desktop-ui #ticketModal .td-tab { color: var(--pg-mu) !important; border-radius: 4px !important; }
+html:root.mr-desktop-ui #ticketModal .td-tab.active { background: var(--pg-on) !important; color: var(--pg-onf) !important; }
+html:root.mr-desktop-ui #ticketModal .td-tab--needs-action { color: var(--pg-fg) !important; text-decoration: underline; text-underline-offset: 4px; }
+html:root.mr-desktop-ui #ticketModal .td-tab.active * { color: inherit !important; }
+html:root.mr-desktop-ui #ticketModal .rd-td-step__ico { background: var(--pg-sf) !important; color: var(--pg-fg) !important; border: 1px solid var(--pg-ln) !important; }
+html:root.mr-desktop-ui #ticketModal .rd-td-step--done .rd-td-step__ico { background: var(--pg-on) !important; color: var(--pg-onf) !important; border-color: var(--pg-on) !important; }
+html:root.mr-desktop-ui #ticketModal .rd-td-step--done .rd-td-step__ico i { color: var(--pg-onf) !important; }
+html:root.mr-desktop-ui #ticketModal .rd-td-step__line { background: var(--pg-ln) !important; }
+html:root.mr-desktop-ui #ticketModal .rd-td-step--done .rd-td-step__line { background: var(--pg-on) !important; }
+html:root.mr-desktop-ui #ticketModal .rd-td-step--current .rd-td-step__ico, html:root.mr-desktop-ui #ticketModal .rd-td-step--active .rd-td-step__ico { background: var(--pg-bg) !important; color: var(--pg-fg) !important; border: 2px solid var(--pg-on) !important; }
+html:root.mr-desktop-ui #ticketModal .td-admin-att-edit, html:root.mr-desktop-ui #ticketModal .log-compose-attach {
+  background: transparent !important; color: var(--pg-fg) !important; border: 1px solid var(--pg-ln) !important; border-radius: 4px !important; padding: 6px 12px; cursor: pointer; font-family: inherit;
+}
+html:root.mr-desktop-ui #ticketModal .td-resp-action { border-radius: 4px !important; box-shadow: none !important; }
+html:root.mr-desktop-ui #ticketModal .td-resp-action.btn-primary { background: var(--pg-on) !important; color: var(--pg-onf) !important; border-color: var(--pg-on) !important; }
+html:root.mr-desktop-ui #ticketModal .td-resp-action.btn-warning { background: transparent !important; color: var(--pg-fg) !important; border: 1px solid var(--pg-fg) !important; }
+html:root.mr-desktop-ui #ticketModal .td-resp-action.btn-danger { background: transparent !important; color: var(--pg-fg) !important; border: 1px solid var(--pg-ln) !important; }
+html:root.mr-desktop-ui #ticketModal .td-tab--needs-action, html:root.mr-desktop-ui #ticketModal .td-tab--needs-action * { color: var(--pg-fg) !important; -webkit-text-fill-color: currentColor !important; }
+
+/* ---- toasts: flat, hairline, severity only on the icon chip ---- */
+html:root .mk-toast { border-radius: 4px !important; box-shadow: 0 6px 24px rgba(0,0,0,.12) !important; background: #fff !important; color: #0a0a0a !important; border: 1px solid #e4e4e4 !important; backdrop-filter: none !important; }
+html:root[data-theme="dark"] .mk-toast { background: #151515 !important; color: #f2f2f2 !important; border-color: #303030 !important; }
+html:root .mk-toast__icon { border-radius: 4px !important; }
+html:root .mk-toast--success .mk-toast__icon { background: #DDF3E8 !important; color: #11623F !important; }
+html:root .mk-toast--error .mk-toast__icon { background: #FDE3E0 !important; color: #A3261E !important; }
+html:root .mk-toast--warning .mk-toast__icon, html:root .mk-toast--warn .mk-toast__icon { background: #FDF0CF !important; color: #7A4F00 !important; }
+html:root .mk-toast--info .mk-toast__icon { background: #E4EEFC !important; color: #1B4F9E !important; }
+html:root .mk-toast__text { font-family: 'IBM Plex Sans Arabic', system-ui, sans-serif; }
