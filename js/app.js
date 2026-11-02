@@ -15329,6 +15329,19 @@
       }
 
       function rdUsrDeskTableHTML(users, canManage) {
+        if (window.AtharAdminDesign) {
+          try {
+            return window.AtharAdminDesign.usersTable(users.map((u) => {
+              const roleKey = normalizeUserRole(u.role);
+              const branch = state._branchById ? state._branchById.get(u.branch_id) : (state.branches || []).find(b => b.id === u.branch_id);
+              return {
+                id: String(u.id || ''), name: u.name || '', no: padEmpNum(u.employee_number) || '—',
+                role: userTableRoleLabel(u) || ROLE_LABELS[roleKey] || roleKey, branch: (branch && branch.name) || '—',
+                active: !!(u.auth_uid && isActiveUser(u))
+              };
+            }), !!canManage, (v) => Sec.escapeHTML(String(v == null ? '' : v)));
+          } catch (e) { console.warn('[atu]', e); }
+        }
         const head = `
           <div class="rd-desk-table rd-desk-table--users" role="table">
             <div class="rd-desk-table__head" role="row">
