@@ -51,5 +51,40 @@
     var log = '<section class="atb-card atb-log"><div class="atb-row"><h2>سجل جلساتي</h2><span class="atb-mu">اليوم</span></div><div class="atb-scroll"><table><thead><tr><th>اليوم</th><th>النوع</th><th>البداية</th><th>النهاية</th><th>المدة</th><th>الحالة</th></tr></thead><tbody>' + body + '</tbody></table></div></section>';
     return head + '<section class="atb-top">' + cur + start + '</section>' + log;
   }
-  window.AtharBreaksDesign = { html: html };
+  /* ── Manager monitor: only employees who took a break today; sessions expand inline ── */
+  var OPEN = {};
+  function monitor(m) {
+    var e = m.esc;
+    var chipDefs = [['all', 'الكل'], ['active', 'في البريك الآن'], ['paused', 'متوقف'], ['overage', 'تجاوز المدة'], ['ended', 'انتهى']];
+    var chips = chipDefs.map(function (c) {
+      return '<button type="button" class="abm-chip' + (m.filter === c[0] ? ' is-on' : '') + '" onclick="setBreakStatusFilter(\'' + c[0] + '\')"><span>' + c[1] + '</span><b>' + (m.counts[c[0]] || 0) + '</b></button>';
+    }).join('');
+    var tool = '<div class="abm-tool"><div class="abm-search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>' +
+      '<input type="search" id="rdBreaksSearch" value="' + e(m.q) + '" placeholder="بحث بالاسم أو الرقم الوظيفي أو الفرع" autocomplete="off" oninput="refreshBreaksFromSearch(this)" aria-label="بحث"></div>' +
+      '<div class="abm-chips" role="group" aria-label="تصفية الحالة">' + chips + '</div></div>';
+    var rows = m.rows.map(function (r) {
+      var open = !!OPEN[r.id] && m.canHist;
+      var live = r.kind === 'active' || r.kind === 'overage';
+      var attrs = r.liveId ? ' data-break-live-row="' + e(r.liveId) + '" data-break-live-status="active"' : '';
+      var sess = open ? '<div class="abm-sess"><table><thead><tr><th>#</th><th>النوع</th><th>من</th><th>إلى</th><th>المدة</th><th>الحالة</th></tr></thead><tbody>' + r.sessions.map(function (s) {
+        return '<tr class="' + s.tone + '"><td class="atd-mono">' + s.n + '</td><td>' + e(s.type) + '</td><td class="atd-mono">' + e(s.from) + '</td><td class="atd-mono">' + e(s.to) + '</td><td class="atd-mono">' + e(s.dur) + '</td><td><span class="abm-st abm-st--' + s.tone + '">' + e(s.status) + '</span>' + (s.reason ? '<div class="abm-reason">السبب: ' + e(s.reason) + '</div>' : '') + '</td></tr>';
+      }).join('') + '</tbody></table></div>' : '';
+      return '<article class="abm-row' + (open ? ' is-open' : '') + '"' + attrs + '>' +
+        '<div class="abm-main"><div class="abm-av" aria-hidden="true">' + e(r.initial) + '</div><div class="abm-who"><div class="abm-name">' + e(r.name) + (r.me ? ' <span class="abm-me">أنت</span>' : '') + '</div><div class="abm-sub">' + e(r.branch) + (r.num ? ' · <span class="atd-mono">' + e(r.num) + '</span>' : '') + '</div></div>' +
+        '<span class="abm-tag abm-tag--' + r.kind + '"' + (live ? ' data-break-row-status' : '') + '><i></i>' + e(r.statusLbl) + '</span>' +
+        '<div class="abm-meta"><span class="abm-mu">الجلسات</span><b class="atd-mono">' + r.sessions.length + '</b></div>' +
+        '<div class="abm-meta"><span class="abm-mu">' + (live ? 'المتبقي' : 'المستخدم') + '</span><b class="atd-mono abm-clock' + (r.kind === 'overage' ? ' is-over' : '') + '"' + (r.liveId ? ' data-break-row-clock="' + e(r.liveId) + '"' : '') + ' dir="ltr">' + e(r.clock) + '</b></div>' +
+        (r.force ? '<button type="button" class="abm-btn" data-break-admin-force="' + e(r.liveId) + '" ' + (r.kind === 'overage' ? '' : 'hidden') + ' onclick="event.stopPropagation();adminForceEndStaffBreakFromUi(\'' + e(r.liveId) + '\')">إيقاف</button>' : '') +
+        (m.canHist ? '<button type="button" class="abm-btn abm-btn--g" data-abm-toggle="' + e(r.id) + '" aria-expanded="' + open + '">' + (open ? 'إخفاء الجلسات' : 'عرض الجلسات') + '</button>' : '') +
+        '</div>' + sess + '</article>';
+    }).join('');
+    var list = rows ? '<div class="abm-list">' + rows + '</div>' : '<div class="abm-empty">' + (m.q ? 'لا توجد نتائج مطابقة' : 'لا يوجد موظف أخذ بريكاً اليوم') + '</div>';
+    return '<section class="abm" aria-label="مراقبة البريكات">' + tool + list + '</section>';
+  }
+  document.addEventListener('click', function (ev) {
+    var t = ev.target.closest && ev.target.closest('[data-abm-toggle]'); if (!t) return;
+    var id = t.getAttribute('data-abm-toggle'); OPEN[id] = !OPEN[id];
+    if (typeof window.renderStaffBreaksPage === 'function') window.renderStaffBreaksPage({ soft: true });
+  });
+  window.AtharBreaksDesign = { html: html, monitor: monitor };
 })();

@@ -39652,6 +39652,70 @@
           </div>`;
       }
 
+      /** نموذج مراقبة البريكات للمدراء: فقط من أخذ بريكاً اليوم */
+      function buildBreakMonitorModel() {
+        const esc = (v) => Sec.escapeHTML(String(v == null ? '' : v));
+        const tz = 'Asia/Riyadh';
+        const fmtT = (iso) => {
+          if (!iso) return '—';
+          try {
+            const p = new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: 'numeric', minute: '2-digit', hour12: true }).formatToParts(new Date(iso));
+            const g = (t) => (p.find((x) => x.type === t) || {}).value || '';
+            return `${g('hour')}:${g('minute')} ${/pm/i.test(g('dayPeriod')) ? 'م' : 'ص'}`;
+          } catch (_) { return '—'; }
+        };
+        const todayKey = getStaffBreakTodayKey();
+        const dayRows = (state.staffBreakDayRows || []).filter((b) => b && (!b.day_key || String(b.day_key).slice(0, 10) === todayKey));
+        const actives = (state.staffBreaks || []).filter((b) => b.status === 'active');
+        const canForce = canAdminForceEndStaffBreak();
+        const all = [];
+        getBreakRosterUsers().filter(staffBreakUserMatchesSearch).forEach((u) => {
+          const sess = dayRows.filter((b) => b.user_id === u.id)
+            .sort((a, b) => new Date(a.started_at || 0) - new Date(b.started_at || 0));
+          const act = actives.find((b) => b.user_id === u.id) || null;
+          if (!sess.length && !act) return;
+          const view = getBreakRosterRowView(u);
+          let kind = 'ended', statusLbl = 'انتهى', clock = '', liveId = '';
+          const usedSec = sess.reduce((s, r) => s + Math.max(0, Number(r.used_seconds) || 0), 0);
+          if (act) {
+            const rem = getBreakRemainingSeconds(act);
+            const lbl = getStaffBreakTypeLabel(act);
+            kind = rem < 0 && isStaffBreakReportableOvertime(act, rem) ? 'overage' : 'active';
+            statusLbl = rem < 0 ? `${lbl} — تجاوز المدة` : lbl;
+            clock = rem < 0 ? formatBreakOverageClock(rem) : formatBreakClock(rem);
+            liveId = act.id;
+          } else if (view.overEnded) { kind = 'overage'; statusLbl = 'انتهى مع تجاوز'; clock = formatBreakOverageClock(view.dayRow ? getStaffBreakOvertimeSeconds(view.dayRow) : 0); }
+          else if (view.stopped) { kind = 'paused'; statusLbl = 'متوقف'; clock = `${Math.max(1, Math.ceil(usedSec / 60))} د`; }
+          else { kind = 'ended'; statusLbl = 'انتهى'; clock = usedSec ? `${Math.max(1, Math.ceil(usedSec / 60))} د` : (view.minsLabel || '—'); }
+          const branch = state._branchById?.get(u.branch_id) || state.branches.find((b) => b.id === u.branch_id);
+          const sessions = sess.map((r, i) => {
+            const over = getStaffBreakOvertimeSeconds(r);
+            let st = 'انتهى', tone = 'end';
+            if (r.status === 'active') { st = over > 0 || getBreakRemainingSeconds(r) < 0 ? 'جارٍ — تجاوز' : 'جارٍ الآن'; tone = 'live'; }
+            else if (r.status === 'paused') { st = 'متوقف'; tone = 'pause'; }
+            else if (over > 0) { st = `انتهى مع تجاوز (+${Math.max(1, Math.ceil(over / 60))} د)`; tone = 'over'; }
+            return {
+              n: i + 1, type: getStaffBreakTypeLabel(r), from: fmtT(r.started_at),
+              to: r.status === 'active' ? 'جارٍ' : fmtT(r.ended_at || r.paused_at || r.updated_at),
+              dur: getBreakSessionUsedLabel(r), status: st, tone,
+              reason: formatStaffBreakOvertimeReason(r.overtime_reason) || ''
+            };
+          });
+          all.push({
+            id: u.id, name: u.name || '—', initial: (u.name || 'م').trim().charAt(0) || 'م',
+            num: u.employee_number ? padEmpNum(u.employee_number) : '', branch: branch?.name || '—',
+            me: u.id === state.currentUser?.id, kind, statusLbl, clock, liveId, force: !!(canForce && liveId), sessions
+          });
+        });
+        const order = { overage: 0, active: 1, paused: 2, ended: 3 };
+        all.sort((a, b) => order[a.kind] - order[b.kind]);
+        const counts = { all: all.length, active: 0, paused: 0, overage: 0, ended: 0 };
+        all.forEach((r) => { counts[r.kind]++; });
+        const f = getBreakStatusFilter();
+        const rows = f === 'all' ? all : all.filter((r) => r.kind === f);
+        return { esc, rows, counts, filter: f, q: state._breakRosterSearch || '', canHist: canViewStaffBreakHistory() };
+      }
+
       function renderStaffBreaksRedesign() {
         const host = document.getElementById('rdBreaks');
         if (!host) return;
@@ -39716,10 +39780,19 @@
             });
             const showMon = canViewStaffBreakHistory() && normalizeUserRole(me.role) !== 'employee';
             const lists = showMon ? `<div class="rd-breaks-page__lists">${showUnifiedAll ? renderStaffBreakAllUnifiedHtml() : ''}</div>` : '';
-            host.innerHTML = `<div class="rd-screen rd-breaks-page rd-breaks-page--desk atb-page">${dhtml}${showMon ? `<div class="atb-mon">${renderBreaksDeskToolbarHtml()}${lists}</div>` : ''}</div>`;
+            host.innerHTML = `<div class="rd-screen rd-breaks-page rd-breaks-page--desk atb-page">${dhtml}${showMon ? `<div class="atb-mon">${window.AtharBreaksDesign.monitor ? window.AtharBreaksDesign.monitor(buildBreakMonitorModel()) : ''}</div>` : ''}</div>`;
             host.hidden = false;
             return;
           } catch (e) { console.warn('[atb]', e); }
+        }
+        if (desk && window.AtharBreaksDesign && window.AtharBreaksDesign.monitor) {
+          try {
+            host.innerHTML = `<div class="rd-screen rd-breaks-page rd-breaks-page--desk atb-page">
+              <header class="atb-head"><div><p class="atd-kick">STAFF BREAKS</p><h1 class="atd-h1">بريكات الموظفين</h1></div>${manageBtn}</header>
+              <div class="atb-mon">${window.AtharBreaksDesign.monitor(buildBreakMonitorModel())}</div></div>`;
+            host.hidden = false;
+            return;
+          } catch (e) { console.warn('[abm]', e); }
         }
         host.innerHTML = `
           <div class="rd-screen rd-breaks-page${desk ? ' rd-breaks-page--desk' : ''}">
@@ -40407,6 +40480,7 @@
       window.adminForceEndStaffBreakFromUi = adminForceEndStaffBreakFromUi;
       window.submitBreakOvertimeReason = submitBreakOvertimeReason;
       window.setBreakStatusFilter = setBreakStatusFilter;
+      window.renderStaffBreaksPage = renderStaffBreaksPage;
       window.refreshBreaksFromSearch = refreshBreaksFromSearch;
       window.setBreakSchScope = setBreakSchScope;
       window.setBreakSchType = setBreakSchType;
