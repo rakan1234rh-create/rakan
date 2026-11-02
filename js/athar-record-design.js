@@ -41,5 +41,28 @@
     }).join('') : '<div class="atd-mu atr-none">لم ترصد أي مخالفة بعد</div>');
     if (aside.dataset.h !== html) { aside.dataset.h = html; aside.innerHTML = html; }
   }
+  /* Picked employee / type lives inside the field: banner replaces the search box, with a "تغيير" button. */
+  function pickFields() {
+    ['emp', 'type'].forEach(function (k) {
+      var slot = document.getElementById('nt-' + k + 'Found'); if (!slot) return;
+      var field = slot.closest('.mk-field'); if (!field) return;
+      var ban = slot.querySelector('.mk-pick-banner');
+      var key = ban ? (ban.querySelector('strong') || ban).textContent : '';
+      if (field.dataset.atrPick !== key) { field.dataset.atrPick = key; field.classList.remove('atr-editing'); }
+      if (ban && !ban.querySelector('.atr-change')) {
+        var b = document.createElement('button'); b.type = 'button'; b.className = 'atr-change'; b.textContent = 'تغيير';
+        b.onclick = function (e) { e.preventDefault(); e.stopPropagation(); field.classList.add('atr-editing'); var i = field.querySelector('.figma-search-input'); if (i) i.focus(); };
+        ban.appendChild(b);
+      }
+      field.classList.toggle('atr-picked', !!ban && slot.style.display !== 'none');
+    });
+  }
+  setInterval(pickFields, 250);
+  document.addEventListener('click', function (e) {
+    document.querySelectorAll('#tab-newTicket .mk-field.atr-editing').forEach(function (f) {
+      if (f.contains(e.target)) return;
+      if (f.dataset.atrPick) f.classList.remove('atr-editing');
+    });
+  });
   setInterval(mount, 1200);
 })();
