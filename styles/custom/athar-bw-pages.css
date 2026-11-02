@@ -102,3 +102,15 @@ html:root.mr-desktop-ui .rd-desk-ticket-badge { white-space: nowrap !important; 
 html:root.mr-desktop-ui #tab-breaks .breaks-panel, html:root.mr-desktop-ui #tab-breaks .wf-panel { background: transparent !important; border: 0 !important; box-shadow: none !important; }
 html:root.mr-desktop-ui #tab-breaks .rd-break-card { border-radius: 4px !important; box-shadow: none !important; border: 1px solid var(--pg-ln) !important; background: var(--pg-bg) !important; }
 html:root.mr-desktop-ui #tab-breaks .rd-break-card button { border-radius: 4px !important; box-shadow: none !important; }
+
+/* ---- complaints: form docked beside the list ---- */
+html:root.mr-desktop-ui #newComplaintModal.modal.open { position: fixed !important; top: var(--unified-topbar-h, 68px) !important; left: 0 !important; right: 0 !important; bottom: 0 !important; background: transparent !important; pointer-events: none !important; backdrop-filter: none !important; align-items: flex-start !important; justify-content: flex-start !important; padding: 12px 16px !important; z-index: 1100 !important; }
+html:root.mr-desktop-ui #newComplaintModal .modal-card.cp-new-sheet { pointer-events: auto; position: relative !important; width: 440px !important; max-width: 440px !important; max-height: calc(100vh - 110px) !important; overflow: auto; margin: 0 !important; border: 1px solid var(--pg-ln) !important; border-radius: 4px !important; box-shadow: none !important; background: var(--pg-bg) !important; transform: none !important; animation: none !important; }
+html:root.mr-desktop-ui:has(#newComplaintModal.open) #tab-complaints { padding-left: 480px !important; }
+html:root.mr-desktop-ui #newComplaintModal .cp-new-close-btn, html:root.mr-desktop-ui #newComplaintModal .cp-new-cancel-btn { display: none !important; }
+html:root.mr-desktop-ui #newComplaintModal .btn-primary { background: var(--pg-on) !important; color: var(--pg-onf) !important; border-radius: 4px !important; }
+html:root.mr-desktop-ui #newComplaintModal .form-input { border-radius: 4px !important; }
+html:root.mr-desktop-ui #newComplaintModal #cpKindOptions > *, html:root.mr-desktop-ui #newComplaintModal #cpCategoryOptions > * { border-radius: 4px !important; }
+html:root.mr-desktop-ui #newComplaintModal #cpKindOptions > .active, html:root.mr-desktop-ui #newComplaintModal #cpKindOptions > [aria-pressed="true"], html:root.mr-desktop-ui #newComplaintModal #cpCategoryOptions > .active, html:root.mr-desktop-ui #newComplaintModal #cpCategoryOptions > [aria-pressed="true"] { background: var(--pg-on) !important; color: var(--pg-onf) !important; border-color: var(--pg-on) !important; }
+html:root.mr-desktop-ui #newComplaintModal.modal.open { display: block !important; padding: 0 !important; }
+html:root.mr-desktop-ui #newComplaintModal .modal-card.cp-new-sheet { position: absolute !important; left: 16px !important; right: auto !important; top: 12px !important; }

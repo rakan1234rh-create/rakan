@@ -194,6 +194,17 @@
     card.appendChild(b);
   }
   setInterval(mountTicketClose, 1500);
+  /* complaints: show the existing new-complaint form docked beside the list (design) */
+  var cmplDocked = false;
+  setInterval(function () {
+    try {
+      if (!document.documentElement.classList.contains('mr-desktop-ui')) return;
+      var tab = document.getElementById('tab-complaints'); var m = document.getElementById('newComplaintModal'); if (!tab || !m) return;
+      var vis = !tab.hidden && tab.offsetParent !== null;
+      if (vis && !cmplDocked && !m.classList.contains('open') && typeof canSubmitComplaint === 'function' && canSubmitComplaint() && typeof openNewComplaintModal === 'function') { cmplDocked = true; openNewComplaintModal(); }
+      if (!vis && cmplDocked) { cmplDocked = false; if (m.classList.contains('open') && typeof closeModal === 'function') closeModal('newComplaintModal'); }
+    } catch (_) { /* noop */ }
+  }, 700);
   var tries = 0; (function wait() { mountThemePill(); if (!document.querySelector('.rd-h-theme--top') && tries++ < 60) setTimeout(wait, 500); })();
 
   window.AtharRoleDash = {
