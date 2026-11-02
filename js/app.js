@@ -39600,6 +39600,38 @@
                   ${renderStaffBreakRosterHtml()}
                 </div>`
           : '';
+        if (desk && canTakeStaffBreak() && window.AtharBreaksDesign) {
+          try {
+            const me = state.currentUser;
+            const open = getMyOpenStaffBreak();
+            const active = open?.status === 'active' ? open : null;
+            const mk = (type) => ({
+              mins: resolveBreakDurationMinsForUser(me, type) || 0,
+              exhausted: isMyBreakAllowanceExhausted(type),
+              unscheduled: isMyBreakUnscheduledToday(type),
+              note: isMyBreakUnscheduledToday(type) ? getStaffBreakUnscheduledNote(type) : ''
+            });
+            const colleague = !active ? getActiveBreakColleagueInMyBranch() : null;
+            const rows = (state.staffBreakDayRows || []).filter(r => r && r.user_id === me.id)
+              .sort((x, y) => new Date(y.started_at || 0) - new Date(x.started_at || 0));
+            const dhtml = window.AtharBreaksDesign.html({
+              active, planned: active ? (Number(active.planned_duration_minutes) || 0) : 0,
+              remaining: active ? getBreakRemainingSeconds(active) : 0,
+              clock: formatBreakClock, overClock: formatBreakOverageClock,
+              typeLabel: active ? (active.break_type === 'restroom' ? 'دورة مياه' : 'استراحة') : '',
+              regular: mk('regular'), restroom: mk('restroom'),
+              colleague: colleague ? (colleague._userName || '—') : '',
+              busy: isStaffBreakActionBusy(), branch: (state.branches || []).find(b => b.id === me.branch_id)?.name || '—',
+              disableNote: (typeof getStaffBreakDisableMessageText === 'function' ? '' : ''),
+              rows, esc: (v) => Sec.escapeHTML(String(v == null ? '' : v))
+            });
+            const showMon = canViewStaffBreakHistory() && normalizeUserRole(me.role) !== 'employee';
+            const lists = showMon ? `<div class="rd-breaks-page__lists">${showUnifiedAll ? renderStaffBreakAllUnifiedHtml() : ''}</div>` : '';
+            host.innerHTML = `<div class="rd-screen rd-breaks-page rd-breaks-page--desk atb-page">${dhtml}${showMon ? `<div class="atb-mon">${renderBreaksDeskToolbarHtml()}${lists}</div>` : ''}</div>`;
+            host.hidden = false;
+            return;
+          } catch (e) { console.warn('[atb]', e); }
+        }
         host.innerHTML = `
           <div class="rd-screen rd-breaks-page${desk ? ' rd-breaks-page--desk' : ''}">
             ${headHtml}
