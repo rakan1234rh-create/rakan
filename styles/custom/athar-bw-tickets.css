@@ -118,3 +118,15 @@ html:root.mr-desktop-ui #tab-workflow #wfClassicToolbar .wf-date-range{display:n
 html[data-theme="dark"] .atd-st--closed{background:#F2F2F2;color:#0A0A0A}html[data-theme="dark"] .atd-st--closed i{background:#0A0A0A}
 .atd-st--open i{background:var(--t-ct)}
 .atd-grid{--t-okb:#DDF3E4;--t-okf:#1E6B3A}html[data-theme="dark"] .atd-grid{--t-okb:#12301D;--t-okf:#7FD99A}
+/* search box — same control look as the rest */
+html:root.mr-desktop-ui.mr-desktop-ui #tab-workflow #wfClassicToolbar .wf-search{position:relative;display:flex !important;align-items:center;height:44px;box-sizing:border-box;border:1px solid var(--t-ct) !important;border-radius:4px !important;background:var(--t-sf) !important;box-shadow:none !important;padding:0 !important;margin:0 !important}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-workflow #wfClassicToolbar .wf-search:focus-within{outline:2px solid var(--t-fg);outline-offset:2px}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-workflow #wf-search{flex:1;min-width:0;height:42px !important;border:0 !important;outline:0 !important;background:transparent !important;box-shadow:none !important;padding:0 14px !important;font-size:15px !important;color:var(--t-fg) !important;border-radius:0 !important}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-workflow #wf-search::placeholder{color:var(--t-mu)}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-workflow #wfClassicToolbar .figma-search-btn{position:static !important;flex:none;display:grid;place-items:center;width:42px;height:42px;border:0 !important;background:transparent !important;color:var(--t-mu) !important;padding:0 !important;transform:none !important}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-workflow #wfClassicToolbar .figma-search-wrap.wf-search{height:44px !important;min-height:44px !important;max-height:none !important}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-workflow #wfClassicToolbar .figma-search-wrap.wf-search .figma-search-btn{width:42px !important;height:42px !important;min-width:42px !important;display:grid !important;opacity:1 !important;visibility:visible !important;font-size:14px !important}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-workflow #wfClassicToolbar .figma-search-wrap.wf-search #wf-search{height:42px !important;padding-inline-end:4px !important}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-workflow #wfClassicToolbar .figma-search-wrap.wf-search::before,html:root.mr-desktop-ui.mr-desktop-ui #tab-workflow #wfClassicToolbar .figma-search-wrap.wf-search::after{display:none !important;content:none !important}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-workflow #wfClassicToolbar .figma-search-wrap.wf-search #wf-search{background-image:none !important}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-workflow #wfClassicToolbar .figma-search-wrap.wf-search .figma-search-btn{order:-1}
