@@ -22,3 +22,14 @@ html:root.mr-desktop-ui #tab-newTicket .mk-form-ft{margin-top:6px}
 html:root.mr-desktop-ui #tab-newTicket .mk-form-ft .mk-btn--primary{flex:0 0 auto !important;width:auto !important}
 html:root.mr-desktop-ui #tab-newTicket .atr-ttl{margin-bottom:-4px}
 html:root.mr-desktop-ui #tab-newTicket .atr-ttl{margin-bottom:6px}
+html:root.mr-desktop-ui #tab-newTicket .rd-nt-sev,html:root.mr-desktop-ui #tab-newTicket .mk-req,html:root.mr-desktop-ui #tab-newTicket .mk-field__hint,html:root.mr-desktop-ui #tab-newTicket .mk-drop,html:root.mr-desktop-ui #tab-newTicket .mk-field--full>.mk-field__lbl:not([for]),html:root.mr-desktop-ui #tab-newTicket .mk-form-ft .mk-btn:not(.mk-btn--primary):not(#atrAttach){display:none !important}
+html:root.mr-desktop-ui #tab-newTicket .mk-field--emp{order:1}
+html:root.mr-desktop-ui #tab-newTicket .mk-field--type{order:2}
+html:root.mr-desktop-ui #tab-newTicket .mk-field--dt-row{order:3}
+html:root.mr-desktop-ui #tab-newTicket .mk-field--full{order:4}
+html:root.mr-desktop-ui #tab-newTicket .mk-field__lbl,html:root.mr-desktop-ui #tab-newTicket .mk-dt-item__lbl{font-weight:400 !important}
+html:root.mr-desktop-ui #tab-newTicket .mk-form-ft .mk-btn--primary{flex:0 0 auto !important}
+html:root.mr-desktop-ui #tab-newTicket #atrAttach{display:inline-flex !important;align-items:center;justify-content:center;min-width:140px;padding:0 22px}
+.atr-rh p{margin:0;font-size:12px;color:var(--t-mu)}
+html:root.mr-desktop-ui #tab-newTicket .mk-form-ft .mk-btn--primary{width:180px !important;max-width:180px !important;min-width:180px !important;flex:0 0 180px !important}
+html:root.mr-desktop-ui #tab-newTicket .mk-form-ft{justify-content:flex-start !important}
