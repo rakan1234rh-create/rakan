@@ -10,7 +10,23 @@
     }).join('');
     return '<div class="atu-scroll"><table class="atu-table"><thead><tr><th scope="col">الاسم</th><th scope="col">الرقم الوظيفي</th><th scope="col">الدور</th><th scope="col">الفرع</th><th scope="col">الحالة</th><th scope="col">إجراء</th></tr></thead><tbody>' + body + '</tbody></table></div>';
   }
-  var HEADS = { departments: ['USER MANAGEMENT', 'إدارة المستخدمين', '.wf-panel'], broadcasts: ['MOBILE BROADCASTS', 'النشرات', '.bc-page'], settings: ['PLATFORM PERMISSIONS', 'الصلاحيات', '#tab-settings', true] };
+  function branchesTable(rows, e) {
+    var band = function (n) { return n >= 90 ? 'ex' : n >= 75 ? 'gd' : n >= 50 ? 'md' : 'bd'; };
+    var body = rows.map(function (r) {
+      return '<tr class="atu-tr" tabindex="0" onclick="openRegionView(\'' + e(r.rid) + '\');openLocBranchView(\'' + e(r.id) + '\')"><td>' + e(r.name) + '</td><td>' + e(r.region) + '</td><td>' + e(r.mgr) + '</td><td class="atd-mono atu-no">' + r.n + '</td><td><span class="atq-chip atq-chip--' + band(r.score) + '">' + r.score + '</span></td></tr>';
+    }).join('') || '<tr><td colspan="5" class="atu-empty">لا توجد فروع</td></tr>';
+    return '<div class="atu-scroll"><table class="atu-table"><thead><tr><th scope="col">الفرع</th><th scope="col">المنطقة</th><th scope="col">المدير</th><th scope="col">الموظفون</th><th scope="col">الامتثال</th></tr></thead><tbody>' + body + '</tbody></table></div>';
+  }
+  function typesTable(rows, canManage, e) {
+    var cls = { 'عالي': 'hi', 'متوسط': 'md', 'منخفض': 'lo' }, lbl = { 'عالي': 'عالية', 'متوسط': 'متوسطة', 'منخفض': 'منخفضة' };
+    var body = rows.map(function (r) {
+      var id = e(r.id).replace(/'/g, '&#39;');
+      return '<tr class="atu-tr" tabindex="0" onclick="openViolDetailSheet(\'' + id + '\')"><td>' + e(r.name) + '</td><td><span class="atd-sev atd-sev--' + (cls[r.sev] === 'hi' ? 'hi' : cls[r.sev] === 'md' ? 'med' : 'low') + '">' + e(lbl[r.sev] || r.sev) + '</span></td><td class="atd-mono atu-no">−' + e(r.pts) + '</td><td>' + e(r.cat) + '</td>' +
+        (canManage ? '<td onclick="event.stopPropagation()"><button type="button" class="atu-edit" onclick="editViolType(\'' + id + '\')">تعديل</button></td>' : '') + '</tr>';
+    }).join('') || '<tr><td colspan="5" class="atu-empty">لا توجد أنواع مخالفات</td></tr>';
+    return '<div class="atu-scroll"><table class="atu-table"><thead><tr><th scope="col">النوع</th><th scope="col">الخطورة</th><th scope="col">النقاط</th><th scope="col">الفئة</th>' + (canManage ? '<th scope="col"></th>' : '') + '</tr></thead><tbody>' + body + '</tbody></table></div>';
+  }
+  var HEADS = { departments: ['USER MANAGEMENT', 'إدارة المستخدمين', '.wf-panel'], broadcasts: ['MOBILE BROADCASTS', 'النشرات', '.bc-page'], settings: ['PLATFORM PERMISSIONS', 'الصلاحيات', '#tab-settings', true], locations: ['REGIONS & BRANCHES', 'المناطق والفروع', '#tab-locations', true], violations: ['VIOLATION TYPES', 'أنواع المخالفات', '#tab-violations', true] };
   function mount() {
     var h = document.documentElement; if (!h.classList.contains('mr-desktop-ui')) return;
     Object.keys(HEADS).forEach(function (k) {
@@ -19,6 +35,13 @@
       var d = document.createElement('div'); d.className = 'atu-head';
       d.innerHTML = '<p class="atd-kick">' + HEADS[k][0] + '</p><h1 class="atd-h1">' + HEADS[k][1] + '</h1>';
       root.insertBefore(d, root.firstChild);
+    });
+    [['locations', 'المناطق والفروع', 'atuLocCount', 'regions-count', ' منطقة'], ['violations', 'أنواع المخالفات', 'atuVtCount', 'viol-types-count', ' أنواع']].forEach(function (c) {
+      var t = document.getElementById('tab-' + c[0]); if (!t || !t.offsetParent) return;
+      var p = t.querySelector('.wf-panel'); if (!p) return;
+      if (!p.querySelector(':scope > .atu-card-hd')) { var d = document.createElement('div'); d.className = 'atu-card-hd'; d.innerHTML = '<h2>' + c[1] + '</h2><p id="' + c[2] + '"></p>'; p.insertBefore(d, p.firstChild); }
+      var n = document.getElementById(c[3]), el = document.getElementById(c[2]);
+      if (c[0] === 'violations' && n && el) el.textContent = n.textContent + c[4];
     });
     var tab = document.getElementById('tab-departments');
     if (tab && tab.offsetParent) {
@@ -31,5 +54,5 @@
     }
   }
   setInterval(mount, 1000);
-  window.AtharAdminDesign = { usersTable: usersTable };
+  window.AtharAdminDesign = { usersTable: usersTable, branchesTable: branchesTable, typesTable: typesTable };
 })();

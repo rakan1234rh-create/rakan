@@ -14071,6 +14071,24 @@
           setRegionsResultCount(0);
           return;
         }
+        if (window.AtharAdminDesign) {
+          try {
+            const vAll = typeof getViolationsForScoring === 'function' ? getViolationsForScoring() : (state.violations || []);
+            const brs = state.branches.filter(b => visibleRegions.some(r => r.id === b.region_id) && branchMatchesSearch(b));
+            const rowsB = brs.map((b) => {
+              const reg = state.regions.find(r => r.id === b.region_id);
+              const staff = getBranchStaff(b.id);
+              const mgr = staff.find(u => u.role === 'branch_manager');
+              let score = 100; try { score = Math.round(Number(calcBranchSafety(b.id, vAll).score) || 0); } catch (_) {}
+              return { id: String(b.id), rid: String(b.region_id || ''), name: b.name || '', region: reg ? reg.name : '—', mgr: mgr ? mgr.name : 'لا يوجد مدير', n: staff.length, score };
+            });
+            container.innerHTML = window.AtharAdminDesign.branchesTable(rowsB, (v) => Sec.escapeHTML(String(v == null ? '' : v)));
+            const cnt = document.getElementById('atuLocCount');
+            if (cnt) cnt.textContent = visibleRegions.length + ' مناطق · ' + rowsB.length + ' فرعًا';
+            setRegionsResultCount(rowsB.length);
+            return;
+          } catch (e) { console.warn('[atl]', e); }
+        }
         container.innerHTML = `
           <div class="rd-loc-board rd-loc-board--desk">
             <div class="rd-loc-desk-table rd-loc-desk-table--region">
@@ -15962,6 +15980,15 @@
 
       function renderViolTypesRedesign(types, canManage) {
         const desk = typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi();
+        if (desk && window.AtharAdminDesign) {
+          try {
+            const rowsT = types.map((v) => ({
+              id: String(v.id || ''), name: v.name || '', sev: violTypeSeverity(v),
+              pts: v.weight ?? v.points ?? 0, cat: v.category || '—'
+            }));
+            return window.AtharAdminDesign.typesTable(rowsT, !!canManage, (x) => Sec.escapeHTML(String(x == null ? '' : x)));
+          } catch (e) { console.warn('[atv]', e); }
+        }
         const order = [
           { sev: 'عالي', label: 'مخالفات عالية', color: 'var(--danger)' },
           { sev: 'متوسط', label: 'مخالفات متوسطة', color: 'var(--warning)' },
