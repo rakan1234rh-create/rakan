@@ -27999,6 +27999,14 @@
           </div>`;
       }
 
+      function cedBand(n) {
+        n = Number(n) || 0;
+        if (n >= 90) return { cls: 'ex', label: 'ممتاز', color: '#1E9E6A' };
+        if (n >= 75) return { cls: 'gd', label: 'جيد', color: '#2F6FDB' };
+        if (n >= 50) return { cls: 'md', label: 'متوسط', color: '#D9A011' };
+        return { cls: 'bd', label: 'متعثر', color: '#D6342C' };
+      }
+
       function buildRdCmpEmpDetailHeroHTML(item) {
         const emp = state.users.find(u => u.id === item.id);
         const branch = emp?.branch_id
@@ -28009,34 +28017,27 @@
           || '';
         const empRaw = item.empNumber || emp?.employee_number || '';
         const empNum = empRaw && typeof padEmpNum === 'function' ? padEmpNum(empRaw) : String(empRaw || '');
-        const jobTitle = emp && typeof getStaffJobTitle === 'function'
-          ? getStaffJobTitle(emp)
-          : '';
-        const meta = [];
-        if (empNum && empNum !== '-') {
-          meta.push(`<span class="rd-cmp-emp-hd__num" dir="ltr">${Sec.escapeHTML(empNum)}</span>`);
-        }
-        if (branchName) {
-          meta.push(`<span class="rd-cmp-emp-hd__branch">${Sec.escapeHTML(branchName)}</span>`);
-        }
+        const jobTitle = emp && typeof getStaffJobTitle === 'function' ? getStaffJobTitle(emp) : '';
+        const parts = [];
+        if (jobTitle && jobTitle !== '—') parts.push(`<span>${Sec.escapeHTML(jobTitle)}</span>`);
+        if (empNum && empNum !== '-') parts.push(`<span class="ced-mono" dir="ltr">${Sec.escapeHTML(empNum)}</span>`);
+        if (branchName) parts.push(`<span>${Sec.escapeHTML(branchName)}</span>`);
         return `
-          <div class="rd-cmp-emp-hd">
-            <div class="rd-cmp-emp-hd__body">
-              <div class="rd-cmp-emp-hd__name">${Sec.escapeHTML(item.name || '')}</div>
-              ${jobTitle && jobTitle !== '—' ? `<div class="rd-cmp-emp-hd__job">${Sec.escapeHTML(jobTitle)}</div>` : ''}
-              ${meta.length ? `<div class="rd-cmp-emp-hd__meta">${meta.join('<span class="rd-cmp-emp-hd__sep" aria-hidden="true">·</span>')}</div>` : ''}
-            </div>
+          <div class="ced-hd">
+            <p class="ced-kick">EMPLOYEE</p>
+            <h2 class="ced-name">${Sec.escapeHTML(item.name || '')}</h2>
+            ${parts.length ? `<p class="ced-sub">${parts.join('<i aria-hidden="true">·</i>')}</p>` : ''}
           </div>`;
       }
 
       function buildRdCmpEmpDetailHTML(item, viols, scoringViols) {
-        const score = Number(item.score) || 0;
-        const scoreColor = typeof rdClassifyScore === 'function' ? rdClassifyScore(score) : cmpScoreRateColor(score);
+        const esc = (v) => Sec.escapeHTML(String(v == null ? '' : v));
+        const score = Math.round((Number(item.score) || 0) * 10) / 10;
         const emp = state.users.find(u => u.id === item.id);
         const respRole = normalizeUserRole(emp?.role) === 'branch_manager' ? 'branch_manager' : 'employee';
         const respData = calcResponseRate(item.id, respRole, scoringViols);
-        const respScore = Number(respData.score) || 0;
-        const respColor = typeof rdClassifyScore === 'function' ? rdClassifyScore(respScore) : cmpScoreRateColor(respScore);
+        const respScore = Math.round((Number(respData.score) || 0) * 10) / 10;
+        const bs = cedBand(score), br = cedBand(respScore);
 
         const affecting = getRateImpactingViolations(viols || []);
         const months = ksaMonthSlots(6).map(m => ({ ...m, count: 0 }));
@@ -28048,57 +28049,75 @@
           if (mo) mo.count++;
         });
         const maxMonthly = Math.max(1, ...months.map(m => m.count));
-        const totalViol = months.reduce((s, m) => s + m.count, 0);
-        const barsHTML = months.map(m => {
-          const pct = m.count ? Math.max(4, Math.round((m.count / maxMonthly) * 100)) : 4;
-          return `
-            <div class="rd-cmp-emp-bar">
-              <span class="rd-cmp-emp-bar__val">${m.count}</span>
-              <div class="rd-cmp-emp-bar__fill" style="height:${pct}%"></div>
-              <span class="rd-cmp-emp-bar__lbl">${Sec.escapeHTML(m.monthName)}</span>
-            </div>`;
-        }).join('');
+        const totalViol = months.reduce((x, m) => x + m.count, 0);
 
         const sev = computeSeverityForItem(item, viols || []);
-        const high = (sev.high || 0) + (sev.crit || 0);
-        const mid = sev.mid || 0;
-        const low = sev.low || 0;
-        const sevTotal = Math.max(1, high + mid + low);
-        const sevRows = [
-          { label: 'عالية', count: high, color: 'var(--danger)', pct: Math.round((high / sevTotal) * 100) },
-          { label: 'متوسطة', count: mid, color: 'var(--warning)', pct: Math.round((mid / sevTotal) * 100) },
-          { label: 'منخفضة', count: low, color: 'var(--info)', pct: Math.round((low / sevTotal) * 100) }
-        ];
-        const sevHTML = sevRows.map(sv => `
-          <div class="rd-cmp-emp-sev__row">
-            <div class="rd-cmp-emp-sev__top">
-              <span class="rd-cmp-emp-sev__lbl">${Sec.escapeHTML(sv.label)}</span>
-              <span class="rd-cmp-emp-sev__count" style="color:${sv.color}">${sv.count}</span>
-            </div>
-            <div class="rd-cmp-emp-sev__track">
-              <div class="rd-cmp-emp-sev__fill" style="width:${sv.pct}%;background:${sv.color}"></div>
-            </div>
+        const high = (sev.high || 0) + (sev.crit || 0), mid = sev.mid || 0, low = sev.low || 0;
+        const sevTotal = high + mid + low;
+
+        const kpi = (lbl, val, b) => `
+          <div class="ced-kpi">
+            <span class="ced-kpi__lbl">${lbl}</span>
+            <span class="ced-kpi__val ced-mono">${esc(Number.isInteger(val) ? val : val.toFixed(1))}</span>
+            <span class="atq-chip atq-chip--${b.cls}">${b.label}</span>
+            <span class="ced-kpi__bar" aria-hidden="true"><i style="width:${Math.max(2, Math.min(100, val))}%;background:${b.color}"></i></span>
+          </div>`;
+
+        const bars = months.map((m) => `
+          <div class="ced-col">
+            <span class="ced-col__n ced-mono">${m.count}</span>
+            <span class="ced-col__bar" style="height:${m.count ? Math.max(8, Math.round((m.count / maxMonthly) * 72)) : 2}px"></span>
+            <span class="ced-col__lbl">${esc(m.monthName)}</span>
           </div>`).join('');
 
+        const segs = [
+          { n: high, label: 'عالية', color: '#D6342C' },
+          { n: mid, label: 'متوسطة', color: '#D9A011' },
+          { n: low, label: 'منخفضة', color: '#2F6FDB' }
+        ];
+        const strip = sevTotal
+          ? segs.filter(x => x.n > 0).map(x => `<i style="flex:${x.n};background:${x.color}"></i>`).join('')
+          : '<i style="flex:1;background:var(--ced-ln)"></i>';
+        const legend = segs.map(x => `
+          <div class="ced-leg"><span class="ced-leg__dot" style="background:${x.color}"></span><span class="ced-leg__lbl">${x.label}</span><b class="ced-mono">${x.n}</b></div>`).join('');
+
+        const recent = (viols || []).slice()
+          .map(v => ({ v, iso: dashViolationIsoDate(v) || '' }))
+          .sort((a, b) => b.iso.localeCompare(a.iso))
+          .slice(0, 5)
+          .map(({ v, iso }) => {
+            const type = (state.violationTypes || []).find(x => x.name === v.violation_type);
+            const sv = violTypeSeverity(type);
+            const cls = sv === 'عالي' ? 'bd' : (sv === 'متوسط' ? 'md' : 'gd');
+            return `<tr><td class="ced-mono">${esc(iso)}</td><td>${esc(v.violation_type || '—')}</td><td><span class="atq-chip atq-chip--${cls}">${esc(sv)}</span></td></tr>`;
+          }).join('');
+
         return `
-          <div class="rd-cmp-emp-detail">
-            <div class="rd-cmp-emp-gauges">
-              <div class="rd-cmp-emp-gauge">
-                ${rdCmpGaugeRingHTML(score, scoreColor)}
-                <div class="rd-cmp-emp-gauge__lbl">معدل الالتزام</div>
+          <div class="ced">
+            <section class="ced-kpis">
+              ${kpi('معدل الالتزام', score, bs)}
+              ${kpi('معدل الاستجابة', respScore, br)}
+              <div class="ced-kpi">
+                <span class="ced-kpi__lbl">المخالفات</span>
+                <span class="ced-kpi__val ced-mono">${totalViol}</span>
+                <span class="ced-kpi__note">عالية <b class="ced-mono">${high}</b></span>
               </div>
-              <div class="rd-cmp-emp-gauge">
-                ${rdCmpGaugeRingHTML(respScore, respColor)}
-                <div class="rd-cmp-emp-gauge__lbl">معدل الاستجابة</div>
-              </div>
-            </div>
-            <div class="rd-cmp-emp-sec-hd">
-              <span class="rd-cmp-emp-sec-hd__title">المخالفات — آخر 6 أشهر</span>
-              <span class="rd-cmp-emp-sec-hd__meta">الإجمالي: ${totalViol}</span>
-            </div>
-            <div class="rd-cmp-emp-months">${barsHTML}</div>
-            <div class="rd-cmp-emp-sec-title">توزيع خطورة المخالفات</div>
-            <div class="rd-cmp-emp-sev">${sevHTML}</div>
+            </section>
+            <section class="ced-card">
+              <div class="ced-hdr"><h3>المخالفات شهريًا</h3><p>آخر 6 أشهر</p></div>
+              <div class="ced-cols" dir="rtl">${bars}</div>
+            </section>
+            <section class="ced-card">
+              <div class="ced-hdr"><h3>توزيع الخطورة</h3><p>${sevTotal} مخالفة</p></div>
+              <div class="ced-strip" aria-hidden="true">${strip}</div>
+              <div class="ced-legs">${legend}</div>
+            </section>
+            <section class="ced-card">
+              <div class="ced-hdr"><h3>آخر المخالفات</h3></div>
+              ${recent
+                ? `<div class="ced-scroll"><table class="ced-table"><thead><tr><th>التاريخ</th><th>المخالفة</th><th>الخطورة</th></tr></thead><tbody>${recent}</tbody></table></div>`
+                : '<p class="ced-none">لا توجد مخالفات مسجلة</p>'}
+            </section>
           </div>`;
       }
 

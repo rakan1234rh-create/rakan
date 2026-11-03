@@ -66,7 +66,50 @@ html:root #cmpDetailModal .rd-cmp-emp-bar__fill{max-height:64% !important;max-wi
 html:root #cmpDetailModal .rd-cmp-emp-bar__lbl{font-size:11px !important;overflow:visible !important;text-overflow:clip !important}
 
 /* desktop: centered dialog (same as the other B&W dialogs) instead of the old side drawer */
-html:root.athar-staging-redesign.mr-desktop-ui.mr-desktop-ui #cmpDetailModal.modal.open.cmp-detail--rd-emp{display:flex !important;align-items:center;justify-content:center;top:0 !important;height:100% !important;max-height:100% !important;background:rgba(0,0,0,.45) !important}
-html:root.athar-staging-redesign.mr-desktop-ui.mr-desktop-ui #cmpDetailModal.cmp-detail--rd-emp .modal-card.cmp-detail-card--rd-emp{position:relative !important;inset:auto !important;width:560px !important;max-width:94vw !important;height:auto !important;max-height:88vh !important;border:1px solid var(--t-ln2) !important;border-radius:8px !important;padding:24px !important;box-shadow:0 18px 48px rgba(0,0,0,.28) !important}
+html:root.athar-staging-redesign.mr-desktop-ui.mr-desktop-ui #cmpDetailModal.modal.open.cmp-detail--rd-emp{display:flex !important;align-items:center;justify-content:center;background:rgba(0,0,0,.45) !important}
+html:root.athar-staging-redesign.mr-desktop-ui.mr-desktop-ui #cmpDetailModal.cmp-detail--rd-emp .modal-card.cmp-detail-card--rd-emp{position:relative !important;inset:auto !important;width:560px !important;max-width:94vw !important;height:auto !important;max-height:calc(100vh - var(--unified-topbar-h,68px) - 48px) !important;border:1px solid var(--t-ln2) !important;border-radius:8px !important;padding:24px !important;box-shadow:0 18px 48px rgba(0,0,0,.28) !important}
 html:root.athar-staging-redesign.mr-desktop-ui.mr-desktop-ui #cmpDetailModal.cmp-detail--rd-emp .rd-cmp-emp-hd__name{font-size:20px !important;font-weight:600 !important}
 html:root.athar-staging-redesign.mr-desktop-ui.mr-desktop-ui #cmpDetailModal.cmp-detail--rd-emp .cmp-detail-modal-header{padding:0 0 18px !important;margin-bottom:18px;border-bottom:1px solid var(--t-ln) !important}
+
+/* ===== Employee detail — new layout (ced-*) ===== */
+html:root #cmpDetailModal{--ced-ln:var(--t-ln2);--t-exb:#DDF3E8;--t-exf:#1D6B43;--t-gdb:#E4EEFC;--t-gdf:#1B4F9E;--t-mdb:#FDF0CF;--t-mdf:#7A4F00;--t-bdb:#FDE3E0;--t-bdf:#A3261E}
+html[data-theme="dark"]:root #cmpDetailModal{--t-exb:#12301F;--t-exf:#7FD6A5;--t-gdb:#14233F;--t-gdf:#9CC0FF;--t-mdb:#3A2F12;--t-mdf:#F0C25B;--t-bdb:#401A18;--t-bdf:#FF9C90}
+.ced-mono{font-family:'IBM Plex Mono',monospace}
+.ced-hd{padding-inline-end:48px;text-align:start}
+.ced-kick{margin:0;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;color:var(--t-mu)}
+.ced-name{margin:2px 0 0;font-family:'Readex Pro',sans-serif;font-weight:600;font-size:22px;line-height:1.4;color:var(--t-fg)}
+.ced-sub{margin:4px 0 0;font-size:13px;color:var(--t-mu);display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center}
+.ced-sub i{font-style:normal;color:var(--t-ct)}
+.ced{display:flex;flex-direction:column;gap:16px;color:var(--t-fg)}
+.ced-kpis{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--t-ln2);border-radius:6px;background:var(--t-sf);overflow:hidden}
+.ced-kpi{display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:14px 16px;min-width:0}
+.ced-kpi+.ced-kpi{border-inline-start:1px solid var(--t-ln2)}
+.ced-kpi__lbl{font-size:12px;color:var(--t-mu)}
+.ced-kpi__val{font-size:30px;font-weight:500;line-height:1.1;color:var(--t-fg)}
+.ced-kpi__note{font-size:12px;color:var(--t-mu)}.ced-kpi__note b{color:var(--t-fg);font-weight:500}
+.ced-kpi__bar{display:block;width:100%;height:4px;background:var(--t-hv);margin-top:2px}.ced-kpi__bar i{display:block;height:4px}
+.ced-card{background:var(--t-sf);border:1px solid var(--t-ln2);border-radius:6px;padding:16px}
+.ced-hdr{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--t-ln)}
+.ced-hdr h3{margin:0;font-size:14px;font-weight:600;color:var(--t-fg)}.ced-hdr p{margin:0;font-size:12px;color:var(--t-mu)}
+.ced-cols{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;height:128px;padding-bottom:0;border-bottom:1px solid var(--t-ln2)}
+.ced-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;height:100%;min-width:0;position:relative}
+.ced-col__n{font-size:11px;color:var(--t-mu);line-height:1}
+.ced-col__bar{display:block;width:100%;max-width:24px;background:var(--t-fg)}
+.ced-col__lbl{position:absolute;bottom:-20px;font-size:11px;color:var(--t-mu);white-space:nowrap}
+.ced-cols{margin-bottom:26px}
+.ced-strip{display:flex;height:8px;gap:2px;margin-bottom:12px}.ced-strip i{display:block;height:8px}
+.ced-legs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.ced-leg{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--t-mu)}.ced-leg b{margin-inline-start:auto;color:var(--t-fg);font-weight:500}
+.ced-leg__dot{width:8px;height:8px;display:inline-block}
+.ced-scroll{overflow-x:auto}
+.ced-table{width:100%;border-collapse:collapse;font-size:13px}
+.ced-table th{text-align:start;font-weight:500;font-size:12px;color:var(--t-mu);padding:8px 6px;border-bottom:1px solid var(--t-fg)}
+.ced-table td{padding:10px 6px;border-bottom:1px solid var(--t-ln);color:var(--t-fg)}
+.ced-table tr:last-child td{border-bottom:0}
+.ced-table td.ced-mono{font-size:12px;color:var(--t-mu)}
+.ced-none{margin:0;font-size:13px;color:var(--t-mu);text-align:center;padding:12px 0}
+@media (max-width:480px){.ced-kpi{padding:12px}.ced-kpi__val{font-size:24px}.ced-legs{grid-template-columns:1fr}.ced-name{font-size:20px}}
+
+.ced-hd{margin-bottom:14px}
+html:root.athar-staging-redesign.mr-desktop-ui.mr-desktop-ui #cmpDetailModal .ced-hd{margin-bottom:0}
+.ced-kpi__lbl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
