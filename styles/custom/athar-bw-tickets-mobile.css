@@ -164,3 +164,10 @@ html:root.mr-mobile-ui.mr-mobile-ui #tab-workflow #wfClassicToolbar .figma-searc
 .atd-cd__bar i{display:block;height:100%;width:0;background:var(--t-fg)}
 .atd-cd.is-warn .atd-cd__v{color:#E8A317}.atd-cd.is-warn .atd-cd__bar i{background:#E8A317}
 .atd-cd.is-over .atd-cd__v{color:#D6322B}.atd-cd.is-over .atd-cd__bar i{background:#D6322B}
+
+/* compact countdown beside the status */
+.atd-stl{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}
+.atd-stl .atd-cd{margin:0;padding:2px 10px;gap:6px;flex-wrap:nowrap}
+.atd-stl .atd-cd__v{font-size:15px}
+.atd-stl .atd-cd__l{font-size:11px}
+.atd-stl .atd-cd__bar{display:none}

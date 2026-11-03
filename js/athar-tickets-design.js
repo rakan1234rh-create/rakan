@@ -156,7 +156,7 @@
     var code = i === 0 ? 'emp' : i === 1 ? 'sup' : ''; if (!code) return '';
     var m = null; try { m = B().sla(t, code); } catch (_) {}
     if (!m) return '';
-    return '<div class="atd-cd" data-start="' + esc(m.startISO || '') + '" data-deadline="' + esc(m.deadlineISO || '') + '" data-limit="' + esc(m.limitH || 24) + '"><span class="atd-cd__l">المتبقي لتمرير المخالفة تلقائيًا</span><span class="atd-cd__v atd-mono" dir="ltr">--:--:--</span><span class="atd-cd__bar"><i></i></span></div>';
+    return '<div class="atd-cd" data-start="' + esc(m.startISO || '') + '" data-deadline="' + esc(m.deadlineISO || '') + '" data-limit="' + esc(m.limitH || 24) + '"><span class="atd-cd__l">متبقي</span><span class="atd-cd__v atd-mono" dir="ltr">--:--:--</span><span class="atd-cd__bar"><i></i></span></div>';
   }
   function tickCd() {
     var list = document.querySelectorAll('.atd-cd'); if (!list.length) return;
@@ -186,7 +186,7 @@
     var sx = Math.min(st, 5);
     var steps = STEPS.map(function (n, i) {
       var done = i < sx, now = i === sx; if (i === 5 && st >= 5) n = NAMES[st];
-      return '<li class="atd-step"><div class="atd-step__rail"><i class="atd-dot ' + (done ? 'is-done' : now ? 'is-now' : '') + '"></i><i class="atd-line' + (i < sx ? ' is-done' : '') + '"></i></div><div class="atd-step__t"><div class="' + (now ? 'is-now' : done ? '' : 'is-off') + '">' + esc(n) + '</div><div class="atd-mu">' + (done ? 'تم' : now ? (st >= 5 ? 'أُغلقت التذكرة' : 'بانتظار الإجراء') : '') + '</div>' + (now ? cdHtml(t, i) : '') + '</div></li>';
+      return '<li class="atd-step"><div class="atd-step__rail"><i class="atd-dot ' + (done ? 'is-done' : now ? 'is-now' : '') + '"></i><i class="atd-line' + (i < sx ? ' is-done' : '') + '"></i></div><div class="atd-step__t"><div class="' + (now ? 'is-now' : done ? '' : 'is-off') + '">' + esc(n) + '</div><div class="atd-stl"><div class="atd-mu">' + (done ? 'تم' : now ? (st >= 5 ? 'أُغلقت التذكرة' : 'بانتظار الإجراء') : '') + '</div>' + (now ? cdHtml(t, i) : '') + '</div></div></li>';
     }).join('');
     var btns = [];
     if (b.state.editingTicket && b.state.editingTicket.id === t.id && S.loading !== t.id) {
