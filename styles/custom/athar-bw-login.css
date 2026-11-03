@@ -94,7 +94,7 @@
 
 /* ── mobile/tablet: the brand band must be solid black so the white wordmark reads in light mode ── */
 @media (max-width: 900px) {
-  html.mr-mobile-ui #loginScreen #loginScreenFloor { background-color: var(--bw-bg) !important; background-image: linear-gradient(#0a0a0a, #0a0a0a) !important; background-size: 100% 120px !important; background-repeat: no-repeat !important; background-position: top !important; }
+  html.mr-mobile-ui #loginScreen #loginScreenFloor { background-color: var(--bw-bg) !important; background-image: linear-gradient(#0a0a0a, #0a0a0a) !important; background-size: 100% calc(120px + env(safe-area-inset-top, 0px)) !important; background-repeat: no-repeat !important; background-position: top !important; }
   #loginScreen.lp-screen::before { align-self: stretch; justify-self: stretch; height: auto; }
   #loginScreen.lp-screen::after { z-index: 1; }
 }
@@ -114,3 +114,19 @@
 @media (prefers-reduced-motion: reduce) { #loginTransition .lt-box::after { animation: none; background-position: 50% 0; } }
 
 #loginTransition .lt-shield.wefaq-logo-slot, #loginTransition .wefaq-app-logo { filter: brightness(0) invert(1) !important; opacity: 1 !important; }
+
+/* bottom bleed under the home indicator + page behind the card: same colour as the page (no grey strip) */
+html.login-portal-open { --login-portal-bg: #ffffff; }
+html.login-portal-open[data-theme="dark"] { --login-portal-bg: #0b0b0b; }
+#loginScreen .lp-meta { justify-content: flex-start; }
+#loginScreen .lp-btn-primary { margin-top: 4px; }
+#loginScreen .lp-meta { margin: 2px 0 18px; }
+@media (max-width: 900px) {
+  html.mr-mobile-ui body.login-portal-open #loginScreen .lp-center { align-items: flex-start !important; padding-top: 40px !important; }
+}
+@media (max-width: 900px) {
+  html.mr-mobile-ui body.login-portal-open #loginScreen .lp-card { margin-block: 0 auto !important; align-self: flex-start !important; }
+}
+@media (max-width: 900px) {
+  html.mr-mobile-ui body.login-portal-open #loginScreen .lp-center { align-self: start !important; height: auto !important; }
+}
