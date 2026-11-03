@@ -74,7 +74,8 @@
         table: table('موظفون بحاجة لمتابعة', 'أقل من 75 نقطة هذا الشهر', ['الموظف', 'مخالفات الشهر', 'الامتثال', 'المؤشر'], low.slice(0, 8).map(function (u) { var sc = scoreOfEmp(u.id, all); return { cells: [esc(u.name), num(v.filter(function (t) { return t.employee_id === u.id; }).length), num(sc), chip(sc)] }; })) };
     }
     if (role === 'supervisor') {
-      var rows = branchRows(state.branches || [], v, all);
+      var supIds = (me.supervisedBranches || []).map(String);
+      var rows = branchRows((state.branches || []).filter(function (b) { return supIds.indexOf(String(b.id)) >= 0; }), v, all);
       var need = rows.filter(function (r) { return r.s < 80; }).length;
       return { hero: hero('مؤشر منطقتك', avg(rows.map(function (r) { return r.s; })), rows.length + ' فروع تحت إشرافك · ' + need + ' دون 80 نقطة', [[rows.length, 'فروع المنطقة'], [need, 'فروع تحتاج متابعة'], [rows.reduce(function (a, r) { return a + Number(r.cells[1].replace(/<[^>]+>/g, '')); }, 0), 'موظفًا']]),
         table: table('فروع المنطقة', 'مرتبة حسب مؤشر الامتثال هذا الشهر', HEAD_BRANCH, rows) };
