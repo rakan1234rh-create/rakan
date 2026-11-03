@@ -122,3 +122,17 @@ html:root.mr-desktop-ui #tab-breaks .rd-break-card[data-break-kind="active"] svg
 html:root.mr-desktop-ui #tab-breaks .rd-break-card[data-break-kind="active"] svg circle[data-break-ring-progress], html:root.mr-desktop-ui #tab-breaks .rd-break-card[data-break-kind="overage"] svg circle[data-break-ring-progress] { stroke: var(--pg-onf) !important; }
 html:root.mr-desktop-ui #tab-breaks .rd-break-card[data-break-kind="active"] button, html:root.mr-desktop-ui #tab-breaks .rd-break-card[data-break-kind="overage"] button { background: var(--pg-onf) !important; color: var(--pg-on) !important; border: 0 !important; }
 html:root.mr-desktop-ui #tab-breaks .rd-break-card[data-break-kind="active"] button * { color: var(--pg-on) !important; }
+
+/* complaints (admin / internal audit): docked form replaces the top banner; page gets a standard heading */
+html:root.mr-desktop-ui:has(#newComplaintModal.open) #tab-complaints .rd-cmpl-head{display:flex !important;flex-direction:column;gap:2px;align-items:flex-start;padding:0 0 4px;border:0 !important;background:transparent !important;box-shadow:none !important}
+html:root.mr-desktop-ui:has(#newComplaintModal.open) #tab-complaints .rd-cmpl-head>*{display:none !important}
+html:root.mr-desktop-ui:has(#newComplaintModal.open) #tab-complaints .rd-cmpl-head::before{content:"COMPLAINTS & SUGGESTIONS";font-family:var(--font-mono,'IBM Plex Mono',monospace);font-size:12px;letter-spacing:.14em;color:var(--pg-mu,#6b6b6b)}
+html:root.mr-desktop-ui:has(#newComplaintModal.open) #tab-complaints .rd-cmpl-head::after{content:"الشكاوى والاقتراحات";font-size:32px;font-weight:600;color:var(--pg-fg,#0a0a0a);line-height:1.2;font-family:'Readex Pro','IBM Plex Sans Arabic',sans-serif}
+html:root.mr-desktop-ui #newComplaintModal.modal.open{padding:var(--cmpl-dock-top,112px) 24px 12px 24px !important}
+html:root.mr-desktop-ui #newComplaintModal .modal-card.cp-new-sheet{border-radius:6px !important}
+html:root.mr-desktop-ui #newComplaintModal .btn-primary{box-shadow:none !important;height:46px;padding:0 22px;border-radius:4px !important}
+html:root.mr-desktop-ui #newComplaintModal .modal-footer{display:flex;justify-content:stretch}
+html:root.mr-desktop-ui #newComplaintModal .modal-footer .btn-primary{flex:1 1 auto}
+html:root.mr-desktop-ui #newComplaintModal.modal.open{padding:112px 24px 12px 24px !important}
+html:root.mr-desktop-ui:has(#newComplaintModal.open) #tab-complaints .rd-cmpl-head{align-self:stretch !important;width:100%;text-align:start;align-items:flex-start !important;justify-content:flex-start !important}
+html:root.mr-desktop-ui:has(#newComplaintModal.open) #tab-complaints .rd-cmpl-head::before,html:root.mr-desktop-ui:has(#newComplaintModal.open) #tab-complaints .rd-cmpl-head::after{align-self:flex-start;text-align:start}
