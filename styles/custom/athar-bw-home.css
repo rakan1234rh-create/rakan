@@ -119,3 +119,6 @@ html:root .rd-h-pill { border: 1px solid var(--hm-fg); border-radius: 999px; pad
 html:root .rd-h-nt { padding: 12px 0; border-bottom: 1px solid var(--hm-ln); font-size: 13px; color: var(--hm-fg); }
 html:root .rd-h-tiles { grid-template-columns: repeat(3, 1fr); }
 @media (max-width: 1100px) { html:root .rd-h-row--a, html:root .rd-h-row--b { grid-template-columns: 1fr; } }
+
+.rd-h-row--a.rd-h-row--1{grid-template-columns:1fr !important}
+html:root.mr-mobile-ui .rd-mob-dash .rd-h-row--a.rd-h-row--1{grid-template-columns:1fr !important}

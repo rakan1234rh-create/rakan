@@ -82,3 +82,6 @@ html:root.mr-mobile-ui.mr-profile-page-active #appWrap .main::after{display:bloc
 html:root.mr-mobile-ui.mr-mobile-ui #appWrap#appWrap#appWrap .main{overflow-y:auto !important;overflow-x:hidden !important;display:block !important;height:auto;max-height:none}
 html:root.mr-mobile-ui.mr-mobile-ui #appWrap#appWrap#appWrap .main > .content{overflow:visible !important;height:auto !important;max-height:none !important;display:block !important}
 html:root.mr-mobile-ui.mr-mobile-ui #appWrap#appWrap#appWrap .content > .tab-content.active{overflow:visible !important;height:auto !important;max-height:none !important}
+
+.rd-h-row--a.rd-h-row--1{grid-template-columns:1fr !important}
+html:root.mr-mobile-ui .rd-mob-dash .rd-h-row--a.rd-h-row--1{grid-template-columns:1fr !important}

@@ -137,15 +137,12 @@
       '<div class="rd-h-stats">' + h.kpis.map(function (k) { return '<div><div class="rd-h-stats__v">' + num(k[0]) + '</div><div class="rd-h-stats__l">' + esc(k[1]) + '</div></div>'; }).join('') + '</div></section>';
   }
   function rankCard(me, all, branchAll) {
-    /* same staff set and same violation scope the branch manager sees, so every role gets the same score for the same person */
-    var staff = (typeof getBranchStaff === 'function' ? getBranchStaff(me.branch_id) : []).slice();
-    if (!staff.some(function (u) { return u.id === me.id; })) staff.push(me);
+    /* branch manager only: ranking of the branch employees, scored from the whole branch scope */
+    var staff = (typeof getBranchStaff === 'function' ? getBranchStaff(me.branch_id) : []).filter(function (u) { return u.role === 'employee'; });
     var scope = branchAll || all;
     var list = staff.map(function (u) { return { u: u, s: scoreOfEmp(u.id, scope) }; }).sort(function (a, b) { return b.s - a.s; });
-    var pos = list.findIndex(function (r) { return r.u.id === me.id; }) + 1;
-    return '<section class="rd-h-card"><div class="rd-h-rank"><div><div class="rd-h-card__t">ترتيبي في ' + esc(branchName(me.branch_id)) + '</div><div class="rd-rl-sub">أعلى ' + Math.min(8, list.length) + ' موظفين من ' + list.length + '</div></div>' +
-      '<div class="rd-h-rank__n">' + num(pos || '—') + '<small>من ' + list.length + '</small></div></div><div class="rd-h-list">' +
-      list.slice(0, 8).map(function (r, i) { var b = band(r.s)[1]; return '<div class="rd-h-list__r' + (r.u.id === me.id ? ' is-me' : '') + '"><span class="rd-rl-num rd-h-mu">' + (i + 1) + '</span><span>' + esc(r.u.name) + '</span><span class="rd-h-meter"><i style="width:' + r.s + '%;background:' + COL[b] + '"></i></span><span class="rd-rl-num">' + r.s + '</span></div>'; }).join('') +
+    return '<section class="rd-h-card"><div class="rd-h-rank"><div><div class="rd-h-card__t">ترتيب موظفي الفرع</div><div class="rd-rl-sub">' + esc(branchName(me.branch_id)) + ' · ' + list.length + ' موظف</div></div></div><div class="rd-h-list">' +
+      list.slice(0, 8).map(function (r, i) { var b = band(r.s)[1]; return '<div class="rd-h-list__r"><span class="rd-rl-num rd-h-mu">' + (i + 1) + '</span><span>' + esc(r.u.name) + '</span><span class="rd-h-meter"><i style="width:' + Math.max(0, Math.min(100, r.s)) + '%;background:' + COL[b] + '"></i></span><span class="rd-rl-num">' + r.s + '</span></div>'; }).join('') +
       (list.length ? '' : '<div class="rd-rl-empty">لا توجد بيانات</div>') + '</div></section>';
   }
   function recentCard(title, items) {
@@ -224,14 +221,14 @@
         var p = hasPersonal ? personal(role, ctx) : null;
         var top, recent;
         if (hasPersonal) {
-          top = heroCard(p) + rankCard(me, all, ctx.branchAll);
+          top = heroCard(p) + (role === 'branch_manager' ? rankCard(me, all, ctx.branchAll) : '');
           recent = p.mine.slice(0, 5);
         } else if (extra) {
           top = heroCard(extra.hero) + notifCard();
           recent = v.slice(0, 5);
         }
         var rows2 = hasPersonal ? recentCard('آخر تذاكري', recent) + notifCard() : recentCard('آخر التذاكر', recent);
-        var html = header(me, role) + '<div class="rd-h-row rd-h-row--a">' + top + '</div>' +
+        var html = header(me, role) + '<div class="rd-h-row rd-h-row--a' + (hasPersonal && role !== 'branch_manager' ? ' rd-h-row--1' : '') + '">' + top + '</div>' +
           '<div class="rd-h-row rd-h-row--b">' + rows2 + '</div>' +
           (extra ? (role === 'branch_manager' ? tiles(extra.hero.kpis) : '') + extra.table : '');
         root.classList.add('rd-desk-dash--h');
