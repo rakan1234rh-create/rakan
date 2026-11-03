@@ -115,3 +115,8 @@ html[data-theme="dark"] .as-opt.is-act{background:#262626}
 html[data-theme="dark"] .as-search{background:#1a1a1a}
 /* old ticket sheet never shows on the new tickets page */
 body:has(#tab-workflow.active) #ticketModal{display:none!important}
+/* PDF button in the tickets page detail card */
+.atd-a-head{position:relative}
+.atd-pdf{position:absolute;top:-4px;left:0;display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 13px;border:1px solid #0a0a0a;border-radius:4px;background:#0a0a0a;color:#fff;font:700 12px inherit;font-family:inherit;cursor:pointer}
+.atd-pdf:hover{background:#2a2a2a}
+html[data-theme="dark"] .atd-pdf{background:#f2f2f2;color:#0a0a0a;border-color:#f2f2f2}
