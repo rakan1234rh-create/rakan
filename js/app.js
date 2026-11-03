@@ -41769,41 +41769,84 @@
           </div>`).join('');
       }
 
+      const CMPL_PDF_STYLES = `
+    @page { size: A4 portrait; margin: 14mm 13mm 16mm; }
+    * { box-sizing: border-box; }
+    body { margin:0; direction:rtl; text-align:right; font-family:'IBM Plex Sans Arabic','Segoe UI',Tahoma,Arial,sans-serif; font-size:11px; line-height:1.6; color:#0a0a0a; background:#fff; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    .cp-top { display:flex; align-items:flex-end; justify-content:space-between; padding-bottom:9px; border-bottom:2px solid #0a0a0a; }
+    .cp-word { font:300 24px/1 'Helvetica Neue',Arial,sans-serif; letter-spacing:.32em; direction:ltr; }
+    .cp-meta { text-align:left; direction:ltr; font:500 9.5px/1.5 'Courier New',monospace; color:#555; letter-spacing:.08em; }
+    .cp-h1 { margin:12px 0 2px; font-size:20px; font-weight:800; }
+    .cp-sub { margin:0 0 10px; color:#555; font-size:10.5px; }
+    .cp-info { display:grid; grid-template-columns:repeat(3,1fr); border:1px solid #0a0a0a; margin-bottom:12px; }
+    .cp-info div { padding:5px 9px; border-inline-start:1px solid #d4d4d4; }
+    .cp-info div:first-child { border-inline-start:0; }
+    .cp-info b { display:block; font-size:9px; color:#666; font-weight:600; }
+    .cp-info span { font-size:10.5px; font-weight:700; }
+    .cp-sum { width:100%; border-collapse:collapse; font-size:10px; margin-bottom:14px; }
+    .cp-sum th { background:#0a0a0a; color:#fff; padding:5px 7px; text-align:right; font-weight:700; }
+    .cp-sum td { padding:5px 7px; border-bottom:1px solid #e2e2e2; }
+    .cp-sum tr { page-break-inside:avoid; }
+    .cp-card { border:1px solid #0a0a0a; margin-bottom:14px; page-break-inside:auto; }
+    .cp-card + .cp-card { page-break-before:auto; }
+    .cp-ch { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:8px 12px; background:#0a0a0a; color:#fff; }
+    .cp-ch b { font-size:13px; font-weight:800; }
+    .cp-ch small { font:500 10px 'Courier New',monospace; letter-spacing:.1em; direction:ltr; opacity:.85; }
+    .cp-chip { display:inline-block; border:1px solid currentColor; border-radius:3px; padding:0 8px; font-size:10px; font-weight:700; white-space:nowrap; }
+    .cp-ch .cp-chip { color:#fff; }
+    .cp-grid { display:grid; grid-template-columns:repeat(4,1fr); border-bottom:1px solid #d4d4d4; }
+    .cp-grid div { padding:6px 10px; border-inline-start:1px solid #e4e4e4; }
+    .cp-grid div:first-child { border-inline-start:0; }
+    .cp-grid b { display:block; font-size:9px; color:#666; font-weight:600; }
+    .cp-grid span { font-size:10.5px; font-weight:700; }
+    .cp-sec { padding:8px 12px 2px; font-size:10.5px; font-weight:800; display:flex; justify-content:space-between; }
+    .cp-sec small { font:500 9.5px 'Courier New',monospace; color:#666; }
+    .cp-desc { margin:4px 12px 8px; padding:8px 10px; border:1px solid #d4d4d4; background:#fafafa; font-size:11px; line-height:1.8; white-space:pre-wrap; word-break:break-word; }
+    .cp-att { margin:0 12px 8px; display:inline-block; border:1px solid #d4d4d4; padding:1px 9px; font-size:10px; }
+    .cp-thread { padding:2px 12px 10px; }
+    .cp-msg { position:relative; padding:0 14px 8px 0; margin:0; page-break-inside:avoid; }
+    .cp-msg::before { content:''; position:absolute; right:0; top:6px; width:7px; height:7px; background:#0a0a0a; }
+    .cp-msg--user::before { background:#fff; border:1px solid #0a0a0a; width:7px; height:7px; box-sizing:border-box; }
+    .cp-msg::after { content:''; position:absolute; right:3px; top:15px; bottom:-2px; width:1px; background:#cfcfcf; }
+    .cp-msg:last-child::after { display:none; }
+    .cp-mh { display:flex; justify-content:space-between; font-size:10px; color:#555; }
+    .cp-mh b { color:#0a0a0a; font-weight:800; }
+    .cp-mt { font-size:11px; white-space:pre-wrap; word-break:break-word; }
+    .cp-none { padding:6px 12px 12px; color:#777; font-size:10.5px; }
+    .cp-foot { margin-top:12px; padding-top:7px; border-top:1px solid #0a0a0a; display:flex; justify-content:space-between; font:500 9px 'Courier New',monospace; color:#666; letter-spacing:.08em; direction:ltr; }
+  `;
+
       function buildCmplPdfReportBody(rows, customTitle) {
         const list = Array.isArray(rows) ? rows : [];
         const n = list.length;
-        const exportedAt = new Date().toLocaleString('ar-SA', { timeZone: 'Asia/Riyadh' });
+        const E = (v) => Sec.escapeHTML(String(v == null ? '' : v));
+        const exportedAt = new Date().toLocaleString('ar-SA-u-ca-gregory-nu-latn', { timeZone: 'Asia/Riyadh' });
+        const stamp = new Date().toLocaleDateString('en-GB', { timeZone: 'Asia/Riyadh' }) + ' ' + new Date().toLocaleTimeString('en-GB', { timeZone: 'Asia/Riyadh', hour: '2-digit', minute: '2-digit' });
         const exporter = (typeof rdCmplCurrentUserName === 'function' && rdCmplCurrentUserName()) || '—';
         const onlyC = list.filter((r) => r.kind === 'complaint').length;
         const onlyS = list.filter((r) => r.kind === 'suggestion').length;
 
         let dynamicTitle = customTitle;
         if (!dynamicTitle) {
-          if (onlyC > 0 && onlyS === 0) {
-            dynamicTitle = n === 1 ? 'تقرير شكوى' : 'تقرير الشكاوى';
-          } else if (onlyS > 0 && onlyC === 0) {
-            dynamicTitle = n === 1 ? 'تقرير اقتراح' : 'تقرير الاقتراحات';
-          } else {
-            dynamicTitle = 'تقرير الشكاوى والاقتراحات';
-          }
+          if (onlyC > 0 && onlyS === 0) dynamicTitle = n === 1 ? 'تقرير شكوى' : 'تقرير الشكاوى';
+          else if (onlyS > 0 && onlyC === 0) dynamicTitle = n === 1 ? 'تقرير اقتراح' : 'تقرير الاقتراحات';
+          else dynamicTitle = 'تقرير الشكاوى والاقتراحات';
         }
+
+        const stLabel = (r) => rdCmplStatusMeta(r.status, r.kind, r.decision).label;
+        const numOf = (r) => r.complaintNumber || (typeof rdCmplNumber === 'function' ? rdCmplNumber(r.id) : '') || '—';
+
+        const summary = n > 1 ? `
+          <table class="cp-sum"><thead><tr><th>#</th><th>الرقم</th><th>النوع</th><th>التصنيف</th><th>المقدّم</th><th>التاريخ</th><th>الحالة</th></tr></thead><tbody>
+          ${list.map((r, i) => `<tr><td>${i + 1}</td><td>${E(numOf(r))}</td><td>${r.kind === 'suggestion' ? 'اقتراح' : 'شكوى'}</td><td>${E(r.category || 'عام')}</td><td>${E((typeof rdCmplDisplayName === 'function' && rdCmplDisplayName(r)) || '—')}</td><td>${E(complaintPdfWhen(r))}</td><td>${E(stLabel(r))}</td></tr>`).join('')}
+          </tbody></table>` : '';
 
         const detailCards = list.map((r, i) => {
           const kindLbl = r.kind === 'suggestion' ? 'اقتراح' : 'شكوى';
-          const num = r.complaintNumber || (typeof rdCmplNumber === 'function' ? rdCmplNumber(r.id) : '');
           const desc = String(r.description || r.desc || 'لا يوجد وصف مسجل').trim();
           const who = (typeof rdCmplDisplayName === 'function' && rdCmplDisplayName(r)) || '—';
-          const branch = complaintPdfBranchName(r);
-          const when = complaintPdfWhen(r);
-          const statusBadge = cmplPdfStatusBadge(r);
-
           const rawRow = r._raw || r;
           const fileAtts = typeof getComplaintFileAttachments === 'function' ? getComplaintFileAttachments(rawRow) : [];
-          const attsHtml = fileAtts.length ? `
-            <div class="cmpl-pdf-section-hdr">المرفقات (${fileAtts.length}):</div>
-            <div style="margin-bottom:10px">
-              ${fileAtts.map((a, ai) => `<span class="cmpl-pdf-att-tag">📎 ${Sec.escapeHTML(a.name || a.filename || ('مرفق ' + (ai + 1)))}</span>`).join('')}
-            </div>` : '';
 
           const threadList = Array.isArray(r.thread) && r.thread.length
             ? r.thread
@@ -41816,59 +41859,43 @@
               })) : []);
 
           const threadHtml = threadList.length ? threadList.map((m) => {
-            const mAtts = Array.isArray(m.attachments) ? m.attachments : [];
-            const mAttsHtml = mAtts.length ? `
-              <div style="margin-top:4px">
-                ${mAtts.map((a, ai) => `<span class="cmpl-pdf-att-tag">📎 ${Sec.escapeHTML(a.name || a.filename || ('مرفق ' + (ai + 1)))}</span>`).join('')}
-              </div>` : '';
+            const ac = Array.isArray(m.attachments) ? m.attachments.length : 0;
             return `
-            <div class="cmpl-pdf-msg ${m.isAdmin ? 'cmpl-pdf-msg--admin' : ''}">
-              <div class="cmpl-pdf-msg__head">
-                <span class="cmpl-pdf-msg__author">${Sec.escapeHTML(m.author || (m.isAdmin ? 'الإدارة' : 'المستخدم'))}${m.isAdmin ? ' (الإدارة)' : ''}</span>
-                <span class="cmpl-pdf-msg__time">${Sec.escapeHTML(m.time || '')}</span>
-              </div>
-              <div class="cmpl-pdf-msg__text">${Sec.escapeHTML(m.text || '')}</div>
-              ${mAttsHtml}
+            <div class="cp-msg ${m.isAdmin ? 'cp-msg--admin' : 'cp-msg--user'}">
+              <div class="cp-mh"><b>${E(m.author || (m.isAdmin ? 'الإدارة' : 'المستخدم'))}${m.isAdmin ? ' · الإدارة' : ''}</b><span>${E(m.time || '')}</span></div>
+              <div class="cp-mt">${E(m.text || '')}${ac ? ` <span class="cp-chip" style="font-size:9px">${ac} مرفق</span>` : ''}</div>
             </div>`;
-          }).join('') : '<div class="cmpl-pdf-empty-thread">لا توجد ردود مسجلة بعد على هذه الشكوى</div>';
+          }).join('') : '<div class="cp-none">لا توجد ردود مسجلة بعد</div>';
 
           return `
-          <div class="cmpl-pdf-card">
-            <div class="cmpl-pdf-card__head">
-              <div class="cmpl-pdf-card__title">
-                <span>#${i + 1} — ${Sec.escapeHTML(num || '—')}</span>
-                <span style="font-size:11px;font-weight:600;color:#64748b">(${Sec.escapeHTML(kindLbl)} · ${Sec.escapeHTML(r.category || 'عام')})</span>
-              </div>
-              <div>${statusBadge}</div>
+          <div class="cp-card">
+            <div class="cp-ch"><b>${n > 1 ? `#${i + 1} — ` : ''}${E(kindLbl)} · ${E(r.category || 'عام')}</b><span><small>${E(numOf(r))}</small> <span class="cp-chip">${E(stLabel(r))}</span></span></div>
+            <div class="cp-grid">
+              <div><b>المقدّم</b><span>${E(who)}</span></div>
+              <div><b>الفرع</b><span>${E(complaintPdfBranchName(r))}</span></div>
+              <div><b>تاريخ الرفع</b><span>${E(complaintPdfWhen(r))}</span></div>
+              <div><b>عدد الردود</b><span>${threadList.length}</span></div>
             </div>
-            <div class="cmpl-pdf-card__meta-grid">
-              <div class="cmpl-pdf-card__meta-item"><strong>المقدّم</strong><span>${Sec.escapeHTML(who)}</span></div>
-              <div class="cmpl-pdf-card__meta-item"><strong>الفرع</strong><span>${Sec.escapeHTML(branch)}</span></div>
-              <div class="cmpl-pdf-card__meta-item"><strong>تاريخ الرفع</strong><span>${Sec.escapeHTML(when)}</span></div>
-              <div class="cmpl-pdf-card__meta-item"><strong>عدد الردود</strong><span>${threadList.length}</span></div>
-            </div>
-            <div class="cmpl-pdf-section-hdr">نص ${Sec.escapeHTML(kindLbl)} بالكامل:</div>
-            <div class="cmpl-pdf-desc-box">${Sec.escapeHTML(desc)}</div>
-            ${attsHtml}
-            <div class="cmpl-pdf-section-hdr">سجل المحادثات والردود (${threadList.length}):</div>
-            <div class="cmpl-pdf-thread">${threadHtml}</div>
+            <div class="cp-sec"><span>نص ${E(kindLbl)}</span></div>
+            <div class="cp-desc">${E(desc)}</div>
+            <div class="cp-att">عدد المرفقات: <b>${fileAtts.length}</b></div>
+            <div class="cp-sec"><span>المحادثة والردود</span><small>${threadList.length}</small></div>
+            <div class="cp-thread">${threadHtml}</div>
           </div>`;
         }).join('');
 
         return `
-        <div class="cmp-pdf-page">
-          <div class="cmp-pdf-hero">
-            <h1>${Sec.escapeHTML(dynamicTitle)}</h1>
-            <p>ATHAR · النتائج والتفاصيل الكاملة للمحادثات</p>
+          <div class="cp-top"><div class="cp-word">ATHAR</div><div class="cp-meta">${n === 1 ? 'COMPLAINT REPORT' : 'COMPLAINTS REPORT'}<br>${E(stamp)}</div></div>
+          <h1 class="cp-h1">${E(dynamicTitle)}</h1>
+          <p class="cp-sub">${n} سجل</p>
+          <div class="cp-info">
+            <div><b>تاريخ التصدير</b><span>${E(exportedAt)}</span></div>
+            <div><b>نطاق التصفية</b><span>${E(complaintPdfScopeLabel())}</span></div>
+            <div><b>أُعدّ بواسطة</b><span>${E(exporter)}</span></div>
           </div>
-          <div class="cmp-pdf-meta">
-            <div class="cmp-pdf-meta-item"><strong>تاريخ التصدير</strong><span>${Sec.escapeHTML(exportedAt)}</span></div>
-            <div class="cmp-pdf-meta-item"><strong>نطاق التصفية</strong><span>${Sec.escapeHTML(complaintPdfScopeLabel())}</span></div>
-            <div class="cmp-pdf-meta-item"><strong>أُعدّ بواسطة</strong><span>${Sec.escapeHTML(exporter)}</span></div>
-          </div>
-          ${detailCards || '<p style="color:#64748b;text-align:center;padding:16px 0">لا توجد سجلات</p>'}
-          <div class="cmp-pdf-foot"><span>ATHAR</span><span>${n} سجل · تقرير تفصيلي كامل</span></div>
-        </div>`;
+          ${summary}
+          ${detailCards || '<p style="color:#666;text-align:center;padding:16px 0">لا توجد سجلات</p>'}
+          <div class="cp-foot"><span>ATHAR</span><span>${E(stamp)}</span></div>`;
       }
 
       function exportComplaintsPDF() {
@@ -41880,7 +41907,7 @@
           let reportTitle = 'تقرير الشكاوى والاقتراحات';
           if (onlyC > 0 && onlyS === 0) reportTitle = rows.length === 1 ? 'تقرير شكوى' : 'تقرير الشكاوى';
           else if (onlyS > 0 && onlyC === 0) reportTitle = rows.length === 1 ? 'تقرير اقتراح' : 'تقرير الاقتراحات';
-          printCmpPdfReport(buildCmplPdfReportBody(rows, reportTitle), reportTitle);
+          printCmpPdfReport(buildCmplPdfReportBody(rows, reportTitle), reportTitle, CMPL_PDF_STYLES);
           showToast('اختر «حفظ كـ PDF» من نافذة الطباعة', 'info');
         } catch (err) {
           if (isAtharDebugLog()) console.warn('[complaints pdf]', err);
@@ -41902,7 +41929,7 @@
         const kindWord = row.kind === 'suggestion' ? 'اقتراح' : 'شكوى';
         const docTitle = `تقرير ${kindWord} — ${num || row.id}`;
         try {
-          printCmpPdfReport(buildCmplPdfReportBody([row], `تقرير ${kindWord}`), docTitle);
+          printCmpPdfReport(buildCmplPdfReportBody([row], `تقرير ${kindWord}`), docTitle, CMPL_PDF_STYLES);
           showToast('اختر «حفظ كـ PDF» من نافذة الطباعة', 'info');
         } catch (err) {
           if (isAtharDebugLog()) console.warn('[complaint pdf]', err);
