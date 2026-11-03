@@ -200,3 +200,16 @@ html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket :is(.mk-field__hint,.rd-nt-su
 html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .mk-req{color:var(--m-fg) !important}
 html:root.mr-mobile-ui.mr-mobile-ui #appWrap#appWrap #tab-violations button.rd-viol-desk-add{background:var(--m-pb) !important;color:var(--m-pf) !important;border:1px solid var(--m-pb) !important;border-radius:6px !important;box-shadow:none !important}
 html:root.mr-mobile-ui.mr-mobile-ui #appWrap#appWrap #tab-violations button.rd-viol-desk-add *{color:var(--m-pf) !important}
+
+/* ===== Complaint detail sheet + new complaint sheet (mobile + iPad) — B&W ===== */
+html:root.mr-mobile-ui.mr-mobile-ui :is(#complaintDetailModal,#newComplaintModal){--m-sf:#fff;--m-fg:#0A0A0A;--m-mu:#5F5F5F;--m-ln:#D9D9D9;--m-hv:#F7F7F7;--m-pb:#0A0A0A;--m-pf:#fff}
+html[data-theme="dark"]:root.mr-mobile-ui.mr-mobile-ui :is(#complaintDetailModal,#newComplaintModal){--m-sf:#151515;--m-fg:#F2F2F2;--m-mu:#A3A3A3;--m-ln:#303030;--m-hv:#1C1C1C;--m-pb:#F2F2F2;--m-pf:#0A0A0A}
+html:root.mr-mobile-ui.mr-mobile-ui #complaintDetailModal .cp-paper-sheet{background:var(--m-sf) !important;color:var(--m-fg) !important;border-radius:12px 12px 0 0 !important}
+html:root.mr-mobile-ui.mr-mobile-ui #complaintDetailModal :is(.cp-detail__title,.cp-detail__who,.cp-detail__num){color:var(--m-fg) !important}
+html:root.mr-mobile-ui.mr-mobile-ui #complaintDetailModal .cp-detail__muted{color:var(--m-mu) !important}
+html:root.mr-mobile-ui.mr-mobile-ui #complaintDetailModal :is(.cp-detail__kind,.cp-detail__status){background:var(--m-hv) !important;color:var(--m-fg) !important;border:1px solid var(--m-ln) !important;border-radius:4px !important}
+html:root.mr-mobile-ui.mr-mobile-ui #complaintDetailModal :is(.cp-detail__desc,.cp-detail__reply,.cp-detail__reply textarea){background:var(--m-hv) !important;border:1px solid var(--m-ln) !important;border-radius:6px !important;color:var(--m-fg) !important;box-shadow:none !important}
+html:root.mr-mobile-ui.mr-mobile-ui #complaintDetailModal :is(.cp-detail-print-btn,.cp-detail-close-btn,.cp-mob-attach){background:var(--m-sf) !important;color:var(--m-fg) !important;border:1px solid var(--m-ln) !important;border-radius:6px !important;box-shadow:none !important}
+html:root.mr-mobile-ui.mr-mobile-ui #complaintDetailModal .cp-detail__send{background:var(--m-pb) !important;color:var(--m-pf) !important;border:1px solid var(--m-pb) !important;border-radius:6px !important;box-shadow:none !important}
+html:root.mr-mobile-ui.mr-mobile-ui #complaintDetailModal .cp-detail__resolve{background:var(--m-sf) !important;color:var(--m-fg) !important;border:1px solid var(--m-fg) !important;border-radius:6px !important;box-shadow:none !important}
+html:root.mr-mobile-ui.mr-mobile-ui #complaintDetailModal .cp-detail__resolve *{color:var(--m-fg) !important}

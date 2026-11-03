@@ -8900,7 +8900,7 @@
         newTicket: { title: 'رصد مخالفة جديدة', sub: 'سجّل مخالفة بأكبر قدر من التفاصيل' },
         workflow: { title: 'التذاكر', sub: 'إدارة ومتابعة تذاكر المخالفات' },
         breaks: { title: 'بريكات الموظفين', sub: '' },
-        complaints: { title: 'الشكاوى والاقتراحات', sub: 'ارفع شكواك أو اقتراحك وتابع الرد عليها' },
+        complaints: { title: 'الشكاوى والاقتراحات', get sub() { try { return canManageComplaints() ? 'تابع الشكاوى والاقتراحات وعالجها' : 'ارفع شكواك أو اقتراحك وتابع الرد عليها'; } catch (_) { return ''; } } },
         reports: { title: 'التقارير', sub: 'مؤشرات الأداء والاتجاهات' },
         compliance: { title: 'لوحة مؤشرات الامتثال', sub: 'compliance dashboard' },
         locations: { title: 'المناطق والفروع', sub: 'regions & branches' },
@@ -41016,8 +41016,10 @@
         host.innerHTML = `
           <div class="rd-cmpl-board">
             <div class="rd-cmpl-head">
-              <p class="rd-cmpl-intro">يمكنك رفع شكوى أو اقتراح حول أي موضوع يخص بيئة العمل، وستتم متابعتها من الإدارة المختصة.</p>
-              <button type="button" class="rd-cmpl-cta" onclick="rdOpenComplaintForm()"><i class="fas fa-plus" aria-hidden="true"></i>رفع شكوى أو اقتراح</button>
+              ${(typeof canManageComplaints === 'function' && canManageComplaints())
+                ? '<p class="rd-cmpl-intro">تعرض هذه الصفحة كل الشكاوى والاقتراحات المرفوعة للمعالجة والرد عليها.</p>'
+                : `<p class="rd-cmpl-intro">يمكنك رفع شكوى أو اقتراح حول أي موضوع يخص بيئة العمل، وستتم متابعتها من الإدارة المختصة.</p>
+              <button type="button" class="rd-cmpl-cta" onclick="rdOpenComplaintForm()"><i class="fas fa-plus" aria-hidden="true"></i>رفع شكوى أو اقتراح</button>`}
             </div>
             <div class="rd-cmpl-metrics">
               <div class="rd-cmpl-metric">
@@ -41260,6 +41262,7 @@
       }
 
       function rdOpenComplaintForm() {
+        if (typeof canManageComplaints === 'function' && canManageComplaints()) return;
         state._rdCmplDetailId = null;
         void clearComplaintAttachFiles();
         state._rdCmplForm = {
@@ -41968,11 +41971,11 @@
           <div class="cp-mob-page" style="animation:screenIn .32s ease">
             <header class="cp-mob-head">
               <h1 class="cp-mob-head__title">الشكاوى والاقتراحات</h1>
-              <p class="cp-mob-head__sub">ارفع شكواك أو اقتراحك وتابع الرد عليها</p>
+              <p class="cp-mob-head__sub">${canManageComplaints() ? 'تابع الشكاوى والاقتراحات وعالجها' : 'ارفع شكواك أو اقتراحك وتابع الرد عليها'}</p>
             </header>
-            <button type="button" class="cp-mob-cta" onclick="openNewComplaintModal()">
+            ${canManageComplaints() ? '' : `<button type="button" class="cp-mob-cta" onclick="openNewComplaintModal()">
               <i class="fas fa-plus" aria-hidden="true"></i>رفع شكوى أو اقتراح
-            </button>
+            </button>`}
             <div class="cp-mob-stats">
               ${statCard(myComplaints, canManageComplaints() ? 'الشكاوى' : 'شكاواي', 'fa-triangle-exclamation', 'var(--danger)')}
               ${statCard(mySuggestions, canManageComplaints() ? 'الاقتراحات' : 'اقتراحاتي', 'fa-lightbulb', 'var(--info)')}
@@ -42209,6 +42212,7 @@
       }
 
       function openNewComplaintModal() {
+        if (typeof canManageComplaints === 'function' && canManageComplaints()) return;
         if (!canSubmitComplaint()) {
           showToast('سجّل الدخول لرفع شكوى أو اقتراح', 'warning');
           return;
