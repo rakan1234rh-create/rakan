@@ -113,3 +113,5 @@ html[data-theme="dark"] .as-btn.is-set .as-chev{color:#f2f2f2}
 html[data-theme="dark"] .as-opt.is-sel{background:#1d1d1d}
 html[data-theme="dark"] .as-opt.is-act{background:#262626}
 html[data-theme="dark"] .as-search{background:#1a1a1a}
+/* old ticket sheet never shows on the new tickets page */
+body:has(#tab-workflow.active) #ticketModal{display:none!important}

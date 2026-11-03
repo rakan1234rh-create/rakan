@@ -157,3 +157,4 @@ html:root:root:root :is(#tab-profile,#tab-notifications) .notif-page-back{width:
 html:root:root:root :is(#tab-profile,#tab-notifications) .notif-page-back__ico{display:inline-flex;align-items:center;justify-content:center;width:auto;height:auto;background:transparent !important}
 html:root:root:root :is(#tab-profile,#tab-notifications) .notif-page-back i{font-size:12px;color:inherit !important}
 html:root:root:root :is(#tab-profile,#tab-notifications) .notif-page-back__label{display:inline !important;font-size:13px;font-weight:600;color:inherit !important;line-height:1}
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap #sidebar .nav-item.active [class*="badge"], html:root.mr-desktop-ui.mr-desktop-ui #appWrap #sidebar .nav-item.active [class*="badge"] *{color:#fff !important;-webkit-text-fill-color:#fff !important}

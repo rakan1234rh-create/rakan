@@ -23152,9 +23152,8 @@
         const t = state.violations.find(v => v.id === id);
         if (!t) return showToast('التذكرة غير موجودة', 'error');
 
-        /* الجوال: التفاصيل تُعرض في صفحة التذاكر الجديدة بدل الورقة القديمة */
+        /* الجوال والديسكتوب: التفاصيل تُعرض في صفحة التذاكر الجديدة بدل الورقة القديمة */
         if (!window.__atdSilent && window.AtharTicketsDesign && window.AtharTicketsDesign.select
-          && document.documentElement.classList.contains('mr-mobile-ui')
           && !document.querySelector('.modal.open')
           && !document.body.classList.contains('ticket-over-cmp')) {
           try { if (window.AtharTicketsDesign.select(id)) return; } catch (_) { /* fall through to legacy sheet */ }
