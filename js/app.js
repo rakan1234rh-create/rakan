@@ -30675,7 +30675,104 @@
         if (fpState.observers.length) visible = visible.filter(v => fpState.observers.includes(v.observer_id));
         if (fpState.employees.length) visible = visible.filter(v => fpState.employees.includes(v.employee_id));
 
-        return visible;
+        return rpfApply(visible);
+      }
+
+      /* ── فلاتر صفحة التقارير (الفترة / المنطقة / الفرع / الموظف / الحالة) ── */
+      const RPF_PERIODS = [['all', 'كل الفترات'], ['month', 'هذا الشهر'], ['prev', 'الشهر الماضي'], ['q', 'آخر 3 أشهر'], ['year', 'هذه السنة'], ['custom', 'فترة مخصصة']];
+      const RPF_STATUS = [['', 'كل الحالات'], ['approved', 'معتمدة'], ['rejected', 'ملغاة'], ['pending', 'قيد المعالجة'], ['auto', 'تمرير تلقائي']];
+      function rpfState() { return state.rpf || (state.rpf = { period: 'all', from: '', to: '', region: '', branch: '', employee: '', status: '' }); }
+      function rpfRange() {
+        const f = rpfState();
+        const cur = ksaCurrentMonthRange();
+        const ranges = rdLastSixMonthRanges();
+        if (f.period === 'month') return { from: cur.fromIso, next: cur.nextFromIso };
+        if (f.period === 'prev') { const r = ranges[ranges.length - 2]; return r ? { from: r.fromIso, next: r.nextIso } : {}; }
+        if (f.period === 'q') { const r = ranges[ranges.length - 3]; return r ? { from: r.fromIso, next: cur.nextFromIso } : {}; }
+        if (f.period === 'year') return { from: String(cur.year) + '-01-01', next: String(cur.year + 1) + '-01-01' };
+        if (f.period === 'custom') return { from: f.from, to: f.to };
+        return {};
+      }
+      function rpfActive() { const f = rpfState(); return !!(f.period !== 'all' || f.region || f.branch || f.employee || f.status); }
+      function rpfApply(list) {
+        const f = rpfState();
+        if (!rpfActive()) return list;
+        const r = rpfRange();
+        let out = list;
+        if (r.from || r.to || r.next) {
+          out = out.filter(v => {
+            const iso = dashViolationIsoDate(v);
+            if (!iso) return false;
+            if (r.from && iso < r.from) return false;
+            if (r.to && iso > r.to) return false;
+            if (r.next && iso >= r.next) return false;
+            return true;
+          });
+        }
+        if (f.region) { const ids = state.branches.filter(b => String(b.region_id) === String(f.region)).map(b => b.id); out = out.filter(v => ids.includes(v.branch_id)); }
+        if (f.branch) out = out.filter(v => String(v.branch_id) === String(f.branch));
+        if (f.employee) out = out.filter(v => String(v.employee_id) === String(f.employee));
+        if (f.status) {
+          out = out.filter(v => {
+            if (f.status === 'approved') return v.state === 'closed' && (v.status_text || '').includes('معتمد');
+            if (f.status === 'rejected') return v.state === 'closed' && (v.status_text || '').includes('ملغ');
+            if (f.status === 'pending') return isTicketWorkflowOpen(v);
+            if (f.status === 'auto') return !!(v.auto_forwarded_emp || v.auto_forwarded_sup);
+            return true;
+          });
+        }
+        return out;
+      }
+      function rpfDescribe() {
+        const f = rpfState(); const out = [];
+        const per = RPF_PERIODS.find(x => x[0] === f.period);
+        if (f.period === 'custom') out.push(['الفترة', (f.from || '…') + ' → ' + (f.to || '…')]); else if (f.period !== 'all') out.push(['الفترة', per[1]]);
+        if (f.region) out.push(['المنطقة', (state.regions.find(r => String(r.id) === String(f.region)) || {}).name || '']);
+        if (f.branch) out.push(['الفرع', (state.branches.find(b => String(b.id) === String(f.branch)) || {}).name || '']);
+        if (f.employee) { const v = getVisibleViolations().find(x => String(x.employee_id) === String(f.employee)); out.push(['الموظف', v ? v._empName : '']); }
+        if (f.status) out.push(['الحالة', (RPF_STATUS.find(x => x[0] === f.status) || [])[1] || '']);
+        return out;
+      }
+      function rpfBarHtml() {
+        const f = rpfState();
+        const E = (x) => Sec.escapeHTML(String(x == null ? '' : x));
+        const opt = (arr, cur) => arr.map(a => `<option value="${E(a[0])}"${String(a[0]) === String(cur) ? ' selected' : ''}>${E(a[1])}</option>`).join('');
+        const regions = [['', 'كل المناطق']].concat((state.regions || []).map(r => [r.id, r.name]));
+        const brs = [['', 'كل الفروع']].concat((state.branches || []).filter(b => !f.region || String(b.region_id) === String(f.region)).map(b => [b.id, b.name]));
+        const seen = {}; const emps = [['', 'كل الموظفين']];
+        getVisibleViolations().forEach(v => { if (v.employee_id && !seen[v.employee_id]) { seen[v.employee_id] = 1; emps.push([v.employee_id, v._empName + (v._empNumber ? ' — ' + v._empNumber : '')]); } });
+        const fld = (lbl, id, key, arr, cur) => `<label class="rpf-f"><span class="rpf-l">${lbl}</span><select id="${id}" aria-label="${lbl}" onchange="rpfSet('${key}',this.value)">${opt(arr, cur)}</select></label>`;
+        const custom = f.period === 'custom' ? `
+          <label class="rpf-f"><span class="rpf-l">من</span><input type="date" id="rpf-from" value="${E(f.from)}" onchange="rpfSet('from',this.value)"></label>
+          <label class="rpf-f"><span class="rpf-l">إلى</span><input type="date" id="rpf-to" value="${E(f.to)}" onchange="rpfSet('to',this.value)"></label>` : '';
+        const n = rpfApply(getVisibleViolations().filter(v => v.state !== 'uploading')).length;
+        return `<section class="rpf" aria-label="فلاتر التقارير">
+          <div class="rpf-grid">
+            ${fld('الفترة', 'rpf-period', 'period', RPF_PERIODS, f.period)}${custom}
+            ${fld('المنطقة', 'rpf-region', 'region', regions, f.region)}
+            ${fld('الفرع', 'rpf-branch', 'branch', brs, f.branch)}
+            ${fld('الموظف', 'rpf-emp', 'employee', emps, f.employee)}
+            ${fld('الحالة', 'rpf-status', 'status', RPF_STATUS, f.status)}
+          </div>
+          <div class="rpf-foot"><span class="rpf-count"><b>${n}</b> مخالفة مطابقة للفلاتر</span>
+            <span class="rpf-acts">${rpfActive() ? '<button type="button" class="rpf-b" onclick="rpfReset()">إعادة ضبط</button>' : ''}<button type="button" class="rpf-b" onclick="exportReportExcel()">تصدير Excel</button><button type="button" class="rpf-b rpf-b--p" onclick="exportReportsSummaryPDF()">تصدير PDF</button></span></div>
+        </section>`;
+      }
+      function rpfSet(k, v) {
+        const f = rpfState(); f[k] = v;
+        if (k === 'region') f.branch = '';
+        if (k === 'period' && v !== 'custom') { f.from = ''; f.to = ''; }
+        renderReportsRedesign();
+      }
+      function rpfReset() { state.rpf = null; renderReportsRedesign(); }
+      window.rpfSet = rpfSet; window.rpfReset = rpfReset;
+
+      function rdRpRenderMain(desk) {
+        let html = rdRpRenderMainInner(desk);
+        const bar = rpfBarHtml();
+        html = html.replace(/<button type="button" class="rd-rp-download-btn"[\s\S]*?<\/button>/, '');
+        html = html.replace(/<section class="atp-act">[\s\S]*?<\/section>/, '');
+        return html.indexOf('</header>') >= 0 ? html.replace('</header>', '</header>' + bar) : html + bar;
       }
 
       function rpRefreshDatePickerIfOpen() {
@@ -30934,8 +31031,8 @@
         host.hidden = false;
       }
 
-      function rdRpRenderMain(desk) {
-        const allVisible = getVisibleViolations().filter((v) => v.state !== 'uploading');
+      function rdRpRenderMainInner(desk) {
+        const allVisible = rpfApply(getVisibleViolations().filter((v) => v.state !== 'uploading'));
         const cur = typeof ksaCurrentMonthRange === 'function' ? ksaCurrentMonthRange() : null;
         const thisMonth = cur
           ? allVisible.filter((v) => {
@@ -35831,49 +35928,39 @@
       // 21.7. PRINT TICKET (طباعة تفاصيل المخالفة)
       // ═══════════════════════════════════════════════════════════════════════════
       const PRINT_TICKET_DOC_STYLES = `
-    @page { size: A4; margin: 14mm; }
+    @page { size: A4; margin: 14mm 14mm 16mm; }
+    * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; }
-    body {
-      font-family: 'IBM Plex Sans Arabic', 'Segoe UI', Tahoma, sans-serif;
-      direction: rtl;
-      color: #000;
-      background: #fff;
-      padding: 20px;
-      -webkit-print-color-adjust: exact;
-      print-color-adjust: exact;
-    }
-    .print-header { text-align: center; padding-bottom: 14px; border-bottom: 2px solid #000; margin-bottom: 18px; }
-    .print-header h1 { font-size: 20px; margin: 0 0 4px; color: #000; }
-    .print-header p { font-size: 12px; color: #555; margin: 0; }
-    .print-section { margin-bottom: 18px; }
-    .print-section h3 {
-      font-size: 14px; background: #f0f0f0; padding: 6px 10px;
-      color: #000; margin: 0 0 8px;
-    }
-    .print-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; }
-    .print-row {
-      display: flex;
-      gap: 6px;
-      padding: 4px 0;
-      border-bottom: 1px dotted #ccc;
-      font-size: 12px;
-      align-items: baseline;
-    }
-    .print-row strong { flex: 0 0 auto; color: #555; white-space: nowrap; }
-    .print-row span { flex: 0 1 auto; color: #000; word-break: break-word; }
-    .print-reply { margin-bottom: 10px; padding: 8px; border-right: 3px solid #444; background: #fafafa; }
-    .print-reply strong { font-size: 11px; color: #555; display: block; margin-bottom: 4px; }
-    .print-reply span { font-size: 12px; }
-    .print-desc { font-size: 12px; line-height: 1.7; padding: 8px; background: #f9f9f9; border-radius: 4px; margin: 0; }
-    .print-log { margin-bottom: 8px; padding: 6px 10px; border-right: 2px solid #888; font-size: 11px; }
-    .print-log-meta { color: #666; }
-    .print-log-action { font-weight: 600; margin-top: 2px; }
-    .print-log-note { color: #555; margin-top: 2px; }
-    .print-muted { font-size: 12px; color: #888; margin: 0; }
-    .print-foot {
-      margin-top: 30px; padding-top: 14px; border-top: 1px solid #000;
-      font-size: 10px; color: #555; display: flex; justify-content: space-between;
-    }
+    body { font-family: 'IBM Plex Sans Arabic', 'Segoe UI', Tahoma, sans-serif; direction: rtl; color: #0a0a0a; background: #fff; font-size: 12px; line-height: 1.65; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .pd-top { display: flex; align-items: flex-end; justify-content: space-between; padding-bottom: 14px; border-bottom: 2px solid #0a0a0a; margin-bottom: 20px; }
+    .pd-brand { font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace; font-size: 22px; letter-spacing: .32em; font-weight: 500; direction: ltr; }
+    .pd-meta { text-align: left; direction: ltr; font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace; font-size: 10px; color: #5f5f5f; letter-spacing: .06em; line-height: 1.7; }
+    .pd-kicker { font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace; font-size: 10px; letter-spacing: .16em; color: #5f5f5f; direction: ltr; text-align: right; margin: 0 0 4px; }
+    .pd-title { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 0 0 4px; }
+    .pd-title h1 { margin: 0; font-size: 24px; font-weight: 700; }
+    .pd-chip { display: inline-block; border: 1px solid #0a0a0a; border-radius: 3px; padding: 2px 10px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+    .pd-sub { margin: 0 0 18px; color: #5f5f5f; font-size: 12px; }
+    .pd-sec { margin: 0 0 18px; break-inside: avoid; }
+    .pd-sec h3 { margin: 0 0 8px; font-size: 12px; font-weight: 700; letter-spacing: .02em; padding-bottom: 6px; border-bottom: 1px solid #0a0a0a; display: flex; justify-content: space-between; }
+    .pd-sec h3 small { font-weight: 400; color: #5f5f5f; font-size: 11px; }
+    .pd-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 28px; }
+    .pd-row { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px solid #e4e4e4; font-size: 12px; }
+    .pd-row b { font-weight: 400; color: #5f5f5f; white-space: nowrap; }
+    .pd-row span { font-weight: 600; text-align: left; word-break: break-word; }
+    .pd-box { border: 1px solid #d9d9d9; border-radius: 3px; padding: 10px 12px; font-size: 12px; line-height: 1.8; margin: 0; white-space: pre-wrap; word-break: break-word; }
+    .pd-reply { border: 1px solid #d9d9d9; border-inline-start: 3px solid #0a0a0a; border-radius: 3px; padding: 8px 12px; margin-bottom: 8px; break-inside: avoid; }
+    .pd-reply b { display: block; font-size: 10.5px; color: #5f5f5f; font-weight: 600; margin-bottom: 3px; }
+    .pd-att { display: flex; align-items: center; justify-content: space-between; border: 1px solid #d9d9d9; border-radius: 3px; padding: 10px 12px; font-size: 12px; }
+    .pd-att b { font-size: 18px; font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace; }
+    .pd-log { position: relative; padding: 0 16px 10px 0; border-inline-start: 0; }
+    .pd-log::before { content: ''; position: absolute; right: 0; top: 7px; width: 7px; height: 7px; background: #0a0a0a; }
+    .pd-log::after { content: ''; position: absolute; right: 3px; top: 15px; bottom: -2px; width: 1px; background: #d9d9d9; }
+    .pd-log:last-child::after { display: none; }
+    .pd-log-meta { color: #5f5f5f; font-size: 10.5px; }
+    .pd-log-act { font-weight: 600; font-size: 12px; }
+    .pd-log-note { color: #444; font-size: 11px; margin-top: 1px; }
+    .pd-muted { color: #8a8a8a; margin: 0; font-size: 12px; }
+    .pd-foot { margin-top: 22px; padding-top: 10px; border-top: 1px solid #0a0a0a; display: flex; justify-content: space-between; font-size: 10px; color: #5f5f5f; }
   `;
 
       function buildPrintDocumentHtml(bodyHtml) {
@@ -35934,21 +36021,25 @@
         const t = state.editingTicket;
         if (!t) return showToast('لا توجد تذكرة لطباعتها', 'error');
 
-        const hideObs = shouldHideObserverName();
-        const atts = getVisibleAttachments(t);
+        /* PDF: never show the observer's name; attachments are a count only */
+        const hideObs = true;
+        const attCount = getVisibleAttachments(t).length;
         const logs = parseDbJsonArray(t.logs);
+        const escape = Sec.escapeHTML;
+        const num = shortTicketNum(t.ticket_number) || '-';
+        const status = t.status_text || STATE_LABELS[t.state] || '-';
+        const nowTxt = formatDateTime(new Date().toISOString());
 
-        const rows = [];
-        rows.push(['رقم التذكرة', shortTicketNum(t.ticket_number) || '-']);
-        rows.push(['الحالة', t.status_text || STATE_LABELS[t.state] || '-']);
-        rows.push(['الموظف', `${t._empName} (${t._empNumber || '-'})`]);
-        rows.push(['الفرع', t._branchName || '-']);
-        rows.push(['المشرف المسؤول', t._supName || '-']);
-        if (!hideObs && t.observer_id) rows.push(['الراصد', t._obsName || '-']);
-        rows.push(['نوع المخالفة', t.violation_type || '-']);
-        rows.push(['تاريخ المخالفة', t.violation_date || '-']);
-        rows.push(['وقت المخالفة', formatTime12(t.violation_time)]);
-        rows.push(['تاريخ الإنشاء', formatDateTime(t.created_at)]);
+        const rows = [
+          ['الموظف', `${t._empName || '-'} (${t._empNumber || '-'})`],
+          ['الفرع', t._branchName || '-'],
+          ['المشرف المسؤول', t._supName || '-'],
+          ['نوع المخالفة', t.violation_type || '-'],
+          ['تاريخ المخالفة', t.violation_date || '-'],
+          ['وقت المخالفة', formatTime12(t.violation_time)],
+          ['تاريخ الإنشاء', formatDateTime(t.created_at)],
+          ['الحالة', status]
+        ];
 
         const replies = [];
         if (t.employee_reply) replies.push(['رد الموظف', t.employee_reply]);
@@ -35957,73 +36048,53 @@
         if (t.audit_reply) replies.push(['ملاحظات الرقابة الداخلية', t.audit_reply]);
         if (t.hr_reply) replies.push(['قرار الموارد البشرية', t.hr_reply]);
 
-        const escape = Sec.escapeHTML;
-
         const printBody = `
-    <div class="print-header">
-      <h1>تقرير مخالفة — ${escape(shortTicketNum(t.ticket_number))}</h1>
-      <p>ATHAR · تاريخ الطباعة: ${escape(formatDateTime(new Date().toISOString()))}</p>
+    <div class="pd-top">
+      <div class="pd-brand">ATHAR</div>
+      <div class="pd-meta">VIOLATION REPORT<br>${escape(nowTxt)}</div>
     </div>
 
-    <div class="print-section">
+    <p class="pd-kicker">TICKET ${escape(num)}</p>
+    <div class="pd-title"><h1>تقرير مخالفة</h1><span class="pd-chip">${escape(status)}</span></div>
+    <p class="pd-sub">رقم التذكرة ${escape(num)}</p>
+
+    <div class="pd-sec">
       <h3>بيانات التذكرة</h3>
-      <div class="print-grid">
-        ${rows.map(([k, v]) => `<div class="print-row"><strong>${escape(k)}:</strong><span>${escape(v)}</span></div>`).join('')}
+      <div class="pd-grid">
+        ${rows.map(([k, v]) => `<div class="pd-row"><b>${escape(k)}</b><span>${escape(v)}</span></div>`).join('')}
       </div>
     </div>
 
-    <div class="print-section">
+    <div class="pd-sec">
       <h3>وصف المخالفة</h3>
-      <p class="print-desc">${escape(t.description || '-')}</p>
+      <p class="pd-box">${escape(t.description || '-')}</p>
     </div>
 
     ${replies.length ? `
-    <div class="print-section">
+    <div class="pd-sec">
       <h3>الردود والقرارات</h3>
-      ${replies.map(([k, v]) => `
-        <div class="print-reply">
-          <strong>${escape(k)}</strong>
-          <span>${escape(v)}</span>
-        </div>
-      `).join('')}
+      ${replies.map(([k, v]) => `<div class="pd-reply"><b>${escape(k)}</b>${escape(v)}</div>`).join('')}
     </div>` : ''}
 
-    <div class="print-section">
-      <h3>المرفقات (${atts.length})</h3>
-      ${atts.length ? atts.map((a, i) => {
-          const attName = a.n || a.name || 'ملف';
-          const uploader = formatAttachmentUploaderForDisplay(a, hideObs);
-          let uploaderLine = '';
-          if (hideObs && isObserverStageAttachment(a)) {
-            uploaderLine = 'الراصد';
-          } else {
-            // إذا كان الاسم مخفياً (يحتوي على المسمى الوظيفي فقط بدون دور إضافي)
-            if (uploader.user && !uploader.role) {
-              uploaderLine = uploader.user;
-            } else {
-              uploaderLine = uploader.user ? `${uploader.role} (${uploader.user})` : uploader.role;
-            }
-          }
-          return `
-        <div class="print-row">
-          <strong>${i + 1}.</strong>
-          <span>${escape(attName)} — رفع بواسطة: ${escape(uploaderLine)}</span>
-        </div>`;
-        }).join('') : '<p class="print-muted">لا توجد مرفقات</p>'}
+    <div class="pd-sec">
+      <h3>المرفقات</h3>
+      <div class="pd-att"><span>عدد المرفقات</span><b>${attCount}</b></div>
     </div>
 
-    <div class="print-section">
-      <h3>سجل الإجراءات</h3>
+    <div class="pd-sec">
+      <h3>سجل الإجراءات <small>${logs.length}</small></h3>
       ${logs.length ? logs.map(l => {
           const metaLine = formatLogMetaLine(l, t, hideObs);
           return `
-          <div class="print-log">
-            <div class="print-log-meta">${escape(metaLine)}</div>
-            <div class="print-log-action">${escape(rewriteLegacyAuditLabel(l.action || '-'))}</div>
-            ${l.note ? `<div class="print-log-note">${escape(rewriteLegacyAuditLabel(l.note))}</div>` : ''}
+          <div class="pd-log">
+            <div class="pd-log-meta">${escape(metaLine)}</div>
+            <div class="pd-log-act">${escape(rewriteLegacyAuditLabel(l.action || '-'))}</div>
+            ${l.note ? `<div class="pd-log-note">${escape(rewriteLegacyAuditLabel(l.note))}</div>` : ''}
           </div>`;
-        }).join('') : '<p class="print-muted">لا يوجد سجل</p>'}
+        }).join('') : '<p class="pd-muted">لا يوجد سجل</p>'}
     </div>
+
+    <div class="pd-foot"><span>ATHAR · نظام متابعة المخالفات</span><span>${escape(num)}</span></div>
   `;
 
         printHtmlInFrame(printBody, `تقرير مخالفة ${shortTicketNum(t.ticket_number)}`.trim());
@@ -42737,10 +42808,15 @@
         const m = window.__rpModel;
         if (!m) return showToast('لا توجد بيانات للتصدير', 'warning');
         try {
-          const e = (v) => Sec.escapeHTML(String(v));
-          const body = `<h2>ملخص التقارير</h2><table><thead><tr><th>المؤشر</th><th>القيمة</th></tr></thead><tbody>${m.kpis.map(k => `<tr><td>${e(k[1])}</td><td>${e(k[0])}</td></tr>`).join('')}</tbody></table>
+          const e = (v) => Sec.escapeHTML(String(v == null ? '' : v));
+          const rows = getReportsFilteredViolations().filter(v => v.state !== 'uploading');
+          const fd = rpfDescribe();
+          const filt = fd.length ? `<p style="margin:0 0 10px"><b>الفلاتر:</b> ${fd.map(x => e(x[0]) + ': ' + e(x[1])).join(' · ')}</p>` : '<p style="margin:0 0 10px">الفلاتر: الكل</p>';
+          const det = rows.slice(0, 500).map(v => `<tr><td>${e(shortTicketNum(v.ticket_number))}</td><td>${e(v._empName)}</td><td>${e(v._branchName)}</td><td>${e(v.violation_type)}</td><td>${e(v.violation_date || '')}</td><td>${e(v.status_text || STATE_LABELS[v.state] || '')}</td></tr>`).join('');
+          const body = `<h2>ملخص التقارير</h2>${filt}<table><thead><tr><th>المؤشر</th><th>القيمة</th></tr></thead><tbody>${m.kpis.map(k => `<tr><td>${e(k[1])}</td><td>${e(k[0])}</td></tr>`).join('')}</tbody></table>
             <h2>المخالفات الشهرية</h2><table><thead><tr><th>الشهر</th><th>العدد</th></tr></thead><tbody>${m.months.map(x => `<tr><td>${e(x.l)}</td><td>${e(x.n)}</td></tr>`).join('')}</tbody></table>
-            <h2>أكثر المخالفات تكرارًا</h2><table><thead><tr><th>النوع</th><th>العدد</th></tr></thead><tbody>${m.tops.map(x => `<tr><td>${e(x.name)}</td><td>${e(x.n)}</td></tr>`).join('')}</tbody></table>`;
+            <h2>أكثر المخالفات تكرارًا</h2><table><thead><tr><th>النوع</th><th>العدد</th></tr></thead><tbody>${m.tops.map(x => `<tr><td>${e(x.name)}</td><td>${e(x.n)}</td></tr>`).join('')}</tbody></table>
+            <h2>تفاصيل المخالفات (${rows.length})</h2><table><thead><tr><th>التذكرة</th><th>الموظف</th><th>الفرع</th><th>النوع</th><th>التاريخ</th><th>الحالة</th></tr></thead><tbody>${det || '<tr><td colspan="6">لا توجد مخالفات</td></tr>'}</tbody></table>`;
           printCmpPdfReport(body, 'ملخص التقارير');
           showToast('اختر «حفظ كـ PDF» من نافذة الطباعة', 'info');
         } catch (_) { showToast('تعذّر تصدير PDF', 'error'); }

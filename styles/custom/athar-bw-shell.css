@@ -142,3 +142,18 @@ html:root.mr-desktop-ui.mr-desktop-ui:not([data-theme="dark"]) #appWrap header.t
 html:root.mr-desktop-ui.mr-desktop-ui #tab-notifications .notif-page-shell{width:100% !important;max-width:980px !important;box-sizing:border-box}
 html:root.mr-desktop-ui.mr-desktop-ui #tab-notifications .notif-page-topbar__title{display:block !important;flex:1 1 auto}
 html:root.mr-desktop-ui.mr-desktop-ui #tab-notifications .notif-list--page{flex:0 0 auto !important;min-height:0 !important}
+
+/* ===== Back button (profile + notifications): one rectangular button, arrow + label ===== */
+html:root:root:root :is(#tab-profile,#tab-notifications) .notif-page-back-group{
+  display:inline-flex !important;align-items:center;gap:8px;height:38px;padding:0 14px 0 16px !important;
+  border:1px solid #d9d9d9 !important;border-radius:4px !important;background:transparent !important;color:#0a0a0a !important;
+  cursor:pointer;box-shadow:none !important;transition:background .15s,border-color .15s;flex:0 0 auto;width:auto !important}
+html[data-theme="dark"]:root:root:root :is(#tab-profile,#tab-notifications) .notif-page-back-group{border-color:#303030 !important;color:#f2f2f2 !important}
+html:root:root:root :is(#tab-profile,#tab-notifications) .notif-page-back-group:hover{border-color:#0a0a0a !important;background:#f7f7f7 !important}
+html[data-theme="dark"]:root:root:root :is(#tab-profile,#tab-notifications) .notif-page-back-group:hover{border-color:#f2f2f2 !important;background:#1c1c1c !important}
+html:root:root:root :is(#tab-profile,#tab-notifications) .notif-page-back-group:focus-visible{outline:2px solid #0a0a0a;outline-offset:2px}
+html[data-theme="dark"]:root:root:root :is(#tab-profile,#tab-notifications) .notif-page-back-group:focus-visible{outline-color:#f2f2f2}
+html:root:root:root :is(#tab-profile,#tab-notifications) .notif-page-back{width:auto !important;height:auto !important;min-width:0 !important;padding:0 !important;border:0 !important;border-radius:0 !important;background:transparent !important;box-shadow:none !important;display:inline-flex;align-items:center}
+html:root:root:root :is(#tab-profile,#tab-notifications) .notif-page-back__ico{display:inline-flex;align-items:center;justify-content:center;width:auto;height:auto;background:transparent !important}
+html:root:root:root :is(#tab-profile,#tab-notifications) .notif-page-back i{font-size:12px;color:inherit !important}
+html:root:root:root :is(#tab-profile,#tab-notifications) .notif-page-back__label{display:inline !important;font-size:13px;font-weight:600;color:inherit !important;line-height:1}
