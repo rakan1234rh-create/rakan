@@ -4,11 +4,13 @@
   function usersTable(rows, canManage, e) {
     var body = rows.map(function (r) {
       var id = e(r.id).replace(/'/g, '&#39;');
-      return '<tr class="atu-tr"><td>' + e(r.name) + '</td><td class="atd-mono atu-no">' + e(r.no) + '</td><td>' + e(r.role) + '</td><td>' + e(r.branch) + '</td>' +
+      var ini = (String(r.name || '').trim().charAt(0)) || '؟';
+      return '<tr class="atu-tr atl-tr"><td><span class="atl-name"><span class="atl-ico atl-ico--av" aria-hidden="true">' + e(ini) + '</span><span>' + e(r.name) + '</span></span></td>' +
+        '<td class="atd-mono atu-no">' + e(r.no) + '</td><td><span class="atl-pill">' + e(r.role) + '</span></td><td>' + e(r.branch) + '</td>' +
         '<td><span class="atu-st ' + (r.active ? 'is-on' : 'is-off') + '">' + (r.active ? 'نشط' : 'موقوف') + '</span></td>' +
-        '<td>' + (canManage ? '<button type="button" class="atu-edit" onclick="editUser(\'' + id + '\')">تعديل</button>' + (r.active ? '<button type="button" class="atu-off" onclick="deleteUser(\'' + id + '\')">تعطيل</button>' : '') : '<span class="atd-mu">—</span>') + '</td></tr>';
-    }).join('');
-    return '<div class="atu-scroll"><table class="atu-table"><thead><tr><th scope="col">الاسم</th><th scope="col">الرقم الوظيفي</th><th scope="col">الدور</th><th scope="col">الفرع</th><th scope="col">الحالة</th><th scope="col">إجراء</th></tr></thead><tbody>' + body + '</tbody></table></div>';
+        '<td class="atl-acts">' + (canManage ? '<button type="button" class="atl-btn" onclick="editUser(\'' + id + '\')"><i class="fas fa-pen" aria-hidden="true"></i>تعديل</button>' + (r.active ? '<button type="button" class="atl-btn atl-btn--del" title="تعطيل المستخدم" aria-label="تعطيل المستخدم" onclick="deleteUser(\'' + id + '\')"><i class="fas fa-user-slash" aria-hidden="true"></i>تعطيل</button>' : '') : '<span class="atd-mu">—</span>') + '</td></tr>';
+    }).join('') || '<tr><td colspan="6" class="atu-empty">لا يوجد مستخدمون</td></tr>';
+    return '<div class="atu-scroll"><table class="atu-table atl-table"><colgroup><col style="width:26%"><col style="width:12%"><col style="width:14%"><col style="width:18%"><col style="width:10%"><col style="width:220px"></colgroup><thead><tr><th scope="col">الاسم</th><th scope="col">الرقم الوظيفي</th><th scope="col">الدور</th><th scope="col">الفرع</th><th scope="col">الحالة</th><th scope="col"></th></tr></thead><tbody>' + body + '</tbody></table></div>';
   }
   function actBtns(canManage, canDelete, editFn, delFn, id, what) {
     return '<td class="atl-acts" onclick="event.stopPropagation()">' +

@@ -123,3 +123,9 @@ html:root.mr-desktop-ui.mr-desktop-ui .atl-table td{padding:16px 12px}
 html:root.mr-desktop-ui.mr-desktop-ui #tab-locations #rbPanelIntro,html:root.mr-desktop-ui.mr-desktop-ui #tab-locations #rbPanelTitle,html:root.mr-desktop-ui.mr-desktop-ui #tab-locations #rbPanelSub{display:none !important}
 .atl-btn--del{color:var(--t-fg) !important;border-color:var(--t-ct) !important}.atl-btn--del:hover{background:var(--t-fg) !important;color:var(--t-pf) !important;border-color:var(--t-fg) !important}
 html:root.mr-desktop-ui.mr-desktop-ui #tab-locations .atu-card-hd{display:none !important}
+.atl-ico--av{border-radius:50%;font-weight:700;font-size:14px}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-departments .atu-st{border-radius:4px}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-departments :is(.wf-panel-intro,.wf-panel-banner>.wf-panel-intro){display:none !important}
+
+html:root.mr-desktop-ui.mr-desktop-ui #tab-departments .figma-search-wrap.wf-search{border:0 !important;background:transparent !important;box-shadow:none !important;padding:0 !important;height:auto}html:root.mr-desktop-ui.mr-desktop-ui #tab-departments .figma-search-wrap.wf-search #user-search{height:46px !important;min-height:46px;padding:0 40px 0 14px !important;width:100% !important;font-size:14px}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-departments .figma-search-wrap.wf-search{position:relative;min-width:340px}
