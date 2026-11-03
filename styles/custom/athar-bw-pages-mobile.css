@@ -51,3 +51,28 @@ html:root.mr-mobile-ui #complaintDetailModal #cpDetailBody .btn-primary, html:ro
 html:root.mr-mobile-ui #complaintDetailModal #cpDetailBody button[onclick*="Attach"], html:root.mr-mobile-ui #complaintDetailModal #cpDetailBody .btn-ghost { background: var(--pg-bg) !important; color: var(--pg-fg) !important; border: 1px solid var(--pg-mu) !important; }
 html:root.mr-mobile-ui #complaintDetailModal #cpDetailBody [class*="bubble"], html:root.mr-mobile-ui #complaintDetailModal #cpDetailBody [class*="desc"], html:root.mr-mobile-ui #complaintDetailModal #cpDetailBody [class*="reply"] { border-radius: 4px !important; }
 html:root.mr-mobile-ui #complaintDetailModal .cp-paper-sheet-body > *:last-child, html:root.mr-mobile-ui #complaintDetailModal [class*="composer"], html:root.mr-mobile-ui #complaintDetailModal [class*="reply-bar"] { background: var(--pg-bg) !important; border-color: var(--pg-ln) !important; }
+
+/* ---- complaint details: square, readable, no tinted bubbles (cd2) ---- */
+html:root.mr-mobile-ui #complaintDetailModal .cp-paper-sheet { border-radius: 12px 12px 0 0 !important; }
+html:root.mr-mobile-ui #complaintDetailModal .cp-detail__title { font-size: 19px !important; font-weight: 700 !important; color: var(--pg-fg) !important; }
+html:root.mr-mobile-ui #complaintDetailModal .cp-detail__kind { background: transparent !important; color: var(--pg-fg) !important; border: 1px solid var(--pg-fg) !important; border-radius: 999px !important; font-size: 12px !important; font-weight: 600 !important; padding: 1px 10px !important; }
+html:root.mr-mobile-ui #complaintDetailModal .cp-detail__num { font-family: ui-monospace, 'IBM Plex Mono', monospace !important; font-size: 12px !important; color: var(--pg-mu) !important; }
+html:root.mr-mobile-ui #complaintDetailModal .cp-detail__who, html:root.mr-mobile-ui #complaintDetailModal .cp-detail__subrow { font-size: 13px !important; color: var(--pg-mu) !important; }
+html:root.mr-mobile-ui #complaintDetailModal .cp-detail__who i { font-size: 12px !important; }
+html:root.mr-mobile-ui #complaintDetailModal .cp-detail__status { font-size: 12px !important; font-weight: 600 !important; }
+html:root.mr-mobile-ui #complaintDetailModal .cp-detail__desc { background: var(--pg-sf) !important; border: 1px solid var(--pg-ln) !important; border-radius: 4px !important; box-shadow: none !important; }
+html:root.mr-mobile-ui #complaintDetailModal .rd-cmpl-desc-text { font-size: 15px !important; line-height: 1.8 !important; color: var(--pg-fg) !important; }
+html:root.mr-mobile-ui #complaintDetailModal .cp-detail__thread > div { gap: 10px !important; }
+html:root.mr-mobile-ui #complaintDetailModal .cp-detail__thread > div > div { background: var(--pg-bg) !important; border: 1px solid var(--pg-ln) !important; border-radius: 4px !important; padding: 12px 14px !important; box-shadow: none !important; }
+html:root.mr-mobile-ui #complaintDetailModal .cp-detail__thread > div > div:has(.fa-headset) { background: var(--pg-sf) !important; border-color: var(--pg-fg) !important; border-inline-start-width: 3px !important; }
+html:root.mr-mobile-ui #complaintDetailModal .cp-detail__thread > div > div > div:first-child span { font-size: 12.5px !important; color: var(--pg-fg) !important; }
+html:root.mr-mobile-ui #complaintDetailModal .cp-detail__thread > div > div > div:first-child span + span { font-size: 11.5px !important; color: var(--pg-mu) !important; font-weight: 400 !important; }
+html:root.mr-mobile-ui #complaintDetailModal .cp-detail__thread > div > div > div:first-child i { font-size: 12px !important; color: var(--pg-fg) !important; }
+html:root.mr-mobile-ui #complaintDetailModal .rd-cmpl-thread-text { font-size: 14px !important; line-height: 1.8 !important; color: var(--pg-fg) !important; }
+html:root.mr-mobile-ui #complaintDetailModal .cp-detail__compose { background: var(--pg-bg) !important; border-top: 1px solid var(--pg-ln) !important; }
+html:root.mr-mobile-ui #complaintDetailModal .cp-detail__reply { border-radius: 4px !important; font-size: 15px !important; }
+html:root.mr-mobile-ui #complaintDetailModal .cp-detail__send { border-radius: 4px !important; background: var(--pg-on) !important; color: var(--pg-onf) !important; font-size: 15px !important; font-weight: 600 !important; }
+html:root.mr-mobile-ui #complaintDetailModal .cp-detail__reply-attach { border-radius: 4px !important; border: 1px solid var(--pg-ln) !important; background: var(--pg-bg) !important; color: var(--pg-fg) !important; }
+html:root.mr-mobile-ui #complaintDetailModal .cp-detail__reply-attach i { color: var(--pg-fg) !important; }
+html:root.mr-mobile-ui #complaintDetailModal .cp-detail__resolved-banner { border-radius: 4px !important; }
+html:root.mr-mobile-ui #complaintDetailModal .cp-detail__basics { background: var(--pg-bg) !important; border-bottom: 1px solid var(--pg-ln) !important; }
