@@ -70,3 +70,75 @@ html:root.mr-desktop-ui.mr-desktop-ui #appWrap #sidebar .nav-item.active * { -we
 html:root.mr-desktop-ui.mr-desktop-ui #appWrap #sidebar .nav-item:not(.active) .nav-item-label { -webkit-text-fill-color: currentColor !important; }
 html:root.mr-desktop-ui.mr-desktop-ui #appWrap #sidebar .nav-item.active i::before,
 html:root.mr-desktop-ui.mr-desktop-ui #appWrap #sidebar .nav-item.active .nav-icon-wrap i { color: #0a0a0a !important; -webkit-text-fill-color: #0a0a0a !important; opacity: 1 !important; }
+
+/* ===== Desktop topbar — same black bar + square buttons as mobile ===== */
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap header.topbar.unified-banner{background:#0a0a0a !important;border-bottom:1px solid #262626 !important;color:#f2f2f2}
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap header.topbar .rd-top-titles,html:root.mr-desktop-ui.mr-desktop-ui #appWrap header.topbar .rd-top-titles__title{color:#f2f2f2 !important}
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap header.topbar .rd-top-titles__sub{color:#9a9a9a !important;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11px;letter-spacing:.06em}
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap header.topbar .topbar-actions-zone{display:flex;align-items:center;gap:10px}
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap header.topbar #notifBellBtn,
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap header.topbar #topbarUserMenuBtn{width:36px !important;height:36px !important;min-width:36px !important;padding:0 !important;margin:0 !important;border-radius:4px !important;border:1px solid #3a3a3a !important;background:transparent !important;color:#f2f2f2 !important;display:inline-flex !important;align-items:center;justify-content:center;position:relative;box-shadow:none !important;cursor:pointer;transition:background .15s,border-color .15s}
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap header.topbar #notifBellBtn:hover,
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap header.topbar #topbarUserMenuBtn:hover{background:#1a1a1a !important;border-color:#f2f2f2 !important}
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap header.topbar #notifBellBtn i{font-size:15px;color:#f2f2f2 !important}
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap header.topbar #topbarUserMenuBtn *:not(img){background:transparent !important;color:#f2f2f2 !important;border-radius:0 !important}
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap header.topbar #topbarUserMenuBtn svg{width:20px;height:20px}
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap header.topbar .mr-topbar-user{display:inline-flex !important}
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap header.topbar #notifBellBtn .notif-bell-count{position:absolute;top:-6px;inset-inline-end:-6px;min-width:16px;height:16px;padding:0 4px;border-radius:3px;background:#fff !important;color:#0a0a0a !important;font-size:10px;font-weight:700;line-height:14px;border:1px solid #0a0a0a;text-align:center}
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap header.topbar #notifBellBtn .notif-bell-count[style*="display:none"],html:root.mr-desktop-ui.mr-desktop-ui #appWrap header.topbar #notifBellBtn .notif-bell-count:empty{display:none !important}
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap header.topbar .rd-h-theme{display:inline-flex;height:36px;border:1px solid #3a3a3a;border-radius:4px;overflow:hidden;background:transparent}
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap header.topbar .rd-h-theme button{width:36px;height:34px;border:0;border-radius:0 !important;background:transparent;color:#9a9a9a !important;cursor:pointer}
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap header.topbar .rd-h-theme button.is-on{background:#f2f2f2;color:#0a0a0a !important}
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap header.topbar .rd-h-theme button.is-on i{color:#0a0a0a !important}
+
+/* sidebar badges: same white square badge as the mobile bottom nav */
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap #sidebar .nav-item :is(.nav-badge,.nav-item-badge,.badge,[class*="badge"]){background:#fff !important;color:#0a0a0a !important;border:1px solid #0a0a0a !important;border-radius:3px !important;box-shadow:none !important;min-width:18px;height:18px;line-height:16px;font-size:10.5px;font-weight:700;padding:0 5px}
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap #sidebar .nav-item.active :is(.nav-badge,.nav-item-badge,.badge,[class*="badge"]){background:#0a0a0a !important;color:#fff !important;border-color:#0a0a0a !important}
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap #sidebar .nav-item{transition:background .15s,color .15s}
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap #sidebar .nav-item .nav-icon-wrap{width:22px;display:inline-flex;justify-content:center}
+
+/* ===== Desktop notifications page + dropdown ===== */
+html:root.mr-desktop-ui.mr-desktop-ui{--nt-sf:#fff;--nt-fg:#0a0a0a;--nt-mu:#5f5f5f;--nt-ln:#e4e4e4;--nt-ln2:#d9d9d9;--nt-hv:#f7f7f7;--nt-on:#0a0a0a;--nt-onf:#fff}
+html[data-theme="dark"]:root.mr-desktop-ui.mr-desktop-ui{--nt-sf:#151515;--nt-fg:#f2f2f2;--nt-mu:#a3a3a3;--nt-ln:#262626;--nt-ln2:#303030;--nt-hv:#1c1c1c;--nt-on:#f2f2f2;--nt-onf:#0a0a0a}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-notifications .notif-page-shell{max-width:980px;margin:0 auto;padding:28px 24px 40px;display:flex;flex-direction:column;gap:18px;height:auto !important;background:transparent !important}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-notifications .notif-page-head{display:flex;flex-direction:column;gap:16px;background:transparent !important;border:0 !important;padding:0 !important}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-notifications .notif-page-topbar{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-direction:row;padding:0 !important;background:transparent !important;border:0 !important;box-shadow:none !important}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-notifications .notif-page-back-group{order:2;display:inline-flex;align-items:center;gap:8px;cursor:pointer}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-notifications .notif-page-back{width:36px;height:36px;border-radius:4px !important;border:1px solid var(--nt-ln2) !important;background:transparent !important;color:var(--nt-fg) !important;box-shadow:none !important;display:inline-flex;align-items:center;justify-content:center}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-notifications .notif-page-back i{color:var(--nt-fg) !important}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-notifications .notif-page-back__label{color:var(--nt-fg) !important;font-weight:600;font-size:13px}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-notifications .notif-page-back-group:hover .notif-page-back{background:var(--nt-hv) !important;border-color:var(--nt-fg) !important}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-notifications .notif-page-topbar__title{order:1}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-notifications .notif-page-topbar__title::before{content:'NOTIFICATIONS';display:block;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11px;letter-spacing:.14em;color:var(--nt-mu);margin-bottom:6px}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-notifications .notif-page-topbar__heading{display:flex;align-items:baseline;gap:12px;margin:0}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-notifications .notif-page-topbar__heading-title{font-family:'Readex Pro','IBM Plex Sans Arabic',sans-serif;font-size:30px;font-weight:600;color:var(--nt-fg) !important}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-notifications .notif-page-topbar__heading .notif-count{font-size:13px;color:var(--nt-mu) !important;background:transparent !important;border:0 !important;padding:0 !important}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-notifications .notif-page-filters{display:flex;flex-wrap:wrap;gap:8px;overflow:visible}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-notifications .notif-filter-btn{flex:0 0 auto !important;width:auto !important;height:36px;padding:0 18px;border-radius:4px !important;border:1px solid var(--nt-ln2) !important;background:transparent !important;color:var(--nt-mu) !important;font-weight:600;font-size:13px;box-shadow:none !important;cursor:pointer}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-notifications .notif-filter-btn:hover{border-color:var(--nt-fg) !important;color:var(--nt-fg) !important}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-notifications .notif-filter-btn.is-active{background:var(--nt-on) !important;color:var(--nt-onf) !important;border-color:var(--nt-on) !important}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-notifications .notif-list--page{background:var(--nt-sf) !important;border:1px solid var(--nt-ln2) !important;border-radius:6px !important;box-shadow:none !important;padding:0 !important;overflow:hidden;height:auto !important;max-height:none !important}
+html:root.mr-desktop-ui.mr-desktop-ui :is(#tab-notifications,#notifPanel) .notif-swipe{border-bottom:1px solid var(--nt-ln) !important;background:transparent !important}
+html:root.mr-desktop-ui.mr-desktop-ui :is(#tab-notifications,#notifPanel) .notif-swipe:last-child{border-bottom:0 !important}
+html:root.mr-desktop-ui.mr-desktop-ui :is(#tab-notifications,#notifPanel) .notif-item{background:var(--nt-sf) !important;color:var(--nt-fg) !important;border-radius:0 !important;box-shadow:none !important;padding:16px 20px;gap:14px;align-items:flex-start;transition:background .15s}
+html:root.mr-desktop-ui.mr-desktop-ui :is(#tab-notifications,#notifPanel) .notif-item:hover{background:var(--nt-hv) !important}
+html:root.mr-desktop-ui.mr-desktop-ui :is(#tab-notifications,#notifPanel) .notif-item.unread{background:var(--nt-hv) !important;box-shadow:inset 3px 0 0 var(--nt-on) !important}
+html:root.mr-desktop-ui.mr-desktop-ui :is(#tab-notifications,#notifPanel) .notif-item.unread::before{display:none !important}
+html:root.mr-desktop-ui.mr-desktop-ui :is(#tab-notifications,#notifPanel) .notif-icon{flex:0 0 auto;width:38px;height:38px;border-radius:4px !important;border:1px solid var(--nt-ln2) !important;background:transparent !important;color:var(--nt-fg) !important;display:inline-flex;align-items:center;justify-content:center;box-shadow:none !important}
+html:root.mr-desktop-ui.mr-desktop-ui :is(#tab-notifications,#notifPanel) .notif-icon i{color:var(--nt-fg) !important;font-size:15px}
+html:root.mr-desktop-ui.mr-desktop-ui :is(#tab-notifications,#notifPanel) .notif-title{color:var(--nt-fg) !important;font-weight:600;font-size:14px}
+html:root.mr-desktop-ui.mr-desktop-ui :is(#tab-notifications,#notifPanel) .notif-msg{color:var(--nt-mu) !important;font-size:13px;line-height:1.7}
+html:root.mr-desktop-ui.mr-desktop-ui :is(#tab-notifications,#notifPanel) .notif-time{color:var(--nt-mu) !important;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11px;margin-top:4px}
+html:root.mr-desktop-ui.mr-desktop-ui :is(#tab-notifications,#notifPanel) .notif-bc-tag{border-radius:3px !important;background:transparent !important;color:var(--nt-mu) !important;border:1px solid var(--nt-ln2) !important;font-size:11px}
+html:root.mr-desktop-ui.mr-desktop-ui :is(#tab-notifications,#notifPanel) .notif-empty{color:var(--nt-mu) !important;padding:56px 0}
+html:root.mr-desktop-ui.mr-desktop-ui :is(#tab-notifications,#notifPanel) .notif-empty i{color:var(--nt-ln2) !important;font-size:34px}
+/* dropdown from the bell */
+html:root.mr-desktop-ui.mr-desktop-ui #notifPanel{background:var(--nt-sf) !important;border:1px solid var(--nt-ln2) !important;border-radius:6px !important;box-shadow:0 12px 32px rgba(0,0,0,.18) !important;overflow:hidden}
+html:root.mr-desktop-ui.mr-desktop-ui #notifPanel .notif-header{background:transparent !important;border-bottom:1px solid var(--nt-ln) !important;padding:14px 18px}
+html:root.mr-desktop-ui.mr-desktop-ui #notifPanel .notif-header h4{color:var(--nt-fg) !important;font-weight:600;font-size:15px;margin:0}
+html:root.mr-desktop-ui.mr-desktop-ui #notifPanel .notif-count{color:var(--nt-mu) !important;font-size:12px}
+html:root.mr-desktop-ui.mr-desktop-ui #notifPanel .notif-item{padding:12px 16px}
+html:root.mr-desktop-ui.mr-desktop-ui:not([data-theme="dark"]) #appWrap header.topbar .topbar-brand-zone :is(img,svg){filter:brightness(0) invert(1) !important}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-notifications .notif-page-shell{width:100% !important;max-width:980px !important;box-sizing:border-box}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-notifications .notif-page-topbar__title{display:block !important;flex:1 1 auto}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-notifications .notif-list--page{flex:0 0 auto !important;min-height:0 !important}

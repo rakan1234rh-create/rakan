@@ -50,3 +50,23 @@ html:root.mr-mobile-ui #tab-notifications .notif-msg, html:root.mr-mobile-ui #ta
 html:root.mr-mobile-ui #tab-notifications .notif-icon { border-radius: 4px !important; background: var(--sh-sf) !important; color: var(--sh-fg) !important; border: 1px solid var(--sh-ln) !important; }
 html:root.mr-mobile-ui #tab-notifications .notif-icon i { color: var(--sh-fg) !important; }
 html:root.mr-mobile-ui #tab-notifications .notif-bc-tag { border-radius: 3px !important; background: transparent !important; color: var(--sh-mu) !important; border: 1px solid var(--sh-ln) !important; }
+
+/* ── notifications page: same design language as desktop ── */
+html:root.mr-mobile-ui.mr-mobile-ui #tab-notifications .notif-page-shell{padding:14px 16px 24px !important;display:flex;flex-direction:column;gap:14px;height:auto !important;background:transparent !important;box-sizing:border-box}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-notifications .notif-page-head{display:flex;flex-direction:column;gap:14px;background:transparent !important;border:0 !important;padding:0 !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-notifications .notif-page-topbar{display:flex !important;flex-direction:row;align-items:flex-end;justify-content:space-between;gap:12px;padding:0 !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-notifications .notif-page-back-group{order:2}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-notifications .notif-page-back__label{display:none !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-notifications .notif-page-topbar__title{order:1;display:block}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-notifications .notif-page-topbar__title::before{content:'NOTIFICATIONS';display:block;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11px;letter-spacing:.14em;color:var(--sh-mu);margin-bottom:4px}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-notifications .notif-page-topbar__heading{display:flex;align-items:baseline;gap:10px;margin:0}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-notifications .notif-page-topbar__heading-title{font-family:'Readex Pro','IBM Plex Sans Arabic',sans-serif;font-size:26px !important;font-weight:600}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-notifications .notif-page-filters{display:flex;gap:8px;overflow-x:auto;flex-wrap:nowrap;padding-bottom:2px;scrollbar-width:none}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-notifications .notif-page-filters::-webkit-scrollbar{display:none}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-notifications .notif-filter-btn{flex:0 0 auto !important;width:auto !important;height:36px;padding:0 16px;font-size:13px}
+@media (min-width:700px){html:root.mr-mobile-ui.mr-mobile-ui #tab-notifications .notif-page-filters{flex-wrap:wrap;overflow:visible}html:root.mr-mobile-ui.mr-mobile-ui #tab-notifications .notif-page-shell{max-width:820px;margin:0 auto;padding:22px 24px 32px !important}}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-notifications .notif-list--page{flex:0 0 auto !important;height:auto !important;min-height:0 !important;max-height:none !important;overflow:hidden;border-radius:6px !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-notifications .notif-item{padding:14px 16px !important;gap:12px;align-items:flex-start}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-notifications .notif-item.unread::before,html:root.mr-mobile-ui.mr-mobile-ui #tab-notifications .notif-item.unread::after{display:none !important;content:none !important;background:none !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-notifications .notif-time{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11px;margin-top:4px}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-notifications .notif-empty{padding:48px 0}
