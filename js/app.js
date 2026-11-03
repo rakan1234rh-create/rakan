@@ -14096,7 +14096,14 @@
               let score = 100; try { score = Math.round(Number(calcBranchSafety(b.id, vAll).score) || 0); } catch (_) {}
               return { id: String(b.id), rid: String(b.region_id || ''), name: b.name || '', region: reg ? reg.name : '—', mgr: mgr ? mgr.name : 'لا يوجد مدير', n: staff.length, score };
             });
-            container.innerHTML = window.AtharAdminDesign.branchesTable(rowsB, (v) => Sec.escapeHTML(String(v == null ? '' : v)));
+            const escF = (v) => Sec.escapeHTML(String(v == null ? '' : v));
+            const rowsR = visibleRegions.map((r) => {
+              const rb = state.branches.filter(b => b.region_id === r.id);
+              const sup = r.supervisor_id ? state.users.find(u => u.id === r.supervisor_id) : null;
+              return { id: String(r.id), name: r.name || '', sup: sup && sup.name ? sup.name : '', branches: rb.length, n: rb.reduce((a, b) => a + getBranchStaff(b.id).length, 0) };
+            });
+            container.innerHTML = '<div class="atu-sec-t" style="font-weight:700;margin:0 0 10px">المناطق</div>' + window.AtharAdminDesign.regionsTable(rowsR, canManageRegions, canDeleteRegionsPerm, escF) +
+              '<div class="atu-sec-t" style="font-weight:700;margin:26px 0 10px">الفروع</div>' + window.AtharAdminDesign.branchesTable(rowsB, escF);
             const cnt = document.getElementById('atuLocCount');
             if (cnt) cnt.textContent = visibleRegions.length + ' مناطق · ' + rowsB.length + ' فرعًا';
             setRegionsResultCount(rowsB.length);

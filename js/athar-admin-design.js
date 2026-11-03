@@ -10,6 +10,15 @@
     }).join('');
     return '<div class="atu-scroll"><table class="atu-table"><thead><tr><th scope="col">الاسم</th><th scope="col">الرقم الوظيفي</th><th scope="col">الدور</th><th scope="col">الفرع</th><th scope="col">الحالة</th><th scope="col">إجراء</th></tr></thead><tbody>' + body + '</tbody></table></div>';
   }
+  function regionsTable(rows, canManage, canDelete, e) {
+    var acts = canManage || canDelete;
+    var body = rows.map(function (r) {
+      var id = e(r.id).replace(/'/g, '&#39;');
+      return '<tr class="atu-tr" tabindex="0" onclick="openRegionView(\'' + id + '\')"><td>' + e(r.name) + '</td><td>' + (r.sup ? e(r.sup) : '<span class="atd-mu">لا يوجد مشرف</span>') + '</td><td class="atd-mono atu-no">' + r.branches + '</td><td class="atd-mono atu-no">' + r.n + '</td>' +
+        (acts ? '<td onclick="event.stopPropagation()">' + (canManage ? '<button type="button" class="atu-edit" onclick="editRegion(\'' + id + '\')">تعديل / المشرف</button>' : '') + (canDelete ? '<button type="button" class="atu-off" onclick="deleteRegion(\'' + id + '\')">حذف</button>' : '') + '</td>' : '') + '</tr>';
+    }).join('') || '<tr><td colspan="5" class="atu-empty">لا توجد مناطق</td></tr>';
+    return '<div class="atu-scroll"><table class="atu-table"><thead><tr><th scope="col">المنطقة</th><th scope="col">المشرف</th><th scope="col">الفروع</th><th scope="col">الموظفون</th>' + (acts ? '<th scope="col">إجراء</th>' : '') + '</tr></thead><tbody>' + body + '</tbody></table></div>';
+  }
   function branchesTable(rows, e) {
     var band = function (n) { return n >= 90 ? 'ex' : n >= 75 ? 'gd' : n >= 50 ? 'md' : 'bd'; };
     var body = rows.map(function (r) {
@@ -54,5 +63,5 @@
     }
   }
   setInterval(mount, 1000);
-  window.AtharAdminDesign = { usersTable: usersTable, branchesTable: branchesTable, typesTable: typesTable };
+  window.AtharAdminDesign = { regionsTable: regionsTable, usersTable: usersTable, branchesTable: branchesTable, typesTable: typesTable };
 })();
