@@ -97,3 +97,19 @@ html:root:root .date-picker-popup{border:1px solid #0a0a0a!important;border-radi
 html:root:root .dp-day.selected,html:root:root .dp-day.is-selected{background:#0a0a0a!important;color:#fff!important}
 html[data-theme="dark"]:root:root .date-picker-popup{border-color:#f2f2f2!important}
 html[data-theme="dark"]:root:root .dp-day.selected,html[data-theme="dark"]:root:root .dp-day.is-selected{background:#f2f2f2!important;color:#0a0a0a!important}
+/* polish */
+.as-btn.is-set{border-color:#0a0a0a;font-weight:700}
+.as-btn.is-set .as-chev{color:#0a0a0a}
+.as-btn{min-height:44px;border-radius:8px}
+.as-opt{min-height:40px}
+.as-opt.is-sel{background:#f4f4f4}
+.as-opt.is-act{outline:0;background:#ececec}
+.as-pop{border-radius:10px}
+.as-search{background:#fafafa}
+.rpf{padding:16px;border-radius:10px}
+.rpf-l{font-size:11.5px;letter-spacing:.02em}
+html[data-theme="dark"] .as-btn.is-set{border-color:#f2f2f2}
+html[data-theme="dark"] .as-btn.is-set .as-chev{color:#f2f2f2}
+html[data-theme="dark"] .as-opt.is-sel{background:#1d1d1d}
+html[data-theme="dark"] .as-opt.is-act{background:#262626}
+html[data-theme="dark"] .as-search{background:#1a1a1a}

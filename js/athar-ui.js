@@ -103,6 +103,7 @@
       v.textContent = o ? o.text : '';
       var ph = !o || o.value === '' || sel.value === '';
       btn.classList.toggle('is-ph', ph);
+      btn.classList.toggle('is-set', sel.selectedIndex > 0);
       btn.disabled = sel.disabled;
       wrap.classList.toggle('is-disabled', sel.disabled);
       if (sel.classList.contains('is-invalid') || sel.getAttribute('aria-invalid') === 'true') btn.classList.add('is-invalid'); else btn.classList.remove('is-invalid');

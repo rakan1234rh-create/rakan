@@ -30427,15 +30427,15 @@
         </div>`;
       }
 
-      function buildCmpPrintDocumentHtml(bodyHtml, title) {
+      function buildCmpPrintDocumentHtml(bodyHtml, title, styles) {
         return `<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="UTF-8">
           <title></title>
           <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700;800&display=swap" rel="stylesheet">
-          <style>${CMP_PDF_DOC_STYLES}</style></head><body>${bodyHtml}</body></html>`;
+          <style>${styles || CMP_PDF_DOC_STYLES}</style></head><body>${bodyHtml}</body></html>`;
       }
 
-      function printCmpPdfReport(bodyHtml, title) {
-        const html = buildCmpPrintDocumentHtml(bodyHtml, title);
+      function printCmpPdfReport(bodyHtml, title, styles) {
+        const html = buildCmpPrintDocumentHtml(bodyHtml, title, styles);
         const iframe = document.createElement('iframe');
         iframe.setAttribute('title', title || 'تصدير مؤشرات الامتثال');
         iframe.setAttribute('aria-hidden', 'true');
@@ -42804,6 +42804,51 @@
       window.submitResp = submitResp;
       window.filterReports = filterReports;
       window.filterReportsSearch = filterReportsSearch;
+      const RPT_PDF_STYLES = `
+    @page { size: A4 portrait; margin: 14mm 13mm 16mm; }
+    * { box-sizing: border-box; }
+    body { margin:0; direction:rtl; text-align:right; font-family:'IBM Plex Sans Arabic','Segoe UI',Tahoma,Arial,sans-serif; font-size:11px; line-height:1.55; color:#0a0a0a; background:#fff; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    .rp-top { display:flex; align-items:flex-end; justify-content:space-between; padding-bottom:10px; border-bottom:2px solid #0a0a0a; }
+    .rp-word { font:300 26px/1 'Helvetica Neue',Arial,sans-serif; letter-spacing:.32em; direction:ltr; }
+    .rp-meta { text-align:left; direction:ltr; font:500 9.5px/1.5 'Courier New',monospace; color:#555; letter-spacing:.08em; }
+    .rp-kick { margin:20px 0 2px; font:500 9.5px 'Courier New',monospace; letter-spacing:.2em; color:#666; direction:ltr; text-align:right; }
+    .rp-h1 { margin:0 0 4px; font-size:24px; font-weight:800; }
+    .rp-sub { margin:0 0 14px; color:#555; font-size:11px; }
+    .rp-chips { display:flex; flex-wrap:wrap; gap:6px; margin:0 0 16px; }
+    .rp-chip { border:1px solid #0a0a0a; border-radius:3px; padding:3px 9px; font-size:10.5px; }
+    .rp-chip b { font-weight:700; }
+    .rp-chip--all { border-color:#bbb; color:#666; }
+    .rp-kpis { display:grid; grid-template-columns:repeat(4,1fr); gap:0; border:1px solid #0a0a0a; margin-bottom:18px; }
+    .rp-kpi { padding:12px 10px; border-inline-start:1px solid #d4d4d4; text-align:center; }
+    .rp-kpi:first-child { border-inline-start:0; }
+    .rp-kpi__n { font:600 26px/1.1 'Courier New',monospace; direction:ltr; }
+    .rp-kpi__l { margin-top:4px; font-size:10px; color:#555; font-weight:600; }
+    .rp-two { display:grid; grid-template-columns:1.15fr 1fr; gap:14px; margin-bottom:18px; }
+    .rp-card { border:1px solid #d4d4d4; padding:12px 14px; page-break-inside:avoid; }
+    .rp-card h2 { margin:0 0 10px; font-size:13px; font-weight:800; }
+    .rp-bars { display:flex; align-items:flex-end; gap:8px; height:120px; border-bottom:1px solid #0a0a0a; }
+    .rp-bar { flex:1; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; height:100%; }
+    .rp-bar i { display:block; width:100%; background:#0a0a0a; min-height:1px; }
+    .rp-bar span { font:600 10px 'Courier New',monospace; margin-bottom:2px; }
+    .rp-lbls { display:flex; gap:8px; margin-top:4px; }
+    .rp-lbls span { flex:1; text-align:center; font-size:9.5px; color:#555; }
+    .rp-top-row { display:grid; grid-template-columns:1fr 70px 24px; gap:8px; align-items:center; margin:6px 0; font-size:10.5px; }
+    .rp-trk { height:7px; background:#ececec; }
+    .rp-trk i { display:block; height:100%; background:#0a0a0a; }
+    .rp-top-row b { font:600 10.5px 'Courier New',monospace; text-align:left; direction:ltr; }
+    .rp-sec { margin:4px 0 8px; font-size:14px; font-weight:800; display:flex; justify-content:space-between; align-items:baseline; }
+    .rp-sec small { font:500 10px 'Courier New',monospace; color:#666; }
+    table.rp-t { width:100%; border-collapse:collapse; font-size:10.5px; }
+    .rp-t thead { display:table-header-group; }
+    .rp-t th { background:#0a0a0a; color:#fff; font-weight:700; text-align:right; padding:6px 8px; }
+    .rp-t td { padding:6px 8px; border-bottom:1px solid #e2e2e2; vertical-align:top; }
+    .rp-t tr { page-break-inside:avoid; }
+    .rp-t tbody tr:nth-child(even) td { background:#f7f7f7; }
+    .rp-mono { font-family:'Courier New',monospace; direction:ltr; unicode-bidi:embed; white-space:nowrap; }
+    .rp-st { display:inline-block; border:1px solid #0a0a0a; padding:0 7px; border-radius:3px; font-size:9.5px; font-weight:600; white-space:nowrap; }
+    .rp-none { padding:16px; text-align:center; color:#666; border:1px dashed #bbb; }
+    .rp-foot { margin-top:18px; padding-top:8px; border-top:1px solid #0a0a0a; display:flex; justify-content:space-between; font:500 9px 'Courier New',monospace; color:#666; letter-spacing:.08em; direction:ltr; }
+  `;
       function exportReportsSummaryPDF() {
         const m = window.__rpModel;
         if (!m) return showToast('لا توجد بيانات للتصدير', 'warning');
@@ -42811,13 +42856,31 @@
           const e = (v) => Sec.escapeHTML(String(v == null ? '' : v));
           const rows = getReportsFilteredViolations().filter(v => v.state !== 'uploading');
           const fd = rpfDescribe();
-          const filt = fd.length ? `<p style="margin:0 0 10px"><b>الفلاتر:</b> ${fd.map(x => e(x[0]) + ': ' + e(x[1])).join(' · ')}</p>` : '<p style="margin:0 0 10px">الفلاتر: الكل</p>';
-          const det = rows.slice(0, 500).map(v => `<tr><td>${e(shortTicketNum(v.ticket_number))}</td><td>${e(v._empName)}</td><td>${e(v._branchName)}</td><td>${e(v.violation_type)}</td><td>${e(v.violation_date || '')}</td><td>${e(v.status_text || STATE_LABELS[v.state] || '')}</td></tr>`).join('');
-          const body = `<h2>ملخص التقارير</h2>${filt}<table><thead><tr><th>المؤشر</th><th>القيمة</th></tr></thead><tbody>${m.kpis.map(k => `<tr><td>${e(k[1])}</td><td>${e(k[0])}</td></tr>`).join('')}</tbody></table>
-            <h2>المخالفات الشهرية</h2><table><thead><tr><th>الشهر</th><th>العدد</th></tr></thead><tbody>${m.months.map(x => `<tr><td>${e(x.l)}</td><td>${e(x.n)}</td></tr>`).join('')}</tbody></table>
-            <h2>أكثر المخالفات تكرارًا</h2><table><thead><tr><th>النوع</th><th>العدد</th></tr></thead><tbody>${m.tops.map(x => `<tr><td>${e(x.name)}</td><td>${e(x.n)}</td></tr>`).join('')}</tbody></table>
-            <h2>تفاصيل المخالفات (${rows.length})</h2><table><thead><tr><th>التذكرة</th><th>الموظف</th><th>الفرع</th><th>النوع</th><th>التاريخ</th><th>الحالة</th></tr></thead><tbody>${det || '<tr><td colspan="6">لا توجد مخالفات</td></tr>'}</tbody></table>`;
-          printCmpPdfReport(body, 'ملخص التقارير');
+          const now = new Date();
+          const stamp = now.toLocaleDateString('en-GB', { timeZone: 'Asia/Riyadh' }) + ' ' + now.toLocaleTimeString('en-GB', { timeZone: 'Asia/Riyadh', hour: '2-digit', minute: '2-digit' });
+          const chips = fd.length ? fd.map(x => `<span class="rp-chip">${e(x[0])}: <b>${e(x[1])}</b></span>`).join('') : '<span class="rp-chip rp-chip--all">كل البيانات — بدون فلاتر</span>';
+          const mmax = Math.max.apply(null, m.months.map(x => x.n).concat([1]));
+          const bars = m.months.map(x => `<div class="rp-bar"><span>${x.n}</span><i style="height:${Math.round(x.n / mmax * 100)}%"></i></div>`).join('');
+          const lbls = m.months.map(x => `<span>${e(x.l)}</span>`).join('');
+          const tmax = Math.max.apply(null, m.tops.map(x => x.n).concat([1]));
+          const tops = m.tops.length ? m.tops.map(x => `<div class="rp-top-row"><span>${e(x.name)}</span><div class="rp-trk"><i style="width:${Math.round(x.n / tmax * 100)}%"></i></div><b>${x.n}</b></div>`).join('') : '<div class="rp-none">لا توجد مخالفات</div>';
+          const LIM = 400;
+          const det = rows.slice(0, LIM).map(v => `<tr><td class="rp-mono">${e(shortTicketNum(v.ticket_number))}</td><td>${e(v._empName)}</td><td>${e(v._branchName)}</td><td>${e(v.violation_type)}</td><td class="rp-mono">${e(v.violation_date || '')}</td><td><span class="rp-st">${e(v.status_text || STATE_LABELS[v.state] || '')}</span></td></tr>`).join('');
+          const body = `
+            <div class="rp-top"><div class="rp-word">ATHAR</div><div class="rp-meta">VIOLATIONS REPORT<br>${e(stamp)}</div></div>
+            <div class="rp-kick">REPORTS SUMMARY</div>
+            <h1 class="rp-h1">تقرير المخالفات</h1>
+            <p class="rp-sub">${e(m.month + ' ' + m.year)} · ${rows.length} مخالفة</p>
+            <div class="rp-chips">${chips}</div>
+            <div class="rp-kpis">${m.kpis.map(k => `<div class="rp-kpi"><div class="rp-kpi__n">${e(k[0])}</div><div class="rp-kpi__l">${e(k[1])}</div></div>`).join('')}</div>
+            <div class="rp-two">
+              <div class="rp-card"><h2>المخالفات الشهرية — آخر 6 أشهر</h2><div class="rp-bars">${bars}</div><div class="rp-lbls">${lbls}</div></div>
+              <div class="rp-card"><h2>أكثر المخالفات تكرارًا</h2>${tops}</div>
+            </div>
+            <div class="rp-sec"><span>تفاصيل المخالفات</span><small>${rows.length}${rows.length > LIM ? ' · عرض أول ' + LIM : ''}</small></div>
+            ${rows.length ? `<table class="rp-t"><thead><tr><th>التذكرة</th><th>الموظف</th><th>الفرع</th><th>النوع</th><th>التاريخ</th><th>الحالة</th></tr></thead><tbody>${det}</tbody></table>` : '<div class="rp-none">لا توجد مخالفات مطابقة للفلاتر</div>'}
+            <div class="rp-foot"><span>ATHAR</span><span>${e(stamp)}</span></div>`;
+          printCmpPdfReport(body, 'تقرير المخالفات', RPT_PDF_STYLES);
           showToast('اختر «حفظ كـ PDF» من نافذة الطباعة', 'info');
         } catch (_) { showToast('تعذّر تصدير PDF', 'error'); }
       }
