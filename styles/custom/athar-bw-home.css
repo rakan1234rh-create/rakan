@@ -123,7 +123,4 @@ html:root .rd-h-tiles { grid-template-columns: repeat(3, 1fr); }
 .rd-h-row--a.rd-h-row--1{grid-template-columns:1fr !important}
 html:root.mr-mobile-ui .rd-mob-dash .rd-h-row--a.rd-h-row--1{grid-template-columns:1fr !important}
 
-html:root .rd-h-list__r.is-me { background: var(--hm-fg); color: var(--hm-bg); margin: 0 -10px; padding: 9px 10px; border-radius: 4px; border-bottom-color: transparent; }
-html:root .rd-h-list__r.is-me .rd-h-mu, html:root .rd-h-list__r.is-me .rd-rl-num { color: var(--hm-bg); }
-html:root .rd-h-list__r.is-me .rd-h-meter { background: rgba(128,128,128,.35); }
-html:root .rd-h-me { font-style: normal; font-size: 10px; font-weight: 700; letter-spacing: 0; margin-inline-start: 6px; padding: 1px 6px; border: 1px solid currentColor; border-radius: 3px; white-space: nowrap; }
+html:root .rd-h-list__r.is-me { background: rgba(128,128,128,.14); margin: 0 -10px; padding: 9px 10px; border-radius: 4px; border-bottom-color: transparent; font-weight: 700; }

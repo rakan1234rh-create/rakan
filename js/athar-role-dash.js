@@ -143,7 +143,7 @@
     if (!staff.some(function (u) { return u.id === me.id; })) staff.push(me);
     var list = staff.map(function (u) { return { u: u, s: scoreOfEmp(u.id, scope), me: u.id === me.id }; }).sort(function (a, b) { return b.s - a.s; });
     return '<section class="rd-h-card"><div class="rd-h-rank"><div><div class="rd-h-card__t">ترتيب موظفي الفرع</div><div class="rd-rl-sub">' + esc(branchName(me.branch_id)) + ' · ' + (list.length - 1) + ' موظف + أنت</div></div></div><div class="rd-h-list">' +
-      list.slice(0, 10).map(function (r, i) { var b = band(r.s)[1]; return '<div class="rd-h-list__r' + (r.me ? ' is-me' : '') + '"><span class="rd-rl-num rd-h-mu">' + (i + 1) + '</span><span>' + esc(r.u.name) + (r.me ? ' <em class="rd-h-me">أنت · مدير الفرع</em>' : '') + '</span><span class="rd-h-meter"><i style="width:' + Math.max(0, Math.min(100, r.s)) + '%;background:' + COL[b] + '"></i></span><span class="rd-rl-num">' + r.s + '</span></div>'; }).join('') +
+      list.slice(0, 10).map(function (r, i) { var b = band(r.s)[1]; return '<div class="rd-h-list__r' + (r.me ? ' is-me' : '') + '"><span class="rd-rl-num rd-h-mu">' + (i + 1) + '</span><span>' + esc(r.u.name) + '</span><span class="rd-h-meter"><i style="width:' + Math.max(0, Math.min(100, r.s)) + '%;background:' + COL[b] + '"></i></span><span class="rd-rl-num">' + r.s + '</span></div>'; }).join('') +
       (list.length ? '' : '<div class="rd-rl-empty">لا توجد بيانات</div>') + '</div></section>';
   }
   function recentCard(title, items) {
