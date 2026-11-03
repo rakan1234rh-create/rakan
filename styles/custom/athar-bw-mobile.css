@@ -77,3 +77,8 @@ html:root.mr-mobile-ui.mr-profile-page-active.mr-profile-page-active #appWrap .m
 html:root.mr-mobile-ui.mr-mobile-ui:has(#tab-profile.active) #appWrap > .app-shell > #mobileBottomNav.mobile-bottom-nav,
 html:root.mr-mobile-ui.mr-mobile-ui.mr-profile-page-active #appWrap > .app-shell > #mobileBottomNav.mobile-bottom-nav{display:flex !important;visibility:visible !important;pointer-events:auto !important;opacity:1 !important}
 html:root.mr-mobile-ui.mr-profile-page-active #appWrap .main::after{display:block !important}
+
+/* beat legacy per-tab locks such as .main:has(#tab-workflow.active){overflow:hidden} (triple id for specificity) */
+html:root.mr-mobile-ui.mr-mobile-ui #appWrap#appWrap#appWrap .main{overflow-y:auto !important;overflow-x:hidden !important;display:block !important;height:auto;max-height:none}
+html:root.mr-mobile-ui.mr-mobile-ui #appWrap#appWrap#appWrap .main > .content{overflow:visible !important;height:auto !important;max-height:none !important;display:block !important}
+html:root.mr-mobile-ui.mr-mobile-ui #appWrap#appWrap#appWrap .content > .tab-content.active{overflow:visible !important;height:auto !important;max-height:none !important}
