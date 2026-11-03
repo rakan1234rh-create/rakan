@@ -34069,6 +34069,25 @@
             const on = perm === 'granted';
             profileToggle.classList.toggle('push-toggle--on', on);
             profileToggle.setAttribute('aria-pressed', on ? 'true' : 'false');
+            profileToggle.hidden = true;
+            let st = document.getElementById('profilePagePushStatus');
+            if (!st) {
+              st = document.createElement('span');
+              st.id = 'profilePagePushStatus';
+              profileToggle.insertAdjacentElement('afterend', st);
+            }
+            if (on) {
+              st.className = 'pf-push pf-push--on';
+              st.innerHTML = '<i class="fas fa-circle-check" aria-hidden="true"></i> تم التفعيل';
+              st.onclick = null;
+              st.removeAttribute('role');
+            } else {
+              st.className = 'pf-push pf-push--btn';
+              st.setAttribute('role', 'button');
+              st.tabIndex = 0;
+              st.textContent = perm === 'denied' ? 'فعّل من إعدادات الجهاز' : 'تفعيل التنبيهات';
+              st.onclick = (e) => toggleWebPushFromMenu(e);
+            }
           }
         }
       }

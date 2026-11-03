@@ -33,3 +33,11 @@ html:root.mr-mobile-ui.mr-mobile-ui #tab-profile .profile-page-shell{padding:12p
 html:root.mr-mobile-ui.mr-mobile-ui #tab-profile .profile-page-body{grid-template-columns:minmax(0,1fr) !important}
 html:root.mr-mobile-ui.mr-mobile-ui #tab-profile .profile-page-body>*{grid-column:1 !important;grid-row:auto !important}
 html:root.mr-mobile-ui.mr-mobile-ui #tab-profile .profile-hero{padding:18px}
+
+/* push status in profile */
+#tab-profile .pf-push{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 14px;border-radius:4px;font-size:13px;font-weight:600;white-space:nowrap}
+#tab-profile .pf-push--on{background:#DDF3E8;color:#11623F}
+html[data-theme="dark"] #tab-profile .pf-push--on{background:#123524;color:#6FD3A3}
+#tab-profile .pf-push--btn{background:#0A0A0A;color:#fff;cursor:pointer;border:1px solid #0A0A0A}
+html[data-theme="dark"] #tab-profile .pf-push--btn{background:#F2F2F2;color:#0A0A0A;border-color:#F2F2F2}
+#tab-profile #profilePagePushToggle{display:none !important}
