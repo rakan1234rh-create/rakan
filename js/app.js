@@ -7889,7 +7889,7 @@
           else if (tab === 'violations' && typeof renderViolTypes === 'function') renderViolTypes();
           else if (tab === 'breaks' && typeof renderStaffBreaksPage === 'function') renderStaffBreaksPage({ soft: true });
           else if (tab === 'complaints') {
-            if (typeof isMobileViewport === 'function' && isMobileViewport()) {
+            if (false) {
               if (typeof renderComplaintsPage === 'function') renderComplaintsPage();
             } else if (typeof renderComplaintsDesktop === 'function') {
               renderComplaintsDesktop();
@@ -10176,7 +10176,7 @@
             try {
               const deskPanel = document.querySelector('.rd-complaints-desk-panel');
               const mobPanel = document.querySelector('.rd-complaints-mob-panel');
-              const isMob = typeof isMobileViewport === 'function' && isMobileViewport();
+              const isMob = false; /* الجوال يستخدم نفس تصميم سطح المكتب */
               if (deskPanel) deskPanel.hidden = !!isMob;
               if (mobPanel) mobPanel.hidden = !isMob;
               if (isMob) {
@@ -11347,7 +11347,7 @@
           renderStaffBreaksPage({ soft: true });
         }
         if (document.getElementById('tab-complaints')?.classList.contains('active')) {
-          if (typeof isMobileViewport === 'function' && isMobileViewport()) {
+          if (false) {
             if (typeof renderComplaintsPage === 'function') renderComplaintsPage({ soft: true });
           } else if (typeof renderComplaintsDesktop === 'function') {
             renderComplaintsDesktop({ soft: true });
@@ -40844,7 +40844,7 @@
       async function renderComplaintsDesktop(opts = {}) {
         const host = document.getElementById('rdComplaintsHost');
         if (!host) return;
-        if (!isAtharDesktopScreenUi()) {
+        if (!isAtharDesktopScreenUi() && !document.documentElement.classList.contains('mr-mobile-ui')) {
           host.innerHTML = '<div class="rd-ticket-empty"><i class="fas fa-desktop"></i><p>شاشة الشكاوى متاحة على سطح المكتب</p></div>';
           rdCmplOverlayHost().innerHTML = '';
           return;
