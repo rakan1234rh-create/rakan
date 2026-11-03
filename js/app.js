@@ -13239,6 +13239,13 @@
         const host = document.getElementById('rdDash');
         if (!host) return;
         const me = state.currentUser;
+        if (window.AtharRoleDash && me) {
+          try {
+            host.innerHTML = '<div class="rd-screen rd-desk-dash rd-mob-dash"></div>';
+            window.AtharRoleDash.apply(host, { role: normalizeUserRole(me?.role), me, visible, allVisible });
+            if (host.querySelector('.rd-desk-dash--h')) { host.hidden = false; return; }
+          } catch (_) { /* fall back to legacy mobile home */ }
+        }
         const monthLbl = formatDashMonthYear(ksaNowParts.year, ksaNowParts.month);
         const greetingDate = document.getElementById('dash-date-kicker')?.textContent || '—';
         const greetingName = me?.name || '—';

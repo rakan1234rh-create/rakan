@@ -1,0 +1,63 @@
+/* ATHAR — black & white mobile / iPad shell + home. Scoped to html.mr-mobile-ui. */
+html:root.mr-mobile-ui.mr-mobile-ui { --mb-bar: #0a0a0a; --mb-barfg: #f2f2f2; --mb-barmu: #8a8a8a; }
+/* top bar */
+html:root.mr-mobile-ui.mr-mobile-ui #appWrap header.topbar.unified-banner {
+  background: var(--mb-bar) !important; color: var(--mb-barfg) !important; border: 0 !important;
+  border-bottom: 1px solid #262626 !important; box-shadow: none !important; backdrop-filter: none !important; border-radius: 0 !important;
+}
+html:root.mr-mobile-ui.mr-mobile-ui #appWrap header.topbar .topbar-clock,
+html:root.mr-mobile-ui.mr-mobile-ui #appWrap header.topbar .rd-top-titles,
+html:root.mr-mobile-ui.mr-mobile-ui #appWrap header.topbar i,
+html:root.mr-mobile-ui.mr-mobile-ui #appWrap header.topbar button { color: var(--mb-barfg) !important; }
+html:root.mr-mobile-ui.mr-mobile-ui #appWrap header.topbar .rd-h-theme { border: 1px solid #3a3a3a; border-radius: 4px; overflow: hidden; display: inline-flex; background: transparent; }
+html:root.mr-mobile-ui.mr-mobile-ui #appWrap header.topbar .rd-h-theme button { width: 34px; height: 32px; border: 0; background: transparent; color: var(--mb-barmu) !important; }
+html:root.mr-mobile-ui.mr-mobile-ui #appWrap header.topbar .rd-h-theme button.is-on { background: #f2f2f2; color: #0a0a0a !important; }
+html:root.mr-mobile-ui.mr-mobile-ui #appWrap header.topbar .rd-h-theme button.is-on i { color: #0a0a0a !important; }
+/* bottom nav */
+html:root.mr-mobile-ui.mr-mobile-ui nav#mobileBottomNav.mobile-bottom-nav {
+  background: var(--mb-bar) !important; border: 0 !important; border-top: 1px solid #262626 !important;
+  box-shadow: none !important; backdrop-filter: none !important; border-radius: 0 !important;
+}
+html:root.mr-mobile-ui.mr-mobile-ui #mobileBottomNav .mob-nav-item { background: transparent !important; color: var(--mb-barmu) !important; border-radius: 0 !important; box-shadow: none !important; }
+html:root.mr-mobile-ui.mr-mobile-ui #mobileBottomNav .mob-nav-item i,
+html:root.mr-mobile-ui.mr-mobile-ui #mobileBottomNav .mob-nav-item span { color: inherit !important; }
+html:root.mr-mobile-ui.mr-mobile-ui #mobileBottomNav .mob-nav-item.active { color: #fff !important; box-shadow: inset 0 2px 0 #fff !important; }
+
+/* home (reuses desktop role dashboard markup) */
+html:root.mr-mobile-ui .rd-mob-dash { padding: 16px 14px 24px; gap: 14px; }
+html:root.mr-mobile-ui .rd-mob-dash .rd-h-head h1 { font-size: 24px; }
+html:root.mr-mobile-ui .rd-mob-dash .rd-h-row--a,
+html:root.mr-mobile-ui .rd-mob-dash .rd-h-row--b { grid-template-columns: 1fr; gap: 14px; }
+html:root.mr-mobile-ui .rd-mob-dash .rd-h-card { padding: 16px; }
+html:root.mr-mobile-ui .rd-mob-dash .rd-h-hero__row { gap: 14px; }
+html:root.mr-mobile-ui .rd-mob-dash .rd-h-ring { width: 104px; height: 104px; }
+html:root.mr-mobile-ui .rd-mob-dash .rd-h-ring svg { width: 104px; height: 104px; }
+html:root.mr-mobile-ui .rd-mob-dash .rd-h-ring__n { font-size: 28px; }
+html:root.mr-mobile-ui .rd-mob-dash .rd-h-stats > div { padding-inline: 8px; }
+html:root.mr-mobile-ui .rd-mob-dash .rd-h-stats__v .rd-rl-num { font-size: 22px; }
+html:root.mr-mobile-ui .rd-mob-dash .rd-h-stats__l { font-size: 11px; }
+html:root.mr-mobile-ui .rd-mob-dash .rd-h-list__r { grid-template-columns: 20px 1fr 70px 34px; gap: 8px; }
+html:root.mr-mobile-ui .rd-mob-dash .rd-h-tiles,
+html:root.mr-mobile-ui .rd-mob-dash .rd-rl-kpis { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+html:root.mr-mobile-ui .rd-mob-dash .rd-rl-kpi { padding: 14px 10px; }
+html:root.mr-mobile-ui .rd-mob-dash .rd-rl-kpi__v .rd-rl-num { font-size: 24px; }
+/* tables: allow horizontal scroll rather than crushing columns */
+html:root.mr-mobile-ui .rd-mob-dash .rd-rl-table { overflow-x: auto; }
+html:root.mr-mobile-ui .rd-mob-dash .rd-rl-tr { min-width: 440px; padding: 12px; }
+/* iPad */
+@media (min-width: 700px) {
+  html:root.mr-mobile-ui .rd-mob-dash { padding: 24px 24px 32px; max-width: 980px; margin-inline: auto; }
+  html:root.mr-mobile-ui .rd-mob-dash .rd-h-head h1 { font-size: 30px; }
+  html:root.mr-mobile-ui .rd-mob-dash .rd-h-row--a { grid-template-columns: 1.15fr 1fr; }
+  html:root.mr-mobile-ui .rd-mob-dash .rd-h-row--b { grid-template-columns: 1.3fr 1fr; }
+  html:root.mr-mobile-ui .rd-mob-dash .rd-rl-tr { min-width: 0; }
+}
+/* wordmark on the black bar */
+html:root.mr-mobile-ui.mr-mobile-ui #appWrap header.topbar .topbar-brand-zone img.wefaq-app-logo { filter: brightness(0) invert(1) !important; opacity: 1 !important; visibility: visible !important; }
+html:root.mr-mobile-ui.mr-mobile-ui #appWrap header.topbar .topbar-brand-zone { display: flex !important; width: auto !important; flex: 0 0 auto; align-items: center; }
+html:root.mr-mobile-ui.mr-mobile-ui #appWrap header.topbar .topbar-brand-zone .brand-area { display: flex !important; align-items: center; }
+html:root.mr-mobile-ui.mr-mobile-ui #appWrap header.topbar .topbar-brand-zone .brand-icon { width: auto !important; height: 26px !important; }
+html:root.mr-mobile-ui.mr-mobile-ui #appWrap header.topbar .topbar-brand-zone img.wefaq-app-logo { height: 24px !important; width: auto !important; display: block !important; transform: none !important; }
+html:root.mr-mobile-ui.mr-mobile-ui #appWrap header.topbar #notifBellBtn,
+html:root.mr-mobile-ui.mr-mobile-ui #appWrap header.topbar #topbarUserMenuBtn { background: #1a1a1a !important; border: 1px solid #333 !important; box-shadow: none !important; }
+html:root.mr-mobile-ui.mr-mobile-ui #appWrap header.topbar #topbarUserMenuBtn *:not(img) { background: transparent !important; color: #f2f2f2 !important; }
