@@ -152,6 +152,26 @@
     if (!h || !h.trim()) h = '<div class="atd-mu atd-nofile">لا توجد ردود أو سجل بعد</div>';
     return '<div class="atd-replies"><h3 class="atd-h3">الردود وسجل التذكرة</h3><div class="atd-logs">' + h + '</div></div>';
   }
+  function cdHtml(t, i) {
+    var code = i === 0 ? 'emp' : i === 1 ? 'sup' : ''; if (!code) return '';
+    var m = null; try { m = B().sla(t, code); } catch (_) {}
+    if (!m) return '';
+    return '<div class="atd-cd" data-start="' + esc(m.startISO || '') + '" data-deadline="' + esc(m.deadlineISO || '') + '" data-limit="' + esc(m.limitH || 24) + '"><span class="atd-cd__l">المتبقي لتمرير المخالفة تلقائيًا</span><span class="atd-cd__v atd-mono" dir="ltr">--:--:--</span><span class="atd-cd__bar"><i></i></span></div>';
+  }
+  function tickCd() {
+    var list = document.querySelectorAll('.atd-cd'); if (!list.length) return;
+    list.forEach(function (c) {
+      var lim = parseFloat(c.getAttribute('data-limit')) || 24, dl = new Date(c.getAttribute('data-deadline')).getTime(), st = new Date(c.getAttribute('data-start')).getTime();
+      if (isNaN(dl)) { if (!isNaN(st)) dl = st + lim * 3600000; else return; }
+      var rem = dl - Date.now(), v = c.querySelector('.atd-cd__v'), bar = c.querySelector('.atd-cd__bar i');
+      if (rem <= 0) { v.textContent = '00:00:00'; c.classList.add('is-over'); c.classList.remove('is-warn'); if (bar) bar.style.width = '100%'; return; }
+      var T = Math.floor(rem / 1000), h = Math.floor(T / 3600), mi = Math.floor(T % 3600 / 60), se = T % 60, p = function (n) { return String(n).padStart(2, '0'); };
+      v.textContent = p(h) + ':' + p(mi) + ':' + p(se);
+      var frac = rem / (lim * 3600000); c.classList.toggle('is-warn', frac <= 0.2); c.classList.remove('is-over');
+      if (bar) bar.style.width = Math.min(100, Math.max(0, (1 - frac) * 100)) + '%';
+    });
+  }
+  setInterval(tickCd, 1000);
   function aside() {
     var el = document.getElementById('atdAside'), b = B(); if (!el || !b) return;
     var t = (b.state.violations || []).filter(function (v) { return v.id === S.sel; })[0];
@@ -166,7 +186,7 @@
     var sx = Math.min(st, 5);
     var steps = STEPS.map(function (n, i) {
       var done = i < sx, now = i === sx; if (i === 5 && st >= 5) n = NAMES[st];
-      return '<li class="atd-step"><div class="atd-step__rail"><i class="atd-dot ' + (done ? 'is-done' : now ? 'is-now' : '') + '"></i><i class="atd-line' + (i < sx ? ' is-done' : '') + '"></i></div><div class="atd-step__t"><div class="' + (now ? 'is-now' : done ? '' : 'is-off') + '">' + esc(n) + '</div><div class="atd-mu">' + (done ? 'تم' : now ? (st >= 5 ? 'أُغلقت التذكرة' : 'بانتظار الإجراء') : '') + '</div></div></li>';
+      return '<li class="atd-step"><div class="atd-step__rail"><i class="atd-dot ' + (done ? 'is-done' : now ? 'is-now' : '') + '"></i><i class="atd-line' + (i < sx ? ' is-done' : '') + '"></i></div><div class="atd-step__t"><div class="' + (now ? 'is-now' : done ? '' : 'is-off') + '">' + esc(n) + '</div><div class="atd-mu">' + (done ? 'تم' : now ? (st >= 5 ? 'أُغلقت التذكرة' : 'بانتظار الإجراء') : '') + '</div>' + (now ? cdHtml(t, i) : '') + '</div></li>';
     }).join('');
     var btns = [];
     if (b.state.editingTicket && b.state.editingTicket.id === t.id && S.loading !== t.id) {
@@ -190,6 +210,8 @@
       '<p class="atd-desc">' + esc(t.description || '—') + '</p>' +
       '<div><h3 class="atd-h3">المرفقات</h3>' + (files || '<div class="atd-mu atd-nofile">لا توجد مرفقات</div>') + '</div>' +
       '<ol class="atd-steps" aria-label="مسار التذكرة">' + steps + '</ol>' + replies(t) + act;
+    tickCd();
+    if (S.pendingScroll) { S.pendingScroll = false; setTimeout(function () { try { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_) {} }, 150); }
   }
 
   document.addEventListener('click', function (e) {
@@ -226,5 +248,12 @@
   document.addEventListener('input', function (e) {
     if (e.target && e.target.id === 'atdResp') { S.resp[S.sel] = e.target.value; var r = document.getElementById('respText'); if (r) r.value = e.target.value; }
   });
-  window.AtharTicketsDesign = { render: render, sevOf: sevOf, fdate: fdate, esc: esc };
+  function selectTicket(id) {
+    var b = B(); if (!b) return false;
+    S.sel = id; S.pendingScroll = true; S.f = { branch: '', emp: '', stage: '', status: '', from: S.f.from, to: S.f.to };
+    var tab = document.getElementById('tab-workflow');
+    if (tab && tab.classList.contains('active')) b.refilter(); else b.goWorkflow();
+    return true;
+  }
+  window.AtharTicketsDesign = { select: selectTicket, render: render, sevOf: sevOf, fdate: fdate, esc: esc };
 })();

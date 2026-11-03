@@ -23128,6 +23128,14 @@
         const t = state.violations.find(v => v.id === id);
         if (!t) return showToast('التذكرة غير موجودة', 'error');
 
+        /* الجوال: التفاصيل تُعرض في صفحة التذاكر الجديدة بدل الورقة القديمة */
+        if (!window.__atdSilent && window.AtharTicketsDesign && window.AtharTicketsDesign.select
+          && document.documentElement.classList.contains('mr-mobile-ui')
+          && !document.querySelector('.modal.open')
+          && !document.body.classList.contains('ticket-over-cmp')) {
+          try { if (window.AtharTicketsDesign.select(id)) return; } catch (_) { /* fall through to legacy sheet */ }
+        }
+
         enrichViolationLite(t);
         state.editingTicket = t;
         void cleanupUploadSession('resp');
@@ -42618,7 +42626,9 @@
         isDesktop: () => (typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi()),
         refilter: () => filterTickets(),
         setDateRange: (from, to) => { wfDpState.from = from || ''; wfDpState.to = to || ''; wfDpApplied.from = from || ''; wfDpApplied.to = to || ''; filterTickets(); },
-        terminal: (t) => (typeof getWfTerminalOutcome === 'function' ? getWfTerminalOutcome(t) : null)
+        terminal: (t) => (typeof getWfTerminalOutcome === 'function' ? getWfTerminalOutcome(t) : null),
+        sla: (t, code) => (typeof getWfStepSlaMeta === 'function' ? getWfStepSlaMeta(t, code) : null),
+        goWorkflow: () => { goTab('workflow', typeof getNavButtonForTab === 'function' ? getNavButtonForTab('workflow') : null); }
       };
       window.rdOpenReportView = rdOpenReportView;
       window.rdBackReportsMain = rdBackReportsMain;
