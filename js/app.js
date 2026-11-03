@@ -28687,7 +28687,7 @@
         const cmpSearchPh = cmpSearchPlaceholder(view);
         if (!cmpDataPending) cmpSnapshotBoardAnim(board);
 
-        if (rdCmp && !cmpDataPending && window.AtharComplianceDesign && typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi()
+        if (rdCmp && !cmpDataPending && window.AtharComplianceDesign && ((typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi()) || (typeof isMobileViewport === 'function' && isMobileViewport()))
           && (view === 'regions' || (view === 'branches' && !state._cmpDrill.regionId))) {
           try {
             const rowsD = (state.branches || []).map((b) => {
@@ -28705,7 +28705,7 @@
             board.classList.add('atq-board');
             return;
           } catch (e) { console.warn('[atq]', e); }
-        } else if (rdCmp && !cmpDataPending && window.AtharComplianceDesign && window.AtharComplianceDesign.drill && typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi()
+        } else if (rdCmp && !cmpDataPending && window.AtharComplianceDesign && window.AtharComplianceDesign.drill && ((typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi()) || (typeof isMobileViewport === 'function' && isMobileViewport()))
           && ((view === 'branches' && state._cmpDrill.regionId) || (view === 'employees' && state._cmpDrill.branchId))) {
           try {
             const escF = (v) => Sec.escapeHTML(String(v == null ? '' : v));
@@ -28723,7 +28723,7 @@
               const reg = state.regions.find(r => r.id === state._cmpDrill.regionId);
               const rowsD = getBranchStaff(state._cmpDrill.branchId).map((u) => {
                 let sc = 100; try { sc = Math.round(Number(calcEmpScore(u.id, violations).score) || 0); } catch (_) {}
-                return { id: u.id, cells: [u.name || '', u.role === 'branch_manager' ? 'مدير فرع' : (getStaffJobTitle(u) || 'موظف'), violations.filter(v => v.employee_id === u.id).length], score: sc };
+                return { id: u.id, cells: [u.name || '', u.role === 'branch_manager' ? 'مدير فرع' : (getStaffJobTitle(u) || 'موظف'), violations.filter(v => v.employee_id === u.id).length], score: sc, click: `openCmpItemDetail('employee','${String(u.id).replace(/'/g, "\\'")}')` };
               }).sort((a, b) => a.score - b.score);
               m = { esc: escF, kicker: 'BRANCH', title: br ? br.name : 'موظفو الفرع', sub: rowsD.length + ' موظف', back: isBranchMgr ? '' : 'cmpBackToBranches()', backLabel: 'فروع ' + (reg ? reg.name : ''), cols: ['الموظف', 'الدور', 'المخالفات'], rows: rowsD, empty: 'لا يوجد موظفون' };
               if (isBranchMgr) m.back = "void 0";

@@ -24,3 +24,20 @@ html:root.mr-desktop-ui #tab-compliance .atq-board .atq-card{background:var(--t-
 .atq-back{height:38px;padding:0 14px;border:1px solid var(--t-ct);border-radius:4px;background:transparent;color:var(--t-fg);font:600 14px inherit;font-family:inherit;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
 .atq-back:hover{background:var(--t-hv)}
 .atq-sec--one .atq-tb{flex:1 1 100%;max-width:none}
+
+/* Compliance — mobile + iPad: same design as desktop, compact */
+html:root.mr-mobile-ui #tab-compliance{--t-sf:#fff;--t-fg:#0A0A0A;--t-mu:#5F5F5F;--t-ln:#E4E4E4;--t-ln2:#D9D9D9;--t-ct:#8A8A8A;--t-hv:#F7F7F7;--t-exb:#DDF3E8;--t-exf:#1D6B43;--t-gdb:#E4EEFC;--t-gdf:#1B4F9E;--t-mdb:#FDF0CF;--t-mdf:#7A4F00;--t-bdb:#FDE3E0;--t-bdf:#A3261E}
+html[data-theme="dark"]:root.mr-mobile-ui #tab-compliance{--t-sf:#151515;--t-fg:#F2F2F2;--t-mu:#A3A3A3;--t-ln:#262626;--t-ln2:#303030;--t-ct:#6E6E6E;--t-hv:#1C1C1C;--t-exb:#12301F;--t-exf:#7FD6A5;--t-gdb:#14233F;--t-gdf:#9CC0FF;--t-mdb:#3A2F12;--t-mdf:#F0C25B;--t-bdb:#401A18;--t-bdf:#FF9C90}
+html:root.mr-mobile-ui #tab-compliance .atq-board,html:root.mr-mobile-ui #tab-compliance .atq-board>*{background:transparent !important;border:0 !important;box-shadow:none !important;padding:0 !important}
+html:root.mr-mobile-ui #tab-compliance .atq-board .atq-card{background:var(--t-sf) !important;border:1px solid var(--t-ln2) !important;border-radius:6px !important;padding:16px !important;box-shadow:none !important}
+html:root.mr-mobile-ui #tab-compliance .atq-page{gap:16px;padding-top:4px}
+html:root.mr-mobile-ui #tab-compliance .atq-sec{gap:16px}
+html:root.mr-mobile-ui #tab-compliance .atq-co,html:root.mr-mobile-ui #tab-compliance .atq-tb{flex:1 1 100%}
+html:root.mr-mobile-ui #tab-compliance .atd-h1{font-size:22px}
+html:root.mr-mobile-ui #tab-compliance .atq-tb table{min-width:0}
+html:root.mr-mobile-ui #tab-compliance .atq-tb :is(th,td){padding:10px 6px;font-size:13px}
+html:root.mr-mobile-ui #tab-compliance .atq-ring,html:root.mr-mobile-ui #tab-compliance .atq-ring svg{width:96px;height:96px}
+html:root.mr-mobile-ui #tab-compliance .atq-rn{font-size:30px}
+html:root.mr-mobile-ui #tab-compliance .atq-drill{flex-direction:column-reverse;align-items:flex-start;gap:12px}
+html:root.mr-mobile-ui #tab-compliance .atq-back{height:36px}
+html:root.mr-mobile-ui #tab-compliance .atq-page{padding-top:12px}
