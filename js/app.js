@@ -42810,18 +42810,18 @@
     .rp-top { display:flex; align-items:flex-end; justify-content:space-between; padding-bottom:10px; border-bottom:2px solid #0a0a0a; }
     .rp-word { font:300 26px/1 'Helvetica Neue',Arial,sans-serif; letter-spacing:.32em; direction:ltr; }
     .rp-meta { text-align:left; direction:ltr; font:500 9.5px/1.5 'Courier New',monospace; color:#555; letter-spacing:.08em; }
-    .rp-kick { margin:20px 0 2px; font:500 9.5px 'Courier New',monospace; letter-spacing:.2em; color:#666; direction:ltr; text-align:right; }
-    .rp-h1 { margin:0 0 4px; font-size:24px; font-weight:800; }
-    .rp-sub { margin:0 0 14px; color:#555; font-size:11px; }
-    .rp-chips { display:flex; flex-wrap:wrap; gap:6px; margin:0 0 16px; }
+    .rp-kick { margin:12px 0 2px; font:500 9.5px 'Courier New',monospace; letter-spacing:.2em; color:#666; direction:ltr; text-align:right; }
+    .rp-h1 { margin:0 0 2px; font-size:20px; font-weight:800; }
+    .rp-sub { margin:0 0 8px; color:#555; font-size:11px; }
+    .rp-chips { display:flex; flex-wrap:wrap; gap:6px; margin:0 0 10px; }
     .rp-chip { border:1px solid #0a0a0a; border-radius:3px; padding:3px 9px; font-size:10.5px; }
     .rp-chip b { font-weight:700; }
     .rp-chip--all { border-color:#bbb; color:#666; }
-    .rp-kpis { display:grid; grid-template-columns:repeat(4,1fr); gap:0; border:1px solid #0a0a0a; margin-bottom:18px; }
-    .rp-kpi { padding:12px 10px; border-inline-start:1px solid #d4d4d4; text-align:center; }
+    .rp-kpis { display:grid; grid-template-columns:repeat(4,1fr); gap:0; border:1px solid #0a0a0a; margin-bottom:12px; }
+    .rp-kpi { padding:5px 8px; border-inline-start:1px solid #d4d4d4; text-align:center; }
     .rp-kpi:first-child { border-inline-start:0; }
-    .rp-kpi__n { font:600 26px/1.1 'Courier New',monospace; direction:ltr; }
-    .rp-kpi__l { margin-top:4px; font-size:10px; color:#555; font-weight:600; }
+    .rp-kpi__n { font:600 15px/1.2 'Courier New',monospace; direction:ltr; }
+    .rp-kpi__l { margin-top:0; font-size:9px; color:#555; font-weight:600; }
     .rp-two { display:grid; grid-template-columns:1.15fr 1fr; gap:14px; margin-bottom:18px; }
     .rp-card { border:1px solid #d4d4d4; padding:12px 14px; page-break-inside:avoid; }
     .rp-card h2 { margin:0 0 10px; font-size:13px; font-weight:800; }
