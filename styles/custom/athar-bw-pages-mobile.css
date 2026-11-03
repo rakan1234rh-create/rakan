@@ -1,0 +1,53 @@
+/* modals (ticket details, new complaint) — retargeted from athar-bw-pages.css */
+html:root.mr-mobile-ui {
+  --pg-fg: #0a0a0a; --pg-mu: #6b6b6b; --pg-ln: #e4e4e4; --pg-bg: #fff; --pg-sf: #f5f5f5; --pg-on: #0a0a0a; --pg-off: #cfcfcf; --pg-onf: #fff;
+}
+html:root.mr-mobile-ui[data-theme="dark"] {
+  --pg-fg: #f2f2f2; --pg-mu: #a3a3a3; --pg-ln: #262626; --pg-bg: #0f0f0f; --pg-sf: #181818; --pg-on: #f2f2f2; --pg-off: #3a3a3a; --pg-onf: #0a0a0a;
+}
+html:root.mr-mobile-ui #ticketModal .td-tab { color: var(--pg-mu) !important; border-radius: 4px !important; }
+html:root.mr-mobile-ui #ticketModal .td-tab.active { background: var(--pg-on) !important; color: var(--pg-onf) !important; }
+html:root.mr-mobile-ui #ticketModal .td-tab--needs-action { color: var(--pg-fg) !important; text-decoration: underline; text-underline-offset: 4px; }
+html:root.mr-mobile-ui #ticketModal .td-tab.active * { color: inherit !important; }
+html:root.mr-mobile-ui #ticketModal .rd-td-step__ico { background: var(--pg-sf) !important; color: var(--pg-fg) !important; border: 1px solid var(--pg-ln) !important; }
+html:root.mr-mobile-ui #ticketModal .rd-td-step--done .rd-td-step__ico { background: var(--pg-on) !important; color: var(--pg-onf) !important; border-color: var(--pg-on) !important; }
+html:root.mr-mobile-ui #ticketModal .rd-td-step--done .rd-td-step__ico i { color: var(--pg-onf) !important; }
+html:root.mr-mobile-ui #ticketModal .rd-td-step__line { background: var(--pg-ln) !important; }
+html:root.mr-mobile-ui #ticketModal .rd-td-step--done .rd-td-step__line { background: var(--pg-on) !important; }
+html:root.mr-mobile-ui #ticketModal .rd-td-step--current .rd-td-step__ico, html:root.mr-mobile-ui #ticketModal .rd-td-step--active .rd-td-step__ico { background: var(--pg-bg) !important; color: var(--pg-fg) !important; border: 2px solid var(--pg-on) !important; }
+html:root.mr-mobile-ui #ticketModal .td-admin-att-edit, html:root.mr-mobile-ui #ticketModal .log-compose-attach {
+  background: transparent !important; color: var(--pg-fg) !important; border: 1px solid var(--pg-ln) !important; border-radius: 4px !important; padding: 6px 12px; cursor: pointer; font-family: inherit;
+}
+html:root.mr-mobile-ui #ticketModal .td-resp-action { border-radius: 4px !important; box-shadow: none !important; }
+html:root.mr-mobile-ui #ticketModal .td-resp-action.btn-primary { background: var(--pg-on) !important; color: var(--pg-onf) !important; border-color: var(--pg-on) !important; }
+html:root.mr-mobile-ui #ticketModal .td-resp-action.btn-warning { background: transparent !important; color: var(--pg-fg) !important; border: 1px solid var(--pg-fg) !important; }
+html:root.mr-mobile-ui #ticketModal .td-resp-action.btn-danger { background: transparent !important; color: var(--pg-fg) !important; border: 1px solid var(--pg-ln) !important; }
+html:root.mr-mobile-ui #ticketModal .td-tab--needs-action, html:root.mr-mobile-ui #ticketModal .td-tab--needs-action * { color: var(--pg-fg) !important; -webkit-text-fill-color: currentColor !important; }
+html:root.athar-staging-redesign.mr-mobile-ui #ticketModal.modal.open { background: transparent !important; pointer-events: none !important; animation: none !important; }
+html:root.athar-staging-redesign.mr-mobile-ui #ticketModal .modal-card.modal-detail.td-mob-sheet {
+  pointer-events: auto; top: 12px !important; bottom: 12px !important; height: auto !important; inset-inline-end: 16px !important;
+  border: 1px solid var(--pg-ln) !important; border-radius: 4px !important; background: var(--pg-bg) !important; width: 440px !important;
+}
+html:root.mr-mobile-ui #ticketModal .rd-td-hd__toolbar { padding-inline-end: 44px; }
+html:root.mr-mobile-ui #newComplaintModal .btn-primary { background: var(--pg-on) !important; color: var(--pg-onf) !important; border-radius: 4px !important; }
+html:root.mr-mobile-ui #newComplaintModal .form-input { border-radius: 4px !important; }
+html:root.mr-mobile-ui #newComplaintModal #cpKindOptions > *, html:root.mr-mobile-ui #newComplaintModal #cpCategoryOptions > * { border-radius: 4px !important; }
+html:root.mr-mobile-ui #newComplaintModal #cpKindOptions > .active, html:root.mr-mobile-ui #newComplaintModal #cpKindOptions > [aria-pressed="true"], html:root.mr-mobile-ui #newComplaintModal #cpCategoryOptions > .active, html:root.mr-mobile-ui #newComplaintModal #cpCategoryOptions > [aria-pressed="true"] { background: var(--pg-on) !important; color: var(--pg-onf) !important; border-color: var(--pg-on) !important; }
+/* ---- ticket sheet: flat controls ---- */
+html:root.mr-mobile-ui #ticketModal .rd-tk-print, html:root.mr-mobile-ui #ticketModal [onclick*="print"], html:root.mr-mobile-ui #ticketModal .rd-tk-sheet-close { border-radius: 4px !important; }
+html:root.mr-mobile-ui #ticketModal .rd-tk-sheet-close, html:root.mr-mobile-ui #ticketModal .viol-sheet-close-bar { background: var(--pg-bg) !important; border: 1px solid var(--pg-ln) !important; color: var(--pg-fg) !important; border-radius: 4px !important; box-shadow: none !important; }
+
+/* ---- complaint details sheet ---- */
+html:root.mr-mobile-ui #complaintDetailModal .cp-paper-sheet { background: var(--pg-bg) !important; color: var(--pg-fg) !important; box-shadow: none !important; }
+html:root.mr-mobile-ui #complaintDetailModal .cp-paper-sheet-head { background: var(--pg-bg) !important; border-bottom: 1px solid var(--pg-ln) !important; }
+html:root.mr-mobile-ui #complaintDetailModal .cp-paper-sheet-head h3 { font-family: 'Readex Pro','IBM Plex Sans Arabic',sans-serif; font-weight: 600; color: var(--pg-fg) !important; }
+html:root.mr-mobile-ui #complaintDetailModal .cp-detail-print-btn, html:root.mr-mobile-ui #complaintDetailModal .cp-detail-close-btn { border-radius: 4px !important; border: 1px solid var(--pg-ln) !important; background: var(--pg-bg) !important; color: var(--pg-fg) !important; box-shadow: none !important; }
+html:root.mr-mobile-ui #complaintDetailModal .cp-detail-print-btn i, html:root.mr-mobile-ui #complaintDetailModal .cp-detail-close-btn i { color: var(--pg-fg) !important; }
+html:root.mr-mobile-ui #complaintDetailModal .viol-sheet-grabber { background: var(--pg-off) !important; }
+html:root.mr-mobile-ui #complaintDetailModal .cp-paper-sheet-body, html:root.mr-mobile-ui #complaintDetailModal #cpDetailBody { background: var(--pg-bg) !important; color: var(--pg-fg) !important; }
+html:root.mr-mobile-ui #complaintDetailModal #cpDetailBody textarea, html:root.mr-mobile-ui #complaintDetailModal #cpDetailBody input[type="text"] { border-radius: 4px !important; border: 1px solid var(--pg-mu) !important; background: var(--pg-bg) !important; color: var(--pg-fg) !important; box-shadow: none !important; }
+html:root.mr-mobile-ui #complaintDetailModal #cpDetailBody button { border-radius: 4px !important; box-shadow: none !important; }
+html:root.mr-mobile-ui #complaintDetailModal #cpDetailBody .btn-primary, html:root.mr-mobile-ui #complaintDetailModal #cpDetailBody button[onclick*="submitComplaintReply"] { background: var(--pg-on) !important; color: var(--pg-onf) !important; border: 1px solid var(--pg-on) !important; }
+html:root.mr-mobile-ui #complaintDetailModal #cpDetailBody button[onclick*="Attach"], html:root.mr-mobile-ui #complaintDetailModal #cpDetailBody .btn-ghost { background: var(--pg-bg) !important; color: var(--pg-fg) !important; border: 1px solid var(--pg-mu) !important; }
+html:root.mr-mobile-ui #complaintDetailModal #cpDetailBody [class*="bubble"], html:root.mr-mobile-ui #complaintDetailModal #cpDetailBody [class*="desc"], html:root.mr-mobile-ui #complaintDetailModal #cpDetailBody [class*="reply"] { border-radius: 4px !important; }
+html:root.mr-mobile-ui #complaintDetailModal .cp-paper-sheet-body > *:last-child, html:root.mr-mobile-ui #complaintDetailModal [class*="composer"], html:root.mr-mobile-ui #complaintDetailModal [class*="reply-bar"] { background: var(--pg-bg) !important; border-color: var(--pg-ln) !important; }
