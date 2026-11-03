@@ -13127,7 +13127,6 @@
           { key: 'sup', label: 'بانتظار المشرف', icon: 'fa-user-shield', colorKey: 'info' },
           { key: 'mgt', label: 'بانتظار الإدارة', icon: 'fa-bolt', colorKey: 'danger' },
           { key: 'aud', label: 'بانتظار الرقابة الداخلية', icon: 'fa-magnifying-glass', colorKey: 'purple' },
-          { key: 'hr', label: 'بانتظار الموارد البشرية', icon: 'fa-id-badge', colorKey: 'gold' },
           { key: 'closed', label: 'مغلقة', icon: 'fa-check', colorKey: 'success' },
           { key: 'Warning_Issued', label: 'تنبيه إداري صادر', icon: 'fa-bell', colorKey: 'text3' }
         ].map(s => {
@@ -13317,7 +13316,6 @@
           { key: 'sup', label: 'بانتظار المشرف', icon: 'fa-user-shield', colorKey: 'info' },
           { key: 'mgt', label: 'بانتظار الإدارة', icon: 'fa-bolt', colorKey: 'danger' },
           { key: 'aud', label: 'بانتظار الرقابة الداخلية', icon: 'fa-magnifying-glass', colorKey: 'purple' },
-          { key: 'hr', label: 'بانتظار الموارد البشرية', icon: 'fa-id-badge', colorKey: 'gold' },
           { key: 'closed', label: 'مغلقة', icon: 'fa-check', colorKey: 'success' },
           { key: 'Warning_Issued', label: 'تنبيه إداري صادر', icon: 'fa-bell', colorKey: 'text3' }
         ].map(s => {
@@ -13567,7 +13565,6 @@
             { key: 'sup', label: 'بانتظار المشرف', sub: 'مراجعة المشرف المباشر', tone: 'blue', icon: 'fa-user-tie', fill: 'var(--blue)' },
             { key: 'mgt', label: 'بانتظار الإدارة', sub: 'القرار الإداري', tone: 'red', icon: 'fa-gavel', fill: 'var(--red)' },
             { key: 'aud', label: 'بانتظار الرقابة الداخلية', sub: 'المراجعة النهائية', tone: 'purple', icon: 'fa-magnifying-glass', fill: 'var(--purple)' },
-            { key: 'hr', label: 'بانتظار الموارد البشرية', sub: 'القرار النهائي', tone: 'orange', icon: 'fa-users-gear', fill: 'var(--orange)' },
             { key: 'closed', label: 'مغلقة', sub: 'تذاكر منتهية ومُعتمدة', tone: 'green', icon: 'fa-circle-check', fill: 'var(--green)' },
             { key: 'Warning_Issued', label: 'تنبيه إداري صادر', sub: 'مخالفات صدر بشأنها قرار', tone: 'amber', icon: 'fa-bell', fill: 'var(--amber)' },
           ];

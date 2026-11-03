@@ -86,7 +86,7 @@
       var kp = role === 'admin'
         ? [[(state.users || []).length, 'مستخدمًا'], [(state.branches || []).length, 'فرعًا'], [open.length, 'تذكرة مفتوحة']]
         : [[rr.length, 'مناطق'], [(state.branches || []).length, 'فرعًا'], [(state.users || []).filter(function (u) { return u.role === 'employee'; }).length, 'موظفًا']];
-      var stages = [['emp', 'بانتظار الموظف'], ['sup', 'بانتظار المشرف'], ['mgt', 'بانتظار الإدارة'], ['aud', 'بانتظار الرقابة الداخلية'], ['hr', 'بانتظار الموارد البشرية']].map(function (k) {
+      var stages = [['emp', 'بانتظار الموظف'], ['sup', 'بانتظار المشرف'], ['mgt', 'بانتظار الإدارة'], ['aud', 'بانتظار الرقابة الداخلية']].map(function (k) {
         var c = v.filter(function (t) { return t.state === k[0]; }); var od = c.filter(function (t) { return days(t.updated_at || t.created_at) > 3; }).length;
         return { cells: [esc(k[1]), num(c.length), num(od)] };
       });

@@ -6,9 +6,10 @@
   var STAGES = ['emp', 'sup', 'mgt', 'aud', 'hr'];
   var NAMES = ['بانتظار رد الموظف', 'بانتظار رد المشرف', 'بانتظار القرار الإداري', 'بانتظار الرقابة الداخلية', 'بانتظار الموارد البشرية', 'معتمدة', 'تنبيه', 'ملغاة', 'مغلقة'];
   var TONE = ['', '', '', '', '', 'ok', 'warn', 'bad', 'closed'];
-  var STEPS = ['الموظف', 'المشرف', 'القرار الإداري', 'إدارة الرقابة الداخلية', 'الموارد البشرية', 'معتمدة'];
+  var STEPS = ['الموظف', 'المشرف', 'القرار الإداري', 'إدارة الرقابة الداخلية', 'معتمدة'];
   function esc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function stageOf(t) {
+    if (t.state === 'hr') return 5; /* HR stage retired: treated as final approval */
     var i = STAGES.indexOf(t.state); if (i >= 0) return i;
     var o = null; try { o = B().terminal(t); } catch (_) {}
     if (o === 'warn') return 6; if (o === 'cancel') return 7;
@@ -42,7 +43,7 @@
     h.innerHTML = '<div><p class="atd-kick">TICKET PROCESSING</p><h1 class="atd-h1">معالجة التذاكر</h1></div>';
   }
   var SHORT = ['رد الموظف', 'رد المشرف', 'قرار الإدارة', 'الرقابة الداخلية', 'الموارد البشرية', 'معتمدة', 'تنبيه', 'ملغاة', 'مغلقة'];
-  var STAGE_OPTS = ['بانتظار رد الموظف', 'بانتظار رد المشرف', 'بانتظار القرار الإداري', 'بانتظار الرقابة الداخلية', 'بانتظار الموارد البشرية'];
+  var STAGE_OPTS = ['بانتظار رد الموظف', 'بانتظار رد المشرف', 'بانتظار القرار الإداري', 'بانتظار الرقابة الداخلية'];
   var STATUS_OPTS = [['open', 'قيد المعالجة'], ['5', 'معتمدة'], ['6', 'تنبيه'], ['7', 'ملغاة'], ['8', 'مغلقة']];
   S.f = { branch: '', emp: '', stage: '', status: '', from: '', to: '' };
   function passes(t) {
@@ -200,9 +201,9 @@
       var sz = a.size ? (a.size > 1048576 ? (a.size / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(a.size / 1024)) + ' KB') : '';
       return '<div class="atd-file"><span class="atd-file__n">' + esc(nm) + (sz ? ' <span class="atd-mono">' + sz + '</span>' : '') + '</span><button type="button" class="atd-btn atd-btn--sm" data-atd-view="' + i + '">عرض</button></div>';
     }).join('');
-    var sx = Math.min(st, 5);
+    var sx = st >= 5 ? 4 : st;
     var steps = STEPS.map(function (n, i) {
-      var done = i < sx, now = i === sx; if (i === 5 && st >= 5) n = NAMES[st];
+      var done = i < sx, now = i === sx; if (i === 4 && st >= 5) n = NAMES[st];
       return '<li class="atd-step"><div class="atd-step__rail"><i class="atd-dot ' + (done ? 'is-done' : now ? 'is-now' : '') + '"></i><i class="atd-line' + (i < sx ? ' is-done' : '') + '"></i></div><div class="atd-step__t"><div class="' + (now ? 'is-now' : done ? '' : 'is-off') + '">' + esc(n) + '</div><div class="atd-stl"><div class="atd-mu">' + (done ? 'تم' + autoMark(t, i) : now ? (st >= 5 ? 'أُغلقت التذكرة' : 'بانتظار الإجراء') : '') + '</div>' + (now ? cdHtml(t, i) : '') + '</div></div></li>';
     }).join('');
     var btns = [];
