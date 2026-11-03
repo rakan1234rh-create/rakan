@@ -29,7 +29,7 @@
     var can = function (t) { return !t.exhausted && !t.unscheduled && t.mins > 0; };
     var anyOk = can(c.regular) || can(c.restroom) && !c.colleague;
     var note = c.colleague ? 'زميل في بريك الآن (' + c.colleague + ') — انتظر حتى يعود'
-      : (!can(c.regular) && !can(c.restroom) ? (c.regular.note || c.restroom.note || 'خلصت مدة بريك اليوم') : '');
+      : (!can(c.regular) && !can(c.restroom) ? [['البريك', c.regular], ['بريك دورة المياه', c.restroom]].map(function (x) { return x[1].exhausted ? 'خلصت مدة ' + x[0] + ' اليوم' : (x[1].unscheduled ? (x[1].note || x[0] + ' غير مجدول اليوم') : x[0] + ' غير متاح اليوم'); }).join(' · ') : '');
     var dis = (c.busy || c.active || c.colleague || !anyOk) ? ' disabled' : '';
     var start = '<div class="atb-card atb-new"><h2>بدء بريك جديد</h2><div class="atb-form"><div class="atb-f"><label for="atbType">نوع البريك</label>' +
       '<select id="atbType"' + (c.active ? ' disabled' : '') + '><option value="regular"' + (can(c.regular) ? '' : ' disabled') + '>استراحة</option><option value="restroom"' + (can(c.restroom) ? '' : ' disabled') + '>دورة مياه</option></select></div>' +
