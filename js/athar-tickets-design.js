@@ -152,9 +152,25 @@
     if (!h || !h.trim()) h = '<div class="atd-mu atd-nofile">لا توجد ردود أو سجل بعد</div>';
     return '<div class="atd-replies"><h3 class="atd-h3">الردود وسجل التذكرة</h3><div class="atd-logs">' + h + '</div></div>';
   }
+  function truthy(v) { return v === true || v === 1 || v === 'true' || v === 't'; }
+  function autoMark(t, i) {
+    var code = i === 0 ? 'emp' : i === 1 ? 'sup' : ''; if (!code) return '';
+    var on = truthy(t['auto_forwarded_' + code]);
+    if (!on) {
+      var logs = t.logs; if (typeof logs === 'string') { try { logs = JSON.parse(logs); } catch (_) { logs = []; } }
+      if (Array.isArray(logs)) on = logs.some(function (l) {
+        var a = String((l && l.action) || ''); if (!/تمرير تلقائي/.test(a)) return false;
+        var toSup = /المشرف/.test(a); return code === 'emp' ? toSup : !toSup;
+      });
+    }
+    return on ? ' <i class="fas fa-robot atd-auto" title="تم التمرير تلقائيًا" aria-label="تم التمرير تلقائيًا"></i>' : '';
+  }
   function cdHtml(t, i) {
     var code = i === 0 ? 'emp' : i === 1 ? 'sup' : ''; if (!code) return '';
     var m = null; try { m = B().sla(t, code); } catch (_) {}
+    if (!m && code === 'sup' && t.state === 'sup' && !truthy(t.auto_forwarded_sup)) {
+      m = { limitH: 48, startISO: t._supStartTime || t.updated_at || t.created_at || '', deadlineISO: t.sup_forward_after || '' };
+    }
     if (!m) return '';
     return '<div class="atd-cd" data-start="' + esc(m.startISO || '') + '" data-deadline="' + esc(m.deadlineISO || '') + '" data-limit="' + esc(m.limitH || 24) + '"><span class="atd-cd__l">متبقي</span><span class="atd-cd__v atd-mono" dir="ltr">--:--:--</span><span class="atd-cd__bar"><i></i></span></div>';
   }
@@ -186,7 +202,7 @@
     var sx = Math.min(st, 5);
     var steps = STEPS.map(function (n, i) {
       var done = i < sx, now = i === sx; if (i === 5 && st >= 5) n = NAMES[st];
-      return '<li class="atd-step"><div class="atd-step__rail"><i class="atd-dot ' + (done ? 'is-done' : now ? 'is-now' : '') + '"></i><i class="atd-line' + (i < sx ? ' is-done' : '') + '"></i></div><div class="atd-step__t"><div class="' + (now ? 'is-now' : done ? '' : 'is-off') + '">' + esc(n) + '</div><div class="atd-stl"><div class="atd-mu">' + (done ? 'تم' : now ? (st >= 5 ? 'أُغلقت التذكرة' : 'بانتظار الإجراء') : '') + '</div>' + (now ? cdHtml(t, i) : '') + '</div></div></li>';
+      return '<li class="atd-step"><div class="atd-step__rail"><i class="atd-dot ' + (done ? 'is-done' : now ? 'is-now' : '') + '"></i><i class="atd-line' + (i < sx ? ' is-done' : '') + '"></i></div><div class="atd-step__t"><div class="' + (now ? 'is-now' : done ? '' : 'is-off') + '">' + esc(n) + '</div><div class="atd-stl"><div class="atd-mu">' + (done ? 'تم' + autoMark(t, i) : now ? (st >= 5 ? 'أُغلقت التذكرة' : 'بانتظار الإجراء') : '') + '</div>' + (now ? cdHtml(t, i) : '') + '</div></div></li>';
     }).join('');
     var btns = [];
     if (b.state.editingTicket && b.state.editingTicket.id === t.id && S.loading !== t.id) {
