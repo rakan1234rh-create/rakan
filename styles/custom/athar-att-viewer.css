@@ -1,0 +1,25 @@
+/* attachment viewer: square close button + zoom bar */
+#attViewer { overflow: hidden; }
+#attViewer .att-viewer-content img { touch-action: none; user-select: none; -webkit-user-select: none; -webkit-user-drag: none; will-change: transform; cursor: zoom-in; }
+#attViewer.is-zoomed .att-viewer-content img { cursor: grab; }
+#attViewer.is-zoomed .att-viewer-counter, #attViewer.is-zoomed .att-viewer-caption { opacity: .0; pointer-events: none; }
+/* close: square icon button, top corner, always reachable */
+#attViewer .att-viewer-close-btn {
+  position: fixed; top: max(12px, env(safe-area-inset-top, 0px)); inset-inline-end: 12px; inset-inline-start: auto;
+  width: 44px; height: 44px; min-width: 44px; min-height: 44px; padding: 0; gap: 0; border-radius: 4px;
+  background: #0a0a0a; border: 1px solid #f2f2f2; color: #fff; backdrop-filter: none; -webkit-backdrop-filter: none; z-index: 40;
+}
+#attViewer .att-viewer-close-btn span { display: none; }
+#attViewer .att-viewer-close-btn::before { content: ""; width: 18px; height: 18px; background:
+  linear-gradient(#fff,#fff) center/100% 2px no-repeat, linear-gradient(#fff,#fff) center/2px 100% no-repeat; transform: rotate(45deg); }
+#attViewer .att-viewer-close-btn:hover { background: #262626; }
+#attViewer .att-viewer-counter { position: fixed; top: max(24px, calc(env(safe-area-inset-top, 0px) + 12px)); inset-inline-start: 14px; inset-inline-end: auto; z-index: 40; color: #fff; font-size: 13px; background: #0a0a0a; border: 1px solid #3a3a3a; border-radius: 4px; padding: 4px 10px; }
+#attViewer .att-viewer-counter:empty { display: none; }
+/* zoom bar */
+.aav-bar { position: fixed; left: 50%; transform: translateX(-50%); bottom: max(16px, env(safe-area-inset-bottom, 0px)); z-index: 40; display: flex; align-items: center; gap: 0; background: #0a0a0a; border: 1px solid #3a3a3a; border-radius: 4px; overflow: hidden; direction: ltr; }
+.aav-bar button { width: 46px; height: 44px; border: 0; background: transparent; color: #fff; font-size: 15px; cursor: pointer; touch-action: manipulation; }
+.aav-bar button + button { border-inline-start: 1px solid #262626; }
+.aav-bar button:disabled { opacity: .35; cursor: default; }
+.aav-bar button:active:not(:disabled) { background: #262626; }
+.aav-bar .aav-pct { min-width: 56px; text-align: center; color: #d4d4d4; font: 600 13px ui-monospace, 'IBM Plex Mono', monospace; border-inline: 1px solid #262626; padding: 0 6px; line-height: 44px; }
+#attViewer .att-viewer-caption { margin-bottom: 64px; }
