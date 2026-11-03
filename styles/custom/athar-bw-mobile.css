@@ -231,3 +231,5 @@ html:root.mr-mobile-ui.mr-mobile-ui #cmpDetailModal :is(.modal-close,.btn-close,
 html:root.mr-mobile-ui.mr-mobile-ui #cmpDetailModal :is(.rd-cmp-emp-months,.rd-cmp-emp-bar){overflow:visible !important}
 html:root.mr-mobile-ui.mr-mobile-ui #cmpDetailModal .rd-cmp-emp-months{padding-bottom:14px !important;min-height:150px}
 html:root.mr-mobile-ui.mr-mobile-ui #cmpDetailModal .rd-cmp-emp-bar__lbl{white-space:nowrap}
+/* observer home tables have 4 columns: fit the phone width without scrolling */
+html:root.mr-mobile-ui .rd-mob-dash .rd-rl-tr[style*="--c:4"] { min-width: 0; }

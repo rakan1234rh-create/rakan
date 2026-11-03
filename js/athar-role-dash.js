@@ -102,14 +102,31 @@
         table: table(role === 'hr' ? 'تذاكر بانتظار الموارد البشرية' : 'تذاكر بانتظار الرقابة الداخلية', 'الأقدم أولًا', HEAD_QUEUE, queue(v, key, all)) };
     }
     if (role === 'observer') {
-      var mine = v.filter(function (t) { return t.observer_id === me.id; });
-      var appr = mine.filter(function (t) { return String(t.status_text || '').indexOf('معتمد') >= 0 || t.state === 'closed'; }).length;
-      var rej = mine.filter(function (t) { return String(t.status_text || '').indexOf('ملغ') >= 0; }).length;
-      var pct = mine.length ? Math.round(appr / mine.length * 100) : 100;
-      var wk = {}; mine.forEach(function (t) { var d = new Date(t.created_at); var w = Math.ceil(d.getDate() / 7); (wk[w] = wk[w] || []).push(t); });
-      var wr = Object.keys(wk).sort().map(function (w) { var a = wk[w]; var ap = a.filter(function (t) { return String(t.status_text || '').indexOf('معتمد') >= 0 || t.state === 'closed'; }).length; var p = Math.round(ap / a.length * 100); return { cells: ['الأسبوع ' + w, num(a.length), num(ap), num(p + '%'), chip(p)] }; });
-      return { hero: hero('أداء الرصد', pct, mine.length + ' مخالفة مرصودة، اعتُمد منها ' + appr, [[mine.length, 'مرصودة'], [appr, 'معتمدة'], [rej, 'مرفوضة']]),
-        table: table('أداء الرصد الأسبوعي', 'نسبة اعتماد ما رصدته', ['الأسبوع', 'المرصودة', 'المعتمدة', 'نسبة الاعتماد', 'المؤشر'], wr) };
+      var isOk = function (t) { return String(t.status_text || '').indexOf('معتمد') >= 0 || t.state === 'closed'; };
+      var isRej = function (t) { return String(t.status_text || '').indexOf('ملغ') >= 0 || String(t.status_text || '').indexOf('مرفوض') >= 0; };
+      var mineAll = (ctx.allVisible || v).filter(function (t) { return String(t.observer_id) === String(me.id); });
+      var slots = []; try { slots = ksaMonthSlots(6); } catch (_) { slots = []; }
+      var inMonth = function (sl) {
+        var from = sl.year + '-' + String(sl.month + 1).padStart(2, '0') + '-01';
+        var ny = sl.month === 11 ? sl.year + 1 : sl.year, nm = sl.month === 11 ? 0 : sl.month + 1;
+        var to = ny + '-' + String(nm + 1).padStart(2, '0') + '-01';
+        return mineAll.filter(function (t) { var d = dashViolationIsoDate(t); return d && d >= from && d < to; });
+      };
+      var rate = function (a) { return a.length ? Math.round(a.filter(isOk).length / a.length * 100) : 0; };
+      var prev = slots.length > 1 ? slots[slots.length - 2] : null;
+      var pm = prev ? inMonth(prev) : [];
+      var appr = pm.filter(isOk).length, rej = pm.filter(isRej).length;
+      var pct = rate(pm);
+      var mrows = slots.slice().reverse().map(function (sl, i) {
+        var a = inMonth(sl), p = rate(a);
+        return { cells: [esc(sl.monthName + ' ' + sl.yearLabel) + (i === 0 ? ' <small>(جارٍ)</small>' : ''), num(a.length), num(a.filter(isOk).length), num(a.length ? p + '%' : '—')] };
+      });
+      var wk = {}; pm.forEach(function (t) { var d = dashViolationIsoDate(t); var w = Math.ceil(Number(String(d).slice(8, 10)) / 7); (wk[w] = wk[w] || []).push(t); });
+      var wr = Object.keys(wk).sort().map(function (w) { var a = wk[w]; var p = rate(a); return { cells: ['الأسبوع ' + w, num(a.length), num(a.filter(isOk).length), num(p + '%')] }; });
+      var lbl = prev ? prev.monthName + ' ' + prev.yearLabel : 'الشهر الماضي';
+      return { hero: hero('أداء الرصد · ' + lbl, pct, pm.length ? (pm.length + ' مخالفة مرصودة في ' + prev.monthName + '، اعتُمد منها ' + appr) : ('لا توجد مخالفات مرصودة في ' + (prev ? prev.monthName : 'الشهر الماضي')), [[pm.length, 'مرصودة'], [appr, 'معتمدة'], [rej, 'مرفوضة']]),
+        table: table('أداء الرصد الشهري', 'نسبة اعتماد ما رصدته في كل شهر', ['الشهر', 'المرصودة', 'المعتمدة', 'الاعتماد'], mrows) +
+          (wr.length ? table('أسابيع ' + (prev ? prev.monthName : 'الشهر الماضي'), 'تفصيل الشهر الماضي', ['الأسبوع', 'المرصودة', 'المعتمدة', 'الاعتماد'], wr) : '') };
     }
     return null;
   }
@@ -228,7 +245,7 @@
           recent = p.mine.slice(0, 5);
         } else if (extra) {
           top = heroCard(extra.hero) + notifCard();
-          recent = v.slice(0, 5);
+          recent = role === 'observer' ? (all || v).filter(function (t) { return String(t.observer_id) === String(me.id); }).slice(0, 5) : v.slice(0, 5);
         }
         var rows2 = hasPersonal ? recentCard('آخر تذاكري', recent) + notifCard() : recentCard('آخر التذاكر', recent);
         var html = header(me, role) + '<div class="rd-h-row rd-h-row--a' + (hasPersonal && role !== 'branch_manager' ? ' rd-h-row--1' : '') + '">' + top + '</div>' +
