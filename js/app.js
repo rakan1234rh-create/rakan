@@ -42690,11 +42690,64 @@
               }
             }
             if (state.activeComplaintId === row.id) renderComplaintDetailModal();
-            if (state._rdCmplDetailId === row.id) renderComplaintsOverlays();
+            if (state._rdCmplDetailId === row.id) {
+              const ta0 = document.getElementById('rdCmplReplyInput');
+              const typing0 = !!(ta0 && document.activeElement === ta0);
+              const pos0 = typing0 ? [ta0.selectionStart, ta0.selectionEnd] : null;
+              renderComplaintsOverlays();
+              if (typing0) { const n0 = document.getElementById('rdCmplReplyInput'); if (n0) { n0.focus(); try { n0.setSelectionRange(pos0[0], pos0[1]); } catch (_) { /* noop */ } } }
+            }
           })
-          .subscribe();
+          .subscribe((status) => {
+            if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+              if (state._complaintsChannel !== ch) return;
+              clearTimeout(state._cmplReconnT);
+              state._cmplReconnT = setTimeout(() => { try { setupComplaintsRealtime(); } catch (_) { /* noop */ } }, 4000);
+            }
+          });
         state._complaintsChannel = ch;
         state.realtimeChannels.push(ch);
+        startComplaintsPolling();
+      }
+
+      /* شبكة أمان: لو تأخر الـ realtime نجلب الشكاوى دورياً ونحدّث الشاشة عند أي تغيير */
+      function complaintsSignature(list) {
+        return (list || []).map(c => `${c.id}|${c.updated_at || ''}|${c.status || ''}|${Array.isArray(c.logs) ? c.logs.length : String(c.logs || '').length}`).join(';');
+      }
+      async function complaintsPollOnce() {
+        if (document.hidden || !canSubmitComplaint()) return;
+        const tab = document.getElementById('tab-complaints');
+        const onPage = !!(tab && tab.classList.contains('active')) || !!state.activeComplaintId || !!state._rdCmplDetailId;
+        if (!onPage || state._cmplPolling) return;
+        state._cmplPolling = true;
+        try {
+          const before = complaintsSignature(state.complaints);
+          const { data, error } = await sb.from('complaints')
+            .select('id,complaint_number,employee_id,branch_id,kind,category,description,attachments,status,logs,created_at,updated_at,resolved_at')
+            .order('created_at', { ascending: false })
+            .limit(500);
+          if (error || !data) return;
+          if (complaintsSignature(data) === before) return;
+          const typing = document.activeElement && document.activeElement.id === 'rdCmplReplyInput';
+          state.complaints = data;
+          refreshComplaintsUi();
+          if (state.activeComplaintId) renderComplaintDetailModal();
+          if (state._rdCmplDetailId) {
+            const ta = document.getElementById('rdCmplReplyInput');
+            const pos = typing && ta ? [ta.selectionStart, ta.selectionEnd] : null;
+            renderComplaintsOverlays();
+            if (typing) {
+              const nt = document.getElementById('rdCmplReplyInput');
+              if (nt) { nt.focus(); try { nt.setSelectionRange(pos[0], pos[1]); } catch (_) { /* noop */ } }
+            }
+          }
+        } catch (_) { /* noop */ } finally { state._cmplPolling = false; }
+      }
+      function startComplaintsPolling() {
+        if (state._cmplPollT) return;
+        state._cmplPollT = setInterval(complaintsPollOnce, 5000);
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) complaintsPollOnce(); });
+        window.addEventListener('focus', () => complaintsPollOnce());
       }
 
       window.renderComplaintsPage = renderComplaintsPage;
