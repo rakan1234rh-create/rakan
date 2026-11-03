@@ -64,6 +64,7 @@
 
   function build(role, ctx) {
     var me = ctx.me, v = ctx.visible, all = ctx.allVisible || v;
+    if (role === 'branch_manager' && ctx.branchAll) { v = ctx.branchMonth || ctx.branchAll; all = ctx.branchAll; }
     var open = v.filter(isTicketWorkflowOpen);
     var overdue = open.filter(function (t) { return days(t.updated_at || t.created_at) > 3; }).length;
     if (role === 'branch_manager') {
@@ -160,6 +161,7 @@
   }
   function personal(role, ctx) {
     var me = ctx.me, v = ctx.visible, all = ctx.allVisible || v;
+    if (role === 'branch_manager' && ctx.branchAll) { v = ctx.branchMonth || ctx.branchAll; all = ctx.branchAll; }
     var sc = (typeof calcEmpScore === 'function') ? calcEmpScore(me.id, all) : { score: 100, deducted: 0 };
     var score = Math.round(Number(sc.score) || 0), ded = Math.round(Number(sc.deducted) || 0);
     var mine = v.filter(function (t) { return t.employee_id === me.id; });

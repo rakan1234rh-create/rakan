@@ -130,3 +130,13 @@ html.login-portal-open[data-theme="dark"] { --login-portal-bg: #0b0b0b; }
 @media (max-width: 900px) {
   html.mr-mobile-ui body.login-portal-open #loginScreen .lp-center { align-self: start !important; height: auto !important; }
 }
+
+/* ── welcome splash: no glow / shine; the wordmark fills up from dim to white like a loading bar ── */
+html #atharWelcomeSplash .aws-logo-shine-wrap { filter: none !important; }
+html #atharWelcomeSplash .aws-brand-logo:not(.aws-brand-logo--gleam) { opacity: .22 !important; transform: none !important; transition: none !important; }
+html #atharWelcomeSplash .aws-brand-logo--gleam {
+  opacity: 1 !important; filter: none !important; -webkit-mask-image: none !important; mask-image: none !important;
+  clip-path: inset(0 100% 0 0); -webkit-clip-path: inset(0 100% 0 0); animation: none !important; transition: none !important; will-change: clip-path;
+}
+html #atharWelcomeSplash.aws-active .aws-brand-logo--gleam { animation: awsFill 2.6s cubic-bezier(.4,0,.2,1) forwards !important; }
+@keyframes awsFill { from { clip-path: inset(0 100% 0 0); -webkit-clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); -webkit-clip-path: inset(0 0 0 0); } }

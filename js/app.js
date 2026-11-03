@@ -4527,7 +4527,7 @@
       }
 
       const ATHAR_WELCOME_SEEN_KEY = 'athar_welcome_seen';
-      const ATHAR_WELCOME_SHINE_MS = 4800;
+      const ATHAR_WELCOME_SHINE_MS = 2800;
       const ATHAR_WELCOME_HOLD_MS = 900;
       const ATHAR_WELCOME_EXIT_MS = 700;
 
@@ -13234,7 +13234,7 @@
             </div>
           </div>`;
         try {
-          if (window.AtharRoleDash) window.AtharRoleDash.apply(host, { role: normalizeUserRole(me?.role), me, visible, allVisible, branchAll: (normalizeUserRole(me?.role) === 'branch_manager' ? violationsForBranchManagerScope(state.violations.filter(v => v.state !== 'uploading')) : null) });
+          if (window.AtharRoleDash) window.AtharRoleDash.apply(host, { role: normalizeUserRole(me?.role), me, visible, allVisible, branchAll: (normalizeUserRole(me?.role) === 'branch_manager' ? violationsForBranchManagerScope(state.violations.filter(v => v.state !== 'uploading')) : null), branchMonth: (normalizeUserRole(me?.role) === 'branch_manager' ? (violationsForBranchManagerScope(state.violations.filter(v => v.state !== 'uploading')) || []).filter(v => { const iso = dashViolationIsoDate(v); return iso && iso >= monthFromIso && iso < nextFromIso; }) : null) });
         } catch (_) { /* noop */ }
         host.hidden = false;
       }
@@ -13246,7 +13246,7 @@
         if (window.AtharRoleDash && me) {
           try {
             host.innerHTML = '<div class="rd-screen rd-desk-dash rd-mob-dash"></div>';
-            window.AtharRoleDash.apply(host, { role: normalizeUserRole(me?.role), me, visible, allVisible, branchAll: (normalizeUserRole(me?.role) === 'branch_manager' ? violationsForBranchManagerScope(state.violations.filter(v => v.state !== 'uploading')) : null) });
+            window.AtharRoleDash.apply(host, { role: normalizeUserRole(me?.role), me, visible, allVisible, branchAll: (normalizeUserRole(me?.role) === 'branch_manager' ? violationsForBranchManagerScope(state.violations.filter(v => v.state !== 'uploading')) : null), branchMonth: (normalizeUserRole(me?.role) === 'branch_manager' ? (violationsForBranchManagerScope(state.violations.filter(v => v.state !== 'uploading')) || []).filter(v => { const iso = dashViolationIsoDate(v); return iso && iso >= monthFromIso && iso < nextFromIso; }) : null) });
             if (host.querySelector('.rd-desk-dash--h')) { host.hidden = false; return; }
           } catch (_) { /* fall back to legacy mobile home */ }
         }
