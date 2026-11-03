@@ -148,3 +148,10 @@ html:root.mr-mobile-ui.mr-mobile-ui #tab-workflow #wfClassicToolbar > .wf-status
 html:root.mr-mobile-ui.mr-mobile-ui .atd-aside{position:static !important;scroll-margin-top:70px;padding:18px !important}
 html:root.mr-mobile-ui.mr-mobile-ui .atd-grid{gap:16px}
 html:root.mr-mobile-ui.mr-mobile-ui #tab-workflow #wfClassicToolbar .wf-status-filter *{border-radius:4px}
+/* one row: search + filter; stage dropdown removed (the filter popover covers it) */
+html:root.mr-mobile-ui.mr-mobile-ui #tab-workflow #wfClassicToolbar{flex-wrap:nowrap !important;align-items:center !important;gap:8px !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-workflow #wfClassicToolbar .wf-status-filter{display:none !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-workflow #wfClassicToolbar .wf-search{flex:1 1 auto !important;min-width:0;height:40px !important;min-height:40px !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-workflow #wfClassicToolbar #wf-search{height:38px !important;font-size:14px !important;padding:0 10px !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-workflow #wfClassicToolbar > .atd-fbtn{flex:0 0 auto !important;height:40px !important;padding:0 12px !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-workflow #wfClassicToolbar .figma-search-wrap.wf-search{height:40px !important;min-height:40px !important}
