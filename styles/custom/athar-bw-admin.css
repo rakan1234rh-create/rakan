@@ -168,3 +168,13 @@ html:root.mr-mobile-ui.mr-mobile-ui #tab-locations .atu-tr:active{background:var
 html:root.mr-mobile-ui.mr-mobile-ui #appWrap#appWrap #tab-locations :is(.mr-users-list-wrap,#regionsList){background:transparent !important;border:0 !important;padding:0 !important;box-shadow:none !important;height:auto !important;min-height:0 !important;flex:0 0 auto !important;overflow:visible !important}
 html:root.mr-mobile-ui.mr-mobile-ui #tab-locations .atu-back{align-self:flex-start;height:36px;padding:0 14px;border:1px solid var(--t-fg) !important;border-radius:4px !important;background:transparent !important;color:var(--t-fg) !important;font:600 13px inherit;font-family:inherit;cursor:pointer}
 html:root.mr-mobile-ui.mr-mobile-ui #tab-locations .atu-drill{margin:4px 0 12px}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-locations .atl-name{white-space:nowrap}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-locations .atl-name>span:last-child{white-space:nowrap}
+@media (max-width:520px){
+html:root.mr-mobile-ui.mr-mobile-ui #tab-locations .atl-ico{display:none}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-locations .atl-go{display:none}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-locations .atl-btn{width:30px;height:30px}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-locations .atl-acts{display:table-cell}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-locations .atu-table :is(th,td){padding:12px 3px}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-locations .atl-pill{padding:2px 5px;font-size:11px}
+}
