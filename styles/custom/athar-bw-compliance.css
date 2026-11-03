@@ -41,3 +41,32 @@ html:root.mr-mobile-ui #tab-compliance .atq-rn{font-size:30px}
 html:root.mr-mobile-ui #tab-compliance .atq-drill{flex-direction:column-reverse;align-items:flex-start;gap:12px}
 html:root.mr-mobile-ui #tab-compliance .atq-back{height:36px}
 html:root.mr-mobile-ui #tab-compliance .atq-page{padding-top:12px}
+
+/* ===== Employee detail panel (opens on tapping an employee) — same B&W design on every device ===== */
+#cmpDetailModal .cmp-detail-modal-header{position:relative}
+#cmpDetailModal .cmp-detail-x{position:absolute;top:0;inset-inline-end:0;width:36px;height:36px;display:inline-flex;align-items:center;justify-content:center;border-radius:6px;cursor:pointer;font-size:15px}
+html:root #cmpDetailModal{--t-sf:#fff;--t-fg:#0A0A0A;--t-mu:#5F5F5F;--t-ln:#E4E4E4;--t-ln2:#D9D9D9;--t-hv:#F7F7F7}
+html[data-theme="dark"]:root #cmpDetailModal{--t-sf:#151515;--t-fg:#F2F2F2;--t-mu:#A3A3A3;--t-ln:#262626;--t-ln2:#303030;--t-hv:#1C1C1C}
+html:root #cmpDetailModal .cmp-detail-x{background:var(--t-sf);color:var(--t-fg);border:1px solid var(--t-ln2)}
+html:root.athar-staging-redesign.mr-desktop-ui.mr-desktop-ui #cmpDetailModal.cmp-detail--rd-emp .modal-card.cmp-detail-card--rd-emp,
+html:root.mr-mobile-ui.mr-mobile-ui #cmpDetailModal .modal-card.cmp-detail-card{background:var(--t-sf) !important;color:var(--t-fg) !important;border-color:var(--t-ln2) !important;box-shadow:none !important}
+html:root.athar-staging-redesign.mr-desktop-ui.mr-desktop-ui #cmpDetailModal.cmp-detail--rd-emp .modal-body,
+html:root #cmpDetailModal .modal-body,html:root #cmpDetailModal .rd-cmp-emp-detail{background:transparent !important}
+html:root #cmpDetailModal :is(.rd-cmp-emp-gauge,.rd-cmp-emp-months,.rd-cmp-emp-sev__row){background:var(--t-sf) !important;border:1px solid var(--t-ln2) !important;border-radius:6px !important;box-shadow:none !important}
+html:root #cmpDetailModal :is(.rd-cmp-emp-hd__name,.rd-cmp-emp-sec-hd__title,.rd-cmp-emp-sec-title,.rd-cmp-emp-sev__lbl){color:var(--t-fg) !important}
+html:root #cmpDetailModal :is(.rd-cmp-emp-hd__job,.rd-cmp-emp-hd__meta,.rd-cmp-emp-hd__num,.rd-cmp-emp-hd__branch,.rd-cmp-emp-gauge__lbl,.rd-cmp-emp-sec-hd__meta,.rd-cmp-emp-bar__lbl,.rd-cmp-emp-bar__val){color:var(--t-mu) !important}
+html:root #cmpDetailModal .rd-cmp-emp-hd__num{font-family:'IBM Plex Mono',monospace}
+html:root #cmpDetailModal .rd-cmp-emp-bar__fill{background:var(--t-fg) !important;border-radius:0 !important}
+html:root #cmpDetailModal :is(.rd-cmp-emp-sev__track){background:var(--t-hv) !important;border-radius:0 !important}
+html:root #cmpDetailModal .rd-cmp-emp-sev__fill{border-radius:0 !important}
+html:root #cmpDetailModal :is(.rd-cmp-emp-months,.rd-cmp-emp-bar){overflow:visible !important}
+html:root #cmpDetailModal .rd-cmp-emp-months{padding-bottom:14px !important}
+html:root #cmpDetailModal .rd-cmp-emp-months{height:150px !important;padding:14px 12px 12px !important}
+html:root #cmpDetailModal .rd-cmp-emp-bar__fill{max-height:64% !important;max-width:26px !important}
+html:root #cmpDetailModal .rd-cmp-emp-bar__lbl{font-size:11px !important;overflow:visible !important;text-overflow:clip !important}
+
+/* desktop: centered dialog (same as the other B&W dialogs) instead of the old side drawer */
+html:root.athar-staging-redesign.mr-desktop-ui.mr-desktop-ui #cmpDetailModal.modal.open.cmp-detail--rd-emp{display:flex !important;align-items:center;justify-content:center;top:0 !important;height:100% !important;max-height:100% !important;background:rgba(0,0,0,.45) !important}
+html:root.athar-staging-redesign.mr-desktop-ui.mr-desktop-ui #cmpDetailModal.cmp-detail--rd-emp .modal-card.cmp-detail-card--rd-emp{position:relative !important;inset:auto !important;width:560px !important;max-width:94vw !important;height:auto !important;max-height:88vh !important;border:1px solid var(--t-ln2) !important;border-radius:8px !important;padding:24px !important;box-shadow:0 18px 48px rgba(0,0,0,.28) !important}
+html:root.athar-staging-redesign.mr-desktop-ui.mr-desktop-ui #cmpDetailModal.cmp-detail--rd-emp .rd-cmp-emp-hd__name{font-size:20px !important;font-weight:600 !important}
+html:root.athar-staging-redesign.mr-desktop-ui.mr-desktop-ui #cmpDetailModal.cmp-detail--rd-emp .cmp-detail-modal-header{padding:0 0 18px !important;margin-bottom:18px;border-bottom:1px solid var(--t-ln) !important}
