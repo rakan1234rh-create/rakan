@@ -14146,7 +14146,7 @@
       }
 
       function renderRegionsRedesign(ctx) {
-        if (typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi()) {
+        if ((typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi()) || (typeof isMobileViewport === 'function' && isMobileViewport())) {
           renderLocationsDesktop(ctx);
           return;
         }
