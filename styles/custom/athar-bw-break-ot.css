@@ -28,3 +28,16 @@ html:root #userModal .modal-header { position: sticky; top: 0; z-index: 2; backg
 html:root #userModal .modal-footer { position: sticky; bottom: 0; background: var(--ot-bg); }
 @media (max-width: 700px) { html:root #userModal .modal-footer .btn { flex: 1 1 0; } }
 html:root :is(#breakOvertimeModal,#regionModal,#branchModal,#userModal,#violModal) .modal-header { justify-content: space-between; gap: 16px; }
+
+/* ===== Confirm dialog (حذف / تعطيل / تأكيد) — B&W on every device ===== */
+html:root #confirmOverlay{--cf-sf:#fff;--cf-fg:#0A0A0A;--cf-mu:#5F5F5F;--cf-ln:#D9D9D9;--cf-hv:#F7F7F7;--cf-pb:#0A0A0A;--cf-pf:#fff}
+html[data-theme="dark"]:root #confirmOverlay{--cf-sf:#151515;--cf-fg:#F2F2F2;--cf-mu:#A3A3A3;--cf-ln:#303030;--cf-hv:#1C1C1C;--cf-pb:#F2F2F2;--cf-pf:#0A0A0A}
+html:root #confirmOverlay .confirm-box{background:var(--cf-sf) !important;color:var(--cf-fg) !important;border:1px solid var(--cf-ln) !important;border-radius:8px !important;box-shadow:0 18px 48px rgba(0,0,0,.28) !important}
+html:root #confirmOverlay .confirm-icon{background:var(--cf-hv) !important;color:var(--cf-fg) !important;border:1px solid var(--cf-ln) !important;border-radius:6px !important;box-shadow:none !important}
+html:root #confirmOverlay .confirm-icon i{color:var(--cf-fg) !important}
+html:root #confirmOverlay .confirm-title{color:var(--cf-fg) !important}
+html:root #confirmOverlay .confirm-msg{color:var(--cf-mu) !important}
+html:root #confirmOverlay .confirm-btn{border-radius:6px !important;box-shadow:none !important;font-weight:600 !important;outline:0 !important}
+html:root #confirmOverlay .confirm-btn.confirm-cancel{background:var(--cf-sf) !important;color:var(--cf-fg) !important;border:1px solid var(--cf-ln) !important}
+html:root #confirmOverlay .confirm-btn.confirm-ok,html:root #confirmOverlay .confirm-btn.confirm-ok.warn,html:root #confirmOverlay .confirm-btn.confirm-ok.info{background:var(--cf-pb) !important;color:var(--cf-pf) !important;border:1px solid var(--cf-pb) !important}
+html:root #confirmOverlay .confirm-btn:focus-visible{outline:2px solid var(--cf-fg) !important;outline-offset:2px !important}
