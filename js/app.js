@@ -15360,7 +15360,7 @@
         const actions = canManage
           ? `<div class="rd-usr__actions">
               <button type="button" class="rd-usr__btn" onclick="editUser('${uid}')"><i class="fas fa-pen" aria-hidden="true"></i>تعديل</button>
-              <button type="button" class="rd-usr__btn rd-usr__btn--danger" onclick="deleteUser('${uid}')"><i class="fas fa-trash" aria-hidden="true"></i>حذف</button>
+              <button type="button" class="rd-usr__btn rd-usr__btn--danger" onclick="deleteUser('${uid}')"><i class="fas fa-ban" aria-hidden="true"></i>تعطيل</button>
             </div>`
           : '';
         const hasPhoto = avatar.className.includes('has-avatar-photo') || avatar.className.includes('has-default-icon');
