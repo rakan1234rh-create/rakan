@@ -61,3 +61,13 @@ html:root.mr-mobile-ui.mr-mobile-ui #appWrap header.topbar .topbar-brand-zone im
 html:root.mr-mobile-ui.mr-mobile-ui #appWrap header.topbar #notifBellBtn,
 html:root.mr-mobile-ui.mr-mobile-ui #appWrap header.topbar #topbarUserMenuBtn { background: #1a1a1a !important; border: 1px solid #333 !important; box-shadow: none !important; }
 html:root.mr-mobile-ui.mr-mobile-ui #appWrap header.topbar #topbarUserMenuBtn *:not(img) { background: transparent !important; color: #f2f2f2 !important; }
+
+/* scrolling: the page scrolls inside .main; tabs must size to their content */
+html:root.mr-mobile-ui.mr-mobile-ui #appWrap .main{overflow-y:auto !important;overflow-x:hidden !important;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;touch-action:pan-y}
+html:root.mr-mobile-ui.mr-mobile-ui #appWrap .main > .content{height:auto !important;max-height:none !important;min-height:0 !important;overflow:visible !important;flex:0 0 auto !important}
+html:root.mr-mobile-ui.mr-mobile-ui #appWrap .content > .tab-content.active{height:auto !important;max-height:none !important;min-height:0 !important;overflow:visible !important;flex:0 0 auto !important}
+/* .main is a fixed-height flex row; stretching clipped tall pages — make both blocks so height follows content */
+html:root.mr-mobile-ui.mr-mobile-ui #appWrap .main{display:block !important}
+html:root.mr-mobile-ui.mr-mobile-ui #appWrap .main > .content{display:block !important}
+html:root.mr-mobile-ui.mr-mobile-ui #appWrap .main > .content{padding-bottom:calc(120px + env(safe-area-inset-bottom)) !important}
+html:root.mr-mobile-ui.mr-mobile-ui #appWrap .main::after{content:"";display:block;height:calc(110px + env(safe-area-inset-bottom));flex:none}
