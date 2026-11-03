@@ -167,6 +167,7 @@
   }
   function cdHtml(t, i) {
     var code = i === 0 ? 'emp' : i === 1 ? 'sup' : ''; if (!code) return '';
+    if (code === 'sup') { var rl = ''; try { rl = String((B().state.currentUser || {}).role || ''); } catch (_) {} if (rl === 'employee' || rl === 'branch_manager') return ''; }
     var m = null; try { m = B().sla(t, code); } catch (_) {}
     if (!m && code === 'sup' && t.state === 'sup' && !truthy(t.auto_forwarded_sup)) {
       m = { limitH: 48, startISO: t._supStartTime || t.updated_at || t.created_at || '', deadlineISO: t.sup_forward_after || '' };
