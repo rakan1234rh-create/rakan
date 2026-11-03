@@ -8089,8 +8089,8 @@
           nav.style.display = 'none';
           return;
         }
-        if (document.documentElement.classList.contains('mr-profile-page-active')
-          || getActiveTabKey() === 'profile') {
+        if (false /* الشريط السفلي يبقى ظاهراً في الملف الشخصي */ && (document.documentElement.classList.contains('mr-profile-page-active')
+          || getActiveTabKey() === 'profile')) {
           nav.style.setProperty('display', 'none', 'important');
           nav.style.setProperty('visibility', 'hidden', 'important');
           nav.style.setProperty('pointer-events', 'none', 'important');
@@ -10282,7 +10282,7 @@
       function syncProfileBottomNavHidden(hidden) {
         const nav = document.getElementById('mobileBottomNav');
         if (!nav) return;
-        if (hidden) {
+        if (false && hidden) {
           nav.style.setProperty('display', 'none', 'important');
           nav.style.setProperty('visibility', 'hidden', 'important');
           nav.style.setProperty('pointer-events', 'none', 'important');

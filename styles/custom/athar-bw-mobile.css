@@ -73,3 +73,7 @@ html:root.mr-mobile-ui.mr-mobile-ui #appWrap .main > .content{padding-bottom:cal
 html:root.mr-mobile-ui.mr-mobile-ui #appWrap .main::after{content:"";display:block;height:calc(56px + env(safe-area-inset-bottom));flex:none}
 html:root.mr-mobile-ui.mr-profile-page-active #appWrap .main::after{display:none !important}
 html:root.mr-mobile-ui.mr-profile-page-active.mr-profile-page-active #appWrap .main,html:root.mr-mobile-ui.mr-profile-page-active.mr-profile-page-active #appWrap .main > .content{padding-bottom:0 !important;margin-bottom:0 !important}
+/* keep the bottom nav on the profile page: one tap leaves it */
+html:root.mr-mobile-ui.mr-mobile-ui:has(#tab-profile.active) #appWrap > .app-shell > #mobileBottomNav.mobile-bottom-nav,
+html:root.mr-mobile-ui.mr-mobile-ui.mr-profile-page-active #appWrap > .app-shell > #mobileBottomNav.mobile-bottom-nav{display:flex !important;visibility:visible !important;pointer-events:auto !important;opacity:1 !important}
+html:root.mr-mobile-ui.mr-profile-page-active #appWrap .main::after{display:block !important}
