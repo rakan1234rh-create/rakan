@@ -39760,7 +39760,8 @@
                   ${renderStaffBreakRosterHtml()}
                 </div>`
           : '';
-        if (desk && canTakeStaffBreak() && window.AtharBreaksDesign) {
+        const deskDesign = desk || document.documentElement.classList.contains('mr-mobile-ui');
+        if (deskDesign && canTakeStaffBreak() && window.AtharBreaksDesign) {
           try {
             const me = state.currentUser;
             const open = getMyOpenStaffBreak();
@@ -39792,7 +39793,7 @@
             return;
           } catch (e) { console.warn('[atb]', e); }
         }
-        if (desk && window.AtharBreaksDesign && window.AtharBreaksDesign.monitor) {
+        if (deskDesign && window.AtharBreaksDesign && window.AtharBreaksDesign.monitor) {
           try {
             host.innerHTML = `<div class="rd-screen rd-breaks-page rd-breaks-page--desk atb-page">
               <header class="atb-head"><div><p class="atd-kick">STAFF BREAKS</p><h1 class="atd-h1">بريكات الموظفين</h1></div>${manageBtn}</header>
