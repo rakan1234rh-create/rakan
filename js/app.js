@@ -15464,7 +15464,7 @@
           searchEl.dataset.rdPlaceholder = '1';
         }
 
-        list.className = rdDesk
+        list.className = (rdDesk || rdMob)
           ? 'mr-users-list rd-usr-desk'
           : (rdMob
             ? 'mr-users-list users-grid--mob-list rd-usr-list'
@@ -15495,7 +15495,7 @@
           return;
         }
 
-        if (rdDesk) {
+        if (rdDesk || (rdMob && window.AtharAdminDesign)) {
           if (typeof initRdLocMenuDismiss === 'function') initRdLocMenuDismiss();
           list.innerHTML = rdUsrDeskTableHTML(filtered, canManage);
           hydrateProfileAvatarImages(list).catch(() => {});
