@@ -9842,7 +9842,7 @@
         };
         const mob = typeof isMobileViewport === 'function' && isMobileViewport();
         const active = document.getElementById('tab-violations')?.classList.contains('active');
-        if (!mob || !active || !grid.classList.contains('viol-grid--mob-list')) {
+        if (!mob || !active || !grid.classList.contains('viol-grid--mob-list') || grid.querySelector('.atu-table') || grid.closest('#violDeskHost')) {
           clearViolMobListHeight();
           return;
         }
@@ -16018,7 +16018,7 @@
 
       function renderViolTypesRedesign(types, canManage) {
         const desk = typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi();
-        if (desk && window.AtharAdminDesign) {
+        if ((desk || (typeof isMobileViewport === 'function' && isMobileViewport())) && window.AtharAdminDesign) {
           try {
             const rowsT = types.map((v) => ({
               id: String(v.id || ''), name: v.name || '', sev: violTypeSeverity(v),
