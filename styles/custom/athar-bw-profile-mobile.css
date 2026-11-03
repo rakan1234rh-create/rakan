@@ -43,3 +43,6 @@ html[data-theme="dark"] #tab-profile .pf-push--btn{background:#F2F2F2;color:#0A0
 #tab-profile #profilePagePushToggle{display:none !important}
 html:root.mr-mobile-ui.mr-mobile-ui #tab-profile,html:root.mr-mobile-ui.mr-mobile-ui #tab-profile .profile-page-shell,html:root.mr-mobile-ui.mr-mobile-ui #tab-profile .profile-page-body{height:auto !important;max-height:none !important;overflow:visible !important;min-height:0 !important}
 html:root.mr-mobile-ui.mr-mobile-ui #tab-profile .profile-page-shell{padding-bottom:calc(24px + env(safe-area-inset-bottom)) !important}
+/* back button always reachable */
+html:root.mr-mobile-ui.mr-mobile-ui #tab-profile .profile-page-topbar{position:sticky !important;top:0;z-index:20;margin:0 0 16px !important;padding:12px 0 !important;background:var(--t-bg,#F4F4F4) !important}
+html[data-theme="dark"]:root.mr-mobile-ui.mr-mobile-ui #tab-profile .profile-page-topbar{background:#000 !important}

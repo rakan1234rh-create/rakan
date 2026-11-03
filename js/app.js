@@ -11297,6 +11297,10 @@
         }
         document.getElementById('topbarUserMenuBtn')?.blur();
         goTab('profile', null);
+        const resetMainScroll = () => { try { const m = document.querySelector('.main'); if (m) m.scrollTop = 0; window.scrollTo(0, 0); } catch (_) { /* noop */ } };
+        resetMainScroll();
+        requestAnimationFrame(resetMainScroll);
+        setTimeout(resetMainScroll, 150);
       }
 
       function closeProfilePage(event) {
