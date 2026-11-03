@@ -1,0 +1,52 @@
+/* notifications page, topbar buttons, bottom nav — square black & white */
+html:root.mr-mobile-ui { --sh-fg:#0a0a0a; --sh-mu:#6b6b6b; --sh-ln:#e4e4e4; --sh-bg:#fff; --sh-sf:#f5f5f5; --sh-pg:#f2f2f2; --sh-on:#0a0a0a; --sh-onf:#fff; }
+html:root.mr-mobile-ui[data-theme="dark"] { --sh-fg:#f2f2f2; --sh-mu:#a3a3a3; --sh-ln:#262626; --sh-bg:#0f0f0f; --sh-sf:#181818; --sh-pg:#0a0a0a; --sh-on:#f2f2f2; --sh-onf:#0a0a0a; }
+
+/* ── topbar: bell + profile as squares, same box as the theme toggle ── */
+html:root.mr-mobile-ui.mr-mobile-ui #appWrap header.topbar #notifBellBtn,
+html:root.mr-mobile-ui.mr-mobile-ui #appWrap header.topbar #topbarUserMenuBtn {
+  width: 34px !important; height: 34px !important; min-width: 34px !important; padding: 0 !important; margin: 0 !important;
+  border-radius: 4px !important; border: 1px solid #3a3a3a !important; background: transparent !important;
+  display: inline-flex !important; align-items: center; justify-content: center; position: relative; box-shadow: none !important;
+}
+html:root.mr-mobile-ui.mr-mobile-ui #appWrap header.topbar #topbarUserMenuBtn .mr-topbar-user-icon { width: 20px !important; height: 20px !important; border-radius: 0 !important; display: inline-flex; align-items: center; justify-content: center; }
+html:root.mr-mobile-ui.mr-mobile-ui #appWrap header.topbar #topbarUserMenuBtn svg { width: 20px; height: 20px; }
+html:root.mr-mobile-ui.mr-mobile-ui #appWrap header.topbar #notifBellBtn i { font-size: 15px; }
+html:root.mr-mobile-ui.mr-mobile-ui #appWrap header.topbar .rd-h-theme { height: 34px; border-radius: 4px; }
+html:root.mr-mobile-ui.mr-mobile-ui #appWrap header.topbar .rd-h-theme button { height: 32px; border-radius: 0 !important; }
+html:root.mr-mobile-ui.mr-mobile-ui #appWrap header.topbar #notifBellBtn .notif-bell-count {
+  position: absolute; top: -6px; inset-inline-end: -6px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 3px;
+  background: #fff !important; color: #0a0a0a !important; font-size: 10px; font-weight: 700; line-height: 16px; border: 1px solid #0a0a0a;
+}
+
+/* ── bottom nav ── */
+html:root.mr-mobile-ui.mr-mobile-ui nav#mobileBottomNav.mobile-bottom-nav { padding-top: 6px !important; }
+html:root.mr-mobile-ui.mr-mobile-ui #mobileBottomNav .mob-nav-item { gap: 4px !important; padding: 4px 2px 6px !important; font-size: 11px !important; font-weight: 600 !important; letter-spacing: 0; box-shadow: none !important; }
+html:root.mr-mobile-ui.mr-mobile-ui #mobileBottomNav .mob-nav-item > i {
+  width: 44px !important; height: 30px !important; border-radius: 4px !important; font-size: 18px !important;
+  background: transparent !important; box-shadow: none !important; transform: none !important; border: 0 !important; color: inherit !important;
+}
+html:root.mr-mobile-ui.mr-mobile-ui #mobileBottomNav .mob-nav-item span { max-width: 80px !important; }
+html:root.mr-mobile-ui.mr-mobile-ui #mobileBottomNav .mob-nav-item.active { box-shadow: none !important; color: #fff !important; }
+html:root.mr-mobile-ui.mr-mobile-ui #mobileBottomNav .mob-nav-item.active > i { background: #f2f2f2 !important; color: #0a0a0a !important; box-shadow: none !important; }
+html:root.mr-mobile-ui.mr-mobile-ui #mobileBottomNav .mob-nav-item.active span { color: #fff !important; font-weight: 700 !important; }
+html:root.mr-mobile-ui.mr-mobile-ui #mobileBottomNav .mob-nav-badge { border-radius: 3px !important; background: #fff !important; color: #0a0a0a !important; border: 1px solid #0a0a0a !important; }
+
+/* ── notifications page ── */
+html:root.mr-mobile-ui #tab-notifications.notif-tab-overlay, html:root.mr-mobile-ui.mr-notif-page-active #tab-notifications.active { background: var(--sh-pg) !important; }
+html:root.mr-mobile-ui #tab-notifications .notif-page-topbar { padding: 8px 14px 6px !important; }
+html:root.mr-mobile-ui #tab-notifications .notif-page-topbar__heading-title, html:root.mr-mobile-ui #tab-notifications .notif-page-back__label { color: var(--sh-fg) !important; }
+html:root.mr-mobile-ui #tab-notifications .notif-page-topbar__heading *:not(.notif-page-topbar__heading-title) { color: var(--sh-mu) !important; }
+html:root.mr-mobile-ui #tab-notifications .notif-page-back { width: 34px !important; height: 34px !important; border-radius: 4px !important; background: transparent !important; border: 1px solid var(--sh-ln) !important; color: var(--sh-fg) !important; box-shadow: none !important; }
+html:root.mr-mobile-ui #tab-notifications .notif-page-back i { color: var(--sh-fg) !important; }
+html:root.mr-mobile-ui #tab-notifications .notif-filter-btn { border-radius: 4px !important; background: var(--sh-bg) !important; color: var(--sh-mu) !important; border: 1px solid var(--sh-ln) !important; box-shadow: none !important; font-weight: 600; }
+html:root.mr-mobile-ui #tab-notifications .notif-filter-btn.is-active { background: var(--sh-on) !important; color: var(--sh-onf) !important; border-color: var(--sh-on) !important; }
+html:root.mr-mobile-ui #tab-notifications .notif-list--page { border-radius: 4px !important; background: var(--sh-bg) !important; border: 1px solid var(--sh-ln) !important; box-shadow: none !important; }
+html:root.mr-mobile-ui #tab-notifications .notif-swipe { border-bottom: 1px solid var(--sh-ln) !important; }
+html:root.mr-mobile-ui #tab-notifications .notif-item { background: var(--sh-bg) !important; color: var(--sh-fg) !important; border-radius: 0 !important; }
+html:root.mr-mobile-ui #tab-notifications .notif-item.unread { background: var(--sh-sf) !important; box-shadow: inset 3px 0 0 var(--sh-on) !important; }
+html:root.mr-mobile-ui #tab-notifications .notif-title { color: var(--sh-fg) !important; }
+html:root.mr-mobile-ui #tab-notifications .notif-msg, html:root.mr-mobile-ui #tab-notifications .notif-time, html:root.mr-mobile-ui #tab-notifications .notif-empty { color: var(--sh-mu) !important; }
+html:root.mr-mobile-ui #tab-notifications .notif-icon { border-radius: 4px !important; background: var(--sh-sf) !important; color: var(--sh-fg) !important; border: 1px solid var(--sh-ln) !important; }
+html:root.mr-mobile-ui #tab-notifications .notif-icon i { color: var(--sh-fg) !important; }
+html:root.mr-mobile-ui #tab-notifications .notif-bc-tag { border-radius: 3px !important; background: transparent !important; color: var(--sh-mu) !important; border: 1px solid var(--sh-ln) !important; }
