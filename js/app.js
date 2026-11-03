@@ -13424,7 +13424,7 @@
               host.hidden = false;
               const pendingHtml = (isBrowserOffline() || state._connStatus === 'offline' || state._connStatus === 'disconnected')
                 ? offlineEmptyHTML('لا يوجد اتصال بالإنترنت')
-                : '<div class="rd-screen"><div class="rd-home-loading">جاري تحميل الإحصائيات…</div></div>';
+                : '<div class="rd-screen rd-desk-dash rd-mob-dash ath-sk" role="status" aria-label="جاري تحميل الإحصائيات"><div class="ath-sk__ln ath-sk__ln--s"></div><div class="ath-sk__ln ath-sk__ln--h"></div><div class="ath-sk__card ath-sk__card--hero"><div class="ath-sk__ring"></div><div class="ath-sk__col"><div class="ath-sk__ln"></div><div class="ath-sk__ln ath-sk__ln--m"></div></div></div><div class="ath-sk__card"><div class="ath-sk__ln ath-sk__ln--m"></div><div class="ath-sk__ln"></div><div class="ath-sk__ln ath-sk__ln--s"></div></div><div class="ath-sk__card"><div class="ath-sk__ln ath-sk__ln--m"></div><div class="ath-sk__ln"></div></div></div>';
               host.innerHTML = pendingHtml;
             }
             return;

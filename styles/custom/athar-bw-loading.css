@@ -1,0 +1,31 @@
+/* loading states: one ring spinner + skeleton, black & white, platform font */
+@keyframes athSpin { to { transform: rotate(360deg); } }
+@keyframes athShimmer { 0% { background-position: 120% 0; } 100% { background-position: -120% 0; } }
+
+/* every FontAwesome spinner in the app becomes a clean ring (inherits size + color) */
+i.fa-spinner, .fa-spinner.fa-spin, i.fa-spin.fa-spinner {
+  display: inline-block; width: 1em; height: 1em; flex-shrink: 0; vertical-align: -.125em;
+  font-size: inherit; line-height: 1; box-sizing: border-box; border-radius: 50%;
+  border: .14em solid color-mix(in srgb, currentColor 22%, transparent); border-top-color: currentColor;
+  animation: athSpin .8s linear infinite !important; background: none !important;
+}
+i.fa-spinner::before { content: none !important; display: none !important; }
+i.fa-spinner.fa-2x { width: 2em; height: 2em; font-size: 20px; }
+@media (prefers-reduced-motion: reduce) { i.fa-spinner { animation-duration: 1.8s !important; } }
+
+/* loading placeholders (list / page) */
+.mr-data-loading, .mk-empty, .rd-ticket-empty:has(.fa-spinner) { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 36px 16px; text-align: center; }
+.mr-data-loading i.fa-spinner, .mk-empty i.fa-spinner, .rd-ticket-empty i.fa-spinner { font-size: 28px; color: var(--mr-text, currentColor); }
+.mr-data-loading p, .mk-empty p, .rd-ticket-empty:has(.fa-spinner) p { margin: 0; font-family: var(--font, 'IBM Plex Sans Arabic', system-ui, sans-serif); font-size: 14px; font-weight: 500; color: var(--mr-text-2, #6b6b6b); }
+.rd-ticket-empty:has(.fa-spinner) i.fa-spinner { font-size: 28px; }
+
+/* dashboard skeleton */
+.ath-sk { display: flex; flex-direction: column; gap: 14px; padding: 16px 14px 24px; }
+.ath-sk__ln, .ath-sk__ring { background: linear-gradient(100deg, var(--sk-a, #e4e4e4) 30%, var(--sk-b, #f4f4f4) 50%, var(--sk-a, #e4e4e4) 70%) 120% 0 / 240% 100%; animation: athShimmer 1.4s ease-in-out infinite; border-radius: 4px; }
+.ath-sk__ln { height: 14px; width: 100%; } .ath-sk__ln--s { width: 38%; height: 11px; } .ath-sk__ln--m { width: 62%; } .ath-sk__ln--h { width: 56%; height: 26px; margin-bottom: 4px; }
+.ath-sk__card { display: flex; flex-direction: column; gap: 12px; padding: 18px; background: var(--mr-surface, #fff); border: 1px solid var(--mr-border, #e4e4e4); border-radius: 6px; }
+.ath-sk__card--hero { flex-direction: row; align-items: center; gap: 18px; } .ath-sk__col { flex: 1; display: flex; flex-direction: column; gap: 12px; }
+.ath-sk__ring { width: 96px; height: 96px; border-radius: 50%; flex-shrink: 0; }
+[data-theme="dark"] .ath-sk { --sk-a: #1f1f1f; --sk-b: #2c2c2c; }
+@media (min-width: 700px) { .ath-sk { max-width: 980px; margin-inline: auto; padding: 24px; } }
+@media (prefers-reduced-motion: reduce) { .ath-sk__ln, .ath-sk__ring { animation: none; } }
