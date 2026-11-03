@@ -14457,9 +14457,9 @@
         if (!canDeleteRegions()) { showToast('لا تملك صلاحية حذف المناطق.', 'warning'); return; }
         const branchCount = state.branches.filter(b => b.region_id === id).length;
         const msg = branchCount > 0
-          ? `هذه المنطقة بها ${branchCount} فرع/فروع. الحذف سيفصلها عن المنطقة. متأكد؟`
-          : 'هل تريد حذف هذه المنطقة؟';
-        if (!await confirmDialog(msg, { title: 'حذف المنطقة', okText: 'حذف' })) return;
+          ? `⚠️ هذه المنطقة بها ${branchCount} فرع/فروع. الحذف سيفصلها عن المنطقة، ولا يمكن التراجع عنه. هل أنت متأكد؟`
+          : 'سيتم حذف هذه المنطقة نهائياً ولا يمكن التراجع عن ذلك. هل أنت متأكد؟';
+        if (!await confirmDialog(msg, { title: 'تحذير: حذف المنطقة', okText: 'نعم، احذف المنطقة', type: 'danger' })) return;
 
         try {
           const { error } = await sb.from('regions').delete().eq('id', id);
@@ -14540,9 +14540,9 @@
         if (!canDeleteRegions()) { showToast('لا تملك صلاحية حذف الفروع.', 'warning'); return; }
         const empCount = state.users.filter(u => u.branch_id === id && isActiveUser(u)).length;
         const msg = empCount > 0
-          ? `هذا الفرع به ${empCount} موظف(ين). الحذف سيفصلهم عن الفرع. هل أنت متأكد؟`
-          : 'هل تريد حذف هذا الفرع؟';
-        if (!await confirmDialog(msg, { title: 'حذف الفرع', okText: 'حذف' })) return;
+          ? `⚠️ هذا الفرع به ${empCount} موظف(ين). الحذف سيفصلهم عن الفرع، ولا يمكن التراجع عنه. هل أنت متأكد؟`
+          : 'سيتم حذف هذا الفرع نهائياً ولا يمكن التراجع عن ذلك. هل أنت متأكد؟';
+        if (!await confirmDialog(msg, { title: 'تحذير: حذف الفرع', okText: 'نعم، احذف الفرع', type: 'danger' })) return;
 
         try {
           const { error } = await sb.from('branches').delete().eq('id', id);

@@ -10,24 +10,34 @@
     }).join('');
     return '<div class="atu-scroll"><table class="atu-table"><thead><tr><th scope="col">الاسم</th><th scope="col">الرقم الوظيفي</th><th scope="col">الدور</th><th scope="col">الفرع</th><th scope="col">الحالة</th><th scope="col">إجراء</th></tr></thead><tbody>' + body + '</tbody></table></div>';
   }
+  function actBtns(canManage, canDelete, editFn, delFn, id, what) {
+    return '<td class="atl-acts" onclick="event.stopPropagation()">' +
+      (canManage ? '<button type="button" class="atl-btn" onclick="' + editFn + '(\'' + id + '\')"><i class="fas fa-pen" aria-hidden="true"></i>تعديل</button>' : '') +
+      (canDelete ? '<button type="button" class="atl-btn atl-btn--del" aria-label="حذف ' + what + '" title="حذف ' + what + '" onclick="' + delFn + '(\'' + id + '\')"><i class="fas fa-trash" aria-hidden="true"></i>حذف</button>' : '') + '</td>';
+  }
+  function cnt(n, unit) { return '<span class="atl-pill"><b class="atd-mono">' + n + '</b> ' + unit + '</span>'; }
   function regionsTable(rows, canManage, canDelete, e) {
     var acts = canManage || canDelete;
     var body = rows.map(function (r) {
       var id = e(r.id).replace(/'/g, '&#39;');
-      return '<tr class="atu-tr" tabindex="0" onclick="openRegionView(\'' + id + '\')"><td>' + e(r.name) + '</td><td>' + (r.sup ? e(r.sup) : '<span class="atd-mu">لا يوجد مشرف</span>') + '</td><td class="atd-mono atu-no">' + r.branches + '</td><td class="atd-mono atu-no">' + r.n + '</td>' +
-        (acts ? '<td onclick="event.stopPropagation()">' + (canManage ? '<button type="button" class="atu-edit" onclick="editRegion(\'' + id + '\')">تعديل / المشرف</button>' : '') + (canDelete ? '<button type="button" class="atu-off" onclick="deleteRegion(\'' + id + '\')">حذف</button>' : '') + '</td>' : '') + '</tr>';
-    }).join('') || '<tr><td colspan="5" class="atu-empty">لا توجد مناطق</td></tr>';
-    return '<div class="atu-scroll"><table class="atu-table"><thead><tr><th scope="col">المنطقة</th><th scope="col">المشرف</th><th scope="col">الفروع</th><th scope="col">الموظفون</th>' + (acts ? '<th scope="col">إجراء</th>' : '') + '</tr></thead><tbody>' + body + '</tbody></table></div>';
+      return '<tr class="atu-tr atl-tr" tabindex="0" onclick="openRegionView(\'' + id + '\')"><td><span class="atl-name"><span class="atl-ico" aria-hidden="true"><i class="fas fa-map-location-dot"></i></span><span>' + e(r.name) + '</span></span></td>' +
+        '<td>' + (r.sup ? '<span class="atl-sup"><i class="fas fa-user-tie" aria-hidden="true"></i>' + e(r.sup) + '</span>' : '<span class="atd-mu">لا يوجد مشرف</span>') + '</td>' +
+        '<td>' + cnt(r.branches, 'فرع') + '</td><td>' + cnt(r.n, 'موظف') + '</td>' + (acts ? actBtns(canManage, canDelete, 'editRegion', 'deleteRegion', id, 'المنطقة') : '') +
+        '<td class="atl-go" aria-hidden="true"><i class="fas fa-chevron-left"></i></td></tr>';
+    }).join('') || '<tr><td colspan="7" class="atu-empty">لا توجد مناطق</td></tr>';
+    return '<div class="atu-scroll"><table class="atu-table atl-table"><colgroup><col style="width:28%"><col style="width:24%"><col style="width:11%"><col style="width:11%">' + (acts ? '<col style="width:210px">' : '') + '<col style="width:32px"></colgroup><thead><tr><th scope="col">المنطقة</th><th scope="col">المشرف</th><th scope="col">الفروع</th><th scope="col">الموظفون</th>' + (acts ? '<th scope="col"></th>' : '') + '<th scope="col"></th></tr></thead><tbody>' + body + '</tbody></table></div>';
   }
   function regionBranchesTable(rows, canManage, canDelete, e) {
     var band = function (n) { return n >= 90 ? 'ex' : n >= 75 ? 'gd' : n >= 50 ? 'md' : 'bd'; };
     var acts = canManage || canDelete;
     var body = rows.map(function (r) {
       var id = e(r.id).replace(/'/g, '&#39;');
-      return '<tr class="atu-tr" tabindex="0" onclick="openLocBranchView(\'' + id + '\')"><td>' + e(r.name) + '</td><td>' + (r.mgr ? e(r.mgr) : '<span class="atd-mu">لا يوجد مدير</span>') + '</td><td class="atd-mono atu-no">' + r.n + '</td><td><span class="atq-chip atq-chip--' + band(r.score) + '">' + r.score + '</span></td>' +
-        (acts ? '<td onclick="event.stopPropagation()">' + (canManage ? '<button type="button" class="atu-edit" onclick="editBranch(\'' + id + '\')">تعديل</button>' : '') + (canDelete ? '<button type="button" class="atu-off" onclick="deleteBranch(\'' + id + '\')">حذف</button>' : '') + '</td>' : '') + '</tr>';
-    }).join('') || '<tr><td colspan="5" class="atu-empty">لا توجد فروع</td></tr>';
-    return '<div class="atu-scroll"><table class="atu-table"><thead><tr><th scope="col">الفرع</th><th scope="col">المدير</th><th scope="col">الموظفون</th><th scope="col">الامتثال</th>' + (acts ? '<th scope="col">إجراء</th>' : '') + '</tr></thead><tbody>' + body + '</tbody></table></div>';
+      return '<tr class="atu-tr atl-tr" tabindex="0" onclick="openLocBranchView(\'' + id + '\')"><td><span class="atl-name"><span class="atl-ico" aria-hidden="true"><i class="fas fa-store"></i></span><span>' + e(r.name) + '</span></span></td>' +
+        '<td>' + (r.mgr ? '<span class="atl-sup"><i class="fas fa-user-tie" aria-hidden="true"></i>' + e(r.mgr) + '</span>' : '<span class="atd-mu">لا يوجد مدير</span>') + '</td>' +
+        '<td>' + cnt(r.n, 'موظف') + '</td><td><span class="atq-chip atq-chip--' + band(r.score) + '">' + r.score + '</span></td>' + (acts ? actBtns(canManage, canDelete, 'editBranch', 'deleteBranch', id, 'الفرع') : '') +
+        '<td class="atl-go" aria-hidden="true"><i class="fas fa-chevron-left"></i></td></tr>';
+    }).join('') || '<tr><td colspan="6" class="atu-empty">لا توجد فروع</td></tr>';
+    return '<div class="atu-scroll"><table class="atu-table atl-table"><colgroup><col style="width:30%"><col style="width:26%"><col style="width:13%"><col style="width:12%">' + (acts ? '<col style="width:210px">' : '') + '<col style="width:32px"></colgroup><thead><tr><th scope="col">الفرع</th><th scope="col">مدير الفرع</th><th scope="col">الموظفون</th><th scope="col">الامتثال</th>' + (acts ? '<th scope="col"></th>' : '') + '<th scope="col"></th></tr></thead><tbody>' + body + '</tbody></table></div>';
   }
   function branchStaffTable(rows, e) {
     var body = rows.map(function (r) {

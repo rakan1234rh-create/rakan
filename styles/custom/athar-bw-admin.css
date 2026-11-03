@@ -104,3 +104,22 @@ html:root.mr-desktop-ui.mr-desktop-ui #tab-locations .atu-drill__t h2{margin:2px
 html:root.mr-desktop-ui.mr-desktop-ui #tab-locations .atu-drill__t p{margin:0}
 html:root.mr-desktop-ui.mr-desktop-ui #tab-locations .atu-back{height:38px;padding:0 14px;border:1px solid var(--t-ct);border-radius:4px;background:transparent;color:var(--t-fg);font:inherit;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
 html:root.mr-desktop-ui.mr-desktop-ui #tab-locations .atu-back:hover{background:var(--t-hv)}
+
+/* locations lists (regions / branches): aligned columns, icon + name, pills, clear actions */
+html:root.mr-desktop-ui.mr-desktop-ui #tab-locations .wf-panel>.wf-panel-title,html:root.mr-desktop-ui.mr-desktop-ui #tab-locations .wf-panel h2.wf-title{display:none}
+html:root.mr-desktop-ui.mr-desktop-ui .atl-table{table-layout:fixed}
+html:root.mr-desktop-ui.mr-desktop-ui .atl-table th{padding:12px 12px}
+html:root.mr-desktop-ui.mr-desktop-ui .atl-table td{padding:16px 12px}
+.atl-tr{cursor:pointer}
+.atl-name{display:inline-flex;align-items:center;gap:12px;font-weight:600;font-size:15px;color:var(--t-fg)}
+.atl-ico{width:36px;height:36px;border:1px solid var(--t-ln2);border-radius:4px;display:inline-flex;align-items:center;justify-content:center;font-size:14px;color:var(--t-fg);background:var(--t-hv);flex:none}
+.atl-sup{display:inline-flex;align-items:center;gap:8px;color:var(--t-fg);font-size:14px}.atl-sup i{color:var(--t-ct);font-size:13px}
+.atl-pill{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 12px;border:1px solid var(--t-ln2);border-radius:4px;font-size:13px;color:var(--t-mu);white-space:nowrap}.atl-pill b{color:var(--t-fg);font-size:14px}
+.atl-acts{text-align:end !important;white-space:nowrap}
+.atl-btn{height:36px;padding:0 14px;margin-inline-start:8px;border:1px solid var(--t-ct);border-radius:4px;background:transparent;color:var(--t-fg);font:600 13px inherit;font-family:inherit;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+.atl-btn i{font-size:12px}.atl-btn:hover{background:var(--t-fg);color:var(--t-pf);border-color:var(--t-fg)}
+.atl-btn--del{color:var(--t-hif);border-color:var(--t-hib)}.atl-btn--del:hover{background:var(--t-hif);color:#fff;border-color:var(--t-hif)}
+.atl-go{color:var(--t-ct);text-align:center;font-size:12px}.atl-tr:hover .atl-go{color:var(--t-fg)}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-locations #rbPanelIntro,html:root.mr-desktop-ui.mr-desktop-ui #tab-locations #rbPanelTitle,html:root.mr-desktop-ui.mr-desktop-ui #tab-locations #rbPanelSub{display:none !important}
+.atl-btn--del{color:var(--t-fg) !important;border-color:var(--t-ct) !important}.atl-btn--del:hover{background:var(--t-fg) !important;color:var(--t-pf) !important;border-color:var(--t-fg) !important}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-locations .atu-card-hd{display:none !important}
