@@ -143,3 +143,15 @@ html:root.mr-mobile-ui.mr-mobile-ui #tab-compliance :is(.rd-cmp-hero__title,.rd-
 html:root.mr-mobile-ui.mr-mobile-ui #tab-compliance :is(.rd-cmp-hero__sub,.rd-cmp-region__mgr,.rd-cmp-hilo__lbl,.rd-cmp-hd__eye,.rd-cmp-region__meta){color:var(--m-mu) !important}
 html:root.mr-mobile-ui.mr-mobile-ui #tab-compliance .rd-cmp-region__bar,html:root.mr-mobile-ui.mr-mobile-ui #tab-compliance .rd-cmp-region__bar span{border-radius:0 !important}
 html:root.mr-mobile-ui.mr-mobile-ui #tab-compliance .rd-cmp-hilo i{color:var(--m-fg) !important}
+
+/* ===== Complaints list (admin/audit, mobile + iPad) — B&W ===== */
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints{--m-sf:#fff;--m-fg:#0A0A0A;--m-mu:#5F5F5F;--m-ln:#D9D9D9;--m-hv:#F7F7F7;--m-pb:#0A0A0A;--m-pf:#fff}
+html[data-theme="dark"]:root.mr-mobile-ui.mr-mobile-ui #tab-complaints{--m-sf:#151515;--m-fg:#F2F2F2;--m-mu:#A3A3A3;--m-ln:#303030;--m-hv:#1C1C1C;--m-pb:#F2F2F2;--m-pf:#0A0A0A}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints :is(.rd-cmpl-metric,.rd-cmpl-card,.rd-cmpl-empty,.rd-app-search,.rd-cmpl-date-btn,.rd-cmpl-pdf-btn,.rd-cmpl-filter,.rd-cmpl-item){background:var(--m-sf) !important;border:1px solid var(--m-ln) !important;border-radius:6px !important;box-shadow:none !important;color:var(--m-fg) !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-cmpl-filter.is-active{background:var(--m-pb) !important;color:var(--m-pf) !important;border-color:var(--m-pb) !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-cmpl-cta{background:var(--m-pb) !important;color:var(--m-pf) !important;border-radius:6px !important;box-shadow:none !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-cmpl-metric__ico{background:var(--m-hv) !important;border:1px solid var(--m-ln) !important;border-radius:4px !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-cmpl-metric__ico i,html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-cmpl-pdf-btn i{color:var(--m-fg) !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-cmpl-metric__val{color:var(--m-fg) !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints :is(.rd-cmpl-metric__lbl,.rd-cmpl-intro){color:var(--m-mu) !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-app-search__input{border:0 !important;background:transparent !important;box-shadow:none !important}
