@@ -140,3 +140,9 @@ html #atharWelcomeSplash .aws-brand-logo--gleam {
 }
 html #atharWelcomeSplash.aws-active .aws-brand-logo--gleam { animation: awsFill 2.6s cubic-bezier(.4,0,.2,1) forwards !important; }
 @keyframes awsFill { from { clip-path: inset(0 100% 0 0); -webkit-clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); -webkit-clip-path: inset(0 0 0 0); } }
+
+/* ===== login messages — black & white (errors / success) ===== */
+html:root #loginScreen :is(.login-err,.login-ok).show{display:flex !important;align-items:center;gap:10px;margin:0 0 14px;padding:12px 14px;border-radius:4px;font-size:13px;font-weight:500;line-height:1.6;background:#F7F7F7;color:#0A0A0A;border:1px solid #0A0A0A;border-inline-start-width:4px;box-shadow:none}
+html:root #loginScreen :is(.login-err,.login-ok).show::before{content:"\f06a";font-family:"Font Awesome 6 Free","Font Awesome 5 Free";font-weight:900;font-size:14px;flex:0 0 auto}
+html:root #loginScreen .login-ok.show::before{content:"\f058"}
+html[data-theme="dark"]:root #loginScreen :is(.login-err,.login-ok).show{background:#151515;color:#F2F2F2;border-color:#F2F2F2}
