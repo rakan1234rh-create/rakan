@@ -19,3 +19,8 @@ html:root.mr-desktop-ui #tab-compliance .atq-board .atq-card{background:var(--t-
 .atq-tb td{padding:12px 8px;border-top:1px solid var(--t-ln);text-align:start}.atq-tb tbody tr:first-child td{border-top:0}
 .atq-tr{cursor:pointer}.atq-tr:hover{background:var(--t-hv)}
 .atq-none{text-align:center !important;color:var(--t-mu)}
+.atq-drill{display:flex;align-items:flex-end;justify-content:space-between;flex-direction:row-reverse;gap:16px}
+.atq-drill>div{text-align:start}
+.atq-back{height:38px;padding:0 14px;border:1px solid var(--t-ct);border-radius:4px;background:transparent;color:var(--t-fg);font:600 14px inherit;font-family:inherit;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+.atq-back:hover{background:var(--t-hv)}
+.atq-sec--one .atq-tb{flex:1 1 100%;max-width:none}

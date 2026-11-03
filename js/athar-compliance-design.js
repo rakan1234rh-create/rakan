@@ -17,5 +17,14 @@
       '<div class="atq-strip" aria-hidden="true"><i style="flex:50;background:#D6342C"></i><i style="flex:25;background:#D9A011"></i><i style="flex:15;background:#2F6FDB"></i><i style="flex:10;background:#1E9E6A"></i><b style="right:' + Math.max(0, Math.min(100, m.org)) + '%"></b></div></div>' +
       '<div class="atq-card atq-tb"><div class="atq-hd"><h2>الفروع حسب الامتثال</h2><p>الأدنى أولًا</p></div><div class="atq-scroll"><table><thead><tr><th scope="col">الفرع</th><th scope="col">المنطقة</th><th scope="col">الموظفون</th><th scope="col">المخالفات</th><th scope="col">الامتثال</th></tr></thead><tbody>' + rows + '</tbody></table></div></div></section></div>';
   }
-  window.AtharComplianceDesign = { html: html };
+  function drill(m) {
+    var e = m.esc;
+    var rows = m.rows.map(function (x) {
+      var bb = band(x.score);
+      return '<tr class="atq-tr"' + (x.click ? ' tabindex="0" onclick="' + x.click + '"' : '') + '>' + x.cells.map(function (c, i) { return '<td' + (i > 0 && /^\d+$/.test(String(c)) ? ' class="atd-mono"' : '') + '>' + e(c) + '</td>'; }).join('') + '<td><span class="atq-chip atq-chip--' + bb[2] + '">' + x.score + '</span></td></tr>';
+    }).join('') || '<tr><td colspan="' + (m.cols.length + 1) + '" class="atq-none">' + e(m.empty || 'لا توجد بيانات') + '</td></tr>';
+    return '<div class="atq-page"><header class="atq-drill"><button type="button" class="atq-back" onclick="' + m.back + '"><span aria-hidden="true">→</span> ' + e(m.backLabel) + '</button><div><p class="atd-kick">' + e(m.kicker) + '</p><h1 class="atd-h1">' + e(m.title) + '</h1>' + (m.sub ? '<p class="atq-sub">' + e(m.sub) + '</p>' : '') + '</div></header>' +
+      '<section class="atq-sec atq-sec--one"><div class="atq-card atq-tb"><div class="atq-scroll"><table><thead><tr>' + m.cols.map(function (c) { return '<th scope="col">' + e(c) + '</th>'; }).join('') + '<th scope="col">الامتثال</th></tr></thead><tbody>' + rows + '</tbody></table></div></div></section></div>';
+  }
+  window.AtharComplianceDesign = { html: html, drill: drill };
 })();

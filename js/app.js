@@ -28705,6 +28705,33 @@
             board.classList.add('atq-board');
             return;
           } catch (e) { console.warn('[atq]', e); }
+        } else if (rdCmp && !cmpDataPending && window.AtharComplianceDesign && window.AtharComplianceDesign.drill && typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi()
+          && ((view === 'branches' && state._cmpDrill.regionId) || (view === 'employees' && state._cmpDrill.branchId))) {
+          try {
+            const escF = (v) => Sec.escapeHTML(String(v == null ? '' : v));
+            let m;
+            if (view === 'branches') {
+              const reg = state.regions.find(r => r.id === state._cmpDrill.regionId);
+              const rowsD = (state.branches || []).filter(b => b.region_id === state._cmpDrill.regionId).map((b) => ({
+                id: b.id, cells: [b.name, getBranchStaff(b.id).length, violations.filter(v => v.branch_id === b.id).length],
+                score: Math.round(Number(calcBranchSafety(b.id, violations).score) || 0), click: `cmpOpenBranchCompliance('${String(b.id).replace(/'/g, "\\'")}')`
+              })).sort((a, b) => a.score - b.score);
+              const avg = rowsD.length ? Math.round(rowsD.reduce((x, r) => x + r.score, 0) / rowsD.length) : 100;
+              m = { esc: escF, kicker: 'REGION', title: reg ? reg.name : 'فروع المنطقة', sub: rowsD.length + ' فرع · متوسط الامتثال ' + avg, back: 'cmpBackToRegions()', backLabel: 'كل المناطق', cols: ['الفرع', 'الموظفون', 'المخالفات'], rows: rowsD, empty: 'لا توجد فروع' };
+            } else {
+              const br = state.branches.find(b => b.id === state._cmpDrill.branchId);
+              const reg = state.regions.find(r => r.id === state._cmpDrill.regionId);
+              const rowsD = getBranchStaff(state._cmpDrill.branchId).map((u) => {
+                let sc = 100; try { sc = Math.round(Number(calcEmpScore(u.id, violations).score) || 0); } catch (_) {}
+                return { id: u.id, cells: [u.name || '', u.role === 'branch_manager' ? 'مدير فرع' : (getStaffJobTitle(u) || 'موظف'), violations.filter(v => v.employee_id === u.id).length], score: sc };
+              }).sort((a, b) => a.score - b.score);
+              m = { esc: escF, kicker: 'BRANCH', title: br ? br.name : 'موظفو الفرع', sub: rowsD.length + ' موظف', back: isBranchMgr ? '' : 'cmpBackToBranches()', backLabel: 'فروع ' + (reg ? reg.name : ''), cols: ['الموظف', 'الدور', 'المخالفات'], rows: rowsD, empty: 'لا يوجد موظفون' };
+              if (isBranchMgr) m.back = "void 0";
+            }
+            board.innerHTML = window.AtharComplianceDesign.drill(m);
+            board.classList.add('atq-board');
+            return;
+          } catch (e) { console.warn('[atq-drill]', e); }
         } else {
           board.classList.remove('atq-board');
         }
