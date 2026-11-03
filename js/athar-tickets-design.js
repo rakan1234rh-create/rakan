@@ -203,7 +203,7 @@
       else if (k === 'period') { S.f.from = ''; S.f.to = ''; } else S.f[k] = '';
       syncDates(); S.sel = null; b.refilter(); if (!document.getElementById('atdFilterPop').hidden) fillPop(S.base || []);
     }
-    else if (t.hasAttribute('data-atd-pick')) { S.sel = t.getAttribute('data-atd-pick'); b.refilter(); }
+    else if (t.hasAttribute('data-atd-pick')) { S.sel = t.getAttribute('data-atd-pick'); b.refilter(); if (document.documentElement.classList.contains('mr-mobile-ui')) setTimeout(function () { var a = document.querySelector('.atd-aside'); if (a) a.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 120); }
     else if (t.hasAttribute('data-atd-view')) { if (typeof window.openAttViewerByIndex === 'function') window.openAttViewerByIndex(+t.getAttribute('data-atd-view')); }
     else if (t.hasAttribute('data-atd-act')) {
       var ta = document.getElementById('atdResp'), real = document.getElementById('respText');

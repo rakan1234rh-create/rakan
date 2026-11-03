@@ -21914,7 +21914,7 @@
         const list = document.getElementById(isReportsList ? 'reportList' : 'ticketList');
         const mobHead = document.getElementById(isReportsList ? 'rpMobTicketsHead' : 'wfMobTicketsHead');
         if (!list) return;
-        if (!isReportsList && window.AtharTicketsDesign && isAtharDesktopScreenUi()) {
+        if (!isReportsList && window.AtharTicketsDesign && (isAtharDesktopScreenUi() || document.documentElement.classList.contains('mr-mobile-ui'))) {
           try { window.AtharTicketsDesign.render(tickets, list); return; } catch (e) { console.warn('[atd]', e); }
         }
 
