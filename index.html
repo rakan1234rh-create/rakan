@@ -1303,7 +1303,7 @@
 <link rel="stylesheet" href="styles/custom/athar-bw-shell-mobile.css?v=sh2" id="athar-bw-shell-mobile">
 <link rel="stylesheet" href="styles/custom/athar-att-viewer.css?v=av2" id="athar-att-viewer">
 <link rel="stylesheet" href="styles/custom/athar-bw-loading.css?v=ld1" id="athar-bw-loading">
-<link rel="stylesheet" href="styles/custom/athar-bw-break-ot.css?v=ot1">
+<link rel="stylesheet" href="styles/custom/athar-bw-break-ot.css?v=ot3">
   <!-- Mirsad tokens + kit: مضمّنة في index.html — لا روابط design-system (تجنّب 404 عند file://) -->
   <style>
     /* Reset figma-search-input inside figma-search-wrap to prevent overlapping border/background from platform-bridge.css */
@@ -5040,7 +5040,7 @@
     <div class="modal" id="regionModal">
       <div class="modal-card">
         <div class="modal-header">
-          <h3 id="regionModalTitle">إضافة منطقة</h3>
+          <h3 id="regionModalTitle">إضافة منطقة</h3><button type="button" class="btn btn-ghost" onclick="closeModal('regionModal')" aria-label="إغلاق"><i class="fas fa-times"></i></button>
         </div>
         <div class="modal-body"><input type="hidden" id="rm-editId" value="">
           <div class="form-group"><label class="form-label">اسم المنطقة <span
@@ -5061,7 +5061,7 @@
     <div class="modal" id="branchModal">
       <div class="modal-card">
         <div class="modal-header">
-          <h3 id="branchModalTitle">إضافة فرع</h3>
+          <h3 id="branchModalTitle">إضافة فرع</h3><button type="button" class="btn btn-ghost" onclick="closeModal('branchModal')" aria-label="إغلاق"><i class="fas fa-times"></i></button>
         </div>
         <div class="modal-body"><input type="hidden" id="bm-editId" value="">
           <div class="form-group"><label class="form-label">المنطقة <span class="required-mark">*</span></label><select
