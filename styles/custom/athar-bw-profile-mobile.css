@@ -42,4 +42,4 @@ html[data-theme="dark"] #tab-profile .pf-push--on{background:#123524;color:#6FD3
 html[data-theme="dark"] #tab-profile .pf-push--btn{background:#F2F2F2;color:#0A0A0A;border-color:#F2F2F2}
 #tab-profile #profilePagePushToggle{display:none !important}
 html:root.mr-mobile-ui.mr-mobile-ui #tab-profile,html:root.mr-mobile-ui.mr-mobile-ui #tab-profile .profile-page-shell,html:root.mr-mobile-ui.mr-mobile-ui #tab-profile .profile-page-body{height:auto !important;max-height:none !important;overflow:visible !important;min-height:0 !important}
-html:root.mr-mobile-ui.mr-mobile-ui #tab-profile .profile-page-shell{padding-bottom:calc(96px + env(safe-area-inset-bottom)) !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-profile .profile-page-shell{padding-bottom:calc(24px + env(safe-area-inset-bottom)) !important}
