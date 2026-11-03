@@ -39539,11 +39539,17 @@
           const elapsed = Math.max(0, planned - rem);
           return formatBreakUsedLabel(elapsed);
         }
-        if (row?.started_at && row?.ended_at) {
-          const sec = Math.max(0, Math.floor((new Date(row.ended_at) - new Date(row.started_at)) / 1000));
-          return formatBreakUsedLabel(sec);
+        /* جلسة موقوفة/منتهية بدون used_seconds مسجّل: نستنتج المدة من الرصيد أو من الأوقات بدل عرض «—» */
+        if (row?.remaining_seconds != null && Number.isFinite(Number(row.remaining_seconds)) && Number(row.planned_duration_minutes) > 0) {
+          const byBal = Math.floor(Number(row.planned_duration_minutes) * 60 - Number(row.remaining_seconds));
+          if (byBal > 0) return formatBreakUsedLabel(byBal);
         }
-        return '—';
+        const endIso = row?.ended_at || row?.paused_at || row?.updated_at;
+        if (row?.started_at && endIso) {
+          const sec = Math.max(0, Math.floor((new Date(endIso) - new Date(row.started_at)) / 1000));
+          if (Number.isFinite(sec)) return formatBreakUsedLabel(sec);
+        }
+        return row?.started_at ? formatBreakUsedLabel(0) : '—';
       }
 
       function renderStaffBreakHistorySessionsHtml(sessions) {
@@ -39732,11 +39738,11 @@
             const lbl = getStaffBreakTypeLabel(act);
             kind = rem < 0 && isStaffBreakReportableOvertime(act, rem) ? 'overage' : 'active';
             statusLbl = rem < 0 ? `${lbl} — تجاوز المدة` : lbl;
-            clock = rem < 0 ? formatBreakOverageClock(rem) : formatBreakClock(rem);
+            clock = rem < 0 ? (kind === 'overage' ? formatBreakOverageClock(rem) : '00:00') : formatBreakClock(rem);
             liveId = act.id;
           } else if (view.overEnded) { kind = 'overage'; statusLbl = 'انتهى مع تجاوز'; clock = formatBreakOverageClock(view.dayRow ? getStaffBreakOvertimeSeconds(view.dayRow) : 0); }
-          else if (view.stopped) { kind = 'paused'; statusLbl = 'متوقف'; clock = formatBreakUsedLabel(usedSec); }
-          else { kind = 'ended'; statusLbl = 'انتهى'; clock = usedSec ? formatBreakUsedLabel(usedSec) : (view.minsLabel || '—'); }
+          else if (view.stopped) { kind = 'paused'; statusLbl = 'متوقف'; clock = usedSec ? formatBreakUsedLabel(usedSec) : (sess.length ? getBreakSessionUsedLabel(sess[sess.length - 1]) : formatBreakUsedLabel(0)); }
+          else { kind = 'ended'; statusLbl = 'انتهى'; const lastLbl = sess.length ? getBreakSessionUsedLabel(sess[sess.length - 1]) : '—'; clock = usedSec ? formatBreakUsedLabel(usedSec) : (lastLbl !== '—' ? lastLbl : (view.minsLabel || '—')); }
           const branch = state._branchById?.get(u.branch_id) || state.branches.find((b) => b.id === u.branch_id);
           const sessions = sess.map((r, i) => {
             const over = getStaffBreakOvertimeSeconds(r);
