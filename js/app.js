@@ -14024,6 +14024,13 @@
             if (!search) return true;
             return `${e.name || ''} ${e.employee_number || ''} ${e.email || ''} ${e.phone || ''}`.toLowerCase().includes(search);
           });
+          if (window.AtharAdminDesign && window.AtharAdminDesign.branchStaffTable) {
+            const escF = (v) => Sec.escapeHTML(String(v == null ? '' : v));
+            const staffRows = employees.map((e) => ({ name: e.name || '', no: padEmpNum(e.employee_number) || '—', role: e.role === 'branch_manager' ? 'مدير فرع' : (getStaffJobTitle(e) || 'موظف') }));
+            container.innerHTML = window.AtharAdminDesign.drillHead('backLocBranchView()', 'فروع ' + (activeRegion.name || ''), 'BRANCH · ' + (activeRegion.name || ''), activeBranch.name || '', employees.length + ' موظف', escF) + window.AtharAdminDesign.branchStaffTable(staffRows, escF);
+            setRegionsResultCount(employees.length);
+            return;
+          }
           const rows = employees.length
             ? employees.map((e, i) => rdLocDeskEmpRowHTML(e, i)).join('')
             : '<div class="rd-ticket-empty"><i class="fas fa-user-slash"></i><p>لا يوجد موظفون</p></div>';
@@ -14051,6 +14058,20 @@
           syncRegionsPanelAction(activeRegion.id);
           const regionBranches = state.branches.filter(b => b.region_id === activeRegion.id);
           const visibleBranches = regionBranches.filter(branchMatchesSearch);
+          if (window.AtharAdminDesign && window.AtharAdminDesign.regionBranchesTable) {
+            const escF = (v) => Sec.escapeHTML(String(v == null ? '' : v));
+            const vAll = typeof getViolationsForScoring === 'function' ? getViolationsForScoring() : (state.violations || []);
+            const brRows = visibleBranches.map((b) => {
+              const staff = getBranchStaff(b.id);
+              const mgr = staff.find(u => u.role === 'branch_manager');
+              let score = 100; try { score = Math.round(Number(calcBranchSafety(b.id, vAll).score) || 0); } catch (_) {}
+              return { id: String(b.id), name: b.name || '', mgr: mgr ? mgr.name : '', n: staff.length, score };
+            });
+            const sup = activeRegion.supervisor_id ? state.users.find(u => u.id === activeRegion.supervisor_id) : null;
+            container.innerHTML = window.AtharAdminDesign.drillHead('backRegionView()', 'كل المناطق', 'REGION', activeRegion.name || '', (sup && sup.name ? 'المشرف: ' + sup.name + ' · ' : 'لا يوجد مشرف · ') + regionBranches.length + ' فرع', escF) + window.AtharAdminDesign.regionBranchesTable(brRows, canManageRegions, canDeleteRegionsPerm, escF);
+            setRegionsResultCount(visibleBranches.length);
+            return;
+          }
           const rows = visibleBranches.length
             ? visibleBranches.map((br, i) => rdLocDeskBranchRowHTML(br, i)).join('')
             : '<div class="rd-ticket-empty"><i class="fas fa-store-slash"></i><p>لا توجد فروع مطابقة</p></div>';
@@ -14099,11 +14120,10 @@
               const sup = r.supervisor_id ? state.users.find(u => u.id === r.supervisor_id) : null;
               return { id: String(r.id), name: r.name || '', sup: sup && sup.name ? sup.name : '', branches: rb.length, n: rb.reduce((a, b) => a + getBranchStaff(b.id).length, 0) };
             });
-            container.innerHTML = '<div class="atu-sec-t" style="font-weight:700;margin:0 0 10px">المناطق</div>' + window.AtharAdminDesign.regionsTable(rowsR, canManageRegions, canDeleteRegionsPerm, escF) +
-              '<div class="atu-sec-t" style="font-weight:700;margin:26px 0 10px">الفروع</div>' + window.AtharAdminDesign.branchesTable(rowsB, escF);
+            container.innerHTML = window.AtharAdminDesign.regionsTable(rowsR, canManageRegions, canDeleteRegionsPerm, escF);
             const cnt = document.getElementById('atuLocCount');
-            if (cnt) cnt.textContent = visibleRegions.length + ' مناطق · ' + rowsB.length + ' فرعًا';
-            setRegionsResultCount(rowsB.length);
+            if (cnt) cnt.textContent = visibleRegions.length + ' مناطق · ' + rowsR.reduce((a, r) => a + r.branches, 0) + ' فرعًا';
+            setRegionsResultCount(rowsR.length);
             return;
           } catch (e) { console.warn('[atl]', e); }
         }

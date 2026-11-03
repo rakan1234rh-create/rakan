@@ -19,6 +19,26 @@
     }).join('') || '<tr><td colspan="5" class="atu-empty">لا توجد مناطق</td></tr>';
     return '<div class="atu-scroll"><table class="atu-table"><thead><tr><th scope="col">المنطقة</th><th scope="col">المشرف</th><th scope="col">الفروع</th><th scope="col">الموظفون</th>' + (acts ? '<th scope="col">إجراء</th>' : '') + '</tr></thead><tbody>' + body + '</tbody></table></div>';
   }
+  function regionBranchesTable(rows, canManage, canDelete, e) {
+    var band = function (n) { return n >= 90 ? 'ex' : n >= 75 ? 'gd' : n >= 50 ? 'md' : 'bd'; };
+    var acts = canManage || canDelete;
+    var body = rows.map(function (r) {
+      var id = e(r.id).replace(/'/g, '&#39;');
+      return '<tr class="atu-tr" tabindex="0" onclick="openLocBranchView(\'' + id + '\')"><td>' + e(r.name) + '</td><td>' + (r.mgr ? e(r.mgr) : '<span class="atd-mu">لا يوجد مدير</span>') + '</td><td class="atd-mono atu-no">' + r.n + '</td><td><span class="atq-chip atq-chip--' + band(r.score) + '">' + r.score + '</span></td>' +
+        (acts ? '<td onclick="event.stopPropagation()">' + (canManage ? '<button type="button" class="atu-edit" onclick="editBranch(\'' + id + '\')">تعديل</button>' : '') + (canDelete ? '<button type="button" class="atu-off" onclick="deleteBranch(\'' + id + '\')">حذف</button>' : '') + '</td>' : '') + '</tr>';
+    }).join('') || '<tr><td colspan="5" class="atu-empty">لا توجد فروع</td></tr>';
+    return '<div class="atu-scroll"><table class="atu-table"><thead><tr><th scope="col">الفرع</th><th scope="col">المدير</th><th scope="col">الموظفون</th><th scope="col">الامتثال</th>' + (acts ? '<th scope="col">إجراء</th>' : '') + '</tr></thead><tbody>' + body + '</tbody></table></div>';
+  }
+  function branchStaffTable(rows, e) {
+    var body = rows.map(function (r) {
+      return '<tr class="atu-tr"><td>' + e(r.name) + '</td><td class="atd-mono atu-no">' + e(r.no) + '</td><td>' + e(r.role) + '</td></tr>';
+    }).join('') || '<tr><td colspan="3" class="atu-empty">لا يوجد موظفون</td></tr>';
+    return '<div class="atu-scroll"><table class="atu-table"><thead><tr><th scope="col">الموظف</th><th scope="col">الرقم الوظيفي</th><th scope="col">الدور</th></tr></thead><tbody>' + body + '</tbody></table></div>';
+  }
+  function drillHead(back, backLabel, kicker, title, sub, e) {
+    return '<div class="atu-drill"><button type="button" class="atu-back" onclick="' + back + '"><span aria-hidden="true">→</span> ' + e(backLabel) + '</button>' +
+      '<div class="atu-drill__t"><p class="atd-kick">' + e(kicker) + '</p><h2>' + e(title) + '</h2>' + (sub ? '<p class="atd-mu">' + e(sub) + '</p>' : '') + '</div></div>';
+  }
   function branchesTable(rows, e) {
     var band = function (n) { return n >= 90 ? 'ex' : n >= 75 ? 'gd' : n >= 50 ? 'md' : 'bd'; };
     var body = rows.map(function (r) {
@@ -63,5 +83,5 @@
     }
   }
   setInterval(mount, 1000);
-  window.AtharAdminDesign = { regionsTable: regionsTable, usersTable: usersTable, branchesTable: branchesTable, typesTable: typesTable };
+  window.AtharAdminDesign = { regionBranchesTable: regionBranchesTable, branchStaffTable: branchStaffTable, drillHead: drillHead, regionsTable: regionsTable, usersTable: usersTable, branchesTable: branchesTable, typesTable: typesTable };
 })();

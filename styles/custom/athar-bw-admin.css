@@ -96,3 +96,11 @@ html:root.mr-desktop-ui.mr-desktop-ui #tab-violations .rd-viol-list{display:bloc
 html:root.mr-desktop-ui.mr-desktop-ui #tab-violations .rd-viol-list>.atu-scroll{width:100% !important}
 html:root.mr-desktop-ui.mr-desktop-ui.mr-desktop-ui #tab-violations #violGrid.rd-viol-list.rd-viol-list--desk.viol-grid{display:block !important;grid-template-columns:none !important}
 html:root.mr-desktop-ui.mr-desktop-ui #tab-locations :is(#br-search,.figma-search,.wf-search) input{border:0 !important;box-shadow:none !important;background:transparent !important}
+
+/* locations drill-down header (region → branches → employees) */
+html:root.mr-desktop-ui.mr-desktop-ui #tab-locations .atu-drill{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin:0 0 18px;flex-direction:row-reverse}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-locations .atu-drill__t{text-align:start}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-locations .atu-drill__t h2{margin:2px 0 4px;font-size:22px;font-weight:600;color:var(--t-fg);font-family:'Readex Pro','IBM Plex Sans Arabic',sans-serif}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-locations .atu-drill__t p{margin:0}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-locations .atu-back{height:38px;padding:0 14px;border:1px solid var(--t-ct);border-radius:4px;background:transparent;color:var(--t-fg);font:inherit;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+html:root.mr-desktop-ui.mr-desktop-ui #tab-locations .atu-back:hover{background:var(--t-hv)}
