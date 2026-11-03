@@ -41088,6 +41088,7 @@
                       <span class="rd-cmpl-card__cat">${Sec.escapeHTML(r.category || 'عام')}</span>
                     </div>
                     <div class="rd-cmpl-card__sub">${Sec.escapeHTML(rdCmplDisplayName(r))} · ${Sec.escapeHTML(r.time || r.createdAt || '')}</div>
+                    ${(r.description || r.desc) ? `<div class="rd-cmpl-card__topic">${Sec.escapeHTML(String(r.description || r.desc).replace(/\s+/g, ' ').trim().slice(0, 110))}</div>` : ''}
                   </div>
                 </div>
                 <div class="rd-cmpl-card__corner">
@@ -42037,6 +42038,7 @@
                 <div style="min-width:0">
                   <div class="cp-card__cat"><span class="cp-card__kind" style="--tone:${kindColor}">${Sec.escapeHTML(kindLabel)}</span> ${Sec.escapeHTML(c.category || '')}</div>
                   <div class="cp-card__meta">${Sec.escapeHTML(time)}</div>
+                  ${c.description ? `<div class="cp-card__topic">${Sec.escapeHTML(String(c.description).replace(/\s+/g, ' ').trim().slice(0, 110))}</div>` : ''}
                 </div>
               </div>
               <div class="cp-card__corner">

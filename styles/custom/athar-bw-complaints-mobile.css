@@ -44,3 +44,103 @@ html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-complaints-desk-panel:no
 html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-complaints-desk-panel:not([hidden]){max-width:none !important;width:100% !important;min-width:0 !important;margin:0 !important}
 html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-complaints-host{width:100% !important;max-width:none !important}
 html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .atc-f input,html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .atc-f textarea{border-radius:4px !important;border:1px solid var(--t-ct) !important;background:var(--t-sf) !important;box-shadow:none !important}
+
+/* ───────── Complaints & suggestions — desktop B&W redesign (manage view + chat panel) ───────── */
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-cmpl-board{--c-fg:#0a0a0a;--c-mu:#5f5f5f;--c-ln:#d9d9d9;--c-sf:#fff;padding:0;background:transparent}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-cmpl-intro{font:500 11px 'Courier New',monospace;letter-spacing:.2em;color:#666;text-transform:uppercase;margin:0 0 4px;direction:ltr;text-align:right}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-cmpl-intro::before{content:"COMPLAINTS & SUGGESTIONS";display:block;font:500 11px 'Courier New',monospace;letter-spacing:.2em;color:#666;margin-bottom:2px}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-cmpl-metrics{gap:12px}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-cmpl-metric{border:1px solid #d9d9d9!important;border-radius:6px!important;background:#fff!important;box-shadow:none!important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-cmpl-metric__ico{background:#0a0a0a!important;color:#fff!important;border-radius:4px!important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-cmpl-metric__val{font:600 26px 'Courier New',monospace!important;color:#0a0a0a!important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-cmpl-metric__lbl{color:#5f5f5f!important;font-weight:600}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints :is(.rd-cmpl-search,.rd-cmpl-date-btn,.rd-cmpl-pdf-btn,.rd-cmpl-filter){border:1px solid #0a0a0a!important;border-radius:4px!important;background:#fff!important;color:#0a0a0a!important;box-shadow:none!important;height:40px}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-cmpl-filter.active,html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-cmpl-filter.is-active{background:#0a0a0a!important;color:#fff!important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-cmpl-pdf-btn i,html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-cmpl-date-btn i{color:#0a0a0a!important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-cmpl-list{gap:0;border:1px solid #d9d9d9;border-radius:6px;background:#fff;overflow:hidden}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-cmpl-card{border:0!important;border-bottom:1px solid #e4e4e4!important;border-radius:0!important;box-shadow:none!important;background:#fff!important;transition:background .12s}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-cmpl-card:last-child{border-bottom:0!important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-cmpl-card:hover{background:#f6f6f6!important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-cmpl-card__icon{background:#0a0a0a!important;color:#fff!important;border-radius:4px!important}
+html:root.mr-mobile-ui.mr-mobile-ui :is(#tab-complaints,#rdCmplOverlayHost) :is(.rd-cmpl-card__kind,.rd-cmpl-card__status,.rd-cmpl-panel__status,.rd-cmpl-status,.rd-cmpl-kind){background:#fff!important;color:#0a0a0a!important;border:1px solid #0a0a0a!important;border-radius:3px!important;font-weight:700}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-cmpl-card__num{font:600 12px 'Courier New',monospace!important;color:#666!important;letter-spacing:.06em}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-cmpl-card__sub{color:#5f5f5f!important}
+/* chat panel */
+html:root.mr-mobile-ui.mr-mobile-ui #rdCmplOverlayHost .rd-cmpl-overlay__scrim{background:rgba(0,0,0,.45)!important}
+html:root.mr-mobile-ui.mr-mobile-ui #rdCmplOverlayHost .rd-cmpl-panel{background:#fff!important;border:0!important;border-inline-end:1px solid #0a0a0a!important;border-radius:0!important;box-shadow:0 0 40px rgba(0,0,0,.25)!important;color:#0a0a0a}
+html:root.mr-mobile-ui.mr-mobile-ui #rdCmplOverlayHost .rd-cmpl-panel__head{padding-bottom:12px;margin-bottom:12px;border-bottom:2px solid #0a0a0a}
+html:root.mr-mobile-ui.mr-mobile-ui #rdCmplOverlayHost .rd-cmpl-panel__title{font-size:20px!important;font-weight:800!important}
+html:root.mr-mobile-ui.mr-mobile-ui #rdCmplOverlayHost :is(.rd-cmpl-panel__print-btn,.rd-cmpl-panel__close){border:1px solid #0a0a0a!important;border-radius:4px!important;background:#fff!important;color:#0a0a0a!important;box-shadow:none!important}
+html:root.mr-mobile-ui.mr-mobile-ui #rdCmplOverlayHost .rd-cmpl-panel__desc{border:1px solid #d9d9d9!important;border-radius:6px!important;background:#fafafa!important}
+html:root.mr-mobile-ui.mr-mobile-ui #rdCmplOverlayHost .rd-cmpl-thread{display:flex;flex-direction:column;gap:10px;padding:4px 0}
+html:root.mr-mobile-ui.mr-mobile-ui #rdCmplOverlayHost .rd-cmpl-thread-bubble{max-width:86%;border:1px solid #d9d9d9!important;border-radius:10px 10px 10px 2px!important;background:#fff!important;box-shadow:none!important;padding:9px 12px}
+html:root.mr-mobile-ui.mr-mobile-ui #rdCmplOverlayHost .rd-cmpl-thread-msg{display:flex}
+html:root.mr-mobile-ui.mr-mobile-ui #rdCmplOverlayHost .rd-cmpl-thread-bubble.is-admin{margin-inline-start:auto;background:#0a0a0a!important;color:#fff!important;border-color:#0a0a0a!important;border-radius:10px 10px 2px 10px!important}
+html:root.mr-mobile-ui.mr-mobile-ui #rdCmplOverlayHost .rd-cmpl-thread-bubble.is-admin :is(.rd-cmpl-thread-author,.rd-cmpl-thread-time,.rd-cmpl-thread-text,.rd-cmpl-thread-author-ic){color:#fff!important}
+html:root.mr-mobile-ui.mr-mobile-ui #rdCmplOverlayHost .rd-cmpl-thread-meta{font-size:11px;opacity:.85}
+html:root.mr-mobile-ui.mr-mobile-ui #rdCmplOverlayHost .rd-cmpl-textarea{border:1px solid #0a0a0a!important;border-radius:6px!important;background:#fff!important;color:#0a0a0a!important;min-height:44px}
+html:root.mr-mobile-ui.mr-mobile-ui #rdCmplOverlayHost .rd-cmpl-btn{border-radius:4px!important;box-shadow:none!important;font-weight:700}
+html:root.mr-mobile-ui.mr-mobile-ui #rdCmplOverlayHost .rd-cmpl-btn--primary{background:#0a0a0a!important;color:#fff!important;border:1px solid #0a0a0a!important}
+html:root.mr-mobile-ui.mr-mobile-ui #rdCmplOverlayHost .rd-cmpl-btn--success{background:#fff!important;color:#0a0a0a!important;border:1px solid #0a0a0a!important}
+html:root.mr-mobile-ui.mr-mobile-ui #rdCmplOverlayHost .rd-cmpl-attach{border:1px solid #0a0a0a!important;border-radius:4px!important;background:#fff!important;color:#0a0a0a!important}
+/* dark */
+html[data-theme="dark"]:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-cmpl-metric,html[data-theme="dark"]:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-cmpl-card,html[data-theme="dark"]:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-cmpl-list{background:#141414!important;border-color:#3a3a3a!important}
+html[data-theme="dark"]:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-cmpl-card:hover{background:#1d1d1d!important}
+html[data-theme="dark"]:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-cmpl-metric__val{color:#f2f2f2!important}
+html[data-theme="dark"]:root.mr-mobile-ui.mr-mobile-ui #tab-complaints :is(.rd-cmpl-metric__ico,.rd-cmpl-card__icon){background:#f2f2f2!important;color:#0a0a0a!important}
+html[data-theme="dark"]:root.mr-mobile-ui.mr-mobile-ui #tab-complaints :is(.rd-cmpl-search,.rd-cmpl-date-btn,.rd-cmpl-pdf-btn,.rd-cmpl-filter){background:#141414!important;color:#f2f2f2!important;border-color:#f2f2f2!important}
+html[data-theme="dark"]:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-cmpl-filter.active,html[data-theme="dark"]:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-cmpl-filter.is-active{background:#f2f2f2!important;color:#0a0a0a!important}
+html[data-theme="dark"]:root.mr-mobile-ui.mr-mobile-ui :is(#tab-complaints,#rdCmplOverlayHost) :is(.rd-cmpl-card__kind,.rd-cmpl-card__status,.rd-cmpl-status,.rd-cmpl-kind){background:#141414!important;color:#f2f2f2!important;border-color:#f2f2f2!important}
+html[data-theme="dark"]:root.mr-mobile-ui.mr-mobile-ui #rdCmplOverlayHost .rd-cmpl-panel{background:#141414!important;color:#f2f2f2;border-color:#f2f2f2!important}
+html[data-theme="dark"]:root.mr-mobile-ui.mr-mobile-ui #rdCmplOverlayHost .rd-cmpl-panel__head{border-bottom-color:#f2f2f2}
+html[data-theme="dark"]:root.mr-mobile-ui.mr-mobile-ui #rdCmplOverlayHost .rd-cmpl-thread-bubble{background:#1a1a1a!important;border-color:#3a3a3a!important;color:#f2f2f2}
+html[data-theme="dark"]:root.mr-mobile-ui.mr-mobile-ui #rdCmplOverlayHost .rd-cmpl-thread-bubble.is-admin{background:#f2f2f2!important;color:#0a0a0a!important}
+html[data-theme="dark"]:root.mr-mobile-ui.mr-mobile-ui #rdCmplOverlayHost .rd-cmpl-thread-bubble.is-admin :is(.rd-cmpl-thread-author,.rd-cmpl-thread-time,.rd-cmpl-thread-text,.rd-cmpl-thread-author-ic){color:#0a0a0a!important}
+html[data-theme="dark"]:root.mr-mobile-ui.mr-mobile-ui #rdCmplOverlayHost .rd-cmpl-textarea{background:#141414!important;color:#f2f2f2!important;border-color:#f2f2f2!important}
+html[data-theme="dark"]:root.mr-mobile-ui.mr-mobile-ui #rdCmplOverlayHost .rd-cmpl-btn--primary{background:#f2f2f2!important;color:#0a0a0a!important;border-color:#f2f2f2!important}
+html[data-theme="dark"]:root.mr-mobile-ui.mr-mobile-ui #rdCmplOverlayHost :is(.rd-cmpl-btn--success,.rd-cmpl-attach,.rd-cmpl-panel__print-btn,.rd-cmpl-panel__close){background:#141414!important;color:#f2f2f2!important;border-color:#f2f2f2!important}
+html[data-theme="dark"]:root.mr-mobile-ui.mr-mobile-ui #rdCmplOverlayHost .rd-cmpl-panel__desc{background:#1a1a1a!important;border-color:#3a3a3a!important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints :is(.rd-cmpl-metric__ico,.rd-cmpl-card__icon) :is(i,svg){color:#fff!important;fill:currentColor}
+html[data-theme="dark"]:root.mr-mobile-ui.mr-mobile-ui #tab-complaints :is(.rd-cmpl-metric__ico,.rd-cmpl-card__icon) :is(i,svg){color:#0a0a0a!important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-cmpl-search input{border:0!important;box-shadow:none!important;background:transparent!important;height:auto}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-cmpl-intro::before{content:"COMPLAINTS"}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-cmpl-intro{direction:rtl;text-align:right;font:500 12px inherit;letter-spacing:0;color:#5f5f5f}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-cmpl-search{border:0!important;background:transparent!important;padding:0!important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-cmpl-search input{border:1px solid #0a0a0a!important;border-radius:4px!important;background:#fff!important;height:40px!important}
+html[data-theme="dark"]:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-cmpl-search input{background:#141414!important;border-color:#f2f2f2!important;color:#f2f2f2!important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-cmpl-intro::before{content:none!important;display:none!important}
+
+/* topic line (all layouts) */
+.rd-cmpl-card__topic,.cp-card__topic{margin-top:4px;font-size:12.5px;line-height:1.5;color:#3a3a3a;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+/* mobile/iPad layout */
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-cmpl-metrics,html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .cp-mob-stats{display:grid!important;grid-template-columns:repeat(2,1fr)!important;gap:10px!important}
+@media (min-width:700px){html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-cmpl-metrics,html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .cp-mob-stats{grid-template-columns:repeat(4,1fr)!important}}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-cmpl-metric{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px!important;flex-direction:row-reverse}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-cmpl-metric__val{font-size:22px!important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-cmpl-metric__ico{width:34px!important;height:34px!important;flex:none}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-cmpl-filters{display:flex;flex-wrap:wrap;gap:8px}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-cmpl-search{flex:1 1 100%}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-cmpl-card__top{align-items:flex-start}
+/* user view cards (cp-*) */
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .cp-mob-stat{border:1px solid #d9d9d9!important;border-radius:6px!important;background:#fff!important;box-shadow:none!important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .cp-mob-stat__val{font:600 22px 'Courier New',monospace!important;color:#0a0a0a!important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .cp-mob-stat__ico{color:#0a0a0a!important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .cp-mob-filter{border:1px solid #0a0a0a!important;border-radius:4px!important;background:#fff!important;color:#0a0a0a!important;box-shadow:none!important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .cp-mob-filter.active,html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .cp-mob-filter.is-active{background:#0a0a0a!important;color:#fff!important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .cp-mob-list{gap:0;border:1px solid #d9d9d9;border-radius:6px;background:#fff;overflow:hidden}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .cp-card{border:0!important;border-bottom:1px solid #e4e4e4!important;border-radius:0!important;box-shadow:none!important;background:#fff!important;margin:0!important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .cp-card:last-child{border-bottom:0!important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .cp-card__icon{background:#0a0a0a!important;color:#fff!important;border-radius:4px!important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .cp-card__icon i{color:#fff!important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints :is(.cp-card__kind,.cp-card__status){background:#fff!important;color:#0a0a0a!important;border:1px solid #0a0a0a!important;border-radius:3px!important;font-weight:700}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .cp-card__num{font:600 12px 'Courier New',monospace!important;color:#666!important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .cp-mob-head__title{font-weight:800}
+html[data-theme="dark"] .rd-cmpl-card__topic,html[data-theme="dark"] .cp-card__topic{color:#c8c8c8}
+html[data-theme="dark"]:root.mr-mobile-ui.mr-mobile-ui #tab-complaints :is(.cp-mob-stat,.cp-card,.cp-mob-list){background:#141414!important;border-color:#3a3a3a!important}
+html[data-theme="dark"]:root.mr-mobile-ui.mr-mobile-ui #tab-complaints :is(.cp-mob-stat__val,.cp-mob-stat__ico){color:#f2f2f2!important}
+html[data-theme="dark"]:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .cp-mob-filter{background:#141414!important;color:#f2f2f2!important;border-color:#f2f2f2!important}
+html[data-theme="dark"]:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .cp-mob-filter.active,html[data-theme="dark"]:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .cp-mob-filter.is-active{background:#f2f2f2!important;color:#0a0a0a!important}
+html[data-theme="dark"]:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .cp-card__icon{background:#f2f2f2!important}
+html[data-theme="dark"]:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .cp-card__icon i{color:#0a0a0a!important}
+html[data-theme="dark"]:root.mr-mobile-ui.mr-mobile-ui #tab-complaints :is(.cp-card__kind,.cp-card__status){background:#141414!important;color:#f2f2f2!important;border-color:#f2f2f2!important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-cmpl-intro{font:500 13px inherit!important;font-family:inherit!important;letter-spacing:0!important;direction:rtl;text-align:right}
