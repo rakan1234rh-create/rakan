@@ -136,9 +136,12 @@
       bandBar(h.score) +
       '<div class="rd-h-stats">' + h.kpis.map(function (k) { return '<div><div class="rd-h-stats__v">' + num(k[0]) + '</div><div class="rd-h-stats__l">' + esc(k[1]) + '</div></div>'; }).join('') + '</div></section>';
   }
-  function rankCard(me, all) {
-    var staff = (state.users || []).filter(function (u) { return String(u.branch_id) === String(me.branch_id) && (u.role === 'employee' || u.id === me.id); });
-    var list = staff.map(function (u) { return { u: u, s: scoreOfEmp(u.id, all) }; }).sort(function (a, b) { return b.s - a.s; });
+  function rankCard(me, all, branchAll) {
+    /* same staff set and same violation scope the branch manager sees, so every role gets the same score for the same person */
+    var staff = (typeof getBranchStaff === 'function' ? getBranchStaff(me.branch_id) : []).slice();
+    if (!staff.some(function (u) { return u.id === me.id; })) staff.push(me);
+    var scope = branchAll || all;
+    var list = staff.map(function (u) { return { u: u, s: scoreOfEmp(u.id, scope) }; }).sort(function (a, b) { return b.s - a.s; });
     var pos = list.findIndex(function (r) { return r.u.id === me.id; }) + 1;
     return '<section class="rd-h-card"><div class="rd-h-rank"><div><div class="rd-h-card__t">ترتيبي في ' + esc(branchName(me.branch_id)) + '</div><div class="rd-rl-sub">أعلى ' + Math.min(8, list.length) + ' موظفين من ' + list.length + '</div></div>' +
       '<div class="rd-h-rank__n">' + num(pos || '—') + '<small>من ' + list.length + '</small></div></div><div class="rd-h-list">' +
@@ -221,7 +224,7 @@
         var p = hasPersonal ? personal(role, ctx) : null;
         var top, recent;
         if (hasPersonal) {
-          top = heroCard(p) + rankCard(me, all);
+          top = heroCard(p) + rankCard(me, all, ctx.branchAll);
           recent = p.mine.slice(0, 5);
         } else if (extra) {
           top = heroCard(extra.hero) + notifCard();

@@ -13234,7 +13234,7 @@
             </div>
           </div>`;
         try {
-          if (window.AtharRoleDash) window.AtharRoleDash.apply(host, { role: normalizeUserRole(me?.role), me, visible, allVisible });
+          if (window.AtharRoleDash) window.AtharRoleDash.apply(host, { role: normalizeUserRole(me?.role), me, visible, allVisible, branchAll: (normalizeUserRole(me?.role) === 'branch_manager' ? violationsForBranchManagerScope(state.violations.filter(v => v.state !== 'uploading')) : null) });
         } catch (_) { /* noop */ }
         host.hidden = false;
       }
@@ -13246,7 +13246,7 @@
         if (window.AtharRoleDash && me) {
           try {
             host.innerHTML = '<div class="rd-screen rd-desk-dash rd-mob-dash"></div>';
-            window.AtharRoleDash.apply(host, { role: normalizeUserRole(me?.role), me, visible, allVisible });
+            window.AtharRoleDash.apply(host, { role: normalizeUserRole(me?.role), me, visible, allVisible, branchAll: (normalizeUserRole(me?.role) === 'branch_manager' ? violationsForBranchManagerScope(state.violations.filter(v => v.state !== 'uploading')) : null) });
             if (host.querySelector('.rd-desk-dash--h')) { host.hidden = false; return; }
           } catch (_) { /* fall back to legacy mobile home */ }
         }
@@ -39516,20 +39516,28 @@
         try { return new Date(iso).toLocaleString('ar-SA'); } catch (_) { return String(iso); }
       }
 
+      /** مدة مستخدمة بدقة: أقل من دقيقة بالثواني، وإلا دقائق وثواني — نفس الرقم لكل الأدوار */
+      function formatBreakUsedLabel(sec) {
+        const t = Math.max(0, Math.floor(Number(sec) || 0));
+        if (t < 60) return `${t} ث`;
+        const m = Math.floor(t / 60), r = t % 60;
+        return r ? `${m} د ${r} ث` : `${m} د`;
+      }
+
       function getBreakSessionUsedLabel(row) {
         const used = Number(row?.used_seconds);
         if (Number.isFinite(used) && used > 0) {
-          return `${Math.max(1, Math.ceil(used / 60))} د`;
+          return formatBreakUsedLabel(used);
         }
         if (row?.status === 'active') {
           const rem = getBreakRemainingSeconds(row);
           const planned = Math.max(0, (Number(row.planned_duration_minutes) || 15) * 60);
           const elapsed = Math.max(0, planned - rem);
-          return `${Math.max(1, Math.ceil(elapsed / 60))} د`;
+          return formatBreakUsedLabel(elapsed);
         }
         if (row?.started_at && row?.ended_at) {
           const sec = Math.max(0, Math.floor((new Date(row.ended_at) - new Date(row.started_at)) / 1000));
-          return `${Math.max(1, Math.ceil(sec / 60))} د`;
+          return formatBreakUsedLabel(sec);
         }
         return '—';
       }
@@ -39555,7 +39563,7 @@
             statusLbl = 'انتهى';
             tone = ' break-history-item--paused';
           } else if (overSec > 0) {
-            statusLbl = `انتهى مع تجاوز (+${Math.max(1, Math.ceil(overSec / 60))} د)`;
+            statusLbl = `انتهى مع تجاوز (+${formatBreakUsedLabel(overSec)})`;
             tone = ' break-history-item--over';
           }
           const endLbl = row.status === 'active'
@@ -39723,15 +39731,15 @@
             clock = rem < 0 ? formatBreakOverageClock(rem) : formatBreakClock(rem);
             liveId = act.id;
           } else if (view.overEnded) { kind = 'overage'; statusLbl = 'انتهى مع تجاوز'; clock = formatBreakOverageClock(view.dayRow ? getStaffBreakOvertimeSeconds(view.dayRow) : 0); }
-          else if (view.stopped) { kind = 'paused'; statusLbl = 'متوقف'; clock = `${Math.max(1, Math.ceil(usedSec / 60))} د`; }
-          else { kind = 'ended'; statusLbl = 'انتهى'; clock = usedSec ? `${Math.max(1, Math.ceil(usedSec / 60))} د` : (view.minsLabel || '—'); }
+          else if (view.stopped) { kind = 'paused'; statusLbl = 'متوقف'; clock = formatBreakUsedLabel(usedSec); }
+          else { kind = 'ended'; statusLbl = 'انتهى'; clock = usedSec ? formatBreakUsedLabel(usedSec) : (view.minsLabel || '—'); }
           const branch = state._branchById?.get(u.branch_id) || state.branches.find((b) => b.id === u.branch_id);
           const sessions = sess.map((r, i) => {
             const over = getStaffBreakOvertimeSeconds(r);
             let st = 'انتهى', tone = 'end';
             if (r.status === 'active') { st = over > 0 || getBreakRemainingSeconds(r) < 0 ? 'جارٍ — تجاوز' : 'جارٍ الآن'; tone = 'live'; }
             else if (r.status === 'paused') { st = 'متوقف'; tone = 'pause'; }
-            else if (over > 0) { st = `انتهى مع تجاوز (+${Math.max(1, Math.ceil(over / 60))} د)`; tone = 'over'; }
+            else if (over > 0) { st = `انتهى مع تجاوز (+${formatBreakUsedLabel(over)})`; tone = 'over'; }
             return {
               n: i + 1, type: getStaffBreakTypeLabel(r), from: fmtT(r.started_at),
               to: r.status === 'active' ? 'جارٍ' : fmtT(r.ended_at || r.paused_at || r.updated_at),
