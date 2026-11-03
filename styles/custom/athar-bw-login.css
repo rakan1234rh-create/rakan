@@ -91,3 +91,26 @@
 #loginScreen .lp-hd, #loginScreen .lp-title, #loginScreen .lp-sub { text-align: start !important; }
 #loginScreen .lp-brand-ico:not(.wefaq-logo-slot) { display: none !important; }
 #loginScreen .lp-card .lp-hd h1, #loginScreen .lp-card .lp-hd p, #loginScreen .lp-card .lp-hd { text-align: start !important; justify-content: flex-start !important; align-items: flex-start !important; }
+
+/* ── mobile/tablet: the brand band must be solid black so the white wordmark reads in light mode ── */
+@media (max-width: 900px) {
+  html.mr-mobile-ui #loginScreen #loginScreenFloor { background-color: var(--bw-bg) !important; background-image: linear-gradient(#0a0a0a, #0a0a0a) !important; background-size: 100% 120px !important; background-repeat: no-repeat !important; background-position: top !important; }
+  #loginScreen.lp-screen::before { align-self: stretch; justify-self: stretch; height: auto; }
+  #loginScreen.lp-screen::after { z-index: 1; }
+}
+
+/* ── entry loading (after sign-in): black like the brand band / splash, thin progress line ── */
+#loginTransition { background: #0a0a0a !important; color: #fff !important; }
+#loginTransition .lt-title {
+  font-family: var(--font, 'IBM Plex Sans Arabic', system-ui, sans-serif) !important; font-size: 15px; font-weight: 500; color: #d4d4d4 !important;
+  margin: 8px 0 0; animation: none !important; letter-spacing: 0;
+}
+#loginTransition .lt-box::after {
+  content: ""; display: block; width: 120px; height: 2px; margin-top: 22px; background: #262626; border-radius: 0;
+  background-image: linear-gradient(#fff, #fff); background-repeat: no-repeat; background-size: 40% 100%; background-position: -50% 0;
+  animation: ltBar 1.3s ease-in-out infinite;
+}
+@keyframes ltBar { 0% { background-position: -60% 0; } 100% { background-position: 160% 0; } }
+@media (prefers-reduced-motion: reduce) { #loginTransition .lt-box::after { animation: none; background-position: 50% 0; } }
+
+#loginTransition .lt-shield.wefaq-logo-slot, #loginTransition .wefaq-app-logo { filter: brightness(0) invert(1) !important; opacity: 1 !important; }
