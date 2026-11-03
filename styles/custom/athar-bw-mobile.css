@@ -88,6 +88,8 @@ html:root.mr-mobile-ui .rd-mob-dash .rd-h-row--a.rd-h-row--1{grid-template-colum
 
 /* locations / users / compliance / violations: legacy fixed-height scroll shells collapsed to 0 once .main became a block; let them size to content */
 html:root.mr-mobile-ui.mr-mobile-ui:is(.mr-locations-tab-active,.mr-users-tab-active,.mr-cmp-tab-active,.mr-viol-tab-active) #appWrap#appWrap :is(#tab-locations,#tab-departments,#tab-compliance,#tab-violations).tab-content.active,
+html:root.mr-mobile-ui.mr-mobile-ui #appWrap#appWrap #tab-reports.tab-content.active,
+html:root.mr-mobile-ui.mr-mobile-ui #appWrap#appWrap #tab-reports :is(.panel.wf-panel,.rd-reports-host,#rdReports,.rd-rp-main),
 html:root.mr-mobile-ui.mr-mobile-ui:is(.mr-locations-tab-active,.mr-users-tab-active,.mr-cmp-tab-active,.mr-viol-tab-active) #appWrap#appWrap :is(#tab-locations,#tab-departments,#tab-compliance,#tab-violations) :is(.panel.wf-panel,#regionsDeskHost,#usersDeskHost,#violDeskHost,.mr-users-list-wrap,.wf-table-wrap,.rb-regions-scroll,#regionsList,#usersList,#violGrid,#cmpBoard,.cmp-neo-board,.cmp-neo-grid,.mk-cmp-grid--emp,.cmp-neo-pending-wrap,.rd-cmp-board){height:auto !important;min-height:0 !important;max-height:none !important;overflow:visible !important;flex:0 0 auto !important}
 
 /* ===== Locations (regions → branches → staff) — B&W, mobile + iPad ===== */
@@ -155,3 +157,46 @@ html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-cmpl-metric__ico i,html:
 html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-cmpl-metric__val{color:var(--m-fg) !important}
 html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints :is(.rd-cmpl-metric__lbl,.rd-cmpl-intro){color:var(--m-mu) !important}
 html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-app-search__input{border:0 !important;background:transparent !important;box-shadow:none !important}
+
+/* ===== Reports (mobile + iPad) — B&W ===== */
+html:root.mr-mobile-ui.mr-mobile-ui #tab-reports{--m-sf:#fff;--m-fg:#0A0A0A;--m-mu:#5F5F5F;--m-ln:#D9D9D9;--m-hv:#F7F7F7;--m-pb:#0A0A0A;--m-pf:#fff}
+html[data-theme="dark"]:root.mr-mobile-ui.mr-mobile-ui #tab-reports{--m-sf:#151515;--m-fg:#F2F2F2;--m-mu:#A3A3A3;--m-ln:#303030;--m-hv:#1C1C1C;--m-pb:#F2F2F2;--m-pf:#0A0A0A}
+html:root.mr-mobile-ui.mr-mobile-ui #appWrap#appWrap #tab-reports.tab-content.active{padding:0 16px !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-reports :is(.rd-rp-metric,.rd-rp-bars-card,.rd-rp-link){background:var(--m-sf) !important;border:1px solid var(--m-ln) !important;border-radius:6px !important;box-shadow:none !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-reports .rd-rp-download-btn{background:var(--m-pb) !important;color:var(--m-pf) !important;border:1px solid var(--m-pb) !important;border-radius:6px !important;box-shadow:none !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-reports .rd-rp-download-btn *{color:var(--m-pf) !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-reports :is(.rd-rp-page-head__title,.rd-rp-sec-title,.rd-rp-metric__value,.rd-rp-link__title){color:var(--m-fg) !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-reports :is(.rd-rp-page-head__sub,.rd-rp-metric__label,.rd-rp-metric__trend,.rd-rp-link__sub,.rd-rp-bar__lbl,.rd-rp-bar__pct,.rd-rp-link__chev){color:var(--m-mu) !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-reports .rd-rp-link__ico{background:var(--m-hv) !important;color:var(--m-fg) !important;border:1px solid var(--m-ln) !important;border-radius:4px !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-reports .rd-rp-link__ico i{color:var(--m-fg) !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-reports .rd-rp-bar__track{background:var(--m-hv) !important;border-radius:0 !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-reports .rd-rp-bar__fill{background:var(--m-fg) !important;border-radius:0 !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-reports :is(.figma-search-wrap,.wf-search,input,select,.rd-rp-chip,.rd-rp-filter,button:not(.rd-rp-download-btn)){border-radius:6px !important}
+
+/* ===== Violation types + new violation (رصد) (mobile + iPad) — B&W ===== */
+html:root.mr-mobile-ui.mr-mobile-ui :is(#tab-violations,#tab-newTicket){--m-sf:#fff;--m-fg:#0A0A0A;--m-mu:#5F5F5F;--m-ln:#D9D9D9;--m-hv:#F7F7F7;--m-pb:#0A0A0A;--m-pf:#fff}
+html[data-theme="dark"]:root.mr-mobile-ui.mr-mobile-ui :is(#tab-violations,#tab-newTicket){--m-sf:#151515;--m-fg:#F2F2F2;--m-mu:#A3A3A3;--m-ln:#303030;--m-hv:#1C1C1C;--m-pb:#F2F2F2;--m-pf:#0A0A0A}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-violations :is(.rd-viol-group__card,.rd-viol-row,.rd-ticket-empty,.rd-viol-desk-add){background:var(--m-sf) !important;border:1px solid var(--m-ln) !important;border-radius:6px !important;box-shadow:none !important;color:var(--m-fg) !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-violations .rd-viol-group__card{padding:0 !important;overflow:hidden}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-violations .rd-viol-group__card .rd-viol-row{border:0 !important;border-radius:0 !important;border-bottom:1px solid var(--m-ln) !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-violations .rd-viol-group__card .rd-viol-row:last-child{border-bottom:0 !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-violations .rd-viol-desk-add{background:var(--m-pb) !important;color:var(--m-pf) !important;border-color:var(--m-pb) !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-violations .rd-viol-desk-add *{color:var(--m-pf) !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-violations :is(.rd-viol-row__name,.rd-viol-group__label){color:var(--m-fg) !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-violations .rd-desk-menu__btn,html:root.mr-mobile-ui.mr-mobile-ui #tab-violations .rd-loc-menu__btn{background:var(--m-sf) !important;border:1px solid var(--m-ln) !important;border-radius:4px !important;color:var(--m-fg) !important;box-shadow:none !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-violations .rd-viol-group__dot{border-radius:0 !important;width:8px;height:8px}
+
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket :is(.rd-nt-form-card,.rd-nt-summary,.mk-form-panel){background:var(--m-sf) !important;border:1px solid var(--m-ln) !important;border-radius:6px !important;box-shadow:none !important;color:var(--m-fg) !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .mk-form-panel{border:0 !important;background:transparent !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket :is(.figma-search-wrap,.mk-dt-control,.mk-input--ta,.mk-drop,textarea,select,input:not([type=file])){background:var(--m-sf) !important;border:1px solid var(--m-ln) !important;border-radius:6px !important;box-shadow:none !important;color:var(--m-fg) !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket :is(.figma-search-input,.mk-dt-control input){border:0 !important;background:transparent !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .mk-drop{border-style:dashed !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .mk-drop i{background:var(--m-hv) !important;color:var(--m-fg) !important;border:1px solid var(--m-ln) !important;border-radius:4px !important;box-shadow:none !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .mk-form-hd__ico{background:var(--m-pb) !important;color:var(--m-pf) !important;border-radius:4px !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .mk-btn{background:var(--m-sf) !important;color:var(--m-fg) !important;border:1px solid var(--m-ln) !important;border-radius:6px !important;box-shadow:none !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .mk-btn--primary{background:var(--m-pb) !important;color:var(--m-pf) !important;border-color:var(--m-pb) !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket :is(.mk-field__lbl,.rd-nt-summary__title){color:var(--m-fg) !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket :is(.mk-field__hint,.rd-nt-summary__row,.is-empty){color:var(--m-mu) !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .mk-req{color:var(--m-fg) !important}
+html:root.mr-mobile-ui.mr-mobile-ui #appWrap#appWrap #tab-violations button.rd-viol-desk-add{background:var(--m-pb) !important;color:var(--m-pf) !important;border:1px solid var(--m-pb) !important;border-radius:6px !important;box-shadow:none !important}
+html:root.mr-mobile-ui.mr-mobile-ui #appWrap#appWrap #tab-violations button.rd-viol-desk-add *{color:var(--m-pf) !important}
