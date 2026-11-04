@@ -48,7 +48,7 @@ begin
           perform public.athar_upsert_notification(
             NEW.employee_id, 'cmplr_' || NEW.id::text,
             'تم الرد على ' || v_lbl_new || ' رقم (' || v_num || ')',
-            format('نفيدكم بوصول رد من الإدارة على %s رقم (%s). يُرجى الاطلاع على الرد.', v_lbl, v_num),
+            format('نفيدكم بوصول رد من إدارة الرقابة على %s رقم (%s). يُرجى الاطلاع على الرد.', v_lbl, v_num),
             'blue', 'fa-reply', null, 'mine', false, null, null);
         end if;
       else
