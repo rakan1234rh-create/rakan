@@ -23157,7 +23157,10 @@
         if (!window.__atdSilent && window.AtharTicketsDesign && window.AtharTicketsDesign.select
           && !document.querySelector('.modal.open')
           && !document.body.classList.contains('ticket-over-cmp')) {
-          try { if (window.AtharTicketsDesign.select(id)) return; } catch (_) { /* fall through to legacy sheet */ }
+          try {
+            if (typeof isNotifPageOpen === 'function' && isNotifPageOpen() && typeof closeNotificationsPage === 'function') closeNotificationsPage();
+            if (window.AtharTicketsDesign.select(id)) return;
+          } catch (_) { /* fall through to legacy sheet */ }
         }
 
         enrichViolationLite(t);
