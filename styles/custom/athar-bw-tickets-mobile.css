@@ -188,3 +188,12 @@ html:root.mr-mobile-ui.mr-mobile-ui body.atd-sheet-open #tab-workflow.active .at
 html:root.mr-mobile-ui.mr-mobile-ui body.atd-sheet-open #tab-workflow.active .atd-a-head .atd-pdf{top:0 !important}
 html:root.mr-mobile-ui.mr-mobile-ui body.atd-sheet-open #tab-workflow.active .atd-back{position:sticky;top:0;z-index:20;flex:0 0 auto;box-shadow:0 10px 0 0 var(--bg,#fff),0 -30px 0 0 var(--bg,#fff)}
 html:root.mr-mobile-ui.mr-mobile-ui body.atd-sheet-open #tab-workflow.active .atd-a-head{padding-top:8px}
+
+/* ---- sheet bar: back + PDF on one row ---- */
+.atd-sbar{display:none}
+html.atd-sheet-open.mr-mobile-ui .topbar,html.atd-sheet-open.mr-mobile-ui #mobileBottomNav{display:none !important}
+html:root.mr-mobile-ui.mr-mobile-ui body.atd-sheet-open #tab-workflow.active .atd-sbar{display:flex;gap:10px;align-items:stretch;position:sticky;top:0;z-index:30;flex:0 0 auto;background:var(--bg,#fff);box-shadow:0 10px 0 0 var(--bg,#fff),0 -30px 0 0 var(--bg,#fff)}
+html:root.mr-mobile-ui.mr-mobile-ui body.atd-sheet-open #tab-workflow.active .atd-sbar .atd-back{flex:1 1 auto;width:auto;position:static;box-shadow:none;margin:0}
+html:root.mr-mobile-ui.mr-mobile-ui body.atd-sheet-open #tab-workflow.active .atd-sbar .atd-pdf2{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 16px;background:#fff;color:#000;border:1px solid #000;border-radius:4px;font:700 14px inherit;font-family:inherit;cursor:pointer}
+html:root.mr-mobile-ui.mr-mobile-ui body.atd-sheet-open #tab-workflow.active .atd-a-head .atd-pdf{display:none !important}
+html[data-theme="dark"] .atd-sbar .atd-pdf2{background:#000 !important;color:#fff !important;border-color:#fff !important}

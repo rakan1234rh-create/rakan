@@ -242,7 +242,7 @@
     }
     var act = btns.length ? '<div class="atd-act"><span class="atd-act__t">إجراء مرحلة ' + esc(NAMES[st]) + '</span><textarea class="atd-ta" id="atdResp" rows="3" placeholder="اكتب الرد أو ملاحظات القرار…">' + esc(S.resp[t.id] || '') + '</textarea><div class="atd-act__b">' + btns.join('') + '</div></div>' : '';
     el.innerHTML =
-      '<button type="button" class="atd-back" data-atd-back="1"><i class="fas fa-arrow-right" aria-hidden="true"></i><span>رجوع للقائمة</span></button><div class="atd-a-head"><button type="button" class="atd-pdf" data-atd-pdf="1" aria-label="تصدير تقرير المخالفة PDF"><i class="fas fa-file-pdf" aria-hidden="true"></i><span>PDF</span></button><span class="atd-mono atd-kk">TICKET #' + esc(b.shortTicketNum(t.ticket_number)) + '</span><h2 class="atd-h2">' + esc(t.violation_type) + '</h2><div class="atd-a-meta">' + sevChip(sv) + '<span class="atd-mu">' + esc(fdate(t)) + '</span></div></div>' +
+      '<div class="atd-sbar"><button type="button" class="atd-back" data-atd-back="1"><i class="fas fa-arrow-right" aria-hidden="true"></i><span>رجوع للقائمة</span></button><button type="button" class="atd-pdf2" data-atd-pdf="1" aria-label="تصدير PDF"><i class="fas fa-file-pdf" aria-hidden="true"></i><span>PDF</span></button></div><div class="atd-a-head"><button type="button" class="atd-pdf" data-atd-pdf="1" aria-label="تصدير تقرير المخالفة PDF"><i class="fas fa-file-pdf" aria-hidden="true"></i><span>PDF</span></button><span class="atd-mono atd-kk">TICKET #' + esc(b.shortTicketNum(t.ticket_number)) + '</span><h2 class="atd-h2">' + esc(t.violation_type) + '</h2><div class="atd-a-meta">' + sevChip(sv) + '<span class="atd-mu">' + esc(fdate(t)) + '</span></div></div>' +
       '<div class="atd-info"><div><div class="atd-mu">الموظف</div><div class="atd-v">' + esc(t._empName) + '</div></div><div><div class="atd-mu">الفرع</div><div class="atd-v">' + esc(t._branchName) + '</div></div>' +
       (b.hideObs() ? '' : '<div><div class="atd-mu">الراصد</div><div class="atd-v">' + esc(t._obsName || '-') + '</div></div>') +
       '<div><div class="atd-mu">وقت المخالفة</div><div class="atd-v">' + vtime(t) + '</div></div><div><div class="atd-mu">وقت الرصد</div><div class="atd-v">' + ctime(t) + '</div></div><div><div class="atd-mu">المرحلة الحالية</div><div class="atd-v">' + esc(NAMES[st]) + '</div></div></div>' +
@@ -255,9 +255,15 @@
 
   function sheet(on) {
     var mob = document.documentElement.classList.contains('mr-mobile-ui');
-    document.body.classList.toggle('atd-sheet-open', !!(on && mob));
+    var o = !!(on && mob);
+    document.body.classList.toggle('atd-sheet-open', o); document.documentElement.classList.toggle('atd-sheet-open', o);
     if (on && mob) { var a = document.getElementById('atdAside'); if (a) a.scrollTop = 0; }
   }
+  setInterval(function () {
+    if (!document.documentElement.classList.contains('atd-sheet-open')) return;
+    var tab = document.getElementById('tab-workflow');
+    if (!tab || !tab.classList.contains('active')) sheet(false);
+  }, 400);
   document.addEventListener('click', function (e) {
     var t = e.target.closest && e.target.closest('[data-atd-clear],[data-atd-pop],#atdFilterBtn,[data-atd-pick],[data-atd-view],[data-atd-act],[data-atd-pdf],[data-atd-back]'); if (!t) return;
     var b = B(); if (!b) return;
