@@ -116,3 +116,15 @@ html:root.mr-mobile-ui #tab-newTicket .atr-head{margin:0 0 4px}
 html:root.mr-mobile-ui #tab-newTicket .atr-head .atd-kick{margin:0 0 6px;font:500 11px 'IBM Plex Mono',monospace;letter-spacing:.12em;color:var(--t-mu)}
 html:root.mr-mobile-ui #tab-newTicket .atr-head .atd-h1{margin:0;font-size:28px;font-weight:700;color:var(--t-fg)}
 html:root.mr-mobile-ui #tab-newTicket .atr-rrow .atd-mu{color:var(--t-mu);font-size:12px}
+
+/* the legacy mobile rule flattened the card (display:contents) — restore the desktop card */
+html.athar-staging-redesign.mr-mobile-ui:root:root #tab-newTicket .rd-nt-form-card{display:block !important;flex:1 1 100%;width:100%;box-sizing:border-box;padding:20px !important}
+html.athar-staging-redesign.mr-mobile-ui:root:root #tab-newTicket .mk-form-panel{display:flex !important;flex-direction:column;align-items:stretch;gap:16px}
+html.athar-staging-redesign.mr-mobile-ui:root:root #tab-newTicket > .panel{padding:0 !important;background:transparent !important;border:0 !important;box-shadow:none !important}
+html.athar-staging-redesign.mr-mobile-ui:root:root #tab-newTicket .atr-ttl{display:block;margin:0 0 14px}
+@media (min-width:600px){
+  html.athar-staging-redesign.mr-mobile-ui:root:root #tab-newTicket .mk-form-ft{flex-direction:row;align-items:center;justify-content:flex-start !important}
+  html.athar-staging-redesign.mr-mobile-ui:root:root #tab-newTicket .mk-form-ft .mk-btn--primary,html.athar-staging-redesign.mr-mobile-ui:root:root #tab-newTicket #submitTicketBtn{width:180px !important;max-width:180px !important;flex:0 0 180px !important;min-width:180px !important}
+  html.athar-staging-redesign.mr-mobile-ui:root:root #tab-newTicket #atrAttach{width:auto !important;min-width:140px !important}
+  html.athar-staging-redesign.mr-mobile-ui:root:root #tab-newTicket :is(.mk-field--emp,.mk-field--type){flex:1 1 240px}
+}
