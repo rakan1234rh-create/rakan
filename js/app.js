@@ -42867,6 +42867,7 @@
         refilter: () => filterTickets(),
         setDateRange: (from, to) => { wfDpState.from = from || ''; wfDpState.to = to || ''; wfDpApplied.from = from || ''; wfDpApplied.to = to || ''; filterTickets(); },
         terminal: (t) => (typeof getWfTerminalOutcome === 'function' ? getWfTerminalOutcome(t) : null),
+        stopStage: (t, o) => (typeof getWfTerminalStopStage === 'function' ? getWfTerminalStopStage(t, o) : null),
         sla: (t, code) => (typeof getWfStepSlaMeta === 'function' ? getWfStepSlaMeta(t, code) : null),
         goWorkflow: () => { goTab('workflow', typeof getNavButtonForTab === 'function' ? getNavButtonForTab('workflow') : null); }
       };

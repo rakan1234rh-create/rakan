@@ -202,9 +202,26 @@
       return '<div class="atd-file"><span class="atd-file__n">' + esc(nm) + (sz ? ' <span class="atd-mono">' + sz + '</span>' : '') + '</span><button type="button" class="atd-btn atd-btn--sm" data-atd-view="' + i + '">عرض</button></div>';
     }).join('');
     var sx = st >= 5 ? 4 : st;
+    /* إلغاء/تنبيه: نحدد المرحلة التي توقفت عندها التذكرة ونعلّم نقطتها مثل علامة الروبوت */
+    var stopIdx = -1, stopKind = '';
+    if (st === 6 || st === 7) {
+      stopKind = st === 6 ? 'warn' : 'cancel';
+      var sc = ''; try { sc = b.stopStage(t, stopKind) || ''; } catch (_) {}
+      stopIdx = Math.max(0, Math.min(3, ['emp', 'sup', 'mgt', 'aud'].indexOf(sc)));
+      if (sc === 'hr') stopIdx = 3;
+      if (!sc) stopIdx = 2;
+      sx = stopIdx;
+    }
     var steps = STEPS.map(function (n, i) {
-      var done = i < sx, now = i === sx; if (i === 4 && st >= 5) n = NAMES[st];
-      return '<li class="atd-step"><div class="atd-step__rail"><i class="atd-dot ' + (done ? 'is-done' : now ? 'is-now' : '') + '"></i><i class="atd-line' + (i < sx ? ' is-done' : '') + '"></i></div><div class="atd-step__t"><div class="' + (now ? 'is-now' : done ? '' : 'is-off') + '">' + esc(n) + '</div><div class="atd-stl"><div class="atd-mu">' + (done ? 'تم' + autoMark(t, i) : now ? (st >= 5 ? 'أُغلقت التذكرة' : 'بانتظار الإجراء') : '') + '</div>' + (now ? cdHtml(t, i) : '') + '</div></div></li>';
+      var isStop = stopIdx >= 0 && i === stopIdx;
+      var after = stopIdx >= 0 && i > stopIdx;
+      var done = stopIdx >= 0 ? i < stopIdx : i < sx, now = stopIdx >= 0 ? false : i === sx;
+      if (i === 4 && st >= 5 && stopIdx < 0) n = NAMES[st];
+      if (i === 4 && stopIdx >= 0) n = stopKind === 'warn' ? 'تنبيه إداري' : 'ملغاة';
+      var sub = isStop
+        ? '<span class="atd-stop atd-stop--' + stopKind + '"><i class="fas ' + (stopKind === 'warn' ? 'fa-bell' : 'fa-ban') + '" aria-hidden="true"></i>' + (stopKind === 'warn' ? 'نقطة التنبيه' : 'نقطة الإلغاء') + '</span>'
+        : done ? 'تم' + autoMark(t, i) : now ? (st >= 5 ? 'أُغلقت التذكرة' : 'بانتظار الإجراء') : '';
+      return '<li class="atd-step' + (isStop ? ' is-stop' : '') + '"><div class="atd-step__rail"><i class="atd-dot ' + (isStop ? 'is-stop' : done ? 'is-done' : now ? 'is-now' : '') + '"></i><i class="atd-line' + (done ? ' is-done' : '') + '"></i></div><div class="atd-step__t"><div class="' + (now || isStop ? 'is-now' : done ? '' : 'is-off') + '">' + esc(n) + '</div><div class="atd-stl"><div class="atd-mu">' + sub + '</div>' + (now ? cdHtml(t, i) : '') + '</div></div></li>';
     }).join('');
     var btns = [];
     if (b.state.editingTicket && b.state.editingTicket.id === t.id && S.loading !== t.id) {
