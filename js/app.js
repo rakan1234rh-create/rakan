@@ -6122,6 +6122,7 @@
           if (refreshing) return true;
           if (document.querySelector('.modal.open, .confirm-overlay.open, #confirmOverlay[style*="flex"]')) return true;
           if (document.body.classList.contains('ticket-sheet-open')) return true;
+          if (document.documentElement.classList.contains('atd-sheet-open')) return true;
           if (document.body.classList.contains('aws-booting')) return true;
           const splash = document.getElementById('atharWelcomeSplash');
           if (splash && !splash.hasAttribute('hidden')) return true;
