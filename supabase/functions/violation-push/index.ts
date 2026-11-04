@@ -1182,6 +1182,26 @@ Deno.serve(async (req) => {
     return json({ ok: true, ...result });
   }
 
+  /* إشعار جهاز لإشعارات الشكاوى/الاقتراحات (يُستدعى من تريغر على notifications) */
+  if (payload.complaintPush === true) {
+    try {
+      if (!await isInternalPushAuth(req, supabase)) return json({ error: 'unauthorized' }, 401);
+      const uid = String(payload.userId || '').trim();
+      if (!uid) return json({ error: 'missing userId' }, 400);
+      const title = String(payload.title || 'تنبيه جديد').slice(0, 120);
+      const message = String(payload.message || '').slice(0, 300);
+      const key = String(payload.eventKey || 'cmpl').slice(0, 80);
+      const result = await sendPushToUserIds(supabase, new Set([uid]), title, message, {
+        tagSuffix: `cmpl_${key}`,
+        kind: 'complaint',
+        url: './index.html',
+      });
+      return json({ ok: true, ...result });
+    } catch (err) {
+      return json({ ok: false, error: String(err) }, 500);
+    }
+  }
+
   if (payload.notifyState === true) {
     try {
       const serviceInternal = await isInternalPushAuth(req, supabase);
