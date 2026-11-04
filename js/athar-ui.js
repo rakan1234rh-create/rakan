@@ -340,5 +340,24 @@
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 
+
+  /* صفحة الإشعارات (ديسكتوب): عجلة الماوس تحرّك القائمة من أي مكان في الصفحة، لا من شريط ضيق فقط */
+  document.addEventListener('wheel', function (e) {
+    try {
+      if (e.defaultPrevented || e.ctrlKey) return;
+      var tab = document.getElementById('tab-notifications');
+      var host = document.querySelector('#appWrap .main');
+      if (!tab || !tab.classList.contains('active') || !host || !host.contains(e.target)) return;
+      if (!document.documentElement.classList.contains('mr-desktop-ui')) return;
+      var shell = tab.querySelector('.notif-page-shell');
+      if (!shell || shell.scrollHeight <= shell.clientHeight) return;
+      var n = e.target, hit = false;
+      while (n && n !== host) { if (n !== shell && !n.classList.contains('notif-list--page') && n.scrollHeight > n.clientHeight + 1 && /(auto|scroll)/.test(getComputedStyle(n).overflowY)) { hit = true; break; } n = n.parentElement; }
+      if (hit) return;
+      var dy = e.deltaMode === 1 ? e.deltaY * 32 : e.deltaMode === 2 ? e.deltaY * shell.clientHeight : e.deltaY;
+      shell.scrollTop += dy; e.preventDefault();
+    } catch (_) { /* noop */ }
+  }, { passive: false, capture: true });
+
   window.AtharUI = { scan: scan, enhanceSelect: enhanceSelect, enhanceDate: enhanceDate, openCalendar: openCalendar, close: closeCurrent, fmtDate: fmt };
 })();
