@@ -107,6 +107,7 @@
     S.sel = sel ? sel.id : null;
     host.classList.add('atd-host');
     if (!list.length) {
+      sheet(false);
       host.innerHTML = '<div class="atd-card atd-empty"><b>لا توجد تذاكر مطابقة</b></div>';
       return;
     }
@@ -124,13 +125,16 @@
 
   function load(id) {
     if (!id || typeof window.openTicket !== 'function') return aside();
-    S.loading = id; window.__atdSilent = true; document.body.classList.add('atd-loading');
+    S.loading = id; S.silent = (S.silent || 0) + 1; window.__atdSilent = true; document.body.classList.add('atd-loading');
+    var done = false;
     var fin = function () {
-      window.__atdSilent = false;
+      if (done) return; done = true;
+      S.silent = Math.max(0, (S.silent || 1) - 1); window.__atdSilent = S.silent > 0;
       try { window.closeModal('ticketModal'); } catch (_) {}
       setTimeout(function () { if (!S.loading || S.loading === id) document.body.classList.remove('atd-loading'); }, 450);
       if (S.loading === id) { S.loading = null; aside(); }
     };
+    setTimeout(function () { if (!done) { fin(); if (S.loading === null || S.loading === id) document.body.classList.remove('atd-loading'); } }, 8000);
     Promise.resolve(window.openTicket(id)).then(fin, fin);
     aside();
   }
@@ -238,7 +242,7 @@
     }
     var act = btns.length ? '<div class="atd-act"><span class="atd-act__t">إجراء مرحلة ' + esc(NAMES[st]) + '</span><textarea class="atd-ta" id="atdResp" rows="3" placeholder="اكتب الرد أو ملاحظات القرار…">' + esc(S.resp[t.id] || '') + '</textarea><div class="atd-act__b">' + btns.join('') + '</div></div>' : '';
     el.innerHTML =
-      '<div class="atd-a-head"><button type="button" class="atd-back" data-atd-back="1"><i class="fas fa-arrow-right" aria-hidden="true"></i><span>رجوع للقائمة</span></button><button type="button" class="atd-pdf" data-atd-pdf="1" aria-label="تصدير تقرير المخالفة PDF"><i class="fas fa-file-pdf" aria-hidden="true"></i><span>PDF</span></button><span class="atd-mono atd-kk">TICKET #' + esc(b.shortTicketNum(t.ticket_number)) + '</span><h2 class="atd-h2">' + esc(t.violation_type) + '</h2><div class="atd-a-meta">' + sevChip(sv) + '<span class="atd-mu">' + esc(fdate(t)) + '</span></div></div>' +
+      '<button type="button" class="atd-back" data-atd-back="1"><i class="fas fa-arrow-right" aria-hidden="true"></i><span>رجوع للقائمة</span></button><div class="atd-a-head"><button type="button" class="atd-pdf" data-atd-pdf="1" aria-label="تصدير تقرير المخالفة PDF"><i class="fas fa-file-pdf" aria-hidden="true"></i><span>PDF</span></button><span class="atd-mono atd-kk">TICKET #' + esc(b.shortTicketNum(t.ticket_number)) + '</span><h2 class="atd-h2">' + esc(t.violation_type) + '</h2><div class="atd-a-meta">' + sevChip(sv) + '<span class="atd-mu">' + esc(fdate(t)) + '</span></div></div>' +
       '<div class="atd-info"><div><div class="atd-mu">الموظف</div><div class="atd-v">' + esc(t._empName) + '</div></div><div><div class="atd-mu">الفرع</div><div class="atd-v">' + esc(t._branchName) + '</div></div>' +
       (b.hideObs() ? '' : '<div><div class="atd-mu">الراصد</div><div class="atd-v">' + esc(t._obsName || '-') + '</div></div>') +
       '<div><div class="atd-mu">وقت المخالفة</div><div class="atd-v">' + vtime(t) + '</div></div><div><div class="atd-mu">وقت الرصد</div><div class="atd-v">' + ctime(t) + '</div></div><div><div class="atd-mu">المرحلة الحالية</div><div class="atd-v">' + esc(NAMES[st]) + '</div></div></div>' +
@@ -282,7 +286,7 @@
   function syncDates() { var b = B(); if (b && b.setDateRange) b.setDateRange(S.f.from, S.f.to); }
   document.addEventListener('change', function (e) {
     var k = e.target && e.target.getAttribute && e.target.getAttribute('data-atd-f'); if (!k) return;
-    S.f[k] = e.target.value; S.sel = null;
+    S.f[k] = e.target.value; S.sel = null; sheet(false);
     if (k === 'from' || k === 'to') { if (S.f.from && S.f.to) { if (S.f.from > S.f.to) { var x = S.f.from; S.f.from = S.f.to; S.f.to = x; } syncDates(); return; } if (!S.f.from && !S.f.to) syncDates(); }
     B().refilter();
   });

@@ -185,4 +185,6 @@ body.atd-sheet-open:has(#tab-workflow.active){overflow:hidden}
 html:root.mr-mobile-ui body.atd-sheet-open:has(#tab-workflow.active) .topbar,
 html:root.mr-mobile-ui body.atd-sheet-open:has(#tab-workflow.active) #mobileBottomNav{display:none !important}
 html:root.mr-mobile-ui.mr-mobile-ui body.atd-sheet-open #tab-workflow.active .atd-back{width:100%;justify-content:flex-start}
-html:root.mr-mobile-ui.mr-mobile-ui body.atd-sheet-open #tab-workflow.active .atd-a-head .atd-pdf{top:60px !important}
+html:root.mr-mobile-ui.mr-mobile-ui body.atd-sheet-open #tab-workflow.active .atd-a-head .atd-pdf{top:0 !important}
+html:root.mr-mobile-ui.mr-mobile-ui body.atd-sheet-open #tab-workflow.active .atd-back{position:sticky;top:0;z-index:20;flex:0 0 auto;box-shadow:0 10px 0 0 var(--bg,#fff),0 -30px 0 0 var(--bg,#fff)}
+html:root.mr-mobile-ui.mr-mobile-ui body.atd-sheet-open #tab-workflow.active .atd-a-head{padding-top:8px}
