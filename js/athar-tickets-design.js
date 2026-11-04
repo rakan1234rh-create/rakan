@@ -219,7 +219,7 @@
       if (i === 4 && st >= 5 && stopIdx < 0) n = NAMES[st];
       if (i === 4 && stopIdx >= 0) n = stopKind === 'warn' ? 'تنبيه إداري' : 'ملغاة';
       var sub = isStop
-        ? '<span class="atd-stop atd-stop--' + stopKind + '"><i class="fas ' + (stopKind === 'warn' ? 'fa-bell' : 'fa-ban') + '" aria-hidden="true"></i>' + (stopKind === 'warn' ? 'نقطة التنبيه' : 'نقطة الإلغاء') + '</span>'
+        ? '<span class="atd-stop atd-stop--' + stopKind + '"><i class="fas ' + (stopKind === 'warn' ? 'fa-bell' : 'fa-ban') + '" aria-hidden="true"></i>' + (stopKind === 'warn' ? 'تنبيه' : 'إلغاء') + '</span>'
         : done ? 'تم' + autoMark(t, i) : now ? (st >= 5 ? 'أُغلقت التذكرة' : 'بانتظار الإجراء') : '';
       return '<li class="atd-step' + (isStop ? ' is-stop' : '') + '"><div class="atd-step__rail"><i class="atd-dot ' + (isStop ? 'is-stop' : done ? 'is-done' : now ? 'is-now' : '') + '"></i><i class="atd-line' + (done ? ' is-done' : '') + '"></i></div><div class="atd-step__t"><div class="' + (now || isStop ? 'is-now' : done ? '' : 'is-off') + '">' + esc(n) + '</div><div class="atd-stl"><div class="atd-mu">' + sub + '</div>' + (now ? cdHtml(t, i) : '') + '</div></div></li>';
     }).join('');
