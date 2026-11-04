@@ -5691,6 +5691,7 @@
           }
           const enrichRow = mobLoad ? enrichViolationLite : enrichViolation;
           state.violations = (violations || []).map(enrichRow);
+          setTimeout(() => backfillOlderViolations(VIOLATIONS_LIMIT), 1500);
           state.violationTypes = (vTypes || []).map((row) => ({
             ...row,
             severity: violTypeSeverity(row)
@@ -8567,6 +8568,44 @@
       }
 
       let _wfViolationsReloadPromise = null;
+      /** تحميل بقية المخالفات الأقدم بعد التحميل الأولي (الحد الأولي 200–500) حتى لا تتجمد الأعداد */
+      let _olderViolBusy = false;
+      async function backfillOlderViolations(usedLimit) {
+        if (_olderViolBusy || typeof sb === 'undefined' || !sb || !state.currentUser) return;
+        if (!Array.isArray(state.violations) || state.violations.length < Number(usedLimit || 0)) return;
+        _olderViolBusy = true;
+        try {
+          const enrich = isMobileViewport() ? enrichViolationLite : enrichViolation;
+          const times = state.violations.map(v => v.created_at).filter(Boolean).sort();
+          let cursor = times[0];
+          if (!cursor) return;
+          const PAGE = 1000;
+          let added = 0;
+          for (let i = 0; i < 12; i++) {
+            const { data, error } = await sb.from('violations').select(VIOLATION_LIST_SELECT)
+              .lte('created_at', cursor).order('created_at', { ascending: false }).limit(PAGE);
+            if (error || !data || !data.length) break;
+            const have = new Set(state.violations.map(v => v.id));
+            const add = data.filter(r => !have.has(r.id));
+            if (!add.length) break;
+            state.violations = state.violations.concat(add.map(enrich));
+            added += add.length;
+            cursor = data[data.length - 1].created_at;
+            if (data.length < PAGE) break;
+          }
+          if (added) {
+            rebuildLookupMaps();
+            invalidateEmpScoreCache();
+            invalidateNotifCache();
+            try { renderAll(); } catch (_) { /* noop */ }
+          }
+        } catch (e) {
+          if (isAtharDebugLog()) console.warn('[violations backfill]', e);
+        } finally {
+          _olderViolBusy = false;
+        }
+      }
+
       async function reloadViolationsForCurrentRole(opts = {}) {
         if (typeof sb === 'undefined' || !sb || !state.currentUser) return;
         if (_wfViolationsReloadPromise) return _wfViolationsReloadPromise;
@@ -8591,6 +8630,7 @@
             if (Array.isArray(rows)) {
               const enrichRow = mobLoad ? enrichViolationLite : enrichViolation;
               state.violations = rows.map(enrichRow);
+              setTimeout(() => backfillOlderViolations(limit), 1500);
               rebuildLookupMaps();
               invalidateEmpScoreCache();
               invalidateNotifCache();
@@ -38545,6 +38585,21 @@
           if (me.branch_id) list = getBranchStaff(me.branch_id);
           else list = state.users.filter(isBranchStaffMember);
         }
+        /* من أخذ بريكاً اليوم يظهر في القائمة حتى لو لم يكن «موظف فرع» (مثل الراصد) */
+        if (role === 'admin' || role === 'manager' || role === 'auditor' || role === 'supervisor') {
+          const have = new Set(list.map(u => u.id));
+          const bidsSet = role === 'supervisor' ? new Set(getSupervisedBranchesForBreaks().map(b => b.id)) : null;
+          const todayK = getStaffBreakTodayKey();
+          (state.staffBreakDayRows || []).forEach((r) => {
+            if (!r?.user_id || have.has(r.user_id)) return;
+            if (r.day_key && String(r.day_key).slice(0, 10) !== todayK) return;
+            const uu = state._userById?.get(r.user_id) || state.users.find(x => x.id === r.user_id);
+            if (!uu) return;
+            if (bidsSet && !bidsSet.has(uu.branch_id)) return;
+            have.add(uu.id);
+            list.push(uu);
+          });
+        }
         return list
           .slice()
           .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'ar'));
@@ -38572,6 +38627,10 @@
           if (ra !== rb) return rb - ra;
           // Prefer the ended session that still holds leftover (ignore consume markers with remaining=0)
           if (a?.status === 'ended' && b?.status === 'ended') {
+            /* جلسة تجاوزت المدة (أو أُوقفت إدارياً) تُمثّل حالة اليوم الأحدث: لا نفضّل عليها جلسة قديمة فيها متبقٍّ فيظهر «متوقف» خطأً */
+            const ovA = Number(a.remaining_seconds) < 0 || Number(a.overtime_seconds) > 0;
+            const ovB = Number(b.remaining_seconds) < 0 || Number(b.overtime_seconds) > 0;
+            if (ovA || ovB) return staffBreakRowRecencyMs(b) - staffBreakRowRecencyMs(a);
             const posA = Number(a.remaining_seconds) > 0 ? 1 : 0;
             const posB = Number(b.remaining_seconds) > 0 ? 1 : 0;
             if (posA !== posB) return posB - posA;
