@@ -41069,11 +41069,12 @@
               rows: (state.complaints || []).slice().sort((x, y) => new Date(y.created_at) - new Date(x.created_at)),
               status: COMPLAINT_STATUS_LABELS,
               open: (id) => openComplaintDetail(id),
-              submit: async (kind, anon, text) => {
+              cats: { complaint: RD_COMPLAINT_CATS.map(c => c.label), suggestion: RD_SUGGESTION_CATS.map(c => c.label) },
+              submit: async (kind, anon, text, cat) => {
                 const before = (state.complaints || [])[0]?.id;
                 state.complaintKind = kind === 'suggestion' ? 'suggestion' : 'complaint';
                 state.complaintAnonymous = !!anon;
-                state.complaintCategory = 'أخرى';
+                state.complaintCategory = cat || 'أخرى';
                 const ta = document.getElementById('cpDescText'); if (ta) ta.value = text;
                 await submitComplaintFromUi();
                 const ok = (state.complaints || [])[0]?.id !== before;
