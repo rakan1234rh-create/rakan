@@ -47,7 +47,7 @@ begin
         if NEW.employee_id is not null then
           perform public.athar_upsert_notification(
             NEW.employee_id, 'cmplr_' || NEW.id::text,
-            'رد جديد على ' || v_lbl_new || 'كم',
+            'تم الرد على ' || v_lbl_new || ' رقم (' || v_num || ')',
             format('نفيدكم بوصول رد من الإدارة على %s رقم (%s). يُرجى الاطلاع على الرد.', v_lbl, v_num),
             'blue', 'fa-reply', null, 'mine', false, null, null);
         end if;
@@ -58,7 +58,7 @@ begin
         loop
           perform public.athar_upsert_notification(
             v_uid, 'cmplr_' || NEW.id::text,
-            'رد جديد على ' || v_lbl_new,
+            'تم الرد على ' || v_lbl_new || ' رقم (' || v_num || ')',
             format('نفيدكم بقيام صاحب %s رقم (%s) بالرد. يُرجى الاطلاع ومتابعة الإجراء.', v_lbl_new, v_num),
             'blue', 'fa-reply', null, 'mine', false, null, null);
         end loop;
