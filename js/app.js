@@ -41593,12 +41593,24 @@
         return sb.rpc('resolve_complaint', { p_complaint_id: id });
       }
 
+      async function confirmComplaintDecision(id, decision) {
+        const row = (state.complaints || []).find(c => String(c.id) === String(id));
+        const sug = (row && row.kind === 'suggestion') || decision === 'accepted' || (decision === 'rejected' && row && row.kind === 'suggestion');
+        const num = row && row.complaint_number ? ` رقم \u2066(${row.complaint_number})\u2069` : '';
+        let msg, ok, title;
+        if (decision === 'rejected') { title = 'رفض الاقتراح'; msg = `هل أنت متأكد من رفض الاقتراح${num}؟ سيتم إغلاقه وإشعار صاحبه.`; ok = 'رفض'; }
+        else if (sug) { title = 'قبول الاقتراح'; msg = `هل أنت متأكد من قبول الاقتراح${num}؟ سيتم إغلاقه وإشعار صاحبه.`; ok = 'قبول'; }
+        else { title = 'حل الشكوى'; msg = `هل أنت متأكد من إغلاق الشكوى${num} كمحلولة؟ سيتم إشعار صاحبها.`; ok = 'تم الحل'; }
+        return await confirmDialog(msg, { type: decision === 'rejected' ? 'danger' : 'warn', title, okText: ok, cancelText: 'تراجع' });
+      }
+
       async function rdResolveComplaint(id, decision) {
         if (!id) return;
         if (typeof canManageComplaints === 'function' && !canManageComplaints()) {
           showToast('مدير النظام فقط يقدر يغلق الشكوى', 'warning');
           return;
         }
+        if (!await confirmComplaintDecision(id, decision)) return;
         try {
           const { data, error } = await resolveComplaintWithDecision(id, decision);
           if (error) throw error;
@@ -42687,6 +42699,7 @@
           showToast('مدير النظام فقط يقدر يغلق الشكوى', 'warning');
           return;
         }
+        if (!await confirmComplaintDecision(state.activeComplaintId, decision)) return;
         try {
           const { data, error } = await resolveComplaintWithDecision(state.activeComplaintId, decision);
           if (error) throw error;
