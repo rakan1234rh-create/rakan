@@ -195,7 +195,8 @@
   }
   setInterval(tickCd, 1000);
   function aside() {
-    var el = document.getElementById('atdAside'), b = B(); if (!el || !b) return;
+    var b = B(), mob = document.documentElement.classList.contains('mr-mobile-ui');
+    var el = mob ? sheetEl() : document.getElementById('atdAside'); if (!el || !b) return;
     var t = (b.state.violations || []).filter(function (v) { return v.id === S.sel; })[0];
     if (!t) { el.innerHTML = ''; return; }
     var st = stageOf(t), sv = sevOf(t);
@@ -242,22 +243,27 @@
     }
     var act = btns.length ? '<div class="atd-act"><span class="atd-act__t">إجراء مرحلة ' + esc(NAMES[st]) + '</span><textarea class="atd-ta" id="atdResp" rows="3" placeholder="اكتب الرد أو ملاحظات القرار…">' + esc(S.resp[t.id] || '') + '</textarea><div class="atd-act__b">' + btns.join('') + '</div></div>' : '';
     el.innerHTML =
-      '<div class="atd-sbar"><button type="button" class="atd-back" data-atd-back="1"><i class="fas fa-arrow-right" aria-hidden="true"></i><span>رجوع للقائمة</span></button><button type="button" class="atd-pdf2" data-atd-pdf="1" aria-label="تصدير PDF"><i class="fas fa-file-pdf" aria-hidden="true"></i><span>PDF</span></button></div><div class="atd-a-head"><button type="button" class="atd-pdf" data-atd-pdf="1" aria-label="تصدير تقرير المخالفة PDF"><i class="fas fa-file-pdf" aria-hidden="true"></i><span>PDF</span></button><span class="atd-mono atd-kk">TICKET #' + esc(b.shortTicketNum(t.ticket_number)) + '</span><h2 class="atd-h2">' + esc(t.violation_type) + '</h2><div class="atd-a-meta">' + sevChip(sv) + '<span class="atd-mu">' + esc(fdate(t)) + '</span></div></div>' +
+      '<div class="atd-sbar"><button type="button" class="atd-back" data-atd-back="1"><i class="fas fa-arrow-right" aria-hidden="true"></i><span>رجوع للقائمة</span></button><button type="button" class="atd-pdf2" data-atd-pdf="1" aria-label="تصدير PDF"><i class="fas fa-file-pdf" aria-hidden="true"></i><span>PDF</span></button></div><div class="atd-sbody"><div class="atd-a-head"><button type="button" class="atd-pdf" data-atd-pdf="1" aria-label="تصدير تقرير المخالفة PDF"><i class="fas fa-file-pdf" aria-hidden="true"></i><span>PDF</span></button><span class="atd-mono atd-kk">TICKET #' + esc(b.shortTicketNum(t.ticket_number)) + '</span><h2 class="atd-h2">' + esc(t.violation_type) + '</h2><div class="atd-a-meta">' + sevChip(sv) + '<span class="atd-mu">' + esc(fdate(t)) + '</span></div></div>' +
       '<div class="atd-info"><div><div class="atd-mu">الموظف</div><div class="atd-v">' + esc(t._empName) + '</div></div><div><div class="atd-mu">الفرع</div><div class="atd-v">' + esc(t._branchName) + '</div></div>' +
       (b.hideObs() ? '' : '<div><div class="atd-mu">الراصد</div><div class="atd-v">' + esc(t._obsName || '-') + '</div></div>') +
       '<div><div class="atd-mu">وقت المخالفة</div><div class="atd-v">' + vtime(t) + '</div></div><div><div class="atd-mu">وقت الرصد</div><div class="atd-v">' + ctime(t) + '</div></div><div><div class="atd-mu">المرحلة الحالية</div><div class="atd-v">' + esc(NAMES[st]) + '</div></div></div>' +
       '<p class="atd-desc">' + esc(t.description || '—') + '</p>' +
       '<div><h3 class="atd-h3">المرفقات</h3>' + (files || '<div class="atd-mu atd-nofile">لا توجد مرفقات</div>') + '</div>' +
-      '<ol class="atd-steps" aria-label="مسار التذكرة">' + steps + '</ol>' + replies(t) + act;
+      '<ol class="atd-steps" aria-label="مسار التذكرة">' + steps + '</ol>' + replies(t) + act + '</div>';
     tickCd();
     if (S.pendingScroll) { S.pendingScroll = false; setTimeout(function () { try { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_) {} }, 150); }
   }
 
+  function sheetEl() {
+    var p = document.getElementById('atdSheet');
+    if (!p) { p = document.createElement('aside'); p.id = 'atdSheet'; p.setAttribute('aria-label', 'تفاصيل التذكرة'); document.body.appendChild(p); }
+    return p;
+  }
   function sheet(on) {
     var mob = document.documentElement.classList.contains('mr-mobile-ui');
     var o = !!(on && mob);
     document.body.classList.toggle('atd-sheet-open', o); document.documentElement.classList.toggle('atd-sheet-open', o);
-    if (on && mob) { var a = document.getElementById('atdAside'); if (a) a.scrollTop = 0; }
+    if (on && mob) { var a = document.getElementById('atdSheet'); var sb = a && a.querySelector('.atd-sbody'); if (sb) sb.scrollTop = 0; }
   }
   setInterval(function () {
     if (!document.documentElement.classList.contains('atd-sheet-open')) return;
