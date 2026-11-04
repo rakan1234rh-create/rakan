@@ -32269,6 +32269,12 @@
 
       const NOTIFICATIONS_DB_SELECT = 'id,event_key,title,message,type,icon,ticket_id,scope,broadcast_id,broadcast_kind,is_auto,is_read,created_at,dismissed_at,broadcasts(expires_at)';
 
+      /** إشعارات الشكاوى/الاقتراحات: رقم الشكوى مرمّز في event_key (cmpl_new_ / cmplr_ / cmpls_) */
+      function parseComplaintNotifId(notifId) {
+        const m = /^cmpl(?:_new_|r_|s_)([0-9a-f-]{36})$/i.exec(String(notifId || ''));
+        return m ? m[1] : '';
+      }
+
       function mapDbNotificationRow(row) {
         const id = String(row?.event_key || row?.id || '');
         const palette = ['amber', 'blue', 'red', 'green', 'purple', 'orange'];
@@ -32277,6 +32283,7 @@
           id,
           dbId: row.id,
           ticketId: row.ticket_id || '',
+          complaintId: parseComplaintNotifId(id) || undefined,
           type,
           icon: row.icon || 'fa-bell',
           title: row.title || 'تنبيه',
@@ -35305,6 +35312,20 @@
         refreshNotifBellBadge(false);
 
         const onNotifPage = isNotifPageOpen();
+        const cmplNotifId = parseComplaintNotifId(notifId);
+        if (cmplNotifId) {
+          if (onNotifPage) closeNotificationsPage(); else closeNotifPanel();
+          const cBtn = document.querySelector('[onclick*="goTab(\'complaints"]');
+          if (!document.getElementById('tab-complaints')?.classList.contains('active')) goTab('complaints', cBtn || undefined);
+          setTimeout(() => {
+            try {
+              if (typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi() && typeof rdOpenComplaintDetail === 'function') rdOpenComplaintDetail(cmplNotifId);
+              else if (typeof openComplaintDetail === 'function') openComplaintDetail(cmplNotifId);
+            } catch (_) { /* noop */ }
+          }, 450);
+          renderNotifications();
+          return;
+        }
         const broadcastId = parseBroadcastNotifId(notifId);
         if (broadcastId) {
           const notif = (state._currentNotifs || buildUserNotifications()).find(n => n.id === notifId);
@@ -42697,6 +42718,11 @@
           .on('postgres_changes', { event: '*', schema: 'public', table: 'complaints' }, (payload) => {
             const row = payload.new || payload.old;
             if (!row?.id) return;
+            /* إشعار التطبيق يُنشأ في القاعدة عند أي رد/حل: نجلب الإشعارات بعد الحدث */
+            clearTimeout(state._cmplNotifT);
+            state._cmplNotifT = setTimeout(() => {
+              refreshNotificationsFromDb().then((ok) => { if (ok) { try { renderNotifBadge(); renderNotifications(); } catch (_) { /* noop */ } } }).catch(() => {});
+            }, 900);
             // Defense in depth: non-managers only keep their own rows even if
             // a realtime event arrives for another employee's complaint.
             const uid = state.currentUser?.id;
