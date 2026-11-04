@@ -35068,7 +35068,7 @@
         const panelCount = document.getElementById(panelTarget.countId);
         if (!pageOnly && panelOpen && panelList && panelCount) {
           panelCount.textContent = buildCountText(allVisible, panelUnread);
-          panelList.innerHTML = allVisible.length ? buildItemsHtml(allVisible) : emptyHtml;
+          { const h = allVisible.length ? buildItemsHtml(allVisible) : emptyHtml; if (panelList.__lastHtml !== h || !panelList.firstChild) { panelList.innerHTML = h; panelList.__lastHtml = h; } }
         }
 
         const pageUnread = pageVisible.filter(n => !read.has(n.id));
@@ -35076,7 +35076,7 @@
         const pageCount = document.getElementById(pageTarget.countId);
         if (pageList && pageCount) {
           pageCount.textContent = buildCountText(pageVisible, pageUnread);
-          pageList.innerHTML = pageVisible.length ? buildItemsHtml(pageVisible) : emptyHtml;
+          { const h = pageVisible.length ? buildItemsHtml(pageVisible) : emptyHtml; if (pageList.__lastHtml !== h || !pageList.firstChild) { pageList.innerHTML = h; pageList.__lastHtml = h; } }
         }
       }
 
