@@ -39663,9 +39663,11 @@
       /** مدة مستخدمة بدقة: أقل من دقيقة بالثواني، وإلا دقائق وثواني — نفس الرقم لكل الأدوار */
       function formatBreakUsedLabel(sec) {
         const t = Math.max(0, Math.floor(Number(sec) || 0));
-        if (t < 60) return `${t} ث`;
+        /* عزل اتجاه RTL حتى لا تنعكس «29 د 11 ث» داخل عناصر ltr */
+        const iso = (x) => `\u2067${x}\u2069`;
+        if (t < 60) return iso(`${t} ث`);
         const m = Math.floor(t / 60), r = t % 60;
-        return r ? `${m} د ${r} ث` : `${m} د`;
+        return iso(r ? `${m} د ${r} ث` : `${m} د`);
       }
 
       function getBreakSessionUsedLabel(row) {
