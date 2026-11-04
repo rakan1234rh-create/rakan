@@ -167,5 +167,11 @@ html:root.mr-desktop-ui.mr-desktop-ui #tab-notifications .notif-list--page,html:
 .av-def{display:inline-flex;align-items:center;justify-content:center;line-height:0;color:inherit;pointer-events:none}
 .av-def svg{width:1.6em;height:1.6em;display:block;stroke:currentColor !important;stroke-width:2;fill:none !important}
 .av-def svg *{stroke:currentColor !important;fill:none !important}
-html:root.mr-desktop-ui.mr-desktop-ui #appWrap #sidebar .rd-side-foot .rd-side-foot__av,
-html:root.mr-desktop-ui.mr-desktop-ui #appWrap #sidebar .rd-side-foot .rd-side-foot__av *{color:#0a0a0a !important}
+/* avatar surface = the banner it sits in; only the silhouette changes: black (light) / grey (dark) */
+html:root:root:root :has(> .av-def){background:transparent !important;background-image:none !important;box-shadow:none !important;border-color:transparent !important}
+html:root:root:root .av-def{color:#0a0a0a !important}
+html[data-theme="dark"]:root:root:root .av-def{color:#8a8a8a !important}
+/* always-dark chrome (sidebar / top bar): keep the silhouette visible */
+html:root:root:root :is(#sidebar,.topbar,.rd-topbar,.mr-topbar,header) .av-def{color:#a3a3a3 !important}
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap #sidebar .rd-side-foot [class*="av"]:has(> .av-def){background:transparent !important;border:0 !important}
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap #sidebar .rd-side-foot [class*="av"] .av-def{color:#a3a3a3 !important;background:transparent !important}

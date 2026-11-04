@@ -124,3 +124,12 @@ html:root .rd-h-tiles { grid-template-columns: repeat(3, 1fr); }
 html:root.mr-mobile-ui .rd-mob-dash .rd-h-row--a.rd-h-row--1{grid-template-columns:1fr !important}
 
 html:root .rd-h-list__r.is-me { background: rgba(128,128,128,.14); margin: 0 -10px; padding: 9px 10px; border-radius: 4px; border-bottom-color: transparent; font-weight: 700; }
+
+/* admin: «التذاكر حسب المرحلة» sits beside «آخر التذاكر», equal size */
+html:root .rd-h-row--b.rd-h-row--eq{grid-template-columns:1fr 1fr;align-items:stretch}
+html:root .rd-h-row--eq>.rd-h-card,html:root .rd-h-row--eq>.rd-h-side{min-width:0}
+html:root .rd-h-side{display:flex;flex-direction:column;background:var(--hm-bg);border:1px solid var(--hm-ln);border-radius:4px;padding:20px}
+html:root .rd-h-side>.rd-desk-sec{margin:0;padding:0;border:0;background:transparent;flex:1;display:flex;flex-direction:column}
+html:root .rd-h-side .rd-desk-sec__head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:12px}
+html:root .rd-h-side .rd-rl-table{flex:1}
+@media (max-width:1100px){html:root .rd-h-row--b.rd-h-row--eq{grid-template-columns:1fr}}

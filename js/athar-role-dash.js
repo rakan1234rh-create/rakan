@@ -91,7 +91,8 @@
         return { cells: [esc(k[1]), num(c.length), num(od)] };
       });
       return { hero: hero(role === 'admin' ? 'مؤشر امتثال الشركة' : 'مؤشر أداء المناطق', avg(rr.map(function (r) { return r.s; })), 'كل المناطق والفروع', kp),
-        table: (role === 'admin' ? table('التذاكر حسب المرحلة', 'كل التذاكر المفتوحة الآن', ['المرحلة', 'تذاكر', 'متأخرة'], stages) : '') + table('أداء المناطق', 'مرتبة حسب الامتثال', HEAD_REGION, rr) };
+        side: (role === 'admin' ? table('التذاكر حسب المرحلة', 'كل التذاكر المفتوحة الآن', ['المرحلة', 'تذاكر', 'متأخرة'], stages) : ''),
+        table: table('أداء المناطق', 'مرتبة حسب الامتثال', HEAD_REGION, rr) };
     }
     if (role === 'auditor' || role === 'hr') {
       var key = role === 'auditor' ? 'aud' : 'hr';
@@ -247,10 +248,12 @@
           top = heroCard(extra.hero) + notifCard();
           recent = role === 'observer' ? (all || v).filter(function (t) { return String(t.observer_id) === String(me.id); }).slice(0, 5) : v.slice(0, 5);
         }
-        var rows2 = hasPersonal ? recentCard('آخر تذاكري', recent) + notifCard() : recentCard('آخر التذاكر', recent);
+        var isDesk = document.documentElement.classList.contains('mr-desktop-ui');
+        var side = (isDesk && !hasPersonal && extra && extra.side) ? '<div class="rd-h-side">' + extra.side + '</div>' : '';
+        var rows2 = hasPersonal ? recentCard('آخر تذاكري', recent) + notifCard() : recentCard('آخر التذاكر', recent) + side;
         var html = header(me, role) + '<div class="rd-h-row rd-h-row--a' + (hasPersonal && role !== 'branch_manager' ? ' rd-h-row--1' : '') + '">' + top + '</div>' +
-          '<div class="rd-h-row rd-h-row--b">' + rows2 + '</div>' +
-          (extra ? (role === 'branch_manager' ? tiles(extra.hero.kpis) : '') + extra.table : '');
+          '<div class="rd-h-row rd-h-row--b' + (side ? ' rd-h-row--eq' : '') + '">' + rows2 + '</div>' +
+          (extra ? (role === 'branch_manager' ? tiles(extra.hero.kpis) : '') + (side ? '' : (extra.side || '')) + extra.table : '');
         root.classList.add('rd-desk-dash--h');
         root.innerHTML = html;
       } catch (e) { try { console.warn('AtharRoleDash', e); } catch (_) { /* noop */ } }
