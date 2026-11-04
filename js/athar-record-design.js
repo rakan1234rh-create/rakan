@@ -1,10 +1,9 @@
-/* Record-violation page — desktop design (O_Record): header + "آخر ما رصدته" card. */
+/* Record-violation page — desktop + mobile design (O_Record): header + "آخر ما رصدته" card. */
 (function () {
   'use strict';
   function ready() { return window.__atdBridge && window.AtharTicketsDesign; }
   function mount() {
     if (!ready()) return;
-    if (!window.__atdBridge.isDesktop()) return;
     var tab = document.getElementById('tab-newTicket'); if (!tab || tab.hidden || !tab.offsetParent) return;
     var b = window.__atdBridge, T = window.AtharTicketsDesign, esc = T.esc;
     var panel = tab.querySelector('.mk-form-panel'); if (!panel) return;

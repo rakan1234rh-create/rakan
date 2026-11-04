@@ -35,7 +35,7 @@
       '<select id="atbType"' + (c.active ? ' disabled' : '') + '><option value="regular"' + (can(c.regular) ? '' : ' disabled') + '>استراحة</option><option value="restroom"' + (can(c.restroom) ? '' : ' disabled') + '>دورة مياه</option></select></div>' +
       '<button type="button" class="atb-go"' + dis + ' onclick="startStaffBreakFromUi(document.getElementById(\'atbType\').value)">بدء البريك</button></div>' +
       (note && !c.active ? '<p class="atb-note">' + e(note) + '</p>' : '') +
-      '<div class="atb-lim"><h3>المدد المسموحة لفرعك</h3><div class="atb-limrow">' +
+      '<div class="atb-lim"><h3>المدة المسموحة لفرعك</h3><div class="atb-limrow">' +
       '<span><span class="atb-mu2">استراحة</span> <b class="atd-mono">' + (c.regular.mins || '—') + ' د</b></span>' +
       '<span><span class="atb-mu2">دورة مياه</span> <b class="atd-mono">' + (c.restroom.mins || '—') + ' د</b></span>' +
       '<span><span class="atb-mu2">النطاق</span> <b>' + e(c.branch) + '</b></span></div></div></div>';

@@ -6579,7 +6579,7 @@
         { id: 'export_users', label: 'تصدير قائمة المستخدمين', group: 'إجراءات', roles: ['admin'] },
         { id: 'manage_regions', label: 'إضافة/تعديل المناطق والفروع', group: 'إجراءات إدارية', roles: ['admin'] },
         { id: 'delete_regions', label: 'حذف المناطق والفروع', group: 'إجراءات إدارية', roles: ['admin'] },
-        { id: 'manage_break_schedules', label: 'تعديل مدد البريك (منطقة/فرع/موظف)', group: 'إجراءات إدارية', roles: ['admin'] },
+        { id: 'manage_break_schedules', label: 'تعديل مدة البريك (منطقة/فرع/موظف)', group: 'إجراءات إدارية', roles: ['admin'] },
         { id: 'manage_complaints', label: 'إدارة الشكاوى والاقتراحات (الرد والإغلاق)', group: 'إجراءات إدارية', roles: ['admin', 'auditor'] },
         { id: 'manage_violation_types', label: 'إدارة أنواع المخالفات', group: 'إجراءات إدارية', roles: ['admin'] },
         { id: 'manage_users', label: 'إضافة/تعديل/تعطيل المستخدمين', group: 'إجراءات إدارية', roles: ['admin'] },
@@ -39835,7 +39835,7 @@
         return `
           <div class="rd-break-manage">
             <button type="button" class="rd-break-manage-btn" onclick="openBreakScheduleModal()">
-              <i class="fas fa-sliders"></i> تعديل مدد البريكات
+              <i class="fas fa-sliders"></i> تعديل مدة البريكات
             </button>
           </div>`;
       }
@@ -39938,9 +39938,9 @@
         const manageBtn = canManageStaffBreakSchedules()
           ? (desk
             ? `<button type="button" class="rd-breaks-page__manage" onclick="openBreakScheduleModal()">
-                 <i class="fas fa-sliders" aria-hidden="true"></i>تعديل مدد البريكات
+                 <i class="fas fa-sliders" aria-hidden="true"></i>تعديل مدة البريكات
                </button>`
-            : `<button type="button" class="rd-breaks-page__gear" onclick="openBreakScheduleModal()" aria-label="تعديل مدد البريكات"><i class="fas fa-sliders"></i></button>`)
+            : `<button type="button" class="rd-breaks-page__gear" onclick="openBreakScheduleModal()" aria-label="تعديل مدة البريكات"><i class="fas fa-sliders"></i></button>`)
           : '';
         const headHtml = desk
           ? (manageBtn
@@ -40571,7 +40571,7 @@
 
       function openBreakScheduleModal() {
         if (!canManageStaffBreakSchedules()) {
-          showToast('لا تملك صلاحية تعديل مدد البريك', 'warning');
+          showToast('لا تملك صلاحية تعديل مدة البريك', 'warning');
           return;
         }
         const typeInp = document.getElementById('breakSchScopeType');
@@ -40591,7 +40591,7 @@
 
       async function saveBreakScheduleFromUi() {
         if (!canManageStaffBreakSchedules()) {
-          showToast('لا تملك صلاحية تعديل مدد البريك', 'warning');
+          showToast('لا تملك صلاحية تعديل مدة البريك', 'warning');
           return;
         }
         const scopeType = document.getElementById('breakSchScopeType')?.value || 'global';

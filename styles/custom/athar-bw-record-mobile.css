@@ -1,0 +1,118 @@
+/* Record violation — O_Record design (mobile / iPad) — mirrors desktop */
+html:root.mr-mobile-ui #tab-newTicket{--t-sf:#fff;--t-fg:#0A0A0A;--t-mu:#5F5F5F;--t-ln:#E4E4E4;--t-ln2:#D9D9D9;--t-ct:#8A8A8A;--t-hv:#F7F7F7;--t-pb:#0A0A0A;--t-pf:#fff;--t-lowb:#E4EEFC;--t-lowf:#1B4F9E;--t-medb:#FDF0CF;--t-medf:#7A4F00;--t-hib:#FDE3E0;--t-hif:#A3261E}
+html[data-theme="dark"]:root.mr-mobile-ui #tab-newTicket{--t-sf:#151515;--t-fg:#F2F2F2;--t-mu:#A3A3A3;--t-ln:#262626;--t-ln2:#303030;--t-ct:#6E6E6E;--t-hv:#1C1C1C;--t-pb:#F2F2F2;--t-pf:#0A0A0A;--t-lowb:#14233F;--t-lowf:#9CC0FF;--t-medb:#3A2F12;--t-medf:#F0C25B;--t-hib:#401A18;--t-hif:#FF9C90}
+html:root.mr-mobile-ui #tab-newTicket .panel{background:transparent !important;border:0 !important;box-shadow:none !important;padding:0 !important;display:flex;flex-direction:column;gap:24px}
+html:root.mr-mobile-ui #tab-newTicket .mk-form-panel{display:flex !important;flex-wrap:wrap;gap:20px;align-items:flex-start;background:transparent !important;border:0 !important;padding:0 !important;box-shadow:none !important;grid-template-columns:none !important}
+html:root.mr-mobile-ui #tab-newTicket .rd-nt-form-card{flex:7 1 460px;min-width:0;box-sizing:border-box;padding:24px !important;background:var(--t-sf) !important;border:1px solid var(--t-ln2) !important;border-radius:6px !important;box-shadow:none !important;display:flex;flex-direction:column;gap:18px;color:var(--t-fg)}
+html:root.mr-mobile-ui #tab-newTicket .mk-form-hd,html:root.mr-mobile-ui #tab-newTicket .rd-nt-summary{display:none !important}
+html:root.mr-mobile-ui #tab-newTicket .atr-ttl{margin:0;font-size:16px;font-weight:600}
+html:root.mr-mobile-ui #tab-newTicket .mk-field__lbl,html:root.mr-mobile-ui #tab-newTicket .mk-dt-item__lbl{font-size:14px;font-weight:500;color:var(--t-fg)}
+html:root.mr-mobile-ui #tab-newTicket .figma-search-input,html:root.mr-mobile-ui #tab-newTicket .mk-dt-control,html:root.mr-mobile-ui #tab-newTicket .mk-input--ta{border:1px solid var(--t-ct) !important;border-radius:4px !important;background:var(--t-sf) !important;color:var(--t-fg) !important;box-shadow:none !important}
+html:root.mr-mobile-ui #tab-newTicket .figma-search-input,html:root.mr-mobile-ui #tab-newTicket .mk-dt-control{height:46px;font-size:15px}
+html:root.mr-mobile-ui #tab-newTicket .mk-drop{border:1px dashed var(--t-ct) !important;border-radius:4px !important;background:transparent !important}
+html:root.mr-mobile-ui #tab-newTicket .mk-form-ft{display:flex;flex-wrap:wrap;gap:12px;flex-direction:row-reverse;justify-content:flex-end}
+html:root.mr-mobile-ui #tab-newTicket .mk-form-ft .mk-btn{height:46px;border-radius:4px !important;font-size:15px;font-weight:600;box-shadow:none !important;flex:0 0 auto}
+html:root.mr-mobile-ui #tab-newTicket .mk-form-ft .mk-btn--primary{min-width:180px;padding:0 22px;background:var(--t-pb) !important;color:var(--t-pf) !important;border:0 !important}
+html:root.mr-mobile-ui #tab-newTicket .mk-form-ft .mk-btn:not(.mk-btn--primary){background:transparent !important;border:1px solid var(--t-fg) !important;color:var(--t-fg) !important;min-width:140px}
+.atr-recent{flex:5 1 340px;min-width:0;box-sizing:border-box;padding:24px;background:var(--t-sf);border:1px solid var(--t-ln2);border-radius:6px;color:var(--t-fg)}
+.atr-rh{padding-bottom:12px}.atr-rh h2{margin:0;font-size:16px;font-weight:600}
+.atr-rrow{padding:12px 8px;margin:0 -8px;border-top:1px solid var(--t-ln);display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 12px}
+.atr-rrow:hover{background:var(--t-hv)}.atr-rrow .atd-sev{align-self:center}.atr-rn{font-weight:600;font-size:14px}.atr-none{padding:16px 0}
+html:root.mr-mobile-ui #tab-newTicket .mk-form-ft{margin-top:6px}
+html:root.mr-mobile-ui #tab-newTicket .mk-form-ft .mk-btn--primary{flex:0 0 auto !important;width:auto !important}
+html:root.mr-mobile-ui #tab-newTicket .atr-ttl{margin-bottom:-4px}
+html:root.mr-mobile-ui #tab-newTicket .atr-ttl{margin-bottom:6px}
+html:root.mr-mobile-ui #tab-newTicket .rd-nt-sev,html:root.mr-mobile-ui #tab-newTicket .mk-req,html:root.mr-mobile-ui #tab-newTicket .mk-field__hint,html:root.mr-mobile-ui #tab-newTicket .mk-drop,html:root.mr-mobile-ui #tab-newTicket .mk-field--full>.mk-field__lbl:not([for]),html:root.mr-mobile-ui #tab-newTicket .mk-form-ft .mk-btn:not(.mk-btn--primary):not(#atrAttach){display:none !important}
+html:root.mr-mobile-ui #tab-newTicket .mk-field--emp{order:1}
+html:root.mr-mobile-ui #tab-newTicket .mk-field--type{order:2}
+html:root.mr-mobile-ui #tab-newTicket .mk-field--dt-row{order:3}
+html:root.mr-mobile-ui #tab-newTicket .mk-field--full{order:4}
+html:root.mr-mobile-ui #tab-newTicket .mk-field__lbl,html:root.mr-mobile-ui #tab-newTicket .mk-dt-item__lbl{font-weight:400 !important}
+html:root.mr-mobile-ui #tab-newTicket .mk-form-ft .mk-btn--primary{flex:0 0 auto !important}
+html:root.mr-mobile-ui #tab-newTicket #atrAttach{display:inline-flex !important;align-items:center;justify-content:center;min-width:140px;padding:0 22px}
+.atr-rh p{margin:0;font-size:12px;color:var(--t-mu)}
+html:root.mr-mobile-ui #tab-newTicket .mk-form-ft .mk-btn--primary{width:180px !important;max-width:180px !important;min-width:180px !important;flex:0 0 180px !important}
+html:root.mr-mobile-ui #tab-newTicket .mk-form-ft{justify-content:flex-start !important}
+/* ── v2: unified controls, picked banner, dropdowns, attachments ── */
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .mk-form-grid{display:flex !important;flex-wrap:wrap;gap:18px 14px}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket :is(.mk-field--emp,.mk-field--type){flex:1 1 220px;min-width:0;position:relative}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket :is(.mk-field--dt-row,.mk-field--full){flex:1 1 100%}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .mk-field--dt-row .mk-dt-pair{display:flex;gap:14px}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .mk-field--dt-row .mk-dt-item{flex:1 1 0;min-width:0}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .figma-search-wrap{position:relative;display:flex;align-items:center;height:46px;box-sizing:border-box;border:1px solid var(--t-ct) !important;border-radius:4px !important;background:var(--t-sf) !important;box-shadow:none !important;padding:0 !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .figma-search-wrap:focus-within{outline:2px solid var(--t-fg);outline-offset:2px}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .figma-search-wrap .figma-search-input{flex:1;min-width:0;height:44px !important;border:0 !important;outline:0 !important;background:transparent !important;box-shadow:none !important;padding:0 14px !important;font-size:15px;color:var(--t-fg) !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .figma-search-wrap .figma-search-input::placeholder{color:var(--t-mu)}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .figma-search-wrap :is(.figma-search-btn,.rd-nt-chev){position:static !important;flex:none;display:grid;place-items:center;width:34px;height:44px;border:0 !important;background:transparent !important;color:var(--t-mu) !important;font-size:13px;padding:0 !important;transform:none !important}
+/* picked state: the banner becomes the field */
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .mk-field.atr-picked:not(.atr-editing) .figma-search-wrap{display:none !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .mk-field.atr-picked.atr-editing .mk-pick-banner-slot{display:none !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .mk-pick-banner-slot{margin:0 !important;padding:0 !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .mk-pick-banner{position:relative;display:flex !important;align-items:center;gap:12px;min-height:46px;box-sizing:border-box;padding:8px 12px !important;border:1px solid var(--t-fg) !important;border-radius:4px !important;background:var(--t-sf) !important;color:var(--t-fg) !important;box-shadow:none !important;animation:none !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .mk-pick-banner__ico{flex:none;width:24px;height:24px;display:grid;place-items:center;border-radius:50% !important;background:var(--t-pb) !important;color:var(--t-pf) !important;font-size:11px}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .mk-pick-banner__body{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .mk-pick-banner__title{font-size:14px;color:var(--t-mu) !important;font-weight:400}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .mk-pick-banner__title strong{color:var(--t-fg) !important;font-weight:600;font-size:15px}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .mk-pick-banner__meta{display:flex;flex-wrap:wrap;gap:4px 12px}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .mk-pick-banner__chip{display:inline-flex;align-items:center;gap:5px;padding:0 !important;border:0 !important;background:transparent !important;color:var(--t-mu) !important;font-size:12px !important;border-radius:0 !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .mk-pick-banner__chip i{color:var(--t-ct) !important;font-size:11px}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .atr-change{flex:none;height:32px;padding:0 12px;border:1px solid var(--t-ln2);border-radius:4px;background:transparent;color:var(--t-fg);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .atr-change:hover{background:var(--t-hv)}
+/* dropdowns */
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .autocomplete-dropdown{position:absolute !important;inset-inline:0;top:calc(100% + 4px) !important;z-index:60;max-height:300px;overflow:auto;padding:4px !important;background:var(--t-sf) !important;border:1px solid var(--t-ln2) !important;border-radius:6px !important;box-shadow:0 12px 32px rgba(0,0,0,.14) !important;color:var(--t-fg)}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .autocomplete-item{display:block;padding:10px 12px !important;margin:0 !important;border:0 !important;border-radius:4px !important;background:transparent !important;cursor:pointer;color:var(--t-fg) !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .autocomplete-item+.autocomplete-item{border-top:1px solid var(--t-ln) !important;border-radius:0 !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .autocomplete-item:hover,html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .autocomplete-item:focus{background:var(--t-hv) !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .ac-name{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:var(--t-fg) !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .ac-name i{color:var(--t-ct) !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .ac-name span{color:var(--t-mu) !important;font-weight:400 !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .ac-details{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:3px;font-size:12px;color:var(--t-mu) !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .ac-details span{color:var(--t-mu) !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .ac-details i{color:var(--t-ct);margin-inline-end:3px}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket mark,html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .autocomplete-item .hl{background:transparent !important;color:var(--t-fg) !important;font-weight:700;text-decoration:underline;text-underline-offset:3px}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .rd-nt-type-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .rd-nt-type-row__name{font-size:14px;font-weight:600;color:var(--t-fg) !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .rd-nt-type-row__meta{font-size:12px;color:var(--t-mu) !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .rd-nt-type-row__sev{flex:none;padding:2px 10px;border-radius:4px !important;font-size:12px;font-weight:600;border:0 !important;background:var(--t-lowb) !important;color:var(--t-lowf) !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .rd-nt-type-row__sev.is-mid{background:var(--t-medb) !important;color:var(--t-medf) !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .rd-nt-type-row__sev.is-high{background:var(--t-hib) !important;color:var(--t-hif) !important}
+/* attachments */
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket #ntFileArea{display:flex;flex-direction:column;gap:8px;margin:0 0 4px;padding:0}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket #ntFileArea:empty{display:none}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket #ntFileArea .file-item{display:block;padding:0 !important;margin:0 !important;border:1px solid var(--t-ln2) !important;border-radius:4px !important;background:var(--t-sf) !important;box-shadow:none !important;overflow:hidden}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket #ntFileArea .file-item-content{display:flex;align-items:center;gap:12px;min-height:48px;padding:6px 12px;color:var(--t-fg)}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket #ntFileArea .file-item-content>i{color:var(--t-ct) !important;font-size:16px}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket #ntFileArea .file-item-content>span:not(.file-item-status){font-size:14px;color:var(--t-fg)}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket #ntFileArea .file-item-status{font-size:12px !important;color:var(--t-mu) !important;font-family:'IBM Plex Mono',monospace}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket #ntFileArea .file-item-content button{flex:none;height:32px;padding:0 12px;border:1px solid var(--t-ln2) !important;border-radius:4px !important;background:transparent !important;color:var(--t-fg) !important;font:inherit;font-size:13px;font-weight:600;cursor:pointer;box-shadow:none !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket #ntFileArea .file-item-content button:hover{background:var(--t-hv) !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket #ntFileArea :is(.progress,.file-progress,.att-progress){height:3px;border-radius:0;background:var(--t-ln)}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket #ntFileArea :is(.progress,.file-progress,.att-progress)>*{background:var(--t-fg) !important}
+/* details textarea — same control look */
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket #nt-desc{display:block;width:100%;box-sizing:border-box;min-height:120px;padding:12px 14px !important;border:1px solid var(--t-ct) !important;border-radius:4px !important;background:var(--t-sf) !important;color:var(--t-fg) !important;font:inherit;font-size:15px;line-height:1.7;resize:vertical;box-shadow:none !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket #nt-desc::placeholder{color:var(--t-mu)}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket #nt-desc:focus{outline:2px solid var(--t-fg);outline-offset:2px}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .figma-search-wrap .rd-nt-chev{display:none !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .mk-field.atr-picked:not(.atr-editing) .mk-pick-banner-slot{display:block !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .mk-pick-banner__title{font-size:0 !important;line-height:1.3}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .mk-pick-banner__title strong{font-size:15px !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .mk-pick-banner__ico i{color:var(--t-pf) !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .mk-pick-banner__role{font-size:12px;color:var(--t-mu) !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .mk-form-grid{align-items:flex-start}
+
+/* ── mobile adjustments ── */
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .rd-nt-form-card{padding:16px !important;flex:1 1 100%}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .atr-recent{flex:1 1 100%;padding:16px}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .mk-form-panel{gap:16px}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket :is(.mk-field--emp,.mk-field--type){flex:1 1 100%}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .mk-field--dt-row .mk-dt-pair{gap:10px}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .mk-form-ft{flex-direction:column-reverse;align-items:stretch;gap:10px}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .mk-form-ft .mk-btn,
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .mk-form-ft .mk-btn--primary,
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket #atrAttach{width:100% !important;max-width:none !important;min-width:0 !important;flex:0 0 auto !important}
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket #nt-desc,
+html:root.mr-mobile-ui.mr-mobile-ui #tab-newTicket .figma-search-input{font-size:16px}
+html:root.mr-mobile-ui #tab-newTicket .atr-head{margin:0 0 4px}
+html:root.mr-mobile-ui #tab-newTicket .atr-head .atd-kick{margin:0 0 6px;font:500 11px 'IBM Plex Mono',monospace;letter-spacing:.12em;color:var(--t-mu)}
+html:root.mr-mobile-ui #tab-newTicket .atr-head .atd-h1{margin:0;font-size:28px;font-weight:700;color:var(--t-fg)}
+html:root.mr-mobile-ui #tab-newTicket .atr-rrow .atd-mu{color:var(--t-mu);font-size:12px}
