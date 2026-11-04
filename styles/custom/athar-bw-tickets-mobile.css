@@ -173,3 +173,16 @@ html:root.mr-mobile-ui.mr-mobile-ui #tab-workflow #wfClassicToolbar .figma-searc
 .atd-stl .atd-cd__bar{display:none}
 
 .atd-auto{font-size:12px;opacity:.7;margin-inline-start:4px;vertical-align:middle}
+
+/* ---- detail as full-screen sheet on mobile/iPad ---- */
+.atd-back{display:none}
+html:root.mr-mobile-ui.mr-mobile-ui .atd-aside{display:none !important}
+html:root.mr-mobile-ui.mr-mobile-ui body.atd-sheet-open #tab-workflow.active .atd-aside{display:flex !important;position:fixed !important;inset:0 !important;z-index:99990 !important;width:100% !important;max-width:none !important;max-height:none !important;border-radius:0 !important;border:0 !important;margin:0;overflow-y:auto !important;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;background:var(--bg,#fff);padding:14px 16px calc(28px + env(safe-area-inset-bottom)) !important;padding-top:calc(14px + env(safe-area-inset-top)) !important;box-sizing:border-box}
+html:root.mr-mobile-ui.mr-mobile-ui body.atd-sheet-open #tab-workflow.active .atd-back{display:inline-flex;align-items:center;gap:8px;position:sticky;top:0;z-index:3;height:44px;padding:0 16px;margin:0 0 12px;background:#000;color:#fff;border:0;border-radius:4px;font:700 14px inherit;font-family:inherit;cursor:pointer}
+html[data-theme="dark"]:root.mr-mobile-ui.mr-mobile-ui body.atd-sheet-open #tab-workflow.active .atd-aside{background:#0b0b0b}
+html[data-theme="dark"] .atd-back{background:#fff !important;color:#000 !important}
+body.atd-sheet-open:has(#tab-workflow.active){overflow:hidden}
+html:root.mr-mobile-ui body.atd-sheet-open:has(#tab-workflow.active) .topbar,
+html:root.mr-mobile-ui body.atd-sheet-open:has(#tab-workflow.active) #mobileBottomNav{display:none !important}
+html:root.mr-mobile-ui.mr-mobile-ui body.atd-sheet-open #tab-workflow.active .atd-back{width:100%;justify-content:flex-start}
+html:root.mr-mobile-ui.mr-mobile-ui body.atd-sheet-open #tab-workflow.active .atd-a-head .atd-pdf{top:60px !important}
