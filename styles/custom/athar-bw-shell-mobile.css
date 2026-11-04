@@ -70,3 +70,6 @@ html:root.mr-mobile-ui.mr-mobile-ui #tab-notifications .notif-item{padding:14px 
 html:root.mr-mobile-ui.mr-mobile-ui #tab-notifications .notif-item.unread::before,html:root.mr-mobile-ui.mr-mobile-ui #tab-notifications .notif-item.unread::after{display:none !important;content:none !important;background:none !important}
 html:root.mr-mobile-ui.mr-mobile-ui #tab-notifications .notif-time{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11px;margin-top:4px}
 html:root.mr-mobile-ui.mr-mobile-ui #tab-notifications .notif-empty{padding:48px 0}
+
+/* notifications page: the shell scrolls (the redesign made the inner list auto-height, which froze scrolling) */
+html:root.mr-mobile-ui.mr-mobile-ui #tab-notifications .notif-page-shell{height:100% !important;max-height:100% !important;min-height:0 !important;overflow-y:auto !important;overflow-x:hidden !important;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;box-sizing:border-box;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px)) !important}

@@ -158,3 +158,6 @@ html:root:root:root :is(#tab-profile,#tab-notifications) .notif-page-back__ico{d
 html:root:root:root :is(#tab-profile,#tab-notifications) .notif-page-back i{font-size:12px;color:inherit !important}
 html:root:root:root :is(#tab-profile,#tab-notifications) .notif-page-back__label{display:inline !important;font-size:13px;font-weight:600;color:inherit !important;line-height:1}
 html:root.mr-desktop-ui.mr-desktop-ui #appWrap #sidebar .nav-item.active [class*="badge"], html:root.mr-desktop-ui.mr-desktop-ui #appWrap #sidebar .nav-item.active [class*="badge"] *{color:#fff !important;-webkit-text-fill-color:#fff !important}
+
+/* notifications page: the shell scrolls (the redesign made the inner list auto-height, which froze scrolling) */
+html:root.mr-desktop-ui.mr-desktop-ui #tab-notifications .notif-page-shell{height:100% !important;max-height:100% !important;min-height:0 !important;overflow-y:auto !important;overflow-x:hidden !important;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;box-sizing:border-box;width:100%}
