@@ -360,5 +360,31 @@
     } catch (_) { /* noop */ }
   }, { passive: false, capture: true });
 
+  /* الجوال: عند الكتابة (كيبورد مفتوح) نخفي الشريط السفلي حتى لا يرتفع فوق الكيبورد */
+  (function () {
+    var isText = function (el) {
+      if (!el || !el.tagName) return false;
+      var t = el.tagName;
+      if (t === 'TEXTAREA') return true;
+      if (t !== 'INPUT') return false;
+      return /^(text|search|email|tel|url|password|number|)$/i.test(el.type || '');
+    };
+    var on = function () {
+      return document.documentElement.classList.contains('mr-mobile-ui');
+    };
+    var t;
+    document.addEventListener('focusin', function (e) {
+      if (!on() || !isText(e.target)) return;
+      clearTimeout(t);
+      document.body.classList.add('mob-typing');
+    });
+    document.addEventListener('focusout', function () {
+      clearTimeout(t);
+      t = setTimeout(function () {
+        if (!isText(document.activeElement)) document.body.classList.remove('mob-typing');
+      }, 120);
+    });
+  })();
+
   window.AtharUI = { scan: scan, enhanceSelect: enhanceSelect, enhanceDate: enhanceDate, openCalendar: openCalendar, close: closeCurrent, fmtDate: fmt };
 })();

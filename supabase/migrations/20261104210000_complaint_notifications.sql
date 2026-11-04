@@ -25,7 +25,7 @@ begin
     loop
       perform public.athar_upsert_notification(
         v_uid, 'cmpl_new_' || NEW.id::text,
-        'وصول ' || v_lbl_new || ' جديد',
+        case when v_is_sug then 'وصول اقتراح جديد برقم (' else 'وصول شكوى جديدة برقم (' end || v_num || ')',
         format('نفيدكم بوصول %s جديد برقم (%s). يُرجى الاطلاع والمتابعة.', v_lbl_new, v_num),
         'blue', 'fa-comment-dots', null, 'mine', false, null, null);
     end loop;

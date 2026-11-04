@@ -20838,10 +20838,6 @@
               if (compressResult.isCompressed && compressResult.blob) {
                 const outName = renameAttachmentWithExt(file.name, compressResult.ext || 'jpg');
                 uploadFile = new File([compressResult.blob], outName, { type: finalType });
-                const savedMb = (file.size - uploadFile.size) / 1048576;
-                if (savedMb >= 1) {
-                  showToast(`تم ضغط الصورة ووفّرنا ~${savedMb.toFixed(1)}MB.`, 'info');
-                }
               } else if (compressResult.blob instanceof Blob) {
                 uploadFile = compressResult.blob instanceof File
                   ? compressResult.blob

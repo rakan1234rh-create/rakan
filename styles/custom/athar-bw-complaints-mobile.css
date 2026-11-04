@@ -144,3 +144,21 @@ html[data-theme="dark"]:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .cp-card_
 html[data-theme="dark"]:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .cp-card__icon i{color:#0a0a0a!important}
 html[data-theme="dark"]:root.mr-mobile-ui.mr-mobile-ui #tab-complaints :is(.cp-card__kind,.cp-card__status){background:#141414!important;color:#f2f2f2!important;border-color:#f2f2f2!important}
 html:root.mr-mobile-ui.mr-mobile-ui #tab-complaints .rd-cmpl-intro{font:500 13px inherit!important;font-family:inherit!important;letter-spacing:0!important;direction:rtl;text-align:right}
+/* ── Attachments in complaints (new/reply): same B&W look as new-ticket files ── */
+html:root.mr-mobile-ui.mr-mobile-ui :is(#cpFileArea,#cprFileArea){display:flex;flex-direction:column;gap:8px;margin:8px 0 4px;padding:0!important;background:transparent!important;border:0!important}
+html:root.mr-mobile-ui.mr-mobile-ui :is(#cpFileArea,#cprFileArea):empty{display:none}
+html:root.mr-mobile-ui.mr-mobile-ui :is(#cpFileArea,#cprFileArea) .file-item{display:block;padding:0!important;margin:0!important;border:1px solid #0a0a0a!important;border-radius:4px!important;background:#fff!important;box-shadow:none!important;overflow:hidden}
+html:root.mr-mobile-ui.mr-mobile-ui :is(#cpFileArea,#cprFileArea) .file-item-content{display:flex;align-items:center;gap:12px;min-height:46px;padding:6px 12px;color:#0a0a0a}
+html:root.mr-mobile-ui.mr-mobile-ui :is(#cpFileArea,#cprFileArea) .file-item-content>i{color:#0a0a0a!important;font-size:16px}
+html:root.mr-mobile-ui.mr-mobile-ui :is(#cpFileArea,#cprFileArea) .file-item-content>span:not(.file-item-status){flex:1;min-width:0;font-size:14px;color:#0a0a0a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+html:root.mr-mobile-ui.mr-mobile-ui :is(#cpFileArea,#cprFileArea) .file-item-status{font-size:12px!important;color:#6b6b6b!important}
+html:root.mr-mobile-ui.mr-mobile-ui :is(#cpFileArea,#cprFileArea) .file-item-content button{flex:none;height:32px;padding:0 12px;border:1px solid #0a0a0a!important;border-radius:4px!important;background:transparent!important;color:#0a0a0a!important;font:inherit;font-size:13px;font-weight:600;cursor:pointer;box-shadow:none!important}
+html:root.mr-mobile-ui.mr-mobile-ui :is(#cpFileArea,#cprFileArea) .file-item-content button:hover{background:#f2f2f2!important}
+html[data-theme="dark"]:root.mr-mobile-ui.mr-mobile-ui :is(#cpFileArea,#cprFileArea) .file-item{background:#141414!important;border-color:#f2f2f2!important}
+html[data-theme="dark"]:root.mr-mobile-ui.mr-mobile-ui :is(#cpFileArea,#cprFileArea) :is(.file-item-content,.file-item-content>i,.file-item-content>span:not(.file-item-status)){color:#f2f2f2!important}
+html[data-theme="dark"]:root.mr-mobile-ui.mr-mobile-ui :is(#cpFileArea,#cprFileArea) .file-item-content button{border-color:#f2f2f2!important;color:#f2f2f2!important}
+html[data-theme="dark"]:root.mr-mobile-ui.mr-mobile-ui :is(#cpFileArea,#cprFileArea) .file-item-content button:hover{background:#262626!important}
+
+/* الكتابة على الجوال: إخفاء الشريط السفلي كي لا يرتفع مع الكيبورد */
+html.mr-mobile-ui body.mob-typing #mobileBottomNav,
+html.mr-mobile-ui body.mob-typing .mobile-bottom-nav{visibility:hidden!important;opacity:0!important;pointer-events:none!important;transform:translateY(100%)!important;transition:opacity .15s ease!important}
