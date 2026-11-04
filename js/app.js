@@ -9417,7 +9417,7 @@
         if (nameEl) nameEl.textContent = name;
         if (emailEl) emailEl.textContent = email || '—';
         if (avEl) {
-          avEl.textContent = initial;
+          avEl.innerHTML = avDef();
         }
       }
 
@@ -10246,6 +10246,12 @@
         goTab(tabKey, btn || null);
       }
 
+      /** أيقونة المستخدم الافتراضية (رأس + جسم) بدل أول حرف من الاسم — لكامل المنصة */
+      function avDef() {
+        return `<span class="av-def" aria-hidden="true">${TOPBAR_USER_DEFAULT_SVG}</span>`;
+      }
+      window.avDef = avDef;
+
       function userDisplayInitials(name) {
         const trimmed = String(name || '').trim();
         if (!trimmed) return 'م';
@@ -10259,7 +10265,7 @@
         const tbAv = document.getElementById('tbAv');
         const initials = userDisplayInitials(u.name);
         if (tbAv) {
-          tbAv.textContent = initials;
+          tbAv.innerHTML = avDef();
           tbAv.style.background = u.color;
         }
         syncTopbarUserAvatar(u);
@@ -11086,7 +11092,7 @@
           el.innerHTML = `<span class="profile-hero__default-svg" aria-hidden="true">${TOPBAR_USER_DEFAULT_SVG}</span>`;
         } else {
           el.classList.remove('has-founding-frame');
-          el.textContent = userDisplayInitials(u.name);
+          el.innerHTML = avDef();
           el.style.background = userAvatarBgGradient(u);
         }
       }
@@ -13154,7 +13160,7 @@
                 : (t.state === 'closed' ? 'var(--success)' : 'var(--warning)');
               return `
                 <button type="button" class="rd-desk-activity__row" onclick="openTicket('${t.id}')">
-                  <div class="rd-desk-av">${Sec.escapeHTML(initial)}</div>
+                  <div class="rd-desk-av">${avDef()}</div>
                   <div class="rd-desk-activity__body">
                     <span class="rd-desk-activity__name">${Sec.escapeHTML(name)}</span>
                     <span class="rd-desk-activity__type">${Sec.escapeHTML(t.violation_type || '—')}</span>
@@ -13336,7 +13342,7 @@
                 : (t.state === 'closed' ? 'var(--success)' : 'var(--warning)');
               return `
                 <button type="button" class="rd-list__row" onclick="openTicket('${t.id}')">
-                  <div class="rd-av">${Sec.escapeHTML(initial)}</div>
+                  <div class="rd-av">${avDef()}</div>
                   <div class="rd-home-activity__copy">
                     <div class="rd-list__name">${Sec.escapeHTML(name)}</div>
                     <div class="rd-list__sub">${Sec.escapeHTML(t.violation_type || '—')}</div>
@@ -13604,7 +13610,7 @@
             const overdueCls = (t.auto_forwarded_emp || t.auto_forwarded_sup) ? ' is-overdue' : '';
             return `
         <button type="button" class="mk-attn__row" onclick="openTicket('${t.id}')">
-          <span class="mk-attn__avatar">${Sec.escapeHTML(initials)}</span>
+          <span class="mk-attn__avatar">${avDef()}</span>
           <span class="mk-attn__body-text">
             <span class="mk-attn__row-top">
               <span class="mk-attn__name">${Sec.escapeHTML(t._empName || '—')}</span>
@@ -13906,7 +13912,7 @@
             const initial = String(e.name || '؟').trim().charAt(0) || '؟';
             return `
               <div class="rd-loc-emp">
-                <span class="rd-loc-emp__av" aria-hidden="true">${Sec.escapeHTML(initial)}</span>
+                <span class="rd-loc-emp__av" aria-hidden="true">${avDef()}</span>
                 <div class="rd-loc-emp__body">
                   <div class="rd-loc-emp__name">${Sec.escapeHTML(e.name || '')}</div>
                   <div class="rd-loc-emp__role">${Sec.escapeHTML(role)} · ${Sec.escapeHTML(padEmpNum(e.employee_number))}</div>
@@ -13976,7 +13982,7 @@
         return `
           <div class="rd-loc-desk-row rd-loc-desk-row--emp" style="animation-delay:${delay}s">
             <span class="rd-loc-desk-cell rd-loc-desk-cell--who rd-loc-desk-who" role="cell">
-              <span class="rd-loc-desk-av" aria-hidden="true">${Sec.escapeHTML(initial)}</span>
+              <span class="rd-loc-desk-av" aria-hidden="true">${avDef()}</span>
               <span class="rd-loc-desk-name rd-loc-desk-name--emp">${Sec.escapeHTML(emp.name || '')}</span>
             </span>
             <span class="rd-loc-desk-cell rd-loc-desk-cell--id rd-loc-desk-mono" role="cell">${Sec.escapeHTML(empId)}</span>
@@ -15199,7 +15205,7 @@
         return {
           className: 'mr-user-card__avatar',
           style: `background:${userAvatarBgGradient(u)}`,
-          html: `<span class="mr-user-card__initials" aria-hidden="true">${Sec.escapeHTML(userDisplayInitials(u.name))}</span>`
+          html: `<span class="mr-user-card__initials" aria-hidden="true">${avDef()}</span>`
         };
       }
 
@@ -15367,7 +15373,7 @@
         const hasPhoto = avatar.className.includes('has-avatar-photo') || avatar.className.includes('has-default-icon');
         const avInner = hasPhoto
           ? `<span class="${avatar.className} rd-usr__av-media"${avatar.style ? ` style="${avatar.style}"` : ''} aria-hidden="true">${avatar.html}</span>`
-          : `<span class="rd-usr__av-fallback" aria-hidden="true">${Sec.escapeHTML(initial)}</span>`;
+          : `<span class="rd-usr__av-fallback" aria-hidden="true">${avDef()}</span>`;
         return `
           <article class="rd-usr" role="listitem" style="animation-delay:${delay}s">
             ${roleLabel ? `<span class="rd-usr__role" style="--rc:${roleColor}">${Sec.escapeHTML(roleLabel)}</span>` : ''}
@@ -15430,7 +15436,7 @@
           return `
             <div class="rd-desk-table__row" role="row" style="animation-delay:${delay}s">
               <div class="rd-desk-user" role="cell">
-                <span class="rd-desk-user__av">${Sec.escapeHTML(initial)}<i class="rd-desk-user__dot${active ? ' is-on' : ''}" aria-hidden="true"></i></span>
+                <span class="rd-desk-user__av">${avDef()}<i class="rd-desk-user__dot${active ? ' is-on' : ''}" aria-hidden="true"></i></span>
                 <span class="rd-desk-user__name">${Sec.escapeHTML(u.name || '')}</span>
               </div>
               <span role="cell" class="rd-desk-mono">${Sec.escapeHTML(empNum || '—')}</span>
@@ -22002,7 +22008,7 @@
                   <span class="rd-ticket__time" dir="ltr">${Sec.escapeHTML(when)}</span>
                 </div>
                 <div class="rd-ticket__body">
-                  <div class="rd-ticket__av">${Sec.escapeHTML(initial)}</div>
+                  <div class="rd-ticket__av">${avDef()}</div>
                   <div style="flex:1;min-width:0">
                     <div class="rd-ticket__name">${Sec.escapeHTML(empName)}</div>
                     <div class="rd-ticket__type">${Sec.escapeHTML(violName)}</div>
@@ -27828,7 +27834,7 @@
             : '');
         const toneCls = ` mk-cmp-emp-card--${lvl.tone}`;
         const healedCls = card.scoreHealed ? ' mk-cmp-emp-card--healed' : '';
-        const initials = Sec.escapeHTML(cmpEmpInitials(card.name));
+        const initials = avDef();
         return `
           <article class="mk-cmp-emp-card${toneCls}${healedCls}${rankCls}" onclick="${click}" role="button" tabindex="0"
                    onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openCmpItemDetail('employee','${empId}');}">
@@ -28266,7 +28272,7 @@
           return `
             <button type="button" class="rd-cmp-emp rd-cmp-row rd-cmp-row--emp" onclick="${Sec.escapeHTML(click)}">
               <span class="rd-cmp-row__who">
-                <span class="rd-cmp-emp__av" aria-hidden="true">${Sec.escapeHTML(initial)}</span>
+                <span class="rd-cmp-emp__av" aria-hidden="true">${avDef()}</span>
                 <span class="rd-cmp-row__name">${Sec.escapeHTML(card.name)}</span>
               </span>
               <span class="rd-cmp-row__muted">${Sec.escapeHTML(role)}</span>
@@ -28275,7 +28281,7 @@
         }
         return `
           <article class="rd-cmp-emp" onclick="${Sec.escapeHTML(click)}" role="button" tabindex="0">
-            <span class="rd-cmp-emp__av" aria-hidden="true">${Sec.escapeHTML(initial)}</span>
+            <span class="rd-cmp-emp__av" aria-hidden="true">${avDef()}</span>
             <div class="rd-cmp-emp__body">
               <div class="rd-cmp-emp__name">${Sec.escapeHTML(card.name)}</div>
               <div class="rd-cmp-emp__role">${Sec.escapeHTML(role)}</div>
@@ -29282,7 +29288,7 @@
 
           // ─── الأفاتار/الأيقونة ───
           const avatarContent = item.type === 'employee'
-            ? Sec.escapeHTML((item.name || 'م').charAt(0))
+            ? avDef()
             : `<i class="fas ${item.icon}"></i>`;
 
           // ─── معلومات الموقع ───
@@ -31229,7 +31235,7 @@
           return `
             <div class="rd-rp-drill-row rd-rp-emp-row" role="row" style="animation-delay:${Math.min(0.3, i * 0.03)}s">
               <div class="rd-rp-emp-cell rd-rp-emp-cell--name" role="cell">
-                <span class="rd-rp-emp-av" aria-hidden="true">${Sec.escapeHTML(initial)}</span>
+                <span class="rd-rp-emp-av" aria-hidden="true">${avDef()}</span>
                 <span class="rd-rp-emp-name">${Sec.escapeHTML(r.name)}</span>
               </div>
               <span class="rd-rp-emp-cell rd-rp-emp-branch" role="cell">${Sec.escapeHTML(r.branchName)}</span>
@@ -31619,7 +31625,7 @@
             <article class="rd-rp-emc-card" style="animation-delay:${Math.min(0.3, i * 0.03)}s">
               <header class="rd-rp-emc-card__head">
                 <div class="rd-rp-emc-card__who">
-                  <span class="rd-rp-emp-av" aria-hidden="true">${Sec.escapeHTML(initial)}</span>
+                  <span class="rd-rp-emp-av" aria-hidden="true">${avDef()}</span>
                   <div class="rd-rp-emc-name-wrap">
                     <h3 class="rd-rp-emc-card__name">${Sec.escapeHTML(r.name)}</h3>
                     ${metaBits ? `<p class="rd-rp-emc-card__meta">${Sec.escapeHTML(metaBits)}</p>` : ''}
@@ -39639,7 +39645,7 @@
           const recordTypeIcon = view.dayRow?.break_type === 'restroom' ? 'fa-restroom' : 'fa-mug-hot';
           const avatarHtml = view.dayRow
             ? `<div class="rd-break-row__av rd-break-row__av--type" aria-label="${Sec.escapeHTML(recordTypeLabel)}" title="${Sec.escapeHTML(recordTypeLabel)}"><i class="fas ${recordTypeIcon}" aria-hidden="true"></i></div>`
-            : `<div class="rd-break-row__av" aria-hidden="true">${Sec.escapeHTML((u.name || 'م').trim().charAt(0) || 'م')}</div>`;
+            : `<div class="rd-break-row__av" aria-hidden="true">${avDef()}</div>`;
           const clickAttr = canHist
             ? ` role="button" tabindex="0" onclick="openStaffBreakHistory('${Sec.escapeHTML(u.id)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openStaffBreakHistory('${Sec.escapeHTML(u.id)}')}"`
             : '';

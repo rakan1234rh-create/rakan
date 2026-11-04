@@ -162,3 +162,10 @@ html:root.mr-desktop-ui.mr-desktop-ui #appWrap #sidebar .nav-item.active [class*
 /* notifications page: the shell scrolls (the redesign made the inner list auto-height, which froze scrolling) */
 html:root.mr-desktop-ui.mr-desktop-ui #tab-notifications .notif-page-shell{height:100% !important;max-height:100% !important;min-height:0 !important;overflow-y:auto !important;overflow-x:hidden !important;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;box-sizing:border-box;width:100%}
 html:root.mr-desktop-ui.mr-desktop-ui #tab-notifications .notif-list--page,html:root.mr-desktop-ui.mr-desktop-ui #tab-notifications .notif-swipe,html:root.mr-desktop-ui.mr-desktop-ui #tab-notifications .notif-item{overscroll-behavior:auto !important}
+
+/* Default user avatar (head + shoulders) — replaces the first-letter initial platform-wide */
+.av-def{display:inline-flex;align-items:center;justify-content:center;line-height:0;color:inherit;pointer-events:none}
+.av-def svg{width:1.6em;height:1.6em;display:block;stroke:currentColor !important;stroke-width:2;fill:none !important}
+.av-def svg *{stroke:currentColor !important;fill:none !important}
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap #sidebar .rd-side-foot .rd-side-foot__av,
+html:root.mr-desktop-ui.mr-desktop-ui #appWrap #sidebar .rd-side-foot .rd-side-foot__av *{color:#0a0a0a !important}

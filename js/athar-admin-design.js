@@ -5,7 +5,7 @@
     var body = rows.map(function (r) {
       var id = e(r.id).replace(/'/g, '&#39;');
       var ini = (String(r.name || '').trim().charAt(0)) || '؟';
-      return '<tr class="atu-tr atl-tr"><td><span class="atl-name"><span class="atl-ico atl-ico--av" aria-hidden="true">' + e(ini) + '</span><span>' + e(r.name) + '</span></span></td>' +
+      return '<tr class="atu-tr atl-tr"><td><span class="atl-name"><span class="atl-ico atl-ico--av" aria-hidden="true">' + (window.avDef ? window.avDef() : e(ini)) + '</span><span>' + e(r.name) + '</span></span></td>' +
         '<td class="atd-mono atu-no">' + e(r.no) + '</td><td><span class="atl-pill">' + e(r.role) + '</span></td><td>' + e(r.branch) + '</td>' +
         '<td><span class="atu-st ' + (r.active ? 'is-on' : 'is-off') + '">' + (r.active ? 'نشط' : 'موقوف') + '</span></td>' +
         '<td class="atl-acts">' + (canManage ? '<button type="button" class="atl-btn" onclick="editUser(\'' + id + '\')"><i class="fas fa-pen" aria-hidden="true"></i>تعديل</button>' + (r.active ? '<button type="button" class="atl-btn atl-btn--del" title="تعطيل المستخدم" aria-label="تعطيل المستخدم" onclick="deleteUser(\'' + id + '\')"><i class="fas fa-user-slash" aria-hidden="true"></i>تعطيل</button>' : '') : '<span class="atd-mu">—</span>') + '</td></tr>';
