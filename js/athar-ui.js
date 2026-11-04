@@ -22,7 +22,7 @@
   function place(pop, anchor, wMin) {
     var r = anchor.getBoundingClientRect();
     var vw = window.innerWidth, vh = window.innerHeight;
-    if (isMobile()) { pop.classList.add('is-sheet'); pop.style.cssText = ''; return; }
+    if (isMobile()) { pop.classList.add('is-sheet'); pop.style.cssText = ''; pop.style.zIndex = String(Z); return; }
     pop.classList.remove('is-sheet');
     var w = Math.max(r.width, wMin || 200);
     w = Math.min(w, vw - 16);
