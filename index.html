@@ -1288,7 +1288,7 @@
 <link rel="stylesheet" href="styles/custom/athar-bw-record.css?v=rc10" id="athar-bw-record">
 <link rel="stylesheet" href="styles/custom/athar-bw-record-mobile.css?v=rm4" id="athar-bw-record-mobile">
 <link rel="stylesheet" href="styles/custom/athar-bw-breaks.css?v=bk6" id="athar-bw-breaks">
-<link rel="stylesheet" href="styles/custom/athar-bw-break-schedule.css?v=bs3" id="athar-bw-break-schedule">
+<link rel="stylesheet" href="styles/custom/athar-bw-break-schedule.css?v=bs4" id="athar-bw-break-schedule">
 <link rel="stylesheet" href="styles/custom/athar-bw-breaks-mon.css?v=m1" id="athar-bw-breaks-mon">
 <link rel="stylesheet" href="styles/custom/athar-bw-complaints.css?v=cp7" id="athar-bw-complaints">
 <link rel="stylesheet" href="styles/custom/athar-bw-reports.css?v=rp2" id="athar-bw-reports">
@@ -4966,6 +4966,9 @@
 
           <div class="break-sch-label">ملخص أسبوعي لهذا النطاق</div>
           <div class="break-sch-week" id="breakSchWeekSummary"></div>
+
+          <div class="break-sch-label">الاستثناءات المحفوظة <span id="breakSchExceptionsCount" class="break-sch-excount"></span></div>
+          <div class="break-sch-exlist" id="breakSchExceptions"></div>
         </div>
         <div class="break-sch-footer">
           <button type="button" class="break-sch-btn break-sch-btn--cancel" onclick="closeModal('breakScheduleModal')">إلغاء</button>
@@ -5522,7 +5525,7 @@
     <script src="js/athar-compliance-design.js?v=cm5"></script>
     <script src="js/athar-admin-design.js?v=ad8"></script>
     <script src="js/athar-att-viewer.js?v=av1"></script>
-    <script src="js/app.js?v=mb56"></script>
+    <script src="js/app.js?v=mb57"></script>
         <style>
       @media (max-width: 992px) {
         /* ── workflow: منع التمدد الأفقي ── */

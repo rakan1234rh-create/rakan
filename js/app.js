@@ -40726,6 +40726,77 @@
           if (label) label.value = existing ? (existing.label || '') : '';
         }
         paintBreakScheduleWeekSummary();
+        paintBreakScheduleExceptions();
+      }
+
+      /** قائمة الاستثناءات (منطقة/فرع/موظف) المحفوظة — تعديل أو حذف */
+      function paintBreakScheduleExceptions() {
+        const host = document.getElementById('breakSchExceptions');
+        if (!host) return;
+        const rows = (state.staffBreakSchedules || []).filter(s => s && s.is_active !== false && s.scope_type !== 'global');
+        const scopeName = (s) => {
+          if (s.scope_type === 'region') return (state.regions || []).find(r => r.id === s.scope_id)?.name || 'منطقة محذوفة';
+          if (s.scope_type === 'branch') return (state.branches || []).find(b => b.id === s.scope_id)?.name || 'فرع محذوف';
+          const u = (state._userById && state._userById.get(s.scope_id)) || (state.users || []).find(x => x.id === s.scope_id);
+          const b = u && (state.branches || []).find(x => x.id === u.branch_id);
+          return u ? (b ? `${u.name} — ${b.name}` : u.name) : 'موظف محذوف';
+        };
+        const typeLbl = { region: 'منطقة', branch: 'فرع', user: 'موظف' };
+        const order = { user: 0, branch: 1, region: 2 };
+        rows.sort((a, b) => (order[a.scope_type] - order[b.scope_type]) || scopeName(a).localeCompare(scopeName(b), 'ar') || a.day_of_week - b.day_of_week);
+        const cnt = document.getElementById('breakSchExceptionsCount');
+        if (cnt) cnt.textContent = rows.length ? String(rows.length) : '';
+        if (!rows.length) {
+          host.innerHTML = '<p class="break-sch-hint" style="margin:0">لا توجد استثناءات — الجميع على المدة العامة.</p>';
+          return;
+        }
+        host.innerHTML = rows.map(s => {
+          const mins = Number(s.duration_minutes) || 0;
+          const q = String(s.id).replace(/'/g, '');
+          return `<div class="break-sch-ex">
+            <div class="break-sch-ex__t"><b>${Sec.escapeHTML(scopeName(s))}</b>
+              <span>${typeLbl[s.scope_type] || ''} · ${Sec.escapeHTML(KSA_AR_WEEKDAYS[s.day_of_week] || '')} · ${s.break_type === 'restroom' ? 'دورة مياه' : 'بريك'}</span></div>
+            <span class="break-sch-ex__m${mins <= 0 ? ' is-off' : ''}">${mins <= 0 ? 'غير متاح' : mins + ' د'}</span>
+            <button type="button" class="break-sch-ex__b" onclick="editBreakScheduleException('${q}')">تعديل</button>
+            <button type="button" class="break-sch-ex__b break-sch-ex__b--del" onclick="deleteBreakScheduleException('${q}')">حذف</button>
+          </div>`;
+        }).join('');
+      }
+
+      function editBreakScheduleException(id) {
+        const s = (state.staffBreakSchedules || []).find(x => String(x.id) === String(id));
+        if (!s) return;
+        document.getElementById('breakSchBreakType').value = s.break_type === 'restroom' ? 'restroom' : 'regular';
+        document.getElementById('breakSchDayOfWeek').value = String(s.day_of_week);
+        document.getElementById('breakSchScopeType').value = s.scope_type;
+        syncBreakScheduleScopeFields();
+        const sel = document.getElementById('breakSchScopeId');
+        if (sel) {
+          if (![...sel.options].some(o => o.value === s.scope_id)) {
+            sel.insertAdjacentHTML('beforeend', `<option value="${Sec.escapeHTML(s.scope_id)}">—</option>`);
+          }
+          sel.value = s.scope_id;
+        }
+        syncBreakScheduleFormFields();
+        document.getElementById('breakSchMinutes')?.focus();
+        document.querySelector('#breakScheduleModal .break-sch-body')?.scrollTo?.({ top: 0, behavior: 'smooth' });
+      }
+
+      async function deleteBreakScheduleException(id) {
+        if (!canManageStaffBreakSchedules()) return;
+        const s = (state.staffBreakSchedules || []).find(x => String(x.id) === String(id));
+        if (!window.confirm('حذف هذا الاستثناء؟ سيعود الموظفون للمدة الأعم (فرع/منطقة/عام).')) return;
+        try {
+          const { data, error } = await sb.rpc('delete_staff_break_schedule', { p_id: id });
+          if (error) throw error;
+          if (!data?.ok) { showToast(data?.error || 'تعذّر الحذف', 'error'); return; }
+          state.staffBreakSchedules = (state.staffBreakSchedules || []).filter(x => String(x.id) !== String(id));
+          showToast('تم حذف الاستثناء', 'success');
+          syncBreakScheduleFormFields();
+          try { await loadStaffBreaksData(); await renderStaffBreaksPage({ soft: true }); syncBreakScheduleFormFields(); } catch (_) {}
+        } catch (e) {
+          showToast('فشل الحذف: ' + (e.message || e), 'error');
+        }
       }
 
       function openBreakScheduleModal() {
@@ -40862,6 +40933,9 @@
       window.setBreakSchDay = setBreakSchDay;
       window.paintBreakScheduleWeekSummary = paintBreakScheduleWeekSummary;
       window.openBreakScheduleModal = openBreakScheduleModal;
+      window.editBreakScheduleException = editBreakScheduleException;
+      window.deleteBreakScheduleException = deleteBreakScheduleException;
+      window.paintBreakScheduleExceptions = paintBreakScheduleExceptions;
       window.saveBreakScheduleFromUi = saveBreakScheduleFromUi;
       window.syncBreakScheduleScopeFields = syncBreakScheduleScopeFields;
       window.syncBreakScheduleFormFields = syncBreakScheduleFormFields;
