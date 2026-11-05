@@ -28658,15 +28658,31 @@
           const worst = arr.slice().sort((a, b) => a.score - b.score || b.v - a.v)[0];
           return { label, best: { name: best.name, sub: sub(best), score: best.score }, worst: arr.length > 1 && worst.id !== best.id ? { name: worst.name, sub: sub(worst), score: worst.score } : null };
         };
+        const level0 = kind === 'bm' ? 'employees' : (drill.branchId ? 'employees' : ((kind === 'sup' || drill.regionId) ? 'branches' : 'regions'));
+        const dBranchId = kind === 'bm' ? (branches[0] && branches[0].id) : drill.branchId;
+        const dBranch = (state.branches || []).find(b => b.id === dBranchId);
+        const dRegionId = drill.regionId || (dBranch && dBranch.region_id) || '';
+        const dRegion = (state.regions || []).find(r => r.id === dRegionId);
         const picks = [];
-        if (kind === 'all') picks.push(pick(regionRows, 'المنطقة', () => ''));
-        if (kind !== 'bm') picks.push(pick(branchRows, 'الفرع', r => r.region));
-        picks.push(pick(empRows, 'الموظف', r => r.branch));
-
         let org;
-        if (kind === 'all') org = { label: 'مؤشر المناطق', score: avg(regionRows), note: 'مناطق متعثرة: ' + regionRows.filter(r => r.score < 50).length + ' · ممتازة: ' + regionRows.filter(r => r.score >= 90).length };
-        else if (kind === 'sup') org = { label: 'مؤشر ' + (regions.length === 1 ? 'منطقة ' + regions[0].name : 'مناطقي'), score: avg(branchRows), note: 'فروع متعثرة: ' + branchRows.filter(r => r.score < 50).length + ' · ممتازة: ' + branchRows.filter(r => r.score >= 90).length };
-        else org = { label: 'مؤشر فرع ' + (branches[0]?.name || ''), score: branchRows[0] ? branchRows[0].score : 100, note: 'موظفون متعثرون: ' + empRows.filter(r => r.score < 50).length + ' · ممتازون: ' + empRows.filter(r => r.score >= 90).length };
+        if (level0 === 'regions') {
+          picks.push(pick(regionRows, 'المنطقة', () => ''));
+          picks.push(pick(branchRows, 'الفرع', r => r.region));
+          picks.push(pick(empRows, 'الموظف', r => r.branch));
+          org = { label: 'مؤشر المناطق', score: avg(regionRows), note: 'مناطق متعثرة: ' + regionRows.filter(r => r.score < 50).length + ' · ممتازة: ' + regionRows.filter(r => r.score >= 90).length };
+        } else if (level0 === 'branches') {
+          const brs = kind === 'sup' ? branchRows : branchRows.filter(b => b.regionId === dRegionId);
+          const ids = new Set(brs.map(b => b.id));
+          picks.push(pick(brs, 'الفرع', r => r.region));
+          picks.push(pick(empRows.filter(e => ids.has(e.branchId)), 'الموظف', r => r.branch));
+          const rr = regionRows.find(r => r.id === dRegionId);
+          org = { label: 'مؤشر ' + (kind === 'sup' && regions.length !== 1 ? 'مناطقي' : 'منطقة ' + (dRegion ? dRegion.name : '')), score: kind === 'sup' ? avg(brs) : (rr ? rr.score : avg(brs)), note: 'فروع متعثرة: ' + brs.filter(r => r.score < 50).length + ' · ممتازة: ' + brs.filter(r => r.score >= 90).length };
+        } else {
+          const es = empRows.filter(e => e.branchId === dBranchId);
+          const br = branchRows.find(b => b.id === dBranchId);
+          picks.push(pick(es, 'الموظف', r => r.job));
+          org = { label: 'مؤشر فرع ' + (dBranch ? dBranch.name : ''), score: br ? br.score : 100, note: 'موظفون متعثرون: ' + es.filter(r => r.score < 50).length + ' · ممتازون: ' + es.filter(r => r.score >= 90).length };
+        }
 
         let level = 'regions';
         if (kind === 'bm') level = 'employees';
