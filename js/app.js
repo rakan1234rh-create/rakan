@@ -28654,9 +28654,16 @@
         const avg = (arr) => arr.length ? sc(arr.reduce((a, x) => a + x.score, 0) / arr.length) : 100;
         const pick = (arr, label, sub) => {
           if (!arr.length) return null;
-          const best = arr.slice().sort((a, b) => b.score - a.score || a.v - b.v)[0];
-          const worst = arr.slice().sort((a, b) => a.score - b.score || b.v - a.v)[0];
-          return { label, best: { name: best.name, sub: sub(best), score: best.score }, worst: arr.length > 1 && worst.id !== best.id ? { name: worst.name, sub: sub(worst), score: worst.score } : null };
+          const mx = Math.max.apply(null, arr.map(x => x.score));
+          const mn = Math.min.apply(null, arr.map(x => x.score));
+          const grp = (sc) => {
+            const g = arr.filter(x => x.score === sc);
+            return { name: g[0].name, sub: g.length > 1 ? '' : sub(g[0]), score: sc, more: g.slice(1).map(x => x.name) };
+          };
+          const same = mx === mn;
+          const best = grp(mx);
+          if (same && arr.length > 1) { const pl = { 'المنطقة': 'مناطق', 'الفرع': 'فروع', 'الموظف': 'موظفين' }[label] || ''; best.name = 'الجميع متساوون'; best.sub = arr.length + ' ' + pl + ' بنفس الدرجة'; best.more = []; }
+          return { label, best, worst: same ? null : grp(mn) };
         };
         const level0 = kind === 'bm' ? 'employees' : (drill.branchId ? 'employees' : ((kind === 'sup' || drill.regionId) ? 'branches' : 'regions'));
         const dBranchId = kind === 'bm' ? (branches[0] && branches[0].id) : drill.branchId;

@@ -42,7 +42,7 @@
       '<div class="atq-strip" aria-hidden="true"><i style="flex:50;background:#D6342C"></i><i style="flex:25;background:#D9A011"></i><i style="flex:15;background:#2F6FDB"></i><i style="flex:10;background:#1E9E6A"></i><b style="right:' + Math.max(0, Math.min(100, m.org.score)) + '%"></b></div></div>';
     function pc(kind, label, x) {
       if (!x) return '';
-      return '<div class="atq-pk"><p class="atq-pk__l">' + (kind === 'best' ? 'أفضل ' : 'أقل ') + e(label) + '</p><div class="atq-pk__r"><div class="atq-pk__t"><b>' + e(x.name) + '</b>' + (x.sub ? '<span>' + e(x.sub) + '</span>' : '') + '</div>' + chip(x.score) + '</div></div>';
+      return '<div class="atq-pk"><p class="atq-pk__l">' + (kind === 'best' ? 'أفضل ' : 'أقل ') + e(label) + '</p><div class="atq-pk__r"><div class="atq-pk__t"><b>' + e(x.name) + '</b>' + (x.sub ? '<span>' + e(x.sub) + '</span>' : '') + (x.more && x.more.length ? '<details class="atq-more"><summary>و ' + x.more.length + ' آخرين بنفس الدرجة</summary><ul>' + x.more.map(function (n) { return '<li>' + e(n) + '</li>'; }).join('') + '</ul></details>' : '') + '</div>' + chip(x.score) + '</div></div>';
     }
     var picks = '<div class="atq-picks">' + m.picks.map(function (p) {
       return '<div class="atq-card atq-pkc">' + pc('best', p.label, p.best) + pc('worst', p.label, p.worst) + '</div>';
