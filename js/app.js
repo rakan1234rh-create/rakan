@@ -38880,7 +38880,8 @@
           // «في البريك الآن» = نشط فقط؛ الإيقاف يغلق الجلسة (ended) وتنزل للسجل
           state.staffBreaks = enriched.filter(b => b.status === 'active');
           state.staffBreakSchedules = schedules || [];
-          state._staffBreakFullLoadDayKey = sErr ? null : todayKey;
+          /* فشل تحميل الجداول أو حساب المدة (أو رجعت قائمة فاضية) = لا نحكم «غير مجدول» من العميل، ونترك الخادم يقرر عند البدء */
+          state._staffBreakFullLoadDayKey = (sErr || dErr || rErr || !(schedules || []).length) ? null : todayKey;
           // null means no break scheduled for today's weekday at any scope
           const resolvedMins = Number(myMins) > 0
             ? Number(myMins)
