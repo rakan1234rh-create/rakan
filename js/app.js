@@ -26432,7 +26432,7 @@
         if (violations == null || violations === state.violations) return `m:${ver}`;
         const from = document.getElementById('cmp-from')?.value || '';
         const to = document.getElementById('cmp-to')?.value || '';
-        return `c:${ver}:${from}:${to}:${violations.length}`;
+        return `c:${ver}:${from}:${to}:${state._cmpPeriod || 'all'}:${violations.length}`;
       }
 
       function invalidateEmpScoreCache() {
@@ -28593,6 +28593,108 @@
         renderCompliance();
       }
 
+      /* ===== مؤشرات الامتثال (التصميم الجديد): نطاق حسب الصلاحية + فترة ===== */
+      function cmpSetPeriod(p) {
+        state._cmpPeriod = (p === 'week' || p === 'month') ? p : 'all';
+        try { invalidateEmpScoreCache(); } catch (_) {}
+        renderCompliance();
+      }
+
+      function cmpPeriodViolations(list) {
+        const p = state._cmpPeriod || 'all';
+        if (p === 'all') return list;
+        let start = '';
+        try {
+          const t = ksaTodayCalendar();
+          const d = new Date(t.getFullYear(), t.getMonth(), t.getDate() - (p === 'week' ? 6 : 29));
+          start = ksaCalendarToIso(d) || '';
+        } catch (_) {}
+        if (!start) return list;
+        return list.filter(v => (v.violation_date || v.created_at || '').toString().slice(0, 10) >= start);
+      }
+
+      function cmpAtqModel(baseViolations) {
+        const esc = (v) => Sec.escapeHTML(String(v == null ? '' : v));
+        const period = state._cmpPeriod || 'all';
+        const violations = cmpPeriodViolations(baseViolations || []);
+        const role = normalizeUserRole(state.currentUser?.role);
+        const kind = canSeeAllCompliance() ? 'all' : (role === 'branch_manager' ? 'bm' : (role === 'supervisor' ? 'sup' : 'all'));
+        const drill = state._cmpDrill || {};
+        const sc = (n) => Math.round(Number(n) || 0);
+        const vCount = (f) => violations.filter(f).length;
+
+        let branches = (state.branches || []).slice();
+        if (kind === 'sup') {
+          const ids = new Set(state.currentUser?.supervisedBranches || []);
+          branches = branches.filter(b => ids.has(b.id));
+        } else if (kind === 'bm') {
+          branches = branches.filter(b => b.id === state.currentUser?.branch_id);
+        }
+        const regionIds = new Set(branches.map(b => b.region_id));
+        const regions = (state.regions || []).filter(r => kind === 'all' ? true : regionIds.has(r.id));
+
+        const branchRows = branches.map(b => {
+          const st = calcBranchSafety(b.id, violations);
+          const reg = (state.regions || []).find(r => r.id === b.region_id);
+          return { id: b.id, name: b.name, region: reg ? reg.name : '', regionId: b.region_id, score: sc(st.score), emps: st.totalEmps, v: vCount(x => x.branch_id === b.id) };
+        });
+        const empRows = [];
+        branches.forEach(b => {
+          getBranchStaff(b.id).forEach(u => {
+            let s = 100; try { s = sc(calcEmpScore(u.id, violations).score); } catch (_) {}
+            empRows.push({ id: u.id, name: u.name || '', branch: b.name, branchId: b.id, job: u.role === 'branch_manager' ? 'مدير فرع' : (getStaffJobTitle(u) || 'موظف'), score: s, v: vCount(x => x.employee_id === u.id) });
+          });
+        });
+        const regionRows = regions.map(r => {
+          const brs = branchRows.filter(b => b.regionId === r.id);
+          let s = 100; try { s = sc(calcRegionStability(r.id, violations).score); } catch (_) {}
+          return { id: r.id, name: r.name, score: s, branches: brs.length, emps: brs.reduce((a, b) => a + b.emps, 0), v: brs.reduce((a, b) => a + b.v, 0) };
+        });
+
+        const avg = (arr) => arr.length ? sc(arr.reduce((a, x) => a + x.score, 0) / arr.length) : 100;
+        const pick = (arr, label, sub) => {
+          if (!arr.length) return null;
+          const best = arr.slice().sort((a, b) => b.score - a.score || a.v - b.v)[0];
+          const worst = arr.slice().sort((a, b) => a.score - b.score || b.v - a.v)[0];
+          return { label, best: { name: best.name, sub: sub(best), score: best.score }, worst: arr.length > 1 && worst.id !== best.id ? { name: worst.name, sub: sub(worst), score: worst.score } : null };
+        };
+        const picks = [];
+        if (kind === 'all') picks.push(pick(regionRows, 'المنطقة', () => ''));
+        if (kind !== 'bm') picks.push(pick(branchRows, 'الفرع', r => r.region));
+        picks.push(pick(empRows, 'الموظف', r => r.branch));
+
+        let org;
+        if (kind === 'all') org = { label: 'مؤشر المناطق', score: avg(regionRows), note: 'مناطق متعثرة: ' + regionRows.filter(r => r.score < 50).length + ' · ممتازة: ' + regionRows.filter(r => r.score >= 90).length };
+        else if (kind === 'sup') org = { label: 'مؤشر ' + (regions.length === 1 ? 'منطقة ' + regions[0].name : 'مناطقي'), score: avg(branchRows), note: 'فروع متعثرة: ' + branchRows.filter(r => r.score < 50).length + ' · ممتازة: ' + branchRows.filter(r => r.score >= 90).length };
+        else org = { label: 'مؤشر فرع ' + (branches[0]?.name || ''), score: branchRows[0] ? branchRows[0].score : 100, note: 'موظفون متعثرون: ' + empRows.filter(r => r.score < 50).length + ' · ممتازون: ' + empRows.filter(r => r.score >= 90).length };
+
+        let level = 'regions';
+        if (kind === 'bm') level = 'employees';
+        else if (drill.branchId) level = 'employees';
+        else if (kind === 'sup' || drill.regionId) level = 'branches';
+
+        const m = { esc, period, kind, level, org, picks: picks.filter(Boolean) };
+        const q = (s) => String(s).replace(/'/g, "\\'");
+        if (level === 'regions') {
+          Object.assign(m, { kicker: 'REGIONS', title: 'المناطق', sub: regionRows.length + ' منطقة', cols: ['المنطقة', 'الفروع', 'الموظفون', 'المخالفات'],
+            rows: regionRows.slice().sort((a, b) => a.score - b.score).map(r => ({ cells: [r.name, r.branches, r.emps, r.v], score: r.score, click: `cmpOpenRegionCompliance('${q(r.id)}')` })) });
+        } else if (level === 'branches') {
+          const reg = (state.regions || []).find(r => r.id === drill.regionId);
+          const rows = branchRows.filter(b => kind === 'sup' || b.regionId === drill.regionId);
+          Object.assign(m, { kicker: 'BRANCHES', title: kind === 'sup' ? 'فروع منطقتك' : 'فروع ' + (reg ? reg.name : ''), sub: rows.length + ' فرع',
+            back: kind === 'sup' ? '' : 'cmpBackToRegions()', backLabel: 'كل المناطق', cols: ['الفرع', 'الموظفون', 'المخالفات'],
+            rows: rows.slice().sort((a, b) => a.score - b.score).map(r => ({ cells: [r.name, r.emps, r.v], score: r.score, click: `cmpOpenBranchCompliance('${q(r.id)}')` })) });
+        } else {
+          const bid = kind === 'bm' ? branches[0]?.id : drill.branchId;
+          const br = (state.branches || []).find(b => b.id === bid);
+          const rows = empRows.filter(e => e.branchId === bid);
+          Object.assign(m, { kicker: 'EMPLOYEES', title: br ? br.name : 'الموظفون', sub: rows.length + ' موظف',
+            back: kind === 'bm' ? '' : 'cmpBackToBranches()', backLabel: kind === 'sup' ? 'كل الفروع' : 'فروع ' + ((state.regions || []).find(r => r.id === br?.region_id)?.name || ''), cols: ['الموظف', 'الوظيفة', 'المخالفات'],
+            rows: rows.slice().sort((a, b) => a.score - b.score).map(r => ({ cells: [r.name, r.job, r.v], score: r.score, click: `openCmpItemDetail('employee','${q(r.id)}')` })) });
+        }
+        return m;
+      }
+
       function renderCompliance() {
         const board = document.getElementById('cmpBoard');
         if (!board) return;
@@ -28751,51 +28853,13 @@
         const cmpSearchPh = cmpSearchPlaceholder(view);
         if (!cmpDataPending) cmpSnapshotBoardAnim(board);
 
-        if (rdCmp && !cmpDataPending && window.AtharComplianceDesign && ((typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi()) || (typeof isMobileViewport === 'function' && isMobileViewport()))
-          && (view === 'regions' || (view === 'branches' && !state._cmpDrill.regionId))) {
+        if (rdCmp && !cmpDataPending && window.AtharComplianceDesign && window.AtharComplianceDesign.page
+          && ((typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi()) || (typeof isMobileViewport === 'function' && isMobileViewport()))) {
           try {
-            const rowsD = (state.branches || []).map((b) => {
-              const st = calcBranchSafety(b.id, violations);
-              const reg = (state.regions || []).find(r => r.id === b.region_id);
-              return {
-                id: b.id, name: b.name, region: reg ? reg.name : '—',
-                n: getBranchStaff(b.id).length,
-                v: violations.filter(v => v.branch_id === b.id).length,
-                score: Math.round(Number(st.score) || 0)
-              };
-            });
-            let org = rowsD.length ? Math.round(rowsD.reduce((x, r) => x + r.score, 0) / rowsD.length) : 100;
-            board.innerHTML = window.AtharComplianceDesign.html({ rows: rowsD, org, esc: (v) => Sec.escapeHTML(String(v == null ? '' : v)) });
+            board.innerHTML = window.AtharComplianceDesign.page(cmpAtqModel(violations));
             board.classList.add('atq-board');
             return;
-          } catch (e) { console.warn('[atq]', e); }
-        } else if (rdCmp && !cmpDataPending && window.AtharComplianceDesign && window.AtharComplianceDesign.drill && ((typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi()) || (typeof isMobileViewport === 'function' && isMobileViewport()))
-          && ((view === 'branches' && state._cmpDrill.regionId) || (view === 'employees' && state._cmpDrill.branchId))) {
-          try {
-            const escF = (v) => Sec.escapeHTML(String(v == null ? '' : v));
-            let m;
-            if (view === 'branches') {
-              const reg = state.regions.find(r => r.id === state._cmpDrill.regionId);
-              const rowsD = (state.branches || []).filter(b => b.region_id === state._cmpDrill.regionId).map((b) => ({
-                id: b.id, cells: [b.name, getBranchStaff(b.id).length, violations.filter(v => v.branch_id === b.id).length],
-                score: Math.round(Number(calcBranchSafety(b.id, violations).score) || 0), click: `cmpOpenBranchCompliance('${String(b.id).replace(/'/g, "\\'")}')`
-              })).sort((a, b) => a.score - b.score);
-              const avg = rowsD.length ? Math.round(rowsD.reduce((x, r) => x + r.score, 0) / rowsD.length) : 100;
-              m = { esc: escF, kicker: 'REGION', title: reg ? reg.name : 'فروع المنطقة', sub: rowsD.length + ' فرع · متوسط الامتثال ' + avg, back: 'cmpBackToRegions()', backLabel: 'كل المناطق', cols: ['الفرع', 'الموظفون', 'المخالفات'], rows: rowsD, empty: 'لا توجد فروع' };
-            } else {
-              const br = state.branches.find(b => b.id === state._cmpDrill.branchId);
-              const reg = state.regions.find(r => r.id === state._cmpDrill.regionId);
-              const rowsD = getBranchStaff(state._cmpDrill.branchId).map((u) => {
-                let sc = 100; try { sc = Math.round(Number(calcEmpScore(u.id, violations).score) || 0); } catch (_) {}
-                return { id: u.id, cells: [u.name || '', u.role === 'branch_manager' ? 'مدير فرع' : (getStaffJobTitle(u) || 'موظف'), violations.filter(v => v.employee_id === u.id).length], score: sc, click: `openCmpItemDetail('employee','${String(u.id).replace(/'/g, "\\'")}')` };
-              }).sort((a, b) => a.score - b.score);
-              m = { esc: escF, kicker: 'BRANCH', title: br ? br.name : 'موظفو الفرع', sub: rowsD.length + ' موظف', back: isBranchMgr ? '' : 'cmpBackToBranches()', backLabel: 'فروع ' + (reg ? reg.name : ''), cols: ['الموظف', 'الدور', 'المخالفات'], rows: rowsD, empty: 'لا يوجد موظفون' };
-              if (isBranchMgr) m.back = "void 0";
-            }
-            board.innerHTML = window.AtharComplianceDesign.drill(m);
-            board.classList.add('atq-board');
-            return;
-          } catch (e) { console.warn('[atq-drill]', e); }
+          } catch (e) { console.warn('[atq]', e); board.classList.remove('atq-board'); }
         } else {
           board.classList.remove('atq-board');
         }

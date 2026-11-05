@@ -113,3 +113,31 @@ html[data-theme="dark"]:root #cmpDetailModal{--t-exb:#12301F;--t-exf:#7FD6A5;--t
 .ced-hd{margin-bottom:14px}
 html:root.athar-staging-redesign.mr-desktop-ui.mr-desktop-ui #cmpDetailModal .ced-hd{margin-bottom:0}
 .ced-kpi__lbl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+
+/* ===== role-scoped compliance page (period + summary picks) ===== */
+.atq-top{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.atq-seg{display:inline-flex;border:1px solid var(--t-ln2);border-radius:6px;overflow:hidden;background:var(--t-sf)}
+.atq-seg__b{height:38px;padding:0 16px;border:0;background:transparent;color:var(--t-fg);font:500 14px inherit;font-family:inherit;cursor:pointer}
+.atq-seg__b+.atq-seg__b{border-inline-start:1px solid var(--t-ln2)}
+.atq-seg__b:hover{background:var(--t-hv)}
+html:root #tab-compliance .atq-seg__b.is-on{background:var(--t-fg);color:var(--t-sf)}
+.atq-sec--sum{align-items:stretch}
+.atq-sec--sum .atq-co{flex:4 1 300px}
+.atq-picks{flex:8 1 460px;min-width:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:20px;align-content:stretch}
+.atq-pkc{display:flex;flex-direction:column;gap:0;box-sizing:border-box;padding:0 !important}
+html:root #tab-compliance .atq-board .atq-card.atq-pkc{padding:0 !important}
+.atq-pk{padding:16px 20px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.atq-pk+.atq-pk{border-top:1px solid var(--t-ln)}
+.atq-pk__l{margin:0;font-size:12px;color:var(--t-mu)}
+.atq-pk__r{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.atq-pk__t{display:flex;flex-direction:column;min-width:0}.atq-pk__t b{font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.atq-pk__t span{font-size:12px;color:var(--t-mu)}
+.atq-tb--full{flex:1 1 100%}
+.atq-hd--row{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:12px}
+.atq-hd--row .atd-kick{margin:0}
+html:root.mr-mobile-ui #tab-compliance .atq-top{flex-direction:column;align-items:stretch}
+html:root.mr-mobile-ui #tab-compliance .atq-seg{display:flex}
+html:root.mr-mobile-ui #tab-compliance .atq-seg__b{flex:1;padding:0 6px}
+html:root.mr-mobile-ui #tab-compliance .atq-picks{flex:1 1 100%;grid-template-columns:1fr;gap:16px}
+html:root.mr-mobile-ui #tab-compliance .atq-pk{padding:14px 16px}
+html:root.mr-mobile-ui #tab-compliance .atq-sec--sum .atq-co{flex:1 1 100%}
+html:root.mr-mobile-ui #tab-compliance .atq-hd--row{flex-direction:column;align-items:flex-start}
