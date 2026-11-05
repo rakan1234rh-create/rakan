@@ -39709,8 +39709,6 @@
       }
 
       function getBreakRosterRowView(u) {
-        const remSec = Math.max(0, Math.floor(Number(getUserBreakRemainingSeconds(u)) || 0));
-        const mins = Math.max(0, Math.floor(remSec / 60));
         let dayRow = state.staffBreakDayByUser?.[u.id];
         /* آخر جلسة بريك عادي منتهية تجاوزت 5 دقائق (إيقاف إداري أو إنهاء ذاتي) تُعرض «تجاوز المدة» حتى لو تقدّمت عليها صفّ آخر في الترتيب */
         if (dayRow?.status !== 'active' && dayRow?.status !== 'paused') {
@@ -39720,6 +39718,20 @@
             .sort((a, b) => staffBreakEndedRecencyMs(b) - staffBreakEndedRecencyMs(a))[0];
           if (lastReg && getStaffBreakOvertimeSeconds(lastReg) > BREAK_OVERTIME_REASON_AFTER_SEC) dayRow = lastReg;
         }
+        /* انتهاء/تجاوز بريك دورة المياه لا يقفل البريك العادي: الحالة تُبنى على البريك العادي إن بقي له رصيد */
+        if (dayRow && dayRow.break_type === 'restroom' && dayRow.status === 'ended'
+          && (Number(dayRow.remaining_seconds || 0) <= 0 || Number(dayRow.overtime_seconds || 0) > 0)) {
+          const regRow = state.staffBreakDayByUserType?.[`${u.id}:regular`] || null;
+          if (!regRow) {
+            if (resolveBreakDurationMinsForUser(u, 'regular')) dayRow = null;
+          } else if (regRow.status === 'active' || regRow.status === 'paused'
+            || (Number(regRow.remaining_seconds || 0) > 0 && !(Number(regRow.overtime_seconds || 0) > 0))) {
+            dayRow = regRow;
+          }
+        }
+        const openBrk = (state.staffBreaks || []).find(x => x.user_id === u.id && x.status === 'active');
+        const remSec = Math.max(0, Math.floor(Number(openBrk ? getBreakRemainingSeconds(openBrk) : (dayRow && (dayRow.status === 'ended' || dayRow.status === 'paused') ? dayRow.remaining_seconds : (resolveBreakDurationMinsForUser(u) || 0) * 60)) || 0));
+        const mins = Math.max(0, Math.floor(remSec / 60));
         const isRestroom = dayRow?.break_type === 'restroom';
         const typeLabel = isRestroom ? 'بريك دورة المياه' : 'البريك';
         const overSec = dayRow?.status === 'ended' ? getStaffBreakOvertimeSeconds(dayRow) : 0;
