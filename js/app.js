@@ -39711,13 +39711,20 @@
       function getBreakRosterRowView(u) {
         const remSec = Math.max(0, Math.floor(Number(getUserBreakRemainingSeconds(u)) || 0));
         const mins = Math.max(0, Math.floor(remSec / 60));
-        const dayRow = state.staffBreakDayByUser?.[u.id];
+        let dayRow = state.staffBreakDayByUser?.[u.id];
+        /* آخر جلسة بريك عادي منتهية تجاوزت 5 دقائق (إيقاف إداري أو إنهاء ذاتي) تُعرض «تجاوز المدة» حتى لو تقدّمت عليها صفّ آخر في الترتيب */
+        if (dayRow?.status !== 'active' && dayRow?.status !== 'paused') {
+          const tk = getStaffBreakTodayKey();
+          const lastReg = (state.staffBreakDayRows || [])
+            .filter(r => r && r.user_id === u.id && r.break_type !== 'restroom' && r.status === 'ended' && (!r.day_key || String(r.day_key).slice(0, 10) === tk))
+            .sort((a, b) => staffBreakEndedRecencyMs(b) - staffBreakEndedRecencyMs(a))[0];
+          if (lastReg && getStaffBreakOvertimeSeconds(lastReg) > BREAK_OVERTIME_REASON_AFTER_SEC) dayRow = lastReg;
+        }
         const isRestroom = dayRow?.break_type === 'restroom';
         const typeLabel = isRestroom ? 'بريك دورة المياه' : 'البريك';
         const overSec = dayRow?.status === 'ended' ? getStaffBreakOvertimeSeconds(dayRow) : 0;
         const overEnded = !isRestroom
-          && overSec > BREAK_OVERTIME_REASON_AFTER_SEC
-          && Number(dayRow?.remaining_seconds || 0) <= 0;
+          && overSec > BREAK_OVERTIME_REASON_AFTER_SEC;
         const unscheduled = !dayRow
           && !resolveBreakDurationMinsForUser(u, 'regular')
           && !resolveBreakDurationMinsForUser(u, 'restroom');
