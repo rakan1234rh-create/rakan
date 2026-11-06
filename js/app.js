@@ -30905,8 +30905,19 @@
         const opt = (arr, cur) => arr.map(a => `<option value="${E(a[0])}"${String(a[0]) === String(cur) ? ' selected' : ''}>${E(a[1])}</option>`).join('');
         const regions = [['', 'كل المناطق']].concat(rpScope().regions.map(r => [r.id, r.name]));
         const brs = [['', 'كل الفروع']].concat(rpScope().branches.filter(b => !f.region || String(b.region_id) === String(f.region)).map(b => [b.id, b.name]));
-        const seen = {}; const emps = [['', 'كل الموظفين']];
-        getReportsVisibleViolations().forEach(v => { if (v.employee_id && !seen[v.employee_id]) { seen[v.employee_id] = 1; emps.push([v.employee_id, v._empName + (v._empNumber ? ' — ' + v._empNumber : '')]); } });
+        const seen = {}; const emps = [['', 'كل الموظفين']]; const empList = [];
+        const brFilter = f.branch ? String(f.branch) : '';
+        const regBrIds = f.region ? new Set((rpScope().branches || []).filter(b => String(b.region_id) === String(f.region)).map(b => b.id)) : null;
+        const inFilter = (branchId) => (!brFilter || String(branchId) === brFilter) && (!regBrIds || regBrIds.has(branchId));
+        rpScope().users.forEach(u => {
+          if (!u || !u.id || seen[u.id]) return;
+          if (typeof isViolationSubjectUser === 'function' && !isViolationSubjectUser(u)) return;
+          if (!inFilter(u.branch_id)) return;
+          seen[u.id] = 1; empList.push([u.id, (u.name || '—') + (u.employee_number ? ' — ' + u.employee_number : '')]);
+        });
+        getReportsVisibleViolations().forEach(v => { if (v.employee_id && !seen[v.employee_id] && inFilter(v.branch_id)) { seen[v.employee_id] = 1; empList.push([v.employee_id, (v._empName || '—') + (v._empNumber ? ' — ' + v._empNumber : '')]); } });
+        empList.sort((a, b) => String(a[1]).localeCompare(String(b[1]), 'ar'));
+        empList.forEach(e => emps.push(e));
         const fld = (lbl, id, key, arr, cur) => `<label class="rpf-f"><span class="rpf-l">${lbl}</span><select id="${id}" aria-label="${lbl}" onchange="rpfSet('${key}',this.value)">${opt(arr, cur)}</select></label>`;
         const custom = f.period === 'custom' ? `
           <label class="rpf-f"><span class="rpf-l">من</span><input type="date" id="rpf-from" value="${E(f.from)}" onchange="rpfSet('from',this.value)"></label>
@@ -31309,21 +31320,7 @@
               </div>
             </div>
           </section>`;
-        const linksHtml = `
-          <nav class="rd-rp-section rd-rp-section--links" aria-labelledby="rdRpLinksTitle">
-            <h3 class="rd-rp-sec-title" id="rdRpLinksTitle">تقارير سريعة</h3>
-            <div class="rd-rp-links">
-              ${links.map((r) => `
-                <button type="button" class="rd-rp-link" style="animation-delay:${r.delay}s" onclick="${r.action}">
-                  <span class="rd-rp-link__ico" aria-hidden="true"><i class="fas ${r.icon}" aria-hidden="true"></i></span>
-                  <span class="rd-rp-link__body">
-                    <span class="rd-rp-link__title">${Sec.escapeHTML(r.title)}</span>
-                    <span class="rd-rp-link__sub">${Sec.escapeHTML(r.sub)}</span>
-                  </span>
-                  <i class="fas fa-chevron-left rd-rp-link__chev" aria-hidden="true"></i>
-                </button>`).join('')}
-            </div>
-          </nav>`;
+        const linksHtml = ''; /* «تقارير سريعة» محذوفة */
         const headHtml = `
           <header class="rd-rp-page-head">
             <div class="rd-rp-page-head__text">
