@@ -114,7 +114,7 @@
         return mineAll.filter(function (t) { var d = dashViolationIsoDate(t); return d && d >= from && d < to; });
       };
       var rate = function (a) { return a.length ? Math.round(a.filter(isOk).length / a.length * 100) : 0; };
-      var prev = slots.length > 1 ? slots[slots.length - 2] : null;
+      var prev = slots.length ? slots[slots.length - 1] : null; /* الشهر الجاري */
       var pm = prev ? inMonth(prev) : [];
       var appr = pm.filter(isOk).length, rej = pm.filter(isRej).length;
       var pct = rate(pm);
@@ -124,10 +124,10 @@
       });
       var wk = {}; pm.forEach(function (t) { var d = dashViolationIsoDate(t); var w = Math.ceil(Number(String(d).slice(8, 10)) / 7); (wk[w] = wk[w] || []).push(t); });
       var wr = Object.keys(wk).sort().map(function (w) { var a = wk[w]; var p = rate(a); return { cells: ['الأسبوع ' + w, num(a.length), num(a.filter(isOk).length), num(p + '%')] }; });
-      var lbl = prev ? prev.monthName + ' ' + prev.yearLabel : 'الشهر الماضي';
-      return { hero: hero('أداء الرصد · ' + lbl, pct, pm.length ? (pm.length + ' مخالفة مرصودة في ' + prev.monthName + '، اعتُمد منها ' + appr) : ('لا توجد مخالفات مرصودة في ' + (prev ? prev.monthName : 'الشهر الماضي')), [[pm.length, 'مرصودة'], [appr, 'معتمدة'], [rej, 'مرفوضة']]),
+      var lbl = prev ? prev.monthName + ' ' + prev.yearLabel : 'الشهر الجاري';
+      return { hero: hero('أداء الرصد · ' + lbl, pct, pm.length ? (pm.length + ' مخالفة مرصودة في ' + prev.monthName + '، اعتُمد منها ' + appr + ' · الاعتماد قيد الاستكمال') : ('لا توجد مخالفات مرصودة في ' + (prev ? prev.monthName : 'الشهر الجاري')), [[pm.length, 'مرصودة'], [appr, 'معتمدة'], [rej, 'مرفوضة']]),
         table: table('أداء الرصد الشهري', 'نسبة اعتماد ما رصدته في كل شهر', ['الشهر', 'المرصودة', 'المعتمدة', 'الاعتماد'], mrows) +
-          (wr.length ? table('أسابيع ' + (prev ? prev.monthName : 'الشهر الماضي'), 'تفصيل الشهر الماضي', ['الأسبوع', 'المرصودة', 'المعتمدة', 'الاعتماد'], wr) : '') };
+          (wr.length ? table('أسابيع ' + (prev ? prev.monthName : 'الشهر الجاري'), 'تفصيل الشهر الجاري', ['الأسبوع', 'المرصودة', 'المعتمدة', 'الاعتماد'], wr) : '') };
     }
     return null;
   }
