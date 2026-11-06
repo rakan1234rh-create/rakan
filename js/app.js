@@ -31256,7 +31256,7 @@
               { title: 'تقرير الاستجابة للموظفين', sub: 'متوسط زمن الرد على البلاغات', icon: 'fa-gauge-high', action: "goTab('departments')", delay: 0.15 },
             ];
 
-        if (desk && window.AtharReportsDesign) {
+        if (window.AtharReportsDesign) {
           try {
             const isClosed = (v) => v.state === 'closed' || v.state === 'Warning_Issued';
             const closedAll = allVisible.filter(isClosed);
@@ -31277,7 +31277,7 @@
               esc: (v) => Sec.escapeHTML(String(v == null ? '' : v))
             };
             window.__rpModel = model;
-            return window.AtharReportsDesign.html(model);
+            if (desk) return window.AtharReportsDesign.html(model);
           } catch (e) { console.warn('[atr]', e); }
         }
         const metricsHtml = `
