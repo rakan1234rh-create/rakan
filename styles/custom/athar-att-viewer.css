@@ -31,3 +31,5 @@
 #attViewer #att-loading > i::before { content: none !important; display: none !important; }
 #attViewer #att-loading p { font-family: var(--font, 'IBM Plex Sans Arabic', system-ui, sans-serif) !important; font-size: 15px !important; font-weight: 500 !important; color: #f2f2f2 !important; text-shadow: none !important; letter-spacing: 0; }
 @media (prefers-reduced-motion: reduce) { #attViewer #att-loading > i { animation-duration: 1.6s !important; } }
+/* فوق ورقة التذكرة في الجوال (#atdSheet z-index 2147483000) */
+html #attViewer.open, html #attViewer.att-over-ticket.open, html #attViewer.att-over-cmpl.open { z-index: 2147483600 !important; }
