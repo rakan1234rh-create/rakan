@@ -34193,6 +34193,17 @@
         return reg;
       }
 
+      function getAtharDeviceId() {
+        try {
+          let id = localStorage.getItem('athar_device_id');
+          if (!id) {
+            id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('d' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10));
+            localStorage.setItem('athar_device_id', id);
+          }
+          return id;
+        } catch (_) { return null; }
+      }
+
       async function savePushSubscriptionToDb(sub) {
         if (!state.currentUser?.id || !sub) throw new Error('لا يوجد مستخدم أو اشتراك');
         const json = sub.toJSON();
@@ -34206,6 +34217,7 @@
           p256dh: keys.p256dh,
           auth_key: keys.auth,
           user_agent: navigator.userAgent || null,
+          device_id: getAtharDeviceId(),
           updated_at: new Date().toISOString()
         };
         const { error } = await sb.from('push_subscriptions').upsert(row, { onConflict: 'endpoint' });
@@ -34296,11 +34308,10 @@
         };
         // Prefer DB webhook as primary; client is a fallback if webhook fails.
         // Durable email claim prevents Hostinger duplicates when both fire.
-        invokeViolationPush({ notify: true, type: 'INSERT', record })
-          .then((data) => {
-            if (data?.errors?.length && isAtharDebugLog()) console.warn('[webPush] new violation notify', data);
-            return refreshNotificationsFromDb();
-          })
+        // الإرسال يتم من محفّز القاعدة فقط (إشعار واحد لكل جهاز) — هنا نحدّث القائمة فقط.
+        Promise.resolve()
+          .then(() => new Promise((r) => setTimeout(r, 1500)))
+          .then(() => refreshNotificationsFromDb())
           .then(() => { try { renderNotifications(false); } catch (_) { /* noop */ } })
           .catch((e) => {
             if (isAtharDebugLog()) console.warn('[webPush] new violation notify', e);
