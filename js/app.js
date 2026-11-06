@@ -30752,6 +30752,39 @@
         </div>
       `;
       }
+      /** نطاق صفحة التقارير: المشرف = فروعه فقط، مدير الفرع = فرعه فقط، غيرهم حسب صلاحياتهم */
+      function rpScope() {
+        const me = state.currentUser || {};
+        const role = normalizeUserRole(me.role);
+        let branches = state.branches || [];
+        let scoped = false;
+        if (role === 'supervisor') {
+          const ids = new Set(me.supervisedBranches || []);
+          branches = branches.filter(b => ids.has(b.id));
+          scoped = true;
+        } else if (role === 'branch_manager' && me.branch_id && !canViewAllTickets()) {
+          branches = branches.filter(b => b.id === me.branch_id);
+          scoped = true;
+        }
+        if (!scoped) return { scoped: false, branches, users: state.users || [], regions: state.regions || [], branchIds: null };
+        const ids = new Set(branches.map(b => b.id));
+        const regIds = new Set(branches.map(b => b.region_id));
+        return {
+          scoped: true,
+          branches,
+          users: (state.users || []).filter(u => ids.has(u.branch_id)),
+          regions: (state.regions || []).filter(r => regIds.has(r.id)),
+          branchIds: ids
+        };
+      }
+
+      function getReportsVisibleViolations() {
+        let list = getVisibleViolations().filter(v => v && v.state !== 'uploading');
+        const sc = rpScope();
+        if (sc.scoped && sc.branchIds) list = list.filter(v => sc.branchIds.has(v.branch_id));
+        return list;
+      }
+
       function getReportsFilteredViolations(opts = {}) {
         const skipDate = !!opts.skipDate;
         const skipSearch = !!opts.skipSearch;
@@ -30759,7 +30792,7 @@
         const fromDate = skipDate ? '' : (document.getElementById('rp-from')?.value || '');
         const toDate = skipDate ? '' : (document.getElementById('rp-to')?.value || '');
 
-        let visible = getVisibleViolations();
+        let visible = getReportsVisibleViolations();
 
         if (search) {
           visible = visible.filter(v => {
@@ -30861,7 +30894,7 @@
         if (f.period === 'custom') out.push(['الفترة', (f.from || '…') + ' → ' + (f.to || '…')]); else if (f.period !== 'all') out.push(['الفترة', per[1]]);
         if (f.region) out.push(['المنطقة', (state.regions.find(r => String(r.id) === String(f.region)) || {}).name || '']);
         if (f.branch) out.push(['الفرع', (state.branches.find(b => String(b.id) === String(f.branch)) || {}).name || '']);
-        if (f.employee) { const v = getVisibleViolations().find(x => String(x.employee_id) === String(f.employee)); out.push(['الموظف', v ? v._empName : '']); }
+        if (f.employee) { const v = getReportsVisibleViolations().find(x => String(x.employee_id) === String(f.employee)); out.push(['الموظف', v ? v._empName : '']); }
         if (f.status) out.push(['الحالة', (RPF_STATUS.find(x => x[0] === f.status) || [])[1] || '']);
         return out;
       }
@@ -30869,15 +30902,15 @@
         const f = rpfState();
         const E = (x) => Sec.escapeHTML(String(x == null ? '' : x));
         const opt = (arr, cur) => arr.map(a => `<option value="${E(a[0])}"${String(a[0]) === String(cur) ? ' selected' : ''}>${E(a[1])}</option>`).join('');
-        const regions = [['', 'كل المناطق']].concat((state.regions || []).map(r => [r.id, r.name]));
-        const brs = [['', 'كل الفروع']].concat((state.branches || []).filter(b => !f.region || String(b.region_id) === String(f.region)).map(b => [b.id, b.name]));
+        const regions = [['', 'كل المناطق']].concat(rpScope().regions.map(r => [r.id, r.name]));
+        const brs = [['', 'كل الفروع']].concat(rpScope().branches.filter(b => !f.region || String(b.region_id) === String(f.region)).map(b => [b.id, b.name]));
         const seen = {}; const emps = [['', 'كل الموظفين']];
-        getVisibleViolations().forEach(v => { if (v.employee_id && !seen[v.employee_id]) { seen[v.employee_id] = 1; emps.push([v.employee_id, v._empName + (v._empNumber ? ' — ' + v._empNumber : '')]); } });
+        getReportsVisibleViolations().forEach(v => { if (v.employee_id && !seen[v.employee_id]) { seen[v.employee_id] = 1; emps.push([v.employee_id, v._empName + (v._empNumber ? ' — ' + v._empNumber : '')]); } });
         const fld = (lbl, id, key, arr, cur) => `<label class="rpf-f"><span class="rpf-l">${lbl}</span><select id="${id}" aria-label="${lbl}" onchange="rpfSet('${key}',this.value)">${opt(arr, cur)}</select></label>`;
         const custom = f.period === 'custom' ? `
           <label class="rpf-f"><span class="rpf-l">من</span><input type="date" id="rpf-from" value="${E(f.from)}" onchange="rpfSet('from',this.value)"></label>
           <label class="rpf-f"><span class="rpf-l">إلى</span><input type="date" id="rpf-to" value="${E(f.to)}" onchange="rpfSet('to',this.value)"></label>` : '';
-        const n = rpfApply(getVisibleViolations().filter(v => v.state !== 'uploading')).length;
+        const n = rpfApply(getReportsVisibleViolations().filter(v => v.state !== 'uploading')).length;
         return `<section class="rpf" aria-label="فلاتر التقارير">
           <div class="rpf-grid">
             ${fld('الفترة', 'rpf-period', 'period', RPF_PERIODS, f.period)}${custom}
@@ -30913,7 +30946,7 @@
       }
 
       function rdAvgComplianceRate(violations) {
-        const emps = (state.users || []).filter(u => typeof isViolationSubjectUser === 'function' && isViolationSubjectUser(u));
+        const emps = rpScope().users.filter(u => typeof isViolationSubjectUser === 'function' && isViolationSubjectUser(u));
         if (!emps.length) return 100;
         const sum = emps.reduce((a, e) => a + (calcEmpScore(e.id, violations || state.violations).score || 0), 0);
         return Math.round((sum / emps.length) * 10) / 10;
@@ -31021,8 +31054,8 @@
 
       /** تجميع بيانات تقرير استجابة الموظفين من مخالفات النظام الحقيقية */
       function rdRpBuildEmployeeResponse() {
-        const emps = (state.users || []).filter(u => typeof isViolationSubjectUser === 'function' ? isViolationSubjectUser(u) : (normalizeUserRole(u.role) === 'employee'));
-        const allViolations = (state.violations || []).filter(v => v.state !== 'uploading');
+        const emps = rpScope().users.filter(u => typeof isViolationSubjectUser === 'function' ? isViolationSubjectUser(u) : (normalizeUserRole(u.role) === 'employee'));
+        const allViolations = getReportsVisibleViolations();
         const rows = [];
         emps.forEach((u) => {
           const myViols = allViolations.filter(v => v.employee_id === u.id);
@@ -31062,14 +31095,14 @@
 
       /** تجميع بيانات تقرير المخالفات حسب الفرع (شدة/مجموع/معدل) */
       function rdRpBuildVbRows() {
-        const branches = state.branches || [];
-        const allViolations = (state.violations || []).filter(v => v.state !== 'uploading');
+        const branches = rpScope().branches;
+        const allViolations = getReportsVisibleViolations();
         const vTypeById = new Map();
         (state.violationTypes || []).forEach(vt => { if (vt && vt.id) vTypeById.set(vt.id, vt); });
         const empBranch = new Map();
-        (state.users || []).forEach(u => { if (u && u.id) empBranch.set(u.id, u.branch_id); });
+        rpScope().users.forEach(u => { if (u && u.id) empBranch.set(u.id, u.branch_id); });
         const rows = branches.map(b => {
-          const region = (state.regions || []).find(r => r.id === b.region_id);
+          const region = rpScope().regions.find(r => r.id === b.region_id);
           let high = 0, medium = 0, low = 0;
           allViolations.forEach(v => {
             const bId = empBranch.get(v.employee_id);
@@ -31109,7 +31142,7 @@
       /** تجميع صفوف تقرير الالتزام الشهري بالتفاصيل */
       function rdRpBuildMcRows() {
         const ranges = rdLastSixMonthRanges();
-        const allViolations = (state.violations || []).filter(v => v.state !== 'uploading');
+        const allViolations = getReportsVisibleViolations();
         if (!ranges.length) {
           return [
             { label: 'فبراير', rate: 52, violations: 38, resolved: 34 },
@@ -31164,7 +31197,7 @@
       }
 
       function rdRpRenderMainInner(desk) {
-        const allVisible = rpfApply(getVisibleViolations().filter((v) => v.state !== 'uploading'));
+        const allVisible = rpfApply(getReportsVisibleViolations().filter((v) => v.state !== 'uploading'));
         const cur = typeof ksaCurrentMonthRange === 'function' ? ksaCurrentMonthRange() : null;
         const thisMonth = cur
           ? allVisible.filter((v) => {
@@ -31601,8 +31634,8 @@
       /** صفوف تقرير الالتزام الشهري لكل موظف ومخالفاته في شهر محدد */
       function rdRpBuildEmpMcRows(range) {
         if (!range) return [];
-        const emps = (state.users || []).filter((u) => (typeof isViolationSubjectUser === 'function' ? isViolationSubjectUser(u) : (normalizeUserRole(u.role) === 'employee')));
-        const allViolations = (state.violations || []).filter((v) => v.state !== 'uploading');
+        const emps = rpScope().users.filter((u) => (typeof isViolationSubjectUser === 'function' ? isViolationSubjectUser(u) : (normalizeUserRole(u.role) === 'employee')));
+        const allViolations = getReportsVisibleViolations();
         const vTypeById = new Map();
         (state.violationTypes || []).forEach((vt) => { if (vt && vt.id) vTypeById.set(vt.id, vt); });
         const rows = [];
