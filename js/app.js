@@ -8720,7 +8720,8 @@
        */
       function shouldHideObserverName() {
         if (!state.currentUser) return true;
-        return !hasPermission('see_observer_name');
+        /* اسم الراصد لمدير النظام فقط في كل المنصة (شاشات + تصدير Excel/PDF) */
+        return normalizeUserRole(state.currentUser.role) !== 'admin';
       }
 
       /**
