@@ -201,10 +201,12 @@
     if (!t) { el.innerHTML = ''; return; }
     var st = stageOf(t), sv = sevOf(t);
     var atts = []; try { atts = b.getVisibleAttachments(t) || []; } catch (_) {}
+    var isAdm = false; try { isAdm = !!(b.isAdmin && b.isAdmin()); } catch (_) {}
+    var editMode = isAdm && !!b.state._adminAttachmentEditMode && b.state.editingTicket && b.state.editingTicket.id === t.id;
     var files = atts.map(function (a, i) {
       var nm = a.name || a.n || a.filename || ('مرفق ' + (i + 1));
       var sz = a.size ? (a.size > 1048576 ? (a.size / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(a.size / 1024)) + ' KB') : '';
-      return '<div class="atd-file"><span class="atd-file__n">' + esc(nm) + (sz ? ' <span class="atd-mono">' + sz + '</span>' : '') + '</span><button type="button" class="atd-btn atd-btn--sm" data-atd-view="' + i + '">عرض</button></div>';
+      return '<div class="atd-file"><span class="atd-file__n">' + esc(nm) + (sz ? ' <span class="atd-mono">' + sz + '</span>' : '') + '</span><button type="button" class="atd-btn atd-btn--sm" data-atd-view="' + i + '">عرض</button>' + (editMode ? '<button type="button" class="atd-btn atd-btn--sm atd-btn--m" onclick="atdAdminAtt(\'del\',\'' + esc(t.id) + '\',' + i + ')">حذف</button>' : '') + '</div>';
     }).join('');
     var sx = st >= 5 ? 4 : st;
     /* إلغاء/تنبيه: نحدد المرحلة التي توقفت عندها التذكرة ونعلّم نقطتها مثل علامة الروبوت */
@@ -248,7 +250,9 @@
       (b.hideObs() ? '' : '<div><div class="atd-mu">الراصد</div><div class="atd-v">' + esc(t._obsName || '-') + '</div></div>') +
       '<div><div class="atd-mu">وقت المخالفة</div><div class="atd-v">' + vtime(t) + '</div></div><div><div class="atd-mu">وقت الرصد</div><div class="atd-v">' + ctime(t) + '</div></div><div><div class="atd-mu">المرحلة الحالية</div><div class="atd-v">' + esc(NAMES[st]) + '</div></div></div>' +
       '<p class="atd-desc">' + esc(t.description || '—') + '</p>' +
-      '<div><h3 class="atd-h3">المرفقات</h3>' + (files || '<div class="atd-mu atd-nofile">لا توجد مرفقات</div>') + '</div>' +
+      '<div><h3 class="atd-h3">المرفقات</h3>' + (files || '<div class="atd-mu atd-nofile">لا توجد مرفقات</div>') +
+      (isAdm ? '<div class="atd-admatt"><button type="button" class="atd-btn atd-btn--sm" onclick="atdAdminAtt(\'toggle\',\'' + esc(t.id) + '\')">' + (editMode ? 'إغلاق التعديل' : 'تعديل المرفقات') + '</button></div>' : '') +
+      (editMode ? '<div class="atd-admatt-ed"><input id="adminAttInput" type="file" multiple onchange="handleFiles(event, \'adminAtt\')"><div id="adminAttFileArea"></div><button type="button" class="atd-btn atd-btn--sm atd-btn--p" onclick="atdAdminAtt(\'save\',\'' + esc(t.id) + '\')">حفظ الإضافة</button></div>' : '') + '</div>' +
       '<ol class="atd-steps" aria-label="مسار التذكرة">' + steps + '</ol>' + replies(t) + act + '</div>';
     tickCd();
     if (S.pendingScroll) { S.pendingScroll = false; setTimeout(function () { try { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_) {} }, 150); }
@@ -316,5 +320,5 @@
     if (tab && tab.classList.contains('active')) b.refilter(); else b.goWorkflow();
     return true;
   }
-  window.AtharTicketsDesign = { select: selectTicket, render: render, sevOf: sevOf, fdate: fdate, esc: esc };
+  window.AtharTicketsDesign = { select: selectTicket, render: render, aside: aside, sevOf: sevOf, fdate: fdate, esc: esc };
 })();

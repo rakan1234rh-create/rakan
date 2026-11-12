@@ -20803,7 +20803,7 @@
           : scope === 'cp' ? 'cpFileArea'
             : scope === 'cpr' ? 'cprFileArea'
               : 'respFileArea';
-        const area = document.getElementById(areaId);
+        const area = (scope === 'adminAtt' && document.querySelector('#atdAside #adminAttFileArea, #atdSheet #adminAttFileArea')) || document.getElementById(areaId);
         if (!area) {
           showToast('تعذّر العثور على منطقة المرفقات', 'error');
           event.target.value = '';
@@ -23397,6 +23397,27 @@
         buildInlineAttachments(state.editingTicket);
       }
 
+      /** واجهة التذاكر الجديدة: تعديل المرفقات (مدير النظام فقط) */
+      function atdAdminAtt(action, id, visIdx) {
+        if (!isSystemAdminForAttachmentEdit()) return;
+        if (!state.editingTicket || String(state.editingTicket.id) !== String(id)) {
+          const row = (state.violations || []).find(v => String(v.id) === String(id));
+          if (!row) return;
+          state.editingTicket = row;
+        }
+        const t = state.editingTicket;
+        if (action === 'toggle') return toggleAdminAttachmentEditor();
+        if (action === 'save') return saveAdminAttachmentEdits();
+        if (action === 'del') {
+          const vis = getVisibleAttachments(t);
+          const raw = parseDbJsonArray(t.attachments);
+          const rawIdx = raw.indexOf(vis[visIdx]);
+          if (rawIdx < 0) return;
+          return adminDeleteAttachment(rawIdx);
+        }
+      }
+      window.atdAdminAtt = atdAdminAtt;
+
       async function adminDeleteAttachment(index) {
         if (!isSystemAdminForAttachmentEdit()) return;
         const t = state.editingTicket;
@@ -23464,6 +23485,7 @@
       }
 
       function buildInlineAttachments(t) {
+        try { window.AtharTicketsDesign && window.AtharTicketsDesign.aside && window.AtharTicketsDesign.aside(); } catch (_) {}
         const c = document.getElementById('tdInlineAttachments');
         if (!c) return;
 
@@ -43192,6 +43214,7 @@
       window.openTicket = openTicket;
       window.__atdBridge = {
         state, STATE_LABELS, violTypeSeverity, getVisibleAttachments, canActOnTicket, shortTicketNum,
+        isAdmin: () => isSystemAdminForAttachmentEdit(),
         hideObs: () => (typeof shouldHideObserverName === 'function' ? shouldHideObserverName() : false),
         isDesktop: () => (typeof isAtharDesktopScreenUi === 'function' && isAtharDesktopScreenUi()),
         refilter: () => filterTickets(),
