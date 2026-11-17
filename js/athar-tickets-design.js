@@ -208,6 +208,7 @@
     if (!t) { el.innerHTML = ''; return; }
     /* منطقة ملفات الرد الحقيقية (#respFileArea) تُنقل داخل اللوحة؛ ننقذها قبل إعادة البناء حتى لا تضيع المرفقات المرفوعة */
     keepResp();
+    try { var fl = (b.state.uploadedFiles && b.state.uploadedFiles.resp) || []; if (S.wait && fl.some(function (f) { return f.prepStatus === 'error'; })) { S.wait = null; if (typeof window.showToast === 'function') window.showToast('فشل رفع أحد المرفقات — أزله أو أعد اختياره ثم أرسل', 'error'); } } catch (_) {}
     var st = stageOf(t), sv = sevOf(t);
     var atts = []; try { atts = b.getVisibleAttachments(t) || []; } catch (_) {}
     var isAdm = false; try { isAdm = !!(b.isAdmin && b.isAdmin()); } catch (_) {}
@@ -250,7 +251,9 @@
         var m = (r.getAttribute('onclick') || '').match(/'([a-z_]+)'/); var act = m ? m[1] : '';
         var lbl = /warning/.test(act) ? 'تنبيه' : /delete|cancel/.test(act) ? 'إلغاء' : /approve|forward|send|pass|emp_reply|sup_/.test(act) ? 'تمرير' : (r.textContent || '').trim();
         var kind = /warning/.test(act) ? 'g' : /delete|cancel/.test(act) ? 'm' : 'p';
-        btns.push('<button type="button" class="atd-btn atd-btn--' + kind + '"' + (prepWait ? ' disabled style="opacity:.55"' : '') + ' data-atd-act="' + i + '">' + esc(lbl) + '</button>');
+        var waiting = !!(S.wait && S.wait.id === t.id && S.wait.i === i);
+        btns.push('<button type="button" class="atd-btn atd-btn--' + kind + '"' + (waiting ? ' disabled aria-busy="true"' : '') + ' data-atd-act="' + i + '">' + (waiting ? '<i class="fas fa-spinner fa-spin" aria-hidden="true"></i> جاري رفع المرفقات…' : esc(lbl)) + '</button>');
+        if (waiting && !prepWait) { S.wait = null; (function (rr) { setTimeout(function () { var ta2 = document.getElementById('atdResp'), real2 = document.getElementById('respText'); if (real2 && ta2) real2.value = ta2.value; rr.click(); }, 0); })(r); }
       });
     }
     var act = btns.length ? '<div class="atd-act"><span class="atd-act__t">إجراء مرحلة ' + esc(NAMES[st]) + '</span><textarea class="atd-ta" id="atdResp" rows="3" placeholder="اكتب الرد أو ملاحظات القرار…">' + esc(S.resp[t.id] || '') + '</textarea><div class="atd-attrow"><button type="button" class="atd-btn atd-btn--sm" data-atd-attach="1"><i class="fas fa-plus" aria-hidden="true"></i> إرفاق مرفقات</button></div><div id="atdRespSlot"></div><div class="atd-act__b">' + btns.join('') + '</div></div>' : '';
@@ -309,7 +312,8 @@
       var ta = document.getElementById('atdResp'), real = document.getElementById('respText');
       if (real && ta) real.value = ta.value;
       var r = document.querySelectorAll('#responseButtons .td-resp-action')[+t.getAttribute('data-atd-act')];
-      if (r) r.click();
+      if (r && r.disabled) { S.wait = { id: S.sel, i: +t.getAttribute('data-atd-act') }; aside(); }
+      else if (r) r.click();
     }
   });
   function syncDates() { var b = B(); if (b && b.setDateRange) b.setDateRange(S.f.from, S.f.to); }
