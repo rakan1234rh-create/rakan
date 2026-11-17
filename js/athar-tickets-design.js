@@ -241,12 +241,14 @@
       return '<li class="atd-step' + (isStop ? ' is-stop' : '') + '"><div class="atd-step__rail"><i class="atd-dot ' + (isStop ? 'is-stop' : done ? 'is-done' : now ? 'is-now' : '') + '"></i><i class="atd-line' + (done ? ' is-done' : '') + '"></i></div><div class="atd-step__t"><div class="' + (now || isStop ? 'is-now' : done ? '' : 'is-off') + '">' + esc(n) + '</div><div class="atd-stl"><div class="atd-mu">' + sub + '</div>' + (now ? cdHtml(t, i) : '') + '</div></div></li>';
     }).join('');
     var btns = [];
-    if (b.state.editingTicket && b.state.editingTicket.id === t.id && S.loading !== t.id) {
+    var canAct = true; try { canAct = !b.canActOnTicket || !!b.canActOnTicket(t); } catch (_) {}
+    if (canAct && b.state.editingTicket && b.state.editingTicket.id === t.id && S.loading !== t.id) {
       var form = document.getElementById('respText'); var wrap = document.getElementById('responseButtons');
       var real = wrap ? wrap.querySelectorAll('.td-resp-action') : [];
       var hidden = form && form.closest('form, .td-resp-form, #respForm') && getComputedStyle(form.closest('form, .td-resp-form, #respForm')).display === 'none';
       if (!hidden) real.forEach(function (r, i) {
-        var prepWait = r.disabled && r.style.opacity === '0.55';
+        var nFiles = 0; try { nFiles = ((b.state.uploadedFiles && b.state.uploadedFiles.resp) || []).length; } catch (_) {}
+        var prepWait = r.disabled && r.style.opacity === '0.55' && r.dataset.submitting !== '1' && nFiles > 0;
         if (r.disabled && !prepWait) return;
         var m = (r.getAttribute('onclick') || '').match(/'([a-z_]+)'/); var act = m ? m[1] : '';
         var lbl = /warning/.test(act) ? 'تنبيه' : /delete|cancel/.test(act) ? 'إلغاء' : /approve|forward|send|pass|emp_reply|sup_/.test(act) ? 'تمرير' : (r.textContent || '').trim();
