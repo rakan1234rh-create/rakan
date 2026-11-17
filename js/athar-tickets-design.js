@@ -249,13 +249,20 @@
       if (!hidden) real.forEach(function (r, i) {
         var nFiles = 0; try { nFiles = ((b.state.uploadedFiles && b.state.uploadedFiles.resp) || []).length; } catch (_) {}
         var prepWait = r.disabled && r.style.opacity === '0.55' && r.dataset.submitting !== '1' && nFiles > 0;
-        if (r.disabled && !prepWait) return;
+        var busy = !!(S.sending && S.sending.id === t.id);
+        var busyNow = busy && ((r.disabled && !prepWait) || Date.now() - S.sending.t0 < 1200);
+        if (r.disabled && !prepWait && !busy) return;
         var m = (r.getAttribute('onclick') || '').match(/'([a-z_]+)'/); var act = m ? m[1] : '';
         var lbl = /warning/.test(act) ? 'تنبيه' : /delete|cancel/.test(act) ? 'إلغاء' : /approve|forward|send|pass|emp_reply|sup_/.test(act) ? 'تمرير' : (r.textContent || '').trim();
         var kind = /warning/.test(act) ? 'g' : /delete|cancel/.test(act) ? 'm' : 'p';
         var waiting = !!(S.wait && S.wait.id === t.id && S.wait.i === i);
+        if (busyNow) {
+          var mine = S.sending.i === i, rt = (r.textContent || '').trim();
+          btns.push('<button type="button" class="atd-btn atd-btn--' + kind + '" disabled aria-busy="' + mine + '" data-atd-act="' + i + '">' + (mine ? '<i class="fas fa-spinner fa-spin" aria-hidden="true"></i> ' + esc(/جاري|انتظار/.test(rt) ? rt : 'جاري الإرسال…') : esc(lbl)) + '</button>');
+          return;
+        }
         btns.push('<button type="button" class="atd-btn atd-btn--' + kind + '"' + (waiting ? ' disabled aria-busy="true"' : '') + ' data-atd-act="' + i + '">' + (waiting ? '<i class="fas fa-spinner fa-spin" aria-hidden="true"></i> جاري رفع المرفقات…' : esc(lbl)) + '</button>');
-        if (waiting && !prepWait) { S.wait = null; (function (rr) { setTimeout(function () { var ta2 = document.getElementById('atdResp'), real2 = document.getElementById('respText'); if (real2 && ta2) real2.value = ta2.value; rr.click(); }, 0); })(r); }
+        if (waiting && !prepWait) { S.wait = null; S.sending = { id: t.id, i: i, t0: Date.now() }; (function (rr) { setTimeout(function () { var ta2 = document.getElementById('atdResp'), real2 = document.getElementById('respText'); if (real2 && ta2) real2.value = ta2.value; rr.click(); }, 0); })(r); }
       });
     }
     var act = btns.length ? '<div class="atd-act"><span class="atd-act__t">إجراء مرحلة ' + esc(NAMES[st]) + '</span><textarea class="atd-ta" id="atdResp" rows="3" placeholder="اكتب الرد أو ملاحظات القرار…">' + esc(S.resp[t.id] || '') + '</textarea><div class="atd-attrow"><button type="button" class="atd-btn atd-btn--sm" data-atd-attach="1"><i class="fas fa-plus" aria-hidden="true"></i> إرفاق مرفقات</button></div><div id="atdRespSlot"></div><div class="atd-act__b">' + btns.join('') + '</div></div>' : '';
@@ -315,9 +322,16 @@
       if (real && ta) real.value = ta.value;
       var r = document.querySelectorAll('#responseButtons .td-resp-action')[+t.getAttribute('data-atd-act')];
       if (r && r.disabled) { S.wait = { id: S.sel, i: +t.getAttribute('data-atd-act') }; aside(); }
-      else if (r) r.click();
+      else if (r) { S.sending = { id: S.sel, i: +t.getAttribute('data-atd-act'), t0: Date.now() }; r.click(); aside(); }
     }
   });
+  setInterval(function () {
+    if (!S.sending) return;
+    var rs = document.querySelectorAll('#responseButtons .td-resp-action'), anyBusy = false;
+    rs.forEach(function (r) { if (r.disabled && !(r.style.opacity === '0.55')) anyBusy = true; });
+    if (!anyBusy && Date.now() - S.sending.t0 > 1500) S.sending = null;
+    try { aside(); } catch (_) {}
+  }, 500);
   function syncDates() { var b = B(); if (b && b.setDateRange) b.setDateRange(S.f.from, S.f.to); }
   document.addEventListener('change', function (e) {
     var k = e.target && e.target.getAttribute && e.target.getAttribute('data-atd-f'); if (!k) return;
