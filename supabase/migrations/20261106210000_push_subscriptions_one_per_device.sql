@@ -12,4 +12,4 @@ begin
 end $$;
 revoke all on function public.athar_push_sub_one_per_device() from public, anon, authenticated;
 drop trigger if exists athar_push_sub_one_per_device_trg on public.push_subscriptions;
-create trigger athar_push_sub_one_per_device_trg after insert or update of endpoint on public.push_subscriptions for each row execute function public.athar_push_sub_one_per_device();
+create trigger athar_push_sub_one_per_device_trg before insert or update of endpoint, device_id on public.push_subscriptions for each row execute function public.athar_push_sub_one_per_device();

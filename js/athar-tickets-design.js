@@ -105,6 +105,7 @@
     var list = all.filter(passes);
     var sel = list.filter(function (t) { return t.id === S.sel; })[0] || list[0] || null;
     S.sel = sel ? sel.id : null;
+    keepResp();
     host.classList.add('atd-host');
     if (!list.length) {
       sheet(false);
@@ -194,11 +195,19 @@
     });
   }
   setInterval(tickCd, 1000);
+  function keepResp() {
+    var keep = document.getElementById('atdKeep');
+    if (!keep) { keep = document.createElement('div'); keep.id = 'atdKeep'; keep.hidden = true; document.body.appendChild(keep); }
+    var ra = document.getElementById('respFileArea');
+    if (ra && ra.parentNode !== keep && ra.closest('#atdAside, #atdSheet')) keep.appendChild(ra);
+  }
   function aside() {
     var b = B(), mob = document.documentElement.classList.contains('mr-mobile-ui');
     var el = mob ? sheetEl() : document.getElementById('atdAside'); if (!el || !b) return;
     var t = (b.state.violations || []).filter(function (v) { return v.id === S.sel; })[0];
     if (!t) { el.innerHTML = ''; return; }
+    /* منطقة ملفات الرد الحقيقية (#respFileArea) تُنقل داخل اللوحة؛ ننقذها قبل إعادة البناء حتى لا تضيع المرفقات المرفوعة */
+    keepResp();
     var st = stageOf(t), sv = sevOf(t);
     var atts = []; try { atts = b.getVisibleAttachments(t) || []; } catch (_) {}
     var isAdm = false; try { isAdm = !!(b.isAdmin && b.isAdmin()); } catch (_) {}
@@ -236,14 +245,15 @@
       var real = wrap ? wrap.querySelectorAll('.td-resp-action') : [];
       var hidden = form && form.closest('form, .td-resp-form, #respForm') && getComputedStyle(form.closest('form, .td-resp-form, #respForm')).display === 'none';
       if (!hidden) real.forEach(function (r, i) {
-        if (r.disabled) return;
+        var prepWait = r.disabled && r.style.opacity === '0.55';
+        if (r.disabled && !prepWait) return;
         var m = (r.getAttribute('onclick') || '').match(/'([a-z_]+)'/); var act = m ? m[1] : '';
         var lbl = /warning/.test(act) ? 'تنبيه' : /delete|cancel/.test(act) ? 'إلغاء' : /approve|forward|send|pass|emp_reply|sup_/.test(act) ? 'تمرير' : (r.textContent || '').trim();
         var kind = /warning/.test(act) ? 'g' : /delete|cancel/.test(act) ? 'm' : 'p';
-        btns.push('<button type="button" class="atd-btn atd-btn--' + kind + '" data-atd-act="' + i + '">' + esc(lbl) + '</button>');
+        btns.push('<button type="button" class="atd-btn atd-btn--' + kind + '"' + (prepWait ? ' disabled style="opacity:.55"' : '') + ' data-atd-act="' + i + '">' + esc(lbl) + '</button>');
       });
     }
-    var act = btns.length ? '<div class="atd-act"><span class="atd-act__t">إجراء مرحلة ' + esc(NAMES[st]) + '</span><textarea class="atd-ta" id="atdResp" rows="3" placeholder="اكتب الرد أو ملاحظات القرار…">' + esc(S.resp[t.id] || '') + '</textarea><div class="atd-act__b">' + btns.join('') + '</div></div>' : '';
+    var act = btns.length ? '<div class="atd-act"><span class="atd-act__t">إجراء مرحلة ' + esc(NAMES[st]) + '</span><textarea class="atd-ta" id="atdResp" rows="3" placeholder="اكتب الرد أو ملاحظات القرار…">' + esc(S.resp[t.id] || '') + '</textarea><div class="atd-attrow"><button type="button" class="atd-btn atd-btn--sm" data-atd-attach="1"><i class="fas fa-plus" aria-hidden="true"></i> إرفاق مرفقات</button></div><div id="atdRespSlot"></div><div class="atd-act__b">' + btns.join('') + '</div></div>' : '';
     el.innerHTML =
       '<div class="atd-sbar"><button type="button" class="atd-back" data-atd-back="1"><i class="fas fa-arrow-right" aria-hidden="true"></i><span>رجوع للقائمة</span></button><button type="button" class="atd-pdf2" data-atd-pdf="1" aria-label="تصدير PDF"><i class="fas fa-file-pdf" aria-hidden="true"></i><span>PDF</span></button></div><div class="atd-sbody"><div class="atd-a-head"><button type="button" class="atd-pdf" data-atd-pdf="1" aria-label="تصدير تقرير المخالفة PDF"><i class="fas fa-file-pdf" aria-hidden="true"></i><span>PDF</span></button><span class="atd-mono atd-kk">TICKET #' + esc(b.shortTicketNum(t.ticket_number)) + '</span><h2 class="atd-h2">' + esc(t.violation_type) + '</h2><div class="atd-a-meta">' + sevChip(sv) + '<span class="atd-mu">' + esc(fdate(t)) + '</span></div></div>' +
       '<div class="atd-info"><div><div class="atd-mu">الموظف</div><div class="atd-v">' + esc(t._empName) + '</div></div><div><div class="atd-mu">الفرع</div><div class="atd-v">' + esc(t._branchName) + '</div></div>' +
@@ -254,6 +264,8 @@
       (isAdm ? '<div class="atd-admatt"><button type="button" class="atd-btn atd-btn--sm" onclick="atdAdminAtt(\'toggle\',\'' + esc(t.id) + '\')">' + (editMode ? 'إغلاق التعديل' : 'تعديل المرفقات') + '</button></div>' : '') +
       (editMode ? '<div class="atd-admatt-ed"><input id="adminAttInput" type="file" multiple onchange="handleFiles(event, \'adminAtt\')"><div id="adminAttFileArea"></div><button type="button" class="atd-btn atd-btn--sm atd-btn--p" onclick="atdAdminAtt(\'save\',\'' + esc(t.id) + '\')">حفظ الإضافة</button></div>' : '') + '</div>' +
       '<ol class="atd-steps" aria-label="مسار التذكرة">' + steps + '</ol>' + replies(t) + act + '</div>';
+    var slot = document.getElementById('atdRespSlot'), raNew = document.getElementById('respFileArea');
+    if (slot && raNew) slot.appendChild(raNew);
     tickCd();
     if (S.pendingScroll) { S.pendingScroll = false; setTimeout(function () { try { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_) {} }, 150); }
   }
@@ -275,7 +287,7 @@
     if (!tab || !tab.classList.contains('active')) sheet(false);
   }, 400);
   document.addEventListener('click', function (e) {
-    var t = e.target.closest && e.target.closest('[data-atd-clear],[data-atd-pop],#atdFilterBtn,[data-atd-pick],[data-atd-view],[data-atd-act],[data-atd-pdf],[data-atd-back]'); if (!t) return;
+    var t = e.target.closest && e.target.closest('[data-atd-clear],[data-atd-pop],#atdFilterBtn,[data-atd-pick],[data-atd-view],[data-atd-act],[data-atd-pdf],[data-atd-back],[data-atd-attach]'); if (!t) return;
     var b = B(); if (!b) return;
     if (t.id === 'atdFilterBtn') { var pp = document.getElementById('atdFilterPop'); pp.hidden = !pp.hidden; if (!pp.hidden) fillPop(S.base || []); }
     else if (t.hasAttribute('data-atd-pop')) { document.getElementById('atdFilterPop').hidden = true; }
@@ -286,6 +298,7 @@
       syncDates(); S.sel = null; b.refilter(); if (!document.getElementById('atdFilterPop').hidden) fillPop(S.base || []);
     }
     else if (t.hasAttribute('data-atd-back')) { sheet(false); }
+    else if (t.hasAttribute('data-atd-attach')) { var fi = document.getElementById('resp-files'); if (fi) fi.click(); }
     else if (t.hasAttribute('data-atd-pick')) { S.sel = t.getAttribute('data-atd-pick'); b.refilter(); sheet(true); }
     else if (t.hasAttribute('data-atd-pdf')) {
       var tk = (b.state.violations || []).filter(function (v) { return v.id === S.sel; })[0];

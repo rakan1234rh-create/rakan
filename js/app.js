@@ -19511,6 +19511,7 @@
             else if (hasError) btn.title = 'أزل المرفق الفاشل أو أعد اختياره';
             else btn.title = btn.getAttribute('aria-label') || '';
           });
+          try { window.AtharTicketsDesign && window.AtharTicketsDesign.aside && window.AtharTicketsDesign.aside(); } catch (_) {}
         }
 
         if (scope === 'cp') {

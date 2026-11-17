@@ -150,3 +150,5 @@ html:root.mr-desktop-ui.mr-desktop-ui #tab-workflow #wfClassicToolbar .figma-sea
 .atd-auto{font-size:12px;opacity:.7;margin-inline-start:4px;vertical-align:middle}
 .atd-admatt{margin-top:10px}
 .atd-admatt-ed{display:flex;flex-direction:column;gap:10px;margin-top:10px;padding:12px;border:1px solid var(--t-ln);border-radius:4px}
+.atd-attrow{margin:8px 0}
+#atdRespSlot .file-list,#atdRespSlot{display:block}
