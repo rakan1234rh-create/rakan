@@ -1689,7 +1689,15 @@
         },
         // تطبيع الإيميل (lowercase + trim) لمنع تكرارات وهمية
         normalizeEmail(s) {
-          return s ? String(s).trim().toLowerCase() : '';
+          if (!s) return '';
+          let t = String(s);
+          try { t = t.normalize('NFKC'); } catch (_) { /* noop */ }
+          // أرقام عربية/فارسية من لوحة المفاتيح العربية → أرقام لاتينية
+          t = t.replace(/[\u0660-\u0669]/g, (c) => String(c.charCodeAt(0) - 0x0660))
+               .replace(/[\u06F0-\u06F9]/g, (c) => String(c.charCodeAt(0) - 0x06F0));
+          // محارف الاتجاه/العرض الصفري التي تضيفها اللصق/الإكمال التلقائي في الواجهات العربية
+          t = t.replace(/[\u00A0\u00AD\u061C\u180E\u200B-\u200F\u202A-\u202E\u2060-\u2064\u2066-\u2069\uFEFF]/g, '');
+          return t.trim().toLowerCase();
         },
         /** تطبيع جوال سعودي — يعالج حذف Excel للصفر الأول أو صيغة 966 / 5XXXXXXXX */
         normalizePhone(s) {
