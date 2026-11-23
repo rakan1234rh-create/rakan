@@ -223,8 +223,8 @@
     }
     /* 3) الموظف */
     if (path === 3 || md === 'reject') add('الموظف', 'skip', '<span class="atd-skip-lbl">تم التخطي</span>لم تُحَل إليه المخالفة');
-    else if (ph === 'emp_reply') add('الموظف', 'now', (path === 2 ? '<span class="atd-ret"><i class="fas fa-rotate-left" aria-hidden="true"></i>عادت للموظف</span> بعد اعتماد الإدارة' : 'بانتظار الرد'), cdV2(t, 24, false));
-    else if (past(['mgr_final', 'aud_final'])) add('الموظف', 'done', (path === 2 ? '<span class="atd-ret"><i class="fas fa-rotate-left" aria-hidden="true"></i>عادت للموظف</span> ردّ بعد اعتماد الإدارة' : 'تم') + autoMark(t, 0));
+    else if (ph === 'emp_reply') add('الموظف', 'now', (path === 2 ? 'بانتظار الرد بعد اعتماد الإدارة' : 'بانتظار الرد بعد اعتماد المشرف'), cdV2(t, 24, false));
+    else if (past(['mgr_final', 'aud_final'])) add('الموظف', 'done', (path === 2 ? 'بعد اعتماد الإدارة' : 'بعد اعتماد المشرف') + autoMark(t, 0));
     else add('الموظف', 'todo', ph === 'mgr_review' ? 'إن اعتمدت الإدارة المخالفة' : '');
     /* 4) القرار الإداري النهائي — لا يمر به مسار الرفض المبدئي */
     if (!supRej) {
