@@ -152,3 +152,9 @@ html:root.mr-desktop-ui.mr-desktop-ui #tab-workflow #wfClassicToolbar .figma-sea
 .atd-admatt-ed{display:flex;flex-direction:column;gap:10px;margin-top:10px;padding:12px;border:1px solid var(--t-ln);border-radius:4px}
 .atd-attrow{margin:8px 0}
 #atdRespSlot .file-list,#atdRespSlot{display:block}
+
+/* دورة العمل الجديدة: خطوة متخطّاة / عودة للموظف */
+.atd-dot.is-skip{background:transparent;border:2px dashed var(--t-ct)}
+.atd-step.is-skip .atd-step__t>div:first-child{color:var(--t-mu)}
+.atd-skip-lbl{display:inline-block;border:1px dashed var(--t-ct);border-radius:999px;padding:0 8px;margin-inline-end:6px;font-size:11px;line-height:18px}
+.atd-ret{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--t-fg);border-radius:999px;padding:0 8px;margin-inline-end:6px;font-size:11px;line-height:18px;font-weight:600;color:var(--t-fg)}

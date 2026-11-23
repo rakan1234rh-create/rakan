@@ -25151,14 +25151,14 @@
 
         const WF2_WARN_TXT = 'تنبيه إداري — اكتفاء بالتنبيه (بدون أثر على النقاط)';
         const wf2 = {
-          wf2_sup_approve: { v2: true, phase: 'sup_decision', decision: 'approve', newState: 'emp', statusText: 'بانتظار رد الموظف', fieldKey: 'supervisor_reply', actionLabel: 'اعتماد مبدئي' },
-          wf2_sup_reject: { v2: true, phase: 'sup_decision', decision: 'reject', newState: 'mgt', statusText: 'بانتظار قرار المدير على الرفض المبدئي', fieldKey: 'supervisor_reply', actionLabel: 'رفض مبدئي' },
-          wf2_mgr_approve: { v2: true, phase: 'mgr_review', decision: 'approve', newState: 'emp', statusText: 'بانتظار رد الموظف', fieldKey: 'management_reply', actionLabel: 'اعتماد المخالفة (بعد الرفض المبدئي)' },
-          wf2_mgr_reject: { v2: true, phase: 'mgr_review', decision: 'reject', newState: 'aud', statusText: 'بانتظار الرقابة الداخلية', fieldKey: 'management_reply', actionLabel: 'رفض المخالفة' },
+          wf2_sup_approve: { v2: true, phase: 'sup_decision', decision: 'approve', newState: 'emp', statusText: 'بانتظار رد الموظف', fieldKey: 'supervisor_reply', actionLabel: 'اعتماد مبدئي', reasonNote: true },
+          wf2_sup_reject: { v2: true, phase: 'sup_decision', decision: 'reject', newState: 'mgt', statusText: 'بانتظار قرار المدير على الرفض المبدئي', fieldKey: 'supervisor_reply', actionLabel: 'رفض مبدئي', reasonNote: true },
+          wf2_mgr_approve: { v2: true, phase: 'mgr_review', decision: 'approve', newState: 'emp', statusText: 'بانتظار رد الموظف', fieldKey: 'management_reply', actionLabel: 'اعتماد الإدارة للمخالفة', reasonNote: true },
+          wf2_mgr_reject: { v2: true, phase: 'mgr_review', decision: 'reject', newState: 'aud', statusText: 'بانتظار الرقابة الداخلية', fieldKey: 'management_reply', actionLabel: 'رفض الإدارة للمخالفة', reasonNote: true },
           wf2_emp_reply: { v2: true, phase: 'emp_reply', decision: 'reply', newState: Number(t.wf_path) === 2 ? 'aud' : 'mgt', statusText: Number(t.wf_path) === 2 ? 'بانتظار الرقابة الداخلية' : 'بانتظار القرار النهائي للمدير', fieldKey: 'employee_reply', actionLabel: 'رد الموظف' },
-          wf2_fin_approve: { v2: true, phase: 'mgr_final', decision: 'approve', newState: 'aud', statusText: 'بانتظار الرقابة الداخلية', fieldKey: 'management_reply', actionLabel: 'اعتماد نهائي' },
-          wf2_fin_warning: { v2: true, phase: 'mgr_final', decision: 'warning', newState: 'aud', statusText: 'بانتظار الرقابة الداخلية', fieldKey: 'management_reply', actionLabel: 'اكتفاء بالتنبيه (تنبيه المرة الأولى)' },
-          wf2_fin_reject: { v2: true, phase: 'mgr_final', decision: 'reject', newState: 'aud', statusText: 'بانتظار الرقابة الداخلية', fieldKey: 'management_reply', actionLabel: 'إلغاء (الإدارة)' },
+          wf2_fin_approve: { v2: true, phase: 'mgr_final', decision: 'approve', newState: 'aud', statusText: 'بانتظار الرقابة الداخلية', fieldKey: 'management_reply', actionLabel: 'اعتماد نهائي', reasonNote: true },
+          wf2_fin_warning: { v2: true, phase: 'mgr_final', decision: 'warning', newState: 'aud', statusText: 'بانتظار الرقابة الداخلية', fieldKey: 'management_reply', actionLabel: 'اكتفاء بالتنبيه (تنبيه المرة الأولى)', reasonNote: true },
+          wf2_fin_reject: { v2: true, phase: 'mgr_final', decision: 'reject', newState: 'aud', statusText: 'بانتظار الرقابة الداخلية', fieldKey: 'management_reply', actionLabel: 'إلغاء المخالفة (قرار إداري)', reasonNote: true },
         };
         let tr = wf2[action] || transitions[action];
         if (typeof tr === 'function') tr = tr();
@@ -25192,7 +25192,7 @@
           user: logUser,
           role: logRole,
           action: tr.actionLabel,
-          note: text
+          note: tr.reasonNote ? 'السبب: ' + text : text
         };
 
         const respBtns = Array.from(document.querySelectorAll('.td-resp-action'));

@@ -201,6 +201,50 @@
     var ra = document.getElementById('respFileArea');
     if (ra && ra.parentNode !== keep && ra.closest('#atdAside, #atdSheet')) keep.appendChild(ra);
   }
+  /* دورة العمل الجديدة: مراحل ديناميكية بحسب المسار (1 اعتماد مبدئي / 2 رفض مبدئي ثم اعتماد الإدارة / 3 رفض الإدارة) */
+  function cdV2(t, limit, hideForEmp) {
+    if (hideForEmp) { var rl = ''; try { rl = String((B().state.currentUser || {}).role || ''); } catch (_) {} if (rl === 'employee' || rl === 'branch_manager') return ''; }
+    if (!t.wf_due_at) return '';
+    return '<div class="atd-cd" data-start="" data-deadline="' + esc(t.wf_due_at) + '" data-limit="' + limit + '"><span class="atd-cd__l">متبقي</span><span class="atd-cd__v atd-mono" dir="ltr">--:--:--</span><span class="atd-cd__bar"><i></i></span></div>';
+  }
+  function v2Steps(t, st) {
+    var ph = t.wf_phase || '', path = Number(t.wf_path) || 0, sd = t.wf_sup_decision || '', md = t.wf_mgr_decision || '';
+    var closed = st >= 5, out = [];
+    function add(n, k, sub, cd) { out.push({ n: n, k: k, sub: sub || '', cd: cd || '' }); }
+    var supRej = sd === 'reject' || path === 2 || path === 3;
+    var past = function (list) { return closed || list.indexOf(ph) >= 0; };
+    /* 1) المشرف */
+    if (ph === 'sup_decision') add('المشرف', 'now', 'بانتظار القرار المبدئي', cdV2(t, 48, true));
+    else add('المشرف', 'done', (sd === 'reject' ? 'رفض مبدئي' : sd === 'approve' ? 'اعتماد مبدئي' : 'تم تمريرها تلقائيًا') + autoMark(t, 1));
+    /* 2) مراجعة المدير (عند الرفض المبدئي فقط) */
+    if (supRej) {
+      if (ph === 'mgr_review') add('مراجعة المدير', 'now', 'بانتظار قرار الإدارة على الرفض المبدئي');
+      else add('مراجعة المدير', 'done', md === 'reject' ? 'رفضت المخالفة' : 'اعتمدت المخالفة');
+    }
+    /* 3) الموظف */
+    if (path === 3 || md === 'reject') add('الموظف', 'skip', '<span class="atd-skip-lbl">تم التخطي</span>لم تُحَل إليه المخالفة');
+    else if (ph === 'emp_reply') add('الموظف', 'now', (path === 2 ? '<span class="atd-ret"><i class="fas fa-rotate-left" aria-hidden="true"></i>عادت للموظف</span> بعد اعتماد الإدارة' : 'بانتظار الرد'), cdV2(t, 24, false));
+    else if (past(['mgr_final', 'aud_final'])) add('الموظف', 'done', (path === 2 ? '<span class="atd-ret"><i class="fas fa-rotate-left" aria-hidden="true"></i>عادت للموظف</span> ردّ بعد اعتماد الإدارة' : 'تم') + autoMark(t, 0));
+    else add('الموظف', 'todo', ph === 'mgr_review' ? 'إن اعتمدت الإدارة المخالفة' : '');
+    /* 4) القرار الإداري النهائي — لا يمر به مسار الرفض المبدئي */
+    if (!supRej) {
+      if (ph === 'mgr_final') add('القرار الإداري', 'now', 'بانتظار القرار النهائي');
+      else if (past(['aud_final'])) add('القرار الإداري', 'done', 'تم');
+      else add('القرار الإداري', 'todo', '');
+    }
+    /* 5) الرقابة الداخلية */
+    if (ph === 'aud_final') add('إدارة الرقابة الداخلية', 'now', 'بانتظار الإجراء');
+    else if (closed) add('إدارة الرقابة الداخلية', 'done', 'تم');
+    else add('إدارة الرقابة الداخلية', 'todo', '');
+    /* 6) النتيجة */
+    if (st === 6 || st === 7) add(st === 6 ? 'تنبيه إداري' : 'ملغاة', 'stop', '<span class="atd-stop atd-stop--' + (st === 6 ? 'warn' : 'cancel') + '"><i class="fas ' + (st === 6 ? 'fa-bell' : 'fa-ban') + '" aria-hidden="true"></i>' + (st === 6 ? 'تنبيه' : 'إلغاء') + '</span>');
+    else if (closed) add(NAMES[st] || 'معتمدة', 'now', 'أُغلقت التذكرة');
+    else add('معتمدة', 'todo', '');
+    return out.map(function (x) {
+      var dot = x.k === 'done' ? 'is-done' : x.k === 'now' ? 'is-now' : x.k === 'stop' ? 'is-stop' : x.k === 'skip' ? 'is-skip' : '';
+      return '<li class="atd-step' + (x.k === 'stop' ? ' is-stop' : '') + (x.k === 'skip' ? ' is-skip' : '') + '"><div class="atd-step__rail"><i class="atd-dot ' + dot + '"></i><i class="atd-line' + (x.k === 'done' ? ' is-done' : '') + '"></i></div><div class="atd-step__t"><div class="' + (x.k === 'now' || x.k === 'stop' ? 'is-now' : x.k === 'done' ? '' : 'is-off') + '">' + esc(x.n) + '</div><div class="atd-stl"><div class="atd-mu">' + x.sub + '</div>' + x.cd + '</div></div></li>';
+    }).join('');
+  }
   function aside() {
     var b = B(), mob = document.documentElement.classList.contains('mr-mobile-ui');
     var el = mob ? sheetEl() : document.getElementById('atdAside'); if (!el || !b) return;
@@ -229,7 +273,7 @@
       if (!sc) stopIdx = 2;
       sx = stopIdx;
     }
-    var steps = STEPS.map(function (n, i) {
+    var steps = Number(t.workflow_version) === 2 ? v2Steps(t, st) : STEPS.map(function (n, i) {
       var isStop = stopIdx >= 0 && i === stopIdx;
       var after = stopIdx >= 0 && i > stopIdx;
       var done = stopIdx >= 0 ? i < stopIdx : i < sx, now = stopIdx >= 0 ? false : i === sx;
@@ -253,8 +297,9 @@
         var busyNow = busy && ((r.disabled && !prepWait) || Date.now() - S.sending.t0 < 1200);
         if (r.disabled && !prepWait && !busy) return;
         var m = (r.getAttribute('onclick') || '').match(/'([a-z_]+)'/); var act = m ? m[1] : '';
-        var lbl = /warning/.test(act) ? 'تنبيه' : /delete|cancel/.test(act) ? 'إلغاء' : /approve|forward|send|pass|emp_reply|sup_/.test(act) ? 'تمرير' : (r.textContent || '').trim();
-        var kind = /warning/.test(act) ? 'g' : /delete|cancel/.test(act) ? 'm' : 'p';
+        var isW2 = /^wf2_/.test(act);
+        var lbl = isW2 ? (r.textContent || '').trim() : /warning/.test(act) ? 'تنبيه' : /delete|cancel/.test(act) ? 'إلغاء' : /approve|forward|send|pass|emp_reply|sup_/.test(act) ? 'تمرير' : (r.textContent || '').trim();
+        var kind = /warning/.test(act) ? 'g' : /delete|cancel|reject/.test(act) ? 'm' : 'p';
         var waiting = !!(S.wait && S.wait.id === t.id && S.wait.i === i);
         if (busyNow) {
           var mine = S.sending.i === i, rt = (r.textContent || '').trim();
