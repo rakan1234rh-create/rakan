@@ -17473,6 +17473,56 @@
         }
       }
 
+      /** الدورة الجديدة: الرسالة تذهب للمشرف (لا للموظف) وبتفاصيل المخالفة كاملة. */
+      async function fetchViolationSupervisorContact(employeeId) {
+        const id = String(employeeId || '').trim();
+        if (!id) return { name: '', phone: '' };
+        try {
+          const { data, error } = await sb.rpc('get_violation_supervisor_contact', { p_employee_id: id });
+          if (error) {
+            if (isAtharDebugLog()) console.warn('[whatsapp] supervisor rpc', error);
+            return { name: '', phone: '' };
+          }
+          const row = Array.isArray(data) ? data[0] : data;
+          return { name: String(row?.name || '').trim(), phone: String(row?.phone || '').trim() };
+        } catch (e) {
+          if (isAtharDebugLog()) console.warn('[whatsapp] supervisor rpc', e);
+          return { name: '', phone: '' };
+        }
+      }
+
+      function buildSupervisorWhatsAppText(d) {
+        const clean = (x) => String(x || '').trim().replace(/\s+/g, ' ') || '—';
+        const sup = String(d.supervisorName || '').trim().replace(/\s+/g, ' ');
+        return [
+          sup ? `مرحباً ${sup}،` : 'مرحباً،',
+          'تم رصد مخالفة جديدة بانتظار قراركم المبدئي (اعتماد أو رفض مع ذكر السبب):',
+          `رقم المخالفة: ${shortTicketNum(d.ticketNumber)}`,
+          `الموظف: ${clean(d.employeeName)}`,
+          `الفرع: ${clean(d.branchName)}`,
+          `التاريخ: ${clean(d.date)}`,
+          `الوقت: ${d.time ? formatTime12(d.time) : '—'}`,
+          `نوع المخالفة: ${clean(d.violationType)}`,
+          'يرجى اتخاذ القرار عبر تطبيق أثر خلال 48 ساعة.',
+          'هذه رسالة تلقائية من نظام أثر.'
+        ].join('\n');
+      }
+
+      async function openWhatsAppToSupervisorAfterViolation(d) {
+        const c = await fetchViolationSupervisorContact(d.employeeId);
+        const digits = phoneToWhatsAppDigits(c.phone);
+        if (!digits || !/^\d{10,15}$/.test(digits)) {
+          showToast('لا يوجد جوال محفوظ للمشرف — تعذّر تجهيز رابط واتساب', 'warning');
+          return false;
+        }
+        const text = buildSupervisorWhatsAppText({ ...d, supervisorName: c.name });
+        return showViolationWhatsAppBar(
+          `https://wa.me/${digits}?text=${encodeURIComponent(text)}`,
+          shortTicketNum(d.ticketNumber),
+          'المشرف'
+        );
+      }
+
       function buildViolationWhatsAppText(ticketNumber, violationType, employeeName) {
         const ticket = shortTicketNum(ticketNumber);
         const vType = String(violationType || '—').trim() || '—';
@@ -17507,7 +17557,7 @@
        * شريط مستطيل أعلى صفحة رصد المخالفة (نفس الصفحة — بلا تنقل).
        * رابط wa.me حقيقي + زر إغلاق X.
        */
-      function showViolationWhatsAppBar(url, ticketLabel) {
+      function showViolationWhatsAppBar(url, ticketLabel, recipientLabel) {
         if (!url || !/^https:\/\/wa\.me\/\d+\?text=/.test(url)) return false;
         dismissViolationWhatsAppBar();
 
@@ -17563,7 +17613,7 @@
         const sub = document.createElement('div');
         sub.style.cssText = 'font-size:12px;color:var(--text3, #6b7280);margin-top:2px';
         const ticketTxt = ticketLabel ? ` للتذكرة ${ticketLabel}` : '';
-        sub.textContent = `اضغط «فتح واتساب» لإرسال الرسالة جاهزة${ticketTxt}.`;
+        sub.textContent = `اضغط «فتح واتساب» لإرسال الرسالة${recipientLabel ? ' إلى ' + recipientLabel : ''} جاهزة${ticketTxt}.`;
         textWrap.appendChild(title);
         textWrap.appendChild(sub);
 
@@ -17746,6 +17796,7 @@
         const originalBtnText = submitBtn ? submitBtn.innerHTML : '';
         let createdTicketId = null;
         let createdTicketNumber = '';
+        let createdIsV2 = false;
         if (submitBtn) {
           submitBtn.dataset.submitting = '1';
           submitBtn.disabled = true;
@@ -17824,6 +17875,7 @@
           const officialNumber = ticketData.ticket_number;
           createdTicketId = ticketData.id;
           createdTicketNumber = officialNumber;
+          createdIsV2 = isWf2(ticketData);
 
           // الخطوة 3: نقل الملفات إلى المجلد النهائي قبل إظهار النجاح (تجنّب 404 على مسار temp_)
           const movedAtts = await moveAttachmentsToFinalFolder(
@@ -17848,7 +17900,17 @@
           showToast('تم إصدار التذكرة ' + shortTicketNum(officialNumber) + ' بنجاح ✓', 'success');
           notifyViolationPushAfterInsert(ticketData);
           // الدورة الجديدة: الموظف لا يُبلَّغ إلا عند وصول المخالفة إليه
-          if (!isWf2(ticketData)) {
+          if (isWf2(ticketData)) {
+          await openWhatsAppToSupervisorAfterViolation({
+            employeeId: emp.id,
+            ticketNumber: officialNumber,
+            employeeName: emp.name || emp.fullName || '',
+            branchName: branch?.name || '',
+            date,
+            time,
+            violationType: type
+          });
+          } else {
           // ابقَ في صفحة رصد المخالفة — شريط واتساب مستطيل أعلى نفس الصفحة (بلا goTab)
           await openWhatsAppAfterViolation({
             phone: empPhone,
@@ -17878,7 +17940,17 @@
             if (state.uploadSessions) state.uploadSessions.nt = null;
             try { resetNewTicket(); } catch (_) { /* noop */ }
             try {
-              await openWhatsAppAfterViolation({
+              if (createdIsV2) {
+                await openWhatsAppToSupervisorAfterViolation({
+                  employeeId: emp.id,
+                  ticketNumber: createdTicketNumber,
+                  employeeName: emp.name || emp.fullName || '',
+                  branchName: branch?.name || '',
+                  date,
+                  time,
+                  violationType: type
+                });
+              } else await openWhatsAppAfterViolation({
                 phone: empPhone,
                 employeeId: emp.id,
                 ticketNumber: createdTicketNumber,
