@@ -26337,6 +26337,8 @@
         if (!v) return true;
         if (v.state === 'draft' || v.state === 'uploading') return true;
         if (v.state === 'Warning_Issued') return true;
+        // الدورة الجديدة: لا تُحتسب النقاط قبل إغلاق الرقابة الداخلية
+        if (Number(v.workflow_version) === 2 && v.state !== 'closed') return true;
         const st = (v.status_text || '').trim();
         if (v.state === 'closed') {
           if (/تنبيه|اكتفاء بالتنبيه|Warning_Issued/i.test(st)) return true;
