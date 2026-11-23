@@ -1823,6 +1823,8 @@
         'employee_reply', 'supervisor_reply', 'audit_reply', 'management_reply', 'hr_reply',
         'auto_forwarded_emp', 'auto_forwarded_sup',
         'emp_forward_after', 'sup_forward_after',
+        'workflow_version', 'wf_phase', 'wf_path', 'wf_due_at', 'employee_visible',
+        'wf_sup_decision', 'wf_sup_reason', 'wf_mgr_decision', 'wf_mgr_reason', 'wf_final_decision', 'wf_final_reason',
       ].join(',');
       const MOB_VIOLATION_SELECT = VIOLATION_LIST_SELECT;
       const TICKET_DETAIL_EXTRA_SELECT = [
@@ -1831,6 +1833,8 @@
         'source_role', 'updated_at',
         'auto_forwarded_emp', 'auto_forwarded_sup',
         'emp_forward_after', 'sup_forward_after',
+        'workflow_version', 'wf_phase', 'wf_path', 'wf_due_at', 'employee_visible',
+        'wf_sup_decision', 'wf_sup_reason', 'wf_mgr_decision', 'wf_mgr_reason', 'wf_final_decision', 'wf_final_reason',
       ].join(',');
       const MOB_VIOLATION_TYPES_SELECT = 'id,name,category,severity,weight,description';
       /** أعمدة مختصرة للديسكتوب — نفس نمط الجوال لتقليل egress */
@@ -8735,9 +8739,25 @@
       /**
        * صلاحيات الإجراء على تذكرة معينة في الحالة الحالية
        */
+      /** دورة العمل الجديدة (قرار المشرف/المدير بسبب إلزامي) */
+      function isWf2(t) { return !!t && Number(t.workflow_version) === 2; }
+
+      function wf2CanAct(t) {
+        const { id, role } = state.currentUser;
+        const normRole = normalizeUserRole(role);
+        if (normRole === 'admin' || hasPermission('act_all_tickets')) return true;
+        const ph = t.wf_phase;
+        if (ph === 'sup_decision') return hasPermission('act_as_supervisor') && normRole === 'supervisor' && (state.currentUser.supervisedBranches || []).includes(t.branch_id);
+        if (ph === 'mgr_review' || ph === 'mgr_final') return hasPermission('act_as_manager') && normRole === 'manager';
+        if (ph === 'emp_reply') return hasPermission('respond_own_ticket') && (normRole === 'employee' || normRole === 'branch_manager') && t.employee_id === id;
+        if (ph === 'aud_final') return hasPermission('act_as_auditor') && normRole === 'auditor';
+        return false;
+      }
+
       function canActOnTicket(t) {
         if (!state.currentUser || !t) return false;
         if (t.state === 'closed' || t.state === 'Warning_Issued') return false;
+        if (isWf2(t)) return wf2CanAct(t);
 
         const { id, role } = state.currentUser;
         const normRole = normalizeUserRole(role);
@@ -17827,6 +17847,8 @@
           renderNotifications();
           showToast('تم إصدار التذكرة ' + shortTicketNum(officialNumber) + ' بنجاح ✓', 'success');
           notifyViolationPushAfterInsert(ticketData);
+          // الدورة الجديدة: الموظف لا يُبلَّغ إلا عند وصول المخالفة إليه
+          if (!isWf2(ticketData)) {
           // ابقَ في صفحة رصد المخالفة — شريط واتساب مستطيل أعلى نفس الصفحة (بلا goTab)
           await openWhatsAppAfterViolation({
             phone: empPhone,
@@ -17835,6 +17857,7 @@
             violationType: type,
             employeeName: emp.name || emp.fullName || ''
           });
+          }
           
         } catch (err) {
           if (isAtharDebugLog()) console.error('[Sync] Critical Error:', err);
@@ -24979,7 +25002,36 @@
         // Path A: من الراصد → موظف → مشرف → إدارة → رقابة داخلية
         // Path B: من المشرف (يبدأ مباشرة من الإدارة ثم الرقابة الداخلية)
 
-        if (wfState === 'emp' && (actAsAdmin || (hasPermission('respond_own_ticket') && (role === 'employee' || role === 'branch_manager') && t.employee_id === meId))) {
+        if (isWf2(t) && t.wf_phase !== 'aud_final') {
+          const ph = t.wf_phase;
+          if (ph === 'sup_decision') {
+            buttons.push({ act: 'wf2_sup_approve', label: 'اعتماد مبدئي', cls: 'btn-success', icon: 'fa-check' });
+            buttons.push({ act: 'wf2_sup_reject', label: 'رفض مبدئي', cls: 'btn-danger', icon: 'fa-times' });
+            respTextarea.placeholder = 'اكتب سبب قرارك… (إلزامي)';
+          } else if (ph === 'mgr_review') {
+            buttons.push({ act: 'wf2_mgr_approve', label: 'اعتماد المخالفة', cls: 'btn-success', icon: 'fa-check', title: 'اعتماد المخالفة رغم الرفض المبدئي' });
+            buttons.push({ act: 'wf2_mgr_reject', label: 'رفض المخالفة', cls: 'btn-danger', icon: 'fa-times', title: 'تأييد الرفض المبدئي وإحالتها للرقابة' });
+            respTextarea.placeholder = 'اكتب سبب قرارك… (إلزامي)';
+          } else if (ph === 'emp_reply') {
+            buttons.push({ act: 'wf2_emp_reply', label: RESP_SEND_LABEL, cls: 'btn-primary', icon: 'fa-paper-plane' });
+            respTextarea.placeholder = 'اكتب ردك على المخالفة… (مطلوب)';
+          } else if (ph === 'mgr_final') {
+            const typeRecW = state.violationTypes.find(x => x.name === t.violation_type);
+            const vTypeIdW = t.violation_type_id || typeRecW?.id || null;
+            const blockWarnW = employeeHadWarningSameTypeThisCalendarMonth(
+              t.employee_id, vTypeIdW, t.violation_type, t.created_at || t.violation_date, t.id, state.violations || []
+            );
+            buttons.push({ act: 'wf2_fin_approve', label: 'اعتماد', cls: 'btn-success', icon: 'fa-check', title: 'اعتماد نهائي' });
+            if (!blockWarnW) {
+              buttons.push({ act: 'wf2_fin_warning', label: 'تنبيه', cls: 'btn-warning', icon: 'fa-bell', title: 'اكتفاء بالتنبيه (تنبيه المرة الأولى)' });
+            } else {
+              blockedWarnStrip = '<div class="td-resp-blocked-wrap"><button type="button" class="btn" disabled style="opacity:.7;cursor:not-allowed;width:100%;border-style:dashed;min-height:34px;font-size:11px">مخالفة مكررة هذا الشهر — يستوجب الخصم</button></div>';
+            }
+            buttons.push({ act: 'wf2_fin_reject', label: 'إلغاء', cls: 'btn-danger', icon: 'fa-times', title: 'إلغاء (قرار إداري)' });
+            respTextarea.placeholder = 'اكتب قرارك النهائي وسببه… (إلزامي)';
+          }
+        }
+        else if (wfState === 'emp' && (actAsAdmin || (hasPermission('respond_own_ticket') && (role === 'employee' || role === 'branch_manager') && t.employee_id === meId))) {
           buttons.push({ act: 'respond', label: RESP_SEND_LABEL, cls: 'btn-primary', icon: 'fa-paper-plane' });
           respTextarea.placeholder = 'اكتب ردك على المخالفة… (مطلوب)';
         }
@@ -25097,9 +25149,31 @@
           hr_warning: { newState: 'Warning_Issued', statusText: 'تنبيه إداري — اكتفاء بالتنبيه (بدون أثر على النقاط)', fieldKey: 'hr_reply', actionLabel: 'اكتفاء بالتنبيه (تنبيه المرة الأولى)' },
         };
 
-        let tr = transitions[action];
+        const WF2_WARN_TXT = 'تنبيه إداري — اكتفاء بالتنبيه (بدون أثر على النقاط)';
+        const wf2 = {
+          wf2_sup_approve: { v2: true, phase: 'sup_decision', decision: 'approve', newState: 'emp', statusText: 'بانتظار رد الموظف', fieldKey: 'supervisor_reply', actionLabel: 'اعتماد مبدئي' },
+          wf2_sup_reject: { v2: true, phase: 'sup_decision', decision: 'reject', newState: 'mgt', statusText: 'بانتظار قرار المدير على الرفض المبدئي', fieldKey: 'supervisor_reply', actionLabel: 'رفض مبدئي' },
+          wf2_mgr_approve: { v2: true, phase: 'mgr_review', decision: 'approve', newState: 'emp', statusText: 'بانتظار رد الموظف', fieldKey: 'management_reply', actionLabel: 'اعتماد المخالفة (بعد الرفض المبدئي)' },
+          wf2_mgr_reject: { v2: true, phase: 'mgr_review', decision: 'reject', newState: 'aud', statusText: 'بانتظار الرقابة الداخلية', fieldKey: 'management_reply', actionLabel: 'رفض المخالفة' },
+          wf2_emp_reply: { v2: true, phase: 'emp_reply', decision: 'reply', newState: Number(t.wf_path) === 2 ? 'aud' : 'mgt', statusText: Number(t.wf_path) === 2 ? 'بانتظار الرقابة الداخلية' : 'بانتظار القرار النهائي للمدير', fieldKey: 'employee_reply', actionLabel: 'رد الموظف' },
+          wf2_fin_approve: { v2: true, phase: 'mgr_final', decision: 'approve', newState: 'aud', statusText: 'بانتظار الرقابة الداخلية', fieldKey: 'management_reply', actionLabel: 'اعتماد نهائي' },
+          wf2_fin_warning: { v2: true, phase: 'mgr_final', decision: 'warning', newState: 'aud', statusText: 'بانتظار الرقابة الداخلية', fieldKey: 'management_reply', actionLabel: 'اكتفاء بالتنبيه (تنبيه المرة الأولى)' },
+          wf2_fin_reject: { v2: true, phase: 'mgr_final', decision: 'reject', newState: 'aud', statusText: 'بانتظار الرقابة الداخلية', fieldKey: 'management_reply', actionLabel: 'إلغاء (الإدارة)' },
+        };
+        let tr = wf2[action] || transitions[action];
         if (typeof tr === 'function') tr = tr();
+        // الرقابة الداخلية في الدورة الجديدة: إغلاق مباشر بحسب قرار الإدارة
+        if (isWf2(t) && action === 'aud_approve') {
+          const outcome = Number(t.wf_path) === 3 ? 'reject' : (Number(t.wf_path) === 2 ? 'approve' : (t.wf_final_decision || 'approve'));
+          tr = outcome === 'warning'
+            ? { newState: 'Warning_Issued', statusText: WF2_WARN_TXT, fieldKey: 'audit_reply', actionLabel: 'إغلاق (الرقابة الداخلية) — تنبيه' }
+            : outcome === 'reject'
+              ? { newState: 'closed', statusText: 'ملغاة بقرار إداري', fieldKey: 'audit_reply', actionLabel: 'إغلاق (الرقابة الداخلية) — إلغاء' }
+              : { newState: 'closed', statusText: 'معتمدة نهائياً', fieldKey: 'audit_reply', actionLabel: 'إغلاق (الرقابة الداخلية) — اعتماد' };
+        }
         if (!tr) return showToast('إجراء غير صالح', 'error');
+        if (tr.v2 && (!isWf2(t) || t.wf_phase !== tr.phase)) return showToast('حالة التذكرة تغيّرت — أعد تحميل الصفحة', 'error');
+        if (tr.v2 && String(text).trim().length < 3) return showToast('السبب إلزامي', 'error');
 
         let logUser = me.name;
         let logRole = ROLE_LABELS[me.role];
@@ -25231,7 +25305,16 @@
 
           if (activeBtn) activeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...';
 
-          const { data: rpcData, error: rpcErr } = await sb.rpc('append_violation_log_with_guard', {
+          const { data: rpcData, error: rpcErr } = tr.v2
+            ? await sb.rpc('athar_wf2_act', {
+                p_violation_id: t.id,
+                p_expected_phase: tr.phase,
+                p_decision: tr.decision,
+                p_reason: text,
+                p_log_entry: newLog,
+                p_attachments: newAttachments,
+              })
+            : await sb.rpc('append_violation_log_with_guard', {
             p_violation_id: t.id,
             p_expected_state: t.state,
             p_log_entry: newLog,
@@ -25250,10 +25333,12 @@
           replyReferenceCommitted = true;
           await commitR2CopiedAttachments(copiedReplyMoves);
 
-          notifyViolationPushAfterStateChange(
-            { ...t, state: tr.newState, ticket_number: t.ticket_number },
-            t.state
-          );
+          if (!tr.v2 && !isWf2(t)) {
+            notifyViolationPushAfterStateChange(
+              { ...t, state: tr.newState, ticket_number: t.ticket_number },
+              t.state
+            );
+          }
 
           closeModal('ticketModal');
           state.editingTicket = null;
@@ -25267,6 +25352,19 @@
             attachments: newAttachments,
           };
           if (tr.statusText) localPatch.status_text = tr.statusText;
+          if (tr.v2) {
+            localPatch.state = rpcData.state || tr.newState;
+            localPatch.status_text = rpcData.status_text || tr.statusText;
+            localPatch.wf_phase = rpcData.wf_phase;
+            localPatch.wf_path = rpcData.wf_path;
+            localPatch.wf_due_at = rpcData.wf_due_at;
+            localPatch.employee_visible = rpcData.employee_visible;
+            if (tr.phase === 'sup_decision') { localPatch.wf_sup_decision = tr.decision; localPatch.wf_sup_reason = text; }
+            if (tr.phase === 'mgr_review') { localPatch.wf_mgr_decision = tr.decision; localPatch.wf_mgr_reason = text; }
+            if (tr.phase === 'mgr_final') { localPatch.wf_final_decision = tr.decision; localPatch.wf_final_reason = text; }
+          } else if (isWf2(t)) {
+            localPatch.wf_phase = 'closed';
+          }
           if (action === 'respond') localPatch.auto_forwarded_emp = false;
           if (action === 'sup_process') localPatch.auto_forwarded_sup = false;
           patchViolationLocally(t.id, localPatch);
