@@ -23791,7 +23791,7 @@
         if (actor.masked) {
           const user = String(actor.user || '').trim();
           if (user && user !== 'الراصد') return `${date} · ${user}`;
-          return `${date} · الراصد`;
+          return date;
         }
         const user = String(actor.user || '').trim();
         const role = String(actor.role || '').trim();
@@ -25021,7 +25021,7 @@
             return `
       <article class="rd-td-log${isAuto ? ' rd-td-log--auto' : ''}">
         <div class="rd-td-log__top">
-          <span class="rd-td-log__author">${Sec.escapeHTML(author)}</span>
+          ${author && author !== 'الراصد' ? `<span class="rd-td-log__author">${Sec.escapeHTML(author)}</span>` : '<span class="rd-td-log__author"></span>'}
           <span class="rd-td-log__time">${Sec.escapeHTML(time)}</span>
         </div>
         ${role ? `<div class="rd-td-log__role">${Sec.escapeHTML(role)}</div>` : ''}
